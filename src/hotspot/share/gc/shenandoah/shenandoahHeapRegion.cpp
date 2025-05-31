@@ -75,6 +75,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _plab_allocs(0),
   _live_data(0),
   _critical_pins(0),
+  _mixed_candidate_garbage_words(0),
   _update_watermark(start),
   _age(0),
 #ifdef SHENANDOAH_CENSUS_NOISE
@@ -391,9 +392,11 @@ size_t ShenandoahHeapRegion::get_plab_allocs() const {
   return _plab_allocs * HeapWordSize;
 }
 
-void ShenandoahHeapRegion::set_live_data(size_t s) {
+void ShenandoahHeapRegion::set_live_data_after_fullgc(size_t s) {
   assert(Thread::current()->is_VM_thread(), "by VM thread");
-  _live_data = (s >> LogHeapWordSize);
+  ShenandoahMarkingContext* marking_context = ShenandoahHeap::heap()->complete_marking_context();
+  size_t words_allocated_above_tams = pointer_delta(top(), marking_context->top_at_mark_start(this));
+  _live_data = (s >> LogHeapWordSize) - words_allocated_above_tams;
 }
 
 void ShenandoahHeapRegion::print_on(outputStream* st) const {
