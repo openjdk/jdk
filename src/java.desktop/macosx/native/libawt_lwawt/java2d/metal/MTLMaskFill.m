@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,9 @@ MTLMaskFill_MaskFill(MTLContext *mtlc, BMTLSDOps * dstOps,
                      jint maskoff, jint maskscan, jint masklen,
                      unsigned char *pMask)
 {
-    J2dTraceLn5(J2D_TRACE_INFO, "MTLMaskFill_MaskFill (x=%d y=%d w=%d h=%d pMask=%p)", x, y, w, h, dstOps->pTexture);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "MTLMaskFill_MaskFill (x=%d y=%d w=%d h=%d pMask=%p)",
+               x, y, w, h, dstOps->pTexture);
     jint tw, th, x0;
     jint sx1, sy1, sx2, sy2;
     jint sx, sy, sw, sh;

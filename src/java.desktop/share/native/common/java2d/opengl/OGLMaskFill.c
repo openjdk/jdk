@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,9 +94,9 @@ OGLMaskFill_MaskFill(OGLContext *oglc,
     RETURN_IF_NULL(oglc);
     CHECK_PREVIOUS_OP(OGL_STATE_MASK_OP);
 
-    J2dTraceLn4(J2D_TRACE_VERBOSE, "  x=%d y=%d w=%d h=%d", x, y, w, h);
-    J2dTraceLn2(J2D_TRACE_VERBOSE, "  maskoff=%d maskscan=%d",
-                maskoff, maskscan);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  x=%d y=%d w=%d h=%d", x, y, w, h);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  maskoff=%d maskscan=%d",
+               maskoff, maskscan);
 
     {
         jint tw, th, x0;
