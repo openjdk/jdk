@@ -517,6 +517,7 @@ public sealed interface Template permits Template.ZeroArgs,
     /**
      * Creates a {@link Template} with one argument.
      * See {@link #body} for more details about how to construct a Template with {@link Token}s.
+     * Good practice but not enforced but not enforced: {@code arg1Name} should match the lambda argument name.
      *
      * <p>
      * Here is an example with template argument {@code 'a'}, captured once as string name
@@ -544,6 +545,7 @@ public sealed interface Template permits Template.ZeroArgs,
     /**
      * Creates a {@link Template} with two arguments.
      * See {@link #body} for more details about how to construct a Template with {@link Token}s.
+     * Good practice but not enforced: {@code arg1Name} and {@code arg2Name} should match the lambda argument names.
      *
      * <p>
      * Here an example with template arguments {@code 'a'} and {@code 'b'}, captured once as string names
@@ -573,6 +575,7 @@ public sealed interface Template permits Template.ZeroArgs,
     /**
      * Creates a {@link Template} with three arguments.
      * See {@link #body} for more details about how to construct a Template with {@link Token}s.
+     * Good practice but not enforced: {@code arg1Name}, {@code arg2Name}, and {@code arg3Name} should match the lambda argument names.
      *
      * @param body The {@link TemplateBody} created by {@link Template#body}.
      * @param <T1> Type of the first argument.
