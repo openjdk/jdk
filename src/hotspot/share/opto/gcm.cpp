@@ -2490,9 +2490,6 @@ bool CFGLoop::in_loop_nest(Block* b) {
   int depth = _depth;
   CFGLoop* b_loop = b->_loop;
   int b_depth = b_loop->_depth;
-  if (depth == b_depth) {
-    return true;
-  }
   while (b_depth > depth) {
     b_loop = b_loop->_parent;
     b_depth = b_loop->_depth;
