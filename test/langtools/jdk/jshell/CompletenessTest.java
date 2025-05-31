@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,8 +99,8 @@ public class CompletenessTest extends KullaTesting {
         "int p",
         "Deque<Token> stack = new ArrayDeque<>()",
         "final Deque<Token> stack = new ArrayDeque<>()",
-        "java.util.Scanner input = new java.util.Scanner(System.in)",
-        "java.util.Scanner input = new java.util.Scanner(System.in) { }",
+        "java.util.Scanner input = new java.util.Scanner(System.in, System.getProperty(\"stdin.encoding\"))",
+        "java.util.Scanner input = new java.util.Scanner(System.in, System.getProperty(\"stdin.encoding\")) { }",
         "int j = -i",
         "String[] a = { \"AAA\" }",
         "assert true",

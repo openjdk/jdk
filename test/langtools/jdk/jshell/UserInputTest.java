@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class UserInputTest extends KullaTesting {
 
     public void testScanner() {
         assertEval("import java.util.Scanner;");
-        assertEval("Scanner s = new Scanner(System.in);");
+        assertEval("Scanner s = new Scanner(System.in, System.getProperty(\"stdin.encoding\"));");
         setInput("12\n");
         assertEval("s.nextInt();", "12");
     }
