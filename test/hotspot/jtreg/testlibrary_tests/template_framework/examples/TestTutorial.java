@@ -1056,15 +1056,15 @@ public class TestTutorial {
                     public static void main() {
                         // All fields are still in their initial state.
                         """,
-                        myClassList.stream().map(c -> templateLoad.asToken(c)).toList(),
+                        myClassList.stream().map(templateLoad::asToken).toList(),
                         """
                         // Now let us mutate some fields.
                         """,
-                        myClassList.stream().map(c -> templateStore.asToken(c)).toList(),
+                        myClassList.stream().map(templateStore::asToken).toList(),
                         """
                         // And now some fields are different than before.
                         """,
-                        myClassList.stream().map(c -> templateLoad.asToken(c)).toList(),
+                        myClassList.stream().map(templateLoad::asToken).toList(),
                         """
                     }
                     """
