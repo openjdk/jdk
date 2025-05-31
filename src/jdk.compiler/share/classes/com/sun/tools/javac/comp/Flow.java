@@ -377,10 +377,6 @@ public class Flow {
             abstract JCTree getTarget(JCTree tree);
         }
 
-        /** Table of ending positions.
-         */
-        EndPosTable endPositions;
-
         /** The currently pending exits that go from current inner blocks
          *  to an enclosing block, in source order.
          */
@@ -609,7 +605,7 @@ public class Flow {
             tree.completesNormally = alive != Liveness.DEAD;
 
             if (alive == Liveness.ALIVE && !tree.sym.type.getReturnType().hasTag(VOID))
-                log.error(TreeInfo.diagEndPos(endPositions, tree.body), Errors.MissingRetStmt);
+                log.error(TreeInfo.diagEndPos(tree.body), Errors.MissingRetStmt);
 
             clearPendingExits(true);
         }
@@ -739,10 +735,10 @@ public class Flow {
                 scanStats(c.stats);
                 if (alive == Liveness.ALIVE) {
                     if (c.caseKind == JCCase.RULE) {
-                        log.error(TreeInfo.diagEndPos(endPositions, c.body),
+                        log.error(TreeInfo.diagEndPos(c.body),
                                   Errors.RuleCompletesNormally);
                     } else if (l.tail.isEmpty()) {
-                        log.error(TreeInfo.diagEndPos(endPositions, tree),
+                        log.error(TreeInfo.diagEndPos(tree),
                                   Errors.SwitchExpressionCompletesNormally);
                     }
                 }
@@ -1215,7 +1211,7 @@ public class Flow {
                 scanStat(tree.finalizer);
                 tree.finallyCanCompleteNormally = alive != Liveness.DEAD;
                 if (alive == Liveness.DEAD) {
-                    log.warning(TreeInfo.diagEndPos(endPositions, tree.finalizer),
+                    log.warning(TreeInfo.diagEndPos(tree.finalizer),
                                 LintWarnings.FinallyCannotComplete);
                 } else {
                     while (exits.nonEmpty()) {
@@ -1321,11 +1317,9 @@ public class Flow {
                 attrEnv = env;
                 Flow.this.make = make;
                 pendingExits = new ListBuffer<>();
-                endPositions = env.toplevel.endPositions;
                 alive = Liveness.ALIVE;
                 scan(tree);
             } finally {
-                endPositions = null;
                 pendingExits = null;
                 Flow.this.make = null;
             }
@@ -1892,13 +1886,11 @@ public class Flow {
                 attrEnv = env;
                 Flow.this.make = make;
                 pendingExits = new ListBuffer<>();
-                endPositions = env.toplevel.endPositions;
                 preciseRethrowTypes = new HashMap<>();
                 this.thrown = this.caught = null;
                 this.classDef = null;
                 scan(tree);
             } finally {
-                endPositions = null;
                 pendingExits = null;
                 Flow.this.make = null;
                 this.thrown = this.caught = null;
@@ -2499,13 +2491,13 @@ public class Flow {
                                      */
                                         var.flags_field |= UNINITIALIZED_FIELD;
                                     } else {
-                                        checkInit(TreeInfo.diagEndPos(endPositions, tree.body), var);
+                                        checkInit(TreeInfo.diagEndPos(tree.body), var);
                                     }
                                 } else {
                                     checkInit(TreeInfo.diagnosticPositionFor(var, vardecl), var);
                                 }
                             } else {
-                                checkInit(TreeInfo.diagEndPos(endPositions, tree.body), var);
+                                checkInit(TreeInfo.diagEndPos(tree.body), var);
                             }
                         }
                     }
@@ -3176,11 +3168,11 @@ public class Flow {
 
         /** Perform definite assignment/unassignment analysis on a tree.
          */
-        public void analyzeTree(Env<AttrContext> env, TreeMaker make) {
+        public void analyzeTree(Env<?> env, TreeMaker make) {
             analyzeTree(env, env.tree, make);
          }
 
-        public void analyzeTree(Env<AttrContext> env, JCTree tree, TreeMaker make) {
+        public void analyzeTree(Env<?> env, JCTree tree, TreeMaker make) {
             try {
                 startPos = tree.pos().getStartPosition();
 
@@ -3193,7 +3185,6 @@ public class Flow {
                 nextadr = 0;
                 Flow.this.make = make;
                 pendingExits = new ListBuffer<>();
-                endPositions = env.toplevel.endPositions;
                 this.classDef = null;
                 unrefdResources = WriteableScope.create(env.enclClass.sym);
                 scan(tree);
@@ -3209,7 +3200,6 @@ public class Flow {
                 firstadr = 0;
                 nextadr = 0;
                 Flow.this.make = null;
-                endPositions = null;
                 pendingExits = null;
                 this.classDef = null;
                 unrefdResources = null;
@@ -3422,10 +3412,8 @@ public class Flow {
                 attrEnv = env;
                 Flow.this.make = make;
                 pendingExits = new ListBuffer<>();
-                endPositions = env.toplevel.endPositions;
                 scan(tree);
             } finally {
-                endPositions = null;
                 pendingExits = null;
                 Flow.this.make = null;
             }

@@ -82,7 +82,6 @@ import static com.sun.tools.javac.code.TypeTag.VOID;
 
 import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant;
 import com.sun.tools.javac.jvm.Target;
-import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCBlock;
 import com.sun.tools.javac.tree.JCTree.JCBlock.PatternMatchingCatch;
@@ -136,7 +135,6 @@ public class TransPatterns extends TreeTranslator {
     private final Preview preview;
     private TreeMaker make;
     private Env<AttrContext> env;
-    private EndPosTable endPositions;
 
     BindingContext bindingContext = new BindingContext() {
         @Override
@@ -753,7 +751,7 @@ public class TransPatterns extends TreeTranslator {
         if (c.caseKind == CaseTree.CaseKind.RULE || (cases.last() == c && c.completesNormally)) {
             JCTree pos = c.stats.nonEmpty() ? c.stats.last()
                                             : c;
-            JCBreak brk = make.at(TreeInfo.endPos(endPositions, pos)).Break(null);
+            JCBreak brk = make.at(TreeInfo.endPos(pos)).Break(null);
             brk.target = switchTree;
             c.stats = c.stats.append(brk);
         }
@@ -1398,13 +1396,11 @@ public class TransPatterns extends TreeTranslator {
         try {
             this.make = make;
             this.env = env;
-            this.endPositions = env.toplevel.endPositions;
             translate(cdef);
         } finally {
             // note that recursive invocations of this method fail hard
             this.make = null;
             this.env = null;
-            this.endPositions = null;
         }
 
         return cdef;
