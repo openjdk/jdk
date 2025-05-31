@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,10 +217,12 @@ public class FileInputStream extends InputStream
                 bytesRead = 1;
             }
         } finally {
-            long duration = FileReadEvent.timestamp() - start;
-            if (FileReadEvent.shouldCommit(duration)) {
+            long end = FileReadEvent.timestamp();
+            long duration = end - start;
+            if (FileReadEvent.shouldThrottleCommit(duration, end)) {
                 FileReadEvent.commit(start, duration, path, bytesRead, endOfFile);
             }
+
         }
         return result;
     }
@@ -241,8 +243,9 @@ public class FileInputStream extends InputStream
             start = FileReadEvent.timestamp();
             bytesRead = readBytes(b, off, len);
         } finally {
-            long duration = FileReadEvent.timestamp() - start;
-            if (FileReadEvent.shouldCommit(duration)) {
+            long end = FileReadEvent.timestamp();
+            long duration = end - start;
+            if (FileReadEvent.shouldThrottleCommit(duration, end)) {
                 if (bytesRead < 0) {
                     FileReadEvent.commit(start, duration, path, 0L, true);
                 } else {

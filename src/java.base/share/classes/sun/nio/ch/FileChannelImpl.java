@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,8 +269,9 @@ public class FileChannelImpl
             start = FileReadEvent.timestamp();
             bytesRead = implRead(dst);
         } finally {
-            long duration = FileReadEvent.timestamp() - start;
-            if (FileReadEvent.shouldCommit(duration)) {
+            long end = FileReadEvent.timestamp();
+            long duration = end - start;
+            if (FileReadEvent.shouldThrottleCommit(duration, end)) {
                 if (bytesRead < 0) {
                     FileReadEvent.commit(start, duration, path, 0L, true);
                 } else {
@@ -331,8 +332,9 @@ public class FileChannelImpl
             start = FileReadEvent.timestamp();
             bytesRead = implRead(dsts, offset, length);
         } finally {
-            long duration = FileReadEvent.timestamp() - start;
-            if (FileReadEvent.shouldCommit(duration)) {
+            long end = FileReadEvent.timestamp();
+            long duration = end - start;
+            if (FileReadEvent.shouldThrottleCommit(duration, end)) {
                 if (bytesRead < 0) {
                     FileReadEvent.commit(start, duration, path, 0L, true);
                 } else {
@@ -390,8 +392,9 @@ public class FileChannelImpl
             start = FileWriteEvent.timestamp();
             bytesWritten = implWrite(src);
         } finally {
-            long duration = FileWriteEvent.timestamp() - start;
-            if (FileWriteEvent.shouldCommit(duration)) {
+            long end = FileWriteEvent.timestamp();
+            long duration = end - start;
+            if (FileWriteEvent.shouldThrottleCommit(duration, end)) {
                 long bytes = bytesWritten > 0 ? bytesWritten : 0;
                 FileWriteEvent.commit(start, duration, path, bytes);
             }
@@ -446,8 +449,9 @@ public class FileChannelImpl
             start = FileWriteEvent.timestamp();
             bytesWritten = implWrite(srcs, offset, length);
         } finally {
-            long duration = FileWriteEvent.timestamp() - start;
-            if (FileWriteEvent.shouldCommit(duration)) {
+            long end = FileWriteEvent.timestamp();
+            long duration = end - start;
+            if (FileWriteEvent.shouldThrottleCommit(duration, end)) {
                 long bytes = bytesWritten > 0 ? bytesWritten : 0;
                 FileWriteEvent.commit(start, duration, path, bytes);
             }
@@ -1204,8 +1208,9 @@ public class FileChannelImpl
             start = FileReadEvent.timestamp();
             bytesRead = implRead(dst, position);
         } finally {
-            long duration = FileReadEvent.timestamp() - start;
-            if (FileReadEvent.shouldCommit(duration)) {
+            long end = FileReadEvent.timestamp();
+            long duration = end - start;
+            if (FileReadEvent.shouldThrottleCommit(duration, end)) {
                 if (bytesRead < 0) {
                     FileReadEvent.commit(start, duration, path, 0L, true);
                 } else {
@@ -1276,8 +1281,9 @@ public class FileChannelImpl
             start = FileWriteEvent.timestamp();
             bytesWritten = implWrite(src, position);
         } finally {
-            long duration = FileWriteEvent.timestamp() - start;
-            if (FileWriteEvent.shouldCommit(duration)) {
+            long end = FileWriteEvent.timestamp();
+            long duration = end - start;
+            if (FileWriteEvent.shouldThrottleCommit(duration, end)) {
                 long bytes = bytesWritten > 0 ? bytesWritten : 0;
                 FileWriteEvent.commit(start, duration, path, bytes);
             }

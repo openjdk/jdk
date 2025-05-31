@@ -44,6 +44,7 @@ import jdk.jfr.SettingControl;
 import jdk.jfr.SettingDefinition;
 import jdk.jfr.StackTrace;
 import jdk.jfr.Threshold;
+import jdk.jfr.Throttle;
 import jdk.jfr.events.ActiveSettingEvent;
 import jdk.jfr.events.StackFilter;
 import jdk.jfr.internal.settings.CutoffSetting;
@@ -54,6 +55,7 @@ import jdk.jfr.internal.settings.PeriodSetting;
 import jdk.jfr.internal.settings.StackTraceSetting;
 import jdk.jfr.internal.settings.ThresholdSetting;
 import jdk.jfr.internal.settings.ThrottleSetting;
+import jdk.jfr.internal.settings.Throttler;
 import jdk.jfr.internal.tracing.Modification;
 import jdk.jfr.internal.util.Utils;
 
@@ -94,6 +96,7 @@ public final class EventControl {
         }
         if (eventType.hasThrottle()) {
             addControl(Throttle.NAME, defineThrottle(eventType));
+            eventType.setThrottler(new Throttler(eventType));
         }
         if (eventType.hasLevel()) {
             addControl(Level.NAME, defineLevel(eventType));
