@@ -362,11 +362,11 @@
           range(0, 100)                                                     \
                                                                             \
   product(uint, YoungGenerationSizeSupplement, 80,                          \
-          "Supplement to YoungedGenerationSizeIncrement used at startup")   \
+          "Supplement to YoungGenerationSizeIncrement used at startup")     \
           range(0, 100)                                                     \
                                                                             \
   product(uintx, YoungGenerationSizeSupplementDecay, 8,                     \
-          "Decay factor to YoungedGenerationSizeSupplement")                \
+          "Decay factor to YoungGenerationSizeSupplement")                  \
           range(1, max_uintx)                                               \
                                                                             \
   product(uint, TenuredGenerationSizeIncrement, 20,                         \
