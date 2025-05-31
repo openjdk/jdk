@@ -25,12 +25,10 @@
 
 package com.sun.tools.javac.code;
 
-import java.lang.annotation.Annotation;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -245,12 +243,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             List<Type> typarams = t.getTypeArguments();
             List<Type> typarams1 = visit(typarams, s);
             if (outer1 == outer && typarams1 == typarams) return t;
-            else return new ClassType(outer1, typarams1, t.tsym, t.metadata) {
-                @Override
-                protected boolean needsStripping() {
-                    return true;
-                }
-            };
+            else return new ClassType(outer1, typarams1, t.tsym, t.metadata);
         }
 
         @Override
@@ -261,12 +254,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             if (t == wt.type)
                 return wt;
             else
-                return new WildcardType(t, wt.kind, wt.tsym, wt.bound, wt.metadata) {
-                    @Override
-                    protected boolean needsStripping() {
-                        return true;
-                    }
-                };
+                return new WildcardType(t, wt.kind, wt.tsym, wt.bound, wt.metadata);
         }
 
         @Override
@@ -274,12 +262,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             Type elemtype = t.elemtype;
             Type elemtype1 = visit(elemtype, s);
             if (elemtype1 == elemtype) return t;
-            else return new ArrayType(elemtype1, t.tsym, t.metadata) {
-                @Override
-                protected boolean needsStripping() {
-                    return true;
-                }
-            };
+            else return new ArrayType(elemtype1, t.tsym, t.metadata);
         }
 
         @Override
@@ -293,12 +276,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             if (argtypes1 == argtypes &&
                 restype1 == restype &&
                 thrown1 == thrown) return t;
-            else return new MethodType(argtypes1, restype1, thrown1, t.tsym) {
-                @Override
-                protected boolean needsStripping() {
-                    return true;
-                }
-            };
+            else return new MethodType(argtypes1, restype1, thrown1, t.tsym);
         }
 
         @Override
@@ -400,25 +378,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             }
         }
         return cloneWithMetadata(newMetadata);
-    }
-
-    /**
-     * Does this type require annotation stripping for API clients?
-     */
-    protected boolean needsStripping() {
-        return false;
-    }
-
-    /**
-     * Strip all metadata associated with this type - this could return a new clone of the type.
-     * This routine is only used to present the correct annotated types back to the users when types
-     * are accessed through compiler APIs; it should not be used anywhere in the compiler internals
-     * as doing so might result in performance penalties.
-     */
-    public Type stripMetadataIfNeeded() {
-        return needsStripping() ?
-                accept(stripMetadata, null) :
-                this;
     }
 
     public Type stripMetadata() {
