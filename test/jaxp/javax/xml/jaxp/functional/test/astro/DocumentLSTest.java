@@ -37,6 +37,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Writer;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -177,6 +178,15 @@ public class DocumentLSTest {
     private DocumentBuilder getDocumentBuilder() throws ParserConfigurationException {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
+         // Security fixes to prevent XXE attacks
+        dbf.setFeature("http://javax.xml.XMLConstants/feature/secure-processing", true);
+        dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        dbf.setExpandEntityReferences(false);
+        
+        // Disable external DTD and schema access
+        dbf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        dbf.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
         return dbf.newDocumentBuilder();
     }
 }
