@@ -76,7 +76,7 @@ public class TestTemplate {
     private record MyPrimitive(String name) implements DataName.Type {
         @Override
         public boolean isSubtypeOf(DataName.Type other) {
-            return other instanceof MyPrimitive(String n) && n == name();
+            return other instanceof MyPrimitive(String n) && n.equals(name());
         }
 
         @Override

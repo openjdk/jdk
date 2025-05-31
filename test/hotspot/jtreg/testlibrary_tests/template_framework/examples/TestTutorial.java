@@ -82,6 +82,9 @@ public class TestTutorial {
         // Hint: if you want to see the generated source code, you can enable
         //       printing of the source code that the CompileFramework receives,
         //       with -DCompileFrameworkVerbose=true
+        //       The code may not be nicely formatted, especially regarding
+        //       indentation. You might consider dumping the generated code
+        //       into an IDE or other auto-formatting tool.
         comp.compile();
 
         comp.invoke("p.xyz.InnerTest1",  "main", new Object[] {});
@@ -149,17 +152,30 @@ public class TestTutorial {
             "System.out.println(", arg, ");\n",  // capture arg via lambda argument
             "System.out.println(#arg);\n",       // capture arg via hashtag replacement
             "System.out.println(#{arg});\n",     // capture arg via hashtag replacement with brackets
-            // The Template Framework allows two ways of formatting Strings, either
-            // by appending to the comma-separated list of Tokens passed to body(), or by hashtag
-            // replacements inside a single string. Appending as a Token works whenever one has a reference
-            // to the Object in Java code. But often, this is rather cumbersome and
-            // looks awkward, given all the additional quotes and commands required.
-            // Optimal would have been Java String Templates, but since those do not
-            // currently exist, we use hashtag replacements. These can be either
-            // defined by capturing arguments as string names, or by using a "let" definition,
-            // see further down for examples. Which one should be preferred is a code
-            // style question. Generally, we prefer the use of hashtag replacements
-            // because that allows easy use of multiline strings (i.e. text blocks).
+            // It would have been optimal to use Java String Templates to format
+            // argument values into Strings. However, since these are (yet) available,
+            // the Template Framework provides two alternative ways of formatting
+            // Strings:
+            // 1) By appending to the comma-separated list of Tokens passed to body().
+            //    Appending as a Token works whenever one has a reference to the Object
+            //    in Java code. But often, this is rather cumbersome and looks awkward,
+            //    given all the additional quotes and commands required. Hence, it
+            //    is encouraged to only use this method when necessary.
+            // 2) By hashtag replacements inside a single string. One can either
+            //    use "#arg" directly, or use brackets "#{arg}". When possible, one
+            //    should prefer avoiding the brackets, as they create additional
+            //    noise. However, there are cases where they are useful, for
+            //    example "#TYPE_CON" would be parsed as a hashtag replacement
+            //    for the hashtag name "TYPE_CON", whereas "#{TYPE}_CON" is
+            //    parsed as hashtag name "TYPE", followed by literal string "_CON".
+            //    See also: generateWithHashtagAndDollarReplacements2
+            //    There are two ways to define the value of a hashtag replacement:
+            //    a) Capturing Template arguments as Strings.
+            //    b) Using a "let" definition (see examples further down).
+            // Which one should be preferred is a code style question. Generally, we
+            // prefer the use of hashtag replacements because that allows easy use of
+            // multiline strings (i.e. text blocks).
+            // TODO: example where other is required.
             "if (#arg != ", arg, ") { throw new RuntimeException(\"mismatch\"); }\n"
         ));
 
