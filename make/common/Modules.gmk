@@ -111,6 +111,9 @@ FindModuleInfosForSrcDir = \
         $(patsubst %,%/*/module-info.java, $(strip $1)) \
     )
 
+#$(error XXXX $(notdir $(patsubst %/,%, $(dir $(patsubst %/,%, $(dir $(patsubst %/,%, $(dir /Users/dnsimon/dev/galahad-ee/graal/sdk/src/org.graalvm.word/share/classes/module-info.java))))))) XXXX)
+#$(notdir $(patsubst %/,%, $(dir $(patsubst %/,%, $(dir $(patsubst %/,%, $(dir $(mi)))))))))))
+
 # Extract the module names from the paths of module-info.java files. The
 # position of the module directory differs depending on if this is an imported
 # src dir or not.
@@ -173,6 +176,10 @@ GetModuleSrcPath = \
 MODULE_DEPS_MAKEFILE := $(MAKESUPPORT_OUTPUTDIR)/module-deps.gmk
 
 MODULE_INFOS := $(call FindAllModuleInfos, *)
+#$(info MODULE_INFOS $(MODULE_INFOS))
+
+#$(info MODULE_INFOS: $(MODULE_INFOS))
+#$(info MODULE_DEPS_MAKEFILE: $(MODULE_DEPS_MAKEFILE))
 
 ifeq ($(GENERATE_MODULE_DEPS_FILE), true)
   $(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
