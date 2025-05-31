@@ -45,7 +45,6 @@ import java.util.stream.Stream;
 import com.sun.tools.javac.code.Directive;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.LintMapper;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.*;
@@ -343,7 +342,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
           .filter(MethodInfo::analyzable)
           .forEach(this::analyzeConstructor);
 
-        // Manually apply (and validate) any Lint suppressions
+        // Manually apply (and validate) any Lint suppression
         filterWarnings(warning -> !warning.isSuppressed());
 
         // Field intitializers and initialization blocks will generate a separate warning for each primary constructor.
@@ -1391,7 +1390,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
               + "[" + properties.stream().collect(Collectors.joining(",")) + "]";
         }
 
-        protected void addProperties(java.util.List<String> properties) {
+        protected void addProperties(ArrayList<String> properties) {
         }
 
         // Return a modified copy of this Ref's Indirections. The modified set must not be empty.
@@ -1521,7 +1520,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
         }
 
         @Override
-        protected void addProperties(java.util.List<String> properties) {
+        protected void addProperties(ArrayList<String> properties) {
             super.addProperties(properties);
             properties.add("depth=" + depth);
         }
@@ -1601,7 +1600,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
         }
 
         @Override
-        protected void addProperties(java.util.List<String> properties) {
+        protected void addProperties(ArrayList<String> properties) {
             super.addProperties(properties);
             properties.add("sym=" + sym);
         }
@@ -1745,10 +1744,10 @@ public class ThisEscapeAnalyzer extends TreeScanner {
     private class Warning {
 
         final JCClassDecl declaringClass;           // the class whose instance is leaked
-        final java.util.List<StackFrame> stack;     // the call stack where the leak happens
+        final ArrayList<StackFrame> stack;          // the call stack where the leak happens
         final JCTree origin;                        // the originating ctor, field, or init block
 
-        Warning(JCClassDecl declaringClass, java.util.List<StackFrame> stack) {
+        Warning(JCClassDecl declaringClass, ArrayList<StackFrame> stack) {
             this.declaringClass = declaringClass;
             this.stack = stack;
             this.origin = stack.stream()
