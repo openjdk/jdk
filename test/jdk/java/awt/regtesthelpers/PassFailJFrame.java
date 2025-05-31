@@ -72,6 +72,7 @@ import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.Timer;
 import javax.swing.border.Border;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
@@ -98,7 +99,8 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  * tester. The instructions can be either plain text or HTML. If the
  * text of the instructions starts with {@code "<html>"}, the
  * instructions are displayed as HTML, as supported by Swing, which
- * provides richer formatting options.
+ * provides richer formatting options. {@link Builder#addHyperlinkListener}
+ * can be called to add a listener to hyperlinks inside the HTML.
  * <p>
  * The instructions are displayed in a text component with word-wrapping
  * so that there's no horizontal scroll bar. If the text doesn't fit, a
@@ -592,6 +594,7 @@ public final class PassFailJFrame {
         frame.add(createInstructionUIPanel(instructions,
                                            testTimeOut,
                                            rows, columns,
+                                           null,
                                            false,
                                            false, 0),
                   BorderLayout.CENTER);
@@ -610,6 +613,7 @@ public final class PassFailJFrame {
                 createInstructionUIPanel(builder.instructions,
                                          builder.testTimeOut,
                                          builder.rows, builder.columns,
+                                         builder.hyperlinkListener,
                                          builder.screenCapture,
                                          builder.addLogArea,
                                          builder.logAreaRows);
@@ -631,6 +635,7 @@ public final class PassFailJFrame {
     private static JComponent createInstructionUIPanel(String instructions,
                                                        long testTimeOut,
                                                        int rows, int columns,
+                                                       HyperlinkListener hyperlinkListener,
                                                        boolean enableScreenCapture,
                                                        boolean addLogArea,
                                                        int logAreaRows) {
@@ -643,9 +648,13 @@ public final class PassFailJFrame {
         JTextComponent text = instructions.startsWith("<html>")
                               ? configureHTML(instructions, rows, columns)
                               : configurePlainText(instructions, rows, columns);
+        if (hyperlinkListener != null && text instanceof JEditorPane ep) {
+            ep.addHyperlinkListener(hyperlinkListener);
+        }
         text.setEditable(false);
         text.setBorder(createTextBorder());
         text.setCaretPosition(0);
+        text.getCaret().setVisible(false);
 
         JPanel textPanel = new JPanel(new BorderLayout());
         textPanel.setBorder(createEmptyBorder(GAP, 0, GAP, 0));
@@ -1398,6 +1407,7 @@ public final class PassFailJFrame {
         private int rows;
         private int columns;
         private boolean screenCapture;
+        HyperlinkListener hyperlinkListener;
         private boolean addLogArea;
         private int logAreaRows = 10;
 
@@ -1475,6 +1485,17 @@ public final class PassFailJFrame {
          */
         public Builder columns(int columns) {
             this.columns = columns;
+            return this;
+        }
+
+        /**
+         * Set the HyperlinkListener of links inside the instructions pane.
+         *
+         * @param hyperlinkListener the listener
+         * @return this builder
+         */
+        public Builder addHyperlinkListener(HyperlinkListener hyperlinkListener) {
+            this.hyperlinkListener = hyperlinkListener;
             return this;
         }
 
