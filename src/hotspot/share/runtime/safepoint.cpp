@@ -802,7 +802,10 @@ void ThreadSafepointState::handle_polling_page_exception() {
     StackWatermarkSet::after_unwind(self);
 
     // Process pending operation
-    SafepointMechanism::process_if_requested_with_exit_check(self, true /* check asyncs */);
+    ResourceMark rm;
+    ResourceHashtable<HandshakeFilterOperation, bool> operations_filter;
+    operations_filter.put(HandshakeFilterOperation::check_async_exception, true); /* check asyncs */
+    SafepointMechanism::process_if_requested_with_exit_check(self, operations_filter);
 
     // restore oop result, if any
     if (return_oop) {
@@ -825,7 +828,10 @@ void ThreadSafepointState::handle_polling_page_exception() {
     // and still install the exception here because live registers needed
     // during deoptimization are clobbered by the exception path. The
     // exception will just be delivered once we get into the interpreter.
-    SafepointMechanism::process_if_requested_with_exit_check(self, false /* check asyncs */);
+    ResourceMark rm;
+    ResourceHashtable<HandshakeFilterOperation, bool> operations_filter;
+    operations_filter.put(HandshakeFilterOperation::check_async_exception, false); /* check asyncs */
+    SafepointMechanism::process_if_requested_with_exit_check(self, operations_filter);
     set_at_poll_safepoint(false);
 
     if (self->has_async_exception_condition()) {
