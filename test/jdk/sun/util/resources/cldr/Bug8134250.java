@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8134250 8134520
  * @modules jdk.localedata
  * @summary Tests CLDR/LDML features are correctly reflected in JDK.
- * @run main/othervm -Djava.locale.providers=CLDR Bug8134250
+ * @run main Bug8134250
  */
 
 // Note this test highly depends on a particular version of CLDR. Results
