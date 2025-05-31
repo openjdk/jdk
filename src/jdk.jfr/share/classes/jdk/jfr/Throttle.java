@@ -39,7 +39,7 @@ import java.lang.annotation.Target;
  * If the event class annotated with {@code Throttle} are filtering by other
  * settings, such as a {@link jdk.jfr.Threshold} or a user-defined setting, the
  * throttling will happen after those settings have been applied.
- * 
+ *
  * @since 25
  */
 @MetadataDefinition
