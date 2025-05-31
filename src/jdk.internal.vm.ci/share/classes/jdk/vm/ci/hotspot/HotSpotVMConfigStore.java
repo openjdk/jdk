@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,11 +124,10 @@ public final class HotSpotVMConfigStore {
      *     ]
      * </pre>
      */
-    @SuppressWarnings("try")
     HotSpotVMConfigStore(CompilerToVM compilerToVm) {
         this.compilerToVm = compilerToVm;
         Object[] data;
-        try (InitTimer t = timer("CompilerToVm readConfiguration")) {
+        try (InitTimer _ = timer("CompilerToVm readConfiguration")) {
             data = compilerToVm.readConfiguration();
         }
         if (data.length != 5) {
@@ -148,7 +147,7 @@ public final class HotSpotVMConfigStore {
         vmIntrinsics = Arrays.asList((VMIntrinsicMethod[]) data[4]);
         // @formatter:on
 
-        try (InitTimer t = timer("HotSpotVMConfigStore<init> fill maps")) {
+        try (InitTimer _ = timer("HotSpotVMConfigStore<init> fill maps")) {
             for (VMField vmField : vmFieldsInfo) {
                 vmFields.put(vmField.name, vmField);
             }

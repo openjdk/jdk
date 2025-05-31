@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,9 +65,7 @@ public abstract class AbstractProfiledItem<T> implements Comparable<AbstractProf
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        long temp;
-        temp = Double.doubleToLongBits(probability);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
+        result = prime * result + Double.hashCode(probability);
         result = prime * result + item.hashCode();
         return result;
     }

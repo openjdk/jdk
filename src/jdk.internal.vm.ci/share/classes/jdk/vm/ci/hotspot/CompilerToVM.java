@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,11 +20,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.vm.ci.hotspot;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
+import java.util.List;
 
 import jdk.internal.misc.Unsafe;
 import jdk.vm.ci.code.BytecodeFrame;
@@ -84,9 +84,8 @@ final class CompilerToVM {
     final int ARRAY_DOUBLE_INDEX_SCALE;
     final int ARRAY_OBJECT_INDEX_SCALE;
 
-    @SuppressWarnings("try")
     CompilerToVM() {
-        try (InitTimer t = timer("CompilerToVM.registerNatives")) {
+        try (InitTimer _ = timer("CompilerToVM.registerNatives")) {
             registerNatives();
             ARRAY_BOOLEAN_BASE_OFFSET = arrayBaseOffset(JavaKind.Boolean.getTypeChar());
             ARRAY_BYTE_BASE_OFFSET = arrayBaseOffset(JavaKind.Byte.getTypeChar());
@@ -282,8 +281,6 @@ final class CompilerToVM {
 
     /**
      * Converts {@code javaClass} to a HotSpotResolvedJavaType.
-     *
-     * Must not be called if {@link Services#IS_IN_NATIVE_IMAGE} is {@code true}.
      */
     native HotSpotResolvedJavaType lookupClass(Class<?> javaClass);
 
@@ -291,7 +288,6 @@ final class CompilerToVM {
 
     /**
      * Gets the {@code jobject} value wrapped by {@code peerObject}.
-     * Must not be called if {@link Services#IS_IN_NATIVE_IMAGE} is {@code false}.
      */
     native long getJObjectValue(HotSpotObjectConstantImpl peerObject);
 
@@ -327,7 +323,7 @@ final class CompilerToVM {
 
     /**
      * Gets the {@code JVM_CONSTANT_NameAndType} index referenced by the {@code rawIndex}.
-     * The meaning of {@code rawIndex} is dependent on the given {@opcode}.
+     * The meaning of {@code rawIndex} is dependent on the given {@code opcode}.
      *
      * The behavior of this method is undefined if the class holding the {@code constantPool}
      * has not yet been rewritten, or {@code rawIndex} is not a valid index for
@@ -376,7 +372,7 @@ final class CompilerToVM {
     /**
      * Gets the {@code JVM_CONSTANT_Class} index from the entry in {@code constantPool}
      * referenced by the {@code which}. The meaning of {@code which} is dependent
-     * on the given {@opcode}.
+     * on the given {@code opcode}.
      *
      * The behavior of this method is undefined if the class holding the {@code constantPool}
      * has not yet been rewritten, or {@code which} is not a valid index for
@@ -502,8 +498,8 @@ final class CompilerToVM {
 
     /**
      * Gets the constant pool index of a static argument of a {@code CONSTANT_Dynamic_info} or
-     * @{code CONSTANT_InvokeDynamic_info} entry. Used when the list of static arguments in the
-     * {@link BootstrapMethodInvocation} is a {@code List<PrimitiveConstant>} of the form
+     * {@code CONSTANT_InvokeDynamic_info} entry. Used when the list of static arguments in the
+     * {@code BootstrapMethodInvocation} is a {@code List<PrimitiveConstant>} of the form
      * {{@code arg_count}, {@code pool_index}}, meaning the arguments are not already resolved and that
      * the JDK has to lookup the arguments when they are needed. The {@code cpi} corresponds to
      * {@code pool_index} and the {@code index} has to be smaller than {@code arg_count}.
@@ -1067,8 +1063,8 @@ final class CompilerToVM {
     /**
      * @see ResolvedJavaType#getInterfaces()
      */
-    HotSpotResolvedObjectTypeImpl[] getInterfaces(HotSpotResolvedObjectTypeImpl klass) {
-        return getInterfaces(klass, klass.getKlassPointer());
+    List<ResolvedJavaType> getInterfaces(HotSpotResolvedObjectTypeImpl klass) {
+        return List.of(getInterfaces(klass, klass.getKlassPointer()));
     }
 
     native HotSpotResolvedObjectTypeImpl[] getInterfaces(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
@@ -1141,8 +1137,8 @@ final class CompilerToVM {
     /**
      * Gets the {@link ResolvedJavaMethod}s for all the constructors of {@code klass}.
      */
-    ResolvedJavaMethod[] getDeclaredConstructors(HotSpotResolvedObjectTypeImpl klass) {
-        return getDeclaredConstructors(klass, klass.getKlassPointer());
+    List<ResolvedJavaMethod> getDeclaredConstructors(HotSpotResolvedObjectTypeImpl klass) {
+        return List.of(getDeclaredConstructors(klass, klass.getKlassPointer()));
     }
 
     native ResolvedJavaMethod[] getDeclaredConstructors(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
@@ -1150,14 +1146,14 @@ final class CompilerToVM {
     /**
      * Gets the {@link ResolvedJavaMethod}s for all the non-constructor methods of {@code klass}.
      */
-    ResolvedJavaMethod[] getDeclaredMethods(HotSpotResolvedObjectTypeImpl klass) {
-        return getDeclaredMethods(klass, klass.getKlassPointer());
+    List<ResolvedJavaMethod> getDeclaredMethods(HotSpotResolvedObjectTypeImpl klass) {
+        return List.of(getDeclaredMethods(klass, klass.getKlassPointer()));
     }
 
     native ResolvedJavaMethod[] getDeclaredMethods(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
 
-    HotSpotResolvedObjectTypeImpl.FieldInfo[] getDeclaredFieldsInfo(HotSpotResolvedObjectTypeImpl klass) {
-        return getDeclaredFieldsInfo(klass, klass.getKlassPointer());
+    List<HotSpotResolvedObjectTypeImpl.FieldInfo> getDeclaredFieldsInfo(HotSpotResolvedObjectTypeImpl klass) {
+        return List.of(getDeclaredFieldsInfo(klass, klass.getKlassPointer()));
     }
 
     native HotSpotResolvedObjectTypeImpl.FieldInfo[] getDeclaredFieldsInfo(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
@@ -1519,7 +1515,7 @@ final class CompilerToVM {
      * If the current thread is a CompilerThread associated with a JVMCI compiler where
      * newState != CompilerThread::_can_call_java, then _can_call_java is set to newState.
      *
-     * @returns false if no change was made, otherwise true
+     * @return false if no change was made, otherwise true
      */
     native boolean updateCompilerThreadCanCallJava(boolean newState);
 

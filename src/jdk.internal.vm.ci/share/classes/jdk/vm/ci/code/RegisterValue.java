@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ public final class RegisterValue extends AllocatableValue {
 
     private final Register reg;
 
-    protected RegisterValue(ValueKind<?> kind, Register register) {
+    RegisterValue(ValueKind<?> kind, Register register) {
         super(kind);
         this.reg = register;
     }
@@ -56,8 +56,7 @@ public final class RegisterValue extends AllocatableValue {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof RegisterValue) {
-            RegisterValue other = (RegisterValue) obj;
+        if (obj instanceof RegisterValue other) {
             return super.equals(obj) && reg.equals(other.reg);
         }
         return false;

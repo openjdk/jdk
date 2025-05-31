@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,14 @@
  */
 package jdk.vm.ci.code;
 
-import java.util.Arrays;
-import java.util.Objects;
-
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaValue;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Value;
+
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Represents the Java bytecode frame state(s) at a given position including {@link Value locations}
@@ -71,14 +71,13 @@ public final class BytecodeFrame extends BytecodePosition {
      * This field is intentionally exposed as a mutable array that a compiler may modify (e.g.
      * during register allocation).
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "field is intentionally mutable")//
-    public final JavaValue[] values;
+    public final List<JavaValue> values;
 
     /**
      * An array describing the Java kinds in {@link #values}. It records a kind for the locals and
      * the operand stack.
      */
-    private final JavaKind[] slotKinds;
+    private final List<JavaKind> slotKinds;
 
     /**
      * The number of locals in the values array.
@@ -205,7 +204,6 @@ public final class BytecodeFrame extends BytecodePosition {
      * @param numStack the depth of the stack
      * @param numLocks the number of locked objects
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `slotKinds`")
     public BytecodeFrame(BytecodeFrame caller,
                     ResolvedJavaMethod method,
                     int bci,
@@ -220,8 +218,8 @@ public final class BytecodeFrame extends BytecodePosition {
         assert values != null;
         this.rethrowException = rethrowException;
         this.duringCall = duringCall;
-        this.values = values;
-        this.slotKinds = slotKinds;
+        this.values = List.of(values);
+        this.slotKinds = List.of(slotKinds);
         this.numLocals = numLocals;
         this.numStack = numStack;
         this.numLocks = numLocks;
@@ -236,23 +234,23 @@ public final class BytecodeFrame extends BytecodePosition {
      * @throws JVMCIError if any of the other invariants are violated
      */
     public void verifyInvariants() {
-        if (values.length != numLocals + numStack + numLocks) {
-            throw new JVMCIError("unexpected values length %d in frame (%d locals, %d stack slots, %d locks)", values.length, numLocals, numStack, numLocks);
+        if (values.size() != numLocals + numStack + numLocks) {
+            throw new JVMCIError("unexpected values length %d in frame (%d locals, %d stack slots, %d locks)", values.size(), numLocals, numStack, numLocks);
         }
-        if (slotKinds.length != numLocals + numStack) {
-            throw new JVMCIError("unexpected slotKinds length %d in frame (%d locals, %d stack slots)", values.length, numLocals, numStack);
+        if (slotKinds.size() != numLocals + numStack) {
+            throw new JVMCIError("unexpected slotKinds length %d in frame (%d locals, %d stack slots)", values.size(), numLocals, numStack);
         }
-        for (int i = 0; i < slotKinds.length; i++) {
-            Objects.requireNonNull(values[i]);
-            JavaKind kind = slotKinds[i];
+        for (int i = 0; i < slotKinds.size(); i++) {
+            Objects.requireNonNull(values.get(i));
+            JavaKind kind = slotKinds.get(i);
             if (kind.needsTwoSlots()) {
-                if (i + 1 >= values.length || values[i + 1] != Value.ILLEGAL) {
+                if (i + 1 >= values.size() || values.get(i + 1) != Value.ILLEGAL) {
                     throw new JVMCIError("2 slot value at index %d not followed by Value.ILLEGAL", i);
                 }
             }
         }
-        for (int i = slotKinds.length; i < values.length; i++) {
-            JavaValue lock = values[i];
+        for (int i = slotKinds.size(); i < values.size(); i++) {
+            JavaValue lock = values.get(i);
             Objects.requireNonNull(lock);
             if (!(lock instanceof StackLockValue)) {
                 throw new JVMCIError("Lock at %d must be of type StackLockValue, got %s", i, lock.getClass().getName());
@@ -270,11 +268,11 @@ public final class BytecodeFrame extends BytecodePosition {
             caller().validateFormat();
         }
         for (int i = 0; i < numLocals + numStack; i++) {
-            if (values[i] != null) {
-                JavaKind kind = slotKinds[i];
+            if (values.get(i) != null) {
+                JavaKind kind = slotKinds.get(i);
                 if (kind.needsTwoSlots()) {
-                    assert slotKinds.length > i + 1 : String.format("missing second word %s", this);
-                    assert slotKinds[i + 1] == JavaKind.Illegal : this;
+                    assert slotKinds.size() > i + 1 : String.format("missing second word %s", this);
+                    assert slotKinds.get(i + 1) == JavaKind.Illegal : this;
                 }
             }
         }
@@ -286,11 +284,11 @@ public final class BytecodeFrame extends BytecodePosition {
      *
      * @param i the local variable to query
      * @return the kind of local variable {@code i}
-     * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numLocals}
+     * @throws IndexOutOfBoundsException if {@code i < 0 || i >= this.numLocals}
      */
     public JavaKind getLocalValueKind(int i) {
         Objects.checkIndex(i, numLocals);
-        return slotKinds[i];
+        return slotKinds.get(i);
     }
 
     /**
@@ -298,11 +296,11 @@ public final class BytecodeFrame extends BytecodePosition {
      *
      * @param i the local variable to query
      * @return the kind of stack slot {@code i}
-     * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numStack}
+     * @throws IndexOutOfBoundsException if {@code i < 0 || i >= this.numStack}
      */
     public JavaKind getStackValueKind(int i) {
         Objects.checkIndex(i, numStack);
-        return slotKinds[i + numLocals];
+        return slotKinds.get(i + numLocals);
     }
 
     /**
@@ -310,11 +308,11 @@ public final class BytecodeFrame extends BytecodePosition {
      *
      * @param i the local variable index
      * @return the value that can be used to reconstruct the local's current value
-     * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numLocals}
+     * @throws IndexOutOfBoundsException if {@code i < 0 || i >= this.numLocals}
      */
     public JavaValue getLocalValue(int i) {
         Objects.checkIndex(i, numLocals);
-        return values[i];
+        return values.get(i);
     }
 
     /**
@@ -322,11 +320,11 @@ public final class BytecodeFrame extends BytecodePosition {
      *
      * @param i the stack index
      * @return the value that can be used to reconstruct the stack slot's current value
-     * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numStack}
+     * @throws IndexOutOfBoundsException if {@code i < 0 || i >= this.numStack}
      */
     public JavaValue getStackValue(int i) {
         Objects.checkIndex(i, numStack);
-        return values[i + numLocals];
+        return values.get(i + numLocals);
     }
 
     /**
@@ -334,11 +332,11 @@ public final class BytecodeFrame extends BytecodePosition {
      *
      * @param i the lock index
      * @return the value that can be used to reconstruct the lock's current value
-     * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numLocks}
+     * @throws IndexOutOfBoundsException if {@code i < 0 || i >= this.numLocks}
      */
     public JavaValue getLockValue(int i) {
         Objects.checkIndex(i, numLocks);
-        return values[i + numLocals + numStack];
+        return values.get(i + numLocals + numStack);
     }
 
     /**
@@ -358,8 +356,8 @@ public final class BytecodeFrame extends BytecodePosition {
                         numLocks,
                         numStack,
                         rethrowException,
-                        Arrays.hashCode(slotKinds),
-                        Arrays.hashCode(values));
+                        slotKinds,
+                        values);
     }
 
     @Override
@@ -379,8 +377,8 @@ public final class BytecodeFrame extends BytecodePosition {
                         numLocks == that.numLocks &&
                         numStack == that.numStack &&
                         rethrowException == that.rethrowException &&
-                        Arrays.equals(slotKinds, that.slotKinds) &&
-                        Arrays.equals(values, that.values);
+                        slotKinds.equals(that.slotKinds) &&
+                        values.equals(that.values);
     }
 
     @Override

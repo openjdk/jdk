@@ -86,29 +86,20 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         public static final int MULTIANEWARRAY = 197; // 0xC5
 
         static boolean isInvoke(int opcode) {
-            switch (opcode) {
-                case INVOKEVIRTUAL:
-                case INVOKESPECIAL:
-                case INVOKESTATIC:
-                case INVOKEINTERFACE:
-                case INVOKEDYNAMIC:
-                    return true;
-                default:
-                    return false;
-            }
+            return switch (opcode) {
+                case INVOKEVIRTUAL, INVOKESPECIAL, INVOKESTATIC, INVOKEINTERFACE, INVOKEDYNAMIC -> true;
+                default -> false;
+            };
         }
 
         /**
          * See: {@code Rewriter::maybe_rewrite_invokehandle}.
          */
         static boolean isInvokeHandleAlias(int opcode) {
-            switch (opcode) {
-                case INVOKEVIRTUAL:
-                case INVOKESPECIAL:
-                    return true;
-                default:
-                    return false;
-            }
+            return switch (opcode) {
+                case INVOKEVIRTUAL, INVOKESPECIAL -> true;
+                default -> false;
+            };
         }
     }
 
@@ -510,15 +501,13 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
             if (res == null) {
                 int argCpi = compilerToVM().bootstrapArgumentIndexAt(cp, bssIndex, index);
                 Object object = cp.lookupConstant(argCpi, false);
-                if (object instanceof PrimitiveConstant primitiveConstant) {
-                    res = runtime().getReflection().boxPrimitive(primitiveConstant);
-                } else if (object instanceof JavaConstant javaConstant) {
-                    res = javaConstant;
-                } else if (object instanceof JavaType type) {
-                    res = runtime().getReflection().forObject(type);
-                } else {
-                    res = JavaConstant.forInt(argCpi);
-                }
+                res = switch (object) {
+                    case PrimitiveConstant primitiveConstant ->
+                            runtime().getReflection().boxPrimitive(primitiveConstant);
+                    case JavaConstant javaConstant -> javaConstant;
+                    case JavaType type -> runtime().getReflection().forObject(type);
+                    case null, default -> JavaConstant.forInt(argCpi);
+                };
                 cache[index] = res;
             }
             return res;
@@ -600,17 +589,16 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
                 JavaConstant type = (JavaConstant) bsmi[2];
                 Object staticArguments = bsmi[3];
                 List<JavaConstant> staticArgumentsList;
-                if (staticArguments == null) {
-                    staticArgumentsList = List.of();
-                } else if (staticArguments instanceof JavaConstant) {
-                    staticArgumentsList = List.of((JavaConstant) staticArguments);
-                } else if (staticArguments instanceof JavaConstant[]) {
-                    staticArgumentsList = List.of((JavaConstant[]) staticArguments);
-                } else {
-                    int[] bsciArgs = (int[]) staticArguments;
-                    int argCount = bsciArgs[0];
-                    int bss_index = bsciArgs[1];
-                    staticArgumentsList = new CachedBSMArgs(this, bss_index, argCount);
+                switch (staticArguments) {
+                    case null -> staticArgumentsList = List.of();
+                    case JavaConstant javaConstant -> staticArgumentsList = List.of(javaConstant);
+                    case JavaConstant[] javaConstants -> staticArgumentsList = List.of(javaConstants);
+                    default -> {
+                        int[] bsciArgs = (int[]) staticArguments;
+                        int argCount = bsciArgs[0];
+                        int bss_index = bsciArgs[1];
+                        staticArgumentsList = new CachedBSMArgs(this, bss_index, argCount);
+                    }
                 }
                 return new BootstrapMethodInvocationImpl(tag.name.equals("InvokeDynamic"), method, name, type, staticArgumentsList);
             default:
@@ -623,20 +611,14 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      */
     JavaConstant getStaticFieldConstantValue(int cpi) {
         final JvmConstant tag = getTagAt(cpi);
-        switch (tag.name) {
-            case "Integer":
-                return JavaConstant.forInt(getIntAt(cpi));
-            case "Long":
-                return JavaConstant.forLong(getLongAt(cpi));
-            case "Float":
-                return JavaConstant.forFloat(getFloatAt(cpi));
-            case "Double":
-                return JavaConstant.forDouble(getDoubleAt(cpi));
-            case "String":
-                return compilerToVM().getUncachedStringInPool(this, cpi);
-            default:
-                throw new IllegalArgumentException("Illegal entry for a ConstantValue attribute:" + tag);
-        }
+        return switch (tag.name) {
+            case "Integer" -> JavaConstant.forInt(getIntAt(cpi));
+            case "Long" -> JavaConstant.forLong(getLongAt(cpi));
+            case "Float" -> JavaConstant.forFloat(getFloatAt(cpi));
+            case "Double" -> JavaConstant.forDouble(getDoubleAt(cpi));
+            case "String" -> compilerToVM().getUncachedStringInPool(this, cpi);
+            default -> throw new IllegalArgumentException("Illegal entry for a ConstantValue attribute:" + tag);
+        };
     }
 
     @Override
@@ -647,37 +629,26 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
     @Override
     public Object lookupConstant(int cpi, boolean resolve) {
         final JvmConstant tag = getTagAt(cpi);
-        switch (tag.name) {
-            case "Integer":
-                return JavaConstant.forInt(getIntAt(cpi));
-            case "Long":
-                return JavaConstant.forLong(getLongAt(cpi));
-            case "Float":
-                return JavaConstant.forFloat(getFloatAt(cpi));
-            case "Double":
-                return JavaConstant.forDouble(getDoubleAt(cpi));
-            case "Class":
-            case "UnresolvedClass":
-            case "UnresolvedClassInError":
+        return switch (tag.name) {
+            case "Integer" -> JavaConstant.forInt(getIntAt(cpi));
+            case "Long" -> JavaConstant.forLong(getLongAt(cpi));
+            case "Float" -> JavaConstant.forFloat(getFloatAt(cpi));
+            case "Double" -> JavaConstant.forDouble(getDoubleAt(cpi));
+            case "Class", "UnresolvedClass", "UnresolvedClassInError" -> {
                 final int opcode = -1;  // opcode is not used
-                return lookupType(cpi, opcode);
-            case "String":
+                yield lookupType(cpi, opcode);  // opcode is not used
+            }
+            case "String" ->
                 /*
                  * Normally, we would expect a String here, but unsafe anonymous classes can have
                  * "pseudo strings" (arbitrary live objects) patched into a String entry. Such
                  * entries do not have a symbol in the constant pool slot.
                  */
-                return compilerToVM().lookupConstantInPool(this, cpi, true);
-            case "MethodHandle":
-            case "MethodHandleInError":
-            case "MethodType":
-            case "MethodTypeInError":
-            case "Dynamic":
-            case "DynamicInError":
-                return compilerToVM().lookupConstantInPool(this, cpi, resolve);
-            default:
-                throw new JVMCIError("Unknown constant pool tag %s", tag);
-        }
+                    compilerToVM().lookupConstantInPool(this, cpi, true);
+            case "MethodHandle", "MethodHandleInError", "MethodType", "MethodTypeInError", "Dynamic",
+                 "DynamicInError" -> compilerToVM().lookupConstantInPool(this, cpi, resolve);
+            default -> throw new JVMCIError("Unknown constant pool tag %s", tag);
+        };
 
     }
 
@@ -706,8 +677,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      * @param type either a ResolvedJavaType or a String naming a unresolved type.
      */
     private static JavaType getJavaType(final Object type) {
-        if (type instanceof String) {
-            String name = (String) type;
+        if (type instanceof String name) {
             return UnresolvedJavaType.create("L" + name + ";");
         } else {
             return (JavaType) type;
@@ -807,8 +777,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
             final int offset = info[1];
             final int fieldIndex = info[2];
             final int fieldFlags = info[3];
-            HotSpotResolvedJavaField result = resolvedHolder.createField(type, offset, flags, fieldFlags, fieldIndex);
-            return result;
+            return resolvedHolder.createField(type, offset, flags, fieldFlags, fieldIndex);
         } else {
             return new UnresolvedJavaField(fieldHolder, lookupUtf8(getNameRefIndexAt(nameAndTypeIndex)), type);
         }

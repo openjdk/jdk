@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -332,8 +332,8 @@ public class HotSpotSpeculationLog implements SpeculationLog {
 
         String sep = "";
         if (failedSpeculations != null) {
-            for (int i = 0; i < failedSpeculations.length; i++) {
-                buf.format("%s{len:%d, hash:0x%x}", sep, failedSpeculations[i].length, Arrays.hashCode(failedSpeculations[i]));
+            for (byte[] failedSpeculation : failedSpeculations) {
+                buf.format("%s{len:%d, hash:0x%x}", sep, failedSpeculation.length, Arrays.hashCode(failedSpeculation));
                 sep = ", ";
             }
         }

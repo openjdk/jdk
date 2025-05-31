@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,8 +95,7 @@ public final class Register implements Comparable<Register> {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof RegisterCategory) {
-                RegisterCategory that = (RegisterCategory) obj;
+            if (obj instanceof RegisterCategory that) {
                 return this.name.equals(that.name);
             }
             return false;
@@ -164,13 +163,7 @@ public final class Register implements Comparable<Register> {
 
     @Override
     public int compareTo(Register o) {
-        if (number < o.number) {
-            return -1;
-        }
-        if (number > o.number) {
-            return 1;
-        }
-        return 0;
+        return Integer.compare(number, o.number);
     }
 
     @Override
@@ -180,8 +173,7 @@ public final class Register implements Comparable<Register> {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof Register) {
-            Register other = (Register) obj;
+        if (obj instanceof Register other) {
             if (number == other.number) {
                 assert name.equals(other.name);
                 assert encoding == other.encoding;

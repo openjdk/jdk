@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,6 @@ public final class Mark extends Site {
 
     /**
      * Creates a mark that associates {@code id} with the machine code position {@code pcOffset}.
-     *
-     * @param pcOffset
-     * @param id
      */
     public Mark(int pcOffset, Object id) {
         super(pcOffset);
@@ -63,11 +60,8 @@ public final class Mark extends Site {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof Mark) {
-            Mark that = (Mark) obj;
-            if (this.pcOffset == that.pcOffset && Objects.equals(this.id, that.id)) {
-                return true;
-            }
+        if (obj instanceof Mark that) {
+            return this.pcOffset == that.pcOffset && Objects.equals(this.id, that.id);
         }
         return false;
     }
