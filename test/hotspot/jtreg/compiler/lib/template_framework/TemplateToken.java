@@ -62,25 +62,25 @@ public sealed abstract class TemplateToken implements Token
      * instantiation either as a {@link Token} inside another {@link Template} or as a {@link String}
      * with {@link #render}.
      *
-     * @param <A> The type of the (first) argument.
+     * @param <T1> The type of the (first) argument.
      */
-    static final class OneArg<A> extends TemplateToken implements Token {
-        private final Template.OneArg<A> oneArgs;
-        private final A a;
+    static final class OneArg<T1> extends TemplateToken implements Token {
+        private final Template.OneArg<T1> oneArgs;
+        private final T1 arg1;
 
-        OneArg(Template.OneArg<A> oneArgs, A a) {
+        OneArg(Template.OneArg<T1> oneArgs, T1 arg1) {
             this.oneArgs = oneArgs;
-            this.a = a;
+            this.arg1 = arg1;
         }
 
         @Override
         public TemplateBody instantiate() {
-            return oneArgs.instantiate(a);
+            return oneArgs.instantiate(arg1);
         }
 
         @Override
         public void visitArguments(ArgumentVisitor visitor) {
-            visitor.visit(oneArgs.arg0Name(), a);
+            visitor.visit(oneArgs.arg1Name(), arg1);
         }
     }
 
@@ -89,29 +89,29 @@ public sealed abstract class TemplateToken implements Token
      * instantiation either as a {@link Token} inside another {@link Template} or as a {@link String}
      * with {@link #render}.
      *
-     * @param <A> The type of the first argument.
-     * @param <B> The type of the second argument.
+     * @param <T1> The type of the first argument.
+     * @param <T2> The type of the second argument.
      */
-    static final class TwoArgs<A, B> extends TemplateToken implements Token {
-        private final Template.TwoArgs<A, B> twoArgs;
-        private final A a;
-        private final B b;
+    static final class TwoArgs<T1, T2> extends TemplateToken implements Token {
+        private final Template.TwoArgs<T1, T2> twoArgs;
+        private final T1 arg1;
+        private final T2 arg2;
 
-        TwoArgs(Template.TwoArgs<A, B> twoArgs, A a, B b) {
+        TwoArgs(Template.TwoArgs<T1, T2> twoArgs, T1 arg1, T2 arg2) {
             this.twoArgs = twoArgs;
-            this.a = a;
-            this.b = b;
+            this.arg1 = arg1;
+            this.arg2 = arg2;
         }
 
         @Override
         public TemplateBody instantiate() {
-            return twoArgs.instantiate(a, b);
+            return twoArgs.instantiate(arg1, arg2);
         }
 
         @Override
         public void visitArguments(ArgumentVisitor visitor) {
-            visitor.visit(twoArgs.arg0Name(), a);
-            visitor.visit(twoArgs.arg1Name(), b);
+            visitor.visit(twoArgs.arg1Name(), arg1);
+            visitor.visit(twoArgs.arg2Name(), arg2);
         }
     }
 
@@ -120,33 +120,33 @@ public sealed abstract class TemplateToken implements Token
      * instantiation either as a {@link Token} inside another {@link Template} or as a {@link String}
      * with {@link #render}.
      *
-     * @param <A> The type of the first argument.
-     * @param <B> The type of the second argument.
-     * @param <C> The type of the second argument.
+     * @param <T1> The type of the first argument.
+     * @param <T2> The type of the second argument.
+     * @param <T3> The type of the second argument.
      */
-    static final class ThreeArgs<A, B, C> extends TemplateToken implements Token {
-        private final Template.ThreeArgs<A, B, C> threeArgs;
-        private final A a;
-        private final B b;
-        private final C c;
+    static final class ThreeArgs<T1, T2, T3> extends TemplateToken implements Token {
+        private final Template.ThreeArgs<T1, T2, T3> threeArgs;
+        private final T1 arg1;
+        private final T2 arg2;
+        private final T3 arg3;
 
-        ThreeArgs(Template.ThreeArgs<A, B, C> threeArgs, A a, B b, C c) {
+        ThreeArgs(Template.ThreeArgs<T1, T2, T3> threeArgs, T1 arg1, T2 arg2, T3 arg3) {
             this.threeArgs = threeArgs;
-            this.a = a;
-            this.b = b;
-            this.c = c;
+            this.arg1 = arg1;
+            this.arg2 = arg2;
+            this.arg3 = arg3;
         }
 
         @Override
         public TemplateBody instantiate() {
-            return threeArgs.instantiate(a, b, c);
+            return threeArgs.instantiate(arg1, arg2, arg3);
         }
 
         @Override
         public void visitArguments(ArgumentVisitor visitor) {
-            visitor.visit(threeArgs.arg0Name(), a);
-            visitor.visit(threeArgs.arg1Name(), b);
-            visitor.visit(threeArgs.arg2Name(), c);
+            visitor.visit(threeArgs.arg1Name(), arg1);
+            visitor.visit(threeArgs.arg2Name(), arg2);
+            visitor.visit(threeArgs.arg3Name(), arg3);
         }
     }
 

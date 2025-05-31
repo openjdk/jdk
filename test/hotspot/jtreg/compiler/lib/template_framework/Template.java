@@ -321,97 +321,97 @@ public sealed interface Template permits Template.ZeroArgs,
     /**
      * A {@link Template} with one argument.
      *
-     * @param arg0Name The name of the (first) argument, used for hashtag replacements in the {@link Template}.
-     * @param <A> The type of the (first) argument.
+     * @param arg1Name The name of the (first) argument, used for hashtag replacements in the {@link Template}.
+     * @param <T1> The type of the (first) argument.
      * @param function The {@link Function} that creates the {@link TemplateBody} given the template argument.
      */
-    record OneArg<A>(String arg0Name, Function<A, TemplateBody> function) implements Template {
-        TemplateBody instantiate(A a) {
-            return function.apply(a);
+    record OneArg<T1>(String arg1Name, Function<T1, TemplateBody> function) implements Template {
+        TemplateBody instantiate(T1 arg1) {
+            return function.apply(arg1);
         }
 
         /**
          * Creates a {@link TemplateToken} which can be used as a {@link Token} inside
          * a {@link Template} for nested code generation.
          *
-         * @param a The value for the (first) argument.
+         * @param arg1 The value for the (first) argument.
          * @return The {@link TemplateToken} to use the {@link Template} inside another
          *         {@link Template}.
          */
-        public TemplateToken asToken(A a) {
-            return new TemplateToken.OneArg<>(this, a);
+        public TemplateToken asToken(T1 arg1) {
+            return new TemplateToken.OneArg<>(this, arg1);
         }
 
         /**
          * Renders the {@link Template} to a {@link String}.
          *
-         * @param a The value for the first argument.
+         * @param arg1 The value for the first argument.
          * @return The {@link String}, resulting from rendering the {@link Template}.
          */
-        public String render(A a) {
-            return new TemplateToken.OneArg<>(this, a).render();
+        public String render(T1 arg1) {
+            return new TemplateToken.OneArg<>(this, arg1).render();
         }
 
         /**
          * Renders the {@link Template} to a {@link String}.
          *
-         * @param a The value for the first argument.
+         * @param arg1 The value for the first argument.
          * @param fuel The amount of fuel provided for recursive Template instantiations.
          * @return The {@link String}, resulting from rendering the {@link Template}.
          */
-        public String render(float fuel, A a) {
-            return new TemplateToken.OneArg<>(this, a).render(fuel);
+        public String render(float fuel, T1 arg1) {
+            return new TemplateToken.OneArg<>(this, arg1).render(fuel);
         }
     }
 
     /**
      * A {@link Template} with two arguments.
      *
-     * @param arg0Name The name of the first argument, used for hashtag replacements in the {@link Template}.
-     * @param arg1Name The name of the second argument, used for hashtag replacements in the {@link Template}.
-     * @param <A> The type of the first argument.
-     * @param <B> The type of the second argument.
+     * @param arg1Name The name of the first argument, used for hashtag replacements in the {@link Template}.
+     * @param arg2Name The name of the second argument, used for hashtag replacements in the {@link Template}.
+     * @param <T1> The type of the first argument.
+     * @param <T2> The type of the second argument.
      * @param function The {@link BiFunction} that creates the {@link TemplateBody} given the template arguments.
      */
-    record TwoArgs<A, B>(String arg0Name, String arg1Name, BiFunction<A, B, TemplateBody> function) implements Template {
-        TemplateBody instantiate(A a, B b) {
-            return function.apply(a, b);
+    record TwoArgs<T1, T2>(String arg1Name, String arg2Name, BiFunction<T1, T2, TemplateBody> function) implements Template {
+        TemplateBody instantiate(T1 arg1, T2 arg2) {
+            return function.apply(arg1, arg2);
         }
 
         /**
          * Creates a {@link TemplateToken} which can be used as a {@link Token} inside
          * a {@link Template} for nested code generation.
          *
-         * @param a The value for the first argument.
-         * @param b The value for the second argument.
+         * @param arg1 The value for the first argument.
+         * @param arg2 The value for the second argument.
          * @return The {@link TemplateToken} to use the {@link Template} inside another
          *         {@link Template}.
          */
-        public TemplateToken asToken(A a, B b) {
-            return new TemplateToken.TwoArgs<>(this, a, b);
+        public TemplateToken asToken(T1 arg1, T2 arg2) {
+            return new TemplateToken.TwoArgs<>(this, arg1, arg2);
         }
 
         /**
          * Renders the {@link Template} to a {@link String}.
          *
-         * @param a The value for the first argument.
-         * @param b The value for the second argument.
+         * @param arg1 The value for the first argument.
+         * @param arg2 The value for the second argument.
          * @return The {@link String}, resulting from rendering the {@link Template}.
          */
-        public String render(A a, B b) {
-            return new TemplateToken.TwoArgs<>(this, a, b).render();
+        public String render(T1 arg1, T2 arg2) {
+            return new TemplateToken.TwoArgs<>(this, arg1, arg2).render();
         }
 
         /**
          * Renders the {@link Template} to a {@link String}.
          *
-         * @param a The value for the first argument.
-         * @param b The value for the second argument.
+         * @param arg1 The value for the first argument.
+         * @param arg2 The value for the second argument.
          * @param fuel The amount of fuel provided for recursive Template instantiations.
          * @return The {@link String}, resulting from rendering the {@link Template}.
          */
-        public String render(float fuel, A a, B b) {
-            return new TemplateToken.TwoArgs<>(this, a, b).render(fuel);
+        public String render(float fuel, T1 arg1, T2 arg2) {
+            return new TemplateToken.TwoArgs<>(this, arg1, arg2).render(fuel);
         }
     }
 
@@ -440,56 +440,56 @@ public sealed interface Template permits Template.ZeroArgs,
     /**
      * A {@link Template} with three arguments.
      *
-     * @param arg0Name The name of the first argument, used for hashtag replacements in the {@link Template}.
-     * @param arg1Name The name of the second argument, used for hashtag replacements in the {@link Template}.
-     * @param arg2Name The name of the third argument, used for hashtag replacements in the {@link Template}.
-     * @param <A> The type of the first argument.
-     * @param <B> The type of the second argument.
-     * @param <C> The type of the third argument.
+     * @param arg1Name The name of the first argument, used for hashtag replacements in the {@link Template}.
+     * @param arg2Name The name of the second argument, used for hashtag replacements in the {@link Template}.
+     * @param arg3Name The name of the third argument, used for hashtag replacements in the {@link Template}.
+     * @param <T1> The type of the first argument.
+     * @param <T2> The type of the second argument.
+     * @param <T3> The type of the third argument.
      * @param function The function with three arguments that creates the {@link TemplateBody} given the template arguments.
      */
-    record ThreeArgs<A, B, C>(String arg0Name, String arg1Name, String arg2Name, TriFunction<A, B, C, TemplateBody> function) implements Template {
-        TemplateBody instantiate(A a, B b, C c) {
-            return function.apply(a, b, c);
+    record ThreeArgs<T1, T2, T3>(String arg1Name, String arg2Name, String arg3Name, TriFunction<T1, T2, T3, TemplateBody> function) implements Template {
+        TemplateBody instantiate(T1 arg1, T2 arg2, T3 arg3) {
+            return function.apply(arg1, arg2, arg3);
         }
 
         /**
          * Creates a {@link TemplateToken} which can be used as a {@link Token} inside
          * a {@link Template} for nested code generation.
          *
-         * @param a The value for the first argument.
-         * @param b The value for the second argument.
-         * @param c The value for the third argument.
+         * @param arg1 The value for the first argument.
+         * @param arg2 The value for the second argument.
+         * @param arg3 The value for the third argument.
          * @return The {@link TemplateToken} to use the {@link Template} inside another
          *         {@link Template}.
          */
-        public TemplateToken asToken(A a, B b, C c) {
-            return new TemplateToken.ThreeArgs<>(this, a, b, c);
+        public TemplateToken asToken(T1 arg1, T2 arg2, T3 arg3) {
+            return new TemplateToken.ThreeArgs<>(this, arg1, arg2, arg3);
         }
 
         /**
          * Renders the {@link Template} to a {@link String}.
          *
-         * @param a The value for the first argument.
-         * @param b The value for the second argument.
-         * @param c The value for the third argument.
+         * @param arg1 The value for the first argument.
+         * @param arg2 The value for the second argument.
+         * @param arg3 The value for the third argument.
          * @return The {@link String}, resulting from rendering the {@link Template}.
          */
-        public String render(A a, B b, C c) {
-            return new TemplateToken.ThreeArgs<>(this, a, b, c).render();
+        public String render(T1 arg1, T2 arg2, T3 arg3) {
+            return new TemplateToken.ThreeArgs<>(this, arg1, arg2, arg3).render();
         }
 
         /**
          * Renders the {@link Template} to a {@link String}.
          *
-         * @param a The value for the first argument.
-         * @param b The value for the second argument.
-         * @param c The value for the third argument.
+         * @param arg1 The value for the first argument.
+         * @param arg2 The value for the second argument.
+         * @param arg3 The value for the third argument.
          * @param fuel The amount of fuel provided for recursive Template instantiations.
          * @return The {@link String}, resulting from rendering the {@link Template}.
          */
-        public String render(float fuel, A a, B b, C c) {
-            return new TemplateToken.ThreeArgs<>(this, a, b, c).render(fuel);
+        public String render(float fuel, T1 arg1, T2 arg2, T3 arg3) {
+            return new TemplateToken.ThreeArgs<>(this, arg1, arg2, arg3).render(fuel);
         }
     }
 
@@ -533,12 +533,12 @@ public sealed interface Template permits Template.ZeroArgs,
      * }
      *
      * @param body The {@link TemplateBody} created by {@link Template#body}.
-     * @param <A> Type of the (first) argument.
-     * @param arg0Name The name of the (first) argument for hashtag replacement.
+     * @param <T1> Type of the (first) argument.
+     * @param arg1Name The name of the (first) argument for hashtag replacement.
      * @return A {@link Template} with one argument.
      */
-    static <A> Template.OneArg<A> make(String arg0Name, Function<A, TemplateBody> body) {
-        return new Template.OneArg<>(arg0Name, body);
+    static <T1> Template.OneArg<T1> make(String arg1Name, Function<T1, TemplateBody> body) {
+        return new Template.OneArg<>(arg1Name, body);
     }
 
     /**
@@ -560,14 +560,14 @@ public sealed interface Template permits Template.ZeroArgs,
      * }
      *
      * @param body The {@link TemplateBody} created by {@link Template#body}.
-     * @param <A> Type of the first argument.
-     * @param arg0Name The name of the first argument for hashtag replacement.
-     * @param <B> Type of the second argument.
-     * @param arg1Name The name of the second argument for hashtag replacement.
+     * @param <T1> Type of the first argument.
+     * @param arg1Name The name of the first argument for hashtag replacement.
+     * @param <T2> Type of the second argument.
+     * @param arg2Name The name of the second argument for hashtag replacement.
      * @return A {@link Template} with two arguments.
      */
-    static <A, B> Template.TwoArgs<A, B> make(String arg0Name, String arg1Name, BiFunction<A, B, TemplateBody> body) {
-        return new Template.TwoArgs<>(arg0Name, arg1Name, body);
+    static <T1, T2> Template.TwoArgs<T1, T2> make(String arg1Name, String arg2Name, BiFunction<T1, T2, TemplateBody> body) {
+        return new Template.TwoArgs<>(arg1Name, arg2Name, body);
     }
 
     /**
@@ -575,16 +575,16 @@ public sealed interface Template permits Template.ZeroArgs,
      * See {@link #body} for more details about how to construct a Template with {@link Token}s.
      *
      * @param body The {@link TemplateBody} created by {@link Template#body}.
-     * @param <A> Type of the first argument.
-     * @param arg0Name The name of the first argument for hashtag replacement.
-     * @param <B> Type of the second argument.
-     * @param arg1Name The name of the second argument for hashtag replacement.
-     * @param <C> Type of the third argument.
-     * @param arg2Name The name of the third argument for hashtag replacement.
+     * @param <T1> Type of the first argument.
+     * @param arg1Name The name of the first argument for hashtag replacement.
+     * @param <T2> Type of the second argument.
+     * @param arg2Name The name of the second argument for hashtag replacement.
+     * @param <T3> Type of the third argument.
+     * @param arg3Name The name of the third argument for hashtag replacement.
      * @return A {@link Template} with three arguments.
      */
-    static <A, B, C> Template.ThreeArgs<A, B, C> make(String arg0Name, String arg1Name, String arg2Name, Template.TriFunction<A, B, C, TemplateBody> body) {
-        return new Template.ThreeArgs<>(arg0Name, arg1Name, arg2Name, body);
+    static <T1, T2, T3> Template.ThreeArgs<T1, T2, T3> make(String arg1Name, String arg2Name, String arg3Name, Template.TriFunction<T1, T2, T3, TemplateBody> body) {
+        return new Template.ThreeArgs<>(arg1Name, arg2Name, arg3Name, body);
     }
 
     /**
