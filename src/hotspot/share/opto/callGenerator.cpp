@@ -611,6 +611,17 @@ void CallGenerator::do_late_inline_helper() {
   }
 
   Compile* C = Compile::current();
+
+  uint endoff = call->jvms()->endoff();
+  if (C->inlining_incrementally()) {
+    assert(endoff == call->req(), ""); // assert in SafePointNode::grow_stack
+  } else {
+    if (call->req() > endoff) {
+      assert(OptimizeReachabilityFences, "");
+      return; // keep the original call node as the holder of reachability info
+    }
+  }
+
   // Remove inlined methods from Compiler's lists.
   if (call->is_macro()) {
     C->remove_macro_node(call);
