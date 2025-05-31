@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,8 @@ static jclass sjc_PAbortEx = NULL;
     GET_CPRINTERJOB_CLASS();
     DECLARE_METHOD(jm_printToPathGraphics, sjc_CPrinterJob, "printToPathGraphics",
                    "(Lsun/print/PeekGraphics;Ljava/awt/print/PrinterJob;Ljava/awt/print/Printable;Ljava/awt/print/PageFormat;IJ)V");
+    DECLARE_METHOD(jm_getXRes, sjc_CPrinterJob, "getXRes", "()D");
+    DECLARE_METHOD(jm_getYRes, sjc_CPrinterJob, "getYRes", "()D");
 
     // Create and draw into a new CPrinterGraphics with the current Context.
     assert(fCurPageFormat != NULL);
@@ -103,6 +105,20 @@ static jclass sjc_PAbortEx = NULL;
 
     jlong context = ptr_to_jlong([printLoop context]);
     CGContextRef cgRef = (CGContextRef)[[printLoop context] graphicsPort];
+
+    //Scale to default device DPI
+    jdouble hRes = (*env)->CallDoubleMethod(env, fPrinterJob, jm_getXRes);
+    CHECK_EXCEPTION();
+    jdouble vRes = (*env)->CallDoubleMethod(env, fPrinterJob, jm_getYRes);
+    CHECK_EXCEPTION();
+    if (hRes > 0 && vRes > 0) {
+        double scaleX = DEFAULT_DEVICE_DPI/hRes;
+        double scaleY = DEFAULT_DEVICE_DPI/vRes;
+        if (scaleX != 1 && scaleY != 1) {
+            CGContextScaleCTM(cgRef, scaleX, scaleY);
+        }
+    }
+
     CGContextSaveGState(cgRef); //04/28/2004: state needs to be saved here due to addition of lazy state management
 
     (*env)->CallVoidMethod(env, fPrinterJob, jm_printToPathGraphics, fCurPeekGraphics, fPrinterJob,
