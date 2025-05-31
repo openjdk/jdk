@@ -766,11 +766,6 @@ void SerialHeap::prepare_for_verify() {
   ensure_parsability(false);        // no need to retire TLABs
 }
 
-bool SerialHeap::is_maximal_no_gc() const {
-  // We don't expand young-gen except at a GC.
-  return _old_gen->is_maximal_no_gc();
-}
-
 void SerialHeap::save_marks() {
   _young_gen_saved_top = _young_gen->to()->top();
   _old_gen_saved_top = _old_gen->space()->top();
