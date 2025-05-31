@@ -327,6 +327,24 @@ public class StringJoinerTest {
         testCombos(",", "<", ">");
     }
 
+    public void testNegativeCapacity() {
+        try {
+            new StringJoiner(DASH, "{", "}", -1);
+            fail("Should have thrown IllegalArgumentException");
+        } catch (IllegalArgumentException ex) {
+            // okay
+        }
+    }
+
+    public void testZeroCapacity() {
+        StringJoiner sj = new StringJoiner(DASH, "{", "}", 0);
+        assertEquals(sj.toString(), "{}");
+        sj.add(ONE);
+        assertEquals(sj.toString(), "{" + ONE + "}");
+        sj.add(TWO);
+        assertEquals(sj.toString(), "{" + ONE + DASH + TWO + "}");
+    }
+
     public void OOM1() {
         try {
             new StringJoiner(MAX_STRING, MAX_STRING, MAX_STRING).toString();
