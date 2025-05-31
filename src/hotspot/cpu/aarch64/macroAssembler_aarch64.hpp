@@ -328,7 +328,7 @@ class MacroAssembler: public Assembler {
   }
 
   inline void rol(Register Rd, Register Rn, unsigned imm) {
-    extr(Rd, Rn, Rn, ((64 - imm) & 63));
+    extr(Rd, Rn, Rn, (64 - imm));
   }
 
   using Assembler::rax1;
