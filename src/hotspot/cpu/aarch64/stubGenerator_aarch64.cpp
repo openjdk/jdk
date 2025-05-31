@@ -7409,7 +7409,7 @@ class StubGenerator: public StubCodeGenerator {
     } else {
       __ ldr(state, Address(sp, 112));
     }
-    // saving calculated sha3 state
+    // save calculated sha3 state
     __ stp(a0, a1, Address(state));
     __ stp(a2, a3, Address(state, 16));
     __ stp(a4, a5, Address(state, 32));
