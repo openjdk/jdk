@@ -86,6 +86,7 @@ extern Monitor* Compilation_lock;                // a lock used to pause compila
 extern Mutex*   TrainingData_lock;               // a lock used when accessing training records
 extern Monitor* TrainingReplayQueue_lock;        // a lock held when class are added/removed to the training replay queue
 extern Mutex*   CompileTaskAlloc_lock;           // a lock held when CompileTasks are allocated
+extern Monitor* CompileTaskWait_lock;            // a lock held when CompileTasks are waited/notified
 extern Mutex*   CompileStatistics_lock;          // a lock held when updating compilation statistics
 extern Mutex*   DirectivesStack_lock;            // a lock held when mutating the dirstack and ref counting directives
 extern Monitor* Terminator_lock;                 // a lock used to guard termination of the vm
