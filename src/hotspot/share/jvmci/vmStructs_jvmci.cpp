@@ -54,6 +54,7 @@
 #include "gc/z/zThreadLocalData.hpp"
 #endif
 #if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #endif
@@ -969,6 +970,13 @@
    declare_constant_with_value("ShenandoahThreadLocalData::satb_mark_queue_index_offset", in_bytes(ShenandoahThreadLocalData::satb_mark_queue_index_offset())) \
    declare_constant_with_value("ShenandoahThreadLocalData::satb_mark_queue_buffer_offset", in_bytes(ShenandoahThreadLocalData::satb_mark_queue_buffer_offset())) \
    declare_constant_with_value("ShenandoahThreadLocalData::card_table_offset", in_bytes(ShenandoahThreadLocalData::card_table_offset())) \
+   declare_constant_with_value("ShenandoahHeap::HAS_FORWARDED", ShenandoahHeap::HAS_FORWARDED)                                           \
+   declare_constant_with_value("ShenandoahHeap::MARKING", ShenandoahHeap::MARKING)                                                       \
+   declare_constant_with_value("ShenandoahHeap::EVACUATION", ShenandoahHeap::EVACUATION)                                                 \
+   declare_constant_with_value("ShenandoahHeap::UPDATE_REFS", ShenandoahHeap::UPDATE_REFS)                                               \
+   declare_constant_with_value("ShenandoahHeap::WEAK_ROOTS", ShenandoahHeap::WEAK_ROOTS)                                                 \
+   declare_constant_with_value("ShenandoahHeap::YOUNG_MARKING", ShenandoahHeap::YOUNG_MARKING)                                           \
+   declare_constant_with_value("ShenandoahHeap::OLD_MARKING", ShenandoahHeap::OLD_MARKING)                                               \
 
 #endif
 
