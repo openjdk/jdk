@@ -1488,7 +1488,7 @@ size_t Arguments::limit_heap_by_allocatable_memory(size_t limit) {
 static const size_t DefaultHeapBaseMinAddress = HeapBaseMinAddress;
 
 void Arguments::set_heap_size() {
-  julong phys_mem;
+  size_t phys_mem;
 
   // If the user specified one of these options, they
   // want specific memory sizing so do not limit memory
@@ -1505,11 +1505,11 @@ void Arguments::set_heap_size() {
       phys_mem = os::physical_memory();
       FLAG_SET_ERGO(MaxRAM, (uint64_t)phys_mem);
     } else {
-      phys_mem = (julong)MaxRAM;
+      phys_mem = static_cast<size_t>(MaxRAM);
     }
   } else {
-    phys_mem = FLAG_IS_DEFAULT(MaxRAM) ? MIN2(os::physical_memory(), (julong)MaxRAM)
-                                       : (julong)MaxRAM;
+    phys_mem = FLAG_IS_DEFAULT(MaxRAM) ? MIN2(os::physical_memory(), static_cast<size_t>(MaxRAM))
+                                       : static_cast<size_t>(MaxRAM);
   }
 
   // If the maximum heap size has not been set with -Xmx,

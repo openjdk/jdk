@@ -1935,11 +1935,11 @@ bool os::is_server_class_machine() {
   // Then actually look at the machine
   bool         result            = false;
   const unsigned int    server_processors = 2;
-  const julong server_memory     = 2UL * G;
+  const size_t server_memory     = 2UL * G;
   // We seem not to get our full complement of memory.
   //     We allow some part (1/8?) of the memory to be "missing",
   //     based on the sizes of DIMMs, and maybe graphics cards.
-  const julong missing_memory   = 256UL * M;
+  const size_t missing_memory   = 256UL * M;
 
   /* Is this a server class machine? */
   if ((os::active_processor_count() >= (int)server_processors) &&
@@ -2202,7 +2202,7 @@ static void assert_nonempty_range(const char* addr, size_t bytes) {
          p2i(addr), p2i(addr) + bytes);
 }
 
-julong os::used_memory() {
+size_t os::used_memory() {
 #ifdef LINUX
   if (OSContainer::is_containerized()) {
     jlong mem_usage = OSContainer::memory_usage_in_bytes();
