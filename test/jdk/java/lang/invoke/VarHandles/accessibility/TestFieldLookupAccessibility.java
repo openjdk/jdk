@@ -27,10 +27,12 @@
  * @compile TestFieldLookupAccessibility.java
  *          pkg/A.java pkg/B_extends_A.java pkg/C.java
  *          pkg/subpkg/B_extends_A.java pkg/subpkg/C.java
- * @run testng/othervm TestFieldLookupAccessibility
+ * @run testng/othervm --enable-final-field-mutation=ALL-UNNAMED -DwriteAccess=true TestFieldLookupAccessibility
+ * @run testng/othervm --illegal-final-field-mutation=deny -DwriteAccess=false TestFieldLookupAccessibility
  */
 
-import org.testng.Assert;
+import static org.testng.Assert.*;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import pkg.B_extends_A;
@@ -48,6 +50,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class TestFieldLookupAccessibility {
+    static boolean writeAccess;
+
+    @BeforeClass
+    static void setup() {
+        String s = System.getProperty("writeAccess");
+        assertNotNull(s);
+        writeAccess = Boolean.valueOf(s);
+    }
 
     // The set of possible field lookup mechanisms
     enum FieldLookup {
@@ -118,7 +128,11 @@ public class TestFieldLookupAccessibility {
             }
 
             boolean isAccessible(Field f) {
-                return !(Modifier.isStatic(f.getModifiers()) && Modifier.isFinal(f.getModifiers()));
+                if (Modifier.isFinal(f.getModifiers())) {
+                    return !Modifier.isStatic(f.getModifiers()) && writeAccess;
+                } else {
+                    return true;
+                }
             }
 
             // Setting the accessibility bit of a Field grants access to non-static
@@ -226,15 +240,15 @@ public class TestFieldLookupAccessibility {
                 collect(Collectors.toSet());
         if (!actualFieldNames.equals(expected)) {
             if (actualFieldNames.isEmpty()) {
-                Assert.assertEquals(actualFieldNames, expected, "No accessibility failures:");
+                assertEquals(actualFieldNames, expected, "No accessibility failures:");
             }
             else {
-                Assert.assertEquals(actualFieldNames, expected, "Accessibility failures differ:");
+                assertEquals(actualFieldNames, expected, "Accessibility failures differ:");
             }
         }
         else {
             if (!actual.values().stream().allMatch(IllegalAccessException.class::isInstance)) {
-                Assert.fail("Expecting an IllegalArgumentException for all failures " + actual);
+                fail("Expecting an IllegalArgumentException for all failures " + actual);
             }
         }
     }

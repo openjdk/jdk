@@ -1,0 +1,81 @@
+<!doctype html>
+<!--
+ Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Oracle designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Oracle in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+<html lang="en">
+<head>
+    <title>Mutation methods</title>
+</head>
+<body>
+
+<h1 id="mutation">Mutation methods</h1>
+
+<p>A number of methods in Java SE API provide <em>write</em> access to non-static
+final fields. This means that Java code can alter the value of a final field
+after the field has been initialized in a constructor.
+
+The methods that provide write access, known as <em>mutation methods</em> are:
+<ul>
+    <li><a href="../Field.html#set(java.lang.Object,java.lang.Object)">
+        java.lang.reflect.Field.set(Object, Object)</a></li>
+    <li><a href="../Field.html#setBoolean(java.lang.Object,boolean)">
+        java.lang.reflect.Field.setBoolean(Object, boolean)</a></li>
+    <li><a href="../Field.html#setByte(java.lang.Object,byte)">
+        java.lang.reflect.Field.setByte(Object, byte)</a></li>
+    <li><a href="../Field.html#setChar(java.lang.Object,char)">
+        java.lang.reflect.Field.setChar(Object, byte)</a></li>
+    <li><a href="../Field.html#setInt(java.lang.Object,char)">
+        java.lang.reflect.Field.setInt(Object, int)</a></li>
+    <li><a href="../Field.html#setLong(java.lang.Object,long)">
+        java.lang.reflect.Field.setLong(Object, long)</a></li>
+    <li><a href="../Field.html#setFloat(java.lang.Object,float)">
+        java.lang.reflect.Field.setFloat(Object, float)</a></li>
+    <li><a href="../Field.html#setDouble(java.lang.Object,double)">
+        java.lang.reflect.Field.setDouble(Object, double)</a></li>
+    <li><a href="{@docRoot}/java.base/java/lang/invoke/MethodHandles.Lookup.html#unreflectSetter(java.lang.reflect.Field)">
+        java.lang.invoke.MethodHandles.Lookup.unreflectSetter(Field)</a></li>
+</ul>
+
+<p> The use of mutation methods to alter the values of final fields is
+strongly inadvisable because it undermines the correctness of programs written in
+expectation of final fields being immutable.
+
+<p> In the reference implementation, a module can be granted the capability to mutate
+final instance fields of classes in packages that are open to the module using
+the command line option <code>--enable-final-field-mutation=M1,M2, ... M}</code> where
+<code>M1</code>, <code>M2</code>, <code>...Mn</code> are module names (for the unnamed
+module, the special value <code>ALL-UNNAMED</code> can be used). Mutation of final
+instance fields of classes from modules not listed by that option is deemed
+<em>illegal</em>.
+
+The command line option <code>--illegal-final-field-mutation</code> controls how illegal
+final mutation is handled. Valid values for this command line option are "warn", "allow",
+"debug, and "deny".  If this option is not specified then the default is "warn" so that
+illegal final field mutation will result in a warning at runtime.
+
+</body>
+
+</body>
+</html>
+
