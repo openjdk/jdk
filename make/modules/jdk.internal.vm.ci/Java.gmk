@@ -27,10 +27,12 @@
 
 DISABLED_WARNINGS_java += dangling-doc-comments this-escape
 
+VERSION_JVMCI = $(shell $(EXPR) $(VERSION_FEATURE) - 1 )
+
 # -parameters provides method's parameters information in class file,
 # JVMCI compilers make use of that information for various sanity checks.
 # Don't use Indy strings concatenation to have good JVMCI startup performance.
 
-JAVAC_FLAGS += -parameters -XDstringConcat=inline
+JAVAC_FLAGS += -parameters -XDstringConcat=inline --source $(VERSION_JVMCI) --target $(VERSION_JVMCI)
 
 ################################################################################
