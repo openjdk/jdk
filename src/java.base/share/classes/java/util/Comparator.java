@@ -202,7 +202,7 @@ public interface Comparator<T> {
      * @throws  ClassCastException if the arguments' types prevent them from
      *          being compared by this comparator.
      *
-     * @since 25
+     * @since 26
      */
     default <U extends T> U max(U o1, U o2) {
         return compare(o1, o2) >= 0 ? o1 : o2;
@@ -222,7 +222,7 @@ public interface Comparator<T> {
      * @throws  ClassCastException if the arguments' types prevent them from
      *          being compared by this comparator.
      *
-     * @since 25
+     * @since 26
      */
     default <U extends T> U min(U o1, U o2) {
         return compare(o1, o2) <= 0 ? o1 : o2;
