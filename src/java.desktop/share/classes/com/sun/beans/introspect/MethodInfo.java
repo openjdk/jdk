@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,11 @@ import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.List;
 import java.util.Set;
 
@@ -105,13 +106,16 @@ final class MethodInfo {
                 }
             }
 
-            // Add default methods inherited from interfaces
-            for (Class<?> iface : type.getInterfaces()) {
+            // Add methods inherited from interfaces
+            Deque<Class<?>> ifaceDeque = new ArrayDeque<>(List.of(type.getInterfaces()));
+            while (!ifaceDeque.isEmpty()) {
+                Class<?> iface = ifaceDeque.removeLast();
                 if (IGNORABLE_INTERFACES.contains(iface)) {
                     continue;
                 }
+                ifaceDeque.addAll(List.of(iface.getInterfaces()));
                 for (Method method : iface.getMethods()) {
-                    if (!Modifier.isAbstract(method.getModifiers())) {
+                    if (!Modifier.isAbstract(method.getModifiers()) && !method.isBridge()) {
                         (list = createIfNeeded(list)).add(method);
                     }
                 }
