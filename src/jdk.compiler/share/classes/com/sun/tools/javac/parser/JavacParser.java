@@ -3148,6 +3148,7 @@ public class JavacParser implements Parser {
             accept(LBRACE);
             List<JCCase> cases = switchBlockStatementGroups();
             JCSwitch t = to(F.at(pos).Switch(selector, cases));
+            t.bracePos = token.endPos;
             accept(RBRACE);
             return t;
         }
@@ -5641,11 +5642,10 @@ public class JavacParser implements Parser {
         @Override
         public int replaceTree(JCTree oldTree, JCTree newTree) {
             int pos = endPosMap.remove(oldTree);
-            if (pos != -1) {
+            if (pos != -1 && newTree != null) {
                 storeEnd(newTree, pos);
-                return pos;
             }
-            return Position.NOPOS;
+            return pos;
         }
     }
 
@@ -5662,9 +5662,6 @@ public class JavacParser implements Parser {
             case CLASSDEF:
             case METHODDEF:
             case VARDEF:
-            case BLOCK:
-            case SWITCH:
-            case SWITCH_EXPRESSION:
                 break;
             default:
                 return tree;

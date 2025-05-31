@@ -383,7 +383,7 @@ public class LintMapper {
         }
 
         Span(JCTree tree, EndPosTable endPositions) {
-            this(TreeInfo.getStartPos(tree), TreeInfo.endPos(endPositions, tree));
+            this(TreeInfo.getStartPos(tree), TreeInfo.getEndPos(tree, endPositions));
         }
 
         boolean contains(int pos) {

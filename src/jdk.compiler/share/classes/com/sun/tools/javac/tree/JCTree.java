@@ -1329,6 +1329,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class JCSwitch extends JCStatement implements SwitchTree {
         public JCExpression selector;
         public List<JCCase> cases;
+        /** Position of closing brace, optional. */
+        public int bracePos = Position.NOPOS;
         public boolean hasUnconditionalPattern;
         public boolean isExhaustive;
         public boolean patternSwitch;

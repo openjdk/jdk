@@ -753,7 +753,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
         Type elemType = types.elemtype(tree.expr.type);
 
         // If not array, resolve the Iterable and Iterator methods
-        record ForeachMethods(MethodSymbol iterator, MethodSymbol hasNext, MethodSymbol next) { };
+        record ForeachMethods(MethodSymbol iterator, MethodSymbol hasNext, MethodSymbol next) { }
         MethodSymbol iterator = null;
         MethodSymbol hasNext = null;
         MethodSymbol next = null;
@@ -1766,7 +1766,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
             return numExtra >= 0 &&
               IntStream.range(0, that.stack.size())
                 .allMatch(index -> this.stack.get(numExtra + index).comparePos(that.stack.get(index)) == 0);
-        };
+        }
 
         // Order warnings by their stack frames, lexicographically in reverse calling order, which will cause
         // all warnings that are isRedundantWith() some other warning to immediately follow that warning.
@@ -1786,7 +1786,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
                 if (diff != 0)
                     return diff;
             }
-        };
+        }
 
         // Determine whether this warning is suppressed and, if so, validate that suppression. A single "this-escape"
         // warning involves multiple source code positions, so we must determine and validate suppression manually.
