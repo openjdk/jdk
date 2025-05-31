@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -312,7 +312,7 @@ private static volatile int commandSeq = 0;         // Command sequence number
                         // Read commands from stdin;  at eof, close stdin of
                         // children and wait for each to exit
                         sendResult(action, "start");
-                        try (Reader reader = new InputStreamReader(System.in);
+                        try (Reader reader = new InputStreamReader(System.in, System.getProperty("stdin.encoding"));
                              BufferedReader input = new BufferedReader(reader)) {
                             String line;
                             while ((line = input.readLine()) != null) {
