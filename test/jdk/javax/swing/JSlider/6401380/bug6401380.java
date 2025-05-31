@@ -27,7 +27,6 @@
  * @bug 6401380
  * @summary JSlider - mouse click ont the left side of the knob is ignored.
  * @library /lib/client
- * @build ExtendedRobot
  * @author Alexander Potochkin
  * @run main bug6401380
  */
@@ -61,7 +60,7 @@ public class bug6401380 extends JFrame {
 
     public static void main(String[] args) throws Exception {
 
-        ExtendedRobot robot = new ExtendedRobot();
+        Robot robot = new Robot();
         robot.setAutoDelay(10);
 
         SwingUtilities.invokeAndWait(new Runnable() {
