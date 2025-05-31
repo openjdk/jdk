@@ -148,6 +148,7 @@ import compiler.lib.ir_framework.TestFramework;
  * {@link Template#make(String, Function)}. For each number of arguments there is an implementation
  * (e.g. {@link Template.TwoArgs} for two arguments). This allows the use of generics for the
  * {@link Template} argument types which enables type checking of the {@link Template} arguments.
+ *  It is currently only allowed to use up to three arguments.
  *
  * <p>
  * A {@link Template} can be rendered to a {@link String} (e.g. {@link Template.ZeroArgs#render()}).
@@ -187,7 +188,7 @@ import compiler.lib.ir_framework.TestFramework;
  *
  * <p>
  * The writer of recursive {@link Template}s must ensure that this recursion terminates. To unify the
- * approach across {@link Template}s, we introduce the concept of {@link fuel}. Templates are rendered starting
+ * approach across {@link Template}s, we introduce the concept of {@link #fuel}. Templates are rendered starting
  * with a limited amount of {@link #fuel} (default: 100, see {@link #DEFAULT_FUEL}), which is decreased at each
  * Template nesting by a certain amount (default: 10, see {@link #DEFAULT_FUEL_COST}). The default fuel for a
  * template can be changed when we {@code render()} it (e.g. {@link ZeroArgs#render(float)}) and the default
@@ -197,8 +198,8 @@ import compiler.lib.ir_framework.TestFramework;
  * <p>
  * Code generation can involve keeping track of fields and variables, as well as the scopes in which they
  * are available, and if they are mutable or immutable. We model fields and variables with {@link DataName}s,
- * which we can add to the current scope with {@link addDataName}. We can access the {@link DataName}s with
- * {@link dataNames}. We can filter for {@link DataName}s of specific {@link DataName.Type}s, and then
+ * which we can add to the current scope with {@link #addDataName}. We can access the {@link DataName}s with
+ * {@link #dataNames}. We can filter for {@link DataName}s of specific {@link DataName.Type}s, and then
  * we can call {@link DataName.View#count}, {@link DataName.View#sample}, {@link DataName.View#toList}, etc.
  * There are many use-cases for this mechanism, especially facilitating communication between the code
  * of outer and inner {@link Template}s. Especially for fuzzing, it may be useful to be able to add
@@ -219,7 +220,7 @@ import compiler.lib.ir_framework.TestFramework;
  * the evaluation of its lambda and later the evaluation of its tokens. It is important to keep in mind
  * that the lambda is always executed first, and the tokens are evaluated afterwards. A method like
  * {@code dataNames(MUTABLE).exactOf(type).count()} is a method that is executed during the evaluation
- * of the lambda. But a method like {@link addDataName} returns a token, and does not immediately add
+ * of the lambda. But a method like {@link #addDataName} returns a token, and does not immediately add
  * the {@link DataName}. This ensures that the {@link DataName} is only inserted when the tokens are
  * evaluated, so that it is inserted at the exact scope where we would expect it.
  *
@@ -249,7 +250,7 @@ import compiler.lib.ir_framework.TestFramework;
  *         // be already evaluated. Hence, "v1" and "v2" are added by then, and if the
  *         // "otherTemplate" were to count the DataNames, the count would be increased
  *         // by 2 compared to "c1".
- *         otherTemplate.asToken(),
+ *         otherTemplate.asToken()
  *     ),
  *     // After closing the scope, "v2" is no longer available.
  *     // The count is still the same as "c1", since "v1" is still only a token.
@@ -257,7 +258,7 @@ import compiler.lib.ir_framework.TestFramework;
  *     // We nest another Template. Again, this creates a TemplateToken, which is only
  *     // evaluated later. By that time, the token for "v1" is evaluated, and so the
  *     // nested Template would observe an increment in the count.
- *     anotherTemplate.asToken(),
+ *     anotherTemplate.asToken()
  *     // By this point, all methods are called, and the tokens generated.
  *     // The lambda returns the "body", which is all of the tokens that we just
  *     // generated. After returning from the lambda, the tokens will be evaluated
@@ -665,7 +666,7 @@ public sealed interface Template permits Template.ZeroArgs,
 
     /**
      * Define a hashtag replacement for {@code "#key"}, with a specific value, which is also captured
-     * by the provided {@code 'function'} with type {@code <T>}.
+     * by the provided {@code function} with type {@code <T>}.
      *
      * <p>
      * {@snippet lang=java :
@@ -680,7 +681,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param key Name for the hashtag replacement.
      * @param value The value that the hashtag is replaced with.
      * @param <T> The type of the value.
-     * @param function The function that is applied with the provided {@code 'value'}.
+     * @param function The function that is applied with the provided {@code value}.
      * @return A {@link TemplateBody}.
      * @throws RendererException if there is a duplicate hashtag {@code key}.
      */
@@ -693,14 +694,14 @@ public sealed interface Template permits Template.ZeroArgs,
      * Default amount of fuel for Template rendering. It guides the nesting depth of Templates. Can be changed when
      * rendering a template with {@code render(fuel)} (e.g. {@link ZeroArgs#render(float)}).
      */
-    static final float DEFAULT_FUEL = 100.0f;
+    float DEFAULT_FUEL = 100.0f;
 
     /**
      * The default amount of fuel spent per Template. It is subtracted from the current {@link #fuel} at every
      * nesting level, and once the {@link #fuel} reaches zero, the nesting is supposed to terminate. Can be changed
      * with {@link #setFuelCost(float)} inside {@link #body(Object...)}.
      */
-    static final float DEFAULT_FUEL_COST = 10.0f;
+    float DEFAULT_FUEL_COST = 10.0f;
 
     /**
      * The current remaining fuel for nested Templates. Every level of Template nesting
@@ -759,7 +760,7 @@ public sealed interface Template permits Template.ZeroArgs,
      *                   or if we also allow it to be mutated.
      * @param weight The weight of the {@link DataName}, which correlates to the probability
      *               of this {@link DataName} being chosen when we sample.
-     *               Must be a value from 0 to 1000.
+     *               Must be a value from 1 to 1000.
      * @return The token that performs the defining action.
      */
     static Token addDataName(String name, DataName.Type type, DataName.Mutability mutability, int weight) {
@@ -807,7 +808,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param type The type of the {@link StructuralName}.
      * @param weight The weight of the {@link StructuralName}, which correlates to the probability
      *               of this {@link StructuralName} being chosen when we sample.
-     *               Must be a value from 0 to 1000.
+     *               Must be a value from 1 to 1000.
      * @return The token that performs the defining action.
      */
     static Token addStructuralName(String name, StructuralName.Type type, int weight) {
