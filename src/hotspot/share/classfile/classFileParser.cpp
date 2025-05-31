@@ -2425,9 +2425,6 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
       method_parameters_data = cfs->current();
       cfs->skip_u2_fast(method_parameters_length);
       cfs->skip_u2_fast(method_parameters_length);
-      // ignore this attribute if it cannot be reflected
-      if (!vmClasses::Parameter_klass_loaded())
-        method_parameters_length = -1;
     } else if (method_attribute_name == vmSymbols::tag_synthetic()) {
       if (method_attribute_length != 0) {
         classfile_parse_error(
