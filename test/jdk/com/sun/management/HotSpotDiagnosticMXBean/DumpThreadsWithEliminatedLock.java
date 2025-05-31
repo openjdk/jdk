@@ -112,7 +112,7 @@ public class DumpThreadsWithEliminatedLock {
                         .dumpThreads(file.toString(), HotSpotDiagnosticMXBean.ThreadDumpFormat.TEXT_PLAIN);
                 try (Stream<String> stream = Files.lines(file)) {
                     found = stream.map(String::trim)
-                            .anyMatch(l -> l.contains("// lock is eliminated"));
+                            .anyMatch(l -> l.contains("- lock is eliminated"));
                 }
                 System.out.format("%s Attempt %d, found: %b%n", Instant.now(), attempts, found);
             }

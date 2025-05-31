@@ -93,8 +93,8 @@ public class ThreadDumper {
     /**
      * Generate a thread dump in plain text or JSON format to a byte array, UTF-8 encoded.
      * This method is the implementation of the Thread.dump_to_file diagnostic command
-     * when a file path is not specified. It returns the thread and/or message to send
-     * to the tool user.
+     * when a file path is not specified. It returns the thread dump and/or message to
+     * send to the tool user.
      */
     private static byte[] dumpThreadsToByteArray(boolean json, int maxSize) {
         var out = new BoundedByteArrayOutputStream(maxSize);
@@ -117,7 +117,7 @@ public class ThreadDumper {
     /**
      * Generate a thread dump in plain text or JSON format to the given file, UTF-8 encoded.
      * This method is the implementation of the Thread.dump_to_file diagnostic command.
-     * It returns the thread and/or message to send to the tool user.
+     * It returns the thread dump and/or message to send to the tool user.
      */
     private static byte[] dumpThreadsToFile(String file, boolean okayToOverwrite, boolean json) {
         Path path = Path.of(file).toAbsolutePath();
@@ -184,35 +184,47 @@ public class ThreadDumper {
         writer.println("#" + thread.threadId() + " \"" + snapshot.threadName()
                 + "\" " + (thread.isVirtual() ? "virtual " : "") + state + " " + now);
 
-        // park blocker
-        Object parkBlocker = snapshot.parkBlocker();
-        if (parkBlocker != null) {
-            writer.println("      // parked on " + Objects.toIdentityString(parkBlocker));
-        }
-
-        // blocked on monitor enter or Object.wait
-        if (state == Thread.State.BLOCKED && snapshot.blockedOn() instanceof Object obj) {
-            writer.println("      // blocked on " + Objects.toIdentityString(obj));
-        } else if ((state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING)
-                && snapshot.waitingOn() instanceof Object obj) {
-            writer.println("      // waiting on " + Objects.toIdentityString(obj));
-        }
-
         StackTraceElement[] stackTrace = snapshot.stackTrace();
         int depth = 0;
         while (depth < stackTrace.length) {
+            writer.print("    at ");
+            writer.println(stackTrace[depth]);
             snapshot.ownedMonitorsAt(depth).forEach(o -> {
                 if (o != null) {
-                    writer.println("      // locked " + Objects.toIdentityString(o));
+                    writer.println("    - locked " + decorateObject(o));
                 } else {
-                    writer.println("      // lock is eliminated");
+                    writer.println("    - lock is eliminated");
                 }
             });
-            writer.print("      ");
-            writer.println(stackTrace[depth]);
+
+            // if parkBlocker set, or blocked/waiting on monitor, then print after top frame
+            if (depth == 0) {
+                // park blocker
+                Object parkBlocker = snapshot.parkBlocker();
+                if (parkBlocker != null) {
+                    writer.println("    - parking to wait for " + decorateObject(parkBlocker));
+                }
+
+                // blocked on monitor enter or Object.wait
+                if (state == Thread.State.BLOCKED && snapshot.blockedOn() instanceof Object obj) {
+                    writer.println("    - waiting to lock " + decorateObject(obj));
+                } else if ((state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING)
+                        && snapshot.waitingOn() instanceof Object obj) {
+                    writer.println("    - waiting on " + decorateObject(obj));
+                }
+            }
+
             depth++;
         }
         writer.println();
+    }
+
+    /**
+     * Returns the identity string for the given object in a form suitable for the plain
+     * text format thread dump.
+     */
+    private static String decorateObject(Object obj) {
+        return "<" + Objects.toIdentityString(obj) + ">";
     }
 
     /**

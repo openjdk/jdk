@@ -267,7 +267,7 @@ class DumpThreads {
                 ThreadFields fields = findThread(tid, lines);
                 assertNotNull(fields, "thread not found");
                 assertEquals("BLOCKED", fields.state());
-                assertTrue(contains(lines, "// blocked on " + lockAsString));
+                assertTrue(contains(lines, "- waiting to lock <" + lockAsString));
 
                 // thread dump in JSON format should include thread in root container
                 ThreadDump threadDump = dumpThreadsToJson();
@@ -361,7 +361,7 @@ class DumpThreads {
             boolean expectWaitingOn = !WhiteBox.getWhiteBox().isMethodCompiled(wait0);
             if (expectWaitingOn) {
                 // plain text dump should have "waiting on" line
-                assertTrue(contains(lines, "// waiting on " + lockAsString));
+                assertTrue(contains(lines, "- waiting on <" + lockAsString));
 
                 // JSON thread dump should have waitingOn property
                 assertEquals(lockAsString, ti.waitingOn());
@@ -425,7 +425,7 @@ class DumpThreads {
             ThreadFields fields = findThread(tid, lines);
             assertNotNull(fields, "thread not found");
             assertEquals("WAITING", fields.state());
-            assertTrue(contains(lines, "// parked on java.util.concurrent.locks.ReentrantLock"));
+            assertTrue(contains(lines, "- parking to wait for <java.util.concurrent.locks.ReentrantLock"));
 
             // thread dump in JSON format should include thread in root container
             ThreadDump threadDump = dumpThreadsToJson();
@@ -498,7 +498,7 @@ class DumpThreads {
             ThreadFields fields = findThread(tid, lines);
             assertNotNull(fields, "thread not found");
             assertEquals("WAITING", fields.state());
-            assertTrue(contains(lines, "// locked " + lockAsString));
+            assertTrue(contains(lines, "- locked <" + lockAsString));
 
             // thread dump in JSON format should include thread in root container
             ThreadDump threadDump = dumpThreadsToJson();
