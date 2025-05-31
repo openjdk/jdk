@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,7 @@ public class Basic {
         testAsynchronousClose(blah.toPath());
         testCancel(blah.toPath());
         testTruncate(blah.toPath());
+        testViewsOfUnsupportedArenas(blah.toPath());
 
         // eagerly clean-up
         blah.delete();
@@ -561,22 +562,60 @@ public class Basic {
         }
     }
 
+    // tests unsupported MemorySegment view buffers
+    static void testViewsOfUnsupportedArenas(Path file) throws IOException {
+        System.out.println("testViewsOfUnsupportedArenas");
+
+        AsynchronousFileChannel ch = AsynchronousFileChannel
+            .open(file, CREATE, WRITE, TRUNCATE_EXISTING);
+
+        try {
+            writeFully(ch, genUnsupportedBuffer(true), 0L);
+            throw new RuntimeException("IllegalStateException expected");
+        } catch (IllegalStateException expected) {
+            // ignore
+        }
+
+        try {
+            writeFully(ch, genUnsupportedBuffer(false), 0L);
+            throw new RuntimeException("UnsupportedOperationException expected");
+        } catch (UnsupportedOperationException expected) {
+            // ignore
+        } finally {
+            ch.close();
+        }
+    }
+
     // returns ByteBuffer with random bytes
     static ByteBuffer genBuffer() {
         int size = 1024 + rand.nextInt(16000);
         byte[] buf = new byte[size];
-        return switch (rand.nextInt(3)) {
+        rand.nextBytes(buf);
+        return switch (rand.nextInt(4)) {
             case 0 -> ByteBuffer.allocateDirect(buf.length)
                     .put(buf)
                     .flip();
             case 1 -> ByteBuffer.wrap(buf);
-            case 2 -> Arena.ofAuto().allocate(buf.length).asByteBuffer()
+            case 2 -> Arena.global().allocate(buf.length).asByteBuffer()
+                    .put(buf)
+                    .flip();
+            case 3 -> Arena.ofAuto().allocate(buf.length).asByteBuffer()
                     .put(buf)
                     .flip();
             default -> throw new InternalError("Should not reach here");
         };
     }
 
+    // returns ByteBuffer view of confined or shared arena
+    static ByteBuffer genUnsupportedBuffer(boolean isConfined) {
+        int size = 1024 + rand.nextInt(16000);
+        byte[] buf = new byte[size];
+        rand.nextBytes(buf);
+        Arena arena = isConfined ? Arena.ofConfined() : Arena.ofShared();
+        return arena.allocate(buf.length).asByteBuffer().put(buf).flip();
+    }
+
+    // writes all remaining bytes in the buffer to the given channel at the
     // writes all remaining bytes in the buffer to the given channel at the
     // given position
     static void writeFully(final AsynchronousFileChannel ch,
