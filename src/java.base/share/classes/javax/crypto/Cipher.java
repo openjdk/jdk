@@ -389,8 +389,8 @@ public class Cipher {
         Transform(String alg, String suffix, String mode, String pad) {
             this.transform = alg + suffix;
             this.suffix = suffix.toUpperCase(Locale.ENGLISH);
-            this.mode = mode;
-            this.pad = pad;
+            this.mode = ((mode == null) || mode.isEmpty()) ? null : mode;
+            this.pad = ((pad == null) || pad.isEmpty()) ? null : pad;
         }
         // set mode and padding for the given SPI
         void setModePadding(CipherSpi spi) throws NoSuchAlgorithmException,
