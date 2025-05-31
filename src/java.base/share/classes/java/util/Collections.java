@@ -1015,6 +1015,43 @@ public final class Collections {
     }
 
 
+    // Wrapper Collections
+
+    /*
+     * This segment of the file contains several groups of APIs and implementation
+     * classes for specialized collections. These groups include, in order:
+     *
+     *  - Unmodifiable Wrappers
+     *  - Synchronized Wrappers
+     *  - Checked (dynamically typesafe) Wrappers
+     *  - Empty Collections
+     *  - Singleton Collections
+     *
+     * There are a large number of collection implementations in this file, and
+     * for the sake of brevity, the following style rules are applied here:
+     *
+     * 1. Single-line methods are often written with the implementation on the same
+     * line as the declaration. Sometimes the braces for a group of such methods
+     * are aligned.
+     *
+     * 2. The wrapper collections change the semantics of the collection interfaces,
+     * sometimes in fundamental ways. Thus they shouldn't inherit any default methods
+     * provided by the collection interfaces, as they might not support the right semantics.
+     * Put another way, the wrapper collections must override all default methods. (However,
+     * it's permitted for a subclass of a wrapper to inherit methods from a wrapper
+     * superclass.) Strictly speaking not every default method need be overridden. However,
+     * given the history of bugs introduced by inheritance of default methods, we have
+     * adopted the simpler, blanket rule of avoiding inheriting any default methods. This
+     * rule is enforced by the test test/jdk/java/util/Collections/Wrappers.java .
+     *
+     * 3. Given the large number of overrides that must be present in many implementations,
+     * the @Override annotation is generally not used. For the most part any methods that
+     * aren't declared as proper overrides will be detected through testing.
+     *
+     * (The @Override annotation still occurs in several places in this file. They'll be
+     * removed over time.)
+     */
+
     // Unmodifiable Wrappers
 
     /**
@@ -1358,6 +1395,16 @@ public final class Collections {
 
         public E first()                   {return ss.first();}
         public E last()                    {return ss.last();}
+        public void addFirst(E e)          {throw new UnsupportedOperationException();}
+        public void addLast(E e)           {throw new UnsupportedOperationException();}
+        public E getFirst()                {return ss.getFirst();}
+        public E getLast()                 {return ss.getLast();}
+        public E removeFirst()             {throw new UnsupportedOperationException();}
+        public E removeLast()              {throw new UnsupportedOperationException();}
+
+        public SortedSet<E> reversed() {
+            return new UnmodifiableSortedSet<>(ss.reversed());
+        }
     }
 
     /**
@@ -1439,6 +1486,13 @@ public final class Collections {
         public Iterator<E> descendingIterator()
                                          { return descendingSet().iterator(); }
 
+        public void addFirst(E e){ throw new UnsupportedOperationException(); }
+        public void addLast(E e) { throw new UnsupportedOperationException(); }
+        public E getFirst()                           { return ns.getFirst(); }
+        public E getLast()                             { return ns.getLast(); }
+        public E removeFirst()   { throw new UnsupportedOperationException(); }
+        public E removeLast()    { throw new UnsupportedOperationException(); }
+
         public NavigableSet<E> subSet(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
             return new UnmodifiableNavigableSet<>(
                 ns.subSet(fromElement, fromInclusive, toElement, toInclusive));
@@ -1452,6 +1506,10 @@ public final class Collections {
         public NavigableSet<E> tailSet(E fromElement, boolean inclusive) {
             return new UnmodifiableNavigableSet<>(
                 ns.tailSet(fromElement, inclusive));
+        }
+
+        public NavigableSet<E> reversed() {
+            return new UnmodifiableNavigableSet<>(ns.reversed());
         }
     }
 
@@ -1522,9 +1580,21 @@ public final class Collections {
         public void replaceAll(UnaryOperator<E> operator) {
             throw new UnsupportedOperationException();
         }
+
         @Override
         public void sort(Comparator<? super E> c) {
             throw new UnsupportedOperationException();
+        }
+
+        public void addFirst(E e) { throw new UnsupportedOperationException(); }
+        public void addLast(E e)  { throw new UnsupportedOperationException(); }
+        public E getFirst()       { return list.getFirst(); }
+        public E getLast()        { return list.getLast(); }
+        public E removeFirst()    { throw new UnsupportedOperationException(); }
+        public E removeLast()     { throw new UnsupportedOperationException(); }
+
+        public List<E> reversed() {
+            return ReverseOrderListView.of(this, false);
         }
 
         public ListIterator<E> listIterator()   {return listIterator(0);}
@@ -2531,8 +2601,47 @@ public final class Collections {
         public E first() {
             synchronized (mutex) {return ss.first();}
         }
+
         public E last() {
             synchronized (mutex) {return ss.last();}
+        }
+
+        public void addFirst(E element) {
+            throw new UnsupportedOperationException();
+        }
+
+        public void addLast(E element) {
+            throw new UnsupportedOperationException();
+        }
+
+        public E getFirst() {
+            synchronized (mutex) {
+                return ss.getFirst();
+            }
+        }
+
+        public E getLast() {
+            synchronized (mutex) {
+                return ss.getLast();
+            }
+        }
+
+        public E removeFirst() {
+            synchronized (mutex) {
+                return ss.removeFirst();
+            }
+        }
+
+        public E removeLast() {
+            synchronized (mutex) {
+                return ss.removeLast();
+            }
+        }
+
+        public SortedSet<E> reversed() {
+            synchronized (mutex) {
+                return new SynchronizedSortedSet<>(ss.reversed(), mutex);
+            }
         }
     }
 
@@ -2651,6 +2760,12 @@ public final class Collections {
         public NavigableSet<E> tailSet(E fromElement, boolean inclusive) {
             synchronized (mutex) {
                 return new SynchronizedNavigableSet<>(ns.tailSet(fromElement, inclusive), mutex);
+            }
+        }
+
+        public NavigableSet<E> reversed() {
+            synchronized (mutex) {
+                return new SynchronizedNavigableSet<>(ns.reversed(), mutex);
             }
         }
     }
@@ -3725,6 +3840,27 @@ public final class Collections {
         public SortedSet<E> tailSet(E fromElement) {
             return checkedSortedSet(ss.tailSet(fromElement), type);
         }
+        public void addFirst(E element) {
+            throw new UnsupportedOperationException();
+        }
+        public void addLast(E element) {
+            throw new UnsupportedOperationException();
+        }
+        public E getFirst() {
+            return ss.getFirst();
+        }
+        public E getLast() {
+            return ss.getLast();
+        }
+        public E removeFirst() {
+            return ss.removeFirst();
+        }
+        public E removeLast() {
+            return ss.removeLast();
+        }
+        public SortedSet<E> reversed() {
+            return checkedSortedSet(ss.reversed(), type);
+        }
     }
 
     /**
@@ -3809,6 +3945,10 @@ public final class Collections {
 
         public NavigableSet<E> tailSet(E fromElement, boolean inclusive) {
             return checkedNavigableSet(ns.tailSet(fromElement, inclusive), type);
+        }
+
+        public NavigableSet<E> reversed() {
+            return checkedNavigableSet(ns.reversed(), type);
         }
     }
 
@@ -3932,6 +4072,34 @@ public final class Collections {
         public void sort(Comparator<? super E> c) {
             list.sort(c);
         }
+
+        public void addFirst(E element) {
+            list.addFirst(typeCheck(element));
+        }
+
+        public void addLast(E element) {
+            list.addLast(typeCheck(element));
+        }
+
+        public E getFirst() {
+            return list.getFirst();
+        }
+
+        public E getLast() {
+            return list.getLast();
+        }
+
+        public E removeFirst() {
+            return list.removeFirst();
+        }
+
+        public E removeLast() {
+            return list.removeLast();
+        }
+
+        public List<E> reversed() {
+            return new CheckedList<>(list.reversed(), type);
+        }
     }
 
     /**
@@ -3950,6 +4118,15 @@ public final class Collections {
         public List<E> subList(int fromIndex, int toIndex) {
             return new CheckedRandomAccessList<>(
                     list.subList(fromIndex, toIndex), type);
+        }
+
+        public List<E> reversed() {
+            var rev = list.reversed();
+            if (rev instanceof RandomAccess) {
+                return new CheckedRandomAccessList<>(rev, type);
+            } else {
+                return new CheckedList<>(rev, type);
+            }
         }
     }
 
