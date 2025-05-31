@@ -385,10 +385,10 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * {@snippet lang = java:
  *     var number = 1000;
  *     NumberFormat.getCurrencyInstance(Locale.US).format(number); // returns "$1,000.00"
- *     NumberFormat.getCurrencyInstance(Locale.JAPAN).format(number); // returns "\u00A51,000""
+ *     NumberFormat.getCurrencyInstance(Locale.JAPAN).format(number); // returns "¥1,000""
  *     var date = LocalDate.of(2024, 1, 1);
  *     DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).localizedBy(Locale.US).format(date); // returns "January 1, 2024"
- *     DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).localizedBy(Locale.JAPAN).format(date); // returns "2024\u5e741\u67081\u65e5"
+ *     DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).localizedBy(Locale.JAPAN).format(date); // returns "2024年1月1日"
  * }
  *
  * <h2><a id="LocaleMatching">Locale Matching</a></h2>

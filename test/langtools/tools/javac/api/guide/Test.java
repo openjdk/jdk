@@ -25,7 +25,7 @@
  * @test
  * @bug     6427274 6347778 6469079
  * @summary Various bugs fixed while writing Compiler API Guide
- * @author  Peter von der Ah\u0081
+ * @author  Peter von der Ahé
  * @library ../lib
  * @modules java.compiler
  *          jdk.compiler

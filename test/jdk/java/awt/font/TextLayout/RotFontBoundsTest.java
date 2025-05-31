@@ -60,10 +60,10 @@ public final class RotFontBoundsTest {
     private static final String TEXT = ".This is a STRINg.";
 
     private static final String INSTRUCTIONS =
-            "A string \u201C" + TEXT + "\u201D is drawn at eight different "
+            "A string \"" + TEXT + \" is drawn at eight different "
             + "angles, and eight boxes that surround the bounds of the text "
             + "layouts (give or take a pixel) are drawn in red. The boxes "
-            + "are always composed of horizontal and vertical lines \u2014 "
+            + "are always composed of horizontal and vertical lines - "
             + "they are not rotated.\n"
             + "\n"
             + "By default, all the rotations are displayed. Select or clear "
