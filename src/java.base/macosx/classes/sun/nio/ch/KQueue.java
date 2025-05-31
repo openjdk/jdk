@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,17 @@
 
 package sun.nio.ch;
 
-import java.io.IOException;
-import jdk.internal.misc.Unsafe;
+import jdk.internal.ffi.generated.errno.errno_h;
+import jdk.internal.ffi.generated.timespec.timespec;
+import jdk.internal.ffi.generated.kqueue.kevent;
+import jdk.internal.ffi.generated.kqueue.kqueue_h;
+import jdk.internal.ffi.util.FFMUtils;
+
+import java.io.*;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+
+import static java.lang.foreign.MemorySegment.NULL;
 
 /**
  * Provides access to the BSD kqueue facility.
@@ -34,8 +43,6 @@ import jdk.internal.misc.Unsafe;
 
 class KQueue {
     private KQueue() { }
-
-    private static final Unsafe unsafe = Unsafe.getUnsafe();
 
     /**
      * struct kevent {
@@ -47,74 +54,105 @@ class KQueue {
      *        void            *udata;         // opaque user data identifier
      * };
      */
-    static {
-        IOUtil.load();
-    }
-    private static final int SIZEOF_KQUEUEEVENT    = keventSize();
-    private static final int OFFSET_IDENT          = identOffset();
-    private static final int OFFSET_FILTER         = filterOffset();
-    private static final int OFFSET_FLAGS          = flagsOffset();
 
     // filters
-    static final int EVFILT_READ  = -1;
-    static final int EVFILT_WRITE = -2;
+    static final int EVFILT_READ  = kqueue_h.EVFILT_READ();
+    static final int EVFILT_WRITE = kqueue_h.EVFILT_WRITE();
 
     // flags
-    static final int EV_ADD     = 0x0001;
-    static final int EV_DELETE  = 0x0002;
-    static final int EV_ONESHOT = 0x0010;
-    static final int EV_CLEAR   = 0x0020;
+    static final int EV_ADD     = kqueue_h.EV_ADD();
+    static final int EV_DELETE  = kqueue_h.EV_DELETE();
+    static final int EV_ONESHOT = kqueue_h.EV_ONESHOT();
+    static final int EV_CLEAR   = kqueue_h.EV_CLEAR();
 
     /**
      * Allocates a poll array to handle up to {@code count} events.
      */
-    static long allocatePollArray(int count) {
-        return unsafe.allocateMemory(count * SIZEOF_KQUEUEEVENT);
+    static MemorySegment allocatePollArray(int count) {
+        return kevent.allocateArray(count, FFMUtils.SEGMENT_ALLOCATOR);
     }
 
     /**
      * Free a poll array
      */
-    static void freePollArray(long address) {
-        unsafe.freeMemory(address);
+    static void freePollArray(MemorySegment memorySegment){
+        FFMUtils.free(memorySegment);
     }
 
     /**
      * Returns kevent[i].
      */
-    static long getEvent(long address, int i) {
-        return address + (SIZEOF_KQUEUEEVENT*i);
+    static MemorySegment getEvent(MemorySegment memoryHandle, int i) {
+        return kevent.asSlice(memoryHandle, i);
     }
 
     /**
      * Returns the file descriptor from a kevent (assuming it is in the ident field)
      */
-    static int getDescriptor(long address) {
-        return unsafe.getInt(address + OFFSET_IDENT);
+    static long getDescriptor(MemorySegment memoryHandle) {
+        return kevent.ident(memoryHandle);
     }
 
-    static short getFilter(long address) {
-        return unsafe.getShort(address + OFFSET_FILTER);
+    static short getFilter(MemorySegment memoryHandle) {
+        return kevent.filter(memoryHandle);
     }
 
-    static short getFlags(long address) {
-        return unsafe.getShort(address + OFFSET_FLAGS);
+    static short getFlags(MemorySegment memoryHandle) {
+        return kevent.flags(memoryHandle);
     }
 
     // -- Native methods --
 
-    private static native int keventSize();
+    static public int register(int kqfd, int fd, int filter, int flags) {
+        int result;
+        try (var arena = Arena.ofConfined()) {
+            try {
+                MemorySegment keventMS = arena.allocate(kevent.layout());
+                kevent.ident(keventMS, fd);
+                kevent.filter(keventMS, (short) filter);
+                kevent.flags(keventMS, (short) flags);
+                // rest default to zero
 
-    private static native int identOffset();
+                // this do-while replaces restartable
+                do {
+                    result = kqueue_h.kevent(
+                            kqfd, keventMS, 1, NULL,
+                            0, NULL);
+                } while ((result == -1));
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return result;
+    }
 
-    private static native int filterOffset();
+    static public int poll(int kqfd, MemorySegment pollAddress, int nevents, long timeout) {
+        int result;
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment tsMS = arena.allocate(timespec.layout());
+            MemorySegment tsp;
 
-    private static native int flagsOffset();
+            if (timeout >= 0) {
+                timespec.tv_sec(tsMS, timeout / 1000);
+                timespec.tv_nsec(tsMS, (timeout % 1000) * 1000000);
+                tsp = tsMS;
+            } else {
+                tsp = NULL;
+            }
 
-    static native int create() throws IOException;
-
-    static native int register(int kqfd, int fd, int filter, int flags);
-
-    static native int poll(int kqfd, long pollAddress, int nevents, long timeout)
-        throws IOException;
+            result = kqueue_h.kevent(
+                    kqfd, NULL, 0, pollAddress,
+                    nevents, tsp);
+            if (result < 0) {
+                if (result == errno_h.EINTR()) {
+                    return IOStatus.INTERRUPTED;
+                } else {
+                    throw new IOException("kqueue_poll failed");
+                }
+            }
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+        return result;
+    }
 }
