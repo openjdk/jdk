@@ -63,7 +63,7 @@ public class TestTutorial {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
 
-        // Add java source files.
+        // Add Java source files.
         comp.addJavaSourceCode("p.xyz.InnerTest1",  generateWithListOfTokens());
         comp.addJavaSourceCode("p.xyz.InnerTest2",  generateWithTemplateArguments());
         comp.addJavaSourceCode("p.xyz.InnerTest3",  generateWithHashtagAndDollarReplacements());
@@ -150,8 +150,8 @@ public class TestTutorial {
             "System.out.println(#arg);\n",       // capture arg via hashtag replacement
             "System.out.println(#{arg});\n",     // capture arg via hashtag replacement with brackets
             // The Template Framework allows two ways of formatting Strings, either
-            // by appending to the comma-separated list of Tokens, or by hashtag
-            // replacements. Appending as a Token works whenever one has a reference
+            // by appending to the comma-separated list of Tokens passed to body(), or by hashtag
+            // replacements inside a single string. Appending as a Token works whenever one has a reference
             // to the Object in Java code. But often, this is rather cumbersome and
             // looks awkward, given all the additional quotes and commands required.
             // Optimal would have been Java String Templates, but since those do not
@@ -196,7 +196,8 @@ public class TestTutorial {
             let("con", 3 * x),
             // In the code below, we use "var" as a local variable. But if we were
             // to instantiate this template twice, the names could conflict. Hence,
-            // we automatically rename the names that have a $ prepended.
+            // we automatically rename the names that have a $ prepended with
+            // var_1, var_2, etc.
             """
             int $var = #con;
             System.out.println("T1: #x, #con, " + $var);
@@ -205,7 +206,7 @@ public class TestTutorial {
 
         var template2 = Template.make("x", (Integer x) ->
             // Sometimes it can be helpful to not just create a hashtag replacement
-            // with let, but also to capture the variable.
+            // with let, but also to capture the variable to use it as lambda parameter.
             let("y", 11 * x, y ->
                 body(
                     """
@@ -295,7 +296,7 @@ public class TestTutorial {
     }
 
     // In this example, we look at the use of Hooks. They allow us to reach back, to outer
-    // scopes. For example, we can reach out from inside a method body to a hook set at
+    // scopes. For example, we can reach out from inside a method body to a hook anchored at
     // the top of the class, and insert a field.
     public static String generateWithCustomHooks() {
         // We can define a custom hook.
@@ -311,7 +312,10 @@ public class TestTutorial {
 
         var template2 = Template.make("x", (Integer x) -> body(
             """
-            // Let us go back to the hook, and define a field named $field...
+            // Let us go back to where we anchored the hook with anchor() and define a field named $field there.
+            // Note that in the Java code we have not defined anchor() on the hook, yet. But since it's a lambda
+            // expression, it is not evaluated, yet! Eventually, anchor() will be evaluated before insert() in
+            // this example.
             """,
             myHook.insert(template1.asToken($("field"), x)),
             """
@@ -522,7 +526,7 @@ public class TestTutorial {
     }
     private static final MySimpleInt mySimpleInt = new MySimpleInt();
 
-    // In this Example, we generate 3 fields, and add their names to the
+    // In this example, we generate 3 fields, and add their names to the
     // current scope. In a nested Template, we can then sample one of these
     // DataNames, which gives us one of the fields. We increment that randomly
     // chosen field. At the end, we print all three fields.
@@ -776,7 +780,7 @@ public class TestTutorial {
 
     // Having defined these helper methods, let us start with the first example.
     // You should start reading this example bottum-up, starting at
-    // templateClass, then going to templateMain and last to templateInnner.
+    // templateClass, then going to templateMain and last to templateInner.
     public static String generateWithDataNamesAndScopes1() {
 
         var templateInner = Template.make(() -> body(
@@ -854,7 +858,7 @@ public class TestTutorial {
             """
             public static int f1 = 42;
             """,
-            // But why is this DataName now availabe inside the scope of
+            // But why is this DataName now available inside the scope of
             // templateInner? Does that not mean that "f1" escapes this
             // templateFields here? Yes it does!
             // For normal template nesting, the names do not escape the
@@ -865,7 +869,7 @@ public class TestTutorial {
             // DataNames are added to the scope of the Hook we just
             // inserted into, i.e. the CLASS_HOOK. This is very important,
             // if we did not make that scope transparent, we could not
-            // add any DataNames to the class scope any more, and we could
+            // add any DataNames to the class scope anymore, and we could
             // not add any fields that would be available in the class
             // scope.
             Hooks.METHOD_HOOK.anchor(
@@ -1078,7 +1082,7 @@ public class TestTutorial {
     // "DataNames" are useful for modeling fields and variables. They hold data,
     // and we can read and write to them, they may be mutable or immutable.
     // We now introduce another set of "Names", the "StructuralNames". They are
-    // useful for modeling method names an class names, and possibly more. Anything
+    // useful for modeling method names and class names, and possibly more. Anything
     // that has a fixed name in the Java code, for which mutability is inapplicable.
     // Some use-cases for "StructuralNames":
     // - Method names. The Type could represent the signature of the static method
@@ -1091,7 +1095,7 @@ public class TestTutorial {
     //                     and its subtypes - if so, we know the exception would be
     //                     caught.
     //
-    // Let us show an example with Method names. But for simplicity, we assume they
+    // Let us look at an example with Method names. But for simplicity, we assume they
     // all have the same signature: they take two int arguments and return an int.
     //
     // Should you ever work on a test where there are methods with different signatures,

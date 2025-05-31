@@ -46,7 +46,7 @@ public class TestFormat {
     record FormatInfo(int id, String type, Object value) {}
 
     public static void main(String[] args) {
-        List<FormatInfo> list = new ArrayList();
+        List<FormatInfo> list = new ArrayList<>();
 
         for (int i = 0; i < 1000; i++) {
             int v = Generators.G.ints().next();
