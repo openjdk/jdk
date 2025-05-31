@@ -1792,21 +1792,18 @@ bool LibraryCallKit::runtime_math(const TypeFunc* call_type, address funcAddr, c
   assert(call_type == OptoRuntime::Math_DD_D_Type() || call_type == OptoRuntime::Math_D_D_Type(),
          "must be (DD)D or (D)D type");
 
-  // Inputs
-  Node* a = argument(0);
-  Node* b = (call_type == OptoRuntime::Math_DD_D_Type()) ? argument(2) : nullptr;
+  Node* lhs = argument(0);
 
-  const TypePtr* no_memory_effects = nullptr;
-  Node* trig = make_runtime_call(RC_LEAF, call_type, funcAddr, funcName,
-                                 no_memory_effects,
-                                 a, top(), b, b ? top() : nullptr);
-  Node* value = _gvn.transform(new ProjNode(trig, TypeFunc::Parms+0));
-#ifdef ASSERT
-  Node* value_top = _gvn.transform(new ProjNode(trig, TypeFunc::Parms+1));
-  assert(value_top == top(), "second value must be top");
-#endif
-
-  set_result(value);
+  Node* call;
+  if (call_type == OptoRuntime::Math_DD_D_Type()) {
+    Node* rhs = argument(2);
+    call = PureBinaryNativeMathNode::make(C, funcAddr, funcName, control(), lhs, rhs);
+  } else {
+    call = PureUnaryNativeMathNode::make(C, funcAddr, funcName, control(), lhs);
+  }
+  call = _gvn.transform(call);
+  set_control(_gvn.transform(new ProjNode(call, TypeFunc::Control)));
+  set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms + 0)));
   return true;
 }
 
