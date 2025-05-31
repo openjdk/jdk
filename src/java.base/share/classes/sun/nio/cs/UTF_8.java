@@ -227,7 +227,7 @@ public final class UTF_8 extends Unicode {
             int dp = doff + dst.position();
             int dl = doff + dst.limit();
 
-            int n = JLA.uncheckedDecodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
+            int n = JLA.decodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
             sp += n;
             dp += n;
 
