@@ -2831,7 +2831,7 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
         if (data != nullptr) {
           // Only the mirror in the HotSpot heap is accessible
           // through JVMCINMethodData
-          oop nmethod_mirror = data->get_nmethod_mirror(nm, /* phantom_ref */ true);
+          oop nmethod_mirror = data->get_nmethod_mirror(nm);
           if (nmethod_mirror != nullptr) {
             result = HotSpotJVMCI::wrap(nmethod_mirror);
           }
@@ -2863,7 +2863,7 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
           if (data == nullptr) {
             JVMCI_THROW_MSG_0(IllegalArgumentException, "Missing HotSpotNmethod data");
           }
-          if (data->get_nmethod_mirror(nm, /* phantom_ref */ false) != nullptr) {
+          if (data->get_nmethod_mirror(nm) != nullptr) {
             JVMCI_THROW_MSG_0(IllegalArgumentException, "Cannot overwrite existing HotSpotNmethod mirror for nmethod");
           }
           oop nmethod_mirror = HotSpotJVMCI::resolve(result);
