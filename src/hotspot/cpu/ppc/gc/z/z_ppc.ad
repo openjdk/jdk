@@ -141,6 +141,7 @@ instruct zLoadP(iRegPdst dst, memoryAlg4 mem, flagsRegCR0 cr0)
 %{
   match(Set dst (LoadP mem));
   effect(TEMP_DEF dst, KILL cr0);
+  ins_is_late_expanded_null_check_candidate(true);
   ins_cost(MEMORY_REF_COST);
 
   predicate((UseZGC && n->as_Load()->barrier_data() != 0)
@@ -160,6 +161,7 @@ instruct zLoadP_acq(iRegPdst dst, memoryAlg4 mem, flagsRegCR0 cr0)
 %{
   match(Set dst (LoadP mem));
   effect(TEMP_DEF dst, KILL cr0);
+  ins_is_late_expanded_null_check_candidate(true);
   ins_cost(3 * MEMORY_REF_COST);
 
   // Predicate on instruction order is implicitly present due to the predicate of the cheaper zLoadP operation
