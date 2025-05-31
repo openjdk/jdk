@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2024, Red Hat Inc.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +62,34 @@ class CgroupV2CpuController: public CgroupCpuController {
     int cpu_quota() override;
     int cpu_period() override;
     int cpu_shares() override;
+    jlong cpu_usage_in_micros();
+    bool is_read_only() override {
+      return reader()->is_read_only();
+    }
+    const char* subsystem_path() override {
+      return reader()->subsystem_path();
+    }
+    bool needs_hierarchy_adjustment() override {
+      return reader()->needs_hierarchy_adjustment();
+    }
+    void set_subsystem_path(const char* cgroup_path) override {
+      reader()->set_subsystem_path(cgroup_path);
+    }
+    const char* mount_point() override { return reader()->mount_point(); }
+    const char* cgroup_path() override { return reader()->cgroup_path(); }
+};
+
+class CgroupV2CpuacctController: public CgroupCpuacctController {
+  private:
+    CgroupV2CpuController* _reader;
+    CgroupV2CpuController* reader() { return _reader; }
+  public:
+    CgroupV2CpuacctController(CgroupV2CpuController* reader) : _reader(reader) {
+    }
+    // In cgroup v2, cpu usage is a part of the cpu controller.
+    jlong cpu_usage_in_micros() override {
+      return reader()->cpu_usage_in_micros();
+    }
     bool is_read_only() override {
       return reader()->is_read_only();
     }
@@ -89,6 +118,7 @@ class CgroupV2MemoryController final: public CgroupMemoryController {
     jlong memory_and_swap_limit_in_bytes(julong host_mem, julong host_swp) override;
     jlong memory_and_swap_usage_in_bytes(julong host_mem, julong host_swp) override;
     jlong memory_soft_limit_in_bytes(julong upper_bound) override;
+    jlong memory_throttle_limit_in_bytes() override;
     jlong memory_usage_in_bytes() override;
     jlong memory_max_usage_in_bytes() override;
     jlong rss_usage_in_bytes() override;
@@ -118,11 +148,14 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     CachingCgroupController<CgroupMemoryController>* _memory = nullptr;
     CachingCgroupController<CgroupCpuController>* _cpu = nullptr;
 
+    CgroupCpuacctController* _cpuacct = nullptr;
+
     CgroupV2Controller* unified() { return &_unified; }
 
   public:
     CgroupV2Subsystem(CgroupV2MemoryController * memory,
                       CgroupV2CpuController* cpu,
+                      CgroupV2CpuacctController* cpuacct,
                       CgroupV2Controller unified);
 
     char * cpu_cpuset_cpus() override;
@@ -137,6 +170,7 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     }
     CachingCgroupController<CgroupMemoryController>* memory_controller() override { return _memory; }
     CachingCgroupController<CgroupCpuController>* cpu_controller() override { return _cpu; }
+    CgroupCpuacctController* cpuacct_controller() override { return _cpuacct; };
 };
 
 #endif // CGROUP_V2_SUBSYSTEM_LINUX_HPP
