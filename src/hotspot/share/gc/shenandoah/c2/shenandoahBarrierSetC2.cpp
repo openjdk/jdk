@@ -215,7 +215,7 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
   // Now some of the values
   Node* marking;
   Node* gc_state = __ AddP(no_base, tls, __ ConX(in_bytes(ShenandoahThreadLocalData::gc_state_offset())));
-  Node* ld = __ load(__ ctrl(), gc_state, TypeInt::BYTE, T_BYTE, Compile::AliasIdxRaw);
+  Node* ld = __ load(__ ctrl(), gc_state, TypeInt::BYTE, T_BYTE);
   marking = __ AndI(ld, __ ConI(ShenandoahHeap::MARKING));
   assert(ShenandoahBarrierC2Support::is_gc_state_load(ld), "Should match the shape");
 
@@ -223,7 +223,7 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
   __ if_then(marking, BoolTest::ne, zero, unlikely); {
     BasicType index_bt = TypeX_X->basic_type();
     assert(sizeof(size_t) == type2aelembytes(index_bt), "Loading Shenandoah SATBMarkQueue::_index with wrong size.");
-    Node* index   = __ load(__ ctrl(), index_adr, TypeX_X, index_bt, Compile::AliasIdxRaw);
+    Node* index   = __ load(__ ctrl(), index_adr, TypeX_X, index_bt);
 
     if (do_load) {
       // load original value
@@ -233,7 +233,7 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
 
     // if (pre_val != nullptr)
     __ if_then(pre_val, BoolTest::ne, kit->null()); {
-      Node* buffer  = __ load(__ ctrl(), buffer_adr, TypeRawPtr::NOTNULL, T_ADDRESS, Compile::AliasIdxRaw);
+      Node* buffer  = __ load(__ ctrl(), buffer_adr, TypeRawPtr::NOTNULL, T_ADDRESS);
 
       // is the queue for this thread full?
       __ if_then(index, BoolTest::ne, zeroX, likely); {
@@ -243,9 +243,9 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
 
         // Now get the buffer location we will log the previous value into and store it
         Node *log_addr = __ AddP(no_base, buffer, next_index);
-        __ store(__ ctrl(), log_addr, pre_val, T_OBJECT, Compile::AliasIdxRaw, MemNode::unordered);
+        __ store(__ ctrl(), log_addr, pre_val, T_OBJECT, MemNode::unordered);
         // update the index
-        __ store(__ ctrl(), index_adr, next_index, index_bt, Compile::AliasIdxRaw, MemNode::unordered);
+        __ store(__ ctrl(), index_adr, next_index, index_bt, MemNode::unordered);
 
       } __ else_(); {
 
@@ -483,7 +483,7 @@ void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
 
   Node* curr_ct_holder_offset = __ ConX(in_bytes(ShenandoahThreadLocalData::card_table_offset()));
   Node* curr_ct_holder_addr  = __ AddP(__ top(), tls, curr_ct_holder_offset);
-  Node* curr_ct_base_addr = __ load( __ ctrl(), curr_ct_holder_addr, TypeRawPtr::NOTNULL, T_ADDRESS, Compile::AliasIdxRaw);
+  Node* curr_ct_base_addr = __ load( __ ctrl(), curr_ct_holder_addr, TypeRawPtr::NOTNULL, T_ADDRESS);
 
   // Divide by card size
   Node* card_offset = __ URShiftX( cast, __ ConI(CardTable::card_shift()) );
@@ -491,8 +491,6 @@ void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
   // Combine card table base and card offset
   Node* card_adr = __ AddP(__ top(), curr_ct_base_addr, card_offset);
 
-  // Get the alias_index for raw card-mark memory
-  int adr_type = Compile::AliasIdxRaw;
   Node*   zero = __ ConI(0); // Dirty card value
 
   if (UseCondCardMark) {
@@ -503,12 +501,12 @@ void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
     // UseCondCardMark enables MP "polite" conditional card mark
     // stores.  In theory we could relax the load from ctrl() to
     // no_ctrl, but that doesn't buy much latitude.
-    Node* card_val = __ load( __ ctrl(), card_adr, TypeInt::BYTE, T_BYTE, adr_type);
+    Node* card_val = __ load( __ ctrl(), card_adr, TypeInt::BYTE, T_BYTE);
     __ if_then(card_val, BoolTest::ne, zero);
   }
 
   // Smash zero into card
-  __ store(__ ctrl(), card_adr, zero, T_BYTE, adr_type, MemNode::unordered);
+  __ store(__ ctrl(), card_adr, zero, T_BYTE, MemNode::unordered);
 
   if (UseCondCardMark) {
     __ end_if();
