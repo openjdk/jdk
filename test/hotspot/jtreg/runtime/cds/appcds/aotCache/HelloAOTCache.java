@@ -49,6 +49,17 @@ public class HelloAOTCache {
                     out.shouldContain("HelloWorld");
                 })
             .runAOTWorkflow();
+
+        SimpleCDSAppTester.of("HelloAOTCache-with-manangment-agent")
+            // test with the initialization of a management agent
+            .addVmArgs("-Xlog:class+load", "-Dcom.sun.management.jmxremote=true")
+            .classpath("app.jar")
+            .appCommandLine("HelloAOTCacheApp")
+            .setProductionChecker((OutputAnalyzer out) -> {
+                    out.shouldMatch("class,load.*HelloAOTCacheApp.*shared objects");
+                    out.shouldContain("HelloWorld");
+                })
+            .runAOTWorkflow();
     }
 }
 
