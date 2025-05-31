@@ -36,7 +36,7 @@ import java.lang.annotation.Target;
  * Event annotation, specifies the maximum rate of events per time unit, (for
  * example, {@code "100/s"}).
  * <p>
- * If the event class annotated with {@code Throttle} are filtering by other
+ * If the event class annotated with {@code Throttle} are filtered by other
  * settings, such as a {@link jdk.jfr.Threshold} or a user-defined setting, the
  * throttling will happen after those settings have been applied.
  *
@@ -55,7 +55,7 @@ public @interface Throttle {
     /**
      * The throttle rate, for example {@code "100/s"}.
      * <p>
-     * String representation of a non-negative {@code Long} value followed by a
+     * String representation of a non-negative {@code long} value followed by a
      * forward slash ("/") and one of the following units: <br>
      * <ul style="list-style-type:none">
      * <li>{@code "ns"} (nanoseconds)</li>
