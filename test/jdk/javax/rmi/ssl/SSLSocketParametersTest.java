@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 5016500
- * @library /test/lib/
+ * @library /javax/net/ssl/templates
+ *          /test/lib/
  * @summary Test SslRmi[Client|Server]SocketFactory SSL socket parameters.
  * @run main/othervm SSLSocketParametersTest 1
  * @run main/othervm SSLSocketParametersTest 2
@@ -36,8 +37,6 @@
  */
 import jdk.test.lib.Asserts;
 
-import java.io.IOException;
-import java.io.File;
 import java.io.Serializable;
 import java.lang.ref.Reference;
 import java.rmi.ConnectIOException;
@@ -49,13 +48,17 @@ import javax.net.ssl.SSLContext;
 import javax.rmi.ssl.SslRMIClientSocketFactory;
 import javax.rmi.ssl.SslRMIServerSocketFactory;
 
-public class SSLSocketParametersTest implements Serializable {
+public class SSLSocketParametersTest extends SSLContextTemplate {
+
+    public SSLSocketParametersTest() throws Exception {
+        SSLContext.setDefault(createServerSSLContext());
+    }
 
     public interface Hello extends Remote {
         String sayHello() throws RemoteException;
     }
 
-    public class HelloImpl implements Hello {
+    public static class HelloImpl implements Hello {
         public String sayHello() {
             return "Hello World!";
         }
@@ -134,22 +137,6 @@ public class SSLSocketParametersTest implements Serializable {
     }
 
     public static void main(String[] args) throws Exception {
-        // Set keystore properties (server-side)
-        //
-        final String keystore = System.getProperty("test.src") +
-                File.separator + "keystore";
-        System.out.println("KeyStore = " + keystore);
-        System.setProperty("javax.net.ssl.keyStore", keystore);
-        System.setProperty("javax.net.ssl.keyStorePassword", "password");
-
-        // Set truststore properties (client-side)
-        //
-        final String truststore = System.getProperty("test.src") +
-                File.separator + "truststore";
-        System.out.println("TrustStore = " + truststore);
-        System.setProperty("javax.net.ssl.trustStore", truststore);
-        System.setProperty("javax.net.ssl.trustStorePassword", "trustword");
-
         SSLSocketParametersTest test = new SSLSocketParametersTest();
         test.runTest(Integer.parseInt(args[0]));
     }

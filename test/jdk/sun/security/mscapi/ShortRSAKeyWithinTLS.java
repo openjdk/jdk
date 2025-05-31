@@ -233,6 +233,10 @@ public class ShortRSAKeyWithinTLS {
     private static String clientCiperSuite = null;
 
     public static void main(String[] args) throws Exception {
+        // Disable KeyManager's algorithm constraints checking.
+        System.setProperty(
+                "jdk.tls.keymanager.disableConstraintsChecking", "true");
+
         if (debug) {
             System.setProperty("javax.net.debug", "all");
         }
