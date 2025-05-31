@@ -156,12 +156,11 @@ import compiler.lib.ir_framework.TestFramework;
  * (e.g. {@link Template.ZeroArgs#asToken()}), and use the {@link Token} inside another {@link Template#body}.
  *
  * <p>
- * Ideally, we would have used <a href="https://openjdk.org/jeps/430">string templates</a> to inject these Template arguments into the strings.
- * But since string templates are not (yet) available, the Templates provide <strong>hashtag replacements</strong>
-
- * in the {@link String}s: the Template argument names are captured, and the argument values automatically replace any
- * {@code "#name"} in the {@link String}s. See the different overloads of {@link #make} for examples. Additional hashtag
- * replacements can be defined with {@link #let}.
+ * Ideally, we would have used <a href="https://openjdk.org/jeps/430">string templates</a> to inject these Template
+ * arguments into the strings. But since string templates are not (yet) available, the Templates provide
+ * <strong>hashtag replacements</strong> in the {@link String}s: the Template argument names are captured, and
+ * the argument values automatically replace any {@code "#name"} in the {@link String}s. See the different overloads
+ * of {@link #make} for examples. Additional hashtag replacements can be defined with {@link #let}.
  *
  * <p>
  * When using nested Templates, there can be collisions with identifiers (e.g. variable names and method names).

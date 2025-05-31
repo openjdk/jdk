@@ -35,7 +35,6 @@
 package template_framework.examples;
 
 import java.util.List;
-import java.util.Random;
 import jdk.test.lib.Utils;
 
 import compiler.lib.generators.Generator;
@@ -57,8 +56,6 @@ import static compiler.lib.template_framework.Template.let;
  * classes (see {@link CompileFramework#getEscapedClassPathOfCompiledClasses}).
  */
 public class TestAdvanced {
-    private static final Random RANDOM = Utils.getRandomInstance();
-
     public static final RestrictableGenerator<Integer> GEN_BYTE = Generators.G.safeRestrict(Generators.G.ints(), Byte.MIN_VALUE, Byte.MAX_VALUE);
     public static final RestrictableGenerator<Integer> GEN_CHAR = Generators.G.safeRestrict(Generators.G.ints(), Character.MIN_VALUE, Character.MAX_VALUE);
     public static final RestrictableGenerator<Integer> GEN_SHORT = Generators.G.safeRestrict(Generators.G.ints(), Short.MIN_VALUE, Short.MAX_VALUE);
