@@ -1019,6 +1019,20 @@ public class TestResolvedJavaType extends TypeUniverse {
         }
     }
 
+    @Test
+    public void getAllMethodsTest() {
+        for (Class<?> c : classes) {
+            ResolvedJavaType type = metaAccess.lookupJavaType(c);
+            Set<ResolvedJavaMethod> allMethods = new HashSet<>(type.getAllMethods(true));
+            boolean included = Arrays.stream(type.getDeclaredMethods()).allMatch(m -> allMethods.contains(m));
+            included = included && Arrays.stream(type.getDeclaredConstructors()).allMatch(m -> allMethods.contains(m));
+            if (included && type.getClassInitializer() != null) {
+                included = allMethods.contains(type.getClassInitializer());
+            }
+            assertTrue(included);
+        }
+    }
+
     static class A {
         static String name = "foo";
     }
