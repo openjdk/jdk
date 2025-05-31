@@ -19,27 +19,23 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_JFR_JFR_INLINE_HPP
-#define SHARE_JFR_JFR_INLINE_HPP
+package jdk.jfr.event.profiling;
 
-#include "jfr/jfr.hpp"
+import jdk.test.lib.jfr.EventNames;
 
-#include "jfr/periodic/sampling/jfrThreadSampling.hpp"
-#include "runtime/javaThread.hpp"
+/**
+ * @test
+ * @requires vm.hasJFR & os.family == "linux"
+ * @library /test/lib
+ * @build jdk.jfr.event.profiling.BaseTestFullStackTrace
+ * @run main/othervm jdk.jfr.event.profiling.TestCPUTimeSampleFullStackTrace
+ */
+public class TestCPUTimeSampleFullStackTrace {
 
-inline bool Jfr::has_sample_request(JavaThread* jt) {
-  assert(jt != nullptr, "invariant");
-  JfrThreadLocal* tl = jt->jfr_thread_local();
-  return tl->has_sample_request() || tl->has_cpu_time_jfr_requests();
+    public static void main(String[] args) throws Throwable {
+        new BaseTestFullStackTrace(EventNames.CPUTimeSample, "eventThread").run();
+    }
+
 }
-
-inline void Jfr::check_and_process_sample_request(JavaThread* jt) {
-  if (has_sample_request(jt)) {
-    JfrThreadSampling::process_sample_request(jt);
-  }
-}
-
-#endif // SHARE_JFR_JFR_INLINE_HPP

@@ -26,6 +26,7 @@
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/checkpoint/objectSampleCheckpoint.hpp"
 #include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
+#include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrOopTraceId.inline.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
@@ -34,6 +35,7 @@
 #include "jfr/recorder/storage/jfrStorage.hpp"
 #include "jfr/support/jfrThreadId.inline.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
+#include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrSpinlockHelper.hpp"
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "logging/log.hpp"
@@ -78,7 +80,15 @@ JfrThreadLocal::JfrThreadLocal() :
   _enqueued_requests(false),
   _vthread(false),
   _notified(false),
-  _dead(false) {
+  _dead(false)
+#ifdef LINUX
+  ,_cpu_timer(nullptr),
+  _cpu_time_jfr_locked(UNLOCKED),
+  _has_cpu_time_jfr_requests(false),
+  _cpu_time_jfr_queue(0),
+  _wants_is_thread_in_native_stackwalking(false)
+#endif
+  {
   Thread* thread = Thread::current_or_null();
   _parent_trace_id = thread != nullptr ? jvm_thread_id(thread) : (traceid)0;
 }
@@ -129,7 +139,9 @@ void JfrThreadLocal::on_start(Thread* t) {
   if (JfrRecorder::is_recording()) {
     JfrCheckpointManager::write_checkpoint(t);
     if (t->is_Java_thread()) {
-      send_java_thread_start_event(JavaThread::cast(t));
+      JavaThread *const jt = JavaThread::cast(t);
+      send_java_thread_start_event(jt);
+      JfrCPUTimeThreadSampling::on_javathread_create(jt);
     }
   }
   if (t->jfr_thread_local()->has_cached_stack_trace()) {
@@ -221,6 +233,7 @@ void JfrThreadLocal::on_exit(Thread* t) {
   if (t->is_Java_thread()) {
     JavaThread* const jt = JavaThread::cast(t);
     send_java_thread_end_event(jt, JfrThreadLocal::jvm_thread_id(jt));
+    JfrCPUTimeThreadSampling::on_javathread_terminate(jt);
     JfrThreadCPULoadEvent::send_event_for_thread(jt);
   }
   release(tl, Thread::current()); // because it could be that Thread::current() != t
@@ -537,3 +550,74 @@ Arena* JfrThreadLocal::dcmd_arena(JavaThread* jt) {
   tl->_dcmd_arena = arena;
   return arena;
 }
+
+
+#ifdef LINUX
+
+void JfrThreadLocal::set_cpu_timer(timer_t* timer) {
+  if (_cpu_timer == nullptr) {
+    _cpu_timer = JfrCHeapObj::new_array<timer_t>(1);
+  }
+  *_cpu_timer = *timer;
+}
+
+void JfrThreadLocal::unset_cpu_timer() {
+  if (_cpu_timer != nullptr) {
+    JfrCHeapObj::free(_cpu_timer, sizeof(timer_t));
+    _cpu_timer = nullptr;
+  }
+}
+
+timer_t* JfrThreadLocal::cpu_timer() const {
+  return _cpu_timer;
+}
+
+bool JfrThreadLocal::is_cpu_time_jfr_enqueue_locked() {
+  return Atomic::load(&_cpu_time_jfr_locked) == ENQUEUE;
+}
+
+bool JfrThreadLocal::is_cpu_time_jfr_dequeue_locked() {
+  return Atomic::load(&_cpu_time_jfr_locked) == DEQUEUE;
+}
+
+bool JfrThreadLocal::acquire_cpu_time_jfr_enqueue_lock() {
+  return Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, ENQUEUE) == UNLOCKED;
+}
+
+bool JfrThreadLocal::acquire_cpu_time_jfr_native_lock() {
+  return Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, NATIVE) == UNLOCKED;
+}
+
+void JfrThreadLocal::acquire_cpu_time_jfr_dequeue_lock() {
+  while (Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, DEQUEUE) != UNLOCKED);
+}
+
+void JfrThreadLocal::release_cpu_time_jfr_queue_lock() {
+  Atomic::store(&_cpu_time_jfr_locked, UNLOCKED);
+}
+
+void JfrThreadLocal::set_has_cpu_time_jfr_requests(bool has_requests) {
+  Atomic::release_store(&_has_cpu_time_jfr_requests, has_requests);
+}
+
+bool JfrThreadLocal::has_cpu_time_jfr_requests() {
+  return Atomic::load(&_has_cpu_time_jfr_requests);
+}
+
+JfrCPUTimeTraceQueue& JfrThreadLocal::cpu_time_jfr_queue() {
+  return _cpu_time_jfr_queue;
+}
+
+void JfrThreadLocal::deallocate_cpu_time_jfr_queue() {
+  cpu_time_jfr_queue().ensure_capacity(0);
+}
+
+void JfrThreadLocal::set_wants_is_thread_in_native_stackwalking(bool wants) {
+  Atomic::release_store(&_wants_is_thread_in_native_stackwalking, wants);
+}
+
+bool JfrThreadLocal::wants_is_thread_in_native_stackwalking() {
+  return Atomic::load(&_wants_is_thread_in_native_stackwalking);
+}
+
+#endif
