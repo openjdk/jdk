@@ -95,6 +95,13 @@ void VM_Version::initialize() {
     FLAG_SET_ERGO(TrapBasedRangeChecks, false);
   }
 
+  if (PowerArchitecturePPC64 >= 9) {
+    // Performance is good since Power9.
+    if (FLAG_IS_DEFAULT(SuperwordUseVSX)) {
+      FLAG_SET_ERGO(SuperwordUseVSX, true);
+    }
+  }
+
   MaxVectorSize = SuperwordUseVSX ? 16 : 8;
   if (FLAG_IS_DEFAULT(AlignVector)) {
     FLAG_SET_ERGO(AlignVector, false);
