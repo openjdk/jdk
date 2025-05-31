@@ -61,7 +61,7 @@ public:
 
   // Check if string at position matches a malloclimit_mode_t.
   // Advance position on match.
-  bool match_mode_flag(MallocLimitMode* out) {
+  bool match_mode(MallocLimitMode* out) {
     if (eof()) {
       return false;
     }
@@ -77,9 +77,9 @@ public:
     return false;
   }
 
-  // Check if string at position matches a category name.
+  // Check if string at position matches a MemTag name.
   // Advances position on match.
-  bool match_category(MemTag* out) {
+  bool match_mem_tag(MemTag* out) {
     if (eof()) {
       return false;
     }
@@ -130,30 +130,29 @@ void MallocLimitSet::set_global_limit(size_t s, MallocLimitMode flag) {
   _glob.sz = s; _glob.mode = flag;
 }
 
-void MallocLimitSet::set_category_limit(MemTag mem_tag, size_t s, MallocLimitMode flag) {
+void MallocLimitSet::set_mem_tag_limit(MemTag mem_tag, size_t s, MallocLimitMode mode) {
   const int i = NMTUtil::tag_to_index(mem_tag);
-  _cat[i].sz = s; _cat[i].mode = flag;
+  _mtag[i].sz = s; _mtag[i].mode = mode;
 }
 
 void MallocLimitSet::reset() {
   set_global_limit(0, MallocLimitMode::trigger_fatal);
   _glob.sz = 0; _glob.mode = MallocLimitMode::trigger_fatal;
   for (int i = 0; i < mt_number_of_tags; i++) {
-    set_category_limit(NMTUtil::index_to_tag(i), 0, MallocLimitMode::trigger_fatal);
+    set_mem_tag_limit(NMTUtil::index_to_tag(i), 0, MallocLimitMode::trigger_fatal);
   }
 }
 
 void MallocLimitSet::print_on(outputStream* st) const {
-  static const char* flagnames[] = { MODE_FATAL, MODE_OOM };
   if (_glob.sz > 0) {
     st->print_cr("MallocLimit: total limit: " PROPERFMT " (%s)", PROPERFMTARGS(_glob.sz),
                  mode_to_name(_glob.mode));
   } else {
     for (int i = 0; i < mt_number_of_tags; i++) {
-      if (_cat[i].sz > 0) {
-        st->print_cr("MallocLimit: category \"%s\" limit: " PROPERFMT " (%s)",
+      if (_mtag[i].sz > 0) {
+        st->print_cr("MallocLimit: MemTag \"%s\" limit: " PROPERFMT " (%s)",
                      NMTUtil::tag_to_enum_name(NMTUtil::index_to_tag(i)),
-                     PROPERFMTARGS(_cat[i].sz), mode_to_name(_cat[i].mode));
+                     PROPERFMTARGS(_mtag[i].sz), mode_to_name(_mtag[i].mode));
       }
     }
   }
@@ -164,10 +163,10 @@ bool MallocLimitSet::parse_malloclimit_option(const char* v, const char** err) {
 #define BAIL_UNLESS(condition, errormessage) if (!(condition)) { *err = errormessage; return false; }
 
   // Global form:
-  // MallocLimit=<size>[:flag]
+  // MallocLimit=<size>[:mode]
 
-  // Category-specific form:
-  // MallocLimit=<category>:<size>[:flag][,<category>:<size>[:flag]...]
+  // MemTag-specific form:
+  // MallocLimit=<mem-tag>:<size>[:mode][,<mem-tag>:<size>[:mode]...]
 
   reset();
 
@@ -177,29 +176,29 @@ bool MallocLimitSet::parse_malloclimit_option(const char* v, const char** err) {
 
   // Global form?
   if (sst.match_size(&_glob.sz)) {
-    // Match optional mode flag (e.g. 1g:oom)
+    // Match optional mode  (e.g. 1g:oom)
     if (!sst.eof()) {
       BAIL_UNLESS(sst.match_char(':'), "Expected colon");
-      BAIL_UNLESS(sst.match_mode_flag(&_glob.mode), "Expected flag");
+      BAIL_UNLESS(sst.match_mode(&_glob.mode), "Expected mode");
     }
   }
-  // Category-specific form?
+  // MemTag-specific form?
   else {
     while (!sst.eof()) {
       MemTag mem_tag;
 
-      // Match category, followed by :
-      BAIL_UNLESS(sst.match_category(&mem_tag), "Expected category name");
-      BAIL_UNLESS(sst.match_char(':'), "Expected colon following category");
+      // Match MemTag, followed by :
+      BAIL_UNLESS(sst.match_mem_tag(&mem_tag), "Expected MemTag name");
+      BAIL_UNLESS(sst.match_char(':'), "Expected colon following MemTag");
 
-      malloclimit* const modified_limit = &_cat[NMTUtil::tag_to_index(mem_tag)];
+      malloclimit* const modified_limit = &_mtag[NMTUtil::tag_to_index(mem_tag)];
 
       // Match size
       BAIL_UNLESS(sst.match_size(&modified_limit->sz), "Expected size");
 
-      // Match optional flag
+      // Match optional mode
       if (!sst.eof() && sst.match_char(':')) {
-        BAIL_UNLESS(sst.match_mode_flag(&modified_limit->mode), "Expected flag");
+        BAIL_UNLESS(sst.match_mode(&modified_limit->mode), "Expected mode");
       }
 
       // More to come?
