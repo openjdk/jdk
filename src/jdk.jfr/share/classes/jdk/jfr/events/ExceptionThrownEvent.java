@@ -39,7 +39,7 @@ import jdk.jfr.internal.Type;
 @Category("Java Application")
 @Description("An object derived from java.lang.Exception has been created")
 @RemoveFields("duration")
-@Throttle("off")
+@Throttle
 public final class ExceptionThrownEvent extends MirrorEvent {
 
     @Label("Message")
