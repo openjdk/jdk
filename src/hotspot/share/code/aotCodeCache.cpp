@@ -139,6 +139,9 @@ void AOTCodeCache::initialize() {
     return; // AOTCache must be specified to dump and use AOT code
   }
 
+  // Disable stubs caching until JDK-8357398 is fixed.
+  FLAG_SET_ERGO(AOTStubCaching, false);
+
   if (VerifyOops) {
     // Disable AOT stubs caching when VerifyOops flag is on.
     // Verify oops code generated a lot of C strings which overflow
@@ -899,7 +902,8 @@ CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, uint id, c
   AOTCodeReader reader(cache, entry);
   CodeBlob* blob = reader.compile_code_blob(name, entry_offset_count, entry_offsets);
 
-  log_debug(aot, codecache, stubs)("Read blob '%s' (id=%u, kind=%s) from AOT Code Cache", name, id, aot_code_entry_kind_name[entry_kind]);
+  log_debug(aot, codecache, stubs)("%sRead blob '%s' (id=%u, kind=%s) from AOT Code Cache",
+                                   (blob == nullptr? "Failed to " : ""), name, id, aot_code_entry_kind_name[entry_kind]);
   return blob;
 }
 
@@ -914,8 +918,7 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name, int entry_offset_co
   if (strncmp(stored_name, name, (name_size - 1)) != 0) {
     log_warning(aot, codecache, stubs)("Saved blob's name '%s' is different from the expected name '%s'",
                                        stored_name, name);
-    ((AOTCodeCache*)_cache)->set_failed();
-    report_load_failure();
+    set_lookup_failed(); // Skip this blob
     return nullptr;
   }
 

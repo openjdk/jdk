@@ -5605,14 +5605,14 @@ public class Check {
                     if (!argExps.isEmpty() && msym instanceof MethodSymbol ms && ms.params != null) {
                         VarSymbol lastParam = ms.params.head;
                         for (VarSymbol param: ms.params) {
-                            if (param.attribute(syms.requiresIdentityType.tsym) != null && argExps.head.type.isValueBased()) {
+                            if ((param.flags_field & REQUIRES_IDENTITY) != 0 && argExps.head.type.isValueBased()) {
                                 log.warning(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
                             }
                             lastParam = param;
                             argExps = argExps.tail;
                         }
                         while (argExps != null && !argExps.isEmpty() && lastParam != null) {
-                            if (lastParam.attribute(syms.requiresIdentityType.tsym) != null && argExps.head.type.isValueBased()) {
+                            if ((lastParam.flags_field & REQUIRES_IDENTITY) != 0 && argExps.head.type.isValueBased()) {
                                 log.warning(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
                             }
                             argExps = argExps.tail;
@@ -5689,7 +5689,7 @@ public class Check {
                 SymbolMetadata sm = t.tsym.getMetadata();
                 if (sm != null && !t.getTypeArguments().isEmpty()) {
                     if (sm.getTypeAttributes().stream()
-                            .filter(ta -> ta.type.tsym == syms.requiresIdentityType.tsym &&
+                            .filter(ta -> isRequiresIdentityAnnotation(ta.type.tsym) &&
                                     t.getTypeArguments().get(ta.position.parameter_index) != null &&
                                     t.getTypeArguments().get(ta.position.parameter_index).isValueBased()).findAny().isPresent()) {
                         requiresWarning = true;
@@ -5714,11 +5714,16 @@ public class Check {
             }
             if (sm != null)
                 sm.getTypeAttributes().stream()
-                        .filter(ta -> (ta.type.tsym == syms.requiresIdentityType.tsym) &&
+                        .filter(ta -> isRequiresIdentityAnnotation(ta.type.tsym) &&
                                 typeParamTrees.get(ta.position.parameter_index).type != null &&
                                 typeParamTrees.get(ta.position.parameter_index).type.isValueBased())
                         .forEach(ta -> log.warning(typeParamTrees.get(ta.position.parameter_index).pos(),
                                 CompilerProperties.LintWarnings.AttemptToUseValueBasedWhereIdentityExpected));
         }
+    }
+
+    private boolean isRequiresIdentityAnnotation(TypeSymbol annoType) {
+        return annoType == syms.requiresIdentityType.tsym ||
+               annoType.flatName() == syms.requiresIdentityInternalType.tsym.flatName();
     }
 }
