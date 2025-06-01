@@ -28,26 +28,12 @@
  * and we're rendering on top of another frame we respect the new transparency.
  */
 
-import java.awt.Color;
-import java.awt.image.BufferedImage;
-import java.net.URL;
 
 public class GifSavedImageTransparentTest {
     public static void main(String[] args) throws Throwable {
-        URL srcURL = GifSavedImageTransparentTest.class.getResource("ukraine-flag.gif");
-        BufferedImage bi = GifComparison.run(srcURL);
-
-        Color topLeftPixel = new Color(bi.getRGB(3, 3), true);
-        if (topLeftPixel.getAlpha() != 0) {
-            throw new Error("The top left corner should be transparent");
-        }
-
-        Color topStripePixel = new Color(bi.getRGB(30, 30), true);
-        if (topStripePixel.getAlpha() != 255) {
-            throw new Error("The top stripe should be opaque");
-        }
-        if (!topStripePixel.equals(new Color(0, 91, 187))) {
-            throw new Error("The top stripe should be blue");
-        }
+        GifBuilder.test(
+                new GifBuilder.FrameDescription(GifBuilder.Disposal.doNotDispose, false),
+                new GifBuilder.FrameDescription(GifBuilder.Disposal.doNotDispose, true),
+                new GifBuilder.FrameDescription(GifBuilder.Disposal.doNotDispose, true) );
     }
 }
