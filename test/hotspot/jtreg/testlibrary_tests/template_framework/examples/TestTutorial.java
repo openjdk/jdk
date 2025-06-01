@@ -153,9 +153,9 @@ public class TestTutorial {
             "System.out.println(#arg);\n",       // capture arg via hashtag replacement
             "System.out.println(#{arg});\n",     // capture arg via hashtag replacement with brackets
             // It would have been optimal to use Java String Templates to format
-            // argument values into Strings. However, since these are (yet) available,
-            // the Template Framework provides two alternative ways of formatting
-            // Strings:
+            // argument values into Strings. However, since these are not (yet)
+            // available, the Template Framework provides two alternative ways of
+            // formatting Strings:
             // 1) By appending to the comma-separated list of Tokens passed to body().
             //    Appending as a Token works whenever one has a reference to the Object
             //    in Java code. But often, this is rather cumbersome and looks awkward,
@@ -175,7 +175,6 @@ public class TestTutorial {
             // Which one should be preferred is a code style question. Generally, we
             // prefer the use of hashtag replacements because that allows easy use of
             // multiline strings (i.e. text blocks).
-            // TODO: example where other is required.
             "if (#arg != ", arg, ") { throw new RuntimeException(\"mismatch\"); }\n"
         ));
 
@@ -254,16 +253,37 @@ public class TestTutorial {
         ));
 
         var templateClass = Template.make(() -> body(
+            // The Template Framework API only guarantees that every Template use
+            // has a unique ID. When using the Templates, all we need is that
+            // variables from different Template uses do not conflict. But it can
+            // be helpful to understand how the IDs are produced. The implementation
+            // simply gives the first Template use the ID=1, and increments from there.
+            //
+            // In this example, the templateClass is the first Template use, and
+            // has ID=1. We never use a dollar replacement here, so the code will
+            // not show any "_1".
             """
             package p.xyz;
 
             public class InnerTest3 {
                 public static void main() {
             """,
+                    // Second Template use: ID=2 -> var_2
                     template1.asToken(1),
+                    // Third Template use: ID=3 -> var_3
                     template1.asToken(7),
+                    // Fourth Template use with template2, no use of dollar, so
+                    // no "_4" shows up in the generated code. Internally, it
+                    // calls template1, shich is the fifth Template use, with
+                    // ID = 5 -> var_5
                     template2.asToken(2),
+                    // Sixth and Seventh Template use -> var_7
                     template2.asToken(5),
+                    // Eighth Template use with template4 -> var_8.
+                    // Ninth Template use with internal call to template3,
+                    // The local "$var" turns to "var_9", but the Template
+                    // argument captured value = "var_8" from the outer
+                    // template use of $("var").
                     template4.asToken(),
             """
                 }
