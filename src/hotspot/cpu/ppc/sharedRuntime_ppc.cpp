@@ -2740,6 +2740,21 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ li(r_temp_2, 0);
   __ stw(r_temp_2, in_bytes(JNIHandleBlock::top_offset()), r_temp_1);
 
+  // Prepare for return
+  // --------------------------------------------------------------------------
+  __ pop_frame();
+  __ restore_LR(R11);
+
+#if INCLUDE_JFR
+  // We need to do a poll test after unwind in case the sampler
+  // managed to sample the native frame after returning to Java.
+  Label L_stub;
+  int safepoint_offset = __ offset();
+  if (!UseSIGTRAP) {
+    __ relocate(relocInfo::poll_return_type);
+  }
+  __ safepoint_poll(L_stub, r_temp_2, true /* at_return */, true /* in_nmethod: frame already popped */);
+#endif // INCLUDE_JFR
 
   // Check for pending exceptions.
   // --------------------------------------------------------------------------
@@ -2747,13 +2762,16 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ cmpdi(CR0, r_temp_2, 0);
   __ bne(CR0, handle_pending_exception);
 
-  // Return
-  // --------------------------------------------------------------------------
-
-  __ pop_frame();
-  __ restore_LR(R11);
+  // Return.
   __ blr();
 
+  // Handler for return safepoint (out-of-line).
+#if INCLUDE_JFR
+  if (!UseSIGTRAP) {
+    __ bind(L_stub);
+    __ jump_to_polling_page_return_handler_blob(safepoint_offset);
+  }
+#endif // INCLUDE_JFR
 
   // Handler for pending exceptions (out-of-line).
   // --------------------------------------------------------------------------
@@ -2761,9 +2779,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // is the empty function. We just pop this frame and then jump to
   // forward_exception_entry.
   __ bind(handle_pending_exception);
-
-  __ pop_frame();
-  __ restore_LR(R11);
   __ b64_patchable((address)StubRoutines::forward_exception_entry(),
                        relocInfo::runtime_call_type);
 

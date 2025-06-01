@@ -490,8 +490,8 @@ void AOTClassLocationConfig::dumptime_init_helper(TRAPS) {
 
   const char* lcp = find_lcp(all_css.boot_and_app_cp(), _dumptime_lcp_len);
   if (_dumptime_lcp_len > 0) {
-    os::free((void*)lcp);
     log_info(class, path)("Longest common prefix = %s (%zu chars)", lcp, _dumptime_lcp_len);
+    os::free((void*)lcp);
   } else {
     assert(_dumptime_lcp_len == 0, "sanity");
     log_info(class, path)("Longest common prefix = <none> (0 chars)");

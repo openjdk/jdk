@@ -765,6 +765,7 @@ sun/tools/jstat/jstatLineCounts4.sh                             8248691,8268211 
 
 jdk/incubator/vector/ShortMaxVectorTests.java                   8306592 generic-i586
 jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-x64
+jdk/incubator/vector/PreferredSpeciesTest.java#id0              8358217 generic-all
 
 ############################################################################
 
