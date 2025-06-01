@@ -394,8 +394,19 @@ public class TestTutorial {
         return templateClass.render();
     }
 
-    // We saw the use of custom hooks above, but now we look at the use of CLASS_HOOK and METHOD_HOOK
-    // from the Template Library.
+    // We saw the use of custom hooks above, but now we look at the use of CLASS_HOOK and METHOD_HOOK.
+    // By convention, we use the CLASS_HOOK for class scopes, and METHOD_HOOK for method scopes.
+    // Whenever we open a class scope, we should anchor a CLASS_HOOK for that scope, and whenever we
+    // open a method, we should anchor a METHOD_HOOK. Conversely, this allows us to check if we are
+    // inside a class or method scope by querying "isAnchored". This convention helps us when building
+    // a large library of Templates. But if you are writing your own self-contained set of Templates,
+    // you do not have to follow this convention.
+    //
+    // Hooks are "re-entrant", that is we can anchor the same hook inside a scope that we already
+    // anchored it previously. The "Hook.insert" always goes to the innermost anchoring of that
+    // hook. There are cases where "re-entrant" Hooks are helpful such as nested classes, where
+    // there is a class scope inside another class scope. Similarly, we can nest lambda bodies
+    // inside method bodies, so also METHOD_HOOK can be used in such a "re-entrant" way.
     public static String generateWithLibraryHooks() {
         var templateStaticField = Template.make("name", "value", (String name, Integer value) -> body(
             """
@@ -492,6 +503,9 @@ public class TestTutorial {
             // For every recursion depth, some fuel is automatically subtracted
             // so that the fuel slowly depletes with the depth.
             // We keep the recursion going until the fuel is depleted.
+            //
+            // Note: if we forget to check the fuel(), the renderer causes a
+            //       StackOverflowException, because the recursion never ends.
             (fuel() > 0) ? binding1.get().asToken(depth + 1)
                         : "System.out.println(\"Fuel depleted.\");\n",
             """
@@ -523,8 +537,8 @@ public class TestTutorial {
     // fields and variables, which are then available inside a defined scope. "DataNames" can
     // be registered at a certain scope with addDataName. This "DataName" is then available
     // in this scope, and in any nested scope, including nested Templates. This allows us to
-    // add some fields and registers in one Template, and later on, in another Template, we
-    // can access these fields and registers again with "dataNames()".
+    // add some fields and variables in one Template, and later on, in another Template, we
+    // can access these fields and variables again with "dataNames()".
     //
     // Here are a few use-cases:
     // - You are writing some inner Template, and would like to access a random field or
@@ -633,7 +647,7 @@ public class TestTutorial {
     private record MyPrimitive(String name) implements DataName.Type {
         @Override
         public boolean isSubtypeOf(DataName.Type other) {
-            return other instanceof MyPrimitive(String n) && n == name();
+            return other instanceof MyPrimitive(String n) && n.equals(name());
         }
 
         // Note: the name method is automatically overridden by the record
