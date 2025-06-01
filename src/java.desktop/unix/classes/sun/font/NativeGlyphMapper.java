@@ -79,6 +79,11 @@ public final class NativeGlyphMapper extends CharToGlyphMapper {
     }
 
     @Override
+    public int charToGlyphRaw(int unicode) {
+        return charToGlyph(unicode);
+    }
+
+    @Override
     public void charsToGlyphs(int count, char[] unicodes, int[] glyphs) {
         for (int i=0; i<count; i++) {
             char code = unicodes[i];
