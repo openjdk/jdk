@@ -29,11 +29,11 @@
  * index changes.
  */
 
-import java.net.URL;
-
 public class GifErasureTest {
     public static void main(String[] args) throws Throwable {
-        URL srcURL = GifErasureTest.class.getResource("leo.gif");
-        GifComparison.run(srcURL);
+        GifBuilder.test(
+                new GifBuilder.FrameDescription(GifBuilder.Disposal.doNotDispose, false),
+                new GifBuilder.FrameDescription(GifBuilder.Disposal.restoreToBackgroundColor, true),
+                new GifBuilder.FrameDescription(GifBuilder.Disposal.doNotDispose, false) );
     }
 }
