@@ -247,6 +247,8 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
       break;
     }
 
+    biased = true;
+
     // Check for a matching compiled method.
     if (current->cb()->as_nmethod_or_null() == sampled_nm) {
       if (current->pc() != sampled_pc) {
@@ -254,13 +256,13 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
         const PcDesc* const pc_desc = get_pc_desc(sampled_nm, sampled_pc);
         if (is_valid(pc_desc)) {
           current->adjust_pc(pc_desc->real_pc(sampled_nm));
+          biased = false;
         }
       }
     }
     // Either a hit or a mismatched sample in which case we trace from the sender.
     // Yet another instance of safepoint bias,to be addressed with
     // more exact and stricter versions when parsable blobs become available.
-    biased = true;
     top_frame = *current;
     break;
   }

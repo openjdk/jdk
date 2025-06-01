@@ -86,7 +86,7 @@ JfrThreadLocal::JfrThreadLocal() :
   _cpu_time_jfr_locked(UNLOCKED),
   _has_cpu_time_jfr_requests(false),
   _cpu_time_jfr_queue(0),
-  _wants_is_thread_in_native_stackwalking(false)
+  _do_async_processing_of_cpu_time_jfr_requests(false)
 #endif
   {
   Thread* thread = Thread::current_or_null();
@@ -612,12 +612,12 @@ void JfrThreadLocal::deallocate_cpu_time_jfr_queue() {
   cpu_time_jfr_queue().ensure_capacity(0);
 }
 
-void JfrThreadLocal::set_wants_is_thread_in_native_stackwalking(bool wants) {
-  Atomic::release_store(&_wants_is_thread_in_native_stackwalking, wants);
+void JfrThreadLocal::set_do_async_processing_of_cpu_time_jfr_requests(bool wants) {
+  Atomic::release_store(&_do_async_processing_of_cpu_time_jfr_requests, wants);
 }
 
-bool JfrThreadLocal::wants_is_thread_in_native_stackwalking() {
-  return Atomic::load(&_wants_is_thread_in_native_stackwalking);
+bool JfrThreadLocal::wants_async_processing_of_cpu_time_jfr_requests() {
+  return Atomic::load(&_do_async_processing_of_cpu_time_jfr_requests);
 }
 
 #endif

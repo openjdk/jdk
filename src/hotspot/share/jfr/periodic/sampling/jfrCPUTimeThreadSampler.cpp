@@ -180,7 +180,7 @@ class JfrCPUTimeThreadSampler : public NonJavaThread {
   volatile bool _disenrolled;
   volatile bool _stop_signals;
   volatile int _active_signal_handlers;
-  volatile bool _is_thread_in_native_stackwalking_triggered;
+  volatile bool _is_async_processing_of_cpu_time_jfr_requests_triggered;
 
   JfrCPUTimeThreadSampler(double rate, bool autoadapt);
 
@@ -216,7 +216,7 @@ public:
   void init_timers();
   void stop_timer();
 
-  void trigger_is_thread_in_native_stackwalking();
+  void trigger_async_processing_of_cpu_time_jfr_requests();
 };
 
 
@@ -229,12 +229,12 @@ JfrCPUTimeThreadSampler::JfrCPUTimeThreadSampler(double rate, bool autoadapt) :
   _disenrolled(true),
   _stop_signals(false),
   _active_signal_handlers(0),
-  _is_thread_in_native_stackwalking_triggered(false) {
+  _is_async_processing_of_cpu_time_jfr_requests_triggered(false) {
   assert(rate >= 0, "invariant");
 }
 
-void JfrCPUTimeThreadSampler::trigger_is_thread_in_native_stackwalking() {
-  Atomic::release_store(&_is_thread_in_native_stackwalking_triggered, true);
+void JfrCPUTimeThreadSampler::trigger_async_processing_of_cpu_time_jfr_requests() {
+  Atomic::release_store(&_is_async_processing_of_cpu_time_jfr_requests_triggered, true);
 }
 
 void JfrCPUTimeThreadSampler::on_javathread_create(JavaThread* thread) {
@@ -314,8 +314,8 @@ void JfrCPUTimeThreadSampler::run() {
       last_autoadapt_check = os::javaTimeNanos();
     }
 
-    if (Atomic::load_acquire(&_is_thread_in_native_stackwalking_triggered)) {
-      Atomic::release_store(&_is_thread_in_native_stackwalking_triggered, false);
+    if (Atomic::load_acquire(&_is_async_processing_of_cpu_time_jfr_requests_triggered)) {
+      Atomic::release_store(&_is_async_processing_of_cpu_time_jfr_requests_triggered, false);
       stackwalk_threads_in_native();
     }
     os::naked_sleep(100);
@@ -329,11 +329,11 @@ void JfrCPUTimeThreadSampler::stackwalk_threads_in_native() {
   for (size_t i = 0; i < tlh.list()->length(); i++) {
     JavaThread* jt = tlh.list()->thread_at(i);
     JfrThreadLocal* tl = jt->jfr_thread_local();
-    if (tl != nullptr && tl->wants_is_thread_in_native_stackwalking()) {
+    if (tl != nullptr && tl->wants_async_processing_of_cpu_time_jfr_requests()) {
       if (!tl->acquire_cpu_time_jfr_native_lock()) {
         continue;
       }
-      tl->set_wants_is_thread_in_native_stackwalking(false);
+      tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
       stackwalk_thread_in_native(jt);
       tl->release_cpu_time_jfr_queue_lock();
     }
@@ -507,9 +507,9 @@ void JfrCPUTimeThreadSampling::on_javathread_terminate(JavaThread *thread) {
   }
 }
 
-void JfrCPUTimeThreadSampling::trigger_is_thread_in_native_stackwalking() {
+void JfrCPUTimeThreadSampling::trigger_async_processing_of_cpu_time_jfr_requests() {
   if (_instance != nullptr && _instance->_sampler != nullptr) {
-    _instance->_sampler->trigger_is_thread_in_native_stackwalking();
+    _instance->_sampler->trigger_async_processing_of_cpu_time_jfr_requests();
   }
 }
 
@@ -555,7 +555,7 @@ void JfrCPUTimeThreadSampler::handle_timer_signal(siginfo_t* info, void* context
   if (!check_state(jt) ||
       jt->is_JfrRecorder_thread()) {
       queue.increment_lost_samples();
-      tl->set_wants_is_thread_in_native_stackwalking(false);
+      tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
     return;
   }
   if (!tl->acquire_cpu_time_jfr_enqueue_lock()) {
@@ -580,10 +580,10 @@ void JfrCPUTimeThreadSampler::handle_timer_signal(siginfo_t* info, void* context
   if (jt->thread_state() == _thread_in_native &&
       queue.size() > queue.capacity() * 2 / 3) {
     // we are in native code and the queue is getting full
-    tl->set_wants_is_thread_in_native_stackwalking(true);
-    JfrCPUTimeThreadSampling::trigger_is_thread_in_native_stackwalking();
+    tl->set_do_async_processing_of_cpu_time_jfr_requests(true);
+    JfrCPUTimeThreadSampling::trigger_async_processing_of_cpu_time_jfr_requests();
   } else {
-    tl->set_wants_is_thread_in_native_stackwalking(false);
+    tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
   }
 
   tl->release_cpu_time_jfr_queue_lock();

@@ -33,7 +33,6 @@ class NonJavaThread;
 
 #if defined(LINUX)
 
-#include "memory/padded.hpp"
 #include "jfr/periodic/sampling/jfrSampleRequest.hpp"
 
 struct JfrCPUTimeSampleRequest {
@@ -129,7 +128,7 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   static void send_lost_event(const JfrTicks& time, traceid tid, s4 lost_samples);
 
   // Trigger sampling while a thread is not in a safepoint, from a seperate thread
-  static void trigger_is_thread_in_native_stackwalking();
+  static void trigger_async_processing_of_cpu_time_jfr_requests();
 };
 
 #else
