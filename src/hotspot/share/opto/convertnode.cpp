@@ -260,43 +260,60 @@ Node* ConvF2HFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     }
   }
 
-  Node* con_inp = nullptr;
-  Node* var_inp = nullptr;
+  // Detects following ideal graph pattern
+  //      ConvF2HF(binopF(conF, ConvHF2F(varS))) =>
+  //              ReinterpretHF2SNode(binopHF(conHF, ReinterpretS2HFNode(varS)))
+  Node* conF = nullptr;
+  Node* varS = nullptr;
   if (Float16NodeFactory::is_float32_binary_oper(in(1)->Opcode())) {
-    Node* f32bOp = in(1);
+    Node* binopF = in(1);
     // Check if incoming binary operation has one floating point constant
     // input and other a half precision to single precision upcasting node.
     // We land here because prior HalfFloat to Float conversion promotes
     // integral constant holding Float16 value to a floating point constant
     // i.e. ConvHF2F ConI(short) => ConF
-    if (f32bOp->in(1)->is_Con() && f32bOp->in(2)->Opcode() == Op_ConvHF2F) {
-      con_inp = f32bOp->in(1);
-      var_inp = f32bOp->in(2)->in(1);
-    } else if (f32bOp->in(2)->is_Con() &&  f32bOp->in(1)->Opcode() == Op_ConvHF2F) {
-      con_inp = f32bOp->in(2);
-      var_inp = f32bOp->in(1)->in(1);
+    if (binopF->in(1)->is_Con() && binopF->in(2)->Opcode() == Op_ConvHF2F) {
+      conF = binopF->in(1);
+      varS = binopF->in(2)->in(1);
+    } else if (binopF->in(2)->is_Con() &&  binopF->in(1)->Opcode() == Op_ConvHF2F) {
+      conF = binopF->in(2);
+      varS = binopF->in(1)->in(1);
     }
 
-    if (con_inp && var_inp &&
-        con_inp->bottom_type()->is_float_constant() &&
-        Matcher::match_rule_supported(Float16NodeFactory::get_float16_binary_oper(f32bOp->Opcode())) &&
+    if (conF != nullptr &&
+        varS != nullptr &&
+        conF->bottom_type()->is_float_constant() &&
+        Matcher::match_rule_supported(Float16NodeFactory::get_float16_binary_oper(binopF->Opcode())) &&
         Matcher::match_rule_supported(Op_ReinterpretS2HF) &&
         Matcher::match_rule_supported(Op_ReinterpretHF2S) &&
         StubRoutines::hf2f_adr() != nullptr &&
         StubRoutines::f2hf_adr() != nullptr) {
-      jfloat conF = con_inp->bottom_type()->getf();
-      // If constant lie within Float16 value range, convert it to
-      // a half-float constant.
-      if (StubRoutines::hf2f(StubRoutines::f2hf(conF)) == conF) {
-        Node* new_var_inp = phase->transform(new ReinterpretS2HFNode(var_inp));
-        Node* new_con_inp = phase->makecon(TypeH::make(conF));
-        Node* f16bOp = nullptr;
-        if (f32bOp->in(1) == con_inp) {
-          f16bOp = phase->transform(Float16NodeFactory::make(f32bOp->Opcode(), f32bOp->in(0), new_con_inp, new_var_inp));
+      jfloat con = conF->bottom_type()->getf();
+      // Conditions under which floating point constant can be considered for a pattern match.
+      // 1. Constant must lie within Float16 value range, this will ensure that
+      // we don't unintentially round off float constant to enforce a pattern match.
+      // 2. If constant value is one of the valid IEEE 754 binary32 NaN bit pattern
+      // then its safe to consider it for pattern match because of following reasons
+      //   a. As per section 2.8 of JVMS, Java Virtual Machine does not support
+      //   signaling NaN value.
+      //   b. Any signaling NaN which takes part in a non-comparison expression
+      //   results into a quiet NaN but preserves the significand bits of signaling NaN.
+      //   c. Pattern being matched includes a Float to Float16 conversion after binary
+      //   expression, this downcast will still preserve significand bits of binary32 NaN.
+      bool isnan = ((*reinterpret_cast<jint*>(&con) & 0x7F800000) == 0x7F800000) &&
+                   ((*reinterpret_cast<jint*>(&con) & 0x7FFFFF) != 0);
+      if (StubRoutines::hf2f(StubRoutines::f2hf(con)) == con || isnan) {
+        Node* newVarHF = phase->transform(new ReinterpretS2HFNode(varS));
+        Node* conHF = phase->makecon(TypeH::make(con));
+        Node* binopHF = nullptr;
+        // Preserving original input order for semantic correctness
+        // of non-commutative operation.
+        if (binopF->in(1) == conF) {
+          binopHF = phase->transform(Float16NodeFactory::make(binopF->Opcode(), binopF->in(0), conHF, newVarHF));
         } else {
-          f16bOp = phase->transform(Float16NodeFactory::make(f32bOp->Opcode(), f32bOp->in(0), new_var_inp, new_con_inp));
+          binopHF = phase->transform(Float16NodeFactory::make(binopF->Opcode(), binopF->in(0), newVarHF, conHF));
         }
-        return new ReinterpretHF2SNode(f16bOp);
+        return new ReinterpretHF2SNode(binopHF);
       }
     }
   }

@@ -562,8 +562,6 @@ const Type* SubFPNode::Value(PhaseGVN* phase) const {
 const Type* SubHFNode::sub(const Type* t1, const Type* t2) const {
   // Half precision floating point subtraction follows the rules of IEEE 754
   // applicable to other floating point types.
-  // There are no known undefined, unspecified or implimentation specific
-  // behaviors w.r.t to floating point non-pointer subtraction.
   if (t1->isa_half_float_constant() &&
       t2->isa_half_float_constant())  {
     return TypeH::make(t1->getf() - t2->getf());

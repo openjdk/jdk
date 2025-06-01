@@ -32,9 +32,13 @@
 * @run driver TestFloat16ScalarOperations
 */
 import compiler.lib.ir_framework.*;
+import compiler.lib.verify.*;
 import jdk.incubator.vector.Float16;
 import static jdk.incubator.vector.Float16.*;
 import java.util.Random;
+
+import compiler.lib.generators.Generator;
+import static compiler.lib.generators.Generators.G;
 
 public class TestFloat16ScalarOperations {
     private static final int count = 1024;
@@ -55,13 +59,14 @@ public class TestFloat16ScalarOperations {
     private static final Float16 MAX_HALF_ULP = Float16.valueOf(16.0f);
     private static final Float16 SIGNALING_NAN = shortBitsToFloat16((short)31807);
 
-    private static Random r = jdk.test.lib.Utils.getRandomInstance();
+    private static Generator<Float> genF = G.uniformFloats(0.0f, 70000.0f);
+    private static Generator<Short> genHF = G.uniformFloat16s(Float.floatToFloat16(-2000.0f), Float.floatToFloat16(2000.0f));
 
-    private static final Float16 RANDOM1 = Float16.valueOf(r.nextFloat() * MAX_VALUE.floatValue());
-    private static final Float16 RANDOM2 = Float16.valueOf(r.nextFloat() * MAX_VALUE.floatValue());
-    private static final Float16 RANDOM3 = Float16.valueOf(r.nextFloat() * MAX_VALUE.floatValue());
-    private static final Float16 RANDOM4 = Float16.valueOf(r.nextFloat() * MAX_VALUE.floatValue());
-    private static final Float16 RANDOM5 = Float16.valueOf(r.nextFloat() * MAX_VALUE.floatValue());
+    private static final Float16 RANDOM1 = Float16.valueOf(genF.next());
+    private static final Float16 RANDOM2 = Float16.valueOf(genF.next());
+    private static final Float16 RANDOM3 = Float16.valueOf(genF.next());
+    private static final Float16 RANDOM4 = Float16.valueOf(genF.next());
+    private static final Float16 RANDOM5 = Float16.valueOf(genF.next());
 
     private static Float16 RANDOM1_VAR = RANDOM1;
     private static Float16 RANDOM2_VAR = RANDOM2;
@@ -84,11 +89,9 @@ public class TestFloat16ScalarOperations {
     public TestFloat16ScalarOperations() {
         src = new short[count];
         dst = new short[count];
-        fl = new float[count];
-        for (int i = 0; i < count; i++) {
-            src[i] = Float.floatToFloat16(r.nextFloat() * MAX_VALUE.floatValue());
-            fl[i] = r.nextFloat();
-        }
+        fl  = new float[count];
+        G.fill(genF, fl);
+        G.fill(genHF, src);
     }
 
     static void assertResult(float actual, float expected, String msg) {
@@ -276,7 +279,7 @@ public class TestFloat16ScalarOperations {
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
     @IR(counts = {IRNode.MUL_HF, " >0 ", IRNode.REINTERPRET_S2HF, " >0 ", IRNode.REINTERPRET_HF2S, " >0 "},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
-    public void testDivByPOT() {
+    public Float16 testDivByPOT() {
         Float16 res = valueOf(0.0f);
         for (int i = 0; i < 50; i++) {
             Float16 divisor = valueOf(8.0f);
@@ -287,7 +290,14 @@ public class TestFloat16ScalarOperations {
             divisor = valueOf(32.0f);
             res = add(res, divide(dividend, divisor));
         }
-        dst[0] = float16ToRawShortBits(res);
+        return res;
+    }
+
+    @Check(test="testDivByPOT")
+    public void checkDivByPOT(Float16 actual) throws Exception {
+        TestFramework.deoptimize(TestFloat16ScalarOperations.class.getMethod("testDivByPOT"));
+        Float16 expected = testDivByPOT();
+        Verify.checkEQ(Float16.float16ToRawShortBits(expected), Float16.float16ToRawShortBits(actual));
     }
 
     @Test
@@ -295,14 +305,21 @@ public class TestFloat16ScalarOperations {
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
     @IR(counts = {IRNode.MUL_HF, " 0 ", IRNode.ADD_HF, " >0 ", IRNode.REINTERPRET_S2HF, " >0 ", IRNode.REINTERPRET_HF2S, " >0 "},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
-    public void testMulByTWO() {
+    public Float16 testMulByTWO() {
         Float16 res = valueOf(0.0f);
         Float16 multiplier = valueOf(2.0f);
         for (int i = 0; i < 20; i++) {
             Float16 multiplicand = valueOf((float)i);
             res = add(res, multiply(multiplicand, multiplier));
         }
-        assertResult(res.floatValue(), (float)((20 * (20 - 1))/2) * 2.0f, "testMulByTWO");
+        return res;
+    }
+
+    @Check(test="testMulByTWO")
+    public void checkMulByTWO(Float16 actual) throws Exception {
+        TestFramework.deoptimize(TestFloat16ScalarOperations.class.getMethod("testMulByTWO"));
+        Float16 expected = testMulByTWO();
+        Verify.checkEQ(Float16.float16ToRawShortBits(expected), Float16.float16ToRawShortBits(actual));
     }
 
     @Test
@@ -310,42 +327,42 @@ public class TestFloat16ScalarOperations {
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
     @IR(counts = {IRNode.ADD_HF, " 0 ", IRNode.SUB_HF, " 0 ", IRNode.MUL_HF, " 0 ", IRNode.DIV_HF, " 0 "},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
-    public void testInexactFP16ConstantPatterns() {
+    public short testInexactFP16ConstantPatterns() {
         short res = 0;
-         res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() + INEXACT_FP16);
-         res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() - INEXACT_FP16);
-         res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() * INEXACT_FP16);
-         res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() / INEXACT_FP16);
-         assertResult(Float.float16ToFloat(res), 32.125f, "testInexactFP16ConstantPatterns");
+        res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() + INEXACT_FP16);
+        res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() - INEXACT_FP16);
+        res += Float.floatToFloat16(INEXACT_FP16 * POSITIVE_ZERO_VAR.floatValue());
+        res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() / INEXACT_FP16);
+        return res;
+    }
+
+    @Check(test="testInexactFP16ConstantPatterns")
+    public void checkInexactFP16ConstantPatterns(short actual) throws Exception {
+        TestFramework.deoptimize(TestFloat16ScalarOperations.class.getMethod("testInexactFP16ConstantPatterns"));
+        short expected = testInexactFP16ConstantPatterns();
+        Verify.checkEQ(expected, actual);
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_HF, " 0 ", IRNode.SUB_HF, " 0 ", IRNode.MUL_HF, " 0 ", IRNode.DIV_HF, " 0 "},
+    @IR(counts = {IRNode.ADD_HF, " >0 ", IRNode.SUB_HF, " >0 ", IRNode.MUL_HF, " >0 ", IRNode.DIV_HF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
-    @IR(counts = {IRNode.ADD_HF, " 0 ", IRNode.SUB_HF, " 0 ", IRNode.MUL_HF, " 0 ", IRNode.DIV_HF, " 0 "},
+    @IR(counts = {IRNode.ADD_HF, " >0 ", IRNode.SUB_HF, " >0 ", IRNode.MUL_HF, " >0 ", IRNode.DIV_HF, " >0 "},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     @Warmup(10000)
-    public void testSNaNFP16ConstantPatterns() {
+    public short testSNaNFP16ConstantPatterns() {
         short res = 0;
-         res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() + SNAN_FP16);
-         res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() - SNAN_FP16);
-         res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() * SNAN_FP16);
-         res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() / SNAN_FP16);
-         assertResult(Float.float16ToFloat(res), -32768.0f, "testSNaNFP16ConstantPatterns");
+        res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() + SNAN_FP16);
+        res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() - SNAN_FP16);
+        res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() * SNAN_FP16);
+        res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() / SNAN_FP16);
+        return res;
     }
 
-    @Test
-    @IR(counts = {IRNode.ADD_HF, " 0 ", IRNode.SUB_HF, " 0 ", IRNode.MUL_HF, " 0 ", IRNode.DIV_HF, " 0 "},
-        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
-    @IR(counts = {IRNode.ADD_HF, " 0 ", IRNode.SUB_HF, " 0 ", IRNode.MUL_HF, " 0 ", IRNode.DIV_HF, " 0 "},
-        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
-    public void testQNaNFP16ConstantPatterns() {
-        short res = 0;
-         res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() + QNAN_FP16);
-         res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() - QNAN_FP16);
-         res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() * QNAN_FP16);
-         res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() / QNAN_FP16);
-         assertResult(Float.float16ToFloat(res), -32768.0f, "testQNaNFP16ConstantPatterns");
+    @Check(test="testSNaNFP16ConstantPatterns")
+    public void checkSNaNFP16ConstantPatterns(short actual) throws Exception {
+        TestFramework.deoptimize(TestFloat16ScalarOperations.class.getMethod("testSNaNFP16ConstantPatterns"));
+        short expected = testSNaNFP16ConstantPatterns();
+        Verify.checkEQ(expected, actual);
     }
 
     @Test
@@ -353,14 +370,67 @@ public class TestFloat16ScalarOperations {
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
     @IR(counts = {IRNode.ADD_HF, " >0 ", IRNode.SUB_HF, " >0 ", IRNode.MUL_HF, " >0 ", IRNode.DIV_HF, " >0 "},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
-    public void testExactFP16ConstantPatterns() {
+    @Warmup(10000)
+    public short testQNaNFP16ConstantPatterns() {
         short res = 0;
-         res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() + EXACT_FP16);
-         res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() - EXACT_FP16);
-         res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() * EXACT_FP16);
-         res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() / EXACT_FP16);
-         assertResult(Float.float16ToFloat(res), 32.125f, "testExactFP16ConstantPatterns");
+        res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() + QNAN_FP16);
+        res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() - QNAN_FP16);
+        res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() * QNAN_FP16);
+        res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() / QNAN_FP16);
+        return res;
     }
+
+    @Check(test="testQNaNFP16ConstantPatterns")
+    public void checkQNaNFP16ConstantPatterns(short actual) throws Exception {
+        TestFramework.deoptimize(TestFloat16ScalarOperations.class.getMethod("testQNaNFP16ConstantPatterns"));
+        short expected = testQNaNFP16ConstantPatterns();
+        Verify.checkEQ(expected, actual);
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_HF, " >0 ", IRNode.SUB_HF, " >0 ", IRNode.MUL_HF, " >0 ", IRNode.DIV_HF, " >0 "},
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
+    @IR(counts = {IRNode.ADD_HF, " >0 ", IRNode.SUB_HF, " >0 ", IRNode.MUL_HF, " >0 ", IRNode.DIV_HF, " >0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+    @Warmup(10000)
+    public short testExactFP16ConstantPatterns() {
+        short res = 0;
+        res += Float.floatToFloat16(EXACT_FP16 + POSITIVE_ZERO_VAR.floatValue());
+        res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() - EXACT_FP16);
+        res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() * EXACT_FP16);
+        res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() / EXACT_FP16);
+        return res;
+    }
+
+    @Check(test="testExactFP16ConstantPatterns")
+    public void checkExactFP16ConstantPatterns(short actual) throws Exception {
+        TestFramework.deoptimize(TestFloat16ScalarOperations.class.getMethod("testExactFP16ConstantPatterns"));
+        short expected = testExactFP16ConstantPatterns();
+        Verify.checkEQ(expected, actual);
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_HF, " >0 ", IRNode.SUB_HF, " >0 ", IRNode.MUL_HF, " >0 ", IRNode.DIV_HF, " >0 "},
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
+    @IR(counts = {IRNode.ADD_HF, " >0 ", IRNode.SUB_HF, " >0 ", IRNode.MUL_HF, " >0 ", IRNode.DIV_HF, " >0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+    @Warmup(10000)
+    public short testRandomFP16ConstantPatterns() {
+        short res = 0;
+        res += Float.floatToFloat16(RANDOM1_VAR.floatValue() + RANDOM2.floatValue());
+        res += Float.floatToFloat16(RANDOM2_VAR.floatValue() - RANDOM3.floatValue());
+        res += Float.floatToFloat16(RANDOM3_VAR.floatValue() * RANDOM4.floatValue());
+        res += Float.floatToFloat16(RANDOM4_VAR.floatValue() / RANDOM5.floatValue());
+        return res;
+    }
+
+    @Check(test="testRandomFP16ConstantPatterns")
+    public void checkRandomFP16ConstantPatterns(short actual) throws Exception {
+        TestFramework.deoptimize(TestFloat16ScalarOperations.class.getMethod("testRandomFP16ConstantPatterns"));
+        short expected = testRandomFP16ConstantPatterns();
+        Verify.checkEQ(expected, actual);
+    }
+
 
     //
     // Tests points for various Float16 constant folding transforms. Following figure represents various
@@ -678,7 +748,6 @@ public class TestFloat16ScalarOperations {
     }
 
     @Test
-    @Warmup(value = 10000)
     @IR(counts = {IRNode.ADD_HF, " >0 ", IRNode.SUB_HF, " >0 ", IRNode.MUL_HF, " >0 ",
                   IRNode.DIV_HF, " >0 ", IRNode.SQRT_HF, " >0 ", IRNode.FMA_HF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
