@@ -44,23 +44,10 @@ import java.util.stream.Stream;
  */
 final class Renderer {
     private static final String NAME_CHARACTERS = "[a-zA-Z_][a-zA-Z0-9_]*";
-    private static final Pattern DOLLAR_NAME_PATTERN = Pattern.compile(
-        "\\$" +
-        // After the dollar, we either have "name" or "{name}"
-        "(?:" + // non-capturing group for the OR
-            // capturing group for "name"
-            "(" + NAME_CHARACTERS + ")" +
-        "|" + // OR
-            // We want to trim off the brackets, so have
-            // another non-capturing group.
-            "(?:\\{" +
-                // capturing group for "name" inside of "{name}"
-                "(" + NAME_CHARACTERS + ")" +
-            "\\})" +
-        ")");
-    private static final Pattern HASHTAG_REPLACEMENT_PATTERN = Pattern.compile(
-        "#" +
-        // After the hashtag, we either have "name" or "{name}"
+    private static final Pattern NAME_PATTERN = Pattern.compile(
+        // The pattern must be at the beginning of the String part.
+        "^" +
+        // We either have "name" or "{name}"
         "(?:" + // non-capturing group for the OR
             // capturing group for "name"
             "(" + NAME_CHARACTERS + ")" +
@@ -267,7 +254,7 @@ final class Renderer {
     private void renderToken(Token token) {
         switch (token) {
             case StringToken(String s) -> {
-                currentCodeFrame.addString(templateString(s));
+                renderStringWithDollarAndHashtagReplacements(s);
             }
             case NothingToken() -> {
                 // Nothing.
@@ -340,20 +327,40 @@ final class Renderer {
         }
     }
 
-    private String templateString(String s) {
-        var temp = DOLLAR_NAME_PATTERN.matcher(s).replaceAll(
-            (MatchResult result) -> $(
-                // There are two groups: (1) for "$name" and (2) for "${name}"
-                result.group(1) != null ? result.group(1) : result.group(2)
-            )
-        );
-        return HASHTAG_REPLACEMENT_PATTERN.matcher(temp).replaceAll(
-            // We must escape "$", because it has a special meaning in replaceAll.
-            (MatchResult result) -> getHashtagReplacement(
-                // There are two groups: (1) for "#name" and (2) for "#{name}"
-                result.group(1) != null ? result.group(1) : result.group(2)
-            ).replace("\\", "\\\\").replace("$", "\\$")
-        );
+    private void renderStringWithDollarAndHashtagReplacements(String s) {
+        int count = 0;
+        int start = 0;
+        boolean lastWasDollar = false;
+        do {
+            int dollar  = s.indexOf("$", start);
+            int hashtag = s.indexOf("#", start);
+            dollar  = (dollar == -1)  ? s.length() : dollar;
+            hashtag = (hashtag == -1) ? s.length() : hashtag;
+            int next = Math.min(dollar, hashtag);
+            String part = s.substring(start, next);
+            if (count == 0) {
+                // First part has no "#" or "$" before it.
+                currentCodeFrame.addString(part);
+            } else {
+                // All others must do the replacement.
+                final boolean isDollar = lastWasDollar;
+                // TODO: add verification if we do not match? Add tests?
+                currentCodeFrame.addString(NAME_PATTERN.matcher(part).replaceFirst(
+                    (MatchResult result) -> {
+                        // There are two groups: (1) for "name" and (2) for "{name}"
+                        String name = result.group(1) != null ? result.group(1) : result.group(2);
+                        if (isDollar) {
+                            return $(name);
+                        } else {
+                            return getHashtagReplacement(name).replace("\\", "\\\\").replace("$", "\\$");
+                        }
+                    }
+                ));
+            }
+            start = next + 1; // drop the "#" or "$"
+            lastWasDollar = next == dollar;
+            count++;
+        } while (start < s.length());
     }
 
     boolean isAnchored(Hook hook) {
