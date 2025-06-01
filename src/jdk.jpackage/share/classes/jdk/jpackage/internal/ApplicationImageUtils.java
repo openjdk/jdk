@@ -84,7 +84,7 @@ final class ApplicationImageUtils {
 
     static ApplicationImageTaskAction<Application, ApplicationLayout> createWriteRuntimeAction() {
         return env -> {
-            env.app().runtimeBuilder().orElseThrow().createRuntime(env.resolvedLayout());
+            env.app().runtimeBuilder().orElseThrow().create(env.resolvedLayout());
         };
     }
 
