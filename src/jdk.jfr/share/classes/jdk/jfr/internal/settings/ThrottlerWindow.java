@@ -45,8 +45,7 @@ final class ThrottlerWindow {
             return;
         }
         measuredPopulationSize.set(0);
-        endTicks = JVM.counterTime() +
-        JVMSupport.nanosToTicks(1_000_000L * parameters.windowDurationMillis);
+        endTicks = JVM.counterTime() + JVMSupport.nanosToTicks(1_000_000L * parameters.windowDurationMillis);
     }
 
     boolean isExpired(long timestamp) {

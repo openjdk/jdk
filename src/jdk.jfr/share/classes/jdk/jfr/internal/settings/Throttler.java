@@ -52,7 +52,7 @@ public final class Throttler {
     private ThrottlerParameters lastParameters = new ThrottlerParameters(0, 0, 0);
     private long sampleSize;
     private long periodMillis;
-    private volatile boolean disabled;
+    private boolean disabled;
     private boolean update = true;
 
     public Throttler(PlatformEventType t) {
@@ -117,7 +117,7 @@ public final class Throttler {
 
     private ThrottlerWindow setRate(ThrottlerParameters parameters, ThrottlerWindow expired) {
         ThrottlerWindow next = nextWindow(expired);
-        long projectedSampleSize = parameters.samplePointsPerWindow + amortizedDebt(expired);
+        long projectedSampleSize = parameters.samplePointsPerWindow + amortizeDebt(expired);
         if (projectedSampleSize == 0) {
             next.projectedPopulationSize = 0;
             return next;
@@ -127,7 +127,7 @@ public final class Throttler {
         return next;
     }
 
-    private long amortizedDebt(ThrottlerWindow expired) {
+    private long amortizeDebt(ThrottlerWindow expired) {
         long accumulatedDebt = expired.accumulatedDebt();
         if (accumulatedDebtCarryCount == accumulatedDebtCarryLimit) {
             accumulatedDebtCarryCount = 1;
@@ -145,9 +145,10 @@ public final class Throttler {
         double projectProbability = adjustBoundary(sampleSize) / adjustBoundary(populationSize);
         return nextGeometric(adjustBoundary(projectProbability), randomGenerator.nextDouble());
     }
-     double projectPopulationSize(ThrottlerWindow expired) {
-         averagePopulationSize = exponentiallyWeightedMovingAverage(expired.populationSize(), ewmaPopulationSize, averagePopulationSize);
-         return averagePopulationSize;
+
+    private double projectPopulationSize(ThrottlerWindow expired) {
+        averagePopulationSize = exponentiallyWeightedMovingAverage(expired.populationSize(), ewmaPopulationSize, averagePopulationSize);
+        return averagePopulationSize;
     }
 
     private static long nextGeometric(double p, double u) {
