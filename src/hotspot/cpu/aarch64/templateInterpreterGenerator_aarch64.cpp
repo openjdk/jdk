@@ -1888,6 +1888,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   Interpreter::_remove_activation_preserving_args_entry = __ pc();
   __ empty_expression_stack();
+  __ restore_bcp(); // We have just deoptimized this frame so restore rbcp.
   // Set the popframe_processing bit in pending_popframe_condition
   // indicating that we are currently handling popframe, so that
   // call_VMs that may happen later do not trigger new popframe
