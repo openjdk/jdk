@@ -28,13 +28,11 @@
  * the disposal method changes from 2 to 1
  */
 
-import java.awt.Color;
-import java.awt.image.BufferedImage;
-import java.net.URL;
-
 public class GifEmptyBackgroundTest {
     public static void main(String[] args) throws Throwable {
-        URL srcURL = GifEmptyBackgroundTest.class.getResource("clyde.gif");
-        BufferedImage bi = GifComparison.run(srcURL);
+        GifBuilder.test(
+                new GifBuilder.FrameDescription(GifBuilder.Disposal.restoreToBackgroundColor, false),
+                new GifBuilder.FrameDescription(GifBuilder.Disposal.doNotDispose, false),
+                new GifBuilder.FrameDescription(GifBuilder.Disposal.doNotDispose, false) );
     }
 }
