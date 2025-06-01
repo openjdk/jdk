@@ -428,24 +428,6 @@ bool AOTCodeCache::Config::verify() const {
     AOTStubCaching = false;
   }
 
-  // The rest of checks do not affect AOT stubs caching
-
-  if (((_flags & enableContendedPadding) != 0) != EnableContended) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with EnableContended = %s", EnableContended ? "false" : "true");
-  }
-  if (((_flags & restrictContendedPadding) != 0) != RestrictContended) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with RestrictContended = %s", RestrictContended ? "false" : "true");
-  }
-  if (_contendedPaddingWidth != (uint)ContendedPaddingWidth) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with ContendedPaddingWidth = %d vs current %d", _contendedPaddingWidth, ContendedPaddingWidth);
-  }
-
-  if (((_flags & systemClassAssertions) != 0) != JavaAssertions::systemClassDefault()) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with JavaAssertions::systemClassDefault() = %s", JavaAssertions::systemClassDefault() ? "disabled" : "enabled");
-  }
-  if (((_flags & userClassAssertions) != 0) != JavaAssertions::userClassDefault()) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with JavaAssertions::userClassDefault() = %s", JavaAssertions::userClassDefault() ? "disabled" : "enabled");
-  }
   return true;
 }
 
@@ -982,6 +964,8 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name, int entry_offset_co
 
 // ------------ process code and data --------------
 
+// Can't use -1. It is valid value for jump to iteself destination
+// used by static call stub: see NativeJump::jump_destination().
 #define BAD_ADDRESS_ID -2
 
 bool AOTCodeCache::write_relocations(CodeBlob& code_blob) {
@@ -1008,7 +992,7 @@ bool AOTCodeCache::write_relocations(CodeBlob& code_blob) {
         break;
       }
       case relocInfo::runtime_call_w_cp_type:
-        log_debug(aot, codecache, reloc)("runtime_call_w_cp_type relocation is not unimplemented");
+        log_debug(aot, codecache, reloc)("runtime_call_w_cp_type relocation is not implemented");
         return false;
       case relocInfo::external_word_type: {
         // Record offset of runtime target
@@ -1078,7 +1062,7 @@ void AOTCodeReader::fix_relocations(CodeBlob* code_blob) {
       }
       case relocInfo::runtime_call_w_cp_type:
         // this relocation should not be in cache (see write_relocations)
-        assert(false, "runtime_call_w_cp_type relocation is not unimplemented");
+        assert(false, "runtime_call_w_cp_type relocation is not implemented");
         break;
       case relocInfo::external_word_type: {
         address target = _cache->address_for_id(reloc_data[j]);
