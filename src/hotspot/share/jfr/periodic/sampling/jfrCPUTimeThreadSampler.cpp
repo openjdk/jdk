@@ -70,7 +70,7 @@ static JavaThread* get_java_thread_if_valid() {
 }
 
 JfrCPUTimeTraceQueue::JfrCPUTimeTraceQueue(u4 capacity) :
-  _capacity(capacity), _head(0), _lost_samples(0), _first_native_request_index(-1) {
+  _capacity(capacity), _head(0), _lost_samples(0) {
   _data = JfrCHeapObj::new_array<JfrCPUTimeSampleRequest>(capacity);
 }
 
@@ -160,14 +160,6 @@ void JfrCPUTimeTraceQueue::ensure_capacity_for_period(u4 period_millis) {
 
 void JfrCPUTimeTraceQueue::clear() {
   Atomic::release_store(&_head, (u4)0);
-}
-
-void JfrCPUTimeTraceQueue::set_first_native_request_index(s4 index) {
-  Atomic::release_store(&_first_native_request_index, index);
-}
-
-s4 JfrCPUTimeTraceQueue::first_native_request_index() const {
-  return Atomic::load_acquire(&_first_native_request_index);
 }
 
 static int64_t compute_sampling_period(double rate) {
@@ -368,11 +360,8 @@ void JfrCPUTimeThreadSampler::stackwalk_thread_in_native(JavaThread* thread) {
   if (queue.is_empty()) {
     return;
   }
-  s4 first_index = queue.first_native_request_index();
-  assert(first_index >= 0, "invariant");
-
   const frame top_frame = thread->last_frame();
-  for (u4 i = first_index; i < queue.size(); i++) {
+  for (u4 i = 0; i < queue.size(); i++) {
     JfrCPUTimeSampleRequest& request = queue.at(i);
     JfrStackTrace stacktrace;
     traceid tid = JfrThreadLocal::thread_id(thread);
@@ -384,12 +373,10 @@ void JfrCPUTimeThreadSampler::stackwalk_thread_in_native(JavaThread* thread) {
       JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, sid, tid, request._cpu_time_period, false);
     }
   }
-  queue.set_first_native_request_index(-1);
   if (queue.lost_samples() > 0) {
     const JfrTicks now = JfrTicks::now();
     JfrCPUTimeThreadSampling::send_lost_event(now, JfrThreadLocal::thread_id(thread), queue.get_and_reset_lost_samples());
   }
-  queue.set_size(first_index);
 }
 
 
@@ -595,13 +582,8 @@ void JfrCPUTimeThreadSampler::handle_timer_signal(siginfo_t* info, void* context
     // we are in native code and the queue is getting full
     tl->set_wants_is_thread_in_native_stackwalking(true);
     JfrCPUTimeThreadSampling::trigger_is_thread_in_native_stackwalking();
-    if (queue.first_native_request_index() == -1) {
-      // this is the first native request, set the index
-      queue.set_first_native_request_index(queue.size() - 1);
-    }
   } else {
     tl->set_wants_is_thread_in_native_stackwalking(false);
-    queue.set_first_native_request_index(-1);
   }
 
   tl->release_cpu_time_jfr_queue_lock();
