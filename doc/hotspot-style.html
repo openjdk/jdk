@@ -1116,7 +1116,7 @@ function name and the parameter list.</li>
 href="http://wg21.link/n3050">n3050</a>) are permitted with restrictions
 described below.</p>
 <ul>
-<li>Only the abbreviated form of <code>noexcept</code> exception
+<li>Only the argument-less form of <code>noexcept</code> exception
 specifications are permitted. <code>noexcept</code> exception
 specifications with arguments are forbidden.</li>
 <li>Allocation functions that may return <code>nullptr</code> to
@@ -1135,7 +1135,7 @@ distinct purposes.</p>
 in support of exceptions being thrown by a function. But this is
 unnecessary, because exceptions are disabled.</p>
 <p>The second is to allow the compiler and library code to choose
-different algorithms, depending on whether a some function may throw
+different algorithms, depending on whether some function may throw
 exceptions. This is only relevant to a certain set of functions.</p>
 <ul>
 <li><p>Some allocation functions (<code>operator new</code> and
@@ -1145,8 +1145,8 @@ allocation function, it must check for and handle that possibility.
 Declaring such a function <code>noexcept</code> informs the compiler
 that <code>nullptr</code> is a possible result. If an allocation
 function is not declared <code>noexcept</code> then the compiler may
-elide that checking and handling for a using <code>new</code>
-expression.</p></li>
+elide that checking and handling for a <code>new</code> expression
+calling that function.</p></li>
 <li><p>Certain Standard Library facilities (notably containers) provide
 different guarantees for some operations (and may choose different
 algorithms to implement those operations), depending on whether certain

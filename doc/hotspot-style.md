@@ -1110,7 +1110,7 @@ Use of `noexcept` exception specifications
 ([n3050](http://wg21.link/n3050))
 are permitted with restrictions described below.
 
-* Only the abbreviated form of `noexcept` exception specifications are
+* Only the argument-less form of `noexcept` exception specifications are
 permitted. `noexcept` exception specifications with arguments are forbidden.
 * Allocation functions that may return `nullptr` to indicate allocation
 failure must be declared `noexcept`.
@@ -1128,7 +1128,7 @@ of exceptions being thrown by a function. But this is unnecessary, because
 exceptions are disabled.
 
 The second is to allow the compiler and library code to choose different
-algorithms, depending on whether a some function may throw exceptions. This is
+algorithms, depending on whether some function may throw exceptions. This is
 only relevant to a certain set of functions.
 
 * Some allocation functions (`operator new` and `operator new[]`) return
@@ -1136,7 +1136,8 @@ only relevant to a certain set of functions.
 allocation function, it must check for and handle that possibility. Declaring
 such a function `noexcept` informs the compiler that `nullptr` is a possible
 result. If an allocation function is not declared `noexcept` then the compiler
-may elide that checking and handling for a using `new` expression.
+may elide that checking and handling for a `new` expression calling that
+function.
 
 * Certain Standard Library facilities (notably containers) provide different
 guarantees for some operations (and may choose different algorithms to
