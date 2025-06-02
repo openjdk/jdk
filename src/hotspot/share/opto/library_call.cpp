@@ -245,6 +245,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
   case vmIntrinsics::_dtanh:
+  case vmIntrinsics::_dcbrt:
   case vmIntrinsics::_dabs:
   case vmIntrinsics::_fabs:
   case vmIntrinsics::_iabs:
@@ -1886,6 +1887,9 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
   case vmIntrinsics::_dtanh:
     return StubRoutines::dtanh() != nullptr ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dtanh(), "dtanh") : false;
+  case vmIntrinsics::_dcbrt:
+    return StubRoutines::dcbrt() != nullptr ?
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dcbrt(), "dcbrt") : false;
   case vmIntrinsics::_dexp:
     return StubRoutines::dexp() != nullptr ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dexp(),  "dexp") :
@@ -7741,6 +7745,7 @@ bool LibraryCallKit::inline_kyberNttMult() {
   ntta = must_be_not_null(ntta, true);
   nttb = must_be_not_null(nttb, true);
   zetas = must_be_not_null(zetas, true);
+
   Node* result_start  = array_element_address(result, intcon(0), T_SHORT);
   assert(result_start, "result is null");
   Node* ntta_start  = array_element_address(ntta, intcon(0), T_SHORT);

@@ -51,10 +51,24 @@ import jdk.jfr.internal.util.Utils;
 public final class ThrottleSetting extends SettingControl {
     public static final String DEFAULT_VALUE = Throttle.DEFAULT;
     private final PlatformEventType eventType;
-    private String value = DEFAULT_VALUE;
+    private final String defaultValue;
+    private String value;
 
-    public ThrottleSetting(PlatformEventType eventType) {
-       this.eventType = Objects.requireNonNull(eventType);
+    public ThrottleSetting(PlatformEventType eventType, String defaultValue) {
+        this.eventType = Objects.requireNonNull(eventType);
+        this.defaultValue = validRate(defaultValue);
+        this.value = defaultValue;
+    }
+
+    private String validRate(String defaultValue) {
+        if (DEFAULT_VALUE.equals(defaultValue)) {
+            return DEFAULT_VALUE; // Fast path to avoid parsing
+        }
+        if (Rate.of(defaultValue) == null) {
+            Utils.warnInvalidAnnotation(eventType, "Throttle", defaultValue, DEFAULT_VALUE);
+            return DEFAULT_VALUE;
+        }
+        return defaultValue;
     }
 
     @Override
@@ -70,8 +84,7 @@ public final class ThrottleSetting extends SettingControl {
                 }
             }
         }
-        // "off" is default
-        return Objects.requireNonNullElse(text, DEFAULT_VALUE);
+        return Objects.requireNonNullElse(text, defaultValue);
     }
 
     @Override

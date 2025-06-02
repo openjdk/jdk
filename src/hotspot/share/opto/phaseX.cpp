@@ -1029,7 +1029,7 @@ void PhaseIterGVN::optimize() {
   // max_live_nodes_increase_per_iteration in between checks. If this
   // assumption does not hold, there is a risk that we exceed the max node
   // limit in between checks and trigger an assert during node creation.
-  const int max_live_nodes_increase_per_iteration = NodeLimitFudgeFactor * 2;
+  const int max_live_nodes_increase_per_iteration = NodeLimitFudgeFactor * 3;
 
   uint loop_count = 0;
   // Pull from worklist and transform the node. If the node has changed,

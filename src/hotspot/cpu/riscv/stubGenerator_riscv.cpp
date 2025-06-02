@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2025, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -886,7 +886,7 @@ class StubGenerator: public StubCodeGenerator {
 
   void copy_memory_v(Register s, Register d, Register count, int step) {
     bool is_backward = step < 0;
-    int granularity = uabs(step);
+    int granularity = g_uabs(step);
 
     const Register src = x30, dst = x31, vl = x14, cnt = x15, tmp1 = x16, tmp2 = x17;
     assert_different_registers(s, d, cnt, vl, tmp1, tmp2);
@@ -948,7 +948,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     bool is_backwards = step < 0;
-    int granularity = uabs(step);
+    int granularity = g_uabs(step);
 
     const Register src = x30, dst = x31, cnt = x15, tmp3 = x16, tmp4 = x17, tmp5 = x14, tmp6 = x13;
     const Register gct1 = x28, gct2 = x29, gct3 = t2;
@@ -1633,6 +1633,126 @@ class StubGenerator: public StubCodeGenerator {
     BLOCK_COMMENT("arraycopy_range_checks done");
   }
 
+  address generate_unsafecopy_common_error_exit() {
+    address start = __ pc();
+    __ mv(x10, 0);
+    __ leave();
+    __ ret();
+    return start;
+  }
+
+  //
+  //  Generate 'unsafe' set memory stub
+  //  Though just as safe as the other stubs, it takes an unscaled
+  //  size_t (# bytes) argument instead of an element count.
+  //
+  //  Input:
+  //    c_rarg0   - destination array address
+  //    c_rarg1   - byte count (size_t)
+  //    c_rarg2   - byte value
+  //
+  address generate_unsafe_setmemory() {
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::unsafe_setmemory_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+
+    // bump this on entry, not on exit:
+    // inc_counter_np(SharedRuntime::_unsafe_set_memory_ctr);
+
+    Label L_fill_elements;
+
+    const Register dest = c_rarg0;
+    const Register count = c_rarg1;
+    const Register value = c_rarg2;
+    const Register cnt_words = x28; // temp register
+    const Register tmp_reg   = x29; // temp register
+
+    // Mark remaining code as such which performs Unsafe accesses.
+    UnsafeMemoryAccessMark umam(this, true, false);
+
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    // if count < 8, jump to L_fill_elements
+    __ mv(tmp_reg, 8); // 8 bytes fill by element
+    __ bltu(count, tmp_reg, L_fill_elements);
+
+    // Propagate byte to 64-bit width
+    // 8 bit -> 16 bit
+    __ zext(value, value, 8);
+    __ slli(tmp_reg, value, 8);
+    __ orr(value, value, tmp_reg);
+    // 16 bit -> 32 bit
+    __ slli(tmp_reg, value, 16);
+    __ orr(value, value, tmp_reg);
+    // 32 bit -> 64 bit
+    __ slli(tmp_reg, value, 32);
+    __ orr(value, value, tmp_reg);
+
+    // Align source address at 8 bytes address boundary.
+    Label L_skip_align1, L_skip_align2, L_skip_align4;
+    // One byte misalignment happens.
+    __ test_bit(tmp_reg, dest, 0);
+    __ beqz(tmp_reg, L_skip_align1);
+    __ sb(value, Address(dest, 0));
+    __ addi(dest, dest, 1);
+    __ subi(count, count, 1);
+
+    __ bind(L_skip_align1);
+    // Two bytes misalignment happens.
+    __ test_bit(tmp_reg, dest, 1);
+    __ beqz(tmp_reg, L_skip_align2);
+    __ sh(value, Address(dest, 0));
+    __ addi(dest, dest, 2);
+    __ subi(count, count, 2);
+
+    __ bind(L_skip_align2);
+    // Four bytes misalignment happens.
+    __ test_bit(tmp_reg, dest, 2);
+    __ beqz(tmp_reg, L_skip_align4);
+    __ sw(value, Address(dest, 0));
+    __ addi(dest, dest, 4);
+    __ subi(count, count, 4);
+    __ bind(L_skip_align4);
+
+    //  Fill large chunks
+    __ srli(cnt_words, count, 3); // number of words
+    __ slli(tmp_reg, cnt_words, 3);
+    __ sub(count, count, tmp_reg);
+    {
+      __ fill_words(dest, cnt_words, value);
+    }
+
+    // Handle copies less than 8 bytes
+    __ bind(L_fill_elements);
+    Label L_fill_2, L_fill_1, L_exit;
+    __ test_bit(tmp_reg, count, 2);
+    __ beqz(tmp_reg, L_fill_2);
+    __ sb(value, Address(dest, 0));
+    __ sb(value, Address(dest, 1));
+    __ sb(value, Address(dest, 2));
+    __ sb(value, Address(dest, 3));
+    __ addi(dest, dest, 4);
+
+    __ bind(L_fill_2);
+    __ test_bit(tmp_reg, count, 1);
+    __ beqz(tmp_reg, L_fill_1);
+    __ sb(value, Address(dest, 0));
+    __ sb(value, Address(dest, 1));
+    __ addi(dest, dest, 2);
+
+    __ bind(L_fill_1);
+    __ test_bit(tmp_reg, count, 0);
+    __ beqz(tmp_reg, L_exit);
+    __ sb(value, Address(dest, 0));
+
+    __ bind(L_exit);
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
   //
   //  Generate 'unsafe' array copy stub
   //  Though just as safe as the other stubs, it takes an unscaled
@@ -2076,8 +2196,8 @@ class StubGenerator: public StubCodeGenerator {
       switch (t) {
         case T_BYTE:
           // One byte misalignment happens only for byte arrays.
-          __ test_bit(t0, to, 0);
-          __ beqz(t0, L_skip_align1);
+          __ test_bit(tmp_reg, to, 0);
+          __ beqz(tmp_reg, L_skip_align1);
           __ sb(value, Address(to, 0));
           __ addi(to, to, 1);
           __ subiw(count, count, 1);
@@ -2085,8 +2205,8 @@ class StubGenerator: public StubCodeGenerator {
           // Fallthrough
         case T_SHORT:
           // Two bytes misalignment happens only for byte and short (char) arrays.
-          __ test_bit(t0, to, 1);
-          __ beqz(t0, L_skip_align2);
+          __ test_bit(tmp_reg, to, 1);
+          __ beqz(tmp_reg, L_skip_align2);
           __ sh(value, Address(to, 0));
           __ addi(to, to, 2);
           __ subiw(count, count, 2 >> shift);
@@ -2094,8 +2214,8 @@ class StubGenerator: public StubCodeGenerator {
           // Fallthrough
         case T_INT:
           // Align to 8 bytes, we know we are 4 byte aligned to start.
-          __ test_bit(t0, to, 2);
-          __ beqz(t0, L_skip_align4);
+          __ test_bit(tmp_reg, to, 2);
+          __ beqz(tmp_reg, L_skip_align4);
           __ sw(value, Address(to, 0));
           __ addi(to, to, 4);
           __ subiw(count, count, 4 >> shift);
@@ -2121,69 +2241,51 @@ class StubGenerator: public StubCodeGenerator {
       __ fill_words(to, cnt_words, value);
     }
 
-    // Remaining count is less than 8 bytes and address is heapword aligned.
-    Label L_fill_2, L_fill_4, L_exit1;
-    switch (t) {
-      case T_BYTE:
-        __ test_bit(t0, count, 0);
-        __ beqz(t0, L_fill_2);
-        __ sb(value, Address(to, 0));
-        __ addi(to, to, 1);
-        __ bind(L_fill_2);
-        __ test_bit(t0, count, 1);
-        __ beqz(t0, L_fill_4);
-        __ sh(value, Address(to, 0));
-        __ addi(to, to, 2);
-        __ bind(L_fill_4);
-        __ test_bit(t0, count, 2);
-        __ beqz(t0, L_exit1);
-        __ sw(value, Address(to, 0));
-        break;
-      case T_SHORT:
-        __ test_bit(t0, count, 0);
-        __ beqz(t0, L_fill_4);
-        __ sh(value, Address(to, 0));
-        __ addi(to, to, 2);
-        __ bind(L_fill_4);
-        __ test_bit(t0, count, 1);
-        __ beqz(t0, L_exit1);
-        __ sw(value, Address(to, 0));
-        break;
-      case T_INT:
-        __ beqz(count, L_exit1);
-        __ sw(value, Address(to, 0));
-        break;
-      default: ShouldNotReachHere();
-    }
-    __ bind(L_exit1);
-    __ leave();
-    __ ret();
-
     // Handle copies less than 8 bytes.
-    Label L_loop1, L_loop2, L_exit2;
+    // Address may not be heapword aligned.
+    Label L_fill_1, L_fill_2, L_exit;
     __ bind(L_fill_elements);
-    __ beqz(count, L_exit2);
     switch (t) {
       case T_BYTE:
-        __ bind(L_loop1);
+        __ test_bit(tmp_reg, count, 2);
+        __ beqz(tmp_reg, L_fill_2);
         __ sb(value, Address(to, 0));
-        __ addi(to, to, 1);
-        __ subiw(count, count, 1);
-        __ bnez(count, L_loop1);
+        __ sb(value, Address(to, 1));
+        __ sb(value, Address(to, 2));
+        __ sb(value, Address(to, 3));
+        __ addi(to, to, 4);
+
+        __ bind(L_fill_2);
+        __ test_bit(tmp_reg, count, 1);
+        __ beqz(tmp_reg, L_fill_1);
+        __ sb(value, Address(to, 0));
+        __ sb(value, Address(to, 1));
+        __ addi(to, to, 2);
+
+        __ bind(L_fill_1);
+        __ test_bit(tmp_reg, count, 0);
+        __ beqz(tmp_reg, L_exit);
+        __ sb(value, Address(to, 0));
         break;
       case T_SHORT:
-        __ bind(L_loop2);
+        __ test_bit(tmp_reg, count, 1);
+        __ beqz(tmp_reg, L_fill_2);
         __ sh(value, Address(to, 0));
-        __ addi(to, to, 2);
-        __ subiw(count, count, 2 >> shift);
-        __ bnez(count, L_loop2);
+        __ sh(value, Address(to, 2));
+        __ addi(to, to, 4);
+
+        __ bind(L_fill_2);
+        __ test_bit(tmp_reg, count, 0);
+        __ beqz(tmp_reg, L_exit);
+        __ sh(value, Address(to, 0));
         break;
       case T_INT:
+        __ beqz(count, L_exit);
         __ sw(value, Address(to, 0));
         break;
       default: ShouldNotReachHere();
     }
-    __ bind(L_exit2);
+    __ bind(L_exit);
     __ leave();
     __ ret();
 
@@ -2201,6 +2303,9 @@ class StubGenerator: public StubCodeGenerator {
 
     generate_copy_longs(StubGenStubId::copy_byte_f_id, copy_f, c_rarg0, c_rarg1, t1);
     generate_copy_longs(StubGenStubId::copy_byte_b_id, copy_b, c_rarg0, c_rarg1, t1);
+
+    address ucm_common_error_exit     = generate_unsafecopy_common_error_exit();
+    UnsafeMemoryAccess::set_common_exit_stub_pc(ucm_common_error_exit);
 
     StubRoutines::riscv::_zero_blocks = generate_zero_blocks();
 
@@ -2272,6 +2377,8 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_arrayof_jbyte_fill = generate_fill(StubGenStubId::arrayof_jbyte_fill_id);
     StubRoutines::_arrayof_jshort_fill = generate_fill(StubGenStubId::arrayof_jshort_fill_id);
     StubRoutines::_arrayof_jint_fill = generate_fill(StubGenStubId::arrayof_jint_fill_id);
+
+    StubRoutines::_unsafe_setmemory    = generate_unsafe_setmemory();
   }
 
   void generate_aes_loadkeys(const Register &key, VectorRegister *working_vregs, int rounds) {

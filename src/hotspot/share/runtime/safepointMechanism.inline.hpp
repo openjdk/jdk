@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,9 @@
 #include "runtime/handshake.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermarkSet.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.inline.hpp"
+#endif
 
 // Caller is responsible for using a memory barrier if needed.
 inline void SafepointMechanism::ThreadData::set_polling_page(uintptr_t poll_value) {
@@ -54,6 +57,10 @@ bool SafepointMechanism::local_poll_armed(JavaThread* thread) {
 
 bool SafepointMechanism::global_poll() {
   return (SafepointSynchronize::_state != SafepointSynchronize::_not_synchronized);
+}
+
+inline bool SafepointMechanism::has_pending_safepoint(JavaThread* thread) {
+  return global_poll() || thread->handshake_state()->has_operation() JFR_ONLY(|| Jfr::has_sample_request(thread));
 }
 
 bool SafepointMechanism::should_process(JavaThread* thread, bool allow_suspend) {
