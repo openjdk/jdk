@@ -41,7 +41,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class ManagementAgent {
     public static void main(String... args) throws Exception {
-        SimpleCDSAppTester.of("HelloAOTCache-with-manangment-agent")
+        SimpleCDSAppTester.of("HelloAOTCache-with-management-agent")
             // test with the initialization of a management agent
             .addVmArgs("-Xlog:class+load", "-Dcom.sun.management.jmxremote=true")
             .classpath("app.jar")
