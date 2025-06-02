@@ -2870,10 +2870,11 @@ BaseCountedLoopNode* BaseCountedLoopNode::make(Node* entry, Node* backedge, Basi
   return new LongCountedLoopNode(entry, backedge);
 }
 
-void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, LoopNode* inner_cl, PhaseIterGVN* igvn,
-                                              PhaseIdealLoop* iloop) {
-  Node* cle_out = inner_cle->proj_out(false);
-  Node* cle_tail = inner_cle->proj_out(true);
+void OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(PhaseIterGVN* igvn,
+                                                                        PhaseIdealLoop* iloop) const {
+  CountedLoopNode* inner_cl = inner_counted_loop();
+  Node* cle_out = inner_loop_exit();
+
   if (cle_out->outcnt() > 1) {
     // Look for chains of stores that were sunk
     // out of the inner loop and are in the outer loop
@@ -2988,11 +2989,73 @@ void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, Loo
   }
 }
 
+// Sunk stores should be referenced from an outer loop memory Phi
+void OuterStripMinedLoopNode::handle_sunk_stores_at_expansion(PhaseIterGVN* igvn) {
+  Node* cle_exit_proj = inner_loop_exit();
+
+  // Sunk stores are pinned on the loop exit projection of the inner loop
+#ifdef ASSERT
+  int stores_in_outer_loop_cnt = 0;
+  for (DUIterator_Fast imax, i = cle_exit_proj->fast_outs(imax); i < imax; i++) {
+    Node* u = cle_exit_proj->fast_out(i);
+    if (u->is_Store()) {
+      stores_in_outer_loop_cnt++;
+    }
+  }
+#endif
+
+  // Sunk stores are reachable from the memory state of the outer loop safepoint
+  Node* safepoint = outer_safepoint();
+  Node* safepoint_mem = safepoint->in(TypeFunc::Memory);
+  if (safepoint_mem->is_MergeMem()) {
+    MergeMemNode* mm = safepoint_mem->as_MergeMem();
+    DEBUG_ONLY(int stores_in_outer_loop_cnt2 = 0);
+    for (MergeMemStream mms(mm); mms.next_non_empty(); ) {
+      Node* mem = mms.memory();
+      Node* last = mem;
+      Node* first = nullptr;
+      while (mem->is_Store() && mem->in(0) == cle_exit_proj) {
+        DEBUG_ONLY(stores_in_outer_loop_cnt2++);
+        first = mem;
+        mem = mem->in(MemNode::Memory);
+      }
+      if (first != nullptr) {
+        // Found a chain of Stores that were sunk
+        // Do we already have a memory Phi for that slice on the outer loop? If that is the case, that Phi was created
+        // by cloning an inner loop Phi. The inner loop Phi should have mem, the memory state of the first Store out of
+        // the inner loop as input on the backedge. So does the outer loop Phi given it's a clone.
+        Node* phi = nullptr;
+        for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
+          Node* u = mem->fast_out(i);
+          if (u->is_Phi() && u->in(0) == this && u->in(LoopBackControl) == mem) {
+            assert(phi == nullptr, "there should be only one");
+            phi = u;
+            PRODUCT_ONLY(break);
+          }
+        }
+        if (phi == nullptr) {
+          // No outer loop Phi? create one
+          phi = PhiNode::make(this, last);
+          phi->set_req(EntryControl, mem);
+          phi = igvn->transform(phi);
+          igvn->replace_input_of(first, MemNode::Memory, phi);
+        } else {
+          // Fix memory state along the backedge: it should be the last sunk Stores of the chain
+          igvn->replace_input_of(phi, LoopBackControl, last);
+        }
+      }
+    }
+    assert(stores_in_outer_loop_cnt == stores_in_outer_loop_cnt2, "inconsistent");
+  } else {
+    assert(stores_in_outer_loop_cnt == 0, "inconsistent");
+  }
+}
+
 void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
   // Look for the outer & inner strip mined loop, reduce number of
   // iterations of the inner loop, set exit condition of outer loop,
   // construct required phi nodes for outer loop.
-  CountedLoopNode* inner_cl = unique_ctrl_out()->as_CountedLoop();
+  CountedLoopNode* inner_cl = inner_counted_loop();
   assert(inner_cl->is_strip_mined(), "inner loop should be strip mined");
   if (LoopStripMiningIter == 0) {
     remove_outer_loop_and_safepoint(igvn);
@@ -3010,7 +3073,7 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
     inner_cl->clear_strip_mined();
     return;
   }
-  CountedLoopEndNode* inner_cle = inner_cl->loopexit();
+  CountedLoopEndNode* inner_cle = inner_counted_loop_end();
 
   int stride = inner_cl->stride_con();
   // For a min int stride, LoopStripMiningIter * stride overflows the int range for all values of LoopStripMiningIter
@@ -3111,6 +3174,8 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
     }
   }
 
+  handle_sunk_stores_at_expansion(igvn);
+
   if (iv_phi != nullptr) {
     // Now adjust the inner loop's exit condition
     Node* limit = inner_cl->limit();
@@ -3166,7 +3231,7 @@ void OuterStripMinedLoopNode::transform_to_counted_loop(PhaseIterGVN* igvn, Phas
   CountedLoopEndNode* inner_cle = inner_cl->loopexit();
   Node* safepoint = outer_safepoint();
 
-  fix_sunk_stores(inner_cle, inner_cl, igvn, iloop);
+  fix_sunk_stores_when_back_to_counted_loop(igvn, iloop);
 
   // make counted loop exit test always fail
   ConINode* zero = igvn->intcon(0);
