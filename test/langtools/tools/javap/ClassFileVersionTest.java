@@ -60,6 +60,7 @@ public class ClassFileVersionTest {
         return Stream.of(
             of(createClassFile(classFile, major17, 0), false),
             of(createClassFile(classFile, major17, preview), false),
+            of(createClassFile(classFile, 0, 0), false),
             of(createClassFile(classFile, major17, 0, AccessFlag.PUBLIC), false),
             of(createClassFile(classFile, major17, preview, AccessFlag.PUBLIC), false),
             of(createClassFile(classFile, majorLatest, preview, AccessFlag.PUBLIC), false),

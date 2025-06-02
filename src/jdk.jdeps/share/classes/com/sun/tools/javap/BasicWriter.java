@@ -60,19 +60,12 @@ public class BasicWriter {
 
     protected Set<AccessFlag> maskToAccessFlagsReportUnknown(int mask, AccessFlag.Location location, ClassFileFormatVersion cffv) {
         try {
-            return maskToAccessFlagsNullSafe(mask, location, cffv);
+            return AccessFlag.maskToAccessFlags(mask, location, cffv);
         } catch (IllegalArgumentException ex) {
-            mask &= cffv != null ? location.flagsMask(cffv) : location.flagsMask();
+            mask &= location.flagsMask(cffv);
             report("Access Flags: " + ex.getMessage());
-            return maskToAccessFlagsNullSafe(mask, location, cffv);
+            return AccessFlag.maskToAccessFlags(mask, location, cffv);
         }
-    }
-
-    private Set<AccessFlag> maskToAccessFlagsNullSafe(int mask, AccessFlag.Location location, ClassFileFormatVersion cffv) {
-        if (cffv == null) {
-            return AccessFlag.maskToAccessFlags(mask, location);
-        }
-        return AccessFlag.maskToAccessFlags(mask, location, cffv);
     }
 
     protected void print(String s) {
