@@ -22,7 +22,7 @@
  *
  */
 
- #include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
+#include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
@@ -321,9 +321,9 @@ void JfrCPUTimeThreadSampler::stackwalk_threads_in_native() {
     JavaThread* jt = tlh.list()->thread_at(i);
     JfrThreadLocal* tl = jt->jfr_thread_local();
     if (tl->wants_async_processing_of_cpu_time_jfr_requests()) {
-      if (!tl->try_acquire_cpu_time_jfr_dequeue_lock()) {
-        // the thread is already processing requests at its safepoint
-        continue;
+      if (!jt->has_last_Java_frame() || !tl->try_acquire_cpu_time_jfr_dequeue_lock()) {
+        tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
+        continue; // thread doesn't have a last Java frame or queue is already being processed
       }
       tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
       stackwalk_thread_in_native(jt);
