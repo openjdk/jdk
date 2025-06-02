@@ -229,6 +229,12 @@ public abstract class VectorAliasing {
     })
     public static class VectorAliasingSuperWordWithoutSlowLoopOptimizations extends VectorAliasing {}
 
+    @Fork(value = 1, jvmArgs = {
+        "-XX:+UseSuperWord",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:AutoVectorizationOverrideProfitability=0"
+    })
+    public static class VectorAliasingSuperWordPretendNotProfitable extends VectorAliasing {}
 
     @Fork(value = 1, jvmArgs = {
         "-XX:+UseSuperWord"
