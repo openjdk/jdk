@@ -1442,7 +1442,7 @@ nmethod::nmethod(nmethod* nm) : CodeBlob(nm->_name, nm->_kind, nm->_size, nm->_h
   _immutable_data_size          = nm->_immutable_data_size;
   if (_immutable_data_size > 0) {
     _immutable_data             = nm->_immutable_data;
-    set_immutable_data_references(get_immutable_data_references() + 1);
+    set_immutable_data_references_counter(get_immutable_data_references_counter() + 1);
   } else {
     _immutable_data             = blob_end();
   }
@@ -1798,7 +1798,7 @@ nmethod::nmethod(
       memcpy(speculations_begin(), speculations, speculations_len);
     }
 #endif
-    set_immutable_data_references(1);
+    set_immutable_data_references_counter(1);
 
     post_init();
 
@@ -2387,10 +2387,10 @@ void nmethod::purge(bool unregister_nmethod) {
 
   if (_immutable_data != blob_end()) {
     // Free memory if this is the last nmethod referencing immutable data
-    if (get_immutable_data_references() == 1) {
+    if (get_immutable_data_references_counter() == 1) {
       os::free(_immutable_data);
     } else {
-      set_immutable_data_references(get_immutable_data_references() - 1);
+      set_immutable_data_references_counter(get_immutable_data_references_counter() - 1);
     }
 
     _immutable_data = blob_end(); // Valid not null address

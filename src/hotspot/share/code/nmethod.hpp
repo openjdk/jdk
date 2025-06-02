@@ -579,7 +579,7 @@ public:
   address scopes_data_end       () const { return           immutable_data_end() - ImmutableDataReferencesCounterSize ; }
 #endif
 
-  address immutable_data_references_begin () const { return immutable_data_end() - ImmutableDataReferencesCounterSize ; }
+  address immutable_data_references_counter_begin () const { return immutable_data_end() - ImmutableDataReferencesCounterSize ; }
 
   // Sizes
   int immutable_data_size() const { return _immutable_data_size; }
@@ -893,8 +893,8 @@ public:
   bool  load_reported() const                     { return _load_reported; }
   void  set_load_reported()                       { _load_reported = true; }
 
-  inline int  get_immutable_data_references()           { return *((int*)immutable_data_references_begin());  }
-  inline void set_immutable_data_references(int count)  { *((int*)immutable_data_references_begin()) = count; }
+  inline int  get_immutable_data_references_counter()           { return *((int*)immutable_data_references_counter_begin());  }
+  inline void set_immutable_data_references_counter(int count)  { *((int*)immutable_data_references_counter_begin()) = count; }
 
  public:
   // ScopeDesc retrieval operation
