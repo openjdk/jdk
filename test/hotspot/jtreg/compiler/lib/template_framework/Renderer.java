@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.regex.MatchResult;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -45,6 +46,13 @@ import java.util.stream.Stream;
 final class Renderer {
     private static final String NAME_CHARACTERS = "[a-zA-Z_][a-zA-Z0-9_]*";
     private static final Pattern NAME_PATTERN = Pattern.compile(
+        // We are parsing patterns:
+        //   #name
+        //   #{name}
+        //   $name
+        //   ${name}
+        // But the "#" or "$" have already been removed, and the String
+        // starts at the character after that.
         // The pattern must be at the beginning of the String part.
         "^" +
         // We either have "name" or "{name}"
@@ -328,10 +336,11 @@ final class Renderer {
     }
 
     private void renderStringWithDollarAndHashtagReplacements(String s) {
-        int count = 0;
+        int count = 0; // First part needs special handling
         int start = 0;
         boolean lastWasDollar = false;
         do {
+            // Find the next "$" or "#", after start.
             int dollar  = s.indexOf("$", start);
             int hashtag = s.indexOf("#", start);
             dollar  = (dollar == -1)  ? s.length() : dollar;
@@ -344,8 +353,13 @@ final class Renderer {
             } else {
                 // All others must do the replacement.
                 final boolean isDollar = lastWasDollar;
-                // TODO: add verification if we do not match? Add tests?
-                currentCodeFrame.addString(NAME_PATTERN.matcher(part).replaceFirst(
+                Matcher matcher = NAME_PATTERN.matcher(part);
+                if (!matcher.find()) {
+                    String replacement = isDollar ? "$" : "#";
+                    throw new RendererException("Is not a valid '" + replacement + "' replacement pattern: '" +
+                                                replacement + part + "' in '" + s + "'.");
+                }
+                currentCodeFrame.addString(matcher.replaceFirst(
                     (MatchResult result) -> {
                         // There are two groups: (1) for "name" and (2) for "{name}"
                         String name = result.group(1) != null ? result.group(1) : result.group(2);
@@ -357,10 +371,14 @@ final class Renderer {
                     }
                 ));
             }
+            if (next == s.length()) {
+                // No new "#" or "$" was found, terminate now.
+                return;
+            }
             start = next + 1; // drop the "#" or "$"
             lastWasDollar = next == dollar;
             count++;
-        } while (start < s.length());
+        } while (true);
     }
 
     boolean isAnchored(Hook hook) {

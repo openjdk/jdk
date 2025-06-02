@@ -165,6 +165,7 @@ public class TestTemplate {
         expectRendererException(() -> testFailingHashtagName2(), "Is not a valid hashtag replacement name: 'abc#abc'.");
         expectRendererException(() -> testFailingHashtagName3(), "Is not a valid hashtag replacement name: ''.");
         expectRendererException(() -> testFailingHashtagName4(), "Is not a valid hashtag replacement name: 'xyz#xyz'.");
+        expectRendererException(() -> testFailingHashtagName5(), "Is not a valid '#' replacement pattern: '#' in '#'.");
         expectRendererException(() -> testFailingHook(), "Hook 'Hook1' was referenced but not found!");
         expectRendererException(() -> testFailingSample1(),  "No variable: MUTABLE, subtypeOf(int), supertypeOf(int).");
         expectRendererException(() -> testFailingHashtag1(), "Duplicate hashtag replacement for #a");
@@ -1859,8 +1860,15 @@ public class TestTemplate {
 
     public static void testFailingHashtagName4() {
         var template1 = Template.make(() -> body(
-        // "#" character not allowed in let hashtag name
+            // "#" character not allowed in let hashtag name
             let("xyz#xyz", "abc")
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingHashtagName5() {
+        var template1 = Template.make(() -> body(
+            "#" // empty hashtag name
         ));
         String code = template1.render();
     }
