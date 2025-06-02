@@ -630,7 +630,6 @@ public final class Http3ServerExchange implements Http2TestExchange {
             boolean streaming = responseLength == 0;
             if (streaming) {
                 if (buffer.hasRemaining()) {
-                    // TODO: add a static method that takes the length instead!
                     int len = buffer.remaining();
                     if (debug.on()) {
                         debug.log("Streaming BodyResponse: streamId=%s writing DataFrame(%s)",
