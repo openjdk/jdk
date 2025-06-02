@@ -63,7 +63,7 @@ public class TestUtfNumChars {
                     continue;
                 int nchars = Convert.utfNumChars(utf8, i_off, j_off - i_off);
                 if (nchars != j - i)
-                    throw new AssertionError(String.format("nchars %d != %d for [%d, %d)", nchars, j - i, i, j));
+                    throw new AssertionError(String.format("nchars %d != %d for [%d, %d)", nchars, j - i, i_off, j_off));
             }
         }
     }
