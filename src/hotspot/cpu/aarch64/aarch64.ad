@@ -7761,14 +7761,12 @@ instruct popCountI(iRegINoSp dst, iRegIorL2I src, vRegF tmp) %{
   effect(TEMP tmp);
   ins_cost(INSN_COST * 13);
 
-  format %{ "mov    $tmp, zr\t# vector (1S)\n\t"
-            "mov    $tmp, $src\t# vector (1S)\n\t"
+  format %{ "fmovs  $tmp, $src\t# vector (1S)\n\t"
             "cnt    $tmp, $tmp\t# vector (8B)\n\t"
             "addv   $tmp, $tmp\t# vector (8B)\n\t"
             "mov    $dst, $tmp\t# vector (1D)" %}
   ins_encode %{
-    __ mov($tmp$$FloatRegister, __ S, 1, zr);             // tmp[32:63] <- 0
-    __ mov($tmp$$FloatRegister, __ S, 0, $src$$Register); // tmp[ 0:31] <- src
+    __ fmovs($tmp$$FloatRegister, $src$$Register);
     __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ mov($dst$$Register, $tmp$$FloatRegister, __ D, 0);

@@ -55,7 +55,7 @@ public class BitCountIAarch64PreservesArgument {
             test();
             if (result != 0xfedc_ba98_7654_3210L) {
                 // Wrongly outputs the cut input 0x7654_3210 == 1985229328
-                throw new RuntimeException("Wrong result. lFld=" + lFld + "; result=" + result);
+                throw new RuntimeException("Wrong result. Expected result = " + lFld + "; Actual result = " + result);
             }
         }
 
@@ -63,7 +63,7 @@ public class BitCountIAarch64PreservesArgument {
         for (int i = 0; i < 10_000; i++) {
             test();
             if (result != lFld) {
-                throw new RuntimeException("Wrong result. lFld=" + lFld + "; result=" + result);
+                throw new RuntimeException("Wrong result. Expected result = " + lFld + "; Actual result = " + result);
             }
         }
     }
