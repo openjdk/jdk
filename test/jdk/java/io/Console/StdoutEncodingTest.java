@@ -35,13 +35,14 @@ import org.junit.jupiter.params.provider.CsvSource;
 /**
  * @test
  * @bug 8264208 8265918 8356985 8358158
- * @summary Tests Console.charset() method. "expect" command in Windows/Cygwin
+ * @summary Tests if "stdout.encoding" property is reflected in
+ *          Console.charset() method. "expect" command in Windows/Cygwin
  *          does not work as expected. Ignoring tests on Windows.
  * @requires (os.family == "linux") | (os.family == "mac")
  * @library /test/lib
- * @run junit CharsetTest
+ * @run junit StdoutEncodingTest
  */
-public class CharsetTest {
+public class StdoutEncodingTest {
 
     @ParameterizedTest
     @CsvSource({
@@ -59,7 +60,7 @@ public class CharsetTest {
         OutputAnalyzer output = ProcessTools.executeProcess(
                 "expect",
                 "-n",
-                TEST_SRC + "/script.exp",
+                TEST_SRC + "/stdoutEncoding.exp",
                 TEST_JDK + "/bin/java",
                 locale,
                 expectedCharset,
