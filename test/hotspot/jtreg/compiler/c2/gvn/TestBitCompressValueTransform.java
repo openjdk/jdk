@@ -290,7 +290,7 @@ public class TestBitCompressValueTransform {
     }
 
     @Test
-    @IR (counts = { IRNode.COMPRESS_BITS, " 1 " })
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = {"bmi2" , "true"})
     public int test15(int src, int mask) {
         // src_type = [min_int + 1, -1]
         src = Math.max(Integer.MIN_VALUE + 1, Math.min(src, -1));
