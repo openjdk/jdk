@@ -375,11 +375,8 @@ public class Http3ServerConnection {
             if (controlFramesDecoder.eof()) break;
         }
         if (controlFramesDecoder.eof()) {
-            // TODO: close connection unless it's already closed?
-            //       Error should be H3_CRITICAL_STREAM_CLOSED
-            if (debug.on()) {
-                debug.log("EOF reached while reading client control stream");
-            }
+            close(Http3Error.H3_CLOSED_CRITICAL_STREAM,
+                    "EOF reached while reading client control stream");
         }
     }
 
