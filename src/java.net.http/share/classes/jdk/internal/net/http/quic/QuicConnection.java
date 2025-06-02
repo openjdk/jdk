@@ -31,7 +31,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import jdk.internal.net.http.quic.ConnectionTerminator.IdleTerminationApprover;
 import jdk.internal.net.http.quic.packets.QuicPacket;
 import jdk.internal.net.http.quic.streams.QuicBidiStream;
 import jdk.internal.net.http.quic.streams.QuicReceiverStream;
@@ -235,14 +234,6 @@ public abstract class QuicConnection {
      * The default implementation of this method returns null
      */
     public QuicConnectionId localConnectionId() { return null; }
-
-    // registers a listener which will be notified just before the QUIC connection
-    // will be silently terminated due to being idle for longer than the max_idle_timeout.
-    // the listener is allowed to use the ConnectionTerminator to keepAlive() the
-    // connection and thus veto this round of idle connection termination
-    // TODO: consider expecting listener to call requestSendPing() instead of keepalive()
-    // or in addition to calling keepalive()
-    public abstract void registerIdleTerminationApprover(IdleTerminationApprover approver);
 
     /**
      * {@return the {@link ConnectionTerminator} for this connection}

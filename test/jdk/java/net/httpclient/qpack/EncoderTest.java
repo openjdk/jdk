@@ -36,7 +36,6 @@ import jdk.internal.net.http.qpack.writers.IntegerWriter;
 import jdk.internal.net.http.qpack.writers.StringWriter;
 import jdk.internal.net.http.qpack.StaticTable;
 import jdk.internal.net.http.quic.ConnectionTerminator;
-import jdk.internal.net.http.quic.ConnectionTerminator.IdleTerminationApprover;
 import jdk.internal.net.http.quic.QuicConnection;
 import jdk.internal.net.http.quic.TerminationCause;
 import jdk.internal.net.http.quic.streams.QuicBidiStream;
@@ -387,11 +386,6 @@ public class EncoderTest {
         @Override
         public CompletableFuture<Long> requestSendPing() {
             return MinimalFuture.completedFuture(-1L);
-        }
-
-        @Override
-        public void registerIdleTerminationApprover(IdleTerminationApprover approver) {
-            // do nothing
         }
 
         @Override

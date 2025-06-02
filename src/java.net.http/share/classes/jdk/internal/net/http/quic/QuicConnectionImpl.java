@@ -72,7 +72,6 @@ import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.SequentialScheduler;
 import jdk.internal.net.http.common.TimeSource;
 import jdk.internal.net.http.common.Utils;
-import jdk.internal.net.http.quic.ConnectionTerminator.IdleTerminationApprover;
 import jdk.internal.net.http.quic.OrderedFlow.CryptoDataFlow;
 import jdk.internal.net.http.quic.QuicEndpoint.QuicDatagram;
 import jdk.internal.net.http.quic.QuicTransportParameters.VersionInformation;
@@ -3733,11 +3732,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     }
 
     @Override
-    public void registerIdleTerminationApprover(final IdleTerminationApprover approver) {
-        this.idleTimeoutManager.registerTerminationApprover(approver);
-    }
-
-    @Override
     public ConnectionTerminator connectionTerminator() {
         return this.terminator;
     }
@@ -4164,19 +4158,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         return rttEstimator.getBasePtoDuration().toMillis() +
                 (quicTLSEngine.getCurrentSendKeySpace() == KeySpace.ONE_RTT ?
                         PacketSpaceManager.ADVERTISED_MAX_ACK_DELAY : 0);
-    }
-
-    /**
-     * Returns the idle timeout, in milliseconds, negotiated for this connection.
-     * The negotiated idle timeout of a connection is the minimum of the idle connection
-     * timeout that is advertised by this endpoint and the idle connection timeout advertised
-     * by the peer. If neither endpoints have advertised any idle connection timeout then this
-     * method returns an {@linkplain Optional#empty() empty} value.
-     *
-     * @return the idle timeout in milliseconds or {@linkplain Optional#empty() empty}
-     */
-    public Optional<Long> getIdleTimeout() {
-        return this.idleTimeoutManager.getIdleTimeout();
     }
 
     public void runAppPacketSpaceTransmitter() {

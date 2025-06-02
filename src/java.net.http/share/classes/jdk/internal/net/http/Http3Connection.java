@@ -64,8 +64,8 @@ import jdk.internal.net.http.http3.frames.MalformedFrame;
 import jdk.internal.net.http.http3.frames.MaxPushIdFrame;
 import jdk.internal.net.http.http3.frames.PartialFrame;
 import jdk.internal.net.http.http3.frames.SettingsFrame;
-import jdk.internal.net.http.http3.streams.Http3Streams.StreamType;
 import jdk.internal.net.http.http3.streams.Http3Streams;
+import jdk.internal.net.http.http3.streams.Http3Streams.StreamType;
 import jdk.internal.net.http.http3.streams.PeerUniStreamDispatcher;
 import jdk.internal.net.http.http3.streams.QueuingStreamPair;
 import jdk.internal.net.http.http3.streams.UniStreamPair;
@@ -82,7 +82,6 @@ import jdk.internal.net.http.quic.streams.QuicReceiverStream;
 import jdk.internal.net.http.quic.streams.QuicStream;
 import jdk.internal.net.http.quic.streams.QuicStreamWriter;
 import jdk.internal.net.http.quic.streams.QuicStreams;
-
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static jdk.internal.net.http.Http3ClientProperties.MAX_STREAM_LIMIT_WAIT_TIMEOUT;
 import static jdk.internal.net.http.http3.Http3Error.H3_CLOSED_CRITICAL_STREAM;
@@ -139,9 +138,6 @@ public final class Http3Connection implements AutoCloseable {
     private static final int GOAWAY_SENT = 1; // local endpoint sent GOAWAY
     private static final int GOAWAY_RECEIVED = 2; // received GOAWAY from remote peer
     private static final int CLOSED = 4; // close called on QUIC connection
-    // state when idle connection management initiates a shutdown of the connection, after
-    // which the connection will go into SHUTDOWN_REQUESTED state
-    private static final int IDLE_SHUTDOWN_INITIATED = 8;
     volatile int closedState;
 
     private final ReentrantLock lock = new ReentrantLock();
@@ -198,9 +194,6 @@ public final class Http3Connection implements AutoCloseable {
         qpackEncoderStreams = qpackEncoder.encoderStreams();
         qpackDecoder = new Decoder(this::createDecoderStreams, this::connectionError);
         qpackDecoderStreams = qpackDecoder.decoderStreams();
-        // register a listener which will be called when the underlying QUIC connection
-        // is being prepared to be idle timed out
-        quicConnection.registerIdleTerminationApprover(this::allowsQuicIdleTermination);
         // Register listener to be called when the peer opens a new stream
         remoteStreamListener = this::onOpenRemoteStream;
         quicConnection.addRemoteStreamListener(remoteStreamListener);
@@ -241,7 +234,7 @@ public final class Http3Connection implements AutoCloseable {
         if (tableEntry.type() == TableEntry.EntryType.NAME_VALUE) {
             return false;
         }
-        return switch(tableEntry.name().toString()) {
+        return switch (tableEntry.name().toString()) {
             case ":authority", "user-agent" -> !tableEntry.value().isEmpty();
             default -> false;
         };
@@ -258,6 +251,7 @@ public final class Http3Connection implements AutoCloseable {
     /**
      * Debug tag used to create the debug logger for this
      * HTTP/3 connection instance.
+     *
      * @return a debug tag
      */
     String dbgTag() {
@@ -353,6 +347,7 @@ public final class Http3Connection implements AutoCloseable {
     /**
      * Whether the final stream (last stream allowed on a connection), has
      * been set.
+     *
      * @return true if the final stream has been set.
      */
     boolean isFinalStream() {
@@ -399,7 +394,7 @@ public final class Http3Connection implements AutoCloseable {
         // check if this connection is closing before initiating this new stream
         if (!reserveStream()) {
             if (Log.http3()) {
-                Log.logHttp3("Cannot initiate new stream on connection {0} for exchange {1}" ,
+                Log.logHttp3("Cannot initiate new stream on connection {0} for exchange {1}",
                         quicConnectionTag(), exchange);
             }
             // we didn't create the stream and thus the server hasn't yet processed this request.
@@ -519,39 +514,6 @@ public final class Http3Connection implements AutoCloseable {
         exchanges.put(streamId, exchange);
         exchange.start();
         return exchange;
-    }
-
-    private boolean allowsQuicIdleTermination() {
-        // the connection state(s) for which it is OK to idle terminate the
-        // QUIC connection
-        final int cstate = closedState;
-        if ((cstate & CLOSED) == CLOSED) {
-            if (debug.on()) {
-                debug.log("connection state=" + cstate + ", allowing QUIC connection"
-                        + " to idle timeout");
-            }
-            return true;
-        }
-        lock();
-        final boolean okToIdleTimeout;
-        try {
-            if (markIdleShutdownInitiated()) {
-                // don't allow any new streams to be created
-                setFinalStream();
-                okToIdleTimeout = finalStreamClosed();
-            } else {
-                // already marked for idle shutdown previously.
-                // check if all streams on the connection have now closed.
-                okToIdleTimeout = finalStreamClosed();
-            }
-        } finally {
-            unlock();
-        }
-        if (debug.on()) {
-            debug.log((okToIdleTimeout ? "allowing" : "disallowing") + " QUIC connection" +
-                    " to idle timeout");
-        }
-        return okToIdleTimeout;
     }
 
     // marks this connection as no longer available for creating additional streams. current
@@ -683,7 +645,7 @@ public final class Http3Connection implements AutoCloseable {
     }
 
     void connectionError(Http3Stream<?> exchange, Throwable throwable, long errorCode,
-                                String logMsg) {
+                         String logMsg) {
         final Optional<Http3Error> error = Http3Error.fromCode(errorCode);
         assert error.isPresent() : "not a HTTP3 error code: " + errorCode;
         close(error.get(), logMsg, throwable);
@@ -704,6 +666,7 @@ public final class Http3Connection implements AutoCloseable {
 
     /**
      * Called by the {@link Http3ExchangeImpl} when the exchange is closed.
+     *
      * @param streamId The request stream id
      */
     void onExchangeClose(Http3ExchangeImpl<?> exch, final long streamId) {
@@ -839,6 +802,7 @@ public final class Http3Connection implements AutoCloseable {
         /**
          * Dispatches the given remote initiated unidirectional stream to the
          * given Http3Connection after reading the stream type off the stream.
+         *
          * @param conn the Http3Connection with which the stream is associated
          * @param stream a newly opened remote unidirectional stream.
          */
@@ -864,6 +828,7 @@ public final class Http3Connection implements AutoCloseable {
      * be considered "in use". This way the idle connection management doesn't close
      * this connection during the time the connection is handed out from the pool and any
      * new stream created on that connection.
+     *
      * @return true if the connection has been successfully reserved and is {@link #isOpen()}. false
      *          otherwise; in which case the connection must not be handed out from the pool.
      */
@@ -872,6 +837,12 @@ public final class Http3Connection implements AutoCloseable {
         lock();
         try {
             cancelIdleShutdownEvent();
+            // co-ordinate with the QUIC connection to prevent it from silently terminating
+            // a potentially idle transport
+            if (!quicConnection.connectionTerminator().tryReserveForUse()) {
+                // QUIC says the connection can't be used
+                return false;
+            }
             // consider the reservation successful only if the connection's state hasn't moved
             // to "being closed"
             return isOpen() && finalStream == false;
@@ -895,7 +866,10 @@ public final class Http3Connection implements AutoCloseable {
     // and has not sent the final stream flag
     final class IdleConnectionTimeoutEvent extends TimeoutEvent {
 
+        // both cancelled and idleShutDownInitiated are to be accessed
+        // when holding the connection's lock
         private boolean cancelled;
+        private boolean idleShutDownInitiated;
 
         IdleConnectionTimeoutEvent(Duration duration) {
             super(duration);
@@ -906,12 +880,12 @@ public final class Http3Connection implements AutoCloseable {
             boolean okToIdleTimeout;
             lock();
             try {
-                if (cancelled) return;
-                if (!markIdleShutdownInitiated()) {
-                    if (debug.on()) {
-                        debug.log("Idle shutdown already initiated");
-                    }
+                if (cancelled || idleShutDownInitiated) {
                     return;
+                }
+                idleShutDownInitiated = true;
+                if (debug.on()) {
+                    debug.log("H3 idle shutdown initiated");
                 }
                 setFinalStream();
                 okToIdleTimeout = finalStreamClosed();
@@ -948,6 +922,7 @@ public final class Http3Connection implements AutoCloseable {
     /**
      * This method is called when the peer opens a new stream.
      * The stream can be unidirectional or bidirectional.
+     *
      * @param stream the new stream
      * @return always returns true (see {@link
      * QuicConnection#addRemoteStreamListener(Predicate)}
@@ -969,6 +944,7 @@ public final class Http3Connection implements AutoCloseable {
 
     /**
      * This method is called when the peer opens a unidirectional stream.
+     *
      * @param uni the unidirectional stream opened by the peer
      * @return always returns true ({@link
      *         QuicConnection#addRemoteStreamListener(Predicate)}
@@ -987,6 +963,7 @@ public final class Http3Connection implements AutoCloseable {
     /**
      * Called when the peer opens a bidirectional stream.
      * On the client side, this method should never be called.
+     *
      * @param bidi the new bidirectional stream opened by the
      *             peer.
      * @return always returns false ({@link
@@ -1009,6 +986,7 @@ public final class Http3Connection implements AutoCloseable {
 
     /**
      * Called if the dispatch failed.
+     *
      * @param reason the reason of the failure
      */
     protected void dispatchingFailed(QuicReceiverStream uni, Throwable reason) {
@@ -1019,6 +997,7 @@ public final class Http3Connection implements AutoCloseable {
 
     /**
      * Schedules sending of client settings.
+     *
      * @return a completable future that will be completed with the
      * {@link QuicStreamWriter} allowing to write to the local control
      * stream
@@ -1045,6 +1024,7 @@ public final class Http3Connection implements AutoCloseable {
 
     /**
      * Schedules sending of max push id that this (client) connection allows.
+     *
      * @param writer the control stream writer
      * @return the {@link QuicStreamWriter} passed as parameter
      */
@@ -1106,6 +1086,7 @@ public final class Http3Connection implements AutoCloseable {
     /**
      * This method is called to process bytes received on the peer
      * control stream.
+     *
      * @param buffer the bytes received
      */
     private void processPeerControlBytes(final ByteBuffer buffer) {
@@ -1200,9 +1181,11 @@ public final class Http3Connection implements AutoCloseable {
 
     /**
      * Called when a new push promise stream is created by the peer.
+     *
      * @apiNote this method gives an opportunity to cancel the stream
      *          before reading the pushId, if it is known that no push
      *          will be accepted anyway.
+     *
      * @param pushStream the new push promise stream
      * @param pushId or -1 if the pushId is not available yet
      */
@@ -1217,6 +1200,7 @@ public final class Http3Connection implements AutoCloseable {
     /**
      * Called when a new push promise stream is created by the peer, and
      * the pushId has been read.
+     *
      * @param pushStream the new push promise stream
      * @param pushId the pushId
      */
@@ -1230,6 +1214,7 @@ public final class Http3Connection implements AutoCloseable {
      * a push stream or a push promise should be processed, with respect to the
      * GOAWAY state. Any pushId larger than what was sent in the GOAWAY frame
      * should be cancelled /rejected.
+     *
      * @param pushStream a push stream (may be null if not yet materialized)
      * @param pushId a pushId, must be > 0
      * @return true if the pushId can be processed
@@ -1320,7 +1305,7 @@ public final class Http3Connection implements AutoCloseable {
         try {
             return exceptionally(t);
         } finally {
-           close(t);
+            close(t);
         }
     }
 
@@ -1421,10 +1406,6 @@ public final class Http3Connection implements AutoCloseable {
         return markClosedState(GOAWAY_RECEIVED);
     }
 
-    private boolean markIdleShutdownInitiated() {
-        return markClosedState(IDLE_SHUTDOWN_INITIATED);
-    }
-
     private boolean markClosedState(int flag) {
         int state, desired;
         do {
@@ -1438,9 +1419,6 @@ public final class Http3Connection implements AutoCloseable {
     String describeClosedState(int state) {
         if (state == 0) return "active";
         String desc = null;
-        if (isMarked(state, IDLE_SHUTDOWN_INITIATED)) {
-            desc = "idle-shutdown-initiated";
-        }
         if (isMarked(state, GOAWAY_SENT)) {
             if (desc == null) desc = "goaway-sent";
             else desc += "+goaway-sent";
@@ -1494,7 +1472,7 @@ public final class Http3Connection implements AutoCloseable {
     /**
      * {@return a completable future that will be completed when a pushId has been
      * accepted by the exchange in charge of creating the response body}
-     *
+     * <p>
      * The completable future is complete with {@code true} if the pushId is
      * accepted, and with {@code false} if the pushId was rejected or cancelled.
      *
@@ -1520,6 +1498,7 @@ public final class Http3Connection implements AutoCloseable {
 
     /**
      * Called when a PushPromiseFrame has been decoded.
+     *
      * @param exchange        The HTTP/3 exchange that received the frame
      * @param pushId          The pushId contained in the frame
      * @param promiseHeaders  The push promise headers contained in the frame
@@ -1540,6 +1519,7 @@ public final class Http3Connection implements AutoCloseable {
 
     /**
      * Schedules sending of max push id that this (client) connection allows.
+     *
      * @return a completable future that will be completed with the
      * {@link QuicStreamWriter} allowing to write to the local control
      * stream
@@ -1608,6 +1588,7 @@ public final class Http3Connection implements AutoCloseable {
     /**
      * Checks whether the given pushId exceed the maximum pushId allowed
      * to the peer, and if so, closes the connection.
+     *
      * @param pushId the pushId
      * @return an {@code IOException} that can be used to complete a completable
      *         future if the maximum pushId is exceeded, {@code null}
@@ -1620,6 +1601,7 @@ public final class Http3Connection implements AutoCloseable {
     /**
      * Checks whether the given pushId exceed the maximum pushId allowed
      * to the peer, and if so, closes the connection.
+     *
      * @param pushId the pushId
      * @return an {@code IOException} that can be used to complete a completable
      *         future if the maximum pushId is exceeded, {@code null}

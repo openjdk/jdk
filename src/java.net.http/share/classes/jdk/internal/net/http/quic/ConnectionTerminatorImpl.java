@@ -27,7 +27,6 @@ package jdk.internal.net.http.quic;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -73,6 +72,11 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
     @Override
     public void keepAlive() {
         this.connection.idleTimeoutManager.keepAlive();
+    }
+
+    @Override
+    public boolean tryReserveForUse() {
+        return this.connection.idleTimeoutManager.tryReserveForUse();
     }
 
     @Override
@@ -281,7 +285,7 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
                     .loggedAs(msg);
         } else {
             final QuicTransportErrors err = QuicTransportErrors.ofCode(
-                    incomingFrame.errorCode())
+                            incomingFrame.errorCode())
                     // fallback to INTERNAL_ERROR if the peer sends an unexpected error code
                     // in the CONNECTION_CLOSE frame
                     .orElse(INTERNAL_ERROR);

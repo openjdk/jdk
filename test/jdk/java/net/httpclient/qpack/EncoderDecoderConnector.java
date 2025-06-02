@@ -35,7 +35,6 @@ import jdk.internal.net.http.qpack.QPACK.QPACKErrorHandler;
 import jdk.internal.net.http.qpack.QPackException;
 import jdk.internal.net.http.qpack.readers.IntegerReader;
 import jdk.internal.net.http.quic.ConnectionTerminator;
-import jdk.internal.net.http.quic.ConnectionTerminator.IdleTerminationApprover;
 import jdk.internal.net.http.quic.QuicConnection;
 import jdk.internal.net.http.quic.TerminationCause;
 import jdk.internal.net.http.quic.streams.QuicBidiStream;
@@ -299,11 +298,6 @@ public class EncoderDecoderConnector {
         @Override
         public CompletableFuture<Long> requestSendPing() {
             return MinimalFuture.completedFuture(-1L);
-        }
-
-        @Override
-        public void registerIdleTerminationApprover(IdleTerminationApprover approver) {
-            // do nothing
         }
 
         @Override
