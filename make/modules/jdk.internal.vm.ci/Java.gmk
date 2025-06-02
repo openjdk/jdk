@@ -27,12 +27,14 @@
 
 DISABLED_WARNINGS_java += dangling-doc-comments this-escape
 
-VERSION_JVMCI = $(shell $(EXPR) $(VERSION_FEATURE) - 1 )
+# Target an older JDK so JVMCI class files can be read by Native Image
+# running on an older JDK.
+JVMCI_SOURCETARGET = $(BOOT_JDK_SOURCETARGET)
 
 # -parameters provides method's parameters information in class file,
 # JVMCI compilers make use of that information for various sanity checks.
 # Don't use Indy strings concatenation to have good JVMCI startup performance.
 
-JAVAC_FLAGS += -parameters -XDstringConcat=inline --source $(VERSION_JVMCI) --target $(VERSION_JVMCI)
+JAVAC_FLAGS += -parameters -XDstringConcat=inline $(JVMCI_SOURCETARGET)
 
 ################################################################################
