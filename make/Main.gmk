@@ -425,12 +425,12 @@ bootcycle-images:
 	  $(call MakeDir, $(OUTPUTDIR)/bootcycle-build)
           # We need to create essential files for the bootcycle spec dir
 	  ( cd $(TOPDIR) && \
-	        $(MAKE) $(MAKE_ARGS) -f make/GenerateFindTests.gmk \
-	         SPEC=$(BOOTCYCLE_SPEC))
+	      $(MAKE) $(MAKE_ARGS) -f make/GenerateFindTests.gmk \
+	      SPEC=$(BOOTCYCLE_SPEC))
 	  ( cd $(TOPDIR) && \
-	        $(MAKE) $(MAKE_ARGS) -f $(TOPDIR)/make/Main.gmk \
-	        SPEC=$(BOOTCYCLE_SPEC) UPDATE_MODULE_DEPS=true NO_RECIPES=true \
-	        create-main-targets-include )
+	      $(MAKE) $(MAKE_ARGS) -f $(TOPDIR)/make/Main.gmk \
+	      SPEC=$(BOOTCYCLE_SPEC) UPDATE_MODULE_DEPS=true NO_RECIPES=true \
+	      create-main-targets-include )
 	  +$(MAKE) $(MAKE_ARGS) -f $(TOPDIR)/make/Init.gmk PARALLEL_TARGETS=$(BOOTCYCLE_TARGET) \
 	      LOG_PREFIX="[bootcycle] " JOBS= SPEC=$(BOOTCYCLE_SPEC) main
         else
