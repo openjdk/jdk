@@ -25,25 +25,30 @@
 
 /*
  * @test
- * @summary Sanity test for AOTCache
+ * @bug 8352187
+ * @summary ManagementAgent will not be started during AOT cache creation.
  * @requires vm.cds.supports.aot.class.linking
  * @comment work around JDK-8345635
  * @requires !vm.jvmci.enabled
  * @library /test/lib
  * @build HelloAOTCache
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar HelloAOTCacheApp
- * @run driver HelloAOTCache
+ * @run driver ManagementAgent
  */
 
 import jdk.test.lib.cds.SimpleCDSAppTester;
 import jdk.test.lib.process.OutputAnalyzer;
 
-public class HelloAOTCache {
+public class ManagementAgent {
     public static void main(String... args) throws Exception {
-        SimpleCDSAppTester.of("HelloAOTCache")
-            .addVmArgs("-Xlog:class+load")
+        SimpleCDSAppTester.of("HelloAOTCache-with-manangment-agent")
+            // test with the initialization of a management agent
+            .addVmArgs("-Xlog:class+load", "-Dcom.sun.management.jmxremote=true")
             .classpath("app.jar")
             .appCommandLine("HelloAOTCacheApp")
+            .setAssemblyChecker((OutputAnalyzer out) -> {
+                    out.shouldContain("Not starting management agent during creation of AOT cache.");
+                })
             .setProductionChecker((OutputAnalyzer out) -> {
                     out.shouldMatch("class,load.*HelloAOTCacheApp.*shared objects");
                     out.shouldContain("HelloWorld");
