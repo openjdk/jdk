@@ -238,7 +238,7 @@ size_t ZCollectedHeap::tlab_used(Thread* ignored) const {
 }
 
 size_t ZCollectedHeap::max_tlab_size() const {
-  return _heap.max_tlab_size();
+  return _heap.max_tlab_size() / HeapWordSize;
 }
 
 size_t ZCollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {

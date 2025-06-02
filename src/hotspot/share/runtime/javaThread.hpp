@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -216,7 +216,6 @@ class JavaThread: public Thread {
   enum SuspendFlags {
     // NOTE: avoid using the sign-bit as cc generates different test code
     //       when the sign-bit is used, and sometimes incorrectly - see CR 6398077
-    _trace_flag             = 0x00000004U, // call tracing backend
     _obj_deopt              = 0x00000008U  // suspend for object reallocation and relocking for JVMTI agent
   };
 
@@ -227,11 +226,8 @@ class JavaThread: public Thread {
   inline void clear_suspend_flag(SuspendFlags f);
 
  public:
-  inline void set_trace_flag();
-  inline void clear_trace_flag();
   inline void set_obj_deopt_flag();
   inline void clear_obj_deopt_flag();
-  bool is_trace_suspend()      { return (_suspend_flags & _trace_flag) != 0; }
   bool is_obj_deopt_suspend()  { return (_suspend_flags & _obj_deopt) != 0; }
 
   // Asynchronous exception support
@@ -751,7 +747,7 @@ private:
   // Support for object deoptimization and JFR suspension
   void handle_special_runtime_exit_condition();
   bool has_special_runtime_exit_condition() {
-    return (_suspend_flags & (_obj_deopt JFR_ONLY(| _trace_flag))) != 0;
+    return (_suspend_flags & _obj_deopt) != 0;
   }
 
   // Stack-locking support (not for LM_LIGHTWEIGHT)
@@ -1167,16 +1163,14 @@ private:
   // It can be set to zero asynchronously to this threads execution (i.e., without
   // safepoint/handshake or a lock) so we have to be very careful.
   // Accesses by other threads are synchronized using JvmtiThreadState_lock though.
+  // This field is checked by the interpreter which expects it to be an integer.
   int               _interp_only_mode;
 
  public:
   // used by the interpreter for fullspeed debugging support (see above)
   static ByteSize interp_only_mode_offset() { return byte_offset_of(JavaThread, _interp_only_mode); }
   bool is_interp_only_mode()                { return (_interp_only_mode != 0); }
-  int get_interp_only_mode()                { return _interp_only_mode; }
-  int set_interp_only_mode(int val)         { return _interp_only_mode = val; }
-  void increment_interp_only_mode()         { ++_interp_only_mode; }
-  void decrement_interp_only_mode()         { --_interp_only_mode; }
+  void set_interp_only_mode(bool val)       { _interp_only_mode = val ? 1 : 0; }
 
   // support for cached flag that indicates whether exceptions need to be posted for this thread
   // if this is false, we can avoid deoptimizing when events are thrown

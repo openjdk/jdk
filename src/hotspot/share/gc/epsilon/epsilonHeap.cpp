@@ -301,14 +301,14 @@ void EpsilonHeap::object_iterate(ObjectClosure *cl) {
 void EpsilonHeap::print_heap_on(outputStream *st) const {
   st->print_cr("Epsilon Heap");
 
-  StreamAutoIndentor indentor(st, 1);
+  StreamIndentor si(st, 1);
 
   _virtual_space.print_on(st);
 
   if (_space != nullptr) {
     st->print_cr("Allocation space:");
 
-    StreamAutoIndentor indentor(st, 1);
+    StreamIndentor si(st, 1);
     _space->print_on(st, "");
   }
 }

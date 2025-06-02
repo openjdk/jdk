@@ -402,11 +402,10 @@ jint ShenandoahHeap::initialize() {
 
   _regions = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, _num_regions, mtGC);
   _affiliations = NEW_C_HEAP_ARRAY(uint8_t, _num_regions, mtGC);
-  _free_set = new ShenandoahFreeSet(this, _num_regions);
 
   {
     ShenandoahHeapLocker locker(lock());
-
+    _free_set = new ShenandoahFreeSet(this, _num_regions);
     for (size_t i = 0; i < _num_regions; i++) {
       HeapWord* start = (HeapWord*)sh_rs.base() + ShenandoahHeapRegion::region_size_words() * i;
       bool is_committed = i < num_committed_regions;
@@ -1500,6 +1499,9 @@ void ShenandoahHeap::labs_make_parsable() {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
     ThreadLocalAllocBuffer& tlab = t->tlab();
     tlab.make_parsable();
+    if (ZeroTLAB) {
+      t->retire_tlab();
+    }
     cl.do_thread(t);
   }
 
@@ -1517,10 +1519,9 @@ void ShenandoahHeap::tlabs_retire(bool resize) {
   ThreadLocalAllocStats stats;
 
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    ThreadLocalAllocBuffer& tlab = t->tlab();
-    tlab.retire(&stats);
+    t->retire_tlab(&stats);
     if (resize) {
-      tlab.resize();
+      t->tlab().resize();
     }
   }
 

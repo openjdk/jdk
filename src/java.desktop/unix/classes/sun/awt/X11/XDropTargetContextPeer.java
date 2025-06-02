@@ -82,6 +82,7 @@ final class XDropTargetContextPeer extends SunDropTargetContextPeer {
     /*
      * @param returnValue the drop action selected by the Java drop target.
      */
+    @Override
     protected void eventProcessed(SunDropTargetEvent e, int returnValue,
                                   boolean dispatcherDone) {
         /* The native context is the pointer to the XClientMessageEvent
@@ -109,6 +110,7 @@ final class XDropTargetContextPeer extends SunDropTargetContextPeer {
         }
     }
 
+    @Override
     protected void doDropDone(boolean success, int dropAction,
                               boolean isLocal) {
         /* The native context is the pointer to the XClientMessageEvent
@@ -134,6 +136,7 @@ final class XDropTargetContextPeer extends SunDropTargetContextPeer {
         }
     }
 
+    @Override
     protected Object getNativeData(long format)
       throws IOException {
         /* The native context is the pointer to the XClientMessageEvent
@@ -161,18 +164,21 @@ final class XDropTargetContextPeer extends SunDropTargetContextPeer {
     private void cleanup() {
     }
 
+    @Override
     protected void processEnterMessage(SunDropTargetEvent event) {
         if (!processSunDropTargetEvent(event)) {
             super.processEnterMessage(event);
         }
     }
 
+    @Override
     protected void processExitMessage(SunDropTargetEvent event) {
         if (!processSunDropTargetEvent(event)) {
             super.processExitMessage(event);
         }
     }
 
+    @Override
     protected void processMotionMessage(SunDropTargetEvent event,
                                         boolean operationChanged) {
         if (!processSunDropTargetEvent(event)) {
@@ -180,6 +186,7 @@ final class XDropTargetContextPeer extends SunDropTargetContextPeer {
         }
     }
 
+    @Override
     protected void processDropMessage(SunDropTargetEvent event) {
         if (!processSunDropTargetEvent(event)) {
             super.processDropMessage(event);
@@ -247,6 +254,7 @@ final class XDropTargetContextPeer extends SunDropTargetContextPeer {
             return theInstance;
         }
 
+        @Override
         public void handleDropTargetNotification(XWindow xwindow, int x, int y,
                                                  int dropAction, int actions,
                                                  long[] formats, long nativeCtxt,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,11 +158,11 @@ class TestedThread extends Thread {
         // run in a loop
         threadReady = true;
         int i = 0;
-        int n = 1000;
+        int n = 100;
         while (!shouldFinish) {
             if (n <= 0) {
-                n = 1000;
-                SuspendResume2.sleep(10);
+                n = 100;
+                SuspendResume2.sleep(50);
             }
             if (i > n) {
                 i = 0;

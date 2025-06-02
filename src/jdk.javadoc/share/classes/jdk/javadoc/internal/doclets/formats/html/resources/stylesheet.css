@@ -167,9 +167,6 @@ tt {
 code {
     font-family:var(--code-font-family);
     font-size:var(--code-font-size);
-    background-color: var(--code-background-color);
-    padding: 1px 2px;
-    border-radius: 3px;
 }
 button {
     font-family: var(--body-font-family);
@@ -846,12 +843,6 @@ div.block {
 [style*=font-size] code {
     font-size: inherit;
 }
-:is(pre, table, sup, sub) code,
-section[id$=-description] > dl.notes code,
-div.summary-table code {
-    background-color: inherit;
-    padding: initial;
-}
 .doc-file-page main {
     font-family: var(--block-font-family);
     font-size: var(--block-font-size);
@@ -912,8 +903,6 @@ sup.restricted-mark > a:link {
 }
 .deprecation-block code, .preview-block code, .restricted-block code {
     font-size: 0.97em;
-    background-color: inherit;
-    padding: 0;
 }
 div.block div.deprecation-comment {
     font-style:normal;
