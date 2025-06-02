@@ -32,7 +32,7 @@ sealed interface Name permits DataName, StructuralName {
     /**
      * The name of the name, that can be used in code.
      *
-     * @return The {@String} name of the name, that can be used in code.
+     * @return The {@link String} name of the name, that can be used in code.
      */
     String name();
 
@@ -51,7 +51,7 @@ sealed interface Name permits DataName, StructuralName {
      */
     int weight();
 
-    public interface Type {
+    interface Type {
         /**
          * The name of the type, that can be used in code.
          *

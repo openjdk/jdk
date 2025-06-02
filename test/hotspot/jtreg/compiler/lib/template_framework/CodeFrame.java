@@ -30,11 +30,10 @@ import java.util.List;
 
 /**
  * The {@link CodeFrame} represents a frame (i.e. scope) of code, appending {@link Code} to the {@code 'codeList'}
- * as {@link Token}s are rendered, and adding names to the {@link NameSet}s with {@link Template#addName}.
- * {@link Hook}s can be added to a frame, which allows code to be inserted at that location later.
- * When a {@link Hook} is {@link Hook#set}, this separates the Template into an outer and inner
- * {@link CodeFrame}, ensuring that names that are {@link Template#addName}'d inside the inner frame
- * are only available inside that frame.
+ * as {@link Token}s are rendered, and adding names to the {@link NameSet}s with {@link Template#addStructuralName}/
+ * {@link Template#addDataName}. {@link Hook}s can be added to a frame, which allows code to be inserted at that
+ * location later. When a {@link Hook} is {@link Hook#anchor}ed, it separates the Template into an outer and inner
+ * {@link CodeFrame}, ensuring that names that are added inside the inner frame are only available inside that frame.
  *
  * <p>
  * On the other hand, each {@link TemplateFrame} represents the frame (or scope) of exactly one use of a
@@ -49,13 +48,13 @@ import java.util.List;
  */
 class CodeFrame {
     public final CodeFrame parent;
-    private final List<Code> codeList = new ArrayList<Code>();
+    private final List<Code> codeList = new ArrayList<>();
     private final Map<Hook, Code.CodeList> hookCodeLists = new HashMap<>();
 
     /**
      * The {@link NameSet} is used for variable and fields etc.
      */
-    final NameSet names;
+    private final NameSet names;
 
     private CodeFrame(CodeFrame parent, boolean isTransparentForNames) {
         this.parent = parent;
@@ -64,10 +63,10 @@ class CodeFrame {
             this.names = new NameSet(null);
         } else if (isTransparentForNames) {
             // We use the same NameSet as the parent - makes it transparent.
-            this.names     = parent.names;
+            this.names = parent.names;
         } else {
             // New NameSet, to make sure we have a nested scope for the names.
-            this.names     = new NameSet(parent.names);
+            this.names = new NameSet(parent.names);
         }
     }
 
@@ -93,7 +92,7 @@ class CodeFrame {
      * frame when the current frame is exited. This is necessary for {@link Hook#insert},
      * where we would possibly want to make field or variable definitions during the insertion
      * that are not just local to the insertion but affect the {@link CodeFrame} that we
-     * {@link Hook#set} earlier and are now {@link Hook#insert}ing into.
+     * {@link Hook#anchor} earlier and are now {@link Hook#insert}ing into.
      */
     public static CodeFrame makeTransparentForNames(CodeFrame parent) {
         return new CodeFrame(parent, true);
@@ -115,7 +114,7 @@ class CodeFrame {
         hookCodeLists.put(hook, new Code.CodeList(new ArrayList<Code>()));
     }
 
-    boolean hasHook(Hook hook) {
+    private boolean hasHook(Hook hook) {
         return hookCodeLists.containsKey(hook);
     }
 

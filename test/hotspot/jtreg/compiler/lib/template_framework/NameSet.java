@@ -35,7 +35,7 @@ import jdk.test.lib.Utils;
  * set of the {@code 'parent'} set.
  */
 class NameSet {
-    static final Random RANDOM = Utils.getRandomInstance();
+    private static final Random RANDOM = Utils.getRandomInstance();
 
     private final NameSet parent;
     private final List<NameSet> children = new ArrayList<>();
@@ -55,26 +55,26 @@ class NameSet {
     }
 
     private long weight(Predicate predicate) {
-        long w = names.stream().filter(n -> predicate.check(n)).mapToInt(Name::weight).sum();
+        long w = names.stream().filter(predicate::check).mapToInt(Name::weight).sum();
         if (parent != null) { w += parent.weight(predicate); }
         return w;
     }
 
     public int count(Predicate predicate) {
-        int c = (int)names.stream().filter(n -> predicate.check(n)).count();
+        int c = (int)names.stream().filter(predicate::check).count();
         if (parent != null) { c += parent.count(predicate); }
         return c;
     }
 
     public boolean hasAny(Predicate predicate) {
-        return names.stream().anyMatch(n -> predicate.check(n)) ||
+        return names.stream().anyMatch(predicate::check) ||
                (parent != null && parent.hasAny(predicate));
     }
 
     public List<Name> toList(Predicate predicate) {
         List<Name> list = (parent != null) ? parent.toList(predicate)
                                            : new ArrayList<>();
-        list.addAll(names.stream().filter(n -> predicate.check(n)).toList());
+        list.addAll(names.stream().filter(predicate::check).toList());
         return list;
     }
 
