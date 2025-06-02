@@ -81,7 +81,9 @@ public class CopyAreaOOB extends Canvas {
                 throw new RuntimeException("Test failed: \n" + errorLog.toString());
             }
         } finally {
-            EventQueue.invokeAndWait(frame::dispose);
+            if (frame != null) {
+                frame.dispose();
+            }
         }
     }
 
