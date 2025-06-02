@@ -798,10 +798,10 @@ void JVMCINMethodData::set_nmethod_mirror(nmethod* nm, oop new_mirror) {
 }
 
 void JVMCINMethodData::invalidate_nmethod_mirror(nmethod* nm) {
-  if (_nmethod_mirror_index == -1) {
-    return;
-  }
   oop nmethod_mirror = get_nmethod_mirror(nm);
+  if (nmethod_mirror == nullptr) {
+   return;
+  }
 
   // Update the values in the mirror if it still refers to nm.
   // We cannot use JVMCIObject to wrap the mirror as this is called
