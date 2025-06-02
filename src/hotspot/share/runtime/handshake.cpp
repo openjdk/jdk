@@ -490,12 +490,12 @@ bool HandshakeState::operation_pending(HandshakeOperation* op) {
   return _queue.contains(mo);
 }
 
-HandshakeOperation* HandshakeState::get_op_for_self(HandshakeOperationFilter& operations_filter) {
+HandshakeOperation* HandshakeState::get_op_for_self(HandshakeOperationFilter& operation_filter) {
   assert(_handshakee == Thread::current(), "Must be called by self");
   assert(_lock.owned_by_self(), "Lock must be held");
 
-  bool allow_suspend = operations_filter.get(HandshakeOperationProperty::allow_suspend) != nullptr ? *operations_filter.get(HandshakeOperationProperty::allow_suspend) : false;
-  const bool check_async_exception = operations_filter.get(HandshakeOperationProperty::check_async_exception) != nullptr ? *operations_filter.get(HandshakeOperationProperty::check_async_exception) : false;
+  bool allow_suspend = operation_filter.get(HandshakeOperationProperty::allow_suspend) != nullptr ? *operation_filter.get(HandshakeOperationProperty::allow_suspend) : false;
+  const bool check_async_exception = operation_filter.get(HandshakeOperationProperty::check_async_exception) != nullptr ? *operation_filter.get(HandshakeOperationProperty::check_async_exception) : false;
 
   assert(allow_suspend || !check_async_exception, "invalid case");
 #if INCLUDE_JVMTI
@@ -513,7 +513,7 @@ HandshakeOperation* HandshakeState::get_op_for_self(HandshakeOperationFilter& op
   }
 }
 
-bool HandshakeState::has_operation(HandshakeOperationFilter& operations_filter) {
+bool HandshakeState::has_operation(HandshakeOperationFilter& operation_filter) {
   // We must not block here as that could lead to deadlocks if we already hold an
   // "external" mutex. If the try_lock fails then we assume that there is an operation
   // and force the caller to check more carefully in a safer context. If we can't get
@@ -522,7 +522,7 @@ bool HandshakeState::has_operation(HandshakeOperationFilter& operations_filter) 
   bool ret = true;
   if (_lock.try_lock()) {
 
-    ret = get_op_for_self(operations_filter) != nullptr;
+    ret = get_op_for_self(operation_filter) != nullptr;
     _lock.unlock();
   }
   return ret;
@@ -563,7 +563,7 @@ void HandshakeState::remove_op(HandshakeOperation* op) {
   assert(ret == op, "Popped op must match requested op");
 };
 
-bool HandshakeState::process_by_self(HandshakeOperationFilter& operations_filter) {
+bool HandshakeState::process_by_self(HandshakeOperationFilter& operation_filter) {
   assert(Thread::current() == _handshakee, "should call from _handshakee");
   assert(!_handshakee->is_terminated(), "should not be a terminated thread");
 
@@ -580,7 +580,7 @@ bool HandshakeState::process_by_self(HandshakeOperationFilter& operations_filter
     // the asynchronous suspension and unsafe access error handshakes.
     MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
 
-    HandshakeOperation* op = get_op_for_self(operations_filter);
+    HandshakeOperation* op = get_op_for_self(operation_filter);
     if (op != nullptr) {
       assert(op->_target == nullptr || op->_target == Thread::current(), "Wrong thread");
       bool async = op->is_async();

@@ -68,11 +68,11 @@ bool SafepointMechanism::should_process(JavaThread* thread, bool allow_suspend) 
     return false;
   }
   ResourceMark rm;
-  HandshakeOperationFilter operations_filter;
-  operations_filter.put(HandshakeOperationProperty::allow_suspend, allow_suspend);
-  operations_filter.put(HandshakeOperationProperty::check_async_exception, false);
+  HandshakeOperationFilter operation_filter;
+  operation_filter.put(HandshakeOperationProperty::allow_suspend, allow_suspend);
+  operation_filter.put(HandshakeOperationProperty::check_async_exception, false);
   if (global_poll() || // Safepoint
-      thread->handshake_state()->has_operation(operations_filter) || // Handshake
+      thread->handshake_state()->has_operation(operation_filter) || // Handshake
       !StackWatermarkSet::processing_started(thread)) { // StackWatermark processing is not started
     return true;
   }
@@ -85,17 +85,17 @@ bool SafepointMechanism::should_process(JavaThread* thread, bool allow_suspend) 
   return false;
 }
 
-void SafepointMechanism::process_if_requested(JavaThread* thread, HandshakeOperationFilter& operations_filter) {
+void SafepointMechanism::process_if_requested(JavaThread* thread, HandshakeOperationFilter& operation_filter) {
   // Check NoSafepointVerifier. This also clears unhandled oops if CheckUnhandledOops is used.
   thread->check_possible_safepoint();
   if (local_poll_armed(thread)) {
-    process(thread, operations_filter);
+    process(thread, operation_filter);
   }
 }
 
-void SafepointMechanism::process_if_requested_with_exit_check(JavaThread* thread, HandshakeOperationFilter& operations_filter) {
-  operations_filter.put(HandshakeOperationProperty::allow_suspend, true);
-  process_if_requested(thread, operations_filter);
+void SafepointMechanism::process_if_requested_with_exit_check(JavaThread* thread, HandshakeOperationFilter& operation_filter) {
+  operation_filter.put(HandshakeOperationProperty::allow_suspend, true);
+  process_if_requested(thread, operation_filter);
   if (thread->has_special_runtime_exit_condition()) {
     thread->handle_special_runtime_exit_condition();
   }

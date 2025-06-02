@@ -1271,9 +1271,9 @@ void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
 
   ResourceMark rm;
-  HandshakeOperationFilter operations_filter;
-  operations_filter.put(HandshakeOperationProperty::check_async_exception, true); /* check asyncs */
-  SafepointMechanism::process_if_requested_with_exit_check(thread, operations_filter);
+  HandshakeOperationFilter operation_filter;
+  operation_filter.put(HandshakeOperationProperty::check_async_exception, true); /* check asyncs */
+  SafepointMechanism::process_if_requested_with_exit_check(thread, operation_filter);
 
   // After returning from native, it could be that the stack frames are not
   // yet safe to use. We catch such situations in the subsequent stack watermark

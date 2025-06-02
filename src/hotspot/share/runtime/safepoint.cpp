@@ -803,9 +803,9 @@ void ThreadSafepointState::handle_polling_page_exception() {
 
     // Process pending operation
     ResourceMark rm;
-    HandshakeOperationFilter operations_filter;
-    operations_filter.put(HandshakeOperationProperty::check_async_exception, true); /* check asyncs */
-    SafepointMechanism::process_if_requested_with_exit_check(self, operations_filter);
+    HandshakeOperationFilter operation_filter;
+    operation_filter.put(HandshakeOperationProperty::check_async_exception, true); /* check asyncs */
+    SafepointMechanism::process_if_requested_with_exit_check(self, operation_filter);
 
     // restore oop result, if any
     if (return_oop) {
@@ -829,9 +829,9 @@ void ThreadSafepointState::handle_polling_page_exception() {
     // during deoptimization are clobbered by the exception path. The
     // exception will just be delivered once we get into the interpreter.
     ResourceMark rm;
-    HandshakeOperationFilter operations_filter;
-    operations_filter.put(HandshakeOperationProperty::check_async_exception, false); /* check asyncs */
-    SafepointMechanism::process_if_requested_with_exit_check(self, operations_filter);
+    HandshakeOperationFilter operation_filter;
+    operation_filter.put(HandshakeOperationProperty::check_async_exception, false); /* check asyncs */
+    SafepointMechanism::process_if_requested_with_exit_check(self, operation_filter);
     set_at_poll_safepoint(false);
 
     if (self->has_async_exception_condition()) {

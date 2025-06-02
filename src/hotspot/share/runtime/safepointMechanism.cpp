@@ -132,7 +132,7 @@ void SafepointMechanism::update_poll_values(JavaThread* thread) {
   }
 }
 
-void SafepointMechanism::process(JavaThread *thread, HandshakeOperationFilter& operations_filter) {
+void SafepointMechanism::process(JavaThread *thread, HandshakeOperationFilter& operation_filter) {
   DEBUG_ONLY(intptr_t* sp_before = thread->last_Java_sp();)
   // Read global poll and has_handshake after local poll
   OrderAccess::loadload();
@@ -157,7 +157,7 @@ void SafepointMechanism::process(JavaThread *thread, HandshakeOperationFilter& o
     // 2) After a thread races with the disarming of the global poll and transitions from native/blocked
     // 3) Before the handshake code is run
     StackWatermarkSet::on_safepoint(thread);
-    need_rechecking = thread->handshake_state()->has_operation() && thread->handshake_state()->process_by_self(operations_filter);
+    need_rechecking = thread->handshake_state()->has_operation() && thread->handshake_state()->process_by_self(operation_filter);
   } while (need_rechecking);
 
   update_poll_values(thread);

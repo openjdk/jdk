@@ -113,7 +113,7 @@ class HandshakeState {
   bool can_process_handshake();
 
   bool have_non_self_executable_operation();
-  HandshakeOperation* get_op_for_self(HandshakeOperationFilter& operations_filter);
+  HandshakeOperation* get_op_for_self(HandshakeOperationFilter& operation_filter);
   HandshakeOperation* get_op();
   void remove_op(HandshakeOperation* op);
 
@@ -135,7 +135,7 @@ class HandshakeState {
   void add_operation(HandshakeOperation* op);
 
   bool has_operation() { return !_queue.is_empty(); }
-  bool has_operation(HandshakeOperationFilter& operations_filter);
+  bool has_operation(HandshakeOperationFilter& operation_filter);
   bool has_async_exception_operation();
   void clean_async_exception_operation();
 
@@ -144,7 +144,7 @@ class HandshakeState {
   // If the method returns true we need to check for a possible safepoint.
   // This is due to a suspension handshake which put the JavaThread in blocked
   // state so a safepoint may be in-progress.
-  bool process_by_self(HandshakeOperationFilter& operations_filter);
+  bool process_by_self(HandshakeOperationFilter& operation_filter);
 
   enum ProcessResult {
     _no_operation = 0,
