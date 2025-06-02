@@ -273,7 +273,7 @@ public final class JVM {
     /**
      * Set the maximum event emission rate for the CPU time sampler
      *
-     * Setting rate to 0 turns off the CPU time method sampler.
+     * Setting rate to 0 turns off the CPU time sampler.
      *
      * @param rate the new rate in events per second
      * @param autoadapt true if the rate should be adapted automatically

@@ -22,17 +22,14 @@
  *
  */
 
+ #include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 #include "utilities/ticks.hpp"
-#include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 
 #if defined(LINUX)
 
-#include "jfr/recorder/jfrRecorder.hpp"
-#include "jfr/recorder/service/jfrRecorderService.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "jfr/utilities/jfrTime.hpp"
