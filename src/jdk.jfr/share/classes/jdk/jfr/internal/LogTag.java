@@ -101,7 +101,12 @@ public enum LogTag {
     /**
      * -XX:StartFlightRecording
      */
-    JFR_START(16);
+    JFR_START(16),
+    /**
+     *  Covers usage of MethodTiming and MethodTrace events
+     */
+    JFR_METHODTRACE(17),
+    ;
 
     /* set from native side */
     volatile int tagSetLevel = 100; // prevent logging if JVM log system has not been initialized

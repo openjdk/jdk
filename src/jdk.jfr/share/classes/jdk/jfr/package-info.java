@@ -176,6 +176,31 @@
  * <td>{@code "true"},<br>
  * {@code "false"}</td>
  * </tr>
+ * <tr>
+ * <th scope="row">{@code filter}</th>
+ * <td>Specifies the filter for the event</td>
+ * <td>{@code ""} (empty string)</td>
+ * <td>An empty string if no filter is used. Otherwise, a
+ * filter that can be used with the jdk.MethodTrace or
+ * jdk.MethodTiming events and follows this grammar:<br>
+ * {@snippet :
+ * filter ::= target (";" target)*
+ * target ::= class | class-method | method | annotation
+ * class ::= identifier ("." identifier)*
+ * class-method ::= class method
+ * method ::= "::" method-name
+ * method-name ::= identifier | "<clinit>" | "<init>"
+ * annotation ::= "@" class
+ * identifier ::= see JLS 3.8
+ * }
+ * </td>
+ * <td>{@code "java.lang.String"}<br>
+ * {@code "::<clinit>"}<br>
+ * {@code "java.util.HashMap::resize"}<br>
+ * {@code "java.io.FileDescriptor::<init>;java.io.FileDescriptor::close"}<br>
+ * {@code  "@jakarta.ws.rs.GET"}<br>
+ * </td>
+ * </tr>
  * </tbody>
  * </table>
  * <p>
