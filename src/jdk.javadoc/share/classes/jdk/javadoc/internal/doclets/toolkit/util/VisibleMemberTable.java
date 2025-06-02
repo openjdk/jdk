@@ -56,7 +56,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
@@ -263,10 +262,6 @@ public class VisibleMemberTable {
      * Returns a list of all enclosed members including any extra members.
      * Typically called by various builders.
      *
-     * For methods, any interface method coming from an undocumented supertype
-     * will be removed if this class (or one of its superclasses) provides
-     * an override.
-     *
      * @param kind the member kind
      * @return a list of visible enclosed members
      */
@@ -275,35 +270,7 @@ public class VisibleMemberTable {
             TypeElement encl = utils.getEnclosingTypeElement(e);
             return Objects.equals(encl, te) || utils.isUndocumentedEnclosure(encl);
         };
-        List<Element> members = getVisibleMembers(kind, declaredAndLeafMembers);
-
-        if (kind == Kind.METHODS) {
-            members = removeDuplicates(members);
-        }
-
-        return members;
-    }
-
-    /**
-     * Drop any methods that were inlined from an undocumented interface
-     * and have a local override in this class hierarchy.
-     */
-    private List<Element> removeDuplicates(List<Element> methods) {
-        Set<ExecutableElement> localMethods = overriddenMethodTable.values().stream()
-                .map(info -> info.overriddenMethod)
-                .collect(Collectors.toSet());
-
-        return methods.stream()
-                .filter(e -> shouldKeepInheritedMethod(e, localMethods))
-                .toList();
-    }
-
-    private boolean shouldKeepInheritedMethod(Element e, Set<ExecutableElement> overridden) {
-        if (!(e instanceof ExecutableElement ee)) return true;
-        TypeElement encl = utils.getEnclosingTypeElement(ee);
-        boolean hiddenInterface = !Objects.equals(encl, te)
-                && utils.isUndocumentedEnclosure(encl);
-        return !hiddenInterface || !overridden.contains(ee);
+        return getVisibleMembers(kind, declaredAndLeafMembers);
     }
 
     /**
