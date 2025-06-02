@@ -1569,7 +1569,8 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
   MutexLocker ml_NMethodState_lock(NMethodState_lock, Mutex::_no_safepoint_check_flag);
 
   // Verify the nm we copied from is still valid
-  if (method() != nullptr && method()->code() == this && !is_marked_for_deoptimization() && is_in_use()) {
+  if (!is_marked_for_deoptimization() && is_in_use()) {
+    assert(method() != nullptr && method()->code() == this, "should be if is in use");
 
     // Attempt to start using the copy
     if (nm_copy->make_in_use()) {
