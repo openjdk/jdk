@@ -629,44 +629,67 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //   But we can use the following definition, using (LINEAR-FORM-INIT), so we do
 //   not have to compute p(limX) directly:
 //
-//     p1(limX) = p1(init) - init * iv_scale1 + limX * iv_scale1
+//     p1(limX) = p1(init) - init * iv_scale1 + limX * iv_scale1                 (SPAN-X1)
 //                         --------------- defines -------------
 //                p1(init) + spanX1
 //
-//     p2(limX) = p2(init) - init * iv_scale2 + limX * iv_scale2
+//     p2(limX) = p2(init) - init * iv_scale2 + limX * iv_scale2                 (SPAN-X2)
 //                         --------------- defines -------------
 //                p1(init) + spanX2
-//
-// TODO: continue here!
 //
 //     spanX1 = - init * iv_scale1 + limX * iv_scale1
 //     spanX2 = - init * iv_scale2 + limX * iv_scale2
 //
-//   If: iv_stride >= 0
-//     p2(limX) + size2 <
+//   Further, we define:
 //
-//     spanX1 = p1(limX) - p1(init) = (limX - init) * iv_scale1
-//     spanX2 = p2(limX) - p2(init) = (limX - init) * iv_scale2
+//     span1 = - init * iv_scale1 + limit * iv_scale1
+//     span2 = - init * iv_scale2 + limit * iv_scale2
 //
-
-//   But as mentioned above, computing limX is cumbersome, so we will slightly
-//   strengthen the checks from using limX to limit. But of course we should
-//   not evaluate p(limit), as this may be out of bounds.
+//   Given that we assumed (without loss of generality), that iv_scale1 < iv_scale2, we know:
+//     If iv_stride >= 0 -> limX <= limit -> (limit - limX) >= 0
+//                        iv_scale2 >                    iv_scale1
+//       (limit - limX) * iv_scale2 >=  (limit - limX) * iv_scale1
+//       span2  - spanX2             >= span1  - spanX1
+//       spanX2 - span2              <= spanX1 - span1                            (RELAX-POS)
 //
-///   Since computing limX is cumbersome, and we only have limit readily
-//   available, we the spans with slightly larger magnitude:
-//     span1 = (limit - init) * iv_scale1
-//     span2 = (limit - init) * iv_scale2
+//     If iv_stride <= 0 -> limX >= limit -> (limit - limX) <= 0
+//                        iv_scale2 >                   iv_scale1
+//       (limit - limX) * iv_scale2 <= (limit - limX) * iv_scale1
+//       span2 - spanX2             <= span1 - spanX1
+//       spanX1 - span1             <= spanX2 - span2                             (RELAX-NEG)
 //
-//   p1(init) + size1 <= p2(init)  OR  p2(limX) + size2 <= p1(limX)      (if iv_stride >= 0)
-//   p1(limX) + size1 <= p2(limX)  OR  p2(init) + size2 <= p1(init)      (if iv_stride <= 0)
+//   We can use this inequality to relax the conditions ever so slightly, and use limit instead
+//   of limX in the condition:
 //
+//       p1(init) + size1 <= p2(init)       (if iv_stride >= 0)  |    p2(limX) + size2 <= p1(limX)      (if iv_stride >= 0)   |
+//       -> already as desired                                   |                                                            |
+//                                                               |    Instead, we take the following relaxed condition, which |
+//                                                               |    implies the condition above:                            |
+//                                                               |                                                            |
+//                                                               |    p2(init) + span2  + size2 <= p1(init) + span1           |
+//                                                               |    -------------- (add RELAX-POS) --------------           |
+//                                                               |    p2(init) + span2  + size2 <= p1(init) + span1           |
+//                                                               |    spanX2 - span2            <= spanX1 - span1             |
+//                                                               |    ----------------- (implies) -----------------           |
+//                                                               |    p2(init) + spanX2 + size2 <= p1(init) + spanX1          |
+//                                                               |                                                            |
+//                                                               |                                                            |
+//       p1(limX) + size1 <= p2(limX)       (if iv_stride <= 0)  |    p2(init) + size2 <= p1(init)      (if iv_stride <= 0)   |
+//                                                               |    -> already as desired                                   |
+//       Instead, we take the following relaxed condition, which |                                                            |
+//       implies the condition above:                            |                                                            |
+//                                                               |                                                            |
+//       p1(init) + span1  + size1 <= p2(init) + span2           |                                                            |
+//       -------------- (add RELAX-NEG) --------------           |                                                            |
+//       p1(init) + span1  + size1 <= p2(init) + span2           |                                                            |
+//       spanX1 - span1            <= spanX2 - span2             |                                                            |
+//       ----------------- (implies) -----------------           |                                                            |
+//       p1(init) + spanX1 + size1 <= p2(init) + spanX2          |                                                            |
+//                                                               |                                                            |
 //
-///////   p1(init)         + size1 <= p2(init)          OR  p2(init) + span2 + size2 <= p1(init) + span1    (if iv_stride >= 0)
-///////   p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)            (if iv_stride <= 0)
-///////   ------------ is equivalent to --------------      ------------- is equivalent to -------------
-///////                 (P1-BEFORE-P2)                  OR                 (P1-AFTER-P2)
-//
+//   In summary, we can use the conditions below:
+//     p1(init)         + size1 <= p2(init)          OR  p2(init) + span2 + size2 <= p1(init) + span1    (if iv_stride >= 0)
+//     p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)            (if iv_stride <= 0)
 //
 bool VPointer::can_make_speculative_aliasing_check_with(const VPointer& other) const {
   const VPointer& vp1 = *this;
