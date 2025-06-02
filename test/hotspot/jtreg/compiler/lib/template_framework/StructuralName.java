@@ -31,6 +31,7 @@ import java.util.List;
  * count, list or even sample random {@link StructuralName}s. Every {@link StructuralName} has a {@link StructuralName.Type},
  * so that sampling can be restricted to these types.
  *
+ * <p>
  * For field and variable names and alike, there are the analogous {@link DataName}s.
  *
  * @param name The {@link String} name used in code.
@@ -91,9 +92,9 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
                 throw new UnsupportedOperationException("Must first call 'subtypeOf', 'supertypeOf', or 'exactOf'.");
             }
             return (Name name) -> {
-                if (!(name instanceof StructuralName dn)) { return false; }
-                if (subtype != null && !dn.type().isSubtypeOf(subtype)) { return false; }
-                if (supertype != null && !supertype.isSubtypeOf(dn.type())) { return false; }
+                if (!(name instanceof StructuralName structuralName)) { return false; }
+                if (subtype != null && !structuralName.type().isSubtypeOf(subtype)) { return false; }
+                if (supertype != null && !supertype.isSubtypeOf(structuralName.type())) { return false; }
                 return true;
             };
         }
@@ -104,7 +105,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          * @param type The type of which all {@link StructuralName}s must be subtypes of.
          * @return The filtered {@link View}.
          * @throws UnsupportedOperationException If this {@link View} was already filtered with
-         *                                       {@link subtypeOf} or {@link exactOf}.
+         *                                       {@link #subtypeOf} or {@link #exactOf}.
          */
         public View subtypeOf(StructuralName.Type type) {
             if (subtype != null) {
@@ -114,7 +115,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
         }
 
         /**
-         * Create a filtered {@link View}, where all {@link StructuralName}s must be subtypes of {@code type}.
+         * Create a filtered {@link View}, where all {@link StructuralName}s must be supertypes of {@code type}.
          *
          * @param type The type of which all {@link StructuralName}s must be supertype of.
          * @return The filtered {@link View}.

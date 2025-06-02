@@ -63,7 +63,7 @@ final class Renderer {
             // We want to trim off the brackets, so have
             // another non-capturing group.
             "(?:\\{" +
-                // capturing group for "name" inside of "{name}"
+                // capturing group for "name" inside "{name}"
                 "(" + NAME_CHARACTERS + ")" +
             "\\})" +
         ")");
@@ -196,7 +196,7 @@ final class Renderer {
 
     /**
      * Formats values to {@link String} with the goal of using them in Java code.
-     * By default we use the overrides of {@link Object#toString}.
+     * By default, we use the overrides of {@link Object#toString}.
      * But for some boxed primitives we need to create a special formatting.
      */
     static String format(Object value) {
@@ -289,7 +289,7 @@ final class Renderer {
                 currentCodeFrame.addCode(hookCodeFrame.getCode());
                 currentCodeFrame.addCode(innerCodeFrame.getCode());
             }
-            case HookInsertToken(Hook hook, TemplateToken t) -> {
+            case HookInsertToken(Hook hook, TemplateToken templateToken) -> {
                 // Switch to hook CodeFrame.
                 CodeFrame callerCodeFrame = currentCodeFrame;
                 CodeFrame hookCodeFrame = codeFrameForHook(hook);
@@ -302,19 +302,19 @@ final class Renderer {
                 // the hookCodeFrame, and are not limited to the CodeFrame for the TemplateToken.
                 currentCodeFrame = CodeFrame.makeTransparentForNames(hookCodeFrame);
 
-                renderTemplateToken(t);
+                renderTemplateToken(templateToken);
 
                 hookCodeFrame.addCode(currentCodeFrame.getCode());
 
                 // Switch back from hook CodeFrame to caller CodeFrame.
                 currentCodeFrame = callerCodeFrame;
             }
-            case TemplateToken t -> {
+            case TemplateToken templateToken -> {
                 // Use a nested CodeFrame.
                 CodeFrame callerCodeFrame = currentCodeFrame;
                 currentCodeFrame = CodeFrame.make(currentCodeFrame);
 
-                renderTemplateToken(t);
+                renderTemplateToken(templateToken);
 
                 callerCodeFrame.addCode(currentCodeFrame.getCode());
                 currentCodeFrame = callerCodeFrame;

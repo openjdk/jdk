@@ -31,6 +31,7 @@ import java.util.List;
  * count, list or even sample random {@link DataName}s. Every {@link DataName} has a {@link DataName.Type},
  * so that sampling can be restricted to these types.
  *
+ * <p>
  * For method and class names and alike, there are the analogous {@link StructuralName}s.
  *
  * @param name The {@link String} name used in code.
@@ -116,11 +117,11 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
                 throw new UnsupportedOperationException("Must first call 'subtypeOf', 'supertypeOf', or 'exactOf'.");
             }
             return (Name name) -> {
-                if (!(name instanceof DataName dn)) { return false; }
-                if (mutability == Mutability.MUTABLE && !dn.mutable()) { return false; }
-                if (mutability == Mutability.IMMUTABLE && dn.mutable()) { return false; }
-                if (subtype != null && !dn.type().isSubtypeOf(subtype)) { return false; }
-                if (supertype != null && !supertype.isSubtypeOf(dn.type())) { return false; }
+                if (!(name instanceof DataName dataName)) { return false; }
+                if (mutability == Mutability.MUTABLE && !dataName.mutable()) { return false; }
+                if (mutability == Mutability.IMMUTABLE && dataName.mutable()) { return false; }
+                if (subtype != null && !dataName.type().isSubtypeOf(subtype)) { return false; }
+                if (supertype != null && !supertype.isSubtypeOf(dataName.type())) { return false; }
                 return true;
             };
         }
@@ -131,7 +132,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * @param type The type of which all {@link DataName}s must be subtypes of.
          * @return The filtered {@link View}.
          * @throws UnsupportedOperationException If this {@link View} was already filtered with
-         *                                       {@link subtypeOf} or {@link exactOf}.
+         *                                       {@link #subtypeOf} or {@link #exactOf}.
          */
         public View subtypeOf(DataName.Type type) {
             if (subtype != null) {
@@ -141,7 +142,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
         }
 
         /**
-         * Create a filtered {@link View}, where all {@link DataName}s must be subtypes of {@code type}.
+         * Create a filtered {@link View}, where all {@link DataName}s must be supertypes of {@code type}.
          *
          * @param type The type of which all {@link DataName}s must be supertype of.
          * @return The filtered {@link View}.

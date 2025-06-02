@@ -32,6 +32,7 @@ import java.util.List;
  * "back" or to some outer scope, e.g. while generating code for a method, one can reach out
  * to the class scope to insert fields.
  *
+ * <p>
  * Example:
  * {@snippet lang=java :
  * var myHook = new Hook("MyHook");

@@ -23,14 +23,13 @@
 
 package compiler.lib.template_framework;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
  * This class collects code, i.e. {@link String}s or {@link List}s of {@link String}s.
  * All the {@link String}s are later collected in a {@link StringBuilder}. If we used a {@link StringBuilder}
  * directly to collect the {@link String}s, we could not as easily insert code at an "earlier" position, i.e.
- * reaching out to a {@link Hook#set}.
+ * reaching out to a {@link Hook#anchor}.
  */
 sealed interface Code permits Code.Token, Code.CodeList {
 
