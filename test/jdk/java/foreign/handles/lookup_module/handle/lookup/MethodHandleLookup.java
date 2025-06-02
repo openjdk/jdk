@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,18 @@ public class MethodHandleLookup {
                     { MethodHandles.lookup().findStatic(SymbolLookup.class, "libraryLookup",
                             MethodType.methodType(SymbolLookup.class, Path.class, Arena.class)),
                             "SymbolLookup::libraryLookup(Path)" },
+                    { MethodHandles.lookup().findStatic(System.class, "load",
+                            MethodType.methodType(void.class, String.class)),
+                            "System::load" },
+                    { MethodHandles.lookup().findStatic(System.class, "loadLibrary",
+                            MethodType.methodType(void.class, String.class)),
+                            "System::loadLibrary" },
+                    { MethodHandles.lookup().findVirtual(Runtime.class, "load",
+                            MethodType.methodType(void.class, String.class)),
+                            "Runtime::load" },
+                    { MethodHandles.lookup().findVirtual(Runtime.class, "loadLibrary",
+                            MethodType.methodType(void.class, String.class)),
+                            "Runtime::loadLibrary" }
             };
         } catch (Throwable ex) {
             throw new ExceptionInInitializerError((ex));

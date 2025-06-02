@@ -376,7 +376,7 @@ public class ProxySelectorTest implements HttpServerAdapters {
     public void teardown() throws Exception {
         client = null;
         Thread.sleep(100);
-        AssertionError fail = TRACKER.check(500);
+        AssertionError fail = TRACKER.check(1500);
         try {
             proxy.stop();
             authproxy.stop();

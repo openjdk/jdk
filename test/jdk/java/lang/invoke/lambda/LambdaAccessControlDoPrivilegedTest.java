@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @modules jdk.compiler
  *          jdk.zipfs
  * @compile LambdaAccessControlDoPrivilegedTest.java
- * @run main/othervm -Djava.security.manager=allow LambdaAccessControlDoPrivilegedTest
+ * @run main/othervm LambdaAccessControlDoPrivilegedTest
  * @summary tests DoPrivileged action (implemented as lambda expressions) by
  * inserting them into the BootClassPath.
  */
@@ -63,7 +63,6 @@ public class LambdaAccessControlDoPrivilegedTest {
         scratch.clear();
         scratch.add("public class Bar {");
         scratch.add("public static void main(String... args) {");
-        scratch.add("System.setSecurityManager(new SecurityManager());");
         scratch.add("DoPriv.main();");
         scratch.add("}");
         scratch.add("}");
@@ -81,7 +80,6 @@ public class LambdaAccessControlDoPrivilegedTest {
         ProcessBuilder pb = createTestJavaProcessBuilder(
                                 "-Xbootclasspath/a:foo.jar",
                                 "-cp", ".",
-                                "-Djava.security.manager=allow",
                                 "Bar");
         executeProcess(pb).shouldHaveExitValue(0);
 

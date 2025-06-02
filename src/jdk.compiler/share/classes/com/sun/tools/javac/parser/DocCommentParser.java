@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,12 @@ import java.util.regex.Pattern;
 import com.sun.source.doctree.AttributeTree.ValueKind;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.ErroneousTree;
+import com.sun.source.doctree.LiteralTree;
+import com.sun.source.doctree.StartElementTree;
+import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
 import com.sun.source.doctree.UnknownInlineTagTree;
+import com.sun.source.util.SimpleDocTreeVisitor;
 import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.tree.DCTree;
 import com.sun.tools.javac.tree.DCTree.DCAttribute;
@@ -126,6 +130,9 @@ public class DocCommentParser {
     private int lastNonWhite = -1;
     private boolean newline = true;
 
+    /** Used for whitespace normalization in pre/code/literal tags. */
+    private boolean inPre = false;
+
     private final Map<Name, TagParser> tagParsers;
 
     /**
@@ -158,7 +165,7 @@ public class DocCommentParser {
         this.fac = fac;
         this.diags = fac.log.diags;
         this.diagSource = diagSource;
-        this.comment = comment;
+        this.comment = comment.stripIndent();
         names = fac.names;
         this.isHtmlFile = isHtmlFile;
         textKind = isHtmlFile ? DocTree.Kind.TEXT : getTextKind(comment);
@@ -281,10 +288,15 @@ public class DocCommentParser {
      */
     protected List<DCTree> content(Phase phase) {
         ListBuffer<DCTree> trees = new ListBuffer<>();
+        ListBuffer<DCTree> mainTrees = null;
         textStart = -1;
 
         int depth = 1;                  // only used when phase is INLINE
         int pos = bp;                   // only used when phase is INLINE
+
+        if (textKind == DocTree.Kind.MARKDOWN) {
+            initMarkdownLine();
+        }
 
         loop:
         while (bp < buflen) {
@@ -292,10 +304,7 @@ public class DocCommentParser {
                 case '\n', '\r' -> {
                     nextChar();
                     if (textKind == DocTree.Kind.MARKDOWN) {
-                        markdown.update();
-                        if (markdown.isIndentedCodeBlock()) {
-                            markdown.skipLine();
-                        }
+                        initMarkdownLine();
                     }
                 }
 
@@ -347,6 +356,18 @@ public class DocCommentParser {
                             }
                             addPendingText(trees, bp - 1);
                             trees.add(html());
+
+                            // Create new list for <pre> content which is merged into main list when element is closed.
+                            if (inPre) {
+                                if (mainTrees == null) {
+                                    mainTrees = trees;
+                                    trees = new ListBuffer<>();
+                                }
+                            } else if (mainTrees != null) {
+                                mainTrees.addAll(normalizePreContent(trees));
+                                trees = mainTrees;
+                                mainTrees = null;
+                            }
 
                             if (phase == Phase.PREAMBLE || phase == Phase.POSTAMBLE) {
                                 break; // Ignore newlines after html tags, in the meta content
@@ -475,6 +496,13 @@ public class DocCommentParser {
         if (lastNonWhite != -1)
             addPendingText(trees, lastNonWhite);
 
+        // Happens with unclosed <pre> element. Add content without normalizing.
+        if (mainTrees != null) {
+            mainTrees.addAll(trees);
+            trees = mainTrees;
+            mainTrees = null;
+        }
+
         return (phase == Phase.INLINE)
                 ? List.of(erroneous("dc.unterminated.inline.tag", pos))
                 : trees.toList();
@@ -486,6 +514,17 @@ public class DocCommentParser {
             textStart = bp;
         lastNonWhite = bp;
         nextChar();
+    }
+
+    void initMarkdownLine() {
+        if (textStart == -1) {
+            textStart = bp;
+        }
+        markdown.update();
+        if (markdown.isIndentedCodeBlock()) {
+            markdown.skipLine();
+            lastNonWhite = bp - 1; // do not include newline or EOF
+        }
     }
 
     private IllegalStateException unknownTextKind(DocTree.Kind textKind) {
@@ -1042,6 +1081,9 @@ public class DocCommentParser {
                 }
                 if (ch == '>') {
                     nextChar();
+                    if ("pre".equalsIgnoreCase(name.toString())) {
+                        inPre = true;
+                    }
                     return m.at(p).newStartElementTree(name, attrs, selfClosing).setEndPos(bp);
                 }
             }
@@ -1052,6 +1094,9 @@ public class DocCommentParser {
                 skipWhitespace();
                 if (ch == '>') {
                     nextChar();
+                    if ("pre".equalsIgnoreCase(name.toString())) {
+                        inPre = false;
+                    }
                     return m.at(p).newEndElementTree(name).setEndPos(bp);
                 }
             }
@@ -1135,7 +1180,6 @@ public class DocCommentParser {
         ListBuffer<DCTree> attrs = new ListBuffer<>();
         skipWhitespace();
 
-        loop:
         while (bp < buflen && isIdentifierStart(ch)) {
             int namePos = bp;
             Name name = readAttributeName();
@@ -1153,14 +1197,6 @@ public class DocCommentParser {
                     nextChar();
                     textStart = bp;
                     while (bp < buflen && ch != quote) {
-                        if (newline && ch == '@') {
-                            attrs.add(erroneous("dc.unterminated.string", namePos));
-                            // No point trying to read more.
-                            // In fact, all attrs get discarded by the caller
-                            // and superseded by a malformed.html node because
-                            // the html tag itself is not terminated correctly.
-                            break loop;
-                        }
                         attrValueChar(v);
                     }
                     addPendingText(v, bp - 1, DocTree.Kind.TEXT);
@@ -1181,6 +1217,102 @@ public class DocCommentParser {
         }
 
         return attrs.toList();
+    }
+
+    /*
+     * Removes a newline character following a <code>, {@code or {@literal tag at the
+     * beginning of <pre> element content, as well as any space/tabs between the pre
+     * and code tags. The operation is only performed on traditional doc comments.
+     * If conditions are not met the list is returned unchanged.
+     */
+    ListBuffer<DCTree> normalizePreContent(ListBuffer<DCTree> trees) {
+        // Do nothing if comment is not eligible for whitespace normalization.
+        if (textKind == DocTree.Kind.MARKDOWN || isHtmlFile) {
+            return trees;
+        }
+
+        enum State {
+            BEFORE_CODE, // at beginning of <pre> content, or after leading horizontal whitespace
+            AFTER_CODE,  // after <code> start tag (not used for {@code} tag)
+            SUCCEEDED,   // normalization succeeded, add remaining trees
+            FAILED;      // normalization failed, return original trees
+        }
+
+        class Context {
+            State state = State.BEFORE_CODE;
+
+            // Called when an unexpected tree is encountered. Set state to
+            // FAILED unless normalization already terminated successfully.
+            void unexpectedTree() {
+                if (state != State.SUCCEEDED) {
+                    state = State.FAILED;
+                }
+            }
+        }
+
+        var visitor = new SimpleDocTreeVisitor<DCTree, Context>() {
+            @Override
+            public DCTree visitText(TextTree text, Context cx) {
+                if (cx.state == State.BEFORE_CODE && text.getBody().matches("[ \t]+")) {
+                    // <pre>  ...
+                    return null;
+                } else if (cx.state == State.AFTER_CODE && text.getBody().startsWith("\n")) {
+                    // <pre><code>\n...
+                    cx.state = State.SUCCEEDED;
+                    return m.at(((DCText) text).pos + 1).newTextTree(text.getBody().substring(1));
+                }
+                cx.unexpectedTree();
+                return (DCTree) text;
+            }
+
+            @Override
+            public DCTree visitLiteral(LiteralTree literal, Context cx) {
+                if (cx.state == State.BEFORE_CODE && literal.getBody().getBody().startsWith("\n")) {
+                    // <pre>{@code\n...
+                    cx.state = State.SUCCEEDED;
+                    DCText oldBody = (DCText) literal.getBody();
+                    DCText newBody = m.at(oldBody.pos + 1).newTextTree(oldBody.getBody().substring(1));
+                    m.at(((DCTree) literal).pos);
+                    return literal.getKind() == DocTree.Kind.CODE
+                            ? m.newCodeTree(newBody)
+                            : m.newLiteralTree(newBody);
+                }
+                cx.unexpectedTree();
+                return (DCTree) literal;
+            }
+
+            @Override
+            public DCTree visitStartElement(StartElementTree node, Context cx) {
+                if (cx.state == State.BEFORE_CODE && node.getName().toString().equalsIgnoreCase("code")) {
+                    cx.state = State.AFTER_CODE;
+                } else {
+                    cx.unexpectedTree();
+                }
+                return (DCTree) node;
+            }
+
+            @Override
+            protected DCTree defaultAction(DocTree node, Context cx) {
+                cx.unexpectedTree();
+                return (DCTree) node;
+            }
+        };
+
+        Context cx = new Context();
+        var normalized = new ListBuffer<DCTree>();
+
+        for (var tree : trees) {
+            var visited = visitor.visit(tree, cx);
+            // null return value means the tree should be dropped
+            if (visited != null) {
+                normalized.add(visited);
+            }
+            if (cx.state == State.FAILED) {
+                return trees;
+            }
+        }
+
+        return cx.state == State.SUCCEEDED ? normalized : trees;
     }
 
     protected void attrValueChar(ListBuffer<DCTree> list) {

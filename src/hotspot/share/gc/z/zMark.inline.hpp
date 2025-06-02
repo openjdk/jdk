@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@
 
 template <bool resurrect, bool gc_thread, bool follow, bool finalizable>
 inline void ZMark::mark_object(zaddress addr) {
-  assert(!ZVerifyOops || oopDesc::is_oop(to_oop(addr)), "Should be oop");
+  assert_is_oop(addr);
 
   ZPage* const page = _page_table->get(addr);
   if (page->is_allocating()) {
@@ -84,7 +84,7 @@ inline void ZMark::mark_object(zaddress addr) {
   assert(ZHeap::heap()->is_young(addr) == _generation->is_young(), "Phase/object mismatch");
 
   const bool publish = !gc_thread;
-  stacks->push(&_allocator, &_stripes, stripe, &_terminate, entry, publish);
+  stacks->push(&_stripes, stripe, &_terminate, entry, publish);
 }
 
 #endif // SHARE_GC_Z_ZMARK_INLINE_HPP

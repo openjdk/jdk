@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
           "Use static branch prediction hints for uncommon paths.")         \
                                                                             \
   /* special instructions */                                                \
-  product(bool, SuperwordUseVSX, false,                                     \
+  product(bool, SuperwordUseVSX, true,                                      \
           "Use Power8 VSX instructions for superword optimization.")        \
                                                                             \
   product(bool, UseByteReverseInstructions, false, DIAGNOSTIC,              \

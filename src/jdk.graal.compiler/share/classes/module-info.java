@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
   * external implementation of a JVMCI compiler. It must be upgradeable so
   * that it can be replaced when jlinking a new JDK image without failing
   * the hash check for the qualified exports in jdk.internal.vm.ci's
-  * module descriptor.
+  * and java.base's module descriptors.
   *
   * @moduleGraph
   * @since 22

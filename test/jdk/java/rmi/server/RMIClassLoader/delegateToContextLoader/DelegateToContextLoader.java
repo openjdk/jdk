@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,13 +34,12 @@
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary Dummy
- * @run main/othervm/policy=security.policy/timeout=120 DelegateToContextLoader
+ * @run main/othervm/timeout=120 DelegateToContextLoader
  */
 
 import java.io.*;
 import java.net.*;
 import java.security.*;
-import java.rmi.RMISecurityManager;
 import java.rmi.server.RMIClassLoader;
 
 public class DelegateToContextLoader {
@@ -52,14 +51,6 @@ public class DelegateToContextLoader {
     private static final String classFileName = className + ".class";
 
     public static void main(String[] args) throws Exception {
-
-        /*
-         * Set a security manager so that RMI class loading will not
-         * be disabled.
-         */
-        TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
-
-
         URL codebaseURL = TestLibrary.
             installClassInCodebase(className, "codebase");
 

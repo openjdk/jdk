@@ -26,7 +26,6 @@
  * @bug 8246774
  * @summary Basic tests for prohibited magic serialPersistentFields
  * @library /test/lib
- * @enablePreview
  * @run testng SerialPersistentFieldsTest
  */
 

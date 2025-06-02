@@ -30,13 +30,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.utils.PseudoRandom;
 
-public abstract class TestsGenerator implements BiConsumer<IRNode, IRNode> {
+public abstract class TestsGenerator implements Consumer<IRTreeGenerator.Test> {
     private static final int DEFAULT_JTREG_TIMEOUT = 120;
     protected static final String JAVA_BIN = getJavaPath();
     protected static final String JAVAC = Paths.get(JAVA_BIN, "javac").toString();
@@ -121,9 +120,9 @@ public abstract class TestsGenerator implements BiConsumer<IRNode, IRNode> {
         }
     }
 
-    protected String getJtregHeader(String mainClassName) {
+    protected String getJtregHeader(String mainClassName, long seed) {
         String synopsis = "seed = '" + ProductionParams.seed.value() + "'"
-                + ", specificSeed = '" + PseudoRandom.getCurrentSeed() + "'";
+                + ", specificSeed = '" + seed + "'";
         StringBuilder header = new StringBuilder();
         header.append("/*\n * @test\n * @summary ")
               .append(synopsis)

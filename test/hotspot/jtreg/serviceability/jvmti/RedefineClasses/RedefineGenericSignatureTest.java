@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
  * @bug 8282241
  * @summary Verifies class redefinition correctly updates generic_signature and source_file_name attributes
  * @requires vm.jvmti
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.instrument
+ * @modules java.instrument
+ * @library /testlibrary/asm
  * @library /test/lib
  * @run main RedefineClassHelper
  * @run main/othervm -javaagent:redefineagent.jar --add-opens=java.base/java.lang=ALL-UNNAMED RedefineGenericSignatureTest
@@ -42,10 +42,10 @@ import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.util.List;
 
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Opcodes;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Opcodes;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;

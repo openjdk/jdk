@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,11 @@ public class TestRestricted {
             RestrictedMethod.of(MemorySegment.class, "reinterpret", MemorySegment.class, Arena.class, Consumer.class),
             RestrictedMethod.of(MemorySegment.class, "reinterpret", MemorySegment.class, long.class, Arena.class, Consumer.class),
             RestrictedMethod.of(AddressLayout.class, "withTargetLayout", AddressLayout.class, MemoryLayout.class),
-            RestrictedMethod.of(ModuleLayer.Controller.class, "enableNativeAccess", ModuleLayer.Controller.class, Module.class)
+            RestrictedMethod.of(ModuleLayer.Controller.class, "enableNativeAccess", ModuleLayer.Controller.class, Module.class),
+            RestrictedMethod.of(System.class, "load", void.class, String.class),
+            RestrictedMethod.of(System.class, "loadLibrary", void.class, String.class),
+            RestrictedMethod.of(Runtime.class, "load", void.class, String.class),
+            RestrictedMethod.of(Runtime.class, "loadLibrary", void.class, String.class)
     );
 
     @Test

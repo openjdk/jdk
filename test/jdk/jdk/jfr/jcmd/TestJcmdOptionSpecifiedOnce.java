@@ -25,7 +25,7 @@ package jdk.jfr.jcmd;
 /**
  * @test
  * @summary The test verifies that options can only be specified once with jcmd JFR
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal.dcmd

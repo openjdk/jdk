@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,8 @@ import org.openjdk.jmh.annotations.Warmup;
  */
 @Warmup(iterations = 2)
 @Measurement(iterations = 4)
-@Fork(value = 1, jvmArgsAppend = {
-        "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED",
-        "--enable-preview",
+@Fork(value = 1, jvmArgs = {
+        "--add-exports", "java.base/jdk.internal.classfile.components=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.classfile.impl=ALL-UNNAMED"})
 @State(Scope.Benchmark)
 public class AbstractCorpusBenchmark {

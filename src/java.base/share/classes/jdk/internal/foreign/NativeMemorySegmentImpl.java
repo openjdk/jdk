@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,17 @@
 
 package jdk.internal.foreign;
 
-import java.nio.ByteBuffer;
-import java.util.Optional;
-
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
+
+import java.nio.ByteBuffer;
+import java.util.Optional;
 
 /**
  * Implementation for native memory segments. A native memory segment is essentially a wrapper around
  * a native long address.
  */
-sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl permits MappedMemorySegmentImpl {
+public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl permits MappedMemorySegmentImpl {
 
     final long min;
 

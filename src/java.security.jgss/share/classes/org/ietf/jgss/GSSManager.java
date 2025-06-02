@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -345,15 +345,7 @@ public abstract class GSSManager {
     /**
      * Factory method for acquiring default credentials.  This will cause
      * the GSS-API to use system specific defaults for the set of mechanisms,
-     * name, and lifetime.<p>
-     *
-     * GSS-API mechanism providers must impose a local access-control
-     * policy on callers to prevent unauthorized callers from acquiring
-     * credentials to which they are not entitled. The kinds of permissions
-     * needed by different mechanism providers will be documented on a
-     * per-mechanism basis. A failed permission check might cause a {@link
-     * java.lang.SecurityException SecurityException} to be thrown from
-     * this method.
+     * name, and lifetime.
      *
      * @param usage The intended usage for this credential object. The value
      * of this parameter must be one of:
@@ -380,14 +372,6 @@ public abstract class GSSManager {
 
     /**
      * Factory method for acquiring a single mechanism credential.<p>
-     *
-     * GSS-API mechanism providers must impose a local access-control
-     * policy on callers to prevent unauthorized callers from acquiring
-     * credentials to which they are not entitled. The kinds of permissions
-     * needed by different mechanism providers will be documented on a
-     * per-mechanism basis. A failed permission check might cause a {@link
-     * java.lang.SecurityException SecurityException} to be thrown from
-     * this method. <p>
      *
      * Non-default values for lifetime cannot always be honored by the
      * underlying mechanisms, thus applications should be prepared to call
@@ -436,14 +420,6 @@ public abstract class GSSManager {
      * credentials succeeded, the caller should use the {@link
      * GSSCredential#getMechs() GSSCredential.getMechs} method.<p>
      *
-     * GSS-API mechanism providers must impose a local access-control
-     * policy on callers to prevent unauthorized callers from acquiring
-     * credentials to which they are not entitled. The kinds of permissions
-     * needed by different mechanism providers will be documented on a
-     * per-mechanism basis. A failed permission check might cause a {@link
-     * java.lang.SecurityException SecurityException} to be thrown from
-     * this method.<p>
-     *
      * Non-default values for lifetime cannot always be honored by the
      * underlying mechanisms, thus applications should be prepared to call
      * {@link GSSCredential#getRemainingLifetime() getRemainingLifetime}
@@ -487,12 +463,7 @@ public abstract class GSSManager {
 
     /**
      * Factory method for creating a context on the initiator's
-     * side.
-     *
-     * Some mechanism providers might require that the caller be granted
-     * permission to initiate a security context. A failed permission check
-     * might cause a {@link java.lang.SecurityException SecurityException}
-     * to be thrown from this method.<p>
+     * side.<p>
      *
      * Non-default values for lifetime cannot always be honored by the
      * underlying mechanism, thus applications should be prepared to call
@@ -532,11 +503,6 @@ public abstract class GSSManager {
     * context's properties will be determined from the input token supplied
     * to the accept method.
     *
-    * Some mechanism providers might require that the caller be granted
-    * permission to accept a security context. A failed permission check
-    * might cause a {@link java.lang.SecurityException SecurityException}
-    * to be thrown from this method.
-    *
     * @param myCred the credentials for the acceptor.  Use
     * <code>null</code> to act as a default acceptor principal.
     * @return an unestablished GSSContext
@@ -566,11 +532,6 @@ public abstract class GSSManager {
      * an implementation that does not support it will result in a
      * <code>GSSException</code> with the error
      * code {@link GSSException#UNAVAILABLE GSSException.UNAVAILABLE}.
-     *
-     * Some mechanism providers might require that the caller be granted
-     * permission to initiate or accept a security context. A failed
-     * permission check might cause a {@link java.lang.SecurityException
-     * SecurityException} to be thrown from this method.
      *
      * @param interProcessToken the token previously emitted from the
      * export method.

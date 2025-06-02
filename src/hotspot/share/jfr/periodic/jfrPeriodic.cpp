@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderStats.hpp"
 #include "classfile/javaClasses.hpp"
@@ -321,6 +320,10 @@ TRACE_REQUEST_FUNC(NativeAgent) {
 TRACE_REQUEST_FUNC(JavaAgent)   {}
 TRACE_REQUEST_FUNC(NativeAgent) {}
 #endif // INCLUDE_JVMTI
+
+TRACE_REQUEST_FUNC(MethodTiming) {
+  // Emitted in Java, but defined in native to have Method type field.
+}
 
 TRACE_REQUEST_FUNC(ThreadContextSwitchRate) {
   double rate = 0.0;
@@ -739,4 +742,10 @@ TRACE_REQUEST_FUNC(NativeMemoryUsage) {
 
 TRACE_REQUEST_FUNC(NativeMemoryUsageTotal) {
   JfrNativeMemoryEvent::send_total_event(timestamp());
+}
+
+TRACE_REQUEST_FUNC(JavaMonitorStatistics) {
+  EventJavaMonitorStatistics event;
+  event.set_count(ObjectSynchronizer::in_use_list_count());
+  event.commit();
 }

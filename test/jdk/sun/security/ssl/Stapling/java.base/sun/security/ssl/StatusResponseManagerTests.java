@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@ import java.security.KeyStore;
 import java.security.PublicKey;
 import java.util.concurrent.TimeUnit;
 
-import sun.security.testlibrary.SimpleOCSPServer;
-import sun.security.testlibrary.CertificateBuilder;
+import jdk.test.lib.security.SimpleOCSPServer;
+import jdk.test.lib.security.CertificateBuilder;
 
 import static sun.security.ssl.CertStatusExtension.*;
 
@@ -82,6 +82,7 @@ public class StatusResponseManagerTests {
             put("Clear StatusResponseManager cache", testClearSRM);
             put("Basic OCSP_MULTI fetch test", testOcspMultiFetch);
             put("Test Cache Expiration", testCacheExpiry);
+            put("Test Interrupt while fetching", forceInterruptMainThread);
         }};
 
         // Create the CAs and OCSP responders
@@ -258,6 +259,38 @@ public class StatusResponseManagerTests {
 
             // Set the cache lifetime back to the default
             System.setProperty("jdk.tls.stapling.cacheLifetime", "");
+            return new AbstractMap.SimpleEntry<>(pass, message);
+        }
+    };
+
+    public static final TestCase forceInterruptMainThread = new TestCase() {
+        @Override
+        public Map.Entry<Boolean, String> runTest() {
+            StatusResponseManager srm = new StatusResponseManager();
+            Boolean pass = Boolean.FALSE;
+            String message = null;
+            CertStatusRequest oReq = OCSPStatusRequest.EMPTY_OCSP;
+
+            try {
+                // Force the interrupt flag to be set on the thread that
+                // performs the invokeAll in the SRM.
+                Thread.currentThread().interrupt();
+
+                // Get OCSP responses for non-root certs in the chain
+                Map<X509Certificate, byte[]> responseMap = srm.get(
+                        CertStatusRequestType.OCSP, oReq, chain, 5000,
+                        TimeUnit.MILLISECONDS);
+                if (Thread.currentThread().isInterrupted()) {
+                    pass = Boolean.TRUE;
+                    message = "Thread is in expected interrupted state.";
+                } else {
+                    message = "Missing expectedInterruptedException.";
+                }
+                message += " Number of SRM entries: " + responseMap.size();
+            } catch (Exception exc) {
+                message = "Unexpected exception: " + exc;
+            }
+
             return new AbstractMap.SimpleEntry<>(pass, message);
         }
     };

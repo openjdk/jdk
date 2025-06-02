@@ -106,7 +106,7 @@ StackChunkFrameStream<frame_kind>::StackChunkFrameStream(stackChunkOop chunk, co
 
 template <ChunkFrames frame_kind>
 inline bool StackChunkFrameStream<frame_kind>::is_stub() const {
-  return cb() != nullptr && (_cb->is_safepoint_stub() || _cb->is_runtime_stub());
+  return cb() != nullptr && _cb->is_runtime_stub();
 }
 
 template <ChunkFrames frame_kind>
@@ -196,7 +196,14 @@ inline int StackChunkFrameStream<frame_kind>::stack_argsize() const {
 
 template <ChunkFrames frame_kind>
 inline int StackChunkFrameStream<frame_kind>::num_oops() const {
-  return is_interpreted() ? interpreter_frame_num_oops() : oopmap()->num_oops();
+  if (is_interpreted()) {
+    return interpreter_frame_num_oops();
+  } else if (is_compiled()) {
+    return oopmap()->num_oops();
+  } else {
+    assert(is_stub(), "invariant");
+    return 0;
+  }
 }
 
 template <ChunkFrames frame_kind>
@@ -208,7 +215,7 @@ template <ChunkFrames frame_kind>
 template <typename RegisterMapT>
 inline void StackChunkFrameStream<frame_kind>::next(RegisterMapT* map, bool stop) {
   update_reg_map(map);
-  bool safepoint = is_stub();
+  bool is_runtime_stub = is_stub();
   if (frame_kind == ChunkFrames::Mixed) {
     if (is_interpreted()) {
       next_for_interpreter_frame();
@@ -232,8 +239,9 @@ inline void StackChunkFrameStream<frame_kind>::next(RegisterMapT* map, bool stop
 
   get_cb();
   update_reg_map_pd(map);
-  if (safepoint && cb() != nullptr) { // there's no post-call nop and no fast oopmap lookup
-    _oopmap = cb()->oop_map_for_return_address(pc());
+  if (is_runtime_stub && cb() != nullptr) { // there's no post-call nop and no fast oopmap lookup
+    // caller could have been deoptimized so use orig_pc()
+    _oopmap = cb()->oop_map_for_return_address(orig_pc());
   }
 }
 
@@ -300,9 +308,8 @@ inline void StackChunkFrameStream<ChunkFrames::Mixed>::update_reg_map(RegisterMa
 template<>
 template<>
 inline void StackChunkFrameStream<ChunkFrames::CompiledOnly>::update_reg_map(RegisterMap* map) {
-  assert(map->in_cont(), "");
-  assert(map->stack_chunk()() == _chunk, "");
-  if (map->update_map()) {
+  assert(!map->in_cont() || map->stack_chunk() == _chunk, "");
+  if (map->update_map() && is_stub()) {
     frame f = to_frame();
     oopmap()->update_register_map(&f, map); // we have callee-save registers in this case
   }

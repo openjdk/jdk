@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zAbort.inline.hpp"
@@ -41,6 +40,7 @@
 #include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zStackWatermark.hpp"
 #include "gc/z/zStat.hpp"
+#include "gc/z/zStringDedup.inline.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zUncoloredRoot.inline.hpp"
 #include "gc/z/zVerify.hpp"
@@ -560,12 +560,14 @@ public:
 template <typename Allocator>
 class ZRelocateWork : public StackObj {
 private:
-  Allocator* const   _allocator;
-  ZForwarding*       _forwarding;
-  ZPage*             _target[ZAllocator::_relocation_allocators];
-  ZGeneration* const _generation;
-  size_t             _other_promoted;
-  size_t             _other_compacted;
+  Allocator* const    _allocator;
+  ZForwarding*        _forwarding;
+  ZPage*              _target[ZAllocator::_relocation_allocators];
+  ZGeneration* const  _generation;
+  size_t              _other_promoted;
+  size_t              _other_compacted;
+  ZStringDedupContext _string_dedup_context;
+
 
   ZPage* target(ZPageAge age) {
     return _target[static_cast<uint>(age) - 1];
@@ -670,9 +672,9 @@ private:
     // moved them over to the current bitmap.
     //
     // If the young generation runs multiple cycles while the old generation is
-    // relocating, then the first cycle will have consume the the old remset,
+    // relocating, then the first cycle will have consumed the old remset,
     // bits and moved associated objects to a new old page. The old relocation
-    // could find either the the two bitmaps. So, either it will find the original
+    // could find either of the two bitmaps. So, either it will find the original
     // remset bits for the page, or it will find an empty bitmap for the page. It
     // doesn't matter for correctness, because the young generation marking has
     // already taken care of the bits.
@@ -796,6 +798,13 @@ private:
     update_remset_promoted(to_addr);
   }
 
+  void maybe_string_dedup(zaddress to_addr) {
+    if (_forwarding->is_promotion()) {
+      // Only deduplicate promoted objects, and let short-lived strings simply die instead.
+      _string_dedup_context.request(to_oop(to_addr));
+    }
+  }
+
   bool try_relocate_object(zaddress from_addr) {
     const zaddress to_addr = try_relocate_object_inner(from_addr);
 
@@ -804,6 +813,8 @@ private:
     }
 
     update_remset_for_fields(from_addr, to_addr);
+
+    maybe_string_dedup(to_addr);
 
     return true;
   }
@@ -842,15 +853,29 @@ private:
     const bool promotion = _forwarding->is_promotion();
 
     // Promotions happen through a new cloned page
-    ZPage* const to_page = promotion ? from_page->clone_limited() : from_page;
-    to_page->reset(to_age, ZPageResetType::InPlaceRelocation);
+    ZPage* const to_page = promotion
+        ? from_page->clone_for_promotion()
+        : from_page->reset(to_age);
+
+    // Reset page for in-place relocation
+    to_page->reset_top_for_allocation();
+
+    // Verify that the inactive remset is clear when resetting the page for
+    // in-place relocation.
+    if (from_page->age() == ZPageAge::old) {
+      if (ZGeneration::old()->active_remset_is_current()) {
+        to_page->verify_remset_cleared_previous();
+      } else {
+        to_page->verify_remset_cleared_current();
+      }
+    }
 
     // Clear remset bits for all objects that were relocated
     // before this page became an in-place relocated page.
     start_in_place_relocation_prepare_remset(from_page);
 
     if (promotion) {
-      // Register the the promotion
+      // Register the promotion
       ZGeneration::young()->in_place_relocate_promote(from_page, to_page);
       ZGeneration::young()->register_in_place_relocate_promoted(from_page);
     }
@@ -927,35 +952,15 @@ public:
     return ZGeneration::old()->active_remset_is_current();
   }
 
-  void clear_remset_before_reuse(ZPage* page, bool in_place) {
+  void clear_remset_before_in_place_reuse(ZPage* page) {
     if (_forwarding->from_age() != ZPageAge::old) {
       // No remset bits
       return;
     }
 
-    if (in_place) {
-      // Clear 'previous' remset bits. For in-place relocated pages, the previous
-      // remset bits are always used, even when active_remset_is_current().
-      page->clear_remset_previous();
-
-      return;
-    }
-
-    // Normal relocate
-
-    // Clear active remset bits
-    if (active_remset_is_current()) {
-      page->clear_remset_current();
-    } else {
-      page->clear_remset_previous();
-    }
-
-    // Verify that inactive remset bits are all cleared
-    if (active_remset_is_current()) {
-      page->verify_remset_cleared_previous();
-    } else {
-      page->verify_remset_cleared_current();
-    }
+    // Clear 'previous' remset bits. For in-place relocated pages, the previous
+    // remset bits are always used, even when active_remset_is_current().
+    page->clear_remset_previous();
   }
 
   void finish_in_place_relocation() {
@@ -1001,7 +1006,7 @@ public:
       ZPage* const page = _forwarding->detach_page();
 
       // Ensure that previous remset bits are cleared
-      clear_remset_before_reuse(page, true /* in_place */);
+      clear_remset_before_in_place_reuse(page);
 
       page->log_msg(" (relocate page done in-place)");
 
@@ -1012,11 +1017,6 @@ public:
     } else {
       // Wait for all other threads to call release_page
       ZPage* const page = _forwarding->detach_page();
-
-      // Ensure that all remset bits are cleared
-      // Note: cleared after detach_page, when we know that
-      // the young generation isn't scanning the remset.
-      clear_remset_before_reuse(page, false /* in_place */);
 
       page->log_msg(" (relocate page done normal)");
 
@@ -1188,10 +1188,15 @@ public:
 
   virtual void work() {
     SuspendibleThreadSetJoiner sts_joiner;
+    ZStringDedupContext        string_dedup_context;
 
     for (ZPage* page; _iter.next(&page);) {
       page->object_iterate([&](oop obj) {
+        // Remap oops and add remset if needed
         ZIterator::basic_oop_iterate_safe(obj, remap_and_maybe_add_remset);
+
+        // String dedup
+        string_dedup_context.request(obj);
       });
 
       SuspendibleThreadSet::yield();
@@ -1270,8 +1275,12 @@ public:
       prev_page->log_msg(promotion ? " (flip promoted)" : " (flip survived)");
 
       // Setup to-space page
-      ZPage* const new_page = promotion ? prev_page->clone_limited_promote_flipped() : prev_page;
-      new_page->reset(to_age, ZPageResetType::FlipAging);
+      ZPage* const new_page = promotion
+          ? prev_page->clone_for_promotion()
+          : prev_page->reset(to_age);
+
+      // Reset page for flip aging
+      new_page->reset_livemap();
 
       if (promotion) {
         ZGeneration::young()->flip_promote(prev_page, new_page);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,11 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 
-import jdk.javadoc.internal.doclets.formats.html.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.DocType;
+import jdk.javadoc.internal.html.HtmlTag;
 
 /**
  * Class for generating an HTML document for javadoc output.
@@ -43,7 +45,7 @@ public class HtmlDocument {
     /**
      * Constructs an HTML document.
      *
-     * @param html the {@link TagName#HTML HTML} element of the document
+     * @param html the {@link HtmlTag#HTML HTML} element of the document
      */
     public HtmlDocument(Content html) {
         docContent = html;

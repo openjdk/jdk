@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,6 +24,7 @@ import java.util.ListResourceBundle;
 
 /**
  * @author Morten Jorgensen
+ * @LastModified: Dec 2024
  */
 public class ErrorMessages_de extends ListResourceBundle {
 
@@ -275,10 +275,10 @@ public class ErrorMessages_de extends ListResourceBundle {
         "Ein Attribut, dessen Wert ein NCName sein muss, hatte den Wert \"{0}\""},
 
         {BasisLibrary.UNALLOWED_EXTENSION_FUNCTION_ERR,
-        "Verwendung der Erweiterungsfunktion \"{0}\" ist nicht zul\u00E4ssig, wenn das Feature f\u00FCr die sichere Verarbeitung auf \"true\" gesetzt ist."},
+        "Verwendung der Erweiterungsfunktion \"{0}\" ist nicht zul\u00E4ssig, wenn die Erweiterungsfunktionen vom Feature f\u00FCr die sichere Verarbeitung oder der Eigenschaft \"jdk.xml.enableExtensionFunctions\" deaktiviert wurden. Setzen Sie \"jdk.xml.enableExtensionFunctions\" auf \"true\", um die Erweiterungsfunktionen zu aktivieren."},
 
         {BasisLibrary.UNALLOWED_EXTENSION_ELEMENT_ERR,
-        "Verwendung des Erweiterungselements \"{0}\" ist nicht zul\u00E4ssig, wenn das Feature f\u00FCr die sichere Verarbeitung auf \"true\" gesetzt ist."},
+        "Verwendung des Erweiterungselements \"{0}\" ist nicht zul\u00E4ssig, wenn die Erweiterungsfunktionen vom Feature f\u00FCr die sichere Verarbeitung oder der Eigenschaft \"jdk.xml.enableExtensionFunctions\" deaktiviert wurden. Setzen Sie \"jdk.xml.enableExtensionFunctions\" auf \"true\", um die Erweiterungsfunktionen zu aktivieren."},
     };
     }
 

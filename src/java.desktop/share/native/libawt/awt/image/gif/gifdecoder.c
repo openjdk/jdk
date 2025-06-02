@@ -237,7 +237,7 @@ Java_sun_awt_image_GifImageDecoder_parseImage(JNIEnv *env,
                 len = (*env)->CallIntMethod(env, this, readID,
                                             blockh, remain, blockLength + 1);
                 if (len > blockLength + 1) len = blockLength + 1;
-                if ((*env)->ExceptionOccurred(env)) {
+                if ((*env)->ExceptionCheck(env)) {
                     return 0;
                 }
                 GET_ARRAYS();
@@ -314,10 +314,10 @@ Java_sun_awt_image_GifImageDecoder_parseImage(JNIEnv *env,
                 }
                 if ((*env)->CallIntMethod(env, this, readID,
                                           blockh, 0, blockLength + 1) != 0
-                    || (*env)->ExceptionOccurred(env))
+                    || (*env)->ExceptionCheck(env))
                 {
                     /* quietly accept truncated GIF images */
-                    return (!(*env)->ExceptionOccurred(env));
+                    return (!(*env)->ExceptionCheck(env));
                 }
                 GET_ARRAYS();
                 blockLength = block[blockLength];
@@ -412,7 +412,7 @@ Java_sun_awt_image_GifImageDecoder_parseImage(JNIEnv *env,
                                               relx, rely + y,
                                               width, passht,
                                               raslineh, cmh);
-                if (count <= 0 || (*env)->ExceptionOccurred(env)) {
+                if (count <= 0 || (*env)->ExceptionCheck(env)) {
                     /* Nobody is listening any more. */
                     if (verbose) {
                         fprintf(stdout, "Orphan gif decoder quitting\n");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
@@ -234,8 +233,10 @@ class MaskFillerForNative: public NativeSignatureIterator {
  private:
   uintptr_t * _mask;                             // the bit mask to be filled
   int         _size;                             // the mask size in bits
+  int         _num_oops;
 
   void set_one(int i) {
+    _num_oops++;
     i *= InterpreterOopMap::bits_per_entry;
     assert(0 <= i && i < _size, "offset out of bounds");
     _mask[i / BitsPerWord] |= (((uintptr_t) 1 << InterpreterOopMap::oop_bit_number) << (i % BitsPerWord));
@@ -253,6 +254,7 @@ class MaskFillerForNative: public NativeSignatureIterator {
   MaskFillerForNative(const methodHandle& method, uintptr_t* mask, int size) : NativeSignatureIterator(method) {
     _mask   = mask;
     _size   = size;
+    _num_oops = 0;
     // initialize with 0
     int i = (size + BitsPerWord - 1) / BitsPerWord;
     while (i-- > 0) _mask[i] = 0;
@@ -261,6 +263,8 @@ class MaskFillerForNative: public NativeSignatureIterator {
   void generate() {
     iterate();
   }
+
+  int num_oops() { return _num_oops; }
 };
 
 bool OopMapCacheEntry::verify_mask(CellTypeState* vars, CellTypeState* stack, int max_locals, int stack_top) {
@@ -307,7 +311,7 @@ void OopMapCacheEntry::deallocate_bit_mask() {
     assert(!Thread::current()->resource_area()->contains((void*)_bit_mask[0]),
       "This bit mask should not be in the resource area");
     FREE_C_HEAP_ARRAY(uintptr_t, _bit_mask[0]);
-    debug_only(_bit_mask[0] = 0;)
+    DEBUG_ONLY(_bit_mask[0] = 0;)
   }
 }
 
@@ -319,6 +323,7 @@ void OopMapCacheEntry::fill_for_native(const methodHandle& mh) {
   // fill mask for parameters
   MaskFillerForNative mf(mh, bit_mask(), mask_size());
   mf.generate();
+  _num_oops = mf.num_oops();
 }
 
 

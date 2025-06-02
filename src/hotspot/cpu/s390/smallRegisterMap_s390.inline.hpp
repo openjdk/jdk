@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,15 @@
 
 // Java frames don't have callee saved registers (except for rfp), so we can use a smaller RegisterMap
 class SmallRegisterMap {
+  constexpr SmallRegisterMap() = default;
+  ~SmallRegisterMap() = default;
+  NONCOPYABLE(SmallRegisterMap);
+
 public:
-  static constexpr SmallRegisterMap* instance = nullptr;
+  static const SmallRegisterMap* instance() {
+    static constexpr SmallRegisterMap the_instance{};
+    return &the_instance;
+  }
 private:
   static void assert_is_rfp(VMReg r) NOT_DEBUG_RETURN
                                      DEBUG_ONLY({ Unimplemented(); })
@@ -44,12 +51,6 @@ public:
   RegisterMap* copy_to_RegisterMap(RegisterMap* map, intptr_t* sp) const {
     Unimplemented();
     return map;
-  }
-
-  SmallRegisterMap() {}
-
-  SmallRegisterMap(const RegisterMap* map) {
-    Unimplemented();
   }
 
   inline address location(VMReg reg, intptr_t* sp) const {

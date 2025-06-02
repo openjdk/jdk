@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.List;
 
 import jdk.internal.misc.MethodFinder;
 import jdk.internal.misc.VM;
@@ -74,7 +73,6 @@ public final class SourceLauncher {
     public static void main(String... args) throws Throwable {
         try {
             new SourceLauncher(System.err)
-                    .checkSecurityManager()
                     .run(VM.getRuntimeArguments(), args);
         } catch (Fault f) {
             System.err.println(f.getMessage());
@@ -106,19 +104,6 @@ public final class SourceLauncher {
      */
     public SourceLauncher(PrintWriter out) {
         this.out = out;
-    }
-
-    /**
-     * Checks if a security manager is present and throws an exception if so.
-     * @return this object
-     * @throws Fault if a security manager is present
-     */
-    @SuppressWarnings("removal")
-    private SourceLauncher checkSecurityManager() throws Fault {
-        if (System.getSecurityManager() != null) {
-            throw new Fault(Errors.SecurityManager);
-        }
-        return this;
     }
 
     /**
@@ -242,6 +227,10 @@ public final class SourceLauncher {
         Object instance = null;
 
         if (!isStatic) {
+            if (Modifier.isAbstract(mainClass.getModifiers())) {
+                throw new Fault(Errors.CantInstantiate(mainClassName));
+            }
+
             Constructor<?> constructor;
             try {
                 constructor = mainClass.getDeclaredConstructor();

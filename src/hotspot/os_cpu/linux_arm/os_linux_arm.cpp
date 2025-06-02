@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-// no precompiled headers
 #include "asm/assembler.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/vtableStubs.hpp"
@@ -188,7 +187,30 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   intptr_t* fp;
   address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
+  if (!is_readable_pointer(epc)) {
+    // Try to recover from calling into bad memory
+    // Assume new frame has not been set up, the same as
+    // compiled frame stack bang
+    return fetch_compiled_frame_from_context(ucVoid);
+  }
   return frame(sp, fp, epc);
+}
+
+frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  // In compiled code, the stack banging is performed before LR
+  // has been saved in the frame.  LR is live, and SP and FP
+  // belong to the caller.
+  intptr_t* fp = os::Linux::ucontext_get_fp(uc);
+  intptr_t* sp = os::Linux::ucontext_get_sp(uc);
+  address pc = (address)(uc->uc_mcontext.arm_lr
+                         - NativeInstruction::instruction_size);
+  return frame(sp, fp, pc);
+}
+
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  Unimplemented();
+  return nullptr;
 }
 
 frame os::get_sender_for_C_frame(frame* fr) {
@@ -474,23 +496,6 @@ void os::print_context(outputStream *st, const void *context) {
   st->cr();
 }
 
-void os::print_tos_pc(outputStream *st, const void *context) {
-  if (context == nullptr) return;
-
-  const ucontext_t* uc = (const ucontext_t*)context;
-
-  address sp = (address)os::Linux::ucontext_get_sp(uc);
-  print_tos(st, sp);
-  st->cr();
-
-  // Note: it may be unsafe to inspect memory near pc. For example, pc may
-  // point to garbage if entry point in an nmethod is corrupted. Leave
-  // this at the end, and hope for the best.
-  address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc);
-  st->cr();
-}
-
 void os::print_register_info(outputStream *st, const void *context, int& continuation) {
   const int register_count = ARM_REGS_IN_CONTEXT;
   int n = continuation;
@@ -537,7 +542,7 @@ int64_t ARMAtomicFuncs::cmpxchg_long_bootstrap(int64_t compare_value, int64_t ex
 
 int64_t ARMAtomicFuncs::load_long_bootstrap(const volatile int64_t* src) {
   // try to use the stub:
-  load_long_func_t func = CAST_TO_FN_PTR(load_long_func_t, StubRoutines::atomic_load_long_entry());
+  load_long_func_t func = CAST_TO_FN_PTR(load_long_func_t, StubRoutines::Arm::atomic_load_long_entry());
 
   if (func != nullptr) {
     _load_long_func = func;
@@ -551,7 +556,7 @@ int64_t ARMAtomicFuncs::load_long_bootstrap(const volatile int64_t* src) {
 
 void ARMAtomicFuncs::store_long_bootstrap(int64_t val, volatile int64_t* dest) {
   // try to use the stub:
-  store_long_func_t func = CAST_TO_FN_PTR(store_long_func_t, StubRoutines::atomic_store_long_entry());
+  store_long_func_t func = CAST_TO_FN_PTR(store_long_func_t, StubRoutines::Arm::atomic_store_long_entry());
 
   if (func != nullptr) {
     _store_long_func = func;

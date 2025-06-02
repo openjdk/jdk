@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -144,7 +145,7 @@ readFully(int fd, void *buf, size_t nbyte)
             buf = (void *) (((char *)buf) + n);
         } else if (errno == EINTR) {
             /* Strange signals like SIGJVM1 are possible at any time.
-             * See http://www.dreamsongs.com/WorseIsBetter.html */
+             * See https://dreamsongs.com/WorseIsBetter.html */
         } else {
             return -1;
         }
@@ -404,6 +405,13 @@ childProcess(void *arg)
     /* change to the new working directory */
     if (p->pdir != NULL && chdir(p->pdir) < 0)
         goto WhyCantJohnnyExec;
+
+    // Reset any mask signals from parent, but not in VFORK mode
+    if (p->mode != MODE_VFORK) {
+        sigset_t unblock_signals;
+        sigemptyset(&unblock_signals);
+        sigprocmask(SIG_SETMASK, &unblock_signals, NULL);
+    }
 
     if (fcntl(FAIL_FILENO, F_SETFD, FD_CLOEXEC) == -1)
         goto WhyCantJohnnyExec;

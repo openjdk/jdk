@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4744,7 +4744,6 @@ public class BidiBase {
         static final Boolean RUN_DIRECTION_LTR = (jafa == null) ?
             Boolean.FALSE : (Boolean)jafa.getTextAttributeConstant("RUN_DIRECTION_LTR");
 
-        @SuppressWarnings("serial")
         private static AttributedCharacterIterator.Attribute
             getTextAttribute(String name)
         {

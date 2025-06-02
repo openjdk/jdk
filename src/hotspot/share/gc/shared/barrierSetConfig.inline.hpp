@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
 
 #include "gc/shared/barrierSetConfig.hpp"
 
-#include "gc/shared/modRefBarrierSet.inline.hpp"
 #include "gc/shared/cardTableBarrierSet.inline.hpp"
+#include "gc/shared/modRefBarrierSet.inline.hpp"
 
 #if INCLUDE_EPSILONGC
 #include "gc/epsilon/epsilonBarrierSet.hpp"
@@ -40,7 +40,6 @@
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #endif
 #if INCLUDE_ZGC
-#include "gc/x/xBarrierSet.inline.hpp"
 #include "gc/z/zBarrierSet.inline.hpp"
 #endif
 

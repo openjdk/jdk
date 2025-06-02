@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.nio.fs;
 import java.nio.file.attribute.*;
 import java.util.concurrent.TimeUnit;
 import jdk.internal.misc.Unsafe;
-import sun.security.action.GetPropertyAction;
 
 import static sun.nio.fs.WindowsNativeDispatcher.*;
 import static sun.nio.fs.WindowsConstants.*;
@@ -115,8 +114,8 @@ class WindowsFileAttributes
     // indicates if accurate metadata is required (interesting on NTFS only)
     private static final boolean ensureAccurateMetadata;
     static {
-        String propValue = GetPropertyAction.privilegedGetProperty(
-            "sun.nio.fs.ensureAccurateMetadata", "false");
+        String propValue =
+            System.getProperty("sun.nio.fs.ensureAccurateMetadata", "false");
         ensureAccurateMetadata = propValue.isEmpty() ? true : Boolean.parseBoolean(propValue);
     }
 

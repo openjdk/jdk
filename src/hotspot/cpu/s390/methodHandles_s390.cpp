@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
@@ -180,8 +179,8 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   __ z_br(target);
 
   __ bind(L_no_such_method);
-  assert(StubRoutines::throw_AbstractMethodError_entry() != nullptr, "not yet generated!");
-  __ load_const_optimized(target, StubRoutines::throw_AbstractMethodError_entry());
+  assert(SharedRuntime::throw_AbstractMethodError_entry() != nullptr, "not yet generated!");
+  __ load_const_optimized(target, SharedRuntime::throw_AbstractMethodError_entry());
   __ z_br(target);
 }
 
@@ -543,7 +542,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       __ bind(L_no_such_interface);
 
       // Throw exception.
-      __ load_const_optimized(Z_R1, StubRoutines::throw_IncompatibleClassChangeError_entry());
+      __ load_const_optimized(Z_R1, SharedRuntime::throw_IncompatibleClassChangeError_entry());
       __ z_br(Z_R1);
       break;
     }

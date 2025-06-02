@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
@@ -58,6 +57,8 @@
 # include <stdlib.h>
 # include <stdio.h>
 # include <intrin.h>
+
+#define REG_BCP X22
 
 void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, JavaThread* thread) {
   f(value, method, args, thread);
@@ -96,6 +97,22 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* fp;
   address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
   return frame(sp, fp, epc);
+}
+
+#ifdef ASSERT
+static bool is_interpreter(const CONTEXT* uc) {
+  assert(uc != nullptr, "invariant");
+  address pc = reinterpret_cast<address>(uc->Pc);
+  assert(pc != nullptr, "invariant");
+  return Interpreter::contains(pc);
+}
+#endif
+
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  assert(ucVoid != nullptr, "invariant");
+  CONTEXT* uc = (CONTEXT*)ucVoid;
+  assert(is_interpreter(uc), "invariant");
+  return reinterpret_cast<intptr_t*>(uc->REG_BCP);
 }
 
 bool os::win32::get_frame_at_stack_banging_point(JavaThread* thread,
@@ -202,24 +219,6 @@ void os::print_context(outputStream *st, const void *context) {
   st->print(", X27=" INTPTR_FORMAT, uc->X27);
   st->print(", X28=" INTPTR_FORMAT, uc->X28);
   st->cr();
-  st->cr();
-}
-
-void os::print_tos_pc(outputStream *st, const void *context) {
-  if (context == nullptr) return;
-
-  const CONTEXT* uc = (const CONTEXT*)context;
-
-  address sp = (address)uc->Sp;
-  print_tos(st, sp);
-  st->cr();
-
-  // Note: it may be unsafe to inspect memory near pc. For example, pc may
-  // point to garbage if entry point in an nmethod is corrupted. Leave
-  // this at the end, and hope for the best.
-  address pc = (address)uc->Pc;
-  st->print_cr("Instructions: (pc=" PTR_FORMAT ")", pc);
-  print_hex_dump(st, pc - 32, pc + 32, sizeof(char), /* print_ascii=*/false);
   st->cr();
 }
 

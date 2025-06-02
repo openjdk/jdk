@@ -128,11 +128,6 @@ public class CK_PBE_PARAMS {
         sb.append(Constants.NEWLINE);
 
         sb.append(Constants.INDENT);
-        sb.append("pPassword: ");
-        sb.append(pPassword);
-        sb.append(Constants.NEWLINE);
-
-        sb.append(Constants.INDENT);
         sb.append("ulSaltLen: ");
         sb.append(pSalt.length);
         sb.append(Constants.NEWLINE);

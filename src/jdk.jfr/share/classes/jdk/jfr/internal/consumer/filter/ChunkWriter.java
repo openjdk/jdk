@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,13 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
 import java.util.function.Predicate;
 
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.internal.LongMap;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.consumer.ChunkHeader;
-import jdk.jfr.internal.consumer.FileAccess;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
@@ -52,6 +52,28 @@ import jdk.jfr.internal.consumer.Reference;
  * All positional values are relative to file start, not the chunk.
  */
 public final class ChunkWriter implements Closeable {
+    public static class RemovedEvents implements Comparable<RemovedEvents> {
+        public final String name;
+        private long count;
+        private long removed;
+
+        private RemovedEvents(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String share() {
+            return removed + "/" + count;
+        }
+
+        @Override
+        public int compareTo(RemovedEvents that) {
+            return this.getName().compareTo(that.getName());
+        }
+    }
     private LongMap<Constants> pools = new LongMap<>();
     private final Deque<CheckpointEvent> checkpoints = new ArrayDeque<>();
     private final Path destination;
@@ -59,16 +81,19 @@ public final class ChunkWriter implements Closeable {
     private final RecordingOutput output;
     private final Predicate<RecordedEvent> filter;
     private final Map<String, Long> waste = new HashMap<>();
+    private final LongMap<RemovedEvents> removedEvents = new LongMap<>();
+    private final boolean collectResults;
 
     private long chunkStartPosition;
     private boolean chunkComplete;
     private long lastCheckpoint;
 
-    public ChunkWriter(Path source, Path destination, Predicate<RecordedEvent> filter) throws IOException {
+    public ChunkWriter(Path source, Path destination, Predicate<RecordedEvent> filter, boolean collectResults) throws IOException {
         this.destination = destination;
         this.output = new RecordingOutput(destination.toFile());
-        this.input = new RecordingInput(source.toFile(), FileAccess.UNPRIVILEGED);
+        this.input = new RecordingInput(source.toFile());
         this.filter = filter;
+        this.collectResults = collectResults;
     }
 
     Constants getPool(Type type) {
@@ -88,7 +113,25 @@ public final class ChunkWriter implements Closeable {
     }
 
     public boolean accept(RecordedEvent event) {
-        return filter.test(event);
+        if (!collectResults) {
+            return filter.test(event);
+        }
+        long id = event.getEventType().getId();
+        RemovedEvents r = removedEvents.get(id);
+        if (r == null) {
+            r = new RemovedEvents(event.getEventType().getName());
+            removedEvents.put(id, r);
+        }
+        r.count++;
+        if (filter.test(event)) {
+            return true;
+        }
+        r.removed++;
+        return false;
+    }
+
+    public List<RemovedEvents> getRemovedEventTypes() {
+        return removedEvents.values().stream().filter(r -> r.removed > 0).sorted().toList();
     }
 
     public void touch(Object object) {

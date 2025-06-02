@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.io.Serializable;
-import java.security.AccessController;
 
 import javax.swing.event.SwingPropertyChangeSupport;
-
-import sun.security.action.GetPropertyAction;
 
 /**
  * This class provides default implementations for the JFC <code>Action</code>
@@ -81,14 +78,11 @@ public abstract class AbstractAction implements Action, Cloneable, Serializable
      * Whether or not to reconfigure all action properties from the
      * specified event.
      */
-    @SuppressWarnings("removal")
     static boolean shouldReconfigure(PropertyChangeEvent e) {
         if (e.getPropertyName() == null) {
             synchronized(AbstractAction.class) {
                 if (RECONFIGURE_ON_NULL == null) {
-                    RECONFIGURE_ON_NULL = Boolean.valueOf(
-                        AccessController.doPrivileged(new GetPropertyAction(
-                        "swing.actions.reconfigureOnNull", "false")));
+                    RECONFIGURE_ON_NULL = Boolean.getBoolean("swing.actions.reconfigureOnNull");
                 }
                 return RECONFIGURE_ON_NULL;
             }

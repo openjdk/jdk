@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,14 @@
 # questions.
 #
 
-########################################################################
+################################################################################
 # This file is responsible for detecting, verifying and setting up the
 # toolchain, i.e. the compiler, linker and related utilities. It will setup
 # proper paths to the binaries, but it will not setup any flags.
 #
 # The binaries used is determined by the toolchain type, which is the family of
 # compilers and related tools that are used.
-########################################################################
+################################################################################
 
 m4_include([toolchain_microsoft.m4])
 
@@ -291,6 +291,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
       # For Xcode, we set the Xcode version as TOOLCHAIN_VERSION
       TOOLCHAIN_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | $CUT -f 2 -d ' '`
       TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode $TOOLCHAIN_VERSION"
+      if test "x$TOOLCHAIN_VERSION" = "x16" || test "x$TOOLCHAIN_VERSION" = "x16.1" ; then
+        AC_MSG_NOTICE([Xcode $TOOLCHAIN_VERSION has a compiler bug that causes the build to fail.])
+        AC_MSG_NOTICE([Please use Xcode 16.2 or later, or a version prior to 16.])
+        AC_MSG_ERROR([Compiler version is not supported.])
+      fi
     fi
   fi
   AC_SUBST(TOOLCHAIN_VERSION)
@@ -307,7 +312,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_POST_DETECTION],
 [
   # Restore old path, except for the microsoft toolchain, which requires the
   # toolchain path to remain in place. Otherwise the compiler will not work in
-  # some siutations in later configure checks.
+  # some situations in later configure checks.
   if test "x$TOOLCHAIN_TYPE" != "xmicrosoft"; then
     PATH="$OLD_PATH"
   fi
@@ -316,10 +321,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_POST_DETECTION],
   # This is necessary since AC_PROG_CC defaults CFLAGS to "-g -O2"
   CFLAGS="$ORG_CFLAGS"
   CXXFLAGS="$ORG_CXXFLAGS"
-
-  # filter out some unwanted additions autoconf may add to CXX; we saw this on macOS with autoconf 2.72
-  UTIL_GET_NON_MATCHING_VALUES(cxx_filtered, $CXX, -std=c++11 -std=gnu++11)
-  CXX="$cxx_filtered"
 ])
 
 # Check if a compiler is of the toolchain type we expect, and save the version
@@ -358,6 +359,11 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
     #     Copyright (C) 2013 Free Software Foundation, Inc.
     #     This is free software; see the source for copying conditions.  There is NO
     #     warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    # or look like
+    #     gcc (GCC) 10.2.1 20200825 (Alibaba 10.2.1-3.8 2.32)
+    #     Copyright (C) 2020 Free Software Foundation, Inc.
+    #     This is free software; see the source for copying conditions.  There is NO
+    #     warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
     COMPILER_VERSION_OUTPUT=`$COMPILER --version 2>&1`
     # Check that this is likely to be GCC.
     $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "Free Software Foundation" > /dev/null
@@ -371,7 +377,8 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
     COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT | \
         $SED -e 's/ *Copyright .*//'`
     COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
-        $SED -e 's/^.* \(@<:@1-9@:>@<:@0-9@:>@*\.@<:@0-9.@:>@*\)@<:@^0-9.@:>@.*$/\1/'`
+        $AWK -F ')' '{print [$]2}' | \
+        $AWK '{print [$]1}'`
   elif test  "x$TOOLCHAIN_TYPE" = xclang; then
     # clang --version output typically looks like
     #    Apple clang version 15.0.0 (clang-1500.3.9.4)
@@ -443,6 +450,7 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
         AC_MSG_ERROR([User supplied compiler $1=[$]$1 does not exist])
       fi
     fi
+    $1_IS_USER_SUPPLIED=true
   else
     # No user supplied value. Locate compiler ourselves.
 
@@ -460,6 +468,7 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
       HELP_MSG_MISSING_DEPENDENCY([devkit])
       AC_MSG_ERROR([Could not find a $COMPILER_NAME compiler. $HELP_MSG])
     fi
+    $1_IS_USER_SUPPLIED=false
   fi
 
   # Now we have a compiler binary in $1. Make sure it's okay.
@@ -616,6 +625,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     # All other toolchains use the compiler to link.
     LD="$CC"
     LDCXX="$CXX"
+    # Force use of lld, since that is what we expect when setting flags later on
+    if test "x$TOOLCHAIN_TYPE" = xclang; then
+      if test "x$OPENJDK_TARGET_OS" = xlinux; then
+        LD="$LD -fuse-ld=lld"
+        LDCXX="$LDCXX -fuse-ld=lld"
+      fi
+    fi
   fi
   AC_SUBST(LD)
   # FIXME: it should be CXXLD, according to standard (cf CXXCPP)
@@ -678,6 +694,9 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
       test_metal=`$METAL --version 2>&1`
       if test $? -ne 0; then
         AC_MSG_RESULT([no])
+        AC_MSG_NOTICE([A full XCode is required to build the JDK (not only command line tools)])
+        AC_MSG_NOTICE([If you have XCode installed, you might need to reset the Xcode active developer directory])
+        AC_MSG_NOTICE([using 'sudo xcode-select -r'])
         AC_MSG_ERROR([XCode tool 'metal' neither found in path nor with xcrun])
       else
         AC_MSG_RESULT([yes, will be using '$METAL'])

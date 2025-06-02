@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,10 +49,12 @@ import jdk.jfr.events.StackFilter;
 import jdk.jfr.internal.settings.CutoffSetting;
 import jdk.jfr.internal.settings.EnabledSetting;
 import jdk.jfr.internal.settings.LevelSetting;
+import jdk.jfr.internal.settings.MethodSetting;
 import jdk.jfr.internal.settings.PeriodSetting;
 import jdk.jfr.internal.settings.StackTraceSetting;
 import jdk.jfr.internal.settings.ThresholdSetting;
 import jdk.jfr.internal.settings.ThrottleSetting;
+import jdk.jfr.internal.tracing.Modification;
 import jdk.jfr.internal.util.Utils;
 
 // This class can't have a hard reference from PlatformEventType, since it
@@ -70,6 +72,7 @@ public final class EventControl {
     private static final Type TYPE_THROTTLE = TypeLibrary.createType(ThrottleSetting.class);
     private static final long STACK_FILTER_ID = Type.getTypeId(StackFilter.class);
     private static final Type TYPE_LEVEL = TypeLibrary.createType(LevelSetting.class);
+    private static final Type TYPE_METHOD_FILTER = TypeLibrary.createType(MethodSetting.class);
 
     private final ArrayList<SettingControl> settingControls = new ArrayList<>();
     private final ArrayList<NamedControl> namedControls = new ArrayList<>(5);
@@ -95,6 +98,10 @@ public final class EventControl {
         if (eventType.hasLevel()) {
             addControl(Level.NAME, defineLevel(eventType));
         }
+        if (eventType.getModification() != Modification.NONE) {
+            addControl("filter", defineMethodFilter(eventType, eventType.getModification()));
+        }
+
         addControl(Enabled.NAME, defineEnabled(eventType));
 
         addStackFilters(eventType);
@@ -280,7 +287,7 @@ public final class EventControl {
         } catch (Exception e) {
             throw (Error) new InternalError("Could not get constructor for " + settingControlClass.getName()).initCause(e);
         }
-        SecuritySupport.setAccessible(cc);
+        cc.setAccessible(true);
         try {
             return (SettingControl) cc.newInstance();
         } catch (IllegalArgumentException | InvocationTargetException e) {
@@ -299,9 +306,9 @@ public final class EventControl {
     }
 
     private static Control defineThreshold(PlatformEventType type) {
-        String def = type.getAnnotationValue(Threshold.class, "0 ns");
+        String def = type.getAnnotationValue(Threshold.class, ThresholdSetting.DEFAULT_VALUE);
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_THRESHOLD, Threshold.NAME, def, Collections.emptyList()));
-        return new Control(new ThresholdSetting(type), def);
+        return new Control(new ThresholdSetting(type, def), def);
     }
 
     private static Control defineStackTrace(PlatformEventType type) {
@@ -311,15 +318,15 @@ public final class EventControl {
     }
 
     private static Control defineCutoff(PlatformEventType type) {
-        String def = type.getAnnotationValue(Cutoff.class, Cutoff.INFINITY);
+        String def = type.getAnnotationValue(Cutoff.class, CutoffSetting.DEFAULT_VALUE);
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_CUTOFF, Cutoff.NAME, def, Collections.emptyList()));
-        return new Control(new CutoffSetting(type), def);
+        return new Control(new CutoffSetting(type, def), def);
     }
 
     private static Control defineThrottle(PlatformEventType type) {
-        String def = type.getAnnotationValue(Throttle.class, Throttle.DEFAULT);
+        String def = type.getAnnotationValue(Throttle.class, ThrottleSetting.DEFAULT_VALUE);
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_THROTTLE, Throttle.NAME, def, Collections.emptyList()));
-        return new Control(new ThrottleSetting(type), def);
+        return new Control(new ThrottleSetting(type, def), def);
     }
 
     private static Control defineLevel(PlatformEventType type) {
@@ -330,9 +337,15 @@ public final class EventControl {
     }
 
     private static Control definePeriod(PlatformEventType type) {
-        String def = type.getAnnotationValue(Period.class, "everyChunk");
+        String def = type.getAnnotationValue(Period.class, PeriodSetting.DEFAULT_VALUE);
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_PERIOD, PeriodSetting.NAME, def, Collections.emptyList()));
-        return new Control(new PeriodSetting(type), def);
+        return new Control(new PeriodSetting(type, def), def);
+    }
+
+    private Control defineMethodFilter(PlatformEventType type, Modification modification) {
+        String def = "";
+        type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_METHOD_FILTER, "filter", def, Collections.emptyList()));
+        return new Control(new MethodSetting(type, modification, def), def);
     }
 
     void disable() {
@@ -340,6 +353,12 @@ public final class EventControl {
             if (nc.control.isType(EnabledSetting.class)) {
                 nc.control.setValue("false");
                 return;
+            } else {
+                String v = nc.control.getDefaultValue();
+                // Avoids slow retransformation during shutdown
+                if (v != null && !PlatformRecorder.isInShutDown()) {
+                    nc.control.setValue(v);
+                }
             }
         }
     }
@@ -373,13 +392,6 @@ public final class EventControl {
         return idName;
     }
 
-    /**
-     * A malicious user must never be able to run a callback in the wrong
-     * context. Methods on SettingControl must therefore never be invoked directly
-     * by JFR, instead use jdk.jfr.internal.Control.
-     *
-     * The returned list is only to be used inside EventConfiguration
-     */
     public List<SettingControl> getSettingControls() {
         return settingControls;
     }

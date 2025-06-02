@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,6 @@ import java.io.Serializable;
  *
  * @author Tom Santos
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class MetalToggleButtonUI extends BasicToggleButtonUI {
 
     private static final Object METAL_TOGGLE_BUTTON_UI_KEY = new Object();

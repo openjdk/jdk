@@ -24,28 +24,10 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.ClassFileBuilder;
-import java.lang.classfile.ClassFileTransform;
+import java.lang.classfile.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-
-import java.lang.classfile.ClassBuilder;
-import java.lang.classfile.ClassElement;
-import java.lang.classfile.ClassTransform;
-import java.lang.classfile.ClassFileElement;
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.CodeElement;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.CodeTransform;
-import java.lang.classfile.FieldBuilder;
-import java.lang.classfile.FieldElement;
-import java.lang.classfile.FieldModel;
-import java.lang.classfile.FieldTransform;
-import java.lang.classfile.MethodBuilder;
-import java.lang.classfile.MethodElement;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.MethodTransform;
 
 public final class TransformImpl {
     // ClassTransform

@@ -28,15 +28,13 @@
 #include "gc/parallel/psCardTable.hpp"
 #include "gc/parallel/psVirtualspace.hpp"
 #include "gc/shared/collectorCounters.hpp"
-#include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "gc/shared/referenceProcessor.hpp"
 #include "memory/allStatic.hpp"
 #include "oops/oop.hpp"
 #include "utilities/stack.hpp"
 
-class ReferenceProcessor;
 class ParallelScavengeHeap;
-class ParallelScavengeTracer;
 class PSIsAliveClosure;
 class STWGCTimer;
 

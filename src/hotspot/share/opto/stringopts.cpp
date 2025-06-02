@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciSymbols.hpp"
 #include "classfile/javaClasses.hpp"
 #include "compiler/compileLog.hpp"
@@ -203,7 +202,7 @@ class StringConcat : public ResourceObj {
       Node* uct = _uncommon_traps.at(u);
 
       // Build a new call using the jvms state of the allocate
-      address call_addr = SharedRuntime::uncommon_trap_blob()->entry_point();
+      address call_addr = OptoRuntime::uncommon_trap_blob()->entry_point();
       const TypeFunc* call_type = OptoRuntime::uncommon_trap_Type();
       const TypePtr* no_memory_effects = nullptr;
       Compile* C = _stringopts->C;
@@ -257,6 +256,13 @@ void StringConcat::eliminate_unneeded_control() {
       assert(n->req() == 3 && n->in(2)->in(0) == iff, "not a diamond");
       assert(iff->is_If(), "no if for the diamond");
       Node* bol = iff->in(1);
+      if (bol->is_Con()) {
+        // A BoolNode shared by two diamond Region/If sub-graphs
+        // was replaced by a constant zero in a previous call to this method.
+        // Do nothing as the transformation in the previous call ensures both are folded away.
+        assert(bol == _stringopts->gvn()->intcon(0), "shared condition should have been set to false");
+        continue;
+      }
       assert(bol->is_Bool(), "unexpected if shape");
       Node* cmp = bol->in(1);
       assert(cmp->is_Cmp(), "unexpected if shape");
@@ -988,12 +994,21 @@ bool StringConcat::validate_control_flow() {
         continue;
       }
 
-      // A test which leads to an uncommon trap which should be safe.
-      // Later this trap will be converted into a trap that restarts
+      // A test which leads to an uncommon trap. It is safe to convert the trap
+      // into a trap that restarts at the beginning as long as its test does not
+      // depend on intermediate results of the candidate chain.
       // at the beginning.
       if (otherproj->outcnt() == 1) {
         CallStaticJavaNode* call = otherproj->unique_out()->isa_CallStaticJava();
         if (call != nullptr && call->_name != nullptr && strcmp(call->_name, "uncommon_trap") == 0) {
+          // First check for dependency on a toString that is going away during stacked concats.
+          if (_multiple &&
+              ((v1->is_Proj() && is_SB_toString(v1->in(0)) && ctrl_path.member(v1->in(0))) ||
+               (v2->is_Proj() && is_SB_toString(v2->in(0)) && ctrl_path.member(v2->in(0))))) {
+            // iftrue -> if -> bool -> cmpp -> resproj -> tostring
+            fail = true;
+            break;
+          }
           // control flow leads to uct so should be ok
           _uncommon_traps.push(call);
           ctrl_path.push(call);
@@ -1325,7 +1340,7 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
   Node* index = __ SubI(charPos, __ intcon((bt == T_BYTE) ? 1 : 2));
   Node* ch = __ AddI(r, __ intcon('0'));
   Node* st = __ store_to_memory(kit.control(), kit.array_element_address(dst_array, index, T_BYTE),
-                                ch, bt, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+                                ch, bt, MemNode::unordered, false /* require_atomic_access */,
                                 false /* unaligned */, (bt != T_BYTE) /* mismatched */);
 
   iff = kit.create_and_map_if(head, __ Bool(__ CmpI(q, __ intcon(0)), BoolTest::ne),
@@ -1364,8 +1379,8 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
   } else {
     Node* index = __ SubI(charPos, __ intcon((bt == T_BYTE) ? 1 : 2));
     st = __ store_to_memory(kit.control(), kit.array_element_address(dst_array, index, T_BYTE),
-                            sign, bt, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
-                            false /* unaligned */, (bt != T_BYTE) /* mismatched */);
+                            sign, bt, MemNode::unordered, false /* require_atomic_access */, false /* unaligned */,
+                            (bt != T_BYTE) /* mismatched */);
 
     final_merge->init_req(merge_index + 1, kit.control());
     final_mem->init_req(merge_index + 1, st);

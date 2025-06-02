@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -539,58 +539,42 @@ public final class CompactNumberFormat extends NumberFormat {
     public final StringBuffer format(Object number,
             StringBuffer toAppendTo,
             FieldPosition fieldPosition) {
-
-        if (number == null) {
-            throw new IllegalArgumentException("Cannot format null as a number");
-        }
-
-        if (number instanceof Long || number instanceof Integer
-                || number instanceof Short || number instanceof Byte
-                || number instanceof AtomicInteger
-                || number instanceof AtomicLong
-                || (number instanceof BigInteger
-                && ((BigInteger) number).bitLength() < 64)) {
-            return format(((Number) number).longValue(), toAppendTo,
-                    fieldPosition);
-        } else if (number instanceof BigDecimal) {
-            return format((BigDecimal) number, StringBufFactory.of(toAppendTo), fieldPosition).asStringBuffer();
-        } else if (number instanceof BigInteger) {
-            return format((BigInteger) number, StringBufFactory.of(toAppendTo), fieldPosition).asStringBuffer();
-        } else if (number instanceof Number) {
-            return format(((Number) number).doubleValue(), toAppendTo, fieldPosition);
-        } else {
-            throw new IllegalArgumentException("Cannot format "
-                    + number.getClass().getName() + " as a number");
-        }
+        return switch (number) {
+            case Long l -> format(l.longValue(), toAppendTo, fieldPosition);
+            case Integer i -> format(i.longValue(), toAppendTo, fieldPosition);
+            case Short s -> format(s.longValue(), toAppendTo, fieldPosition);
+            case Byte b -> format(b.longValue(), toAppendTo, fieldPosition);
+            case AtomicInteger ai -> format(ai.longValue(), toAppendTo, fieldPosition);
+            case AtomicLong al -> format(al.longValue(), toAppendTo, fieldPosition);
+            case BigInteger bi when bi.bitLength() < 64 -> format(bi.longValue(), toAppendTo, fieldPosition);
+            case BigDecimal bd -> format(bd, StringBufFactory.of(toAppendTo), fieldPosition).asStringBuffer();
+            case BigInteger bi -> format(bi, StringBufFactory.of(toAppendTo), fieldPosition).asStringBuffer();
+            case Number n -> format(n.doubleValue(), toAppendTo, fieldPosition);
+            case null -> throw new IllegalArgumentException("Cannot format null as a number");
+            default -> throw new IllegalArgumentException(
+                    String.format("Cannot format %s as a number", number.getClass().getName()));
+        };
     }
 
     @Override
     StringBuf format(Object number,
                      StringBuf toAppendTo,
                      FieldPosition fieldPosition) {
-
-        if (number == null) {
-            throw new IllegalArgumentException("Cannot format null as a number");
-        }
-
-        if (number instanceof Long || number instanceof Integer
-                    || number instanceof Short || number instanceof Byte
-                    || number instanceof AtomicInteger
-                    || number instanceof AtomicLong
-                    || (number instanceof BigInteger
-                                && ((BigInteger) number).bitLength() < 64)) {
-            return format(((Number) number).longValue(), toAppendTo,
-                    fieldPosition);
-        } else if (number instanceof BigDecimal) {
-            return format((BigDecimal) number, toAppendTo, fieldPosition);
-        } else if (number instanceof BigInteger) {
-            return format((BigInteger) number, toAppendTo, fieldPosition);
-        } else if (number instanceof Number) {
-            return format(((Number) number).doubleValue(), toAppendTo, fieldPosition);
-        } else {
-            throw new IllegalArgumentException("Cannot format "
-                                                       + number.getClass().getName() + " as a number");
-        }
+        return switch (number) {
+            case Long l -> format(l.longValue(), toAppendTo, fieldPosition);
+            case Integer i -> format(i.longValue(), toAppendTo, fieldPosition);
+            case Short s -> format(s.longValue(), toAppendTo, fieldPosition);
+            case Byte b -> format(b.longValue(), toAppendTo, fieldPosition);
+            case AtomicInteger ai -> format(ai.longValue(), toAppendTo, fieldPosition);
+            case AtomicLong al -> format(al.longValue(), toAppendTo, fieldPosition);
+            case BigInteger bi when bi.bitLength() < 64 -> format(bi.longValue(), toAppendTo, fieldPosition);
+            case BigDecimal bd -> format(bd, toAppendTo, fieldPosition);
+            case BigInteger bi -> format(bi, toAppendTo, fieldPosition);
+            case Number n -> format(n.doubleValue(), toAppendTo, fieldPosition);
+            case null -> throw new IllegalArgumentException("Cannot format null as a number");
+            default -> throw new IllegalArgumentException(
+                    String.format("Cannot format %s as a number", number.getClass().getName()));
+        };
     }
 
     /**
@@ -668,16 +652,16 @@ public final class CompactNumberFormat extends NumberFormat {
             double val = getNumberValue(number, divisor);
             if (checkIncrement(val, compactDataIndex, divisor)) {
                 divisor = (Long) divisors.get(++compactDataIndex);
-                val = getNumberValue(number, divisor);
             }
+            roundedNumber = roundedNumber / divisor;
+            decimalFormat.setDigitList(roundedNumber, isNegative, getMaximumFractionDigits());
+            val = decimalFormat.getDigitList().getDouble();
             String prefix = getAffix(false, true, isNegative, compactDataIndex, val);
             String suffix = getAffix(false, false, isNegative, compactDataIndex, val);
 
             if (!prefix.isEmpty() || !suffix.isEmpty()) {
                 appendPrefix(result, prefix, delegate);
                 if (!placeHolderPatterns.get(compactDataIndex).get(val).isEmpty()) {
-                    roundedNumber = roundedNumber / divisor;
-                    decimalFormat.setDigitList(roundedNumber, isNegative, getMaximumFractionDigits());
                     decimalFormat.subformatNumber(result, delegate, isNegative,
                             false, getMaximumIntegerDigits(), getMinimumIntegerDigits(),
                             getMaximumFractionDigits(), getMinimumFractionDigits());
@@ -750,31 +734,28 @@ public final class CompactNumberFormat extends NumberFormat {
             double val = getNumberValue(number, divisor);
             if (checkIncrement(val, compactDataIndex, divisor)) {
                 divisor = (Long) divisors.get(++compactDataIndex);
-                val = getNumberValue(number, divisor);
             }
+            var noFraction = number % divisor == 0;
+            if (noFraction) {
+                number = number / divisor;
+                decimalFormat.setDigitList(number, isNegative, 0);
+            } else {
+                // To avoid truncation of fractional part store
+                // the value in double and follow double path instead of
+                // long path
+                double dNumber = (double) number / divisor;
+                decimalFormat.setDigitList(dNumber, isNegative, getMaximumFractionDigits());
+            }
+            val = decimalFormat.getDigitList().getDouble();
             String prefix = getAffix(false, true, isNegative, compactDataIndex, val);
             String suffix = getAffix(false, false, isNegative, compactDataIndex, val);
             if (!prefix.isEmpty() || !suffix.isEmpty()) {
                 appendPrefix(result, prefix, delegate);
                 if (!placeHolderPatterns.get(compactDataIndex).get(val).isEmpty()) {
-                    if ((number % divisor == 0)) {
-                        number = number / divisor;
-                        decimalFormat.setDigitList(number, isNegative, 0);
-                        decimalFormat.subformatNumber(result, delegate,
-                                isNegative, true, getMaximumIntegerDigits(),
-                                getMinimumIntegerDigits(), getMaximumFractionDigits(),
-                                getMinimumFractionDigits());
-                    } else {
-                        // To avoid truncation of fractional part store
-                        // the value in double and follow double path instead of
-                        // long path
-                        double dNumber = (double) number / divisor;
-                        decimalFormat.setDigitList(dNumber, isNegative, getMaximumFractionDigits());
-                        decimalFormat.subformatNumber(result, delegate,
-                                isNegative, false, getMaximumIntegerDigits(),
-                                getMinimumIntegerDigits(), getMaximumFractionDigits(),
-                                getMinimumFractionDigits());
-                    }
+                    decimalFormat.subformatNumber(result, delegate,
+                            isNegative, noFraction, getMaximumIntegerDigits(),
+                            getMinimumIntegerDigits(), getMaximumFractionDigits(),
+                            getMinimumFractionDigits());
                     appendSuffix(result, suffix, delegate);
                 }
             } else {
@@ -849,15 +830,15 @@ public final class CompactNumberFormat extends NumberFormat {
             double val = getNumberValue(number.doubleValue(), divisor.doubleValue());
             if (checkIncrement(val, compactDataIndex, divisor.doubleValue())) {
                 divisor = divisors.get(++compactDataIndex);
-                val = getNumberValue(number.doubleValue(), divisor.doubleValue());
             }
+            number = number.divide(new BigDecimal(divisor.toString()), getRoundingMode());
+            decimalFormat.setDigitList(number, isNegative, getMaximumFractionDigits());
+            val = decimalFormat.getDigitList().getDouble();
             String prefix = getAffix(false, true, isNegative, compactDataIndex, val);
             String suffix = getAffix(false, false, isNegative, compactDataIndex, val);
             if (!prefix.isEmpty() || !suffix.isEmpty()) {
                 appendPrefix(result, prefix, delegate);
                 if (!placeHolderPatterns.get(compactDataIndex).get(val).isEmpty()) {
-                    number = number.divide(new BigDecimal(divisor.toString()), getRoundingMode());
-                    decimalFormat.setDigitList(number, isNegative, getMaximumFractionDigits());
                     decimalFormat.subformatNumber(result, delegate, isNegative,
                             false, getMaximumIntegerDigits(), getMinimumIntegerDigits(),
                             getMaximumFractionDigits(), getMinimumFractionDigits());
@@ -920,34 +901,30 @@ public final class CompactNumberFormat extends NumberFormat {
             double val = getNumberValue(number.doubleValue(), divisor.doubleValue());
             if (checkIncrement(val, compactDataIndex, divisor.doubleValue())) {
                 divisor = divisors.get(++compactDataIndex);
-                val = getNumberValue(number.doubleValue(), divisor.doubleValue());
             }
+            var noFraction = number.mod(new BigInteger(divisor.toString()))
+                    .compareTo(BigInteger.ZERO) == 0;
+            if (noFraction) {
+                number = number.divide(new BigInteger(divisor.toString()));
+                decimalFormat.setDigitList(number, isNegative, 0);
+            } else {
+                // To avoid truncation of fractional part store the value in
+                // BigDecimal and follow BigDecimal path instead of
+                // BigInteger path
+                BigDecimal nDecimal = new BigDecimal(number)
+                        .divide(new BigDecimal(divisor.toString()), getRoundingMode());
+                decimalFormat.setDigitList(nDecimal, isNegative, getMaximumFractionDigits());
+            }
+            val = decimalFormat.getDigitList().getDouble();
             String prefix = getAffix(false, true, isNegative, compactDataIndex, val);
             String suffix = getAffix(false, false, isNegative, compactDataIndex, val);
             if (!prefix.isEmpty() || !suffix.isEmpty()) {
                 appendPrefix(result, prefix, delegate);
                 if (!placeHolderPatterns.get(compactDataIndex).get(val).isEmpty()) {
-                    if (number.mod(new BigInteger(divisor.toString()))
-                            .compareTo(BigInteger.ZERO) == 0) {
-                        number = number.divide(new BigInteger(divisor.toString()));
-
-                        decimalFormat.setDigitList(number, isNegative, 0);
-                        decimalFormat.subformatNumber(result, delegate,
-                                isNegative, true, getMaximumIntegerDigits(),
-                                getMinimumIntegerDigits(), getMaximumFractionDigits(),
-                                getMinimumFractionDigits());
-                    } else {
-                        // To avoid truncation of fractional part store the value in
-                        // BigDecimal and follow BigDecimal path instead of
-                        // BigInteger path
-                        BigDecimal nDecimal = new BigDecimal(number)
-                                .divide(new BigDecimal(divisor.toString()), getRoundingMode());
-                        decimalFormat.setDigitList(nDecimal, isNegative, getMaximumFractionDigits());
-                        decimalFormat.subformatNumber(result, delegate,
-                                isNegative, false, getMaximumIntegerDigits(),
-                                getMinimumIntegerDigits(), getMaximumFractionDigits(),
-                                getMinimumFractionDigits());
-                    }
+                    decimalFormat.subformatNumber(result, delegate,
+                        isNegative, noFraction, getMaximumIntegerDigits(),
+                        getMinimumIntegerDigits(), getMaximumFractionDigits(),
+                        getMinimumFractionDigits());
                     appendSuffix(result, suffix, delegate);
                 }
             } else {
@@ -1182,22 +1159,20 @@ public final class CompactNumberFormat extends NumberFormat {
         CharacterIteratorFieldDelegate delegate
                 = new CharacterIteratorFieldDelegate();
         StringBuf sb = StringBufFactory.of();
-
-        if (obj instanceof Double || obj instanceof Float) {
-            format(((Number) obj).doubleValue(), sb, delegate);
-        } else if (obj instanceof Long || obj instanceof Integer
-                || obj instanceof Short || obj instanceof Byte
-                || obj instanceof AtomicInteger || obj instanceof AtomicLong) {
-            format(((Number) obj).longValue(), sb, delegate);
-        } else if (obj instanceof BigDecimal) {
-            format((BigDecimal) obj, sb, delegate);
-        } else if (obj instanceof BigInteger) {
-            format((BigInteger) obj, sb, delegate, false);
-        } else if (obj == null) {
-            throw new NullPointerException(
+        switch (obj) {
+            case Double d -> format(d.doubleValue(), sb, delegate);
+            case Float f -> format(f.doubleValue(), sb, delegate);
+            case Long l -> format(l.longValue(), sb, delegate);
+            case Integer i -> format(i.longValue(), sb, delegate);
+            case Short s -> format(s.longValue(), sb, delegate);
+            case Byte b -> format(b.longValue(), sb, delegate);
+            case AtomicInteger ai -> format(ai.longValue(), sb, delegate);
+            case AtomicLong al -> format(al.longValue(), sb, delegate);
+            case BigDecimal bd -> format(bd, sb, delegate);
+            case BigInteger bi -> format(bi, sb, delegate, false);
+            case null -> throw new NullPointerException(
                     "formatToCharacterIterator must be passed non-null object");
-        } else {
-            throw new IllegalArgumentException(
+            default -> throw new IllegalArgumentException(
                     "Cannot format given Object as a Number");
         }
         return delegate.getIterator(sb.toString());
@@ -2194,14 +2169,10 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Sets the maximum number of digits allowed in the integer portion of a
-     * number.
-     * The maximum allowed integer range is 309, if the {@code newValue} &gt; 309,
-     * then the maximum integer digits count is set to 309. Negative input
-     * values are replaced with 0.
-     *
-     * @param newValue the maximum number of integer digits to be shown
-     * @see #getMaximumIntegerDigits()
+     * {@inheritDoc NumberFormat}
+     * <p>The maximum allowed integer range is 309, if the {@code newValue} &gt;
+     * 309, then the maximum integer digits count is set to 309.
+     * @param newValue the maximum number of integer digits to be shown.
      */
     @Override
     public void setMaximumIntegerDigits(int newValue) {
@@ -2219,14 +2190,10 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Sets the minimum number of digits allowed in the integer portion of a
-     * number.
-     * The maximum allowed integer range is 309, if the {@code newValue} &gt; 309,
-     * then the minimum integer digits count is set to 309. Negative input
-     * values are replaced with 0.
-     *
-     * @param newValue the minimum number of integer digits to be shown
-     * @see #getMinimumIntegerDigits()
+     * {@inheritDoc NumberFormat}
+     * <p>The maximum allowed integer range is 309, if the {@code newValue} &gt;
+     * 309, then the minimum integer digits count is set to 309.
+     * @param newValue the minimum number of integer digits to be shown.
      */
     @Override
     public void setMinimumIntegerDigits(int newValue) {
@@ -2244,14 +2211,10 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Sets the minimum number of digits allowed in the fraction portion of a
-     * number.
-     * The maximum allowed fraction range is 340, if the {@code newValue} &gt; 340,
-     * then the minimum fraction digits count is set to 340. Negative input
-     * values are replaced with 0.
-     *
-     * @param newValue the minimum number of fraction digits to be shown
-     * @see #getMinimumFractionDigits()
+     * {@inheritDoc NumberFormat}
+     * <p>The maximum allowed fraction range is 340, if the {@code newValue} &gt;
+     * 340, then the minimum fraction digits count is set to 340.
+     * @param newValue the minimum number of fraction digits to be shown.
      */
     @Override
     public void setMinimumFractionDigits(int newValue) {
@@ -2270,14 +2233,10 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Sets the maximum number of digits allowed in the fraction portion of a
-     * number.
-     * The maximum allowed fraction range is 340, if the {@code newValue} &gt; 340,
-     * then the maximum fraction digits count is set to 340. Negative input
-     * values are replaced with 0.
-     *
-     * @param newValue the maximum number of fraction digits to be shown
-     * @see #getMaximumFractionDigits()
+     * {@inheritDoc NumberFormat}
+     * <p>The maximum allowed fraction range is 340, if the {@code newValue} &gt;
+     * 340, then the maximum fraction digits count is set to 340.
+     * @param newValue the maximum number of fraction digits to be shown.
      */
     @Override
     public void setMaximumFractionDigits(int newValue) {

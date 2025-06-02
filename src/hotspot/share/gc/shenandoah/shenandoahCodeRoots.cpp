@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
@@ -103,11 +102,6 @@ public:
     WorkerTask("Shenandoah Disarm NMethods"),
     _iterator(ShenandoahCodeRoots::table()) {
     assert(SafepointSynchronize::is_at_safepoint(), "Only at a safepoint");
-    _iterator.nmethods_do_begin();
-  }
-
-  ~ShenandoahDisarmNMethodsTask() {
-    _iterator.nmethods_do_end();
   }
 
   virtual void work(uint worker_id) {
@@ -175,13 +169,7 @@ public:
   ShenandoahUnlinkTask(bool unloading_occurred) :
     WorkerTask("Shenandoah Unlink NMethods"),
     _cl(unloading_occurred),
-    _iterator(ShenandoahCodeRoots::table()) {
-    _iterator.nmethods_do_begin();
-  }
-
-  ~ShenandoahUnlinkTask() {
-    _iterator.nmethods_do_end();
-  }
+    _iterator(ShenandoahCodeRoots::table()) {}
 
   virtual void work(uint worker_id) {
     _iterator.nmethods_do(&_cl);

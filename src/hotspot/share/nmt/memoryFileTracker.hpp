@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,15 +30,17 @@
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "nmt/vmatree.hpp"
-#include "runtime/mutex.hpp"
 #include "runtime/os.inline.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/deferred.hpp"
 
 // The MemoryFileTracker tracks memory of 'memory files',
 // storage with its own memory space separate from the process.
 // A typical example of such a file is a memory mapped file.
+// All memory is accounted as committed, there is no reserved memory.
+// Any reserved memory is expected to exist in the VirtualMemoryTracker.
 class MemoryFileTracker {
   friend class NMTMemoryFileTrackerTest;
 
@@ -66,11 +68,21 @@ public:
   MemoryFileTracker(bool is_detailed_mode);
 
   void allocate_memory(MemoryFile* file, size_t offset, size_t size, const NativeCallStack& stack,
-                       MEMFLAGS flag);
+                       MemTag mem_tag);
   void free_memory(MemoryFile* file, size_t offset, size_t size);
 
   MemoryFile* make_file(const char* descriptive_name);
   void free_file(MemoryFile* file);
+
+  template<typename F>
+  void iterate_summary(F f) const {
+    for (int d = 0; d < _files.length(); d++) {
+      const MemoryFile* file = _files.at(d);
+      for (int i = 0; i < mt_number_of_tags; i++) {
+        f(NMTUtil::index_to_tag(i), file->_summary.by_tag(NMTUtil::index_to_tag(i)));
+      }
+    }
+  }
 
   void summary_snapshot(VirtualMemorySnapshot* snapshot) const;
 
@@ -80,15 +92,9 @@ public:
   const GrowableArrayCHeap<MemoryFile*, mtNMT>& files();
 
   class Instance : public AllStatic {
-    static MemoryFileTracker* _tracker;
-    static PlatformMutex* _mutex;
+    static Deferred<MemoryFileTracker> _tracker;
 
   public:
-    class Locker : public StackObj {
-    public:
-      Locker();
-      ~Locker();
-    };
 
     static bool initialize(NMT_TrackingLevel tracking_level);
 
@@ -96,8 +102,13 @@ public:
     static void free_file(MemoryFile* device);
 
     static void allocate_memory(MemoryFile* device, size_t offset, size_t size,
-                                const NativeCallStack& stack, MEMFLAGS flag);
+                                const NativeCallStack& stack, MemTag mem_tag);
     static void free_memory(MemoryFile* device, size_t offset, size_t size);
+
+    template<typename F>
+    static void iterate_summary(F f) {
+      _tracker->iterate_summary(f);
+    };
 
     static void summary_snapshot(VirtualMemorySnapshot* snapshot);
 

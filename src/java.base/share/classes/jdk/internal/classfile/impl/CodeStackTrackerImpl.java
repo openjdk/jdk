@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,40 +29,9 @@ import java.lang.classfile.CodeElement;
 import java.lang.classfile.Label;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.TypeKind;
-import java.lang.classfile.components.CodeStackTracker;
-import java.lang.classfile.instruction.ArrayLoadInstruction;
-import java.lang.classfile.instruction.ArrayStoreInstruction;
-import java.lang.classfile.instruction.BranchInstruction;
-import java.lang.classfile.instruction.ConstantInstruction;
-import java.lang.classfile.instruction.ConvertInstruction;
-import java.lang.classfile.instruction.ExceptionCatch;
-import java.lang.classfile.instruction.FieldInstruction;
-import java.lang.classfile.instruction.InvokeDynamicInstruction;
-import java.lang.classfile.instruction.InvokeInstruction;
-import java.lang.classfile.instruction.LabelTarget;
-import java.lang.classfile.instruction.LoadInstruction;
-import java.lang.classfile.instruction.LookupSwitchInstruction;
-import java.lang.classfile.instruction.MonitorInstruction;
-import java.lang.classfile.instruction.NewMultiArrayInstruction;
-import java.lang.classfile.instruction.NewObjectInstruction;
-import java.lang.classfile.instruction.NewPrimitiveArrayInstruction;
-import java.lang.classfile.instruction.NewReferenceArrayInstruction;
-import java.lang.classfile.instruction.NopInstruction;
-import java.lang.classfile.instruction.OperatorInstruction;
-import java.lang.classfile.instruction.ReturnInstruction;
-import java.lang.classfile.instruction.StackInstruction;
-import java.lang.classfile.instruction.StoreInstruction;
-import java.lang.classfile.instruction.TableSwitchInstruction;
-import java.lang.classfile.instruction.ThrowInstruction;
-import java.lang.classfile.instruction.TypeCheckInstruction;
-
-import java.util.AbstractCollection;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import jdk.internal.classfile.components.CodeStackTracker;
+import java.lang.classfile.instruction.*;
+import java.util.*;
 import java.util.function.Consumer;
 
 public final class CodeStackTrackerImpl implements CodeStackTracker {
@@ -146,7 +115,7 @@ public final class CodeStackTrackerImpl implements CodeStackTracker {
 
     private void push(TypeKind type) {
         if (stack != null) {
-            if (type != TypeKind.VoidType) stack.push(type);
+            if (type != TypeKind.VOID) stack.push(type);
         } else {
             maxSize = null;
         }
@@ -228,15 +197,15 @@ public final class CodeStackTrackerImpl implements CodeStackTracker {
             case MonitorInstruction i ->
                 pop(1);
             case NewMultiArrayInstruction i -> {
-                pop(i.dimensions());push(TypeKind.ReferenceType);
+                pop(i.dimensions());push(TypeKind.REFERENCE);
             }
             case NewObjectInstruction i ->
-                push(TypeKind.ReferenceType);
+                push(TypeKind.REFERENCE);
             case NewPrimitiveArrayInstruction i -> {
-                pop(1);push(TypeKind.ReferenceType);
+                pop(1);push(TypeKind.REFERENCE);
             }
             case NewReferenceArrayInstruction i -> {
-                pop(1);push(TypeKind.ReferenceType);
+                pop(1);push(TypeKind.REFERENCE);
             }
             case NopInstruction i -> {}
             case OperatorInstruction i -> {
@@ -329,15 +298,15 @@ public final class CodeStackTrackerImpl implements CodeStackTracker {
             case TypeCheckInstruction i -> {
                 switch (i.opcode()) {
                     case CHECKCAST -> {
-                        pop(1);push(TypeKind.ReferenceType);
+                        pop(1);push(TypeKind.REFERENCE);
                     }
                     case INSTANCEOF -> {
-                        pop(1);push(TypeKind.IntType);
+                        pop(1);push(TypeKind.INT);
                     }
                 }
             }
             case ExceptionCatch i ->
-                map.put(i.handler(), new Stack(new Item(TypeKind.ReferenceType, null), 1, 1));
+                map.put(i.handler(), new Stack(new Item(TypeKind.REFERENCE, null), 1, 1));
             case LabelTarget i ->
                 stack = map.getOrDefault(i.label(), stack);
             default -> {}

@@ -41,6 +41,8 @@ import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Repeatable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -93,13 +95,15 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
     private static final Map<String, Class<? extends Annotation>> nameToAnnotation =
         Map.ofEntries(new NameToAnnotationEntry("java.lang.Override", Override.class),
                       new NameToAnnotationEntry("java.lang.annotation.Repeatable", Repeatable.class),
+                      new NameToAnnotationEntry("java.lang.annotation.Retention", Target.class),
                       new NameToAnnotationEntry("java.lang.annotation.Target", Target.class),
                       new NameToAnnotationEntry("BasicAnnoTests.Test", BasicAnnoTests.Test.class),
                       new NameToAnnotationEntry("BasicAnnoTests.Tests",BasicAnnoTests.Tests.class),
                       new NameToAnnotationEntry("BasicAnnoTests.TA",   BasicAnnoTests.TA.class),
                       new NameToAnnotationEntry("BasicAnnoTests.TB",   BasicAnnoTests.TB.class),
                       new NameToAnnotationEntry("BasicAnnoTests.TC",   BasicAnnoTests.TC.class),
-                      new NameToAnnotationEntry("BasicAnnoTests.TCs",  BasicAnnoTests.TCs.class));
+                      new NameToAnnotationEntry("BasicAnnoTests.TCs",  BasicAnnoTests.TCs.class),
+                      new NameToAnnotationEntry("BasicAnnoTests.TD",  BasicAnnoTests.TD.class));
 
     static class NameToAnnotationEntry extends  AbstractMap.SimpleEntry<String, Class<? extends Annotation>> {
         public NameToAnnotationEntry(String key, Class<? extends Annotation> entry) {
@@ -159,7 +163,7 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
      */
     class TestTypeScanner extends TypeScanner<Void, Void> {
         Element elem;
-        NavigableMap<Integer, AnnotationMirror> toBeFound;
+        NavigableMap<Integer, List<AnnotationMirror>> toBeFound;
         int count = 0;
         Set<TypeMirror> seen = new HashSet<>();
 
@@ -167,10 +171,10 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
             super(types);
             this.elem = elem;
 
-            NavigableMap<Integer, AnnotationMirror> testByPos = new TreeMap<>();
+            NavigableMap<Integer, List<AnnotationMirror>> testByPos = new TreeMap<>();
             for (AnnotationMirror test : tests) {
                 for (int pos : getPosn(test)) {
-                    testByPos.put(pos, test);
+                    testByPos.computeIfAbsent(pos, ArrayList::new).add(test);
                 }
             }
             this.toBeFound = testByPos;
@@ -192,17 +196,18 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
                         out.println("scan " + count + ": " + t);
                     if (toBeFound.size() > 0) {
                         if (toBeFound.firstKey().equals(count)) {
-                            AnnotationMirror test = toBeFound.pollFirstEntry().getValue();
-                            String annoType = getAnnoType(test);
-                            AnnotationMirror anno = getAnnotation(t, annoType);
-                            if (anno == null) {
-                                error(elem, "annotation not found on " + count + ": " + t);
-                            } else {
-                                String v = getValue(anno, "value").toString();
-                                if (v.equals(getExpect(test))) {
-                                    out.println("found " + anno + " as expected");
+                            for (AnnotationMirror test : toBeFound.pollFirstEntry().getValue()) {
+                                String annoType = getAnnoType(test);
+                                AnnotationMirror anno = getAnnotation(t, annoType);
+                                if (anno == null) {
+                                    error(elem, "annotation not found on " + count + ": " + t);
                                 } else {
-                                    error(elem, "Unexpected value: " + v + ", expected: " + getExpect(test));
+                                    String v = getValue(anno, "value").toString();
+                                    if (v.equals(getExpect(test))) {
+                                        out.println("found " + anno + " as expected");
+                                    } else {
+                                        error(elem, "Unexpected value: " + v + ", expected: " + getExpect(test));
+                                    }
                                 }
                             }
                         } else if (count > toBeFound.firstKey()) {
@@ -520,6 +525,12 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
         TC[] value();
     }
 
+    @Target(ElementType.TYPE_USE)
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface TD {
+        int value();
+    }
+
     // Test cases
 
     // TODO: add more cases for arrays
@@ -657,6 +668,10 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
     @Test(posn=1, annoType=TA.class, expect="23")
     public Set<@TA(23) ? super Object> f9;
 
+    @Test(posn=0, annoType=TA.class, expect="1")
+    @Test(posn=0, annoType=TD.class, expect="2")
+    public @TA(1) @TD(2) int f10;
+
     // Test type use annotations on uses of type variables
     @Test(posn=6, annoType = TA.class, expect = "25")
     @Test(posn=6, annoType = TB.class, expect = "26")
@@ -717,4 +732,8 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
             GenericNested(@TA(120) GenericInner120<X> GenericInner120.this) {}
         }
     }
+
+    @Test(posn=1, annoType=TA.class, expect="130")
+    @Test(posn=23, annoType=TA.class, expect="131")
+    public Map<@TA(130) String, @TA(131) String> f130;
 }

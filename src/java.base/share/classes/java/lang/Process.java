@@ -442,10 +442,13 @@ public abstract class Process {
      * terminated and the timeout value is less than, or equal to, zero, then
      * this method returns immediately with the value {@code false}.
      *
-     * <p>The default implementation of this method polls the {@code exitValue}
-     * to check if the process has terminated. Concrete implementations of this
-     * class are strongly encouraged to override this method with a more
-     * efficient implementation.
+     * @implSpec
+     * The default implementation of this method polls the {@code exitValue}
+     * to check if the process has terminated.
+     *
+     * @implNote
+     * Concrete implementations of this class are strongly encouraged to
+     * override this method with a more efficient implementation.
      *
      * @param timeout the maximum time to wait
      * @param unit the time unit of the {@code timeout} argument
@@ -486,10 +489,13 @@ public abstract class Process {
      * terminated and the duration is not positive, then
      * this method returns immediately with the value {@code false}.
      *
-     * <p>The default implementation of this method polls the {@code exitValue}
-     * to check if the process has terminated. Concrete implementations of this
-     * class are strongly encouraged to override this method with a more
-     * efficient implementation.
+     * @implSpec
+     * The default implementation of this method polls the {@code exitValue}
+     * to check if the process has terminated.
+     *
+     * @implNote
+     * Concrete implementations of this class are strongly encouraged to
+     * override this method with a more efficient implementation.
      *
      * @param duration the maximum duration to wait; if not positive,
      *                this method returns immediately.
@@ -747,8 +753,7 @@ public abstract class Process {
      *
      * {@code Process} objects returned by {@link ProcessBuilder#start()} and
      * {@link Runtime#exec} implement {@code toHandle} as the equivalent of
-     * {@link ProcessHandle#of(long) ProcessHandle.of(pid)} including the
-     * check for a SecurityManager and {@code RuntimePermission("manageProcess")}.
+     * {@link ProcessHandle#of(long) ProcessHandle.of(pid)}.
      *
      * @implSpec
      * This implementation throws an instance of
@@ -760,8 +765,6 @@ public abstract class Process {
      * @return Returns a ProcessHandle for the Process
      * @throws UnsupportedOperationException if the Process implementation
      *         does not support this operation
-     * @throws SecurityException if a security manager has been installed and
-     *         it denies RuntimePermission("manageProcess")
      * @since 9
      */
     public ProcessHandle toHandle() {
@@ -805,8 +808,6 @@ public abstract class Process {
      *         direct children of the process
      * @throws UnsupportedOperationException if the Process implementation
      *         does not support this operation
-     * @throws SecurityException if a security manager has been installed and
-     *         it denies RuntimePermission("manageProcess")
      * @since 9
      */
     public Stream<ProcessHandle> children() {
@@ -831,8 +832,6 @@ public abstract class Process {
      *         are descendants of the process
      * @throws UnsupportedOperationException if the Process implementation
      *         does not support this operation
-     * @throws SecurityException if a security manager has been installed and
-     *         it denies RuntimePermission("manageProcess")
      * @since 9
      */
     public Stream<ProcessHandle> descendants() {

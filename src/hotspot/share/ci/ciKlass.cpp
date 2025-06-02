@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciKlass.hpp"
 #include "ci/ciSymbol.hpp"
 #include "ci/ciUtilities.inline.hpp"
@@ -222,7 +221,16 @@ jint ciKlass::modifier_flags() {
 jint ciKlass::access_flags() {
   assert(is_loaded(), "not loaded");
   GUARDED_VM_ENTRY(
-    return get_Klass()->access_flags().as_int();
+    return get_Klass()->access_flags().as_unsigned_short();
+  )
+}
+
+// ------------------------------------------------------------------
+// ciKlass::misc_flags
+klass_flags_t ciKlass::misc_flags() {
+  assert(is_loaded(), "not loaded");
+  GUARDED_VM_ENTRY(
+    return get_Klass()->misc_flags();
   )
 }
 
@@ -248,4 +256,24 @@ const char* ciKlass::external_name() const {
   GUARDED_VM_ENTRY(
     return get_Klass()->external_name();
   )
+}
+
+// ------------------------------------------------------------------
+// ciKlass::prototype_header_offset
+juint ciKlass::prototype_header_offset() {
+  assert(is_loaded(), "must be loaded");
+
+  VM_ENTRY_MARK;
+  Klass* this_klass = get_Klass();
+  return in_bytes(this_klass->prototype_header_offset());
+}
+
+// ------------------------------------------------------------------
+// ciKlass::prototype_header
+uintptr_t ciKlass::prototype_header() {
+  assert(is_loaded(), "must be loaded");
+
+  VM_ENTRY_MARK;
+  Klass* this_klass = get_Klass();
+  return (uintptr_t)this_klass->prototype_header().to_pointer();
 }

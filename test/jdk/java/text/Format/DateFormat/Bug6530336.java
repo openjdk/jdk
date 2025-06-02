@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6530336 6537997 8008577 8174269
+ * @bug 6530336 6537997 8008577 8174269 8333582
  * @library /java/text/testlib
  * @run main Bug6530336
  */
@@ -83,6 +83,7 @@ public class Bug6530336 {
                             date.contains("UTC") ||
                             date.contains("TMG") || // Interlingue
                             date.contains("\u07dc\u07ed\u07d5\u07d6") || // N’Ko
+                            date.contains("\ua2e7\ua0c5\ua395\ua3e6\ua12e\ua209") || // Sichuan Yi, Nuosu
                             date.contains("\u06af\u0631\u06cc\u0646\u06cc\u0686")) { // Central Kurdish
                         continue;
                     }

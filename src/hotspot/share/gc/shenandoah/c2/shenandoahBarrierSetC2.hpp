@@ -31,16 +31,10 @@
 
 class ShenandoahBarrierSetC2State : public ArenaObj {
 private:
-  GrowableArray<ShenandoahIUBarrierNode*>* _iu_barriers;
   GrowableArray<ShenandoahLoadReferenceBarrierNode*>* _load_reference_barriers;
 
 public:
   ShenandoahBarrierSetC2State(Arena* comp_arena);
-
-  int iu_barriers_count() const;
-  ShenandoahIUBarrierNode* iu_barrier(int idx) const;
-  void add_iu_barrier(ShenandoahIUBarrierNode* n);
-  void remove_iu_barrier(ShenandoahIUBarrierNode * n);
 
   int load_reference_barriers_count() const;
   ShenandoahLoadReferenceBarrierNode* load_reference_barrier(int idx) const;
@@ -73,7 +67,15 @@ private:
                                     Node* pre_val,
                                     BasicType bt) const;
 
-  Node* shenandoah_iu_barrier(GraphKit* kit, Node* obj) const;
+  void post_barrier(GraphKit* kit,
+                    Node* ctl,
+                    Node* store,
+                    Node* obj,
+                    Node* adr,
+                    uint adr_idx,
+                    Node* val,
+                    BasicType bt,
+                    bool use_precise) const;
 
   void insert_pre_barrier(GraphKit* kit, Node* base_oop, Node* offset,
                           Node* pre_val, bool need_mem_bar) const;
@@ -93,6 +95,7 @@ public:
   static ShenandoahBarrierSetC2* bsc2();
 
   static bool is_shenandoah_wb_pre_call(Node* call);
+  static bool is_shenandoah_clone_call(Node* call);
   static bool is_shenandoah_lrb_call(Node* call);
   static bool is_shenandoah_marking_if(PhaseValues* phase, Node* n);
   static bool is_shenandoah_state_load(Node* n);
@@ -100,9 +103,9 @@ public:
 
   ShenandoahBarrierSetC2State* state() const;
 
-  static const TypeFunc* write_ref_field_pre_entry_Type();
-  static const TypeFunc* shenandoah_clone_barrier_Type();
-  static const TypeFunc* shenandoah_load_reference_barrier_Type();
+  static const TypeFunc* write_ref_field_pre_Type();
+  static const TypeFunc* clone_barrier_Type();
+  static const TypeFunc* load_reference_barrier_Type();
   virtual bool has_load_barrier_nodes() const { return true; }
 
   // This is the entry-point for the backend to perform accesses through the Access API.
@@ -117,8 +120,8 @@ public:
   virtual Node* step_over_gc_barrier(Node* c) const;
   virtual bool expand_barriers(Compile* C, PhaseIterGVN& igvn) const;
   virtual bool optimize_loops(PhaseIdealLoop* phase, LoopOptsMode mode, VectorSet& visited, Node_Stack& nstack, Node_List& worklist) const;
-  virtual bool strip_mined_loops_expanded(LoopOptsMode mode) const { return mode == LoopOptsShenandoahExpand || mode == LoopOptsShenandoahPostExpand; }
-  virtual bool is_gc_specific_loop_opts_pass(LoopOptsMode mode) const { return mode == LoopOptsShenandoahExpand || mode == LoopOptsShenandoahPostExpand; }
+  virtual bool strip_mined_loops_expanded(LoopOptsMode mode) const { return mode == LoopOptsShenandoahExpand; }
+  virtual bool is_gc_specific_loop_opts_pass(LoopOptsMode mode) const { return mode == LoopOptsShenandoahExpand; }
 
   // Support for macro expanded GC barriers
   virtual void register_potential_barrier_node(Node* node) const;

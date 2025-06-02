@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,8 +109,8 @@ public class SSLEngineKeyLimit extends SSLContextTemplate {
             }
             p.close();
 
-            System.setProperty("test.java.opts",
-                    "-Dtest.src=" + System.getProperty("test.src") +
+            System.setProperty("test.java.opts", System.getProperty("test.java.opts") +
+                    " -Dtest.src=" + System.getProperty("test.src") +
                             " -Dtest.jdk=" + System.getProperty("test.jdk") +
                             " -Djavax.net.debug=ssl,handshake" +
                             " -Djava.security.properties=" + f.getName());

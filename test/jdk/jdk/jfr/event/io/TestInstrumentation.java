@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,15 +51,13 @@ import static java.lang.constant.ConstantDescs.CD_void;
 /*
  * @test
  * @summary Test that will instrument the same classes that JFR will also instrument.
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  *
  * @library /test/lib /test/jdk
  * @modules java.instrument
  *          jdk.jartool/sun.tools.jar
  *          jdk.jfr
- * @enablePreview
- * @comment update --enable-preview in launchTest() too
  *
  * @run main/othervm jdk.jfr.event.io.TestInstrumentation
  */
@@ -281,7 +279,6 @@ public class TestInstrumentation implements ClassFileTransformer {
 
         String[] args = {
             "-Xbootclasspath/a:" + testClassDir + "InstrumentationCallback.jar",
-            "--enable-preview",
             "-classpath", classpath,
             "-javaagent:" + testClassDir + "TestInstrumentation.jar",
             "jdk.jfr.event.io.TestInstrumentation$TestMain" };

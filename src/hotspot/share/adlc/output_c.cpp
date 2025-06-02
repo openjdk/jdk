@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2358,6 +2358,9 @@ private:
     if (strcmp(rep_var,"$VectorRegister") == 0)   return "as_VectorRegister";
     if (strcmp(rep_var,"$VectorSRegister") == 0)  return "as_VectorSRegister";
 #endif
+#if defined(S390)
+    if (strcmp(rep_var,"$VectorRegister") == 0)   return "as_VectorRegister";
+#endif
 #if defined(AARCH64)
     if (strcmp(rep_var,"$PRegister") == 0)  return "as_PRegister";
 #endif
@@ -2418,6 +2421,8 @@ private:
       if( _constant_status == LITERAL_NOT_SEEN ) {
         if ( _constant_type == Form::idealD ) {
           fprintf(_fp,"->constantD()");
+        } else if ( _constant_type == Form::idealH ) {
+          fprintf(_fp,"->constantH()");
         } else if ( _constant_type == Form::idealF ) {
           fprintf(_fp,"->constantF()");
         } else if ( _constant_type == Form::idealL ) {
@@ -3786,6 +3791,8 @@ static void path_to_constant(FILE *fp, FormDict &globals,
       fprintf(fp, "_leaf->bottom_type()->is_narrowoop()");
     } else if ( (strcmp(optype,"ConNKlass") == 0) ) {
       fprintf(fp, "_leaf->bottom_type()->is_narrowklass()");
+    } else if ( (strcmp(optype,"ConH") == 0) ) {
+      fprintf(fp, "_leaf->geth()");
     } else if ( (strcmp(optype,"ConF") == 0) ) {
       fprintf(fp, "_leaf->getf()");
     } else if ( (strcmp(optype,"ConD") == 0) ) {

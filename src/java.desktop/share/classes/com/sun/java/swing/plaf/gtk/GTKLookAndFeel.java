@@ -38,7 +38,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.security.AccessController;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -65,7 +64,6 @@ import com.sun.java.swing.plaf.gtk.GTKConstants.PositionType;
 import com.sun.java.swing.plaf.gtk.GTKConstants.StateType;
 import sun.awt.SunToolkit;
 import sun.awt.UNIXToolkit;
-import sun.security.action.GetPropertyAction;
 import sun.swing.AltProcessor;
 import sun.swing.DefaultLayoutStyle;
 import sun.swing.MnemonicHandler;
@@ -77,7 +75,6 @@ import sun.swing.SwingUtilities2;
  */
 @SuppressWarnings("serial") // Superclass not serializable
 public class GTKLookAndFeel extends SynthLookAndFeel {
-    private static boolean IS_22;
     private static boolean IS_3;
 
     /**
@@ -123,17 +120,6 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
      * Cached theme name. Used by GTKGraphicsUtils
      */
     private static String gtkThemeName = "Default";
-
-    /**
-     * Returns true if running on system containing at least 2.2.
-     */
-    static boolean is2_2() {
-        // NOTE: We're currently hard coding to use 2.2.
-        // If we want to support both GTK 2.0 and 2.2, we'll
-        // need to get the major/minor/micro version from the .so.
-        // Refer to bug 4912613 for details.
-        return IS_22;
-    }
 
     static boolean is3() {
         return IS_3;
@@ -370,8 +356,6 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         Double defaultCaretAspectRatio = Double.valueOf(0.025);
         Color caretColor = table.getColor("caretColor");
         Color controlText = table.getColor("controlText");
-        Color tabbedPaneBg = new ColorUIResource(238, 238, 238);
-        Color unselectedTabColor = new ColorUIResource(255, 255, 255);
 
         Object fieldInputMap = new UIDefaults.LazyInputMap(new Object[] {
                        "ctrl C", DefaultEditorKit.copyAction,
@@ -1043,11 +1027,6 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
             "TabbedPane.selectedLabelShift", 3,
             "TabbedPane.font", new FontLazyValue(Region.TABBED_PANE),
             "TabbedPane.selectedTabPadInsets", new InsetsUIResource(2, 2, 0, 1),
-            "TabbedPane.selected", tabbedPaneBg,
-            "TabbedPane.contentOpaque", Boolean.TRUE,
-            "TabbedPane.tabsOpaque", Boolean.TRUE,
-            "TabbedPane.contentAreaColor", tabbedPaneBg,
-            "TabbedPane.unselectedBackground", unselectedTabColor,
 
             "Table.scrollPaneBorder", zeroBorder,
             "Table.background", tableBg,
@@ -1070,7 +1049,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
                              "KP_RIGHT", "selectNextColumn",
                           "shift RIGHT", "selectNextColumnExtendSelection",
                        "shift KP_RIGHT", "selectNextColumnExtendSelection",
-                     "ctrl shift RIGHT", "selectNextColumnExtendSelection",
+                     "ctrl shift RIGHT", "selectLastColumnExtendSelection",
                   "ctrl shift KP_RIGHT", "selectNextColumnExtendSelection",
                            "ctrl RIGHT", "selectNextColumnChangeLead",
                         "ctrl KP_RIGHT", "selectNextColumnChangeLead",
@@ -1078,7 +1057,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
                               "KP_LEFT", "selectPreviousColumn",
                            "shift LEFT", "selectPreviousColumnExtendSelection",
                         "shift KP_LEFT", "selectPreviousColumnExtendSelection",
-                      "ctrl shift LEFT", "selectPreviousColumnExtendSelection",
+                      "ctrl shift LEFT", "selectFirstColumnExtendSelection",
                    "ctrl shift KP_LEFT", "selectPreviousColumnExtendSelection",
                             "ctrl LEFT", "selectPreviousColumnChangeLead",
                          "ctrl KP_LEFT", "selectPreviousColumnChangeLead",
@@ -1454,17 +1433,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
             throw new InternalError("Unable to load native GTK libraries");
         }
 
-        if (UNIXToolkit.getGtkVersion() == UNIXToolkit.GtkVersions.GTK2) {
-            @SuppressWarnings("removal")
-            String version = AccessController.doPrivileged(
-                    new GetPropertyAction("jdk.gtk.version"));
-            if (version != null) {
-                IS_22 = version.equals("2.2");
-            } else {
-                IS_22 = true;
-            }
-        } else if (UNIXToolkit.getGtkVersion() ==
-                                UNIXToolkit.GtkVersions.GTK3) {
+        if (UNIXToolkit.getGtkVersion() == UNIXToolkit.GtkVersions.GTK3) {
             IS_3 = true;
         }
 

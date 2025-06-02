@@ -135,7 +135,7 @@ void
 fileDescriptorClose(JNIEnv *env, jobject this)
 {
     FD fd = (*env)->GetIntField(env, this, IO_fd_fdID);
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
         return;
     }
 
@@ -150,7 +150,7 @@ fileDescriptorClose(JNIEnv *env, jobject this)
      * taking extra precaution over here.
      */
     (*env)->SetIntField(env, this, IO_fd_fdID, -1);
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
         return;
     }
     /*
@@ -263,4 +263,14 @@ handleGetLength(FD fd)
     }
 #endif
     return sb.st_size;
+}
+
+jboolean
+handleIsRegularFile(JNIEnv* env, FD fd)
+{
+    struct stat fbuf;
+    if (fstat(fd, &fbuf) == -1)
+        JNU_ThrowIOExceptionWithLastError(env, "fstat failed");
+
+    return S_ISREG(fbuf.st_mode) ? JNI_TRUE : JNI_FALSE;
 }

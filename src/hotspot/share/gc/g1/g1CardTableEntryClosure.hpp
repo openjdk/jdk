@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ public:
   typedef CardTable::CardValue CardValue;
 
   // Process the card whose card table entry is "card_ptr".
-  virtual void do_card_ptr(CardValue* card_ptr, uint worker_id) = 0;
+  virtual void do_card_ptr(CardValue* card_ptr) = 0;
 
   // Process all the card_ptrs in node.
   void apply_to_buffer(BufferNode* node, uint worker_id) {
@@ -44,7 +44,7 @@ public:
     size_t capacity = node->capacity();
     for (size_t i = node->index(); i < capacity; ++i) {
       CardValue* card_ptr = static_cast<CardValue*>(buffer[i]);
-      do_card_ptr(card_ptr, worker_id);
+      do_card_ptr(card_ptr);
     }
   }
 };

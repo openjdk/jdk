@@ -66,6 +66,7 @@ This method executes JNI analog for following Java code:
                 env->ThrowNew(
                     env->FindClass("nsk/share/TestJNIError"),
                     "MonitorEnter return non-zero");
+                return;
         }
 
         thisObjectClass = env->GetObjectClass(thisObject);
@@ -78,6 +79,9 @@ This method executes JNI analog for following Java code:
 
         env->CallVoidMethod(wicketObject,
                             env->GetMethodID(wicketClass, "unlockAll", "()V"));
+        if (env->ExceptionOccurred()) {
+                return;
+        }
 
         // step2.waitFor()
         field = env->GetFieldID(thisObjectClass, "step2", "Lnsk/share/Wicket;");
@@ -85,6 +89,9 @@ This method executes JNI analog for following Java code:
 
         env->CallVoidMethod(wicketObject,
                             env->GetMethodID(wicketClass, "waitFor", "()V"));
+        if (env->ExceptionOccurred()) {
+                return;
+        }
 
         // readyWicket.unlock()
         field = env->GetFieldID(thisObjectClass, "readyWicket", "Lnsk/share/Wicket;");
@@ -92,6 +99,9 @@ This method executes JNI analog for following Java code:
 
         env->CallVoidMethod(wicketObject,
                             env->GetMethodID(wicketClass, "unlock", "()V"));
+        if (env->ExceptionOccurred()) {
+                return;
+        }
 
         // inner.lock()
         field = env->GetFieldID(thisObjectClass, "inner", "Lnsk/share/locks/DeadlockLocker;");
@@ -100,8 +110,14 @@ This method executes JNI analog for following Java code:
 
         env->CallVoidMethod(innerObject,
                             env->GetMethodID(deadlockLockerClass, "lock", "()V"));
+        if (env->ExceptionOccurred()) {
+                return;
+        }
 
         success = env->MonitorExit(thisObject);
+        if (env->ExceptionOccurred()) {
+                return;
+        }
 
         if (success != 0)
         {

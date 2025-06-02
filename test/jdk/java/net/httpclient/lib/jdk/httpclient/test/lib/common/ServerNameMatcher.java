@@ -58,6 +58,7 @@ public class ServerNameMatcher extends SNIMatcher {
     private final Logger debug;
     private final boolean attemptDNSResolution;
     private final Set<String> recognizedSNINames;
+    private volatile boolean invoked;
 
     /**
      * Creates a ServerNameMatcher which recognizes the passed {@code recognizedSNIName}
@@ -97,6 +98,7 @@ public class ServerNameMatcher extends SNIMatcher {
      */
     @Override
     public boolean matches(final SNIServerName clientRequestedSNI) {
+        this.invoked = true;
         Objects.requireNonNull(clientRequestedSNI);
         if (!SNIHostName.class.isInstance(clientRequestedSNI)) {
             if (debug.on()) {
@@ -126,6 +128,14 @@ public class ServerNameMatcher extends SNIMatcher {
             debug.log("SNI match (against " + recognizedSNINames + ") failed: " + clientRequestedSNI);
         }
         return false;
+    }
+
+    /**
+     * @return true if the {@link #matches(SNIServerName)} method of this SNIMatcher instance
+     * was invoked at least once, false otherwise.
+     */
+    public boolean wasInvoked() {
+        return this.invoked;
     }
 
     private boolean matchesAfterDNSResolution(final String clientRequestedSNI) {

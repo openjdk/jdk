@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,10 @@
  * @bug 8325203
  * @summary Test that Jpackage windows executable application kills the launched 3rd party application
  *          when System.exit(0) is invoked along with terminating java program.
- * @library ../helpers
- * @library /test/lib
+ * @library /test/jdk/tools/jpackage/helpers
  * @requires os.family == "windows"
- * @build WinChildProcessTest
  * @build jdk.jpackage.test.*
  * @build WinChildProcessTest
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinChildProcessTest
  *
@@ -43,46 +40,50 @@ import java.util.Optional;
 import java.nio.file.Path;
 
 import jdk.jpackage.test.JPackageCommand;
+import static jdk.jpackage.test.HelloApp.configureAndExecute;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.TKit;
+import static jdk.jpackage.test.WindowsHelper.killProcess;
 
 public class WinChildProcessTest {
     private static final Path TEST_APP_JAVA = TKit.TEST_SRC_ROOT
             .resolve("apps/ChildProcessAppLauncher.java");
 
     @Test
-    public static void test() throws Throwable {
-        long calcPid = 0;
+    public static void test() {
+        long childPid = 0;
         try {
             JPackageCommand cmd = JPackageCommand
-                    .helloAppImage(TEST_APP_JAVA + "*Hello");
+                    .helloAppImage(TEST_APP_JAVA + "*Hello")
+                    .ignoreFakeRuntime();
 
             // Create the image of the third party application launcher
             cmd.executeAndAssertImageCreated();
 
             // Start the third party application launcher and dump and save the
             // output of the application
-            List<String> output = new Executor().saveOutput().dumpOutput()
-                    .setExecutable(cmd.appLauncherPath().toAbsolutePath())
-                    .execute(0).getOutput();
+            List<String> output = configureAndExecute(0, new Executor().saveOutput().dumpOutput()
+                    .setExecutable(cmd.appLauncherPath().toAbsolutePath()))
+                            .getOutput();
             String pidStr = output.get(0);
 
-            // parse calculator PID
-            calcPid = Long.parseLong(pidStr.split("=", 2)[1]);
+            // parse child PID
+            childPid = Long.parseLong(pidStr.split("=", 2)[1]);
 
             // Check whether the termination of third party application launcher
             // also terminating the launched third party application
             // If third party application is not terminated the test is
             // successful else failure
-            Optional<ProcessHandle> processHandle = ProcessHandle.of(calcPid);
+            Optional<ProcessHandle> processHandle = ProcessHandle.of(childPid);
             boolean isAlive = processHandle.isPresent()
                     && processHandle.get().isAlive();
-            System.out.println("Is Alive " + isAlive);
-            TKit.assertTrue(isAlive, "Check is calculator process is alive");
+            TKit.assertTrue(isAlive, "Check child process is alive");
         } finally {
-            // Kill only a specific calculator instance
-            Runtime.getRuntime().exec("taskkill /F /PID " + calcPid);
+            if (childPid != 0) {
+                // Kill only a specific child instance
+                killProcess(childPid);
+            }
         }
     }
 }

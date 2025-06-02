@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/codeBlob.hpp"
 #include "code/vmreg.inline.hpp"
@@ -241,7 +240,7 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   __ beqz(tmp2, slow_path);
 
   // Bump the pointer
-  __ sub(tmp2, tmp2, sizeof(ZStoreBarrierEntry));
+  __ subi(tmp2, tmp2, sizeof(ZStoreBarrierEntry));
   __ sd(tmp2, Address(tmp1, ZStoreBarrierBuffer::current_offset()));
 
   // Compute the buffer entry address
@@ -286,7 +285,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     __ relocate(barrier_Relocation::spec(), [&] {
       __ li16u(rtmp1, barrier_Relocation::unpatched);
     }, ZBarrierRelocationFormatStoreGoodBits);
-    __ cmpxchg_weak(rtmp2, zr, rtmp1,
+    __ weak_cmpxchg(rtmp2, zr, rtmp1,
                     Assembler::int64,
                     Assembler::relaxed /* acquire */, Assembler::relaxed /* release */,
                     rtmp3);
@@ -636,8 +635,20 @@ void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
       ShouldNotReachHere();
   }
 
-  // A full fence is generated before icache_flush by default in invalidate_word
-  ICache::invalidate_range(addr, bytes);
+  // If we are using UseCtxFencei no ICache invalidation is needed here.
+  // Instead every hart will preform an fence.i either by a Java thread
+  // (due to patching epoch will take it to slow path),
+  // or by the kernel when a Java thread is moved to a hart.
+  // The instruction streams changes must only happen before the disarm of
+  // the nmethod barrier. Where the disarm have a leading full two way fence.
+  // If this is performed during a safepoint, all Java threads will emit a fence.i
+  // before transitioning to 'Java', e.g. leaving native or the safepoint wait barrier.
+  if (!UseCtxFencei) {
+    // ICache invalidation is a serialization point.
+    // The above patching of instructions happens before the invalidation.
+    // Hence it have a leading full two way fence (wr, wr).
+    ICache::invalidate_range(addr, bytes);
+  }
 }
 
 #ifdef COMPILER2
@@ -712,8 +723,8 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
   {
     SaveLiveRegisters save_live_registers(masm, stub);
     ZSetupArguments setup_arguments(masm, stub);
-    __ mv(t0, stub->slow_path());
-    __ jalr(t0);
+    __ mv(t1, stub->slow_path());
+    __ jalr(t1);
   }
 
   // Stub exit
@@ -746,13 +757,14 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
     __ la(c_rarg0, stub->ref_addr());
 
     if (stub->is_native()) {
-      __ la(t0, RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing_addr()));
+      __ rt_call(ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing_addr());
     } else if (stub->is_atomic()) {
-      __ la(t0, RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr()));
+      __ rt_call(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr());
+    } else if (stub->is_nokeepalive()) {
+      __ rt_call(ZBarrierSetRuntime::no_keepalive_store_barrier_on_oop_field_without_healing_addr());
     } else {
-      __ la(t0, RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr()));
+      __ rt_call(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr());
     }
-    __ jalr(t0);
   }
 
   // Stub exit
@@ -835,10 +847,10 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
    // Save x10 unless it is the result or tmp register
    // Set up SP to accommdate parameters and maybe x10.
    if (ref != x10 && tmp != x10) {
-     __ sub(sp, sp, 32);
+     __ subi(sp, sp, 32);
      __ sd(x10, Address(sp, 16));
    } else {
-     __ sub(sp, sp, 16);
+     __ subi(sp, sp, 16);
    }
 
    // Setup arguments and call runtime stub
@@ -950,7 +962,7 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
 
   __ la(stub->new_zpointer()->as_register(), ce->as_Address(stub->ref_addr()->as_address_ptr()));
 
-  __ sub(sp, sp, 16);
+  __ subi(sp, sp, 16);
   //Setup arguments and call runtime stub
   assert(stub->new_zpointer()->is_valid(), "invariant");
   ce->store_parameter(stub->new_zpointer()->as_register(), 0);

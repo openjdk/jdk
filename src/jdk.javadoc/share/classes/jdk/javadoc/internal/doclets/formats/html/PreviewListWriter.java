@@ -33,12 +33,15 @@ import javax.lang.model.element.Element;
 import com.sun.source.doctree.DocTree;
 
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlStyle;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Generate File to list all the preview elements with the
@@ -81,7 +84,7 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
         if (!jeps.isEmpty()) {
             int index = 1;
             target.add(HtmlTree.P(contents.getContent("doclet.Preview_API_Checkbox_Label")));
-            Content list = HtmlTree.UL(HtmlStyle.previewFeatureList).addStyle(HtmlStyle.checkboxes);
+            Content list = HtmlTree.UL(HtmlStyles.previewFeatureList).addStyle(HtmlStyles.checkboxes);
             for (var jep : jeps) {
                 String jepUrl = resources.getText("doclet.Preview_JEP_URL", String.valueOf(jep.number()));
                 Content label = new ContentBuilder(Text.of(jep.number() + ": "))
@@ -91,6 +94,22 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
             Content label = contents.getContent("doclet.Preview_API_Checkbox_Toggle_All");
             list.add(HtmlTree.LI(getCheckbox(label, ID_ALL, "feature-")));
             target.add(list);
+        }
+    }
+
+    @Override
+    protected void addExtraSection(Content content) {
+        var notes = builder.getElementNotes();
+        if (!notes.isEmpty()) {
+            addSummaryAPI(notes, HtmlId.of("preview-api-notes"),
+                    "doclet.Preview_Notes_Elements", "doclet.Element", content);
+        }
+    }
+
+    @Override
+    protected void addExtraIndexLink(Content target) {
+        if (!builder.getElementNotes().isEmpty()) {
+            addIndexLink(HtmlId.of("preview-api-notes"), "doclet.Preview_Notes", target);
         }
     }
 
@@ -106,7 +125,7 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
 
     @Override
     protected void addTableTabs(Table<Element> table, String headingKey) {
-        table.setGridStyle(HtmlStyle.threeColumnSummary)
+        table.setGridStyle(HtmlStyles.threeColumnSummary)
                 .setDefaultTab(getTableCaption(headingKey))
                 .setRenderTabs(false);
         for (PreviewAPIListBuilder.JEP jep : builder.getJEPs()) {
@@ -131,6 +150,6 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
 
     @Override
     protected HtmlStyle[] getColumnStyles() {
-        return new HtmlStyle[]{ HtmlStyle.colSummaryItemName, HtmlStyle.colSecond, HtmlStyle.colLast };
+        return new HtmlStyle[]{ HtmlStyles.colSummaryItemName, HtmlStyles.colSecond, HtmlStyles.colLast };
     }
 }

@@ -278,7 +278,7 @@ public class ExecPty extends AbstractPty implements Pty {
                 return Integer.parseInt(matcher.group(1));
             }
         }
-        throw new IOException("Unable to parse " + name);
+        return 0;
     }
 
     @Override

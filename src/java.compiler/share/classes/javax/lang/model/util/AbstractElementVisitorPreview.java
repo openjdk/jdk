@@ -29,9 +29,6 @@ import jdk.internal.javac.PreviewFeature;
 
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.SourceVersion;
-import javax.lang.model.element.ElementVisitor;
-import javax.lang.model.element.RecordComponentElement;
 import static javax.lang.model.SourceVersion.*;
 
 /**
@@ -56,7 +53,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see AbstractElementVisitor14
  * @since 23
  */
-@SupportedSourceVersion(RELEASE_24)
+@SupportedSourceVersion(RELEASE_25)
 @PreviewFeature(feature=PreviewFeature.Feature.LANGUAGE_MODEL, reflective=true)
 public abstract class AbstractElementVisitorPreview<R, P> extends AbstractElementVisitor14<R, P> {
     /**

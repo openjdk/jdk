@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2024 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -205,7 +205,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="gmh">Mëttelhéichdäitsch</language>
 			<language type="gn">Guarani</language>
 			<language type="goh">Alhéichdäitsch</language>
-			<language type="gom">Goan-Konkani</language>
 			<language type="gon">Gondi-Sprooch</language>
 			<language type="gor">Mongondou</language>
 			<language type="got">Gotesch</language>
@@ -2580,13 +2579,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Chinesesch Zäit</generic>
 					<standard>Chinesesch Normalzäit</standard>
 					<daylight>Chinesesch Summerzäit</daylight>
-				</long>
-			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Choibalsan-Zäit</generic>
-					<standard>Choibalsan-Normalzäit</standard>
-					<daylight>Choibalsan-Summerzäit</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">

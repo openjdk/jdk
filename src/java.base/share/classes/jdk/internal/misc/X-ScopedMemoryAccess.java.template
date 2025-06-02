@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.lang.ref.Reference;
 import java.io.FileDescriptor;
 import java.util.function.Supplier;
 
+import jdk.internal.access.foreign.MappedMemoryUtilsProxy;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
@@ -74,7 +75,7 @@ import jdk.internal.vm.vector.VectorSupport;
  * which might be deemed to expensive; in other words, this approach prioritizes the performance of memory access over
  * that of releasing a shared memory resource.
  */
-public class ScopedMemoryAccess {
+public final class ScopedMemoryAccess {
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
@@ -237,84 +238,84 @@ public class ScopedMemoryAccess {
     }
 
     @ForceInline
-    public boolean isLoaded(MemorySessionImpl session, long address, boolean isSync, long size) {
+    public boolean isLoaded(MemorySessionImpl session, MappedMemoryUtilsProxy mappedUtils, long address, boolean isSync, long size) {
         try {
-            return isLoadedInternal(session, address, isSync, size);
+            return isLoadedInternal(session, mappedUtils, address, isSync, size);
         } catch (ScopedAccessError ex) {
             throw ex.newRuntimeException();
         }
     }
 
     @ForceInline @Scoped
-    public boolean isLoadedInternal(MemorySessionImpl session, long address, boolean isSync, long size) {
+    public boolean isLoadedInternal(MemorySessionImpl session, MappedMemoryUtilsProxy mappedUtils, long address, boolean isSync, long size) {
         try {
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            return SharedSecrets.getJavaNioAccess().isLoaded(address, isSync, size);
+            return mappedUtils.isLoaded(address, isSync, size);
         } finally {
             Reference.reachabilityFence(session);
         }
     }
 
     @ForceInline
-    public void load(MemorySessionImpl session, long address, boolean isSync, long size) {
+    public void load(MemorySessionImpl session, MappedMemoryUtilsProxy mappedUtils, long address, boolean isSync, long size) {
         try {
-            loadInternal(session, address, isSync, size);
+            loadInternal(session, mappedUtils, address, isSync, size);
         } catch (ScopedAccessError ex) {
             throw ex.newRuntimeException();
         }
     }
 
     @ForceInline @Scoped
-    public void loadInternal(MemorySessionImpl session, long address, boolean isSync, long size) {
+    public void loadInternal(MemorySessionImpl session, MappedMemoryUtilsProxy mappedUtils, long address, boolean isSync, long size) {
         try {
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            SharedSecrets.getJavaNioAccess().load(address, isSync, size);
+            mappedUtils.load(address, isSync, size);
         } finally {
             Reference.reachabilityFence(session);
         }
     }
 
     @ForceInline
-    public void unload(MemorySessionImpl session, long address, boolean isSync, long size) {
+    public void unload(MemorySessionImpl session, MappedMemoryUtilsProxy mappedUtils, long address, boolean isSync, long size) {
         try {
-            unloadInternal(session, address, isSync, size);
+            unloadInternal(session, mappedUtils, address, isSync, size);
         } catch (ScopedAccessError ex) {
             throw ex.newRuntimeException();
         }
     }
 
     @ForceInline @Scoped
-    public void unloadInternal(MemorySessionImpl session, long address, boolean isSync, long size) {
+    public void unloadInternal(MemorySessionImpl session, MappedMemoryUtilsProxy mappedUtils, long address, boolean isSync, long size) {
         try {
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            SharedSecrets.getJavaNioAccess().unload(address, isSync, size);
+            mappedUtils.unload(address, isSync, size);
         } finally {
             Reference.reachabilityFence(session);
         }
     }
 
     @ForceInline
-    public void force(MemorySessionImpl session, FileDescriptor fd, long address, boolean isSync, long index, long length) {
+    public void force(MemorySessionImpl session, MappedMemoryUtilsProxy mappedUtils, FileDescriptor fd, long address, boolean isSync, long index, long length) {
         try {
-            forceInternal(session, fd, address, isSync, index, length);
+            forceInternal(session, mappedUtils, fd, address, isSync, index, length);
         } catch (ScopedAccessError ex) {
             throw ex.newRuntimeException();
         }
     }
 
     @ForceInline @Scoped
-    public void forceInternal(MemorySessionImpl session, FileDescriptor fd, long address, boolean isSync, long index, long length) {
+    public void forceInternal(MemorySessionImpl session, MappedMemoryUtilsProxy mappedUtils, FileDescriptor fd, long address, boolean isSync, long index, long length) {
         try {
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            SharedSecrets.getJavaNioAccess().force(fd, address, isSync, index, length);
+            mappedUtils.force(fd, address, isSync, index, length);
         } finally {
             Reference.reachabilityFence(session);
         }

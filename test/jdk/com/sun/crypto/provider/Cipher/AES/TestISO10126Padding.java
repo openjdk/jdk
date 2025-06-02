@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,8 @@ public class TestISO10126Padding {
 
     private TestISO10126Padding() throws Exception {
         // setup
-        KeyGenerator kg = KeyGenerator.getInstance(ALGO, "SunJCE");
+        KeyGenerator kg = KeyGenerator.getInstance(ALGO,
+                System.getProperty("test.provider.name", "SunJCE"));
         kg.init(KEYSIZE*8);
         key = kg.generateKey();
     }
@@ -59,7 +60,8 @@ public class TestISO10126Padding {
         // TEST#1 --
         // generate the cipher text using manually-supplied
         // XML Encryption padding
-        Cipher ci = Cipher.getInstance(TRANS + "/NoPadding", "SunJCE");
+        Cipher ci = Cipher.getInstance(TRANS + "/NoPadding",
+                System.getProperty("test.provider.name", "SunJCE"));
         ci.init(Cipher.ENCRYPT_MODE, key);
         byte[] paddedData = new byte[ci.getBlockSize()];
         System.arraycopy(data, 0, paddedData, 0, data.length);
@@ -68,7 +70,8 @@ public class TestISO10126Padding {
         byte[] cipherText = ci.doFinal(paddedData);
 
         // decrypt using ISO10126Padding
-        ci = Cipher.getInstance(TRANS + "/ISO10126Padding", "SunJCE");
+        ci = Cipher.getInstance(TRANS + "/ISO10126Padding",
+                System.getProperty("test.provider.name", "SunJCE"));
         ci.init(Cipher.DECRYPT_MODE, key);
         byte[] recovered = ci.doFinal(cipherText);
         if (!Arrays.equals(data, recovered)) {
@@ -76,7 +79,8 @@ public class TestISO10126Padding {
         }
         // TEST#2 --
         // generate the cipher text using ISO10126Padding
-        ci = Cipher.getInstance(TRANS + "/ISO10126Padding", "SunJCE");
+        ci = Cipher.getInstance(TRANS + "/ISO10126Padding",
+                System.getProperty("test.provider.name", "SunJCE"));
         ci.init(Cipher.ENCRYPT_MODE, key);
         cipherText = ci.doFinal(data);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,6 @@ import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import static java.net.NetworkInterface.getNetworkInterfaces;
 import static java.util.Collections.list;
@@ -111,7 +109,7 @@ public class NetworkConfiguration {
      * was looked up.
      *
      * @param ni1 A network interface, may be {@code null}
-     * @param ni2 An other network interface, may be {@code null}
+     * @param ni2 Another network interface, may be {@code null}
      * @return {@code true} if the two network interfaces have the same name
      *         and index, {@code false} otherwise.
      */
@@ -127,8 +125,8 @@ public class NetworkConfiguration {
 
     public static boolean isTestable(NetworkInterface nif) {
         if (Platform.isOSX()) {
-            if (nif.getName().contains("awdl")) {
-                return false; // exclude awdl
+            if (nif.getName().contains("awdl") || nif.getName().contains("docker")) {
+                return false; // exclude awdl or docker
             }
             // filter out interfaces that only have link-local IPv6 addresses
             // on macOS interfaces like 'en6' fall in this category and
@@ -142,6 +140,13 @@ public class NetworkConfiguration {
         if (Platform.isWindows()) {
             String dName = nif.getDisplayName();
             if (dName != null && dName.contains("Teredo")) {
+                return false;
+            }
+        }
+
+        if (Platform.isLinux()) {
+            String dName = nif.getDisplayName();
+            if (dName != null && dName.contains("docker")) {
                 return false;
             }
         }
@@ -440,19 +445,15 @@ public class NetworkConfiguration {
     }
 
     /** Prints all the system interface information to the give stream. */
-    @SuppressWarnings("removal")
     public static void printSystemConfiguration(PrintStream out) {
-        PrivilegedAction<Void> pa = () -> {
         try {
             out.println("*** all system network interface configuration ***");
             for (NetworkInterface nif : list(getNetworkInterfaces())) {
                 out.print(interfaceInformation(nif));
             }
             out.println("*** end ***");
-            return null;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        }};
-        AccessController.doPrivileged(pa);
+        }
     }
 }

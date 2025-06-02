@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/codeBlob.hpp"
 #include "code/vmreg.inline.hpp"
@@ -79,15 +78,48 @@ private:
 
   void save() {
     MacroAssembler* masm = _masm;
-    __ push(rax);
-    __ push(rcx);
-    __ push(rdx);
-    __ push(rdi);
-    __ push(rsi);
-    __ push(r8);
-    __ push(r9);
-    __ push(r10);
-    __ push(r11);
+    if (VM_Version::supports_apx_f()) {
+      if (_result != rax) {
+        __ pushp(rax);
+      }
+      __ pushp(rcx);
+      // Save current stack pointer into rcx
+      __ movptr(rcx, rsp);
+      // Align stack pointer to 16 byte boundary. This is hard constraint
+      // for push2/pop2 with PPX hints.
+      __ andptr(rsp, -StackAlignmentInBytes);
+      // Push original stack pointer.
+      __ push(rcx);
+      // Restore the original contents of RCX register.
+      __ movptr(rcx, Address(rcx));
+      // Now push remaining caller save GPRs and EGPRs on 16B aligned stack.
+      // Note: For PPX to work properly, a PPX-marked PUSH2 (respectively, POP2) should always
+      // be matched with a PPX-marked POP2 (PUSH2), not with two PPX-marked POPs (PUSHs).
+      __ pushp(rdx);
+      __ push2p(rdi, rsi);
+      __ push2p(r8, r9);
+      __ push2p(r10, r11);
+      __ push2p(r16, r17);
+      __ push2p(r18, r19);
+      __ push2p(r20, r21);
+      __ push2p(r22, r23);
+      __ push2p(r24, r25);
+      __ push2p(r26, r27);
+      __ push2p(r28, r29);
+      __ push2p(r30, r31);
+    } else {
+      if (_result != rax) {
+        __ push(rax);
+      }
+      __ push(rcx);
+      __ push(rdx);
+      __ push(rdi);
+      __ push(rsi);
+      __ push(r8);
+      __ push(r9);
+      __ push(r10);
+      __ push(r11);
+    }
 
     if (_xmm_spill_size != 0) {
       __ subptr(rsp, _xmm_spill_size);
@@ -140,21 +172,43 @@ private:
       __ addptr(rsp, _xmm_spill_size);
     }
 
-    __ pop(r11);
-    __ pop(r10);
-    __ pop(r9);
-    __ pop(r8);
-    __ pop(rsi);
-    __ pop(rdi);
-    __ pop(rdx);
-    __ pop(rcx);
-    if (_result == noreg) {
-      __ pop(rax);
-    } else if (_result == rax) {
-      __ addptr(rsp, wordSize);
+    if (VM_Version::supports_apx_f()) {
+      __ pop2p(r31, r30);
+      __ pop2p(r29, r28);
+      __ pop2p(r27, r26);
+      __ pop2p(r25, r24);
+      __ pop2p(r23, r22);
+      __ pop2p(r21, r20);
+      __ pop2p(r19, r18);
+      __ pop2p(r17, r16);
+      __ pop2p(r11, r10);
+      __ pop2p(r9, r8);
+      __ pop2p(rsi, rdi);
+      __ popp(rdx);
+      // Re-instantiate original stack pointer.
+      __ movptr(rsp, Address(rsp));
+      __ popp(rcx);
+      if (_result != rax) {
+        if (_result != noreg) {
+          __ movptr(_result, rax);
+        }
+        __ popp(rax);
+      }
     } else {
-      __ movptr(_result, rax);
-      __ pop(rax);
+      __ pop(r11);
+      __ pop(r10);
+      __ pop(r9);
+      __ pop(r8);
+      __ pop(rsi);
+      __ pop(rdi);
+      __ pop(rdx);
+      __ pop(rcx);
+      if (_result != rax) {
+        if (_result != noreg) {
+          __ movptr(_result, rax);
+        }
+        __ pop(rax);
+      }
     }
   }
 
@@ -221,11 +275,10 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
                                    BasicType type,
                                    Register dst,
                                    Address src,
-                                   Register tmp1,
-                                   Register tmp_thread) {
+                                   Register tmp1) {
   if (!ZBarrierSet::barrier_needed(decorators, type)) {
     // Barrier not needed
-    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1);
     return;
   }
 
@@ -363,8 +416,12 @@ static void emit_store_fast_path_check_c2(MacroAssembler* masm, Address ref_addr
 }
 
 static bool is_c2_compilation() {
+#ifdef COMPILER2
   CompileTask* task = ciEnv::current()->task();
   return task != nullptr && is_c2_compile(task->comp_level());
+#else
+  return false;
+#endif
 }
 
 void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
@@ -636,7 +693,7 @@ void ZBarrierSetAssembler::copy_load_at(MacroAssembler* masm,
 
   // Remove metadata bits so that the store side (vectorized or non-vectorized) can
   // inject the store-good color with an or instruction.
-  __ andq(dst, _zpointer_address_mask);
+  __ andq(dst, ZPointerAddressMask);
 
   if ((decorators & ARRAYCOPY_CHECKCAST) != 0) {
     // The checkcast arraycopy needs to be able to dereference the oops in order to perform a typechecks.
@@ -1260,6 +1317,8 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
       __ call(RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing_addr()));
     } else if (stub->is_atomic()) {
       __ call(RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr()));
+    } else if (stub->is_nokeepalive()) {
+      __ call(RuntimeAddress(ZBarrierSetRuntime::no_keepalive_store_barrier_on_oop_field_without_healing_addr()));
     } else {
       __ call(RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr()));
     }
@@ -1324,7 +1383,13 @@ void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
   const uint16_t value = patch_barrier_relocation_value(format);
   uint8_t* const patch_addr = (uint8_t*)addr + offset;
   if (format == ZBarrierRelocationFormatLoadGoodBeforeShl) {
-    *patch_addr = (uint8_t)value;
+    if (VM_Version::supports_apx_f()) {
+      NativeInstruction* instruction = nativeInstruction_at(addr);
+      uint8_t* const rex2_patch_addr = patch_addr + (instruction->has_rex2_prefix() ? 1 : 0);
+      *rex2_patch_addr = (uint8_t)value;
+    } else {
+      *patch_addr = (uint8_t)value;
+    }
   } else {
     *(uint16_t*)patch_addr = value;
   }

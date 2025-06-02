@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,10 +205,6 @@ public abstract class AsynchronousSocketChannel
      * @throws  UnsupportedAddressTypeException     {@inheritDoc}
      * @throws  ClosedChannelException              {@inheritDoc}
      * @throws  IOException                         {@inheritDoc}
-     * @throws  SecurityException
-     *          If a security manager has been installed and its
-     *          {@link SecurityManager#checkListen checkListen} method denies
-     *          the operation
      */
     @Override
     public abstract AsynchronousSocketChannel bind(SocketAddress local)
@@ -295,12 +291,6 @@ public abstract class AsynchronousSocketChannel
      * established. If the connection cannot be established then the channel is
      * closed.
      *
-     * <p> This method performs exactly the same security checks as the {@link
-     * java.net.Socket} class.  That is, if a security manager has been
-     * installed then this method verifies that its {@link
-     * java.lang.SecurityManager#checkConnect checkConnect} method permits
-     * connecting to the address and port number of the given remote endpoint.
-     *
      * @param   <A>
      *          The type of the attachment
      * @param   remote
@@ -320,9 +310,6 @@ public abstract class AsynchronousSocketChannel
      *          If a connection operation is already in progress on this channel
      * @throws  ShutdownChannelGroupException
      *          If the channel group has terminated
-     * @throws  SecurityException
-     *          If a security manager has been installed
-     *          and it does not permit access to the given remote endpoint
      *
      * @see #getRemoteAddress
      */
@@ -353,9 +340,6 @@ public abstract class AsynchronousSocketChannel
      *          If this channel is already connected
      * @throws  ConnectionPendingException
      *          If a connection operation is already in progress on this channel
-     * @throws  SecurityException
-     *          If a security manager has been installed
-     *          and it does not permit access to the given remote endpoint
      */
     public abstract Future<Void> connect(SocketAddress remote);
 
@@ -674,18 +658,9 @@ public abstract class AsynchronousSocketChannel
 
     /**
      * {@inheritDoc}
-     * <p>
-     * If there is a security manager set, its {@code checkConnect} method is
-     * called with the local address and {@code -1} as its arguments to see
-     * if the operation is allowed. If the operation is not allowed,
-     * a {@code SocketAddress} representing the
-     * {@link java.net.InetAddress#getLoopbackAddress loopback} address and the
-     * local port of the channel's socket is returned.
      *
-     * @return  The {@code SocketAddress} that the socket is bound to, or the
-     *          {@code SocketAddress} representing the loopback address if
-     *          denied by the security manager, or {@code null} if the
-     *          channel's socket is not bound
+     * @return  The {@code SocketAddress} that the socket is bound to; {@code null}
+     *          if the channel's socket is not bound
      *
      * @throws  ClosedChannelException     {@inheritDoc}
      * @throws  IOException                {@inheritDoc}

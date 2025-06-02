@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,6 @@ typedef struct {
 jboolean isDisplayLocal(JNIEnv *env) {
     static jboolean isLocal = False;
     static jboolean isLocalSet = False;
-    jboolean ret;
 
     if (! isLocalSet) {
       jclass geCls = (*env)->FindClass(env, "java/awt/GraphicsEnvironment");
@@ -134,7 +133,7 @@ jboolean isDisplayLocal(JNIEnv *env) {
 static char **getX11FontPath ()
 {
     char **x11Path, **fontdirs;
-    int i, pos, slen, nPaths, numDirs;
+    int i, pos, slen, nPaths;
 
     x11Path = XGetFontPath (awt_display, &nPaths);
 
@@ -533,7 +532,6 @@ static char **getFontConfigLocations() {
 
     char **fontdirs;
     int numdirs = 0;
-    FcInitLoadConfigFuncType FcInitLoadConfig;
     FcPatternBuildFuncType FcPatternBuild;
     FcObjectSetFuncType FcObjectSetBuild;
     FcFontListFuncType FcFontList;
@@ -543,14 +541,10 @@ static char **getFontConfigLocations() {
     FcObjectSetDestroyFuncType FcObjectSetDestroy;
     FcFontSetDestroyFuncType FcFontSetDestroy;
 
-    FcConfig *fontconfig;
     FcPattern *pattern;
     FcObjectSet *objset;
     FcFontSet *fontSet;
-    FcStrList *strList;
-    FcChar8 *str;
-    int i, f, found, len=0;
-    char **fontPath;
+    int i, f, found;
 
     void* libfontconfig = openFontConfig();
 

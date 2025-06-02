@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import org.xml.sax.SAXException;
  * This class manages standard and implementation-specific limitations.
  *
  */
-public final class XMLSecurityManager {
+public final class XMLSecurityManager implements Cloneable {
 
     public static final String DTD_KEY = JdkConstants.DTD_PROPNAME;
 
@@ -100,23 +100,23 @@ public final class XMLSecurityManager {
     @SuppressWarnings("deprecation")
     public static enum Limit {
         ENTITY_EXPANSION_LIMIT("EntityExpansionLimit", JdkConstants.JDK_ENTITY_EXPANSION_LIMIT,
-            JdkConstants.SP_ENTITY_EXPANSION_LIMIT, JdkConstants.ENTITY_EXPANSION_LIMIT, 0, 64000, Processor.PARSER, INTMAPPER),
+            JdkConstants.SP_ENTITY_EXPANSION_LIMIT, JdkConstants.ENTITY_EXPANSION_LIMIT, 2500, 2500, Processor.PARSER, INTMAPPER),
         MAX_OCCUR_NODE_LIMIT("MaxOccurLimit", JdkConstants.JDK_MAX_OCCUR_LIMIT,
-            JdkConstants.SP_MAX_OCCUR_LIMIT, JdkConstants.MAX_OCCUR_LIMIT, 0, 5000, Processor.PARSER, INTMAPPER),
+            JdkConstants.SP_MAX_OCCUR_LIMIT, JdkConstants.MAX_OCCUR_LIMIT, 5000, 5000, Processor.PARSER, INTMAPPER),
         ELEMENT_ATTRIBUTE_LIMIT("ElementAttributeLimit", JdkConstants.JDK_ELEMENT_ATTRIBUTE_LIMIT,
-            JdkConstants.SP_ELEMENT_ATTRIBUTE_LIMIT, JdkConstants.ELEMENT_ATTRIBUTE_LIMIT, 0, 10000, Processor.PARSER, INTMAPPER),
+            JdkConstants.SP_ELEMENT_ATTRIBUTE_LIMIT, JdkConstants.ELEMENT_ATTRIBUTE_LIMIT, 200, 200, Processor.PARSER, INTMAPPER),
         TOTAL_ENTITY_SIZE_LIMIT("TotalEntitySizeLimit", JdkConstants.JDK_TOTAL_ENTITY_SIZE_LIMIT,
-            JdkConstants.SP_TOTAL_ENTITY_SIZE_LIMIT, null, 0, 50000000, Processor.PARSER, INTMAPPER),
+            JdkConstants.SP_TOTAL_ENTITY_SIZE_LIMIT, null, 100000, 100000, Processor.PARSER, INTMAPPER),
         GENERAL_ENTITY_SIZE_LIMIT("MaxEntitySizeLimit", JdkConstants.JDK_GENERAL_ENTITY_SIZE_LIMIT,
-            JdkConstants.SP_GENERAL_ENTITY_SIZE_LIMIT, null, 0, 0, Processor.PARSER, INTMAPPER),
-        PARAMETER_ENTITY_SIZE_LIMIT("MaxEntitySizeLimit", JdkConstants.JDK_PARAMETER_ENTITY_SIZE_LIMIT,
-            JdkConstants.SP_PARAMETER_ENTITY_SIZE_LIMIT, null, 0, 1000000, Processor.PARSER, INTMAPPER),
+            JdkConstants.SP_GENERAL_ENTITY_SIZE_LIMIT, null, 100000, 100000, Processor.PARSER, INTMAPPER),
+        PARAMETER_ENTITY_SIZE_LIMIT("MaxParameterEntitySizeLimit", JdkConstants.JDK_PARAMETER_ENTITY_SIZE_LIMIT,
+            JdkConstants.SP_PARAMETER_ENTITY_SIZE_LIMIT, null, 15000, 15000, Processor.PARSER, INTMAPPER),
         MAX_ELEMENT_DEPTH_LIMIT("MaxElementDepthLimit", JdkConstants.JDK_MAX_ELEMENT_DEPTH,
-            JdkConstants.SP_MAX_ELEMENT_DEPTH, null, 0, 0, Processor.PARSER, INTMAPPER),
+            JdkConstants.SP_MAX_ELEMENT_DEPTH, null, 100, 100, Processor.PARSER, INTMAPPER),
         MAX_NAME_LIMIT("MaxXMLNameLimit", JdkConstants.JDK_XML_NAME_LIMIT,
             JdkConstants.SP_XML_NAME_LIMIT, null, 1000, 1000, Processor.PARSER, INTMAPPER),
         ENTITY_REPLACEMENT_LIMIT("EntityReplacementLimit", JdkConstants.JDK_ENTITY_REPLACEMENT_LIMIT,
-            JdkConstants.SP_ENTITY_REPLACEMENT_LIMIT, null, 0, 3000000, Processor.PARSER, INTMAPPER),
+            JdkConstants.SP_ENTITY_REPLACEMENT_LIMIT, null, 100000, 100000, Processor.PARSER, INTMAPPER),
         XPATH_GROUP_LIMIT("XPathGroupLimit", JdkConstants.XPATH_GROUP_LIMIT,
             JdkConstants.XPATH_GROUP_LIMIT, null, 10, 10, Processor.XPATH, INTMAPPER),
         XPATH_OP_LIMIT("XPathExprOpLimit", JdkConstants.XPATH_OP_LIMIT,
@@ -232,7 +232,7 @@ public final class XMLSecurityManager {
     /**
      * Values of the properties
      */
-    private final int[] values;
+    private int[] values;
 
     /**
      * States of the settings for each property
@@ -283,29 +283,34 @@ public final class XMLSecurityManager {
                 states[limit.ordinal()] = State.DEFAULT;
             }
         }
-
-        //read system properties or the config file (jaxp.properties by default)
-        readSystemProperties();
-        // prepare the JDK Catalog
-        prepareCatalog();
     }
 
     /**
-     * Flag indicating whether the JDK Catalog has been initialized
+     * Returns a copy of the XMLSecurityManager.
+     * @return a copy of the XMLSecurityManager
      */
-    static volatile boolean jdkcatalogInitialized = false;
-    private final Object lock = new Object();
-
-    private void prepareCatalog() {
-        if (!jdkcatalogInitialized) {
-            synchronized (lock) {
-                if (!jdkcatalogInitialized) {
-                    jdkcatalogInitialized = true;
-                    String resolve = getLimitValueAsString(Limit.JDKCATALOG_RESOLVE);
-                    JdkCatalog.init(resolve);
-                }
-            }
+    public XMLSecurityManager clone() {
+        try {
+            XMLSecurityManager copy = (XMLSecurityManager) super.clone();
+            copy.values = this.values.clone();
+            copy.states = this.states.clone();
+            copy.isSet = this.isSet.clone();
+            return copy;
+        } catch (CloneNotSupportedException e) {
+            // shouldn't happen as this class is Cloneable
+            throw new InternalError(e);
         }
+    }
+
+    /**
+     * Returns a copy of the XMLSecurityManager that is updated with the
+     * current System Properties.
+     * @return a copy of the XMLSecurityManager
+     */
+    public XMLSecurityManager cloneAndUpdate() {
+        XMLSecurityManager copy = clone();
+        copy.readSystemProperties();
+        return copy;
     }
 
     /**
@@ -316,7 +321,8 @@ public final class XMLSecurityManager {
      */
     public CatalogResolver getJDKCatalogResolver() {
         String resolve = getLimitValueAsString(Limit.JDKCATALOG_RESOLVE);
-        return CatalogManager.catalogResolver(JdkCatalog.catalog, toActionType(resolve));
+        return CatalogManager.catalogResolver(
+                JdkXmlConfig.getInstance(false).getJdkCatalog(), toActionType(resolve));
     }
 
     // convert the string value of the RESOLVE property to the corresponding
@@ -361,7 +367,7 @@ public final class XMLSecurityManager {
         for (Limit limit : Limit.values()) {
             if (limit.is(propertyName)) {
                 // current spec: new property name == systemProperty
-                return limit.systemProperty();
+                return (limit.systemProperty != null) ? limit.systemProperty : limit.apiProperty;
             }
         }
         //ENTITYCOUNT's new name is qName
@@ -716,7 +722,7 @@ public final class XMLSecurityManager {
         if (sysPropertyName == null) return false;
 
         try {
-            String value = SecuritySupport.getSystemProperty(sysPropertyName);
+            String value = System.getProperty(sysPropertyName);
             if (value != null && !value.equals("")) {
                 setLimit(limit, State.SYSTEMPROPERTY, value);
                 return true;

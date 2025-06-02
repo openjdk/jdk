@@ -3,7 +3,7 @@
  * @bug 4759494 4986256
  * @compile/ref=DivZero.noLint.out                   -XDrawDiagnostics DivZero.java
  * @compile/ref=DivZero.lint.out    -Xlint:divzero   -XDrawDiagnostics DivZero.java
- * @compile/ref=DivZero.lint.out    -Xlint:all,-path -XDrawDiagnostics DivZero.java
+ * @compile/ref=DivZero.lint.out    -Xlint:all       -XDrawDiagnostics DivZero.java
  */
 
 class DivZero

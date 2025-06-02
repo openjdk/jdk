@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package jdk.internal.net.http;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -37,11 +36,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.Permission;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -229,11 +223,6 @@ public final class RequestPublishers {
 
     /**
      * Publishes the content of a given file.
-     * <p>
-     * Privileged actions are performed within a limited doPrivileged that only
-     * asserts the specific, read, file permission that was checked during the
-     * construction of this FilePublisher. This only applies if the file system
-     * that created the file provides interoperability with {@code java.io.File}.
      */
     public static class FilePublisher implements BodyPublisher {
 
@@ -241,62 +230,27 @@ public final class RequestPublishers {
         private final long length;
         private final Function<Path, InputStream> inputStreamSupplier;
 
-        private static String pathForSecurityCheck(Path path) {
-            return path.toFile().getPath();
-        }
-
         /**
          * Factory for creating FilePublisher.
-         *
-         * Permission checks are performed here before construction of the
-         * FilePublisher. Permission checking and construction are deliberately
-         * and tightly co-located.
          */
         public static FilePublisher create(Path path)
                 throws FileNotFoundException {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            FilePermission filePermission = null;
             boolean defaultFS = true;
 
             try {
-                String fn = pathForSecurityCheck(path);
-                if (sm != null) {
-                    FilePermission readPermission = new FilePermission(fn, "read");
-                    sm.checkPermission(readPermission);
-                    filePermission = readPermission;
-                }
+                path.toFile().getPath();
             } catch (UnsupportedOperationException uoe) {
+                // path not associated with the default file system provider
                 defaultFS = false;
-                // Path not associated with the default file system
-                // Test early if an input stream can still be obtained
-                try {
-                    if (sm != null) {
-                        Files.newInputStream(path).close();
-                    }
-                } catch (IOException ioe) {
-                    if (ioe instanceof FileNotFoundException) {
-                        throw (FileNotFoundException) ioe;
-                    } else {
-                        var ex = new FileNotFoundException(ioe.getMessage());
-                        ex.initCause(ioe);
-                        throw ex;
-                    }
-                }
             }
 
-            // existence check must be after permission checks
+            // existence check must be after FS checks
             if (Files.notExists(path))
                 throw new FileNotFoundException(path + " not found");
 
-            Permission perm = filePermission;
-            assert perm == null || perm.getActions().equals("read");
-            @SuppressWarnings("removal")
-            AccessControlContext acc = sm != null ?
-                    AccessController.getContext() : null;
             boolean finalDefaultFS = defaultFS;
             Function<Path, InputStream> inputStreamSupplier = (p) ->
-                    createInputStream(p, acc, perm, finalDefaultFS);
+                    createInputStream(p, finalDefaultFS);
 
             long length;
             try {
@@ -308,39 +262,15 @@ public final class RequestPublishers {
             return new FilePublisher(path, length, inputStreamSupplier);
         }
 
-        @SuppressWarnings("removal")
         private static InputStream createInputStream(Path path,
-                                                     AccessControlContext acc,
-                                                     Permission perm,
                                                      boolean defaultFS) {
             try {
-                if (acc != null) {
-                    PrivilegedExceptionAction<InputStream> pa = defaultFS
-                            ? () -> new FileInputStream(path.toFile())
-                            : () -> Files.newInputStream(path);
-                    return perm != null
-                            ? AccessController.doPrivileged(pa, acc, perm)
-                            : AccessController.doPrivileged(pa, acc);
-                } else {
-                    return defaultFS
+                return defaultFS
                             ? new FileInputStream(path.toFile())
                             : Files.newInputStream(path);
-                }
-            } catch (PrivilegedActionException pae) {
-                throw toUncheckedException(pae.getCause());
             } catch (IOException io) {
                 throw new UncheckedIOException(io);
             }
-        }
-
-        private static RuntimeException toUncheckedException(Throwable t) {
-            if (t instanceof RuntimeException)
-                throw (RuntimeException) t;
-            if (t instanceof Error)
-                throw (Error) t;
-            if (t instanceof IOException)
-                throw new UncheckedIOException((IOException) t);
-            throw new UndeclaredThrowableException(t);
         }
 
         private FilePublisher(Path name,
@@ -607,12 +537,20 @@ public final class RequestPublishers {
 
         @Override
         public void request(long n) {
-            if (cancelled || publisher == null && bodies.isEmpty()) {
-                return;
+            synchronized (this) {
+                // We are finished when publisher is null and bodies
+                // is empty. This means that the data from the last
+                // publisher in the list has been consumed.
+                // If we are finished or cancelled, do nothing.
+                if (cancelled || (publisher == null && bodies.isEmpty())) {
+                    return;
+                }
             }
             try {
                 demand.increase(n);
             } catch (IllegalArgumentException x) {
+                // request() should not throw - the scheduler will
+                // invoke onError on the subscriber.
                 illegalRequest = x;
             }
             scheduler.runOrSchedule();
@@ -624,35 +562,50 @@ public final class RequestPublishers {
             scheduler.runOrSchedule();
         }
 
-        private boolean cancelSubscription() {
-            Flow.Subscription subscription = this.subscription;
+        private boolean cancelSubscription(Flow.Subscription subscription) {
             if (subscription != null) {
-                this.subscription = null;
-                this.publisher = null;
+                synchronized (this) {
+                    if (this.subscription == subscription) {
+                        this.subscription = null;
+                        this.publisher = null;
+                    }
+                }
                 subscription.cancel();
             }
+            // This method is called when cancel is true, so
+            // we should always stop the scheduler here
             scheduler.stop();
             return subscription != null;
         }
 
         public void run() {
             try {
+                BodyPublisher publisher;
+                Flow.Subscription subscription = null;
                 while (error.get() == null
                         && (!demand.isFulfilled()
-                        || (publisher == null && !bodies.isEmpty()))) {
+                        || (this.publisher == null && !bodies.isEmpty()))) {
                     boolean cancelled = this.cancelled;
-                    BodyPublisher publisher = this.publisher;
-                    Flow.Subscription subscription = this.subscription;
+                    // make sure we see a consistent state.
+                    synchronized (this) {
+                        publisher = this.publisher;
+                        subscription = this.subscription;
+                    }
                     Throwable illegalRequest = this.illegalRequest;
                     if (cancelled) {
                         bodies.clear();
-                        cancelSubscription();
+                        cancelSubscription(subscription);
                         return;
                     }
                     if (publisher == null && !bodies.isEmpty()) {
-                        this.publisher = publisher = bodies.poll();
+                        // synchronize here to avoid race condition with
+                        // request(long) which could otherwise observe a
+                        // null publisher and an empty bodies list when
+                        // polling the last publisher.
+                        synchronized (this) {
+                            this.publisher = publisher = bodies.poll();
+                        }
                         publisher.subscribe(this);
-                        subscription = this.subscription;
                     } else if (publisher == null) {
                         return;
                     }
@@ -660,10 +613,17 @@ public final class RequestPublishers {
                         onError(illegalRequest);
                         return;
                     }
-                    if (subscription == null) return;
-                    if (!demand.isFulfilled()) {
-                        long n = demand.decreaseAndGet(demand.get());
-                        demanded.increase(n);
+                    long n = 0;
+                    // synchronize to avoid race condition with
+                    // publisherDone()
+                    synchronized (this) {
+                        if ((subscription = this.subscription) == null) return;
+                        if (!demand.isFulfilled()) {
+                            n = demand.decreaseAndGet(demand.get());
+                            demanded.increase(n);
+                        }
+                    }
+                    if (n > 0 && !cancelled) {
                         subscription.request(n);
                     }
                 }
@@ -672,20 +632,35 @@ public final class RequestPublishers {
             }
         }
 
+        // It is important to synchronize when setting
+        // publisher to null to avoid race conditions
+        // with request(long)
+        private synchronized void publisherDone() {
+            publisher = null;
+            subscription = null;
+        }
+
 
         @Override
         public void onSubscribe(Flow.Subscription subscription) {
-            this.subscription = subscription;
+            // synchronize for asserting in a consistent state.
+            synchronized (this) {
+                // we shouldn't be able to observe a null publisher
+                // when onSubscribe is called, unless - possibly - if
+                // there was some error...
+                assert publisher != null || error.get() != null;
+                this.subscription = subscription;
+            }
             scheduler.runOrSchedule();
         }
 
         @Override
         public void onNext(ByteBuffer item) {
-            // make sure to cancel the subscription if we receive
-            // an item after the subscription was cancelled or
+            // make sure to cancel the downstream subscription if we receive
+            // an item after the aggregate subscription was cancelled or
             // an error was reported.
             if (cancelled || error.get() != null) {
-                cancelSubscription();
+                cancelSubscription(this.subscription);
                 return;
             }
             demanded.tryDecrement();
@@ -695,25 +670,30 @@ public final class RequestPublishers {
         @Override
         public void onError(Throwable throwable) {
             if (error.compareAndSet(null, throwable)) {
-                publisher = null;
-                subscription = null;
+                publisherDone();
                 subscriber.onError(throwable);
                 scheduler.stop();
             }
         }
 
-        @Override
-        public void onComplete() {
+        private synchronized boolean completeAndContinue() {
             if (publisher != null && !bodies.isEmpty()) {
                 while (!demanded.isFulfilled()) {
                     demand.increase(demanded.decreaseAndGet(demanded.get()));
                 }
-                publisher = null;
-                subscription = null;
+                publisherDone();
+                return true; // continue
+            } else {
+                publisherDone();
+                return false; // stop
+            }
+        }
+
+        @Override
+        public void onComplete() {
+            if (completeAndContinue()) {
                 scheduler.runOrSchedule();
             } else {
-                publisher = null;
-                subscription = null;
                 if (!cancelled) {
                     subscriber.onComplete();
                 }
@@ -721,4 +701,5 @@ public final class RequestPublishers {
             }
         }
     }
+
 }

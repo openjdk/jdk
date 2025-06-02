@@ -22,14 +22,48 @@
  */
 
 /*
- * @test
+ * @test VMOptionWarningExperimental
  * @bug 8027314
- * @summary Warn if diagnostic or experimental vm option is used and -XX:+UnlockDiagnosticVMOptions or -XX:+UnlockExperimentalVMOptions, respectively, isn't specified. Warn if develop vm option is used with product version of VM.
+ * @summary Warn if experimental vm option is used and -XX:+UnlockExperimentalVMOptions isn't specified.
  * @requires vm.flagless
+ * @requires !vm.opt.final.UnlockExperimentalVMOptions
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver VMOptionWarning
+ * @run driver VMOptionWarning Experimental
+ */
+
+/* @test VMOptionWarningDiagnostic
+ * @bug 8027314
+ * @summary Warn if diagnostic vm option is used and -XX:+UnlockDiagnosticVMOptions isn't specified.
+ * @requires vm.flagless
+ * @requires !vm.debug
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @run driver VMOptionWarning Diagnostic
+ */
+
+/* @test VMCompileCommandWarningDiagnostic
+ * @bug 8351958
+ * @summary Warn if compile command that is an alias for a diagnostic vm option is used and -XX:+UnlockDiagnosticVMOptions isn't specified.
+ * @requires vm.flagless
+ * @requires !vm.debug
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @run driver VMOptionWarning DiagnosticCompileCommand
+ */
+
+/* @test VMOptionWarningDevelop
+ * @bug 8027314
+ * @summary Warn if develop vm option is used with product version of VM.
+ * @requires vm.flagless
+ * @requires !vm.debug
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @run driver VMOptionWarning Develop
  */
 
 import jdk.test.lib.process.ProcessTools;
@@ -38,24 +72,44 @@ import jdk.test.lib.Platform;
 
 public class VMOptionWarning {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+AlwaysSafeConstructors", "-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldNotHaveExitValue(0);
-        output.shouldContain("Error: VM option 'AlwaysSafeConstructors' is experimental and must be enabled via -XX:+UnlockExperimentalVMOptions.");
-
-        if (Platform.isDebugBuild()) {
-            System.out.println("Skip the rest of the tests on debug builds since diagnostic, and develop options are available on debug builds.");
-            return;
+        if (args.length != 1) {
+            throw new RuntimeException("wrong number of args: " + args.length);
         }
 
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+PrintInlining", "-version");
-        output = new OutputAnalyzer(pb.start());
-        output.shouldNotHaveExitValue(0);
-        output.shouldContain("Error: VM option 'PrintInlining' is diagnostic and must be enabled via -XX:+UnlockDiagnosticVMOptions.");
-
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+VerifyStack", "-version");
-        output = new OutputAnalyzer(pb.start());
-        output.shouldNotHaveExitValue(0);
-        output.shouldContain("Error: VM option 'VerifyStack' is develop and is available only in debug version of VM.");
+        ProcessBuilder pb;
+        OutputAnalyzer output;
+        switch (args[0]) {
+            case "Experimental": {
+                pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+AlwaysSafeConstructors", "-version");
+                output = new OutputAnalyzer(pb.start());
+                output.shouldNotHaveExitValue(0);
+                output.shouldContain("Error: VM option 'AlwaysSafeConstructors' is experimental and must be enabled via -XX:+UnlockExperimentalVMOptions.");
+                break;
+            }
+            case "Diagnostic": {
+                pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+PrintInlining", "-version");
+                output = new OutputAnalyzer(pb.start());
+                output.shouldNotHaveExitValue(0);
+                output.shouldContain("Error: VM option 'PrintInlining' is diagnostic and must be enabled via -XX:+UnlockDiagnosticVMOptions.");
+                break;
+            }
+            case "DiagnosticCompileCommand": {
+                pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:CompileCommand=PrintAssembly,MyClass::myMethod", "-version");
+                output = new OutputAnalyzer(pb.start());
+                output.shouldNotHaveExitValue(0);
+                output.shouldContain("Error: VM option 'PrintAssembly' is diagnostic and must be enabled via -XX:+UnlockDiagnosticVMOptions.");
+                break;
+            }
+            case "Develop": {
+                pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+VerifyStack", "-version");
+                output = new OutputAnalyzer(pb.start());
+                output.shouldNotHaveExitValue(0);
+                output.shouldContain("Error: VM option 'VerifyStack' is develop and is available only in debug version of VM.");
+                break;
+            }
+            default: {
+                throw new RuntimeException("Invalid argument: " + args[0]);
+            }
+        }
     }
 }

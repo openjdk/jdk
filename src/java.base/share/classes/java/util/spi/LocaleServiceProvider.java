@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,19 +41,36 @@ import java.util.Locale;
  * and methods for name retrieval in the {@code java.text} and
  * {@code java.util} packages use implementations of the provider
  * interfaces to offer support for locales beyond the set of locales
- * supported by the Java runtime environment itself.
+ * supported by the Java runtime environment itself. Locale sensitive service
+ * providers are deployed on the application module path or the application class
+ * path. In order to be looked up, providers must be visible to the {@link
+ * ClassLoader#getSystemClassLoader() system class loader}.
+ * See {@link java.util.ServiceLoader##developing-service-providers Deploying
+ * Service Providers} for further detail on deploying a locale sensitive service
+ * provider as a module or on the class path.
  *
  * <h2>Packaging of Locale Sensitive Service Provider Implementations</h2>
- * Implementations of these locale sensitive services can be made available
- * by adding them to the application's class path. A provider identifies itself with a
- * provider-configuration file in the resource directory META-INF/services,
- * using the fully qualified provider interface class name as the file name.
- * The file should contain a list of fully-qualified concrete provider class names,
- * one per line. A line is terminated by any one of a line feed ('\n'), a carriage
- * return ('\r'), or a carriage return followed immediately by a line feed. Space
- * and tab characters surrounding each name, as well as blank lines, are ignored.
- * The comment character is '#' ('\u0023'); on each line all characters following
- * the first comment character are ignored. The file must be encoded in UTF-8.
+ *
+ * <p> For a locale sensitive service provider deployed in a module, the <i>provides</i>
+ * directive must be specified in the module declaration. The <i>provides</i>
+ * directive specifies both the service and the service provider.
+ *
+ * <p> For example, an implementation of the {@link java.text.spi.DateFormatProvider
+ * DateFormatProvider} class deployed as a module might specify the following directive:
+ * <pre>{@code
+ *     provides java.text.spi.DateFormatProvider with com.example.ExternalDateFormatProvider;
+ * }</pre>
+ *
+ * <p> For a Locale Service Provider deployed on the class path, the provider
+ * identifies itself with a provider-configuration file in the resource directory
+ * META-INF/services. The file name should be the fully fully qualified provider
+ * interface class name. The file should contain a list of fully-qualified concrete
+ * provider class names, one per line. A line is terminated by any one of a line
+ * feed ('\n'), a carriage return ('\r'), or a carriage return followed immediately
+ * by a line feed. Space and tab characters surrounding each name, as well as
+ * blank lines, are ignored. The comment character is '#' ('\u0023'); on each line
+ * all characters following the first comment character are ignored. The file must
+ * be encoded in UTF-8.
  * <p>
  * If a particular concrete provider class is named in more than one configuration
  * file, or is named in the same configuration file more than once, then the
@@ -88,8 +105,8 @@ import java.util.Locale;
  * supports the requested locale. If such a provider is found, its other
  * methods are called to obtain the requested object or name.  When checking
  * whether a locale is supported, the {@linkplain Locale##def_extensions
- * locale's extensions} are ignored by default. (If locale's extensions should
- * also be checked, the {@code isSupportedLocale} method must be overridden.)
+ * locale's extensions} are ignored by default. (If a locale's extensions should
+ * also be checked, the {@code isSupportedLocale} method must be overridden).
  * If neither the Java runtime environment itself nor an installed provider
  * supports the requested locale, the methods go through a list of candidate
  * locales and repeat the availability check for each until a match is found.
@@ -164,6 +181,10 @@ import java.util.Locale;
  *     <th scope="col">CLDR version</th></tr>
  * </thead>
  * <tbody>
+ * <tr><th scope="row" style="text-align:left">JDK 25</th>
+ *     <td>CLDR 47</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 24</th>
+ *     <td>CLDR 46</td></tr>
  * <tr><th scope="row" style="text-align:left">JDK 23</th>
  *     <td>CLDR 45</td></tr>
  * <tr><th scope="row" style="text-align:left">JDK 22</th>
@@ -203,26 +224,10 @@ import java.util.Locale;
  */
 public abstract class LocaleServiceProvider {
 
-    private static Void checkPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("localeServiceProvider"));
-        }
-        return null;
-    }
-    private LocaleServiceProvider(Void ignore) { }
-
     /**
      * Initializes a new locale service provider.
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission RuntimePermission("localeServiceProvider")}
      */
-    protected LocaleServiceProvider() {
-        this(checkPermission());
-    }
+    protected LocaleServiceProvider() {}
 
     /**
      * {@return an array of all locales for which this locale service provider

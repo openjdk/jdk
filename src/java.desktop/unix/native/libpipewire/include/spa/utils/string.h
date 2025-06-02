@@ -17,6 +17,14 @@ extern "C" {
 
 #include <spa/utils/defs.h>
 
+#ifndef SPA_API_STRING
+ #ifdef SPA_API_IMPL
+  #define SPA_API_STRING SPA_API_IMPL
+ #else
+  #define SPA_API_STRING static inline
+ #endif
+#endif
+
 /**
  * \defgroup spa_string String handling
  * String handling utilities
@@ -33,7 +41,7 @@ extern "C" {
  * If both \a a and \a b are NULL, the two are considered equal.
  *
  */
-static inline bool spa_streq(const char *s1, const char *s2)
+SPA_API_STRING bool spa_streq(const char *s1, const char *s2)
 {
     return SPA_LIKELY(s1 && s2) ? strcmp(s1, s2) == 0 : s1 == s2;
 }
@@ -43,7 +51,7 @@ static inline bool spa_streq(const char *s1, const char *s2)
  *
  * If both \a a and \a b are NULL, the two are considered equal.
  */
-static inline bool spa_strneq(const char *s1, const char *s2, size_t len)
+SPA_API_STRING bool spa_strneq(const char *s1, const char *s2, size_t len)
 {
     return SPA_LIKELY(s1 && s2) ? strncmp(s1, s2, len) == 0 : s1 == s2;
 }
@@ -54,7 +62,7 @@ static inline bool spa_strneq(const char *s1, const char *s2, size_t len)
  * A \a s is NULL, it never starts with the given \a prefix. A \a prefix of
  * NULL is a bug in the caller.
  */
-static inline bool spa_strstartswith(const char *s, const char *prefix)
+SPA_API_STRING bool spa_strstartswith(const char *s, const char *prefix)
 {
     if (SPA_UNLIKELY(s == NULL))
         return false;
@@ -70,7 +78,7 @@ static inline bool spa_strstartswith(const char *s, const char *prefix)
  * A \a s is NULL, it never ends with the given \a suffix. A \a suffix of
  * NULL is a bug in the caller.
  */
-static inline bool spa_strendswith(const char *s, const char *suffix)
+SPA_API_STRING bool spa_strendswith(const char *s, const char *suffix)
 {
     size_t l1, l2;
 
@@ -92,7 +100,7 @@ static inline bool spa_strendswith(const char *s, const char *suffix)
  *
  * \return true on success, false otherwise
  */
-static inline bool spa_atoi32(const char *str, int32_t *val, int base)
+SPA_API_STRING bool spa_atoi32(const char *str, int32_t *val, int base)
 {
     char *endptr;
     long v;
@@ -120,7 +128,7 @@ static inline bool spa_atoi32(const char *str, int32_t *val, int base)
  *
  * \return true on success, false otherwise
  */
-static inline bool spa_atou32(const char *str, uint32_t *val, int base)
+SPA_API_STRING bool spa_atou32(const char *str, uint32_t *val, int base)
 {
     char *endptr;
     unsigned long long v;
@@ -148,7 +156,7 @@ static inline bool spa_atou32(const char *str, uint32_t *val, int base)
  *
  * \return true on success, false otherwise
  */
-static inline bool spa_atoi64(const char *str, int64_t *val, int base)
+SPA_API_STRING bool spa_atoi64(const char *str, int64_t *val, int base)
 {
     char *endptr;
     long long v;
@@ -173,7 +181,7 @@ static inline bool spa_atoi64(const char *str, int64_t *val, int base)
  *
  * \return true on success, false otherwise
  */
-static inline bool spa_atou64(const char *str, uint64_t *val, int base)
+SPA_API_STRING bool spa_atou64(const char *str, uint64_t *val, int base)
 {
     char *endptr;
     unsigned long long v;
@@ -196,7 +204,7 @@ static inline bool spa_atou64(const char *str, uint64_t *val, int base)
  *
  * \return true on success, false otherwise
  */
-static inline bool spa_atob(const char *str)
+SPA_API_STRING bool spa_atob(const char *str)
 {
     return spa_streq(str, "true") || spa_streq(str, "1");
 }
@@ -210,7 +218,7 @@ static inline bool spa_atob(const char *str)
  * number on error.
  */
 SPA_PRINTF_FUNC(3, 0)
-static inline int spa_vscnprintf(char *buffer, size_t size, const char *format, va_list args)
+SPA_API_STRING int spa_vscnprintf(char *buffer, size_t size, const char *format, va_list args)
 {
     int r;
 
@@ -233,7 +241,7 @@ static inline int spa_vscnprintf(char *buffer, size_t size, const char *format, 
  * number on error.
  */
 SPA_PRINTF_FUNC(3, 4)
-static inline int spa_scnprintf(char *buffer, size_t size, const char *format, ...)
+SPA_API_STRING int spa_scnprintf(char *buffer, size_t size, const char *format, ...)
 {
     int r;
     va_list args;
@@ -253,7 +261,7 @@ static inline int spa_scnprintf(char *buffer, size_t size, const char *format, .
  *
  * \return the result float.
  */
-static inline float spa_strtof(const char *str, char **endptr)
+SPA_API_STRING float spa_strtof(const char *str, char **endptr)
 {
 #ifndef __LOCALE_C_ONLY
     static locale_t locale = NULL;
@@ -279,7 +287,7 @@ static inline float spa_strtof(const char *str, char **endptr)
  *
  * \return true on success, false otherwise
  */
-static inline bool spa_atof(const char *str, float *val)
+SPA_API_STRING bool spa_atof(const char *str, float *val)
 {
     char *endptr;
     float v;
@@ -303,7 +311,7 @@ static inline bool spa_atof(const char *str, float *val)
  *
  * \return the result float.
  */
-static inline double spa_strtod(const char *str, char **endptr)
+SPA_API_STRING double spa_strtod(const char *str, char **endptr)
 {
 #ifndef __LOCALE_C_ONLY
     static locale_t locale = NULL;
@@ -329,7 +337,7 @@ static inline double spa_strtod(const char *str, char **endptr)
  *
  * \return true on success, false otherwise
  */
-static inline bool spa_atod(const char *str, double *val)
+SPA_API_STRING bool spa_atod(const char *str, double *val)
 {
     char *endptr;
     double v;
@@ -346,7 +354,7 @@ static inline bool spa_atod(const char *str, double *val)
     return true;
 }
 
-static inline char *spa_dtoa(char *str, size_t size, double val)
+SPA_API_STRING char *spa_dtoa(char *str, size_t size, double val)
 {
     int i, l;
     l = spa_scnprintf(str, size, "%f", val);
@@ -362,15 +370,17 @@ struct spa_strbuf {
     size_t pos;
 };
 
-static inline void spa_strbuf_init(struct spa_strbuf *buf, char *buffer, size_t maxsize)
+SPA_API_STRING void spa_strbuf_init(struct spa_strbuf *buf, char *buffer, size_t maxsize)
 {
     buf->buffer = buffer;
     buf->maxsize = maxsize;
     buf->pos = 0;
+    if (maxsize > 0)
+        buf->buffer[0] = '\0';
 }
 
 SPA_PRINTF_FUNC(2, 3)
-static inline int spa_strbuf_append(struct spa_strbuf *buf, const char *fmt, ...)
+SPA_API_STRING int spa_strbuf_append(struct spa_strbuf *buf, const char *fmt, ...)
 {
     size_t remain = buf->maxsize - buf->pos;
     ssize_t written;

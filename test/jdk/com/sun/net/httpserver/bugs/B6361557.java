@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class B6361557 {
     }
 
     final static String request = "GET /test/foo.html HTTP/1.1\r\nContent-length: 0\r\n\r\n";
-    final static ByteBuffer requestBuf = ByteBuffer.allocate(64).put(request.getBytes());
+    final static ByteBuffer requestBuf = ByteBuffer.wrap(request.getBytes());
 
     public static void main (String[] args) throws Exception {
         Handler handler = new Handler();

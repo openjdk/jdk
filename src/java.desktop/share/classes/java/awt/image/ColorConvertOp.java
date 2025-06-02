@@ -690,7 +690,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
          * shall be set to zero. Thus, we are ignoring two most significant
          * bytes here.
          *
-         *  See http://www.color.org/ICC1v42_2006-05.pdf, section 7.2.15.
+         *  See https://www.color.org/ICC1v42_2006-05.pdf, section 7.2.15.
          */
         return ((header[index+2] & 0xff) <<  8) |
                 (header[index+3] & 0xff);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
 
 package jdk.internal.loader;
 
+import java.io.IOException;
 import java.net.URL;
 import java.io.File;
+
 import sun.net.www.ParseUtil;
 
 /**
@@ -40,12 +42,12 @@ import sun.net.www.ParseUtil;
  * @author      Michael McMahon
  */
 
-public class FileURLMapper {
+final class FileURLMapper {
 
-    URL url;
-    String path;
+    private final URL url;
+    private String path;
 
-    public FileURLMapper (URL url) {
+    FileURLMapper(URL url) {
         this.url = url;
     }
 
@@ -53,15 +55,18 @@ public class FileURLMapper {
      * @return the platform specific path corresponding to the URL
      *  so long as the URL does not contain a hostname in the authority field.
      */
-
-    public String getPath () {
+    String getPath() throws IOException {
         if (path != null) {
             return path;
         }
         String host = url.getHost();
         if (host == null || host.isEmpty() || "localhost".equalsIgnoreCase(host)) {
             path = url.getFile();
-            path = ParseUtil.decode(path);
+            try {
+                path = ParseUtil.decode(path);
+            } catch (IllegalArgumentException iae) {
+                throw new IOException(iae);
+            }
         }
         return path;
     }
@@ -69,12 +74,12 @@ public class FileURLMapper {
     /**
      * Checks whether the file identified by the URL exists.
      */
-    public boolean exists () {
-        String s = getPath ();
+    boolean exists() throws IOException {
+        String s = getPath();
         if (s == null) {
             return false;
         } else {
-            File f = new File (s);
+            File f = new File(s);
             return f.exists();
         }
     }

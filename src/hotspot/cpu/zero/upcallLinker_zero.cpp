@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,9 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "prims/upcallLinker.hpp"
 
-address UpcallLinker::make_upcall_stub(jobject mh, Method* entry,
+address UpcallLinker::make_upcall_stub(jobject mh, Symbol* signature,
                                        BasicType* out_sig_bt, int total_out_args,
                                        BasicType ret_type,
                                        jobject jabi, jobject jconv,

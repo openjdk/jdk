@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
@@ -34,10 +33,10 @@
 #include "gc/shared/stringdedup/stringDedupConfig.hpp"
 #include "gc/shared/stringdedup/stringDedupStat.hpp"
 #include "gc/shared/stringdedup/stringDedupTable.hpp"
-#include "memory/allocation.hpp"
-#include "memory/resourceArea.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/allocation.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/access.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/typeArrayOop.inline.hpp"

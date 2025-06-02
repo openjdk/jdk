@@ -155,7 +155,7 @@ public interface RMIConnection extends Closeable, Remote {
      * passed in parameter is null, the <code>ObjectName</code> passed
      * in parameter contains a pattern or no <code>ObjectName</code>
      * is specified for the MBean.
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws UnsupportedOperationException if {@code delegationSubject} is non-null.
@@ -208,7 +208,7 @@ public interface RMIConnection extends Closeable, Remote {
      * passed in parameter is null, the <code>ObjectName</code> passed
      * in parameter contains a pattern or no <code>ObjectName</code>
      * is specified for the MBean.
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws UnsupportedOperationException if {@code delegationSubject} is non-null.
@@ -268,7 +268,7 @@ public interface RMIConnection extends Closeable, Remote {
      * passed in parameter is null, the <code>ObjectName</code> passed
      * in parameter contains a pattern, or no <code>ObjectName</code>
      * is specified for the MBean.
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws UnsupportedOperationException if {@code delegationSubject} is non-null.
@@ -332,7 +332,7 @@ public interface RMIConnection extends Closeable, Remote {
      * passed in parameter is null, the <code>ObjectName</code> passed
      * in parameter contains a pattern, or no <code>ObjectName</code>
      * is specified for the MBean.
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws UnsupportedOperationException if {@code delegationSubject} is non-null.
@@ -369,7 +369,7 @@ public interface RMIConnection extends Closeable, Remote {
      * name in parameter is null or the MBean you are when trying to
      * unregister is the {@link javax.management.MBeanServerDelegate
      * MBeanServerDelegate} MBean.
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws UnsupportedOperationException if {@code delegationSubject} is non-null.
@@ -397,9 +397,8 @@ public interface RMIConnection extends Closeable, Remote {
      * @throws RuntimeOperationsException Wraps a
      * <code>java.lang.IllegalArgumentException</code>: The object
      * name in parameter is null.
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to perform this operation.
-     * if any, does not have permission to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws UnsupportedOperationException if {@code delegationSubject} is non-null.
      */
@@ -426,7 +425,7 @@ public interface RMIConnection extends Closeable, Remote {
      * objects for the selected MBeans.  If no MBean satisfies the
      * query an empty list is returned.
      *
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws UnsupportedOperationException if {@code delegationSubject} is non-null.
@@ -456,7 +455,7 @@ public interface RMIConnection extends Closeable, Remote {
      * selected.  If no MBean satisfies the query, an empty list is
      * returned.
      *
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws UnsupportedOperationException if {@code delegationSubject} is non-null.
@@ -480,7 +479,7 @@ public interface RMIConnection extends Closeable, Remote {
      * @throws RuntimeOperationsException Wraps a
      * <code>java.lang.IllegalArgumentException</code>: The object
      * name in parameter is null.
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws UnsupportedOperationException if {@code delegationSubject} is non-null.
@@ -496,7 +495,7 @@ public interface RMIConnection extends Closeable, Remote {
      *
      * @return the number of MBeans registered.
      *
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws UnsupportedOperationException if {@code delegationSubject} is non-null.
@@ -532,7 +531,7 @@ public interface RMIConnection extends Closeable, Remote {
      * null.
      * @throws RuntimeMBeanException Wraps a runtime exception thrown
      * by the MBean's getter.
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws UnsupportedOperationException if {@code delegationSubject} is non-null.
@@ -568,7 +567,7 @@ public interface RMIConnection extends Closeable, Remote {
      * @throws RuntimeOperationsException Wrap a
      * <code>java.lang.IllegalArgumentException</code>: The object
      * name in parameter is null or attributes in parameter is null.
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws UnsupportedOperationException if {@code delegationSubject} is non-null.
@@ -611,7 +610,7 @@ public interface RMIConnection extends Closeable, Remote {
      * <code>java.lang.IllegalArgumentException</code>: The object
      * name in parameter is null or the attribute in parameter is
      * null.
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws UnsupportedOperationException if {@code delegationSubject} is non-null.
@@ -652,7 +651,7 @@ public interface RMIConnection extends Closeable, Remote {
      * @throws RuntimeOperationsException Wraps a
      * <code>java.lang.IllegalArgumentException</code>: The object
      * name in parameter is null or attributes in parameter is null.
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws UnsupportedOperationException if {@code delegationSubject} is non-null.
@@ -697,7 +696,7 @@ public interface RMIConnection extends Closeable, Remote {
      * @throws ReflectionException Wraps a
      * <code>java.lang.Exception</code> thrown while trying to invoke
      * the method.
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws RuntimeOperationsException Wraps an {@link
@@ -724,7 +723,7 @@ public interface RMIConnection extends Closeable, Remote {
      *
      * @return the default domain.
      *
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws UnsupportedOperationException if {@code delegationSubject} is non-null.
@@ -740,7 +739,7 @@ public interface RMIConnection extends Closeable, Remote {
      *
      * @return the list of domains.
      *
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws UnsupportedOperationException if {@code delegationSubject} is non-null.
@@ -764,7 +763,7 @@ public interface RMIConnection extends Closeable, Remote {
      * not found.
      * @throws ReflectionException An exception occurred when
      * trying to invoke the getMBeanInfo of a Dynamic MBean.
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws RuntimeOperationsException Wraps a
@@ -793,7 +792,7 @@ public interface RMIConnection extends Closeable, Remote {
      *
      * @throws InstanceNotFoundException The MBean specified is not
      * registered in the MBean server.
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws RuntimeOperationsException Wraps a
@@ -836,7 +835,7 @@ public interface RMIConnection extends Closeable, Remote {
      * <code>listener</code> exists but does not implement the
      * {@link javax.management.NotificationListener} interface,
      * or <code>name</code> or <code>listener</code> is null.
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws UnsupportedOperationException if {@code delegationSubject} is non-null.
@@ -866,7 +865,7 @@ public interface RMIConnection extends Closeable, Remote {
      * does not match any of the registered MBeans.
      * @throws ListenerNotFoundException The listener is not
      * registered in the MBean.
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws RuntimeOperationsException Wraps an {@link
@@ -907,7 +906,7 @@ public interface RMIConnection extends Closeable, Remote {
      * @throws ListenerNotFoundException The listener is not
      * registered in the MBean, or it is not registered with the given
      * filter and handback.
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws RuntimeOperationsException Wraps an {@link
@@ -971,8 +970,8 @@ public interface RMIConnection extends Closeable, Remote {
      * not a <code>NotificationFilter</code>.
      * @throws InstanceNotFoundException if one of the
      * <code>names</code> does not correspond to any registered MBean.
-     * @throws SecurityException if, for one of the MBeans, the
-     * client does not have permission to add a listener.
+     * @throws SecurityException if, for one of the MBeans, the client is not
+     * authorized to add a listener.
      * @throws IOException if a general communication exception occurred.
      * @throws UnsupportedOperationException if {@code delegationSubjects}
      * is non-null and contains any non-null entries.
@@ -1010,7 +1009,7 @@ public interface RMIConnection extends Closeable, Remote {
      * not found on the server side.  This exception can happen if the
      * MBean discarded a listener for some reason other than a call to
      * <code>MBeanServer.removeNotificationListener</code>.
-     * @throws SecurityException if the client does not have permission
+     * @throws SecurityException if the client is not authorized
      * to remove the listeners.
      * @throws IOException if a general communication exception occurred.
      * @throws IllegalArgumentException if <code>ObjectName</code> or

@@ -209,6 +209,23 @@ public final class XMLSignature extends SignatureElementProxy {
     public static final String ALGO_ID_SIGNATURE_EDDSA_ED448 =
             "http://www.w3.org/2021/04/xmldsig-more#eddsa-ed448";
 
+
+    /**Signature - SHA3-224withECDSA */
+    public static final String ALGO_ID_SIGNATURE_ECDSA_SHA3_224 =
+            "http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-224";
+
+    /**Signature - SHA3-256withECDSA */
+    public static final String ALGO_ID_SIGNATURE_ECDSA_SHA3_256 =
+            "http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-256";
+
+    /**Signature - SHA3-384withECDSA */
+    public static final String ALGO_ID_SIGNATURE_ECDSA_SHA3_384 =
+            "http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-384";
+
+    /**Signature - SHA3-512withECDSA */
+    public static final String ALGO_ID_SIGNATURE_ECDSA_SHA3_512 =
+            "http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-512";
+
     /** Signature - Optional RSASSA-PSS */
     public static final String ALGO_ID_SIGNATURE_RSA_PSS =
             Constants.XML_DSIG_NS_MORE_07_05 + "rsa-pss";

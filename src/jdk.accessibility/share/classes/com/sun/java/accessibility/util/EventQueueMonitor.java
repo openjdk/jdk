@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ import java.util.*;
 import java.awt.*;
 import java.awt.event.*;
 import javax.accessibility.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * The {@code EventQueueMonitor} class provides key core functionality for Assistive
@@ -142,24 +140,16 @@ public class EventQueueMonitor
     /**
      * Tell the {@code EventQueueMonitor} to start listening for events.
      */
-    @SuppressWarnings("removal")
     public static void maybeInitialize() {
         if (cedt == null) {
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Void>() {
-                    public Void run() {
-                        try {
-                            long eventMask = AWTEvent.WINDOW_EVENT_MASK |
-                                AWTEvent.FOCUS_EVENT_MASK |
-                                AWTEvent.MOUSE_MOTION_EVENT_MASK;
+            try {
+                long eventMask = AWTEvent.WINDOW_EVENT_MASK |
+                        AWTEvent.FOCUS_EVENT_MASK |
+                        AWTEvent.MOUSE_MOTION_EVENT_MASK;
 
-                            Toolkit.getDefaultToolkit().addAWTEventListener(new EventQueueMonitor(), eventMask);
-                        } catch (Exception e) {
-                        }
-                        return null;
-                    }
-                }
-            );
+                Toolkit.getDefaultToolkit().addAWTEventListener(new EventQueueMonitor(), eventMask);
+            } catch (Exception e) {
+            }
         }
     }
 

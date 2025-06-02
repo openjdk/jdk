@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,6 @@
  * Serialization and JavaBeans that need access to either the public
  * members of a target object (based on its runtime class) or the
  * members declared by a given class.
- *
- * <p>{@link AccessibleObject} allows suppression of access checks if
- * the necessary {@link ReflectPermission} is available.
  *
  * <p>{@link Array} provides static methods to dynamically create and
  * access arrays.

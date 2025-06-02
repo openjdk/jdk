@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@ package validation;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.Reader;
+import java.io.StringReader;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.stream.XMLInputFactory;
@@ -33,12 +35,12 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
 import javax.xml.transform.Source;
 import javax.xml.transform.sax.SAXSource;
+import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -49,12 +51,11 @@ import org.xml.sax.helpers.XMLFilterImpl;
 
 /*
  * @test
- * @bug 8220818 8176447
+ * @bug 8220818 8176447 8349516
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm validation.ValidationTest
  * @summary Runs validations with schemas and sources
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class ValidationTest {
     static final String FILE_PATH = "files/";
     /*
@@ -139,6 +140,55 @@ public class ValidationTest {
         Source schemaSource = new StreamSource(xsdFile);
         validate(schemaSource, xmlSource);
 
+    }
+
+    /**
+     * Verifies the bug fix for 8349516, which adds a guard against empty text.
+     * Prior to the fix, calling {@link XMLStreamReader#getTextCharacters() XMLStreamReader#getTextCharacters()}
+     * with {@code length = 0} resulted in an {@code IndexOutOfBoundsException}.
+     *
+     * This test ensures that the fix prevents such an exception.
+     *
+     * @throws Exception if the test fails due to unexpected issues, such as errors
+     * in creating the schema or reader, or validation errors other than the
+     * {@code IndexOutOfBoundsException}.
+     */
+    @Test
+    public void testValidationWithStAX() throws Exception {
+        String schema = """
+            <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                targetNamespace="http://xxxx.com/schema/test"
+                attributeFormDefault="unqualified"
+                elementFormDefault="qualified"
+            >
+
+                <xs:element name="test">
+                    <xs:complexType>
+                    <xs:choice>
+                        <xs:element name="tag" type="xs:string" />
+                    </xs:choice>
+                    </xs:complexType>
+                </xs:element>
+
+            </xs:schema>
+            """;
+
+        String xml = """
+            <test xmlns="http://xxxx.com/schema/test">
+                <tag><![CDATA[]]></tag>
+            </test>
+            """;
+
+        Reader schemaReader = new StringReader(schema);
+        Reader xmlReader = new StringReader(xml);
+
+        Source source = new StreamSource(schemaReader);
+
+        Validator validator =
+                SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI).newSchema(source).newValidator();
+
+        XMLStreamReader xmlStreamReader = XMLInputFactory.newInstance().createXMLStreamReader(xmlReader);
+        validator.validate(new StAXSource(xmlStreamReader));
     }
 
     private static String getTargetNamespace(String xsdFile) throws Exception {

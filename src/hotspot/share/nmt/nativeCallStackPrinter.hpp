@@ -27,7 +27,7 @@
 #define SHARE_NMT_NATIVECALLSTACKPRINTER_HPP
 
 #include "memory/arena.hpp"
-#include "nmt/memflags.hpp"
+#include "nmt/memTag.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/resourceHash.hpp"
 

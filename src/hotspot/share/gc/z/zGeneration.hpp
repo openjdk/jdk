@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ protected:
 
   void mark_free();
 
-  void select_relocation_set(ZGenerationId generation, bool promote_all);
+  void select_relocation_set(bool promote_all);
   void reset_relocation_set();
 
   ZGeneration(ZGenerationId id, ZPageTable* page_table, ZPageAllocator* page_allocator);
@@ -99,8 +99,6 @@ protected:
   void log_phase_switch(Phase from, Phase to);
 
 public:
-  bool is_initialized() const;
-
   // GC phases
   void set_phase(Phase new_phase);
   bool is_phase_relocate() const;
@@ -122,7 +120,7 @@ public:
   // Statistics
   void reset_statistics();
   virtual bool should_record_stats() = 0;
-  ssize_t freed() const;
+  size_t freed() const;
   void increase_freed(size_t size);
   size_t promoted() const;
   void increase_promoted(size_t size);
@@ -161,7 +159,7 @@ public:
   void mark_object(zaddress addr);
   template <bool resurrect, bool gc_thread, bool follow, bool finalizable>
   void mark_object_if_active(zaddress addr);
-  void mark_flush_and_free(Thread* thread);
+  void mark_flush(Thread* thread);
 
   // Relocation
   void synchronize_relocation();
@@ -309,6 +307,7 @@ public:
   // Reference processing
   ReferenceDiscoverer* reference_discoverer();
   void set_soft_reference_policy(bool clear);
+  bool uses_clear_all_soft_reference_policy() const;
 
   uint total_collections_at_start() const;
 

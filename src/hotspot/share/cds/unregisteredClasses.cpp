@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,46 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/unregisteredClasses.hpp"
-#include "classfile/classFileStream.hpp"
-#include "classfile/classLoader.inline.hpp"
-#include "classfile/classLoaderExt.hpp"
-#include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionaryShared.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "memory/oopFactory.hpp"
-#include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/oopHandle.hpp"
 #include "oops/oopHandle.inline.hpp"
+#include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "services/threadService.hpp"
+
+static InstanceKlass* _UnregisteredClassLoader_klass;
+static InstanceKlass* _UnregisteredClassLoader_Source_klass;
+static OopHandle _unregistered_class_loader;
+
+void UnregisteredClasses::initialize(TRAPS) {
+  if (_UnregisteredClassLoader_klass != nullptr) {
+    return;
+  }
+
+  Symbol* klass_name;
+  Klass* k;
+
+  // no need for synchronization as this function is called single-threaded.
+  klass_name = SymbolTable::new_symbol("jdk/internal/misc/CDS$UnregisteredClassLoader");
+  k = SystemDictionary::resolve_or_fail(klass_name, true, CHECK);
+  _UnregisteredClassLoader_klass = InstanceKlass::cast(k);
+
+  klass_name = SymbolTable::new_symbol("jdk/internal/misc/CDS$UnregisteredClassLoader$Source");
+  k = SystemDictionary::resolve_or_fail(klass_name, true, CHECK);
+  _UnregisteredClassLoader_Source_klass = InstanceKlass::cast(k);
+
+  precond(_unregistered_class_loader.is_empty());
+  HandleMark hm(THREAD);
+  const Handle cl = JavaCalls::construct_new_instance(_UnregisteredClassLoader_klass,
+                                                      vmSymbols::void_method_signature(), CHECK);
+  _unregistered_class_loader = OopHandle(Universe::vm_global(), cl());
+}
 
 // Load the class of the given name from the location given by path. The path is specified by
 // the "source:" in the class list file (see classListParser.cpp), and can be a directory or
@@ -50,65 +74,33 @@ InstanceKlass* UnregisteredClasses::load_class(Symbol* name, const char* path, T
                              THREAD->get_thread_stat()->perf_timers_addr(),
                              PerfClassTraceTime::CLASS_LOAD);
 
-  Symbol* path_symbol = SymbolTable::new_symbol(path);
-  Handle url_classloader = get_url_classloader(path_symbol, CHECK_NULL);
+  assert(!_unregistered_class_loader.is_empty(), "not initialized");
+  Handle classloader(THREAD, _unregistered_class_loader.resolve());
+
+  // Call CDS$UnregisteredClassLoader::load(String name, String source)
+  Symbol* methodName = SymbolTable::new_symbol("load");
+  Symbol* methodSignature = SymbolTable::new_symbol("(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Class;");
   Handle ext_class_name = java_lang_String::externalize_classname(name, CHECK_NULL);
+  Handle path_string = java_lang_String::create_from_str(path, CHECK_NULL);
 
   JavaValue result(T_OBJECT);
-  JavaCallArguments args(2);
-  args.set_receiver(url_classloader);
-  args.push_oop(ext_class_name);
-  args.push_int(JNI_FALSE);
   JavaCalls::call_virtual(&result,
-                          vmClasses::URLClassLoader_klass(),
-                          vmSymbols::loadClass_name(),
-                          vmSymbols::string_boolean_class_signature(),
-                          &args,
+                          classloader,
+                          _UnregisteredClassLoader_klass,
+                          methodName,
+                          methodSignature,
+                          ext_class_name,
+                          path_string,
                           CHECK_NULL);
   assert(result.get_type() == T_OBJECT, "just checking");
-  oop obj = result.get_oop();
-  return InstanceKlass::cast(java_lang_Class::as_Klass(obj));
+
+  return InstanceKlass::cast(java_lang_Class::as_Klass(result.get_oop()));
 }
 
-class URLClassLoaderTable : public ResourceHashtable<
-  Symbol*, OopHandle,
-  137, // prime number
-  AnyObj::C_HEAP> {};
-
-static URLClassLoaderTable* _url_classloader_table = nullptr;
-
-Handle UnregisteredClasses::create_url_classloader(Symbol* path, TRAPS) {
-  ResourceMark rm(THREAD);
-  JavaValue result(T_OBJECT);
-  Handle path_string = java_lang_String::create_from_str(path->as_C_string(), CHECK_NH);
-  JavaCalls::call_static(&result,
-                         vmClasses::jdk_internal_loader_ClassLoaders_klass(),
-                         vmSymbols::toFileURL_name(),
-                         vmSymbols::toFileURL_signature(),
-                         path_string, CHECK_NH);
-  assert(result.get_type() == T_OBJECT, "just checking");
-  oop url_h = result.get_oop();
-  objArrayHandle urls = oopFactory::new_objArray_handle(vmClasses::URL_klass(), 1, CHECK_NH);
-  urls->obj_at_put(0, url_h);
-
-  Handle url_classloader = JavaCalls::construct_new_instance(
-                             vmClasses::URLClassLoader_klass(),
-                             vmSymbols::url_array_classloader_void_signature(),
-                             urls, Handle(), CHECK_NH);
-  return url_classloader;
-}
-
-Handle UnregisteredClasses::get_url_classloader(Symbol* path, TRAPS) {
-  if (_url_classloader_table == nullptr) {
-    _url_classloader_table = new (mtClass)URLClassLoaderTable();
+bool UnregisteredClasses::check_for_exclusion(const InstanceKlass* k) {
+  if (_UnregisteredClassLoader_klass == nullptr) {
+    return false; // Uninitialized
   }
-  OopHandle* url_classloader_ptr = _url_classloader_table->get(path);
-  if (url_classloader_ptr != nullptr) {
-    return Handle(THREAD, (*url_classloader_ptr).resolve());
-  } else {
-    Handle url_classloader = create_url_classloader(path, CHECK_NH);
-    _url_classloader_table->put(path, OopHandle(Universe::vm_global(), url_classloader()));
-    path->increment_refcount();
-    return url_classloader;
-  }
+  return k == _UnregisteredClassLoader_klass ||
+         k->implements_interface(_UnregisteredClassLoader_Source_klass);
 }

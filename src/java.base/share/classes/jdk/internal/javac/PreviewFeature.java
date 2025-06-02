@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,23 +64,22 @@ public @interface PreviewFeature {
      * Values should be annotated with the feature's {@code JEP}.
      */
     public enum Feature {
-        // not used, but required for interim javac to not warn.
-        VIRTUAL_THREADS,
-        FOREIGN,
-        @JEP(number=459, title="String Templates", status="Second Preview")
-        STRING_TEMPLATES,
-        @JEP(number=477, title="Implicitly Declared Classes and Instance Main Methods", status="Third Preview")
-        IMPLICIT_CLASSES,
-        @JEP(number=481, title="Scoped Values", status="Third Preview")
+        // while building the interim javac, the ClassReader will produce a warning when loading a class
+        // keeping the constant of a feature that has been integrated or dropped, serves the purpose of muting such warnings.
+
+        //---
+        IMPLICIT_CLASSES, //to be removed when boot JDK is 25
         SCOPED_VALUES,
-        @JEP(number=480, title="Structured Concurrency", status="Third Preview")
+        @JEP(number=505, title="Structured Concurrency", status="Fifth Preview")
         STRUCTURED_CONCURRENCY,
-        @JEP(number=466, title="ClassFile API", status="Second Preview")
         CLASSFILE_API,
-        @JEP(number=473, title="Stream Gatherers", status="Second Preview")
         STREAM_GATHERERS,
-        @JEP(number=476, title="Module Import Declarations", status="Preview")
-        MODULE_IMPORTS,
+        MODULE_IMPORTS, //remove when the boot JDK is JDK 25
+        KEY_DERIVATION, //remove when the boot JDK is JDK 25
+        @JEP(number = 502, title = "Stable Values", status = "Preview")
+        STABLE_VALUES,
+        @JEP(number=470, title="PEM Encodings of Cryptographic Objects", status="Preview")
+        PEM_API,
         LANGUAGE_MODEL,
         /**
          * A key for testing.

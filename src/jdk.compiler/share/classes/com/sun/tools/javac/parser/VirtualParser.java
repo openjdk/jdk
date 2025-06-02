@@ -62,7 +62,7 @@ public class VirtualParser extends JavacParser {
     }
 
     @Override
-    protected JCErroneous syntaxError(int pos, List<JCTree> errs, Error errorKey) {
+    protected JCErroneous syntaxError(int pos, List<? extends JCTree> errs, Error errorKey) {
         hasErrors = true;
         return F.Erroneous();
     }

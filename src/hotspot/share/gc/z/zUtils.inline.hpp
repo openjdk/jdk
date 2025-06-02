@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,23 @@
 
 #include "gc/z/zAddress.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+inline uintptr_t ZUtils::alloc_aligned_unfreeable(size_t alignment, size_t size) {
+  const size_t padded_size = size + (alignment - 1);
+  void* const addr = os::malloc(padded_size, mtGC);
+  void* const aligned_addr = align_up(addr, alignment);
+
+  memset(aligned_addr, 0, size);
+
+  // Since free expects pointers returned by malloc, aligned_addr cannot be
+  // freed since it is most likely not the same as addr after alignment.
+  return (uintptr_t)aligned_addr;
+}
 
 inline size_t ZUtils::bytes_to_words(size_t size_in_bytes) {
   assert(is_aligned(size_in_bytes, BytesPerWord), "Size not word aligned");
@@ -54,6 +67,36 @@ inline void ZUtils::object_copy_conjoint(zaddress from, zaddress to, size_t size
   if (from != to) {
     Copy::aligned_conjoint_words((HeapWord*)untype(from), (HeapWord*)untype(to), bytes_to_words(size));
   }
+}
+
+template <typename T>
+inline void ZUtils::copy_disjoint(T* dest, const T* src, size_t count) {
+  memcpy(dest, src, sizeof(T) * count);
+}
+
+template <typename T>
+inline void ZUtils::copy_disjoint(T* dest, const T* src, int count) {
+  assert(count >= 0, "must be positive %d", count);
+
+  copy_disjoint(dest, src, static_cast<size_t>(count));
+}
+
+template <typename T, typename Comparator>
+inline void ZUtils::sort(T* array, size_t count, Comparator comparator) {
+  using SortType = int(const void*, const void*);
+  using ComparatorType = int(const T*, const T*);
+
+  ComparatorType* const comparator_fn_ptr = comparator;
+
+  // We rely on ABI compatibility between ComparatorType and SortType
+  qsort(array, count, sizeof(T), reinterpret_cast<SortType*>(comparator_fn_ptr));
+}
+
+template <typename T, typename Comparator>
+inline void ZUtils::sort(T* array, int count, Comparator comparator) {
+  assert(count >= 0, "must be positive %d", count);
+
+  sort(array, static_cast<size_t>(count), comparator);
 }
 
 #endif // SHARE_GC_Z_ZUTILS_INLINE_HPP

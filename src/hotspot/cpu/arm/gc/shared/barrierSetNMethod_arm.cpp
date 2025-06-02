@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/nativeInst.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
@@ -30,8 +29,8 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/sharedRuntime.hpp"
 #include "runtime/registerMap.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
@@ -73,7 +72,7 @@ void NativeNMethodBarrier::verify() const {
 static NativeNMethodBarrier* native_nmethod_barrier(nmethod* nm) {
   address barrier_address = nm->code_begin() + nm->frame_complete_offset() - entry_barrier_bytes;
   NativeNMethodBarrier* barrier = reinterpret_cast<NativeNMethodBarrier*>(barrier_address);
-  debug_only(barrier->verify());
+  DEBUG_ONLY(barrier->verify());
   return barrier;
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "c1/c1_Canonicalizer.hpp"
 #include "c1/c1_Optimizer.hpp"
-#include "c1/c1_ValueMap.hpp"
 #include "c1/c1_ValueSet.hpp"
 #include "c1/c1_ValueStack.hpp"
+#include "compiler/compileLog.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/bitMap.inline.hpp"
-#include "compiler/compileLog.hpp"
 
 typedef GrowableArray<ValueSet*> ValueSetList;
 
@@ -580,7 +577,6 @@ public:
   void do_Base           (Base*            x);
   void do_OsrEntry       (OsrEntry*        x);
   void do_ExceptionObject(ExceptionObject* x);
-  void do_RoundFP        (RoundFP*         x);
   void do_UnsafeGet      (UnsafeGet*       x);
   void do_UnsafePut      (UnsafePut*       x);
   void do_UnsafeGetAndSet(UnsafeGetAndSet* x);
@@ -765,7 +761,6 @@ void NullCheckVisitor::do_Throw          (Throw*           x) { nce()->clear_las
 void NullCheckVisitor::do_Base           (Base*            x) {}
 void NullCheckVisitor::do_OsrEntry       (OsrEntry*        x) {}
 void NullCheckVisitor::do_ExceptionObject(ExceptionObject* x) { nce()->handle_ExceptionObject(x); }
-void NullCheckVisitor::do_RoundFP        (RoundFP*         x) {}
 void NullCheckVisitor::do_UnsafeGet      (UnsafeGet*       x) {}
 void NullCheckVisitor::do_UnsafePut      (UnsafePut*       x) {}
 void NullCheckVisitor::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {}

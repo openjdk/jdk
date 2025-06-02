@@ -38,7 +38,7 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test TestHiddenWait
- * @key jfr
+ * @requires vm.flagless
  * @summary Checks that JFR code don't emit noise in the form of ThreadSleep and JavaMonitorWait events.
  * @requires vm.hasJFR
  * @library /test/lib
@@ -77,6 +77,15 @@ public class TestHiddenWait {
                 s.start();
             }
             List<RecordedEvent> events = Events.fromRecording(r);
+            // Only keep events from the test thread and the JFR threads
+            String testThread = Thread.currentThread().getName();
+            events.removeIf(event -> {
+               String threadName = event.getThread().getJavaName();
+               if (threadName.equals(testThread) || threadName.contains("JFR")) {
+                   return false;
+               }
+               return true;
+            });
             for (RecordedEvent event : events) {
                 if (!event.getEventType().getName().equals(PERIODIC_EVENT_NAME)) {
                     System.out.println(event);

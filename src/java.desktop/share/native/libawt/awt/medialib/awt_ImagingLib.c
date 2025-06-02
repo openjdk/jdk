@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2017,7 +2017,7 @@ cvtCustomToDefault(JNIEnv *env, BufImageS_t *imageP, int component,
                                  g_BImgGetRGBMID, 0, y,
                                  w, numLines,
                                  jpixels, 0, w);
-        if ((*env)->ExceptionOccurred(env)) {
+        if ((*env)->ExceptionCheck(env)) {
             (*env)->DeleteLocalRef(env, jpixels);
             return -1;
         }
@@ -2093,7 +2093,7 @@ cvtDefaultToCustom(JNIEnv *env, BufImageS_t *imageP, int component,
        (*env)->CallVoidMethod(env, imageP->jimage, g_BImgSetRGBMID, 0, y,
                                 w, numLines, jpixels,
                                 0, w);
-       if ((*env)->ExceptionOccurred(env)) {
+       if ((*env)->ExceptionCheck(env)) {
            (*env)->DeleteLocalRef(env, jpixels);
            return -1;
        }

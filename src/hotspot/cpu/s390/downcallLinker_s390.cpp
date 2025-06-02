@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
@@ -36,8 +35,8 @@
 
 #define __ _masm->
 
-static const int native_invoker_code_base_size = 512;
-static const int native_invoker_size_per_args = 8;
+static const int native_invoker_code_base_size = 384;
+static const int native_invoker_size_per_args = 12;
 
 RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
                                                 int num_args,
@@ -80,7 +79,6 @@ RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
 #ifndef PRODUCT
   LogTarget(Trace, foreign, downcall) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     stub->print_on(&ls);
   }
@@ -158,7 +156,6 @@ void DowncallLinker::StubGenerator::generate() {
 #ifndef PRODUCT
   LogTarget(Trace, foreign, downcall) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     arg_shuffle.print_on(&ls);
   }

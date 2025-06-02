@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,21 +34,22 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.util.Arrays;
 import java.util.HexFormat;
+import jdk.test.lib.security.SecurityUtils;
 
 public class DHKeyAgreementPadding {
 
     public static void main(String[] args) throws Exception {
-
-        byte[] aliceSecret = new byte[80];
-        byte[] bobSecret = new byte[80];
-
-        KeyAgreement alice = KeyAgreement.getInstance("DiffieHellman");
-        KeyAgreement bob = KeyAgreement.getInstance("DiffieHellman");
+        String kpgAlgorithm = "DiffieHellman";
+        KeyAgreement alice = KeyAgreement.getInstance(kpgAlgorithm);
+        KeyAgreement bob = KeyAgreement.getInstance(kpgAlgorithm);
+        int keySizeBits = SecurityUtils.getTestKeySize(kpgAlgorithm);
+        byte[] aliceSecret = new byte[keySizeBits / 8];
+        byte[] bobSecret = new byte[keySizeBits / 8];
 
         // The probability of an error is 0.2% or 1/500. Try more times.
         for (int i = 0; i < 5000; i++) {
-            KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("DiffieHellman");
-            keyPairGen.initialize(512);
+            KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance(kpgAlgorithm);
+            keyPairGen.initialize(keySizeBits);
             KeyPair aliceKeyPair = keyPairGen.generateKeyPair();
             KeyPair bobKeyPair = keyPairGen.generateKeyPair();
 

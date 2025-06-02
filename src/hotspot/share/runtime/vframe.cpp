@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/javaThreadStatus.hpp"
 #include "classfile/vmClasses.hpp"
@@ -50,7 +49,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/synchronizer.hpp"
+#include "runtime/synchronizer.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -94,10 +93,11 @@ vframe* vframe::new_vframe(const frame* f, const RegisterMap* reg_map, JavaThrea
 }
 
 vframe* vframe::sender() const {
-  RegisterMap temp_map = *register_map();
   assert(is_top(), "just checking");
   if (_fr.is_empty()) return nullptr;
   if (_fr.is_entry_frame() && _fr.is_first_frame()) return nullptr;
+
+  RegisterMap temp_map = *register_map();
   frame s = _fr.real_sender(&temp_map);
   if (s.is_first_frame()) return nullptr;
   return vframe::new_vframe(&s, &temp_map, thread());
@@ -169,7 +169,7 @@ void javaVFrame::print_locked_object_class_name(outputStream* st, Handle obj, co
   }
 }
 
-void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
+void javaVFrame::print_lock_info_on(outputStream* st, bool is_virtual, int frame_count) {
   Thread* current = Thread::current();
   ResourceMark rm(current);
   HandleMark hm(current);
@@ -204,8 +204,9 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
       oop obj = thread()->current_park_blocker();
       Klass* k = obj->klass();
       st->print_cr("\t- %s <" INTPTR_FORMAT "> (a %s)", "parking to wait for ", p2i(obj), k->external_name());
-    }
-    else if (thread()->osthread()->get_state() == OBJECT_WAIT) {
+    } else if (thread()->osthread()->get_state() == OBJECT_WAIT &&
+        // If this is a carrier thread with mounted virtual thread this is reported for the virtual thread.
+        (is_virtual || !thread()->is_vthread_mounted())) {
       // We are waiting on an Object monitor but Object.wait() isn't the
       // top-frame, so we should be waiting on a Class initialization monitor.
       InstanceKlass* k = thread()->class_to_be_initialized();
@@ -247,13 +248,16 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
           markWord mark = monitor->owner()->mark();
           // The first stage of async deflation does not affect any field
           // used by this comparison so the ObjectMonitor* is usable here.
-          if (mark.has_monitor() &&
-              ( // we have marked ourself as pending on this monitor
-                mark.monitor() == thread()->current_pending_monitor() ||
+          if (mark.has_monitor()) {
+            ObjectMonitor* mon = ObjectSynchronizer::read_monitor(current, monitor->owner(), mark);
+            if (// if the monitor is null we must be in the process of locking
+                mon == nullptr ||
+                // we have marked ourself as pending on this monitor
+                mon == thread()->current_pending_monitor() ||
                 // we are not the owner of this monitor
-                !mark.monitor()->is_entered(thread())
-              )) {
-            lock_state = "waiting to lock";
+                !mon->is_entered(thread())) {
+              lock_state = "waiting to lock";
+            }
           }
         }
         print_locked_object_class_name(st, Handle(current, monitor->owner()), lock_state);
@@ -277,13 +281,14 @@ intptr_t* interpretedVFrame::locals_addr_at(int offset) const {
 }
 
 GrowableArray<MonitorInfo*>* interpretedVFrame::monitors() const {
+  bool heap_frame = stack_chunk() != nullptr;
+  frame f = !heap_frame ? _fr : stack_chunk()->derelativize(_fr);
   GrowableArray<MonitorInfo*>* result = new GrowableArray<MonitorInfo*>(5);
-  if (stack_chunk() == nullptr) { // no monitors in continuations
-    for (BasicObjectLock* current = (fr().previous_monitor_in_interpreter_frame(fr().interpreter_frame_monitor_begin()));
-        current >= fr().interpreter_frame_monitor_end();
-        current = fr().previous_monitor_in_interpreter_frame(current)) {
-      result->push(new MonitorInfo(current->obj(), current->lock(), false, false));
-    }
+  for (BasicObjectLock* current = (f.previous_monitor_in_interpreter_frame(f.interpreter_frame_monitor_begin()));
+      current >= f.interpreter_frame_monitor_end();
+      current = f.previous_monitor_in_interpreter_frame(current)) {
+      oop owner = !heap_frame ? current->obj() : StackValue::create_stack_value_from_oop_location(stack_chunk(), (void*)current->obj_adr())->get_obj()();
+    result->push(new MonitorInfo(owner, current->lock(), false, false));
   }
   return result;
 }
@@ -489,10 +494,10 @@ void vframeStreamCommon::found_bad_method_frame() const {
 #endif
 
 vframeStream::vframeStream(JavaThread* thread, Handle continuation_scope, bool stop_at_java_call_stub)
- : vframeStreamCommon(RegisterMap(thread,
-                                  RegisterMap::UpdateMap::include,
-                                  RegisterMap::ProcessFrames::include,
-                                  RegisterMap::WalkContinuation::include)) {
+ : vframeStreamCommon(thread,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::include) {
 
   _stop_at_java_call_stub = stop_at_java_call_stub;
   _continuation_scope = continuation_scope;
@@ -510,7 +515,7 @@ vframeStream::vframeStream(JavaThread* thread, Handle continuation_scope, bool s
 }
 
 vframeStream::vframeStream(oop continuation, Handle continuation_scope)
- : vframeStreamCommon(RegisterMap(continuation, RegisterMap::UpdateMap::include)) {
+ : vframeStreamCommon(continuation) {
 
   _stop_at_java_call_stub = false;
   _continuation_scope = continuation_scope;
@@ -526,10 +531,13 @@ vframeStream::vframeStream(oop continuation, Handle continuation_scope)
   }
 }
 
+vframeStreamCommon::vframeStreamCommon(oop continuation)
+  : _reg_map(continuation, RegisterMap::UpdateMap::include), _cont_entry(nullptr) {
+  _thread = _reg_map.thread();
+}
 
 // Step back n frames, skip any pseudo frames in between.
-// This function is used in Class.forName, Class.newInstance, Method.Invoke,
-// AccessController.doPrivileged.
+// This function is used in Class.forName, Class.newInstance, and Method.Invoke.
 void vframeStreamCommon::security_get_caller_frame(int depth) {
   assert(depth >= 0, "invalid depth: %d", depth);
   for (int n = 0; !at_end(); security_next()) {
@@ -619,7 +627,7 @@ javaVFrame* vframeStreamCommon::asJavaVFrame() {
 
 #ifndef PRODUCT
 void vframe::print(outputStream* output) {
-  if (WizardMode) _fr.print_value_on(output, nullptr);
+  if (WizardMode) _fr.print_value_on(output);
 }
 
 void vframe::print_value(outputStream* output) const {
@@ -734,7 +742,7 @@ void javaVFrame::print_activation(int index, outputStream* output) const {
 // ------------- externalVFrame --------------
 
 void externalVFrame::print(outputStream* output) {
-  _fr.print_value_on(output, nullptr);
+  _fr.print_value_on(output);
 }
 
 void externalVFrame::print_value(outputStream* output) const {

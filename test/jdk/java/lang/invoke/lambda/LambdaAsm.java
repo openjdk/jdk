@@ -26,7 +26,6 @@
  * @bug 8027232
  * @library /test/lib/
  * @modules jdk.zipfs
- * @enablePreview
  * @compile LambdaAsm.java
  * @run main/othervm LambdaAsm
  * @summary ensures that j.l.i.InvokerByteCodeGenerator and Class-File API

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,10 +64,9 @@ class G1HeapRegionTable : public G1BiasedMappedArray<G1HeapRegion*> {
 //
 // * _num_committed (returned by length()) is the number of currently
 //   committed regions. These may not be contiguous.
-// * _allocated_heapregions_length (not exposed outside this class) is the
-//   number of regions+1 for which we have G1HeapRegions.
-// * max_length() returns the maximum number of regions the heap may commit.
-// * reserved_length() returns the maximum number of regions the heap has reserved.
+// * _next_highest_used_hrm_index (not exposed outside this class) is the
+//   highest heap region index +1 for which we have G1HeapRegions.
+// * max_num_regions() returns the maximum number of regions the heap has reserved.
 //
 
 class G1HeapRegionManager: public CHeapObj<mtGC> {
@@ -81,8 +80,8 @@ class G1HeapRegionManager: public CHeapObj<mtGC> {
   // can either be active (ready for use) or inactive (ready for uncommit).
   G1CommittedRegionMap _committed_map;
 
-  // Internal only. The highest heap region +1 we allocated a G1HeapRegion instance for.
-  uint _allocated_heapregions_length;
+  // Internal only. The highest heap region index +1 we allocated a G1HeapRegion instance for.
+  uint _next_highest_used_hrm_index;
 
   HeapWord* heap_bottom() const { return _regions.bottom_address_mapped(); }
   HeapWord* heap_end() const {return _regions.end_address_mapped(); }
@@ -221,6 +220,8 @@ public:
     return _free_list.length();
   }
 
+  uint num_used_regions() const { return num_committed_regions() - num_free_regions(); }
+
   uint num_free_regions(uint node_index) const {
     return _free_list.length(node_index);
   }
@@ -229,17 +230,16 @@ public:
     return num_free_regions() * G1HeapRegion::GrainBytes;
   }
 
-  // Return the number of regions available (uncommitted) regions.
-  uint available() const { return max_length() - length(); }
+  // Return the number of regions uncommitted or ready to be uncommitted.
+  uint num_inactive_regions() const { return max_num_regions() - num_committed_regions(); }
 
   // Return the number of regions currently active and available for use.
-  uint length() const { return _committed_map.num_active(); }
+  uint num_committed_regions() const { return _committed_map.num_active(); }
 
   // The number of regions reserved for the heap.
-  uint reserved_length() const { return (uint)_regions.length(); }
+  uint max_num_regions() const { return (uint)_regions.length(); }
 
-  // Return maximum number of regions that heap can expand to.
-  uint max_length() const { return reserved_length(); }
+  uint num_available_regions() const { return num_free_regions() + num_inactive_regions(); }
 
   MemoryUsage get_auxiliary_data_memory_usage() const;
 
@@ -255,11 +255,6 @@ public:
   uint expand_on_preferred_node(uint node_index);
 
   G1HeapRegion* next_region_in_heap(const G1HeapRegion* r) const;
-
-  // Find the highest free or uncommitted region in the reserved heap,
-  // and if uncommitted, commit it. If none are available, return G1_NO_HRM_INDEX.
-  // Set the 'expanded' boolean true if a new region was committed.
-  uint find_highest_free(bool* expanded);
 
   // Allocate the regions that contain the address range specified, committing the
   // regions if necessary. Return false if any of the regions is already committed

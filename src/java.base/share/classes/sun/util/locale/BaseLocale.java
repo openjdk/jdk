@@ -38,7 +38,6 @@ import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.StringJoiner;
-import java.util.function.UnaryOperator;
 
 public final class BaseLocale {
 
@@ -91,10 +90,6 @@ public final class BaseLocale {
         }
     }
 
-    // Interned BaseLocale cache
-    private static final ReferencedKeySet<BaseLocale> CACHE =
-            ReferencedKeySet.create(true, ReferencedKeySet.concurrentHashMapSupplier());
-
     public static final String SEP = "_";
 
     private final String language;
@@ -111,6 +106,12 @@ public final class BaseLocale {
      */
     private static final boolean OLD_ISO_CODES = StaticProperty.javaLocaleUseOldISOCodes()
             .equalsIgnoreCase("true");
+    static {
+        if (OLD_ISO_CODES) {
+            System.err.println("WARNING: The use of the system property \"java.locale.useOldISOCodes\"" +
+                " is deprecated. It will be removed in a future release of the JDK.");
+        }
+    }
 
     private BaseLocale(String language, String script, String region, String variant) {
         this.language = language;
@@ -163,21 +164,16 @@ public final class BaseLocale {
         // Obtain the "interned" BaseLocale from the cache. The returned
         // "interned" instance can subsequently be used by the Locale
         // instance which guarantees the locale components are properly cased/interned.
-        return CACHE.intern(new BaseLocale(language, script, region, variant),
-                // Avoid lambdas since this may be on the bootstrap path in many locales
-                INTERNER);
-    }
-
-    public static final UnaryOperator<BaseLocale> INTERNER = new UnaryOperator<>() {
-        @Override
-        public BaseLocale apply(BaseLocale b) {
-            return new BaseLocale(
-                    LocaleUtils.toLowerString(b.language).intern(),
-                    LocaleUtils.toTitleString(b.script).intern(),
-                    LocaleUtils.toUpperString(b.region).intern(),
-                    b.variant.intern());
+        class InterningCache { // TODO: StableValue
+            private static final ReferencedKeySet<BaseLocale> CACHE =
+                    ReferencedKeySet.create(true, ReferencedKeySet.concurrentHashMapSupplier());
         }
-    };
+        return InterningCache.CACHE.intern(new BaseLocale(
+                language.intern(), // guaranteed to be lower-case
+                LocaleUtils.toTitleString(script).intern(),
+                region.intern(), // guaranteed to be upper-case
+                variant.intern()));
+    }
 
     public static String convertOldISOCodes(String language) {
         return switch (language) {

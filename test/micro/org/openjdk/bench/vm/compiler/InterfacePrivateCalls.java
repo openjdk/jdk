@@ -64,7 +64,7 @@ public class InterfacePrivateCalls {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    @Fork(value=3, jvmArgsAppend={"-XX:TieredStopAtLevel=1"})
+    @Fork(value=3, jvmArgs={"-XX:TieredStopAtLevel=1"})
     public void invokePrivateInterfaceMethodC1() {
         for (int i = 0; i < objs.length; ++i) {
             objs[i].foo();

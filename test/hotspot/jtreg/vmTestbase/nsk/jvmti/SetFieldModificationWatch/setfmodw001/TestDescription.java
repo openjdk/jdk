@@ -47,11 +47,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:setfmodw001 nsk.jvmti.SetFieldModificationWatch.setfmodw001
  */
-
-/*
- * @test id=logging
- *
- * @library /vmTestbase
- *          /test/lib
- * @run main/othervm/native -agentlib:setfmodw001 -XX:TraceJVMTI=ec+,+ioe,+s -Xlog:jvmti=trace:file=vm.%p.log nsk.jvmti.SetFieldModificationWatch.setfmodw001
- */

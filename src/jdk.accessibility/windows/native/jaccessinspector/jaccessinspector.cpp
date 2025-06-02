@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1526,8 +1526,8 @@ BOOL UpdateMessageNumber () {
     size_t messageNumber = g_MessageHistory.GetCurrentMessageIndex() + 1;
     char text [32] = {0};
     if ( 0 != messageCount ) {
-        ::_snprintf(text, sizeof(text), "%d of %d", (int)messageNumber,
-                                                    (int) messageCount);
+        ::snprintf(text, sizeof(text), "%d of %d", (int)messageNumber,
+                                                   (int) messageCount);
     }
     return ::SetWindowText(dlgItem, text);
 }

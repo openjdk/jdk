@@ -27,7 +27,6 @@ package com.sun.java.swing.plaf.gtk;
 
 import java.awt.*;
 import java.lang.reflect.*;
-import java.security.*;
 import java.util.*;
 import javax.swing.*;
 import javax.swing.plaf.*;
@@ -751,14 +750,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
               region == Region.EDITOR_PANE) {
             return true;
         }
-        if (!GTKLookAndFeel.is3()) {
-            if (region == Region.FORMATTED_TEXT_FIELD ||
-                  region == Region.PASSWORD_FIELD ||
-                  region == Region.SPINNER ||
-                  region == Region.TEXT_FIELD) {
-                return true;
-            }
-        }
+
         Component c = context.getComponent();
         String name = c.getName();
         if (name == "ComboBox.renderer" || name == "ComboBox.listRenderer") {
@@ -884,7 +876,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             int focusPad =
                 getClassSpecificIntValue(context, "focus-padding", 1);
             return indicatorSpacing + focusSize + focusPad;
-        } else if (GTKLookAndFeel.is3() && "ComboBox.forceOpaque".equals(key)) {
+        } else if ("ComboBox.forceOpaque".equals(key)) {
             return true;
         } else if ("Tree.expanderSize".equals(key)) {
             Object value = getClassSpecificValue("expander-size");
@@ -895,11 +887,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
         }
 
         // Is it a stock icon ?
-        GTKStockIcon stockIcon = null;
-        synchronized (ICONS_MAP) {
-            stockIcon = ICONS_MAP.get(key);
-        }
-
+        GTKStockIcon stockIcon = ICONS_MAP.get(key);
         if (stockIcon != null) {
             return stockIcon;
         }
@@ -1186,27 +1174,28 @@ class GTKStyle extends SynthStyle implements GTKConstants {
         CLASS_SPECIFIC_MAP.put("EditorPane.caretForeground", "cursor-color");
         CLASS_SPECIFIC_MAP.put("EditorPane.caretAspectRatio", "cursor-aspect-ratio");
 
-        ICONS_MAP = new HashMap<String, GTKStockIcon>();
-        ICONS_MAP.put("FileChooser.cancelIcon", new GTKStockIcon("gtk-cancel", 4));
-        ICONS_MAP.put("FileChooser.okIcon",     new GTKStockIcon("gtk-ok",     4));
-        ICONS_MAP.put("OptionPane.yesIcon", new GTKStockIcon("gtk-yes", 4));
-        ICONS_MAP.put("OptionPane.noIcon", new GTKStockIcon("gtk-no", 4));
-        ICONS_MAP.put("OptionPane.cancelIcon", new GTKStockIcon("gtk-cancel", 4));
-        ICONS_MAP.put("OptionPane.okIcon", new GTKStockIcon("gtk-ok", 4));
+        Map<String,GTKStockIcon> iconsMap = new HashMap<>();
+        iconsMap.put("FileChooser.cancelIcon", new GTKStockIcon("gtk-cancel", 4));
+        iconsMap.put("FileChooser.okIcon",     new GTKStockIcon("gtk-ok",     4));
+        iconsMap.put("OptionPane.yesIcon", new GTKStockIcon("gtk-yes", 4));
+        iconsMap.put("OptionPane.noIcon", new GTKStockIcon("gtk-no", 4));
+        iconsMap.put("OptionPane.cancelIcon", new GTKStockIcon("gtk-cancel", 4));
+        iconsMap.put("OptionPane.okIcon", new GTKStockIcon("gtk-ok", 4));
 
         //check whether the gtk version is >= 3.10 as the Icon names were
         //changed from this version
         UNIXToolkit tk = (UNIXToolkit)Toolkit.getDefaultToolkit();
         if (tk.checkGtkVersion(3, 10, 0)) {
-            ICONS_MAP.put("OptionPane.errorIcon", new GTKStockIcon("dialog-error", 6));
-            ICONS_MAP.put("OptionPane.informationIcon", new GTKStockIcon("dialog-information", 6));
-            ICONS_MAP.put("OptionPane.warningIcon", new GTKStockIcon("dialog-warning", 6));
-            ICONS_MAP.put("OptionPane.questionIcon", new GTKStockIcon("dialog-question", 6));
+            iconsMap.put("OptionPane.errorIcon", new GTKStockIcon("dialog-error", 6));
+            iconsMap.put("OptionPane.informationIcon", new GTKStockIcon("dialog-information", 6));
+            iconsMap.put("OptionPane.warningIcon", new GTKStockIcon("dialog-warning", 6));
+            iconsMap.put("OptionPane.questionIcon", new GTKStockIcon("dialog-question", 6));
         } else {
-            ICONS_MAP.put("OptionPane.errorIcon", new GTKStockIcon("gtk-dialog-error", 6));
-            ICONS_MAP.put("OptionPane.informationIcon", new GTKStockIcon("gtk-dialog-info", 6));
-            ICONS_MAP.put("OptionPane.warningIcon", new GTKStockIcon("gtk-dialog-warning", 6));
-            ICONS_MAP.put("OptionPane.questionIcon", new GTKStockIcon("gtk-dialog-question", 6));
+            iconsMap.put("OptionPane.errorIcon", new GTKStockIcon("gtk-dialog-error", 6));
+            iconsMap.put("OptionPane.informationIcon", new GTKStockIcon("gtk-dialog-info", 6));
+            iconsMap.put("OptionPane.warningIcon", new GTKStockIcon("gtk-dialog-warning", 6));
+            iconsMap.put("OptionPane.questionIcon", new GTKStockIcon("gtk-dialog-question", 6));
         }
+        ICONS_MAP = Collections.unmodifiableMap(iconsMap);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import sun.awt.CGraphicsDevice;
 import sun.awt.image.OffScreenImage;
 import sun.awt.image.SunVolatileImage;
 import sun.awt.image.SurfaceManager;
+import sun.awt.image.VolatileSurfaceManager;
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 import sun.java2d.Surface;
@@ -59,8 +60,6 @@ import java.awt.image.DirectColorModel;
 import java.awt.image.VolatileImage;
 import java.awt.image.WritableRaster;
 import java.io.File;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import static sun.java2d.metal.MTLContext.MTLContextCaps.CAPS_EXT_GRAD_SHADER;
 import static sun.java2d.pipe.hw.AccelSurface.TEXTURE;
@@ -70,15 +69,14 @@ import static sun.java2d.pipe.hw.ContextCapabilities.*;
 import static sun.java2d.metal.MTLContext.MTLContextCaps.CAPS_EXT_BIOP_SHADER;
 
 public final class MTLGraphicsConfig extends CGraphicsConfig
-        implements AccelGraphicsConfig, SurfaceManager.ProxiedGraphicsConfig
+        implements AccelGraphicsConfig, SurfaceManager.Factory
 {
     private static ImageCapabilities imageCaps = new MTLImageCaps();
 
-    @SuppressWarnings("removal")
-    private static final String mtlShadersLib = AccessController.doPrivileged(
-            (PrivilegedAction<String>) () ->
+
+    private static final String mtlShadersLib =
                     System.getProperty("java.home", "") + File.separator +
-                            "lib" + File.separator + "shaders.metallib");
+                            "lib" + File.separator + "shaders.metallib";
 
 
     private BufferCapabilities bufferCaps;
@@ -110,11 +108,6 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
         // MTLGraphicsConfigInfo data when this object goes away
         Disposer.addRecord(disposerReferent,
                 new MTLGCDisposerRecord(pConfigInfo));
-    }
-
-    @Override
-    public Object getProxyKey() {
-        return this;
     }
 
     public SurfaceData createManagedSurface(int w, int h, int transparency) {
@@ -380,5 +373,11 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
     public int getMaxTextureHeight() {
         return Math.max(maxTextureSize / getDevice().getScaleFactor(),
                 getBounds().height);
+    }
+
+    @Override
+    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image,
+                                                        Object context) {
+        return new MTLVolatileSurfaceManager(image, context);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public final class JVMSupport {
     private static boolean checkAvailability() {
         // set jfr.unsupported.vm to true to test API on an unsupported VM
         try {
-            if (SecuritySupport.getBooleanProperty("jfr.unsupported.vm")) {
+            if (Boolean.getBoolean("jfr.unsupported.vm")) {
                 return false;
             }
         } catch (NoClassDefFoundError cnfe) {

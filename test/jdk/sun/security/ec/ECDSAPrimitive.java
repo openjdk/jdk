@@ -93,7 +93,8 @@ public class ECDSAPrimitive {
                         digestAlg = null;
                     } else {
                         AlgorithmParameters params =
-                                AlgorithmParameters.getInstance("EC", "SunEC");
+                                AlgorithmParameters.getInstance("EC",
+                                    System.getProperty("test.provider.name", "SunEC"));
                         params.init(new ECGenParameterSpec(curveName));
                         ecParams = params.getParameterSpec(
                                 ECParameterSpec.class);

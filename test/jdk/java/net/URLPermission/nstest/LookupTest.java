@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /**
  * @test
- * @summary A simple smoke test of the HttpURLPermission mechanism, which checks
- *          for either IOException (due to unknown host) or SecurityException
- *          due to lack of permission to connect
- * @run main/othervm -Djava.security.manager=allow -Djdk.net.hosts.file=LookupTestHosts LookupTest
+ * @summary A simple smoke test which checks URLPermission implies,
+ *          and verify that HttpURLConnection either succeeds or throws
+ *          IOException (due to unknown host).
+ * @run main/othervm -Djdk.net.hosts.file=LookupTestHosts LookupTest
  */
 
 import java.io.BufferedWriter;
@@ -46,18 +46,14 @@ import java.net.SocketPermission;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLPermission;
-import java.security.CodeSource;
 import java.security.Permission;
 import java.security.PermissionCollection;
 import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class LookupTest {
 
-    static final Policy DEFAULT_POLICY = Policy.getPolicy();
-    static int port;
+    static LookupTestPermisions permissions;
     static volatile ServerSocket serverSocket;
 
     static void test(String url,
@@ -69,8 +65,11 @@ public class LookupTest {
         try {
             u = new URL(url);
             System.err.println("Connecting to " + u);
+            URLPermission permission = new URLPermission(url, "GET");
+            if (!permissions.implies(permission)) throw new SecurityException(permission.toString());
             URLConnection urlc = u.openConnection();
             is = urlc.getInputStream();
+            System.err.println("Connection sucessful");
         } catch (SecurityException e) {
             if (!throwsSecException) {
                 throw new RuntimeException("Unexpected SecurityException:", e);
@@ -80,6 +79,8 @@ public class LookupTest {
             if (!throwsIOException) {
                 System.err.println("Unexpected IOException:" + e.getMessage());
                 throw new RuntimeException(e);
+            } else {
+                System.err.println("Got expected exception: " + e);
             }
             return;
         } finally {
@@ -93,9 +94,8 @@ public class LookupTest {
             }
         }
 
-        if (throwsSecException || throwsIOException) {
-            System.err.printf("was expecting a %s\n", throwsSecException
-                    ? "security exception" : "IOException");
+        if (throwsIOException) {
+            System.err.printf("was expecting a %s\n", "IOException");
             throw new RuntimeException("was expecting an exception");
         }
     }
@@ -114,9 +114,9 @@ public class LookupTest {
         // name "notAllowedAndNotFound.com" is not in map
         // name "allowedButNotfound.com" is not in map
         Server server = new Server();
+        int port = server.getPort();
+        permissions = new LookupTestPermisions(port);
         try {
-            Policy.setPolicy(new LookupTestPolicy());
-            System.setSecurityManager(new SecurityManager());
             server.start();
             test("http://allowedAndFound.com:"       + port + "/foo", false, false);
             test("http://notAllowedButFound.com:"    + port + "/foo", true, false);
@@ -129,12 +129,17 @@ public class LookupTest {
 
     static class Server extends Thread {
         private volatile boolean done;
+        private final int port;
 
         public Server() throws IOException {
             InetAddress loopback = InetAddress.getLoopbackAddress();
             serverSocket = new ServerSocket();
             serverSocket.bind(new InetSocketAddress(loopback, 0));
             port = serverSocket.getLocalPort();
+        }
+
+        int getPort() {
+            return port;
         }
 
         public void run() {
@@ -192,28 +197,19 @@ public class LookupTest {
         }
     }
 
-    static class LookupTestPolicy extends Policy {
+    static class LookupTestPermisions  {
         final PermissionCollection perms = new Permissions();
 
-        LookupTestPolicy() throws Exception {
-            perms.add(new NetPermission("setProxySelector"));
+        LookupTestPermisions(int port) {
             perms.add(new SocketPermission("localhost:1024-", "resolve,accept"));
             perms.add(new URLPermission("http://allowedAndFound.com:" + port + "/-", "*:*"));
             perms.add(new URLPermission("http://allowedButNotfound.com:" + port + "/-", "*:*"));
             perms.add(new FilePermission("<<ALL FILES>>", "read,write,delete"));
-            //perms.add(new PropertyPermission("java.io.tmpdir", "read"));
         }
 
-        public PermissionCollection getPermissions(ProtectionDomain domain) {
-            return perms;
-        }
 
-        public PermissionCollection getPermissions(CodeSource codesource) {
-            return perms;
-        }
-
-        public boolean implies(ProtectionDomain domain, Permission perm) {
-            return perms.implies(perm) || DEFAULT_POLICY.implies(domain, perm);
+        public boolean implies(Permission perm) {
+            return perms.implies(perm);
         }
     }
 }

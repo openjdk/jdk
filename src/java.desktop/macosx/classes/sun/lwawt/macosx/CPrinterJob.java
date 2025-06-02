@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,12 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.print.*;
 import java.net.URI;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.print.*;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.standard.Chromaticity;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.Destination;
 import javax.print.attribute.standard.Media;
@@ -73,6 +72,10 @@ public final class CPrinterJob extends RasterPrinterJob {
 
     private String outputBin = null;
 
+    private Throwable printerAbortExcpn;
+
+    private boolean monochrome = false;
+
     // This is the NSPrintInfo for this PrinterJob. Protect multi thread
     //  access to it. It is used by the pageDialog, jobDialog, and printLoop.
     //  This way the state of these items is shared across these calls.
@@ -101,7 +104,7 @@ public final class CPrinterJob extends RasterPrinterJob {
      * selected by the user.
      * @return {@code true} if the user does not cancel the dialog;
      * {@code false} otherwise.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -123,7 +126,7 @@ public final class CPrinterJob extends RasterPrinterJob {
             return super.printDialog(attributes);
         }
 
-        return jobSetup(getPageable(), checkAllowedToPrintToFile());
+        return jobSetup(getPageable());
     }
 
     /**
@@ -143,7 +146,7 @@ public final class CPrinterJob extends RasterPrinterJob {
      *            is cancelled; a new {@code PageFormat} object
      *          containing the format indicated by the user if the
      *          dialog is acknowledged.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since     1.2
@@ -212,6 +215,11 @@ public final class CPrinterJob extends RasterPrinterJob {
                 setPageRange(-1, -1);
             }
         }
+
+        PrintService service = getPrintService();
+        Chromaticity chromaticity = (Chromaticity)attributes.get(Chromaticity.class);
+        monochrome = chromaticity == Chromaticity.MONOCHROME && service != null &&
+                service.isAttributeCategorySupported(Chromaticity.class);
     }
 
     private void setPageRangeAttribute(int from, int to, boolean isRangeSet) {
@@ -247,7 +255,7 @@ public final class CPrinterJob extends RasterPrinterJob {
         }
     }
 
-    private void completePrintLoop() {
+    private void completePrintLoop(Throwable excpn)  {
         Runnable r = new Runnable() { public void run() {
             synchronized(this) {
                 performingPrinting = false;
@@ -256,6 +264,10 @@ public final class CPrinterJob extends RasterPrinterJob {
                 printingLoop.exit();
             }
         }};
+
+        if (excpn != null && excpn.toString().contains("PrinterAbortException")) {
+            printerAbortExcpn = excpn;
+        }
 
         if (onEventThread) {
             try { EventQueue.invokeAndWait(r); } catch (Exception e) { e.printStackTrace(); }
@@ -284,7 +296,6 @@ public final class CPrinterJob extends RasterPrinterJob {
         return destinationAttr;
     }
 
-    @SuppressWarnings("removal")
     @Override
     public void print(PrintRequestAttributeSet attributes) throws PrinterException {
         // NOTE: Some of this code is copied from RasterPrinterJob.
@@ -344,14 +355,7 @@ public final class CPrinterJob extends RasterPrinterJob {
 
                     onEventThread = true;
 
-                    printingLoop = AccessController.doPrivileged(new PrivilegedAction<SecondaryLoop>() {
-                        @Override
-                        public SecondaryLoop run() {
-                            return Toolkit.getDefaultToolkit()
-                                    .getSystemEventQueue()
-                                    .createSecondaryLoop();
-                        }
-                    });
+                    printingLoop =  Toolkit.getDefaultToolkit().getSystemEventQueue().createSecondaryLoop();
 
                     try {
                         // Fire off the print rendering loop on the AppKit thread, and don't have
@@ -373,6 +377,9 @@ public final class CPrinterJob extends RasterPrinterJob {
                         printLoop(true, firstPage, lastPage);
                     } catch (Exception e) {
                         e.printStackTrace();
+                    }
+                    if (printerAbortExcpn != null) {
+                        throw (PrinterAbortException) printerAbortExcpn;
                     }
                 }
                 if (++loopi < prMembers.length) {
@@ -581,8 +588,8 @@ public final class CPrinterJob extends RasterPrinterJob {
      * dialog.
      * If the dialog is to use a set of attributes, useAttributes is true.
      */
-    private boolean jobSetup(Pageable doc, boolean allowPrintToFile) {
-        CPrinterDialog printerDialog = new CPrinterJobDialog(null, this, doc, allowPrintToFile);
+    private boolean jobSetup(Pageable doc) {
+        CPrinterDialog printerDialog = new CPrinterJobDialog(null, this, doc);
         printerDialog.setVisible(true);
         boolean result = printerDialog.getRetVal();
         printerDialog.dispose();
@@ -751,15 +758,13 @@ public final class CPrinterJob extends RasterPrinterJob {
         // but that will block the AppKit thread against whomever is holding the synchronized lock
         boolean cancelled = (performingPrinting && userCancelled);
         if (cancelled) {
-            try {
-                LWCToolkit.invokeLater(new Runnable() { public void run() {
-                    try {
+            EventQueue.invokeLater(() -> {
+                try {
                     cancelDoc();
-                    } catch (PrinterAbortException pae) {
-                        // no-op, let the native side handle it
-                    }
-                }}, null);
-            } catch (java.lang.reflect.InvocationTargetException ite) {}
+                } catch (PrinterAbortException pae) {
+                    // no-op, let the native side handle it
+                }
+            });
         }
         return cancelled;
     }
@@ -791,6 +796,9 @@ public final class CPrinterJob extends RasterPrinterJob {
                 Graphics2D pathGraphics = new CPrinterGraphics(delegate, printerJob); // Just stores delegate into an ivar
                 Rectangle2D pageFormatArea = getPageFormatArea(page);
                 initPrinterGraphics(pathGraphics, pageFormatArea);
+                if (monochrome) {
+                    pathGraphics = new GrayscaleProxyGraphics2D(pathGraphics, printerJob);
+                }
                 painter.print(pathGraphics, FlipPageFormat.getOriginal(page), pageIndex);
                 delegate.dispose();
                 delegate = null;

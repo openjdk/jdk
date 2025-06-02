@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,12 @@
 
 package jdk.internal.foreign;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
+import jdk.internal.invoke.MhUtil;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.vm.annotation.ForceInline;
+
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 
 /**
  * A shared session, which can be shared across multiple threads. Closing a shared session has to ensure that
@@ -43,6 +45,8 @@ sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
+    private static final int CLOSED_ACQUIRE_COUNT = -1;
+
     SharedSession() {
         super(null, new SharedResourceList());
     }
@@ -52,15 +56,15 @@ sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
     public void acquire0() {
         int value;
         do {
-            value = (int) STATE.getVolatile(this);
-            if (value < OPEN) {
+            value = (int) ACQUIRE_COUNT.getVolatile(this);
+            if (value < 0) {
                 //segment is not open!
-                throw alreadyClosed();
+                throw sharedSessionAlreadyClosed();
             } else if (value == MAX_FORKS) {
                 //overflow
                 throw tooManyAcquires();
             }
-        } while (!STATE.compareAndSet(this, value, value + 1));
+        } while (!ACQUIRE_COUNT.compareAndSet(this, value, value + 1));
     }
 
     @Override
@@ -68,22 +72,33 @@ sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
     public void release0() {
         int value;
         do {
-            value = (int) STATE.getVolatile(this);
-            if (value <= OPEN) {
+            value = (int) ACQUIRE_COUNT.getVolatile(this);
+            if (value <= 0) {
                 //cannot get here - we can't close segment twice
-                throw alreadyClosed();
+                throw sharedSessionAlreadyClosed();
             }
-        } while (!STATE.compareAndSet(this, value, value - 1));
+        } while (!ACQUIRE_COUNT.compareAndSet(this, value, value - 1));
     }
 
     void justClose() {
-        int prevState = (int) STATE.compareAndExchange(this, OPEN, CLOSED);
-        if (prevState < 0) {
-            throw alreadyClosed();
-        } else if (prevState != OPEN) {
-            throw alreadyAcquired(prevState);
+        int acquireCount = (int) ACQUIRE_COUNT.compareAndExchange(this, 0, CLOSED_ACQUIRE_COUNT);
+        if (acquireCount < 0) {
+            throw sharedSessionAlreadyClosed();
+        } else if (acquireCount > 0) {
+            throw alreadyAcquired(acquireCount);
         }
+
+        STATE.setVolatile(this, CLOSED);
         SCOPED_MEMORY_ACCESS.closeScope(this, ALREADY_CLOSED);
+    }
+
+    private IllegalStateException sharedSessionAlreadyClosed() {
+        // To avoid the situation where a scope fails to be acquired or closed but still reports as
+        // alive afterward, we wait for the state to change before throwing the exception
+        while ((int) STATE.getVolatile(this) == OPEN) {
+            Thread.onSpinWait();
+        }
+        return alreadyClosed();
     }
 
     /**
@@ -91,15 +106,8 @@ sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
      */
     static class SharedResourceList extends ResourceList {
 
-        static final VarHandle FST;
-
-        static {
-            try {
-                FST = MethodHandles.lookup().findVarHandle(ResourceList.class, "fst", ResourceCleanup.class);
-            } catch (Throwable ex) {
-                throw new ExceptionInInitializerError();
-            }
-        }
+        static final VarHandle FST = MhUtil.findVarHandle(
+                MethodHandles.lookup(), ResourceList.class, "fst", ResourceCleanup.class);
 
         @Override
         void add(ResourceCleanup cleanup) {

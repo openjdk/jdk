@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,13 @@ package jdk.internal.classfile.impl;
 
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
+import java.lang.classfile.Instruction;
 import java.lang.classfile.Label;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.instruction.LabelTarget;
-
 import java.util.Objects;
-import java.lang.classfile.Instruction;
+
+import static java.util.Objects.requireNonNull;
 
 public final class BlockCodeBuilderImpl
         extends NonterminalCodeBuilder
@@ -71,21 +72,20 @@ public final class BlockCodeBuilderImpl
     }
 
     private int topLocal(CodeBuilder parent) {
-        return switch (parent) {
-            case BlockCodeBuilderImpl b -> b.topLocal;
-            case ChainedCodeBuilder b -> b.terminal.curTopLocal();
-            case TerminalCodeBuilder b -> b.curTopLocal();
-        };
+        if (parent instanceof BlockCodeBuilderImpl bcb) {
+            return bcb.topLocal;
+        }
+        return findTerminal(parent).curTopLocal();
     }
 
     @Override
     public CodeBuilder with(CodeElement element) {
-        parent.with(element);
+        parent.with(requireNonNull(element));
 
         hasInstructions |= element instanceof Instruction;
 
         if (reachable) {
-            if (element instanceof Instruction i && i.opcode().isUnconditionalBranch())
+            if (element instanceof Instruction i && BytecodeHelpers.isUnconditionalBranch(i.opcode()))
                 reachable = false;
         }
         else if (element instanceof LabelTarget) {

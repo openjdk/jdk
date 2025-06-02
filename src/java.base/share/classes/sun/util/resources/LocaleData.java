@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,6 @@
 
 package sun.util.resources;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -177,31 +175,19 @@ public class LocaleData {
         return getBundle(type.getTextResourcesPackage() + ".FormatData", locale);
     }
 
-    @SuppressWarnings("removal")
     public static ResourceBundle getBundle(final String baseName, final Locale locale) {
-        return AccessController.doPrivileged(new PrivilegedAction<>() {
-            @Override
-            public ResourceBundle run() {
-                return Bundles.of(baseName, locale, LocaleDataStrategy.INSTANCE);
-            }
-        });
+        return Bundles.of(baseName, locale, LocaleDataStrategy.INSTANCE);
     }
 
-    @SuppressWarnings("removal")
     private static OpenListResourceBundle getSupplementary(final String baseName, final Locale locale) {
-        return AccessController.doPrivileged(new PrivilegedAction<>() {
-           @Override
-           public OpenListResourceBundle run() {
-               OpenListResourceBundle rb = null;
-               try {
-                   rb = (OpenListResourceBundle) Bundles.of(baseName, locale,
-                                                            SupplementaryStrategy.INSTANCE);
-               } catch (MissingResourceException e) {
-                   // return null if no supplementary is available
-               }
-               return rb;
-           }
-        });
+       OpenListResourceBundle rb = null;
+       try {
+           rb = (OpenListResourceBundle) Bundles.of(baseName, locale,
+                                                    SupplementaryStrategy.INSTANCE);
+       } catch (MissingResourceException e) {
+           // return null if no supplementary is available
+       }
+       return rb;
     }
 
     private abstract static class LocaleDataResourceBundleProvider

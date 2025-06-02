@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 // Check class type parameters section.
                 """
                     <dt>Type Parameters:</dt>
-                    <dd><code>E</code> - the type parameter for this class.""",
+                    <dd><span id="type-param-E"><code>E</code> - the type parameter for this class.</span></dd>""",
                 // Type parameters in @see/@link
                 """
                     <dl class="notes">
@@ -130,16 +130,18 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     </dl>""",
                 // Method that uses class type parameter.
                 """
-                    (<a href="TypeParameters.html" title="type parameter in TypeParameters">E</a>&nbsp;param)""",
+                    (<a href="#type-param-E" title="type parameter in TypeParameters">E</a>&nbsp;param)""",
                 // Method type parameter section.
                 """
                     <dt>Type Parameters:</dt>
-                    <dd><code>T</code> - This is the first type parameter.</dd>
-                    <dd><code>V</code> - This is the second type parameter.""",
+                    <dd><span id="methodThatHasTypeParameters(T,V)-type-param-T"><code>T</code> - Th\
+                    is is the first type parameter.</span></dd>
+                    <dd><span id="methodThatHasTypeParameters(T,V)-type-param-V"><code>V</code> - Th\
+                    is is the second type parameter.</span></dd>""",
                 // Signature of method with type parameters
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="type-parameters">&lt;T extends java.util.List,<wbr>
+                    lass="type-parameters">&lt;T extends java.util.List, \
                     V&gt;</span>
                     <span class="return-type">java.lang.String[]</span>&nbsp;<span class="element-name">meth\
                     odThatHasTypeParameters</span><wbr><span class="parameters">(T&nbsp;param1,
@@ -147,18 +149,18 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 // Method that returns TypeParameters
                 """
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4"><code><a href="TypeParameters.html" title="type p\
+                    ab2 method-summary-table-tab4"><code><a href="#type-param-E" title="type p\
                     arameter in TypeParameters">E</a>[]</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#methodThatReturnsTypeParameterA(\
                     E%5B%5D)" class="member-name-link">methodThatReturnsTypeParameterA</a><wbr>(<a h\
-                    ref="TypeParameters.html" title="type parameter in TypeParameters">E</a>[]&nbsp;\
+                    ref="#type-param-E" title="type parameter in TypeParameters">E</a>[]&nbsp;\
                     e)</code>""",
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="return-type"><a href="TypeParameters.html" title="type parameter in TypePa\
+                    lass="return-type"><a href="#type-param-E" title="type parameter in TypePa\
                     rameters">E</a>[]</span>&nbsp;<span class="element-name">methodThatReturnsTypePa\
-                    rameterA</span><wbr><span class="parameters">(<a href="TypeParameters.html" titl\
+                    rameterA</span><wbr><span class="parameters">(<a href="#type-param-E" titl\
                     e="type parameter in TypeParameters">E</a>[]&nbsp;e)</span></div>
                     """,
                 """
@@ -176,7 +178,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 """
                     <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
                     b2 method-summary-table-tab4"><code>&lt;X extends java.lang.Throwable&gt;<br><a \
-                    href="TypeParameters.html" title="type parameter in TypeParameters">E</a></code>\
+                    href="#type-param-E" title="type parameter in TypeParameters">E</a></code>\
                     </div>
                     <div class="col-second odd-row-color method-summary-table method-summary-t\
                     able-tab2 method-summary-table-tab4"><code><a href="#orElseThrow(java.util.funct\
@@ -216,8 +218,8 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <dl class="notes">
                     <dt>All Implemented Interfaces:</dt>
                     <dd><code><a href="SubInterface.html" title="interface in pkg">SubInterface</a>&\
-                    lt;E&gt;</code>, <code><a href="SuperInterface.html" title="interface in pkg">Su\
-                    perInterface</a>&lt;E&gt;</code></dd>
+                    lt;E&gt;, <a href="SuperInterface.html" title="interface in pkg">SuperInterface<\
+                    /a>&lt;E&gt;</code></dd>
                     </dl>""");
 
         checkOutput("pkg/SuperInterface.html", true,
@@ -462,7 +464,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
         //=================================
         checkOutput("index-all.html", true,
                 """
-                    <a href="pkg2/Foo.html#method(java.util.Vector)" class="member-name-link">method(Vector&lt;Object&gt;)</a>"""
+                    <a href="pkg2/Foo.html#method(java.util.Vector)" class="member-name-link">method(Vector)</a>"""
         );
 
         // TODO: duplicate of previous case; left in delibarately for now to simplify comparison testing
@@ -471,7 +473,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
         //=================================
         checkOutput("index-all.html", true,
                 """
-                    <a href="pkg2/Foo.html#method(java.util.Vector)" class="member-name-link">method(Vector&lt;Object&gt;)</a>"""
+                    <a href="pkg2/Foo.html#method(java.util.Vector)" class="member-name-link">method(Vector)</a>"""
         );
 
     }

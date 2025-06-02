@@ -43,12 +43,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OptionalDataException;
 import java.io.Serializable;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PermissionCollection;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-import java.security.ProtectionDomain;
 import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.time.Instant;
@@ -3564,25 +3558,9 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         }
     }
 
-    @SuppressWarnings("removal")
-    private static class CalendarAccessControlContext {
-        private static final AccessControlContext INSTANCE;
-        static {
-            RuntimePermission perm = new RuntimePermission("accessClassInPackage.sun.util.calendar");
-            PermissionCollection perms = perm.newPermissionCollection();
-            perms.add(perm);
-            INSTANCE = new AccessControlContext(new ProtectionDomain[] {
-                                                    new ProtectionDomain(null, perms)
-                                                });
-        }
-        private CalendarAccessControlContext() {
-        }
-    }
-
     /**
      * Reconstitutes this object from a stream (i.e., deserialize it).
      */
-    @SuppressWarnings("removal")
     @java.io.Serial
     private void readObject(ObjectInputStream stream)
          throws IOException, ClassNotFoundException
@@ -3617,16 +3595,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         // If there's a ZoneInfo object, use it for zone.
         ZoneInfo zi = null;
         try {
-            zi = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<>() {
-                        @Override
-                        public ZoneInfo run() throws Exception {
-                            return (ZoneInfo) input.readObject();
-                        }
-                    },
-                    CalendarAccessControlContext.INSTANCE);
-        } catch (PrivilegedActionException pae) {
-            Exception e = pae.getException();
+            zi = (ZoneInfo) input.readObject();
+        } catch (Exception e) {
             if (!(e instanceof OptionalDataException)) {
                 if (e instanceof RuntimeException) {
                     throw (RuntimeException) e;

@@ -75,19 +75,9 @@ public class Basic {
         unknownProtocol("bar", UNKNOWN);
         viaProvider("baz", KNOWN);
         viaProvider("bert", KNOWN);
-        viaProvider("ernie", UNKNOWN, "-Djava.security.manager");
-        viaProvider("curly", UNKNOWN, "-Djava.security.manager");
-        viaProvider("larry", KNOWN, "-Djava.security.manager",
-                "-Djava.security.policy=" + TEST_SRC + File.separator + "basic.policy");
-        viaProvider("moe", KNOWN, "-Djava.security.manager",
-                "-Djava.security.policy=" + TEST_SRC + File.separator + "basic.policy");
         viaBadProvider("tom", SCE);
         viaBadProvider("jerry", SCE);
     }
-
-    static final String SECURITY_MANAGER_DEPRECATED
-            = "WARNING: The Security Manager is deprecated and will be removed in a future release."
-                    + System.getProperty("line.separator");
 
     private static String withoutWarning(String in) {
         return in.lines().filter(s -> !s.startsWith("WARNING:")).collect(Collectors.joining());

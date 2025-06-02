@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,10 @@
  * @run junit SwapTest
  */
 
-import java.lang.classfile.AccessFlags;
 import java.lang.classfile.ClassFile;
+
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
@@ -38,9 +40,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
-import static java.lang.reflect.AccessFlag.PUBLIC;
-import static java.lang.reflect.AccessFlag.STATIC;
-
 class SwapTest {
     @Test
     void testTryCatchCatchAll() throws Throwable {
@@ -48,7 +47,7 @@ class SwapTest {
         MethodTypeDesc mtd = mt.describeConstable().get();
 
         byte[] bytes = ClassFile.of().build(ClassDesc.of("C"), cb -> {
-            cb.withMethodBody("m", mtd, AccessFlags.ofMethod(PUBLIC, STATIC).flagsMask(), xb -> {
+            cb.withMethodBody("m", mtd, ACC_PUBLIC | ACC_STATIC, xb -> {
                         xb.aload(0); // 0
                         xb.aload(1); // 1, 0
                         xb.swap();   // 0, 1

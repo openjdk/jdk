@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -461,6 +461,16 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      */
     default boolean isJavaLangObjectInit() {
         return getDeclaringClass().isJavaLangObject() && getName().equals("<init>");
+    }
+
+    /**
+     * Returns true if this method has a
+     * {@code jdk.internal.misc.ScopedMemoryAccess.Scoped} annotation.
+     *
+     * @return true if Scoped annotation present, false otherwise.
+     */
+    default boolean isScoped() {
+        throw new UnsupportedOperationException();
     }
 
     /**

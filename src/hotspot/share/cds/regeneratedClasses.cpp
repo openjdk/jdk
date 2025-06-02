@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "memory/universe.hpp"
@@ -58,7 +57,7 @@ void RegeneratedClasses::add_class(InstanceKlass* orig_klass, InstanceKlass* reg
     Method* regen_m = regen_klass->find_method(orig_m->name(), orig_m->signature());
     if (regen_m == nullptr) {
       ResourceMark rm;
-      log_warning(cds)("Method in original class is missing from regenerated class: " INTPTR_FORMAT " %s",
+      log_warning(aot)("Method in original class is missing from regenerated class: " INTPTR_FORMAT " %s",
                        p2i(orig_m), orig_m->external_name());
     } else {
       _renegerated_objs->put((address)orig_m, (address)regen_m);

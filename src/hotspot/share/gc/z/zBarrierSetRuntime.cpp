@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zBarrierSetRuntime.hpp"
 #include "oops/access.hpp"
@@ -57,6 +56,10 @@ JRT_END
 
 JRT_LEAF(void, ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing(oop* p))
   ZBarrier::store_barrier_on_heap_oop_field((zpointer*)p, false /* heal */);
+JRT_END
+
+JRT_LEAF(void, ZBarrierSetRuntime::no_keepalive_store_barrier_on_oop_field_without_healing(oop* p))
+  ZBarrier::no_keep_alive_store_barrier_on_heap_oop_field((zpointer*)p);
 JRT_END
 
 JRT_LEAF(void, ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing(oop* p))
@@ -124,6 +127,10 @@ address ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr() {
 
 address ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr() {
   return reinterpret_cast<address>(store_barrier_on_oop_field_without_healing);
+}
+
+address ZBarrierSetRuntime::no_keepalive_store_barrier_on_oop_field_without_healing_addr() {
+  return reinterpret_cast<address>(no_keepalive_store_barrier_on_oop_field_without_healing);
 }
 
 address ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing_addr() {

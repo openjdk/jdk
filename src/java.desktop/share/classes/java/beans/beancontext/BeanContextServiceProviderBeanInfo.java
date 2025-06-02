@@ -35,7 +35,6 @@ import java.beans.BeanInfo;
  * services.
  */
 
-@SuppressWarnings("removal")
 @Deprecated(since = "23", forRemoval = true)
 public interface BeanContextServiceProviderBeanInfo extends BeanInfo {
 

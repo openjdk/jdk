@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,7 @@ lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6, int cha
     while (iter) {
         if (iter->ifa_addr != NULL) {
             int family = iter->ifa_addr->sa_family;
-            if (iter->ifa_name[0] != '\0') {
+            if (iter->ifa_name[0] != '\0' && (iter->ifa_flags & IFF_UP) == IFF_UP) {
                 jboolean isLoopback = iter->ifa_flags & IFF_LOOPBACK;
                 if (family == AF_INET) {
                     addrs4++;
@@ -163,7 +163,7 @@ lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6, int cha
     // Now loop around the ifaddrs
     iter = ifa;
     while (iter != NULL) {
-        if (iter->ifa_addr != NULL) {
+        if (iter->ifa_addr != NULL && (iter->ifa_flags & IFF_UP) == IFF_UP) {
             jboolean isLoopback = iter->ifa_flags & IFF_LOOPBACK;
             int family = iter->ifa_addr->sa_family;
 

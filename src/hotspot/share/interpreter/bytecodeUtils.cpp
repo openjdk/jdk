@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/gcLocker.hpp"
@@ -643,7 +642,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
         }
       }
 
-      constantTag tag = cp->tag_at(cp_index);
+      constantTag tag = cp->constant_tag_at(cp_index);
       if (tag.is_klass()  || tag.is_unresolved_klass() ||
           tag.is_method() || tag.is_interface_method() ||
           tag.is_field()  || tag.is_string()) {

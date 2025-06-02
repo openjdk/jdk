@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -227,12 +226,7 @@ void BarrierSetAssembler::clear_patching_epoch() {
 
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation, Label* guard) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-
-  if (bs_nm == nullptr) {
-    return;
-  }
-
-  Assembler::IncompressibleRegion ir(masm);  // Fixed length: see entry_barrier_offset()
+  Assembler::IncompressibleScope scope(masm); // Fixed length: see entry_barrier_offset()
 
   Label local_guard;
   NMethodPatchingType patching_type = nmethod_patching_type();
@@ -265,7 +259,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
       }
     case NMethodPatchingType::conc_instruction_and_data_patch:
       {
-        // If we patch code we need both a code patching and a loadload
+        // If we patch code we need both a cmodx fence and a loadload
         // fence. It's not super cheap, so we use a global epoch mechanism
         // to hide them in a slow path.
         // The high level idea of the global epoch mechanism is to detect
@@ -273,11 +267,19 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
         // last nmethod was disarmed. This implies that the required
         // fencing has been performed for all preceding nmethod disarms
         // as well. Therefore, we do not need any further fencing.
+
         __ la(t1, ExternalAddress((address)&_patching_epoch));
-        // Embed an artificial data dependency to order the guard load
-        // before the epoch load.
-        __ srli(ra, t0, 32);
-        __ orr(t1, t1, ra);
+        if (!UseZtso) {
+          // Embed a synthetic data dependency between the load of the guard and
+          // the load of the epoch. This guarantees that these loads occur in
+          // order, while allowing other independent instructions to be reordered.
+          // Note: This may be slower than using a membar(load|load) (fence r,r).
+          // Because processors will not start the second load until the first comes back.
+          // This means you can't overlap the two loads,
+          // which is stronger than needed for ordering (stronger than TSO).
+          __ srli(ra, t0, 32);
+          __ orr(t1, t1, ra);
+        }
         // Read the global epoch value.
         __ lwu(t1, t1);
         // Combine the guard value (low order) with the epoch value (high order).
@@ -313,11 +315,6 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
 }
 
 void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
-  BarrierSetNMethod* bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs == nullptr) {
-    return;
-  }
-
   Label bad_call;
   __ beqz(xmethod, bad_call);
 
@@ -326,7 +323,7 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ load_method_holder_cld(t0, xmethod);
 
   // Is it a strong CLD?
-  __ lwu(t1, Address(t0, ClassLoaderData::keep_alive_offset()));
+  __ lwu(t1, Address(t0, ClassLoaderData::keep_alive_ref_count_offset()));
   __ bnez(t1, method_live);
 
   // Is it a weak but alive CLD?

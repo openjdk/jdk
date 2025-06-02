@@ -32,7 +32,9 @@
 #include "compiler/oopMap.inline.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/objectMonitor.hpp"
 #include "runtime/stackValue.hpp"
+#include "runtime/synchronizer.hpp"
 #include "utilities/macros.hpp"
 
 #include CPU_HEADER_INLINE(continuationHelper)
@@ -53,7 +55,7 @@ inline bool ContinuationHelper::NonInterpretedUnknownFrame::is_instance(const fr
 }
 
 inline bool ContinuationHelper::Frame::is_stub(CodeBlob* cb) {
-  return cb != nullptr && (cb->is_safepoint_stub() || cb->is_runtime_stub());
+  return cb != nullptr && cb->is_runtime_stub();
 }
 
 inline Method* ContinuationHelper::Frame::frame_method(const frame& f) {
@@ -192,6 +194,26 @@ bool ContinuationHelper::CompiledFrame::is_owning_locks(JavaThread* thread, Regi
     }
   }
   return false;
+}
+#endif
+
+inline bool ContinuationHelper::NativeFrame::is_instance(const frame& f) {
+  return f.is_native_frame();
+}
+
+#ifdef ASSERT
+inline bool ContinuationHelper::NativeFrame::is_owning_locks(JavaThread* thread, const frame& f) {
+  assert(NativeFrame::is_instance(f), "");
+
+  Method* method = f.cb()->as_nmethod()->method();
+  if (!method->is_synchronized()) {
+    return false;
+  } else {
+    // Just verify we are actually the owner
+    oop synced_obj = f.get_native_receiver();
+    assert(ObjectSynchronizer::current_thread_holds_lock(thread, Handle(thread, synced_obj)), "must be owner");
+    return true;
+  }
 }
 #endif
 

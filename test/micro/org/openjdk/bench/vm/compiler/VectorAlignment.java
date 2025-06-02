@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,22 +293,22 @@ public abstract class VectorAlignment {
         }
     }
 
-    @Fork(value = 1, jvmArgsPrepend = {
+    @Fork(value = 1, jvmArgs = {
         "-XX:+UseSuperWord", "-XX:CompileCommand=Option,*::*,Vectorize"
     })
     public static class VectorAlignmentSuperWordWithVectorize extends VectorAlignment {}
 
-    @Fork(value = 1, jvmArgsPrepend = {
+    @Fork(value = 1, jvmArgs = {
         "-XX:+UseSuperWord", "-XX:+AlignVector"
     })
     public static class VectorAlignmentSuperWordAlignVector extends VectorAlignment {}
 
-    @Fork(value = 1, jvmArgsPrepend = {
+    @Fork(value = 1, jvmArgs = {
         "-XX:+UseSuperWord"
     })
     public static class VectorAlignmentSuperWord extends VectorAlignment {}
 
-    @Fork(value = 1, jvmArgsPrepend = {
+    @Fork(value = 1, jvmArgs = {
         "-XX:-UseSuperWord"
     })
     public static class VectorAlignmentNoSuperWord extends VectorAlignment {}

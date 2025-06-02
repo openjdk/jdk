@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,41 @@
 #ifndef SHARE_GC_Z_ZINITIALIZE_HPP
 #define SHARE_GC_Z_ZINITIALIZE_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/compilerWarnings.hpp"
+
+#include <cstddef>
 
 class ZBarrierSet;
 
-class ZInitialize {
+class ZInitializer {
+public:
+  ZInitializer(ZBarrierSet* barrier_set);
+};
+
+class ZInitialize : public AllStatic {
+  friend class ZTest;
+
 private:
-  void pd_initialize();
+  static constexpr size_t ErrorMessageLength = 256;
+
+  static char _error_message[ErrorMessageLength];
+  static bool _had_error;
+  static bool _finished;
+
+  static void register_error(bool debug, const char *error_msg);
+
+  static void pd_initialize();
 
 public:
-  ZInitialize(ZBarrierSet* barrier_set);
+  static void error(const char* msg_format, ...) ATTRIBUTE_PRINTF(1, 2);
+  static void error_d(const char* msg_format, ...) ATTRIBUTE_PRINTF(1, 2);
+
+  static bool had_error();
+  static const char* error_message();
+
+  static void initialize(ZBarrierSet* barrier_set);
+  static void finish();
 };
 
 #endif // SHARE_GC_Z_ZINITIALIZE_HPP

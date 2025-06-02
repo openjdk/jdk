@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,13 +76,7 @@ class IdentityScope extends Identity {
     // initialize the system scope
     private static void initializeSystemScope() {
 
-        String classname = AccessController.doPrivileged(
-                                new PrivilegedAction<>() {
-            public String run() {
-                return Security.getProperty("system.scope");
-            }
-        });
-
+        String classname = Security.getProperty("system.scope");
         if (classname == null) {
             return;
 
@@ -148,22 +142,11 @@ class IdentityScope extends Identity {
     /**
      * Sets the system's identity scope.
      *
-     * <p>First, if there is a security manager, its
-     * {@code checkSecurityAccess}
-     * method is called with {@code "setSystemScope"}
-     * as its argument to see if it's ok to set the identity scope.
-     *
      * @param scope the scope to set.
      *
-     * @throws     SecurityException  if a security manager exists and its
-     * {@code checkSecurityAccess} method doesn't allow
-     * setting the identity scope.
-     *
      * @see #getSystemScope
-     * @see SecurityManager#checkSecurityAccess
      */
     protected static void setSystemScope(IdentityScope scope) {
-        check("setSystemScope");
         IdentityScope.scope = scope;
     }
 
@@ -251,12 +234,4 @@ class IdentityScope extends Identity {
     public String toString() {
         return super.toString() + "[" + size() + "]";
     }
-
-    private static void check(String directive) {
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkSecurityAccess(directive);
-        }
-    }
-
 }

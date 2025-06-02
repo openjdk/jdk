@@ -31,7 +31,7 @@
  *          java.base/sun.util.resources
  * @build com.foobar.Utils
  *        com.foo.*
- * @run main/othervm -Djava.locale.providers=CLDR,SPI DateFormatProviderTest
+ * @run main/othervm/timeout=300 -Djava.locale.providers=CLDR,SPI DateFormatProviderTest
  */
 
 import java.text.DateFormat;

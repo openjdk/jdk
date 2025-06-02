@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.ref.SoftReference;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -60,8 +58,6 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
      * Constant prefix used to tag Java types converted to native platform type.
      */
     private static String JavaMIME = "JAVA_DATAFLAVOR:";
-
-    private static final Object FLAVOR_MAP_KEY = new Object();
 
     /**
      * The list of valid, decoded text flavor representation classes, in order
@@ -204,12 +200,8 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
         }
         isMapInitialized = true;
 
-        @SuppressWarnings("removal")
-        InputStream is = AccessController.doPrivileged(
-            (PrivilegedAction<InputStream>) () -> {
-                return SystemFlavorMap.class.getResourceAsStream(
+        InputStream is = SystemFlavorMap.class.getResourceAsStream(
                         "/sun/datatransfer/resources/flavormap.properties");
-            });
         if (is == null) {
             throw new InternalError("Default flavor mapping not found");
         }

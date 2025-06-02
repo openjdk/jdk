@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,15 @@
 #if defined(__linux__) && !defined(IPV6_FLOWINFO_SEND)
 #define IPV6_FLOWINFO_SEND      33
 #endif
+
+/* Perform platform specific initialization.
+ * Returns 0 on success, non-0 on failure */
+int
+NET_PlatformInit()
+{
+    // Not needed on unix
+    return 0;
+}
 
 void
 NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,

@@ -111,8 +111,9 @@
           range(1, max_intx)                                                \
                                                                             \
   product(uint, G1ConfidencePercent, 50,                                    \
-          "Confidence level for MMU/pause predictions")                     \
-          range(0, 100)                                                     \
+          "Confidence level for MMU/pause predictions. A higher value "     \
+          "means that G1 will use less safety margin for its predictions.") \
+          range(1, 100)                                                     \
                                                                             \
   product(uintx, G1SummarizeRSetStatsPeriod, 0, DIAGNOSTIC,                 \
           "The period (in number of GCs) at which we will generate "        \
@@ -275,6 +276,14 @@
           "An upper bound for the number of old CSet regions expressed "    \
           "as a percentage of the heap size.")                              \
           range(0, 100)                                                     \
+                                                                            \
+  product(uint, G1OldCSetGroupSize, 5, EXPERIMENTAL,                        \
+          "The maximum number of old CSet regions in a collection group. "  \
+          "All regions in a group will be evacuated in the same GC pause."  \
+          "The first group calculated after marking from marking "          \
+          "candidates may exceed this limit as it is calculated based on "  \
+          "G1MixedGCCountTarget.")                                          \
+          range(1, 256)                                                     \
                                                                             \
   product(bool, G1VerifyHeapRegionCodeRoots, false, DIAGNOSTIC,             \
           "Verify the code root lists attached to each heap region.")       \

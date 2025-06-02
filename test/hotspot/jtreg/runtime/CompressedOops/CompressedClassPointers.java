@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ public class CompressedClassPointers {
 
     static final String logging_option = "-Xlog:gc+metaspace=trace,metaspace=info,cds=trace";
     static final String reserveCCSAnywhere = "Reserving compressed class space anywhere";
+    static final String usesCompactObjectHeadersPat = "UseCompactObjectHeaders 1";
 
     // Returns true if we are to test the narrow klass base; we only do this on
     // platforms where we can be reasonably shure that we get reproducable placement).
@@ -55,6 +56,11 @@ public class CompressedClassPointers {
         }
         return true;
 
+    }
+
+    // Returns true if the output indicates that the VM uses compact object headers
+    static boolean usesCompactObjectHeaders(OutputAnalyzer output) {
+        return output.getOutput().contains(usesCompactObjectHeadersPat);
     }
 
     // Returns true if the output indicates that the ccs is reserved anywhere.
@@ -221,7 +227,7 @@ public class CompressedClassPointers {
             "-Xlog:cds=trace",
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        if (!isCCSReservedAnywhere(output)) {
+        if (!isCCSReservedAnywhere(output) && !usesCompactObjectHeaders(output)) {
             output.shouldContain("Narrow klass base: 0x0000000000000000");
         }
         output.shouldHaveExitValue(0);
@@ -239,10 +245,10 @@ public class CompressedClassPointers {
             "-Xlog:cds=trace",
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        if (!isCCSReservedAnywhere(output)) {
+        if (!isCCSReservedAnywhere(output) && !usesCompactObjectHeaders(output)) {
             output.shouldContain("Narrow klass base: 0x0000000000000000");
         }
-        if (!Platform.isAArch64() && !Platform.isPPC()) {
+        if (!Platform.isAArch64()  && !usesCompactObjectHeaders(output) && !Platform.isPPC()) {
             // Currently relax this test for Aarch64 and ppc.
             output.shouldContain("Narrow klass shift: 0");
         }
@@ -261,10 +267,10 @@ public class CompressedClassPointers {
             "-Xlog:cds=trace",
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        if (!isCCSReservedAnywhere(output)) {
+        if (!isCCSReservedAnywhere(output) && !usesCompactObjectHeaders(output)) {
             output.shouldContain("Narrow klass base: 0x0000000000000000");
         }
-        if (!Platform.isAArch64() && !Platform.isPPC()) {
+        if (!Platform.isAArch64()  && !usesCompactObjectHeaders(output) && !Platform.isPPC()) {
             // Currently relax this test for Aarch64 and ppc.
             output.shouldContain("Narrow klass shift: 0");
         }

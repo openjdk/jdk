@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
@@ -173,8 +172,8 @@ bm_word_t* ResourceBitMap::reallocate(bm_word_t* old_map, size_t old_size_in_wor
   return pseudo_reallocate(*this, old_map, old_size_in_words, new_size_in_words);
 }
 
-CHeapBitMap::CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags, bool clear)
-  : GrowableBitMap<CHeapBitMap>(), _flags(flags) {
+CHeapBitMap::CHeapBitMap(idx_t size_in_bits, MemTag mem_tag, bool clear)
+  : GrowableBitMap<CHeapBitMap>(), _mem_tag(mem_tag) {
   initialize(size_in_bits, clear);
 }
 
@@ -183,7 +182,7 @@ CHeapBitMap::~CHeapBitMap() {
 }
 
 bm_word_t* CHeapBitMap::allocate(idx_t size_in_words) const {
-  return MallocArrayAllocator<bm_word_t>::allocate(size_in_words, _flags);
+  return MallocArrayAllocator<bm_word_t>::allocate(size_in_words, _mem_tag);
 }
 
 // GrowableBitMap<T>::resize uses free(ptr, size) for T as CHeapBitMap, ArenaBitMap and ResourceBitMap allocators.
@@ -193,30 +192,25 @@ void CHeapBitMap::free(bm_word_t* map, idx_t size_in_words) const {
 }
 
 bm_word_t* CHeapBitMap::reallocate(bm_word_t* map, size_t old_size_in_words, size_t new_size_in_words) const {
-  return MallocArrayAllocator<bm_word_t>::reallocate(map, new_size_in_words, _flags);
+  return MallocArrayAllocator<bm_word_t>::reallocate(map, new_size_in_words, _mem_tag);
 }
 
 #ifdef ASSERT
-void BitMap::verify_size(idx_t size_in_bits) {
-  assert(size_in_bits <= max_size_in_bits(),
-         "out of bounds: " SIZE_FORMAT, size_in_bits);
-}
-
 void BitMap::verify_index(idx_t bit) const {
   assert(bit < _size,
-         "BitMap index out of bounds: " SIZE_FORMAT " >= " SIZE_FORMAT,
+         "BitMap index out of bounds: %zu >= %zu",
          bit, _size);
 }
 
 void BitMap::verify_limit(idx_t bit) const {
   assert(bit <= _size,
-         "BitMap limit out of bounds: " SIZE_FORMAT " > " SIZE_FORMAT,
+         "BitMap limit out of bounds: %zu > %zu",
          bit, _size);
 }
 
 void BitMap::verify_range(idx_t beg, idx_t end) const {
   assert(beg <= end,
-         "BitMap range error: " SIZE_FORMAT " > " SIZE_FORMAT, beg, end);
+         "BitMap range error: %zu > %zu", beg, end);
   verify_limit(end);
 }
 #endif // #ifdef ASSERT
@@ -694,7 +688,7 @@ BitMap::idx_t BitMap::count_one_bits(idx_t beg, idx_t end) const {
 
 }
 
-void BitMap::print_on_error(outputStream* st, const char* prefix) const {
+void BitMap::print_range_on(outputStream* st, const char* prefix) const {
   st->print_cr("%s[" PTR_FORMAT ", " PTR_FORMAT ")",
       prefix, p2i(map()), p2i((char*)map() + (size() >> LogBitsPerByte)));
 }
@@ -710,14 +704,12 @@ void BitMap::IteratorImpl::assert_not_empty() const {
 }
 #endif
 
-#ifndef PRODUCT
-
 void BitMap::print_on(outputStream* st) const {
-  st->print("Bitmap (" SIZE_FORMAT " bits):", size());
+  st->print("Bitmap (%zu bits):", size());
   for (idx_t index = 0; index < size(); index++) {
     if ((index % 64) == 0) {
       st->cr();
-      st->print(SIZE_FORMAT_W(5) ":", index);
+      st->print("%5zu:", index);
     }
     if ((index % 8) == 0) {
       st->print(" ");
@@ -726,8 +718,6 @@ void BitMap::print_on(outputStream* st) const {
   }
   st->cr();
 }
-
-#endif
 
 template class GrowableBitMap<ArenaBitMap>;
 template class GrowableBitMap<ResourceBitMap>;

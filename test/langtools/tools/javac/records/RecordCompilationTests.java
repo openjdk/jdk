@@ -29,12 +29,10 @@
  *      8332600
  * @summary Negative compilation tests, and positive compilation (smoke) tests for records
  * @library /lib/combo /tools/lib /tools/javac/lib
- * @enablePreview
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.code
  *      jdk.compiler/com.sun.tools.javac.util
- *      java.base/jdk.internal.classfile.impl
  * @build JavacTestingAbstractProcessor
  * @run junit/othervm -DuseAP=false RecordCompilationTests
  * @run junit/othervm -DuseAP=true RecordCompilationTests
@@ -1358,7 +1356,7 @@ class RecordCompilationTests extends CompilationTestCase {
         try {
             String[] testOptions = {};
             setCompileOptions(testOptions);
-            assertFail("compiler.err.illegal.start.of.type",
+            assertFail("compiler.err.statement.not.expected",
                     "class R {\n" +
                             "    record RR(int i) {\n" +
                             "        return null;\n" +
@@ -1615,7 +1613,7 @@ class RecordCompilationTests extends CompilationTestCase {
         }
         assert tAnno != null;
         Assert.check(tAnno.targetInfo().targetType().name().equals(positionType));
-        String annotationName = tAnno.classSymbol().displayName();
+        String annotationName = tAnno.annotation().classSymbol().displayName();
         Assert.check(annotationName.startsWith(annoName));
     }
     private void checkAnno(Attribute<?> rAnnos,

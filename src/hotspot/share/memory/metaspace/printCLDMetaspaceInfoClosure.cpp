@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "memory/classLoaderMetaspace.hpp"
@@ -106,7 +105,7 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
 
   // Optionally, print
   if (_do_print) {
-    _out->print(UINTX_FORMAT_W(4) ": ", _num_loaders);
+    _out->print("%4zu: ", _num_loaders);
 
     // Print "CLD for [<loader name>,] instance of <loader class name>"
     // or    "CLD for <hidden>, loaded by [<loader name>,] instance of <loader class name>"
@@ -144,8 +143,8 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
 
     if (_do_print_classes) {
       // Print a detailed description of all loaded classes.
-      streamIndentor sti(_out, 6);
-      _out->cr_indent();
+      _out->cr();
+      StreamIndentor sai(_out, 6);
       _out->print("Loaded classes");
       if (ckc._num_classes_shared > 0) {
         _out->print("('s' = shared)");
@@ -153,7 +152,7 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
       _out->print(":");
       PrintMetaspaceInfoKlassClosure pkic(_out, true);
       cld->classes_do(&pkic);
-      _out->cr_indent();
+      _out->cr();
       _out->print("-total-: ");
       print_number_of_classes(_out, ckc._num_classes, ckc._num_classes_shared);
     } else {

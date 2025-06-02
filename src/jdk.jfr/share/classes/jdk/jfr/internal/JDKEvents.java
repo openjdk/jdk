@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,11 @@ import jdk.jfr.events.ContainerIOUsageEvent;
 import jdk.jfr.events.ContainerMemoryUsageEvent;
 import jdk.jfr.events.DirectBufferStatisticsEvent;
 import jdk.jfr.events.InitialSecurityPropertyEvent;
+import jdk.jfr.events.MethodTimingEvent;
+import jdk.jfr.events.MethodTraceEvent;
 import jdk.jfr.internal.periodic.PeriodicEvents;
+import jdk.jfr.internal.tracing.PlatformTracer;
+import jdk.jfr.tracing.MethodTracer;
 
 public final class JDKEvents {
 
@@ -68,12 +72,13 @@ public final class JDKEvents {
         jdk.internal.event.TLSHandshakeEvent.class,
         jdk.internal.event.VirtualThreadStartEvent.class,
         jdk.internal.event.VirtualThreadEndEvent.class,
-        jdk.internal.event.VirtualThreadPinnedEvent.class,
         jdk.internal.event.VirtualThreadSubmitFailedEvent.class,
         jdk.internal.event.X509CertificateEvent.class,
         jdk.internal.event.X509ValidationEvent.class,
         DirectBufferStatisticsEvent.class,
         InitialSecurityPropertyEvent.class,
+        MethodTraceEvent.class,
+        MethodTimingEvent.class,
     };
 
     private static final Runnable emitExceptionStatistics = JDKEvents::emitExceptionStatistics;
@@ -84,6 +89,7 @@ public final class JDKEvents {
     private static final Runnable emitContainerMemoryUsage = JDKEvents::emitContainerMemoryUsage;
     private static final Runnable emitContainerIOUsage = JDKEvents::emitContainerIOUsage;
     private static final Runnable emitInitialSecurityProperties = JDKEvents::emitInitialSecurityProperties;
+    private static final Runnable emitMethodTiming = JDKEvents::emitMethodTiming;
     private static Metrics containerMetrics = null;
     private static boolean initializationTriggered;
 
@@ -92,11 +98,12 @@ public final class JDKEvents {
         try {
             if (initializationTriggered == false) {
                 for (Class<?> eventClass : eventClasses) {
-                    SecuritySupport.registerEvent((Class<? extends Event>) eventClass);
+                    MetadataRepository.getInstance().register((Class<? extends Event>) eventClass);
                 }
-                PeriodicEvents.addJDKEvent(jdk.internal.event.ExceptionStatisticsEvent.class, emitExceptionStatistics);
-                PeriodicEvents.addJDKEvent(DirectBufferStatisticsEvent.class, emitDirectBufferStatistics);
-                PeriodicEvents.addJDKEvent(InitialSecurityPropertyEvent.class, emitInitialSecurityProperties);
+                PeriodicEvents.addJavaEvent(jdk.internal.event.ExceptionStatisticsEvent.class, emitExceptionStatistics);
+                PeriodicEvents.addJavaEvent(DirectBufferStatisticsEvent.class, emitDirectBufferStatistics);
+                PeriodicEvents.addJavaEvent(InitialSecurityPropertyEvent.class, emitInitialSecurityProperties);
+                PeriodicEvents.addJavaEvent(MethodTimingEvent.class, emitMethodTiming);
 
                 initializeContainerEvents();
                 JFRTracing.enable();
@@ -117,17 +124,21 @@ public final class JDKEvents {
         }
         // The registration of events and hooks are needed to provide metadata,
         // even when not running in a container
-        SecuritySupport.registerEvent(ContainerConfigurationEvent.class);
-        SecuritySupport.registerEvent(ContainerCPUUsageEvent.class);
-        SecuritySupport.registerEvent(ContainerCPUThrottlingEvent.class);
-        SecuritySupport.registerEvent(ContainerMemoryUsageEvent.class);
-        SecuritySupport.registerEvent(ContainerIOUsageEvent.class);
+        registerEvent(ContainerConfigurationEvent.class);
+        registerEvent(ContainerCPUUsageEvent.class);
+        registerEvent(ContainerCPUThrottlingEvent.class);
+        registerEvent(ContainerMemoryUsageEvent.class);
+        registerEvent(ContainerIOUsageEvent.class);
 
-        PeriodicEvents.addJDKEvent(ContainerConfigurationEvent.class, emitContainerConfiguration);
-        PeriodicEvents.addJDKEvent(ContainerCPUUsageEvent.class, emitContainerCPUUsage);
-        PeriodicEvents.addJDKEvent(ContainerCPUThrottlingEvent.class, emitContainerCPUThrottling);
-        PeriodicEvents.addJDKEvent(ContainerMemoryUsageEvent.class, emitContainerMemoryUsage);
-        PeriodicEvents.addJDKEvent(ContainerIOUsageEvent.class, emitContainerIOUsage);
+        PeriodicEvents.addJavaEvent(ContainerConfigurationEvent.class, emitContainerConfiguration);
+        PeriodicEvents.addJavaEvent(ContainerCPUUsageEvent.class, emitContainerCPUUsage);
+        PeriodicEvents.addJavaEvent(ContainerCPUThrottlingEvent.class, emitContainerCPUThrottling);
+        PeriodicEvents.addJavaEvent(ContainerMemoryUsageEvent.class, emitContainerMemoryUsage);
+        PeriodicEvents.addJavaEvent(ContainerIOUsageEvent.class, emitContainerIOUsage);
+    }
+
+    private static void registerEvent(Class<? extends jdk.internal.event.Event> eventClass) {
+        MetadataRepository.getInstance().register(eventClass);
     }
 
     private static void emitExceptionStatistics() {
@@ -197,6 +208,7 @@ public final class JDKEvents {
         PeriodicEvents.removeEvent(emitExceptionStatistics);
         PeriodicEvents.removeEvent(emitDirectBufferStatistics);
         PeriodicEvents.removeEvent(emitInitialSecurityProperties);
+        PeriodicEvents.removeEvent(emitMethodTiming);
 
         PeriodicEvents.removeEvent(emitContainerConfiguration);
         PeriodicEvents.removeEvent(emitContainerCPUUsage);
@@ -219,6 +231,12 @@ public final class JDKEvents {
                 e.value = p.getProperty(key);
                 e.commit();
             }
+        }
+    }
+
+    private static void emitMethodTiming() {
+        if (MethodTimingEvent.enabled()) {
+            PlatformTracer.emitTiming();
         }
     }
 }

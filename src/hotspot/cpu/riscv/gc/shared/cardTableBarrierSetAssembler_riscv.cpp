@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
@@ -69,7 +68,7 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   __ beqz(count, L_done); // zero count - nothing to do
   // end = start + count << LogBytesPerHeapOop
   __ shadd(end, count, start, count, LogBytesPerHeapOop);
-  __ sub(end, end, BytesPerHeapOop); // last element address to make inclusive
+  __ subi(end, end, BytesPerHeapOop); // last element address to make inclusive
 
   __ srli(start, start, CardTable::card_shift());
   __ srli(end, end, CardTable::card_shift());
@@ -81,7 +80,7 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   __ bind(L_loop);
   __ add(tmp, start, count);
   __ sb(zr, Address(tmp));
-  __ sub(count, count, 1);
+  __ subi(count, count, 1);
   __ bgez(count, L_loop);
   __ bind(L_done);
 }

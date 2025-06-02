@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -57,7 +57,7 @@ import jdk.xml.internal.XMLSecurityManager.Limit;
  * @author Arnaud  Le Hors, IBM
  * @author K.Venugopal Sun Microsystems
  *
- * @LastModified: July 2023
+ * @LastModified: Nov 2024
  */
 public class XMLEntityScanner implements XMLLocator  {
 
@@ -1009,7 +1009,7 @@ public class XMLEntityScanner implements XMLLocator  {
             fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN, "TotalEntitySizeLimit",
                     new Object[]{fLimitAnalyzer.getTotalValue(Limit.TOTAL_ENTITY_SIZE_LIMIT),
                 fSecurityManager.getLimit(Limit.TOTAL_ENTITY_SIZE_LIMIT),
-                fSecurityManager.getStateLiteral(Limit.TOTAL_ENTITY_SIZE_LIMIT)},
+                Limit.TOTAL_ENTITY_SIZE_LIMIT.systemProperty()},
                     XMLErrorReporter.SEVERITY_FATAL_ERROR);
         }
     }

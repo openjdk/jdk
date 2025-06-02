@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ import com.sun.tools.javac.tree.JCTree.JCBreak;
 import com.sun.tools.javac.tree.JCTree.JCCase;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCExpressionStatement;
+
 import static com.sun.tools.javac.tree.JCTree.JCOperatorExpression.OperandPos.LEFT;
 import com.sun.tools.javac.tree.JCTree.JCSwitchExpression;
 
@@ -104,6 +105,7 @@ public class Lower extends TreeTranslator {
     private final boolean disableProtectedAccessors; // experimental
     private final PkgInfo pkginfoOpt;
     private final boolean optimizeOuterThis;
+    private final boolean nullCheckOuterThis;
     private final boolean useMatchException;
     private final HashMap<TypePairs, String> typePairToName;
     private int variableIndex = 0;
@@ -133,6 +135,8 @@ public class Lower extends TreeTranslator {
         optimizeOuterThis =
             target.optimizeOuterThis() ||
             options.getBoolean("optimizeOuterThis", false);
+        nullCheckOuterThis = options.getBoolean("nullCheckOuterThis",
+            target.nullCheckOuterThisByDefault());
         disableProtectedAccessors = options.isSet("disableProtectedAccessors");
         Source source = Source.instance(context);
         Preview preview = Preview.instance(context);
@@ -266,26 +270,22 @@ public class Lower extends TreeTranslator {
     Map<ClassSymbol,List<VarSymbol>> freevarCache;
 
     /** A navigator class for collecting the free variables accessed
-     *  from a local class. There is only one case; all other cases simply
-     *  traverse down the tree. This class doesn't deal with the specific
-     *  of Lower - it's an abstract visitor that is meant to be reused in
-     *  order to share the local variable capture logic.
+     *  from a local class.
      */
-    abstract class BasicFreeVarCollector extends TreeScanner {
+    class FreeVarCollector extends CaptureScanner {
 
-        /** Add all free variables of class c to fvs list
-         *  unless they are already there.
-         */
-        abstract void addFreeVars(ClassSymbol c);
-
-        /** If tree refers to a variable in owner of local class, add it to
-         *  free variables list.
-         */
-        public void visitIdent(JCIdent tree) {
-            visitSymbol(tree.sym);
+        FreeVarCollector(JCTree ownerTree) {
+            super(ownerTree);
         }
-        // where
-        abstract void visitSymbol(Symbol _sym);
+
+        void addFreeVars(ClassSymbol c) {
+            List<VarSymbol> fvs = freevarCache.get(c);
+            if (fvs != null) {
+                for (List<VarSymbol> l = fvs; l.nonEmpty(); l = l.tail) {
+                    addFreeVar(l.head);
+                }
+            }
+        }
 
         /** If tree refers to a class instance creation expression
          *  add all free variables of the freshly created class.
@@ -305,84 +305,6 @@ public class Lower extends TreeTranslator {
             }
             super.visitApply(tree);
         }
-
-        @Override
-        public void visitYield(JCYield tree) {
-            scan(tree.value);
-        }
-
-    }
-
-    /**
-     * Lower-specific subclass of {@code BasicFreeVarCollector}.
-     */
-    class FreeVarCollector extends BasicFreeVarCollector {
-
-        /** The owner of the local class.
-         */
-        Symbol owner;
-
-        /** The local class.
-         */
-        ClassSymbol clazz;
-
-        /** The list of owner's variables accessed from within the local class,
-         *  without any duplicates.
-         */
-        List<VarSymbol> fvs;
-
-        FreeVarCollector(ClassSymbol clazz) {
-            this.clazz = clazz;
-            this.owner = clazz.owner;
-            this.fvs = List.nil();
-        }
-
-        /** Add free variable to fvs list unless it is already there.
-         */
-        private void addFreeVar(VarSymbol v) {
-            for (List<VarSymbol> l = fvs; l.nonEmpty(); l = l.tail)
-                if (l.head == v) return;
-            fvs = fvs.prepend(v);
-        }
-
-        @Override
-        void addFreeVars(ClassSymbol c) {
-            List<VarSymbol> fvs = freevarCache.get(c);
-            if (fvs != null) {
-                for (List<VarSymbol> l = fvs; l.nonEmpty(); l = l.tail) {
-                    addFreeVar(l.head);
-                }
-            }
-        }
-
-        @Override
-        void visitSymbol(Symbol _sym) {
-            Symbol sym = _sym;
-            if (sym.kind == VAR || sym.kind == MTH) {
-                if (sym != null && sym.owner != owner)
-                    sym = proxies.get(sym);
-                if (sym != null && sym.owner == owner) {
-                    VarSymbol v = (VarSymbol)sym;
-                    if (v.getConstValue() == null) {
-                        addFreeVar(v);
-                    }
-                }
-            }
-        }
-    }
-
-    ClassSymbol ownerToCopyFreeVarsFrom(ClassSymbol c) {
-        if (!c.isDirectlyOrIndirectlyLocal()) {
-            return null;
-        }
-        Symbol currentOwner = c.owner;
-        while (currentOwner.owner.kind.matches(KindSelector.TYP) && currentOwner.isDirectlyOrIndirectlyLocal()) {
-            currentOwner = currentOwner.owner;
-        }
-        if (currentOwner.owner.kind.matches(KindSelector.VAL_MTH) && c.isSubClass(currentOwner, types)) {
-            return (ClassSymbol)currentOwner;
-        }
-        return null;
     }
 
     /** Return the variables accessed from within a local class, which
@@ -394,22 +316,10 @@ public class Lower extends TreeTranslator {
         if (fvs != null) {
             return fvs;
         }
-        if (c.owner.kind.matches(KindSelector.VAL_MTH) && !c.isStatic()) {
-            FreeVarCollector collector = new FreeVarCollector(c);
-            collector.scan(classDef(c));
-            fvs = collector.fvs;
-            freevarCache.put(c, fvs);
-            return fvs;
-        } else {
-            ClassSymbol owner = ownerToCopyFreeVarsFrom(c);
-            if (owner != null) {
-                fvs = freevarCache.get(owner);
-                freevarCache.put(c, fvs);
-                return fvs;
-            } else {
-                return List.nil();
-            }
-        }
+        FreeVarCollector collector = new FreeVarCollector(classDef(c));
+        fvs = collector.analyzeCaptures().reverse();
+        freevarCache.put(c, fvs);
+        return fvs;
     }
 
     Map<TypeSymbol,EnumMapping> enumSwitchMap = new LinkedHashMap<>();
@@ -1500,7 +1410,7 @@ public class Lower extends TreeTranslator {
      *  @param owner      The class in which the definitions go.
      */
     List<JCVariableDecl> freevarDefs(int pos, List<VarSymbol> freevars, Symbol owner) {
-        return freevarDefs(pos, freevars, owner, 0);
+        return freevarDefs(pos, freevars, owner, LOCAL_CAPTURE_FIELD);
     }
 
     List<JCVariableDecl> freevarDefs(int pos, List<VarSymbol> freevars, Symbol owner,
@@ -1516,7 +1426,12 @@ public class Lower extends TreeTranslator {
                 proxyName = proxyName(v.name, index++);
             } while (!proxyNames.add(proxyName));
             VarSymbol proxy = new VarSymbol(
-                flags, proxyName, v.erasure(types), owner);
+                flags, proxyName, v.erasure(types), owner) {
+                @Override
+                public Symbol baseSymbol() {
+                    return v;
+                }
+            };
             proxies.put(v, proxy);
             JCVariableDecl vd = make.at(pos).VarDef(proxy, null);
             vd.vartype = access(vd.vartype);
@@ -1882,18 +1797,27 @@ public class Lower extends TreeTranslator {
                     make.Ident(rhs)).setType(lhs.erasure(types)));
     }
 
-    /** Return tree simulating the assignment {@code this.this$n = this$n}.
+    /**
+     * Return tree simulating null checking outer this and/or assigning. This is
+     * called when a null check is required (nullCheckOuterThis), or a synthetic
+     * field is generated (stores).
      */
-    JCStatement initOuterThis(int pos, VarSymbol rhs) {
+    JCStatement initOuterThis(int pos, VarSymbol rhs, boolean stores) {
         Assert.check(rhs.owner.kind == MTH);
-        VarSymbol lhs = outerThisStack.head;
-        Assert.check(rhs.owner.owner == lhs.owner);
+        Assert.check(nullCheckOuterThis || stores); // One of the flags must be true
         make.at(pos);
-        return
-            make.Exec(
-                make.Assign(
+        JCExpression expression = make.Ident(rhs);
+        if (nullCheckOuterThis) {
+            expression = attr.makeNullCheck(expression);
+        }
+        if (stores) {
+            VarSymbol lhs = outerThisStack.head;
+            Assert.check(rhs.owner.owner == lhs.owner);
+            expression = make.Assign(
                     make.Select(make.This(lhs.owner.erasure(types)), lhs),
-                    make.Ident(rhs)).setType(lhs.erasure(types)));
+                    expression).setType(lhs.erasure(types));
+        }
+        return make.Exec(expression);
     }
 
 /* ************************************************************************
@@ -2298,15 +2222,22 @@ public class Lower extends TreeTranslator {
         }
         // If this$n was accessed, add the field definition and prepend
         // initializer code to any super() invocation to initialize it
-        if (currentClass.hasOuterInstance() && shouldEmitOuterThis(currentClass)) {
-            tree.defs = tree.defs.prepend(otdef);
-            enterSynthetic(tree.pos(), otdef.sym, currentClass.members());
+        // otherwise prepend enclosing instance null check code if required
+        emitOuter:
+        if (currentClass.hasOuterInstance()) {
+            boolean storesThis = shouldEmitOuterThis(currentClass);
+            if (storesThis) {
+                tree.defs = tree.defs.prepend(otdef);
+                enterSynthetic(tree.pos(), otdef.sym, currentClass.members());
+            } else if (!nullCheckOuterThis) {
+                break emitOuter;
+            }
 
             for (JCTree def : tree.defs) {
                 if (TreeInfo.isConstructor(def)) {
                     JCMethodDecl mdef = (JCMethodDecl)def;
                     if (TreeInfo.hasConstructorCall(mdef, names._super)) {
-                        List<JCStatement> initializer = List.of(initOuterThis(mdef.body.pos, mdef.params.head.sym));
+                        List<JCStatement> initializer = List.of(initOuterThis(mdef.body.pos, mdef.params.head.sym, storesThis)) ;
                         TreeInfo.mapSuperCalls(mdef.body, supercall -> make.Block(0, initializer.append(supercall)));
                     }
                 }
@@ -2629,7 +2560,7 @@ public class Lower extends TreeTranslator {
         StringBuilder sb = new StringBuilder();
 
         LowerSignatureGenerator() {
-            super(types);
+            types.super();
         }
 
         @Override

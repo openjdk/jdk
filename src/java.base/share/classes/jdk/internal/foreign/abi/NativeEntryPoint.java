@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,29 @@ public class NativeEntryPoint {
     private record CacheKey(MethodType methodType, ABIDescriptor abi,
                             List<VMStorage> argMoves, List<VMStorage> retMoves,
                             boolean needsReturnBuffer, int capturedStateMask,
-                            boolean needsTransition) {}
+                            boolean needsTransition) {
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof CacheKey other)) return false;
+
+            return methodType == other.methodType && abi == other.abi && capturedStateMask == other.capturedStateMask
+                    && needsTransition == other.needsTransition && needsReturnBuffer == other.needsReturnBuffer
+                    && argMoves.equals(other.argMoves) && retMoves.equals(other.retMoves);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = System.identityHashCode(methodType);
+            result = 31 * result + abi.hashCode();
+            result = 31 * result + argMoves.hashCode();
+            result = 31 * result + retMoves.hashCode();
+            result = 31 * result + Boolean.hashCode(needsReturnBuffer);
+            result = 31 * result + capturedStateMask;
+            result = 31 * result + Boolean.hashCode(needsTransition);
+            return result;
+        }
+    }
 
     private NativeEntryPoint(MethodType methodType, long downcallStubAddress) {
         this.methodType = methodType;
@@ -60,11 +82,12 @@ public class NativeEntryPoint {
                                         MethodType methodType,
                                         boolean needsReturnBuffer,
                                         int capturedStateMask,
-                                        boolean needsTransition) {
+                                        boolean needsTransition,
+                                        boolean usingAddressPairs) {
         if (returnMoves.length > 1 != needsReturnBuffer) {
             throw new AssertionError("Multiple register return, but needsReturnBuffer was false");
         }
-        checkType(methodType, needsReturnBuffer, capturedStateMask);
+        checkMethodType(methodType, needsReturnBuffer, capturedStateMask, usingAddressPairs);
 
         CacheKey key = new CacheKey(methodType, abi, Arrays.asList(argMoves), Arrays.asList(returnMoves),
                                     needsReturnBuffer, capturedStateMask, needsTransition);
@@ -80,14 +103,26 @@ public class NativeEntryPoint {
         });
     }
 
-    private static void checkType(MethodType methodType, boolean needsReturnBuffer, int savedValueMask) {
-        if (methodType.parameterType(0) != long.class) {
-            throw new AssertionError("Address expected as first param: " + methodType);
+    private static void checkMethodType(MethodType methodType, boolean needsReturnBuffer, int savedValueMask,
+                                        boolean usingAddressPairs) {
+        int checkIdx = 0;
+        checkParamType(methodType, checkIdx++, long.class, "Function address");
+        if (needsReturnBuffer) {
+            checkParamType(methodType, checkIdx++, long.class, "Return buffer address");
         }
-        int checkIdx = 1;
-        if ((needsReturnBuffer && methodType.parameterType(checkIdx++) != long.class)
-            || (savedValueMask != 0 && methodType.parameterType(checkIdx) != long.class)) {
-            throw new AssertionError("return buffer and/or preserved value address expected: " + methodType);
+        if (savedValueMask != 0) { // capturing call state
+            if (usingAddressPairs) {
+                checkParamType(methodType, checkIdx++, Object.class, "Capture state heap base");
+                checkParamType(methodType, checkIdx, long.class, "Capture state offset");
+            } else {
+                checkParamType(methodType, checkIdx, long.class, "Capture state address");
+            }
+        }
+    }
+
+    private static void checkParamType(MethodType methodType, int checkIdx, Class<?> expectedType, String name) {
+        if (methodType.parameterType(checkIdx) != expectedType) {
+            throw new AssertionError(name + " expected at index " + checkIdx + ": " + methodType);
         }
     }
 

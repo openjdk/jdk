@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, 2023 SAP SE. All rights reserved.
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/mallocHeader.inline.hpp"
 #include "nmt/mallocTracker.hpp"
@@ -33,10 +32,10 @@
 #include "unittest.hpp"
 
 // Check NMT header for integrity, as well as expected type and size.
-static void check_expected_malloc_header(const void* payload, MEMFLAGS type, size_t size) {
+static void check_expected_malloc_header(const void* payload, MemTag mem_tag, size_t size) {
   const MallocHeader* hdr = MallocHeader::resolve_checked(payload);
   EXPECT_EQ(hdr->size(), size);
-  EXPECT_EQ(hdr->flags(), type);
+  EXPECT_EQ(hdr->mem_tag(), mem_tag);
 }
 
 // ASAN complains about allocating very large sizes
@@ -138,7 +137,7 @@ TEST_VM(NMT, random_reallocs) {
 
   for (int n = 0; n < 100; n ++) {
     size_t new_size = (size_t)(os::random() % 512) + 1;
-    // LOG_HERE("reallocating " SIZE_FORMAT "->" SIZE_FORMAT, size, new_size);
+    // LOG_HERE("reallocating %zu->%zu", size, new_size);
     p = do_realloc(p, size, new_size, content, nmt_enabled);
     size = new_size;
     content = (n % 26) + 'A';

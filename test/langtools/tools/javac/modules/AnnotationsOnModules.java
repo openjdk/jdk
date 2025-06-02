@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,20 @@
 
 /*
  * @test
- * @bug 8159602 8170549 8171255 8171322 8254023
+ * @bug 8159602 8170549 8171255 8171322 8254023 8341966
  * @summary Test annotations on module declaration.
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main AnnotationsOnModules
  */
 
 import java.io.File;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -55,6 +55,7 @@ import javax.lang.model.element.TypeElement;
 import java.lang.classfile.*;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.attribute.*;
+import java.lang.reflect.AccessFlag;
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.Task.OutputKind;
@@ -723,6 +724,93 @@ public class AnnotationsOnModules extends ModuleTestBase {
                 .files(findJavaFiles(extraSrc))
                 .run()
                 .writeAll();
+        }
+    }
+
+    @Test
+    public void testBrokenModuleInfoClassWithAnnotation(Path base) throws Exception {
+        Path lib = base.resolve("lib");
+        tb.writeJavaFiles(lib,
+                          """
+                          @Deprecated
+                          module m{}
+                          """);
+
+        Path libClasses = base.resolve("lib-classes");
+        Files.createDirectories(libClasses);
+
+        new JavacTask(tb)
+            .options("--release", "21")
+            .outdir(libClasses)
+            .files(findJavaFiles(lib))
+            .run()
+            .writeAll();
+
+        Path modifiedModuleInfo = libClasses.resolve("module-info.class");
+        ClassModel cm1 = ClassFile.of().parse(modifiedModuleInfo);
+        byte[] newBytes = ClassFile.of().transformClass(cm1, (builder, element) -> {
+            if (element instanceof ModuleAttribute attr) {
+                List<ModuleRequireInfo> requires = new ArrayList<>();
+
+                for (ModuleRequireInfo mri : attr.requires()) {
+                    if (mri.requires().name().equalsString("java.base")) {
+                        requires.add(ModuleRequireInfo.of(mri.requires(),
+                                                          List.of(AccessFlag.STATIC_PHASE),
+                                                          mri.requiresVersion()
+                                                             .orElse(null)));
+                    } else {
+                        requires.add(mri);
+                    }
+                }
+
+                builder.accept(ModuleAttribute.of(attr.moduleName(),
+                                                  attr.moduleFlagsMask(),
+                                                  attr.moduleVersion()
+                                                      .orElseGet(() -> null),
+                                                  requires,
+                                                  attr.exports(),
+                                                  attr.opens(),
+                                                  attr.uses(),
+                                                  attr.provides()));
+            } else {
+                builder.accept(element);
+            }
+        });
+
+        try (OutputStream out = Files.newOutputStream(modifiedModuleInfo)) {
+            out.write(newBytes);
+        }
+
+        Path src = base.resolve("src");
+        Path classes = base.resolve("classes");
+
+        tb.writeJavaFiles(src,
+                          """
+                          public class C {}
+                          """);
+
+        Files.createDirectories(classes);
+
+        List<String> actualErrors =
+            new JavacTask(tb)
+                .options("--module-path", libClasses.toString(),
+                         "--add-modules", "m",
+                         "-XDshould-stop.at=FLOW",
+                         "-XDdev",
+                         "-XDrawDiagnostics")
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+        List<String> expectedErrors = List.of(
+            "- compiler.err.cant.access: m.module-info, (compiler.misc.bad.class.file.header: module-info.class, (compiler.misc.bad.requires.flag: ACC_STATIC_PHASE (0x0040)))",
+            "1 error"
+        );
+
+        if (!expectedErrors.equals(actualErrors)) {
+            throw new AssertionError("Unexpected errors, expected: " + expectedErrors +
+                                     ", but got: " + actualErrors);
         }
     }
 

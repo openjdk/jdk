@@ -949,9 +949,6 @@ public class Properties extends Hashtable<Object,Object> {
     }
 
     private static void writeDateComment(BufferedWriter bw) throws IOException {
-        // value of java.properties.date system property isn't sensitive
-        // and so doesn't need any security manager checks to make the value accessible
-        // to the callers
         String sysPropVal = StaticProperty.javaPropertiesDate();
         if (sysPropVal != null && !sysPropVal.isEmpty()) {
             writeComments(bw, sysPropVal);

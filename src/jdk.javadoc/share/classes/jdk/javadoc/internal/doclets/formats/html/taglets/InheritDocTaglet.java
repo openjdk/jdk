@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,12 @@ import com.sun.source.util.DocTreePath;
 
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
-import jdk.javadoc.internal.doclets.formats.html.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.Content;
 
 /**
  * A taglet that represents the {@code {@inheritDoc}} tag.
@@ -128,12 +128,12 @@ public class InheritDocTaglet extends BaseTaglet {
                     d = docFinder.search(src, m -> extractMainDescription(m, isFirstSentence, utils));
                 }
                 if (d instanceof Result.Conclude<Documentation> doc) {
-                    replacement = writer.commentTagsToOutput(doc.value().method, null,
+                    replacement = writer.commentTagsToOutput(doc.value().method, inheritDoc,
                             doc.value().mainDescription, isFirstSentence);
                 }
             } catch (DocFinder.NoOverriddenMethodFound e) {
                 String signature = utils.getSimpleName(method)
-                        + utils.flatSignature(method, writer.getCurrentPageElement());
+                        + utils.flatSignature(method, writer.getCurrentTypeElement());
                 messages.warning(method, "doclet.noInheritedDoc", signature);
             }
             return replacement;
@@ -157,7 +157,7 @@ public class InheritDocTaglet extends BaseTaglet {
             }
         } else {
             String signature = utils.getSimpleName(method)
-                    + utils.flatSignature(method, writer.getCurrentPageElement());
+                    + utils.flatSignature(method, writer.getCurrentTypeElement());
             messages.warning(method, "doclet.noInheritedDoc", signature);
         }
         return replacement;

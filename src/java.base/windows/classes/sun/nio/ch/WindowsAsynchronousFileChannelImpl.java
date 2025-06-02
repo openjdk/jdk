@@ -25,6 +25,8 @@
 
 package sun.nio.ch;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.channels.*;
 import java.util.concurrent.*;
 import java.nio.ByteBuffer;
@@ -34,6 +36,7 @@ import java.io.FileDescriptor;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.event.FileForceEvent;
+import jdk.internal.invoke.MhUtil;
 
 /**
  * Windows implementation of AsynchronousFileChannel using overlapped I/O.
@@ -383,10 +386,13 @@ public class WindowsAsynchronousFileChannelImpl
      * Task that initiates read operation and handles completion result.
      */
     private class ReadTask<A> implements Runnable, Iocp.ResultHandler {
+        private static final VarHandle RELEASED = MhUtil.findVarHandle(MethodHandles.lookup(),
+                "released", boolean.class);
         private final ByteBuffer dst;
         private final int pos, rem;     // buffer position/remaining
         private final long position;    // file position
         private final PendingFuture<Integer,A> result;
+        private volatile boolean released;
 
         // set to dst if direct; otherwise set to substituted direct buffer
         private volatile ByteBuffer buf;
@@ -405,8 +411,9 @@ public class WindowsAsynchronousFileChannelImpl
         }
 
         void releaseBufferIfSubstituted() {
-            if (buf != dst)
+            if (buf != dst && RELEASED.compareAndSet(this, false, true)) {
                 Util.releaseTemporaryDirectBuffer(buf);
+            }
         }
 
         void updatePosition(int bytesTransferred) {
@@ -569,10 +576,13 @@ public class WindowsAsynchronousFileChannelImpl
      * Task that initiates write operation and handles completion result.
      */
     private class WriteTask<A> implements Runnable, Iocp.ResultHandler {
+        private static final VarHandle RELEASED = MhUtil.findVarHandle(MethodHandles.lookup(),
+                "released", boolean.class);
         private final ByteBuffer src;
         private final int pos, rem;     // buffer position/remaining
         private final long position;    // file position
         private final PendingFuture<Integer,A> result;
+        private volatile boolean released;
 
         // set to src if direct; otherwise set to substituted direct buffer
         private volatile ByteBuffer buf;
@@ -591,8 +601,9 @@ public class WindowsAsynchronousFileChannelImpl
         }
 
         void releaseBufferIfSubstituted() {
-            if (buf != src)
+            if (buf != src && RELEASED.compareAndSet(this, false, true)) {
                 Util.releaseTemporaryDirectBuffer(buf);
+            }
         }
 
         void updatePosition(int bytesTransferred) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/altHashing.hpp"
@@ -166,7 +165,7 @@ void Symbol::print_symbol_on(outputStream* st) const {
 
 char* Symbol::as_quoted_ascii() const {
   const char *ptr = (const char *)&_body[0];
-  int quoted_length = UTF8::quoted_ascii_length(ptr, utf8_length());
+  size_t quoted_length = UTF8::quoted_ascii_length(ptr, utf8_length());
   char* result = NEW_RESOURCE_ARRAY(char, quoted_length + 1);
   UTF8::as_quoted_ascii(ptr, utf8_length(), result, quoted_length + 1);
   return result;
@@ -368,8 +367,8 @@ void Symbol::make_permanent() {
 }
 
 void Symbol::metaspace_pointers_do(MetaspaceClosure* it) {
-  if (log_is_enabled(Trace, cds)) {
-    LogStream trace_stream(Log(cds)::trace());
+  if (log_is_enabled(Trace, aot)) {
+    LogStream trace_stream(Log(aot)::trace());
     trace_stream.print("Iter(Symbol): %p ", this);
     print_value_on(&trace_stream);
     trace_stream.cr();

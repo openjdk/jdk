@@ -51,8 +51,9 @@ public class SigInteropPSS2 extends PKCS11Test {
     @Override
     public void main(Provider p) throws Exception {
 
-        Provider sunRsaSign = Security.getProvider("SunRsaSign");
-        Security.removeProvider("SunRsaSign");
+        String providerName = System.getProperty("test.provider.name", "SunRsaSign");
+        Provider sunRsaSign = Security.getProvider(providerName);
+        Security.removeProvider(providerName);
 
         Signature sigPkcs11;
         Signature sigSunRsaSign =

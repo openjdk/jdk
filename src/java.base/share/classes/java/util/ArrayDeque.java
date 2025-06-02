@@ -38,6 +38,7 @@ import java.io.Serializable;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.ArraysSupport;
 
 /**
  * Resizable-array implementation of the {@link Deque} interface.  Array
@@ -124,12 +125,9 @@ public class ArrayDeque<E> extends AbstractCollection<E>
     transient int tail;
 
     /**
-     * The maximum size of array to allocate.
-     * Some VMs reserve some header words in an array.
-     * Attempts to allocate larger arrays may result in
-     * OutOfMemoryError: Requested array size exceeds VM limit
+     * The maximum size of array to allocate
      */
-    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+    private static final int MAX_ARRAY_SIZE = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 
     /**
      * Increases the capacity of this deque by at least the given amount.

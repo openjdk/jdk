@@ -30,16 +30,16 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.constant.ClassDesc;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-import java.lang.classfile.ClassHierarchyResolver;
-
+import static java.lang.classfile.ClassFile.ACC_INTERFACE;
+import static java.lang.classfile.constantpool.PoolEntry.*;
 import static java.lang.constant.ConstantDescs.CD_Object;
-import static java.lang.classfile.ClassFile.*;
 import static java.util.Objects.requireNonNull;
 import static jdk.internal.constant.ConstantUtils.referenceClassDesc;
 
@@ -174,10 +174,10 @@ public final class ClassHierarchyImpl {
                     switch (tag = in.readUnsignedByte()) {
                         case TAG_UTF8 -> cpStrings[i] = in.readUTF();
                         case TAG_CLASS -> cpClasses[i] = in.readUnsignedShort();
-                        case TAG_STRING, TAG_METHODTYPE, TAG_MODULE, TAG_PACKAGE -> in.skipBytes(2);
-                        case TAG_METHODHANDLE -> in.skipBytes(3);
-                        case TAG_INTEGER, TAG_FLOAT, TAG_FIELDREF, TAG_METHODREF, TAG_INTERFACEMETHODREF,
-                                TAG_NAMEANDTYPE, TAG_CONSTANTDYNAMIC, TAG_INVOKEDYNAMIC -> in.skipBytes(4);
+                        case TAG_STRING, TAG_METHOD_TYPE, TAG_MODULE, TAG_PACKAGE -> in.skipBytes(2);
+                        case TAG_METHOD_HANDLE -> in.skipBytes(3);
+                        case TAG_INTEGER, TAG_FLOAT, TAG_FIELDREF, TAG_METHODREF, TAG_INTERFACE_METHODREF,
+                             TAG_NAME_AND_TYPE, TAG_DYNAMIC, TAG_INVOKE_DYNAMIC -> in.skipBytes(4);
                         case TAG_LONG, TAG_DOUBLE -> {
                             in.skipBytes(8);
                             i++;
@@ -204,9 +204,9 @@ public final class ClassHierarchyImpl {
             map = HashMap.newHashMap(interfaceNames.size() + classToSuperClass.size() + 1);
             map.put(CD_Object, ClassHierarchyInfoImpl.OBJECT_INFO);
             for (var e : classToSuperClass.entrySet())
-                map.put(e.getKey(), ClassHierarchyInfo.ofClass(e.getValue()));
+                map.put(requireNonNull(e.getKey()), ClassHierarchyInfo.ofClass(e.getValue()));
             for (var i : interfaceNames)
-                map.put(i, ClassHierarchyInfo.ofInterface());
+                map.put(requireNonNull(i), ClassHierarchyInfo.ofInterface());
         }
 
         @Override

@@ -63,7 +63,7 @@ public class objmonusage001 {
         }
         // Virtual threads are not supported by GetObjectMonitorUsage.
         // Correct the expected values if the test is executed with
-        // JTREG_TEST_THREAD_FACTORY=Virtual.
+        // JTREG="TEST_THREAD_FACTORY=Virtual".
         Thread expOwner = mainThread.isVirtual() ? null : mainThread;
         int expEntryCount = mainThread.isVirtual() ? 0 : 1;
 
@@ -157,7 +157,7 @@ class objmonusage001a extends Thread {
     public void run() {
         // Virtual threads are not supported by GetObjectMonitorUsage.
         // Correct the expected values if the test is executed with
-        // JTREG_TEST_THREAD_FACTORY=Virtual.
+        // JTREG="TEST_THREAD_FACTORY=Virtual".
         Thread expOwner = this.isVirtual() ? null : this;
         Thread expNotifyWaiter = mainThread.isVirtual() ? null : mainThread;
         int expEntryCount = this.isVirtual() ? 0 : 1;

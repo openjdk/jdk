@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-// no precompiled headers
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
@@ -36,8 +35,6 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #if INCLUDE_ZGC
-#include "gc/x/xBarrierSetRuntime.hpp"
-#include "gc/x/xThreadLocalData.hpp"
 #include "gc/z/zBarrierSetRuntime.hpp"
 #include "gc/z/zThreadLocalData.hpp"
 #endif
@@ -55,7 +52,13 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/resourceHash.hpp"
+#if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#endif
 
+int CompilerToVM::Data::oopDesc_klass_offset_in_bytes;
+int CompilerToVM::Data::arrayOopDesc_length_offset_in_bytes;
 
 int CompilerToVM::Data::Klass_vtable_start_offset;
 int CompilerToVM::Data::Klass_vtable_length_offset;
@@ -68,6 +71,7 @@ address CompilerToVM::Data::SharedRuntime_deopt_blob_unpack;
 address CompilerToVM::Data::SharedRuntime_deopt_blob_unpack_with_exception_in_tls;
 address CompilerToVM::Data::SharedRuntime_deopt_blob_uncommon_trap;
 address CompilerToVM::Data::SharedRuntime_polling_page_return_handler;
+address CompilerToVM::Data::SharedRuntime_throw_delayed_StackOverflowError_entry;
 
 address CompilerToVM::Data::nmethod_entry_barrier;
 int CompilerToVM::Data::thread_disarmed_guard_value_offset;
@@ -85,6 +89,11 @@ address CompilerToVM::Data::ZBarrierSetRuntime_clone;
 address CompilerToVM::Data::ZPointerVectorLoadBadMask_address;
 address CompilerToVM::Data::ZPointerVectorStoreBadMask_address;
 address CompilerToVM::Data::ZPointerVectorStoreGoodMask_address;
+
+#if INCLUDE_SHENANDOAHGC
+address CompilerToVM::Data::shenandoah_in_cset_fast_test_addr;
+int CompilerToVM::Data::shenandoah_region_size_bytes_shift;
+#endif
 
 bool CompilerToVM::Data::continuations_enabled;
 
@@ -116,6 +125,7 @@ int CompilerToVM::Data::cardtable_shift;
 
 #ifdef X86
 int CompilerToVM::Data::L1_line_size;
+bool CompilerToVM::Data::supports_avx512_simd_sort;
 #endif
 
 size_t CompilerToVM::Data::vm_page_size;
@@ -134,6 +144,8 @@ int CompilerToVM::Data::sizeof_ZStoreBarrierEntry = sizeof(ZStoreBarrierEntry);
 address CompilerToVM::Data::dsin;
 address CompilerToVM::Data::dcos;
 address CompilerToVM::Data::dtan;
+address CompilerToVM::Data::dtanh;
+address CompilerToVM::Data::dcbrt;
 address CompilerToVM::Data::dexp;
 address CompilerToVM::Data::dlog;
 address CompilerToVM::Data::dlog10;
@@ -147,6 +159,9 @@ int CompilerToVM::Data::data_section_item_alignment;
 JVMTI_ONLY( int* CompilerToVM::Data::_should_notify_object_alloc; )
 
 void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
+  oopDesc_klass_offset_in_bytes = oopDesc::klass_offset_in_bytes();
+  arrayOopDesc_length_offset_in_bytes = arrayOopDesc::length_offset_in_bytes();
+
   Klass_vtable_start_offset = in_bytes(Klass::vtable_start_offset());
   Klass_vtable_length_offset = in_bytes(Klass::vtable_length_offset());
 
@@ -158,35 +173,20 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   SharedRuntime_deopt_blob_unpack_with_exception_in_tls = SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
   SharedRuntime_deopt_blob_uncommon_trap = SharedRuntime::deopt_blob()->uncommon_trap();
   SharedRuntime_polling_page_return_handler = SharedRuntime::polling_page_return_handler_blob()->entry_point();
+  SharedRuntime_throw_delayed_StackOverflowError_entry = SharedRuntime::throw_delayed_StackOverflowError_entry();
 
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm != nullptr) {
-    thread_disarmed_guard_value_offset = in_bytes(bs_nm->thread_disarmed_guard_value_offset());
-    nmethod_entry_barrier = StubRoutines::method_entry_barrier();
-    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-    AARCH64_ONLY(BarrierSetAssembler_nmethod_patching_type = (int) bs_asm->nmethod_patching_type());
-    AARCH64_ONLY(BarrierSetAssembler_patching_epoch_addr = bs_asm->patching_epoch_addr());
-  }
+  thread_disarmed_guard_value_offset = in_bytes(bs_nm->thread_disarmed_guard_value_offset());
+  nmethod_entry_barrier = StubRoutines::method_entry_barrier();
+  BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+  AARCH64_ONLY(BarrierSetAssembler_nmethod_patching_type = (int) bs_asm->nmethod_patching_type());
+  AARCH64_ONLY(BarrierSetAssembler_patching_epoch_addr = bs_asm->patching_epoch_addr());
 
 #if INCLUDE_ZGC
   if (UseZGC) {
-    if (ZGenerational) {
-      ZPointerVectorLoadBadMask_address   = (address) &ZPointerVectorLoadBadMask;
-      ZPointerVectorStoreBadMask_address  = (address) &ZPointerVectorStoreBadMask;
-      ZPointerVectorStoreGoodMask_address = (address) &ZPointerVectorStoreGoodMask;
-    } else {
-      thread_address_bad_mask_offset = in_bytes(XThreadLocalData::address_bad_mask_offset());
-      // Initialize the old names for compatibility.  The proper XBarrierSetRuntime names are
-      // exported as addresses in vmStructs_jvmci.cpp as are the new ZBarrierSetRuntime names.
-      ZBarrierSetRuntime_load_barrier_on_oop_field_preloaded              = XBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr();
-      ZBarrierSetRuntime_load_barrier_on_weak_oop_field_preloaded         = XBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded_addr();
-      ZBarrierSetRuntime_load_barrier_on_phantom_oop_field_preloaded      = XBarrierSetRuntime::load_barrier_on_phantom_oop_field_preloaded_addr();
-      ZBarrierSetRuntime_weak_load_barrier_on_oop_field_preloaded         = XBarrierSetRuntime::weak_load_barrier_on_oop_field_preloaded_addr();
-      ZBarrierSetRuntime_weak_load_barrier_on_weak_oop_field_preloaded    = XBarrierSetRuntime::weak_load_barrier_on_weak_oop_field_preloaded_addr();
-      ZBarrierSetRuntime_weak_load_barrier_on_phantom_oop_field_preloaded = XBarrierSetRuntime::weak_load_barrier_on_phantom_oop_field_preloaded_addr();
-      ZBarrierSetRuntime_load_barrier_on_oop_array                        = XBarrierSetRuntime::load_barrier_on_oop_array_addr();
-      ZBarrierSetRuntime_clone                                            = XBarrierSetRuntime::clone_addr();
-    }
+    ZPointerVectorLoadBadMask_address   = (address) &ZPointerVectorLoadBadMask;
+    ZPointerVectorStoreBadMask_address  = (address) &ZPointerVectorStoreBadMask;
+    ZPointerVectorStoreGoodMask_address = (address) &ZPointerVectorStoreGoodMask;
   }
 #endif
 
@@ -238,14 +238,27 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
     assert(base != nullptr, "unexpected byte_map_base");
     cardtable_start_address = base;
     cardtable_shift = CardTable::card_shift();
+#if INCLUDE_SHENANDOAHGC
+  } else if (bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
+    cardtable_start_address = nullptr;
+    cardtable_shift = CardTable::card_shift();
+#endif
   } else {
     // No card mark barriers
-    cardtable_start_address = 0;
+    cardtable_start_address = nullptr;
     cardtable_shift = 0;
   }
 
+#if INCLUDE_SHENANDOAHGC
+  if (UseShenandoahGC) {
+    shenandoah_in_cset_fast_test_addr = ShenandoahHeap::in_cset_fast_test_addr();
+    shenandoah_region_size_bytes_shift = ShenandoahHeapRegion::region_size_bytes_shift_jint();
+  }
+#endif
+
 #ifdef X86
   L1_line_size = VM_Version::L1_line_size();
+  supports_avx512_simd_sort = VM_Version::supports_avx512_simd_sort();
 #endif
 
   vm_page_size = os::vm_page_size();
@@ -266,6 +279,20 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   SET_TRIGFUNC(dpow);
 
 #undef SET_TRIGFUNC
+
+#define SET_TRIGFUNC_OR_NULL(name)                              \
+  if (StubRoutines::name() != nullptr) {                        \
+    name = StubRoutines::name();                                \
+  } else {                                                      \
+    name = nullptr;                                             \
+  }
+
+  SET_TRIGFUNC_OR_NULL(dtanh);
+  SET_TRIGFUNC_OR_NULL(dcbrt);
+
+#undef SET_TRIGFUNC_OR_NULL
+
+
 }
 
 static jboolean is_c1_supported(vmIntrinsics::ID id){
@@ -447,6 +474,7 @@ jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
                  strcmp(vmField.typeString, "intptr_t") == 0 ||
                  strcmp(vmField.typeString, "uintptr_t") == 0 ||
                  strcmp(vmField.typeString, "OopHandle") == 0 ||
+                 strcmp(vmField.typeString, "VM_Version::VM_Features") == 0 ||
                  strcmp(vmField.typeString, "size_t") == 0 ||
                  // All foo* types are addresses.
                  vmField.typeString[strlen(vmField.typeString) - 1] == '*') {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
 #include "logging/log.hpp"
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/timer.hpp"
 #include "runtime/os.hpp"
+#include "runtime/timer.hpp"
 
 G1SentinelTask::G1SentinelTask() : G1ServiceTask("Sentinel Task") {
   set_time(max_jlong);

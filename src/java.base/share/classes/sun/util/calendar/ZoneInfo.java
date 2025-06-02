@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
+import java.util.stream.Stream;
 
 /**
  * <code>ZoneInfo</code> is an implementation subclass of {@link
@@ -560,6 +561,27 @@ public class ZoneInfo extends TimeZone {
      */
     public static String[] getAvailableIDs(int rawOffset) {
         return ZoneInfoFile.getZoneIds(rawOffset);
+    }
+
+    /**
+     * Gets all available IDs supported in the Java run-time.
+     *
+     * @return a stream of time zone IDs.
+     */
+    public static Stream<String> availableIDs() {
+        return ZoneInfoFile.zoneIds();
+    }
+
+    /**
+     * Gets all available IDs that have the same value as the
+     * specified raw GMT offset.
+     *
+     * @param rawOffset the GMT offset in milliseconds. This
+     * value should not include any daylight saving time.
+     * @return a stream of time zone IDs.
+     */
+    public static Stream<String> availableIDs(int rawOffset) {
+        return ZoneInfoFile.zoneIds(rawOffset);
     }
 
     /**

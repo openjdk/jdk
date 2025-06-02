@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,6 +158,33 @@ Java_GetXSpace_getSpace0
 #endif
     (*env)->SetLongArrayRegion(env, sizes, 0, 4, array);
     return totalSpaceIsEstimated;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_GetXSpace_isCDDrive
+    (JNIEnv *env, jclass cls, jstring root)
+{
+#ifdef WINDOWS
+    const jchar* strchars = (*env)->GetStringChars(env, root, NULL);
+    if (strchars == NULL) {
+        JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
+                                     "GetStringChars");
+        return JNI_FALSE;
+    }
+
+    LPCWSTR path = (LPCWSTR)strchars;
+    UINT driveType = GetDriveTypeW(path);
+
+    (*env)->ReleaseStringChars(env, root, strchars);
+
+    if (driveType != DRIVE_CDROM) {
+        return JNI_FALSE;
+    }
+
+    return JNI_TRUE;
+#else
+    return JNI_FALSE;
+#endif
 }
 #ifdef __cplusplus
 }

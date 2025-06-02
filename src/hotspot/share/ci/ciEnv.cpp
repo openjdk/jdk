@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciConstant.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciField.hpp"
@@ -43,8 +42,8 @@
 #include "compiler/compilationLog.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
-#include "compiler/compilerEvent.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compilerEvent.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -100,10 +99,6 @@ ciSymbol*        ciEnv::_unloaded_cisymbol = nullptr;
 ciInstanceKlass* ciEnv::_unloaded_ciinstance_klass = nullptr;
 ciObjArrayKlass* ciEnv::_unloaded_ciobjarrayklass = nullptr;
 
-jobject ciEnv::_ArrayIndexOutOfBoundsException_handle = nullptr;
-jobject ciEnv::_ArrayStoreException_handle = nullptr;
-jobject ciEnv::_ClassCastException_handle = nullptr;
-
 #ifndef PRODUCT
 static bool firstEnv = true;
 #endif /* PRODUCT */
@@ -111,7 +106,7 @@ static bool firstEnv = true;
 // ------------------------------------------------------------------
 // ciEnv::ciEnv
 ciEnv::ciEnv(CompileTask* task)
-  : _ciEnv_arena(mtCompiler) {
+  : _ciEnv_arena(mtCompiler, Arena::Tag::tag_cienv) {
   VM_ENTRY_MARK;
 
   // Set up ciEnv::current immediately, for the sake of ciObjectFactory, etc.
@@ -158,10 +153,16 @@ ciEnv::ciEnv(CompileTask* task)
   o = Universe::arithmetic_exception_instance();
   assert(o != nullptr, "should have been initialized");
   _ArithmeticException_instance = get_object(o)->as_instance();
+  o = Universe::array_index_out_of_bounds_exception_instance();
+  assert(o != nullptr, "should have been initialized");
+  _ArrayIndexOutOfBoundsException_instance = get_object(o)->as_instance();
+  o = Universe::array_store_exception_instance();
+  assert(o != nullptr, "should have been initialized");
+  _ArrayStoreException_instance = get_object(o)->as_instance();
+  o = Universe::class_cast_exception_instance();
+  assert(o != nullptr, "should have been initialized");
+  _ClassCastException_instance = get_object(o)->as_instance();
 
-  _ArrayIndexOutOfBoundsException_instance = nullptr;
-  _ArrayStoreException_instance = nullptr;
-  _ClassCastException_instance = nullptr;
   _the_null_string = nullptr;
   _the_min_jint_string = nullptr;
 
@@ -237,7 +238,7 @@ public:
   }
 };
 
-ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler) {
+ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler, Arena::Tag::tag_cienv) {
   ASSERT_IN_VM;
 
   // Set up ciEnv::current immediately, for the sake of ciObjectFactory, etc.
@@ -363,29 +364,6 @@ void ciEnv::cache_dtrace_flags() {
   _dtrace_alloc_probes  = DTraceAllocProbes;
 }
 
-// ------------------------------------------------------------------
-// helper for lazy exception creation
-ciInstance* ciEnv::get_or_create_exception(jobject& handle, Symbol* name) {
-  VM_ENTRY_MARK;
-  if (handle == nullptr) {
-    // Cf. universe.cpp, creation of Universe::_null_ptr_exception_instance.
-    InstanceKlass* ik = SystemDictionary::find_instance_klass(THREAD, name, Handle(), Handle());
-    jobject objh = nullptr;
-    if (ik != nullptr) {
-      oop obj = ik->allocate_instance(THREAD);
-      if (!HAS_PENDING_EXCEPTION)
-        objh = JNIHandles::make_global(Handle(THREAD, obj));
-    }
-    if (HAS_PENDING_EXCEPTION) {
-      CLEAR_PENDING_EXCEPTION;
-    } else {
-      handle = objh;
-    }
-  }
-  oop obj = JNIHandles::resolve(handle);
-  return obj == nullptr? nullptr: get_object(obj)->as_instance();
-}
-
 ciInstanceKlass* ciEnv::get_box_klass_for_primitive_type(BasicType type) {
   switch (type) {
     case T_BOOLEAN: return Boolean_klass();
@@ -401,31 +379,6 @@ ciInstanceKlass* ciEnv::get_box_klass_for_primitive_type(BasicType type) {
       assert(false, "not a primitive: %s", type2name(type));
       return nullptr;
   }
-}
-
-ciInstance* ciEnv::ArrayIndexOutOfBoundsException_instance() {
-  if (_ArrayIndexOutOfBoundsException_instance == nullptr) {
-    _ArrayIndexOutOfBoundsException_instance
-          = get_or_create_exception(_ArrayIndexOutOfBoundsException_handle,
-          vmSymbols::java_lang_ArrayIndexOutOfBoundsException());
-  }
-  return _ArrayIndexOutOfBoundsException_instance;
-}
-ciInstance* ciEnv::ArrayStoreException_instance() {
-  if (_ArrayStoreException_instance == nullptr) {
-    _ArrayStoreException_instance
-          = get_or_create_exception(_ArrayStoreException_handle,
-          vmSymbols::java_lang_ArrayStoreException());
-  }
-  return _ArrayStoreException_instance;
-}
-ciInstance* ciEnv::ClassCastException_instance() {
-  if (_ClassCastException_instance == nullptr) {
-    _ClassCastException_instance
-          = get_or_create_exception(_ClassCastException_handle,
-          vmSymbols::java_lang_ClassCastException());
-  }
-  return _ClassCastException_instance;
 }
 
 ciInstance* ciEnv::the_null_string() {
@@ -508,14 +461,12 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
   }
 
   Handle loader;
-  Handle domain;
   if (accessing_klass != nullptr) {
     loader = Handle(current, accessing_klass->loader());
-    domain = Handle(current, accessing_klass->protection_domain());
   }
 
   Klass* found_klass = require_local ?
-                         SystemDictionary::find_instance_or_array_klass(current, sym, loader, domain) :
+                         SystemDictionary::find_instance_or_array_klass(current, sym, loader) :
                          SystemDictionary::find_constrained_instance_or_array_klass(current, sym, loader);
 
   // If we fail to find an array klass, look again for its element type.
@@ -1208,6 +1159,13 @@ int ciEnv::compile_id() {
 // ciEnv::notice_inlined_method()
 void ciEnv::notice_inlined_method(ciMethod* method) {
   _num_inlined_bytecodes += method->code_size_for_inlining();
+  CompileTrainingData* ctd = task()->training_data();
+  if (ctd != nullptr) {
+    GUARDED_VM_ENTRY({
+      methodHandle mh(Thread::current(), method->get_Method());
+      ctd->notice_inlined_method(task(), mh);
+    });
+  }
 }
 
 // ------------------------------------------------------------------
@@ -1219,6 +1177,15 @@ int ciEnv::num_inlined_bytecodes() const {
 // ------------------------------------------------------------------
 // ciEnv::record_failure()
 void ciEnv::record_failure(const char* reason) {
+  // record the bailout for hserr envlog
+  if (reason != nullptr) {
+    if (CompilationLog::log() != nullptr) {
+      CompilerThread* thread = CompilerThread::current();
+      CompileTask* task = thread->task();
+      CompilationLog::log()->log_failure(thread, task, reason, nullptr);
+    }
+  }
+
   if (_failure_reason.get() == nullptr) {
     // Record the first failure reason.
     _failure_reason.set(reason);
@@ -1643,6 +1610,8 @@ void ciEnv::dump_replay_data_helper(outputStream* out) {
   NoSafepointVerifier no_safepoint;
   ResourceMark rm;
 
+  assert(this->task() != nullptr, "task must not be null");
+
   dump_replay_data_version(out);
 #if INCLUDE_JVMTI
   out->print_cr("JvmtiExport can_access_local_variables %d",     _jvmti_can_access_local_variables);
@@ -1655,13 +1624,13 @@ void ciEnv::dump_replay_data_helper(outputStream* out) {
   GrowableArray<ciMetadata*>* objects = _factory->get_ci_metadata();
   out->print_cr("# %d ciObject found", objects->length());
 
-  // The very first entry is the InstanceKlass of the root method of the current compilation in order to get the right
-  // protection domain to load subsequent classes during replay compilation.
+  // The very first entry is the InstanceKlass of the root method of the current compilation.
   ciInstanceKlass::dump_replay_instanceKlass(out, task()->method()->method_holder());
 
   for (int i = 0; i < objects->length(); i++) {
     objects->at(i)->dump_replay_data(out);
   }
+
   dump_compile_data(out);
   out->flush();
 }

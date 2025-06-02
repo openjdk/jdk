@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,14 @@
  * @test
  * @requires vm.jvmci
  * @library ../../../../../
+ * @library /testlibrary/asm
  * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/AnnotationTestInput.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberDeleted.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberTypeChanged.java
  * @clean jdk.internal.vm.test.AnnotationTestInput$Missing
  * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberDeleted.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.reflect
+ * @modules java.base/jdk.internal.reflect
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
@@ -71,7 +71,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
@@ -144,7 +146,7 @@ public class TestResolvedJavaType extends TypeUniverse {
     public void findInstanceFieldWithOffsetTest() {
         for (Class<?> c : classes) {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
-            Set<Field> reflectionFields = getInstanceFields(c, true);
+            Set<Field> reflectionFields = Set.copyOf(getInstanceFields(c, true));
             for (Field f : reflectionFields) {
                 ResolvedJavaField rf = lookupField(type.getInstanceFields(true), f);
                 assertNotNull(rf);
@@ -192,6 +194,16 @@ public class TestResolvedJavaType extends TypeUniverse {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
             boolean expected = c.isArray();
             boolean actual = type.isArray();
+            assertEquals(expected, actual);
+        }
+    }
+
+    @Test
+    public void isConcreteTest() {
+        for (Class<?> c : classes) {
+            ResolvedJavaType type = metaAccess.lookupJavaType(c);
+            boolean expected = c.isArray() || !isAbstract(c.getModifiers());
+            boolean actual = type.isConcrete();
             assertEquals(expected, actual);
         }
     }
@@ -862,18 +874,20 @@ public class TestResolvedJavaType extends TypeUniverse {
         assertEquals(thisMethod, ucm);
     }
 
-    public static Set<Field> getInstanceFields(Class<?> c, boolean includeSuperclasses) {
+    public static List<Field> getInstanceFields(Class<?> c, boolean includeSuperclasses) {
         if (c.isArray() || c.isPrimitive() || c.isInterface()) {
-            return Collections.emptySet();
+            return List.of();
         }
-        Set<Field> result = new HashSet<>();
+        List<Field> result = new ArrayList<>();
         for (Field f : c.getDeclaredFields()) {
             if (!Modifier.isStatic(f.getModifiers())) {
                 result.add(f);
             }
         }
         if (includeSuperclasses && c != Object.class) {
-            result.addAll(getInstanceFields(c.getSuperclass(), true));
+            List<Field> allFields = getInstanceFields(c.getSuperclass(), true);
+            allFields.addAll(result);
+            result = allFields;
         }
         return result;
     }
@@ -902,7 +916,7 @@ public class TestResolvedJavaType extends TypeUniverse {
         return null;
     }
 
-    public Field lookupField(Set<Field> fields, ResolvedJavaField key) {
+    public Field lookupField(Collection<Field> fields, ResolvedJavaField key) {
         for (Field f : fields) {
             if (fieldsEqual(f, key)) {
                 return f;
@@ -912,14 +926,16 @@ public class TestResolvedJavaType extends TypeUniverse {
     }
 
     private static boolean isHiddenFromReflection(ResolvedJavaField f) {
-        if (f.getDeclaringClass().equals(metaAccess.lookupJavaType(Throwable.class)) && f.getName().equals("backtrace")) {
-            return true;
-        }
         if (f.getDeclaringClass().equals(metaAccess.lookupJavaType(ConstantPool.class)) && f.getName().equals("constantPoolOop")) {
             return true;
         }
         if (f.getDeclaringClass().equals(metaAccess.lookupJavaType(Class.class))) {
-            return f.getName().equals("classLoader") || f.getName().equals("classData");
+            String name = f.getName();
+            return name.equals("classLoader") ||
+                   name.equals("classData") ||
+                   name.equals("modifiers") ||
+                   name.equals("protectionDomain") ||
+                   name.equals("primitive");
         }
         if (f.getDeclaringClass().equals(metaAccess.lookupJavaType(Lookup.class))) {
             return f.getName().equals("allowedModes") || f.getName().equals("lookupClass");
@@ -940,20 +956,28 @@ public class TestResolvedJavaType extends TypeUniverse {
         for (Class<?> c : classes) {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
             for (boolean includeSuperclasses : new boolean[]{true, false}) {
-                Set<Field> expected = getInstanceFields(c, includeSuperclasses);
-                ResolvedJavaField[] actual = type.getInstanceFields(includeSuperclasses);
-                for (Field f : expected) {
-                    assertNotNull(lookupField(actual, f));
+                List<Field> reflectFields = getInstanceFields(c, includeSuperclasses);
+                ResolvedJavaField[] fields = type.getInstanceFields(includeSuperclasses);
+                int reflectFieldIndex = 0;
+                for (int i = 0; i < fields.length; i++) {
+                    ResolvedJavaField field = fields[i];
+                    if (field.isInternal() || isHiddenFromReflection(field)) {
+                        continue;
+                    }
+                    Field reflectField = reflectFields.get(reflectFieldIndex++);
+                    ResolvedJavaField field2 = lookupField(fields, reflectField);
+
+                    assertEquals("ResolvedJavaType.getInstanceFields order differs from Class.getDeclaredFields", field, field2);
                 }
-                for (ResolvedJavaField rf : actual) {
+                for (ResolvedJavaField rf : fields) {
                     if (!isHiddenFromReflection(rf)) {
-                        assertEquals(rf.toString(), lookupField(expected, rf) != null, !rf.isInternal());
+                        assertEquals(rf.toString(), lookupField(reflectFields, rf) != null, !rf.isInternal());
                     }
                 }
 
                 // Test stability of getInstanceFields
-                ResolvedJavaField[] actual2 = type.getInstanceFields(includeSuperclasses);
-                assertArrayEquals(actual, actual2);
+                ResolvedJavaField[] fields2 = type.getInstanceFields(includeSuperclasses);
+                assertArrayEquals(fields, fields2);
             }
         }
     }

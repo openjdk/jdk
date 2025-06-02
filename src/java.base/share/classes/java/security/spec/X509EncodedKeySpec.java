@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package java.security.spec;
 
+import java.security.DEREncodable;
+
 /**
  * This class represents the ASN.1 encoding of a public key,
  * encoded according to the ASN.1 type {@code SubjectPublicKeyInfo}.
@@ -49,8 +51,8 @@ package java.security.spec;
  * @since 1.2
  */
 
-public class X509EncodedKeySpec extends EncodedKeySpec {
-
+public non-sealed class X509EncodedKeySpec extends EncodedKeySpec implements
+    DEREncodable {
     /**
      * Creates a new {@code X509EncodedKeySpec} with the given encoded key.
      *
@@ -73,15 +75,17 @@ public class X509EncodedKeySpec extends EncodedKeySpec {
      * @param encodedKey the key, which is assumed to be
      * encoded according to the X.509 standard. The contents of the
      * array are copied to protect against subsequent modification.
-     * @param algorithm the algorithm name of the encoded public key
-     * See the KeyFactory section in the <a href=
-     * "{@docRoot}/../specs/security/standard-names.html#keyfactory-algorithms">
+     * @param algorithm the algorithm name of the encoded public key.
+     * See the AsymmetricKey Algorithms section in the
+     * <a href="{@docRoot}/../specs/security/standard-names.html#asymmetrickey-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
-     * for information about standard algorithm names.
+     * for information about standard asymmetric key algorithm names.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @throws NullPointerException if {@code encodedKey}
      * or {@code algorithm} is null.
      * @throws IllegalArgumentException if {@code algorithm} is
      * the empty string {@code ""}
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @since 9
      */
     public X509EncodedKeySpec(byte[] encodedKey, String algorithm) {

@@ -24,6 +24,7 @@
  */
 package java.util.stream;
 
+import jdk.internal.invoke.MhUtil;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.invoke.MethodHandles;
@@ -44,7 +45,7 @@ import java.util.stream.Gatherer.Integrator;
  * The performance-critical code below contains some more complicated encodings:
  * therefore, make sure to run benchmarks to verify changes to prevent regressions.
  *
- * @since 22
+ * @since 24
  */
 final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
     @SuppressWarnings("unchecked")
@@ -149,7 +150,7 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
             final var initializer = gatherer.initializer();
             if (initializer != Gatherer.defaultInitializer()) // Optimization
                 state = initializer.get();
-            sink.begin(size);
+            sink.begin(-1); // GathererOp does not know the size of the output
         }
 
         @Override
@@ -453,16 +454,8 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
             private Spliterator<T> spliterator;
             private Hybrid next;
 
-            private static final VarHandle NEXT;
-
-            static {
-                try {
-                    MethodHandles.Lookup l = MethodHandles.lookup();
-                    NEXT = l.findVarHandle(Hybrid.class, "next", Hybrid.class);
-                } catch (Exception e) {
-                    throw new InternalError(e);
-                }
-            }
+            private static final VarHandle NEXT = MhUtil.findVarHandle(
+                    MethodHandles.lookup(), "next", Hybrid.class);
 
             protected Hybrid(Spliterator<T> spliterator) {
                 super(null);

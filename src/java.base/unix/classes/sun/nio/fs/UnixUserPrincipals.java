@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,11 +132,6 @@ public class UnixUserPrincipals {
     private static int lookupName(String name, boolean isGroup)
         throws IOException
     {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("lookupUserInformation"));
-        }
         int id;
         try {
             id = (isGroup) ? getgrnam(name) : getpwnam(name);

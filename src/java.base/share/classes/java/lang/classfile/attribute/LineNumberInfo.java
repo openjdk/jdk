@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,18 @@
  */
 package java.lang.classfile.attribute;
 
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.instruction.LineNumber;
+
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models a single line number in the {@link LineNumberTableAttribute}.
+ * Models a single line number entry in the {@link LineNumberTableAttribute}.
  *
- * @since 22
+ * @see LineNumberTableAttribute#lineNumbers()
+ * @see LineNumber
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface LineNumberInfo
         permits UnboundAttribute.UnboundLineNumberInfo {
 
@@ -49,6 +52,12 @@ public sealed interface LineNumberInfo
 
     /**
      * {@return a line number description}
+     *
+     * @apiNote
+     * The created entry cannot be written to a {@link CodeBuilder}.  Call
+     * {@link CodeBuilder#lineNumber CodeBuilder::lineNumber} in the correct
+     * order instead.
+     *
      * @param startPc the starting index of the code array for this line
      * @param lineNumber the line number within the original source file
      */

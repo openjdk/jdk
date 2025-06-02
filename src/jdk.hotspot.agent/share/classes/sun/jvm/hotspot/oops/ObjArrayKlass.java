@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,19 +59,6 @@ public class ObjArrayKlass extends ArrayKlass {
 
   public Klass getElementKlass() { return (Klass) elementKlass.getValue(this); }
   public Klass getBottomKlass()  { return (Klass) bottomKlass.getValue(this); }
-
-  public long computeModifierFlags() {
-    long elementFlags = getElementKlass().computeModifierFlags();
-    long arrayFlags = 0L;
-    if ((elementFlags & (JVM_ACC_PUBLIC | JVM_ACC_PROTECTED)) != 0) {
-       // The array type is public if the component type is public or protected
-       arrayFlags = JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
-    } else {
-       // The array type is private if the component type is private
-       arrayFlags = JVM_ACC_ABSTRACT | JVM_ACC_FINAL;
-    }
-    return arrayFlags;
-  }
 
   public void iterateFields(MetadataVisitor visitor) {
     super.iterateFields(visitor);

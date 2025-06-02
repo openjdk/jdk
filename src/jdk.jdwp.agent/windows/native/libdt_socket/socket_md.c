@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+#include <stdlib.h>
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -88,30 +89,21 @@ static struct {
     { WSA_OPERATION_ABORTED,    "Overlapped operation aborted" },
 };
 
+static void dbgsysAtExitCallback(void)
+{
+    WSACleanup();
+}
 
-/*
- * Initialize Windows Sockets API support
- */
-BOOL WINAPI
-DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved)
+/* Perform platform specific initialization.
+ * Returns 0 on success, non-0 on failure */
+int
+dbgsysPlatformInit()
 {
     WSADATA wsadata;
 
-    switch (reason) {
-        case DLL_PROCESS_ATTACH:
-            if (WSAStartup(MAKEWORD(2,2), &wsadata) != 0) {
-                return FALSE;
-            }
-            break;
+    atexit(dbgsysAtExitCallback);
 
-        case DLL_PROCESS_DETACH:
-            WSACleanup();
-            break;
-
-        default:
-            break;
-    }
-    return TRUE;
+    return WSAStartup(MAKEWORD(2,2), &wsadata);
 }
 
 /*

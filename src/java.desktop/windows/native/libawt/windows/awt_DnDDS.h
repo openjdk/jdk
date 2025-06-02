@@ -53,33 +53,33 @@ class AwtDragSource : virtual public IDropSource, virtual public IDataObject {
 
         // IUnknown
 
-        virtual HRESULT __stdcall QueryInterface(REFIID riid, void __RPC_FAR *__RPC_FAR *ppvObject);
+        virtual HRESULT QueryInterface(REFIID riid, void __RPC_FAR *__RPC_FAR *ppvObject);
 
-        virtual ULONG   __stdcall AddRef(void);
-        virtual ULONG   __stdcall Release(void);
+        virtual ULONG   AddRef(void);
+        virtual ULONG   Release(void);
 
         // IDropSource
 
-        virtual HRESULT __stdcall QueryContinueDrag(BOOL fEscapeKeyPressed, DWORD grfKeyState);
+        virtual HRESULT QueryContinueDrag(BOOL fEscapeKeyPressed, DWORD grfKeyState);
 
-        virtual HRESULT __stdcall GiveFeedback(DWORD dwEffect);
+        virtual HRESULT GiveFeedback(DWORD dwEffect);
 
         // IDataObject
 
-        virtual HRESULT __stdcall GetData(FORMATETC __RPC_FAR *pFormatEtc, STGMEDIUM __RPC_FAR *pmedium);
-        virtual HRESULT __stdcall GetDataHere(FORMATETC __RPC_FAR *pFormatEtc, STGMEDIUM __RPC_FAR *pmedium);
+        virtual HRESULT GetData(FORMATETC __RPC_FAR *pFormatEtc, STGMEDIUM __RPC_FAR *pmedium);
+        virtual HRESULT GetDataHere(FORMATETC __RPC_FAR *pFormatEtc, STGMEDIUM __RPC_FAR *pmedium);
 
-        virtual HRESULT __stdcall QueryGetData(FORMATETC __RPC_FAR *pFormatEtc);
+        virtual HRESULT QueryGetData(FORMATETC __RPC_FAR *pFormatEtc);
 
-        virtual HRESULT __stdcall GetCanonicalFormatEtc(FORMATETC __RPC_FAR *pFormatEtcIn, FORMATETC __RPC_FAR *pFormatEtcOut);
+        virtual HRESULT GetCanonicalFormatEtc(FORMATETC __RPC_FAR *pFormatEtcIn, FORMATETC __RPC_FAR *pFormatEtcOut);
 
-        virtual HRESULT __stdcall SetData(FORMATETC __RPC_FAR *pFormatEtc, STGMEDIUM __RPC_FAR *pmedium, BOOL fRelease);
+        virtual HRESULT SetData(FORMATETC __RPC_FAR *pFormatEtc, STGMEDIUM __RPC_FAR *pmedium, BOOL fRelease);
 
-        virtual HRESULT __stdcall EnumFormatEtc(DWORD dwDirection, IEnumFORMATETC *__RPC_FAR *ppenumFormatEtc);
+        virtual HRESULT EnumFormatEtc(DWORD dwDirection, IEnumFORMATETC *__RPC_FAR *ppenumFormatEtc);
 
-        virtual HRESULT __stdcall DAdvise(FORMATETC __RPC_FAR *pFormatEtc, DWORD advf, IAdviseSink __RPC_FAR *pAdvSink, DWORD __RPC_FAR *pdwConnection);
-        virtual HRESULT __stdcall DUnadvise(DWORD dwConnection);
-        virtual HRESULT __stdcall EnumDAdvise(IEnumSTATDATA __RPC_FAR *__RPC_FAR *ppenumAdvise);
+        virtual HRESULT DAdvise(FORMATETC __RPC_FAR *pFormatEtc, DWORD advf, IAdviseSink __RPC_FAR *pAdvSink, DWORD __RPC_FAR *pdwConnection);
+        virtual HRESULT DUnadvise(DWORD dwConnection);
+        virtual HRESULT EnumDAdvise(IEnumSTATDATA __RPC_FAR *__RPC_FAR *ppenumAdvise);
 
 
         // AwtDragSource
@@ -104,7 +104,7 @@ class AwtDragSource : virtual public IDropSource, virtual public IDataObject {
 
         INLINE void Signal() { ::ReleaseMutex(m_mutex); }
 
-        virtual HRESULT __stdcall GetProcessId(FORMATETC __RPC_FAR *pFormatEtc, STGMEDIUM __RPC_FAR *pmedium);
+        virtual HRESULT GetProcessId(FORMATETC __RPC_FAR *pFormatEtc, STGMEDIUM __RPC_FAR *pmedium);
 
     protected:
         INLINE void WaitUntilSignalled(BOOL retain) {
@@ -117,14 +117,14 @@ class AwtDragSource : virtual public IDropSource, virtual public IDataObject {
 
         static void _DoDragDrop(void* param);
 
-        HRESULT __stdcall MatchFormatEtc(FORMATETC __RPC_FAR *pFormatEtcIn, FORMATETC *cacheEnt);
+        HRESULT MatchFormatEtc(FORMATETC __RPC_FAR *pFormatEtcIn, FORMATETC *cacheEnt);
 
    private:
 
         void LoadCache(jlongArray formats);
         void UnloadCache();
 
-        static int __cdecl _compar(const void *, const void *);
+        static int _compar(const void *, const void *);
 
         static void call_dSCenter(JNIEnv* env, jobject self, jint targetActions,
                                   jint modifiers, POINT pt);
@@ -151,17 +151,17 @@ class AwtDragSource : virtual public IDropSource, virtual public IDataObject {
 
                 // IUnknown
 
-                virtual HRESULT __stdcall QueryInterface(REFIID riid, void __RPC_FAR *__RPC_FAR *ppvObject);
+                virtual HRESULT QueryInterface(REFIID riid, void __RPC_FAR *__RPC_FAR *ppvObject);
 
-                virtual ULONG   __stdcall AddRef(void);
-                virtual ULONG   __stdcall Release(void);
+                virtual ULONG   AddRef(void);
+                virtual ULONG   Release(void);
 
                 // IEnumFORMATETC
 
-                virtual HRESULT _stdcall Next(ULONG celt, FORMATETC __RPC_FAR *rgelt, ULONG __RPC_FAR *pceltFetched);
-                virtual HRESULT _stdcall Skip(ULONG celt);
-                virtual HRESULT _stdcall Reset();
-                virtual HRESULT _stdcall Clone(IEnumFORMATETC __RPC_FAR *__RPC_FAR *ppenum);
+                virtual HRESULT Next(ULONG celt, FORMATETC __RPC_FAR *rgelt, ULONG __RPC_FAR *pceltFetched);
+                virtual HRESULT Skip(ULONG celt);
+                virtual HRESULT Reset();
+                virtual HRESULT Clone(IEnumFORMATETC __RPC_FAR *__RPC_FAR *ppenum);
 
             private:
                 AwtDragSource*  m_parent;
@@ -181,35 +181,35 @@ class AwtDragSource : virtual public IDropSource, virtual public IDataObject {
 
                 // IUnknown
 
-                virtual HRESULT __stdcall QueryInterface(REFIID riid, void __RPC_FAR *__RPC_FAR *ppvObject);
+                virtual HRESULT QueryInterface(REFIID riid, void __RPC_FAR *__RPC_FAR *ppvObject);
 
-                virtual ULONG   __stdcall AddRef(void);
-                virtual ULONG   __stdcall Release(void);
+                virtual ULONG   AddRef(void);
+                virtual ULONG   Release(void);
 
                 // IStream
 
 
-                virtual  HRESULT __stdcall Read(void __RPC_FAR *pv, ULONG cb, ULONG __RPC_FAR *pcbRead);
+                virtual  HRESULT Read(void __RPC_FAR *pv, ULONG cb, ULONG __RPC_FAR *pcbRead);
 
-                virtual  HRESULT __stdcall Write(const void __RPC_FAR *pv, ULONG cb, ULONG __RPC_FAR *pcbWritten);
+                virtual  HRESULT Write(const void __RPC_FAR *pv, ULONG cb, ULONG __RPC_FAR *pcbWritten);
 
-                virtual  HRESULT __stdcall Seek(LARGE_INTEGER dlibMove, DWORD dwOrigin, ULARGE_INTEGER __RPC_FAR *plibNewPosition);
+                virtual  HRESULT Seek(LARGE_INTEGER dlibMove, DWORD dwOrigin, ULARGE_INTEGER __RPC_FAR *plibNewPosition);
 
-                virtual HRESULT __stdcall SetSize(ULARGE_INTEGER libNewSize);
+                virtual HRESULT SetSize(ULARGE_INTEGER libNewSize);
 
-                virtual  HRESULT __stdcall CopyTo(IStream __RPC_FAR *pstm, ULARGE_INTEGER cb, ULARGE_INTEGER __RPC_FAR *pcbRead, ULARGE_INTEGER __RPC_FAR *pcbWritten);
+                virtual  HRESULT CopyTo(IStream __RPC_FAR *pstm, ULARGE_INTEGER cb, ULARGE_INTEGER __RPC_FAR *pcbRead, ULARGE_INTEGER __RPC_FAR *pcbWritten);
 
-                virtual HRESULT __stdcall Commit(DWORD grfCommitFlags);
+                virtual HRESULT Commit(DWORD grfCommitFlags);
 
-                virtual HRESULT __stdcall Revert();
+                virtual HRESULT Revert();
 
-                virtual HRESULT __stdcall LockRegion(ULARGE_INTEGER libOffset, ULARGE_INTEGER cb, DWORD dwLockType);
+                virtual HRESULT LockRegion(ULARGE_INTEGER libOffset, ULARGE_INTEGER cb, DWORD dwLockType);
 
-                virtual HRESULT __stdcall UnlockRegion(ULARGE_INTEGER libOffset, ULARGE_INTEGER cb, DWORD dwLockType);
+                virtual HRESULT UnlockRegion(ULARGE_INTEGER libOffset, ULARGE_INTEGER cb, DWORD dwLockType);
 
-                virtual HRESULT __stdcall Stat(STATSTG __RPC_FAR *pstatstg, DWORD grfStatFlag);
+                virtual HRESULT Stat(STATSTG __RPC_FAR *pstatstg, DWORD grfStatFlag);
 
-                virtual HRESULT __stdcall Clone(IStream __RPC_FAR *__RPC_FAR *ppstm);
+                virtual HRESULT Clone(IStream __RPC_FAR *__RPC_FAR *ppstm);
             protected:
                 AwtDragSource*   m_parent;
 

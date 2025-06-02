@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,8 @@ public class TestCipherKeyWrapperPBEKey {
     public static void main(String[] args) {
 
         TestCipherKeyWrapperPBEKey test = new TestCipherKeyWrapperPBEKey();
-        Provider sunjce = Security.getProvider("SunJCE");
+        Provider sunjce = Security.getProvider(
+                            System.getProperty("test.provider.name", "SunJCE"));
 
         if (!test.runAll(sunjce, System.out)) {
             throw new RuntimeException("One or more tests have failed....");

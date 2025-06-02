@@ -116,6 +116,7 @@ Java_nsk_share_ReferringObject_createJNILocalReferenceNative(JNIEnv *env,
                 env->ThrowNew(
                     env->FindClass("nsk/share/TestJNIError"),
                     "NewLocalRef return null");
+                return;
         }
 
         klass = env->GetObjectClass(createWicket);
@@ -123,8 +124,11 @@ Java_nsk_share_ReferringObject_createJNILocalReferenceNative(JNIEnv *env,
         // notify another thread that JNI local reference has been created
         env->CallVoidMethod(createWicket,
                             env->GetMethodID(klass, "unlock", "()V"));
+        if (env->ExceptionCheck()) {
+          return;
+        }
 
-        // wait till JNI local reference can be released (it will heppen then we will leave the method)
+        // wait till JNI local reference can be released (it will happen then we will leave the method)
         env->CallVoidMethod(deleteWicket,
                             env->GetMethodID(klass, "waitFor", "()V"));
 }

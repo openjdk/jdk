@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8336010 8336588
+ * @bug 8335935 8336588
  * @summary Testing ClassFile transformations.
  * @run junit TransformTests
  */

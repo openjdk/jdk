@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package jdk.javadoc.internal.doclets.formats.html.taglets;
 
 import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,21 +49,21 @@ import com.sun.source.util.DocTreePath;
 
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.Action;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.ParseException;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.Parser;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.Style;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.StyledText;
-import jdk.javadoc.internal.doclets.formats.html.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 import static jdk.javadoc.internal.doclets.formats.html.taglets.SnippetTaglet.Language.*;
 
@@ -122,66 +120,63 @@ public class SnippetTaglet extends BaseTaglet {
     private Content snippetTagOutput(Element element, SnippetTree tag, StyledText content,
                                        String id, String lang) {
         var pathToRoot = tagletWriter.htmlWriter.pathToRoot;
-        var pre = new HtmlTree(TagName.PRE).setStyle(HtmlStyle.snippet);
+        var pre = HtmlTree.PRE(HtmlStyles.snippet);
         if (id != null && !id.isBlank()) {
             pre.put(HtmlAttr.ID, id);
         } else {
             pre.put(HtmlAttr.ID, config.htmlIds.forSnippet(element, ids).name());
         }
-        var code = new HtmlTree(TagName.CODE)
+        var code = HtmlTree.CODE()
                 .addUnchecked(Text.EMPTY); // Make sure the element is always rendered
         if (lang != null && !lang.isBlank()) {
             code.addStyle("language-" + lang);
         }
-
         content.consumeBy((styles, sequence) -> {
             CharSequence text = Text.normalizeNewlines(sequence);
             if (styles.isEmpty()) {
                 code.add(text);
             } else {
-                Element e = null;
-                String t = null;
-                boolean linkEncountered = false;
+                Element ref = null;
+                String linkTarget = null;
                 boolean markupEncountered = false;
                 Set<String> classes = new HashSet<>();
                 for (Style s : styles) {
-                    if (s instanceof Style.Name n) {
-                        classes.add(n.name());
-                    } else if (s instanceof Style.Link l) {
-                        assert !linkEncountered; // TODO: do not assert; pick the first link report on subsequent
-                        linkEncountered = true;
-                        t = l.target();
-                        e = getLinkedElement(element, t);
-                        if (e == null) {
-                            // TODO: diagnostic output
+                    switch (s) {
+                        case Style.Name n -> classes.add(n.name());
+                        case Style.Link l -> {
+                            if (linkTarget != null) {
+                                messages.error(utils.getCommentHelper(element).getDocTreePath(tag),
+                                        "doclet.error.snippet.ambiguous.link",
+                                        linkTarget,
+                                        l.target(),
+                                        content.asCharSequence().toString().trim());
+                            }
+                            linkTarget = l.target();
+                            ref = getLinkedElement(element, linkTarget);
+                            if (ref == null) {
+                                messages.error(utils.getCommentHelper(element).getDocTreePath(tag),
+                                        "doclet.link.see.reference_not_found",
+                                        linkTarget);
+                            }
                         }
-                    } else if (s instanceof Style.Markup) {
-                        markupEncountered = true;
-                        break;
-                    } else {
-                        // TODO: transform this if...else into an exhaustive
-                        // switch over the sealed Style hierarchy when "Pattern
-                        // Matching for switch" has been implemented (JEP 406
-                        // and friends)
-                        throw new AssertionError(styles);
+                        case Style.Markup m -> markupEncountered = true;
                     }
                 }
                 Content c;
                 if (markupEncountered) {
                     return;
-                } else if (linkEncountered) {
-                    assert e != null;
+                } else if (linkTarget != null) {
                     //disable preview tagging inside the snippets:
                     Utils.PreviewFlagProvider prevPreviewProvider = utils.setPreviewFlagProvider(el -> false);
                     try {
                         var lt = (LinkTaglet) config.tagletManager.getTaglet(DocTree.Kind.LINK);
                         c = lt.linkSeeReferenceOutput(element,
                                 null,
-                                t,
-                                e,
+                                linkTarget,
+                                ref,
                                 false, // TODO: for now
                                 Text.of(sequence.toString()),
-                                (key, args) -> { /* TODO: report diagnostic */ },
+                                (key, args) -> { /* Error has already been reported above */ },
                                 tagletWriter);
                     } finally {
                         utils.setPreviewFlagProvider(prevPreviewProvider);
@@ -196,16 +191,15 @@ public class SnippetTaglet extends BaseTaglet {
         String copyText = resources.getText("doclet.Copy_to_clipboard");
         String copiedText = resources.getText("doclet.Copied_to_clipboard");
         String copySnippetText = resources.getText("doclet.Copy_snippet_to_clipboard");
-        var snippetContainer = HtmlTree.DIV(HtmlStyle.snippetContainer,
-                new HtmlTree(TagName.BUTTON)
+        var snippetContainer = HtmlTree.DIV(HtmlStyles.snippetContainer,
+                HtmlTree.of(HtmlTag.BUTTON)
                         .add(HtmlTree.SPAN(Text.of(copyText))
                                 .put(HtmlAttr.DATA_COPIED, copiedText))
-                        .add(new HtmlTree(TagName.IMG)
-                                .put(HtmlAttr.SRC, pathToRoot.resolve(DocPaths.RESOURCE_FILES)
-                                                             .resolve(DocPaths.CLIPBOARD_SVG).getPath())
-                                .put(HtmlAttr.ALT, copySnippetText))
-                        .addStyle(HtmlStyle.copy)
-                        .addStyle(HtmlStyle.snippetCopy)
+                        .add(HtmlTree.IMG(pathToRoot.resolve(DocPaths.RESOURCE_FILES)
+                                        .resolve(DocPaths.CLIPBOARD_SVG),
+                                copySnippetText))
+                        .addStyle(HtmlStyles.copy)
+                        .addStyle(HtmlStyles.snippetCopy)
                         .put(HtmlAttr.ARIA_LABEL, copySnippetText)
                         .put(HtmlAttr.ONCLICK, "copySnippet(this)"));
         return snippetContainer.add(pre.add(code));

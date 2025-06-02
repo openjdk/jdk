@@ -22,8 +22,6 @@
  */
 package jdk.vm.ci.services;
 
-import static jdk.vm.ci.services.Services.IS_BUILDING_NATIVE_IMAGE;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -61,7 +59,6 @@ public abstract class JVMCIServiceLocator {
      */
     protected JVMCIServiceLocator() {
         this(checkPermission());
-        Services.checkJVMCIEnabled();
         Services.openJVMCITo(getClass().getModule());
     }
 
@@ -71,24 +68,12 @@ public abstract class JVMCIServiceLocator {
      */
     protected abstract <S> S getProvider(Class<S> service);
 
-    private static volatile List<JVMCIServiceLocator> cachedLocators;
-
-    private static Iterable<JVMCIServiceLocator> getJVMCIServiceLocators() {
-        Iterable<JVMCIServiceLocator> result = cachedLocators;
-        if (result != null) {
-            return result;
-        }
-        result = ServiceLoader.load(JVMCIServiceLocator.class, ClassLoader.getSystemClassLoader());
-        if (IS_BUILDING_NATIVE_IMAGE) {
-            ArrayList<JVMCIServiceLocator> l = new ArrayList<>();
-            for (JVMCIServiceLocator locator : result) {
-                l.add(locator);
-            }
-            l.trimToSize();
-            cachedLocators = l;
-            return l;
-        }
-        return result;
+    /**
+     * The available set of locators.
+     */
+    private static final List<JVMCIServiceLocator> locators = new ArrayList<>();
+    static {
+        ServiceLoader.load(JVMCIServiceLocator.class).forEach(locators::add);
     }
 
     /**
@@ -99,14 +84,13 @@ public abstract class JVMCIServiceLocator {
      *             {@link JVMCIPermission}
      */
     public static <S> List<S> getProviders(Class<S> service) {
-        Services.checkJVMCIEnabled();
         @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new JVMCIPermission());
         }
         List<S> providers = new ArrayList<>();
-        for (JVMCIServiceLocator access : getJVMCIServiceLocators()) {
+        for (JVMCIServiceLocator access : locators) {
             S provider = access.getProvider(service);
             if (provider != null) {
                 providers.add(provider);

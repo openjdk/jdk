@@ -36,12 +36,7 @@
                          constraint)                                    \
                                                                         \
   product(bool, UseOprofile, false,                                     \
-        "enable support for Oprofile profiler")                         \
-                                                                        \
-  /*  NB: The default value of UseLinuxPosixThreadCPUClocks may be   */ \
-  /* overridden in Arguments::parse_each_vm_init_arg.                */ \
-  product(bool, UseLinuxPosixThreadCPUClocks, true,                     \
-          "enable fast Linux Posix clocks where available")             \
+        "(Deprecated) enable support for Oprofile profiler")            \
                                                                         \
   product(bool, UseTransparentHugePages, false,                         \
           "Use MADV_HUGEPAGE for large pages")                          \

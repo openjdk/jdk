@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,13 @@
 
 package java.io;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.*;
 import java.nio.charset.Charset;
 import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.io.JdkConsoleImpl;
 import jdk.internal.io.JdkConsoleProvider;
-import jdk.internal.javac.PreviewFeature;
-import jdk.internal.util.StaticProperty;
-import sun.security.action.GetPropertyAction;
+import sun.nio.cs.UTF_8;
 
 /**
  * Methods to access the character-based console device, if any, associated
@@ -62,6 +58,13 @@ import sun.security.action.GetPropertyAction;
  * {@link #printf printf()} as well as the read, format and write operations
  * on the objects returned by {@link #reader()} and {@link #writer()} may
  * block in multithreaded scenarios.
+ * <p>
+ * Read and write operations use the {@code Charset}s specified by
+ * {@link System##stdin.encoding stdin.encoding} and {@link
+ * System##stdout.encoding stdout.encoding}, respectively. The
+ * {@code Charset} used for write operations can also be retrieved using
+ * the {@link #charset()} method. Since {@code Console} is intended for
+ * interactive use on a terminal, these charsets are typically the same.
  * <p>
  * Operations that format strings are locale sensitive, using either the
  * specified {@code Locale}, or the
@@ -148,69 +151,6 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * @return  The reader associated with this console
      */
     public Reader reader() {
-        throw newUnsupportedOperationException();
-    }
-
-    /**
-     * Writes a string representation of the specified object to this console's
-     * output stream, terminates the line using {@link System#lineSeparator()}
-     * and then flushes the console.
-     *
-     * <p> The string representation of the specified object is obtained as if
-     * by calling {@link String#valueOf(Object)}.
-     *
-     * @param  obj
-     *         An object whose string representation is to be written,
-     *         may be {@code null}.
-     *
-     * @return  This console
-     *
-     * @since 23
-     */
-    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
-    public Console println(Object obj) {
-        throw newUnsupportedOperationException();
-    }
-
-    /**
-     * Writes a string representation of the specified object to this console's
-     * output stream and then flushes the console.
-     *
-     * <p> The string representation of the specified object is obtained as if
-     * by calling {@link String#valueOf(Object)}.
-     *
-     * @param  obj
-     *         An object whose string representation is to be written,
-     *         may be {@code null}.
-     *
-     * @return  This console
-     *
-     * @since 23
-     */
-    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
-    public Console print(Object obj) {
-        throw newUnsupportedOperationException();
-    }
-
-    /**
-     * Writes a prompt as if by calling {@code print}, then reads a single line
-     * of text from this console.
-     *
-     * @param  prompt
-     *         A prompt string, may be {@code null}.
-     *
-     * @throws IOError
-     *         If an I/O error occurs.
-     *
-     * @return  A string containing the line read from the console, not
-     *          including any line-termination characters, or {@code null}
-     *          if an end of stream has been reached without having read
-     *          any characters.
-     *
-     * @since 23
-     */
-    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
-    public String readln(String prompt) {
         throw newUnsupportedOperationException();
     }
 
@@ -576,16 +516,15 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     /**
-     * Returns the {@link java.nio.charset.Charset Charset} object used for
-     * the {@code Console}.
+     * {@return the {@link java.nio.charset.Charset Charset} object used for
+     * the write operations on this {@code Console}}
      * <p>
-     * The returned charset corresponds to the input and output source
-     * (e.g., keyboard and/or display) specified by the host environment or user.
-     * It may not necessarily be the same as the default charset returned from
+     * The returned charset is used for encoding the data that is sent to
+     * the output (e.g., display), specified by the host environment or user.
+     * It defaults to the one based on {@link System##stdout.encoding stdout.encoding},
+     * and may not necessarily be the same as the default charset returned from
      * {@link java.nio.charset.Charset#defaultCharset() Charset.defaultCharset()}.
      *
-     * @return a {@link java.nio.charset.Charset Charset} object used for the
-     *          {@code Console}
      * @since 17
      */
     public Charset charset() {
@@ -614,30 +553,13 @@ public sealed class Console implements Flushable permits ProxyingConsole {
                 "Console class itself does not provide implementation");
     }
 
-    private static native String encoding();
     private static final boolean istty = istty();
-    static final Charset CHARSET;
+    private static final Charset STDIN_CHARSET =
+        Charset.forName(System.getProperty("stdin.encoding"), UTF_8.INSTANCE);
+    private static final Charset STDOUT_CHARSET =
+        Charset.forName(System.getProperty("stdout.encoding"), UTF_8.INSTANCE);
+    private static final Console cons = instantiateConsole();
     static {
-        Charset cs = null;
-
-        if (istty) {
-            String csname = encoding();
-            if (csname == null) {
-                csname = GetPropertyAction.privilegedGetProperty("stdout.encoding");
-            }
-            if (csname != null) {
-                cs = Charset.forName(csname, null);
-            }
-        }
-        if (cs == null) {
-            cs = Charset.forName(StaticProperty.nativeEncoding(),
-                    Charset.defaultCharset());
-        }
-
-        CHARSET = cs;
-
-        cons = instantiateConsole();
-
         // Set up JavaIOAccess in SharedSecrets
         SharedSecrets.setJavaIOAccess(new JavaIOAccess() {
             public Console console() {
@@ -646,9 +568,8 @@ public sealed class Console implements Flushable permits ProxyingConsole {
         });
     }
 
-    @SuppressWarnings("removal")
     private static Console instantiateConsole() {
-        Console c;
+        Console c = null;
 
         try {
             /*
@@ -660,35 +581,28 @@ public sealed class Console implements Flushable permits ProxyingConsole {
              * If no providers are available, or instantiation failed, java.base built-in
              * Console implementation is used.
              */
-            c = AccessController.doPrivileged(new PrivilegedAction<Console>() {
-                public Console run() {
-                    var consModName = System.getProperty("jdk.console",
-                            JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME);
+            var consModName = System.getProperty("jdk.console",
+                    JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME);
 
-                    for (var jcp : ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class)) {
-                        if (consModName.equals(jcp.getClass().getModule().getName())) {
-                            var jc = jcp.console(istty, CHARSET);
-                            if (jc != null) {
-                                return new ProxyingConsole(jc);
-                            }
-                            break;
-                        }
+            for (var jcp : ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class)) {
+                if (consModName.equals(jcp.getClass().getModule().getName())) {
+                    var jc = jcp.console(istty, STDIN_CHARSET, STDOUT_CHARSET);
+                    if (jc != null) {
+                        c = new ProxyingConsole(jc);
                     }
-                    return null;
+                    break;
                 }
-            });
+            }
         } catch (ServiceConfigurationError _) {
-            c = null;
         }
 
         // If not found, default to built-in Console
         if (istty && c == null) {
-            c = new ProxyingConsole(new JdkConsoleImpl(CHARSET));
+            c = new ProxyingConsole(new JdkConsoleImpl(STDIN_CHARSET, STDOUT_CHARSET));
         }
 
         return c;
     }
 
-    private static final Console cons;
     private static native boolean istty();
 }

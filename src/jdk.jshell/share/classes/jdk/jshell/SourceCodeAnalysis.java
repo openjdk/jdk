@@ -145,7 +145,8 @@ public abstract class SourceCodeAnalysis {
      * will be {@code "*UNASSOCIATED*"}.
      * The returned snippets are not associated with the
      * {@link JShell} instance, so attempts to pass them to {@code JShell}
-     * methods will throw an {@code IllegalArgumentException}.
+     * methods will throw an {@code IllegalArgumentException}, unless otherwise
+     * noted.
      * They will not appear in queries for snippets --
      * for example, {@link JShell#snippets() }.
      * <p>

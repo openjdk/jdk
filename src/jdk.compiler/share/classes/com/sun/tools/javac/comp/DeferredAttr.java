@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -547,7 +547,7 @@ public class DeferredAttr extends JCTree.Visitor {
             }
 
             DeferredAttrDiagHandler(Log log, JCTree newTree) {
-                super(log, d -> {
+                log.super(d -> {
                     PosScanner posScanner = new PosScanner(d.getDiagnosticPosition());
                     posScanner.scan(newTree);
                     return posScanner.found;

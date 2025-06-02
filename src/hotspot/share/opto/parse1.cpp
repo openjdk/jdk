@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/resourceArea.hpp"
@@ -247,7 +246,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
     Node *displaced_hdr = fetch_interpreter_state((index*2) + 1, T_ADDRESS, monitors_addr, osr_buf);
 
 
-    store_to_memory(control(), box, displaced_hdr, T_ADDRESS, Compile::AliasIdxRaw, MemNode::unordered);
+    store_to_memory(control(), box, displaced_hdr, T_ADDRESS, MemNode::unordered);
 
     // Build a bogus FastLockNode (no code will be generated) and push the
     // monitor into our debug info.
@@ -412,7 +411,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   _wrote_volatile = false;
   _wrote_stable = false;
   _wrote_fields = false;
-  _alloc_with_final = nullptr;
+  _alloc_with_final_or_stable = nullptr;
   _block = nullptr;
   _first_return = true;
   _replaced_nodes_for_exceptions = false;
@@ -642,7 +641,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   // for exiting control flow still refers to the inlined method.
   C->set_default_node_notes(caller_nn);
 
-  if (log)  log->done("parse nodes='%d' live='%d' memory='" SIZE_FORMAT "'",
+  if (log)  log->done("parse nodes='%d' live='%d' memory='%zu'",
                       C->unique(), C->live_nodes(), C->node_arena()->used());
 }
 
@@ -988,8 +987,8 @@ void Parse::do_exits() {
   // Figure out if we need to emit the trailing barrier. The barrier is only
   // needed in the constructors, and only in three cases:
   //
-  // 1. The constructor wrote a final. The effects of all initializations
-  //    must be committed to memory before any code after the constructor
+  // 1. The constructor wrote a final or a @Stable field. All these
+  //    initializations must be ordered before any code after the constructor
   //    publishes the reference to the newly constructed object. Rather
   //    than wait for the publication, we simply block the writes here.
   //    Rather than put a barrier on only those writes which are required
@@ -1014,34 +1013,23 @@ void Parse::do_exits() {
   // exceptional returns, since they cannot publish normally.
   //
   if (method()->is_object_initializer() &&
-       (wrote_final() ||
+       (wrote_final() || wrote_stable() ||
          (AlwaysSafeConstructors && wrote_fields()) ||
          (support_IRIW_for_not_multiple_copy_atomic_cpu && wrote_volatile()))) {
+    Node* recorded_alloc = alloc_with_final_or_stable();
     _exits.insert_mem_bar(UseStoreStoreForCtor ? Op_MemBarStoreStore : Op_MemBarRelease,
-                          alloc_with_final());
+                          recorded_alloc);
 
     // If Memory barrier is created for final fields write
     // and allocation node does not escape the initialize method,
     // then barrier introduced by allocation node can be removed.
-    if (DoEscapeAnalysis && alloc_with_final()) {
-      AllocateNode* alloc = AllocateNode::Ideal_allocation(alloc_with_final());
+    if (DoEscapeAnalysis && (recorded_alloc != nullptr)) {
+      AllocateNode* alloc = AllocateNode::Ideal_allocation(recorded_alloc);
       alloc->compute_MemBar_redundancy(method());
     }
     if (PrintOpto && (Verbose || WizardMode)) {
       method()->print_name();
-      tty->print_cr(" writes finals and needs a memory barrier");
-    }
-  }
-
-  // Any method can write a @Stable field; insert memory barriers
-  // after those also. Can't bind predecessor allocation node (if any)
-  // with barrier because allocation doesn't always dominate
-  // MemBarRelease.
-  if (wrote_stable()) {
-    _exits.insert_mem_bar(Op_MemBarRelease);
-    if (PrintOpto && (Verbose || WizardMode)) {
-      method()->print_name();
-      tty->print_cr(" writes @Stable and needs a memory barrier");
+      tty->print_cr(" writes finals/@Stable and needs a memory barrier");
     }
   }
 
@@ -1662,7 +1650,7 @@ void Parse::merge_new_path(int target_bci) {
 // The ex_oop must be pushed on the stack, unlike throw_to_exit.
 void Parse::merge_exception(int target_bci) {
 #ifdef ASSERT
-  if (target_bci < bci()) {
+  if (target_bci <= bci()) {
     C->set_exception_backedge();
   }
 #endif
@@ -1847,10 +1835,10 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
           // Now _gvn will join that with the meet of current inputs.
           // BOTTOM is never permissible here, 'cause pessimistically
           // Phis of pointers cannot lose the basic pointer type.
-          debug_only(const Type* bt1 = phi->bottom_type());
+          DEBUG_ONLY(const Type* bt1 = phi->bottom_type());
           assert(bt1 != Type::BOTTOM, "should not be building conflict phis");
           map()->set_req(j, _gvn.transform(phi));
-          debug_only(const Type* bt2 = phi->bottom_type());
+          DEBUG_ONLY(const Type* bt2 = phi->bottom_type());
           assert(bt2->higher_equal_speculative(bt1), "must be consistent with type-flow");
           record_for_igvn(phi);
         }
@@ -1948,7 +1936,7 @@ void Parse::ensure_phis_everywhere() {
   // Ensure a phi on all currently known memories.
   for (MergeMemStream mms(merged_memory()); mms.next_non_empty(); ) {
     ensure_memory_phi(mms.alias_idx());
-    debug_only(mms.set_memory());  // keep the iterator happy
+    DEBUG_ONLY(mms.set_memory());  // keep the iterator happy
   }
 
   // Note:  This is our only chance to create phis for memory slices.
@@ -2132,12 +2120,12 @@ void Parse::call_register_finalizer() {
   // finalization.  In general this will fold up since the concrete
   // class is often visible so the access flags are constant.
   Node* klass_addr = basic_plus_adr( receiver, receiver, oopDesc::klass_offset_in_bytes() );
-  Node* klass = _gvn.transform(LoadKlassNode::make(_gvn, nullptr, immutable_memory(), klass_addr, TypeInstPtr::KLASS));
+  Node* klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), klass_addr, TypeInstPtr::KLASS));
 
-  Node* access_flags_addr = basic_plus_adr(klass, klass, in_bytes(Klass::access_flags_offset()));
-  Node* access_flags = make_load(nullptr, access_flags_addr, TypeInt::INT, T_INT, MemNode::unordered);
+  Node* access_flags_addr = basic_plus_adr(klass, klass, in_bytes(Klass::misc_flags_offset()));
+  Node* access_flags = make_load(nullptr, access_flags_addr, TypeInt::UBYTE, T_BOOLEAN, MemNode::unordered);
 
-  Node* mask  = _gvn.transform(new AndINode(access_flags, intcon(JVM_ACC_HAS_FINALIZER)));
+  Node* mask  = _gvn.transform(new AndINode(access_flags, intcon(KlassFlags::_misc_has_finalizer)));
   Node* check = _gvn.transform(new CmpINode(mask, intcon(0)));
   Node* test  = _gvn.transform(new BoolNode(check, BoolTest::ne));
 
@@ -2283,7 +2271,7 @@ void Parse::add_safepoint() {
   Node *polladr;
   Node *thread = _gvn.transform(new ThreadLocalNode());
   Node *polling_page_load_addr = _gvn.transform(basic_plus_adr(top(), thread, in_bytes(JavaThread::polling_page_offset())));
-  polladr = make_load(control(), polling_page_load_addr, TypeRawPtr::BOTTOM, T_ADDRESS, Compile::AliasIdxRaw, MemNode::unordered);
+  polladr = make_load(control(), polling_page_load_addr, TypeRawPtr::BOTTOM, T_ADDRESS, MemNode::unordered);
   sfpnt->init_req(TypeFunc::Parms+0, _gvn.transform(polladr));
 
   // Fix up the JVM State edges

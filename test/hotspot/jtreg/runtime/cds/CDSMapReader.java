@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,12 @@ import java.util.regex.Pattern;
 
 This is a simple parser for parsing the output of
 
-   java -Xshare:dump -Xlog:cds+map=debug,cds+map+oops=trace:file=cds.map:none:filesize=0
+   java -Xshare:dump -Xlog:aot+map=debug,aot+map+oops=trace:file=cds.map:none:filesize=0
 
 The map file contains patterns like this for the heap objects:
 
 ======================================================================
-0x00000000ffe00000: @@ Object (0xffe00000) java.lang.String
+0x00000000ffe00000: @@ Object (0xffe00000) java.lang.String ""
  - klass: 'java/lang/String' 0x0000000800010220
  - fields (3 words):
  - private 'hash' 'I' @12  0 (0x00000000)
@@ -149,11 +149,11 @@ public class CDSMapReader {
 
     // (one address)
     // 0x00000007ffc00000: @@ Object java.lang.String
-    static Pattern objPattern1 = Pattern.compile("^0x([0-9a-f]+): @@ Object (.*)");
+    static Pattern objPattern1 = Pattern.compile("^0x([0-9a-f]+): @@ Object ([^ ]*)");
 
     // (two addresses)
     // 0x00000007ffc00000: @@ Object (0xfff80000) java.lang.String
-    static Pattern objPattern2 = Pattern.compile("^0x([0-9a-f]+): @@ Object [(]0x([0-9a-f]+)[)] (.*)");
+    static Pattern objPattern2 = Pattern.compile("^0x([0-9a-f]+): @@ Object [(]0x([0-9a-f]+)[)] ([^ ]*)");
 
     //  - klass: 'java/lang/String' 0x0000000800010290
     static Pattern instanceObjKlassPattern = Pattern.compile("^ - klass: '([^']+)' 0x([0-9a-f]+)");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import jdk.security.jarsigner.JarSigner;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.JarUtils;
@@ -717,7 +718,8 @@ public class Compatibility {
             String match = "^  ("
                     + "  Signature algorithm: " + signItem.certInfo.
                             expectedSigalg(signItem) + ", " + signItem.certInfo.
-                            expectedKeySize() + "-bit key"
+                            expectedKeySize() + "-bit " + signItem.certInfo.
+                            expectedKeyAlgorithm() + " key"
                     + ")|("
                     + "  Digest algorithm: " + signItem.expectedDigestAlg()
                     + (isWeakAlg(signItem.expectedDigestAlg()) ? " \\(weak\\)" : "")
@@ -1223,6 +1225,12 @@ public class Compatibility {
             }
         }
 
+        private String expectedKeyAlgorithm() {
+            return keyAlgorithm.equals("EC")
+                    ? ("EC .secp" + expectedKeySize() + "r1.")
+                    : keyAlgorithm;
+        }
+
         private int expectedKeySize() {
             if (keySize != 0) return keySize;
 
@@ -1430,7 +1438,9 @@ public class Compatibility {
         String expectedDigestAlg() {
             return digestAlgorithm != null
                     ? digestAlgorithm
-                    : jdkInfo.majorVersion >= 20 ? "SHA-384" : "SHA-256";
+                    : jdkInfo.majorVersion >= 20
+                        ? JarSigner.Builder.getDefaultDigestAlgorithm()
+                        : "SHA-256";
         }
 
         private SignItem tsaDigestAlgorithm(String tsaDigestAlgorithm) {
@@ -1439,7 +1449,11 @@ public class Compatibility {
         }
 
         String expectedTsaDigestAlg() {
-            return tsaDigestAlgorithm != null ? tsaDigestAlgorithm : "SHA-256";
+            return tsaDigestAlgorithm != null
+                    ? tsaDigestAlgorithm
+                    : jdkInfo.majorVersion >= 20
+                        ? JarSigner.Builder.getDefaultDigestAlgorithm()
+                        : "SHA-256";
         }
 
         private SignItem tsaIndex(int tsaIndex) {

@@ -40,7 +40,6 @@ import java.awt.Container;
  * @see java.beans.beancontext.BeanContextSupport
  */
 
-@SuppressWarnings("removal")
 @Deprecated(since = "23", forRemoval = true)
 public interface BeanContextContainerProxy {
 

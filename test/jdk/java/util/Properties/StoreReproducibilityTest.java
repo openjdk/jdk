@@ -59,13 +59,8 @@ public class StoreReproducibilityTest {
             .withZone(ZoneOffset.UTC);
 
     public static void main(final String[] args) throws Exception {
-        // no security manager enabled
-        testWithoutSecurityManager();
-        // security manager enabled and security policy explicitly allows
-        // read permissions on java.properties.date system property
-        testWithSecMgrExplicitPermission();
-        // security manager enabled and no explicit permission on java.properties.date system property
-        testWithSecMgrNoSpecificPermission();
+        // test that store method uses the java.properties.date system property
+        testStoreUsesPropValue();
         // free form non-date value for java.properties.date system property
         testNonDateSysPropValue();
         // blank value for java.properties.date system property
@@ -87,9 +82,8 @@ public class StoreReproducibilityTest {
      * and the output written by each run of this program is verified to be exactly the same.
      * Additionally, the date comment that's written out is verified to be the expected date that
      * corresponds to the passed {@code java.properties.date}.
-     * The launched Java program is run without any security manager
      */
-    private static void testWithoutSecurityManager() throws Exception {
+    private static void testStoreUsesPropValue() throws Exception {
         final List<Path> storedFiles = new ArrayList<>();
         final String sysPropVal = FORMATTER.format(Instant.ofEpochSecond(243535322));
         for (int i = 0; i < 5; i++) {
@@ -97,94 +91,6 @@ public class StoreReproducibilityTest {
             storedFiles.add(tmpFile);
             final ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
-                    StoreTest.class.getName(),
-                    tmpFile.toString(),
-                    i % 2 == 0 ? "--use-outputstream" : "--use-writer");
-            executeJavaProcess(processBuilder);
-            assertExpectedComment(tmpFile, sysPropVal);
-            if (!StoreTest.propsToStore.equals(loadProperties(tmpFile))) {
-                throw new RuntimeException("Unexpected properties stored in " + tmpFile);
-            }
-        }
-        assertAllFileContentsAreSame(storedFiles, sysPropVal);
-    }
-
-    /**
-     * Launches a Java program which is responsible for using Properties.store() to write out the
-     * properties to a file. The launched Java program is passed a value for the
-     * {@code java.properties.date} system property and the date comment written out to the file
-     * is expected to use this value.
-     * The launched Java program is run with the default security manager and is granted
-     * a {@code read} permission on {@code java.properties.date}.
-     * The program is launched multiple times with the same value for {@code java.properties.date}
-     * and the output written by each run of this program is verified to be exactly the same.
-     * Additionally, the date comment that's written out is verified to be the expected date that
-     * corresponds to the passed {@code java.properties.date}.
-     */
-    private static void testWithSecMgrExplicitPermission() throws Exception {
-        final Path policyFile = Files.createTempFile("8231640", ".policy");
-        Files.write(policyFile, Collections.singleton("""
-                grant {
-                    // test writes/stores to a file, so FilePermission
-                    permission java.io.FilePermission "<<ALL FILES>>", "read,write";
-                    // explicitly grant read permission on java.properties.date system property
-                    // to verify store() APIs work fine
-                    permission java.util.PropertyPermission "java.properties.date", "read";
-                };
-                """));
-        final List<Path> storedFiles = new ArrayList<>();
-        final String sysPropVal = FORMATTER.format(Instant.ofEpochSecond(1234342423));
-        for (int i = 0; i < 5; i++) {
-            final Path tmpFile = Files.createTempFile("8231640", ".props");
-            storedFiles.add(tmpFile);
-            final ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(
-                    "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
-                    "-Djava.security.manager",
-                    "-Djava.security.policy=" + policyFile,
-                    StoreTest.class.getName(),
-                    tmpFile.toString(),
-                    i % 2 == 0 ? "--use-outputstream" : "--use-writer");
-            executeJavaProcess(processBuilder);
-            assertExpectedComment(tmpFile, sysPropVal);
-            if (!StoreTest.propsToStore.equals(loadProperties(tmpFile))) {
-                throw new RuntimeException("Unexpected properties stored in " + tmpFile);
-            }
-        }
-        assertAllFileContentsAreSame(storedFiles, sysPropVal);
-    }
-
-    /**
-     * Launches a Java program which is responsible for using Properties.store() to write out the
-     * properties to a file. The launched Java program is passed a value for the
-     * {@code java.properties.date} system property and the date comment written out to the file
-     * is expected to use this value.
-     * The launched Java program is run with the default security manager and is NOT granted
-     * any explicit permission for {@code java.properties.date} system property.
-     * The program is launched multiple times with the same value for {@code java.properties.date}
-     * and the output written by each run of this program is verified to be exactly the same.
-     * Additionally, the date comment that's written out is verified to be the expected date that
-     * corresponds to the passed {@code java.properties.date}.
-     */
-    private static void testWithSecMgrNoSpecificPermission() throws Exception {
-        final Path policyFile = Files.createTempFile("8231640", ".policy");
-        Files.write(policyFile, Collections.singleton("""
-                grant {
-                    // test writes/stores to a file, so FilePermission
-                    permission java.io.FilePermission "<<ALL FILES>>", "read,write";
-                    // no other grants, not even "read" java.properties.date system property.
-                    // test should still work fine and the date comment should correspond to the value of
-                    // java.properties.date system property.
-                };
-                """));
-        final List<Path> storedFiles = new ArrayList<>();
-        final String sysPropVal = FORMATTER.format(Instant.ofEpochSecond(1234342423));
-        for (int i = 0; i < 5; i++) {
-            final Path tmpFile = Files.createTempFile("8231640", ".props");
-            storedFiles.add(tmpFile);
-            final ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(
-                    "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
-                    "-Djava.security.manager",
-                    "-Djava.security.policy=" + policyFile,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");

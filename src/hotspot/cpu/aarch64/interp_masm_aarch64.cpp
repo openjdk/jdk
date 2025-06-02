@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -393,7 +392,13 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
                                               bool verifyoop,
                                               bool generate_poll) {
   if (VerifyActivationFrameSize) {
-    Unimplemented();
+    Label L;
+    sub(rscratch2, rfp, esp);
+    int min_frame_size = (frame::link_offset - frame::interpreter_frame_initial_sp_offset) * wordSize;
+    subs(rscratch2, rscratch2, min_frame_size);
+    br(Assembler::GE, L);
+    stop("broken stack frame");
+    bind(L);
   }
   if (verifyoop) {
     interp_verify_oop(r0, state);
@@ -453,9 +458,10 @@ void InterpreterMacroAssembler::dispatch_via(TosState state, address* table) {
 
 // remove activation
 //
-// Apply stack watermark barrier.
 // Unlock the receiver if this is a synchronized method.
 // Unlock any Java monitors from synchronized blocks.
+// Apply stack watermark barrier.
+// Notify JVMTI.
 // Remove the activation from the stack.
 //
 // If there are locked Java monitors
@@ -465,29 +471,13 @@ void InterpreterMacroAssembler::dispatch_via(TosState state, address* table) {
 //       installs IllegalMonitorStateException
 //    Else
 //       no error processing
-void InterpreterMacroAssembler::remove_activation(
-        TosState state,
-        bool throw_monitor_exception,
-        bool install_monitor_exception,
-        bool notify_jvmdi) {
+void InterpreterMacroAssembler::remove_activation(TosState state,
+                                                  bool throw_monitor_exception,
+                                                  bool install_monitor_exception,
+                                                  bool notify_jvmdi) {
   // Note: Registers r3 xmm0 may be in use for the
   // result check if synchronized method
   Label unlocked, unlock, no_unlock;
-
-  // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
-  // that would normally not be safe to use. Such bad returns into unsafe territory of
-  // the stack, will call InterpreterRuntime::at_unwind.
-  Label slow_path;
-  Label fast_path;
-  safepoint_poll(slow_path, true /* at_return */, false /* acquire */, false /* in_nmethod */);
-  br(Assembler::AL, fast_path);
-  bind(slow_path);
-  push(state);
-  set_last_Java_frame(esp, rfp, (address)pc(), rscratch1);
-  super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), rthread);
-  reset_last_Java_frame(true);
-  pop(state);
-  bind(fast_path);
 
   // get the value of _do_not_unlock_if_synchronized into r3
   const Address do_not_unlock_if_synchronized(rthread,
@@ -497,7 +487,7 @@ void InterpreterMacroAssembler::remove_activation(
 
  // get method access flags
   ldr(r1, Address(rfp, frame::interpreter_frame_method_offset * wordSize));
-  ldr(r2, Address(r1, Method::access_flags_offset()));
+  ldrh(r2, Address(r1, Method::access_flags_offset()));
   tbz(r2, exact_log2(JVM_ACC_SYNCHRONIZED), unlocked);
 
   // Don't unlock anything if the _do_not_unlock_if_synchronized flag
@@ -606,7 +596,24 @@ void InterpreterMacroAssembler::remove_activation(
 
   bind(no_unlock);
 
-  // jvmti support
+  JFR_ONLY(enter_jfr_critical_section();)
+
+  // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
+  // that would normally not be safe to use. Such bad returns into unsafe territory of
+  // the stack, will call InterpreterRuntime::at_unwind.
+  Label slow_path;
+  Label fast_path;
+  safepoint_poll(slow_path, true /* at_return */, false /* acquire */, false /* in_nmethod */);
+  br(Assembler::AL, fast_path);
+  bind(slow_path);
+  push(state);
+  set_last_Java_frame(esp, rfp, pc(), rscratch1);
+  super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), rthread);
+  reset_last_Java_frame(true);
+  pop(state);
+  bind(fast_path);
+
+  // JVMTI support. Make sure the safepoint poll test is issued prior.
   if (notify_jvmdi) {
     notify_method_exit(state, NotifyJVMTI);    // preserve TOSCA
   } else {
@@ -633,6 +640,8 @@ void InterpreterMacroAssembler::remove_activation(
     cmp(rscratch2, rscratch1);
     br(Assembler::LS, no_reserved_zone_enabling);
 
+    JFR_ONLY(leave_jfr_critical_section();)
+
     call_VM_leaf(
       CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), rthread);
     call_VM(noreg, CAST_FROM_FN_PTR(address,
@@ -642,16 +651,33 @@ void InterpreterMacroAssembler::remove_activation(
     bind(no_reserved_zone_enabling);
   }
 
-  // restore sender esp
-  mov(esp, rscratch2);
   // remove frame anchor
   leave();
+
+  JFR_ONLY(leave_jfr_critical_section();)
+
+  // restore sender esp
+  mov(esp, rscratch2);
+
   // If we're returning to interpreted code we will shortly be
   // adjusting SP to allow some space for ESP.  If we're returning to
   // compiled code the saved sender SP was saved in sender_sp, so this
   // restores it.
   andr(sp, esp, -16);
 }
+
+#if INCLUDE_JFR
+void InterpreterMacroAssembler::enter_jfr_critical_section() {
+  const Address sampling_critical_section(rthread, in_bytes(SAMPLING_CRITICAL_SECTION_OFFSET_JFR));
+  mov(rscratch1, true);
+  strb(rscratch1, sampling_critical_section);
+}
+
+void InterpreterMacroAssembler::leave_jfr_critical_section() {
+  const Address sampling_critical_section(rthread, in_bytes(SAMPLING_CRITICAL_SECTION_OFFSET_JFR));
+  strb(zr, sampling_critical_section);
+}
+#endif // INCLUDE_JFR
 
 // Lock object
 //
@@ -666,7 +692,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 {
   assert(lock_reg == c_rarg1, "The argument is only for looks. It must be c_rarg1");
   if (LockingMode == LM_MONITOR) {
-    call_VM(noreg,
+    call_VM_preemptable(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
   } else {
@@ -688,17 +714,18 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     // Load object pointer into obj_reg %c_rarg3
     ldr(obj_reg, Address(lock_reg, obj_offset));
 
-    if (DiagnoseSyncOnValueBasedClasses != 0) {
-      load_klass(tmp, obj_reg);
-      ldrw(tmp, Address(tmp, Klass::access_flags_offset()));
-      tstw(tmp, JVM_ACC_IS_VALUE_BASED_CLASS);
-      br(Assembler::NE, slow_case);
-    }
-
     if (LockingMode == LM_LIGHTWEIGHT) {
-      lightweight_lock(obj_reg, tmp, tmp2, tmp3, slow_case);
-      b(count);
+      lightweight_lock(lock_reg, obj_reg, tmp, tmp2, tmp3, slow_case);
+      b(done);
     } else if (LockingMode == LM_LEGACY) {
+
+      if (DiagnoseSyncOnValueBasedClasses != 0) {
+        load_klass(tmp, obj_reg);
+        ldrb(tmp, Address(tmp, Klass::misc_flags_offset()));
+        tst(tmp, KlassFlags::_misc_is_value_based_class);
+        br(Assembler::NE, slow_case);
+      }
+
       // Load (object->mark() | 1) into swap_reg
       ldr(rscratch1, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       orr(swap_reg, rscratch1, 1);
@@ -747,24 +774,18 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 
       // Save the test result, for recursive case, the result is zero
       str(swap_reg, Address(lock_reg, mark_offset));
-      br(Assembler::EQ, count);
+      br(Assembler::NE, slow_case);
+
+      bind(count);
+      inc_held_monitor_count(rscratch1);
+      b(done);
     }
     bind(slow_case);
 
     // Call the runtime routine for slow case
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      call_VM(noreg,
-              CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter_obj),
-              obj_reg);
-    } else {
-      call_VM(noreg,
-              CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-              lock_reg);
-    }
-    b(done);
-
-    bind(count);
-    increment(Address(rthread, JavaThread::held_monitor_count_offset()));
+    call_VM_preemptable(noreg,
+            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
+            lock_reg);
 
     bind(done);
   }
@@ -810,11 +831,10 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
     // Free entry
     str(zr, Address(lock_reg, BasicObjectLock::obj_offset()));
 
+    Label slow_case;
     if (LockingMode == LM_LIGHTWEIGHT) {
-      Label slow_case;
       lightweight_unlock(obj_reg, header_reg, swap_reg, tmp_reg, slow_case);
-      b(count);
-      bind(slow_case);
+      b(done);
     } else if (LockingMode == LM_LEGACY) {
       // Load the old header from BasicLock structure
       ldr(header_reg, Address(swap_reg,
@@ -824,16 +844,17 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
       cbz(header_reg, count);
 
       // Atomic swap back the old header
-      cmpxchg_obj_header(swap_reg, header_reg, obj_reg, rscratch1, count, /*fallthrough*/nullptr);
+      cmpxchg_obj_header(swap_reg, header_reg, obj_reg, rscratch1, count, &slow_case);
+
+      bind(count);
+      dec_held_monitor_count(rscratch1);
+      b(done);
     }
+
+    bind(slow_case);
     // Call the runtime routine for slow case.
     str(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset())); // restore obj
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
-    b(done);
-
-    bind(count);
-    decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
-
     bind(done);
     restore_bcp();
   }
@@ -1402,9 +1423,6 @@ void InterpreterMacroAssembler::_interp_verify_oop(Register reg, TosState state,
   }
 }
 
-void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) { ; }
-
-
 void InterpreterMacroAssembler::notify_method_entry() {
   // Whenever JVMTI is interp_only_mode, method entry/exit events are sent to
   // track stack depth.  If it is possible to enter interp_only_mode we add
@@ -1535,6 +1553,55 @@ void InterpreterMacroAssembler::call_VM_base(Register oop_result,
 // interpreter specific
   restore_bcp();
   restore_locals();
+}
+
+void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
+                                                    address entry_point,
+                                                    Register arg_1) {
+  assert(arg_1 == c_rarg1, "");
+  Label resume_pc, not_preempted;
+
+#ifdef ASSERT
+  {
+    Label L;
+    ldr(rscratch1, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+    cbz(rscratch1, L);
+    stop("Should not have alternate return address set");
+    bind(L);
+  }
+#endif /* ASSERT */
+
+  // Force freeze slow path.
+  push_cont_fastpath();
+
+  // Make VM call. In case of preemption set last_pc to the one we want to resume to.
+  adr(rscratch1, resume_pc);
+  str(rscratch1, Address(rthread, JavaThread::last_Java_pc_offset()));
+  call_VM_base(oop_result, noreg, noreg, entry_point, 1, false /*check_exceptions*/);
+
+  pop_cont_fastpath();
+
+  // Check if preempted.
+  ldr(rscratch1, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+  cbz(rscratch1, not_preempted);
+  str(zr, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+  br(rscratch1);
+
+  // In case of preemption, this is where we will resume once we finally acquire the monitor.
+  bind(resume_pc);
+  restore_after_resume(false /* is_native */);
+
+  bind(not_preempted);
+}
+
+void InterpreterMacroAssembler::restore_after_resume(bool is_native) {
+  lea(rscratch1, ExternalAddress(Interpreter::cont_resume_interpreter_adapter()));
+  blr(rscratch1);
+  if (is_native) {
+    // On resume we need to set up stack as expected
+    push(dtos);
+    push(ltos);
+  }
 }
 
 void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& mdo_addr) {

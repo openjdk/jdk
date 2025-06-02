@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,8 @@ public class WithoutNULL {
                 b8oaWkxk069jDTM1RhllPJZkAjeQRbw4gkg4N6wKZz9B/jdSRMNJg/b9QdRYZOHOBxsEHMbUREPV
                 DoCOLaxB8eIXX0EWkiE=""");
 
-        Signature s = Signature.getInstance("SHA1withRSA", "SunRsaSign");
+        Signature s = Signature.getInstance("SHA1withRSA",
+                System.getProperty("test.provider.name", "SunRsaSign"));
         s.initVerify(KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(key)));
         if (!s.verify(sig)) {
             throw new RuntimeException("Does not verify");

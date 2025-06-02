@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.org.objectweb.asm
  *
  * @summary converted from VM Testbase vm/mlvm/meth/stress/gc/createLotsOfMHConsts.
  * VM Testbase keywords: [feature_mlvm, nonconcurrent]
@@ -34,6 +33,7 @@
  *     using different classloaders) to see if they are garbage collected and don't overflow
  *     different generations of heap.
  *
+ * @library /testlibrary/asm
  * @library /vmTestbase
  *          /test/lib
  *          /vmTestbase/vm/mlvm/patches

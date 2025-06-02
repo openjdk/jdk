@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderData.inline.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -43,11 +42,12 @@
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shared/fullGCForwarding.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/modRefBarrierSet.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
@@ -132,7 +132,7 @@ public:
       // obj->set_mark(obj->mark().set_marked());
 
       assert(dead_length == obj->size(), "bad filler object size");
-      log_develop_trace(gc, compaction)("Inserting object to dead space: " PTR_FORMAT ", " PTR_FORMAT ", " SIZE_FORMAT "b",
+      log_develop_trace(gc, compaction)("Inserting object to dead space: " PTR_FORMAT ", " PTR_FORMAT ", %zub",
                                         p2i(dead_start), p2i(dead_end), dead_length * HeapWordSize);
 
       return true;
@@ -230,7 +230,7 @@ class Compacter {
   static void forward_obj(oop obj, HeapWord* new_addr) {
     prefetch_write_scan(obj);
     if (cast_from_oop<HeapWord*>(obj) != new_addr) {
-      obj->forward_to(cast_to_oop(new_addr));
+      FullGCForwarding::forward_to(obj, cast_to_oop(new_addr));
     } else {
       assert(obj->is_gc_marked(), "inv");
       // This obj will stay in-place. Fix the markword.
@@ -255,7 +255,7 @@ class Compacter {
     prefetch_read_scan(addr);
 
     oop obj = cast_to_oop(addr);
-    oop new_obj = obj->forwardee();
+    oop new_obj = FullGCForwarding::forwardee(obj);
     HeapWord* new_addr = cast_from_oop<HeapWord*>(new_obj);
     assert(addr != new_addr, "inv");
     prefetch_write_copy(new_addr);
@@ -352,13 +352,13 @@ public:
       HeapWord* top = space->top();
 
       // Check if the first obj inside this space is forwarded.
-      if (!cast_to_oop(cur_addr)->is_forwarded()) {
+      if (!FullGCForwarding::is_forwarded(cast_to_oop(cur_addr))) {
         // Jump over consecutive (in-place) live-objs-chunk
         cur_addr = get_first_dead(i);
       }
 
       while (cur_addr < top) {
-        if (!cast_to_oop(cur_addr)->is_forwarded()) {
+        if (!FullGCForwarding::is_forwarded(cast_to_oop(cur_addr))) {
           cur_addr = *(HeapWord**) cur_addr;
           continue;
         }
@@ -593,7 +593,7 @@ void SerialFullGC::mark_object(oop obj) {
   // some marks may contain information we need to preserve so we store them away
   // and overwrite the mark.  We'll restore it at the end of serial full GC.
   markWord mark = obj->mark();
-  obj->set_mark(markWord::prototype().set_marked());
+  obj->set_mark(obj->prototype_mark().set_marked());
 
   ContinuationGCSupport::transform_stack_chunk(obj);
 
@@ -624,8 +624,8 @@ template <class T> void SerialFullGC::adjust_pointer(T* p) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     assert(Universe::heap()->is_in(obj), "should be in heap");
 
-    if (obj->is_forwarded()) {
-      oop new_obj = obj->forwardee();
+    if (FullGCForwarding::is_forwarded(obj)) {
+      oop new_obj = FullGCForwarding::forwardee(obj);
       assert(is_object_aligned(new_obj), "oop must be aligned");
       RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
     }
@@ -650,7 +650,7 @@ void SerialFullGC::adjust_marks() {
 }
 
 void SerialFullGC::restore_marks() {
-  log_trace(gc)("Restoring " SIZE_FORMAT " marks", _preserved_count + _preserved_overflow_stack_set.get()->size());
+  log_trace(gc)("Restoring %zu marks", _preserved_count + _preserved_overflow_stack_set.get()->size());
 
   // restore the marks we saved earlier
   for (size_t i = 0; i < _preserved_count; i++) {

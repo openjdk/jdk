@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_PRIMS_JVMTIAGENTLIST_HPP
 #define SHARE_PRIMS_JVMTIAGENTLIST_HPP
 
-#include "nmt/memflags.hpp"
+#include "nmt/memTag.hpp"
 #include "prims/jvmtiAgent.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -61,7 +61,6 @@ class JvmtiAgentList : AllStatic {
  private:
   static JvmtiAgent* _list;
 
-  static Iterator all();
   static void initialize();
   static void convert_xrun_agents();
 
@@ -82,10 +81,12 @@ class JvmtiAgentList : AllStatic {
 
   static JvmtiAgent* lookup(JvmtiEnv* env, void* f_ptr);
 
+  static Iterator all();
   static Iterator agents() NOT_JVMTI({ Iterator it; return it; });
   static Iterator java_agents();
   static Iterator native_agents();
   static Iterator xrun_agents();
+  static void disable_agent_list() NOT_JVMTI_RETURN;
 };
 
 #endif // SHARE_PRIMS_JVMTIAGENTLIST_HPP

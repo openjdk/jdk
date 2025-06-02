@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,14 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "asm/assembler.hpp"
+#include "asm/macroAssembler.hpp"
 #include "logging/log.hpp"
 #include "oops/compressedKlass.hpp"
 #include "memory/metaspace.hpp"
+#include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/formatBuffer.hpp"
 
 // Helper function; reserve at an address that is compatible with EOR
 static char* reserve_at_eor_compatible_address(size_t size, bool aslr) {
@@ -69,7 +70,7 @@ static char* reserve_at_eor_compatible_address(size_t size, bool aslr) {
     const uint64_t immediate = ((uint64_t)immediates[index]) << 32;
     assert(immediate > 0 && Assembler::operand_valid_for_logical_immediate(/*is32*/false, immediate),
            "Invalid immediate %d " UINT64_FORMAT, index, immediate);
-    result = os::attempt_reserve_memory_at((char*)immediate, size, false);
+    result = os::attempt_reserve_memory_at((char*)immediate, size, mtNone);
     if (result == nullptr) {
       log_trace(metaspace, map)("Failed to attach at " UINT64_FORMAT_X, immediate);
     }
@@ -79,6 +80,7 @@ static char* reserve_at_eor_compatible_address(size_t size, bool aslr) {
   }
   return result;
 }
+
 char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size_t size, bool aslr, bool optimize_for_zero_base) {
 
   char* result = nullptr;
@@ -112,22 +114,17 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
   if (result == nullptr) {
     constexpr size_t alignment = nth_bit(32);
     log_debug(metaspace, map)("Trying to reserve at a 32-bit-aligned address");
-    result = os::reserve_memory_aligned(size, alignment, false);
+    result = os::reserve_memory_aligned(size, alignment, mtNone);
   }
 
   return result;
 }
 
-void CompressedKlassPointers::initialize(address addr, size_t len) {
-  constexpr uintptr_t unscaled_max = nth_bit(32);
-  assert(len <= unscaled_max, "Klass range larger than 32 bits?");
+bool CompressedKlassPointers::check_klass_decode_mode(address base, int shift, const size_t range) {
+  return MacroAssembler::check_klass_decode_mode(base, shift, range);
+}
 
-  // Shift is always 0 on aarch64.
-  _shift = 0;
-
-  // On aarch64, we don't bother with zero-based encoding (base=0 shift>0).
-  address const end = addr + len;
-  _base = (end <= (address)unscaled_max) ? nullptr : addr;
-
-  _range = end - _base;
+bool CompressedKlassPointers::set_klass_decode_mode() {
+  const size_t range = klass_range_end() - base();
+  return MacroAssembler::set_klass_decode_mode(_base, _shift, range);
 }

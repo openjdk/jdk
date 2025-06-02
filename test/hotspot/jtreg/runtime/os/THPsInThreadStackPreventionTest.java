@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,10 +45,13 @@
  * @requires os.family == "linux"
  * @requires vm.debug
  * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/manual THPsInThreadStackPreventionTest  PATCH-DISABLED
  */
+
+import jdk.test.lib.os.linux.HugePageConfiguration;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jtreg.SkippedException;

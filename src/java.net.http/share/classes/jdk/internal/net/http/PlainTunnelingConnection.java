@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,11 +54,12 @@ final class PlainTunnelingConnection extends HttpConnection {
     protected PlainTunnelingConnection(InetSocketAddress addr,
                                        InetSocketAddress proxy,
                                        HttpClientImpl client,
-                                       ProxyHeaders proxyHeaders) {
-        super(addr, client);
+                                       ProxyHeaders proxyHeaders,
+                                       String label) {
+        super(addr, client, label);
         this.proxyAddr = proxy;
         this.proxyHeaders = proxyHeaders;
-        delegate = new PlainHttpConnection(proxy, client);
+        delegate = new PlainHttpConnection(proxy, client, label);
     }
 
     @Override
@@ -72,7 +73,7 @@ final class PlainTunnelingConnection extends HttpConnection {
                 assert client != null;
                 HttpRequestImpl req = new HttpRequestImpl("CONNECT", address, proxyHeaders);
                 MultiExchange<Void> mulEx = new MultiExchange<>(null, req,
-                        client, discarding(), null, null);
+                        client, discarding(), null);
                 Exchange<Void> connectExchange = mulEx.getExchange();
 
                 return connectExchange

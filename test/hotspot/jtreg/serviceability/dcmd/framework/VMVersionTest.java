@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8221730
  * @summary Test of diagnostic command VM.version (tests all DCMD executors)
- * @enablePreview
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.module
  *          java.compiler

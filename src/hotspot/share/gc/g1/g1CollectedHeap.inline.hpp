@@ -225,7 +225,6 @@ void G1CollectedHeap::register_region_with_region_attr(G1HeapRegion* r) {
 }
 
 void G1CollectedHeap::register_old_region_with_region_attr(G1HeapRegion* r) {
-  assert(!r->has_pinned_objects(), "must be");
   assert(r->rem_set()->is_complete(), "must be");
   _region_attr.set_in_old(r->hrm_index(), true);
   _rem_set->exclude_region_from_scan(r->hrm_index());

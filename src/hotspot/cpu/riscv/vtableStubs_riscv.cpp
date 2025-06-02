@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/compiledIC.hpp"
@@ -131,8 +130,8 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   // xmethod: Method*
   // x12: receiver
   address ame_addr = __ pc();
-  __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
-  __ jr(t0);
+  __ ld(t1, Address(xmethod, Method::from_compiled_offset()));
+  __ jr(t1);
 
   masm->flush();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, true, vtable_index, slop_bytes, 0);
@@ -160,6 +159,13 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   MacroAssembler* masm = new MacroAssembler(&cb);
   assert_cond(masm != nullptr);
 
+  // Real entry arguments:
+  //  t0: CompiledICData
+  //  j_rarg0: Receiver
+  // Make sure the move of CompiledICData from t0 to t1 is the frist thing that happens.
+  // Otherwise we risk clobber t0 as it is used as scratch.
+  __ mv(t1, t0);
+
 #if (!defined(PRODUCT) && defined(COMPILER2))
   if (CountCompiledCalls) {
     __ la(x18, ExternalAddress((address) SharedRuntime::nof_megamorphic_calls_addr()));
@@ -170,8 +176,8 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // get receiver (need to skip return address on top of stack)
   assert(VtableStub::receiver_location() == j_rarg0->as_VMReg(), "receiver expected in j_rarg0");
 
-  // Entry arguments:
-  //  t1: CompiledICData
+  // Arguments from this point:
+  //  t1 (moved from t0): CompiledICData
   //  j_rarg0: Receiver
 
   // This stub is called from compiled code which has no callee-saved registers,
@@ -220,8 +226,8 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // xmethod: Method*
   // j_rarg0: receiver
   address ame_addr = __ pc();
-  __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
-  __ jr(t0);
+  __ ld(t1, Address(xmethod, Method::from_compiled_offset()));
+  __ jr(t1);
 
   __ bind(L_no_such_interface);
   // Handle IncompatibleClassChangeError in itable stubs.

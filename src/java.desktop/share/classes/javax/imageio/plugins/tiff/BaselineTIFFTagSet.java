@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1008,7 +1008,7 @@ public final class BaselineTIFFTagSet extends TIFFTagSet {
     /**
      * Constant specifying the "ICC Profile" tag.
      *
-     * @see <a href="http://www.color.org/ICC1V42.pdf">ICC Specification, section B.4: Embedding ICC profiles in TIFF files</a>
+     * @see <a href="https://www.color.org/ICC1V42.pdf">ICC Specification, section B.4: Embedding ICC profiles in TIFF files</a>
      */
     public static final int TAG_ICC_PROFILE = 34675;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,11 @@ public class TestUseCompressedOopsFlagsWithUlimit {
     args.add("-XX:MaxRAM=" + maxram);
     args.add("-XX:MaxRAMPercentage=" + maxrampercent);
     args.add("-XX:+PrintFlagsFinal");
+
+    // Avoid issues with libjvmci failing to reserve
+    // a large virtual address space for its heap
+    args.add("-Xint");
+
     args.add("-version");
 
     // Convert bytes to kbytes for ulimit -v

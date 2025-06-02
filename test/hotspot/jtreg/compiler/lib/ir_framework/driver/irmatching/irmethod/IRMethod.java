@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ import compiler.lib.ir_framework.shared.TestFormatException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+
+import static compiler.lib.ir_framework.TestFramework.PRINT_RULE_MATCHING_TIME;
 
 /**
  * This class represents a {@link Test @Test} annotated method that has an associated non-empty list of applicable
@@ -83,6 +85,20 @@ public class IRMethod implements IRMethodMatchable {
      */
     @Override
     public MatchResult match() {
-        return new IRMethodMatchResult(method, matcher.match());
+        if (!PRINT_RULE_MATCHING_TIME) {
+            return new IRMethodMatchResult(method, matcher.match());
+        }
+
+        List<MatchResult> match;
+        for (int i = 0; i < 10; i++) {  // warm up
+            match = matcher.match();
+        }
+
+        long startTime = System.nanoTime();
+        match = matcher.match();
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime);
+        System.out.println("Verifying IR rules for " + name() + ": " + duration + " ns = " + (duration / 1000000) + " ms");
+        return new IRMethodMatchResult(method, match);
     }
 }

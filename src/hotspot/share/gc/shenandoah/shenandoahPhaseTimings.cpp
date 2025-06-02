@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +23,13 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shared/workerDataArray.inline.hpp"
-#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/ostream.hpp"
 
@@ -97,6 +97,7 @@ bool ShenandoahPhaseTimings::is_worker_phase(Phase phase) {
   assert(phase >= 0 && phase < _num_phases, "Out of bounds");
   switch (phase) {
     case init_evac:
+    case init_scan_rset:
     case finish_mark:
     case purge_weak_par:
     case full_gc_mark:
@@ -108,15 +109,19 @@ bool ShenandoahPhaseTimings::is_worker_phase(Phase phase) {
     case full_gc_weakrefs:
     case full_gc_purge_class_unload:
     case full_gc_purge_weak_par:
+    case degen_gc_coalesce_and_fill:
     case degen_gc_weakrefs:
     case degen_gc_purge_class_unload:
     case degen_gc_purge_weak_par:
     case heap_iteration_roots:
+    case conc_mark:
     case conc_mark_roots:
     case conc_thread_roots:
     case conc_weak_roots_work:
     case conc_weak_refs:
     case conc_strong_roots:
+    case conc_coalesce_and_fill:
+    case promote_in_place:
       return true;
     default:
       return false;
@@ -137,17 +142,21 @@ bool ShenandoahPhaseTimings::is_root_work_phase(Phase phase) {
   }
 }
 
-void ShenandoahPhaseTimings::set_cycle_data(Phase phase, double time) {
+void ShenandoahPhaseTimings::set_cycle_data(Phase phase, double time, bool should_aggregate) {
+  const double cycle_data = _cycle_data[phase];
+  if (should_aggregate) {
+    _cycle_data[phase] = (cycle_data == uninitialized()) ? time :  (cycle_data + time);
+  } else {
 #ifdef ASSERT
-  double d = _cycle_data[phase];
-  assert(d == uninitialized(), "Should not be set yet: %s, current value: %lf", phase_name(phase), d);
+    assert(cycle_data == uninitialized(), "Should not be set yet: %s, current value: %lf", phase_name(phase), cycle_data);
 #endif
-  _cycle_data[phase] = time;
+    _cycle_data[phase] = time;
+  }
 }
 
-void ShenandoahPhaseTimings::record_phase_time(Phase phase, double time) {
+void ShenandoahPhaseTimings::record_phase_time(Phase phase, double time, bool should_aggregate) {
   if (!_policy->is_at_shutdown()) {
-    set_cycle_data(phase, time);
+    set_cycle_data(phase, time, should_aggregate);
   }
 }
 
@@ -181,33 +190,33 @@ void ShenandoahPhaseTimings::flush_par_workers_to_cycle() {
   for (uint pi = 0; pi < _num_phases; pi++) {
     Phase phase = Phase(pi);
     if (is_worker_phase(phase)) {
-      double s = uninitialized();
+      double sum = uninitialized();
       for (uint i = 1; i < _num_par_phases; i++) {
         ShenandoahWorkerData* wd = worker_data(phase, ParPhase(i));
-        double ws = uninitialized();
+        double worker_sum = uninitialized();
         for (uint c = 0; c < _max_workers; c++) {
-          double v = wd->get(c);
-          if (v != ShenandoahWorkerData::uninitialized()) {
-            if (ws == uninitialized()) {
-              ws = v;
+          double worker_time = wd->get(c);
+          if (worker_time != ShenandoahWorkerData::uninitialized()) {
+            if (worker_sum == uninitialized()) {
+              worker_sum = worker_time;
             } else {
-              ws += v;
+              worker_sum += worker_time;
             }
           }
         }
-        if (ws != uninitialized()) {
+        if (worker_sum != uninitialized()) {
           // add to each line in phase
-          set_cycle_data(Phase(phase + i + 1), ws);
-          if (s == uninitialized()) {
-            s = ws;
+          set_cycle_data(Phase(phase + i + 1), worker_sum);
+          if (sum == uninitialized()) {
+            sum = worker_sum;
           } else {
-            s += ws;
+            sum += worker_sum;
           }
         }
       }
-      if (s != uninitialized()) {
+      if (sum != uninitialized()) {
         // add to total for phase
-        set_cycle_data(Phase(phase + 1), s);
+        set_cycle_data(Phase(phase + 1), sum);
       }
     }
   }
@@ -308,17 +317,17 @@ void ShenandoahPhaseTimings::print_global_on(outputStream* out) const {
 }
 
 ShenandoahWorkerTimingsTracker::ShenandoahWorkerTimingsTracker(ShenandoahPhaseTimings::Phase phase,
-        ShenandoahPhaseTimings::ParPhase par_phase, uint worker_id) :
+        ShenandoahPhaseTimings::ParPhase par_phase, uint worker_id, bool cumulative) :
         _timings(ShenandoahHeap::heap()->phase_timings()),
         _phase(phase), _par_phase(par_phase), _worker_id(worker_id) {
 
-  assert(_timings->worker_data(_phase, _par_phase)->get(_worker_id) == ShenandoahWorkerData::uninitialized(),
+  assert(_timings->worker_data(_phase, _par_phase)->get(_worker_id) == ShenandoahWorkerData::uninitialized() || cumulative,
          "Should not be set yet: %s", ShenandoahPhaseTimings::phase_name(_timings->worker_par_phase(_phase, _par_phase)));
   _start_time = os::elapsedTime();
 }
 
 ShenandoahWorkerTimingsTracker::~ShenandoahWorkerTimingsTracker() {
-  _timings->worker_data(_phase, _par_phase)->set(_worker_id, os::elapsedTime() - _start_time);
+  _timings->worker_data(_phase, _par_phase)->set_or_add(_worker_id, os::elapsedTime() - _start_time);
 
   if (ShenandoahPhaseTimings::is_root_work_phase(_phase)) {
     ShenandoahPhaseTimings::Phase root_phase = _phase;

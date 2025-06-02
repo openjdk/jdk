@@ -102,12 +102,6 @@ public:
   MemRegion prev_used_region() const { return _prev_used_region; }
   void save_used_region()   { _prev_used_region = used_region(); }
 
-  // Returns true if this generation cannot be expanded further
-  // without a GC.
-  bool is_maximal_no_gc() const {
-    return _virtual_space.uncommitted_size() == 0;
-  }
-
   HeapWord* block_start(const void* addr) const;
 
   void scan_old_to_young_refs(HeapWord* saved_top_in_old_gen);
@@ -121,8 +115,7 @@ public:
                     CardTableRS* remset);
 
   // Printing
-  const char* name() const { return "tenured generation"; }
-  const char* short_name() const { return "Tenured"; }
+  const char* name() const { return "Tenured"; }
 
   // Iteration
   void object_iterate(ObjectClosure* blk);
@@ -130,10 +123,12 @@ public:
   void complete_loaded_archive_space(MemRegion archive_space);
   inline void update_for_block(HeapWord* start, HeapWord* end);
 
-  virtual inline HeapWord* allocate(size_t word_size, bool is_tlab);
-  virtual inline HeapWord* par_allocate(size_t word_size, bool is_tlab);
+  // Allocate and returns a block of the requested size, or returns "null".
+  // Assumes the caller has done any necessary locking.
+  inline HeapWord* allocate(size_t word_size);
 
-  HeapWord* expand_and_allocate(size_t size, bool is_tlab);
+  // Expand the old-gen then invoke allocate above.
+  HeapWord* expand_and_allocate(size_t size);
 
   void gc_prologue();
   void gc_epilogue();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
@@ -95,7 +94,7 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
     return true;
   }
 
-  clone_template_assertion_predicate_expression_down(n);
+  clone_template_assertion_expression_down(n);
 
   if (n->Opcode() == Op_OpaqueZeroTripGuard) {
     // If this Opaque1 is part of the zero trip guard for a loop:
@@ -135,14 +134,6 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
         set_ctrl(load,blk1);
     }
   }
-
-  // Found some other Node; must clone it up
-#ifndef PRODUCT
-  if( PrintOpto && VerifyLoopOptimizations ) {
-    tty->print("Cloning up: ");
-    n->dump();
-  }
-#endif
 
   // ConvI2L may have type information on it which becomes invalid if
   // it moves up in the graph so change any clones so widen the type
@@ -309,12 +300,6 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
            at_relevant_ctrl(cmov, blk1, blk2)))) {
 
       // Must clone down
-#ifndef PRODUCT
-      if( PrintOpto && VerifyLoopOptimizations ) {
-        tty->print("Cloning down: ");
-        n->dump();
-      }
-#endif
       if (!n->is_FastLock()) {
         // Clone down any block-local BoolNode uses of this CmpNode
         for (DUIterator i = n->outs(); n->has_out(i); i++) {
@@ -322,7 +307,8 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
           assert( bol->is_Bool(), "" );
           if (bol->outcnt() == 1) {
             Node* use = bol->unique_out();
-            if (use->is_Opaque4() || use->is_OpaqueInitializedAssertionPredicate()) {
+            if (use->is_OpaqueNotNull() || use->is_OpaqueTemplateAssertionPredicate() ||
+                use->is_OpaqueInitializedAssertionPredicate()) {
               if (use->outcnt() == 1) {
                 Node* iff = use->unique_out();
                 assert(iff->is_If(), "unexpected node type");
@@ -343,16 +329,11 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
           }
           if (at_relevant_ctrl(bol, blk1, blk2)) {
             // Recursively sink any BoolNode
-#ifndef PRODUCT
-            if( PrintOpto && VerifyLoopOptimizations ) {
-              tty->print("Cloning down: ");
-              bol->dump();
-            }
-#endif
             for (DUIterator j = bol->outs(); bol->has_out(j); j++) {
               Node* u = bol->out(j);
-              // Uses are either IfNodes, CMoves, Opaque4, or OpaqueInitializedAssertionPredicates
-              if (u->is_Opaque4() || u->is_OpaqueInitializedAssertionPredicate()) {
+              // Uses are either IfNodes, CMoves, OpaqueNotNull, or Opaque*AssertionPredicate
+              if (u->is_OpaqueNotNull() || u->is_OpaqueTemplateAssertionPredicate() ||
+                  u->is_OpaqueInitializedAssertionPredicate()) {
                 assert(u->in(1) == bol, "bad input");
                 for (DUIterator_Last kmin, k = u->last_outs(kmin); k >= kmin; --k) {
                   Node* iff = u->last_out(k);
@@ -409,25 +390,27 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
   return false;
 }
 
-// 'n' could be a node belonging to a Template Assertion Predicate Expression (i.e. any node between a Template
-// Assertion Predicate and its OpaqueLoop* nodes (included)). We cannot simply split this node up since this would
-// create a phi node inside the Template Assertion Predicate Expression - making it unrecognizable as such. Therefore,
-// we completely clone the entire Template Assertion Predicate Expression "down". This ensures that we have an
-// untouched copy that is still recognized by the Template Assertion Predicate matching code.
-void PhaseIdealLoop::clone_template_assertion_predicate_expression_down(Node* node) {
-  if (!TemplateAssertionPredicateExpressionNode::is_in_expression(node)) {
+// 'n' could be a node belonging to a Template Assertion Expression (i.e. any node between a Template Assertion Predicate
+// and its OpaqueLoop* nodes (included)). We cannot simply split this node up since this would  create a phi node inside
+// the Template Assertion Expression - making it unrecognizable as such. Therefore, we completely clone the entire
+// Template Assertion Expression "down". This ensures that we have an untouched copy that is still recognized by the
+// Template Assertion Predicate matching code.
+void PhaseIdealLoop::clone_template_assertion_expression_down(Node* node) {
+  if (!TemplateAssertionExpressionNode::is_in_expression(node)) {
     return;
   }
 
-  TemplateAssertionPredicateExpressionNode template_assertion_predicate_expression_node(node);
+  TemplateAssertionExpressionNode template_assertion_expression_node(node);
   auto clone_expression = [&](IfNode* template_assertion_predicate) {
-    Opaque4Node* opaque4_node = template_assertion_predicate->in(1)->as_Opaque4();
-    TemplateAssertionPredicateExpression template_assertion_predicate_expression(opaque4_node);
-    Node* new_ctrl = template_assertion_predicate->in(0);
-    Opaque4Node* cloned_opaque4_node = template_assertion_predicate_expression.clone(new_ctrl, this);
-    igvn().replace_input_of(template_assertion_predicate, 1, cloned_opaque4_node);
+    OpaqueTemplateAssertionPredicateNode* opaque_node =
+        template_assertion_predicate->in(1)->as_OpaqueTemplateAssertionPredicate();
+    TemplateAssertionExpression template_assertion_expression(opaque_node, this);
+    Node* new_control = template_assertion_predicate->in(0);
+    OpaqueTemplateAssertionPredicateNode* cloned_opaque_node = template_assertion_expression.clone(new_control,
+                                                                                                   opaque_node->loop_node());
+    igvn().replace_input_of(template_assertion_predicate, 1, cloned_opaque_node);
   };
-  template_assertion_predicate_expression_node.for_each_template_assertion_predicate(clone_expression);
+  template_assertion_expression_node.for_each_template_assertion_predicate(clone_expression);
 }
 
 //------------------------------register_new_node------------------------------

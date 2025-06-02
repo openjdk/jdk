@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import jdk.test.lib.jfr.TestClassLoader;
  * @test
  * @summary The test verifies that an old object sample maintains references to "stale" metadata
  * @requires vm.hasJFR
- * @key jfr
+ * @requires vm.flagless
  * @modules jdk.jfr/jdk.jfr.internal.test
  * @library /test/lib /test/jdk
  * @build jdk.jfr.event.oldobject.TestMetadataObject
@@ -86,7 +86,7 @@ public final class TestMetadataRetention {
 
                 // System.gc() will trigger class unloading if -XX:+ExplicitGCInvokesConcurrent
                 // is NOT set. If this flag is set G1 will never unload classes on System.gc().
-                // As far as the "jfr" key guarantees no VM flags are set from the
+                // As far as the vm.flagless guarantees no VM flags are set from the
                 // outside it should be enough with System.gc().
                 System.gc();
 

@@ -149,12 +149,12 @@ public abstract class Format implements Serializable, Cloneable {
 
     /**
      * Formats an object to produce a string.
-     * This method returns a string that would be equal to the string returned by
+     *
+     * @implSpec This method returns a string that would be equal to the string returned by
      * <blockquote>
      * {@link #format(Object, StringBuffer, FieldPosition) format}<code>(obj,
      *         new StringBuffer(), new FieldPosition(0)).toString();</code>
      * </blockquote>
-     *
      * @param obj    The object to format
      * @return       Formatted string.
      * @throws    IllegalArgumentException if the Format cannot format the given
@@ -207,11 +207,11 @@ public abstract class Format implements Serializable, Cloneable {
      * to define what the legal values are for each attribute in the
      * {@code AttributedCharacterIterator}, but typically the attribute
      * key is also used as the attribute value.
-     * <p>The default implementation creates an
-     * {@code AttributedCharacterIterator} with no attributes. Subclasses
-     * that support fields should override this and create an
-     * {@code AttributedCharacterIterator} with meaningful attributes.
      *
+     * @apiNote Subclasses that support fields should override this and create an
+     * {@code AttributedCharacterIterator} with meaningful attributes.
+     * @implSpec The default implementation creates an
+     * {@code AttributedCharacterIterator} with no attributes.
      * @throws    NullPointerException if obj is null.
      * @throws    IllegalArgumentException when the Format cannot format the
      *            given object.

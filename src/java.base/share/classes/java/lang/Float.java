@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,10 @@ import jdk.internal.math.FloatToDecimal;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
- * The {@code Float} class wraps a value of primitive type
- * {@code float} in an object. An object of type
- * {@code Float} contains a single field whose type is
- * {@code float}.
+ * The {@code Float} class is the {@linkplain
+ * java.lang##wrapperClass wrapper class} for values of the primitive
+ * type {@code float}. An object of type {@code Float} contains a
+ * single field whose type is {@code float}.
  *
  * <p>In addition, this class provides several methods for converting a
  * {@code float} to a {@code String} and a
@@ -67,8 +67,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * decimal conversion issues} in {@code java.lang.Double} is also
  * applicable to {@code float} values.
  *
- * @see <a href="https://standards.ieee.org/ieee/754/6210/">
- *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
+ * @spec https://standards.ieee.org/ieee/754/6210/
+ *       IEEE Standard for Floating-Point Arithmetic
  *
  * @author  Lee Boynton
  * @author  Arthur van Hoff
@@ -93,9 +93,9 @@ public final class Float extends Number
     public static final float NEGATIVE_INFINITY = -1.0f / 0.0f;
 
     /**
-     * A constant holding a Not-a-Number (NaN) value of type
-     * {@code float}.  It is equivalent to the value returned by
-     * {@code Float.intBitsToFloat(0x7fc00000)}.
+     * A constant holding a Not-a-Number (NaN) value of type {@code float}.
+     * It is {@linkplain Double##equivalenceRelation equivalent}
+     * to the value returned by{@code Float.intBitsToFloat(0x7fc00000)}.
      */
     public static final float NaN = 0.0f / 0.0f;
 
@@ -175,8 +175,7 @@ public final class Float extends Number
      *
      * @since 1.1
      */
-    @SuppressWarnings("unchecked")
-    public static final Class<Float> TYPE = (Class<Float>) Class.getPrimitiveClass("float");
+    public static final Class<Float> TYPE = Class.getPrimitiveClass("float");
 
     /**
      * Returns a string representation of the {@code float}
@@ -669,7 +668,7 @@ public final class Float extends Number
      * {@link #valueOf(float)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Float(float value) {
         this.value = value;
     }
@@ -685,7 +684,7 @@ public final class Float extends Number
      * static factory method {@link #valueOf(float)} method as follows:
      * {@code Float.valueOf((float)value)}.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Float(double value) {
         this.value = (float)value;
     }
@@ -706,7 +705,7 @@ public final class Float extends Number
      * {@code float} primitive, or use {@link #valueOf(String)}
      * to convert a string to a {@code Float} object.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Float(String s) throws NumberFormatException {
         value = parseFloat(s);
     }
@@ -889,8 +888,8 @@ public final class Float extends Number
      * @jls 15.21.1 Numerical Equality Operators == and !=
      */
     public boolean equals(Object obj) {
-        return (obj instanceof Float)
-               && (floatToIntBits(((Float)obj).value) == floatToIntBits(value));
+        return (obj instanceof Float f) &&
+            (floatToIntBits(f.value) == floatToIntBits(value));
     }
 
     /**

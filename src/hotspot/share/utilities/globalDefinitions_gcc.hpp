@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,24 +71,6 @@
 #include <sys/time.h>
 #endif // LINUX || _ALLBSD_SOURCE
 
-// NULL vs NULL_WORD:
-// On Linux NULL is defined as a special type '__null'. Assigning __null to
-// integer variable will cause gcc warning. Use NULL_WORD in places where a
-// pointer is stored as integer value.  On some platforms, sizeof(intptr_t) >
-// sizeof(void*), so here we want something which is integer type, but has the
-// same size as a pointer.
-#ifdef __GNUC__
-  #ifdef _LP64
-    #define NULL_WORD  0L
-  #else
-    // Cast 0 to intptr_t rather than int32_t since they are not the same type
-    // on platforms such as Mac OS X.
-    #define NULL_WORD  ((intptr_t)0)
-  #endif
-#else
-  #define NULL_WORD  NULL
-#endif
-
 // checking for nanness
 #if defined(__APPLE__)
 inline int g_isnan(double f) { return isnan(f); }
@@ -99,25 +81,11 @@ inline int g_isnan(double f) { return isnan(f); }
 #error "missing platform-specific definition here"
 #endif
 
-#define CAN_USE_NAN_DEFINE 1
-
-
 // Checking for finiteness
 
 inline int g_isfinite(jfloat  f)                 { return isfinite(f); }
 inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 
-
-// Formatting.
-#ifdef _LP64
-# ifdef __APPLE__
-# define FORMAT64_MODIFIER "ll"
-# else
-# define FORMAT64_MODIFIER "l"
-# endif
-#else // !_LP64
-#define FORMAT64_MODIFIER "ll"
-#endif // _LP64
 
 // gcc warns about applying offsetof() to non-POD object or calculating
 // offset directly when base address is null. The -Wno-invalid-offsetof

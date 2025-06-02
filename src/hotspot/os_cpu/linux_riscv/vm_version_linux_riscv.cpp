@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/register.hpp"
 #include "logging/log.hpp"
 #include "riscv_hwprobe.hpp"
@@ -35,6 +34,7 @@
 #include <asm/hwcap.h>
 #include <ctype.h>
 #include <sys/auxv.h>
+#include <sys/prctl.h>
 
 #ifndef HWCAP_ISA_I
 #define HWCAP_ISA_I  nth_bit('I' - 'A')
@@ -82,6 +82,23 @@
         __v;                                                    \
 })
 
+// prctl PR_RISCV_SET_ICACHE_FLUSH_CTX is from Linux 6.9
+#ifndef PR_RISCV_SET_ICACHE_FLUSH_CTX
+#define PR_RISCV_SET_ICACHE_FLUSH_CTX 71
+#endif
+#ifndef PR_RISCV_CTX_SW_FENCEI_ON
+#define PR_RISCV_CTX_SW_FENCEI_ON  0
+#endif
+#ifndef PR_RISCV_CTX_SW_FENCEI_OFF
+#define PR_RISCV_CTX_SW_FENCEI_OFF 1
+#endif
+#ifndef PR_RISCV_SCOPE_PER_PROCESS
+#define PR_RISCV_SCOPE_PER_PROCESS 0
+#endif
+#ifndef PR_RISCV_SCOPE_PER_THREAD
+#define PR_RISCV_SCOPE_PER_THREAD  1
+#endif
+
 uint32_t VM_Version::cpu_vector_length() {
   assert(ext_V.enabled(), "should not call this");
   return (uint32_t)read_csr(CSR_VLENB);
@@ -102,6 +119,7 @@ void VM_Version::setup_cpu_available_features() {
   if (!RiscvHwprobe::probe_features()) {
     os_aux_features();
   }
+
   char* uarch = os_uarch_additional_features();
   vendor_features();
 
@@ -111,6 +129,9 @@ void VM_Version::setup_cpu_available_features() {
     snprintf(buf, sizeof(buf)/2, "%s ", uarch);
   }
   os::free((void*) uarch);
+
+  int features_offset = strnlen(buf, sizeof(buf));
+
   strcat(buf, "rv64");
   int i = 0;
   while (_feature_list[i] != nullptr) {
@@ -155,7 +176,27 @@ void VM_Version::setup_cpu_available_features() {
     i++;
   }
 
-  _features_string = os::strdup(buf);
+  // Linux kernel require Zifencei
+  if (!ext_Zifencei.enabled()) {
+    log_info(os, cpu)("Zifencei not found, required by Linux, enabling.");
+    ext_Zifencei.enable_feature();
+  }
+
+  if (UseCtxFencei) {
+    // Note that we can set this up only for effected threads
+    // via PR_RISCV_SCOPE_PER_THREAD, i.e. on VM attach/deattach.
+    int ret = prctl(PR_RISCV_SET_ICACHE_FLUSH_CTX, PR_RISCV_CTX_SW_FENCEI_ON, PR_RISCV_SCOPE_PER_PROCESS);
+    if (ret == 0) {
+      log_debug(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) enabled.");
+    } else {
+      FLAG_SET_ERGO(UseCtxFencei, false);
+      log_info(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) disabled, unsupported by kernel.");
+    }
+  }
+
+  _cpu_info_string = os::strdup(buf);
+
+  _features_string = _cpu_info_string + features_offset;
 }
 
 void VM_Version::os_aux_features() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,10 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.Interfaces;
+import java.lang.classfile.constantpool.ClassEntry;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.Interfaces;
 
 public final class InterfacesImpl
         extends AbstractElement

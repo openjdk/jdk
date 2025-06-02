@@ -26,10 +26,8 @@
  * @bug 8198945 8207018 8207017
  * @summary Invalid RuntimeVisibleTypeAnnotations for annotation on anonymous class type parameter
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile.impl
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.ToolBox toolbox.JavapTask
  * @run compile -g AnonymousClassTest.java
@@ -215,7 +213,7 @@ public class AnonymousClassTest {
         int offset = info instanceof TypeAnnotation.OffsetTarget offsetInfo? cAttr.labelToBci(offsetInfo.target()): -1;
         String name;
         try {
-            name = annotation.classSymbol().descriptorString();
+            name = annotation.annotation().classSymbol().descriptorString();
         } catch (Exception e) {
             throw new AssertionError(e);
         }
@@ -227,7 +225,7 @@ public class AnonymousClassTest {
         return String.format(
                 "@%s(%s) %s, offset=%d, location=%s",
                 name,
-                annotationValueDebugString(cm, annotation),
+                annotationValueDebugString(cm, annotation.annotation()),
                 info.targetType(),
                 offset,
                 location);
@@ -246,7 +244,7 @@ public class AnonymousClassTest {
 
     private static String elementValueDebugString(AnnotationValue value) {
         if (value.tag() == 'I') {
-            return Integer.toString(((AnnotationValue.OfInteger) value).intValue());
+            return Integer.toString(((AnnotationValue.OfInt) value).intValue());
         } else {
             throw new UnsupportedOperationException(String.format("%c", value.tag()));
         }

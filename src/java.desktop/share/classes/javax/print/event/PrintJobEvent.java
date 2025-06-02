@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public class PrintJobEvent extends PrintEvent {
     private static final long serialVersionUID = -1711656903622072997L;
 
     /**
-     * The reason of this event.
+     * @serial The reason of this event.
      */
     private int reason;
 

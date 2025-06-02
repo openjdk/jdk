@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/compiledIC.hpp"
 #include "code/nmethod.hpp"
 #include "oops/method.inline.hpp"
@@ -36,16 +35,23 @@
 #include "runtime/stubRoutines.hpp"
 
 int ContinuationEntry::_return_pc_offset = 0;
+int ContinuationEntry::_thaw_call_pc_offset = 0;
+int ContinuationEntry::_cleanup_offset = 0;
 address ContinuationEntry::_return_pc = nullptr;
+address ContinuationEntry::_thaw_call_pc = nullptr;
+address ContinuationEntry::_cleanup_pc = nullptr;
 nmethod* ContinuationEntry::_enter_special = nullptr;
 int ContinuationEntry::_interpreted_entry_offset = 0;
 
 void ContinuationEntry::set_enter_code(nmethod* nm, int interpreted_entry_offset) {
   assert(_return_pc_offset != 0, "");
   _return_pc = nm->code_begin() + _return_pc_offset;
+  _thaw_call_pc = nm->code_begin() + _thaw_call_pc_offset;
+  _cleanup_pc = nm->code_begin() + _cleanup_offset;
 
   _enter_special = nm;
   _interpreted_entry_offset = interpreted_entry_offset;
+
   assert(_enter_special->code_contains(compiled_entry()),    "entry not in enterSpecial");
   assert(_enter_special->code_contains(interpreted_entry()), "entry not in enterSpecial");
   assert(interpreted_entry() < compiled_entry(), "unexpected code layout");

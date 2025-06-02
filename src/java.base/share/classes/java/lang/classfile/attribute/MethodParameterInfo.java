@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,45 +24,49 @@
  */
 package java.lang.classfile.attribute;
 
+import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.reflect.AccessFlag;
+import java.lang.reflect.Parameter;
 import java.util.Optional;
 import java.util.Set;
 
-import java.lang.classfile.constantpool.Utf8Entry;
-import java.lang.reflect.AccessFlag;
-import java.lang.classfile.ClassFile;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a single method parameter in the {@link MethodParametersAttribute}.
  *
- * @since 22
+ * @see MethodParametersAttribute#parameters()
+ * @see Parameter
+ * @jvms 4.7.24 The {@code MethodParameters} Attribute
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface MethodParameterInfo
         permits UnboundAttribute.UnboundMethodParameterInfo {
     /**
-     * The name of the method parameter, if there is one.
+     * {@return the parameter name, if it has one}
      *
-     * @return the parameter name, if it has one
+     * @see Parameter#getName()
+     * @see Parameter#isNamePresent()
      */
     Optional<Utf8Entry> name();
 
     /**
-     * Parameter access flags for this parameter, as a bit mask.  Valid
-     * parameter flags include {@link ClassFile#ACC_FINAL},
-     * {@link ClassFile#ACC_SYNTHETIC}, and {@link ClassFile#ACC_MANDATED}.
+     * {@return the access flags, as a bit mask}  It is in the range of unsigned
+     * short, {@code [0, 0xFFFF]}.
      *
-     * @return the access flags, as a bit mask
+     * @see Parameter#getModifiers()
+     * @see AccessFlag.Location#METHOD_PARAMETER
      */
     int flagsMask();
 
     /**
-     * Parameter access flags for this parameter.
+     * {@return the access flags, as a set of flag enums}
      *
-     * @return the access flags, as a bit mask
+     * @throws IllegalArgumentException if the flags mask has any undefined bit set
+     * @see Parameter#accessFlags()
+     * @see AccessFlag.Location#METHOD_PARAMETER
      */
     default Set<AccessFlag> flags() {
         return AccessFlag.maskToAccessFlags(flagsMask(), AccessFlag.Location.METHOD_PARAMETER);
@@ -71,6 +75,7 @@ public sealed interface MethodParameterInfo
     /**
      * {@return whether the method parameter has a specific flag set}
      * @param flag the method parameter flag
+     * @see AccessFlag.Location#METHOD_PARAMETER
      */
     default boolean has(AccessFlag flag) {
         return Util.has(AccessFlag.Location.METHOD_PARAMETER, flagsMask(), flag);
@@ -78,7 +83,7 @@ public sealed interface MethodParameterInfo
 
     /**
      * {@return a method parameter description}
-     * @param name the method parameter name
+     * @param name the method parameter name, may be empty
      * @param flags the method parameter access flags
      */
     static MethodParameterInfo of(Optional<Utf8Entry> name, int flags) {
@@ -87,8 +92,10 @@ public sealed interface MethodParameterInfo
 
     /**
      * {@return a method parameter description}
-     * @param name the method parameter name
+     * @param name the method parameter name, may be empty
      * @param flags the method parameter access flags
+     * @throws IllegalArgumentException if any flag cannot be applied to the
+     *         {@link AccessFlag.Location#METHOD_PARAMETER} location
      */
     static MethodParameterInfo of(Optional<String> name, AccessFlag... flags) {
         return of(name.map(TemporaryConstantPool.INSTANCE::utf8Entry), Util.flagsToBits(AccessFlag.Location.METHOD_PARAMETER, flags));
@@ -96,7 +103,7 @@ public sealed interface MethodParameterInfo
 
     /**
      * {@return a method parameter description}
-     * @param name the method parameter name
+     * @param name the method parameter name, may be empty
      * @param flags the method parameter access flags
      */
     static MethodParameterInfo ofParameter(Optional<String> name, int flags) {

@@ -175,7 +175,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <dl class="notes">
                     <dt>Type Parameters:</dt>
-                    <dd><code>T</code> - This is a type parameter.</dd>
+                    <dd><span id="type-param-T"><code>T</code> - This is a type parameter.</span></dd>
                     <dt>Record Components:</dt>
                     <dd><code><span id="param-r1">r1</span></code> - This is a component.</dd>
                     </dl>""",

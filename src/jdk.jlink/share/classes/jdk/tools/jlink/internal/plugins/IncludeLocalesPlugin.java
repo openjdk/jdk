@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+
+import static java.lang.classfile.constantpool.PoolEntry.*;
 import static java.util.ResourceBundle.Control;
 import java.util.Set;
 import java.util.function.IntUnaryOperator;
@@ -41,7 +43,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import static java.lang.classfile.ClassFile.*;
+
 import jdk.tools.jlink.internal.ResourcePrevisitor;
 import jdk.tools.jlink.internal.StringTable;
 import jdk.tools.jlink.plugin.ResourcePoolModule;
@@ -215,7 +217,7 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
             available = Stream.concat(module.entries()
                                         .map(md -> p.matcher(md.path()))
                                         .filter(Matcher::matches)
-                                        .map(m -> m.group("tag").replaceAll("_", "-")),
+                                        .map(m -> m.group("tag").replace('_', '-')),
                                     Stream.of(jaJPJPTag, thTHTHTag, "und"))
                 .distinct()
                 .sorted()
@@ -248,7 +250,7 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
             return List.of();
         }
 
-        List<String> files = new ArrayList<>(includeLocaleFiles(tag.replaceAll("-", "_")));
+        List<String> files = new ArrayList<>(includeLocaleFiles(tag.replace('-', '_')));
 
         // Add Thai BreakIterator related data files
         if (tag.equals("th")) {
@@ -300,18 +302,18 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
                 }
                 case TAG_CLASS,
                      TAG_STRING,
-                     TAG_METHODTYPE,
+                     TAG_METHOD_TYPE,
                      TAG_MODULE,
                      TAG_PACKAGE -> offset += 3;
-                case TAG_METHODHANDLE -> offset += 4;
+                case TAG_METHOD_HANDLE -> offset += 4;
                 case TAG_INTEGER,
                      TAG_FLOAT,
                      TAG_FIELDREF,
                      TAG_METHODREF,
-                     TAG_INTERFACEMETHODREF,
-                     TAG_NAMEANDTYPE,
-                     TAG_CONSTANTDYNAMIC,
-                     TAG_INVOKEDYNAMIC -> offset += 5;
+                     TAG_INTERFACE_METHODREF,
+                     TAG_NAME_AND_TYPE,
+                     TAG_DYNAMIC,
+                     TAG_INVOKE_DYNAMIC -> offset += 5;
                 case TAG_LONG,
                      TAG_DOUBLE -> {offset += 9; cpSlot++;} //additional slot for double and long entries
                 default -> throw new IllegalArgumentException("Unknown constant pool entry: 0x"

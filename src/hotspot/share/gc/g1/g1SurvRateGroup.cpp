@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1Predictions.hpp"
 #include "gc/g1/g1SurvRateGroup.hpp"
@@ -47,7 +46,7 @@ void G1SurvRateGroup::reset() {
   // The call to stop_adding_regions() will use "new" to refill
   // the _surv_rate_pred array, so we need to make sure to call
   // "delete".
-  for (size_t i = 0; i < _stats_arrays_length; ++i) {
+  for (uint i = 0; i < _stats_arrays_length; ++i) {
     delete _surv_rate_predictors[i];
   }
   _stats_arrays_length = 0;
@@ -69,13 +68,23 @@ void G1SurvRateGroup::stop_adding_regions() {
     _accum_surv_rate_pred = REALLOC_C_HEAP_ARRAY(double, _accum_surv_rate_pred, _num_added_regions, mtGC);
     _surv_rate_predictors = REALLOC_C_HEAP_ARRAY(TruncatedSeq*, _surv_rate_predictors, _num_added_regions, mtGC);
 
-    for (size_t i = _stats_arrays_length; i < _num_added_regions; ++i) {
+    for (uint i = _stats_arrays_length; i < _num_added_regions; ++i) {
       // Initialize predictors and accumulated survivor rate predictions.
       _surv_rate_predictors[i] = new TruncatedSeq(10);
-      _surv_rate_predictors[i]->add(InitialSurvivorRate);
-      _accum_surv_rate_pred[i] = ((i == 0) ? 0.0 : _accum_surv_rate_pred[i-1]) + InitialSurvivorRate;
+      if (i == 0) {
+        _surv_rate_predictors[i]->add(InitialSurvivorRate);
+        _accum_surv_rate_pred[i] = InitialSurvivorRate;
+      } else {
+        // Assume that the prediction for the newly added regions is the same as the
+        // ones at the (current) end of the array. Particularly predictions at the end
+        // of this array fairly seldom get updated, so having a better initial value
+        // that is at least somewhat related to the actual application is preferable.
+        double next_pred = _surv_rate_predictors[i-1]->last();
+        _surv_rate_predictors[i]->add(next_pred);
+        _accum_surv_rate_pred[i] = _accum_surv_rate_pred[i-1] + next_pred;
+      }
     }
-    _last_pred = InitialSurvivorRate;
+    _last_pred = _surv_rate_predictors[_num_added_regions-1]->last();
 
     _stats_arrays_length = _num_added_regions;
   }
@@ -111,7 +120,7 @@ double G1SurvRateGroup::accum_surv_rate_pred(uint age) const {
 void G1SurvRateGroup::fill_in_last_surv_rates() {
   if (_num_added_regions > 0) { // conservative
     double surv_rate = _surv_rate_predictors[_num_added_regions-1]->last();
-    for (size_t i = _num_added_regions; i < _stats_arrays_length; ++i) {
+    for (uint i = _num_added_regions; i < _stats_arrays_length; ++i) {
       _surv_rate_predictors[i]->add(surv_rate);
     }
   }
@@ -120,7 +129,7 @@ void G1SurvRateGroup::fill_in_last_surv_rates() {
 void G1SurvRateGroup::finalize_predictions(const G1Predictions& predictor) {
   double accum = 0.0;
   double pred = 0.0;
-  for (size_t i = 0; i < _stats_arrays_length; ++i) {
+  for (uint i = 0; i < _stats_arrays_length; ++i) {
     pred = predictor.predict_in_unit_interval(_surv_rate_predictors[i]);
     accum += pred;
     _accum_surv_rate_pred[i] = accum;

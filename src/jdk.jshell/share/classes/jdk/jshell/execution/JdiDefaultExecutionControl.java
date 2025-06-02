@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,8 @@ import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.VirtualMachine;
 import java.io.PrintStream;
+import java.time.Duration;
 import java.util.Optional;
-import java.util.stream.Stream;
 import jdk.jshell.JShellConsole;
 import jdk.jshell.execution.JdiDefaultExecutionControl.JdiStarter.TargetDescription;
 import jdk.jshell.spi.ExecutionControl;
@@ -69,6 +69,13 @@ import jdk.jshell.execution.impl.ConsoleImpl.ConsoleOutputStream;
  * @since 9
  */
 public class JdiDefaultExecutionControl extends JdiExecutionControl {
+
+    private static final Duration SHUTDOWN_TIMEOUT = Duration.ofSeconds(1);
+    private static final List<String> FORWARD_SYSTEM_PROPERTIES = List.of(
+        "stderr.encoding",
+        "stdin.encoding",
+        "stdout.encoding"
+    );
 
     private VirtualMachine vm;
     private Process process;
@@ -102,11 +109,15 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
             int port = listener.getLocalPort();
             Optional<JShellConsole> console = env.console();
             String consoleModule = console.isPresent() ? "jdk.jshell" : "java.base";
-            List<String> augmentedremoteVMOptions =
-                    Stream.concat(env.extraRemoteVMOptions().stream(),
-                                  //disable System.console():
-                                  List.of("-Djdk.console=" + consoleModule).stream())
-                          .toList();
+            List<String> augmentedremoteVMOptions = new ArrayList<>();
+
+            //the stdin/out/err.encoding properties are always defined, and can be copied:
+            FORWARD_SYSTEM_PROPERTIES.forEach(
+                    prop -> augmentedremoteVMOptions.add("-D" + prop + "=" +
+                                                         System.getProperty(prop)));
+            augmentedremoteVMOptions.addAll(env.extraRemoteVMOptions());
+            augmentedremoteVMOptions.add("-Djdk.console=" + consoleModule);
+
             ExecutionEnv augmentedEnv = new ExecutionEnv() {
                 @Override
                 public InputStream userIn() {
@@ -267,6 +278,20 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
     @Override
     public void close() {
         super.close();
+
+        Process remoteProcess;
+
+        synchronized (this) {
+            remoteProcess = this.process;
+        }
+
+        if (remoteProcess != null) {
+            try {
+                remoteProcess.waitFor(SHUTDOWN_TIMEOUT);
+            } catch (InterruptedException ex) {
+                debug(ex, "waitFor remote");
+            }
+        }
         disposeVM();
     }
 

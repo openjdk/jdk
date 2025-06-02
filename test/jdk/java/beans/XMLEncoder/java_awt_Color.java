@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6402062 6487891
  * @summary Tests Color encoding
- * @run main/othervm -Djava.security.manager=allow java_awt_Color
+ * @run main/othervm java_awt_Color
  * @author Sergey Malenkov
  */
 
@@ -33,7 +33,7 @@ import java.awt.Color;
 
 public final class java_awt_Color extends AbstractTest<Color> {
     public static void main(String[] args) {
-        new java_awt_Color().test(true);
+        new java_awt_Color().test();
     }
 
     protected Color getObject() {

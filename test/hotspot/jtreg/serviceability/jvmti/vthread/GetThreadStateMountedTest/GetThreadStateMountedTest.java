@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,13 +251,14 @@ public class GetThreadStateMountedTest {
         }
     }
 
+    private static native void runFromNative(Runnable runnable);
+
     private static Thread createPinnedVThread(Runnable runnable) {
-        final Object syncObj = new Object();
-        return Thread.ofVirtual().unstarted(() -> {
-            synchronized (syncObj) {
-                runnable.run();
-            }
-        });
+        return Thread.ofVirtual().unstarted(() -> runFromNative(runnable));
+    }
+
+    private static void runUpcall(Runnable runnable) {
+        runnable.run();
     }
 
     // Native implementation of suspendWaiting.

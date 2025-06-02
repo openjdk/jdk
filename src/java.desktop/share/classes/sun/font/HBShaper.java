@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,7 +187,6 @@ public class HBShaper {
         dispose_face_handle = tmp3;
 
         FunctionDescriptor shapeDesc = FunctionDescriptor.ofVoid(
-            //JAVA_INT,    // return type
             JAVA_FLOAT,  // ptSize
             ADDRESS,     // matrix
             ADDRESS,     // face
@@ -339,7 +338,7 @@ public class HBShaper {
     ) {
 
         Font2D font2D = scopedVars.get().font();
-        int glyphID = font2D.charToGlyph(unicode);
+        int glyphID = font2D.charToGlyphRaw(unicode);
         @SuppressWarnings("restricted")
         MemorySegment glyphIDPtr = glyph.reinterpret(4);
         glyphIDPtr.setAtIndex(JAVA_INT, 0, glyphID);
@@ -355,7 +354,7 @@ public class HBShaper {
         MemorySegment user_data   /* Not used */
     ) {
         Font2D font2D = scopedVars.get().font();
-        int glyphID = font2D.charToVariationGlyph(unicode, variation_selector);
+        int glyphID = font2D.charToVariationGlyphRaw(unicode, variation_selector);
         @SuppressWarnings("restricted")
         MemorySegment glyphIDPtr = glyph.reinterpret(4);
         glyphIDPtr.setAtIndex(JAVA_INT, 0, glyphID);
@@ -470,7 +469,7 @@ public class HBShaper {
                 MemorySegment matrix = arena.allocateFrom(JAVA_FLOAT, mat);
                 MemorySegment chars = arena.allocateFrom(JAVA_CHAR, text);
 
-                /*int ret =*/ jdk_hb_shape_handle.invokeExact(
+                jdk_hb_shape_handle.invokeExact(
                      ptSize, matrix, hbface, chars, text.length,
                      script, offset, limit,
                      baseIndex, startX, startY, flags, slot,

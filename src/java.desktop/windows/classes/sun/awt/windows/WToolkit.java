@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,8 +112,6 @@ import java.awt.peer.TrayIconPeer;
 import java.awt.peer.WindowPeer;
 import java.beans.PropertyChangeListener;
 import java.lang.ref.WeakReference;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Hashtable;
 import java.util.Locale;
 import java.util.Map;
@@ -125,7 +123,6 @@ import javax.swing.text.JTextComponent;
 
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAutoShutdown;
-import sun.awt.AWTPermissions;
 import sun.awt.AppContext;
 import sun.awt.DisplayChangedListener;
 import sun.awt.LightweightFrame;
@@ -168,17 +165,11 @@ public final class WToolkit extends SunToolkit implements Runnable {
      */
     private static native void initIDs();
     private static boolean loaded = false;
-    @SuppressWarnings("removal")
+
+    @SuppressWarnings("restricted")
     public static void loadLibraries() {
         if (!loaded) {
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Void>() {
-                    @Override
-                    public Void run() {
-                        System.loadLibrary("awt");
-                        return null;
-                    }
-                });
+            System.loadLibrary("awt");
             loaded = true;
         }
     }
@@ -195,7 +186,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
         }
     }
 
-    static class ToolkitDisposer implements sun.java2d.DisposerRecord {
+    static final class ToolkitDisposer implements sun.java2d.DisposerRecord {
         @Override
         public void dispose() {
             WToolkit.postDispose();
@@ -208,7 +199,6 @@ public final class WToolkit extends SunToolkit implements Runnable {
 
     private static native boolean startToolkitThread(Runnable thread, ThreadGroup rootThreadGroup);
 
-    @SuppressWarnings("removal")
     public WToolkit() {
         // Startup toolkit threads
         if (PerformanceLogger.loggingEnabled()) {
@@ -225,16 +215,12 @@ public final class WToolkit extends SunToolkit implements Runnable {
         AWTAutoShutdown.notifyToolkitThreadBusy();
 
         // Find a root TG and attach toolkit thread to it
-        ThreadGroup rootTG = AccessController.doPrivileged(
-                (PrivilegedAction<ThreadGroup>) ThreadGroupUtils::getRootThreadGroup);
+        ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
         if (!startToolkitThread(this, rootTG)) {
             final String name = "AWT-Windows";
-            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                Thread toolkitThread = new Thread(rootTG, this, name, 0, false);
-                toolkitThread.setDaemon(true);
-                toolkitThread.start();
-                return null;
-            });
+            Thread toolkitThread = new Thread(rootTG, this, name, 0, false);
+            toolkitThread.setDaemon(true);
+            toolkitThread.start();
         }
 
         try {
@@ -251,36 +237,25 @@ public final class WToolkit extends SunToolkit implements Runnable {
         // by the native system though.
         setDynamicLayout(true);
         final String extraButtons = "sun.awt.enableExtraMouseButtons";
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            areExtraMouseButtonsEnabled =
-                 Boolean.parseBoolean(System.getProperty(extraButtons, "true"));
-            //set system property if not yet assigned
-            System.setProperty(extraButtons, ""+areExtraMouseButtonsEnabled);
-            return null;
-        });
+        areExtraMouseButtonsEnabled =
+             Boolean.parseBoolean(System.getProperty(extraButtons, "true"));
+        //set system property if not yet assigned
+        System.setProperty(extraButtons, ""+areExtraMouseButtonsEnabled);
         setExtraMouseButtonsEnabledNative(areExtraMouseButtonsEnabled);
     }
 
-    @SuppressWarnings("removal")
     private void registerShutdownHook() {
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            Thread shutdown = new Thread(
-                    ThreadGroupUtils.getRootThreadGroup(), this::shutdown,
-                    "ToolkitShutdown", 0, false);
-            shutdown.setContextClassLoader(null);
-            Runtime.getRuntime().addShutdownHook(shutdown);
-            return null;
-        });
-     }
+        Thread shutdown = new Thread(
+                ThreadGroupUtils.getRootThreadGroup(), this::shutdown,
+                "ToolkitShutdown", 0, false);
+        shutdown.setContextClassLoader(null);
+        Runtime.getRuntime().addShutdownHook(shutdown);
+    }
 
-    @SuppressWarnings("removal")
     @Override
     public void run() {
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            Thread.currentThread().setContextClassLoader(null);
-            Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
-            return null;
-        });
+        Thread.currentThread().setContextClassLoader(null);
+        Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
 
         boolean startPump = init();
 
@@ -618,22 +593,20 @@ public final class WToolkit extends SunToolkit implements Runnable {
 
     @Override
     public FontPeer getFontPeer(String name, int style) {
-        FontPeer retval = null;
         String lcName = name.toLowerCase();
         if (null != cacheFontPeer) {
-            retval = cacheFontPeer.get(lcName + style);
-            if (null != retval) {
-                return retval;
+            FontPeer cachedVal = cacheFontPeer.get(lcName + style);
+            if (null != cachedVal) {
+                return cachedVal;
             }
         }
-        retval = new WFontPeer(name, style);
-        if (retval != null) {
-            if (null == cacheFontPeer) {
-                cacheFontPeer = new Hashtable<>(5, 0.9f);
-            }
-            if (null != cacheFontPeer) {
-                cacheFontPeer.put(lcName + style, retval);
-            }
+
+        FontPeer retval = new WFontPeer(name, style);
+        if (null == cacheFontPeer) {
+            cacheFontPeer = new Hashtable<>(5, 0.9f);
+        }
+        if (null != cacheFontPeer) {
+            cacheFontPeer.put(lcName + style, retval);
         }
         return retval;
     }
@@ -702,11 +675,6 @@ public final class WToolkit extends SunToolkit implements Runnable {
 
     @Override
     public Clipboard getSystemClipboard() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
-        }
         synchronized (this) {
             if (clipboard == null) {
                 clipboard = new WClipboard();

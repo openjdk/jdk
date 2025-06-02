@@ -39,7 +39,7 @@ import java.lang.classfile.ClassTransform;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
-import java.lang.classfile.components.ClassPrinter;
+import jdk.internal.classfile.components.ClassPrinter;
 
 public class AnnotationsExamples {
 

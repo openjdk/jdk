@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,8 @@
  * @bug 0000000
  * @summary This test checks performance of various ciphers.
  * @author Jan Luehe
- * @run main/manual PerformanceTest
  */
-import java.security.*;
 import java.security.spec.*;
-import java.io.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
@@ -178,14 +175,16 @@ public class PerformanceTest {
         long start, end;
         cipher.init(Cipher.ENCRYPT_MODE, cipherKey, params);
 
-        start = System.currentTimeMillis();
+        start = getTimeInMicroseconds();
         for (int i=0; i<count-1; i++) {
             cipher.update(data, 0, data.length);
         }
         cipher.doFinal(data, 0, data.length);
-        end = System.currentTimeMillis();
+        end = getTimeInMicroseconds();
 
-        int speed = (int)((data.length * count)/(end - start));
+        // To avoid dividing by zero in the rare case where end is equal to start
+        long executionTime = end != start ? end - start : 1L;
+        int speed = (int) ((data.length * count) / executionTime);
         sum += speed;
         col.append(speed);
     }
@@ -198,8 +197,12 @@ public class PerformanceTest {
         System.out.println
             ("=========================================================");
         System.out.println
-            ("Algorithm                      DataSize Rounds Kbytes/sec");
+            ("Algorithm                      DataSize Rounds Bytes/microsec");
 
+    }
+
+    private static long getTimeInMicroseconds() {
+        return System.nanoTime() / 1000;
     }
 
 }

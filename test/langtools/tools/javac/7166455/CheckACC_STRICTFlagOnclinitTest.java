@@ -26,7 +26,6 @@
  * @bug 7166455
  * @summary javac doesn't set ACC_STRICT bit on <clinit> for strictfp class
  * @library /tools/lib /test/lib
- * @enablePreview
  */
 
 import jdk.test.lib.compiler.CompilerUtils;

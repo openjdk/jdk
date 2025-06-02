@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
@@ -955,7 +954,7 @@ void IterateOverHeapObjectClosure::do_object(oop o) {
 
   // skip if object is a dormant shared object whose mirror hasn't been loaded
   if (o != nullptr && o->klass()->java_mirror() == nullptr) {
-    log_debug(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)", p2i(o),
+    log_debug(aot, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)", p2i(o),
                          o->klass()->external_name());
     return;
   }
@@ -1041,7 +1040,7 @@ void IterateThroughHeapObjectClosure::do_object(oop obj) {
 
   // skip if object is a dormant shared object whose mirror hasn't been loaded
   if (obj != nullptr &&   obj->klass()->java_mirror() == nullptr) {
-    log_debug(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)", p2i(obj),
+    log_debug(aot, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)", p2i(obj),
                          obj->klass()->external_name());
     return;
   }
@@ -2306,10 +2305,11 @@ bool StackRefCollector::report_native_stack_refs(jmethodID method) {
   _blk->set_context(_thread_tag, _tid, _depth, method);
   if (_is_top_frame) {
     // JNI locals for the top frame.
-    assert(_java_thread != nullptr, "sanity");
-    _java_thread->active_handles()->oops_do(_blk);
-    if (_blk->stopped()) {
-      return false;
+    if (_java_thread != nullptr) {
+      _java_thread->active_handles()->oops_do(_blk);
+      if (_blk->stopped()) {
+        return false;
+      }
     }
   } else {
     if (_last_entry_frame != nullptr) {

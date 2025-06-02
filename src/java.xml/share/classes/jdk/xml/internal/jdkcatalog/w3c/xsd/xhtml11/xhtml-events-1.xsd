@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ elementFormDefault="qualified"
+ xmlns:xh11d="http://www.w3.org/1999/xhtml/datatypes/"
+>
+    <xs:import namespace="http://www.w3.org/1999/xhtml/datatypes/" 
+               schemaLocation="xhtml-datatypes-1.xsd" />
+
+    <xs:annotation>
+        <xs:documentation>
+      This is the XML Schema Intrinsic Events module for XHTML
+      $Id: xhtml-events-1.xsd,v 1.4 2005/09/26 22:54:53 ahby Exp $
+    </xs:documentation>
+        <xs:documentation source="xhtml-copyright-1.xsd"/>
+    </xs:annotation>
+    <xs:annotation>
+        <xs:documentation>
+      Intrinsic Event Attributes
+      These are the event attributes defined in HTML 4,
+      Section 18.2.3 "Intrinsic Events".
+    </xs:documentation>
+        <xs:documentation source="http://www.w3.org/TR/2001/REC-xhtml-modularization-20010410/abstract_modules.html#s_intrinsiceventsmodule"/>
+    </xs:annotation>
+    <xs:attributeGroup name="xhtml.Events.attrib">
+        <xs:attribute name="onclick" type="xh11d:Script"/>
+        <xs:attribute name="ondblclick" type="xh11d:Script"/>
+        <xs:attribute name="onmousedown" type="xh11d:Script"/>
+        <xs:attribute name="onmouseup" type="xh11d:Script"/>
+        <xs:attribute name="onmouseover" type="xh11d:Script"/>
+        <xs:attribute name="onmousemove" type="xh11d:Script"/>
+        <xs:attribute name="onmouseout" type="xh11d:Script"/>
+        <xs:attribute name="onkeypress" type="xh11d:Script"/>
+        <xs:attribute name="onkeydown" type="xh11d:Script"/>
+        <xs:attribute name="onkeyup" type="xh11d:Script"/>
+    </xs:attributeGroup>
+    <!--
+    additional attributes on anchor element
+-->
+    <xs:attributeGroup name="xhtml.a.events.attlist">
+        <xs:attribute name="onfocus" type="xh11d:Script"/>
+        <xs:attribute name="onblur" type="xh11d:Script"/>
+    </xs:attributeGroup>
+    <!--
+    additional attributes on form element
+-->
+    <xs:attributeGroup name="xhtml.form.events.attlist">
+        <xs:attribute name="onsubmit" type="xh11d:Script"/>
+        <xs:attribute name="onreset" type="xh11d:Script"/>
+    </xs:attributeGroup>
+    <!--
+    additional attributes on label element
+-->
+    <xs:attributeGroup name="xhtml.label.events.attlist">
+        <xs:attribute name="onfocus" type="xh11d:Script"/>
+        <xs:attribute name="onblur" type="xh11d:Script"/>
+    </xs:attributeGroup>
+    <!--
+    additional attributes on input element
+-->
+    <xs:attributeGroup name="xhtml.input.events.attlist">
+        <xs:attribute name="onfocus" type="xh11d:Script"/>
+        <xs:attribute name="onblur" type="xh11d:Script"/>
+        <xs:attribute name="onselect" type="xh11d:Script"/>
+        <xs:attribute name="onchange" type="xh11d:Script"/>
+    </xs:attributeGroup>
+    <!--
+    additional attributes on select element
+-->
+    <xs:attributeGroup name="xhtml.select.events.attlist">
+        <xs:attribute name="onfocus" type="xh11d:Script"/>
+        <xs:attribute name="onblur" type="xh11d:Script"/>
+        <xs:attribute name="onchange" type="xh11d:Script"/>
+    </xs:attributeGroup>
+    <!--
+    additional attributes on textarea element
+-->
+    <xs:attributeGroup name="xhtml.textarea.events.attlist">
+        <xs:attribute name="onfocus" type="xh11d:Script"/>
+        <xs:attribute name="onblur" type="xh11d:Script"/>
+        <xs:attribute name="onselect" type="xh11d:Script"/>
+        <xs:attribute name="onchange" type="xh11d:Script"/>
+    </xs:attributeGroup>
+    <!--
+    additional attributes on button element
+-->
+    <xs:attributeGroup name="xhtml.button.events.attlist">
+        <xs:attribute name="onfocus" type="xh11d:Script"/>
+        <xs:attribute name="onblur" type="xh11d:Script"/>
+    </xs:attributeGroup>
+    <!--
+    additional attributes on body element
+-->
+    <xs:attributeGroup name="xhtml.body.events.attlist">
+        <xs:attribute name="onload" type="xh11d:Script"/>
+        <xs:attribute name="onunload" type="xh11d:Script"/>
+    </xs:attributeGroup>
+    <!--
+    additional attributes on area element
+-->
+    <xs:attributeGroup name="xhtml.area.events.attlist">
+        <xs:attribute name="onfocus" type="xh11d:Script"/>
+        <xs:attribute name="onblur" type="xh11d:Script"/>
+    </xs:attributeGroup>
+    <!--
+   Global Events Attributes
+-->
+    <xs:attribute name="onclick" type="xh11d:Script"/>
+    <xs:attribute name="ondblclick" type="xh11d:Script"/>
+    <xs:attribute name="onmousedown" type="xh11d:Script"/>
+    <xs:attribute name="onmouseup" type="xh11d:Script"/>
+    <xs:attribute name="onmouseover" type="xh11d:Script"/>
+    <xs:attribute name="onmousemove" type="xh11d:Script"/>
+    <xs:attribute name="onmouseout" type="xh11d:Script"/>
+    <xs:attribute name="onkeypress" type="xh11d:Script"/>
+    <xs:attribute name="onkeydown" type="xh11d:Script"/>
+    <xs:attribute name="onkeyup" type="xh11d:Script"/>
+    <xs:attributeGroup name="xhtml.Global.events.attrib">
+        <xs:attribute ref="onclick"/>
+        <xs:attribute ref="ondblclick"/>
+        <xs:attribute ref="onmousedown"/>
+        <xs:attribute ref="onmouseup"/>
+        <xs:attribute ref="onmouseover"/>
+        <xs:attribute ref="onmousemove"/>
+        <xs:attribute ref="onmouseout"/>
+        <xs:attribute ref="onkeypress"/>
+        <xs:attribute ref="onkeydown"/>
+        <xs:attribute ref="onkeyup"/>
+    </xs:attributeGroup>
+</xs:schema>

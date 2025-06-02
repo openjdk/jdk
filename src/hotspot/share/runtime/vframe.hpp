@@ -139,8 +139,8 @@ class javaVFrame: public vframe {
 
   // printing used during stack dumps and diagnostics
   static void print_locked_object_class_name(outputStream* st, Handle obj, const char* lock_state);
-  void print_lock_info_on(outputStream* st, int frame_count);
-  void print_lock_info(int frame_count) { print_lock_info_on(tty, frame_count); }
+  void print_lock_info_on(outputStream* st, bool is_virtual, int frame_count);
+  void print_lock_info(bool is_virtual, int frame_count) { print_lock_info_on(tty, is_virtual, frame_count); }
 
 #ifndef PRODUCT
  public:
@@ -281,7 +281,8 @@ class vframeStreamCommon : StackObj {
 
  public:
   // Constructor
-  inline vframeStreamCommon(RegisterMap reg_map);
+  inline vframeStreamCommon(JavaThread* thread, RegisterMap::UpdateMap update_map, RegisterMap::ProcessFrames process_frames, RegisterMap::WalkContinuation walk_cont);
+  vframeStreamCommon(oop continuation);
 
   // Accessors
   Method* method() const { return _method; }

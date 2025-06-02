@@ -37,8 +37,6 @@ import sun.java2d.DisposerRecord;
 import java.awt.geom.Point2D;
 import java.lang.foreign.MemorySegment;
 import java.lang.ref.SoftReference;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.WeakHashMap;
 
@@ -167,10 +165,7 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
 
     static boolean useFFM = true;
     static {
-        @SuppressWarnings("removal")
-        String prop = AccessController.doPrivileged(
-            (PrivilegedAction<String>) () ->
-               System.getProperty("sun.font.layout.ffm", "true"));
+        String prop = System.getProperty("sun.font.layout.ffm", "true");
         useFFM = "true".equals(prop);
 
     }

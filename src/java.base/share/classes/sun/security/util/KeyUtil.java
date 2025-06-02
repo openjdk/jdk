@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,12 @@ import javax.crypto.interfaces.DHKey;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
+import javax.crypto.spec.SecretKeySpec;
+import javax.security.auth.DestroyFailedException;
+import jdk.internal.access.SharedSecrets;
 
 import sun.security.jca.JCAUtil;
+import sun.security.x509.AlgorithmId;
 
 /**
  * A utility class to get key length, validate keys, etc.
@@ -175,24 +179,19 @@ public final class KeyUtil {
     }
 
     /**
-     * Returns the algorithm name of the given key object. If an EC key is
-     * specified, returns the algorithm name and its named curve.
-     *
-     * @param key the key object, cannot be null
-     * @return the algorithm name of the given key object, or return in the
-     *       form of "EC (named curve)" if the given key object is an EC key
+     * If the key is a sub-algorithm of a larger group of algorithms, this
+     * method will return that sub-algorithm.  For example, key.getAlgorithm()
+     * returns "EdDSA", but the underlying key may be "Ed448".  For
+     * DisabledAlgorithmConstraints (DAC), this distinction is important.
+     * "EdDSA" means all curves for DAC, but when using it with
+     * KeyPairGenerator, "EdDSA" means "Ed25519".
      */
-    public static final String fullDisplayAlgName(Key key) {
-        String result = key.getAlgorithm();
-        if (key instanceof ECKey) {
-            ECParameterSpec paramSpec = ((ECKey) key).getParams();
-            if (paramSpec instanceof NamedCurve nc) {
-                result += " (" + nc.getNameAndAliases()[0] + ")";
-            }
-        } else if (key instanceof EdECKey) {
-            result = ((EdECKey) key).getParams().getName();
+    public static String getAlgorithm(Key key) {
+        if (key instanceof AsymmetricKey ak &&
+            ak.getParams() instanceof NamedParameterSpec nps) {
+            return nps.getName();
         }
-        return result;
+        return key.getAlgorithm();
     }
 
     /**
@@ -325,19 +324,31 @@ public final class KeyUtil {
             tmp = encoded;
         }
 
+        // At this point tmp.length is 48
         int encodedVersion =
                 ((tmp[0] & 0xFF) << 8) | (tmp[1] & 0xFF);
-        int check1 = 0;
-        int check2 = 0;
-        int check3 = 0;
-        if (clientVersion != encodedVersion) check1 = 1;
-        if (clientVersion > 0x0301) check2 = 1;
-        if (serverVersion != encodedVersion) check3 = 1;
-        if ((check1 & (check2 | check3)) == 1) {
-            return replacer;
-        } else {
-            return tmp;
+
+        // The following code is a time-constant version of
+        // if ((clientVersion != encodedVersion) ||
+        //    ((clientVersion > 0x301) && (serverVersion != encodedVersion))) {
+        //        return replacer;
+        // } else { return tmp; }
+        int check1 = (clientVersion - encodedVersion) |
+                (encodedVersion - clientVersion);
+        int check2 = 0x0301 - clientVersion;
+        int check3 = (serverVersion - encodedVersion) |
+                (encodedVersion - serverVersion);
+
+        check1 = (check1 & (check2 | check3)) >> 24;
+
+        // Now check1 is either 0 or -1
+        check2 = ~check1;
+
+        for (int i = 0; i < 48; i++) {
+            tmp[i] = (byte) ((tmp[i] & check2) | (replacer[i] & check1));
         }
+
+        return tmp;
     }
 
     /**
@@ -424,7 +435,7 @@ public final class KeyUtil {
         try {
             DerValue val = new DerValue(publicKey.getEncoded());
             val.data.getDerValue();
-            byte[] rawKey = new DerValue(val.data.getBitString()).getOctetString();
+            byte[] rawKey = val.data.getBitString();
             // According to https://www.rfc-editor.org/rfc/rfc8554.html:
             // Section 6.1: HSS public key is u32str(L) || pub[0], where pub[0]
             // is the LMS public key for the top-level tree.
@@ -445,5 +456,95 @@ public final class KeyUtil {
             throw new NoSuchAlgorithmException("Cannot decode public key", e);
         }
     }
+
+    public static boolean isSupportedKeyAgreementOutputAlgorithm(String alg) {
+        return alg.equalsIgnoreCase("TlsPremasterSecret")
+                || alg.equalsIgnoreCase("Generic");
+    }
+
+    // destroy secret keys in a best-effort way
+    public static void destroySecretKeys(SecretKey... keys) {
+        for (SecretKey k : keys) {
+            if (k != null) {
+                if (k instanceof SecretKeySpec sk) {
+                    SharedSecrets.getJavaxCryptoSpecAccess()
+                            .clearSecretKeySpec(sk);
+                } else {
+                    try {
+                        k.destroy();
+                    } catch (DestroyFailedException e) {
+                        // swallow
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * With a given DER encoded bytes, read through and return the AlgorithmID
+     * stored if it can be found.  If none is found or there is an IOException,
+     * null is returned.
+     *
+     * @param encoded DER encoded bytes
+     * @return AlgorithmID stored in the DER encoded bytes or null.
+     */
+    public static String getAlgorithm(byte[] encoded) throws IOException {
+        try {
+            return getAlgorithmId(encoded).getName();
+        } catch (IOException e) {
+            throw new IOException("No recognized algorithm detected in " +
+                "encoding", e);
+        }
+    }
+
+    /**
+     * With a given DER encoded bytes, read through and return the AlgorithmID
+     * stored if it can be found.
+     *
+     * @param encoded DER encoded bytes
+     * @return AlgorithmID stored in the DER encoded bytes
+     * @throws IOException if there was a DER or other parsing error
+     */
+    public static AlgorithmId getAlgorithmId(byte[] encoded) throws IOException {
+        DerInputStream is = new DerInputStream(encoded);
+        DerValue value = is.getDerValue();
+        if (value.tag != DerValue.tag_Sequence) {
+            throw new IOException("Unknown DER Format:  Value 1 not a Sequence");
+        }
+
+        is = value.data;
+        value = is.getDerValue();
+        // This route is for:  RSAPublic, Encrypted RSAPrivate, EC Public,
+        // Encrypted EC Private,
+        if (value.tag == DerValue.tag_Sequence) {
+            return AlgorithmId.parse(value);
+        } else if (value.tag == DerValue.tag_Integer) {
+            // RSAPrivate, ECPrivate
+            // current value is version, which can be ignored
+            value = is.getDerValue();
+            if (value.tag == DerValue.tag_OctetString) {
+                value = is.getDerValue();
+                if (value.tag == DerValue.tag_Sequence) {
+                    return AlgorithmId.parse(value);
+                } else {
+                    // OpenSSL/X9.62 (0xA0)
+                    ObjectIdentifier oid = value.data.getOID();
+                    AlgorithmId algo = new AlgorithmId(oid, (AlgorithmParameters) null);
+                    if (CurveDB.lookup(algo.getName()) != null) {
+                        return new AlgorithmId(AlgorithmId.EC_oid);
+                    }
+
+                }
+
+            } else if (value.tag == DerValue.tag_Sequence) {
+                // Public Key
+                return AlgorithmId.parse(value);
+            }
+
+        }
+        throw new IOException("No algorithm detected");
+    }
+
+
 }
 

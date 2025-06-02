@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,38 @@
 
 /*
  * @test
- * @bug 4129479
- * @summary Test if available would throw an IOException
- *           when the stream is closed.
+ * @bug 4129479 8342086
+ * @summary Test that available throws an IOException if the stream is
+ *          closed, and that available works correctly with the NUL
+ *          device on Windows
+ * @run junit Available
  */
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class Available {
-    public static void main(String args[]) throws Exception {
+    @Test
+    void throwAfterClose() throws IOException {
         File file = new File(System.getProperty("test.src", "."),
                              "Available.java");
         FileInputStream fis = new FileInputStream(file);
         fis.close();
-        try {
-            fis.available();
-            throw new Exception
-                ("available should throw an exception after stream is closed");
-        }
-        catch (IOException e) {
-        }
+        assertThrows(IOException.class, () -> fis.available());
+    }
+
+    @Test
+    @EnabledOnOs(OS.WINDOWS)
+    void nulDevice() throws IOException {
+        File file = new File("nul");
+        FileInputStream fis = new FileInputStream(file);
+        int n = fis.available();
+        assertEquals(0, n, "available() returned non-zero value");
     }
 }

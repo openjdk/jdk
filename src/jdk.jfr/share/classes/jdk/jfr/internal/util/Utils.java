@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 
 package jdk.jfr.internal.util;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
@@ -48,10 +50,12 @@ import jdk.internal.module.Checks;
 import jdk.jfr.Event;
 import jdk.jfr.EventType;
 import jdk.jfr.RecordingState;
+import jdk.jfr.ValueDescriptor;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.MirrorEvent;
+import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.management.HiddenWait;
@@ -429,5 +433,58 @@ public final class Utils {
         // type.getClassLoader() == ClassLoader.getPlatformClassLoader();
         // but only if it is safe and there is a mechanism to register event
         // classes in other modules besides jdk.jfr and java.base.
+    }
+
+    public static long multiplyOverflow(long a, long b, long defaultValue) {
+        try {
+            return Math.multiplyExact(a, b);
+        } catch (ArithmeticException ae) {
+            return defaultValue;
+        }
+    }
+
+    public static ValueDescriptor findField(List<ValueDescriptor> fields, String name) {
+        for (ValueDescriptor v : fields) {
+            if (v.getName().equals(name)) {
+                return v;
+            }
+        }
+        return null;
+    }
+
+    public static Path getPathInProperty(String prop, String subPath) {
+        String path = System.getProperty(prop);
+        if (path == null) {
+            return null;
+        }
+        File file = subPath == null ? new File(path) : new File(path, subPath);
+        return file.toPath().toAbsolutePath();
+    }
+
+
+    public static String validTimespanInfinity(PlatformEventType type, String annotation, String userDefault, String systemDefault) {
+        if (systemDefault.equals(userDefault)) {
+            return systemDefault; // Fast path to avoid parsing
+        }
+        if (ValueParser.parseTimespanWithInfinity(userDefault, ValueParser.MISSING) != ValueParser.MISSING) {
+            return userDefault;
+        }
+        warnInvalidAnnotation(type, annotation, userDefault, systemDefault);
+        return systemDefault;
+    }
+
+    public static void warnInvalidAnnotation(PlatformEventType type, String annotation, String userDefault, String systemDefault) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Programming error. Event setting ");
+        sb.append("@").append(annotation).append("(\"").append(userDefault).append("\")");
+        sb.append(" is invalid on event ");
+        sb.append(type.getName());
+        sb.append(", using ");
+        sb.append("@").append(annotation).append("(\"").append(systemDefault).append("\")");
+        sb.append( " instead.");
+        if (type.isSystem()) {
+            throw new InternalError(sb.toString()); // Fail fast for JDK and JVM events
+        }
+        Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, sb.toString());
     }
 }

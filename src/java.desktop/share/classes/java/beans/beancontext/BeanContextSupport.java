@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -342,13 +342,13 @@ public class      BeanContextSupport extends BeanContextChildSupport
 
 
         /**
-         * The child.
+         * @serial The child.
          */
         @SuppressWarnings("serial") // Not statically typed as Serializable
         private Object child;
 
         /**
-         * The peer if the child and the peer are related by an implementation
+         * @serial The peer if the child and the peer are related by an implementation
          * of BeanContextProxy
          */
         @SuppressWarnings("serial") // Not statically typed as Serializable
@@ -1393,7 +1393,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
     protected transient HashMap<Object, BCSChild>         children;
 
     /**
-     * Currently serializable children.
+     * @serial Currently serializable children.
      */
     private int serializable = 0; // children serializable
 
@@ -1407,12 +1407,16 @@ public class      BeanContextSupport extends BeanContextChildSupport
 
     /**
      * The current locale of this BeanContext.
+     *
+     * @serial
      */
     protected           Locale          locale;
 
     /**
      * A {@code boolean} indicating if this
      * instance may now render a GUI.
+     *
+     * @serial
      */
     protected           boolean         okToUseGui;
 
@@ -1420,6 +1424,8 @@ public class      BeanContextSupport extends BeanContextChildSupport
     /**
      * A {@code boolean} indicating whether or not
      * this object is currently in design time mode.
+     *
+     * @serial
      */
     protected           boolean         designTime;
 

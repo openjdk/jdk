@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
  * command-line script shell, <em>{@index jrunscript jrunscript tool}</em>,
  * that supports executing JavaScript and other languages if its corresponding
  * script engine is installed.
+ * <p> The {@code jrunscript} tool is deprecated and will be removed
+ * in a future release.
  *
  * @toolGuide jrunscript
  *

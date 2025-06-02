@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 @Warmup(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
-@Fork(value = 3, jvmArgsAppend = {"-Xms512m", "-Xmx512m", "-XX:+AlwaysPreTouch", "-XX:+UseParallelGC"})
+@Fork(value = 3, jvmArgs = {"-Xms512m", "-Xmx512m", "-XX:+AlwaysPreTouch", "-XX:+UseParallelGC"})
 public class ConstructorBarriers {
 
     // Checks the barrier coalescing/optimization around field initializations.

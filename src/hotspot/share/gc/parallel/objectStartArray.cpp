@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
-#include "nmt/memTracker.hpp"
+#include "memory/memoryReserver.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "utilities/align.hpp"
@@ -37,9 +36,10 @@ static size_t num_bytes_required(MemRegion mr) {
   return mr.word_size() / CardTable::card_size_in_words();
 }
 
-void ObjectStartArray::initialize(MemRegion reserved_region) {
+ObjectStartArray::ObjectStartArray(MemRegion covered_region)
+  : _virtual_space(nullptr) {
   // Calculate how much space must be reserved
-  size_t bytes_to_reserve = num_bytes_required(reserved_region);
+  size_t bytes_to_reserve = num_bytes_required(covered_region);
   assert(bytes_to_reserve > 0, "Sanity");
 
   bytes_to_reserve =
@@ -47,28 +47,27 @@ void ObjectStartArray::initialize(MemRegion reserved_region) {
 
   // Do not use large-pages for the backing store. The one large page region
   // will be used for the heap proper.
-  ReservedSpace backing_store(bytes_to_reserve);
+  ReservedSpace backing_store = MemoryReserver::reserve(bytes_to_reserve, mtGC);
   if (!backing_store.is_reserved()) {
     vm_exit_during_initialization("Could not reserve space for ObjectStartArray");
   }
-  MemTracker::record_virtual_memory_type(backing_store.base(), mtGC);
 
   // We do not commit any memory initially
-  _virtual_space.initialize(backing_store);
+  _virtual_space = new PSVirtualSpace(backing_store, os::vm_page_size());
 
-  assert(_virtual_space.low_boundary() != nullptr, "set from the backing_store");
+  assert(_virtual_space->low_boundary() != nullptr, "set from the backing_store");
 
-  _offset_base = (uint8_t*)(_virtual_space.low_boundary() - (uintptr_t(reserved_region.start()) >> CardTable::card_shift()));
+  _offset_base = (uint8_t*)(_virtual_space->low_boundary() - (uintptr_t(covered_region.start()) >> CardTable::card_shift()));
 }
 
 void ObjectStartArray::set_covered_region(MemRegion mr) {
   DEBUG_ONLY(_covered_region = mr;)
 
   size_t requested_size = num_bytes_required(mr);
-  // Only commit memory in page sized chunks
+  // Only commit memory in page-sized chunks
   requested_size = align_up(requested_size, os::vm_page_size());
 
-  size_t current_size = _virtual_space.committed_size();
+  size_t current_size = _virtual_space->committed_size();
 
   if (requested_size == current_size) {
     return;
@@ -77,13 +76,13 @@ void ObjectStartArray::set_covered_region(MemRegion mr) {
   if (requested_size > current_size) {
     // Expand
     size_t expand_by = requested_size - current_size;
-    if (!_virtual_space.expand_by(expand_by)) {
+    if (!_virtual_space->expand_by(expand_by)) {
       vm_exit_out_of_memory(expand_by, OOM_MMAP_ERROR, "object start array expansion");
     }
   } else {
     // Shrink
     size_t shrink_by = current_size - requested_size;
-    _virtual_space.shrink_by(shrink_by);
+    _virtual_space->shrink_by(shrink_by);
   }
 }
 
@@ -123,7 +122,7 @@ void ObjectStartArray::update_for_block_work(HeapWord* blk_start,
     assert(start_entry_for_region > end_entry, "Sanity check");
   }
 
-  debug_only(verify_for_block(blk_start, blk_end);)
+  DEBUG_ONLY(verify_for_block(blk_start, blk_end);)
 }
 
 void ObjectStartArray::verify_for_block(HeapWord* blk_start, HeapWord* blk_end) const {

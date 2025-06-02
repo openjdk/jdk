@@ -25,8 +25,6 @@
 
 package sun.util.locale.provider;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.text.spi.BreakIteratorProvider;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -85,12 +83,9 @@ public class FallbackLocaleProviderAdapter extends JRELocaleProviderAdapter {
     // In order to correctly report supported locales
     public BreakIteratorProvider getBreakIteratorProvider() {
         if (breakIteratorProvider == null) {
-            @SuppressWarnings("removal")
-            BreakIteratorProvider provider = AccessController.doPrivileged(
-                    (PrivilegedAction<BreakIteratorProvider>) () ->
-                            new BreakIteratorProviderImpl(
+            BreakIteratorProvider provider = new BreakIteratorProviderImpl(
                                     getAdapterType(),
-                                    getLanguageTagSet("BreakIteratorRules")));
+                                    getLanguageTagSet("BreakIteratorRules"));
 
             synchronized (this) {
                 if (breakIteratorProvider == null) {

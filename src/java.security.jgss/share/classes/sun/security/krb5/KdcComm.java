@@ -31,7 +31,6 @@
 
 package sun.security.krb5;
 
-import java.security.PrivilegedAction;
 import java.security.Security;
 import java.util.Locale;
 import sun.security.krb5.internal.Krb5;
@@ -39,9 +38,6 @@ import sun.security.krb5.internal.NetClient;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.StringTokenizer;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -98,13 +94,7 @@ public final class KdcComm {
      * Read global settings
      */
     public static void initStatic() {
-        @SuppressWarnings("removal")
-        String value = AccessController.doPrivileged(
-        new PrivilegedAction<String>() {
-            public String run() {
-                return Security.getProperty("krb5.kdc.bad.policy");
-            }
-        });
+        String value = Security.getProperty("krb5.kdc.bad.policy");
         if (value != null) {
             value = value.toLowerCase(Locale.ENGLISH);
             String[] ss = value.split(":");
@@ -349,81 +339,39 @@ public final class KdcComm {
                                + ", #bytes=" + obuf.length);
         }
 
-        KdcCommunication kdcCommunication =
-            new KdcCommunication(kdc, port, useTCP, timeout, retries, obuf);
-        try {
-            @SuppressWarnings("removal")
-            byte[] ibuf = AccessController.doPrivileged(kdcCommunication);
+        byte[] ibuf = null;
+
+        for (int i=1; i <= retries; i++) {
+            String proto = useTCP?"TCP":"UDP";
             if (DEBUG != null) {
-                DEBUG.println(">>> KrbKdcReq send: #bytes read="
-                        + (ibuf != null ? ibuf.length : 0));
+                DEBUG.println(">>> KDCCommunication: kdc=" + kdc
+                        + " " + proto + ":"
+                        + port + ", timeout="
+                        + timeout
+                        + ",Attempt =" + i
+                        + ", #bytes=" + obuf.length);
             }
-            return ibuf;
-        } catch (PrivilegedActionException e) {
-            Exception wrappedException = e.getException();
-            if (wrappedException instanceof IOException) {
-                throw (IOException) wrappedException;
-            } else {
-                throw (KrbException) wrappedException;
-            }
-        }
-    }
-
-    private static class KdcCommunication
-        implements PrivilegedExceptionAction<byte[]> {
-
-        private String kdc;
-        private int port;
-        private boolean useTCP;
-        private int timeout;
-        private int retries;
-        private byte[] obuf;
-
-        public KdcCommunication(String kdc, int port, boolean useTCP,
-                                int timeout, int retries, byte[] obuf) {
-            this.kdc = kdc;
-            this.port = port;
-            this.useTCP = useTCP;
-            this.timeout = timeout;
-            this.retries = retries;
-            this.obuf = obuf;
-        }
-
-        // The caller only casts IOException and KrbException so don't
-        // add any new ones!
-
-        public byte[] run() throws IOException, KrbException {
-
-            byte[] ibuf = null;
-
-            for (int i=1; i <= retries; i++) {
-                String proto = useTCP?"TCP":"UDP";
+            try (NetClient kdcClient = NetClient.getInstance(
+                    proto, kdc, port, timeout)) {
+                kdcClient.send(obuf);
+                ibuf = kdcClient.receive();
+                break;
+            } catch (SocketTimeoutException se) {
                 if (DEBUG != null) {
-                    DEBUG.println(">>> KDCCommunication: kdc=" + kdc
-                            + " " + proto + ":"
-                            +  port +  ", timeout="
-                            + timeout
-                            + ",Attempt =" + i
-                            + ", #bytes=" + obuf.length);
+                    DEBUG.println ("SocketTimeOutException with " +
+                            "attempt: " + i);
                 }
-                try (NetClient kdcClient = NetClient.getInstance(
-                        proto, kdc, port, timeout)) {
-                    kdcClient.send(obuf);
-                    ibuf = kdcClient.receive();
-                    break;
-                } catch (SocketTimeoutException se) {
-                    if (DEBUG != null) {
-                        DEBUG.println ("SocketTimeOutException with " +
-                                "attempt: " + i);
-                    }
-                    if (i == retries) {
-                        ibuf = null;
-                        throw se;
-                    }
+                if (i == retries) {
+                    ibuf = null;
+                    throw se;
                 }
             }
-            return ibuf;
         }
+        if (DEBUG != null) {
+            DEBUG.println(">>> KrbKdcReq send: #bytes read="
+                    + (ibuf != null ? ibuf.length : 0));
+        }
+        return ibuf;
     }
 
     /**

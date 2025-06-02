@@ -32,17 +32,17 @@ class G1AdaptiveIHOPControl;
 
 // Track allocation details in the old generation.
 class G1OldGenAllocationTracker : public CHeapObj<mtGC> {
-  // Total number of bytes allocated in the old generation during
-  // last mutator period.
+  // Total number of bytes allocated in the old generation at the end
+  // of the last gc.
   size_t _last_period_old_gen_bytes;
-  // Total growth of the old geneneration for last mutator period,
-  // taking eager reclaim into consideration.
+  // Total growth of the old geneneration since the last gc,
+  // taking eager-reclaim into consideration.
   size_t _last_period_old_gen_growth;
 
   // Total size of humongous objects for last gc.
   size_t _humongous_bytes_after_last_gc;
 
-  // Non-humongous old generation allocations during last mutator period.
+  // Non-humongous old generation allocations since the last gc.
   size_t _allocated_bytes_since_last_gc;
   // Humongous allocations during last mutator period.
   size_t _allocated_humongous_bytes_since_last_gc;

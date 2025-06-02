@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 package sun.security.util;
 
 import java.io.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.cert.X509Certificate;
 import java.util.Properties;
 
@@ -50,22 +48,15 @@ public final class UntrustedCertificates {
     private static final String algorithm;
 
     static {
-        @SuppressWarnings("removal")
-        var dummy = AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            @Override
-            public Void run() {
-                File f = new File(StaticProperty.javaHome(),
-                        "lib/security/blocked.certs");
-                try (FileInputStream fin = new FileInputStream(f)) {
-                    props.load(fin);
-                } catch (IOException fnfe) {
-                    if (debug != null) {
-                        debug.println("Error parsing blocked.certs");
-                    }
-                }
-                return null;
+        File f = new File(StaticProperty.javaHome(),
+                "lib/security/blocked.certs");
+        try (FileInputStream fin = new FileInputStream(f)) {
+            props.load(fin);
+        } catch (IOException fnfe) {
+            if (debug != null) {
+                debug.println("Error parsing blocked.certs");
             }
-        });
+        }
         algorithm = props.getProperty(ALGORITHM_KEY);
     }
 

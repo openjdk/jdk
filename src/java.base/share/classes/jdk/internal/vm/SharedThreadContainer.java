@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.invoke.MhUtil;
 
 /**
  * A "shared" thread container. A shared thread container doesn't have an owner
@@ -41,15 +42,9 @@ public class SharedThreadContainer extends ThreadContainer implements AutoClosea
     private static final VarHandle CLOSED;
     private static final VarHandle VIRTUAL_THREADS;
     static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            CLOSED = l.findVarHandle(SharedThreadContainer.class,
-                    "closed", boolean.class);
-            VIRTUAL_THREADS = l.findVarHandle(SharedThreadContainer.class,
-                    "virtualThreads", Set.class);
-        } catch (Exception e) {
-            throw new ExceptionInInitializerError(e);
-        }
+        MethodHandles.Lookup l = MethodHandles.lookup();
+        CLOSED = MhUtil.findVarHandle(l, "closed", boolean.class);
+        VIRTUAL_THREADS = MhUtil.findVarHandle(l, "virtualThreads", Set.class);
     }
 
     // name of container, used by toString

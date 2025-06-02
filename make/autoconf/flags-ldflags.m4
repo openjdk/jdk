@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -71,10 +71,14 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     LDFLAGS_CXX_PARTIAL_LINKING="$MACHINE_FLAG -r"
 
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
+      # Clang needs the lld linker to work correctly
       BASIC_LDFLAGS="-fuse-ld=lld -Wl,--exclude-libs,ALL"
+      if test "x$CXX_IS_USER_SUPPLIED" = xfalse && test "x$CC_IS_USER_SUPPLIED" = xfalse; then
+        UTIL_REQUIRE_PROGS(LLD, lld, $TOOLCHAIN_PATH:$PATH)
+      fi
     fi
     if test "x$OPENJDK_TARGET_OS" = xaix; then
-      BASIC_LDFLAGS="-Wl,-b64 -Wl,-brtl -Wl,-bnorwexec -Wl,-bnolibpath -Wl,-bnoexpall \
+      BASIC_LDFLAGS="-Wl,-b64 -Wl,-brtl -Wl,-bnorwexec -Wl,-blibpath:/usr/lib:lib -Wl,-bnoexpall \
         -Wl,-bernotok -Wl,-bdatapsize:64k -Wl,-btextpsize:64k -Wl,-bstackpsize:64k"
       BASIC_LDFLAGS_JVM_ONLY="$BASIC_LDFLAGS_JVM_ONLY -Wl,-lC_r -Wl,-bbigtoc"
     fi
@@ -96,7 +100,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
   if test "x$OPENJDK_TARGET_OS" = xmacosx && test "x$TOOLCHAIN_TYPE" = xclang; then
     # FIXME: We should really generalize SET_SHARED_LIBRARY_ORIGIN instead.
     OS_LDFLAGS_JVM_ONLY="-Wl,-rpath,@loader_path/. -Wl,-rpath,@loader_path/.."
-    OS_LDFLAGS="-mmacosx-version-min=$MACOSX_VERSION_MIN"
+    OS_LDFLAGS="-mmacosx-version-min=$MACOSX_VERSION_MIN -Wl,-reproducible"
   fi
 
   # Setup debug level-dependent LDFLAGS
@@ -166,9 +170,9 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_CPU_DEP],
 
     # MIPS ABI does not support GNU hash style
     if test "x${OPENJDK_$1_CPU}" = xmips ||
-       test "x${OPENJDK_$1_CPU}" = xmipsel ||
-       test "x${OPENJDK_$1_CPU}" = xmips64 ||
-       test "x${OPENJDK_$1_CPU}" = xmips64el; then
+        test "x${OPENJDK_$1_CPU}" = xmipsel ||
+        test "x${OPENJDK_$1_CPU}" = xmips64 ||
+        test "x${OPENJDK_$1_CPU}" = xmips64el; then
       $1_CPU_LDFLAGS="${$1_CPU_LDFLAGS} -Wl,--hash-style=sysv"
     else
       $1_CPU_LDFLAGS="${$1_CPU_LDFLAGS} -Wl,--hash-style=gnu"
@@ -188,18 +192,23 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_CPU_DEP],
   # Export variables according to old definitions, prefix with $2 if present.
   LDFLAGS_JDK_COMMON="$BASIC_LDFLAGS $BASIC_LDFLAGS_JDK_ONLY \
       $OS_LDFLAGS $DEBUGLEVEL_LDFLAGS_JDK_ONLY ${$2EXTRA_LDFLAGS}"
-  $2LDFLAGS_JDKLIB="$LDFLAGS_JDK_COMMON $BASIC_LDFLAGS_JDK_LIB_ONLY \
+  $2LDFLAGS_JDKLIB="$LDFLAGS_JDK_COMMON \
       $SHARED_LIBRARY_FLAGS $REPRODUCIBLE_LDFLAGS $FILE_MACRO_LDFLAGS"
   $2LDFLAGS_JDKEXE="$LDFLAGS_JDK_COMMON $EXECUTABLE_LDFLAGS \
       ${$1_CPU_EXECUTABLE_LDFLAGS} $REPRODUCIBLE_LDFLAGS $FILE_MACRO_LDFLAGS"
 
+  $2LDFLAGS_STATIC_JDK="$BASIC_LDFLAGS $OS_LDFLAGS ${$2EXTRA_LDFLAGS} \
+      $REPRODUCIBLE_LDFLAGS $FILE_MACRO_LDFLAGS"
+
   $2JVM_LDFLAGS="$BASIC_LDFLAGS $BASIC_LDFLAGS_JVM_ONLY $OS_LDFLAGS $OS_LDFLAGS_JVM_ONLY \
-      $DEBUGLEVEL_LDFLAGS $DEBUGLEVEL_LDFLAGS_JVM_ONLY $BASIC_LDFLAGS_ONLYCXX \
+      $DEBUGLEVEL_LDFLAGS $DEBUGLEVEL_LDFLAGS_JVM_ONLY \
       ${$1_CPU_LDFLAGS} ${$1_CPU_LDFLAGS_JVM_ONLY} ${$2EXTRA_LDFLAGS} \
       $REPRODUCIBLE_LDFLAGS $FILE_MACRO_LDFLAGS"
 
   AC_SUBST($2LDFLAGS_JDKLIB)
   AC_SUBST($2LDFLAGS_JDKEXE)
+
+  AC_SUBST($2LDFLAGS_STATIC_JDK)
 
   AC_SUBST($2JVM_LDFLAGS)
 ])

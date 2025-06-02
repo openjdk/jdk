@@ -30,10 +30,9 @@ import jdk.test.lib.Utils;
 
 /*
  * @test
- * @bug 8324655 8329797
+ * @bug 8324655 8329797 8331090
  * @key randomness
  * @summary Test that if expressions are properly folded into min/max nodes
- * @requires os.arch != "riscv64"
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestIfMinMax
  */
@@ -228,7 +227,7 @@ public class TestIfMinMax {
 
     @Test
     @IR(applyIf = { "SuperWordReductions", "true" },
-        applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+        applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true", "rvv", "true"},
         counts = { IRNode.MAX_REDUCTION_V, "> 0" })
     @Arguments(setup = "setupIntArrays")
     public Object[] testMaxIntReduction(int[] a, int[] b) {
@@ -262,7 +261,7 @@ public class TestIfMinMax {
 
     @Test
     @IR(applyIf = { "SuperWordReductions", "true" },
-        applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+        applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true", "rvv", "true"},
         counts = { IRNode.MIN_REDUCTION_V, "> 0" })
     @Arguments(setup = "setupIntArrays")
     public Object[] testMinIntReduction(int[] a, int[] b) {
@@ -297,7 +296,7 @@ public class TestIfMinMax {
 
     @Test
     @IR(applyIf = { "SuperWordReductions", "true" },
-        applyIfCPUFeatureOr = { "avx512", "true" },
+        applyIfCPUFeatureOr = { "avx512", "true", "rvv", "true" },
         counts = { IRNode.MAX_REDUCTION_V, "> 0" })
     @Arguments(setup = "setupLongArrays")
     public Object[] testMaxLongReduction(long[] a, long[] b) {
@@ -332,7 +331,7 @@ public class TestIfMinMax {
 
     @Test
     @IR(applyIf = { "SuperWordReductions", "true" },
-        applyIfCPUFeatureOr = { "avx512", "true" },
+        applyIfCPUFeatureOr = { "avx512", "true", "rvv", "true" },
         counts = { IRNode.MIN_REDUCTION_V, "> 0" })
     @Arguments(setup = "setupLongArrays")
     public Object[] testMinLongReduction(long[] a, long[] b) {
@@ -366,7 +365,7 @@ public class TestIfMinMax {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true", "rvv", "true"},
         counts = { IRNode.MAX_VI, "> 0" })
     @Arguments(setup = "setupIntArrays")
     public Object[] testMaxIntVector(int[] a, int[] b) {
@@ -401,7 +400,7 @@ public class TestIfMinMax {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true", "rvv", "true"},
         counts = { IRNode.MIN_VI, "> 0" })
     @Arguments(setup = "setupIntArrays")
     public Object[] testMinIntVector(int[] a, int[] b) {
@@ -436,7 +435,7 @@ public class TestIfMinMax {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true", "rvv", "true"},
         counts = { IRNode.MAX_VL, "> 0" })
     @Arguments(setup = "setupLongArrays")
     public Object[] testMaxLongVector(long[] a, long[] b) {
@@ -471,7 +470,7 @@ public class TestIfMinMax {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true", "rvv", "true"},
         counts = { IRNode.MIN_VL, "> 0" })
     @Arguments(setup = "setupLongArrays")
     public Object[] testMinLongVector(long[] a, long[] b) {
@@ -505,7 +504,27 @@ public class TestIfMinMax {
         }
     }
 
-    @Run(test = { "testMinI1", "testMinI2", "testMaxI1", "testMaxI2", "testMinI1E", "testMinI2E", "testMaxI1E", "testMaxI2E" })
+    @Test
+    @IR(failOn = { IRNode.IF }, counts = { IRNode.MIN_I, "1" })
+    public int testMinIConst(int a) {
+        if (a > 65535) {
+            a = 65535;
+        }
+
+        return a;
+    }
+
+    @Test
+    @IR(phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, failOn = { IRNode.IF }, counts = { IRNode.MIN_L, "1" })
+    public long testMinLConst(long a) {
+        if (a > 65535) {
+            a = 65535;
+        }
+
+        return a;
+    }
+
+    @Run(test = { "testMinI1", "testMinI2", "testMaxI1", "testMaxI2", "testMinI1E", "testMinI2E", "testMaxI1E", "testMaxI2E", "testMinIConst" })
     public void runTestIntegers() {
         testIntegers(10, 20);
         testIntegers(20, 10);
@@ -526,9 +545,12 @@ public class TestIfMinMax {
         Asserts.assertEQ(a >= b ? b : a, testMinI2E(a, b));
         Asserts.assertEQ(a >= b ? a : b, testMaxI1E(a, b));
         Asserts.assertEQ(a <= b ? b : a, testMaxI2E(a, b));
+
+        Asserts.assertEQ(a > 65535 ? 65535 : a, testMinIConst(a));
+        Asserts.assertEQ(b > 65535 ? 65535 : b, testMinIConst(b));
     }
 
-    @Run(test = { "testMinL1", "testMinL2", "testMaxL1", "testMaxL2", "testMinL1E", "testMinL2E", "testMaxL1E", "testMaxL2E" })
+    @Run(test = { "testMinL1", "testMinL2", "testMaxL1", "testMaxL2", "testMinL1E", "testMinL2E", "testMaxL1E", "testMaxL2E", "testMinLConst" })
     public void runTestLongs() {
         testLongs(10, 20);
         testLongs(20, 10);
@@ -551,5 +573,8 @@ public class TestIfMinMax {
         Asserts.assertEQ(a >= b ? b : a, testMinL2E(a, b));
         Asserts.assertEQ(a >= b ? a : b, testMaxL1E(a, b));
         Asserts.assertEQ(a <= b ? b : a, testMaxL2E(a, b));
+
+        Asserts.assertEQ(a > 65535L ? 65535L : a, testMinLConst(a));
+        Asserts.assertEQ(b > 65535L ? 65535L : b, testMinLConst(b));
     }
 }

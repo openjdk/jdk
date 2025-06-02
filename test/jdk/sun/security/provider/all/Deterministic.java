@@ -205,6 +205,8 @@ public class Deterministic {
             case "EC" -> 256;
             case "EdDSA", "Ed25519", "XDH", "X25519" -> 255;
             case "Ed448", "X448" -> 448;
+            case "ML-KEM", "ML-KEM-768", "ML-KEM-512", "ML-KEM-1024",
+                 "ML-DSA", "ML-DSA-44", "ML-DSA-65", "ML-DSA-87" -> -1;
             default -> throw new UnsupportedOperationException(alg);
         };
         g.initialize(size, new SeededSecureRandom(SEED + offset));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -39,11 +38,9 @@ import util.DraconianErrorHandler;
  * @test
  * @bug 4934208
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug4934208
  * @run testng/othervm parsers.Bug4934208
  * @summary Test SAXParser can parse keyref constraint with a selector that is a union xpath expression selecting a node and its child.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class Bug4934208 {
     @Test
     public void test1() throws Exception {

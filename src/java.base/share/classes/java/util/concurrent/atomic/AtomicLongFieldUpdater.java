@@ -37,9 +37,6 @@ package java.util.concurrent.atomic;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongUnaryOperator;
 import jdk.internal.misc.Unsafe;
@@ -381,29 +378,15 @@ public abstract class AtomicLongFieldUpdater<T> {
         /** class holding the field */
         private final Class<T> tclass;
 
-        @SuppressWarnings("removal")
         CASUpdater(final Class<T> tclass, final String fieldName,
                    final Class<?> caller) {
             final Field field;
             final int modifiers;
             try {
-                field = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<Field>() {
-                        public Field run() throws NoSuchFieldException {
-                            return tclass.getDeclaredField(fieldName);
-                        }
-                    });
+                field = tclass.getDeclaredField(fieldName);
                 modifiers = field.getModifiers();
                 sun.reflect.misc.ReflectUtil.ensureMemberAccess(
                     caller, tclass, null, modifiers);
-                ClassLoader cl = tclass.getClassLoader();
-                ClassLoader ccl = caller.getClassLoader();
-                if ((ccl != null) && (ccl != cl) &&
-                    ((cl == null) || !isAncestor(cl, ccl))) {
-                    sun.reflect.misc.ReflectUtil.checkPackageAccess(tclass);
-                }
-            } catch (PrivilegedActionException pae) {
-                throw new RuntimeException(pae.getException());
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }

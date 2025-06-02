@@ -28,7 +28,6 @@ package javax.lang.model.util;
 import javax.lang.model.element.*;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.ElementVisitor;
 import static javax.lang.model.SourceVersion.*;
 
 

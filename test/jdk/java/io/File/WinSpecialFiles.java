@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,12 @@
    @bug 6192331 6348207 8202076
    @summary Check if File.exists()/length() works correctly on Windows
             special files hiberfil.sys and pagefile.sys
+   @requires (os.family == "windows")
  */
 
 import java.io.File;
 public class WinSpecialFiles {
     public static void main(String[] args) throws Exception {
-        String osName = System.getProperty("os.name");
-        if (!osName.startsWith("Windows")) {
-            return;
-        }
         File root = new File("C:\\");
         File[] dir = root.listFiles();
         for (int i = 0; i < dir.length; i++) {

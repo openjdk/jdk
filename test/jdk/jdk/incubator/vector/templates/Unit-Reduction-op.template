@@ -4,7 +4,7 @@
 [[KERNEL]]
         assertReductionArraysEquals(r, ra, a,
 #if[FP]
-                $vectorteststype$::[[TEST]]Reduce, $vectorteststype$::[[TEST]]ReduceAll, RELATIVE_ROUNDING_ERROR);
+                $vectorteststype$::[[TEST]]Reduce, $vectorteststype$::[[TEST]]ReduceAll, RELATIVE_ROUNDING_ERROR_FACTOR_[[TEST]]);
 #else[FP]
                 $vectorteststype$::[[TEST]]Reduce, $vectorteststype$::[[TEST]]ReduceAll);
 #end[FP]

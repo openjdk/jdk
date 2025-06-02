@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -663,9 +663,11 @@ class SleepingThread extends BaseThread {
         expectedMethods.add(Thread.class.getName() + ".currentCarrierThread");
         expectedMethods.add(Thread.class.getName() + ".currentThread");
         // jdk.internal.event.ThreadSleepEvent not accessible
+        expectedMethods.add("java.lang.Object.<init>");
+        expectedMethods.add("jdk.internal.event.Event.<init>");
+        expectedMethods.add("jdk.internal.event.ThreadSleepEvent.<init>");
         expectedMethods.add("jdk.internal.event.ThreadSleepEvent.<clinit>");
         expectedMethods.add("jdk.internal.event.ThreadSleepEvent.isEnabled");
-        expectedMethods.add("jdk.internal.event.ThreadSleepEvent.isTurnedOn");
         expectedMethods.add(SleepingThread.class.getName() + ".run");
 
         switch (controller.invocationType) {

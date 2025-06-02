@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,8 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test
- * @key jfr
  * @requires vm.hasJFR
+ * @requires vm.flagless
  * @library /test/lib /test/jdk
  * @summary Purpose of this test is to run leak profiler without command line tweaks or WhiteBox hacks until we succeed
  * @run main/othervm -Xmx1G jdk.jfr.event.oldobject.TestSanityDefault

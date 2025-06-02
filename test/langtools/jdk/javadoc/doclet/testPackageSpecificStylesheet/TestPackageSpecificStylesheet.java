@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8213354
+ * @bug 8213354 8347058
  * @summary Support package-specific stylesheets
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -82,15 +82,15 @@ public class TestPackageSpecificStylesheet extends JavadocTester {
 
         checkOutput("pkg/A.html", true,
                 """
-                    <link rel="stylesheet" type="text/css" href="../pkg/doc-files/spanstyle.css" title="Style">""");
+                    <link rel="stylesheet" type="text/css" href="../pkg/doc-files/spanstyle.css">""");
 
         checkOutput("pkg/package-summary.html", true,
                 """
-                    <link rel="stylesheet" type="text/css" href="../pkg/doc-files/spanstyle.css" title="Style">""");
+                    <link rel="stylesheet" type="text/css" href="../pkg/doc-files/spanstyle.css">""");
 
         checkOutput("pkg2/B.html", false,
                 """
-                    <link rel="stylesheet" type="text/css" href="../pkg2/doc-files/spanstyle.css" title="Style">""");
+                    <link rel="stylesheet" type="text/css" href="../pkg2/doc-files/spanstyle.css">""");
 
     }
 }

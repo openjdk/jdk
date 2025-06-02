@@ -30,7 +30,6 @@ import java.security.GeneralSecurityException;
 import java.security.cert.*;
 import java.util.*;
 
-import sun.security.action.GetBooleanAction;
 import sun.security.provider.certpath.PKIX.BuilderParams;
 import sun.security.util.Debug;
 
@@ -55,8 +54,8 @@ abstract class Builder {
      * Authority Information Access extension shall be enabled. Currently
      * disabled by default for compatibility reasons.
      */
-    static final boolean USE_AIA = GetBooleanAction
-            .privilegedGetProperty("com.sun.security.enableAIAcaIssuers");
+    static final boolean USE_AIA =
+            Boolean.getBoolean("com.sun.security.enableAIAcaIssuers");
 
     /**
      * Initialize the builder with the input parameters.

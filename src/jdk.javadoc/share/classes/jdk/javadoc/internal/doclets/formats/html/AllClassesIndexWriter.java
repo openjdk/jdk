@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,16 @@ import java.util.TreeSet;
 import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DeprecatedTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlTree;
 
 /**
  * Generate the file with list of all the classes in this run.
@@ -79,9 +81,9 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
      * @param target the content to which the links will be added
      */
     protected void addContents(Content target) {
-        var table = new Table<TypeElement>(HtmlStyle.summaryTable)
+        var table = new Table<TypeElement>(HtmlStyles.summaryTable)
                 .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
-                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
+                .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colLast)
                 .setId(HtmlIds.ALL_CLASSES_TABLE)
                 .setDefaultTab(contents.allClassesAndInterfacesLabel)
                 .addTab(contents.interfaces, utils::isPlainInterface)
@@ -96,8 +98,8 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         }
         Content titleContent = contents.allClassesAndInterfacesLabel;
         var pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
-                HtmlStyle.title, titleContent);
-        var headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
+                HtmlStyles.title, titleContent);
+        var headerDiv = HtmlTree.DIV(HtmlStyles.header, pHeading);
         target.add(headerDiv);
         if (!table.isEmpty()) {
             target.add(table);
@@ -109,7 +111,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         boolean noDeprecated = options.noDeprecated();
         Set<TypeElement> includedTypes = configuration.getIncludedTypeElements();
         for (TypeElement typeElement : includedTypes) {
-            if (utils.hasHiddenTag(typeElement) || !utils.isCoreClass(typeElement)) {
+            if (utils.isHidden(typeElement) || !utils.isCoreClass(typeElement)) {
                 continue;
             }
             if (noDeprecated

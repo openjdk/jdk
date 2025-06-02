@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zCPU.inline.hpp"
@@ -29,6 +28,7 @@
 #include "gc/z/zHeuristics.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
+#include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -39,24 +39,28 @@ void ZHeuristics::set_medium_page_size() {
   // becomes larger than ZPageSizeSmall.
   const size_t min = ZGranuleSize;
   const size_t max = ZGranuleSize * 16;
-  const size_t unclamped = MaxHeapSize * 0.03125;
+  const size_t unclamped = (size_t)(MaxHeapSize * 0.03125);
   const size_t clamped = clamp(unclamped, min, max);
   const size_t size = round_down_power_of_2(clamped);
 
   if (size > ZPageSizeSmall) {
     // Enable medium pages
-    ZPageSizeMedium             = size;
-    ZPageSizeMediumShift        = log2i_exact(ZPageSizeMedium);
-    ZObjectSizeLimitMedium      = ZPageSizeMedium / 8;
-    ZObjectAlignmentMediumShift = (int)ZPageSizeMediumShift - 13;
+    ZPageSizeMediumMax          = size;
+    ZPageSizeMediumMaxShift     = log2i_exact(ZPageSizeMediumMax);
+    ZObjectSizeLimitMedium      = ZPageSizeMediumMax / 8;
+    ZObjectAlignmentMediumShift = ZPageSizeMediumMaxShift - 13;
     ZObjectAlignmentMedium      = 1 << ZObjectAlignmentMediumShift;
+    ZPageSizeMediumEnabled      = true;
+    ZPageSizeMediumMin          = ZUseMediumPageSizeRange
+                                ? align_up(ZObjectSizeLimitMedium, ZGranuleSize)
+                                : ZPageSizeMediumMax;
   }
 }
 
 size_t ZHeuristics::relocation_headroom() {
   // Calculate headroom needed to avoid in-place relocation. Each worker will try
   // to allocate a small page, and all workers will share a single medium page.
-  return (ConcGCThreads * ZPageSizeSmall) + ZPageSizeMedium;
+  return (ConcGCThreads * ZPageSizeSmall) + ZPageSizeMediumMax;
 }
 
 bool ZHeuristics::use_per_cpu_shared_small_pages() {
@@ -68,11 +72,11 @@ bool ZHeuristics::use_per_cpu_shared_small_pages() {
 }
 
 static uint nworkers_based_on_ncpus(double cpu_share_in_percent) {
-  return ceil(os::initial_active_processor_count() * cpu_share_in_percent / 100.0);
+  return (uint)ceil(os::initial_active_processor_count() * cpu_share_in_percent / 100.0);
 }
 
 static uint nworkers_based_on_heap_size(double heap_share_in_percent) {
-  return (MaxHeapSize * (heap_share_in_percent / 100.0)) / ZPageSizeSmall;
+  return (uint)(MaxHeapSize * (heap_share_in_percent / 100.0) / ZPageSizeSmall);
 }
 
 static uint nworkers(double cpu_share_in_percent) {
@@ -101,9 +105,9 @@ uint ZHeuristics::nconcurrent_workers() {
 }
 
 size_t ZHeuristics::significant_heap_overhead() {
-  return MaxHeapSize * (ZFragmentationLimit / 100);
+  return (size_t)(MaxHeapSize * (ZFragmentationLimit / 100));
 }
 
 size_t ZHeuristics::significant_young_overhead() {
-  return MaxHeapSize * (ZYoungCompactionLimit / 100);
+  return (size_t)(MaxHeapSize * (ZYoungCompactionLimit / 100));
 }

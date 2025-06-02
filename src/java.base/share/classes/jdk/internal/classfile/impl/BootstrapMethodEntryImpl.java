@@ -24,13 +24,11 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.List;
-
-import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.BootstrapMethodEntry;
-import java.lang.classfile.BufWriter;
+import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.LoadableConstantEntry;
 import java.lang.classfile.constantpool.MethodHandleEntry;
+import java.util.List;
 
 import static jdk.internal.classfile.impl.AbstractPoolEntry.MethodHandleEntryImpl;
 
@@ -87,9 +85,8 @@ public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
         return hash;
     }
 
-    @Override
-    public void writeTo(BufWriter writer) {
+    void writeTo(BufWriterImpl writer) {
         writer.writeIndex(bootstrapMethod());
-        writer.writeListIndices(arguments());
+        Util.writeListIndices(writer, arguments());
     }
 }

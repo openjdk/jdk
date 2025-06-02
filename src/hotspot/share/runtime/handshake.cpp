@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
+#include "prims/jvmtiThreadState.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
@@ -251,8 +251,13 @@ class VM_HandshakeAllThreads: public VM_Operation {
       thr->handshake_state()->add_operation(_op);
       number_of_threads_issued++;
     }
+
+    // Separate the arming of the poll in add_operation() above from
+    // the read of JavaThread state in the try_process() call below.
     if (UseSystemMemoryBarrier) {
       SystemMemoryBarrier::emit();
+    } else {
+      OrderAccess::fence();
     }
 
     if (number_of_threads_issued < 1) {
@@ -380,6 +385,8 @@ void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThr
   // the read of JavaThread state in the try_process() call below.
   if (UseSystemMemoryBarrier) {
     SystemMemoryBarrier::emit();
+  } else {
+    OrderAccess::fence();
   }
 
   // Keeps count on how many of own emitted handshakes
@@ -559,6 +566,10 @@ bool HandshakeState::process_by_self(bool allow_suspend, bool check_async_except
   // Threads shouldn't block if they are in the middle of printing, but...
   ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
 
+  // Separate all the writes above for other threads reading state
+  // set by this thread in case the operation is ThreadSuspendHandshake.
+  OrderAccess::fence();
+
   while (has_operation()) {
     // Handshakes cannot safely safepoint. The exceptions to this rule are
     // the asynchronous suspension and unsafe access error handshakes.
@@ -719,7 +730,7 @@ class ThreadSelfSuspensionHandshake : public AsyncHandshakeClosure {
   virtual bool is_suspend() { return true; }
 };
 
-bool HandshakeState::suspend_with_handshake() {
+bool HandshakeState::suspend_with_handshake(bool register_vthread_SR) {
   assert(_handshakee->threadObj() != nullptr, "cannot suspend with a null threadObj");
   if (_handshakee->is_exiting()) {
     log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " exiting", p2i(_handshakee));
@@ -734,7 +745,7 @@ bool HandshakeState::suspend_with_handshake() {
       // Target is going to wake up and leave suspension.
       // Let's just stop the thread from doing that.
       log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " re-suspended", p2i(_handshakee));
-      set_suspended(true);
+      set_suspended(true, register_vthread_SR);
       return true;
     }
   }
@@ -742,7 +753,7 @@ bool HandshakeState::suspend_with_handshake() {
   assert(!is_suspended(), "cannot be suspended without a suspend request");
   // Thread is safe, so it must execute the request, thus we can count it as suspended
   // from this point.
-  set_suspended(true);
+  set_suspended(true, register_vthread_SR);
   set_async_suspend_handshake(true);
   log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended, arming ThreadSuspension", p2i(_handshakee));
   ThreadSelfSuspensionHandshake* ts = new ThreadSelfSuspensionHandshake();
@@ -752,17 +763,19 @@ bool HandshakeState::suspend_with_handshake() {
 
 // This is the closure that synchronously honors the suspend request.
 class SuspendThreadHandshake : public HandshakeClosure {
+  bool _register_vthread_SR;
   bool _did_suspend;
 public:
-  SuspendThreadHandshake() : HandshakeClosure("SuspendThread"), _did_suspend(false) {}
+  SuspendThreadHandshake(bool register_vthread_SR) : HandshakeClosure("SuspendThread"),
+    _register_vthread_SR(register_vthread_SR), _did_suspend(false) {}
   void do_thread(Thread* thr) {
     JavaThread* target = JavaThread::cast(thr);
-    _did_suspend = target->handshake_state()->suspend_with_handshake();
+    _did_suspend = target->handshake_state()->suspend_with_handshake(_register_vthread_SR);
   }
   bool did_suspend() { return _did_suspend; }
 };
 
-bool HandshakeState::suspend() {
+bool HandshakeState::suspend(bool register_vthread_SR) {
   JVMTI_ONLY(assert(!_handshakee->is_in_VTMS_transition(), "no suspend allowed in VTMS transition");)
   JavaThread* self = JavaThread::current();
   if (_handshakee == self) {
@@ -770,29 +783,40 @@ bool HandshakeState::suspend() {
     // and just suspend directly
     ThreadBlockInVM tbivm(self);
     MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-    set_suspended(true);
+    set_suspended(true, register_vthread_SR);
     do_self_suspend();
     return true;
   } else {
-    SuspendThreadHandshake st;
+    SuspendThreadHandshake st(register_vthread_SR);
     Handshake::execute(&st, _handshakee);
     return st.did_suspend();
   }
 }
 
-bool HandshakeState::resume() {
-  if (!is_suspended()) {
-    return false;
-  }
+bool HandshakeState::resume(bool register_vthread_SR) {
   MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
   if (!is_suspended()) {
     assert(!_handshakee->is_suspended(), "cannot be suspended without a suspend request");
     return false;
   }
   // Resume the thread.
-  set_suspended(false);
+  set_suspended(false, register_vthread_SR);
   _lock.notify();
   return true;
+}
+
+void HandshakeState::set_suspended(bool is_suspend, bool register_vthread_SR) {
+#if INCLUDE_JVMTI
+  if (register_vthread_SR) {
+    assert(_handshakee->is_vthread_mounted(), "sanity check");
+    if (is_suspend) {
+      JvmtiVTSuspender::register_vthread_suspend(_handshakee->vthread());
+    } else {
+      JvmtiVTSuspender::register_vthread_resume(_handshakee->vthread());
+    }
+  }
+#endif
+  Atomic::store(&_suspended, is_suspend);
 }
 
 void HandshakeState::handle_unsafe_access_error() {

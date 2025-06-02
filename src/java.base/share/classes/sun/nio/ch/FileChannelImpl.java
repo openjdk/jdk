@@ -454,6 +454,7 @@ public class FileChannelImpl
         }
         return bytesWritten;
     }
+
     // -- Other operations --
 
     @Override
@@ -526,6 +527,49 @@ public class FileChannelImpl
                 endBlocking(s > -1);
                 assert IOStatus.check(s);
             }
+        }
+    }
+
+    /**
+     * Returns an estimate of the number of remaining bytes that can be read
+     * from this channel without blocking.
+     */
+    int available() throws IOException {
+        ensureOpen();
+        synchronized (positionLock) {
+            int a = -1;
+            int ti = -1;
+            try {
+                beginBlocking();
+                ti = threads.add();
+                if (!isOpen())
+                    return -1;
+                a = nd.available(fd);
+            } finally {
+                threads.remove(ti);
+                endBlocking(a > -1);
+            }
+            return a;
+        }
+    }
+
+    /**
+     * Tells whether the channel represents something other than a regular
+     * file, directory, or symbolic link.
+     */
+    boolean isOther() throws IOException {
+        ensureOpen();
+        int ti = -1;
+        Boolean isOther = null;
+        try {
+            beginBlocking();
+            ti = threads.add();
+            if (!isOpen())
+                return false;
+            return isOther = nd.isOther(fd);
+        } finally {
+            threads.remove(ti);
+            endBlocking(isOther != null);
         }
     }
 

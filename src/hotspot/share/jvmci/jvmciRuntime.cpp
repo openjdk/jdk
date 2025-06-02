@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -31,8 +30,8 @@
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "jvmci/jniAccessMark.inline.hpp"
-#include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"
+#include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/metadataHandles.hpp"
 #include "logging/log.hpp"
@@ -97,7 +96,7 @@ static void deopt_caller() {
 // call is of the variety where allocation failure returns null without an
 // exception, the following action is taken:
 //   1. The pending OutOfMemoryError is cleared
-//   2. null is written to JavaThread::_vm_result
+//   2. null is written to JavaThread::_vm_result_oop
 class RetryableAllocationMark {
  private:
    InternalOOMEMark _iom;
@@ -108,7 +107,7 @@ class RetryableAllocationMark {
     if (THREAD != nullptr) {
       if (HAS_PENDING_EXCEPTION) {
         oop ex = PENDING_EXCEPTION;
-        THREAD->set_vm_result(nullptr);
+        THREAD->set_vm_result_oop(nullptr);
         if (ex->is_a(vmClasses::OutOfMemoryError_klass())) {
           CLEAR_PENDING_EXCEPTION;
         }
@@ -128,12 +127,12 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_instance_or_null(JavaThread* current, Kl
     if (!h->is_initialized()) {
       // Cannot re-execute class initialization without side effects
       // so return without attempting the initialization
-      current->set_vm_result(nullptr);
+      current->set_vm_result_oop(nullptr);
       return;
     }
     // allocate instance and return via TLS
     oop obj = h->allocate_instance(CHECK);
-    current->set_vm_result(obj);
+    current->set_vm_result_oop(obj);
   }
   JRT_BLOCK_END;
   SharedRuntime::on_slowpath_allocation_exit(current);
@@ -167,7 +166,7 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array_or_null(JavaThread* current, Klass
       deopt_caller();
     }
   }
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
   JRT_BLOCK_END;
   SharedRuntime::on_slowpath_allocation_exit(current);
 JRT_END
@@ -178,13 +177,13 @@ JRT_ENTRY(void, JVMCIRuntime::new_multi_array_or_null(JavaThread* current, Klass
   Handle holder(current, klass->klass_holder()); // keep the klass alive
   RetryableAllocationMark ram(current);
   oop obj = ArrayKlass::cast(klass)->multi_allocate(rank, dims, CHECK);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 JRT_ENTRY(void, JVMCIRuntime::dynamic_new_array_or_null(JavaThread* current, oopDesc* element_mirror, jint length))
   RetryableAllocationMark ram(current);
   oop obj = Reflection::reflect_new_array(element_mirror, length, CHECK);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 JRT_ENTRY(void, JVMCIRuntime::dynamic_new_instance_or_null(JavaThread* current, oopDesc* type_mirror))
@@ -202,12 +201,12 @@ JRT_ENTRY(void, JVMCIRuntime::dynamic_new_instance_or_null(JavaThread* current, 
   if (!klass->is_initialized()) {
     // Cannot re-execute class initialization without side effects
     // so return without attempting the initialization
-    current->set_vm_result(nullptr);
+    current->set_vm_result_oop(nullptr);
     return;
   }
 
   oop obj = klass->allocate_instance(CHECK);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 extern void vm_exit(int code);
@@ -534,7 +533,7 @@ JRT_ENTRY(jlong, JVMCIRuntime::invoke_static_method_one_arg(JavaThread* current,
   if (return_type == T_VOID) {
     return 0;
   } else if (return_type == T_OBJECT || return_type == T_ARRAY) {
-    current->set_vm_result(result.get_oop());
+    current->set_vm_result_oop(result.get_oop());
     return 0;
   } else {
     jvalue *value = (jvalue *) result.get_value_addr();
@@ -628,7 +627,7 @@ JRT_LEAF(oopDesc*, JVMCIRuntime::load_and_clear_exception(JavaThread* thread))
   oop exception = thread->exception_oop();
   assert(exception != nullptr, "npe");
   thread->set_exception_oop(nullptr);
-  thread->set_exception_pc(0);
+  thread->set_exception_pc(nullptr);
   return exception;
 JRT_END
 
@@ -721,7 +720,7 @@ JRT_END
 JVM_ENTRY_NO_ENV(jobject, JVM_GetJVMCIRuntime(JNIEnv *libjvmciOrHotspotEnv, jclass c))
   JVMCIENV_FROM_JNI(thread, libjvmciOrHotspotEnv);
   if (!EnableJVMCI) {
-    JVMCI_THROW_MSG_NULL(InternalError, "JVMCI is not enabled");
+    JVMCI_THROW_MSG_NULL(InternalError, JVMCI_NOT_ENABLED_ERROR_MESSAGE);
   }
   JVMCIENV->runtime()->initialize_HotSpotJVMCIRuntime(JVMCI_CHECK_NULL);
   JVMCIObject runtime = JVMCIENV->runtime()->get_HotSpotJVMCIRuntime(JVMCI_CHECK_NULL);
@@ -733,7 +732,7 @@ JVM_END
 JVM_ENTRY_NO_ENV(jlong, JVM_ReadSystemPropertiesInfo(JNIEnv *env, jclass c, jintArray offsets_handle))
   JVMCIENV_FROM_JNI(thread, env);
   if (!EnableJVMCI) {
-    JVMCI_THROW_MSG_0(InternalError, "JVMCI is not enabled");
+    JVMCI_THROW_MSG_0(InternalError, JVMCI_NOT_ENABLED_ERROR_MESSAGE);
   }
   JVMCIPrimitiveArray offsets = JVMCIENV->wrap(offsets_handle);
   JVMCIENV->put_int_at(offsets, 0, SystemProperty::next_offset_in_bytes());
@@ -743,14 +742,6 @@ JVM_ENTRY_NO_ENV(jlong, JVM_ReadSystemPropertiesInfo(JNIEnv *env, jclass c, jint
   return (jlong) Arguments::system_properties();
 JVM_END
 
-
-void JVMCIRuntime::call_getCompiler(TRAPS) {
-  JVMCIENV_FROM_THREAD(THREAD);
-  JVMCIENV->check_init(CHECK);
-  JVMCIObject jvmciRuntime = JVMCIRuntime::get_HotSpotJVMCIRuntime(JVMCI_CHECK);
-  initialize(JVMCI_CHECK);
-  JVMCIENV->call_HotSpotJVMCIRuntime_getCompiler(jvmciRuntime, JVMCI_CHECK);
-}
 
 void JVMCINMethodData::initialize(int nmethod_mirror_index,
                                   int nmethod_entry_patch_offset,
@@ -1008,7 +999,7 @@ static void _fatal() {
     }
   }
   intx current_thread_id = os::current_thread_id();
-  fatal("thread " INTX_FORMAT ": Fatal error in JVMCI shared library", current_thread_id);
+  fatal("thread %zd: Fatal error in JVMCI shared library", current_thread_id);
 }
 
 JVMCIRuntime::JVMCIRuntime(JVMCIRuntime* next, int id, bool for_compile_broker) :
@@ -1516,7 +1507,7 @@ JVM_ENTRY_NO_ENV(void, JVM_RegisterJVMCINatives(JNIEnv *libjvmciOrHotspotEnv, jc
   JVMCIENV_FROM_JNI(thread, libjvmciOrHotspotEnv);
 
   if (!EnableJVMCI) {
-    JVMCI_THROW_MSG(InternalError, "JVMCI is not enabled");
+    JVMCI_THROW_MSG(InternalError, JVMCI_NOT_ENABLED_ERROR_MESSAGE);
   }
 
   JVMCIENV->runtime()->initialize(JVMCIENV);
@@ -1570,7 +1561,7 @@ bool JVMCIRuntime::destroy_shared_library_javavm() {
   guarantee(_num_attached_threads == cannot_be_attached,
       "cannot destroy JavaVM for JVMCI runtime %d with %d attached threads", _id, _num_attached_threads);
   JavaVM* javaVM;
-  int javaVM_id = _shared_library_javavm_id;
+  jlong javaVM_id = _shared_library_javavm_id;
   {
     // Exactly one thread can destroy the JavaVM
     // and release the handle to it.
@@ -1589,9 +1580,9 @@ bool JVMCIRuntime::destroy_shared_library_javavm() {
       result = javaVM->DestroyJavaVM();
     }
     if (result == JNI_OK) {
-      JVMCI_event_1("destroyed JavaVM[%d]@" PTR_FORMAT " for JVMCI runtime %d", javaVM_id, p2i(javaVM), _id);
+      JVMCI_event_1("destroyed JavaVM[" JLONG_FORMAT "]@" PTR_FORMAT " for JVMCI runtime %d", javaVM_id, p2i(javaVM), _id);
     } else {
-      warning("Non-zero result (%d) when calling JNI_DestroyJavaVM on JavaVM[%d]@" PTR_FORMAT, result, javaVM_id, p2i(javaVM));
+      warning("Non-zero result (%d) when calling JNI_DestroyJavaVM on JavaVM[" JLONG_FORMAT "]@" PTR_FORMAT, result, javaVM_id, p2i(javaVM));
     }
     return true;
   }
@@ -1678,14 +1669,12 @@ Klass* JVMCIRuntime::get_klass_by_name_impl(Klass*& accessing_klass,
   }
 
   Handle loader;
-  Handle domain;
   if (accessing_klass != nullptr) {
     loader = Handle(THREAD, accessing_klass->class_loader());
-    domain = Handle(THREAD, accessing_klass->protection_domain());
   }
 
   Klass* found_klass = require_local ?
-                         SystemDictionary::find_instance_or_array_klass(THREAD, sym, loader, domain) :
+                         SystemDictionary::find_instance_or_array_klass(THREAD, sym, loader) :
                          SystemDictionary::find_constrained_instance_or_array_klass(THREAD, sym, loader);
 
   // If we fail to find an array klass, look again for its element type.
@@ -2078,6 +2067,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                                                        int compile_id,
                                                        bool has_monitors,
                                                        bool has_unsafe_access,
+                                                       bool has_scoped_access,
                                                        bool has_wide_vector,
                                                        JVMCIObject compiled_code,
                                                        JVMCIObject nmethod_mirror,
@@ -2183,7 +2173,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
         nm->set_has_unsafe_access(has_unsafe_access);
         nm->set_has_wide_vectors(has_wide_vector);
         nm->set_has_monitors(has_monitors);
-        nm->set_has_scoped_access(true); // conservative
+        nm->set_has_scoped_access(has_scoped_access);
 
         JVMCINMethodData* data = nm->jvmci_nmethod_data();
         assert(data != nullptr, "must be");
@@ -2197,8 +2187,8 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
               char *method_name = method->name_and_sig_as_C_string();
               tty->print_cr("Replacing method %s", method_name);
             }
-            if (old != nullptr ) {
-              old->make_not_entrant();
+            if (old != nullptr) {
+              old->make_not_entrant("JVMCI register method");
             }
 
             LogTarget(Info, nmethod, install) lt;

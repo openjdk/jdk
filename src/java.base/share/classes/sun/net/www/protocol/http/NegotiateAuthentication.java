@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import sun.net.www.HeaderParser;
 import static sun.net.www.protocol.http.AuthScheme.NEGOTIATE;
 import static sun.net.www.protocol.http.AuthScheme.KERBEROS;
-import sun.security.action.GetPropertyAction;
 
 /**
  * NegotiateAuthentication:
@@ -45,12 +44,8 @@ import sun.security.action.GetPropertyAction;
  * @since 1.6
  */
 
-class NegotiateAuthentication extends AuthenticationInfo {
+final class NegotiateAuthentication extends AuthenticationInfo {
 
-    @java.io.Serial
-    private static final long serialVersionUID = 100L;
-
-    @SuppressWarnings("serial") // Not statically typed as Serializable
     private final HttpCallerInfo hci;
 
     // These maps are used to manage the GSS availability for different
@@ -62,16 +57,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
     static ThreadLocal <HashMap <String, Negotiator>> cache = null;
     private static final ReentrantLock negotiateLock = new ReentrantLock();
 
-    /* Whether cache is enabled for Negotiate/Kerberos */
-    private static final boolean cacheSPNEGO;
-    static {
-        String spnegoCacheProp =
-            GetPropertyAction.privilegedGetProperty("jdk.spnego.cache", "true");
-        cacheSPNEGO = Boolean.parseBoolean(spnegoCacheProp);
-    }
-
     // The HTTP Negotiate Helper
-    @SuppressWarnings("serial") // Not statically typed as Serializable
     private Negotiator negotiator = null;
 
    /**

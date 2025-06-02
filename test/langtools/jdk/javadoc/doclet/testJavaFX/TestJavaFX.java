@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ public class TestJavaFX extends JavadocTester {
                     r-name-link">rate</a></code></div>
                     <div class="col-last odd-row-color">
                     <div class="block">Defines the direction/speed at which the <code>Timeline</code> is expected to
-                     be played.</div>""",
+                    be played.</div>""",
                 "<dt>Default value:</dt>",
                 """
                     <dt>Since:</dt>
@@ -154,7 +154,7 @@ public class TestJavaFX extends JavadocTester {
                     span class="return-type"><a href="C.DoubleProperty.html" title="class in pkg1">C\
                     .DoubleProperty</a></span>&nbsp;<span class="element-name">rateProperty</span></div>
                     <div class="block">Defines the direction/speed at which the <code>Timeline</code> is expected to
-                     be played. This is the second line.</div>""",
+                    be played. This is the second line.</div>""",
                 """
                     <section class="detail" id="setRate(double)">
                     <h3>setRate</h3>
@@ -166,7 +166,7 @@ public class TestJavaFX extends JavadocTester {
                     <dl class="notes">
                     <dt>Property description:</dt>
                     <dd>Defines the direction/speed at which the <code>Timeline</code> is expected to
-                     be played. This is the second line.</dd>
+                    be played. This is the second line.</dd>
                     <dt>Default value:</dt>
                     <dd>11</dd>
                     <dt>Parameters:</dt>
@@ -184,7 +184,7 @@ public class TestJavaFX extends JavadocTester {
                     <dl class="notes">
                     <dt>Property description:</dt>
                     <dd>Defines the direction/speed at which the <code>Timeline</code> is expected to
-                     be played. This is the second line.</dd>
+                    be played. This is the second line.</dd>
                     <dt>Default value:</dt>
                     <dd>11</dd>
                     <dt>Returns:</dt>
@@ -240,7 +240,7 @@ public class TestJavaFX extends JavadocTester {
         checkOutput("pkg1/D.html", true,
                 """
                     <h3 id="properties-inherited-from-class-pkg1.C">Properties inherited from class&\
-                    nbsp;pkg1.<a href="C.html" title="class in pkg1">C</a></h3>
+                    nbsp;<a href="C.html#property-summary" title="class in pkg1">C</a></h3>
                     <code><a href="C.html#pausedProperty">paused</a>, <a href="C.html#rateProperty">rate</a></code></div>""");
 
         checkOutput("pkg1/D.html", false, "shouldNotAppear");

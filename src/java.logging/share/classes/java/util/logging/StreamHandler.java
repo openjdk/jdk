@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@
 package java.util.logging;
 
 import java.io.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Objects;
 
 /**
@@ -99,7 +97,7 @@ public class StreamHandler extends Handler {
         // configure with default level but use specified formatter
         super(Level.INFO, null, Objects.requireNonNull(formatter));
 
-        setOutputStreamPrivileged(out);
+        setOutputStream(out);
     }
 
     /**
@@ -119,24 +117,8 @@ public class StreamHandler extends Handler {
      * Then the output stream is replaced with the new output stream.
      *
      * @param out   New output stream.  May not be null.
-     * @throws  SecurityException  if a security manager exists and if
-     *             the caller does not have {@code LoggingPermission("control")}.
      */
-    protected void setOutputStream(OutputStream out) throws SecurityException {
-        if (tryUseLock()) {
-            try {
-                setOutputStream0(out);
-            } finally {
-                unlock();
-            }
-        } else {
-            synchronized (this) {
-                setOutputStream0(out);
-            }
-        }
-    }
-
-    private void setOutputStream0(OutputStream out) throws SecurityException {
+    protected synchronized void setOutputStream(OutputStream out) {
         if (out == null) {
             throw new NullPointerException();
         }
@@ -165,28 +147,12 @@ public class StreamHandler extends Handler {
      *
      * @param encoding  The name of a supported character encoding.
      *        May be null, to indicate the default platform encoding.
-     * @throws  SecurityException  if a security manager exists and if
-     *             the caller does not have {@code LoggingPermission("control")}.
      * @throws  UnsupportedEncodingException if the named encoding is
      *          not supported.
      */
     @Override
-    public void setEncoding(String encoding)
-                        throws SecurityException, java.io.UnsupportedEncodingException {
-        if (tryUseLock()) {
-            try {
-                setEncoding0(encoding);
-            } finally {
-                unlock();
-            }
-        } else {
-            synchronized (this) {
-                setEncoding0(encoding);
-            }
-        }
-    }
-    private void setEncoding0(String encoding)
-                        throws SecurityException, java.io.UnsupportedEncodingException {
+    public synchronized void setEncoding(String encoding)
+                        throws java.io.UnsupportedEncodingException {
         super.setEncoding(encoding);
         if (output == null) {
             return;
@@ -214,31 +180,31 @@ public class StreamHandler extends Handler {
      * {@code OutputStream}, the {@code Formatter}'s "head" string is
      * written to the stream before the {@code LogRecord} is written.
      *
+     * @implSpec This method avoids acquiring locks during {@code LogRecord}
+     * formatting, but {@code this} instance is synchronized when writing to the
+     * output stream. To avoid deadlock risk, subclasses must not hold locks
+     * while calling {@code super.publish()}. Specifically, subclasses must
+     * not define the overridden {@code publish()} method to be
+     * {@code synchronized} if they call {@code super.publish()}.
+     *
      * @param  record  description of the log event. A null record is
      *                 silently ignored and is not published
      */
     @Override
     public void publish(LogRecord record) {
-        if (tryUseLock()) {
-            try {
-                publish0(record);
-            } finally {
-                unlock();
-            }
-        } else {
-            synchronized (this) {
-                publish0(record);
-            }
-        }
-    }
-
-    private void publish0(LogRecord record) {
         if (!isLoggable(record)) {
             return;
         }
+        // Read once for consistency (whether in or outside the locked region
+        // is not important).
+        Formatter formatter = getFormatter();
+        // JDK-8349206: To avoid deadlock risk, it is essential that the handler
+        // is not locked while formatting the log record. Methods such as
+        // reportError() and isLoggable() are defined to be thread safe, so we
+        // can restrict locking to just writing the message.
         String msg;
         try {
-            msg = getFormatter().format(record);
+            msg = formatter.format(record);
         } catch (Exception ex) {
             // We don't want to throw an exception here, but we
             // report the exception to any registered ErrorManager.
@@ -247,12 +213,15 @@ public class StreamHandler extends Handler {
         }
 
         try {
-            Writer writer = this.writer;
-            if (!doneHeader) {
-                writer.write(getFormatter().getHead(this));
-                doneHeader = true;
+            synchronized (this) {
+                Writer writer = this.writer;
+                if (!doneHeader) {
+                    writer.write(formatter.getHead(this));
+                    doneHeader = true;
+                }
+                writer.write(msg);
+                synchronousPostWriteHook();
             }
-            writer.write(msg);
         } catch (Exception ex) {
             // We don't want to throw an exception here, but we
             // report the exception to any registered ErrorManager.
@@ -260,6 +229,17 @@ public class StreamHandler extends Handler {
         }
     }
 
+    /**
+     * Overridden by other handlers in this package to facilitate synchronous
+     * post-write behaviour. If other handlers need similar functionality, it
+     * might be feasible to make this method protected (see JDK-8349206), but
+     * please find a better name if you do ;).
+     */
+    void synchronousPostWriteHook() {
+        // Empty by default. We could do:
+        //    assert Thread.holdsLock(this);
+        // but this is already covered by unit tests.
+    }
 
     /**
      * Check if this {@code Handler} would actually log a given {@code LogRecord}.
@@ -284,21 +264,7 @@ public class StreamHandler extends Handler {
      * Flush any buffered messages.
      */
     @Override
-    public void flush() {
-        if (tryUseLock()) {
-            try {
-                flush0();
-            } finally {
-                unlock();
-            }
-        } else {
-            synchronized (this) {
-                flush0();
-            }
-        }
-    }
-
-    private void flush0() {
+    public synchronized void flush() {
         Writer writer = this.writer;
         if (writer != null) {
             try {
@@ -311,16 +277,17 @@ public class StreamHandler extends Handler {
         }
     }
 
-    private void flushAndClose() throws SecurityException {
-        checkPermission();
+    // Called synchronously with "this" handler instance locked.
+    private void flushAndClose() {
         Writer writer = this.writer;
         if (writer != null) {
+            Formatter formatter = getFormatter();
             try {
                 if (!doneHeader) {
-                    writer.write(getFormatter().getHead(this));
+                    writer.write(formatter.getHead(this));
                     doneHeader = true;
                 }
-                writer.write(getFormatter().getTail(this));
+                writer.write(formatter.getTail(this));
                 writer.flush();
                 writer.close();
             } catch (Exception ex) {
@@ -340,35 +307,10 @@ public class StreamHandler extends Handler {
      * is closed.  In addition, if the {@code Formatter}'s "head" string has not
      * yet been written to the stream, it will be written before the
      * "tail" string.
-     *
-     * @throws  SecurityException  if a security manager exists and if
-     *             the caller does not have LoggingPermission("control").
      */
     @Override
-    public void close() throws SecurityException {
-        if (tryUseLock()) {
-            try {
-                flushAndClose();
-            } finally {
-                unlock();
-            }
-        } else {
-            synchronized (this) {
-                flushAndClose();
-            }
-        }
+    public synchronized void close() {
+        flushAndClose();
     }
 
-    // Package-private support for setting OutputStream
-    // with elevated privilege.
-    @SuppressWarnings("removal")
-    final void setOutputStreamPrivileged(final OutputStream out) {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            @Override
-            public Void run() {
-                setOutputStream(out);
-                return null;
-            }
-        }, null, LogManager.controlPermission);
-    }
 }

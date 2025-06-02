@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,13 +57,7 @@ public class MetadataFormatThreadTest implements Runnable {
 
     public void run() {
         try {
-            ClassLoader loader = (ClassLoader)
-                java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction() {
-                            public Object run() {
-                                return Thread.currentThread().getContextClassLoader();
-                            }
-                        });
+            ClassLoader loader = (ClassLoader) Thread.currentThread().getContextClassLoader();
 
             Class ct = loader.loadClass(test_class);
 
@@ -84,13 +78,7 @@ public class MetadataFormatThreadTest implements Runnable {
         final ClassLoader loader = new URLClassLoader(urls);
 
         final Thread t = new Thread(new MetadataFormatThreadTest(code));
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
-                    public Object run() {
-                        t.setContextClassLoader(loader);
-                        return null;
-                    }
-                });
+        t.setContextClassLoader(loader);
 
         return t;
     }

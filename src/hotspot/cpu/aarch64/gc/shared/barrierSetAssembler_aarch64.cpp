@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -286,10 +285,6 @@ void BarrierSetAssembler::clear_patching_epoch() {
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation, Label* guard) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
 
-  if (bs_nm == nullptr) {
-    return;
-  }
-
   Label local_guard;
   Label skip_barrier;
   NMethodPatchingType patching_type = nmethod_patching_type();
@@ -362,11 +357,6 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
 }
 
 void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
-  BarrierSetNMethod* bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs == nullptr) {
-    return;
-  }
-
   Label bad_call;
   __ cbz(rmethod, bad_call);
 
@@ -375,7 +365,7 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ load_method_holder_cld(rscratch1, rmethod);
 
   // Is it a strong CLD?
-  __ ldrw(rscratch2, Address(rscratch1, ClassLoaderData::keep_alive_offset()));
+  __ ldrw(rscratch2, Address(rscratch1, ClassLoaderData::keep_alive_ref_count_offset()));
   __ cbnz(rscratch2, method_live);
 
   // Is it a weak but alive CLD?

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,6 +185,10 @@ public:
   static ModuleEntry* create_boot_unnamed_module(ClassLoaderData* cld);
   static ModuleEntry* new_unnamed_module_entry(Handle module_handle, ClassLoaderData* cld);
 
+  // Note caller requires ResourceMark
+  const char* name_as_C_string() {
+    return is_named() ? name()->as_C_string() : UNNAMED_MODULE;
+  }
   void print(outputStream* st = tty);
   void verify();
 
@@ -203,7 +207,6 @@ public:
   void load_from_archive(ClassLoaderData* loader_data);
   void restore_archived_oops(ClassLoaderData* loader_data);
   void clear_archived_oops();
-  void update_oops_in_archived_module(int root_oop_index);
   static void verify_archived_module_entries() PRODUCT_RETURN;
 #endif
 };
