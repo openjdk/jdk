@@ -547,12 +547,6 @@ public interface JavaLangAccess {
     void removeCarrierThreadLocal(CarrierThreadLocal<?> local);
 
     /**
-     * Returns {@code true} if there is a value in the current carrier thread's copy of
-     * thread-local, even if that values is {@code null}.
-     */
-    boolean isCarrierThreadLocalPresent(CarrierThreadLocal<?> local);
-
-    /**
      * Returns the current thread's scoped values cache
      */
     Object[] scopedValueCache();

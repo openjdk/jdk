@@ -94,8 +94,7 @@ jint ParallelScavengeHeap::initialize() {
       old_rs,
       OldSize,
       MinOldSize,
-      MaxOldSize,
-      "old", 1);
+      MaxOldSize);
 
   assert(young_gen()->max_gen_size() == young_rs.size(),"Consistency check");
   assert(old_gen()->max_gen_size() == old_rs.size(), "Consistency check");
@@ -215,11 +214,6 @@ size_t ParallelScavengeHeap::used() const {
   return value;
 }
 
-bool ParallelScavengeHeap::is_maximal_no_gc() const {
-  // We don't expand young-gen except at a GC.
-  return old_gen()->is_maximal_no_gc();
-}
-
 size_t ParallelScavengeHeap::max_capacity() const {
   size_t estimated = reserved_region().byte_size();
   if (UseAdaptiveSizePolicy) {
@@ -332,7 +326,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
       // Did the VM operation execute? If so, return the result directly.
       // This prevents us from looping until time out on requests that can
       // not be satisfied.
-      if (op.prologue_succeeded()) {
+      if (op.gc_succeeded()) {
         assert(is_in_or_null(op.result()), "result not in heap");
 
         return op.result();
