@@ -285,7 +285,9 @@ record MacDmgPackager(MacDmgPackage pkg, BuildEnv env, Path hdiutil, Path output
             // Return "Applications" for "/Applications/foo.app"
             return defaultInstallDir.getParent().getFileName().toString();
         } else {
-            return pkg.installDir().getParent().toString();
+            // If we returning full path we need to replace '/' with ':'.
+            // In this case macOS will display link name as "/Users/USER/MyCompany/MyApp".
+            return pkg.installDir().getParent().toString().replace('/', ':');
         }
     }
 
