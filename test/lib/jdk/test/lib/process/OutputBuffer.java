@@ -27,6 +27,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.StringReader;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.List;
@@ -111,10 +112,12 @@ public interface OutputBuffer {
       private final Future<Void> future;
       private final Charset cs;
 
-      private StreamTask(InputStream stream, Charset cs) {
+      private StreamTask(InputStream stream, Charset cs, OutputStream additionalStream) {
         this.buffer = new ByteArrayOutputStream();
         this.cs = cs;
-        this.future = new StreamPumper(stream, buffer).process();
+        StreamPumper pumper = new StreamPumper(stream, buffer);
+        if (additionalStream != null) pumper.addOutputStream(additionalStream);
+        this.future = pumper.process();
       }
 
       public String get() {
@@ -144,8 +147,9 @@ public interface OutputBuffer {
     private LazyOutputBuffer(Process p, Charset cs) {
       this.p = p;
       logProgress("Gathering output");
-      outTask = new StreamTask(p.getInputStream(), cs);
-      errTask = new StreamTask(p.getErrorStream(), cs);
+      boolean verbose = Boolean.valueOf(System.getProperty("outputanalyzer.verbose", "false"));
+      outTask = new StreamTask(p.getInputStream(), cs, verbose ? System.out : null);
+      errTask = new StreamTask(p.getErrorStream(), cs, verbose ? System.err : null);
     }
 
     @Override
