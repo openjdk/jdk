@@ -133,10 +133,10 @@ TEST(NMT, MallocLimitBadOptions) {
 // Death tests.
 // Majority of MallocLimit functional tests are done via jtreg test runtime/NMT/MallocLimitTest. Here, we just
 // test that limits are triggered for specific APIs.
-TEST_VM_FATAL_ERROR_MSG(NMT, MallocLimitDeathTestOnRealloc, ".*MallocLimit: reached MemTag .mtTest. limit.*") {
+TEST_VM_FATAL_ERROR_MSG(NMT, MallocLimitDeathTestOnRealloc, ".*MallocLimit: reached category .mtTest. limit.*") {
   // We fake the correct assert if NMT is off to make the test pass (there is no way to execute a death test conditionally)
   if (!MemTracker::enabled()) {
-    fatal("Fake message please ignore: MallocLimit: reached MemTag \"mtTest\" limit");
+    fatal("Fake message please ignore: MallocLimit: reached category \"mtTest\" limit");
   }
   // the real test
   MallocLimitHandler::initialize("test:100m:fatal");
@@ -144,10 +144,10 @@ TEST_VM_FATAL_ERROR_MSG(NMT, MallocLimitDeathTestOnRealloc, ".*MallocLimit: reac
   p = (char*)os::realloc(p, 120 * M, mtTest);
 }
 
-TEST_VM_FATAL_ERROR_MSG(NMT, MallocLimitDeathTestOnStrDup, ".*MallocLimit: reached MemTag .mtTest. limit.*") {
+TEST_VM_FATAL_ERROR_MSG(NMT, MallocLimitDeathTestOnStrDup, ".*MallocLimit: reached category .mtTest. limit.*") {
   // We fake the correct assert if NMT is off to make the test pass (there is no way to execute a death test conditionally)
   if (!MemTracker::enabled()) {
-    fatal("Fake message please ignore: MallocLimit: reached MemTag \"mtTest\" limit");
+    fatal("Fake message please ignore: MallocLimit: reached category \"mtTest\" limit");
   }
   // the real test
   MallocLimitHandler::initialize("test:10m:fatal");

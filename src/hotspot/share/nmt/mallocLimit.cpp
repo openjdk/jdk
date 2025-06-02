@@ -150,7 +150,7 @@ void MallocLimitSet::print_on(outputStream* st) const {
   } else {
     for (int i = 0; i < mt_number_of_tags; i++) {
       if (_mtag[i].sz > 0) {
-        st->print_cr("MallocLimit: MemTag \"%s\" limit: " PROPERFMT " (%s)",
+        st->print_cr("MallocLimit: category \"%s\" limit: " PROPERFMT " (%s)",
                      NMTUtil::tag_to_enum_name(NMTUtil::index_to_tag(i)),
                      PROPERFMTARGS(_mtag[i].sz), mode_to_name(_mtag[i].mode));
       }
@@ -188,8 +188,8 @@ bool MallocLimitSet::parse_malloclimit_option(const char* v, const char** err) {
       MemTag mem_tag;
 
       // Match MemTag, followed by :
-      BAIL_UNLESS(sst.match_mem_tag(&mem_tag), "Expected MemTag name");
-      BAIL_UNLESS(sst.match_char(':'), "Expected colon following MemTag");
+      BAIL_UNLESS(sst.match_mem_tag(&mem_tag), "Expected category name");
+      BAIL_UNLESS(sst.match_char(':'), "Expected colon following category");
 
       malloclimit* const modified_limit = &_mtag[NMTUtil::tag_to_index(mem_tag)];
 
