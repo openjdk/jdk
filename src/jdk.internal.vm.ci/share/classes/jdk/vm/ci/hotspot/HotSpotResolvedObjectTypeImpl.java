@@ -1072,11 +1072,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         if (forceLink) {
             link();
         }
-        ResolvedJavaMethod[] instanceMethods = runtime().compilerToVm.getAllMethods(this);
-        if (instanceMethods.length == 0) {
-            return List.of();
-        }
-        return Collections.unmodifiableList(Arrays.asList(instanceMethods));
+        return List.of(runtime().compilerToVm.getAllMethods(this));
     }
 
     @Override
