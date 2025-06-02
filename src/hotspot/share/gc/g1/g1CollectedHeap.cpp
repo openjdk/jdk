@@ -1031,7 +1031,7 @@ bool G1CollectedHeap::expand_single_region(uint node_index) {
   uint expanded_by = _hrm.expand_on_preferred_node(node_index);
 
   if (expanded_by == 0) {
-    assert(num_inactive_regions() == 0, "Should be no regions left, available: %u", _hrm.num_inactive_regions());
+    assert(num_inactive_regions() == 0, "Should be no regions left, available: %u", num_inactive_regions());
     log_debug(gc, ergo, heap)("Did not expand the heap (heap already fully expanded)");
     return false;
   }
