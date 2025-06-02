@@ -33,17 +33,17 @@ public:
     Supplier(uint32_t *keys, uint32_t *values, size_t num_keys):
         _keys(keys), _values(values), _num_keys(num_keys) {}
 
-    bool next(uint32_t *pivot, uint32_t *payload) override {
+    bool next(uint32_t *key, uint32_t *value) override {
         if (_num_keys == 0) {
             return false;
         }
-        *pivot = *_keys;
+        *key = *_keys;
         ++_keys;
         if (_values != nullptr) {
-            *payload = *_values;
+            *value = *_values;
             ++_values;
         } else {
-            *payload = 0;
+            *value = 0;
         }
         --_num_keys;
         return true;
@@ -54,36 +54,36 @@ class Comparator: public PackedTableLookup::Comparator {
 private:
     uint32_t _current;
 public:
-    int compare_to(uint32_t pivot) override {
-        return _current < pivot ? -1 : (_current > pivot ? 1 : 0);
+    int compare_to(uint32_t key) override {
+        return _current < key ? -1 : (_current > key ? 1 : 0);
     }
-    void reset(uint32_t pivot) override {
-        _current = pivot;
+    void reset(uint32_t key) override {
+        _current = key;
     }
 };
 
-static void test(uint32_t max_pivot, uint32_t max_payload, unsigned int length) {
-    if (length > max_pivot + 1) {
+static void test(uint32_t max_key, uint32_t max_value, unsigned int length) {
+    if (length > max_key + 1) {
         // can't generate more keys, as keys must be unique
         return;
     }
-    PackedTableBuilder builder(max_pivot, max_payload);
+    PackedTableBuilder builder(max_key, max_value);
     size_t table_bytes = length * builder.element_bytes();
     u1 *table = new u1[table_bytes];
 
     uint32_t *keys = new uint32_t[length];
-    uint32_t *values = max_payload != 0 ? new uint32_t[length] : nullptr;
+    uint32_t *values = max_value != 0 ? new uint32_t[length] : nullptr;
     for (unsigned int i = 0; i < length; ++i) {
         keys[i] = i;
         if (values != nullptr) {
-            values[i] = i % max_payload;
+            values[i] = i % max_value;
         }
     }
     Supplier sup(keys, values, length);
     builder.fill(table, table_bytes, sup);
 
     Comparator comparator;
-    PackedTableLookup lookup(max_pivot, max_payload);
+    PackedTableLookup lookup(max_key, max_value);
 #ifdef ASSERT
     lookup.validate_order(comparator, table, table_bytes);
 #endif
@@ -104,19 +104,19 @@ static void test(uint32_t max_pivot, uint32_t max_payload, unsigned int length) 
     delete[] values;
 }
 
-static void test_with_bits(uint32_t max_pivot, uint32_t max_payload) {
+static void test_with_bits(uint32_t max_key, uint32_t max_value) {
     // Some small sizes
     for (unsigned int i = 0; i <= 100; ++i) {
-        test(max_pivot, max_payload, 0);
+        test(max_key, max_value, 0);
     }
-    test(max_pivot, max_payload, 10000);
+    test(max_key, max_value, 10000);
 }
 
 TEST(PackedTableLookup, lookup) {
-    for (int pivot_bits = 1; pivot_bits <= 32; ++pivot_bits) {
-        for (int payload_bits = 0; payload_bits <= 32; ++payload_bits) {
-            test_with_bits(static_cast<uint32_t>((1ULL << pivot_bits) - 1),
-                           static_cast<uint32_t>((1ULL << payload_bits) - 1));
+    for (int key_bits = 1; key_bits <= 32; ++key_bits) {
+        for (int value_bits = 0; value_bits <= 32; ++value_bits) {
+            test_with_bits(static_cast<uint32_t>((1ULL << key_bits) - 1),
+                           static_cast<uint32_t>((1ULL << value_bits) - 1));
         }
     }
 }

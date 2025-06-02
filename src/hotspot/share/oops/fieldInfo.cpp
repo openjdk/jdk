@@ -143,12 +143,12 @@ private:
 public:
   FieldInfoSupplier(const field_pos_t *positions, size_t elements): _positions(positions), _elements(elements) {}
 
-  bool next(uint32_t *pivot, uint32_t *payload) override {
+  bool next(uint32_t *key, uint32_t *value) override {
     if (_elements == 0) {
       return false;
     }
-    *pivot = _positions->position;
-    *payload = _positions->index;
+    *key = _positions->position;
+    *value = _positions->index;
     ++_positions;
     --_elements;
     return true;
