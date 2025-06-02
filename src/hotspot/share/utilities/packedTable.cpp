@@ -72,7 +72,7 @@ uint64_t PackedTableLookup::read_element(const u1* data, size_t length, size_t o
 }
 
 bool PackedTableLookup::search(Comparator& comparator, const u1* data, size_t search_table_length, uint32_t* found_key, uint32_t* found_value) const {
-  unsigned int low = 0, high = search_table_length / _element_bytes;
+  unsigned int low = 0, high = checked_cast<unsigned int>(search_table_length / _element_bytes);
   assert(low < high, "must be");
   while (low < high) {
     unsigned int mid = low + (high - low) / 2;
