@@ -3549,7 +3549,7 @@ public final class Main {
 
     private static BufferedReader stdinAwareReader(InputStream in) {
         InputStreamReader reader = in == System.in
-                ? new InputStreamReader(in, Charset.forName(System.getProperty("stdin.encoding")))
+                ? new InputStreamReader(in, Charset.forName(System.getProperty("stdin.encoding"), Charset.defaultCharset()))
                 : new InputStreamReader(in);
         return new BufferedReader(reader);
     }

@@ -36,6 +36,7 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 
 /**
  * A {@code CallbackHandler} that prompts and reads from the command line
@@ -130,7 +131,8 @@ public class ConsoleCallbackHandler implements CallbackHandler {
 
     /* Reads a line of input */
     private String readLine() throws IOException {
-        InputStreamReader reader = new InputStreamReader(System.in, System.getProperty("stdin.encoding"));
+        Charset charset = Charset.forName(System.getProperty("stdin.encoding"), Charset.defaultCharset());
+        InputStreamReader reader = new InputStreamReader(System.in, charset);
         String result = new BufferedReader(reader).readLine();
         if (result == null) {
             throw new IOException("Cannot read from System.in");

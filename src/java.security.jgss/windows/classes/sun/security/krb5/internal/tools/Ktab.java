@@ -35,6 +35,7 @@ import sun.security.krb5.internal.ktab.*;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -304,8 +305,7 @@ public class Ktab {
         }
         if (password == null) {
             try {
-                BufferedReader cis = new BufferedReader(new InputStreamReader(
-                        System.in, System.getProperty("stdin.encoding")));
+                BufferedReader cis = stdinReader();
                 System.out.print("Password for " + pname.toString() + ":");
                 System.out.flush();
                 password = cis.readLine().toCharArray();
@@ -403,6 +403,12 @@ public class Ktab {
         }
     }
 
+    private static BufferedReader stdinReader() {
+        Charset charset = Charset.forName(System.getProperty("stdin.encoding"), Charset.defaultCharset());
+        Reader reader = new InputStreamReader(System.in, charset);
+        return new BufferedReader(reader);
+    }
+
     /**
      * Deletes an entry from the key table.
      */
@@ -412,8 +418,7 @@ public class Ktab {
             pname = new PrincipalName(principal);
             if (!fopt) {
                 String answer;
-                BufferedReader cis = new BufferedReader(new InputStreamReader(
-                        System.in, System.getProperty("stdin.encoding")));
+                BufferedReader cis = stdinReader();
                 System.out.print("Are you sure you want to delete "+
                         "service key(s) for " + pname.toString() +
                         " (" + (etype==-1?"all etypes":("etype="+etype)) + ", " +

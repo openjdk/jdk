@@ -797,7 +797,7 @@ public class TTY implements EventNotifier {
             this.handler = new EventHandler(this, true, trackVthreads);
         }
         try {
-            Charset charset = Charset.forName(System.getProperty("stdin.encoding"));
+            Charset charset = Charset.forName(System.getProperty("stdin.encoding"), Charset.defaultCharset());
             BufferedReader in = new BufferedReader(new InputStreamReader(System.in, charset));
 
             Thread.currentThread().setPriority(Thread.NORM_PRIORITY);

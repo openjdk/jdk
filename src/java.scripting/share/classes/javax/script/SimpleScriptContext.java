@@ -87,11 +87,16 @@ public class SimpleScriptContext  implements ScriptContext {
      * Create a {@code SimpleScriptContext}.
      */
     public SimpleScriptContext() {
-        this(new InputStreamReader(System.in, Charset.forName(System.getProperty("stdin.encoding"))),
+        this(stdinReader(),
              new PrintWriter(System.out , true),
              new PrintWriter(System.err, true));
         engineScope = new SimpleBindings();
         globalScope = null;
+    }
+
+    private static InputStreamReader stdinReader() {
+        Charset charset = Charset.forName(System.getProperty("stdin.encoding"), Charset.defaultCharset());
+        return new InputStreamReader(System.in, charset);
     }
 
     /**
