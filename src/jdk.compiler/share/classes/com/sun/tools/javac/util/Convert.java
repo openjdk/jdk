@@ -223,12 +223,9 @@ public class Convert {
      */
     public static int utfNumChars(byte[] buf, int off, int len) {
         int numChars = 0;
-        while (len > 0) {
-            int byte1 = buf[off];
-            int nbytes = byte1 >= 0 ? 1 : (byte1 & 0xe0) == 0xc0 ? 2 : 3;
-            off += nbytes;
-            len -= nbytes;
-            numChars++;
+        while (len-- > 0) {
+            if ((buf[off++] & 0xc0) != 0x80)
+                numChars++;
         }
         return numChars;
     }
