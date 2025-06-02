@@ -2743,26 +2743,26 @@ template<typename R, typename... Rx>
 
 #undef INSN
 
-// Advanced SIMD three same
-#define INSN(NAME, op1, op2, op3)                                                       \
-  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) { \
-    starti;                                                                             \
-    assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");                    \
-    f(0, 31), f((int)T & 1, 30), f(op1, 29), f(0b01110, 28, 24), f(op2, 23);            \
-    f(T==T2D ? 1:0, 22); f(1, 21), rf(Vm, 16), f(op3, 15, 10), rf(Vn, 5), rf(Vd, 0);    \
+  // Advanced SIMD three same
+  void adv_simd_three_same(Instruction_aarch64 &current_insn, FloatRegister Vd,
+                           SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm,
+                           int op1, int op2, int op3);
+#define INSN(NAME, op1, op2, op3)                                                             \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) {       \
+    starti;                                                                                   \
+    adv_simd_three_same(current_insn, Vd, T, Vn, Vm, op1, op2, op3);                          \
   }
-
-  INSN(fabd, 1, 1, 0b110101);
-  INSN(fadd, 0, 0, 0b110101);
-  INSN(fdiv, 1, 0, 0b111111);
-  INSN(faddp, 1, 0, 0b110101);
-  INSN(fmul, 1, 0, 0b110111);
-  INSN(fsub, 0, 1, 0b110101);
-  INSN(fmla, 0, 0, 0b110011);
-  INSN(fmls, 0, 1, 0b110011);
-  INSN(fmax, 0, 0, 0b111101);
-  INSN(fmin, 0, 1, 0b111101);
-  INSN(facgt, 1, 1, 0b111011);
+  INSN(fabd,  1, 1, 0b0101);
+  INSN(fadd,  0, 0, 0b0101);
+  INSN(fdiv,  1, 0, 0b1111);
+  INSN(faddp, 1, 0, 0b0101);
+  INSN(fmul,  1, 0, 0b0111);
+  INSN(fsub,  0, 1, 0b0101);
+  INSN(fmla,  0, 0, 0b0011);
+  INSN(fmls,  0, 1, 0b0011);
+  INSN(fmax,  0, 0, 0b1101);
+  INSN(fmin,  0, 1, 0b1101);
+  INSN(facgt, 1, 1, 0b1011);
 
 #undef INSN
 
@@ -3262,18 +3262,24 @@ public:
   // parameter "tmask" is a 2-bit mask used to indicate which bits in the size
   // field are determined by the SIMD_Arrangement. The bit of "tmask" should be
   // set to 1 if corresponding bit marked as "x" in the ArmARM.
-#define INSN(NAME, U, size, tmask, opcode)                                          \
-  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {               \
-       starti;                                                                      \
-       assert((ASSERTION), MSG);                                                    \
-       f(0, 31), f((int)T & 1, 30), f(U, 29), f(0b01110, 28, 24);                   \
-       f(size | ((int)(T >> 1) & tmask), 23, 22), f(0b10000, 21, 17);               \
-       f(opcode, 16, 12), f(0b10, 11, 10), rf(Vn, 5), rf(Vd, 0);                    \
+#define INSN(NAME, U, size, tmask, opcode)                                      \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {           \
+    starti;                                                                     \
+    assert((ASSERTION), MSG);                                                   \
+    int op22 = (int)(T >> 1) & tmask;                                           \
+    int op19 = 0b00;                                                            \
+    if (tmask == 0b01 && (T == T4H || T == T8H)) {                              \
+      op22 = 0b1;                                                               \
+      op19 = 0b11;                                                              \
+    }                                                                           \
+    f(0, 31), f((int)T & 1, 30), f(U, 29), f(0b01110, 28, 24);                  \
+    f(size | op22, 23, 22), f(1, 21), f(op19, 20, 19), f(0b00, 18, 17);         \
+    f(opcode, 16, 12), f(0b10, 11, 10), rf(Vn, 5), rf(Vd, 0);                   \
  }
 
 #define MSG "invalid arrangement"
 
-#define ASSERTION (T == T2S || T == T4S || T == T2D)
+#define ASSERTION (T == T4H || T == T8H || T == T2S || T == T4S || T == T2D)
   INSN(fsqrt,  1, 0b10, 0b01, 0b11111);
   INSN(fabs,   0, 0b10, 0b01, 0b01111);
   INSN(fneg,   1, 0b10, 0b01, 0b01111);
@@ -3400,7 +3406,7 @@ public:
 #define INSN(NAME, opcode)                                                             \
   void NAME(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn, FloatRegister Zm) { \
     starti;                                                                            \
-    assert(T == S || T == D, "invalid register variant");                              \
+    assert(T == H || T == S || T == D, "invalid register variant");                    \
     f(0b01100101, 31, 24), f(T, 23, 22), f(0, 21),                                     \
     rf(Zm, 16), f(0, 15, 13), f(opcode, 12, 10), rf(Zn, 5), rf(Zd, 0);                 \
   }
@@ -3485,7 +3491,7 @@ public:
 // SVE floating-point arithmetic - predicate
 #define INSN(NAME, op1, op2)                                                                          \
   void NAME(FloatRegister Zd_or_Zdn_or_Vd, SIMD_RegVariant T, PRegister Pg, FloatRegister Zn_or_Zm) { \
-    assert(T == S || T == D, "invalid register variant");                                             \
+    assert(T == H || T == S || T == D, "invalid register variant");                                   \
     sve_predicate_reg_insn(op1, op2, Zd_or_Zdn_or_Vd, T, Pg, Zn_or_Zm);                               \
   }
 

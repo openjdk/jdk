@@ -359,7 +359,7 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
       // We managed to find a region by expanding the heap.
       log_debug(gc, ergo, heap)("Heap expansion (humongous allocation request). Allocation request: %zuB",
                                 word_size * HeapWordSize);
-      policy()->record_new_heap_size(num_regions());
+      policy()->record_new_heap_size(num_committed_regions());
     } else {
       // Policy: Potentially trigger a defragmentation GC.
     }
@@ -1022,7 +1022,7 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
 
   size_t actual_expand_bytes = expanded_by * G1HeapRegion::GrainBytes;
   assert(actual_expand_bytes <= aligned_expand_bytes, "post-condition");
-  policy()->record_new_heap_size(num_regions());
+  policy()->record_new_heap_size(num_committed_regions());
 
   return true;
 }
@@ -1031,12 +1031,12 @@ bool G1CollectedHeap::expand_single_region(uint node_index) {
   uint expanded_by = _hrm.expand_on_preferred_node(node_index);
 
   if (expanded_by == 0) {
-    assert(is_maximal_no_gc(), "Should be no regions left, available: %u", _hrm.available());
+    assert(is_maximal_no_gc(), "Should be no regions left, available: %u", _hrm.num_inactive_regions());
     log_debug(gc, ergo, heap)("Did not expand the heap (heap already fully expanded)");
     return false;
   }
 
-  policy()->record_new_heap_size(num_regions());
+  policy()->record_new_heap_size(num_committed_regions());
   return true;
 }
 
@@ -1052,7 +1052,7 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
                             shrink_bytes, aligned_shrink_bytes, shrunk_bytes);
   if (num_regions_removed > 0) {
     log_debug(gc, heap)("Uncommittable regions after shrink: %u", num_regions_removed);
-    policy()->record_new_heap_size(num_regions());
+    policy()->record_new_heap_size(num_committed_regions());
   } else {
     log_debug(gc, ergo, heap)("Did not shrink the heap (heap shrinking operation failed)");
   }
@@ -1364,15 +1364,15 @@ jint G1CollectedHeap::initialize() {
   // 6843694 - ensure that the maximum region index can fit
   // in the remembered set structures.
   const uint max_region_idx = (1U << (sizeof(RegionIdx_t)*BitsPerByte-1)) - 1;
-  guarantee((max_reserved_regions() - 1) <= max_region_idx, "too many regions");
+  guarantee((max_num_regions() - 1) <= max_region_idx, "too many regions");
 
   // The G1FromCardCache reserves card with value 0 as "invalid", so the heap must not
   // start within the first card.
   guarantee((uintptr_t)(heap_rs.base()) >= G1CardTable::card_size(), "Java heap must not start within the first card.");
-  G1FromCardCache::initialize(max_reserved_regions());
+  G1FromCardCache::initialize(max_num_regions());
   // Also create a G1 rem set.
   _rem_set = new G1RemSet(this, _card_table);
-  _rem_set->initialize(max_reserved_regions());
+  _rem_set->initialize(max_num_regions());
 
   size_t max_cards_per_region = ((size_t)1 << (sizeof(CardIdx_t)*BitsPerByte-1)) - 1;
   guarantee(G1HeapRegion::CardsPerRegion > 0, "make sure it's initialized");
@@ -1381,7 +1381,7 @@ jint G1CollectedHeap::initialize() {
 
   G1HeapRegionRemSet::initialize(_reserved);
 
-  G1FreeRegionList::set_unrealistically_long_length(max_regions() + 1);
+  G1FreeRegionList::set_unrealistically_long_length(max_num_regions() + 1);
 
   _bot = new G1BlockOffsetTable(reserved(), bot_storage);
 
@@ -1449,7 +1449,7 @@ jint G1CollectedHeap::initialize() {
   // values in the heap have been properly initialized.
   _monitoring_support = new G1MonitoringSupport(this);
 
-  _collection_set.initialize(max_reserved_regions());
+  _collection_set.initialize(max_num_regions());
 
   allocation_failure_injector()->reset();
 
@@ -1548,7 +1548,7 @@ void G1CollectedHeap::ref_processing_init() {
 }
 
 size_t G1CollectedHeap::capacity() const {
-  return _hrm.length() * G1HeapRegion::GrainBytes;
+  return _hrm.num_committed_regions() * G1HeapRegion::GrainBytes;
 }
 
 size_t G1CollectedHeap::unused_committed_regions_in_bytes() const {
@@ -2040,7 +2040,7 @@ size_t G1CollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
 }
 
 size_t G1CollectedHeap::max_capacity() const {
-  return max_regions() * G1HeapRegion::GrainBytes;
+  return max_num_regions() * G1HeapRegion::GrainBytes;
 }
 
 void G1CollectedHeap::prepare_for_verify() {
@@ -2188,7 +2188,7 @@ G1HeapSummary G1CollectedHeap::create_g1_heap_summary() {
 
   VirtualSpaceSummary heap_summary = create_heap_space_summary();
   return G1HeapSummary(heap_summary, heap_used, eden_used_bytes, eden_capacity_bytes,
-                       survivor_used_bytes, old_gen_used_bytes, num_regions());
+                       survivor_used_bytes, old_gen_used_bytes, num_committed_regions());
 }
 
 G1EvacSummary G1CollectedHeap::create_g1_evac_summary(G1EvacStats* stats) {
@@ -2413,7 +2413,7 @@ G1HeapPrinterMark::G1HeapPrinterMark(G1CollectedHeap* g1h) : _g1h(g1h), _heap_tr
   _g1h->rem_set()->print_periodic_summary_info("Before GC RS summary",
                                                _g1h->total_collections(),
                                                true /* show_thread_times */);
-  _g1h->print_heap_before_gc();
+  _g1h->print_before_gc();
   _g1h->print_heap_regions();
 }
 
@@ -2427,7 +2427,7 @@ G1HeapPrinterMark::~G1HeapPrinterMark() {
 
   _heap_transition.print();
   _g1h->print_heap_regions();
-  _g1h->print_heap_after_gc();
+  _g1h->print_after_gc();
   // Print NUMA statistics.
   _g1h->numa()->print_statistics();
 }
