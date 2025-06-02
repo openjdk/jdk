@@ -3836,3 +3836,33 @@ JVM_END
 JVM_LEAF(jboolean, JVM_PrintWarningAtDynamicAgentLoad(void))
   return (EnableDynamicAgentLoading && !FLAG_IS_CMDLINE(EnableDynamicAgentLoading)) ? JNI_TRUE : JNI_FALSE;
 JVM_END
+
+JNIEXPORT arena_t JNICALL
+JVM_MakeArena(const char *name) {
+  return static_cast<arena_t>(MemTagFactory::tag(name));
+}
+
+JNIEXPORT void* JNICALL
+JVM_ArenaAlloc(size_t size, arena_t arena) {
+  return os::malloc(size, static_cast<MemTag>(arena));
+}
+
+JNIEXPORT void* JNICALL
+JVM_ArenaRealloc(void *p, size_t size, arena_t arena) {
+  return os::realloc(p, size, static_cast<MemTag>(arena));
+}
+
+JNIEXPORT void* JNICALL
+JVM_ArenaCalloc(size_t numelems, size_t elemsize, arena_t arena) {
+  // Overflow check.
+  if (std::numeric_limits<size_t>::max() / elemsize < numelems) {
+    return nullptr;
+  }
+  size_t total_size = numelems * elemsize;
+  return os::malloc(total_size, static_cast<MemTag>(arena));
+}
+
+JNIEXPORT void JNICALL
+JVM_ArenaFree(void* ptr) {
+  os::free(ptr);
+}
