@@ -92,7 +92,7 @@ size_t ZPlatformAddressOffsetBits() {
   static const size_t valid_max_address_offset_bits = probe_valid_max_address_bit() + 1;
   const size_t max_address_offset_bits = valid_max_address_offset_bits - 3;
 #ifdef ADDRESS_SANITIZER
-  return max_address_offset_bits;
+  return MIN2(valid_max_address_offset_bits, (size_t)44);
 #else
   const size_t min_address_offset_bits = max_address_offset_bits - 2;
   const size_t address_offset = ZGlobalsPointers::min_address_offset_request();
