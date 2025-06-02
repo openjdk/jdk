@@ -26,6 +26,7 @@
  * @test id=nocoops_nocoh
  * @summary Test Loading of default archives in all configurations
  * @requires vm.cds
+ * @requires vm.gc != "Z"
  * @requires vm.bits == 64
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -37,6 +38,7 @@
  * @test id=nocoops_coh
  * @summary Test Loading of default archives in all configurations (requires --enable-cds-archive-coh)
  * @requires vm.cds
+ * @requires vm.gc != "Z"
  * @requires vm.bits == 64
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
