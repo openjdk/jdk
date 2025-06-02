@@ -612,7 +612,7 @@ const Type* DivINode::Value(PhaseGVN* phase) const {
     int32_t d = i2->get_con(); // Divisor
     if (d == 0) {
       // this division will always throw an exception
-      return TypeInt::INT;
+      return Type::TOP;
     }
     jint lo, hi;
     if( d >= 0 ) {
@@ -717,7 +717,7 @@ const Type* DivLNode::Value(PhaseGVN* phase) const {
     jlong d = i2->get_con();    // Divisor
     if (d == 0) {
       // this division will always throw an exception
-      return TypeLong::LONG;
+      return Type::TOP;
     }
     jlong lo, hi;
     if( d >= 0 ) {
