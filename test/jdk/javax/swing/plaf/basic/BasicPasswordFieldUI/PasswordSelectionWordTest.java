@@ -38,6 +38,7 @@
 import javax.swing.Action;
 import javax.swing.JPasswordField;
 import javax.swing.SwingUtilities;
+import javax.swing.plaf.basic.BasicTextUI;
 import javax.swing.text.DefaultEditorKit;
 import java.awt.event.ActionEvent;
 
@@ -46,6 +47,11 @@ public class PasswordSelectionWordTest {
         SwingUtilities.invokeAndWait(() -> {
             String str = "one two three";
             JPasswordField field = new JPasswordField(str);
+            if (!(field.getUI() instanceof BasicTextUI)) {
+                System.out.println("Skipping PasswordSelectionWordTest " +
+                        "because the JPasswordField UI was " + field.getUI());
+                return;
+            }
 
             // do something (anything) to initialize the Views:
             field.setSize(100, 100);
