@@ -193,18 +193,19 @@ public interface ConstantPool {
         List<JavaConstant> getStaticArguments();
 
         /**
-         * Resolves the element corresponding to this bootstrap. If {@code isInvokeDynamic()}, then the
-         * corresponding invoke dynamic is resolved. If {@code !isInvokeDynamic()}, then the dynamic constant
-         * pool entry will be resolved.
+         * Resolves the element corresponding to this bootstrap. If
+         * {@code isInvokeDynamic()}, then the corresponding invoke dynamic is resolved.
+         * If {@code !isInvokeDynamic()}, then the dynamic constant pool entry will be
+         * resolved.
          *
          * @jvms 5.4.3.6
          */
         void resolve();
 
         /**
-         * If {@code isInvokeDynamic()}, then this method looks up the
-         * corresponding invoke dynamic's appendix. If {@code !isInvokeDynamic()},
-         * then this will return the constant pool entry's value.
+         * If {@code isInvokeDynamic()}, then this method looks up the corresponding
+         * invoke dynamic's appendix. If {@code !isInvokeDynamic()}, then this will
+         * return the constant pool entry's value.
          */
         JavaConstant lookup();
     }
@@ -229,13 +230,15 @@ public interface ConstantPool {
 
     /**
      * Returns either the BootstrapMethodInvocation instances for all invokedynamic
-     * bytecodes which reference this constant pool, or all {@code CONSTANT_Dynamic_info}
-     * BootstrapMethodInvocations within this constant pool.
-     * The returned List is unmodifiable; calls to any mutator method
-     * will always cause {@code UnsupportedOperationException} to be thrown.
+     * bytecodes which reference this constant pool, or all
+     * {@code CONSTANT_Dynamic_info} BootstrapMethodInvocations within this constant
+     * pool. The returned List is unmodifiable; calls to any mutator method will
+     * always cause {@code UnsupportedOperationException} to be thrown.
      *
-     * @param invokeDynamic when true, return all invokedynamic BootstrapMethodInvocations;
-     * otherwise, return all {@code CONSTANT_Dynamic_info} BootstrapMethodInvocations.
+     * @param invokeDynamic when true, return all invokedynamic
+     *                      BootstrapMethodInvocations; otherwise, return all
+     *                      {@code CONSTANT_Dynamic_info}
+     *                      BootstrapMethodInvocations.
      */
     List<BootstrapMethodInvocation> lookupBootstrapMethodInvocations(boolean invokeDynamic);
 

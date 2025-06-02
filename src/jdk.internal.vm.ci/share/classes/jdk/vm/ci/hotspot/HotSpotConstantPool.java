@@ -537,16 +537,15 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         private final String name;
         private final JavaConstant type;
         private final List<JavaConstant> staticArguments;
-        private final int index;
+        private final int cpiOrIndyIndex;
 
-        BootstrapMethodInvocationImpl(boolean indy, ResolvedJavaMethod method, String name, JavaConstant type, List<JavaConstant> staticArguments, int index) {
+        BootstrapMethodInvocationImpl(boolean indy, ResolvedJavaMethod method, String name, JavaConstant type, List<JavaConstant> staticArguments, int cpiOrIndyIndex) {
             this.indy = indy;
             this.method = method;
             this.name = name;
             this.type = type;
             this.staticArguments = staticArguments;
-            // for indys this holds the indyIndex; otherwise holds the cpi
-            this.index = index;
+            this.cpiOrIndyIndex = cpiOrIndyIndex;
         }
 
         @Override
@@ -577,18 +576,18 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         @Override
         public void resolve() {
             if (isInvokeDynamic()) {
-                loadReferencedType(index, Bytecodes.INVOKEDYNAMIC);
+                loadReferencedType(cpiOrIndyIndex, Bytecodes.INVOKEDYNAMIC);
             } else {
-                lookupConstant(index, true);
+                lookupConstant(cpiOrIndyIndex, true);
             }
         }
 
         @Override
         public JavaConstant lookup() {
             if (isInvokeDynamic()) {
-                return lookupAppendix(index, Bytecodes.INVOKEDYNAMIC);
+                return lookupAppendix(cpiOrIndyIndex, Bytecodes.INVOKEDYNAMIC);
             } else {
-                return (JavaConstant) lookupConstant(index, false);
+                return (JavaConstant) lookupConstant(cpiOrIndyIndex, false);
             }
         }
 
