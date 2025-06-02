@@ -191,7 +191,6 @@ final class Http3ServerStreamImpl {
                             debug.log("H3Server Got unexpected partial frame: "
                                     + frame + " on stream=" + stream.streamId());
                         }
-                        // TODO: let the HTTP/3 connection close the quic connection?
                         serverConn.close(Http3Error.H3_FRAME_UNEXPECTED,
                                 "unexpected frame type=" + frame.type()
                                         + " on stream=" + stream.streamId());
