@@ -186,39 +186,41 @@ class HandshakeSuspender {
   friend ThreadSelfSuspensionHandshake;
   friend JavaThread;
 
+  JavaThread* _handshakee;
+  Monitor* _state_lock;
+
+public:
+  HandshakeSuspender(JavaThread* thread, Monitor* state_lock);
+
 private:
 
-  static bool suspend(HandshakeState* state, bool register_vthread_SR);
-  static bool resume(HandshakeState* state, bool register_vthread_SR);
+  bool suspend(HandshakeState* state, bool register_vthread_SR);
+  bool resume(HandshakeState* state, bool register_vthread_SR);
 
   // Called from the async handshake (the trap)
   // to stop a thread from continuing execution when suspended.
-  static void do_self_suspend(HandshakeState* state);
+  void do_self_suspend(HandshakeState* state);
 
   // Called from the suspend handshake.
-  static bool suspend_with_handshake(HandshakeState* state, bool register_vthread_SR);
+  bool suspend_with_handshake(HandshakeState* state, bool register_vthread_SR);
 
-  static JavaThread* get_handshakee(HandshakeState* state) {
+  JavaThread* get_handshakee(HandshakeState* state) {
     return state->_handshakee;
   }
 
-  static void set_suspended(HandshakeState* state, bool to, bool register_vthread_SR) {
+  void set_suspended(HandshakeState* state, bool to, bool register_vthread_SR) {
     state->set_suspended(to, register_vthread_SR);
   }
 
-  static bool is_suspended(HandshakeState* state) {
+  bool is_suspended(HandshakeState* state) {
     return state->is_suspended();
   }
 
-  static Monitor* get_lock_ptr(HandshakeState* state) {
-    return &state->_lock;
-  }
-
-  static bool has_async_suspend_handshake(HandshakeState* state) {
+  bool has_async_suspend_handshake(HandshakeState* state) {
     return state->has_async_suspend_handshake();
   }
 
-  static void set_async_suspend_handshake(HandshakeState* state, bool to) {
+  void set_async_suspend_handshake(HandshakeState* state, bool to) {
     state->set_async_suspend_handshake(to);
   }
 
