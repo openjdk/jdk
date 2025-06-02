@@ -367,10 +367,6 @@ public final class Http3Connection implements AutoCloseable {
         this.finalStream = true;
     }
 
-    boolean isClosed() {
-       return closedState != 0 || !quicConnection.isOpen();
-    }
-
     boolean isOpen() {
         return closedState == 0 && quicConnection.isOpen();
     }
@@ -853,7 +849,7 @@ public final class Http3Connection implements AutoCloseable {
             dispatcher.start();
             conn.lock();
             try {
-                if (conn.isClosed()) {
+                if (!conn.isOpen()) {
                     dispatcher.stop();
                 }
             } finally {
@@ -878,7 +874,7 @@ public final class Http3Connection implements AutoCloseable {
             cancelIdleShutdownEvent();
             // consider the reservation successful only if the connection's state hasn't moved
             // to "being closed"
-            return !isClosed() && finalStream == false;
+            return isOpen() && finalStream == false;
         } finally {
             unlock();
         }

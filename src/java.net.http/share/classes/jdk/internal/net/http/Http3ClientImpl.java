@@ -556,7 +556,7 @@ public final class Http3ClientImpl implements AutoCloseable {
      */
     Http3Connection offerConnection(Http3Connection c) {
         if (debug.on()) debug.log("offering to the connection pool: %s", c);
-        if (c.isClosed() || c.isFinalStream()) {
+        if (!c.isOpen() || c.isFinalStream()) {
             if (debug.on())
                 debug.log("skipping offered closed or closing connection: %s", c);
             return null;
@@ -597,7 +597,7 @@ public final class Http3ClientImpl implements AutoCloseable {
                 if (debug.on())
                     debug.log("removed from the connection pool: %s", c);
             }
-            if (!c.isClosed()) {
+            if (c.isOpen()) {
                 if (debug.on())
                     debug.log("adding to pending close: %s", c);
                 pendingClose.add(c);
