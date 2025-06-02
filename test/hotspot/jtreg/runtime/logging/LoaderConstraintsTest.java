@@ -29,6 +29,8 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib classes
  * @build test.Empty
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver LoaderConstraintsTest
  */
 
@@ -50,7 +52,7 @@ public class LoaderConstraintsTest {
         public static void main(String... args) throws Exception {
             ClassLoader cl = ClassUnloadCommon.newClassLoader();
             Class<?> c = cl.loadClass("test.Empty");
-            // Causes class test.Emtpy to be linked, which triggers the
+            // Causes class test.Empty to be linked, which triggers the
             // constraint on class String due to override of toString().
             Constructor<?> constructor = c.getDeclaredConstructor();
         }
@@ -64,6 +66,8 @@ public class LoaderConstraintsTest {
         Collections.addAll(argsList, args);
         Collections.addAll(argsList, "-Xmn8m");
         Collections.addAll(argsList, "-Xbootclasspath/a:.");
+        Collections.addAll(argsList, "-XX:+UnlockDiagnosticVMOptions");
+        Collections.addAll(argsList, "-XX:+WhiteBoxAPI");
         Collections.addAll(argsList, "-Dtest.class.path=" + classPath);
         Collections.addAll(argsList, ClassUnloadTestMain.class.getName());
         return ProcessTools.createLimitedTestJavaProcessBuilder(argsList);
