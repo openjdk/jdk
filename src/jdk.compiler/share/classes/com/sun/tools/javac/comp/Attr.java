@@ -5475,8 +5475,13 @@ public class Attr extends JCTree.Visitor {
                                                         .stream()
                                                         .anyMatch(d -> d.tsym == c);
                             if (!thisIsASuper) {
-                                log.error(TreeInfo.diagnosticPositionFor(subType.tsym, env.tree),
-                                        Errors.InvalidPermitsClause(Fragments.DoesntExtendSealed(subType)));
+                                if(c.isInterface()) {
+                                    log.error(TreeInfo.diagnosticPositionFor(subType.tsym, env.tree),
+                                            Errors.InvalidPermitsClause(Fragments.DoesntImplementSealed(kindName(subType.tsym), subType)));
+                                } else {
+                                    log.error(TreeInfo.diagnosticPositionFor(subType.tsym, env.tree),
+                                            Errors.InvalidPermitsClause(Fragments.DoesntExtendSealed(subType)));
+                                }
                             }
                         }
                     }

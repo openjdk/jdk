@@ -133,13 +133,13 @@ public class AddReads {
                 return new String[] {
                     "--add-modules", SUB_MODULE,
                     "--add-reads", "com.norequires=" + SUB_MODULE,
-                    "-Xlog:class+load,cds,class+path=info",
+                    "-Xlog:class+load,aot,cds,class+path=info",
                 };
             } else {
                 return new String[] {
                     "--add-modules", SUB_MODULE,
                     "--add-reads", "com.norequires=ALL-UNNAMED",
-                    "-Xlog:class+load,cds,class+path=info",
+                    "-Xlog:class+load,aot,cds,class+path=info",
                 };
             }
         }
@@ -184,7 +184,7 @@ public class AddReads {
                  .modulepath(moduleDir.toString())
                  .addVmArgs("--add-modules", SUB_MODULE,
                             "--add-reads", "com.norequires=" + SUB_MODULE,
-                            "-Xlog:class+load,cds,class+path=info")
+                            "-Xlog:class+load,aot,cds,class+path=info")
                  .appCommandLine("-m", MAIN_MODULE));
 
         test("FMG should be enabled with '--add-reads com.norequires=org.astro'",
@@ -193,7 +193,7 @@ public class AddReads {
                  .modulepath(moduleDir.toString())
                  .addVmArgs("--add-modules", SUB_MODULE,
                             "--add-reads", "com.norequires=" + SUB_MODULE,
-                            "-Xlog:class+load,cds,class+path=info")
+                            "-Xlog:class+load,aot,cds,class+path=info")
                  .appCommandLine("-m", MAIN_MODULE));
 
         printComment("FMG should be enabled with '--add-reads com.norequires=ALL-UNNAMED");
