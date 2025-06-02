@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.file
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.classfile
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main WildcardBoundsNotReadFromClassFileTest
  */
@@ -42,7 +41,6 @@ import java.nio.file.Paths;
 
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.util.Assert;
-import com.sun.tools.classfile.ClassFile;
 
 import toolbox.TestRunner;
 import toolbox.ToolBox;

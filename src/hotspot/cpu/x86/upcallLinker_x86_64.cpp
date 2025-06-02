@@ -76,8 +76,6 @@ static int compute_reg_save_area_size(const ABIDescriptor& abi) {
   return size;
 }
 
-constexpr int MXCSR_MASK = 0xFFC0;  // Mask out any pending exceptions
-
 static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDescriptor& abi, int reg_save_area_offset) {
   // 1. iterate all registers in the architecture
   //     - check if they are volatile or not for the given abi
@@ -114,12 +112,9 @@ static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDesc
   {
     const Address mxcsr_save(rsp, offset);
     Label skip_ldmx;
-    __ stmxcsr(mxcsr_save);
-    __ movl(rax, mxcsr_save);
-    __ andl(rax, MXCSR_MASK);    // Only check control and mask bits
-    ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
-    __ cmp32(rax, mxcsr_std, rscratch1);
+    __ cmp32_mxcsr_std(mxcsr_save, rax, rscratch1);
     __ jcc(Assembler::equal, skip_ldmx);
+    ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
     __ ldmxcsr(mxcsr_std, rscratch1);
     __ bind(skip_ldmx);
   }
@@ -225,7 +220,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
 #ifndef PRODUCT
   LogTarget(Trace, foreign, upcall) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     arg_shuffle.print_on(&ls);
   }
@@ -392,7 +386,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
 
 #ifndef PRODUCT
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     blob->print_on(&ls);
   }

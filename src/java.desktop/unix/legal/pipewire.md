@@ -1,4 +1,4 @@
-## PipeWire 0.3.68
+## PipeWire 1.3.81
 
 ### PipeWire license:
 
@@ -38,4 +38,9 @@ Copyright © 2021 Collabora Ltd.
 spa/include/spa/utils/string.h
 ```
 Copyright © 2021 Red Hat, Inc.
+```
+
+spa/utils/cleanup.h:
+```
+Copyright © 2023 PipeWire authors
 ```

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@
 #define fileclose       fclose
 
 #if defined(__linux__) || defined(_ALLBSD_SOURCE)
-static const char *ETC_TIMEZONE_FILE = "/etc/timezone";
 static const char *ZONEINFO_DIR = "/usr/share/zoneinfo";
 static const char *DEFAULT_ZONEINFO_FILE = "/etc/localtime";
 #else
@@ -248,40 +247,13 @@ getPlatformTimeZoneID()
 {
     struct stat statbuf;
     char *tz = NULL;
-    FILE *fp;
     int fd;
     char *buf;
     size_t size;
     int res;
 
-#if defined(__linux__)
     /*
-     * Try reading the /etc/timezone file for Debian distros. There's
-     * no spec of the file format available. This parsing assumes that
-     * there's one line of an Olson tzid followed by a '\n', no
-     * leading or trailing spaces, no comments.
-     */
-    if ((fp = fopen(ETC_TIMEZONE_FILE, "r")) != NULL) {
-        char line[256];
-
-        if (fgets(line, sizeof(line), fp) != NULL) {
-            char *p = strchr(line, '\n');
-            if (p != NULL) {
-                *p = '\0';
-            }
-            if (strlen(line) > 0) {
-                tz = strdup(line);
-            }
-        }
-        (void) fclose(fp);
-        if (tz != NULL) {
-            return tz;
-        }
-    }
-#endif /* defined(__linux__) */
-
-    /*
-     * Next, try /etc/localtime to find the zone ID.
+     * Try /etc/localtime to find the zone ID.
      */
     RESTARTABLE(lstat(DEFAULT_ZONEINFO_FILE, &statbuf), res);
     if (res == -1) {

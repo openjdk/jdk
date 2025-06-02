@@ -24,9 +24,9 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
+#include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zDirector.hpp"
 #include "gc/z/zDriver.hpp"
-#include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zNMethodTable.hpp"
@@ -701,7 +701,7 @@ ZGenerationTracer* ZStatPhaseGeneration::jfr_tracer() const {
 }
 
 void ZStatPhaseGeneration::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
-  ZCollectedHeap::heap()->print_heap_before_gc();
+  ZCollectedHeap::heap()->print_before_gc();
 
   jfr_tracer()->report_start(start);
 
@@ -716,7 +716,7 @@ void ZStatPhaseGeneration::register_end(ConcurrentGCTimer* timer, const Ticks& s
 
   jfr_tracer()->report_end(end);
 
-  ZCollectedHeap::heap()->print_heap_after_gc();
+  ZCollectedHeap::heap()->print_after_gc();
 
   const Tickspan duration = end - start;
   ZStatDurationSample(_sampler, duration);
@@ -1424,8 +1424,7 @@ ZStatMark::ZStatMark()
     _nproactiveflush(),
     _nterminateflush(),
     _ntrycomplete(),
-    _ncontinue(),
-    _mark_stack_usage() {}
+    _ncontinue() {}
 
 void ZStatMark::at_mark_start(size_t nstripes) {
   _nstripes = nstripes;
@@ -1441,10 +1440,6 @@ void ZStatMark::at_mark_end(size_t nproactiveflush,
   _ncontinue = ncontinue;
 }
 
-void ZStatMark::at_mark_free(size_t mark_stack_usage) {
-  _mark_stack_usage = mark_stack_usage;
-}
-
 void ZStatMark::print() {
   log_info(gc, marking)("Mark: "
                         "%zu stripe(s), "
@@ -1457,8 +1452,6 @@ void ZStatMark::print() {
                         _nterminateflush,
                         _ntrycomplete,
                         _ncontinue);
-
-  log_info(gc, marking)("Mark Stack Usage: %zuM", _mark_stack_usage / M);
 }
 
 //
@@ -1538,7 +1531,7 @@ void ZStatRelocation::print_page_summary() {
   };
 
   print_summary("Small", small_summary, _small_in_place_count);
-  if (ZPageSizeMedium != 0) {
+  if (ZPageSizeMediumEnabled) {
     print_summary("Medium", medium_summary, _medium_in_place_count);
   }
   print_summary("Large", large_summary, 0 /* in_place_count */);

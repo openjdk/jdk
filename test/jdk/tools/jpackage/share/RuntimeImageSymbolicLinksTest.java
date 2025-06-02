@@ -43,7 +43,7 @@ import jdk.jpackage.test.Executor;
  * @key jpackagePlatformPackage
  * @requires (os.family != "windows")
  * @build jdk.jpackage.test.*
- * @compile RuntimeImageSymbolicLinksTest.java
+ * @compile -Xlint:all -Werror RuntimeImageSymbolicLinksTest.java
  * @run main/othervm/timeout=1400 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=RuntimeImageSymbolicLinksTest
  */

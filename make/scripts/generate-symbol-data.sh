@@ -68,8 +68,7 @@ if [ "`git status --porcelain=v1 .`x" != "x" ] ; then
     exit 1
 fi;
 
-$1/bin/java --add-exports jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED \
-            --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
+$1/bin/java --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
             --add-exports jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED \
             --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
             --add-modules jdk.jdeps \

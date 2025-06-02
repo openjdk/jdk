@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,7 +163,6 @@ public class PropertyResourceBundle extends ResourceBundle {
      *     {@code java.util.PropertyResourceBundle.encoding} is set to "UTF-8"
      *     and {@code stream} contains an unmappable UTF-8 byte sequence.
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     public PropertyResourceBundle (InputStream stream) throws IOException {
         this(new InputStreamReader(stream,
             "ISO-8859-1".equals(encoding) ?

@@ -27,6 +27,7 @@
  * @bug 8220095
  * @requires os.family == "linux" | os.family == "mac"
  * @requires vm.flagless
+ * @requires !jdk.static
  * @library /test/lib
  * @modules java.management
  *          jdk.jlink

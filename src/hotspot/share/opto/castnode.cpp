@@ -96,8 +96,14 @@ const Type* ConstraintCastNode::Value(PhaseGVN* phase) const {
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
-Node *ConstraintCastNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  return (in(0) && remove_dead_region(phase, can_reshape)) ? this : nullptr;
+Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (in(0) != nullptr && remove_dead_region(phase, can_reshape)) {
+    return this;
+  }
+  if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
+    return TypeNode::Ideal(phase, can_reshape);
+  }
+  return nullptr;
 }
 
 uint ConstraintCastNode::hash() const {
@@ -525,6 +531,18 @@ const Type* ConstraintCastNode::widen_type(const PhaseGVN* phase, const Type* re
   if (!phase->C->post_loop_opts_phase()) {
     return res;
   }
+
+  // At VerifyConstraintCasts == 1, we verify the ConstraintCastNodes that are present during code
+  // emission. This allows us detecting possible mis-scheduling due to these nodes being pinned at
+  // the wrong control nodes.
+  // At VerifyConstraintCasts == 2, we do not perform widening so that we can verify the
+  // correctness of more ConstraintCastNodes. This further helps us detect possible
+  // mis-transformations that may happen due to these nodes being pinned at the wrong control
+  // nodes.
+  if (VerifyConstraintCasts > 1) {
+    return res;
+  }
+
   const TypeInteger* this_type = res->is_integer(bt);
   const TypeInteger* in_type = phase->type(in(1))->isa_integer(bt);
   if (in_type != nullptr &&

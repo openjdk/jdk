@@ -218,6 +218,9 @@ JVM_DumpClassListToFile(JNIEnv* env, jstring fileName);
 JNIEXPORT void JNICALL
 JVM_DumpDynamicArchive(JNIEnv* env, jstring archiveName);
 
+JNIEXPORT jboolean JNICALL
+JVM_NeedsClassInitBarrierForCDS(JNIEnv* env, jclass cls);
+
 /*
  * java.lang.Throwable
  */
@@ -546,20 +549,8 @@ JVM_GetClassInterfaces(JNIEnv *env, jclass cls);
 JNIEXPORT jboolean JNICALL
 JVM_IsInterface(JNIEnv *env, jclass cls);
 
-JNIEXPORT jobject JNICALL
-JVM_GetProtectionDomain(JNIEnv *env, jclass cls);
-
-JNIEXPORT jboolean JNICALL
-JVM_IsArrayClass(JNIEnv *env, jclass cls);
-
-JNIEXPORT jboolean JNICALL
-JVM_IsPrimitiveClass(JNIEnv *env, jclass cls);
-
 JNIEXPORT jboolean JNICALL
 JVM_IsHiddenClass(JNIEnv *env, jclass cls);
-
-JNIEXPORT jint JNICALL
-JVM_GetClassModifiers(JNIEnv *env, jclass cls);
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetDeclaredClasses(JNIEnv *env, jclass ofClass);

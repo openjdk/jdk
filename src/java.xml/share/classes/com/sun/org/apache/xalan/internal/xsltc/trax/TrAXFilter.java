@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -43,9 +43,8 @@ import org.xml.sax.helpers.XMLFilterImpl;
  * @author Santiago Pericas-Geertsen
  * @author G. Todd Miller
  *
- * @LastModified: July 2023
+ * @LastModified: Jan 2025
  */
-@SuppressWarnings("deprecation") //org.xml.sax.helpers.XMLReaderFactory
 public class TrAXFilter extends XMLFilterImpl {
     private Templates              _templates;
     private TransformerImpl        _transformer;

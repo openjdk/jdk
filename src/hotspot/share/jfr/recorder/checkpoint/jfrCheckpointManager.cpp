@@ -504,7 +504,7 @@ void JfrCheckpointManager::begin_epoch_shift() {
 
 void JfrCheckpointManager::end_epoch_shift() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-  debug_only(const u1 current_epoch = JfrTraceIdEpoch::current();)
+  DEBUG_ONLY(const u1 current_epoch = JfrTraceIdEpoch::current();)
   JfrTraceIdEpoch::end_epoch_shift();
   assert(current_epoch != JfrTraceIdEpoch::current(), "invariant");
   JfrStringPool::on_epoch_shift();
@@ -675,6 +675,10 @@ JfrBlobHandle JfrCheckpointManager::create_thread_blob(JavaThread* jt, traceid t
 
 void JfrCheckpointManager::write_checkpoint(Thread* thread, traceid tid /* 0 */, oop vthread /* nullptr */) {
   JfrTypeManager::write_checkpoint(thread, tid, vthread);
+}
+
+void JfrCheckpointManager::write_simplified_vthread_checkpoint(traceid vtid) {
+  JfrTypeManager::write_simplified_vthread_checkpoint(vtid);
 }
 
 class JfrNotifyClosure : public ThreadClosure {

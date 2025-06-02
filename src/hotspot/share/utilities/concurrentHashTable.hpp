@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,9 +56,12 @@ class ConcurrentHashTable : public CHeapObj<MT> {
       _stats_rate->remove();
     }
   }
-  // Calculate statistics. Item sizes are calculated with VALUE_SIZE_FUNC.
+  // Calculate statistics. Item sizes are calculated with VALUE_SIZE_FUNC, and accumulated in summary and literal_size.
   template <typename VALUE_SIZE_FUNC>
-  TableStatistics statistics_calculate(Thread* thread, VALUE_SIZE_FUNC& vs_f);
+  void internal_statistics_range(Thread* thread, size_t start, size_t stop,
+                                 VALUE_SIZE_FUNC& sts_f, NumberSeq& summary, size_t& literal_size);
+
+  TableStatistics internal_statistics_epilog(Thread* thread, NumberSeq summary, size_t literal_size);
 
   // This is the internal node structure.
   // Only constructed with placement new from memory allocated with MemTag of
@@ -531,12 +534,6 @@ class ConcurrentHashTable : public CHeapObj<MT> {
   template <typename VALUE_SIZE_FUNC>
   TableStatistics statistics_get(Thread* thread, VALUE_SIZE_FUNC& vs_f, TableStatistics old);
 
-  // Writes statistics to the outputStream. Item sizes are calculated with
-  // VALUE_SIZE_FUNC.
-  template <typename VALUE_SIZE_FUNC>
-  void statistics_to(Thread* thread, VALUE_SIZE_FUNC& vs_f, outputStream* st,
-                     const char* table_name);
-
   // Moves all nodes from this table to to_cht with new hash code.
   // Must be done at a safepoint.
   void rehash_nodes_to(Thread* thread, ConcurrentHashTable<CONFIG, MT>* to_cht);
@@ -559,6 +556,7 @@ class ConcurrentHashTable : public CHeapObj<MT> {
  public:
   class BulkDeleteTask;
   class GrowTask;
+  class StatisticsTask;
   class ScanTask;
 };
 

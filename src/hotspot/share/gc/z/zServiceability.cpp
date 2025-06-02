@@ -66,7 +66,7 @@ public:
                          curr_capacity) {}
 
   void update_capacity(size_t capacity) {
-    _current_size->set_value(capacity);
+    update_all(capacity);
   }
 };
 

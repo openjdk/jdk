@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8208377
+ * @bug 8208377 6562489 8270265
  * @summary Confirm that format-category glyphs are not rendered or measured.
  */
 
@@ -174,6 +174,9 @@ public class FormatCharAdvanceTest {
         testChar('\u202D', image, g2d, font); // left-to-right override (LRO)
         testChar('\u202E', image, g2d, font); // right-to-left override (RLO)
         testChar('\u2060', image, g2d, font); // word joiner (WJ)
+        testChar('\u2061', image, g2d, font); // function application
+        testChar('\u2062', image, g2d, font); // invisible times
+        testChar('\u2063', image, g2d, font); // invisible separator
         testChar('\u2066', image, g2d, font); // left-to-right isolate (LRI)
         testChar('\u2067', image, g2d, font); // right-to-left isolate (RLI)
         testChar('\u2068', image, g2d, font); // first strong isolate (FSI)
@@ -272,6 +275,12 @@ public class FormatCharAdvanceTest {
         g2d.drawString(as2.getIterator(), w / 2, h / 2);
         ab2 = findTextBoundingBox(image).width;
         assertEqual(ab1, ab2, "drawString (using AttributedCharacterIterator)", c, font);
+
+        int max = metrics.stringWidth("AB") + 2; // add a little wiggle room to the max width
+        LineBreakMeasurer measurer1 = new LineBreakMeasurer(as1.getIterator(), frc);
+        LineBreakMeasurer measurer2 = new LineBreakMeasurer(as2.getIterator(), frc);
+        assertEqual(2, measurer1.nextOffset(max), "nextOffset 1", c, font);
+        assertEqual(7, measurer2.nextOffset(max), "nextOffset 2", c, font);
     }
 
     private static void assertEqual(int i1, int i2, String scenario, char c, Font font) {

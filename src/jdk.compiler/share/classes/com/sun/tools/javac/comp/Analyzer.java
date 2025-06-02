@@ -730,7 +730,7 @@ public class Analyzer {
          * Simple deferred diagnostic handler which filters out all messages and keep track of errors.
          */
         Log.DeferredDiagnosticHandler diagHandler() {
-            return new Log.DeferredDiagnosticHandler(log, d -> {
+            return log.new DeferredDiagnosticHandler(d -> {
                 if (d.getType() == DiagnosticType.ERROR) {
                     erroneous = true;
                 }

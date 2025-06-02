@@ -116,16 +116,8 @@ public class LWButton extends LWComponent {
         repaint();
       }
     }
-    try {
-      unClicker uc = new unClicker();
-      new Thread(uc).start();
-    } catch (Exception e) {
-      // In case we're in an applet and the security has not been
-      // turned off (in which case we can't start a new thread)
-      // we can catch that and set the flag back to how it should be.
-      isInClick = false;
-      repaint();
-    }
+    unClicker uc = new unClicker();
+    new Thread(uc).start();
   }
 
   /**

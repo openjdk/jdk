@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import jdk.jpackage.test.TKit;
  * @summary jpackage for app's module linked in external runtime
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile ModulePathTest3.java
+ * @compile -Xlint:all -Werror ModulePathTest3.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=ModulePathTest3
  */
@@ -108,7 +108,7 @@ public final class ModulePathTest3 {
     }
 
     @Parameters
-    public static Collection data() {
+    public static Collection<?> data() {
         final List<String[]> paths = new ArrayList<>();
         paths.add(new String[] { "", "" });
         if (TKit.isOSX()) {

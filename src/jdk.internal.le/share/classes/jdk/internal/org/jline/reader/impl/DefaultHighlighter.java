@@ -38,6 +38,7 @@ public class DefaultHighlighter implements Highlighter {
         int underlineEnd = -1;
         int negativeStart = -1;
         int negativeEnd = -1;
+        boolean first = true;
         String search = reader.getSearchTerm();
         if (search != null && search.length() > 0) {
             underlineStart = buffer.indexOf(search);
@@ -65,6 +66,7 @@ public class DefaultHighlighter implements Highlighter {
         }
 
         AttributedStringBuilder sb = new AttributedStringBuilder();
+        commandStyle(reader, sb, true);
         for (int i = 0; i < buffer.length(); i++) {
             if (i == underlineStart) {
                 sb.style(AttributedStyle::underline);
@@ -77,6 +79,10 @@ public class DefaultHighlighter implements Highlighter {
             }
 
             char c = buffer.charAt(i);
+            if (first && Character.isSpaceChar(c)) {
+                first = false;
+                commandStyle(reader, sb, false);
+            }
             if (c == '\t' || c == '\n') {
                 sb.append(c);
             } else if (c < 32) {
@@ -105,4 +111,6 @@ public class DefaultHighlighter implements Highlighter {
         }
         return sb.toAttributedString();
     }
+
+    protected void commandStyle(LineReader reader, AttributedStringBuilder sb, boolean enable) {}
 }

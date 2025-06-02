@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -52,6 +52,9 @@ final class StringConcatHelper {
             byte coder  = String.LATIN1;
             for (String c : constants) {
                 length += c.length();
+                if (length < 0) {
+                    throw new OutOfMemoryError("Total length of constants is out of range");
+                }
                 coder  |= c.coder();
             }
             this.constants = constants;
@@ -312,12 +315,12 @@ final class StringConcatHelper {
     static long prepend(long indexCoder, byte[] buf, int value, String prefix) {
         int index = (int)indexCoder;
         if (indexCoder < UTF16) {
-            index = DecimalDigits.getCharsLatin1(value, index, buf);
+            index = DecimalDigits.uncheckedGetCharsLatin1(value, index, buf);
             index -= prefix.length();
             prefix.getBytes(buf, index, String.LATIN1);
             return index;
         } else {
-            index = DecimalDigits.getCharsUTF16(value, index, buf);
+            index = DecimalDigits.uncheckedGetCharsUTF16(value, index, buf);
             index -= prefix.length();
             prefix.getBytes(buf, index, String.UTF16);
             return index | UTF16;
@@ -338,12 +341,12 @@ final class StringConcatHelper {
     static long prepend(long indexCoder, byte[] buf, long value, String prefix) {
         int index = (int)indexCoder;
         if (indexCoder < UTF16) {
-            index = DecimalDigits.getCharsLatin1(value, index, buf);
+            index = DecimalDigits.uncheckedGetCharsLatin1(value, index, buf);
             index -= prefix.length();
             prefix.getBytes(buf, index, String.LATIN1);
             return index;
         } else {
-            index = DecimalDigits.getCharsUTF16(value, index, buf);
+            index = DecimalDigits.uncheckedGetCharsUTF16(value, index, buf);
             index -= prefix.length();
             prefix.getBytes(buf, index, String.UTF16);
             return index | UTF16;
@@ -429,7 +432,7 @@ final class StringConcatHelper {
     @ForceInline
     static String doConcat(String s1, String s2) {
         byte coder = (byte) (s1.coder() | s2.coder());
-        int newLength = (s1.length() + s2.length()) << coder;
+        int newLength = checkOverflow(s1.length() + s2.length()) << coder;
         byte[] buf = newArray(newLength);
         s1.getBytes(buf, 0, coder);
         s2.getBytes(buf, s1.length(), coder);
@@ -710,11 +713,11 @@ final class StringConcatHelper {
      */
     static int prepend(int index, byte coder, byte[] buf, int value, String prefix) {
         if (coder == String.LATIN1) {
-            index = DecimalDigits.getCharsLatin1(value, index, buf);
+            index = DecimalDigits.uncheckedGetCharsLatin1(value, index, buf);
             index -= prefix.length();
             prefix.getBytes(buf, index, String.LATIN1);
         } else {
-            index = DecimalDigits.getCharsUTF16(value, index, buf);
+            index = DecimalDigits.uncheckedGetCharsUTF16(value, index, buf);
             index -= prefix.length();
             prefix.getBytes(buf, index, String.UTF16);
         }
@@ -734,11 +737,11 @@ final class StringConcatHelper {
      */
     static int prepend(int index, byte coder, byte[] buf, long value, String prefix) {
         if (coder == String.LATIN1) {
-            index = DecimalDigits.getCharsLatin1(value, index, buf);
+            index = DecimalDigits.uncheckedGetCharsLatin1(value, index, buf);
             index -= prefix.length();
             prefix.getBytes(buf, index, String.LATIN1);
         } else {
-            index = DecimalDigits.getCharsUTF16(value, index, buf);
+            index = DecimalDigits.uncheckedGetCharsUTF16(value, index, buf);
             index -= prefix.length();
             prefix.getBytes(buf, index, String.UTF16);
         }

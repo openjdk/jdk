@@ -284,15 +284,14 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_return_type(Register mdp, Register ret, Register tmp);
   void profile_parameters_type(Register mdp, Register tmp1, Register tmp2, Register tmp3);
 
-  // Debugging
-  // only if +VerifyFPU  && (state == ftos || state == dtos)
-  void verify_FPU(int stack_depth, TosState state = ftos);
-
   typedef enum { NotifyJVMTI, SkipNotifyJVMTI } NotifyMethodExitMode;
 
   // support for jvmti/dtrace
   void notify_method_entry();
   void notify_method_exit(TosState state, NotifyMethodExitMode mode);
+
+  JFR_ONLY(void enter_jfr_critical_section();)
+  JFR_ONLY(void leave_jfr_critical_section();)
 
   virtual void _call_Unimplemented(address call_site) {
     save_bcp();

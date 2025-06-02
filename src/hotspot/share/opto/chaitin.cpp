@@ -366,8 +366,8 @@ void PhaseChaitin::Register_Allocate() {
   _alternate = 0;
   _matcher._allocation_started = true;
 
-  ResourceArea split_arena(mtCompiler);     // Arena for Split local resources
-  ResourceArea live_arena(mtCompiler);      // Arena for liveness & IFG info
+  ResourceArea split_arena(mtCompiler, Arena::Tag::tag_regsplit);     // Arena for Split local resources
+  ResourceArea live_arena(mtCompiler, Arena::Tag::tag_reglive);     // Arena for liveness & IFG info
   ResourceMark rm(&live_arena);
 
   // Need live-ness for the IFG; need the IFG for coalescing.  If the
@@ -1323,7 +1323,7 @@ void PhaseChaitin::Simplify( ) {
     bool bound = lrgs(lo_score)._is_bound;
 
     // Find cheapest guy
-    debug_only( int lo_no_simplify=0; );
+    DEBUG_ONLY( int lo_no_simplify=0; );
     for (uint i = _hi_degree; i; i = lrgs(i)._next) {
       assert(!_ifg->_yanked->test(i), "");
       // It's just vaguely possible to move hi-degree to lo-degree without
@@ -1335,7 +1335,7 @@ void PhaseChaitin::Simplify( ) {
         lo_score = i;
         break;
       }
-      debug_only( if( lrgs(i)._was_lo ) lo_no_simplify=i; );
+      DEBUG_ONLY( if( lrgs(i)._was_lo ) lo_no_simplify=i; );
       double iscore = lrgs(i).score();
       double iarea = lrgs(i)._area;
       double icost = lrgs(i)._cost;
@@ -1577,7 +1577,7 @@ uint PhaseChaitin::Select( ) {
 
     // Remove neighbor colors
     IndexSet *s = _ifg->neighbors(lidx);
-    debug_only(RegMask orig_mask = lrg->mask();)
+    DEBUG_ONLY(RegMask orig_mask = lrg->mask();)
 
     if (!s->is_empty()) {
       IndexSetIterator elements(s);
@@ -1706,8 +1706,8 @@ uint PhaseChaitin::Select( ) {
         ttyLocker ttyl;
         tty->print("L%d spilling with neighbors: ", lidx);
         s->dump();
-        debug_only(tty->print(" original mask: "));
-        debug_only(orig_mask.dump());
+        DEBUG_ONLY(tty->print(" original mask: "));
+        DEBUG_ONLY(orig_mask.dump());
         dump_lrg(lidx);
       }
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,6 +105,7 @@ public class Lower extends TreeTranslator {
     private final boolean disableProtectedAccessors; // experimental
     private final PkgInfo pkginfoOpt;
     private final boolean optimizeOuterThis;
+    private final boolean nullCheckOuterThis;
     private final boolean useMatchException;
     private final HashMap<TypePairs, String> typePairToName;
     private int variableIndex = 0;
@@ -134,6 +135,8 @@ public class Lower extends TreeTranslator {
         optimizeOuterThis =
             target.optimizeOuterThis() ||
             options.getBoolean("optimizeOuterThis", false);
+        nullCheckOuterThis = options.getBoolean("nullCheckOuterThis",
+            target.nullCheckOuterThisByDefault());
         disableProtectedAccessors = options.isSet("disableProtectedAccessors");
         Source source = Source.instance(context);
         Preview preview = Preview.instance(context);
@@ -1794,18 +1797,27 @@ public class Lower extends TreeTranslator {
                     make.Ident(rhs)).setType(lhs.erasure(types)));
     }
 
-    /** Return tree simulating the assignment {@code this.this$n = this$n}.
+    /**
+     * Return tree simulating null checking outer this and/or assigning. This is
+     * called when a null check is required (nullCheckOuterThis), or a synthetic
+     * field is generated (stores).
      */
-    JCStatement initOuterThis(int pos, VarSymbol rhs) {
+    JCStatement initOuterThis(int pos, VarSymbol rhs, boolean stores) {
         Assert.check(rhs.owner.kind == MTH);
-        VarSymbol lhs = outerThisStack.head;
-        Assert.check(rhs.owner.owner == lhs.owner);
+        Assert.check(nullCheckOuterThis || stores); // One of the flags must be true
         make.at(pos);
-        return
-            make.Exec(
-                make.Assign(
+        JCExpression expression = make.Ident(rhs);
+        if (nullCheckOuterThis) {
+            expression = attr.makeNullCheck(expression);
+        }
+        if (stores) {
+            VarSymbol lhs = outerThisStack.head;
+            Assert.check(rhs.owner.owner == lhs.owner);
+            expression = make.Assign(
                     make.Select(make.This(lhs.owner.erasure(types)), lhs),
-                    make.Ident(rhs)).setType(lhs.erasure(types)));
+                    expression).setType(lhs.erasure(types));
+        }
+        return make.Exec(expression);
     }
 
 /* ************************************************************************
@@ -2210,15 +2222,22 @@ public class Lower extends TreeTranslator {
         }
         // If this$n was accessed, add the field definition and prepend
         // initializer code to any super() invocation to initialize it
-        if (currentClass.hasOuterInstance() && shouldEmitOuterThis(currentClass)) {
-            tree.defs = tree.defs.prepend(otdef);
-            enterSynthetic(tree.pos(), otdef.sym, currentClass.members());
+        // otherwise prepend enclosing instance null check code if required
+        emitOuter:
+        if (currentClass.hasOuterInstance()) {
+            boolean storesThis = shouldEmitOuterThis(currentClass);
+            if (storesThis) {
+                tree.defs = tree.defs.prepend(otdef);
+                enterSynthetic(tree.pos(), otdef.sym, currentClass.members());
+            } else if (!nullCheckOuterThis) {
+                break emitOuter;
+            }
 
             for (JCTree def : tree.defs) {
                 if (TreeInfo.isConstructor(def)) {
                     JCMethodDecl mdef = (JCMethodDecl)def;
                     if (TreeInfo.hasConstructorCall(mdef, names._super)) {
-                        List<JCStatement> initializer = List.of(initOuterThis(mdef.body.pos, mdef.params.head.sym));
+                        List<JCStatement> initializer = List.of(initOuterThis(mdef.body.pos, mdef.params.head.sym, storesThis)) ;
                         TreeInfo.mapSuperCalls(mdef.body, supercall -> make.Block(0, initializer.append(supercall)));
                     }
                 }

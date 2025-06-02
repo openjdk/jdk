@@ -506,7 +506,6 @@ public:
                    size_t nterminateflush,
                    size_t ntrycomplete,
                    size_t ncontinue);
-  void at_mark_free(size_t mark_stack_usage);
 
   void print();
 };

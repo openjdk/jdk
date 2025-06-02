@@ -31,6 +31,9 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "jvm_io.h"
+#include "jvmci/jniAccessMark.inline.hpp"
+#include "jvmci/jvmciCompiler.hpp"
+#include "jvmci/jvmciRuntime.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -40,12 +43,10 @@
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
-#include "runtime/jniHandles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
-#include "jvmci/jniAccessMark.inline.hpp"
-#include "jvmci/jvmciCompiler.hpp"
-#include "jvmci/jvmciRuntime.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 
 JVMCICompileState::JVMCICompileState(CompileTask* task, JVMCICompiler* compiler):
   _task(task),
@@ -250,12 +251,9 @@ void JVMCIEnv::check_init(TRAPS) {
   if (_init_error == JNI_OK) {
     return;
   }
-  if (_init_error == JNI_ENOMEM) {
-    THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), "JNI_ENOMEM creating or attaching to libjvmci");
-  }
   stringStream st;
   st.print("Error creating or attaching to libjvmci (err: %d, description: %s)",
-           _init_error, _init_error_msg == nullptr ? "unknown" : _init_error_msg);
+            _init_error, _init_error_msg != nullptr ? _init_error_msg : (_init_error == JNI_ENOMEM ? "JNI_ENOMEM" : "none"));
   THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), st.freeze());
 }
 
@@ -612,7 +610,7 @@ JVMCIEnv::~JVMCIEnv() {
   if (_init_error_msg != nullptr) {
     // The memory allocated in libjvmci was not allocated with os::malloc
     // so must not be freed with os::free.
-    ALLOW_C_FUNCTION(::free, ::free((void*) _init_error_msg);)
+    permit_forbidden_function::free((void*)_init_error_msg);
   }
   if (_init_error != JNI_OK) {
     return;
@@ -1775,7 +1773,7 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JV
 
   if (!deoptimize) {
     // Prevent future executions of the nmethod but let current executions complete.
-    nm->make_not_entrant();
+    nm->make_not_entrant("JVMCI invalidate nmethod mirror");
 
     // Do not clear the address field here as the Java code may still
     // want to later call this method with deoptimize == true. That requires
@@ -1784,7 +1782,7 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JV
     // Deoptimize the nmethod immediately.
     DeoptimizationScope deopt_scope;
     deopt_scope.mark(nm);
-    nm->make_not_entrant();
+    nm->make_not_entrant("JVMCI invalidate nmethod mirror");
     nm->make_deoptimized();
     deopt_scope.deoptimize_marked();
 
@@ -1864,9 +1862,7 @@ CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj) {
 
 void JVMCINMethodHandle::set_nmethod(nmethod* nm) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm != nullptr) {
-    bs_nm->nmethod_entry_barrier(nm);
-  }
+  bs_nm->nmethod_entry_barrier(nm);
   _thread->set_live_nmethod(nm);
 }
 
