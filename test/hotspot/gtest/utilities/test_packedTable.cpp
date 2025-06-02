@@ -107,7 +107,7 @@ static void test(uint32_t max_key, uint32_t max_value, unsigned int length) {
 static void test_with_bits(uint32_t max_key, uint32_t max_value) {
     // Some small sizes
     for (unsigned int i = 0; i <= 100; ++i) {
-        test(max_key, max_value, 0);
+        test(max_key, max_value, i);
     }
     test(max_key, max_value, 10000);
 }
@@ -118,5 +118,40 @@ TEST(PackedTableLookup, lookup) {
             test_with_bits(static_cast<uint32_t>((1ULL << key_bits) - 1),
                            static_cast<uint32_t>((1ULL << value_bits) - 1));
         }
+    }
+}
+
+TEST(PackedTableBase, element_bytes) {
+    {
+        PackedTableBuilder builder(1, 0);
+        EXPECT_EQ(builder.element_bytes(), 1U);
+    }
+    {
+        PackedTableBuilder builder(15, 15);
+        EXPECT_EQ(builder.element_bytes(), 1U);
+    }
+    {
+        PackedTableBuilder builder(15, 16);
+        EXPECT_EQ(builder.element_bytes(), 2U);
+    }
+    {
+        PackedTableBuilder builder(31, 7);
+        EXPECT_EQ(builder.element_bytes(), 1U);
+    }
+    {
+        PackedTableBuilder builder(32, 7);
+        EXPECT_EQ(builder.element_bytes(), 2U);
+    }
+    {
+        PackedTableBuilder builder(-1, 0);
+        EXPECT_EQ(builder.element_bytes(), 4U);
+    }
+    {
+        PackedTableBuilder builder(-1, 1);
+        EXPECT_EQ(builder.element_bytes(), 5U);
+    }
+    {
+        PackedTableBuilder builder(-1, -1);
+        EXPECT_EQ(builder.element_bytes(), 8U);
     }
 }
