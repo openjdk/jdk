@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -366,13 +366,6 @@ public final class QuicServerConnection extends QuicConnectionImpl {
     }
 
     @Override
-    protected long getMaxIdleTimeoutTransportParam() {
-        return this.transportParams.getIntParameter(
-                ParameterId.max_idle_timeout, TimeUnit.SECONDS.toMillis(
-                        Utils.getLongProperty("jdk.test.server.quic.idleTimeout", 30)));
-    }
-
-    @Override
     protected ByteBuffer buildInitialParameters() {
         final QuicTransportParameters params = new QuicTransportParameters(this.transportParams);
         if (!params.isPresent(original_destination_connection_id)) {
@@ -385,13 +378,17 @@ public final class QuicServerConnection extends QuicConnectionImpl {
             params.setParameter(stateless_reset_token,
                     endpoint.idFactory().statelessTokenFor(localConnectionId()));
         }
+        if (!params.isPresent(max_idle_timeout)) {
+            final long idleTimeoutMillis = TimeUnit.SECONDS.toMillis(
+                    Utils.getLongProperty("jdk.test.server.quic.idleTimeout", 30));
+            params.setIntParameter(max_idle_timeout, idleTimeoutMillis);
+        }
         if (retryData != null && !params.isPresent(retry_source_connection_id)) {
             // include the connection id that was directed by this server's RETRY packet
             // for usage in INITIAL packets sent by client
             params.setParameter(retry_source_connection_id,
                     retryData.serverChosenConnId().getBytes());
         }
-        setIntParamIfNotSet(params, max_idle_timeout, this::getMaxIdleTimeoutTransportParam);
         setIntParamIfNotSet(params, initial_max_data, () -> DEFAULT_INITIAL_MAX_DATA);
         setIntParamIfNotSet(params, initial_max_stream_data_bidi_local, () -> DEFAULT_INITIAL_STREAM_MAX_DATA);
         setIntParamIfNotSet(params, initial_max_stream_data_bidi_remote, () -> DEFAULT_INITIAL_STREAM_MAX_DATA);

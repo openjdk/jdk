@@ -3473,10 +3473,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         // params.setIntParameter(ParameterId.active_connection_id_limit, 2);
     }
 
-    protected long getMaxIdleTimeoutTransportParam() {
-        return TimeUnit.SECONDS.toMillis(Utils.getLongProperty("jdk.httpclient.quic.idleTimeout", 30));
-    }
-
     /**
      * {@return the number of (active) connection ids that this endpoint is willing
      * to accept from the peer for a given connection}
@@ -3497,7 +3493,9 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     protected ByteBuffer buildInitialParameters() {
         final QuicTransportParameters params = new QuicTransportParameters(this.transportParams);
         setIntParamIfNotSet(params, active_connection_id_limit, this::getLocalActiveConnIDLimit);
-        setIntParamIfNotSet(params, max_idle_timeout, this::getMaxIdleTimeoutTransportParam);
+        final long idleTimeoutMillis = TimeUnit.SECONDS.toMillis(
+                Utils.getLongProperty("jdk.httpclient.quic.idleTimeout", 30));
+        setIntParamIfNotSet(params, max_idle_timeout, () -> idleTimeoutMillis);
         setIntParamIfNotSet(params, max_udp_payload_size, () -> {
             assert this.endpoint != null : "Endpoint hasn't been set";
             return (long) this.endpoint.getMaxUdpPayloadSize();
