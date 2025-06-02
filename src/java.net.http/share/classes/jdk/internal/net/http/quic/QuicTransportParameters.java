@@ -976,9 +976,8 @@ public final class QuicTransportParameters {
         return sb.append("]").toString();
     }
 
-    // TODO: values for only (variable length) integer params aren't included in the string
-    // representation, for other params that are set, only the param key is included (like
-    // toString() implementation)
+    // values for (variable length) integer params are decoded, for other params
+    // that are set, the value is printed as a hex string.
     public String toStringWithValues() {
         final StringBuilder sb = new StringBuilder("Quic Transport Params[");
         for (var kv : values.entrySet()) {
@@ -988,13 +987,7 @@ public final class QuicTransportParameters {
                 // param is set, so include it in the string representation
                 sb.append(param);
                 final String valAsString = valueToString(param);
-                // TODO: val can be null because our implementation currently only
-                // returns string representation for (variable length) integer params.
-                // for other params, like connection ids, we need to add the implementation
-                // after which valueToString() should never return null.
-                if (valAsString != null) {
-                    sb.append("=").append(valAsString);
-                }
+                sb.append("=").append(valAsString);
                 sb.append(", ");
             }
         }
@@ -1003,16 +996,23 @@ public final class QuicTransportParameters {
 
     private String valueToString(final ParameterId parameterId) {
         assert this.values.get(parameterId) != null : "param " + parameterId + " not set";
-        return switch (parameterId) {
-            // int params
-            case max_idle_timeout, max_udp_payload_size, initial_max_data,
-                    initial_max_stream_data_bidi_local, initial_max_stream_data_bidi_remote,
-                    initial_max_stream_data_uni, initial_max_streams_bidi,
-                    initial_max_streams_uni, ack_delay_exponent, max_ack_delay,
-                    active_connection_id_limit -> String.valueOf(getIntParameter(parameterId));
-            // TODO: impl the rest
-            default -> null;
-        };
+        try {
+            return switch (parameterId) {
+                // int params
+                case max_idle_timeout, max_udp_payload_size, initial_max_data,
+                     initial_max_stream_data_bidi_local,
+                     initial_max_stream_data_bidi_remote,
+                     initial_max_stream_data_uni, initial_max_streams_bidi,
+                     initial_max_streams_uni, ack_delay_exponent, max_ack_delay,
+                     active_connection_id_limit ->
+                        String.valueOf(getIntParameter(parameterId));
+                default ->
+                        '"' + HexFormat.of().formatHex(values.get(parameterId)) + '"';
+            };
+        } catch (RuntimeException e) {
+            // if the value was a malformed integer, return the hex representation
+            return '"' + HexFormat.of().formatHex(values.get(parameterId)) + '"';
+        }
     }
 
     /**
