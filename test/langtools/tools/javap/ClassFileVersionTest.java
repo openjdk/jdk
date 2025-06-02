@@ -53,24 +53,24 @@ public class ClassFileVersionTest {
     final ToolBox toolBox = new ToolBox();
 
     public static Stream<Arguments> classFiles() {
-        var classFile = ClassFile.of();
         int major17 = ClassFileFormatVersion.RELEASE_17.major();
         int preview = Character.MAX_VALUE;
         int majorLatest = ClassFileFormatVersion.latest().major();
+        AccessFlag[] noFlags = {};
         return Stream.of(
-            of(createClassFile(classFile, major17, 0), false),
-            of(createClassFile(classFile, major17, preview), false),
-            of(createClassFile(classFile, 0, 0), false),
-            of(createClassFile(classFile, major17, 0, AccessFlag.PUBLIC), false),
-            of(createClassFile(classFile, major17, preview, AccessFlag.PUBLIC), false),
-            of(createClassFile(classFile, majorLatest, preview, AccessFlag.PUBLIC), false),
-            of(createClassFile(classFile, majorLatest, 0, AccessFlag.BRIDGE), true), // misplaced access flag
-            of(createClassFile(classFile, majorLatest, preview, AccessFlag.BRIDGE), true) // misplaced access flag
+            of(false, major17, 0, noFlags),
+            of(false, major17, preview, noFlags),
+            of(false, 0, 0, noFlags),
+            of(false, major17, 0, new AccessFlag[]{AccessFlag.PUBLIC}),
+            of(false, major17, preview, new AccessFlag[]{AccessFlag.PUBLIC}),
+            of(false, majorLatest, preview, new AccessFlag[]{AccessFlag.PUBLIC}),
+            of(true, majorLatest, 0, new AccessFlag[]{AccessFlag.BRIDGE}), // misplaced access flag
+            of(true, majorLatest, preview, new AccessFlag[]{AccessFlag.BRIDGE}) // misplaced access flag
         );
     }
 
-    private static Object createClassFile(ClassFile classFile, int major, int minor, AccessFlag... classFlags) {
-        return classFile.build(ClassDesc.of("Test"), (builder) -> {
+    private static byte[] createClassFile(int major, int minor, AccessFlag[] classFlags) {
+        return ClassFile.of().build(ClassDesc.of("Test"), (builder) -> {
             // manually assemble flag bits to avoid exception in ClassFile api
             int flags = 0;
             for (AccessFlag classFlag : classFlags) {
@@ -82,9 +82,9 @@ public class ClassFileVersionTest {
 
     @ParameterizedTest
     @MethodSource("classFiles")
-    void test(byte[] classFile, boolean shouldError) throws Throwable {
+    void test(boolean shouldError, int major, int minor, AccessFlag[] classFlags) throws Throwable {
 
-        Files.write(Path.of("cf.class"), classFile);
+        Files.write(Path.of("cf.class"), createClassFile(major, minor, classFlags));
 
         var lines = new JavapTask(toolBox)
             .classes("cf.class")
