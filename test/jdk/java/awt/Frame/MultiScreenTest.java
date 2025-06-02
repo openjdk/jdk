@@ -85,9 +85,7 @@ public class MultiScreenTest {
                 "test failed otherwise it passed.";;
 
         PassFailJFrame.builder()
-                .title("MultiScreenTest Instruction")
                 .instructions(INSTRUCTIONS)
-                .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(40)
                 .testUI(obj::init)
                 .build()
@@ -100,8 +98,8 @@ public class MultiScreenTest {
             GraphicsConfiguration[] gc = gs[j].getConfigurations();
             if (gc.length > 0) {
                 for (int i = 0; i < gc.length && i < 10; i++) {
-                    JFrame f = new JFrame(gc[i]); //test JFrame( gc )
-                    GCCanvas c = new GCCanvas(gc[i]);// test canvas( gc )
+                    JFrame f = new JFrame(gc[i]); // test JFrame( gc )
+                    GCCanvas c = new GCCanvas(gc[i]); // test canvas( gc )
                     Rectangle gcBounds = gc[i].getBounds(); // test getBounds()
                     int xoffs = gcBounds.x;
                     int yoffs = gcBounds.y;
@@ -109,7 +107,7 @@ public class MultiScreenTest {
                     f.getContentPane().add(c);
                     f.setTitle("Screen# " + Integer.toString(j) + ", GC#" + Integer.toString(i));
                     f.setSize(300, 200);
-                    f.setLocation(400 + xoffs, (i * 150) + yoffs);// test
+                    f.setLocation(400 + xoffs, (i * 150) + yoffs); // test
                     // displaying in right location
                     list.add(f);
 
@@ -175,7 +173,8 @@ class GCCanvas extends Canvas {
         g.setColor(Color.cyan);
         g.fillArc(150, 30, 30, 30, 0, 200);
     }
-@Override
+
+    @Override
     public Dimension getPreferredSize(){
          return new Dimension(300, 200);
     }
