@@ -59,6 +59,7 @@ public class AquaTextFieldSearch {
     }
 
     static class SearchFieldPropertyListener implements PropertyChangeListener {
+        @Override
         public void propertyChange(final PropertyChangeEvent evt) {
             final Object source = evt.getSource();
             if (!(source instanceof JTextComponent)) return;
@@ -302,6 +303,7 @@ public class AquaTextFieldSearch {
             super(other);
         }
 
+        @Override
         public void paint(final JComponent c, final Graphics g, final int x, final int y, final int w, final int h) {
             reallyPaintBorder = true;
             paintBorder(c, g, x, y, w, h);
@@ -309,11 +311,13 @@ public class AquaTextFieldSearch {
         }
 
         // apparently without adjusting for odd height pixels, the search field "wobbles" relative to it's contents
+        @Override
         public void paintBorder(final Component c, final Graphics g, final int x, final int y, final int width, final int height) {
             if (!reallyPaintBorder) return;
             super.paintBorder(c, g, x, y - (height % 2), width, height);
         }
 
+        @Override
         public Insets getBorderInsets(final Component c) {
             if (doingLayout) return new Insets(0, 0, 0, 0);
 

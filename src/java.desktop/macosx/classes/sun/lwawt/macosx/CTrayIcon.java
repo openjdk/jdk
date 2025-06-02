@@ -140,6 +140,7 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
      * kind of window in Lion, NSPopover, so perhaps it could be used it
      * to implement better looking notifications.
      */
+    @Override
     public void displayMessage(final String caption, final String text,
                                final String messageType) {
         // obtain icon to show along the message

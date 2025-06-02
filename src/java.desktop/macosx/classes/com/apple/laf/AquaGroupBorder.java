@@ -55,6 +55,7 @@ public abstract class AquaGroupBorder extends AquaBorder {
         painter.state.set(Widget.FRAME_GROUP_BOX);
     }
 
+    @Override
     public void paintBorder(final Component c, final Graphics g, int x, int y, int width, int height) {
         // sg2d.setColor(Color.MAGENTA);
         // sg2d.drawRect(x, y, width - 1, height - 1);

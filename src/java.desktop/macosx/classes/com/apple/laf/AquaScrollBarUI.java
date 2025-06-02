@@ -96,12 +96,14 @@ public class AquaScrollBarUI extends ScrollBarUI {
 
     public AquaScrollBarUI() { }
 
+    @Override
     public void installUI(final JComponent c) {
         fScrollBar = (JScrollBar)c;
         installListeners();
         configureScrollBarColors();
     }
 
+    @Override
     public void uninstallUI(final JComponent c) {
         uninstallListeners();
         fScrollBar = null;
@@ -169,6 +171,7 @@ public class AquaScrollBarUI extends ScrollBarUI {
         scrollBarState.set(shouldShowArrows() ? ShowArrows.YES : ShowArrows.NO);
     }
 
+    @Override
     public void paint(final Graphics g, final JComponent c) {
         syncState(c);
         Rectangle trackBounds = getTrackBounds();
@@ -269,6 +272,7 @@ public class AquaScrollBarUI extends ScrollBarUI {
     }
 
     protected class PropertyChangeHandler implements PropertyChangeListener {
+        @Override
         public void propertyChange(final PropertyChangeEvent e) {
             final String propertyName = e.getPropertyName();
 
@@ -286,6 +290,7 @@ public class AquaScrollBarUI extends ScrollBarUI {
     }
 
     protected class ModelListener implements ChangeListener {
+        @Override
         public void stateChanged(final ChangeEvent e) {
             layoutContainer(fScrollBar);
         }
@@ -299,6 +304,7 @@ public class AquaScrollBarUI extends ScrollBarUI {
         protected transient boolean fStillInTrack = false; // Whether mouse is in the track during pageup/down tracking
         protected transient int fFirstMouseX, fFirstMouseY, fFirstValue; // Values for getValueFromOffset
 
+        @Override
         public void mouseReleased(final MouseEvent e) {
             if (!fScrollBar.isEnabled()) return;
             if (fInArrows) {
@@ -315,6 +321,7 @@ public class AquaScrollBarUI extends ScrollBarUI {
             fScrollBar.revalidate();
         }
 
+        @Override
         public void mousePressed(final MouseEvent e) {
             if (!fScrollBar.isEnabled()) return;
 
@@ -331,6 +338,7 @@ public class AquaScrollBarUI extends ScrollBarUI {
             }
         }
 
+        @Override
         public void mouseDragged(final MouseEvent e) {
             if (!fScrollBar.isEnabled()) return;
 
@@ -553,6 +561,7 @@ public class AquaScrollBarUI extends ScrollBarUI {
             this.fUseBlockIncrement = block;
         }
 
+        @Override
         public void actionPerformed(final ActionEvent e) {
             Component parent = fScrollBar.getParent();
             do {
@@ -625,14 +634,17 @@ public class AquaScrollBarUI extends ScrollBarUI {
      * @see #getMaximumSize
      * @see #getMinimumSize
      */
+    @Override
     public Dimension getPreferredSize(final JComponent c) {
         return isHorizontal() ? new Dimension(96, 15) : new Dimension(15, 96);
     }
 
+    @Override
     public Dimension getMinimumSize(final JComponent c) {
         return isHorizontal() ? new Dimension(54, 15) : new Dimension(15, 54);
     }
 
+    @Override
     public Dimension getMaximumSize(final JComponent c) {
         return new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE);
     }

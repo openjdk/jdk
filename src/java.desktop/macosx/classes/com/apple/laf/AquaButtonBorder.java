@@ -69,6 +69,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
         super(other);
     }
 
+    @Override
     public void paintBorder(final Component c, final Graphics g, final int x, final int y, final int width, final int height) {
         // for now we don't paint a border. We let the button paint it since there
         // needs to be a strict ordering for aqua components.
@@ -144,6 +145,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
      * Returns the insets of the border.
      * @param c the component for which this border insets value applies
      */
+    @Override
     public Insets getBorderInsets(final Component c) {
         if (!(c instanceof AbstractButton button)) return new Insets(0, 0, 0, 0);
 
@@ -172,6 +174,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
      * is opaque, it is responsible for filling in it's own
      * background when painting.
      */
+    @Override
     public boolean isBorderOpaque() {
         return false;
     }
@@ -202,6 +205,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
             super(other);
         }
 
+        @Override
         public Insets getContentInsets(final AbstractButton b, final int width, final int height) {
             final Size size = AquaUtilControlSize.getUserSizeFrom(b);
             final Widget style = getStyleForSize(b, size, width, height);
@@ -219,6 +223,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
             return null;
         }
 
+        @Override
         protected void doButtonPaint(final AbstractButton b, final ButtonModel model, final Graphics g, int x, int y, int width, int height) {
             final Size size = AquaUtilControlSize.getUserSizeFrom(b);
             painter.state.set(size);
@@ -265,6 +270,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
             super(other);
         }
 
+        @Override
         protected void doButtonPaint(final AbstractButton b, final ButtonModel model, final Graphics g, final int x, final int y, final int width, final int height) {
             if (height < SizeConstants.fSquareButtonHeightThreshold || width < SizeConstants.fSquareButtonWidthThreshold) {
                 painter.state.set(Widget.BUTTON_BEVEL);
@@ -288,6 +294,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
             super(sizeDescriptor);
         }
 
+        @Override
         protected void doButtonPaint(final AbstractButton b, final ButtonModel model, final Graphics g, final int x, final int y, final int width, final int height) {
             painter.state.set(model.isSelected() ? BooleanValue.YES : BooleanValue.NO);
             super.doButtonPaint(b, model, g, x, y, width, height);
@@ -304,6 +311,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
             super(other);
         }
 
+        @Override
         protected void doButtonPaint(final AbstractButton b, final ButtonModel model, final Graphics g, final int x, final int y, final int w, final int h) {
             if (!model.isSelected()) return; // only paint when the toolbar button is selected
             super.doButtonPaint(b, model, g, x, y, w, h);

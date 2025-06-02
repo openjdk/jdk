@@ -154,6 +154,7 @@ public class AquaMenuPainter {
     static class RecyclableBorder extends RecyclableSingleton<Border> {
         final String borderName;
         RecyclableBorder(final String borderName) { this.borderName = borderName; }
+        @Override
         protected Border getInstance() { return UIManager.getBorder(borderName); }
     }
 

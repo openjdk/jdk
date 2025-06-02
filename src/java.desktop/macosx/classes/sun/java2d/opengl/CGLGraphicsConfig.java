@@ -215,6 +215,7 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
         public CGLGCDisposerRecord(long pCfgInfo) {
             this.pCfgInfo = pCfgInfo;
         }
+        @Override
         public void dispose() {
             if (pCfgInfo != 0) {
                 OGLRenderQueue.disposeGraphicsConfig(pCfgInfo);
@@ -340,6 +341,7 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
         private CGLImageCaps() {
             super(true);
         }
+        @Override
         public boolean isTrueVolatile() {
             return true;
         }

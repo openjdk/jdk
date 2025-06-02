@@ -37,6 +37,7 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI {
         return new AquaPopupMenuUI();
     }
 
+    @Override
     public boolean isPopupTrigger(final MouseEvent e) {
         // Use the awt popup trigger code since this only runs on our OS!
         return e.isPopupTrigger();

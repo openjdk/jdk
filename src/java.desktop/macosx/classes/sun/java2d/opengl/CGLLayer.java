@@ -48,6 +48,7 @@ public class CGLLayer extends CFLayer {
         this.peer = peer;
     }
 
+    @Override
     public SurfaceData replaceSurfaceData() {
         if (getBounds().isEmpty()) {
             surfaceData = NullSurfaceData.theInstance;

@@ -474,6 +474,7 @@ public class AquaKeyBindings {
     static class SimpleBinding implements BindingsProvider {
         final String[] bindings;
         public SimpleBinding(final String[] bindings) { this.bindings = bindings; }
+        @Override
         public String[] getBindings() { return bindings; }
     }
 
@@ -486,10 +487,12 @@ public class AquaKeyBindings {
             this.providerList = providerList;
         }
 
+        @Override
         public Object createValue(final UIDefaults table) {
             return LookAndFeel.makeInputMap(getBindings());
         }
 
+        @Override
         public String[] getBindings() {
             if (mergedBindings != null) return mergedBindings;
 
@@ -544,6 +547,7 @@ public class AquaKeyBindings {
     abstract static class DeleteWordAction extends TextAction {
         public DeleteWordAction(final String name) { super(name); }
 
+        @Override
         public void actionPerformed(final ActionEvent e) {
             if (e == null) return;
 
@@ -589,6 +593,7 @@ public class AquaKeyBindings {
             this.proxyActionName = proxyActionName;
         }
 
+        @Override
         public void actionPerformed(final ActionEvent e) {
             final JTextComponent c = getTextComponent(e);
             final ActionMap actionMap = c.getActionMap();

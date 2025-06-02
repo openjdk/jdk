@@ -272,16 +272,19 @@ class _AppEventHandler {
 
 
     class _AboutDispatcher extends _AppEventDispatcher<AboutHandler> {
+        @Override
         void performDefaultAction(final _NativeEvent event) {
             openCocoaAboutWindow(); // if the handler is null, fall back to showing the Cocoa default
         }
 
+        @Override
         void performUsing(final AboutHandler handler, final _NativeEvent event) {
             handler.handleAbout(new AboutEvent());
         }
     }
 
     static class _PreferencesDispatcher extends _AppEventDispatcher<PreferencesHandler> {
+        @Override
         synchronized void setHandler(final PreferencesHandler handler) {
             super.setHandler(handler);
 
@@ -289,18 +292,21 @@ class _AppEventHandler {
             _AppMenuBarHandler.getInstance().setPreferencesMenuItemEnabled(handler != null);
         }
 
+        @Override
         void performUsing(final PreferencesHandler handler, final _NativeEvent event) {
             handler.handlePreferences(new PreferencesEvent());
         }
     }
 
     static class _OpenAppDispatcher extends _QueuingAppEventDispatcher<com.apple.eawt._OpenAppHandler> {
+        @Override
         void performUsing(com.apple.eawt._OpenAppHandler handler, _NativeEvent event) {
             handler.handleOpenApp();
         }
     }
 
     static class _AppReOpenedDispatcher extends _AppEventMultiplexor<AppReopenedListener> {
+        @Override
         void performOnListener(AppReopenedListener listener, final _NativeEvent event) {
             final AppReopenedEvent e = new AppReopenedEvent();
             listener.appReopened(e);
@@ -308,80 +314,99 @@ class _AppEventHandler {
     }
 
     static class _AppForegroundDispatcher extends _BooleanAppEventMultiplexor<AppForegroundListener, AppForegroundEvent> {
+        @Override
         AppForegroundEvent createEvent(final boolean isTrue) { return new AppForegroundEvent(); }
 
+        @Override
         void performFalseEventOn(final AppForegroundListener listener, final AppForegroundEvent e) {
             listener.appMovedToBackground(e);
         }
 
+        @Override
         void performTrueEventOn(final AppForegroundListener listener, final AppForegroundEvent e) {
             listener.appRaisedToForeground(e);
         }
     }
 
     static class _HiddenAppDispatcher extends _BooleanAppEventMultiplexor<AppHiddenListener, AppHiddenEvent> {
+        @Override
         AppHiddenEvent createEvent(final boolean isTrue) { return new AppHiddenEvent(); }
 
+        @Override
         void performFalseEventOn(final AppHiddenListener listener, final AppHiddenEvent e) {
             listener.appUnhidden(e);
         }
 
+        @Override
         void performTrueEventOn(final AppHiddenListener listener, final AppHiddenEvent e) {
             listener.appHidden(e);
         }
     }
 
     static class _UserSessionDispatcher extends _BooleanAppEventMultiplexor<UserSessionListener, UserSessionEvent> {
+        @Override
         UserSessionEvent createEvent(final boolean isTrue) {
             return new UserSessionEvent(Reason.UNSPECIFIED);
         }
 
+        @Override
         void performFalseEventOn(final UserSessionListener listener, final UserSessionEvent e) {
             listener.userSessionDeactivated(e);
         }
 
+        @Override
         void performTrueEventOn(final UserSessionListener listener, final UserSessionEvent e) {
             listener.userSessionActivated(e);
         }
 
+        @Override
         void registerNativeListener() {
             nativeRegisterForNotification(REGISTER_USER_SESSION);
         }
     }
 
     static class _ScreenSleepDispatcher extends _BooleanAppEventMultiplexor<ScreenSleepListener, ScreenSleepEvent> {
+        @Override
         ScreenSleepEvent createEvent(final boolean isTrue) { return new ScreenSleepEvent(); }
 
+        @Override
         void performFalseEventOn(final ScreenSleepListener listener, final ScreenSleepEvent e) {
             listener.screenAwoke(e);
         }
 
+        @Override
         void performTrueEventOn(final ScreenSleepListener listener, final ScreenSleepEvent e) {
             listener.screenAboutToSleep(e);
         }
 
+        @Override
         void registerNativeListener() {
             nativeRegisterForNotification(REGISTER_SCREEN_SLEEP);
         }
     }
 
     static class _SystemSleepDispatcher extends _BooleanAppEventMultiplexor<SystemSleepListener, SystemSleepEvent> {
+        @Override
         SystemSleepEvent createEvent(final boolean isTrue) { return new SystemSleepEvent(); }
 
+        @Override
         void performFalseEventOn(final SystemSleepListener listener, final SystemSleepEvent e) {
             listener.systemAwoke(e);
         }
 
+        @Override
         void performTrueEventOn(final SystemSleepListener listener, final SystemSleepEvent e) {
             listener.systemAboutToSleep(e);
         }
 
+        @Override
         void registerNativeListener() {
             nativeRegisterForNotification(REGISTER_SYSTEM_SLEEP);
         }
     }
 
     static class _OpenFileDispatcher extends _QueuingAppEventDispatcher<OpenFilesHandler> {
+        @Override
         void performUsing(final OpenFilesHandler handler, final _NativeEvent event) {
             // create file list from fileNames
             final List<String> fileNameList = event.get(0);
@@ -395,6 +420,7 @@ class _AppEventHandler {
     }
 
     static class _PrintFileDispatcher extends _QueuingAppEventDispatcher<PrintFilesHandler> {
+        @Override
         void performUsing(final PrintFilesHandler handler, final _NativeEvent event) {
             // create file list from fileNames
             final List<String> fileNameList = event.get(0);
@@ -407,6 +433,7 @@ class _AppEventHandler {
 
     // Java URLs can't handle unknown protocol types, which is why we use URIs
     static class _OpenURIDispatcher extends _QueuingAppEventDispatcher<OpenURIHandler> {
+        @Override
         void performUsing(final OpenURIHandler handler, final _NativeEvent event) {
             final String urlString = event.get(0);
             try {
@@ -418,10 +445,12 @@ class _AppEventHandler {
     }
 
     class _QuitDispatcher extends _AppEventDispatcher<QuitHandler> {
+        @Override
         void performDefaultAction(final _NativeEvent event) {
             obtainQuitResponse().performQuit();
         }
 
+        @Override
         void performUsing(final QuitHandler handler, final _NativeEvent event) {
             if (_AppMiscHandlers.isSuddenTerminationEnbaled()) {
                 performDefaultAction(event);
@@ -591,6 +620,7 @@ class _AppEventHandler {
             super.dispatch(event);
         }
 
+        @Override
         synchronized void setHandler(final H handler) {
             this._handler = handler;
 

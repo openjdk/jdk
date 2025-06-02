@@ -44,10 +44,14 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
         return new AquaToolBarUI();
     }
 
+    @Override
     protected void setBorderToNonRollover(final Component c) { }
+    @Override
     protected void setBorderToNormal(final Component c) { }
+    @Override
     protected void setBorderToRollover(final Component c) { }
 
+    @Override
     protected RootPaneContainer createFloatingWindow(final JToolBar toolbar) {
         final RootPaneContainer window = super.createFloatingWindow(toolbar);
         window.getRootPane().putClientProperty("Window.style", "small");
@@ -70,6 +74,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
             }
         }
 
+        @Override
         public void paintBorder(final java.awt.Component c, final Graphics g, int x, int y, final int w, final int h) {
             g.translate(x, y);
 
@@ -100,11 +105,13 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
             g.translate(-x, -y);
         }
 
+        @Override
         public Insets getBorderInsets(final java.awt.Component c) {
             final Insets borderInsets = new Insets(5, 5, 5, 5);
             return getBorderInsets(c, borderInsets);
         }
 
+        @Override
         public Insets getBorderInsets(final java.awt.Component c, final Insets borderInsets) {
             borderInsets.left = 4;
             borderInsets.right = 4;
@@ -132,6 +139,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
             return borderInsets;
         }
 
+        @Override
         public boolean isBorderOpaque() {
             return true;
         }

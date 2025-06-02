@@ -128,6 +128,7 @@ public class MTLRenderQueue extends RenderQueue {
         }
     }
 
+    @Override
     public void flushAndInvokeNow(Runnable r) {
         // assert lock.isHeldByCurrentThread();
         try {
@@ -192,6 +193,7 @@ public class MTLRenderQueue extends RenderQueue {
             flushNow();
         }
 
+        @Override
         public synchronized void run() {
             boolean timedOut = false;
             while (true) {

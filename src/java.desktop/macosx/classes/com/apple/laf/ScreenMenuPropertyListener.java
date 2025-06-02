@@ -42,6 +42,7 @@ class ScreenMenuPropertyListener implements PropertyChangeListener {
      * @param e A PropertyChangeEvent object describing the event source
      *       and the property that has changed.
      */
+    @Override
     public void propertyChange(final PropertyChangeEvent e) {
         final String propertyName = e.getPropertyName();
 

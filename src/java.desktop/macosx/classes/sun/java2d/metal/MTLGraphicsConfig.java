@@ -213,6 +213,7 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
         public MTLGCDisposerRecord(long pCfgInfo) {
             this.pCfgInfo = pCfgInfo;
         }
+        @Override
         public void dispose() {
             if (pCfgInfo != 0) {
                 MTLRenderQueue.disposeGraphicsConfig(pCfgInfo);
@@ -321,6 +322,7 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
         private MTLImageCaps() {
             super(true);
         }
+        @Override
         public boolean isTrueVolatile() {
             return true;
         }

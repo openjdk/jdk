@@ -72,10 +72,12 @@ public class AquaButtonRadioUI extends AquaButtonLabeledUI {
         return sizingIcon.get();
     }
 
+    @Override
     protected String getPropertyPrefix() {
         return "RadioButton" + ".";
     }
 
+    @Override
     protected AquaButtonBorder getPainter() {
         return new RadioButtonBorder();
     }

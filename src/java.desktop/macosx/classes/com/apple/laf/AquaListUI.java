@@ -50,6 +50,7 @@ public class AquaListUI extends BasicListUI {
     /**
      * Creates the focus listener to repaint the focus ring
      */
+    @Override
     protected FocusListener createFocusListener() {
         return new AquaListUI.FocusHandler();
     }
@@ -57,10 +58,12 @@ public class AquaListUI extends BasicListUI {
     /**
      * Creates a delegate that implements MouseInputListener.
      */
+    @Override
     protected MouseInputListener createMouseInputListener() {
         return new AquaListUI.MouseInputHandler();
     }
 
+    @Override
     protected void installKeyboardActions() {
         super.installKeyboardActions();
         list.getActionMap().put("aquaHome", new AquaHomeEndAction(true));
@@ -78,6 +81,7 @@ public class AquaListUI extends BasicListUI {
         /**
          * For a Home action, scrolls to the top. Otherwise, scroll to the end.
          */
+        @Override
         public void actionPerformed(final ActionEvent e) {
             final JList<?> list = (JList<?>)e.getSource();
 
@@ -95,22 +99,26 @@ public class AquaListUI extends BasicListUI {
      * &quot;protected&quot; inner class. Instantiate it only within subclasses of BasicListUI.
      */
     class FocusHandler extends BasicListUI.FocusHandler {
+        @Override
         public void focusGained(final FocusEvent e) {
             super.focusGained(e);
             AquaBorder.repaintBorder(getComponent());
         }
 
+        @Override
         public void focusLost(final FocusEvent e) {
             super.focusLost(e);
             AquaBorder.repaintBorder(getComponent());
         }
     }
 
+    @Override
     protected PropertyChangeListener createPropertyChangeListener() {
         return new AquaPropertyChangeHandler();
     }
 
     class AquaPropertyChangeHandler extends PropertyChangeHandler {
+        @Override
         public void propertyChange(final PropertyChangeEvent e) {
             final String prop = e.getPropertyName();
             if (AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(prop)) {
@@ -195,6 +203,7 @@ public class AquaListUI extends BasicListUI {
     }
 
     static class ComponentPainter extends AquaBorder.Default {
+        @Override
         public void paintBorder(final Component c, final Graphics g, final int x, final int y, final int w, final int h) {
             final JComponent jc = c instanceof JComponent ? (JComponent)c : null;
             if (jc != null && !AquaFocusHandler.isActive(jc)) {

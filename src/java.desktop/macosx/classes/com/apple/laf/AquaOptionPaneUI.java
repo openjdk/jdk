@@ -49,6 +49,7 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
      * Creates and returns a Container containin the buttons. The buttons
      * are created by calling {@code getButtons}.
      */
+    @Override
     protected Container createButtonArea() {
         final Container bottom = super.createButtonArea();
         // Now replace the Layout
@@ -61,6 +62,7 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
      * body of the message.
      * The icon and body should be aligned on their top edges
      */
+    @Override
     protected Container createMessageArea() {
         final JPanel top = new JPanel();
         top.setBorder(UIManager.getBorder("OptionPane.messageAreaBorder"));
@@ -116,6 +118,7 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
             super(true, padding);
         }
 
+        @Override
         public void layoutContainer(final Container container) {
             final Component[] children = container.getComponents();
             if (children == null || 0 >= children.length) return;

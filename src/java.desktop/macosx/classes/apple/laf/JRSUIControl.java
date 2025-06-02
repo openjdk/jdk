@@ -114,6 +114,7 @@ public final class JRSUIControl {
         changes.putAll(other.changes);
     }
 
+    @Override
     @SuppressWarnings("removal")
     protected synchronized void finalize() throws Throwable {
         if (cfDictionaryPtr == 0) return;

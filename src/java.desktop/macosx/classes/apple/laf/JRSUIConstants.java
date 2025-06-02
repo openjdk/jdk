@@ -84,6 +84,7 @@ public final class JRSUIConstants {
             return getClass().getSimpleName();
         }
 
+        @Override
         public String toString() {
             return getConstantName(this) + (ptr == 0 ? "(unlinked)" : "");
         }
@@ -106,14 +107,17 @@ public final class JRSUIConstants {
             buffer.putDouble(doubleValue);
         }
 
+        @Override
         public boolean equals(final Object obj) {
             return (obj instanceof DoubleValue) && (((DoubleValue)obj).doubleValue == doubleValue);
         }
 
+        @Override
         public int hashCode() {
             return Double.hashCode(doubleValue);
         }
 
+        @Override
         public String toString() {
             return Double.toString(doubleValue);
         }
@@ -150,6 +154,7 @@ public final class JRSUIConstants {
             return (encodedState & ~encoding.mask) | value;
         }
 
+        @Override
         public String toString() {
             return getClass().getSimpleName();
         }
@@ -811,6 +816,7 @@ public final class JRSUIConstants {
             return getClass().getSimpleName();
         }
 
+        @Override
         public String toString() {
             return getConstantName(this);
         }

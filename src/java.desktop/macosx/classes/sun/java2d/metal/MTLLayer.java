@@ -52,6 +52,7 @@ public class MTLLayer extends CFLayer {
         this.peer = peer;
     }
 
+    @Override
     public SurfaceData replaceSurfaceData() {
         if (getBounds().isEmpty()) {
             surfaceData = NullSurfaceData.theInstance;

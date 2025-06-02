@@ -44,22 +44,26 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, 
         return new AquaSplitPaneUI();
     }
 
+    @Override
     public BasicSplitPaneDivider createDefaultDivider() {
         return new AquaSplitPaneDividerUI(this);
     }
 
+    @Override
     protected void installListeners() {
         super.installListeners();
         splitPane.addPropertyChangeListener(DIVIDER_PAINTER_KEY, this);
         divider.addMouseListener(this);
     }
 
+    @Override
     protected void uninstallListeners() {
         divider.removeMouseListener(this);
         splitPane.removePropertyChangeListener(DIVIDER_PAINTER_KEY, this);
         super.uninstallListeners();
     }
 
+    @Override
     public void mouseClicked(final MouseEvent e) {
         if (e.getClickCount() < 2) return;
         if (!splitPane.isOneTouchExpandable()) return;
@@ -90,11 +94,16 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, 
         }
     }
 
+    @Override
     public void mouseEntered(final MouseEvent e) { }
+    @Override
     public void mouseExited(final MouseEvent e) { }
+    @Override
     public void mousePressed(final MouseEvent e) { }
+    @Override
     public void mouseReleased(final MouseEvent e) { }
 
+    @Override
     public void propertyChange(final PropertyChangeEvent evt) {
         if (!DIVIDER_PAINTER_KEY.equals(evt.getPropertyName())) return;
 

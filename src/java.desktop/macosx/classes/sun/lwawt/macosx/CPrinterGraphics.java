@@ -43,6 +43,7 @@ public class CPrinterGraphics extends ProxyGraphics2D {
         super(graphics, printerJob);
     }
 
+    @Override
     public boolean drawImage(Image img, int x, int y,
                  Color bgcolor,
                  ImageObserver observer) {
@@ -52,6 +53,7 @@ public class CPrinterGraphics extends ProxyGraphics2D {
         return getDelegate().drawImage(img, x, y, bgcolor, observer);
     }
 
+    @Override
     public boolean drawImage(Image img, int x, int y,
                  int width, int height,
                  Color bgcolor,
@@ -62,6 +64,7 @@ public class CPrinterGraphics extends ProxyGraphics2D {
         return getDelegate().drawImage(img, x, y, width, height, bgcolor, observer);
     }
 
+    @Override
     public boolean drawImage(Image img,
                  int dx1, int dy1, int dx2, int dy2,
                  int sx1, int sy1, int sx2, int sy2,

@@ -50,6 +50,7 @@ class ScreenPopupFactory extends PopupFactory {
         return (Window)w;
     }
 
+    @Override
     public Popup getPopup(final Component comp, final Component invoker, final int x, final int y) {
         if (invoker == null) throw new IllegalArgumentException("Popup.getPopup must be passed non-null contents");
 

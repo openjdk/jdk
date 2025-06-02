@@ -607,9 +607,11 @@ public class AquaSpinnerUI extends SpinnerUI {
             }
         }
 
+        @Override
         public void focusGained(FocusEvent e) {
         }
 
+        @Override
         public void focusLost(FocusEvent e) {
             if (spinner == eventToSpinner(e)) {
                 if (autoRepeatTimer.isRunning()) {

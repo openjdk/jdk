@@ -42,6 +42,7 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
         missingGlyph = 0; // for getMissingGlyphCode()
     }
 
+    @Override
     public int getNumGlyphs() {
         if (numGlyphs == -1) {
             numGlyphs = countGlyphs(fFont.getNativeFontPtr());
@@ -49,16 +50,19 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
         return numGlyphs;
     }
 
+    @Override
     public boolean canDisplay(char ch) {
         int glyph = charToGlyph(ch, false);
         return glyph != missingGlyph;
     }
 
+    @Override
     public boolean canDisplay(int cp) {
         int glyph = charToGlyph(cp, false);
         return glyph != missingGlyph;
     }
 
+    @Override
     public synchronized boolean charsToGlyphsNS(int count,
                                                 char[] unicodes, int[] glyphs)
     {
@@ -91,6 +95,7 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
         return false;
     }
 
+    @Override
     public synchronized int charToGlyph(char unicode) {
         return charToGlyph(unicode, false);
     }
@@ -109,10 +114,12 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
         return glyph;
     }
 
+    @Override
     public synchronized int charToGlyph(int unicode) {
         return charToGlyph(unicode, false);
     }
 
+    @Override
     public synchronized int charToGlyphRaw(int unicode) {
         return charToGlyph(unicode, true);
     }
@@ -131,10 +138,12 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
          }
     }
 
+    @Override
     public synchronized void charsToGlyphs(int count, char[] unicodes, int[] glyphs) {
         cache.get(count, unicodes, glyphs, false);
     }
 
+    @Override
     public synchronized void charsToGlyphs(int count, int[] unicodes, int[] glyphs) {
         for (int i = 0; i < count; i++) {
             glyphs[i] = charToGlyph(unicodes[i], false);

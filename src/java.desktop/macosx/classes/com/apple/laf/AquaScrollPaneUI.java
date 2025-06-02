@@ -36,11 +36,13 @@ public class AquaScrollPaneUI extends javax.swing.plaf.basic.BasicScrollPaneUI {
         return new AquaScrollPaneUI();
     }
 
+    @Override
     protected MouseWheelListener createMouseWheelListener() {
         return new XYMouseWheelHandler();
     }
 
     protected class XYMouseWheelHandler extends BasicScrollPaneUI.MouseWheelHandler {
+        @Override
         public void mouseWheelMoved(final MouseWheelEvent e) {
             super.mouseWheelMoved(e);
             // Consume the event even when the scrollBar is invisible

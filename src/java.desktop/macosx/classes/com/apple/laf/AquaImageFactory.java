@@ -466,6 +466,7 @@ public class AquaImageFactory {
             this.color = color;
         }
 
+        @Override
         public int getRGB() {
             return color.getRGB();
         }

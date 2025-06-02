@@ -46,6 +46,7 @@ public class AquaTableUI extends BasicTableUI {
     /**
      * Creates the focus listener to repaint the focus ring
      */
+    @Override
     protected FocusListener createFocusListener() {
         return new AquaTableUI.FocusHandler();
     }
@@ -53,6 +54,7 @@ public class AquaTableUI extends BasicTableUI {
     /**
      * Creates the mouse listener for the JTable.
      */
+    @Override
     protected MouseInputListener createMouseInputListener() {
         return new AquaTableUI.MouseInputHandler();
     }
@@ -63,11 +65,13 @@ public class AquaTableUI extends BasicTableUI {
      * Instantiate it only within subclasses of BasicTableUI.
      */
     public class FocusHandler extends BasicTableUI.FocusHandler {
+        @Override
         public void focusGained(final FocusEvent e) {
             super.focusGained(e);
             AquaBorder.repaintBorder(getComponent());
         }
 
+        @Override
         public void focusLost(final FocusEvent e) {
             super.focusLost(e);
             AquaBorder.repaintBorder(getComponent());
@@ -81,12 +85,14 @@ public class AquaTableUI extends BasicTableUI {
             AquaFocusHandler.swapSelectionColors("Table", getComponent(), ev.getNewValue());
         }
     };
+    @Override
     protected void installListeners() {
         super.installListeners();
         table.addFocusListener(focusHandler);
         table.addPropertyChangeListener(focusHandler);
     }
 
+    @Override
     protected void uninstallListeners() {
         table.removePropertyChangeListener(focusHandler);
         table.removeFocusListener(focusHandler);

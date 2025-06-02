@@ -64,6 +64,7 @@ class MTLTextRenderer extends BufferedTextPipe {
         Tracer(MTLTextRenderer mtltr) {
             super(mtltr.rq);
         }
+        @Override
         protected void drawGlyphList(SunGraphics2D sg2d, GlyphList gl) {
             GraphicsPrimitive.tracePrimitive("MTLDrawGlyphs");
             super.drawGlyphList(sg2d, gl);

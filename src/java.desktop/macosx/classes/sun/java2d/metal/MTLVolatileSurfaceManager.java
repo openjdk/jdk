@@ -49,6 +49,7 @@ public class MTLVolatileSurfaceManager extends VolatileSurfaceManager {
         accelerationEnabled = transparency != Transparency.BITMASK;
     }
 
+    @Override
     protected boolean isAccelerationEnabled() {
         return accelerationEnabled;
     }
@@ -57,6 +58,7 @@ public class MTLVolatileSurfaceManager extends VolatileSurfaceManager {
      * Create a SurfaceData object (or init the backbuffer
      * of an existing window if this is a double buffered GraphicsConfig)
      */
+    @Override
     protected SurfaceData initAcceleratedSurface() {
         try {
             MTLGraphicsConfig gc =

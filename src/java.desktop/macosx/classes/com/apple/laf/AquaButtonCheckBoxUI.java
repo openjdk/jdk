@@ -49,10 +49,12 @@ public class AquaButtonCheckBoxUI extends AquaButtonLabeledUI {
         return sizingIcon.get();
     }
 
+    @Override
     public String getPropertyPrefix() {
         return "CheckBox" + ".";
     }
 
+    @Override
     protected AquaButtonBorder getPainter() {
         return new CheckBoxButtonBorder();
     }

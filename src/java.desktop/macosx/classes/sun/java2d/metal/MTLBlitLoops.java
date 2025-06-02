@@ -342,6 +342,7 @@ class MTLSurfaceToSurfaceBlit extends Blit {
                 MTLSurfaceData.MTLSurface);
     }
 
+    @Override
     public void Blit(SurfaceData src, SurfaceData dst,
                      Composite comp, Region clip,
                      int sx, int sy, int dx, int dy, int w, int h)
@@ -364,6 +365,7 @@ class MTLSurfaceToSurfaceScale extends ScaledBlit {
                 MTLSurfaceData.MTLSurface);
     }
 
+    @Override
     public void Scale(SurfaceData src, SurfaceData dst,
                       Composite comp, Region clip,
                       int sx1, int sy1,
@@ -389,6 +391,7 @@ class MTLSurfaceToSurfaceTransform extends TransformBlit {
                 MTLSurfaceData.MTLSurface);
     }
 
+    @Override
     public void Transform(SurfaceData src, SurfaceData dst,
                           Composite comp, Region clip,
                           AffineTransform at, int hint,
@@ -412,6 +415,7 @@ class MTLRTTSurfaceToSurfaceBlit extends Blit {
                 MTLSurfaceData.MTLSurface);
     }
 
+    @Override
     public void Blit(SurfaceData src, SurfaceData dst,
                      Composite comp, Region clip,
                      int sx, int sy, int dx, int dy, int w, int h)
@@ -434,6 +438,7 @@ class MTLRTTSurfaceToSurfaceScale extends ScaledBlit {
                 MTLSurfaceData.MTLSurface);
     }
 
+    @Override
     public void Scale(SurfaceData src, SurfaceData dst,
                       Composite comp, Region clip,
                       int sx1, int sy1,
@@ -459,6 +464,7 @@ class MTLRTTSurfaceToSurfaceTransform extends TransformBlit {
                 MTLSurfaceData.MTLSurface);
     }
 
+    @Override
     public void Transform(SurfaceData src, SurfaceData dst,
                           Composite comp, Region clip,
                           AffineTransform at, int hint,
@@ -521,6 +527,7 @@ final class MTLSurfaceToSwBlit extends Blit {
         }
     }
 
+    @Override
     public void Blit(SurfaceData src, SurfaceData dst,
                      Composite comp, Region clip,
                      int sx, int sy, int dx, int dy,
@@ -585,6 +592,7 @@ class MTLSwToSurfaceBlit extends Blit {
         this.typeval = typeval;
     }
 
+    @Override
     public void Blit(SurfaceData src, SurfaceData dst,
                      Composite comp, Region clip,
                      int sx, int sy, int dx, int dy, int w, int h)
@@ -609,6 +617,7 @@ class MTLSwToSurfaceScale extends ScaledBlit {
         this.typeval = typeval;
     }
 
+    @Override
     public void Scale(SurfaceData src, SurfaceData dst,
                       Composite comp, Region clip,
                       int sx1, int sy1,
@@ -636,6 +645,7 @@ class MTLSwToSurfaceTransform extends TransformBlit {
         this.typeval = typeval;
     }
 
+    @Override
     public void Transform(SurfaceData src, SurfaceData dst,
                           Composite comp, Region clip,
                           AffineTransform at, int hint,
@@ -660,6 +670,7 @@ class MTLSwToTextureBlit extends Blit {
         this.typeval = typeval;
     }
 
+    @Override
     public void Blit(SurfaceData src, SurfaceData dst,
                      Composite comp, Region clip,
                      int sx, int sy, int dx, int dy, int w, int h)
@@ -681,6 +692,7 @@ class MTLTextureToSurfaceBlit extends Blit {
                 MTLSurfaceData.MTLSurface);
     }
 
+    @Override
     public void Blit(SurfaceData src, SurfaceData dst,
                      Composite comp, Region clip,
                      int sx, int sy, int dx, int dy, int w, int h)
@@ -703,6 +715,7 @@ class MTLTextureToSurfaceScale extends ScaledBlit {
                 MTLSurfaceData.MTLSurface);
     }
 
+    @Override
     public void Scale(SurfaceData src, SurfaceData dst,
                       Composite comp, Region clip,
                       int sx1, int sy1,
@@ -728,6 +741,7 @@ class MTLTextureToSurfaceTransform extends TransformBlit {
                 MTLSurfaceData.MTLSurface);
     }
 
+    @Override
     public void Transform(SurfaceData src, SurfaceData dst,
                           Composite comp, Region clip,
                           AffineTransform at, int hint,
@@ -762,6 +776,7 @@ class MTLGeneralBlit extends Blit {
         this.performop = performop;
     }
 
+    @Override
     public synchronized void Blit(SurfaceData src, SurfaceData dst,
                                   Composite comp, Region clip,
                                   int sx, int sy, int dx, int dy,
@@ -857,6 +872,7 @@ final class MTLAnyCompositeBlit extends Blit {
         this.convertresult = convertresult;
     }
 
+    @Override
     public synchronized void Blit(SurfaceData src, SurfaceData dst,
                                   Composite comp, Region clip,
                                   int sx, int sy, int dx, int dy,

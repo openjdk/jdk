@@ -104,6 +104,7 @@ class CAccessibility implements PropertyChangeListener {
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener("focusOwner", this);
     }
 
+    @Override
     public void propertyChange(final PropertyChangeEvent evt) {
         Object newValue = evt.getNewValue();
         if (newValue == null) return;

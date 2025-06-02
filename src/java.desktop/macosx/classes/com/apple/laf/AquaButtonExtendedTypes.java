@@ -96,6 +96,7 @@ public class AquaButtonExtendedTypes {
             patchUp(border.sizeDescriptor);
         }
 
+        @Override
         Border getBorder() { return border; }
         void patchUp(final SizeDescriptor descriptor) {}
 
@@ -115,6 +116,7 @@ public class AquaButtonExtendedTypes {
             border.painter.state.set(position);
         }
 
+        @Override
         AquaBorder initBorder(final Widget widget, final SizeDescriptor desc) {
             return new SegmentedNamedBorder(widget, desc);
         }
@@ -129,6 +131,7 @@ public class AquaButtonExtendedTypes {
             super(widget, sizeDescriptor);
         }
 
+        @Override
         protected boolean isSelectionPressing() {
             return false;
         }
