@@ -169,7 +169,7 @@ class nmethod : public CodeBlob {
   friend class JVMCINMethodData;
   friend class DeoptimizationScope;
 
-  using ImmutableDataReferences = int;
+  #define ImmutableDataReferencesCounterSize (int)sizeof(int)
 
  private:
 
@@ -574,12 +574,12 @@ public:
 #if INCLUDE_JVMCI
   address scopes_data_end       () const { return           _immutable_data + _speculations_offset ; }
   address speculations_begin    () const { return           _immutable_data + _speculations_offset ; }
-  address speculations_end      () const { return           immutable_data_end() - sizeof(ImmutableDataReferences) ; }
+  address speculations_end      () const { return           immutable_data_end() - ImmutableDataReferencesCounterSize ; }
 #else
-  address scopes_data_end       () const { return           immutable_data_end() - sizeof(ImmutableDataReferences) ; }
+  address scopes_data_end       () const { return           immutable_data_end() - ImmutableDataReferencesCounterSize ; }
 #endif
 
-  address immutable_data_references_begin () const { return immutable_data_end() - sizeof(ImmutableDataReferences) ; }
+  address immutable_data_references_begin () const { return immutable_data_end() - ImmutableDataReferencesCounterSize ; }
 
   // Sizes
   int immutable_data_size() const { return _immutable_data_size; }
