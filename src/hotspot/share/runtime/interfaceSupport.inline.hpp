@@ -104,8 +104,8 @@ class ThreadStateTransition : public StackObj {
       thread->set_thread_state(_thread_in_vm);
     }
     ResourceMark rm;
-    ResourceHashtable<HandshakeFilterOperation, bool> operations_filter;
-    operations_filter.put(HandshakeFilterOperation::check_async_exception, to != _thread_in_Java ? false : check_asyncs);
+    HandshakeOperationFilter operations_filter;
+    operations_filter.put(HandshakeOperationProperty::check_async_exception, to != _thread_in_Java ? false : check_asyncs);
     SafepointMechanism::process_if_requested_with_exit_check(thread, operations_filter);
     thread->set_thread_state(to);
   }
@@ -114,8 +114,8 @@ class ThreadStateTransition : public StackObj {
     assert(thread->thread_state() == _thread_in_vm, "coming from wrong thread state");
     if (to == _thread_in_Java) {
       ResourceMark rm;
-      ResourceHashtable<HandshakeFilterOperation, bool> operations_filter;
-      operations_filter.put(HandshakeFilterOperation::check_async_exception, check_asyncs);
+      HandshakeOperationFilter operations_filter;
+      operations_filter.put(HandshakeOperationProperty::check_async_exception, check_asyncs);
       SafepointMechanism::process_if_requested_with_exit_check(thread, operations_filter);
       thread->set_thread_state(to);
     } else {
@@ -222,9 +222,9 @@ class ThreadBlockInVMPreprocess : public ThreadStateTransition {
     if (SafepointMechanism::should_process(_thread, _allow_suspend)) {
       _pr(_thread);
       ResourceMark rm;
-      ResourceHashtable<HandshakeFilterOperation, bool> operations_filter;
-      operations_filter.put(HandshakeFilterOperation::allow_suspend, _allow_suspend);
-      operations_filter.put(HandshakeFilterOperation::check_async_exception, false);
+      HandshakeOperationFilter operations_filter;
+      operations_filter.put(HandshakeOperationProperty::allow_suspend, _allow_suspend);
+      operations_filter.put(HandshakeOperationProperty::check_async_exception, false);
       SafepointMechanism::process_if_requested(_thread, operations_filter);
     }
   }

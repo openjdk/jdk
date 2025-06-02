@@ -68,9 +68,9 @@ bool SafepointMechanism::should_process(JavaThread* thread, bool allow_suspend) 
     return false;
   }
   ResourceMark rm;
-  ResourceHashtable<HandshakeFilterOperation, bool> operations_filter;
-  operations_filter.put(HandshakeFilterOperation::allow_suspend, allow_suspend);
-  operations_filter.put(HandshakeFilterOperation::check_async_exception, false);
+  HandshakeOperationFilter operations_filter;
+  operations_filter.put(HandshakeOperationProperty::allow_suspend, allow_suspend);
+  operations_filter.put(HandshakeOperationProperty::check_async_exception, false);
   if (global_poll() || // Safepoint
       thread->handshake_state()->has_operation(operations_filter) || // Handshake
       !StackWatermarkSet::processing_started(thread)) { // StackWatermark processing is not started
@@ -85,7 +85,7 @@ bool SafepointMechanism::should_process(JavaThread* thread, bool allow_suspend) 
   return false;
 }
 
-void SafepointMechanism::process_if_requested(JavaThread* thread, ResourceHashtable<HandshakeFilterOperation, bool>& operations_filter) {
+void SafepointMechanism::process_if_requested(JavaThread* thread, HandshakeOperationFilter& operations_filter) {
   // Check NoSafepointVerifier. This also clears unhandled oops if CheckUnhandledOops is used.
   thread->check_possible_safepoint();
   if (local_poll_armed(thread)) {
@@ -93,8 +93,8 @@ void SafepointMechanism::process_if_requested(JavaThread* thread, ResourceHashta
   }
 }
 
-void SafepointMechanism::process_if_requested_with_exit_check(JavaThread* thread, ResourceHashtable<HandshakeFilterOperation, bool> &operations_filter) {
-  operations_filter.put(HandshakeFilterOperation::allow_suspend, true);
+void SafepointMechanism::process_if_requested_with_exit_check(JavaThread* thread, HandshakeOperationFilter& operations_filter) {
+  operations_filter.put(HandshakeOperationProperty::allow_suspend, true);
   process_if_requested(thread, operations_filter);
   if (thread->has_special_runtime_exit_condition()) {
     thread->handle_special_runtime_exit_condition();

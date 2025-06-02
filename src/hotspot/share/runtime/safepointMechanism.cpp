@@ -132,7 +132,7 @@ void SafepointMechanism::update_poll_values(JavaThread* thread) {
   }
 }
 
-void SafepointMechanism::process(JavaThread *thread, ResourceHashtable<HandshakeFilterOperation, bool>& operations_filter) {
+void SafepointMechanism::process(JavaThread *thread, HandshakeOperationFilter& operations_filter) {
   DEBUG_ONLY(intptr_t* sp_before = thread->last_Java_sp();)
   // Read global poll and has_handshake after local poll
   OrderAccess::loadload();
