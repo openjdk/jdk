@@ -184,53 +184,53 @@ public class SecureDS {
         Set<PosixFilePermission> noperms = EnumSet.noneOf(PosixFilePermission.class);
         Set<PosixFilePermission> permsDir = getPosixFilePermissions(aDir);
 
-        SecureDirectoryStream<Path> stream =
-            (SecureDirectoryStream<Path>)newDirectoryStream(aDir);
+        try (SecureDirectoryStream<Path> stream =
+             (SecureDirectoryStream<Path>)newDirectoryStream(aDir);) {
 
-        // Test setting permission on directory with no permissions
-        setPosixFilePermissions(aDir, noperms);
-        assertTrue(getPosixFilePermissions(aDir).equals(noperms));
-        PosixFileAttributeView view = stream.getFileAttributeView(PosixFileAttributeView.class);
-        view.setPermissions(permsDir);
-        assertTrue(getPosixFilePermissions(aDir).equals(permsDir));
+            // Test setting permission on directory with no permissions
+            setPosixFilePermissions(aDir, noperms);
+            assertTrue(getPosixFilePermissions(aDir).equals(noperms));
+            PosixFileAttributeView view = stream.getFileAttributeView(PosixFileAttributeView.class);
+            view.setPermissions(permsDir);
+            assertTrue(getPosixFilePermissions(aDir).equals(permsDir));
 
-        if (supportsSymbolicLinks) {
-            // Create a file and a link to the file
-            Path fileEntry = Path.of("file");
-            Path file = createFile(aDir.resolve(fileEntry));
-            Set<PosixFilePermission> permsFile = getPosixFilePermissions(file);
-            Path linkEntry = Path.of("link");
-            Path link = createSymbolicLink(aDir.resolve(linkEntry), fileEntry);
-            Set<PosixFilePermission> permsLink = getPosixFilePermissions(link, NOFOLLOW_LINKS);
+            if (supportsSymbolicLinks) {
+                // Create a file and a link to the file
+                Path fileEntry = Path.of("file");
+                Path file = createFile(aDir.resolve(fileEntry));
+                Set<PosixFilePermission> permsFile = getPosixFilePermissions(file);
+                Path linkEntry = Path.of("link");
+                Path link = createSymbolicLink(aDir.resolve(linkEntry), fileEntry);
+                Set<PosixFilePermission> permsLink = getPosixFilePermissions(link, NOFOLLOW_LINKS);
 
-            // Test following link to file
-            view = stream.getFileAttributeView(link, PosixFileAttributeView.class);
-            view.setPermissions(noperms);
-            assertTrue(getPosixFilePermissions(file).equals(noperms));
-            assertTrue(getPosixFilePermissions(link, NOFOLLOW_LINKS).equals(permsLink));
-            view.setPermissions(permsFile);
-            assertTrue(getPosixFilePermissions(file).equals(permsFile));
-            assertTrue(getPosixFilePermissions(link, NOFOLLOW_LINKS).equals(permsLink));
-
-            // Symbolic link permissions do not apply on Linux
-            if (!Platform.isLinux()) {
-                // Test not following link to file
-                view = stream.getFileAttributeView(link, PosixFileAttributeView.class, NOFOLLOW_LINKS);
+                // Test following link to file
+                view = stream.getFileAttributeView(link, PosixFileAttributeView.class);
                 view.setPermissions(noperms);
-                assertTrue(getPosixFilePermissions(file).equals(permsFile));
-                assertTrue(getPosixFilePermissions(link, NOFOLLOW_LINKS).equals(noperms));
-                view.setPermissions(permsLink);
+                assertTrue(getPosixFilePermissions(file).equals(noperms));
+                assertTrue(getPosixFilePermissions(link, NOFOLLOW_LINKS).equals(permsLink));
+                view.setPermissions(permsFile);
                 assertTrue(getPosixFilePermissions(file).equals(permsFile));
                 assertTrue(getPosixFilePermissions(link, NOFOLLOW_LINKS).equals(permsLink));
+
+                // Symbolic link permissions do not apply on Linux
+                if (!Platform.isLinux()) {
+                    // Test not following link to file
+                    view = stream.getFileAttributeView(link, PosixFileAttributeView.class, NOFOLLOW_LINKS);
+                    view.setPermissions(noperms);
+                    assertTrue(getPosixFilePermissions(file).equals(permsFile));
+                    assertTrue(getPosixFilePermissions(link, NOFOLLOW_LINKS).equals(noperms));
+                    view.setPermissions(permsLink);
+                    assertTrue(getPosixFilePermissions(file).equals(permsFile));
+                    assertTrue(getPosixFilePermissions(link, NOFOLLOW_LINKS).equals(permsLink));
+                }
+
+                delete(link);
+                delete(file);
             }
 
-            delete(link);
-            delete(file);
+            // clean-up
+            delete(aDir);
         }
-
-        // clean-up
-        stream.close();
-        delete(aDir);
     }
 
     // Exercise SecureDirectoryStream's move method
