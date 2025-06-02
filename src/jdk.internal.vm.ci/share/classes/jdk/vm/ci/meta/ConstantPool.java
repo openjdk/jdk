@@ -186,7 +186,6 @@ public interface ConstantPool {
          * }
          * </pre>
          *
-         * commit to rollback
          * The other types of entries are already resolved and can be used directly.
          *
          * @jvms 5.4.3.6
