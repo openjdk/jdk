@@ -166,14 +166,16 @@ public class Http3ServerConnection {
             if (debug.on()) {
                 debug.log("completing CF for %s with stream %s", description, stream.streamId());
             }
-            if (cf.isDone()) {
-                if (debug.on()) debug.log("CF for %s already completed!", description);
-                if (!cf.isCompletedExceptionally() && cf.resultNow() != stream) {
-                    close(H3_STREAM_CREATION_ERROR,
+            boolean completed = cf.complete(stream);
+            if (!completed) {
+                if (!cf.isCompletedExceptionally()) {
+                    debug.log("CF for %s already completed with stream %s!", description, cf.resultNow().streamId());
+                    close(Http3Error.H3_STREAM_CREATION_ERROR,
                             "%s already created".formatted(description));
+                } else {
+                    debug.log("CF for %s already completed exceptionally!", description);
                 }
             }
-            cf.complete(stream);
         }
 
         static CompletableFuture<QuicReceiverStream> dispatch(Http3ServerConnection conn,
