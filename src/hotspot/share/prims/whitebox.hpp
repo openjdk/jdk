@@ -72,6 +72,8 @@ class WhiteBox : public AllStatic {
 #ifdef LINUX
   static bool validate_cgroup(bool cgroups_v2_enabled, const char* controllers_file, const char* proc_self_cgroup, const char* proc_self_mountinfo, u1* cg_flags);
 #endif
+  static bool is_asan_enabled();
+  static bool is_ubsan_enabled();
 };
 
 #endif // SHARE_PRIMS_WHITEBOX_HPP
