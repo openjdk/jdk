@@ -37,8 +37,10 @@ inline bool Jfr::has_sample_request(JavaThread* jt) {
 }
 
 inline void Jfr::check_and_process_sample_request(JavaThread* jt) {
-  if (has_sample_request(jt)) {
-    JfrThreadSampling::process_sample_request(jt);
+  JfrThreadLocal* tl = jt->jfr_thread_local();
+  bool has_cpu_time_sample_request = tl->has_cpu_time_jfr_requests();
+  if (tl->has_sample_request() || has_cpu_time_sample_request) {
+    JfrThreadSampling::process_sample_request(jt, has_cpu_time_sample_request);
   }
 }
 

@@ -56,7 +56,6 @@ class ParkEvent;
 class ResourceArea;
 class SafeThreadsListPtr;
 class ThreadClosure;
-class ThreadCrashProtection;
 class ThreadsList;
 class ThreadsSMRSupport;
 class VMErrorCallback;
