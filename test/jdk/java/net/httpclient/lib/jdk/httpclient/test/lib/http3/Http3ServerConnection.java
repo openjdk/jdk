@@ -779,7 +779,6 @@ public class Http3ServerConnection {
     }
 
     List<ByteBuffer> encodeHeaders(int bufferSize, long streamId, HttpHeaders... headers) {
-        // TODO: Try to enable DT usage with setting server CAPACITY to non-zero value
         HeaderFrameWriter writer = qpackEncoder.newHeaderFrameWriter();
         return qpackEncoder.encodeHeaders(writer, streamId, bufferSize, headers);
     }
