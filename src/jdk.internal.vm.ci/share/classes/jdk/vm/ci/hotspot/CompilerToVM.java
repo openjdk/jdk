@@ -1148,7 +1148,8 @@ final class CompilerToVM {
     native ResolvedJavaMethod[] getDeclaredConstructors(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
 
     /**
-     * Gets the {@link ResolvedJavaMethod}s for all non-overpass and non-initializer methods of {@code klass}.
+     * Gets the {@link ResolvedJavaMethod}s for all non-overpass and non-initializer
+     * methods of {@code klass}.
      */
     ResolvedJavaMethod[] getDeclaredMethods(HotSpotResolvedObjectTypeImpl klass) {
         return getDeclaredMethods(klass, klass.getKlassPointer());

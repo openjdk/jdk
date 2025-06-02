@@ -1024,12 +1024,10 @@ public class TestResolvedJavaType extends TypeUniverse {
         for (Class<?> c : classes) {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
             Set<ResolvedJavaMethod> allMethods = new HashSet<>(type.getAllMethods(true));
-            boolean included = Arrays.stream(type.getDeclaredMethods()).allMatch(m -> allMethods.contains(m));
-            included = included && Arrays.stream(type.getDeclaredConstructors()).allMatch(m -> allMethods.contains(m));
-            if (included && type.getClassInitializer() != null) {
-                included = allMethods.contains(type.getClassInitializer());
-            }
-            assertTrue(included);
+            Stream<ResolvedJavaMethod> allKnownMethods = Stream.concat(Arrays.stream(type.getDeclaredMethods()), Arrays.stream(type.getDeclaredConstructors()));
+            allKnownMethods = Stream.concat(allKnownMethods, Stream.ofNullable(type.getClassInitializer()));
+            List<ResolvedJavaMethod> missingMethods = allKnownMethods.filter(m -> !allMethods.contains(m)).toList();
+            assertTrue(missingMethods.toString(), missingMethods.isEmpty());
         }
     }
 

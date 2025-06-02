@@ -367,10 +367,11 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
     }
 
     /**
-     * Returns a list containing all methods present within this type. This list can include
-     * methods implicitly created and used by the VM that are not present in {@link #getDeclaredMethods}.
-     * The returned List is unmodifiable; calls to any mutator method
-     * will always cause {@code UnsupportedOperationException} to be thrown.
+     * Returns a list containing all methods present within this type. This list can
+     * include methods implicitly created and used by the VM that are not present in
+     * {@link #getDeclaredMethods}. The returned List is unmodifiable; calls to any
+     * mutator method will always cause {@code UnsupportedOperationException} to be
+     * thrown.
      *
      * @param forceLink if {@code true}, forces this type to be {@link #link linked}
      */
