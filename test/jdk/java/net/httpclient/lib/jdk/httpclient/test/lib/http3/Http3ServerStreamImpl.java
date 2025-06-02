@@ -455,8 +455,6 @@ final class Http3ServerStreamImpl {
 
         @Override
         public void onComplete() {
-            // TODO: it's up to the decoder to tell us when it's done!
-            //       possibly via a call to headersConsumer
             HttpHeaders requestHeaders = requestHeadersBuilder.build();
             headersReader.reset();
             requestHeadersCF.complete(requestHeaders);
