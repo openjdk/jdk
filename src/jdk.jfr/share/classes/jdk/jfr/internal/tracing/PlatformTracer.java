@@ -46,6 +46,8 @@ import jdk.jfr.tracing.MethodTracer;
  * the jdk.jfr.tracing package fewer internals are exposed to the application.
  */
 public final class PlatformTracer {
+    private static volatile boolean INITIALIZED;
+
     private static final ConcurrentHashMap<Long, TimedMethod> timedMethods = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Long, TimedClass> timedClasses = new ConcurrentHashMap<>();
 
@@ -159,6 +161,7 @@ public final class PlatformTracer {
     }
 
     public static void setFilters(Modification modification, List<String> filters) {
+        ensureInitialized();
         publishClasses(applyFilter(modification, filters));
     }
 
@@ -251,6 +254,18 @@ public final class PlatformTracer {
         timedClasses.clear();
     }
 
+    private static void ensureInitialized() {
+        if (INITIALIZED) {
+            return;
+        }
+        synchronized (PlatformTracer.class) {
+            if (!INITIALIZED) {
+                initialize();
+                INITIALIZED = true;
+            }
+        }
+    }
+
     // This method has three purposes:
     //
     // 1) Load classes before instrumentation to avoid recursion in class
@@ -264,7 +279,7 @@ public final class PlatformTracer {
     // This method takes 1-10 milliseconds to run and is only executed once,
     // provided a user has specified a non-empty filter for the MethodTrace or
     // MethodTiming event.
-    public static void initialize() {
+    private static void initialize() {
         try {
             Logger.log(LogTag.JFR_METHODTRACE, LogLevel.DEBUG, "Method tracer initialization started.");
             Thread current = Thread.currentThread();
