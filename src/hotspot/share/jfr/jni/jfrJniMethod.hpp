@@ -129,7 +129,7 @@ jlong JNICALL jfr_get_unloaded_event_classes_count(JNIEnv* env, jclass jvm);
 
 jboolean JNICALL jfr_set_throttle(JNIEnv* env, jclass jvm, jlong event_type_id, jlong event_sample_size, jlong period_ms);
 
-jboolean JNICALL jfr_set_cpu_throttle(JNIEnv* env, jclass jvm, jdouble rate, jboolean autoadapt);
+void JNICALL jfr_set_cpu_throttle(JNIEnv* env, jclass jvm, jdouble rate, jboolean autoadapt);
 
 void JNICALL jfr_set_miscellaneous(JNIEnv* env, jclass jvm, jlong id, jlong value);
 

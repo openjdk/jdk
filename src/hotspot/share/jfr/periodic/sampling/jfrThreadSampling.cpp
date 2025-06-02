@@ -230,6 +230,8 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
 
   assert(!stream.current()->is_safepoint_blob_frame(), "invariant");
 
+  biased = true;
+
   // Search the first frame that is above the sampled sp.
   for (; !stream.is_done(); stream.next()) {
     frame* const current = stream.current();
@@ -243,11 +245,11 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
       // The sample didn't have an nmethod; we decide to trace from its sender.
       // Another instance of safepoint bias.
       top_frame = *current;
-      biased = true;
       break;
+    } else {
+      biased = false;
     }
 
-    biased = true;
 
     // Check for a matching compiled method.
     if (current->cb()->as_nmethod_or_null() == sampled_nm) {
@@ -360,6 +362,7 @@ static void drain_all_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl,
   drain_enqueued_requests(now, tl, jt, current);
 #ifdef LINUX
   if (tl->has_cpu_time_jfr_requests()) {
+    tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
     tl->acquire_cpu_time_jfr_dequeue_lock();
     JfrCPUTimeTraceQueue& queue = tl->cpu_time_jfr_queue();
     for (u4 i = 0; i < queue.size(); i++) {

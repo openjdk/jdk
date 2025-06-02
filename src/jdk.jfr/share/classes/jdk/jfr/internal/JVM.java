@@ -278,7 +278,7 @@ public final class JVM {
      * @param rate the new rate in events per second
      * @param autoadapt true if the rate should be adapted automatically
      */
-    public static native boolean setCPUThrottle(double rate, boolean autoadapt);
+    public static native void setCPUThrottle(double rate, boolean autoadapt);
 
     /**
      * Sets the file where data should be written.

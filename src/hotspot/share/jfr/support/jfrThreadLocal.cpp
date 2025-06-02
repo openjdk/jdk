@@ -584,8 +584,18 @@ bool JfrThreadLocal::acquire_cpu_time_jfr_enqueue_lock() {
   return Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, ENQUEUE) == UNLOCKED;
 }
 
-bool JfrThreadLocal::acquire_cpu_time_jfr_native_lock() {
-  return Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, NATIVE) == UNLOCKED;
+bool JfrThreadLocal::try_acquire_cpu_time_jfr_dequeue_lock() {
+  CPUTimeLockState got;
+  while (true)  {
+    CPUTimeLockState got = Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, DEQUEUE);
+    if (got == UNLOCKED) {
+      return true; // successfully locked for dequeue
+    }
+    if (got == DEQUEUE) {
+      return false; // already locked for dequeue
+    }
+    // else wait for the lock to be released from a signal handler
+  }
 }
 
 void JfrThreadLocal::acquire_cpu_time_jfr_dequeue_lock() {
@@ -601,7 +611,7 @@ void JfrThreadLocal::set_has_cpu_time_jfr_requests(bool has_requests) {
 }
 
 bool JfrThreadLocal::has_cpu_time_jfr_requests() {
-  return Atomic::load(&_has_cpu_time_jfr_requests);
+  return Atomic::load_acquire(&_has_cpu_time_jfr_requests);
 }
 
 JfrCPUTimeTraceQueue& JfrThreadLocal::cpu_time_jfr_queue() {
@@ -609,7 +619,7 @@ JfrCPUTimeTraceQueue& JfrThreadLocal::cpu_time_jfr_queue() {
 }
 
 void JfrThreadLocal::deallocate_cpu_time_jfr_queue() {
-  cpu_time_jfr_queue().ensure_capacity(0);
+  cpu_time_jfr_queue().resize(0);
 }
 
 void JfrThreadLocal::set_do_async_processing_of_cpu_time_jfr_requests(bool wants) {
@@ -617,7 +627,7 @@ void JfrThreadLocal::set_do_async_processing_of_cpu_time_jfr_requests(bool wants
 }
 
 bool JfrThreadLocal::wants_async_processing_of_cpu_time_jfr_requests() {
-  return Atomic::load(&_do_async_processing_of_cpu_time_jfr_requests);
+  return Atomic::load_acquire(&_do_async_processing_of_cpu_time_jfr_requests);
 }
 
 #endif

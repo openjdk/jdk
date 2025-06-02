@@ -54,10 +54,9 @@ static bool is_excluded(JavaThread* thread) {
 
 static JavaThread* get_java_thread_if_valid() {
   Thread* raw_thread = Thread::current_or_null_safe();
+  assert(raw_thread != nullptr, "invariant");
+  assert(raw_thread->is_Java_thread(), "invariant");
   JavaThread* jt;
-  if (raw_thread == nullptr || !raw_thread->is_Java_thread()) { // this can happen due to the high level of parralelism
-    return nullptr;
-  }
   if ((jt = JavaThread::cast(raw_thread))->is_exiting()) {
     return nullptr;
   }
@@ -117,16 +116,12 @@ void JfrCPUTimeTraceQueue::set_capacity(u4 capacity) {
   _capacity = capacity;
 }
 
-bool JfrCPUTimeTraceQueue::is_full() const {
-  return Atomic::load_acquire(&_head) >= _capacity;
-}
-
 bool JfrCPUTimeTraceQueue::is_empty() const {
-  return Atomic::load_acquire(&_head) == 0;
+  return Atomic::load(&_head) == 0;
 }
 
 s4 JfrCPUTimeTraceQueue::lost_samples() const {
-  return Atomic::load_acquire(&_lost_samples);
+  return Atomic::load(&_lost_samples);
 }
 
 void JfrCPUTimeTraceQueue::increment_lost_samples() {
@@ -135,7 +130,7 @@ void JfrCPUTimeTraceQueue::increment_lost_samples() {
 }
 
 u4 JfrCPUTimeTraceQueue::get_and_reset_lost_samples() {
-  s4 lost_samples = Atomic::load_acquire(&_lost_samples);
+  s4 lost_samples = Atomic::load(&_lost_samples);
   s4 new_lost_samples;
   while ((new_lost_samples = Atomic::cmpxchg(&_lost_samples, lost_samples, 0)) != lost_samples) {
     lost_samples = new_lost_samples;
@@ -143,18 +138,18 @@ u4 JfrCPUTimeTraceQueue::get_and_reset_lost_samples() {
   return lost_samples;
 }
 
-void JfrCPUTimeTraceQueue::ensure_capacity(u4 capacity) {
+void JfrCPUTimeTraceQueue::resize(u4 capacity) {
   if (capacity != _capacity) {
     set_capacity(capacity);
   }
 }
 
-void JfrCPUTimeTraceQueue::ensure_capacity_for_period(u4 period_millis) {
+void JfrCPUTimeTraceQueue::resize_for_period(u4 period_millis) {
   u4 capacity = CPU_TIME_QUEUE_CAPACITY;
   if (period_millis > 0 && period_millis < 10) {
     capacity = (u4) ((double) capacity * 10 / period_millis);
   }
-  ensure_capacity(capacity);
+  resize(capacity);
 }
 
 void JfrCPUTimeTraceQueue::clear() {
@@ -233,7 +228,7 @@ JfrCPUTimeThreadSampler::JfrCPUTimeThreadSampler(double rate, bool autoadapt) :
 }
 
 void JfrCPUTimeThreadSampler::trigger_async_processing_of_cpu_time_jfr_requests() {
-  Atomic::release_store(&_is_async_processing_of_cpu_time_jfr_requests_triggered, true);
+  Atomic::store(&_is_async_processing_of_cpu_time_jfr_requests_triggered, true);
 }
 
 void JfrCPUTimeThreadSampler::on_javathread_create(JavaThread* thread) {
@@ -242,7 +237,7 @@ void JfrCPUTimeThreadSampler::on_javathread_create(JavaThread* thread) {
   }
   JfrThreadLocal* tl = thread->jfr_thread_local();
   assert(tl != nullptr, "invariant");
-  tl->cpu_time_jfr_queue().ensure_capacity_for_period(_current_sampling_period_ns / 1000000);
+  tl->cpu_time_jfr_queue().resize_for_period(_current_sampling_period_ns / 1000000);
   timer_t timerid;
   if (create_timer_for_thread(thread, timerid)) {
     tl->set_cpu_timer(&timerid);
@@ -313,8 +308,8 @@ void JfrCPUTimeThreadSampler::run() {
       last_autoadapt_check = os::javaTimeNanos();
     }
 
-    if (Atomic::load_acquire(&_is_async_processing_of_cpu_time_jfr_requests_triggered)) {
-      Atomic::release_store(&_is_async_processing_of_cpu_time_jfr_requests_triggered, false);
+    if (Atomic::load(&_is_async_processing_of_cpu_time_jfr_requests_triggered)) {
+      Atomic::store(&_is_async_processing_of_cpu_time_jfr_requests_triggered, false);
       stackwalk_threads_in_native();
     }
     os::naked_sleep(100);
@@ -328,8 +323,9 @@ void JfrCPUTimeThreadSampler::stackwalk_threads_in_native() {
   for (size_t i = 0; i < tlh.list()->length(); i++) {
     JavaThread* jt = tlh.list()->thread_at(i);
     JfrThreadLocal* tl = jt->jfr_thread_local();
-    if (tl != nullptr && tl->wants_async_processing_of_cpu_time_jfr_requests()) {
-      if (!tl->acquire_cpu_time_jfr_native_lock()) {
+    if (tl->wants_async_processing_of_cpu_time_jfr_requests()) {
+      if (!tl->try_acquire_cpu_time_jfr_dequeue_lock()) {
+        // the thread is already processing requests at its safepoint
         continue;
       }
       tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
@@ -337,13 +333,6 @@ void JfrCPUTimeThreadSampler::stackwalk_threads_in_native() {
       tl->release_cpu_time_jfr_queue_lock();
     }
   }
-}
-
-// equals operator for JfrSampleRequest
-inline bool operator==(const JfrSampleRequest& lhs, const JfrSampleRequest& rhs) {
-  return lhs._sample_sp == rhs._sample_sp &&
-         lhs._sample_pc == rhs._sample_pc &&
-         lhs._sample_bcp == rhs._sample_bcp;
 }
 
 static inline bool is_in_continuation(const frame& frame, JavaThread* jt) {
@@ -355,7 +344,6 @@ void JfrCPUTimeThreadSampler::stackwalk_thread_in_native(JavaThread* thread) {
   JfrThreadLocal* tl = thread->jfr_thread_local();
   assert(tl != nullptr, "invariant");
   JfrCPUTimeTraceQueue& queue = tl->cpu_time_jfr_queue();
-  assert(!queue.is_empty(), "invariant");
   if (queue.is_empty()) {
     return;
   }
@@ -534,8 +522,6 @@ void JfrCPUTimeThreadSampler::sample_thread(JfrSampleRequest& request, void* uco
   JfrSampleRequestBuilder::build_cpu_time_sample_request(request, ucontext, jt, jt->jfr_thread_local());
 }
 
-volatile size_t count__ = 0;
-
 static bool check_state(JavaThread* thread) {
   switch (thread->thread_state()) {
     case _thread_in_Java:
@@ -570,17 +556,20 @@ void JfrCPUTimeThreadSampler::handle_timer_signal(siginfo_t* info, void* context
   sample_thread(request._request, context, jt, tl);
 
   if (queue.enqueue(request)) {
-    tl->set_has_cpu_time_jfr_requests(true);
-    SafepointMechanism::arm_local_poll_release(jt);
+    if (queue.size() == 1) {
+      tl->set_has_cpu_time_jfr_requests(true);
+      SafepointMechanism::arm_local_poll_release(jt);
+    }
   } else {
     queue.increment_lost_samples();
   }
 
-  if (jt->thread_state() == _thread_in_native &&
-      queue.size() > queue.capacity() * 2 / 3) {
+  if (jt->thread_state() == _thread_in_native) {
     // we are in native code and the queue is getting full
-    tl->set_do_async_processing_of_cpu_time_jfr_requests(true);
-    JfrCPUTimeThreadSampling::trigger_async_processing_of_cpu_time_jfr_requests();
+    if (queue.size() == queue.capacity() * 2 / 3) {
+      tl->set_do_async_processing_of_cpu_time_jfr_requests(true);
+      JfrCPUTimeThreadSampling::trigger_async_processing_of_cpu_time_jfr_requests();
+    }
   } else {
     tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
   }

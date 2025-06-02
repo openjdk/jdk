@@ -76,8 +76,6 @@ public:
   // deletes all samples in the queue
   void set_capacity(u4 capacity);
 
-  bool is_full() const;
-
   bool is_empty() const;
 
   s4 lost_samples() const;
@@ -87,9 +85,9 @@ public:
   // returns the previous lost samples count
   u4 get_and_reset_lost_samples();
 
-  void ensure_capacity(u4 capacity);
+  void resize(u4 capacity);
 
-  void ensure_capacity_for_period(u4 period_millis);
+  void resize_for_period(u4 period_millis);
 
   void clear();
 

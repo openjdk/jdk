@@ -91,9 +91,7 @@ class JfrThreadLocal {
     // locked for enqueuing
     ENQUEUE,
     // locked for dequeuing
-    DEQUEUE,
-    // locked for sampling a thread in native state
-    NATIVE
+    DEQUEUE
   };
   volatile CPUTimeLockState _cpu_time_jfr_locked;
   volatile bool _has_cpu_time_jfr_requests;
@@ -373,7 +371,6 @@ class JfrThreadLocal {
   // The CPU time JFR lock has four different states:
   // - ENQUEUE: lock for enqueuing CPU time requests
   // - DEQUEUE: lock for dequeuing CPU time requests
-  // - NATIVE: lock for writing events for threads in native state
   // - UNLOCKED: no lock held
   // This ensures that we can safely enqueue and dequeue CPU time requests,
   // without interleaving
@@ -382,7 +379,7 @@ class JfrThreadLocal {
   bool is_cpu_time_jfr_dequeue_locked();
 
   bool acquire_cpu_time_jfr_enqueue_lock();
-  bool acquire_cpu_time_jfr_native_lock();
+  bool try_acquire_cpu_time_jfr_dequeue_lock();
   void acquire_cpu_time_jfr_dequeue_lock();
   void release_cpu_time_jfr_queue_lock();
 
