@@ -40,7 +40,7 @@ import sun.lwawt.macosx.LWCToolkit;
 
 // MenuBar implementation for Mac L&F
 @SuppressWarnings("restricted")
-public class AquaMenuBarUI extends BasicMenuBarUI implements ScreenMenuBarProvider {
+public final class AquaMenuBarUI extends BasicMenuBarUI implements ScreenMenuBarProvider {
 
     static {
         System.loadLibrary("osxui");

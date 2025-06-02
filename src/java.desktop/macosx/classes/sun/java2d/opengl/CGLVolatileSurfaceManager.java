@@ -35,7 +35,7 @@ import sun.java2d.SurfaceData;
 
 import static sun.java2d.opengl.OGLContext.OGLContextCaps.CAPS_EXT_FBOBJECT;
 
-public class CGLVolatileSurfaceManager extends VolatileSurfaceManager {
+public final class CGLVolatileSurfaceManager extends VolatileSurfaceManager {
 
     private final boolean accelerationEnabled;
 

@@ -33,7 +33,7 @@ import java.nio.*;
 import sun.awt.image.*;
 import sun.java2d.loops.*;
 
-public class OSXOffScreenSurfaceData extends OSXSurfaceData // implements RasterListener
+public final class OSXOffScreenSurfaceData extends OSXSurfaceData // implements RasterListener
 {
     private static native void initIDs();
 

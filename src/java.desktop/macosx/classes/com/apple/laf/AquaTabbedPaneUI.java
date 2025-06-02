@@ -557,7 +557,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
      * whether we're talking about a first tab or last tab.  NOTE that this code is very much
      * Aqua 2 dependent!
      */
-    static class AlterRects {
+    static final class AlterRects {
         Rectangle standard, first, last;
         AlterRects(final int x, final int y, final int w, final int h) { standard = new Rectangle(x, y, w, h); }
         AlterRects start(final int x, final int y, final int w, final int h) { first = new Rectangle(x, y, w, h); return this; }
@@ -805,7 +805,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         return false;
     }
 
-    protected class TabbedPanePropertyChangeHandler extends PropertyChangeHandler {
+    protected final class TabbedPanePropertyChangeHandler extends PropertyChangeHandler {
         @Override
         public void propertyChange(final PropertyChangeEvent e) {
             final String prop = e.getPropertyName();
@@ -838,7 +838,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         };
     }
 
-    protected class FocusHandler extends FocusAdapter {
+    protected final class FocusHandler extends FocusAdapter {
         Rectangle sWorkingRect = new Rectangle();
 
         @Override
@@ -884,7 +884,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         }
     }
 
-    class MouseHandler extends MouseInputAdapter implements ActionListener {
+    final class MouseHandler extends MouseInputAdapter implements ActionListener {
 
         int trackingTab = -3;
         private final Timer popupTimer = new Timer(500, this);
@@ -1089,7 +1089,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         }
     }
 
-    protected class AquaTruncatingTabbedPaneLayout extends AquaTabbedPaneCopyFromBasicUI.TabbedPaneLayout {
+    protected final class AquaTruncatingTabbedPaneLayout extends AquaTabbedPaneCopyFromBasicUI.TabbedPaneLayout {
         // fix for Radar #3346131
         @Override
         protected int preferredTabAreaWidth(final int tabPlacement, final int height) {

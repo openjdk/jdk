@@ -36,7 +36,7 @@ import java.util.List;
  * The input method itself is only loaded when it is actually used.
  */
 
-public class CInputMethodDescriptor implements InputMethodDescriptor {
+public final class CInputMethodDescriptor implements InputMethodDescriptor {
 
     static {
         nativeInit();

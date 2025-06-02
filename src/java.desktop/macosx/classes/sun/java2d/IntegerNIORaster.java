@@ -30,7 +30,7 @@ import java.awt.image.*;
 import java.nio.IntBuffer;
 import sun.awt.image.SunWritableRaster;
 
-public class IntegerNIORaster extends SunWritableRaster {
+public final class IntegerNIORaster extends SunWritableRaster {
 
     protected IntBuffer data;
 

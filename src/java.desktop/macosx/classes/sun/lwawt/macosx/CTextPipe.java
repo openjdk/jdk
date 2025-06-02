@@ -184,7 +184,7 @@ public class CTextPipe implements TextPipe {
         return new Tracer();
     }
 
-    public static class Tracer extends CTextPipe {
+    public static final class Tracer extends CTextPipe {
         void doDrawString(final SurfaceData sData, final long nativeStrikePtr, final String s, final float x, final float y) {
             GraphicsPrimitive.tracePrimitive("QuartzDrawString");
             super.doDrawString(sData, nativeStrikePtr, s, x, y);

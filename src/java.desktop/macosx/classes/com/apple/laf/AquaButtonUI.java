@@ -582,7 +582,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         }
     }
 
-    static class AquaHierarchyButtonListener implements HierarchyListener {
+    static final class AquaHierarchyButtonListener implements HierarchyListener {
         // Every time a hierarchy is changed we need to check if the button is moved on or from
         // the toolbar. If that is the case, we need to re-set the border of the button.
         @Override
@@ -601,7 +601,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         }
     }
 
-    class AquaButtonListener extends BasicButtonListener {
+    final class AquaButtonListener extends BasicButtonListener {
         protected final AbstractButton b;
 
         public AquaButtonListener(final AbstractButton b) {

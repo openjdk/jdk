@@ -33,7 +33,7 @@ import javax.swing.event.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicMenuUI;
 
-public class AquaMenuUI extends BasicMenuUI implements AquaMenuPainter.Client {
+public final class AquaMenuUI extends BasicMenuUI implements AquaMenuPainter.Client {
     public static ComponentUI createUI(final JComponent x) {
         return new AquaMenuUI();
     }
@@ -98,7 +98,7 @@ public class AquaMenuUI extends BasicMenuUI implements AquaMenuPainter.Client {
         return new MenuDragMouseHandler();
     }
 
-    class MenuDragMouseHandler implements MenuDragMouseListener {
+    final class MenuDragMouseHandler implements MenuDragMouseListener {
         @Override
         public void menuDragMouseDragged(final MenuDragMouseEvent e) {
             if (menuItem.isEnabled() == false) return;
@@ -141,7 +141,7 @@ public class AquaMenuUI extends BasicMenuUI implements AquaMenuPainter.Client {
         MenuSelectionManager.defaultManager().setSelectedPath(newPath);
     }
 
-    protected class AquaMouseInputHandler extends MouseInputHandler {
+    protected final class AquaMouseInputHandler extends MouseInputHandler {
         /**
          * Invoked when the cursor enters the menu. This method sets the selected
          * path for the MenuSelectionManager and handles the case

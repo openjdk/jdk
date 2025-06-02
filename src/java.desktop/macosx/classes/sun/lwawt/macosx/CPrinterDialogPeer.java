@@ -30,7 +30,7 @@ import java.awt.dnd.*;
 
 import sun.lwawt.*;
 
-public class CPrinterDialogPeer extends LWWindowPeer {
+public final class CPrinterDialogPeer extends LWWindowPeer {
     static {
         // AWT has to be initialized for the native code to function correctly.
         Toolkit.getDefaultToolkit();

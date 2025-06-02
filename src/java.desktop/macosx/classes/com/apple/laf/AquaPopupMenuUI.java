@@ -32,7 +32,7 @@ import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicPopupMenuUI;
 
-public class AquaPopupMenuUI extends BasicPopupMenuUI {
+public final class AquaPopupMenuUI extends BasicPopupMenuUI {
     public static ComponentUI createUI(final JComponent x) {
         return new AquaPopupMenuUI();
     }

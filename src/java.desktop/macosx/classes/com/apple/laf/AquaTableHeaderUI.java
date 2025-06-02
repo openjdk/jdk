@@ -37,7 +37,7 @@ import com.apple.laf.ClientPropertyApplicator;
 import com.apple.laf.ClientPropertyApplicator.Property;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 
-public class AquaTableHeaderUI extends BasicTableHeaderUI {
+public final class AquaTableHeaderUI extends BasicTableHeaderUI {
     private int originalHeaderAlignment;
     protected int sortColumn;
     protected int sortOrder;
@@ -114,7 +114,7 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    class AquaTableCellRenderer extends DefaultTableCellRenderer implements UIResource {
+    final class AquaTableCellRenderer extends DefaultTableCellRenderer implements UIResource {
         @Override
         public Component getTableCellRendererComponent(final JTable localTable, final Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
             if (localTable != null) {

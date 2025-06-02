@@ -98,7 +98,7 @@ class MTLRenderer extends BufferedRenderPipe {
         return new Tracer(this);
     }
 
-    private static class Tracer extends MTLRenderer {
+    private static final class Tracer extends MTLRenderer {
         private MTLRenderer mtlr;
         Tracer(MTLRenderer mtlr) {
             super(mtlr.rq);

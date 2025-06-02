@@ -39,7 +39,7 @@ import com.apple.laf.AquaUtilControlSize.*;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 import sun.lwawt.macosx.CImage;
 
-public class AquaIcon {
+public final class AquaIcon {
     interface InvertableIcon extends Icon {
         public Icon getInvertedIcon();
     }
@@ -221,7 +221,7 @@ public class AquaIcon {
         }
     }
 
-    static class FileIcon extends CachingScalingIcon {
+    static final class FileIcon extends CachingScalingIcon {
         final File file;
 
         public FileIcon(final File file, final int width, final int height) {
@@ -239,7 +239,7 @@ public class AquaIcon {
         }
     }
 
-    static class SystemIconSingleton extends RecyclableSingleton<SystemIcon> {
+    static final class SystemIconSingleton extends RecyclableSingleton<SystemIcon> {
         final String selector;
 
         public SystemIconSingleton(String selector) {
@@ -252,7 +252,7 @@ public class AquaIcon {
         }
     }
 
-    static class SystemIconUIResourceSingleton extends RecyclableSingleton<IconUIResource> {
+    static final class SystemIconUIResourceSingleton extends RecyclableSingleton<IconUIResource> {
         final String selector;
 
         public SystemIconUIResourceSingleton(String selector) {
@@ -265,7 +265,7 @@ public class AquaIcon {
         }
     }
 
-    static class SystemIcon extends CachingScalingIcon {
+    static final class SystemIcon extends CachingScalingIcon {
         private static final SystemIconUIResourceSingleton folderIcon = new SystemIconUIResourceSingleton("fldr");
         static IconUIResource getFolderIconUIResource() { return folderIcon.get(); }
 

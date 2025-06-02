@@ -30,7 +30,7 @@ import java.beans.*;
 import javax.accessibility.*;
 import javax.swing.*;
 
-class ScreenMenuPropertyListener implements PropertyChangeListener {
+final class ScreenMenuPropertyListener implements PropertyChangeListener {
     ScreenMenuPropertyHandler fMenu;
 
     ScreenMenuPropertyListener(final ScreenMenuPropertyHandler mc) {

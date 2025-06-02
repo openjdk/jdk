@@ -41,7 +41,7 @@ import sun.swing.SwingUtilities2;
 import apple.laf.JRSUIUtils;
 import apple.laf.JRSUIConstants.*;
 
-public class AquaTabbedPaneContrastUI extends AquaTabbedPaneUI {
+public final class AquaTabbedPaneContrastUI extends AquaTabbedPaneUI {
     private static boolean isFrameActive = false;
 
     public static ComponentUI createUI(final JComponent c) {

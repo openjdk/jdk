@@ -33,7 +33,7 @@ import javax.swing.border.Border;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.*;
 
-public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, PropertyChangeListener {
+public final class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, PropertyChangeListener {
     static final String DIVIDER_PAINTER_KEY = "JSplitPane.dividerPainter";
 
     public AquaSplitPaneUI() {

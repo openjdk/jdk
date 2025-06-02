@@ -33,7 +33,7 @@ import javax.swing.plaf.basic.BasicSeparatorUI;
 
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
-public class AquaPopupMenuSeparatorUI extends BasicSeparatorUI {
+public final class AquaPopupMenuSeparatorUI extends BasicSeparatorUI {
     private static final RecyclableSingletonFromDefaultConstructor<AquaPopupMenuSeparatorUI> instance = new RecyclableSingletonFromDefaultConstructor<AquaPopupMenuSeparatorUI>(AquaPopupMenuSeparatorUI.class);
 
     public static ComponentUI createUI(final JComponent c) {

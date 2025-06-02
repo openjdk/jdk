@@ -622,7 +622,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
         return new Tracer();
     }
 
-    public static class Tracer extends CRenderer {
+    public static final class Tracer extends CRenderer {
         @Override
         void doLine(SurfaceData sData, float x1, float y1, float x2, float y2) {
             GraphicsPrimitive.tracePrimitive("QuartzLine");

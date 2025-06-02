@@ -37,7 +37,7 @@ import apple.laf.JRSUIConstants.*;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
-public class AquaTableHeaderBorder extends AbstractBorder {
+public final class AquaTableHeaderBorder extends AbstractBorder {
     protected static final int SORT_NONE = 0;
     protected static final int SORT_ASCENDING = 1;
     protected static final int SORT_DECENDING = -1;

@@ -34,7 +34,7 @@ import java.awt.Transparency;
 import java.awt.image.ColorModel;
 import sun.java2d.pipe.hw.AccelSurface;
 
-public class MTLVolatileSurfaceManager extends VolatileSurfaceManager {
+public final class MTLVolatileSurfaceManager extends VolatileSurfaceManager {
 
     private final boolean accelerationEnabled;
 

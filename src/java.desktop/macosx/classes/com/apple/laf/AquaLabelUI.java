@@ -39,7 +39,7 @@ import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 import sun.swing.MnemonicHandler;
 import sun.swing.SwingUtilities2;
 
-public class AquaLabelUI extends BasicLabelUI {
+public final class AquaLabelUI extends BasicLabelUI {
     private static final RecyclableSingleton<AquaLabelUI> aquaLabelUI = new RecyclableSingletonFromDefaultConstructor<AquaLabelUI>(AquaLabelUI.class);
 
     public static ComponentUI createUI(final JComponent c) {

@@ -36,7 +36,7 @@ import javax.swing.*;
 import static sun.awt.AWTAccessor.*;
 
 @SuppressWarnings("serial") // JDK implementation class
-public class ScreenMenuBar extends MenuBar
+public final class ScreenMenuBar extends MenuBar
         implements ContainerListener, ScreenMenuPropertyHandler,
                    ComponentListener {
 

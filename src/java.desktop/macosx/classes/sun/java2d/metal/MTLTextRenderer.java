@@ -60,7 +60,7 @@ class MTLTextRenderer extends BufferedTextPipe {
         return new Tracer(this);
     }
 
-    private static class Tracer extends MTLTextRenderer {
+    private static final class Tracer extends MTLTextRenderer {
         Tracer(MTLTextRenderer mtltr) {
             super(mtltr.rq);
         }

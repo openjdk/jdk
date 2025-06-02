@@ -76,7 +76,7 @@ import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.ClientPropertyApplicator.Property;
 
 // Inspired by MetalComboBoxUI, which also has a combined text-and-arrow button for noneditables
-public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
+public final class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     static final String POPDOWN_CLIENT_PROPERTY_KEY = "JComboBox.isPopDown";
     static final String ISSQUARE_CLIENT_PROPERTY_KEY = "JComboBox.isSquare";
 
@@ -241,7 +241,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    class AquaCustomComboTextField extends JTextField {
+    final class AquaCustomComboTextField extends JTextField {
         public AquaCustomComboTextField() {
             final InputMap inputMap = getInputMap();
             inputMap.put(KeyStroke.getKeyStroke("DOWN"), highlightNextAction);
@@ -464,7 +464,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         return new AquaComboBoxLayoutManager();
     }
 
-    class AquaComboBoxLayoutManager extends BasicComboBoxUI.ComboBoxLayoutManager {
+    final class AquaComboBoxLayoutManager extends BasicComboBoxUI.ComboBoxLayoutManager {
         protected Rectangle rectangleForCurrentValue() {
             int width = comboBox.getWidth();
             int height = comboBox.getBorder() == null ? 22 : comboBox.getHeight();

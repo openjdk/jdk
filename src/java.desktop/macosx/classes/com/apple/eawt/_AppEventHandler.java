@@ -66,7 +66,7 @@ import java.util.Map;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 
-class _AppEventHandler {
+final class _AppEventHandler {
     private static final int NOTIFY_ABOUT = 1;
     private static final int NOTIFY_PREFS = 2;
     private static final int NOTIFY_OPEN_APP = 3;
@@ -271,7 +271,7 @@ class _AppEventHandler {
     }
 
 
-    class _AboutDispatcher extends _AppEventDispatcher<AboutHandler> {
+    final class _AboutDispatcher extends _AppEventDispatcher<AboutHandler> {
         @Override
         void performDefaultAction(final _NativeEvent event) {
             openCocoaAboutWindow(); // if the handler is null, fall back to showing the Cocoa default
@@ -283,7 +283,7 @@ class _AppEventHandler {
         }
     }
 
-    static class _PreferencesDispatcher extends _AppEventDispatcher<PreferencesHandler> {
+    static final class _PreferencesDispatcher extends _AppEventDispatcher<PreferencesHandler> {
         @Override
         synchronized void setHandler(final PreferencesHandler handler) {
             super.setHandler(handler);
@@ -298,14 +298,14 @@ class _AppEventHandler {
         }
     }
 
-    static class _OpenAppDispatcher extends _QueuingAppEventDispatcher<com.apple.eawt._OpenAppHandler> {
+    static final class _OpenAppDispatcher extends _QueuingAppEventDispatcher<com.apple.eawt._OpenAppHandler> {
         @Override
         void performUsing(com.apple.eawt._OpenAppHandler handler, _NativeEvent event) {
             handler.handleOpenApp();
         }
     }
 
-    static class _AppReOpenedDispatcher extends _AppEventMultiplexor<AppReopenedListener> {
+    static final class _AppReOpenedDispatcher extends _AppEventMultiplexor<AppReopenedListener> {
         @Override
         void performOnListener(AppReopenedListener listener, final _NativeEvent event) {
             final AppReopenedEvent e = new AppReopenedEvent();
@@ -313,7 +313,7 @@ class _AppEventHandler {
         }
     }
 
-    static class _AppForegroundDispatcher extends _BooleanAppEventMultiplexor<AppForegroundListener, AppForegroundEvent> {
+    static final class _AppForegroundDispatcher extends _BooleanAppEventMultiplexor<AppForegroundListener, AppForegroundEvent> {
         @Override
         AppForegroundEvent createEvent(final boolean isTrue) { return new AppForegroundEvent(); }
 
@@ -328,7 +328,7 @@ class _AppEventHandler {
         }
     }
 
-    static class _HiddenAppDispatcher extends _BooleanAppEventMultiplexor<AppHiddenListener, AppHiddenEvent> {
+    static final class _HiddenAppDispatcher extends _BooleanAppEventMultiplexor<AppHiddenListener, AppHiddenEvent> {
         @Override
         AppHiddenEvent createEvent(final boolean isTrue) { return new AppHiddenEvent(); }
 
@@ -343,7 +343,7 @@ class _AppEventHandler {
         }
     }
 
-    static class _UserSessionDispatcher extends _BooleanAppEventMultiplexor<UserSessionListener, UserSessionEvent> {
+    static final class _UserSessionDispatcher extends _BooleanAppEventMultiplexor<UserSessionListener, UserSessionEvent> {
         @Override
         UserSessionEvent createEvent(final boolean isTrue) {
             return new UserSessionEvent(Reason.UNSPECIFIED);
@@ -365,7 +365,7 @@ class _AppEventHandler {
         }
     }
 
-    static class _ScreenSleepDispatcher extends _BooleanAppEventMultiplexor<ScreenSleepListener, ScreenSleepEvent> {
+    static final class _ScreenSleepDispatcher extends _BooleanAppEventMultiplexor<ScreenSleepListener, ScreenSleepEvent> {
         @Override
         ScreenSleepEvent createEvent(final boolean isTrue) { return new ScreenSleepEvent(); }
 
@@ -385,7 +385,7 @@ class _AppEventHandler {
         }
     }
 
-    static class _SystemSleepDispatcher extends _BooleanAppEventMultiplexor<SystemSleepListener, SystemSleepEvent> {
+    static final class _SystemSleepDispatcher extends _BooleanAppEventMultiplexor<SystemSleepListener, SystemSleepEvent> {
         @Override
         SystemSleepEvent createEvent(final boolean isTrue) { return new SystemSleepEvent(); }
 
@@ -405,7 +405,7 @@ class _AppEventHandler {
         }
     }
 
-    static class _OpenFileDispatcher extends _QueuingAppEventDispatcher<OpenFilesHandler> {
+    static final class _OpenFileDispatcher extends _QueuingAppEventDispatcher<OpenFilesHandler> {
         @Override
         void performUsing(final OpenFilesHandler handler, final _NativeEvent event) {
             // create file list from fileNames
@@ -419,7 +419,7 @@ class _AppEventHandler {
         }
     }
 
-    static class _PrintFileDispatcher extends _QueuingAppEventDispatcher<PrintFilesHandler> {
+    static final class _PrintFileDispatcher extends _QueuingAppEventDispatcher<PrintFilesHandler> {
         @Override
         void performUsing(final PrintFilesHandler handler, final _NativeEvent event) {
             // create file list from fileNames
@@ -432,7 +432,7 @@ class _AppEventHandler {
     }
 
     // Java URLs can't handle unknown protocol types, which is why we use URIs
-    static class _OpenURIDispatcher extends _QueuingAppEventDispatcher<OpenURIHandler> {
+    static final class _OpenURIDispatcher extends _QueuingAppEventDispatcher<OpenURIHandler> {
         @Override
         void performUsing(final OpenURIHandler handler, final _NativeEvent event) {
             final String urlString = event.get(0);
@@ -444,7 +444,7 @@ class _AppEventHandler {
         }
     }
 
-    class _QuitDispatcher extends _AppEventDispatcher<QuitHandler> {
+    final class _QuitDispatcher extends _AppEventDispatcher<QuitHandler> {
         @Override
         void performDefaultAction(final _NativeEvent event) {
             obtainQuitResponse().performQuit();
@@ -465,7 +465,7 @@ class _AppEventHandler {
 // -- ABSTRACT QUEUE/EVENT/LISTENER HELPERS --
 
     // generic little "raw event" that's constructed easily from the native callbacks
-    static class _NativeEvent {
+    static final class _NativeEvent {
         Object[] args;
 
         public _NativeEvent(final Object... args) {

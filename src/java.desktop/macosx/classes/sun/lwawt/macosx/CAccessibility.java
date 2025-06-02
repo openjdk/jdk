@@ -72,7 +72,7 @@ import sun.awt.AWTAccessor;
 import sun.lwawt.LWWindowPeer;
 import sun.swing.SwingAccessor;
 
-class CAccessibility implements PropertyChangeListener {
+final class CAccessibility implements PropertyChangeListener {
     private static Set<String> ignoredRoles;
 
     static {

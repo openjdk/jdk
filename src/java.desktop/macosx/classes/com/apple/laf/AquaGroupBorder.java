@@ -71,19 +71,19 @@ public abstract class AquaGroupBorder extends AquaBorder {
         // sg2d.drawRect(x, y, width, height);
     }
 
-    protected static class TabbedPane extends AquaGroupBorder {
+    protected static final class TabbedPane extends AquaGroupBorder {
         public TabbedPane() {
             super(new SizeVariant().alterMargins(8, 12, 8, 12).alterInsets(5, 5, 7, 5));
         }
     }
 
-    protected static class Titled extends AquaGroupBorder {
+    protected static final class Titled extends AquaGroupBorder {
         public Titled() {
             super(new SizeVariant().alterMargins(16, 20, 16, 20).alterInsets(16, 5, 4, 5));
         }
     }
 
-    protected static class Titleless extends AquaGroupBorder {
+    protected static final class Titleless extends AquaGroupBorder {
         public Titleless() {
             super(new SizeVariant().alterMargins(8, 12, 8, 12).alterInsets(3, 5, 1, 5));
         }

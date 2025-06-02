@@ -39,7 +39,7 @@ import com.apple.laf.AquaUtils.RecyclableSingleton;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-class AquaFileView extends FileView {
+final class AquaFileView extends FileView {
     private static final boolean DEBUG = false;
 
     private static final int UNINITALIZED_LS_INFO = -1;
@@ -97,7 +97,7 @@ class AquaFileView extends FileView {
         return getNativePathToSharedJDKBundle();
     }
 
-    static class FileInfo {
+    static final class FileInfo {
         final boolean isDirectory;
         final String absolutePath;
         byte[] pathBytes;

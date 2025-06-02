@@ -34,7 +34,7 @@ import sun.awt.image.*;
 import sun.java2d.loops.*;
 import sun.java2d.pipe.*;
 
-public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, DrawImagePipe, TextPipe {
+public final class CompositeCRenderer extends CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, DrawImagePipe, TextPipe {
     static final int fPadding = 4;
     static final int fPaddingHalf = fPadding / 2;
 

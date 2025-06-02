@@ -33,7 +33,7 @@ import java.nio.ByteBuffer;
 import sun.java2d.*;
 import sun.java2d.loops.SurfaceType;
 
-public class CPrinterSurfaceData extends OSXSurfaceData{
+public final class CPrinterSurfaceData extends OSXSurfaceData{
     public static final String DESC_INT_RGB_PQ = "Integer RGB Printer Quartz";
 //    public static final String DESC_INT_ARGB_PQ = "Integer ARGB Printer Quartz";
 

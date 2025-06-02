@@ -42,7 +42,7 @@ import com.apple.laf.AquaUtilControlSize.*;
 import com.apple.laf.AquaImageFactory.NineSliceMetrics;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 
-public class AquaSliderUI extends BasicSliderUI implements Sizeable {
+public final class AquaSliderUI extends BasicSliderUI implements Sizeable {
 //    static final Dimension roundThumbSize = new Dimension(21 + 4, 21 + 4); // +2px on both sides for focus fuzz
 //    static final Dimension pointingThumbSize = new Dimension(19 + 4, 22 + 4);
 
@@ -326,7 +326,7 @@ public class AquaSliderUI extends BasicSliderUI implements Sizeable {
 
     // This is copied almost verbatim from superclass, except we changed things to use fIsDragging
     // instead of isDragging since isDragging was a private member.
-    class TrackListener extends javax.swing.plaf.basic.BasicSliderUI.TrackListener {
+    final class TrackListener extends javax.swing.plaf.basic.BasicSliderUI.TrackListener {
         protected transient int offset;
         protected transient int currentMouseX = -1, currentMouseY = -1;
 

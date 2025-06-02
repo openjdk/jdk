@@ -42,7 +42,7 @@ import apple.laf.JRSUIConstants.*;
  *
  * All this does is look for a ThemeBorder and invalidate it when the focus changes
  */
-public class AquaListUI extends BasicListUI {
+public final class AquaListUI extends BasicListUI {
     public static ComponentUI createUI(final JComponent c) {
         return new AquaListUI();
     }
@@ -71,7 +71,7 @@ public class AquaListUI extends BasicListUI {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class AquaHomeEndAction extends AbstractAction {
+    static final class AquaHomeEndAction extends AbstractAction {
         private boolean fHomeAction = false;
 
         protected AquaHomeEndAction(final boolean isHomeAction) {
@@ -98,7 +98,7 @@ public class AquaListUI extends BasicListUI {
      * This inner class is marked &quot;public&quot; due to a compiler bug. This class should be treated as a
      * &quot;protected&quot; inner class. Instantiate it only within subclasses of BasicListUI.
      */
-    class FocusHandler extends BasicListUI.FocusHandler {
+    final class FocusHandler extends BasicListUI.FocusHandler {
         @Override
         public void focusGained(final FocusEvent e) {
             super.focusGained(e);
@@ -117,7 +117,7 @@ public class AquaListUI extends BasicListUI {
         return new AquaPropertyChangeHandler();
     }
 
-    class AquaPropertyChangeHandler extends PropertyChangeHandler {
+    final class AquaPropertyChangeHandler extends PropertyChangeHandler {
         @Override
         public void propertyChange(final PropertyChangeEvent e) {
             final String prop = e.getPropertyName();
@@ -134,7 +134,7 @@ public class AquaListUI extends BasicListUI {
 
     // Replace the mouse event with one that returns the cmd-key state when asked
     // for the control-key state, which super assumes is what everyone does to discontiguously extend selections
-    class MouseInputHandler extends BasicListUI.MouseInputHandler {
+    final class MouseInputHandler extends BasicListUI.MouseInputHandler {
         /*public void mousePressed(final MouseEvent e) {
             super.mousePressed(new SelectionMouseEvent(e));
         }
@@ -202,7 +202,7 @@ public class AquaListUI extends BasicListUI {
         return border;
     }
 
-    static class ComponentPainter extends AquaBorder.Default {
+    static final class ComponentPainter extends AquaBorder.Default {
         @Override
         public void paintBorder(final Component c, final Graphics g, final int x, final int y, final int w, final int h) {
             final JComponent jc = c instanceof JComponent ? (JComponent)c : null;

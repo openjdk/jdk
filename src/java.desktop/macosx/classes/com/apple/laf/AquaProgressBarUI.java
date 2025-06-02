@@ -43,7 +43,7 @@ import apple.laf.JRSUIState.ValueState;
 import com.apple.laf.AquaUtilControlSize.*;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 
-public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, PropertyChangeListener, AncestorListener, Sizeable {
+public final class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, PropertyChangeListener, AncestorListener, Sizeable {
     private static final boolean ADJUSTTIMER = true;
 
     private static final RecyclableSingleton<SizeDescriptor> sizeDescriptor = new RecyclableSingleton<SizeDescriptor>() {
@@ -452,7 +452,7 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         progressBar.repaint(repaintRect);
     }
 
-    protected class Animator implements ActionListener {
+    protected final class Animator implements ActionListener {
         private static final int MINIMUM_DELAY = 5;
         private Timer timer;
         private long previousDelay; // used to tune the repaint interval

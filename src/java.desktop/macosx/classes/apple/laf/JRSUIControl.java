@@ -68,7 +68,7 @@ public final class JRSUIControl {
     }
 
     private static final int NIO_BUFFER_SIZE = 128;
-    private static class ThreadLocalByteBuffer {
+    private static final class ThreadLocalByteBuffer {
         final ByteBuffer buffer;
         final long ptr;
 

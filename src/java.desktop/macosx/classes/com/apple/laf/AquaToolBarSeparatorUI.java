@@ -33,7 +33,7 @@ import javax.swing.plaf.basic.BasicToolBarSeparatorUI;
 
 import com.apple.laf.AquaUtils.*;
 
-public class AquaToolBarSeparatorUI extends BasicToolBarSeparatorUI {
+public final class AquaToolBarSeparatorUI extends BasicToolBarSeparatorUI {
     private static final RecyclableSingleton<AquaToolBarSeparatorUI> instance = new RecyclableSingletonFromDefaultConstructor<AquaToolBarSeparatorUI>(AquaToolBarSeparatorUI.class);
 
     public static ComponentUI createUI(final JComponent c) {

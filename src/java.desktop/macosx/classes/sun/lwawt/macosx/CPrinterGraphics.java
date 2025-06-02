@@ -30,7 +30,7 @@ import java.awt.image.*;
 import java.awt.print.*;
 import sun.print.*;
 
-public class CPrinterGraphics extends ProxyGraphics2D {
+public final class CPrinterGraphics extends ProxyGraphics2D {
     // NOTE: This is a ProxyGraphics2D, and not a PathGraphics. However
     // the RasterPrinterJob, upon which CPrinterJob is based, refers to
     // PathGraphics. However, this is not a code path that will be

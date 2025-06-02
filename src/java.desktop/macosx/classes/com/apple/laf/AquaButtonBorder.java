@@ -179,14 +179,14 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
         return false;
     }
 
-    static class SizeConstants {
+    static final class SizeConstants {
         protected static final int fNormalButtonHeight = 29;
         protected static final int fNormalMinButtonWidth = 40;
         protected static final int fSquareButtonHeightThreshold = 23;
         protected static final int fSquareButtonWidthThreshold = 16;
     }
 
-    public static class Dynamic extends AquaButtonBorder {
+    public static final class Dynamic extends AquaButtonBorder {
         final Insets ALTERNATE_PUSH_INSETS = new Insets(3, 12, 5, 12);
         final Insets ALTERNATE_BEVEL_INSETS = new Insets(0, 5, 0, 5);
         final Insets ALTERNATE_SQUARE_INSETS = new Insets(0, 2, 0, 2);
@@ -261,7 +261,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
         }
     }
 
-    public static class Toggle extends AquaButtonBorder {
+    public static final class Toggle extends AquaButtonBorder {
         public Toggle() {
             super(new SizeDescriptor(new SizeVariant().alterMargins(6, 6, 6, 6)));
         }
@@ -301,7 +301,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
         }
     }
 
-    public static class Toolbar extends AquaButtonBorder {
+    public static final class Toolbar extends AquaButtonBorder {
         public Toolbar() {
             super(new SizeDescriptor(new SizeVariant().alterMargins(5, 5, 5, 5)));
             painter.state.set(Widget.TOOLBAR_ITEM_WELL);

@@ -42,7 +42,7 @@ import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaInternalFrameBorderMetrics;
 import java.awt.geom.AffineTransform;
 
-public class AquaInternalFrameBorder implements Border, UIResource {
+public final class AquaInternalFrameBorder implements Border, UIResource {
     private static final int kCloseButton = 0;
     private static final int kIconButton = 1;
     private static final int kGrowButton = 2;

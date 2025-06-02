@@ -40,7 +40,7 @@ import com.apple.laf.AquaIcon.DynamicallySizingJRSUIIcon;
 import com.apple.laf.AquaUtilControlSize.*;
 import com.apple.laf.AquaUtils.*;
 
-public class AquaTextFieldSearch {
+public final class AquaTextFieldSearch {
     private static final String VARIANT_KEY = "JTextField.variant";
     private static final String SEARCH_VARIANT_VALUE = "search";
 
@@ -58,7 +58,7 @@ public class AquaTextFieldSearch {
         c.removePropertyChangeListener(SEARCH_FIELD_PROPERTY_LISTENER);
     }
 
-    static class SearchFieldPropertyListener implements PropertyChangeListener {
+    static final class SearchFieldPropertyListener implements PropertyChangeListener {
         @Override
         public void propertyChange(final PropertyChangeEvent evt) {
             final Object source = evt.getSource();
@@ -291,7 +291,7 @@ public class AquaTextFieldSearch {
     }
 
     // subclass of normal text border, because we still want all the normal text field behaviors
-    static class SearchFieldBorder extends AquaTextFieldBorder implements JComponentPainter {
+    static final class SearchFieldBorder extends AquaTextFieldBorder implements JComponentPainter {
         protected boolean reallyPaintBorder;
 
         public SearchFieldBorder() {

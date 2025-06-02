@@ -41,7 +41,7 @@ import javax.swing.table.AbstractTableModel;
  * Some of it came from BasicDirectoryModel
  */
 @SuppressWarnings("serial") // Superclass is not serializable across versions
-class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeListener {
+final class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeListener {
     private final JTable fFileList;
     private FilesLoader filesLoader = null;
     private Vector<File> files = null;
@@ -344,7 +344,7 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
         protected abstract boolean lt(SortableFile a, SortableFile b);
     }
 
-    static class QuickSortNames extends QuickSort {
+    static final class QuickSortNames extends QuickSort {
         @Override
         protected boolean lt(final SortableFile a, final SortableFile b) {
             final String aLower = a.fName.toLowerCase();
@@ -353,7 +353,7 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
         }
     }
 
-    static class QuickSortDates extends QuickSort {
+    static final class QuickSortDates extends QuickSort {
         @Override
         protected boolean lt(final SortableFile a, final SortableFile b) {
             return a.fDateValue < b.fDateValue;
@@ -361,7 +361,7 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
     }
 
     // for speed in sorting, displaying
-    static class SortableFile /* extends FileView */{
+    static final class SortableFile /* extends FileView */{
         File fFile;
         String fName;
         long fDateValue;
@@ -391,7 +391,7 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
         }
     }
 
-    class FilesLoader implements Runnable {
+    final class FilesLoader implements Runnable {
         ArrayList<Runnable> queuedTasks = new ArrayList<>();
         File currentDirectory = null;
         int fid;
@@ -458,7 +458,7 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
         }
     }
 
-    class DoChangeContents implements Runnable {
+    final class DoChangeContents implements Runnable {
         private Vector<SortableFile> contentFiles;
         private boolean doFire = true;
         private final Object lock = new Object();

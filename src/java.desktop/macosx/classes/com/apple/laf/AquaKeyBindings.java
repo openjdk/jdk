@@ -36,7 +36,7 @@ import javax.swing.text.DefaultEditorKit.DefaultKeyTypedAction;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
-public class AquaKeyBindings {
+public final class AquaKeyBindings {
     private static final RecyclableSingleton<AquaKeyBindings> instance = new RecyclableSingletonFromDefaultConstructor<AquaKeyBindings>(AquaKeyBindings.class);
     static AquaKeyBindings instance() {
         return instance.get();
@@ -471,7 +471,7 @@ public class AquaKeyBindings {
     }
 
     // wraps basic string arrays
-    static class SimpleBinding implements BindingsProvider {
+    static final class SimpleBinding implements BindingsProvider {
         final String[] bindings;
         public SimpleBinding(final String[] bindings) { this.bindings = bindings; }
         @Override
@@ -479,7 +479,7 @@ public class AquaKeyBindings {
     }
 
     // patches all providers together at the moment the UIManager needs the real InputMap
-    static class LateBoundInputMap implements LazyValue, BindingsProvider {
+    static final class LateBoundInputMap implements LazyValue, BindingsProvider {
         private final BindingsProvider[] providerList;
         private String[] mergedBindings;
 
@@ -583,7 +583,7 @@ public class AquaKeyBindings {
     final TextAction pageDownMultilineAction = new AquaMultilineAction(pageDownMultiline, DefaultEditorKit.pageDownAction, DefaultEditorKit.endAction);
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class AquaMultilineAction extends TextAction {
+    static final class AquaMultilineAction extends TextAction {
         final String targetActionName;
         final String proxyActionName;
 

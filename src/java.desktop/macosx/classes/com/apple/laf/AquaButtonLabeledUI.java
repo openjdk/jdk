@@ -46,7 +46,7 @@ public abstract class AquaButtonLabeledUI extends AquaButtonToggleUI implements 
     private static final RecyclableSizingIcon smallIcon = new RecyclableSizingIcon(16);
     private static final RecyclableSizingIcon miniIcon = new RecyclableSizingIcon(14);
 
-    protected static class RecyclableSizingIcon extends RecyclableSingleton<Icon> {
+    protected static final class RecyclableSizingIcon extends RecyclableSingleton<Icon> {
         final int iconSize;
         public RecyclableSizingIcon(final int iconSize) { this.iconSize = iconSize; }
 

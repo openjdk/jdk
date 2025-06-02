@@ -210,7 +210,7 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
         return isCapPresent(CAPS_DOUBLEBUFFERED);
     }
 
-    private static class CGLGCDisposerRecord implements DisposerRecord {
+    private static final class CGLGCDisposerRecord implements DisposerRecord {
         private long pCfgInfo;
         public CGLGCDisposerRecord(long pCfgInfo) {
             this.pCfgInfo = pCfgInfo;
@@ -322,7 +322,7 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
         }
     }
 
-    private static class CGLBufferCaps extends BufferCapabilities {
+    private static final class CGLBufferCaps extends BufferCapabilities {
         public CGLBufferCaps(boolean dblBuf) {
             super(imageCaps, imageCaps,
                   dblBuf ? FlipContents.UNDEFINED : null);
@@ -337,7 +337,7 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
         return bufferCaps;
     }
 
-    private static class CGLImageCaps extends ImageCapabilities {
+    private static final class CGLImageCaps extends ImageCapabilities {
         private CGLImageCaps() {
             super(true);
         }

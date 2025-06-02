@@ -42,7 +42,7 @@ import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
  *
  * AquaRootPaneUI is a singleton object
  */
-public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener, WindowListener, ContainerListener {
+public final class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener, WindowListener, ContainerListener {
     private static final RecyclableSingleton<AquaRootPaneUI> sRootPaneUI = new RecyclableSingletonFromDefaultConstructor<AquaRootPaneUI>(AquaRootPaneUI.class);
     static final boolean sUseScreenMenuBar = AquaMenuBarUI.getScreenMenuBarProperty();
 

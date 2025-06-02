@@ -2020,7 +2020,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
         return SwingUtilities2.tabbedPaneChangeFocusTo(getVisibleComponent());
     }
 
-    private static class Actions extends UIAction {
+    private static final class Actions extends UIAction {
         static final String NEXT = "navigateNext";
         static final String PREVIOUS = "navigatePrevious";
         static final String RIGHT = "navigateRight";
@@ -2703,7 +2703,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
         }
     }
 
-    class TabbedPaneScrollLayout extends TabbedPaneLayout {
+    final class TabbedPaneScrollLayout extends TabbedPaneLayout {
 
         @Override
         protected int preferredTabAreaHeight(final int tabPlacement, final int width) {
@@ -3049,7 +3049,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
         }
     }
 
-    private class ScrollableTabSupport implements ActionListener, ChangeListener {
+    private final class ScrollableTabSupport implements ActionListener, ChangeListener {
         public ScrollableTabViewport viewport;
         public ScrollableTabPanel tabPanel;
         public JButton scrollForwardButton;
@@ -3237,7 +3237,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class ScrollableTabViewport extends JViewport implements UIResource {
+    private final class ScrollableTabViewport extends JViewport implements UIResource {
         public ScrollableTabViewport() {
             super();
             setName("TabbedPane.scrollableViewport");
@@ -3252,7 +3252,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class ScrollableTabPanel extends JPanel implements UIResource {
+    private final class ScrollableTabPanel extends JPanel implements UIResource {
         public ScrollableTabPanel() {
             super(null);
             setOpaque(tabPane.isOpaque());
@@ -3285,7 +3285,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private static class ScrollableTabButton extends javax.swing.plaf.basic.BasicArrowButton implements UIResource, SwingConstants {
+    private static final class ScrollableTabButton extends javax.swing.plaf.basic.BasicArrowButton implements UIResource, SwingConstants {
         public ScrollableTabButton(final int direction) {
             super(direction, UIManager.getColor("TabbedPane.selected"), UIManager.getColor("TabbedPane.shadow"), UIManager.getColor("TabbedPane.darkShadow"), UIManager.getColor("TabbedPane.highlight"));
         }
@@ -3293,7 +3293,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
 
 // Controller: event listeners
 
-    private class Handler implements ChangeListener, ContainerListener, FocusListener, MouseListener, MouseMotionListener, PropertyChangeListener {
+    private final class Handler implements ChangeListener, ContainerListener, FocusListener, MouseListener, MouseMotionListener, PropertyChangeListener {
         //
         // PropertyChangeListener
         //
@@ -3553,7 +3553,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
      * This class should be treated as a &quot;protected&quot; inner class.
      * Instantiate it only within subclasses of BasicTabbedPaneUI.
      */
-    public class TabSelectionHandler implements ChangeListener {
+    public final class TabSelectionHandler implements ChangeListener {
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
@@ -3568,7 +3568,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
      * This class should be treated as a &quot;protected&quot; inner class.
      * Instantiate it only within subclasses of BasicTabbedPaneUI.
      */
-    public class MouseHandler extends MouseAdapter {
+    public final class MouseHandler extends MouseAdapter {
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
@@ -3583,7 +3583,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
      * This class should be treated as a &quot;protected&quot; inner class.
      * Instantiate it only within subclasses of BasicTabbedPaneUI.
      */
-    public class FocusHandler extends FocusAdapter {
+    public final class FocusHandler extends FocusAdapter {
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
@@ -3616,7 +3616,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class TabContainer extends JPanel implements UIResource {
+    private final class TabContainer extends JPanel implements UIResource {
         private boolean notifyTabbedPane = true;
 
         public TabContainer() {
@@ -3664,7 +3664,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class CroppedEdge extends JPanel implements UIResource {
+    private final class CroppedEdge extends JPanel implements UIResource {
         private Shape shape;
         private int tabIndex;
         private int cropline;
@@ -3745,7 +3745,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
      * @author Scott Violet
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class LazyActionMap extends ActionMapUIResource {
+    static final class LazyActionMap extends ActionMapUIResource {
         /**
          * Object to invoke {@code loadActionMap} on. This may be
          * a Class object.

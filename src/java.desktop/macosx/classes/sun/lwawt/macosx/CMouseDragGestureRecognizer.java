@@ -33,7 +33,7 @@ import java.awt.event.*;
 import sun.awt.dnd.SunDragSourceContextPeer;
 
 @SuppressWarnings("serial") // JDK implementation class
-class CMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
+final class CMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
 
       // Number of pixels before drag is determined to have started:
     private static final int fMotionThreshold = getMotionThreshold();

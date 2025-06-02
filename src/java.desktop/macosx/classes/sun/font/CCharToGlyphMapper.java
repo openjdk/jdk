@@ -30,7 +30,7 @@ import java.util.HashMap;
 import static sun.font.FontUtilities.isDefaultIgnorable;
 import static sun.font.FontUtilities.isIgnorableWhitespace;
 
-public class CCharToGlyphMapper extends CharToGlyphMapper {
+public final class CCharToGlyphMapper extends CharToGlyphMapper {
     private static native int countGlyphs(final long nativeFontPtr);
 
     private Cache cache = new Cache();
@@ -160,7 +160,7 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
                                                    int count, char[] unicodes,
                                                    int[] glyphs);
 
-    private class Cache {
+    private final class Cache {
         private static final int FIRST_LAYER_SIZE = 256;
         private static final int SECOND_LAYER_SIZE = 16384; // 16384 = 128x128
 
@@ -218,7 +218,7 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
             generalCache.put(index, value);
         }
 
-        private class SparseBitShiftingTwoLayerArray {
+        private final class SparseBitShiftingTwoLayerArray {
             final int[][] cache;
             final int shift;
             final int secondLayerLength;

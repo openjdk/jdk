@@ -37,7 +37,7 @@ import java.awt.geom.Rectangle2D;
  * and the font is ignored.
  */
 
-public class NativeFont extends PhysicalFont {
+public final class NativeFont extends PhysicalFont {
 
     /**
      * Verifies native font is accessible.

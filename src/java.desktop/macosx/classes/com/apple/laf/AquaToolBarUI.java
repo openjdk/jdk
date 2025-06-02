@@ -34,7 +34,7 @@ import javax.swing.plaf.basic.BasicToolBarUI;
 
 import com.apple.laf.AquaUtils.*;
 
-public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
+public final class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
     private static final RecyclableSingleton<ToolBarBorder> toolBarBorder = new RecyclableSingletonFromDefaultConstructor<ToolBarBorder>(ToolBarBorder.class);
     public static Border getToolBarBorder() {
         return toolBarBorder.get();
@@ -60,7 +60,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
 
     /* ToolBarBorder and drag-off handle, based loosely on MetalBumps */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class ToolBarBorder extends AbstractBorder implements UIResource, javax.swing.SwingConstants {
+    static final class ToolBarBorder extends AbstractBorder implements UIResource, javax.swing.SwingConstants {
         protected void fillHandle(final Graphics g, final int x1, final int y1, final int x2, final int y2, final boolean horizontal) {
             g.setColor(UIManager.getColor("ToolBar.borderHandleColor"));
             if (horizontal) {

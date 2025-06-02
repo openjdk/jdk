@@ -368,7 +368,7 @@ public final class CStrike extends PhysicalStrike {
     // This class stores glyph pointers, and is indexed based on glyph codes,
     // and negative unicode values.  See the comments in
     // CCharToGlyphMapper for more details on our glyph code strategy.
-    private static class GlyphInfoCache extends CStrikeDisposer {
+    private static final class GlyphInfoCache extends CStrikeDisposer {
         private static final int FIRST_LAYER_SIZE = 256;
         private static final int SECOND_LAYER_SIZE = 16384; // 16384 = 128x128
 
@@ -484,7 +484,7 @@ public final class CStrike extends PhysicalStrike {
             }
         }
 
-        private static class SparseBitShiftingTwoLayerArray {
+        private static final class SparseBitShiftingTwoLayerArray {
             final long[][] cache;
             final int shift;
             final int secondLayerLength;
@@ -513,7 +513,7 @@ public final class CStrike extends PhysicalStrike {
         }
     }
 
-    private static class GlyphAdvanceCache {
+    private static final class GlyphAdvanceCache {
         private static final int FIRST_LAYER_SIZE = 256;
         private static final int SECOND_LAYER_SIZE = 16384; // 16384 = 128x128
 
@@ -566,7 +566,7 @@ public final class CStrike extends PhysicalStrike {
             generalCache.put(Integer.valueOf(index), Float.valueOf(value));
         }
 
-        private static class SparseBitShiftingTwoLayerArray {
+        private static final class SparseBitShiftingTwoLayerArray {
             final float[][] cache;
             final int shift;
             final int secondLayerLength;

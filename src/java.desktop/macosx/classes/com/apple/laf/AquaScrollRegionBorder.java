@@ -39,7 +39,7 @@ import com.apple.laf.AquaUtilControlSize.SizeDescriptor;
 import com.apple.laf.AquaUtilControlSize.SizeVariant;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
-public class AquaScrollRegionBorder extends AquaBorder {
+public final class AquaScrollRegionBorder extends AquaBorder {
     private static final RecyclableSingletonFromDefaultConstructor<AquaScrollRegionBorder> instance = new RecyclableSingletonFromDefaultConstructor<AquaScrollRegionBorder>(AquaScrollRegionBorder.class);
 
     public static AquaScrollRegionBorder getScrollRegionBorder() {

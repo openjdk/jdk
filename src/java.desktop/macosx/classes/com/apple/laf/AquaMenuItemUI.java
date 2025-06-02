@@ -35,7 +35,7 @@ import javax.swing.plaf.basic.BasicMenuItemUI;
 import apple.laf.JRSUIConstants.Size;
 
 // TODO: no screen menu bar for now
-public class AquaMenuItemUI extends BasicMenuItemUI implements AquaMenuPainter.Client/*, ScreenMenuItemUI*/ {
+public final class AquaMenuItemUI extends BasicMenuItemUI implements AquaMenuPainter.Client/*, ScreenMenuItemUI*/ {
     static final int kPlain = 0, kCheckBox = 1, kRadioButton = 2;
     static final String[] sPropertyPrefixes = { "MenuItem", "CheckBoxMenuItem", "RadioButtonMenuItem" };
 
@@ -164,7 +164,7 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaMenuPainter.C
     }
 
     static final IndeterminateListener INDETERMINATE_LISTENER = new IndeterminateListener();
-    static class IndeterminateListener implements PropertyChangeListener {
+    static final class IndeterminateListener implements PropertyChangeListener {
         static final String CLIENT_PROPERTY_KEY = "JMenuItem.selectedState";
 
         static void install(final JMenuItem menuItem) {

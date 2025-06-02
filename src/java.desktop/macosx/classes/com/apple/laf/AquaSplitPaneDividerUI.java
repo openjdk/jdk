@@ -40,7 +40,7 @@ import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
-public class AquaSplitPaneDividerUI extends BasicSplitPaneDivider {
+public final class AquaSplitPaneDividerUI extends BasicSplitPaneDivider {
     final AquaPainter<JRSUIState> painter = AquaPainter.create(JRSUIStateFactory.getSplitPaneDivider());
 
     public AquaSplitPaneDividerUI(final AquaSplitPaneUI ui) {
@@ -160,7 +160,7 @@ public class AquaSplitPaneDividerUI extends BasicSplitPaneDivider {
     }
 
     static final int kMaxPopupArrowSize = 9;
-    protected class DividerLayout extends BasicSplitPaneDivider.DividerLayout {
+    protected final class DividerLayout extends BasicSplitPaneDivider.DividerLayout {
         @Override
         public void layoutContainer(final Container c) {
             final int maxSize = getMaxDividerSize();
@@ -209,7 +209,7 @@ public class AquaSplitPaneDividerUI extends BasicSplitPaneDivider {
         return HorizontalSplitDividerGradientPainter.instance();
     }
 
-    static class HorizontalSplitDividerGradientPainter implements Border {
+    static final class HorizontalSplitDividerGradientPainter implements Border {
         private static final RecyclableSingleton<HorizontalSplitDividerGradientPainter> instance = new RecyclableSingletonFromDefaultConstructor<HorizontalSplitDividerGradientPainter>(HorizontalSplitDividerGradientPainter.class);
         static HorizontalSplitDividerGradientPainter instance() {
             return instance.get();

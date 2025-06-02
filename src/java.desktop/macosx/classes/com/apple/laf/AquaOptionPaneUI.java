@@ -31,7 +31,7 @@ import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicOptionPaneUI;
 
-public class AquaOptionPaneUI extends BasicOptionPaneUI {
+public final class AquaOptionPaneUI extends BasicOptionPaneUI {
     private static final int kOKCancelButtonWidth = 79;
     private static final int kButtonHeight = 23;
 
@@ -113,7 +113,7 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
      * BasicOptionPaneUI expects that its buttons are laid out with
      * a subclass of ButtonAreaLayout
      */
-    public static class AquaButtonAreaLayout extends ButtonAreaLayout {
+    public static final class AquaButtonAreaLayout extends ButtonAreaLayout {
         public AquaButtonAreaLayout(final boolean syncAllWidths, final int padding) {
             super(true, padding);
         }

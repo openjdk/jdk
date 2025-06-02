@@ -31,7 +31,7 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.UIResource;
 
-public class AquaMenuBorder implements Border, UIResource {
+public final class AquaMenuBorder implements Border, UIResource {
     public AquaMenuBorder() { }
 
     /**

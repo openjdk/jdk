@@ -31,7 +31,7 @@ import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicScrollPaneUI;
 
-public class AquaScrollPaneUI extends javax.swing.plaf.basic.BasicScrollPaneUI {
+public final class AquaScrollPaneUI extends javax.swing.plaf.basic.BasicScrollPaneUI {
     public static ComponentUI createUI(final JComponent x) {
         return new AquaScrollPaneUI();
     }
@@ -41,7 +41,7 @@ public class AquaScrollPaneUI extends javax.swing.plaf.basic.BasicScrollPaneUI {
         return new XYMouseWheelHandler();
     }
 
-    protected class XYMouseWheelHandler extends BasicScrollPaneUI.MouseWheelHandler {
+    protected final class XYMouseWheelHandler extends BasicScrollPaneUI.MouseWheelHandler {
         @Override
         public void mouseWheelMoved(final MouseWheelEvent e) {
             super.mouseWheelMoved(e);

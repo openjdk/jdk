@@ -556,7 +556,7 @@ public abstract class MTLSurfaceData extends SurfaceData
      * This surface serves as a buffer attached to a MTLLayer and
      * the layer redirects all painting to the buffer's graphics.
      */
-    public static class MTLLayerSurfaceData extends MTLSurfaceData {
+    public static final class MTLLayerSurfaceData extends MTLSurfaceData {
 
         private final MTLLayer layer;
 
@@ -597,7 +597,7 @@ public abstract class MTLSurfaceData extends SurfaceData
     /**
      * SurfaceData object representing an off-screen buffer
      */
-    public static class MTLOffScreenSurfaceData extends MTLSurfaceData {
+    public static final class MTLOffScreenSurfaceData extends MTLSurfaceData {
         private final Image offscreenImage;
 
         public MTLOffScreenSurfaceData(MTLGraphicsConfig gc, int width,

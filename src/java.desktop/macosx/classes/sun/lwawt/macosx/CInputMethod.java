@@ -44,7 +44,7 @@ import sun.lwawt.*;
 
 import static sun.awt.AWTAccessor.ComponentAccessor;
 
-public class CInputMethod extends InputMethodAdapter {
+public final class CInputMethod extends InputMethodAdapter {
     private InputMethodContext fIMContext;
     private Component fAwtFocussedComponent;
     private LWComponentPeer<?, ?> fAwtFocussedComponentPeer;

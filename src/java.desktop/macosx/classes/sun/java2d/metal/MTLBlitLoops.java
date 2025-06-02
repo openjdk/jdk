@@ -334,7 +334,7 @@ final class MTLBlitLoops {
     }
 }
 
-class MTLSurfaceToSurfaceBlit extends Blit {
+final class MTLSurfaceToSurfaceBlit extends Blit {
 
     MTLSurfaceToSurfaceBlit() {
         super(MTLSurfaceData.MTLSurface,
@@ -357,7 +357,7 @@ class MTLSurfaceToSurfaceBlit extends Blit {
     }
 }
 
-class MTLSurfaceToSurfaceScale extends ScaledBlit {
+final class MTLSurfaceToSurfaceScale extends ScaledBlit {
 
     MTLSurfaceToSurfaceScale() {
         super(MTLSurfaceData.MTLSurface,
@@ -383,7 +383,7 @@ class MTLSurfaceToSurfaceScale extends ScaledBlit {
     }
 }
 
-class MTLSurfaceToSurfaceTransform extends TransformBlit {
+final class MTLSurfaceToSurfaceTransform extends TransformBlit {
 
     MTLSurfaceToSurfaceTransform() {
         super(MTLSurfaceData.MTLSurface,
@@ -407,7 +407,7 @@ class MTLSurfaceToSurfaceTransform extends TransformBlit {
     }
 }
 
-class MTLRTTSurfaceToSurfaceBlit extends Blit {
+final class MTLRTTSurfaceToSurfaceBlit extends Blit {
 
     MTLRTTSurfaceToSurfaceBlit() {
         super(MTLSurfaceData.MTLSurfaceRTT,
@@ -430,7 +430,7 @@ class MTLRTTSurfaceToSurfaceBlit extends Blit {
     }
 }
 
-class MTLRTTSurfaceToSurfaceScale extends ScaledBlit {
+final class MTLRTTSurfaceToSurfaceScale extends ScaledBlit {
 
     MTLRTTSurfaceToSurfaceScale() {
         super(MTLSurfaceData.MTLSurfaceRTT,
@@ -456,7 +456,7 @@ class MTLRTTSurfaceToSurfaceScale extends ScaledBlit {
     }
 }
 
-class MTLRTTSurfaceToSurfaceTransform extends TransformBlit {
+final class MTLRTTSurfaceToSurfaceTransform extends TransformBlit {
 
     MTLRTTSurfaceToSurfaceTransform() {
         super(MTLSurfaceData.MTLSurfaceRTT,
@@ -581,7 +581,7 @@ final class MTLSurfaceToSwBlit extends Blit {
     }
 }
 
-class MTLSwToSurfaceBlit extends Blit {
+final class MTLSwToSurfaceBlit extends Blit {
 
     private int typeval;
 
@@ -606,7 +606,7 @@ class MTLSwToSurfaceBlit extends Blit {
     }
 }
 
-class MTLSwToSurfaceScale extends ScaledBlit {
+final class MTLSwToSurfaceScale extends ScaledBlit {
 
     private int typeval;
 
@@ -634,7 +634,7 @@ class MTLSwToSurfaceScale extends ScaledBlit {
     }
 }
 
-class MTLSwToSurfaceTransform extends TransformBlit {
+final class MTLSwToSurfaceTransform extends TransformBlit {
 
     private int typeval;
 
@@ -659,7 +659,7 @@ class MTLSwToSurfaceTransform extends TransformBlit {
     }
 }
 
-class MTLSwToTextureBlit extends Blit {
+final class MTLSwToTextureBlit extends Blit {
 
     private int typeval;
 
@@ -684,7 +684,7 @@ class MTLSwToTextureBlit extends Blit {
     }
 }
 
-class MTLTextureToSurfaceBlit extends Blit {
+final class MTLTextureToSurfaceBlit extends Blit {
 
     MTLTextureToSurfaceBlit() {
         super(MTLSurfaceData.MTLTexture,
@@ -707,7 +707,7 @@ class MTLTextureToSurfaceBlit extends Blit {
     }
 }
 
-class MTLTextureToSurfaceScale extends ScaledBlit {
+final class MTLTextureToSurfaceScale extends ScaledBlit {
 
     MTLTextureToSurfaceScale() {
         super(MTLSurfaceData.MTLTexture,
@@ -733,7 +733,7 @@ class MTLTextureToSurfaceScale extends ScaledBlit {
     }
 }
 
-class MTLTextureToSurfaceTransform extends TransformBlit {
+final class MTLTextureToSurfaceTransform extends TransformBlit {
 
     MTLTextureToSurfaceTransform() {
         super(MTLSurfaceData.MTLTexture,
@@ -763,7 +763,7 @@ class MTLTextureToSurfaceTransform extends TransformBlit {
  * IntArgbPre->MTLSurface/Texture loop to get the intermediate
  * (premultiplied) surface down to Metal using simple blit.
  */
-class MTLGeneralBlit extends Blit {
+final class MTLGeneralBlit extends Blit {
 
     private final Blit performop;
     private WeakReference<SurfaceData> srcTmp;

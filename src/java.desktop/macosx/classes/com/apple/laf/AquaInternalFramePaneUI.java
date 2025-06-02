@@ -34,7 +34,7 @@ import javax.swing.border.Border;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicDesktopPaneUI;
 
-public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements MouseListener {
+public final class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements MouseListener {
 
     JComponent fDock;
     DockLayoutManager fLayoutMgr;
@@ -101,7 +101,7 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
         return fDock;
     }
 
-    class DockLayoutManager implements LayoutManager {
+    final class DockLayoutManager implements LayoutManager {
         @Override
         public void addLayoutComponent(final String name, final Component comp) {
         }
@@ -127,7 +127,7 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    class Dock extends JComponent implements Border {
+    final class Dock extends JComponent implements Border {
         static final int DOCK_EDGE_SLACK = 8;
 
         Dock(final JComponent parent) {
@@ -203,7 +203,7 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
     }
 
     @SuppressWarnings("serial") // JDK implementation class
-    static class AquaDockingDesktopManager extends AquaInternalFrameManager {
+    static final class AquaDockingDesktopManager extends AquaInternalFrameManager {
         @Override
         public void openFrame(final JInternalFrame f) {
             final JInternalFrame.JDesktopIcon desktopIcon = f.getDesktopIcon();
