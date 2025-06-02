@@ -362,9 +362,8 @@ bool JfrSamplerThread::sample_native_thread(JavaThread* jt) {
     assert_lock_strong(Threads_lock);
     JfrSampleMonitor jsm(tl);
     if (jsm.is_waiting()) {
-      // The thread has already returned from native
-      // and is waiting to be sampled. It is currently in
-      // state _thread_in_vm or _thread_in_Java.
+      // The thread has already returned from native,
+      // now in _thread_in_vm and is waiting to be sampled.
       // Convert the native sample request into a java sample request
       // and let the thread process the ljf on its own.
       jsm.install_java_sample_request();
