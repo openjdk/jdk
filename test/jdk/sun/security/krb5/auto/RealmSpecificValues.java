@@ -35,6 +35,7 @@ import sun.security.krb5.Config;
  * @bug 8333772
  * @summary check krb5.conf reading on default and realm-specific values
  * @library /test/lib
+ * @run main/othervm RealmSpecificValues
  */
 public class RealmSpecificValues {
 
