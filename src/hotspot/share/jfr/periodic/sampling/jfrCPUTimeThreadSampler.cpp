@@ -565,11 +565,10 @@ void JfrCPUTimeThreadSampler::handle_timer_signal(siginfo_t* info, void* context
   }
 
   if (jt->thread_state() == _thread_in_native) {
-    // we are in native code and the queue is getting full
-    if (queue.size() == queue.capacity() * 2 / 3) {
-      tl->set_do_async_processing_of_cpu_time_jfr_requests(true);
-      JfrCPUTimeThreadSampling::trigger_async_processing_of_cpu_time_jfr_requests();
-    }
+      if (!tl->wants_async_processing_of_cpu_time_jfr_requests()) {
+        tl->set_do_async_processing_of_cpu_time_jfr_requests(true);
+        JfrCPUTimeThreadSampling::trigger_async_processing_of_cpu_time_jfr_requests();
+      }
   } else {
     tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
   }
