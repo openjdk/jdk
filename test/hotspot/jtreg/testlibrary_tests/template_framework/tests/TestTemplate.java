@@ -160,12 +160,23 @@ public class TestTemplate {
         expectRendererException(() -> testFailingDollarName2(), "Is not a valid '$' name: '#abc'.");
         expectRendererException(() -> testFailingDollarName3(), "Is not a valid '$' name: 'abc#'.");
         expectRendererException(() -> testFailingDollarName4(), "A '$' name should not be null.");
+        expectRendererException(() -> testFailingDollarName5(), "Is not a valid '$' replacement pattern: '$' in '$'.");
+        expectRendererException(() -> testFailingDollarName6(), "Is not a valid '$' replacement pattern: '$' in 'asdf$'.");
+        expectRendererException(() -> testFailingDollarName7(), "Is not a valid '$' replacement pattern: '$1' in 'asdf$1'.");
+        expectRendererException(() -> testFailingDollarName8(), "Is not a valid '$' replacement pattern: '$' in 'abc$$abc'.");
         expectRendererException(() -> testFailingLetName1(), "A hashtag replacement should not be null.");
         expectRendererException(() -> testFailingHashtagName1(), "Is not a valid hashtag replacement name: ''.");
         expectRendererException(() -> testFailingHashtagName2(), "Is not a valid hashtag replacement name: 'abc#abc'.");
         expectRendererException(() -> testFailingHashtagName3(), "Is not a valid hashtag replacement name: ''.");
         expectRendererException(() -> testFailingHashtagName4(), "Is not a valid hashtag replacement name: 'xyz#xyz'.");
         expectRendererException(() -> testFailingHashtagName5(), "Is not a valid '#' replacement pattern: '#' in '#'.");
+        expectRendererException(() -> testFailingHashtagName6(), "Is not a valid '#' replacement pattern: '#' in 'asdf#'.");
+        expectRendererException(() -> testFailingHashtagName7(), "Is not a valid '#' replacement pattern: '#1' in 'asdf#1'.");
+        expectRendererException(() -> testFailingHashtagName8(), "Is not a valid '#' replacement pattern: '#' in 'abc##abc'.");
+        expectRendererException(() -> testFailingDollarHashtagName1(), "Is not a valid '#' replacement pattern: '#' in '#$'.");
+        expectRendererException(() -> testFailingDollarHashtagName2(), "Is not a valid '$' replacement pattern: '$' in '$#'.");
+        expectRendererException(() -> testFailingDollarHashtagName3(), "Is not a valid '#' replacement pattern: '#' in '#$name'.");
+        expectRendererException(() -> testFailingDollarHashtagName4(), "Is not a valid '$' replacement pattern: '$' in '$#name'.");
         expectRendererException(() -> testFailingHook(), "Hook 'Hook1' was referenced but not found!");
         expectRendererException(() -> testFailingSample1(),  "No variable: MUTABLE, subtypeOf(int), supertypeOf(int).");
         expectRendererException(() -> testFailingHashtag1(), "Duplicate hashtag replacement for #a");
@@ -1829,6 +1840,34 @@ public class TestTemplate {
         String code = template1.render();
     }
 
+    public static void testFailingDollarName5() {
+        var template1 = Template.make(() -> body(
+            "$" // empty dollar name
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingDollarName6() {
+        var template1 = Template.make(() -> body(
+            "asdf$" // empty dollar name
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingDollarName7() {
+        var template1 = Template.make(() -> body(
+            "asdf$1" // Bad pattern after dollar
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingDollarName8() {
+        var template1 = Template.make(() -> body(
+            "abc$$abc" // empty dollar name
+        ));
+        String code = template1.render();
+    }
+
     public static void testFailingLetName1() {
         var template1 = Template.make(() -> body(
             let(null, $("abc")) // Null input for hashtag name
@@ -1869,6 +1908,55 @@ public class TestTemplate {
     public static void testFailingHashtagName5() {
         var template1 = Template.make(() -> body(
             "#" // empty hashtag name
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingHashtagName6() {
+        var template1 = Template.make(() -> body(
+            "asdf#" // empty hashtag name
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingHashtagName7() {
+        var template1 = Template.make(() -> body(
+            "asdf#1" // Bad pattern after hashtag
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingHashtagName8() {
+        var template1 = Template.make(() -> body(
+            "abc##abc" // empty hashtag name
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingDollarHashtagName1() {
+        var template1 = Template.make(() -> body(
+            "#$" // empty hashtag name
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingDollarHashtagName2() {
+        var template1 = Template.make(() -> body(
+            "$#" // empty dollar name
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingDollarHashtagName3() {
+        var template1 = Template.make(() -> body(
+            "#$name" // empty hashtag name
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingDollarHashtagName4() {
+        var template1 = Template.make(() -> body(
+            "$#name" // empty dollar name
         ));
         String code = template1.render();
     }

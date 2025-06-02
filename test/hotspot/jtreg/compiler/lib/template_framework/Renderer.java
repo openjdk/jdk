@@ -69,7 +69,7 @@ final class Renderer {
         ")");
     private static final Pattern NAME_CHARACTERS_PATTERN = Pattern.compile("^" + NAME_CHARACTERS + "$");
 
-    static boolean isValidName(String name) {
+    static boolean isValidHashtagOrDollarName(String name) {
         return NAME_CHARACTERS_PATTERN.matcher(name).find();
     }
 
@@ -338,7 +338,7 @@ final class Renderer {
     private void renderStringWithDollarAndHashtagReplacements(String s) {
         int count = 0; // First part needs special handling
         int start = 0;
-        boolean lastWasDollar = false;
+        boolean startIsAfterDollar = false;
         do {
             // Find the next "$" or "#", after start.
             int dollar  = s.indexOf("$", start);
@@ -352,8 +352,10 @@ final class Renderer {
                 currentCodeFrame.addString(part);
             } else {
                 // All others must do the replacement.
-                final boolean isDollar = lastWasDollar;
+                final boolean isDollar = startIsAfterDollar; // final alias for lambda capture.
                 Matcher matcher = NAME_PATTERN.matcher(part);
+                // Let's catch cases where we have bad patterns, such as:
+                //  "##name" or "#1name" or "anything#" etc.
                 if (!matcher.find()) {
                     String replacement = isDollar ? "$" : "#";
                     throw new RendererException("Is not a valid '" + replacement + "' replacement pattern: '" +
@@ -366,6 +368,7 @@ final class Renderer {
                         if (isDollar) {
                             return $(name);
                         } else {
+                            // replaceFirst needs some special escaping of backslashes and ollar signs.
                             return getHashtagReplacement(name).replace("\\", "\\\\").replace("$", "\\$");
                         }
                     }
@@ -376,7 +379,7 @@ final class Renderer {
                 return;
             }
             start = next + 1; // drop the "#" or "$"
-            lastWasDollar = next == dollar;
+            startIsAfterDollar = next == dollar;
             count++;
         } while (true);
     }

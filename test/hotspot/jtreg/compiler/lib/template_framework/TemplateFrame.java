@@ -65,7 +65,7 @@ class TemplateFrame {
         if (name == null) {
             throw new RendererException("A '$' name should not be null.");
         }
-        if (!Renderer.isValidName(name)) {
+        if (!Renderer.isValidHashtagOrDollarName(name)) {
             throw new RendererException("Is not a valid '$' name: '" + name + "'.");
         }
         return name + "_" + id;
@@ -75,7 +75,7 @@ class TemplateFrame {
         if (key == null) {
             throw new RendererException("A hashtag replacement should not be null.");
         }
-        if (!Renderer.isValidName(key)) {
+        if (!Renderer.isValidHashtagOrDollarName(key)) {
             throw new RendererException("Is not a valid hashtag replacement name: '" + key + "'.");
         }
         if (hashtagReplacements.putIfAbsent(key, value) != null) {
@@ -84,7 +84,7 @@ class TemplateFrame {
     }
 
     String getHashtagReplacement(String key) {
-        if (!Renderer.isValidName(key)) {
+        if (!Renderer.isValidHashtagOrDollarName(key)) {
             throw new RendererException("Is not a valid hashtag replacement name: '" + key + "'.");
         }
         if (hashtagReplacements.containsKey(key)) {
