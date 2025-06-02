@@ -30,7 +30,6 @@
  * @summary Testing PEM API is thread safe
  * @enablePreview
  * @modules java.base/sun.security.util
- * @run main PEMMultiThreadTest
  */
 
 import java.security.*;
@@ -39,7 +38,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class    PEMMultiThreadTest {
+public class PEMMultiThreadTest {
     static final int THREAD_COUNT = 5;
     static final int KEYS_COUNT = 50;
 
@@ -52,6 +51,7 @@ public class    PEMMultiThreadTest {
             final CountDownLatch encodingComplete = new CountDownLatch(KEYS_COUNT);
             final CountDownLatch decodingComplete = new CountDownLatch(KEYS_COUNT);
 
+            // Generate keys and encode them in parallel
             for (int i = 0 ; i < KEYS_COUNT ; i++) {
                 final int finalI = i;
                 KeyPair kp = getKeyPair();
@@ -64,6 +64,7 @@ public class    PEMMultiThreadTest {
             }
             encodingComplete.await();
 
+            // Decode keys in parallel
             PEMDecoder decoder = PEMDecoder.of();
             for (Map.Entry<Integer, String> entry : encoded.entrySet()) {
                 ex.submit(() -> {
