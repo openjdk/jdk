@@ -2909,7 +2909,7 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_GetNMethod         },
   {CC"relocateNMethodFromMethod0", CC"(Ljava/lang/reflect/Executable;I)V",
                                                       (void*)&WB_RelocateNMethodFromMethod },
-  {CC"relocateNMethodFromAddr0", CC"(JI)V",           (void*)&WB_RelocateNMethodFromAddr },
+  {CC"relocateNMethodFromAddr", CC"(JI)V",            (void*)&WB_RelocateNMethodFromAddr },
   {CC"allocateCodeBlob",   CC"(II)J",                 (void*)&WB_AllocateCodeBlob   },
   {CC"freeCodeBlob",       CC"(J)V",                  (void*)&WB_FreeCodeBlob       },
   {CC"getCodeHeapEntries", CC"(I)[Ljava/lang/Object;",(void*)&WB_GetCodeHeapEntries },
