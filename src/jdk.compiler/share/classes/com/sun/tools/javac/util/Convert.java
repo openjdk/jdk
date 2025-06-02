@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,10 +223,11 @@ public class Convert {
      */
     public static int utfNumChars(byte[] buf, int off, int len) {
         int numChars = 0;
-        while (len-- > 0) {
-            int byte1 = buf[off++];
-            if (byte1 < 0)
-                len -= ((byte1 & 0xe0) == 0xc0) ? 1 : 2;
+        while (len > 0) {
+            int byte1 = buf[off];
+            int nbytes = byte1 >= 0 ? 1 : (byte1 & 0xe0) == 0xc0 ? 2 : 3;
+            off += nbytes;
+            len -= nbytes;
             numChars++;
         }
         return numChars;
