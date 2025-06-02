@@ -42,15 +42,7 @@ class ReverseOrderListView<E> implements List<E> {
 
     @Stable
     final List<E> base;
-
-    /**
-     * This view is modifiable if this field value is positive, and
-     * not modifiable if value is negative. This field is actually boolean,
-     * but represented as byte to allow constant-folding both cases
-     * by avoiding the default "0"/"false" value.
-     */
-    @Stable
-    final byte modifiable;
+    final boolean modifiable;
 
     public static <T> List<T> of(List<T> list, boolean modifiable) {
         if (list instanceof RandomAccess) {
@@ -66,13 +58,9 @@ class ReverseOrderListView<E> implements List<E> {
         }
     }
 
-    private ReverseOrderListView(List<E> list, byte modifiable) {
+    private ReverseOrderListView(List<E> list, boolean modifiable) {
         this.base = list;
         this.modifiable = modifiable;
-    }
-
-    private ReverseOrderListView(List<E> list, boolean modifiable) {
-        this(list, (byte)(modifiable ? 1 : -1));
     }
 
     /**
@@ -85,7 +73,7 @@ class ReverseOrderListView<E> implements List<E> {
      * behavior if every mutator of this class always checks.
      */
     void checkModifiable() {
-        if (modifiable < 0) {
+        if (! modifiable) {
             throw new UnsupportedOperationException();
         }
     }
