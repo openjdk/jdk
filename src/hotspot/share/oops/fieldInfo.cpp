@@ -193,7 +193,7 @@ Array<u1>* FieldInfoStream::create_search_table(ConstantPool* cp, const Array<u1
   qsort(positions, java_fields, sizeof(field_pos_t), compare_pair);
 
   FieldInfoSupplier supplier(positions, java_fields);
-  builder.fill(table, supplier);
+  builder.fill(table->data(), static_cast<size_t>(table->length()), supplier);
   return table;
 }
 
@@ -271,7 +271,7 @@ void FieldInfoStream::validate_search_table(ConstantPool* cp, const Array<u1>* f
 
   FieldInfoComparator comparator(&reader, cp, nullptr, nullptr);
   // Check 1: assert that elements have the correct order based on the comparison function
-  lookup.validate_order(comparator, search_table);
+  lookup.validate_order(comparator, search_table->data(), static_cast<size_t>(search_table->length()));
 
   // Check 2: Iterate through the original stream (not just search_table) and try if lookup works as expected
   reader.set_position_and_next_index(0, 0);
@@ -303,7 +303,8 @@ int FieldInfoReader::search_table_lookup(const Array<u1> *search_table, const Sy
   PackedTableLookup lookup(_r.limit() - 1, java_fields - 1);
   uint32_t position;
   static_assert(sizeof(uint32_t) == sizeof(_next_index), "field size assert");
-  if (lookup.search(comp, search_table, &position, reinterpret_cast<uint32_t *>(&_next_index))) {
+  if (lookup.search(comp, search_table->data(), static_cast<size_t>(search_table->length()),
+      &position, reinterpret_cast<uint32_t *>(&_next_index))) {
     _r.set_position(static_cast<int>(position));
     return _next_index;
   } else {

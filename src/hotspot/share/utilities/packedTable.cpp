@@ -30,21 +30,20 @@ PackedTableBase::PackedTableBase(uint32_t max_pivot, uint32_t max_payload) {
   unsigned int pivot_bits = max_pivot == 0 ? 0 : 32 - count_leading_zeros(max_pivot);
   unsigned int payload_bits = max_payload == 0 ? 0 : 32 - count_leading_zeros(max_payload);
   _element_bytes = align_up(pivot_bits + payload_bits, 8) / 8;
-  _pivot_mask = (1 << pivot_bits) - 1;
+  // shifting left by 32 is undefined behaviour, and in practice returns 1
+  _pivot_mask = pivot_bits >= 32 ? -1 : (1U << pivot_bits) - 1;
   _payload_shift = pivot_bits;
-  _payload_mask = (1 << payload_bits) - 1;
+  _payload_mask = payload_bits >= 32 ? -1 : (1U << payload_bits) - 1;
   guarantee(_element_bytes > 0, "wouldn't work");
   assert(_element_bytes <= sizeof(uint64_t), "shouldn't happen");
 }
 
-void PackedTableBuilder::fill(Array<u1> *array, Supplier &supplier) const {
+void PackedTableBuilder::fill(u1 *data, size_t length, Supplier &supplier) const {
   uint32_t pivot, payload;
-  u1 *data = array->data();
-  size_t length = static_cast<size_t>(array->length());
   size_t offset = 0;
   for (; offset + sizeof(uint64_t) <= length && supplier.next(&pivot, &payload); offset += _element_bytes) {
     assert((pivot & ~_pivot_mask) == 0, "pivot out of bounds");
-    assert((payload & ~_payload_mask) == 0, "payload out of bounds");
+    assert((payload & ~_payload_mask) == 0, "payload out of bounds: %x vs. %x (%x)", payload, _payload_mask, ~_payload_mask);
     *reinterpret_cast<uint64_t *>(data + offset) = static_cast<uint64_t>(pivot) | (static_cast<uint64_t>(payload) << _payload_shift);
   }
   // last bytes
@@ -72,14 +71,13 @@ uint64_t PackedTableLookup::read_value(const u1* data, size_t length, size_t off
   return value;
 }
 
-bool PackedTableLookup::search(Comparator& comparator, const Array<u1>* search_table, uint32_t* found_pivot, uint32_t* found_payload) const {
-  unsigned int low = 0, high = search_table->length() / _element_bytes;
+bool PackedTableLookup::search(Comparator& comparator, const u1* data, size_t search_table_length, uint32_t* found_pivot, uint32_t* found_payload) const {
+  unsigned int low = 0, high = search_table_length / _element_bytes;
   assert(low < high, "must be");
-  const u1 *data = search_table->data();
   while (low < high) {
     unsigned int mid = low + (high - low) / 2;
     assert(mid >= low && mid < high, "integer overflow?");
-    uint64_t value = read_value(data, static_cast<size_t>(search_table->length()), _element_bytes * mid);
+    uint64_t value = read_value(data, search_table_length, _element_bytes * mid);
     uint32_t pivot = value & _pivot_mask;
     int cmp = comparator.compare_to(pivot);
     if (cmp == 0) {
@@ -96,11 +94,9 @@ bool PackedTableLookup::search(Comparator& comparator, const Array<u1>* search_t
 }
 
 #ifdef ASSERT
-void PackedTableLookup::validate_order(Comparator &comparator, const Array<u1> *search_table) const {
-  const u1* data = search_table->data();
-  size_t length = static_cast<size_t>(search_table->length());
+void PackedTableLookup::validate_order(Comparator &comparator, const u1 *search_table, size_t length) const {
   for (size_t offset = 0; offset < length; offset += _element_bytes) {
-    uint64_t value = read_value(data, length, offset);
+    uint64_t value = read_value(search_table, length, offset);
     uint32_t pivot = value & _pivot_mask;
 
     if (offset != 0) {

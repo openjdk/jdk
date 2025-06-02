@@ -22,7 +22,7 @@
  *
  */
 
-#include "oops/array.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 /*
  * Base for space-optimized structure supporting binary search. Each element
@@ -55,7 +55,7 @@ public:
   // The supplier should return elements with already ordered pivots.
   // We can't easily sort within the builder because qsort() accepts
   // only pure function as comparator.
-  void fill(Array<u1> *search_table, Supplier &supplier) const;
+  void fill(u1 *search_table, size_t search_table_length, Supplier &supplier) const;
 };
 
 class PackedTableLookup: public PackedTableBase {
@@ -71,6 +71,6 @@ public:
 
   PackedTableLookup(uint32_t max_pivot, uint32_t max_payload): PackedTableBase(max_pivot, max_payload) {}
 
-  bool search(Comparator& comparator, const Array<u1>* search_table, uint32_t* found_pivot, uint32_t* found_payload) const;
-  DEBUG_ONLY(void validate_order(Comparator &comparator, const Array<u1> *search_table) const);
+  bool search(Comparator& comparator, const u1* search_table, size_t search_table_length, uint32_t* found_pivot, uint32_t* found_payload) const;
+  DEBUG_ONLY(void validate_order(Comparator &comparator, const u1 *search_table, size_t search_table_length) const);
 };
