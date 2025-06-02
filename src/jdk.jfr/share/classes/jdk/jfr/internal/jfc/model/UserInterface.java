@@ -41,7 +41,7 @@ public final class UserInterface {
 
     public String readLine() throws AbortException {
         try {
-            Charset charset = Charset.forName(System.getProperty("stdin.encoding"));
+            Charset charset = Charset.forName(System.getProperty("stdin.encoding"), Charset.defaultCharset());
             BufferedReader br = new BufferedReader(new InputStreamReader(System.in, charset));
             String line = br.readLine();
             if (line == null || line.equalsIgnoreCase("Q")) {

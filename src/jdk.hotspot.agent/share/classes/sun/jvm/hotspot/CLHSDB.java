@@ -107,7 +107,7 @@ public class CLHSDB {
             };
 
 
-        Charset charset = Charset.forName(System.getProperty("stdin.encoding"));
+        Charset charset = Charset.forName(System.getProperty("stdin.encoding"), Charset.defaultCharset());
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in, charset));
         CommandProcessor cp = new CommandProcessor(di, in, System.out, System.err);
         cp.run(true);
