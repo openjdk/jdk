@@ -222,7 +222,7 @@ bool ZUncommitter::activate_uncommit_cycle() {
   _cycle_start = os::elapsedTime();
 
   // Read watermark from cache
-  const size_t uncommit_watermark = cache->uncommit_watermark();
+  const size_t uncommit_watermark = cache->min_size_watermark();
 
   // Keep 10% as a headroom
   const size_t to_uncommit = align_up(size_t(double(uncommit_watermark) * 0.9), ZGranuleSize);
@@ -234,7 +234,7 @@ bool ZUncommitter::activate_uncommit_cycle() {
   _uncommitted = 0;
 
   // Reset watermark for next uncommit cycle
-  cache->reset_uncommit_watermark();
+  cache->reset_min_size_watermark();
 
   postcond(is_aligned(_to_uncommit, ZGranuleSize));
 
@@ -283,7 +283,7 @@ void ZUncommitter::update_next_cycle_timeout_on_finish() {
 
 void ZUncommitter::cancel_uncommit_cycle() {
   // Reset the cache cycle tracking and register the cancel time.
-  _partition->_cache.reset_uncommit_watermark();
+  _partition->_cache.reset_min_size_watermark();
   _cancel_time = os::elapsedTime();
 }
 
@@ -381,7 +381,7 @@ size_t ZUncommitter::uncommit() {
 
     // Never uncommit more than the current uncommit watermark,
     // (adjusted by what has already been uncommitted).
-    const size_t allowed_to_uncommit = MAX2(cache.uncommit_watermark(), _uncommitted) - _uncommitted;
+    const size_t allowed_to_uncommit = MAX2(cache.min_size_watermark(), _uncommitted) - _uncommitted;
     const size_t to_uncommit = MIN2(_to_uncommit, allowed_to_uncommit);
 
     // Never uncommit below min capacity.

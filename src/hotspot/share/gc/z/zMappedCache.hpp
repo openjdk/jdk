@@ -102,8 +102,9 @@ public:
   ZVirtualMemory remove_contiguous(size_t size);
   size_t remove_discontiguous(size_t size, ZArray<ZVirtualMemory>* out);
 
-  void reset_uncommit_watermark();
-  size_t uncommit_watermark();
+  // ZUncommitter support
+  void reset_min_size_watermark();
+  size_t min_size_watermark();
   size_t remove_for_uncommit(size_t size, ZArray<ZVirtualMemory>* out);
 
   void print_on(outputStream* st) const;

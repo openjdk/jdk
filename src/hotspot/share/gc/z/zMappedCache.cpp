@@ -551,11 +551,11 @@ size_t ZMappedCache::remove_discontiguous(size_t size, ZArray<ZVirtualMemory>* o
   return remove_discontiguous_with_strategy<RemovalStrategy::SizeClasses>(size, out);
 }
 
-void ZMappedCache::reset_uncommit_watermark() {
+void ZMappedCache::reset_min_size_watermark() {
   _min_size_watermark = _size;
 }
 
-size_t ZMappedCache::uncommit_watermark() {
+size_t ZMappedCache::min_size_watermark() {
   return _min_size_watermark;
 }
 
