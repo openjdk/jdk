@@ -99,6 +99,7 @@ public:
 
   void claim_from_cache_or_increase_capacity(ZMemoryAllocation* allocation);
   bool claim_capacity(ZMemoryAllocation* allocation);
+  bool claim_capacity_fast_medium(ZMemoryAllocation* allocation);
 
   void sort_segments_physical(const ZVirtualMemory& vmem);
 
@@ -170,6 +171,7 @@ private:
 
   bool claim_capacity_or_stall(ZPageAllocation* allocation);
   bool claim_capacity(ZPageAllocation* allocation);
+  bool claim_capacity_fast_medium(ZPageAllocation* allocation);
   bool claim_capacity_single_partition(ZSinglePartitionAllocation* single_partition_allocation, uint32_t partition_id);
   void claim_capacity_multi_partition(ZMultiPartitionAllocation* multi_partition_allocation, uint32_t start_partition);
 
