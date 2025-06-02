@@ -211,6 +211,11 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   }
 }
 
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  ShouldNotCallThis();
+  return nullptr;
+}
+
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
 

@@ -99,7 +99,7 @@ void CDSEnumKlass::archive_static_field(int level, KlassSubGraphInfo* subgraph_i
   bool success = HeapShared::archive_reachable_objects_from(level, subgraph_info, oop_field);
   assert(success, "VM should have exited with unarchivable objects for _level > 1");
   int root_index = HeapShared::append_root(oop_field);
-  log_info(cds, heap)("Archived enum obj @%d %s::%s (" INTPTR_FORMAT ")",
+  log_info(aot, heap)("Archived enum obj @%d %s::%s (" INTPTR_FORMAT ")",
                       root_index, ik->external_name(), fd.name()->as_C_string(),
                       p2i((oopDesc*)oop_field));
   SystemDictionaryShared::add_enum_klass_static_field(ik, root_index);
@@ -113,9 +113,9 @@ bool CDSEnumKlass::initialize_enum_klass(InstanceKlass* k, TRAPS) {
   RunTimeClassInfo* info = RunTimeClassInfo::get_for(k);
   assert(info != nullptr, "sanity");
 
-  if (log_is_enabled(Info, cds, heap)) {
+  if (log_is_enabled(Info, aot, heap)) {
     ResourceMark rm;
-    log_info(cds, heap)("Initializing Enum class: %s", k->external_name());
+    log_info(aot, heap)("Initializing Enum class: %s", k->external_name());
   }
 
   oop mirror = k->java_mirror();

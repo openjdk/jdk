@@ -416,13 +416,13 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/aotCache \
  -runtime/cds/appcds/aotClassLinking \
  -runtime/cds/appcds/aotCode \
+ -runtime/cds/appcds/aotFlags \
  -runtime/cds/appcds/applications \
  -runtime/cds/appcds/cacheObject \
  -runtime/cds/appcds/complexURI \
  -runtime/cds/appcds/customLoader \
  -runtime/cds/appcds/dynamicArchive \
  -runtime/cds/appcds/jigsaw/ExactOptionMatch.java \
- -runtime/cds/appcds/jigsaw/modulepath/AddExports.java \
  -runtime/cds/appcds/jigsaw/modulepath/ModulePathAndFMG.java \
  -runtime/cds/appcds/jigsaw/modulepath/OptimizeModuleHandlingTest.java \
  -runtime/cds/appcds/loaderConstraints/DynamicLoaderConstraintsTest.java \
@@ -518,6 +518,7 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/aotCache \
  -runtime/cds/appcds/aotClassLinking \
  -runtime/cds/appcds/aotCode \
+ -runtime/cds/appcds/aotFlags \
  -runtime/cds/appcds/BadBSM.java \
  -runtime/cds/appcds/cacheObject/ArchivedIntegerCacheTest.java \
  -runtime/cds/appcds/cacheObject/ArchivedModuleCompareTest.java \
@@ -543,8 +544,6 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/jigsaw/classpathtests/EmptyClassInBootClassPath.java \
  -runtime/cds/appcds/jigsaw/ExactOptionMatch.java \
  -runtime/cds/appcds/jigsaw/JigsawOptionsCombo.java \
- -runtime/cds/appcds/jigsaw/modulepath/AddExports.java \
- -runtime/cds/appcds/jigsaw/modulepath/AddOpens.java \
  -runtime/cds/appcds/jigsaw/modulepath/AddModules.java \
  -runtime/cds/appcds/jigsaw/modulepath/JvmtiAddPath.java \
  -runtime/cds/appcds/jigsaw/modulepath/MainModuleOnly.java \
