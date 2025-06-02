@@ -64,15 +64,22 @@ public class SecureClassLoader extends ClassLoader {
      * Creates a new {@code SecureClassLoader} using the specified parent
      * class loader for delegation.
      *
-     * @param parent the parent ClassLoader
+     * @apiNote If {@code parent} is specified as {@code null} (for the
+     * bootstrap class loader) then there is no guarantee that all platform
+     * classes are visible.
+     * See {@linkplain ClassLoader##builtinLoaders Run-time Built-in Class Loaders}
+     * for information on the bootstrap class loader and other built-in class loaders.
+     *
+     * @param parent the parent ClassLoader, can be {@code null} for the bootstrap
+     *               class loader
      */
     protected SecureClassLoader(ClassLoader parent) {
         super(parent);
     }
 
     /**
-     * Creates a new {@code SecureClassLoader} using the default parent class
-     * loader for delegation.
+     * Creates a new {@code SecureClassLoader} using the
+     * {@linkplain ClassLoader#getSystemClassLoader() system class loader as the parent}.
      */
     protected SecureClassLoader() {
         super();
@@ -82,8 +89,15 @@ public class SecureClassLoader extends ClassLoader {
      * Creates a new {@code SecureClassLoader} of the specified name and
      * using the specified parent class loader for delegation.
      *
+     * @apiNote If {@code parent} is specified as {@code null} (for the
+     * bootstrap class loader) then there is no guarantee that all platform
+     * classes are visible.
+     * See {@linkplain ClassLoader##builtinLoaders Run-time Built-in Class Loaders}
+     * for information on the bootstrap class loader and other built-in class loaders.
+     *
      * @param name class loader name; or {@code null} if not named
-     * @param parent the parent class loader
+     * @param parent the parent class loader, can be {@code null} for the bootstrap
+     *               class loader
      *
      * @throws IllegalArgumentException if the given name is empty.
      *
