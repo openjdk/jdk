@@ -73,7 +73,7 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
 
     @Override
     GeneralPath getGlyphOutline(long pScalerContext, int glyphCode,
-                                float x, float y) {
+                                         float x, float y) {
        throw new InternalError("Not implemented");
     }
 

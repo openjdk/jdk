@@ -49,7 +49,7 @@ public class NativeStrike extends PhysicalStrike {
 
 
     @Override
-    void getGlyphImagePtrs(int[] glyphCodes, long[] images, int  len) {
+    void getGlyphImagePtrs(int[] glyphCodes, long[] images,int  len) {
     }
 
     @Override
