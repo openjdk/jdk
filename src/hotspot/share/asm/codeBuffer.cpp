@@ -143,8 +143,6 @@ CodeBuffer::~CodeBuffer() {
   if (_shared_trampoline_requests != nullptr) {
     delete _shared_trampoline_requests;
   }
-
-  NOT_PRODUCT(clear_strings());
 }
 
 void CodeBuffer::initialize_oop_recorder(OopRecorder* r) {
@@ -1104,7 +1102,10 @@ AsmRemarks::AsmRemarks() : _remarks(new AsmRemarkCollection()) {
 }
 
 AsmRemarks::~AsmRemarks() {
-  assert(_remarks == nullptr, "Must 'clear()' before deleting!");
+  if (_remarks != nullptr) {
+    clear();
+  }
+  assert(_remarks == nullptr, "must be");
 }
 
 const char* AsmRemarks::insert(uint offset, const char* remstr) {
@@ -1156,7 +1157,10 @@ DbgStrings::DbgStrings() : _strings(new DbgStringCollection()) {
 }
 
 DbgStrings::~DbgStrings() {
-  assert(_strings == nullptr, "Must 'clear()' before deleting!");
+  if (_strings != nullptr) {
+    clear();
+  }
+  assert(_strings == nullptr, "must be");
 }
 
 const char* DbgStrings::insert(const char* dbgstr) {

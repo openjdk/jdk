@@ -821,11 +821,6 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 #ifndef PRODUCT
   AsmRemarks &asm_remarks() { return _asm_remarks; }
   DbgStrings &dbg_strings() { return _dbg_strings; }
-
-  void clear_strings() {
-    _asm_remarks.clear();
-    _dbg_strings.clear();
-  }
 #endif
 
   // Code generation

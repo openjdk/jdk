@@ -303,9 +303,7 @@ CodeBlob* CodeBlob::create(CodeBlob* archived_blob,
                                     archived_oop_maps);
 #ifndef PRODUCT
       blob->use_remarks(archived_asm_remarks);
-      archived_asm_remarks.clear();
       blob->use_strings(archived_dbg_strings);
-      archived_dbg_strings.clear();
 #endif // PRODUCT
 
       assert(blob != nullptr, "sanity check");
