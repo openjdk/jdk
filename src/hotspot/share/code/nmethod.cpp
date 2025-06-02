@@ -2118,7 +2118,11 @@ void nmethod::unlink() {
 }
 
 void nmethod::purge(bool unregister_nmethod) {
-  Events::log_nmethod_flush(Thread::current(), "Flushing %s nmethod " INTPTR_FORMAT,  is_osr_method() ? "osr" : "", p2i(this));
+
+  MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+
+  // completely deallocate this method
+  Events::log_nmethod_flush(Thread::current(), "flushing %s nmethod " INTPTR_FORMAT, is_osr_method() ? "osr" : "", p2i(this));
 
   LogTarget(Debug, codecache) lt;
   if (lt.is_enabled()) {
@@ -2140,8 +2144,6 @@ void nmethod::purge(bool unregister_nmethod) {
                        _compile_id, p2i(this), _comp_level, is_osr_method(), is_cold(), _gc_epoch, CodeCache::cold_gc_count(),
                        codecache_capacity, codecache_free_space, is_jvmci, name);
   }
-
-  MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   // We need to deallocate any ExceptionCache data.
   // Note that we do not need to grab the nmethod lock for this, it
