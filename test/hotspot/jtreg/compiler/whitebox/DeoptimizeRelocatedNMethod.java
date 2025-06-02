@@ -127,6 +127,9 @@ public class DeoptimizeRelocatedNMethod {
             throw new RuntimeException("Did not create new nmethod");
         }
 
+        // Call to verify everything still works
+        function();
+
         // Deoptimized method
         WHITE_BOX.deoptimizeMethod(method);
 
