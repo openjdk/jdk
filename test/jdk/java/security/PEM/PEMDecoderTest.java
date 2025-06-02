@@ -244,6 +244,7 @@ public class PEMDecoderTest {
         throw new AssertionError("Failed");
     }
 
+    // test that X509 CERTIFICATE is converted to CERTIFICATE in PEM
     static void testCertTypeConverter(PEMData.Entry entry) throws CertificateEncodingException {
         String certPem = entry.pem().replace("CERTIFICATE", "X509 CERTIFICATE");
         Asserts.assertEqualsByteArray(entry.der(),
