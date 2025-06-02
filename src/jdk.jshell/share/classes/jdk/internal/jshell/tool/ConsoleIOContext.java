@@ -37,6 +37,7 @@ import java.io.PrintStream;
 import java.io.Writer;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -159,10 +160,15 @@ class ConsoleIOContext extends IOContext {
             boolean allowExecTerminal = !OSUtils.IS_WINDOWS &&
                                         !OSUtils.IS_LINUX &&
                                         !OSUtils.IS_OSX;
-            terminal = TerminalBuilder.builder().exec(allowExecTerminal).inputStreamWrapper(in -> {
-                input.setInputStream(in);
-                return nonBlockingInput;
-            }).nativeSignals(false).build();
+            terminal = TerminalBuilder.builder()
+                                      .exec(allowExecTerminal)
+                                      .inputStreamWrapper(in -> {
+                                          input.setInputStream(in);
+                                          return nonBlockingInput;
+                                      })
+                                      .nativeSignals(false)
+                                      .encoding(System.getProperty("stdin.encoding"))
+                                      .build();
             useComplexDeprecationHighlight = !OSUtils.IS_WINDOWS;
         }
         this.allowIncompleteInputs = allowIncompleteInputs;
@@ -968,6 +974,9 @@ class ConsoleIOContext extends IOContext {
         }
     }
 
+    private static final Charset stdinCharset =
+            Charset.forName(System.getProperty("stdin.encoding"),
+                            Charset.defaultCharset());
     private String pendingLine;
     private int pendingLinePointer;
     private byte[] pendingBytes;
@@ -990,7 +999,7 @@ class ConsoleIOContext extends IOContext {
                     pendingLinePointer--;
                 }
             }
-            pendingBytes = dataToConvert.toString().getBytes();
+            pendingBytes = dataToConvert.toString().getBytes(stdinCharset);
             pendingBytesPointer = 0;
         }
         return pendingBytes[pendingBytesPointer++];

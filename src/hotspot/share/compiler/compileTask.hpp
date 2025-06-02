@@ -29,8 +29,10 @@
 #include "code/nmethod.hpp"
 #include "compiler/compileLog.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "utilities/xmlstream.hpp"
 
+class CompileTrainingData;
 class DirectiveSet;
 
 JVMCI_ONLY(class JVMCICompileState;)
@@ -80,7 +82,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
   }
 
  private:
-  Monitor*             _lock;
   int                  _compile_id;
   Method*              _method;
   jobject              _method_holder;
@@ -109,6 +110,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   const char*          _failure_reason;
   // Specifies if _failure_reason is on the C heap.
   bool                 _failure_reason_on_C_heap;
+  CompileTrainingData* _training_data;
   size_t               _arena_bytes;  // peak size of temporary memory during compilation (e.g. node arenas)
 
  public:
@@ -160,21 +162,19 @@ class CompileTask : public CHeapObj<mtCompiler> {
   }
 #endif
 
-  Monitor*     lock() const                      { return _lock; }
-
   // See how many threads are waiting for this task. Must have lock to read this.
   int waiting_for_completion_count() {
-    assert(_lock->owned_by_self(), "must have lock to use waiting_for_completion_count()");
+    assert(CompileTaskWait_lock->owned_by_self(), "must have lock to use waiting_for_completion_count()");
     return _waiting_count;
   }
   // Indicates that a thread is waiting for this task to complete. Must have lock to use this.
   void inc_waiting_for_completion() {
-    assert(_lock->owned_by_self(), "must have lock to use inc_waiting_for_completion()");
+    assert(CompileTaskWait_lock->owned_by_self(), "must have lock to use inc_waiting_for_completion()");
     _waiting_count++;
   }
   // Indicates that a thread stopped waiting for this task to complete. Must have lock to use this.
   void dec_waiting_for_completion() {
-    assert(_lock->owned_by_self(), "must have lock to use dec_waiting_for_completion()");
+    assert(CompileTaskWait_lock->owned_by_self(), "must have lock to use dec_waiting_for_completion()");
     assert(_waiting_count > 0, "waiting count is not positive");
     _waiting_count--;
   }
@@ -199,6 +199,9 @@ class CompileTask : public CHeapObj<mtCompiler> {
   CompileTask* prev() const                      { return _prev; }
   void         set_prev(CompileTask* prev)       { _prev = prev; }
   bool         is_unloaded() const;
+
+  CompileTrainingData* training_data() const      { return _training_data; }
+  void set_training_data(CompileTrainingData* td) { _training_data = td;   }
 
   // RedefineClasses support
   void         metadata_do(MetadataClosure* f);

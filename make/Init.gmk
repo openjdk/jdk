@@ -37,10 +37,6 @@ include MakeFileStart.gmk
 include $(TOPDIR)/make/InitSupport.gmk
 include LogUtils.gmk
 
-# Force early generation of module-deps.gmk
-GENERATE_MODULE_DEPS_FILE := true
-include Modules.gmk
-
 # Inclusion of this pseudo-target will cause make to execute this file
 # serially, regardless of -j.
 .NOTPARALLEL:
@@ -144,6 +140,14 @@ main: $(INIT_TARGETS)
 	    ( cd $(TOPDIR) && \
 	        $(MAKE) $(MAKE_ARGS) -j 1 -f make/Main.gmk $(USER_MAKE_VARS) \
 	        $(SEQUENTIAL_TARGETS) )
+            # We might have cleaned away essential files, recreate them.
+	    ( cd $(TOPDIR) && \
+	        $(MAKE) $(MAKE_ARGS) -j 1 -f make/GenerateFindTests.gmk \
+	        $(USER_MAKE_VARS) )
+	    ( cd $(TOPDIR) && \
+	        $(MAKE) $(MAKE_ARGS) -j 1 -f make/Main.gmk $(USER_MAKE_VARS) \
+	        UPDATE_MODULE_DEPS=true NO_RECIPES=true \
+	        create-main-targets-include )
           endif
           ifneq ($(PARALLEL_TARGETS), )
 	    $(call PrepareFailureLogs)

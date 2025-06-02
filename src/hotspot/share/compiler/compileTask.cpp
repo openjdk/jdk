@@ -43,8 +43,6 @@ CompileTask::CompileTask(int compile_id,
                          int hot_count,
                          CompileReason compile_reason,
                          bool is_blocking) {
-  _lock = new Monitor(Mutex::safepoint-1, "CompileTask_lock");
-
   Thread* thread = Thread::current();
   _compile_id = compile_id;
   _method = method();
@@ -72,15 +70,13 @@ CompileTask::CompileTask(int compile_id,
   _nm_total_size = 0;
   _failure_reason = nullptr;
   _failure_reason_on_C_heap = false;
+  _training_data = nullptr;
   _arena_bytes = 0;
 
   _next = nullptr;
 }
 
 CompileTask::~CompileTask() {
-  assert(!_lock->is_locked(), "Should not be locked when freed");
-  delete _lock;
-
   if ((_method_holder != nullptr && JNIHandles::is_weak_global_handle(_method_holder))) {
     JNIHandles::destroy_weak_global(_method_holder);
   } else {
