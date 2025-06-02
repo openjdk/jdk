@@ -32,7 +32,7 @@ import java.util.Random;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
 @Warmup(iterations = 1, time = 1, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 1, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 1)
 public abstract class VectorAliasing {
     @Param({/*"512",  "1024", */  "10000"})
@@ -221,6 +221,14 @@ public abstract class VectorAliasing {
         "-XX:-UseAutoVectorizationSpeculativeAliasingChecks"
     })
     public static class VectorAliasingSuperWordWithoutSpeculativeAliasingChecks extends VectorAliasing {}
+
+    @Fork(value = 1, jvmArgs = {
+        "-XX:+UseSuperWord",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:-LoopMultiversioningOptimizeSlowLoop"
+    })
+    public static class VectorAliasingSuperWordWithoutSlowLoopOptimizations extends VectorAliasing {}
+
 
     @Fork(value = 1, jvmArgs = {
         "-XX:+UseSuperWord"

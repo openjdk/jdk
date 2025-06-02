@@ -46,6 +46,7 @@ import compiler.lib.generators.Generator;
  * @run driver compiler.loopopts.superword.TestAliasing nCOH_yAV_nSAC
  * @run driver compiler.loopopts.superword.TestAliasing yCOH_nAV_nSAC
  * @run driver compiler.loopopts.superword.TestAliasing yCOH_yAV_nSAC
+ * @run driver compiler.loopopts.superword.TestAliasing noSlowLoopOptimizations
  */
 
 public class TestAliasing {
@@ -90,6 +91,7 @@ public class TestAliasing {
             case "nCOH_yAV_nSAC" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector", "-XX:-UseAutoVectorizationSpeculativeAliasingChecks"); }
             case "yCOH_nAV_nSAC" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:-AlignVector", "-XX:-UseAutoVectorizationSpeculativeAliasingChecks"); }
             case "yCOH_yAV_nSAC" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:+AlignVector", "-XX:-UseAutoVectorizationSpeculativeAliasingChecks"); }
+            case "noSlowLoopOptimizations" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-LoopMultiversioningOptimizeSlowLoop"); }
             default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
         };
         framework.start();
@@ -258,15 +260,34 @@ public class TestAliasing {
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Without speculative runtime check we cannot know that there is no aliasing.
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
-                  IRNode.STORE_VECTOR, "> 0",
-                  ".*multiversion.*", "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_B,            "> 0",
+                  IRNode.STORE_VECTOR,             "> 0",
+                  ".*pre .* multiversion_fast.*",  "= 1",
+                  ".*main .* multiversion_fast.*", "= 1",
+                  ".*post .* multiversion_fast.*", "= 2", // vectorized and scalar versions
+                  ".*multiversion_slow.*",         "= 2", // main and post (pre-loop only has a single iteration)
+                  ".*multiversion.*",              "= 6"},
         phase = CompilePhase.PRINT_IDEAL,
-        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true", "AlignVector", "false"},
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true",
+                      "LoopMultiversioningOptimizeSlowLoop", "true",
+                      "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // We use speculative runtime checks, it fails and so we do need multiversioning.
     // With AlignVector we cannot prove that both accesses are alignable.
+    @IR(counts = {IRNode.LOAD_VECTOR_B,            "> 0",
+                  IRNode.STORE_VECTOR,             "> 0",
+                  ".*pre .* multiversion_fast.*",  "= 1",
+                  ".*main .* multiversion_fast.*", "= 1",
+                  ".*post .* multiversion_fast.*", "= 2", // vectorized and scalar versions
+                  ".*multiversion_delayed_slow.*", "= 1", // effect from flag -> stays delayed
+                  ".*multiversion.*",              "= 5"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true",
+                      "LoopMultiversioningOptimizeSlowLoop", "false", // slow_loop stays delayed
+                      "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void copy_B_differentIndex_alias(byte[] a, byte[] b) {
         for (int i = 0; i < a.length; i++) {
           b[i] = a[i + INVAR_ZERO];
@@ -334,15 +355,34 @@ public class TestAliasing {
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Without speculative runtime check we cannot know that there is no aliasing.
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
-                  IRNode.STORE_VECTOR, "> 0",
-                  ".*multiversion.*", "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_I,            "> 0",
+                  IRNode.STORE_VECTOR,             "> 0",
+                  ".*pre .* multiversion_fast.*",  "= 1",
+                  ".*main .* multiversion_fast.*", "= 1",
+                  ".*post .* multiversion_fast.*", "= 2", // vectorized and scalar versions
+                  ".*multiversion_slow.*",         "= 2", // main and post (pre-loop only has a single iteration)
+                  ".*multiversion.*",              "= 6"},
         phase = CompilePhase.PRINT_IDEAL,
-        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true", "AlignVector", "false"},
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true",
+                      "LoopMultiversioningOptimizeSlowLoop", "true",
+                      "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // We use speculative runtime checks, it fails and so we do need multiversioning.
     // With AlignVector we cannot prove that both accesses are alignable.
+    @IR(counts = {IRNode.LOAD_VECTOR_I,            "> 0",
+                  IRNode.STORE_VECTOR,             "> 0",
+                  ".*pre .* multiversion_fast.*",  "= 1",
+                  ".*main .* multiversion_fast.*", "= 1",
+                  ".*post .* multiversion_fast.*", "= 2", // vectorized and scalar versions
+                  ".*multiversion_delayed_slow.*", "= 1", // effect from flag -> stays delayed
+                  ".*multiversion.*",              "= 5"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true",
+                      "LoopMultiversioningOptimizeSlowLoop", "false", // slow_loop stays delayed
+                      "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void copy_I_differentIndex_alias(int[] a, int[] b) {
         for (int i = 0; i < a.length; i++) {
           b[i] = a[i + INVAR_ZERO];
