@@ -34,6 +34,7 @@ PackedTableBase::PackedTableBase(uint32_t max_pivot, uint32_t max_payload) {
   _payload_shift = pivot_bits;
   _payload_mask = (1 << payload_bits) - 1;
   guarantee(_element_bytes > 0, "wouldn't work");
+  assert(_element_bytes <= sizeof(uint64_t), "shouldn't happen");
 }
 
 void PackedTableBuilder::fill(Array<u1> *array, Supplier &supplier) const {
@@ -53,6 +54,7 @@ void PackedTableBuilder::fill(Array<u1> *array, Supplier &supplier) const {
       data[offset + i] = static_cast<u1>(0xFF & (value >> (8 * i)));
     }
   }
+
   assert(offset == length, "Did not fill whole array");
   assert(!supplier.next(&pivot, &payload), "Supplier has more elements");
 }
@@ -63,9 +65,10 @@ uint64_t PackedTableLookup::read_value(const u1* data, size_t length, size_t off
   }
   // slow path for accessing end of array
   uint64_t value = 0;
-  for (size_t i = 0; i < sizeof(uint64_t) && offset + i < length; ++i) {
-    value = value | (data[offset + i] << (i * 8));
+  for (size_t i = 0; i < _element_bytes && offset + i < length; ++i) {
+    value = value | (static_cast<uint64_t>(data[offset + i]) << (i * 8));
   }
+  assert((value & ~((uint64_t) _pivot_mask | ((uint64_t) _payload_mask << _payload_shift))) == 0, "read too much");
   return value;
 }
 
