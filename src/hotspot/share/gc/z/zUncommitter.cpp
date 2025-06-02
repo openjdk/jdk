@@ -93,6 +93,19 @@ bool ZUncommitter::should_continue() const {
   return !_stop;
 }
 
+void ZUncommitter::update_statistics(size_t uncommitted, Ticks start, Tickspan* accumulated_time) const {
+  // Update counter
+  ZStatInc(ZCounterUncommit, uncommitted);
+
+  Ticks end = Ticks::now();
+
+  // Send event
+  EventZUncommit::commit(start, end, uncommitted);
+
+  // Track accumulated time
+  *accumulated_time += end - start;
+}
+
 void ZUncommitter::run_thread() {
   // Initialize first cycle timeout
   _next_cycle_timeout = to_millis(ZUncommitDelay);
@@ -124,15 +137,7 @@ void ZUncommitter::run_thread() {
 
       if (_next_uncommit_timeout != 0) {
         // Update statistics
-        ZStatInc(ZCounterUncommit, uncommitted_since_last_timeout);
-
-        Ticks end = Ticks::now();
-
-        // Send event
-        EventZUncommit::commit(start, end, uncommitted_since_last_timeout);
-
-        // Track accumulated time
-        accumulated_time += end - start;
+        update_statistics(uncommitted_since_last_timeout, start, &accumulated_time);
 
         // Wait until next uncommit
         wait(_next_uncommit_timeout);
@@ -146,15 +151,7 @@ void ZUncommitter::run_thread() {
     if (_uncommitted > 0) {
       if (uncommitted_since_last_timeout > 0) {
         // Update statistics
-        ZStatInc(ZCounterUncommit, uncommitted_since_last_timeout);
-
-        Ticks end = Ticks::now();
-
-        // Send event
-        EventZUncommit::commit(start, end, uncommitted_since_last_timeout);
-
-        // Track accumulated time
-        accumulated_time += end - start;
+        update_statistics(uncommitted_since_last_timeout, start, &accumulated_time);
       }
 
       log_info(gc, heap)("Uncommitter (%u) Uncommitted: %zuM(%.0f%%) in %.3fms",

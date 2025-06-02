@@ -26,6 +26,7 @@
 
 #include "gc/z/zLock.hpp"
 #include "gc/z/zThread.hpp"
+#include "utilities/ticks.hpp"
 
 class ZPartition;
 
@@ -61,6 +62,8 @@ private:
   bool uncommit_cycle_is_canceled() const;
 
   size_t uncommit();
+
+  void update_statistics(size_t uncommitted, Ticks start, Tickspan* accumulated_time) const;
 
 protected:
   virtual void run_thread();
