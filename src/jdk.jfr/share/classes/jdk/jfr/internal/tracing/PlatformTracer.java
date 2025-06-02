@@ -46,14 +46,14 @@ import jdk.jfr.tracing.MethodTracer;
  * the jdk.jfr.tracing package fewer internals are exposed to the application.
  */
 public final class PlatformTracer {
-    private static volatile boolean INITIALIZED;
-
     private static final ConcurrentHashMap<Long, TimedMethod> timedMethods = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Long, TimedClass> timedClasses = new ConcurrentHashMap<>();
 
     private static List<Filter> traceFilters = List.of();
     private static List<Filter> timingFilters = List.of();
     private static TimedMethod OBJECT;
+
+    private static boolean initialized;
 
     public static byte[] onMethodTrace(Module module, ClassLoader classLoader, String className,
                                        byte[] oldBytecode, long[] ids, String[] names, String[] signatures,
@@ -254,15 +254,12 @@ public final class PlatformTracer {
         timedClasses.clear();
     }
 
+    // Expected to be called when holding external lock, so no extra
+    // synchronization is required here.
     private static void ensureInitialized() {
-        if (INITIALIZED) {
-            return;
-        }
-        synchronized (PlatformTracer.class) {
-            if (!INITIALIZED) {
-                initialize();
-                INITIALIZED = true;
-            }
+        if (!initialized) {
+            initialize();
+            initialized = true;
         }
     }
 
