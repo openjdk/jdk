@@ -23,6 +23,7 @@
  */
 
 #include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
+#include "jfr/periodic/sampling/jfrThreadSampling.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
@@ -191,8 +192,6 @@ class JfrCPUTimeThreadSampler : public NonJavaThread {
   // process the queues for all threads that are in native state (and requested to be sampled)
   void stackwalk_threads_in_native();
 
-  void stackwalk_thread_in_native(JavaThread* thread);
-
 protected:
   virtual void post_run();
 public:
@@ -325,46 +324,11 @@ void JfrCPUTimeThreadSampler::stackwalk_threads_in_native() {
         tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
         continue; // thread doesn't have a last Java frame or queue is already being processed
       }
-      tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
-      stackwalk_thread_in_native(jt);
+      JfrThreadSampling::process_cpu_time_request(jt, tl, false);
       tl->release_cpu_time_jfr_queue_lock();
     }
   }
 }
-
-static inline bool is_in_continuation(const frame& frame, JavaThread* jt) {
-  return JfrThreadLocal::is_vthread(jt) &&
-         (Continuation::is_frame_in_continuation(jt, frame) || Continuation::is_continuation_enterSpecial(frame));
-}
-
-void JfrCPUTimeThreadSampler::stackwalk_thread_in_native(JavaThread* thread) {
-  JfrThreadLocal* tl = thread->jfr_thread_local();
-  assert(tl != nullptr, "invariant");
-  JfrCPUTimeTraceQueue& queue = tl->cpu_time_jfr_queue();
-  if (queue.is_empty()) {
-    return;
-  }
-  const frame top_frame = thread->last_frame();
-  bool in_continuation = is_in_continuation(top_frame, thread);
-  for (u4 i = 0; i < queue.size(); i++) {
-    JfrCPUTimeSampleRequest& request = queue.at(i);
-    JfrStackTrace stacktrace;
-    const traceid tid = in_continuation ? tl->vthread_id_with_epoch_update(thread) : JfrThreadLocal::jvm_thread_id(thread);
-    if (!stacktrace.record_inner(thread, top_frame, in_continuation, 0)) {
-      log_info(jfr)("Unable to record native stacktrace for thread %s in CPU time sampler", thread->name());
-      JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, tid, request._cpu_time_period);
-    } else {
-      traceid sid = JfrStackTraceRepository::add(stacktrace);
-      JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, sid, tid, request._cpu_time_period, false);
-    }
-  }
-  if (queue.lost_samples() > 0) {
-    const traceid tid = in_continuation ? tl->vthread_id_with_epoch_update(thread) : JfrThreadLocal::jvm_thread_id(thread);
-    const JfrTicks now = JfrTicks::now();
-    JfrCPUTimeThreadSampling::send_lost_event(now, tid, queue.get_and_reset_lost_samples());
-  }
-}
-
 
 static volatile size_t count = 0;
 
