@@ -368,7 +368,7 @@ class JfrThreadLocal {
   void unset_cpu_timer();
   timer_t* cpu_timer() const;
 
-  // The CPU time JFR lock has four different states:
+  // The CPU time JFR lock has three different states:
   // - ENQUEUE: lock for enqueuing CPU time requests
   // - DEQUEUE: lock for dequeuing CPU time requests
   // - UNLOCKED: no lock held
