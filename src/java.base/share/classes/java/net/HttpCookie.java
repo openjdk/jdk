@@ -230,7 +230,10 @@ public final class HttpCookie implements Cloneable {
     // ---------------- Public operations --------------
 
     /**
-     * Reports whether this HTTP cookie has expired or not.
+     * Reports whether this HTTP cookie has expired or not. The calculation is based
+     * on either the {@code expires} or {@code max-age} attribute if only one of them
+     * is specified. If both attributes are specified, then the result is based on
+     * {@code max-age}
      *
      * @return  {@code true} to indicate this HTTP cookie has expired;
      *          otherwise, {@code false}
