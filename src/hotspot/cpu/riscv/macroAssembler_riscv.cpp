@@ -3739,16 +3739,16 @@ void MacroAssembler::check_klass_subtype(Register sub_klass,
   bind(L_failure);
 }
 
-void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod) {
-  ld(t0, Address(xthread, JavaThread::polling_word_offset()));
+void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp_reg) {
+  ld(tmp_reg, Address(xthread, JavaThread::polling_word_offset()));
   if (acquire) {
     membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   }
   if (at_return) {
-    bgtu(in_nmethod ? sp : fp, t0, slow_path, /* is_far */ true);
+    bgtu(in_nmethod ? sp : fp, tmp_reg, slow_path, /* is_far */ true);
   } else {
-    test_bit(t0, t0, exact_log2(SafepointMechanism::poll_bit()));
-    bnez(t0, slow_path, true /* is_far */);
+    test_bit(tmp_reg, tmp_reg, exact_log2(SafepointMechanism::poll_bit()));
+    bnez(tmp_reg, slow_path, /* is_far */ true);
   }
 }
 
