@@ -963,8 +963,8 @@ void InterpreterMacroAssembler::increment_mdp_data_at(Register mdp_in,
                                                       Register index,
                                                       int constant) {
   assert(ProfileInterpreter, "must be profiling interpreter");
-  // %%% this does 64bit counters at best it is wasting space
-  // at worst it is a rare bug when counters overflow
+
+  assert_different_registers(t1, t0, mdp_in, index);
 
   Address addr1(mdp_in, constant);
   Address addr2(t1, 0);
