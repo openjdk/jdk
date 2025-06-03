@@ -148,12 +148,20 @@ public class TestScalarConditionalMove {
         return (a > b) ? c : d;
     }
 
+    private int cmoveIGTforI_Unsigned(int a, int b, int c, int d) {
+        return (Integer.compareUnsigned(a, b) > 0) ? c : d;
+    }
+
     private long cmoveIGTforL(int a, int b, long c, long d) {
         return (a > b) ? c : d;
     }
 
     private float cmoveIGTforF(int a, int b, float c, float d) {
         return (a > b) ? c : d;
+    }
+
+    private float cmoveIGTforF_Unsigned(int a, int b, float c, float d) {
+        return (Integer.compareUnsigned(a, b) > 0) ? c : d;
     }
 
     private double cmoveIGTforD(int a, int b, double c, double d) {
@@ -566,12 +574,25 @@ public class TestScalarConditionalMove {
     //   So far, vectorization only works for CMoveF/D, with same data-width comparison (F/I for F, D/L for D).
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_I, ">0"})
     private static void testCMoveIGTforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
         for (int i = 0; i < a.length; i++) {
             int cc = c[i];
             int dd = d[i];
             r2[i] = cc + dd;
             r[i] = (a[i] > b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_U, ">0"})
+    private static void testCMoveIGTforI_Unsigned(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            int cc = c[i];
+            int dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (Integer.compareUnsigned(a[i], b[i]) > 0) ? cc : dd;
         }
     }
 
@@ -592,12 +613,25 @@ public class TestScalarConditionalMove {
                   IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_float)",
                   IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_int, max_float)",
                   IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_I, ">0"})
     private static void testCMoveIGTforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
             float dd = d[i];
             r2[i] = cc + dd;
             r[i] = (a[i] > b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_U, ">0"})
+    private static void testCMoveIGTforF_Unsigned(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (Integer.compareUnsigned(a[i], b[i]) > 0) ? cc : dd;
         }
     }
 
@@ -939,9 +973,9 @@ public class TestScalarConditionalMove {
     }
 
     @Warmup(0)
-    @Run(test = {"testCMoveIGTforI",
+    @Run(test = {"testCMoveIGTforI", "testCMoveIGTforI_Unsigned",
                  "testCMoveIGTforL",
-                 "testCMoveIGTforF",
+                 "testCMoveIGTforF", "testCMoveIGTforF_Unsigned",
                  "testCMoveIGTforD",
                  "testCMoveLGTforI",
                  "testCMoveLGTforL",
@@ -1001,6 +1035,11 @@ public class TestScalarConditionalMove {
             Asserts.assertEquals(rI[i], cmoveIGTforI(aI[i], bI[i], cI[i], dI[i]));
         }
 
+        testCMoveIGTforI_Unsigned(aI, bI, cI, dI, rI, rI);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rI[i], cmoveIGTforI_Unsigned(aI[i], bI[i], cI[i], dI[i]));
+        }
+
         testCMoveIGTforL(aI, bI, cL, dL, rL, rL);
         for (int i = 0; i < SIZE; i++) {
             Asserts.assertEquals(rL[i], cmoveIGTforL(aI[i], bI[i], cL[i], dL[i]));
@@ -1009,6 +1048,11 @@ public class TestScalarConditionalMove {
         testCMoveIGTforF(aI, bI, cF, dF, rF, rF);
         for (int i = 0; i < SIZE; i++) {
             Asserts.assertEquals(rF[i], cmoveIGTforF(aI[i], bI[i], cF[i], dF[i]));
+        }
+
+        testCMoveIGTforF_Unsigned(aI, bI, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveIGTforF_Unsigned(aI[i], bI[i], cF[i], dF[i]));
         }
 
         testCMoveIGTforD(aI, bI, cD, dD, rD, rD);

@@ -88,7 +88,7 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_FmaHF:
     return (bt == T_SHORT ? Op_FmaVHF : 0);
   case Op_CMoveI:
-    return (bt == T_INT ? Op_VectorBlend : 0);
+    return (is_integral_type(bt) && bt != T_LONG ? Op_VectorBlend : 0);
   case Op_CMoveL:
     return (bt == T_LONG ? Op_VectorBlend : 0);
   case Op_CMoveF:
