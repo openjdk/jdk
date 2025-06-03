@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,15 +162,6 @@ class HandshakeState {
   bool async_exceptions_blocked() { return _async_exceptions_blocked; }
   void set_async_exceptions_blocked(bool b) { _async_exceptions_blocked = b; }
   void handle_unsafe_access_error(HandshakeSuspender* suspender);
-
-  // Suspend/resume support
- private:
-  // This flag is true when the thread owning this
-  // HandshakeState (the _handshakee) is suspended.
-  volatile bool _suspended;
-
-  bool is_suspended()                       { return Atomic::load(&_suspended); }
-  void set_suspended(bool to, bool register_vthread_SR);
 };
 
 class HandshakeSuspender {
@@ -187,7 +178,7 @@ public:
 
 private:
   // This flag is true when the thread owning this
-  // HandshakeState (the _handshakee) is suspended.
+  // HandshakeSuspender (the _handshakee) is suspended.
   volatile bool _suspended;
   // This flag is true while there is async handshake (trap)
   // on queue. Since we do only need one, we can reuse it if
@@ -195,19 +186,19 @@ private:
   // and we have not yet processed it.
   bool _async_suspend_handshake;
 
-  bool suspend(HandshakeState* state, bool register_vthread_SR);
-  bool resume(HandshakeState* state, bool register_vthread_SR);
+  bool suspend(bool register_vthread_SR);
+  bool resume(bool register_vthread_SR);
 
   // Called from the async handshake (the trap)
   // to stop a thread from continuing execution when suspended.
-  void do_self_suspend(HandshakeState* state);
+  void do_self_suspend();
 
   // Called from the suspend handshake.
-  bool suspend_with_handshake(HandshakeState* state, bool register_vthread_SR);
+  bool suspend_with_handshake(bool register_vthread_SR);
 
-  void set_suspended(HandshakeState* state, bool to, bool register_vthread_SR);
+  void set_suspended(bool to, bool register_vthread_SR);
 
-  bool is_suspended(HandshakeState* state) {
+  bool is_suspended() {
     return Atomic::load(&_suspended);
   }
 
