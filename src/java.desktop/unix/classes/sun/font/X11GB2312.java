@@ -31,28 +31,32 @@ import java.nio.charset.*;
 import sun.nio.cs.*;
 import static sun.nio.cs.CharsetMapping.*;
 
-public class X11GB2312 extends Charset {
+public final class X11GB2312 extends Charset {
     public X11GB2312 () {
         super("X11GB2312", null);
     }
+    @Override
     public CharsetEncoder newEncoder() {
         return new Encoder(this);
     }
+    @Override
     public CharsetDecoder newDecoder() {
         return new Decoder(this);
     }
 
+    @Override
     public boolean contains(Charset cs) {
         return cs instanceof X11GB2312;
     }
 
-    private static class Encoder extends CharsetEncoder {
+    private static final class Encoder extends CharsetEncoder {
         private DoubleByte.Encoder enc = (DoubleByte.Encoder)new EUC_CN().newEncoder();
 
         public Encoder(Charset cs) {
             super(cs, 2.0f, 2.0f);
         }
 
+        @Override
         public boolean canEncode(char c) {
             if (c <= 0x7F) {
                 return false;
@@ -64,6 +68,7 @@ public class X11GB2312 extends Charset {
             return enc.encodeChar(c);
         }
 
+        @Override
         protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
             char[] sa = src.array();
             int sp = src.arrayOffset() + src.position();
@@ -93,12 +98,13 @@ public class X11GB2312 extends Charset {
                 dst.position(dp - dst.arrayOffset());
             }
         }
+        @Override
         public boolean isLegalReplacement(byte[] repl) {
             return true;
         }
     }
 
-    private static class Decoder extends  CharsetDecoder {
+    private static final class Decoder extends  CharsetDecoder {
         private DoubleByte.Decoder dec = (DoubleByte.Decoder)new EUC_CN().newDecoder();
 
         public Decoder(Charset cs) {
@@ -109,6 +115,7 @@ public class X11GB2312 extends Charset {
             return dec.decodeDouble(b1, b2);
         }
 
+        @Override
         protected CoderResult decodeLoop(ByteBuffer src, CharBuffer dst) {
             byte[] sa = src.array();
             int sp = src.arrayOffset() + src.position();
