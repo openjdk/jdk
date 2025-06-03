@@ -149,7 +149,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * @param type The type of which all {@link DataName}s must be supertype of.
          * @return The updated filtered set.
          * @throws UnsupportedOperationException If this {@link FilteredSet} was already filtered with
-         *                                       {@link supertypeOf} or {@link exactOf}.
+         *                                       {@link #supertypeOf} or {@link #exactOf}.
          */
         public FilteredSet supertypeOf(DataName.Type type) {
             if (supertype != null) {
@@ -165,7 +165,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * @param type The type of which all {@link DataName}s must be.
          * @return The updated filtered set.
          * @throws UnsupportedOperationException If this {@link FilteredSet} was already filtered with
-         *                                       {@link subtypeOf}, {@link supertypeOf} or {@link exactOf}.
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public FilteredSet exactOf(DataName.Type type) {
             return subtypeOf(type).supertypeOf(type);
@@ -177,7 +177,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          *
          * @return The sampled {@link DataName}.
          * @throws UnsupportedOperationException If the type was not constrained with either of
-         *                                       {@link subtypeOf}, {@link supertypeOf} or {@link exactOf}.
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          * @throws RendererException If the set was empty.
          */
         public DataName sample() {
@@ -195,7 +195,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          *
          * @return The number of {@link DataName}s in the filtered set.
          * @throws UnsupportedOperationException If the type was not constrained with either of
-         *                                       {@link subtypeOf}, {@link supertypeOf} or {@link exactOf}.
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public int count() {
             return Renderer.getCurrent().countNames(predicate());
@@ -206,7 +206,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          *
          * @return Returns {@code true} iff there is at least one {@link DataName} in the filtered set.
          * @throws UnsupportedOperationException If the type was not constrained with either of
-         *                                       {@link subtypeOf}, {@link supertypeOf} or {@link exactOf}.
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public boolean hasAny() {
             return Renderer.getCurrent().hasAnyNames(predicate());
@@ -217,7 +217,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          *
          * @return A {@link List} of all {@link DataName}s in the filtered set.
          * @throws UnsupportedOperationException If the type was not constrained with either of
-         *                                       {@link subtypeOf}, {@link supertypeOf} or {@link exactOf}.
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public List<DataName> toList() {
             List<Name> list = Renderer.getCurrent().listNames(predicate());

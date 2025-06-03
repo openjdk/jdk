@@ -122,7 +122,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          * @param type The type of which all {@link StructuralName}s must be supertype of.
          * @return The updated filtered set.
          * @throws UnsupportedOperationException If this {@link FilteredSet} was already filtered with
-         *                                       {@link supertypeOf} or {@link exactOf}.
+         *                                       {@link #supertypeOf} or {@link #exactOf}.
          */
         public FilteredSet supertypeOf(StructuralName.Type type) {
             if (supertype != null) {
@@ -138,7 +138,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          * @param type The type of which all {@link StructuralName}s must be.
          * @return The updated filtered set.
          * @throws UnsupportedOperationException If this {@link FilteredSet} was already filtered with
-         *                                       {@link subtypeOf}, {@link supertypeOf} or {@link exactOf}.
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public FilteredSet exactOf(StructuralName.Type type) {
             return subtypeOf(type).supertypeOf(type);
@@ -150,7 +150,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          *
          * @return The sampled {@link StructuralName}.
          * @throws UnsupportedOperationException If the type was not constrained with either of
-         *                                       {@link subtypeOf}, {@link supertypeOf} or {@link exactOf}.
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          * @throws RendererException If the set was empty.
          */
         public StructuralName sample() {
@@ -168,7 +168,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          *
          * @return The number of {@link StructuralName}s in the filtered set.
          * @throws UnsupportedOperationException If the type was not constrained with either of
-         *                                       {@link subtypeOf}, {@link supertypeOf} or {@link exactOf}.
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public int count() {
             return Renderer.getCurrent().countNames(predicate());
@@ -179,7 +179,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          *
          * @return Returns {@code true} iff there is at least one {@link StructuralName} in the filtered set.
          * @throws UnsupportedOperationException If the type was not constrained with either of
-         *                                       {@link subtypeOf}, {@link supertypeOf} or {@link exactOf}.
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public boolean hasAny() {
             return Renderer.getCurrent().hasAnyNames(predicate());
@@ -190,7 +190,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          *
          * @return A {@link List} of all {@link StructuralName}s in the filtered set.
          * @throws UnsupportedOperationException If the type was not constrained with either of
-         *                                       {@link subtypeOf}, {@link supertypeOf} or {@link exactOf}.
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public List<StructuralName> toList() {
             List<Name> list = Renderer.getCurrent().listNames(predicate());
