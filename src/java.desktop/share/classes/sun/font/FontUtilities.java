@@ -369,6 +369,20 @@ public final class FontUtilities {
         }
     }
 
+    /**
+     * Checks whether or not the specified codepoint is whitespace which is
+     * ignorable at the shaping stage of text rendering. These ignorable
+     * whitespace characters should be used prior to text shaping and
+     * rendering to determine the position of the text, but are not themselves
+     * rendered.
+     *
+     * @param ch the codepoint to check
+     * @return whether the specified codepoint is ignorable whitespace
+     */
+    public static boolean isIgnorableWhitespace(int ch) {
+        return ch == 0x0009 || ch == 0x000a || ch == 0x000d;
+    }
+
     public static PlatformLogger getLogger() {
         return logger;
     }
