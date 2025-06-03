@@ -44,12 +44,8 @@ public class PointerComparison {
     Object[] o2;
     int[] res;
     long[] resLong;
-    Object[] resObject;
-    Object ro1;
-    Object ro2;
-    Object[] resClass;
-    Class rc1;
-    Class rc2;
+    float[] resFloat;
+    double[] resDouble;
 
     @Setup
     public void setup() {
@@ -58,12 +54,8 @@ public class PointerComparison {
         o2 = new Object[INVOCATIONS];
         res = new int[INVOCATIONS];
         resLong = new long[INVOCATIONS];
-        resObject = new Object[INVOCATIONS];
-        ro1 = new Object();
-        ro2 = new Object();
-        resClass = new Class[INVOCATIONS];
-        rc1 = Float.class;
-        rc2 = Double.class;
+        resFloat = new float[INVOCATIONS];
+        resDouble = new double[INVOCATIONS];
         for (int i = 0; i < INVOCATIONS; i++) {
             o1[i] = new Object();
         }
@@ -86,6 +78,7 @@ public class PointerComparison {
         }
     }
 
+    @Benchmark
     public void equalObjectResLong() {
         for (int i = 0; i < INVOCATIONS; i++) {
             resLong[i] = (o1[i] == o2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
@@ -96,6 +89,34 @@ public class PointerComparison {
     public void notEqualObjectResLong() {
         for (int i = 0; i < INVOCATIONS; i++) {
             resLong[i] = (o1[i] != o2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
+        }
+    }
+
+    @Benchmark
+    public void equalObjecResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (o1[i] == o2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void notEqualObjecResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (o1[i] != o2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void equalObjecResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (o1[i] == o2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void notEqualObjecResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (o1[i] != o2[i]) ? 0.1 : 0.2;
         }
     }
 }
