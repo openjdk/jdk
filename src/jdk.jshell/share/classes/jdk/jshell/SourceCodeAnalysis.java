@@ -28,6 +28,10 @@ package jdk.jshell;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import javax.lang.model.element.Element;
+import javax.lang.model.util.Elements;
 
 /**
  * Provides analysis utilities for source code input.
@@ -63,6 +67,18 @@ public abstract class SourceCodeAnalysis {
      * @return list of candidate continuations of the given input.
      */
     public abstract List<Suggestion> completionSuggestions(String input, int cursor, int[] anchor);
+
+    /**
+     * Compute possible follow-ups for the given input.
+     * Uses information from the current {@code JShell} state, including
+     * type information, to filter the suggestions.
+     * @param input the user input, so far
+     * @param cursor the current position of the cursors in the given {@code input} text
+     * @param convertor convert the given {@linkplain ElementSuggestion} to a custom completion suggestions.
+     * @return list of candidate continuations of the given input.
+     * @since 26
+     */
+    public abstract <S> List<S> completionSuggestions(String input, int cursor, Function<List<ElementSuggestion>, List<S>> convertor);
 
     /**
      * Compute documentation for the given user's input. Multiple {@code Documentation} objects may
@@ -313,6 +329,53 @@ public abstract class SourceCodeAnalysis {
          * target type; otherwise {@code false}
          */
         boolean matchesType();
+    }
+
+    /**
+     * A description of an {@linkplain Element} that is a possible continuation of
+     * a given snippet.
+     *
+     * @apiNote Instances of this interface and instances of the returned {@linkplain Elements}
+     * should only be used and held during the execution of the {@link #completionSuggestions(java.lang.String, int, java.util.function.Function) }
+     * method. Their use outside of the context of the method is not support and
+     * the effect is undefined.
+     *
+     * @since 26
+     */
+    public sealed interface ElementSuggestion permits SourceCodeAnalysisImpl.ElementSuggestionImpl {
+        /**
+         * {@return a possible continuation {@linkplain Element}, or {@code null}
+         *  if this item does not represent an {@linkplain Element}.}
+         */
+        Element element();
+        /**
+         * {@return a possible continuation keyword, or {@code null}
+         *  if this item does not represent a keyword.}
+         */
+        String keyword();
+        /**
+         * {@return {@code true} if this {@linkplain Element}'s type fits into
+         *  the context.}
+         */
+        boolean matchesTypes();
+        /**
+         * {@return {@code true} if parentheses should not be filled for methods and
+         *  constructor in the current context.}
+         */
+        boolean noParenthesis();
+        /**
+         * {@return the offset in the original snippet at which point this {@linkplain Element}
+         *  should be inserted.}
+         */
+        int anchor();
+        /**
+         * {@return a {@linkplain Supplier} for the javadoc documentation for this Element.}
+         *
+         * @apiNote The instance returned from this method is safe to hold for extended
+         * periods of time, and can be called outside of the context of the
+         * {@link #completionSuggestions(java.lang.String, int, java.util.function.Function) } method.
+         */
+        Supplier<String> documentation();
     }
 
     /**

@@ -175,6 +175,7 @@ class TaskFactory {
         allOptions.add("--should-stop=at=FLOW");
         allOptions.add("-Xlint:unchecked,-strictfp");
         allOptions.add("-proc:none");
+        allOptions.add("-parameters");
         allOptions.addAll(extraArgs);
 
         return runTask(wraps.stream(),
