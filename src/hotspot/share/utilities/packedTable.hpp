@@ -48,7 +48,7 @@ public:
   class Supplier {
   public:
     /* Returns elements with already ordered keys. */
-    virtual bool next(uint32_t *key, uint32_t *value) = 0;
+    virtual bool next(uint32_t* key, uint32_t* value) = 0;
   };
 
   PackedTableBuilder(uint32_t max_key, uint32_t max_value): PackedTableBase(max_key, max_value) {}
@@ -56,7 +56,7 @@ public:
   // The supplier should return elements with already ordered keys.
   // We can't easily sort within the builder because qsort() accepts
   // only pure function as comparator.
-  void fill(u1 *search_table, size_t search_table_length, Supplier &supplier) const;
+  void fill(u1* search_table, size_t search_table_length, Supplier &supplier) const;
 };
 
 class PackedTableLookup: public PackedTableBase {
@@ -79,5 +79,5 @@ public:
   PackedTableLookup(uint32_t max_key, uint32_t max_value): PackedTableBase(max_key, max_value) {}
 
   bool search(Comparator& comparator, const u1* search_table, size_t search_table_length, uint32_t* found_key, uint32_t* found_value) const;
-  DEBUG_ONLY(void validate_order(Comparator &comparator, const u1 *search_table, size_t search_table_length) const);
+  DEBUG_ONLY(void validate_order(Comparator &comparator, const u1* search_table, size_t search_table_length) const);
 };

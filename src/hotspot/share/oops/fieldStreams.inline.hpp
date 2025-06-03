@@ -58,7 +58,7 @@ FieldStreamBase::FieldStreamBase(InstanceKlass* klass) :
   initialize();
 }
 
-inline bool JavaFieldStream::lookup(const Symbol *name, const Symbol *signature) {
+inline bool JavaFieldStream::lookup(const Symbol* name, const Symbol* signature) {
   if (_search_table != nullptr) {
     int index = _reader.search_table_lookup(_search_table, name, signature, _constants(), _limit);
     if (index >= 0) {

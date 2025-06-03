@@ -38,13 +38,13 @@ PackedTableBase::PackedTableBase(uint32_t max_key, uint32_t max_value) {
   assert(_element_bytes <= sizeof(uint64_t), "shouldn't happen");
 }
 
-void PackedTableBuilder::fill(u1 *data, size_t length, Supplier &supplier) const {
+void PackedTableBuilder::fill(u1* data, size_t length, Supplier &supplier) const {
   uint32_t key, value;
   size_t offset = 0;
   for (; offset + sizeof(uint64_t) <= length && supplier.next(&key, &value); offset += _element_bytes) {
     assert((key & ~_key_mask) == 0, "key out of bounds");
     assert((value & ~_value_mask) == 0, "value out of bounds: %x vs. %x (%x)", value, _value_mask, ~_value_mask);
-    *reinterpret_cast<uint64_t *>(data + offset) = static_cast<uint64_t>(key) | (static_cast<uint64_t>(value) << _value_shift);
+    *reinterpret_cast<uint64_t*>(data + offset) = static_cast<uint64_t>(key) | (static_cast<uint64_t>(value) << _value_shift);
   }
   // last bytes
   for (; offset < length && supplier.next(&key, &value); offset += _element_bytes) {
@@ -60,7 +60,7 @@ void PackedTableBuilder::fill(u1 *data, size_t length, Supplier &supplier) const
 
 uint64_t PackedTableLookup::read_element(const u1* data, size_t length, size_t offset) const {
   if (offset + sizeof(uint64_t) <= length) {
-    return *reinterpret_cast<const uint64_t *>(data + offset);
+    return *reinterpret_cast<const uint64_t*>(data + offset);
   }
   // slow path for accessing end of array
   uint64_t element = 0;
@@ -94,7 +94,7 @@ bool PackedTableLookup::search(Comparator& comparator, const u1* data, size_t se
 }
 
 #ifdef ASSERT
-void PackedTableLookup::validate_order(Comparator &comparator, const u1 *search_table, size_t length) const {
+void PackedTableLookup::validate_order(Comparator &comparator, const u1* search_table, size_t length) const {
   for (size_t offset = 0; offset < length; offset += _element_bytes) {
     uint64_t element = read_element(search_table, length, offset);
     uint32_t key = element & _key_mask;

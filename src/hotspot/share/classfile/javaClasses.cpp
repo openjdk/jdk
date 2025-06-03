@@ -967,7 +967,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
       ik->set_fieldinfo_stream(new_fis);
       MetadataFactory::free_array<u1>(k->class_loader_data(), old_stream);
 
-      Array<u1> *old_table = ik->fieldinfo_search_table();
+      Array<u1>* old_table = ik->fieldinfo_search_table();
       Array<u1>* search_table = FieldInfoStream::create_search_table(ik->constants(), new_fis, k->class_loader_data(), CHECK);
       ik->set_fieldinfo_search_table(search_table);
       MetadataFactory::free_array<u1>(k->class_loader_data(), old_table);

@@ -406,7 +406,7 @@ class InstanceKlass: public Klass {
   void set_fieldinfo_stream(Array<u1>* fis) { _fieldinfo_stream = fis; }
 
   Array<u1>* fieldinfo_search_table() const { return _fieldinfo_search_table; }
-  void set_fieldinfo_search_table(Array<u1> *table) { _fieldinfo_search_table = table; }
+  void set_fieldinfo_search_table(Array<u1>* table) { _fieldinfo_search_table = table; }
 
   Array<FieldStatus>* fields_status() const {return _fields_status; }
   void set_fields_status(Array<FieldStatus>* array) { _fields_status = array; }

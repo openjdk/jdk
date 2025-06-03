@@ -129,21 +129,21 @@ int FieldInfoStream::compare_name_and_sig(const Symbol* n1, const Symbol* s1, co
 // We use both name and signature during the comparison; while JLS require unique
 // names for fields, JVMS requires only unique name + signature combination.
 typedef struct {
-  Symbol *name;
-  Symbol *signature;
+  Symbol* name;
+  Symbol* signature;
   int index;
   int position;
 } field_pos_t;
-field_pos_t *positions = nullptr;
+field_pos_t* positions = nullptr;
 
 class FieldInfoSupplier: public PackedTableBuilder::Supplier {
 private:
-  const field_pos_t *_positions;
+  const field_pos_t* _positions;
   size_t _elements;
 public:
-  FieldInfoSupplier(const field_pos_t *positions, size_t elements): _positions(positions), _elements(elements) {}
+  FieldInfoSupplier(const field_pos_t* positions, size_t elements): _positions(positions), _elements(elements) {}
 
-  bool next(uint32_t *key, uint32_t *value) override {
+  bool next(uint32_t* key, uint32_t* value) override {
     if (_elements == 0) {
       return false;
     }
@@ -185,9 +185,9 @@ Array<u1>* FieldInfoStream::create_search_table(ConstantPool* cp, const Array<u1
     positions[i].signature = fi.signature(cp);
     positions[i].index = i;
   }
-  auto compare_pair = [](const void *v1, const void *v2) {
-    const field_pos_t *p1 = reinterpret_cast<const field_pos_t *>(v1);
-    const field_pos_t *p2 = reinterpret_cast<const field_pos_t *>(v2);
+  auto compare_pair = [](const void* v1, const void* v2) {
+    const field_pos_t* p1 = reinterpret_cast<const field_pos_t*>(v1);
+    const field_pos_t* p2 = reinterpret_cast<const field_pos_t*>(v2);
     return compare_name_and_sig(p1->name, p1->signature, p2->name, p2->signature);
   };
   qsort(positions, java_fields, sizeof(field_pos_t), compare_pair);
@@ -226,13 +226,13 @@ void FieldInfoStream::print_from_fieldinfo_stream(Array<u1>* fis, outputStream* 
 
 class FieldInfoComparator: public PackedTableLookup::Comparator {
 private:
-  const FieldInfoReader *_reader;
-  ConstantPool *_cp;
-  const Symbol *_name;
-  const Symbol *_signature;
+  const FieldInfoReader* _reader;
+  ConstantPool* _cp;
+  const Symbol* _name;
+  const Symbol* _signature;
 
 public:
-  FieldInfoComparator(const FieldInfoReader *reader, ConstantPool *cp, const Symbol *name, const Symbol *signature):
+  FieldInfoComparator(const FieldInfoReader* reader, ConstantPool* cp, const Symbol* name, const Symbol* signature):
     _reader(reader), _cp(cp), _name(name), _signature(signature) {}
 
   int compare_to(uint32_t position) override {
@@ -240,8 +240,8 @@ public:
     r2.set_position_and_next_index(position, -1);
     u2 name_index, sig_index;
     r2.read_name_and_signature(&name_index, &sig_index);
-    Symbol *mid_name = _cp->symbol_at(name_index);
-    Symbol *mid_sig = _cp->symbol_at(sig_index);
+    Symbol* mid_name = _cp->symbol_at(name_index);
+    Symbol* mid_sig = _cp->symbol_at(sig_index);
 
     return FieldInfoStream::compare_name_and_sig(_name, _signature, mid_name, mid_sig);
   }
@@ -257,7 +257,7 @@ public:
 };
 
 #ifdef ASSERT
-void FieldInfoStream::validate_search_table(ConstantPool* cp, const Array<u1>* fis, const Array<u1> *search_table) {
+void FieldInfoStream::validate_search_table(ConstantPool* cp, const Array<u1>* fis, const Array<u1>* search_table) {
   if (search_table == nullptr) {
     return;
   }
@@ -294,7 +294,7 @@ void FieldInfoStream::validate_search_table(ConstantPool* cp, const Array<u1>* f
 }
 #endif
 
-int FieldInfoReader::search_table_lookup(const Array<u1> *search_table, const Symbol *name, const Symbol *signature, ConstantPool *cp, int java_fields) {
+int FieldInfoReader::search_table_lookup(const Array<u1>* search_table, const Symbol* name, const Symbol* signature, ConstantPool* cp, int java_fields) {
   assert(java_fields >= 0, "must be");
   if (java_fields == 0) {
     return -1;
@@ -304,7 +304,7 @@ int FieldInfoReader::search_table_lookup(const Array<u1> *search_table, const Sy
   uint32_t position;
   static_assert(sizeof(uint32_t) == sizeof(_next_index), "field size assert");
   if (lookup.search(comp, search_table->data(), static_cast<size_t>(search_table->length()),
-      &position, reinterpret_cast<uint32_t *>(&_next_index))) {
+      &position, reinterpret_cast<uint32_t*>(&_next_index))) {
     _r.set_position(static_cast<int>(position));
     return _next_index;
   } else {

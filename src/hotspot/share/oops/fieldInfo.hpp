@@ -232,14 +232,14 @@ private:
   void skip(int n) { int s = _r.try_skip(n); assert(s == n,""); }
 
 public:
-  void read_field_counts(int *java_fields, int *injected_fields);
+  void read_field_counts(int* java_fields, int* injected_fields);
   int has_next() const { return _r.position() < _r.limit(); }
   int position() const { return _r.position(); }
   int next_index() const { return _next_index; }
-  void read_name_and_signature(u2 *name_index, u2 *signature_index);
+  void read_name_and_signature(u2* name_index, u2* signature_index);
   void read_field_info(FieldInfo& fi);
 
-  int search_table_lookup(const Array<u1> *search_table, const Symbol *name, const Symbol *signature, ConstantPool *cp, int java_fields);
+  int search_table_lookup(const Array<u1>* search_table, const Symbol* name, const Symbol* signature, ConstantPool* cp, int java_fields);
 
   // skip a whole field record, both required and optional bits
   FieldInfoReader&  skip_field_info();
@@ -284,7 +284,7 @@ class FieldInfoStream : AllStatic {
   static GrowableArray<FieldInfo>* create_FieldInfoArray(const Array<u1>* fis, int* java_fields_count, int* injected_fields_count);
   static void print_from_fieldinfo_stream(Array<u1>* fis, outputStream* os, ConstantPool* cp);
 
-  DEBUG_ONLY(static void validate_search_table(ConstantPool* cp, const Array<u1>* fis, const Array<u1> *search_table);)
+  DEBUG_ONLY(static void validate_search_table(ConstantPool* cp, const Array<u1>* fis, const Array<u1>* search_table);)
 };
 
 class FieldStatus {

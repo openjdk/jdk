@@ -145,7 +145,7 @@ class FieldStreamBase : public StackObj {
 // Iterate over only the Java fields
 class JavaFieldStream : public FieldStreamBase {
  private:
-  Array<u1> *_search_table;
+  Array<u1>* _search_table;
  public:
   JavaFieldStream(const InstanceKlass* k): FieldStreamBase(k->fieldinfo_stream(), k->constants(), 0, k->java_fields_count()),
     _search_table(k->fieldinfo_search_table()) {}
@@ -175,7 +175,7 @@ class JavaFieldStream : public FieldStreamBase {
 
   // Performs either a linear search or binary search through the stream
   // looking for a matchin name/signature combo
-  bool lookup(const Symbol *name, const Symbol *signature);
+  bool lookup(const Symbol* name, const Symbol* signature);
 };
 
 

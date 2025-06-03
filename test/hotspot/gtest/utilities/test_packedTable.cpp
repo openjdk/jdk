@@ -26,14 +26,14 @@
 
 class Supplier: public PackedTableBuilder::Supplier {
 private:
-    uint32_t *_keys;
-    uint32_t *_values;
+    uint32_t* _keys;
+    uint32_t* _values;
     size_t _num_keys;
 public:
-    Supplier(uint32_t *keys, uint32_t *values, size_t num_keys):
+    Supplier(uint32_t* keys, uint32_t* values, size_t num_keys):
         _keys(keys), _values(values), _num_keys(num_keys) {}
 
-    bool next(uint32_t *key, uint32_t *value) override {
+    bool next(uint32_t* key, uint32_t* value) override {
         if (_num_keys == 0) {
             return false;
         }
@@ -69,10 +69,10 @@ static void test(uint32_t max_key, uint32_t max_value, unsigned int length) {
     }
     PackedTableBuilder builder(max_key, max_value);
     size_t table_bytes = length * builder.element_bytes();
-    u1 *table = new u1[table_bytes];
+    u1* table = new u1[table_bytes];
 
-    uint32_t *keys = new uint32_t[length];
-    uint32_t *values = max_value != 0 ? new uint32_t[length] : nullptr;
+    uint32_t* keys = new uint32_t[length];
+    uint32_t* values = max_value != 0 ? new uint32_t[length] : nullptr;
     for (unsigned int i = 0; i < length; ++i) {
         keys[i] = i;
         if (values != nullptr) {

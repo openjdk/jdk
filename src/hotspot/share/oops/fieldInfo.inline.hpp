@@ -108,12 +108,12 @@ inline FieldInfoReader::FieldInfoReader(const Array<u1>* fi)
   : _r(fi->data(), fi->length()),
     _next_index(0) { }
 
-inline void FieldInfoReader::read_field_counts(int *java_fields, int *injected_fields) {
+inline void FieldInfoReader::read_field_counts(int* java_fields, int* injected_fields) {
   *java_fields = _r.next_uint();
   *injected_fields = _r.next_uint();
 }
 
-inline void FieldInfoReader::read_name_and_signature(u2 *name_index, u2 *signature_index) {
+inline void FieldInfoReader::read_name_and_signature(u2* name_index, u2* signature_index) {
   *name_index = checked_cast<u2>(_r.next_uint());
   *signature_index = checked_cast<u2>(_r.next_uint());
 }
