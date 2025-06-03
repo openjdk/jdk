@@ -246,6 +246,7 @@ public:
     return FieldInfoStream::compare_name_and_sig(_name, _signature, mid_name, mid_sig);
   }
 
+#ifdef ASSERT
   void reset(uint32_t position) override {
     FieldInfoReader r2(*_reader);
     r2.set_position_and_next_index(position, -1);
@@ -254,6 +255,7 @@ public:
     _name = _cp->symbol_at(name_index);
     _signature = _cp->symbol_at(signature_index);
   }
+#endif // ASSERT
 };
 
 #ifdef ASSERT
@@ -292,7 +294,7 @@ void FieldInfoStream::validate_search_table(ConstantPool* cp, const Array<u1>* f
     assert(field_start == r2.position(), "must find the same position");
   }
 }
-#endif
+#endif // ASSERT
 
 int FieldInfoReader::search_table_lookup(const Array<u1>* search_table, const Symbol* name, const Symbol* signature, ConstantPool* cp, int java_fields) {
   assert(java_fields >= 0, "must be");

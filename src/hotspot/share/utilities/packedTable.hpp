@@ -24,12 +24,11 @@
 
 #include "utilities/globalDefinitions.hpp"
 
-/*
- * Base for space-optimized structure supporting binary search. Each element
- * consists of up to 32-bit key, and up to 32-bit value; these are packed
- * into a bit-record aligned on bytes.
- * The keys are ordered according to a custom comparator.
- */
+
+// Base for space-optimized structure supporting binary search. Each element
+// consists of up to 32-bit key, and up to 32-bit value; these are packed
+// into a bit-record with 1-byte alignment.
+// The keys are ordered according to a custom comparator.
 class PackedTableBase {
 protected:
   unsigned int _element_bytes;
@@ -38,46 +37,71 @@ protected:
   uint32_t _value_mask;
 
 public:
+  // The thresholds are inclusive, and in practice the limits are rounded
+  // to the nearest power-of-two - 1.
   PackedTableBase(uint32_t max_key, uint32_t max_value);
 
+  // Returns number of bytes each element will occupy.
   inline unsigned int element_bytes(void) const { return _element_bytes; }
 };
 
+// Helper class for constructing a packed table in the provided array.
 class PackedTableBuilder: public PackedTableBase {
 public:
   class Supplier {
   public:
-    /* Returns elements with already ordered keys. */
+    // Returns elements with already ordered keys.
+    // This function should return true when the key and value was set,
+    // and false when there's no more elements.
+    // Packed table does NOT support duplicate keys.
     virtual bool next(uint32_t* key, uint32_t* value) = 0;
   };
 
+  // The thresholds are inclusive, and in practice the limits are rounded
+  // to the nearest power-of-two - 1.
   PackedTableBuilder(uint32_t max_key, uint32_t max_value): PackedTableBase(max_key, max_value) {}
 
-  // The supplier should return elements with already ordered keys.
-  // We can't easily sort within the builder because qsort() accepts
-  // only pure function as comparator.
-  void fill(u1* search_table, size_t search_table_length, Supplier &supplier) const;
+  // Constructs a packed table in the provided array, filling it with elements
+  // from the supplier. Note that no comparator is requied by this method -
+  // the supplier must return elements with already ordered keys.
+  // The table_length (in bytes) should match number of elements provided
+  // by the supplier (when Supplier::next() returns false the whole array should
+  // be filled).
+  void fill(u1* table, size_t table_length, Supplier &supplier) const;
 };
 
+// Helper class for lookup in a packed table.
 class PackedTableLookup: public PackedTableBase {
 private:
   uint64_t read_element(const u1* data, size_t length, size_t offset) const;
 
 public:
-  /*
-   * The comparator implementation does not have to store a key (uint32_t);
-   * the idea is that key can point into a different structure that hosts data
-   * suitable for the actual comparison. That's why PackedTableLookup::search(...)
-   * returns the key it found as well as the value.
-   */
+
+  // The comparator implementation does not have to store a key (uint32_t);
+  // the idea is that key can point into a different structure that hosts data
+  // suitable for the actual comparison. That's why PackedTableLookup::search(...)
+  // returns the key it found as well as the value.
   class Comparator {
   public:
+    // Returns negative/0/positive if the target referred to by this comparator
+    // is lower/equal/higher than the target referred to by the key.
     virtual int compare_to(uint32_t key) = 0;
-    virtual void reset(uint32_t key) = 0;
+    // Changes the target this comparator refers to.
+    DEBUG_ONLY(virtual void reset(uint32_t key) = 0);
   };
 
+  // The thresholds are inclusive, and in practice the limits are rounded
+  // to the nearest power-of-two - 1.
   PackedTableLookup(uint32_t max_key, uint32_t max_value): PackedTableBase(max_key, max_value) {}
 
-  bool search(Comparator& comparator, const u1* search_table, size_t search_table_length, uint32_t* found_key, uint32_t* found_value) const;
-  DEBUG_ONLY(void validate_order(Comparator &comparator, const u1* search_table, size_t search_table_length) const);
+  // Performs a binary search in the packed table, looking for an element with key
+  // referring to a target equal according to the comparator.
+  // When the element is found, found_key and found_value are updated from the element
+  // and the function returns true.
+  // When the element is not found, found_key and found_value are not changed and
+  // the function returns false.
+  bool search(Comparator& comparator, const u1* table, size_t table_length, uint32_t* found_key, uint32_t* found_value) const;
+
+  // Asserts that elements in the packed table follow the order defined by the comparator.
+  DEBUG_ONLY(void validate_order(Comparator &comparator, const u1* table, size_t table_length) const);
 };

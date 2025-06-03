@@ -57,7 +57,8 @@ public:
     int compare_to(uint32_t key) override {
         return _current < key ? -1 : (_current > key ? 1 : 0);
     }
-    void reset(uint32_t key) override {
+
+    void reset(uint32_t key) DEBUG_ONLY(override) {
         _current = key;
     }
 };

@@ -38,6 +38,8 @@ PackedTableBase::PackedTableBase(uint32_t max_key, uint32_t max_value) {
   assert(_element_bytes <= sizeof(uint64_t), "shouldn't happen");
 }
 
+// Note: we require the supplier to provide the elements in the final order as we can't easily sort
+// within this method - qsort() accepts only pure function as comparator.
 void PackedTableBuilder::fill(u1* data, size_t length, Supplier &supplier) const {
   uint32_t key, value;
   size_t offset = 0;
@@ -71,13 +73,13 @@ uint64_t PackedTableLookup::read_element(const u1* data, size_t length, size_t o
   return element;
 }
 
-bool PackedTableLookup::search(Comparator& comparator, const u1* data, size_t search_table_length, uint32_t* found_key, uint32_t* found_value) const {
-  unsigned int low = 0, high = checked_cast<unsigned int>(search_table_length / _element_bytes);
+bool PackedTableLookup::search(Comparator& comparator, const u1* data, size_t length, uint32_t* found_key, uint32_t* found_value) const {
+  unsigned int low = 0, high = checked_cast<unsigned int>(length / _element_bytes);
   assert(low < high, "must be");
   while (low < high) {
     unsigned int mid = low + (high - low) / 2;
     assert(mid >= low && mid < high, "integer overflow?");
-    uint64_t element = read_element(data, search_table_length, _element_bytes * mid);
+    uint64_t element = read_element(data, length, _element_bytes * mid);
     uint32_t key = element & _key_mask;
     int cmp = comparator.compare_to(key);
     if (cmp == 0) {
@@ -94,9 +96,9 @@ bool PackedTableLookup::search(Comparator& comparator, const u1* data, size_t se
 }
 
 #ifdef ASSERT
-void PackedTableLookup::validate_order(Comparator &comparator, const u1* search_table, size_t length) const {
+void PackedTableLookup::validate_order(Comparator &comparator, const u1* table, size_t length) const {
   for (size_t offset = 0; offset < length; offset += _element_bytes) {
-    uint64_t element = read_element(search_table, length, offset);
+    uint64_t element = read_element(table, length, offset);
     uint32_t key = element & _key_mask;
 
     if (offset != 0) {
