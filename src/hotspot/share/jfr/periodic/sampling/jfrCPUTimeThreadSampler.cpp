@@ -231,7 +231,7 @@ void JfrCPUTimeThreadSampler::trigger_async_processing_of_cpu_time_jfr_requests(
 }
 
 void JfrCPUTimeThreadSampler::on_javathread_create(JavaThread* thread) {
-  if (thread->is_Compiler_thread()) {
+  if (thread->is_hidden_from_external_view() || thread->is_JfrRecorder_thread()) {
     return;
   }
   JfrThreadLocal* tl = thread->jfr_thread_local();
