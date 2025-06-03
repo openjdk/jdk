@@ -324,7 +324,7 @@ class MacroAssembler: public Assembler {
   }
 
   inline void rolw(Register Rd, Register Rn, unsigned imm) {
-    extrw(Rd, Rn, Rn, ((32 - imm) & 31));
+    extrw(Rd, Rn, Rn, (32 - imm));
   }
 
   inline void rol(Register Rd, Register Rn, unsigned imm) {
