@@ -111,9 +111,8 @@ u4 JfrCPUTimeTraceQueue::capacity() const {
 
 void JfrCPUTimeTraceQueue::set_capacity(u4 capacity) {
   _head = 0;
-  JfrCPUTimeSampleRequest* new_data = JfrCHeapObj::new_array<JfrCPUTimeSampleRequest>(capacity);
   JfrCHeapObj::free(_data, _capacity * sizeof(JfrCPUTimeSampleRequest));
-  _data = new_data;
+  _data = JfrCHeapObj::new_array<JfrCPUTimeSampleRequest>(capacity);
   _capacity = capacity;
 }
 
