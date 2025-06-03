@@ -321,11 +321,15 @@ void JfrCPUTimeThreadSampler::stackwalk_threads_in_native() {
     JavaThread* jt = tlh.list()->thread_at(i);
     JfrThreadLocal* tl = jt->jfr_thread_local();
     if (tl->wants_async_processing_of_cpu_time_jfr_requests()) {
-      if (!jt->has_last_Java_frame() || jt->thread_state() != _thread_in_native || !tl->try_acquire_cpu_time_jfr_dequeue_lock()) {
+      if (jt->thread_state() != _thread_in_native || !tl->try_acquire_cpu_time_jfr_dequeue_lock()) {
         tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
         continue; // thread doesn't have a last Java frame or queue is already being processed
       }
-      JfrThreadSampling::process_cpu_time_request(jt, tl, current, false);
+      if (jt->has_last_Java_frame()) {
+        JfrThreadSampling::process_cpu_time_request(jt, tl, current, false);
+      } else {
+        tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
+      }
       tl->release_cpu_time_jfr_queue_lock();
     }
   }
