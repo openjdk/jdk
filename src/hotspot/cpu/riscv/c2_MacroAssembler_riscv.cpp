@@ -289,7 +289,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box,
   Label slow_path;
 
   if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds.
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
     sd(zr, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
   }
 
@@ -2156,6 +2156,36 @@ void C2_MacroAssembler::enc_cmove(int cmpFlag, Register op1, Register op2, Regis
   }
 }
 
+void C2_MacroAssembler::enc_cmove_cmp_fp(int cmpFlag, FloatRegister op1, FloatRegister op2, Register dst, Register src, bool is_single) {
+  int op_select = cmpFlag & (~unsigned_branch_mask);
+
+  switch (op_select) {
+    case BoolTest::eq:
+      cmov_cmp_fp_eq(op1, op2, dst, src, is_single);
+      break;
+    case BoolTest::ne:
+      cmov_cmp_fp_ne(op1, op2, dst, src, is_single);
+      break;
+    case BoolTest::le:
+      cmov_cmp_fp_le(op1, op2, dst, src, is_single);
+      break;
+    case BoolTest::ge:
+      assert(false, "Should go to BoolTest::le case");
+      ShouldNotReachHere();
+      break;
+    case BoolTest::lt:
+      cmov_cmp_fp_lt(op1, op2, dst, src, is_single);
+      break;
+    case BoolTest::gt:
+      assert(false, "Should go to BoolTest::lt case");
+      ShouldNotReachHere();
+      break;
+    default:
+      assert(false, "unsupported compare condition");
+      ShouldNotReachHere();
+  }
+}
+
 // Set dst to NaN if any NaN input.
 void C2_MacroAssembler::minmax_fp(FloatRegister dst, FloatRegister src1, FloatRegister src2,
                                   FLOAT_TYPE ft, bool is_min) {
@@ -3080,7 +3110,9 @@ void C2_MacroAssembler::compare_integral_v(VectorRegister vd, VectorRegister src
   assert(is_integral_type(bt), "unsupported element type");
   assert(vm == Assembler::v0_t ? vd != v0 : true, "should be different registers");
   vsetvli_helper(bt, vector_length);
-  vmclr_m(vd);
+  if (vm == Assembler::v0_t) {
+    vmclr_m(vd);
+  }
   switch (cond) {
     case BoolTest::eq: vmseq_vv(vd, src1, src2, vm); break;
     case BoolTest::ne: vmsne_vv(vd, src1, src2, vm); break;
@@ -3103,7 +3135,9 @@ void C2_MacroAssembler::compare_fp_v(VectorRegister vd, VectorRegister src1, Vec
   assert(is_floating_point_type(bt), "unsupported element type");
   assert(vm == Assembler::v0_t ? vd != v0 : true, "should be different registers");
   vsetvli_helper(bt, vector_length);
-  vmclr_m(vd);
+  if (vm == Assembler::v0_t) {
+    vmclr_m(vd);
+  }
   switch (cond) {
     case BoolTest::eq: vmfeq_vv(vd, src1, src2, vm); break;
     case BoolTest::ne: vmfne_vv(vd, src1, src2, vm); break;

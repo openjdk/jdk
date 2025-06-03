@@ -73,6 +73,9 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   // Setup code generation tools.
   const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
   CodeBuffer buffer(name, 2048, 1024);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
 
   address start = __ pc();

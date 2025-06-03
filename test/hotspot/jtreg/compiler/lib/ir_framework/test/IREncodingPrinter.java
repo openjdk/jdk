@@ -109,6 +109,8 @@ public class IREncodingPrinter {
         "asimd",
         "sve",
         "sve2",
+        "fphp",
+        "asimdhp",
         // RISCV64
         "rvv",
         "zbkb",

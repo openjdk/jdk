@@ -65,14 +65,6 @@ public class JMTest_05 extends AbstractSwingTest {
     int             DOWN = 40;
     int             UP = 38;
 
-    /**
-     * This test cannot run as an applet because it
-     * posts events to the event queue
-     */
-    public boolean canRunInApplet() {
-        return false;
-    }
-
     public JComponent getTestComponent() {
         JPanel panel = new JPanel();
 

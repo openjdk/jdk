@@ -83,11 +83,6 @@ vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemor
 # to make progress when all other threads are currently suspended.
 vmTestbase/nsk/jdi/ThreadReference/isSuspended/issuspended002/TestDescription.java 8338713 generic-all
 
-###
-# Fails on Windows because of additional memory allocation.
-
-gc/g1/TestMixedGCLiveThreshold.java#25percent 8334759 windows-x64
-
 ##########
 ## Tests incompatible with  with virtual test thread factory.
 ## There is no goal to run all test with virtual test thread factory.

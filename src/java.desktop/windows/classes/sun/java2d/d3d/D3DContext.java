@@ -106,7 +106,7 @@ final class D3DContext extends BufferedContext {
         return device;
     }
 
-    static class D3DContextCaps extends ContextCapabilities {
+    static final class D3DContextCaps extends ContextCapabilities {
         /**
          * Indicates the presence of pixel shaders (v2.0 or greater).
          * This cap will only be set if the hardware supports the minimum number

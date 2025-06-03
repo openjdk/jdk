@@ -186,7 +186,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
         }
     }
 
-    static class ToolkitDisposer implements sun.java2d.DisposerRecord {
+    static final class ToolkitDisposer implements sun.java2d.DisposerRecord {
         @Override
         public void dispose() {
             WToolkit.postDispose();

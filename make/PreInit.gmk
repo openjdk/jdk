@@ -161,19 +161,19 @@ ifneq ($(SKIP_SPEC), true)
 	  ( cd $(TOPDIR) && \
 	  $(foreach spec, $(SPECS), \
 	    $(MAKE) $(MAKE_INIT_ARGS) -j 1 -f $(TOPDIR)/make/Init.gmk \
-	        SPEC=$(spec) $(MAKE_INIT_MAIN_TARGET_ARGS) \
-	        main && \
+	        SPEC=$(spec) TOPDIR_ALT=$(TOPDIR) \
+	        $(MAKE_INIT_MAIN_TARGET_ARGS) main && \
 	    $(if $(and $(COMPARE_BUILD), $(PARALLEL_TARGETS)), \
 	      $(MAKE) $(MAKE_INIT_ARGS) -f $(TOPDIR)/make/Init.gmk \
-	          SPEC=$(spec) \
+	          SPEC=$(spec) TOPDIR_ALT=$(TOPDIR) \
 	          COMPARE_BUILD="$(COMPARE_BUILD)" \
 	          pre-compare-build && \
 	      $(MAKE) $(MAKE_INIT_ARGS) -j 1 -f $(TOPDIR)/make/Init.gmk \
-	          SPEC=$(spec) $(MAKE_INIT_MAIN_TARGET_ARGS) \
+	          SPEC=$(spec) TOPDIR_ALT=$(TOPDIR) \
 	          COMPARE_BUILD="$(COMPARE_BUILD):NODRYRUN=true" \
-	          main && \
+	          $(MAKE_INIT_MAIN_TARGET_ARGS) main && \
 	      $(MAKE) $(MAKE_INIT_ARGS) -f $(TOPDIR)/make/Init.gmk \
-	          SPEC=$(spec) \
+	          SPEC=$(spec) TOPDIR_ALT=$(TOPDIR) \
 	          COMPARE_BUILD="$(COMPARE_BUILD):NODRYRUN=true" \
 	          post-compare-build && \
 	    ) \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,11 +158,6 @@ public:
   size_t capacity() const override;
   size_t used() const override;
 
-  // Return "true" if all generations have reached the
-  // maximal committed limit that they can reach, without a garbage
-  // collection.
-  bool is_maximal_no_gc() const override;
-
   void register_nmethod(nmethod* nm) override;
   void unregister_nmethod(nmethod* nm) override;
   void verify_nmethod(nmethod* nm) override;
@@ -214,8 +209,8 @@ public:
 
   void prepare_for_verify() override;
   PSHeapSummary create_ps_heap_summary();
-  void print_on(outputStream* st) const override;
-  void print_on_error(outputStream* st) const override;
+  void print_heap_on(outputStream* st) const override;
+  void print_gc_on(outputStream* st) const override;
   void gc_threads_do(ThreadClosure* tc) const override;
   void print_tracing_info() const override;
 

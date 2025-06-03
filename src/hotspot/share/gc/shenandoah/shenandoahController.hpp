@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLLER_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLLER_HPP
 
-#include "gc/shared/gcCause.hpp"
 #include "gc/shared/concurrentGCThread.hpp"
+#include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 

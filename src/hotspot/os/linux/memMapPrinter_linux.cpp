@@ -28,6 +28,7 @@
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #include <limits.h>
@@ -139,7 +140,7 @@ public:
     st->print_cr("                      huge: mapping uses hugetlb pages");
     st->print_cr("vm info:         VM information (requires NMT)");
     {
-      streamIndentor si(st, 16);
+      StreamIndentor si(st, 16);
       _session.print_nmt_flag_legend();
     }
     st->print_cr("file:            file mapped, if mapping is not anonymous");

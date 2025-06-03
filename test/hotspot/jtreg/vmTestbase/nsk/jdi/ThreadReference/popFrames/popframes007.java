@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,16 +50,16 @@ public class popframes007 {
         "nsk.jdi.ThreadReference.popFrames.popframes007t";
 
     // names of debuggee threads
-    static final String DEBUGGEE_THRDS[] = {
-        "popframes007tMainThr", "popframes007tAuxThr"
-    };
+    static final String DEBUGGEE_MAIN_THREAD_NAME = "popframes007tMainThr";
+    static final String DEBUGGEE_AUX_THREAD_NAME  = "popframes007tAuxThr";
+
     // debuggee local var used to find needed stack frame
     static final String DEBUGGEE_LOCALVAR = "popframes007tFindMe";
     // debuggee field used to indicate that popping has been done
     static final String DEBUGGEE_FIELD = "leaveMethod";
 
     // debuggee source line where it should be stopped
-    static final int DEBUGGEE_STOPATLINE = 83;
+    static final int DEBUGGEE_STOPATLINE = 86;
 
     static final int ATTEMPTS = 5;
     static final int DELAY = 500; // in milliseconds
@@ -106,20 +106,28 @@ public class popframes007 {
             return quitDebuggee();
         }
 
-        ThreadReference thrRef[] = new ThreadReference[2];
-        for (int i=0; i<2; i++)
-            if ((thrRef[i] =
-                    debuggee.threadByName(DEBUGGEE_THRDS[i])) == null) {
-                log.complain("TEST FAILURE: method Debugee.threadByName() returned null for debuggee thread "
-                    + DEBUGGEE_THRDS[i]);
-                tot_res = Consts.TEST_FAILED;
-                return quitDebuggee();
-            }
-
         Field doExit = null;
         try {
             // debuggee main class
             ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
+
+            ThreadReference mainThread =
+                debuggee.threadByFieldName(rType, "mainThread", DEBUGGEE_MAIN_THREAD_NAME);
+            if (mainThread == null) {
+                log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
+                             + DEBUGGEE_MAIN_THREAD_NAME);
+                tot_res = Consts.TEST_FAILED;
+                return quitDebuggee();
+            }
+
+            ThreadReference auxThread =
+                debuggee.threadByFieldName(rType, "auxThr", DEBUGGEE_AUX_THREAD_NAME);
+            if (auxThread == null) {
+                log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
+                             + DEBUGGEE_AUX_THREAD_NAME);
+                tot_res = Consts.TEST_FAILED;
+                return quitDebuggee();
+            }
 
             suspendAtBP(rType, DEBUGGEE_STOPATLINE);
 
@@ -127,23 +135,23 @@ public class popframes007 {
             doExit = rType.fieldByName(DEBUGGEE_FIELD);
 
             // debuggee stack frame to be popped which is not on specified thread's call stack
-            StackFrame stFrame = findFrame(thrRef[1], DEBUGGEE_LOCALVAR);
+            StackFrame stFrame = findFrame(auxThread, DEBUGGEE_LOCALVAR);
 
             log.display("\nTrying to pop stack frame \"" + stFrame
                 + "\"\n\tlocation \"" + stFrame.location()
-                + "\"\n\tgot from thread reference \"" + thrRef[1]
+                + "\"\n\tgot from thread reference \"" + auxThread
                 + "\"\n\tand the frame is not on the following thread's call stack: \""
-                + thrRef[0] + "\" ...");
+                + mainThread + "\" ...");
 
 // Check the tested assersion
             try {
-                thrRef[0].popFrames(stFrame);
+                mainThread.popFrames(stFrame);
                 log.complain("TEST FAILED: expected IllegalArgumentException was not thrown"
                     + "\n\twhen attempted to pop stack frame \"" + stFrame
                     + "\"\n\tlocation \"" + stFrame.location()
-                    + "\"\n\tgot from thread reference \"" + thrRef[1]
+                    + "\"\n\tgot from thread reference \"" + auxThread
                     + "\"\n\tand the frame is not on the following thread's call stack: \""
-                    + thrRef[0] + "\"");
+                    + mainThread + "\"");
                 tot_res = Consts.TEST_FAILED;
             } catch(IllegalArgumentException ee) {
                 log.display("CHECK PASSED: caught expected " + ee);
@@ -167,9 +175,9 @@ public class popframes007 {
                     + ue + "\n\tinstead of IllegalArgumentException"
                     + "\n\twhen attempted to pop stack \"" + stFrame
                     + "\"\n\tlocation \"" + stFrame.location()
-                    + "\"\n\tgot from thread reference \"" + thrRef[1]
+                    + "\"\n\tgot from thread reference \"" + auxThread
                     + "\"\n\tand the frame is not on the following thread's call stack: \""
-                    + thrRef[0] + "\"");
+                    + mainThread + "\"");
                 tot_res = Consts.TEST_FAILED;
             }
         } catch (Exception e) {

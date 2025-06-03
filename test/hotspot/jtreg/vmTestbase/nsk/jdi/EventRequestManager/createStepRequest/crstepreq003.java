@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,8 +77,8 @@ public class crstepreq003 {
 
     //------------------------------------------------------ test specific fields
 
-    static final int lineForBreakInThread    = 137;
-    static final int[] checkedLines = { 138, 138, 178 };
+    static final int lineForBreakInThread    = 141;
+    static final int[] checkedLines = { 142, 142, 182 };
 
     //------------------------------------------------------ mutable common methods
 
@@ -157,14 +157,6 @@ public class crstepreq003 {
     //--------------------------------------------------------- mutable common methods
 
     private void execTest() {
-        ThreadReference mainThread = debuggee.threadByNameOrThrow("main");
-/*
-        BreakpointRequest bpRequest = setBreakpoint( mainThread,
-                                                     debuggeeClass,
-                                                     "methodForCommunication",
-                                                     2,
-                                                     "breakpointForCommunication");
-*/
         BreakpointRequest bpRequest = setBreakpoint( null,
                                                      debuggeeClass,
                                                      "breakInThread",
@@ -255,7 +247,7 @@ public class crstepreq003 {
             exitCode = FAILED;
         }
 
-        ThreadReference thread = debuggee.threadByNameOrThrow(threadName);
+        ThreadReference thread = debuggee.threadByFieldNameOrThrow(debuggeeClass, threadName);
         StepRequest stepRequest = setStepRequest( thread,
                                                   StepRequest.STEP_LINE,
                                                   stepDepth,

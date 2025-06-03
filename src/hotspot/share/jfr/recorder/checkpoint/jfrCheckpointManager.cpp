@@ -504,7 +504,7 @@ void JfrCheckpointManager::begin_epoch_shift() {
 
 void JfrCheckpointManager::end_epoch_shift() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-  debug_only(const u1 current_epoch = JfrTraceIdEpoch::current();)
+  DEBUG_ONLY(const u1 current_epoch = JfrTraceIdEpoch::current();)
   JfrTraceIdEpoch::end_epoch_shift();
   assert(current_epoch != JfrTraceIdEpoch::current(), "invariant");
   JfrStringPool::on_epoch_shift();

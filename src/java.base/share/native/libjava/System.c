@@ -154,6 +154,7 @@ Java_jdk_internal_util_SystemProps_00024Raw_platformProperties(JNIEnv *env, jcla
     PUTPROP(propArray, _sun_jnu_encoding_NDX, sprops->sun_jnu_encoding);
 
     /* encodings for standard streams, may be NULL */
+    PUTPROP(propArray, _stdin_encoding_NDX, sprops->stdin_encoding);
     PUTPROP(propArray, _stdout_encoding_NDX, sprops->stdout_encoding);
     PUTPROP(propArray, _stderr_encoding_NDX, sprops->stderr_encoding);
 

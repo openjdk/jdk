@@ -35,6 +35,7 @@ import jtreg.SkippedException;
  * @bug 8190198
  * @summary Test clhsdb pstack command on a live process
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm ClhsdbPstack false
  */

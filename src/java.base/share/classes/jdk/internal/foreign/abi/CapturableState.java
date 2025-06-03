@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,61 +29,68 @@ import jdk.internal.util.OperatingSystem;
 
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.StructLayout;
-import java.lang.foreign.ValueLayout;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.Map;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 
-public enum CapturableState {
-    GET_LAST_ERROR    ("GetLastError",    JAVA_INT, 1 << 0, OperatingSystem.isWindows()),
-    WSA_GET_LAST_ERROR("WSAGetLastError", JAVA_INT, 1 << 1, OperatingSystem.isWindows()),
-    ERRNO             ("errno",           JAVA_INT, 1 << 2, true);
+/**
+ * Utility class for the call states to capture.
+ */
+public final class CapturableState {
 
-    public static final StructLayout LAYOUT = MemoryLayout.structLayout(
-        supportedStates().map(CapturableState::layout).toArray(MemoryLayout[]::new));
+    public static final StructLayout LAYOUT;
+    // Keep in synch with DowncallLinker::capture_state in downcallLinker.cpp
+    private static final Map<String, Integer> MASKS;
 
-    private final String stateName;
-    private final ValueLayout layout;
-    private final int mask;
-    private final boolean isSupported;
-
-    CapturableState(String stateName, ValueLayout layout, int mask, boolean isSupported) {
-        this.stateName = stateName;
-        this.layout = layout.withName(stateName);
-        this.mask = mask;
-        this.isSupported = isSupported;
+    static {
+        if (OperatingSystem.isWindows()) {
+            LAYOUT = MemoryLayout.structLayout(
+                    JAVA_INT.withName("GetLastError"),
+                    JAVA_INT.withName("WSAGetLastError"),
+                    JAVA_INT.withName("errno"));
+            MASKS = Map.of(
+                    "GetLastError",    1 << 0,
+                    "WSAGetLastError", 1 << 1,
+                    "errno",           1 << 2
+            );
+        } else {
+            LAYOUT = MemoryLayout.structLayout(
+                    JAVA_INT.withName("errno"));
+            MASKS = Map.of(
+                    "errno",           1 << 2
+            );
+        }
     }
 
-    private static Stream<CapturableState> supportedStates() {
-        return Stream.of(values()).filter(CapturableState::isSupported);
+    private CapturableState() {
     }
 
-    public static CapturableState forName(String name) {
-        return Stream.of(values())
-                .filter(stl -> stl.stateName().equals(name))
-                .filter(CapturableState::isSupported)
-                .findAny()
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Unknown name: " + name +", must be one of: "
-                            + supportedStates()
-                                    .map(CapturableState::stateName)
-                                    .collect(Collectors.joining(", "))));
+    /**
+     * Returns the mask for a supported capturable state, or throw an
+     * IllegalArgumentException if no supported state with this name exists.
+     */
+    public static int maskFromName(String name) {
+        var ret = MASKS.get(name);
+        if (ret == null) {
+            throw new IllegalArgumentException(
+                    "Unknown name: " + name + ", must be one of: "
+                            + MASKS.keySet());
+        }
+        return ret;
     }
 
-    public String stateName() {
-        return stateName;
-    }
-
-    public ValueLayout layout() {
-        return layout;
-    }
-
-    public int mask() {
-        return mask;
-    }
-
-    public boolean isSupported() {
-        return isSupported;
+    /**
+     * Returns a collection-like display string for a captured state mask.
+     * Enclosed with brackets.
+     */
+    public static String displayString(int mask) {
+        var displayList = new ArrayList<>(); // unordered
+        for (var e : MASKS.entrySet()) {
+            if ((mask & e.getValue()) != 0) {
+                displayList.add(e.getKey());
+            }
+        }
+        return displayList.toString();
     }
 }
