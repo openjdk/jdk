@@ -435,8 +435,8 @@ KlassTrainingData::KlassTrainingData(InstanceKlass* klass) : TrainingData(klass)
   assert(klass != nullptr, "");
   Handle hm(JavaThread::current(), klass->java_mirror());
   jobject hmj = JNIHandles::make_global(hm);
-  Atomic::release_store(&_holder_mirror, hmj);
-  Atomic::release_store(&_holder, const_cast<InstanceKlass*>(klass));
+  _holder_mirror = hmj;
+  _holder = klass;
   assert(holder() == klass, "");
 }
 
