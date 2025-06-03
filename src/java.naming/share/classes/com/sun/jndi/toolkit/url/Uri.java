@@ -363,10 +363,10 @@ public class Uri {
                         throw newMalformedURLException("invalid authority", auth);
                     }
                     if (q != null) {
-                        throw newMalformedURLException("invalid trailing characters in authority: ?", q);
+                        throw newMalformedURLException("invalid trailing characters in authority '?'", "?" + q);
                     }
                     if (f != null) {
-                        throw newMalformedURLException("invalid trailing characters in authority: #", f);
+                        throw newMalformedURLException("invalid trailing characters in authority: '#'", "#" + f);
                     }
                     String hostport = (host == null ? "" : host)
                             + (port == -1?"":(":" + port));
