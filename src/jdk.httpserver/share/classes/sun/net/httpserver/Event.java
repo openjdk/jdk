@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,35 @@
 
 package sun.net.httpserver;
 
-import com.sun.net.httpserver.*;
-import com.sun.net.httpserver.spi.*;
+import java.util.Objects;
 
-class Event {
+abstract sealed class Event {
 
-    ExchangeImpl exchange;
+    final ExchangeImpl exchange;
 
-    protected Event (ExchangeImpl t) {
+    protected Event(ExchangeImpl t) {
         this.exchange = t;
+    }
+
+    /**
+     * Stopping event for the http server.
+     * The event applies to the whole server and is not tied to any particular
+     * exchange.
+     */
+    static final class StopRequested extends Event {
+        StopRequested() {
+            super(null);
+        }
+    }
+
+    /**
+     * Event indicating that writing is finished for a given exchange.
+     */
+    static final class WriteFinished extends Event {
+        WriteFinished(ExchangeImpl t) {
+            super(Objects.requireNonNull(t));
+            assert !t.writefinished;
+            t.writefinished = true;
+        }
     }
 }
