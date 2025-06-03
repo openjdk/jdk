@@ -94,7 +94,13 @@ class Http3ConnectionPool {
         // If not ALT_SVC, we can use unadvertised connections
         if (discoveryMode != ALT_SVC) {
             var unadvertisedConn = lookupUnadvertised(key, discoveryMode);
-            if (unadvertisedConn != null) return unadvertisedConn;
+            if (unadvertisedConn != null) {
+                if (debug.on()) {
+                    debug.log("Direct HTTP/3 connection found for %s in connection pool %s",
+                            discoveryMode, unadvertisedConn.connection().label());
+                }
+                return unadvertisedConn;
+            }
         }
 
         // Then see if we have a connection which was advertised.
@@ -109,20 +115,27 @@ class Http3ConnectionPool {
                     return advertisedConn;
                 }
                 case ALT_SVC -> {
+                    if (debug.on()) {
+                        debug.log("HTTP/3 connection found for %s in connection pool %s",
+                                discoveryMode, advertisedConn.connection().label());
+                    }
                     return advertisedConn;
                 }
                 case HTTP_3_URI_ONLY -> {
                     if (altService != null && altService.originHasSameAuthority()) {
+                        if (debug.on()) {
+                            debug.log("Same authority HTTP/3 connection found for %s in connection pool %s",
+                                    discoveryMode, advertisedConn.connection().label());
+                        }
                         return advertisedConn;
                     }
                 }
             }
         }
 
-        if (debug.on()) {
-            debug.log("No suitable connection found in the pool for discovery mode %s",
-                    discoveryMode);
-        }
+        // do not log here: this produces confusing logs as this method
+        // can be called several times when trying to establish a
+        // connection, when no connection is found in the pool
         return null;
     }
 

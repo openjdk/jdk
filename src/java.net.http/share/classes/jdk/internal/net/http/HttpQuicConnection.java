@@ -263,7 +263,7 @@ abstract class HttpQuicConnection extends HttpConnection {
         }
 
         assert request.secure();
-        // Question: reread RFC to figure out whether we need this scaffolding
+        // Question: Do we need this scaffolding?
         // I mean - could Http3Connection and HttpQuicConnection be the same
         // object?
         // Answer: Http3Connection models an established connection which is
@@ -280,17 +280,17 @@ abstract class HttpQuicConnection extends HttpConnection {
         // find whether we have an alternate service access point for HTTP/3
         // if we do, create a new QuicConnection and a new Http3Connection over it.
         var uri = request.uri();
+        var config = request.http3Discovery();
+        if (debug.on()) {
+            debug.log("Checking ALT-SVC regardless of H3_DISCOVERY settings");
+        }
         // we only support H3 right now
         var altSvc = client.registry()
                 .lookup(uri, H3::equals)
                 .findFirst().orElse(null);
-        if (debug.on()) debug.log("%s: ALT-SVC: %s", where, altSvc);
-        if (altSvc == null && Log.altsvc()) {
-            Log.logAltSvc("No AltService found for {0}", uri.getRawAuthority());
-        }
         Optional<Duration> directTimeout = Optional.empty();
         final boolean advertisedAltSvc = altSvc != null && altSvc.wasAdvertised();
-        var config = request.http3Discovery();
+        logAltSvcFor(debug, uri, altSvc, where);
         switch (config) {
             case ALT_SVC: {
                 if (!advertisedAltSvc) {
@@ -343,6 +343,9 @@ abstract class HttpQuicConnection extends HttpConnection {
             Log.logAltSvc("{0}: Using AltService for {1}: {2}",
                     config, uri.getRawAuthority(), altSvc);
         }
+        if (debug.on()) {
+            debug.log("%s: creating QuicConnection for: %s", where, uri);
+        }
         final QuicConnection quicConnection = (altSvc != null) ?
                 h3client.quicClient().createConnectionFor(altSvc) :
                 h3client.quicClient().createConnectionFor(addr, new String[] {H3});
@@ -361,6 +364,18 @@ abstract class HttpQuicConnection extends HttpConnection {
             exchange.request().setSystemHeader("alt-used", altSvc.authority());
         }
         return httpQuicConn;
+    }
+
+    private static void logAltSvcFor(Logger debug, URI uri, AltService altSvc, String where) {
+        if (altSvc == null) {
+            if (Log.altsvc()) {
+                Log.logAltSvc("No AltService found for {0}", uri.getRawAuthority());
+            } else if (debug.on()) {
+                debug.log("%s: No ALT-SVC for %s", where,  uri.getRawAuthority());
+            }
+        } else {
+            if (debug.on()) debug.log("%s: ALT-SVC: %s", where, altSvc);
+        }
     }
 
     static void registerUnadvertised(final HttpClientImpl client,

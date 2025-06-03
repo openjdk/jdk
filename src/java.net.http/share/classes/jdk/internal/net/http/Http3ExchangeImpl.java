@@ -410,8 +410,11 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
             Log.dumpHeaders(sb, "    ", requestPseudoHeaders);
             Log.dumpHeaders(sb, "    ", sysh);
             Log.dumpHeaders(sb, "    ", userh);
-            Log.logHeaders(sb.toString());
-            if (!Log.headers()) debug.log(sb);
+            if (Log.headers()) {
+                Log.logHeaders(sb.toString());
+            } else if (debug.on()) {
+                debug.log(sb);
+            }
         }
 
         final Optional<ConnectionSettings> peerSettings = connection.getPeerSettings();
@@ -1253,11 +1256,15 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
                     promiseHeaders);
         }
 
-        if (Log.headers()) {
+        if (Log.headers() || debug.on()) {
             StringBuilder sb = new StringBuilder("PUSH_PROMISE HEADERS (pushId: ")
                     .append(pushId).append("):\n");
             Log.dumpHeaders(sb, "    ", promiseHeaders);
-            Log.logHeaders(sb.toString());
+            if (Log.headers()) {
+                Log.logHeaders(sb.toString());
+            } else if (debug.on()) {
+                debug.log(sb);
+            }
         }
 
         String method = promiseHeaders.firstValue(":method")

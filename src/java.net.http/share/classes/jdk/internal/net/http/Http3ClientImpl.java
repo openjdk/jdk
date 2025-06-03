@@ -229,13 +229,7 @@ public final class Http3ClientImpl implements AutoCloseable {
     }
 
     String connectionKey(HttpRequestImpl request) {
-        var uri = request.uri();
-        var scheme = uri.getScheme();
-        var host = uri.getHost();
-        var port = uri.getPort();
-        assert scheme.toLowerCase(Locale.ROOT).equals("https");
-        if (port < 0) port = 443; // https
-        return String.format("%s:%s:%d", scheme, host, port);
+        return connections.connectionKey(request);
     }
 
     Http3Connection findPooledConnectionFor(HttpRequestImpl request,
@@ -729,8 +723,18 @@ public final class Http3ClientImpl implements AutoCloseable {
      * @return true if there's no h3 endpoint already registered for the given uri.
      */
     public boolean mayAttemptDirectConnection(HttpRequestImpl request) {
-        return request.http3Discovery() != Http3DiscoveryMode.ALT_SVC
-                && client().registry().lookup(request.uri(), H3).findFirst().isEmpty()
-                && !hasNoH3(request.uri().getRawAuthority());
+        var config = request.http3Discovery();
+        return switch (config) {
+            // never attempt direct connection with ALT_SVC
+            case Http3DiscoveryMode.ALT_SVC -> false;
+            // always attempt direct connection with HTTP_3_ONLY, unless
+            // it was attempted before and failed
+            case Http3DiscoveryMode.HTTP_3_URI_ONLY ->
+                    !hasNoH3(request.uri().getRawAuthority());
+            // otherwise, attempt direct connection only if we have no
+            // alt service and it wasn't attempted and failed before
+            default -> client().registry().lookup(request.uri(), H3).findFirst().isEmpty()
+                    && !hasNoH3(request.uri().getRawAuthority());
+        };
     }
 }

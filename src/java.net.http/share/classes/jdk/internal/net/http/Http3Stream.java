@@ -678,10 +678,15 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
              return;
          }
 
-         if (Log.headers()) {
-             StringBuilder sb = new StringBuilder("RESPONSE HEADERS:\n");
+         if (Log.headers() || debug.on()) {
+             StringBuilder sb = new StringBuilder("H3 RESPONSE HEADERS (stream=");
+             sb.append(streamId()).append(")\n");
              Log.dumpHeaders(sb, "    ", responseHeaders);
-             Log.logHeaders(sb.toString());
+             if (Log.headers()) {
+                 Log.logHeaders(sb.toString());
+             } else if (debug.on()) {
+                 debug.log(sb);
+             }
          }
 
          // this will clear the response headers
