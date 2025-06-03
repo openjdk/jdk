@@ -772,24 +772,41 @@ private:
   void evex_prefix(bool vex_r, bool vex_b, bool vex_x, bool evex_v, bool evex_r, bool evex_b,
                        bool eevex_x, int nds_enc, VexSimdPrefix pre, VexOpcode opc, bool no_flags = false);
 
-  void evex_prefix_ndd(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc,
-                       InstructionAttr *attributes, bool no_flags = false);
+  void eevex_prefix_ndd(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc,
+                        InstructionAttr *attributes, bool no_flags = false);
 
-  void evex_prefix_nf(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc,
-                      InstructionAttr *attributes, bool no_flags = false);
+  void eevex_prefix_nf(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc,
+                       InstructionAttr *attributes, bool no_flags = false);
 
   void vex_prefix(Address adr, int nds_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc,
                   InstructionAttr *attributes, bool nds_is_ndd = false, bool no_flags = false);
 
-  int  vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc,
+  int vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc,
                              VexSimdPrefix pre, VexOpcode opc,
                              InstructionAttr *attributes, bool src_is_gpr = false, bool nds_is_ndd = false, bool no_flags = false);
 
-  int  evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                                  InstructionAttr *attributes, bool no_flags = false);
-
-  int  evex_prefix_and_encode_nf(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
+  int eevex_prefix_and_encode_nf(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
                                  InstructionAttr *attributes, bool no_flags = false);
+
+  int emit_eevex_prefix_ndd(int dst_enc, VexSimdPrefix pre, VexOpcode opc, InstructionAttr *attributes, bool no_flags = false);
+
+  int emit_eevex_prefix_or_demote_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
+                                      InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false);
+
+  int emit_eevex_prefix_or_demote_ndd(int dst_enc, int nds_enc, VexSimdPrefix pre, VexOpcode opc,
+                                      InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false);
+
+  void emit_eevex_prefix_or_demote_arith_ndd(Register dst, Register nds, int32_t imm32, VexSimdPrefix pre, VexOpcode opc,
+                                             int size, int op1, int op2, bool no_flags);
+
+  void emit_eevex_or_demote(Register dst, Register src1, Address src2, VexSimdPrefix pre, VexOpcode opc,
+                            int size, int opcode_byte, bool no_flags = false, bool is_map1 = false);
+
+  void emit_eevex_or_demote(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
+                            int size, int opcode_byte, bool no_flags, bool is_map1 = false, bool swap = false);
+
+  void emit_eevex_or_demote(int dst_enc, int nds_enc, int src_enc, int8_t imm8, VexSimdPrefix pre, VexOpcode opc,
+                            int size, int opcode_byte, bool no_flags, bool is_map1 = false);
 
   void simd_prefix(XMMRegister xreg, XMMRegister nds, Address adr, VexSimdPrefix pre,
                    VexOpcode opc, InstructionAttr *attributes);
@@ -798,10 +815,10 @@ private:
                              VexOpcode opc, InstructionAttr *attributes, bool src_is_gpr = false);
 
   // Helper functions for groups of instructions
+  bool is_demotable(bool no_flags, int dst_enc, int nds_enc);
   void emit_arith_b(int op1, int op2, Register dst, int imm8);
 
-  void emit_arith(int op1, int op2, Register dst, int32_t imm32);
-  void emit_arith_ndd(int op1, int op2, Register dst, int32_t imm32);
+  void emit_arith(int op1, int op2, Register dst, int32_t imm32, bool optimize_rax_dst = true);
   // Force generation of a 4 byte immediate value even if it fits into 8bit
   void emit_arith_imm32(int op1, int op2, Register dst, int32_t imm32);
   void emit_arith(int op1, int op2, Register dst, Register src);
