@@ -52,7 +52,10 @@ static bool is_excluded(JavaThread* thread) {
 
 static JavaThread* get_java_thread_if_valid() {
   Thread* raw_thread = Thread::current_or_null_safe();
-  assert(raw_thread != nullptr, "invariant");
+  if (raw_thread == nullptr) {
+    // probably while shutting down
+    return nullptr;
+  }
   assert(raw_thread->is_Java_thread(), "invariant");
   JavaThread* jt;
   if ((jt = JavaThread::cast(raw_thread))->is_exiting()) {
