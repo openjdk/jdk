@@ -735,8 +735,7 @@ void HandshakeSuspender::set_suspended(bool is_suspend, bool register_vthread_SR
     assert(_handshakee->is_vthread_mounted(), "sanity check");
     if (is_suspend) {
       JvmtiVTSuspender::register_vthread_suspend(_handshakee->vthread());
-    }
-    else {
+    } else {
       JvmtiVTSuspender::register_vthread_resume(_handshakee->vthread());
     }
   }
