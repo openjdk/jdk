@@ -1735,7 +1735,7 @@ public abstract class Toolkit {
     public void removeAWTEventListener(AWTEventListener listener) {
         AWTEventListener localL = deProxyAWTEventListener(listener);
 
-        if (listener == null) {
+        if (localL == null) {
             return;
         }
 
