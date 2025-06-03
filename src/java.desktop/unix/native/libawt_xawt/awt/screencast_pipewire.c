@@ -1206,7 +1206,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_remoteDesktopKey
     int key = awt_getX11KeySym(jkey);
     AWT_UNLOCK();
 
-    if (key == NoSymbol) {
+    if (key == NoSymbol || (*env)->ExceptionCheck(env)) {
         return RESULT_ERROR;
     }
 
