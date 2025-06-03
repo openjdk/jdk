@@ -573,6 +573,7 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
 extern "C" {
 JNIEXPORT
 void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
+
   // Can't use thread_from_jni_environment as it may also perform a VM exit check that is unsafe to
   // do from this context.
   Thread* raw_thread = Thread::current_or_null_safe();

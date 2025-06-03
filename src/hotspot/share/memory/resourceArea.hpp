@@ -44,7 +44,7 @@
 // A ResourceArea is an Arena that supports safe usage of ResourceMark.
 class ResourceArea: public Arena {
 #ifdef ASSERT
-  int _nesting;                  // current # of nested ResourceMarks
+  int _nesting;                 // current # of nested ResourceMarks
   void verify_has_resource_mark();
 #endif // ASSERT
 
@@ -186,7 +186,6 @@ public:
   }
 };
 
-// ResourceMark to mark that new resource area allocations are allowed
 class ResourceMark: public StackObj {
   const ResourceMarkImpl _impl;
 #ifdef ASSERT

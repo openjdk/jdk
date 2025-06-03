@@ -41,7 +41,6 @@ class JfrStackTrace : public JfrCHeapObj {
   friend class JfrStackTraceRepository;
   friend class LeakProfilerStackTraceWriter;
   friend class JfrThreadSampling;
-  friend class JfrCPUTimeThreadSampler;
   friend class ObjectSampleCheckpoint;
   friend class ObjectSampler;
   friend class StackTraceResolver;

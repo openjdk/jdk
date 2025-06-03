@@ -276,9 +276,9 @@ public final class JVM {
      * Setting rate to 0 turns off the CPU time sampler.
      *
      * @param rate the new rate in events per second
-     * @param autoadapt true if the rate should be adapted automatically
+     * @param autoAdapt true if the rate should be adapted automatically
      */
-    public static native void setCPUThrottle(double rate, boolean autoadapt);
+    public static native void setCPUThrottle(double rate, boolean autoAdapt);
 
     /**
      * Sets the file where data should be written.
