@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8177100
- * @summary Test to check for duplicate methods
+ * @summary Test to check for duplicate methods across different inheritance patterns
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build toolbox.ToolBox javadoc.tester.*
@@ -49,57 +49,154 @@ public class TestDuplicateMethods extends JavadocTester {
 
 
     TestDuplicateMethods() throws IOException {
+        // Diamond class inheritance
         tb.writeJavaFiles(src, """
                 package p;
-                 interface A {
+                interface A {
                     /**
-                    * JavaDoc for method in class A.
-                    */
-                    abstract void testA ( );
-                 }""","""
-                 package p;
-                 interface B extends A {
+                     * JavaDoc for method in interface A.
+                     */
+                    abstract void testA( );
+                }""", """
+                package p;
+                interface B extends A {
                     /**
-                    * JavaDoc for method in class B.
-                    */
-                    abstract void testB ( );
-                 }""", """
-                 package p;
-                 abstract class C implements A {
+                     * JavaDoc for method in interface B.
+                     */
+                    abstract void testB( );
+                }""", """
+                package p;
+                abstract class C implements A {
                     /**
-                    * Inherited JavaDoc for method in class C.
-                    */
-                    public final void testA ( ) {
-                       // Do nothing.
+                     * Inherited JavaDoc for method in class C.
+                     */
+                    public final void testA( ) {
+                        // Do nothing.
                     }
-                 }""","""
-                 package p;
-                 public final class D extends C implements B {
+                }""","""
+                package p;
+                public final class D extends C implements B {
                     /**
-                    * Inherited JavaDoc
-                    */
-                    public final void testB ( ) {
-                       // Do nothing.
+                     * Inherited JavaDoc.
+                     */
+                    public final void testB() {
+                        // Do nothing.
                     }
-                 }
-                 """);
+                }
+                """);
 
+        // Mirrors the implementation of StringBuilder
+        tb.writeJavaFiles(src,
+                """
+                package sb;
+                public interface I {
+                    /**
+                     * JavaDoc for method in public interface I.
+                     */
+                    void testI();
+                }
+                """, """
+                package sb;
+                abstract class P implements I {
+                    /**
+                     * Inherited JavaDoc for method in class P.
+                     */
+                    public final void testI() {
+                        // Do nothing.
+                    }
+                }
+                """, """
+                package sb;
+                public class U extends P implements I {
+                    // No overrides
+                }
+                """
+        );
+
+        // Mirrors the implementation of HashMap
+        tb.writeJavaFiles(src,
+                """
+                package hm;
+                public interface J {
+                    /**
+                     * JavaDoc for method in public interface J.
+                     */
+                    void testJ();
+                }
+                """,
+                """
+                package hm;
+                public abstract class PubJ implements J {
+                    /**
+                     * Inherited JavaDoc for method in public abstract class PubJ.
+                     */
+                    public final void testJ() {
+                        // Do nothing.
+                    }
+                }
+                """,
+                """
+                package hm;
+                public class V extends PubJ implements J {
+                    // No override
+                }
+                """
+        );
     }
 
     @Test
-    public void testDuplicateMethodWarning(Path base) {
+    public void testDiamondInheritance(Path base) {
         javadoc("-d", base.resolve("out").toString(),
                 "-sourcepath", src.toString(),
                 "p");
         checkExit(Exit.OK);
-        checkOutput("p/D.html", true, """
-                <div class="block">Inherited JavaDoc for method in class C.</div>""","""
-                <div class="horizontal-scroll">
+        checkOutput("p/D.html", true,
+                """
+                <div class="block">Inherited JavaDoc for method in class C.</div>
+                """, """
                 <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">testA</span>()</div>
-                <div class="block">Inherited JavaDoc for method in class C.</div>""");
+                <div class="block">Inherited JavaDoc for method in class C.</div>
+                """
+        );
+
         checkOutput("p/D.html", false, """
-                <div class="block">JavaDoc for method in class A.</div>""", """
+                <div class="block">JavaDoc for method in Interface A.</div>""", """
                 <div class="member-signature"><span class="return-type">void</span>&nbsp;<span class="element-name">testA</span>()</div>
-                <div class="block">JavaDoc for method in class A.</div>""");
+                <div class="block">JavaDoc for method in Interface A.</div>""");
+
+
+        checkOutput("p/D.html", false,
+                """
+                <div class="block">JavaDoc for method in interface A.</div>
+                """);
+    }
+
+    @Test
+    public void testStringBuilderInheritance(Path base) {
+        javadoc("-d", base.resolve("out").toString(),
+                "-sourcepath", src.toString(),
+                "sb");
+        checkExit(Exit.OK);
+
+        checkOutput("sb/U.html", false,
+                """
+                <div class="inherited-list">
+                <h3 id="methods-inherited-from-class-sb.I">Methods inherited from interface&nbsp;<a href="I.html#method-summary" title="interface in sb">I</a></h3>
+                <code><a href="I.html#testI()" title="testI()">testI</a></code></div>
+                """);
+    }
+
+    @Test
+    public void testHashMapInheritance(Path base) {
+        javadoc("-d", base.resolve("out").toString(),
+                "-sourcepath", src.toString(),
+                "hm");
+        checkExit(Exit.OK);
+
+        checkOutput("hm/V.html", false,
+                """
+                <div class="inherited-list">
+                <h3 id="methods-inherited-from-class-hm.J">Methods inherited from interface&nbsp;<a href="J.html#method-summary" title="interface in hm">J</a></h3>
+                <code><a href="J.html#testJ()" title="testJ()">testJ</a></code></div>""");
     }
 }
