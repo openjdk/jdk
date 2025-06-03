@@ -10617,7 +10617,7 @@ instruct xorI_rReg_im1_ndd(rRegI dst, rRegI src, immI_M1 imm)
 // Xor Register with Immediate
 instruct xorI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
 %{
-  predicate(!UseAPX &&  n->in(2)->bottom_type()->is_int()->get_con() != -1);
+  predicate(!UseAPX && n->in(2)->bottom_type()->is_int()->get_con() != -1);
   match(Set dst (XorI dst src));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
