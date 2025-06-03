@@ -128,6 +128,7 @@ jobs:
           --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
           --with-jtreg=${{ steps.jtreg.outputs.path }}
           --with-gtest=${{ steps.gtest.outputs.path }}
+          --with-msvc-toolset-version=${{ inputs.msvc-toolset-version }}
           --with-jmod-compress=zip-1
           ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
           echo "Dumping config.log:" &&
