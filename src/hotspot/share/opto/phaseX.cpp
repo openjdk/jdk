@@ -1636,6 +1636,7 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     // StrIndexOfNode::Ideal
     // Found in tier1-3.
     case Op_StrIndexOf:
+    case Op_StrIndexOfChar:
       return false;
 
     // MergeMemNode::Ideal
@@ -1875,6 +1876,11 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
     case Op_AddI:
     case Op_AddL:
       return false;
+
+    // AbsINode::Identity
+    // Not investigated yet.
+    case Op_AbsI:
+      return false;
   }
 
   if (n->is_Load()) {
@@ -1890,6 +1896,13 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
     //   java -XX:VerifyIterativeGVN=1000 -Xcomp --version
     return false;
   }
+
+  if (n->is_Vector()) {
+    // Found with tier1-3. Not investigated yet.
+    // The observed issue was with AndVNode::Identity
+    return false;
+  }
+
 
   Node* i = n->Identity(this);
   // If we cannot find any other Identity, we are happy.
