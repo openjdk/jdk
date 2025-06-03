@@ -43,7 +43,6 @@
 //------------------------------ResourceArea-----------------------------------
 // A ResourceArea is an Arena that supports safe usage of ResourceMark.
 class ResourceArea: public Arena {
-
 #ifdef ASSERT
   int _nesting;                  // current # of nested ResourceMarks
   void verify_has_resource_mark();

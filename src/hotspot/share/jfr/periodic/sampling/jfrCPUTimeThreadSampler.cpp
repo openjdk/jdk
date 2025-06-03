@@ -31,9 +31,9 @@
 
 #if defined(LINUX)
 
+#include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
-#include "jfr/utilities/jfrTime.hpp"
 #include "jfrfiles/jfrEventClasses.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/osThread.hpp"
@@ -192,7 +192,7 @@ class JfrCPUTimeThreadSampler : public NonJavaThread {
 
   void sample_thread(JfrSampleRequest& request, void* ucontext, JavaThread* jt, JfrThreadLocal* tl);
 
-  // process the queues for all threads that are in native state (and requested to be sampled)
+  // process the queues for all threads that are in native state (and requested to be processed)
   void stackwalk_threads_in_native();
 
 protected:
@@ -269,7 +269,7 @@ void JfrCPUTimeThreadSampler::start_thread() {
 
 void JfrCPUTimeThreadSampler::enroll() {
   if (Atomic::cmpxchg(&_disenrolled, true, false)) {
-    log_info(jfr)("Enrolling CPU thread sampler");
+    log_trace(jfr)("Enrolling CPU thread sampler");
     _sample.signal();
     init_timers();
     log_trace(jfr)("Enrolled CPU thread sampler");
@@ -278,7 +278,7 @@ void JfrCPUTimeThreadSampler::enroll() {
 
 void JfrCPUTimeThreadSampler::disenroll() {
   if (!Atomic::cmpxchg(&_disenrolled, false, true)) {
-    log_info(jfr)("Disenrolling CPU thread sampler");
+    log_trace(jfr)("Disenrolling CPU thread sampler");
     stop_timer();
     Atomic::store(&_stop_signals, true);
     while (Atomic::load_acquire(&_active_signal_handlers) > 0) {
@@ -319,6 +319,7 @@ void JfrCPUTimeThreadSampler::stackwalk_threads_in_native() {
   ResourceMark rm;
   MutexLocker tlock(Threads_lock);
   ThreadsListHandle tlh;
+  Thread* current = Thread::current();
   for (size_t i = 0; i < tlh.list()->length(); i++) {
     JavaThread* jt = tlh.list()->thread_at(i);
     JfrThreadLocal* tl = jt->jfr_thread_local();
@@ -327,7 +328,7 @@ void JfrCPUTimeThreadSampler::stackwalk_threads_in_native() {
         tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
         continue; // thread doesn't have a last Java frame or queue is already being processed
       }
-      JfrThreadSampling::process_cpu_time_request(jt, tl, false);
+      JfrThreadSampling::process_cpu_time_request(jt, tl, current, false);
       tl->release_cpu_time_jfr_queue_lock();
     }
   }
