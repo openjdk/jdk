@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ import jdk.vm.ci.meta.Assumptions.Assumption;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
+import java.util.List;
+
 /**
  * A {@link CompiledCode} with additional HotSpot-specific information required for installing the
  * code in HotSpot's code cache.
@@ -57,24 +59,24 @@ public class HotSpotCompiledCode implements CompiledCode {
     /**
      * A list of code annotations describing special sites in {@link #targetCode}.
      */
-    protected final Site[] sites;
+    protected final List<Site> sites;
 
     /**
      * A list of {@link Assumption} this code relies on.
      */
-    protected final Assumption[] assumptions;
+    protected final List<Assumption> assumptions;
 
     /**
      * The list of the methods whose bytecodes were used as input to the compilation. If
      * {@code null}, then the compilation did not record method dependencies. Otherwise, the first
      * element of this array is the root method of the compilation.
      */
-    protected final ResolvedJavaMethod[] methods;
+    protected final List<ResolvedJavaMethod> methods;
 
     /**
      * A list of comments that will be included in code dumps.
      */
-    protected final Comment[] comments;
+    protected final List<Comment> comments;
 
     /**
      * The data section containing serialized constants for the emitted machine code.
@@ -89,7 +91,7 @@ public class HotSpotCompiledCode implements CompiledCode {
     /**
      * A list of relocations in the {@link #dataSection}.
      */
-    protected final DataPatch[] dataSectionPatches;
+    protected final List<DataPatch> dataSectionPatches;
 
     /**
      * A flag determining whether this code is immutable and position independent.
@@ -117,7 +119,6 @@ public class HotSpotCompiledCode implements CompiledCode {
         }
     }
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `sites`, `targetCode`, `comments`, `methods`, `dataSection`, `dataSectionPatches` and `assumptions`")
     public HotSpotCompiledCode(String name,
                     byte[] targetCode,
                     int targetCodeSize,
@@ -132,16 +133,16 @@ public class HotSpotCompiledCode implements CompiledCode {
                     int totalFrameSize,
                     StackSlot deoptRescueSlot) {
         this.name = name;
-        this.targetCode = targetCode;
+        this.targetCode = targetCode.clone();
         this.targetCodeSize = targetCodeSize;
-        this.sites = sites;
-        this.assumptions = assumptions;
-        this.methods = methods;
+        this.sites = List.of(sites);
+        this.assumptions = List.of(assumptions);
+        this.methods = List.of(methods);
 
-        this.comments = comments;
-        this.dataSection = dataSection;
+        this.comments = List.of(comments);
+        this.dataSection = dataSection.clone();
         this.dataSectionAlignment = dataSectionAlignment;
-        this.dataSectionPatches = dataSectionPatches;
+        this.dataSectionPatches = List.of(dataSectionPatches);
         this.isImmutablePIC = isImmutablePIC;
         this.totalFrameSize = totalFrameSize;
         this.deoptRescueSlot = deoptRescueSlot;
@@ -164,8 +165,7 @@ public class HotSpotCompiledCode implements CompiledCode {
      */
     private boolean validateFrames() {
         for (Site site : sites) {
-            if (site instanceof Infopoint) {
-                Infopoint info = (Infopoint) site;
+            if (site instanceof Infopoint info) {
                 if (info.debugInfo != null) {
                     BytecodeFrame frame = info.debugInfo.frame();
                     assert frame == null || frame.validateFormat();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,11 +58,10 @@ final class HotSpotMetaspaceConstantImpl implements HotSpotMetaspaceConstant, VM
         if (o == this) {
             return true;
         }
-        if (!(o instanceof HotSpotMetaspaceConstantImpl)) {
+        if (!(o instanceof HotSpotMetaspaceConstantImpl other)) {
             return false;
         }
 
-        HotSpotMetaspaceConstantImpl other = (HotSpotMetaspaceConstantImpl) o;
         return Objects.equals(this.metaspaceObject, other.metaspaceObject) && this.compressed == other.compressed;
     }
 

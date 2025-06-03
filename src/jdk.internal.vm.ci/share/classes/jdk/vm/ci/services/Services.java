@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,16 +264,16 @@ public final class Services {
 
     private static String realArch() {
         Architecture arch = Architecture.current();
-        switch (arch) {
-            case X64: return "x86_64";
-            case X86: return "x86";
-            case AARCH64: return "aarch64";
-            case RISCV64: return "riscv64";
-            case ARM: return "arm";
-            case S390: return "s390";
-            case PPC64: return "ppc64";
-            case OTHER: return "other";
-            default: throw new InternalError("missing case for " + arch);
-        }
+        return switch (arch) {
+            case X64 -> "x86_64";
+            case X86 -> "x86";
+            case AARCH64 -> "aarch64";
+            case RISCV64 -> "riscv64";
+            case ARM -> "arm";
+            case S390 -> "s390";
+            case PPC64 -> "ppc64";
+            case OTHER -> "other";
+            default -> throw new InternalError("missing case for " + arch);
+        };
     }
 }

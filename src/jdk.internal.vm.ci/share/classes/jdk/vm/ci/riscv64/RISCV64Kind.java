@@ -74,45 +74,30 @@ public enum RISCV64Kind implements PlatformKind {
     }
 
     public boolean isInteger() {
-        switch (this) {
-            case BYTE:
-            case WORD:
-            case DWORD:
-            case QWORD:
-                return true;
-            default:
-                return false;
-        }
+        return switch (this) {
+            case BYTE, WORD, DWORD, QWORD -> true;
+            default -> false;
+        };
     }
 
     public boolean isFP() {
-        switch (this) {
-            case SINGLE:
-            case DOUBLE:
-                return true;
-            default:
-                return false;
-        }
+        return switch (this) {
+            case SINGLE, DOUBLE -> true;
+            default -> false;
+        };
     }
 
     @Override
     public char getTypeChar() {
-        switch (this) {
-            case BYTE:
-                return 'b';
-            case WORD:
-                return 'w';
-            case DWORD:
-                return 'd';
-            case QWORD:
-                return 'q';
-            case SINGLE:
-                return 'S';
-            case DOUBLE:
-                return 'D';
-            default:
-                return '-';
-        }
+        return switch (this) {
+            case BYTE -> 'b';
+            case WORD -> 'w';
+            case DWORD -> 'd';
+            case QWORD -> 'q';
+            case SINGLE -> 'S';
+            case DOUBLE -> 'D';
+            default -> '-';
+        };
     }
 
 }

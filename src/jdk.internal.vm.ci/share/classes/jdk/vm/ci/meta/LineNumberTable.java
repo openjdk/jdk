@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,10 @@ public class LineNumberTable {
      *            are sorted in ascending order. This array is now owned by this object and must not
      *            be mutated by the caller.
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `lineNumbers` and `bcis`")
     public LineNumberTable(int[] lineNumbers, int[] bcis) {
         assert bcis.length == lineNumbers.length;
-        this.lineNumbers = lineNumbers;
-        this.bcis = bcis;
+        this.lineNumbers = lineNumbers.clone();
+        this.bcis = bcis.clone();
     }
 
     /**

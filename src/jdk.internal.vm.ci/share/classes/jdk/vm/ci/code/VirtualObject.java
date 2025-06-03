@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@ package jdk.vm.ci.code;
 
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Set;
 
 import jdk.vm.ci.common.JVMCIError;
@@ -40,10 +41,10 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 public final class VirtualObject implements JavaValue {
 
     private final ResolvedJavaType type;
-    private JavaValue[] values;
-    private JavaKind[] slotKinds;
+    private List<JavaValue> values;
+    private List<JavaKind> slotKinds;
     private final int id;
-    private boolean isAutoBox;
+    private final boolean isAutoBox;
 
     /**
      * Creates a new {@link VirtualObject} for the given type, with the given fields. If
@@ -89,8 +90,7 @@ public final class VirtualObject implements JavaValue {
     }
 
     private static StringBuilder appendValue(StringBuilder buf, JavaValue value, Set<VirtualObject> visited) {
-        if (value instanceof VirtualObject) {
-            VirtualObject vo = (VirtualObject) value;
+        if (value instanceof VirtualObject vo) {
             buf.append("vobject:").append(vo.type.toJavaName(false)).append(':').append(vo.id);
             if (!visited.contains(vo)) {
                 visited.add(vo);
@@ -99,17 +99,17 @@ public final class VirtualObject implements JavaValue {
                     buf.append("<uninitialized>");
                 } else {
                     if (vo.type.isArray()) {
-                        for (int i = 0; i < vo.values.length; i++) {
+                        for (int i = 0; i < vo.values.size(); i++) {
                             if (i != 0) {
                                 buf.append(',');
                             }
                             buf.append(i).append('=');
-                            appendValue(buf, vo.values[i], visited);
+                            appendValue(buf, vo.values.get(i), visited);
                         }
                     } else {
                         ResolvedJavaField[] fields = vo.type.getInstanceFields(true);
                         int fieldIndex = 0;
-                        for (int i = 0; i < vo.values.length; i++, fieldIndex++) {
+                        for (int i = 0; i < vo.values.size(); i++, fieldIndex++) {
                             if (i != 0) {
                                 buf.append(',');
                             }
@@ -118,7 +118,7 @@ public final class VirtualObject implements JavaValue {
                             } else {
                                 ResolvedJavaField field = fields[fieldIndex];
                                 buf.append(field.getName());
-                                if (vo.slotKinds[i].getSlotCount() == 2 && field.getType().getJavaKind().getSlotCount() == 1) {
+                                if (vo.slotKinds.get(i).getSlotCount() == 2 && field.getType().getJavaKind().getSlotCount() == 1) {
                                     if (fieldIndex + 1 >= fields.length) {
                                         buf.append("/<missing field>");
                                     } else {
@@ -128,7 +128,7 @@ public final class VirtualObject implements JavaValue {
                                 }
                             }
                             buf.append('=');
-                            appendValue(buf, vo.values[i], visited);
+                            appendValue(buf, vo.values.get(i), visited);
                         }
                         // Extra fields
                         for (; fieldIndex < fields.length; fieldIndex++) {
@@ -156,8 +156,8 @@ public final class VirtualObject implements JavaValue {
         if (!type.isArray()) {
             ResolvedJavaField[] fields = type.getInstanceFields(true);
             int fieldIndex = 0;
-            for (int i = 0; i < values.length; i++, fieldIndex++) {
-                JavaKind slotKind = slotKinds[i];
+            for (int i = 0; i < values.size(); i++, fieldIndex++) {
+                JavaKind slotKind = slotKinds.get(i);
                 if (fieldIndex >= fields.length) {
                     throw new JVMCIError("Not enough fields for the values provided for %s", toString());
                 } else {
@@ -191,14 +191,14 @@ public final class VirtualObject implements JavaValue {
                 throw new JVMCIError("Not enough values provided for fields in %s", this);
             }
         } else if (type.getComponentType().getJavaKind() == JavaKind.Byte) {
-            for (int i = 0; i < values.length;) {
-                JavaKind slotkind = slotKinds[i];
+            for (int i = 0; i < values.size();) {
+                JavaKind slotkind = slotKinds.get(i);
                 if (slotkind != JavaKind.Byte) {
                     if (!slotkind.isPrimitive()) {
                         throw new JVMCIError("Storing a non-primitive in a byte array: %s %s", slotkind, toString());
                     }
                     int byteCount = 1;
-                    while (++i < values.length && slotKinds[i] == JavaKind.Illegal) {
+                    while (++i < values.size() && slotKinds.get(i) == JavaKind.Illegal) {
                         byteCount++;
                     }
                     /*
@@ -235,8 +235,7 @@ public final class VirtualObject implements JavaValue {
      * recreated. This field is intentional exposed as a mutable array that a compiler may modify
      * (e.g. during register allocation).
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "`values` is intentional mutable")//
-    public JavaValue[] getValues() {
+    public List<JavaValue> getValues() {
         return values;
     }
 
@@ -244,7 +243,7 @@ public final class VirtualObject implements JavaValue {
      * Returns the kind of the value at {@code index}.
      */
     public JavaKind getSlotKind(int index) {
-        return slotKinds[index];
+        return slotKinds.get(index);
     }
 
     /**
@@ -272,11 +271,10 @@ public final class VirtualObject implements JavaValue {
      *            length as {@code values}. This array is now owned by this object and must not be
      *            mutated by the caller.
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `slotKinds`")
     public void setValues(JavaValue[] values, JavaKind[] slotKinds) {
         assert values.length == slotKinds.length;
-        this.values = values;
-        this.slotKinds = slotKinds;
+        this.values = List.of(values);
+        this.slotKinds = List.of(slotKinds);
     }
 
     @Override
@@ -289,17 +287,16 @@ public final class VirtualObject implements JavaValue {
         if (o == this) {
             return true;
         }
-        if (o instanceof VirtualObject) {
-            VirtualObject l = (VirtualObject) o;
-            if (!l.type.equals(type) || l.values.length != values.length) {
+        if (o instanceof VirtualObject l) {
+            if (!l.type.equals(type) || l.values.size() != values.size()) {
                 return false;
             }
-            for (int i = 0; i < values.length; i++) {
+            for (int i = 0; i < values.size(); i++) {
                 /*
                  * Virtual objects can form cycles. Calling equals() could therefore lead to
                  * infinite recursion.
                  */
-                if (!same(values[i], l.values[i])) {
+                if (!same(values.get(i), l.values.get(i))) {
                     return false;
                 }
             }

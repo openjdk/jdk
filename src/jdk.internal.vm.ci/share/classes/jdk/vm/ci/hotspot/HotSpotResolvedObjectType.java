@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
+import java.util.List;
+
 /**
  * Implementation of {@link JavaType} for resolved non-primitive HotSpot classes.
  */
@@ -47,9 +49,6 @@ public interface HotSpotResolvedObjectType extends ResolvedJavaType {
 
     @Override
     HotSpotResolvedObjectType getSuperclass();
-
-    @Override
-    HotSpotResolvedObjectType[] getInterfaces();
 
     HotSpotResolvedObjectType getSupertype();
 

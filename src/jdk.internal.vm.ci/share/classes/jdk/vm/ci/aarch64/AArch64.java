@@ -201,25 +201,15 @@ public class AArch64 extends Architecture {
 
     @Override
     public PlatformKind getPlatformKind(JavaKind javaKind) {
-        switch (javaKind) {
-            case Boolean:
-            case Byte:
-                return AArch64Kind.BYTE;
-            case Short:
-            case Char:
-                return AArch64Kind.WORD;
-            case Int:
-                return AArch64Kind.DWORD;
-            case Long:
-            case Object:
-                return AArch64Kind.QWORD;
-            case Float:
-                return AArch64Kind.SINGLE;
-            case Double:
-                return AArch64Kind.DOUBLE;
-            default:
-                return null;
-        }
+        return switch (javaKind) {
+            case Boolean, Byte -> AArch64Kind.BYTE;
+            case Short, Char -> AArch64Kind.WORD;
+            case Int -> AArch64Kind.DWORD;
+            case Long, Object -> AArch64Kind.QWORD;
+            case Float -> AArch64Kind.SINGLE;
+            case Double -> AArch64Kind.DOUBLE;
+            default -> null;
+        };
     }
 
     @Override

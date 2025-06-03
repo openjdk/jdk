@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,7 @@
  */
 package jdk.vm.ci.code;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * A map from registers to frame slots. This can be used to describe where callee saved registers
@@ -37,7 +33,7 @@ public final class RegisterSaveLayout {
     /**
      * Keys.
      */
-    private final Register[] registers;
+    private final List<Register> registers;
 
     /**
      * Slot indexes relative to stack pointer.
@@ -50,11 +46,10 @@ public final class RegisterSaveLayout {
      * @param registers the keys in the map
      * @param slots frame slot index for each register in {@code registers}
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `registers` and `slots`")
     public RegisterSaveLayout(Register[] registers, int[] slots) {
         assert registers.length == slots.length;
-        this.registers = registers;
-        this.slots = slots;
+        this.registers = List.of(registers);
+        this.slots = slots.clone();
         assert registersToSlots(false).size() == registers.length : "non-unique registers";
         assert new HashSet<>(registersToSlots(false).values()).size() == slots.length : "non-unqiue slots";
     }
@@ -63,7 +58,7 @@ public final class RegisterSaveLayout {
      * Gets the number of entries in this map.
      */
     public int size() {
-        return registers.length;
+        return registers.size();
     }
 
     /**
@@ -73,10 +68,9 @@ public final class RegisterSaveLayout {
      * @return frame slot index
      */
     public int registerToSlot(Register register) {
-        for (int i = 0; i < registers.length; i++) {
-            if (register.equals(registers[i])) {
-                return slots[i];
-            }
+        int index = registers.indexOf(register);
+        if (index >= 0 && index < slots.length) {
+            return slots[index];
         }
         throw new IllegalArgumentException(register + " not saved by this layout: " + this);
     }
@@ -91,8 +85,8 @@ public final class RegisterSaveLayout {
         } else {
             result = new HashMap<>();
         }
-        for (int i = 0; i < registers.length; i++) {
-            result.put(registers[i], slots[i]);
+        for (int i = 0; i < registers.size(); i++) {
+            result.put(registers.get(i), slots[i]);
         }
         return result;
     }
@@ -107,8 +101,8 @@ public final class RegisterSaveLayout {
         } else {
             result = new HashMap<>();
         }
-        for (int i = 0; i < registers.length; i++) {
-            result.put(slots[i], registers[i]);
+        for (int i = 0; i < registers.size(); i++) {
+            result.put(slots[i], registers.get(i));
         }
         return result;
     }
@@ -123,11 +117,8 @@ public final class RegisterSaveLayout {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof RegisterSaveLayout) {
-            RegisterSaveLayout that = (RegisterSaveLayout) obj;
-            if (Arrays.equals(registers, that.registers) && Arrays.equals(slots, that.slots)) {
-                return true;
-            }
+        if (obj instanceof RegisterSaveLayout that) {
+            return registers.equals(that.registers) && Arrays.equals(slots, that.slots);
         }
         return false;
     }

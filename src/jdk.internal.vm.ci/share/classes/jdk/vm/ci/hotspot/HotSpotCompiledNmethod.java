@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,20 +33,20 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
  */
 public final class HotSpotCompiledNmethod extends HotSpotCompiledCode {
 
-    protected final HotSpotResolvedJavaMethod method;
-    protected final int entryBCI;
+    final HotSpotResolvedJavaMethod method;
+    final int entryBCI;
 
     /**
      * Compilation identifier.
      */
-    protected final int id;
+    final int id;
 
     /**
      * Address of a native {@code JVMCICompileState} object or 0L if no such object exists.
      */
-    protected final long compileState;
+    final long compileState;
 
-    protected final boolean hasUnsafeAccess;
+    final boolean hasUnsafeAccess;
 
     /**
      * May be set by VM if code installation fails. It will describe in more detail why installation

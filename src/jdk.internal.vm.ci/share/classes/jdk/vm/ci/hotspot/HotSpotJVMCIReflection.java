@@ -24,6 +24,7 @@ package jdk.vm.ci.hotspot;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.util.List;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -38,9 +39,9 @@ abstract class HotSpotJVMCIReflection {
 
     abstract boolean isAssignableFrom(HotSpotResolvedObjectTypeImpl holder, HotSpotResolvedObjectTypeImpl otherType);
 
-    abstract Annotation[] getAnnotations(HotSpotResolvedObjectTypeImpl holder);
+    abstract List<Annotation> getAnnotations(HotSpotResolvedObjectTypeImpl holder);
 
-    abstract Annotation[] getDeclaredAnnotations(HotSpotResolvedObjectTypeImpl holder);
+    abstract List<Annotation> getDeclaredAnnotations(HotSpotResolvedObjectTypeImpl holder);
 
     abstract <T extends Annotation> T getAnnotation(HotSpotResolvedObjectTypeImpl holder, Class<T> annotationClass);
 
@@ -52,19 +53,19 @@ abstract class HotSpotJVMCIReflection {
 
     abstract boolean equals(HotSpotObjectConstantImpl hotSpotResolvedJavaType, HotSpotObjectConstantImpl that);
 
-    abstract ResolvedJavaMethod.Parameter[] getParameters(HotSpotResolvedJavaMethodImpl javaMethod);
+    abstract List<ResolvedJavaMethod.Parameter> getParameters(HotSpotResolvedJavaMethodImpl javaMethod);
 
     abstract Annotation[][] getParameterAnnotations(HotSpotResolvedJavaMethodImpl javaMethod);
 
-    abstract Type[] getGenericParameterTypes(HotSpotResolvedJavaMethodImpl javaMethod);
+    abstract List<Type> getGenericParameterTypes(HotSpotResolvedJavaMethodImpl javaMethod);
 
-    abstract Annotation[] getFieldAnnotations(HotSpotResolvedJavaFieldImpl javaMethod);
+    abstract List<Annotation> getFieldAnnotations(HotSpotResolvedJavaFieldImpl javaMethod);
 
     abstract Annotation[] getMethodAnnotations(HotSpotResolvedJavaMethodImpl javaField);
 
     abstract Annotation[] getMethodDeclaredAnnotations(HotSpotResolvedJavaMethodImpl javaMethod);
 
-    abstract Annotation[] getFieldDeclaredAnnotations(HotSpotResolvedJavaFieldImpl javaMethod);
+    abstract List<Annotation> getFieldDeclaredAnnotations(HotSpotResolvedJavaFieldImpl javaMethod);
 
     abstract <T extends Annotation> T getMethodAnnotation(HotSpotResolvedJavaMethodImpl javaMethod, Class<T> annotationClass);
 

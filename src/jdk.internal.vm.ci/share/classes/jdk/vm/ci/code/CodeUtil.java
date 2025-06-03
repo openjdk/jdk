@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,7 +189,6 @@ public class CodeUtil {
     /**
      * Formats the values in a frame as a tabulated string.
      *
-     * @param frame
      * @return the values in {@code frame} as a tabulated string
      */
     public static String tabulateValues(BytecodeFrame frame) {
@@ -203,17 +202,17 @@ public class CodeUtil {
         cols++;
         if (frame.numLocals != 0) {
             cells.add("locals:");
-            cells.addAll(Arrays.asList(frame.values).subList(0, frame.numLocals));
+            cells.addAll(frame.values.subList(0, frame.numLocals));
             cells.addAll(Collections.nCopies(cols - frame.numLocals - 1, ""));
         }
         if (frame.numStack != 0) {
             cells.add("stack:");
-            cells.addAll(Arrays.asList(frame.values).subList(frame.numLocals, frame.numLocals + frame.numStack));
+            cells.addAll(frame.values.subList(frame.numLocals, frame.numLocals + frame.numStack));
             cells.addAll(Collections.nCopies(cols - frame.numStack - 1, ""));
         }
         if (frame.numLocks != 0) {
             cells.add("locks:");
-            cells.addAll(Arrays.asList(frame.values).subList(frame.numLocals + frame.numStack, frame.values.length));
+            cells.addAll(frame.values.subList(frame.numLocals + frame.numStack, frame.values.size()));
             cells.addAll(Collections.nCopies(cols - frame.numLocks - 1, ""));
         }
         Object[] cellArray = cells.toArray();
@@ -248,14 +247,11 @@ public class CodeUtil {
             }
         }
         StringBuilder sb = new StringBuilder();
-        String nl = NEW_LINE;
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < cols; col++) {
                 int index = col + (row * cols);
                 if (index < cells.length) {
-                    for (int i = 0; i < lpad; i++) {
-                        sb.append(' ');
-                    }
+                    sb.append(" ".repeat(Math.max(0, lpad)));
                     Object cell = cells[index];
                     String s = String.valueOf(cell);
                     int w = s.length();
@@ -264,12 +260,10 @@ public class CodeUtil {
                         sb.append(' ');
                         w++;
                     }
-                    for (int i = 0; i < rpad; i++) {
-                        sb.append(' ');
-                    }
+                    sb.append(" ".repeat(Math.max(0, rpad)));
                 }
             }
-            sb.append(nl);
+            sb.append(NEW_LINE);
         }
         return sb.toString();
     }
@@ -302,7 +296,7 @@ public class CodeUtil {
         assert sb.charAt(sb.length() - 1) == ']';
         sb.deleteCharAt(sb.length() - 1);
         sb.append(", duringCall: ").append(frame.duringCall).append(", rethrow: ").append(frame.rethrowException).append(']');
-        if (frame.values != null && frame.values.length > 0) {
+        if (frame.values != null && !frame.values.isEmpty()) {
             sb.append(NEW_LINE);
             String table = tabulateValues(frame);
             String[] rows = table.split(NEW_LINE);

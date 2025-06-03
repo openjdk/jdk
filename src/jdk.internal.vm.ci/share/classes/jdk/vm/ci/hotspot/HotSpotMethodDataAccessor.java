@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,50 +88,26 @@ abstract class HotSpotMethodDataAccessor {
         return TriState.get((getFlags(data, position) & exceptionsMask) != 0);
     }
 
-    /**
-     * @param data
-     * @param position
-     */
     JavaTypeProfile getTypeProfile(HotSpotMethodData data, int position) {
         return null;
     }
 
-    /**
-     * @param data
-     * @param position
-     */
     JavaMethodProfile getMethodProfile(HotSpotMethodData data, int position) {
         return null;
     }
 
-    /**
-     * @param data
-     * @param position
-     */
     double getBranchTakenProbability(HotSpotMethodData data, int position) {
         return -1;
     }
 
-    /**
-     * @param data
-     * @param position
-     */
     double[] getSwitchProbabilities(HotSpotMethodData data, int position) {
         return null;
     }
 
-    /**
-     * @param data
-     * @param position
-     */
     int getExecutionCount(HotSpotMethodData data, int position) {
         return -1;
     }
 
-    /**
-     * @param data
-     * @param position
-     */
     TriState getNullSeen(HotSpotMethodData data, int position) {
         return TriState.UNKNOWN;
     }
@@ -140,10 +116,6 @@ abstract class HotSpotMethodDataAccessor {
         return data.readUnsignedByte(position, config.dataLayoutFlagsOffset);
     }
 
-    /**
-     * @param data
-     * @param position
-     */
     protected int getDynamicSize(HotSpotMethodData data, int position) {
         return 0;
     }
