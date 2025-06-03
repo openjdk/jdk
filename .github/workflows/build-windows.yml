@@ -63,7 +63,7 @@ env:
 jobs:
   build-windows:
     name: build
-    runs-on: windows-2025
+    runs-on: windows-2022
     defaults:
       run:
         shell: bash
