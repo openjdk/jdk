@@ -159,6 +159,11 @@ void ZUncommitter::run_thread() {
                          accumulated_time.seconds() * MILLIUNITS);
     }
 
+    if (!should_continue()) {
+      // We are terminating
+      return;
+    }
+
     deactivate_uncommit_cycle();
   }
 }
