@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import org.testng.annotations.Test;
 
 /**
  * @test
+ * @bug 8356549
  * @modules jdk.incubator.vector java.base/jdk.internal.vm.vector
  * @run testng PreferredSpeciesTest
  */
@@ -125,5 +126,46 @@ public class PreferredSpeciesTest {
         Assert.assertEquals(largestSpecies.vectorShape(), largestShape);
         Assert.assertEquals(largestSpecies.length(), maxLaneCount);
         Assert.assertEquals(largestSpecies.length(), Math.max(species.length(), maxLaneCount));
+    }
+
+    // Testing VectorShape.largestShapeFor() for 8356549
+    @Test(dataProvider = "classesProvider")
+    void testLargestShapeFor(Class<?> c) {
+        final int S_64_BITS = 64;
+        int elemSize = 0;
+        VectorSpecies<?> maxVectorSpecies;
+        if (c == byte.class) {
+            elemSize = Byte.SIZE;
+            maxVectorSpecies = ByteVector.SPECIES_MAX;
+        } else if (c == short.class) {
+            elemSize = Short.SIZE;
+            maxVectorSpecies = ShortVector.SPECIES_MAX;
+        } else if (c == int.class) {
+            elemSize = Integer.SIZE;
+            maxVectorSpecies = IntVector.SPECIES_MAX;
+        } else if (c == long.class) {
+            elemSize = Long.SIZE;
+            maxVectorSpecies = LongVector.SPECIES_MAX;
+        } else if (c == float.class) {
+            elemSize = Float.SIZE;
+            maxVectorSpecies = FloatVector.SPECIES_MAX;
+        } else if (c == double.class) {
+            elemSize = Double.SIZE;
+            maxVectorSpecies = DoubleVector.SPECIES_MAX;
+        } else {
+            throw new IllegalArgumentException("Bad vector element type: " + c.getName());
+        }
+
+        VectorShape vs = VectorShape.largestShapeFor(c);
+
+        int maxLaneCount = VectorSupport.getMaxLaneCount(c);
+        int max = Math.max(maxLaneCount * elemSize, S_64_BITS);
+
+        //Assert we're using the same element when comparing shapes
+        Assert.assertEquals(c, maxVectorSpecies.elementType());
+
+        Assert.assertEquals(vs.vectorBitSize(), max);
+        Assert.assertEquals(vs.vectorBitSize(), maxVectorSpecies.vectorBitSize());
+
     }
 }
