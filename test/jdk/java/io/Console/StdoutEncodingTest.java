@@ -66,10 +66,7 @@ public class StdoutEncodingTest {
                 expectedCharset,
                 TEST_CLASSES);
         output.reportDiagnosticSummary();
-        var eval = output.getExitValue();
-        if (eval != 0) {
-            throw new RuntimeException("Test failed. Exit value from 'expect' command: " + eval);
-        }
+        output.shouldHaveExitValue(0);
     }
 
     public static void main(String... args) {
