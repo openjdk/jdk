@@ -244,16 +244,15 @@ class Bits {                            // package-private
      *
      * @param srcAddr
      *        the starting memory address
-     * @param size
+     * @param count
      *        the number of bytes to set
      * @param value
      *        the byte value to set
      */
-    static void setMemory(long srcAddr, long size, byte value) {
+    static void setMemory(long srcAddr, long count, byte value) {
         long offset = 0;
-        long len = 0;
-        while (offset < size) {
-            len = Math.min(UNSAFE_SET_THRESHOLD, size - offset);
+        while (offset < count) {
+            long len = Math.min(UNSAFE_SET_THRESHOLD, count - offset);
             UNSAFE.setMemory(srcAddr + offset, len, value);
             offset += len;
         }
