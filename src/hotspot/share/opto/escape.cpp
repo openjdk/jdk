@@ -4448,7 +4448,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         InitializeNode* init = alloc->as_Allocate()->initialization();
         assert(init != nullptr, "can't find Initialization node for this Allocate node");
         DUIterator i = init->outs();
-        auto process_narrow_proj = [tinst, init, this, igvn](NarrowMemProjNode* proj) {
+        auto process_narrow_proj = [&](NarrowMemProjNode* proj) {
           const TypePtr* adr_type = proj->adr_type();
           const TypePtr* new_adr_type = tinst->add_offset(adr_type->offset());
           bool already_has_narrow_mem_proj_with_adr_type = init->already_has_narrow_mem_proj_with_adr_type(new_adr_type);

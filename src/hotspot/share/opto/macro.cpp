@@ -1644,7 +1644,7 @@ void PhaseMacroExpand::expand_initialize_membar(AllocateNode* alloc, InitializeN
       Node* ctrl = new ProjNode(init, TypeFunc::Control);
       transform_later(ctrl);
       Node* existing_raw_mem_proj = nullptr;
-      auto find_raw_mem = [&, this](ProjNode* proj) {
+      auto find_raw_mem = [&](ProjNode* proj) {
         if (C->get_alias_index(proj->adr_type()) == Compile::AliasIdxRaw) {
           assert(existing_raw_mem_proj == nullptr, "only one expected");
           existing_raw_mem_proj = proj;

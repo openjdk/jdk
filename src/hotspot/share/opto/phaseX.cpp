@@ -1671,7 +1671,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   if (use_op == Op_Allocate || use_op == Op_AllocateArray) {
     InitializeNode* init = use->as_Allocate()->initialization();
     if (init != nullptr) {
-      auto enqueue = [&worklist](ProjNode* proj) {
+      auto enqueue = [&](ProjNode* proj) {
         add_users_to_worklist0(proj, worklist);
         return false;
       };
@@ -1690,7 +1690,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
 
   if (use_op == Op_Initialize) {
     InitializeNode* init = use->as_Initialize();
-    auto enqueue = [&worklist](ProjNode* proj) {
+    auto enqueue = [&](ProjNode* proj) {
       add_users_to_worklist0(proj, worklist);
       return false;
     };

@@ -5452,7 +5452,7 @@ Node* InitializeNode::complete_stores(Node* rawctl, Node* rawmem, Node* rawptr,
 }
 
 void InitializeNode::replace_mem_projs_by(Node* mem, Compile* C) {
-  auto replace_proj = [C, mem](ProjNode* proj) {
+  auto replace_proj = [&](ProjNode* proj) {
     C->gvn_replace_by(proj, mem);
     return false;
   };
@@ -5461,7 +5461,7 @@ void InitializeNode::replace_mem_projs_by(Node* mem, Compile* C) {
 
 void InitializeNode::replace_mem_projs_by(Node* mem, PhaseIterGVN* igvn) {
   DUIterator_Fast imax, i = fast_outs(imax);
-  auto replace_proj = [mem, igvn, &i, &imax](ProjNode* proj) {
+  auto replace_proj = [&](ProjNode* proj) {
     igvn->replace_node(proj, mem);
     --i; --imax;
     return false;
@@ -5476,7 +5476,7 @@ template <class Callback> ProjNode* InitializeNode::apply_to_narrow_mem_projs(Ca
 
 
 template<class Callback> ProjNode* InitializeNode::apply_to_narrow_mem_projs(Callback callback, const TypePtr* adr_type) const {
-  auto filter = [callback, adr_type](NarrowMemProjNode* proj) {
+  auto filter = [&](NarrowMemProjNode* proj) {
     if (proj->adr_type() == adr_type && callback(proj->as_NarrowMemProj())) {
       return true;
     }

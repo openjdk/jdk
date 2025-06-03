@@ -1404,7 +1404,7 @@ private:
 
   // Iterate with i over all NarrowMemProj uses calling callback
   template <class Callback, class Iterator> ProjNode* apply_to_narrow_mem_projs_any_iterator(Iterator i, Callback callback) const {
-    auto filter = [callback](ProjNode* proj) {
+    auto filter = [&](ProjNode* proj) {
       if (proj->is_NarrowMemProj() && callback(proj->as_NarrowMemProj())) {
         return true;
       }

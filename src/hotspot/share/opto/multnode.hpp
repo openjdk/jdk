@@ -223,7 +223,7 @@ public:
 };
 
 template <class Callback> ProjNode* MultiNode::apply_to_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback, uint which_proj) const {
-  auto filter = [which_proj, callback](ProjNode* proj) {
+  auto filter = [&](ProjNode* proj) {
     if (proj->_con == which_proj && callback(proj)) {
       return true;
     }
