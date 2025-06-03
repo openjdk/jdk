@@ -398,6 +398,16 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
     return capabilities;
 }
 
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_fchmodatNoFollowSupported0(JNIEnv* env, jclass this) {
+#if defined(__linux__)
+    // Linux recognizes but does not support the AT_SYMLINK_NOFOLLOW flag
+    return JNI_FALSE;
+#else
+    return JNI_TRUE;
+#endif
+}
+
 JNIEXPORT jbyteArray JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_getcwd(JNIEnv* env, jclass this) {
     jbyteArray result = NULL;
@@ -792,6 +802,19 @@ Java_sun_nio_fs_UnixNativeDispatcher_fchmod0(JNIEnv* env, jclass this, jint file
     int err;
 
     RESTARTABLE(fchmod((int)filedes, (mode_t)mode), err);
+    if (err == -1) {
+        throwUnixException(env, errno);
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_fchmodat0(JNIEnv* env, jclass this,
+    jint fd, jlong pathAddress, jint mode, jint flag)
+{
+    int err;
+    const char* path = (const char*)jlong_to_ptr(pathAddress);
+
+    RESTARTABLE(fchmodat((int)fd, path, (mode_t)mode, (int)flag), err);
     if (err == -1) {
         throwUnixException(env, errno);
     }
