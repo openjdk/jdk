@@ -369,10 +369,10 @@ void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, traceid si
 }
 
 void JfrCPUTimeThreadSampling::send_lost_event(const JfrTicks &time, traceid tid, s4 lost_samples) {
-  if (!EventCPUTimeSampleLoss::is_enabled()) {
+  if (!EventCPUTimeSamplesLost::is_enabled()) {
     return;
   }
-  EventCPUTimeSampleLoss event(UNTIMED);
+  EventCPUTimeSamplesLost event(UNTIMED);
   event.set_starttime(time);
   event.set_lostSamples(lost_samples);
   event.set_eventThread(tid);

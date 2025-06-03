@@ -78,7 +78,7 @@ public class EventNames {
     public static final String ExecutionSample = PREFIX + "ExecutionSample";
     public static final String NativeMethodSample = PREFIX + "NativeMethodSample";
     public static final String CPUTimeSample = PREFIX + "CPUTimeSample";
-    public static final String CPUTimeSampleLoss = PREFIX + "CPUTimeSampleLoss";
+    public static final String CPUTimeSamplesLost = PREFIX + "CPUTimeSamplesLost";
     public static final String ThreadDump = PREFIX + "ThreadDump";
     public static final String OldObjectSample = PREFIX + "OldObjectSample";
     public static final String SymbolTableStatistics = PREFIX + "SymbolTableStatistics";

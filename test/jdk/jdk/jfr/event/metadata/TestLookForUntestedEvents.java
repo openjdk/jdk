@@ -89,7 +89,7 @@ public class TestLookForUntestedEvents {
 
     // Experimental events
     private static final Set<String> experimentalEvents = Set.of(
-        "Flush", "SyncOnValueBasedClass", "CPUTimeSample", "CPUTimeSampleLoss");
+        "Flush", "SyncOnValueBasedClass", "CPUTimeSample", "CPUTimeSamplesLost");
 
     // Subset of the experimental events that should have tests
     private static final Set<String> experimentalButTestedEvents = Set.of("CPUTimeSample");

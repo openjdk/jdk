@@ -232,7 +232,7 @@
       <setting name="stackTrace">true</setting>
     </event>
 
-    <event name="jdk.CPUTimeSampleLoss">
+    <event name="jdk.CPUTimeSamplesLost">
       <setting name="enabled" control="method-sampling-enabled">true</setting>
     </event>
 
