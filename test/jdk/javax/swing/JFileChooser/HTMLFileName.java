@@ -55,7 +55,7 @@ public class HTMLFileName {
             <li><code>JFileChooser</code> shows a virtual directory.
                 The first file in the list has the following name:
                 <code>&lt;html&gt;&lt;h1 color=#ff00ff&gt;&lt;font
-                face="Comic Sans MS"&gt;Swing Rocks!</code>
+                face="Serif"&gt;Swing Rocks!</code>
                 <br>
                 <br>
             <li>In <b>HTML disabled</b> frame:
@@ -72,7 +72,7 @@ public class HTMLFileName {
             <li>In <b>HTML enabled</b> frame:
                 <ol>
                   <li>Verify that the first file name displays as <em>HTML</em>,
-                      that is <code><font face="Comic Sans MS"
+                      that is <code><font face="Serif"
                       color=#ff00ff>Swing Rocks!</code> in large font
                       and magenta color.
                   <li>If the file name in the file pane and
@@ -134,7 +134,7 @@ public class HTMLFileName {
     private static class VirtualFileSystemView extends FileSystemView {
         private final File[] files = {
                 new File("/", "<html><h1 color=#ff00ff><font " +
-                         "face=\"Comic Sans MS\">Swing Rocks!"),
+                         "face=\"Serif\">Swing Rocks!"),
                 new File("/", "virtualFile1.txt"),
                 new File("/", "virtualFile2.log")
         };
