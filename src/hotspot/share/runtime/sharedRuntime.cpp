@@ -2224,7 +2224,7 @@ class AdapterFingerPrint : public MetaspaceObj {
     return (total_args + (_basic_types_per_int-1)) / _basic_types_per_int;
   }
 
-  static int compute_size(int total_args_passed, BasicType* sig_bt) {
+  static int compute_size(int total_args_passed) {
     int len = length(total_args_passed);
     return BytesPerWord * (int)heap_word_size(sizeof(AdapterFingerPrint) + (len * sizeof(int)));
   }
@@ -2289,7 +2289,7 @@ class AdapterFingerPrint : public MetaspaceObj {
 
  public:
   static AdapterFingerPrint* allocate(int total_args_passed, BasicType* sig_bt) {
-    int size_in_bytes = compute_size(total_args_passed, sig_bt);
+    int size_in_bytes = compute_size(total_args_passed);
     AdapterFingerPrint* afp = new (size_in_bytes) AdapterFingerPrint(total_args_passed, sig_bt);
     assert((afp->size() * BytesPerWord) == size_in_bytes, "should match");
     return afp;
