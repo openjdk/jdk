@@ -573,6 +573,7 @@ bool JfrCPUTimeThreadSampler::create_timer_for_thread(JavaThread* thread, timer_
     return false;
   }
   if (timer_create(clock, &sev, &t) < 0) {
+    log_error(jfr)("Failed to register the signal handler for thread sampling: %s", os::strerror(os::get_last_error()));
     return false;
   }
   int64_t period = get_sampling_period();
