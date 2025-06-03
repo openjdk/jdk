@@ -199,10 +199,11 @@ import compiler.lib.ir_framework.TestFramework;
  * are available, and if they are mutable or immutable. We model fields and variables with {@link DataName}s,
  * which we can add to the current scope with {@link #addDataName}. We can access the {@link DataName}s with
  * {@link #dataNames}. We can filter for {@link DataName}s of specific {@link DataName.Type}s, and then
- * we can call {@link DataName.View#count}, {@link DataName.View#sample}, {@link DataName.View#toList}, etc.
- * There are many use-cases for this mechanism, especially facilitating communication between the code
- * of outer and inner {@link Template}s. Especially for fuzzing, it may be useful to be able to add
- * fields and variables, and sample them randomly, to create a random data flow graph.
+ * we can call {@link DataName.FilteredSet#count}, {@link DataName.FilteredSet#sample},
+ * {@link DataName.FilteredSet#toList}, etc. There are many use-cases for this mechanism, especially
+ * facilitating communication between the code of outer and inner {@link Template}s. Especially for fuzzing,
+ * it may be useful to be able to add fields and variables, and sample them randomly, to create a random data
+ * flow graph.
  *
  * <p>
  * Similarly, we may want to model method and class names, and possibly other structural names. We model
@@ -798,8 +799,8 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param mutability Indicates if we only sample from mutable, immutable or either {@link DataName}s.
      * @return A view on the {@link DataName}s, on which we can sample, count, etc.
      */
-    static DataName.View dataNames(DataName.Mutability mutability) {
-        return new DataName.View(mutability);
+    static DataName.FilteredSet dataNames(DataName.Mutability mutability) {
+        return new DataName.FilteredSet(mutability);
     }
 
     /**
@@ -837,7 +838,7 @@ public sealed interface Template permits Template.ZeroArgs,
      *
      * @return A view on the {@link StructuralName}s, on which we can sample, count, etc.
      */
-    static StructuralName.View structuralNames() {
-        return new StructuralName.View();
+    static StructuralName.FilteredSet structuralNames() {
+        return new StructuralName.FilteredSet();
     }
 }

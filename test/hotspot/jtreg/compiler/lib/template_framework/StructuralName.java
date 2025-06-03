@@ -60,7 +60,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
 
         /**
          * Defines the subtype relationship with other types, which is used to filter {@link StructuralName}s
-         * in {@link View#exactOf}, {@link View#subtypeOf}, and {@link View#supertypeOf}.
+         * in {@link FilteredSet#exactOf}, {@link FilteredSet#subtypeOf}, and {@link FilteredSet#supertypeOf}.
          *
          * @param other The other type, where we check if it is the supertype of {@code 'this'}.
          * @return If {@code 'this'} is a subtype of {@code 'other'}.
@@ -69,21 +69,23 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
     }
 
     /**
-     * The {@link View} represents a filtered set of {@link StructuralName}s in the current scope.
+     * The {@link FilteredSet} represents a filtered set of {@link StructuralName}s in the current scope.
      * It can be obtained with {@link Template#structuralNames}. It can be used to count the
      * available {@link StructuralName}s, or sample a random {@link StructuralName} according to the
      * weights of the {@link StructuralName}s in the filtered set.
+     * Note: The {@link FilteredSet} is only a filtered view on the set of {@link StructuralName}s,
+     * and may return different results in different contexts.
      */
-    public static final class View {
+    public static final class FilteredSet {
         private final StructuralName.Type subtype;
         private final StructuralName.Type supertype;
 
-        View(StructuralName.Type subtype, StructuralName.Type supertype) {
+        FilteredSet(StructuralName.Type subtype, StructuralName.Type supertype) {
             this.subtype = subtype;
             this.supertype = supertype;
         }
 
-        View() {
+        FilteredSet() {
             this(null, null);
         }
 
@@ -100,45 +102,45 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
         }
 
         /**
-         * Create a filtered {@link View}, where all {@link StructuralName}s must be subtypes of {@code type}.
+         * Create a {@link FilteredSet}, where all {@link StructuralName}s must be subtypes of {@code type}.
          *
          * @param type The type of which all {@link StructuralName}s must be subtypes of.
-         * @return The filtered {@link View}.
-         * @throws UnsupportedOperationException If this {@link View} was already filtered with
+         * @return The updated filtered set.
+         * @throws UnsupportedOperationException If this {@link FilteredSet} was already filtered with
          *                                       {@link #subtypeOf} or {@link #exactOf}.
          */
-        public View subtypeOf(StructuralName.Type type) {
+        public FilteredSet subtypeOf(StructuralName.Type type) {
             if (subtype != null) {
                 throw new UnsupportedOperationException("Cannot constrain to subtype " + type + ", is already constrained: " + subtype);
             }
-            return new View(type, supertype);
+            return new FilteredSet(type, supertype);
         }
 
         /**
-         * Create a filtered {@link View}, where all {@link StructuralName}s must be supertypes of {@code type}.
+         * Create a {@link FilteredSet}, where all {@link StructuralName}s must be supertypes of {@code type}.
          *
          * @param type The type of which all {@link StructuralName}s must be supertype of.
-         * @return The filtered {@link View}.
-         * @throws UnsupportedOperationException If this {@link View} was already filtered with
+         * @return The updated filtered set.
+         * @throws UnsupportedOperationException If this {@link FilteredSet} was already filtered with
          *                                       {@link supertypeOf} or {@link exactOf}.
          */
-        public View supertypeOf(StructuralName.Type type) {
+        public FilteredSet supertypeOf(StructuralName.Type type) {
             if (supertype != null) {
                 throw new UnsupportedOperationException("Cannot constrain to supertype " + type + ", is already constrained: " + supertype);
             }
-            return new View(subtype, type);
+            return new FilteredSet(subtype, type);
         }
 
         /**
-         * Create a filtered {@link View}, where all {@link StructuralName}s must be of exact {@code type},
+         * Create a {@link FilteredSet}, where all {@link StructuralName}s must be of exact {@code type},
          * hence it must be both subtype and supertype thereof.
          *
          * @param type The type of which all {@link StructuralName}s must be.
-         * @return The filtered {@link View}.
-         * @throws UnsupportedOperationException If this {@link View} was already filtered with
+         * @return The updated filtered set.
+         * @throws UnsupportedOperationException If this {@link FilteredSet} was already filtered with
          *                                       {@link subtypeOf}, {@link supertypeOf} or {@link exactOf}.
          */
-        public View exactOf(StructuralName.Type type) {
+        public FilteredSet exactOf(StructuralName.Type type) {
             return subtypeOf(type).supertypeOf(type);
         }
 
