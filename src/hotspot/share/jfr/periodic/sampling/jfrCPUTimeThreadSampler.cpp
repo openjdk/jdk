@@ -167,14 +167,14 @@ class JfrCPUTimeThreadSampler : public NonJavaThread {
   Semaphore _sample;
   NonJavaThread* _sampler_thread;
   double _rate;
-  bool _autoadapt;
+  bool _auto_adapt;
   volatile int64_t _current_sampling_period_ns;
   volatile bool _disenrolled;
   volatile bool _stop_signals;
   volatile int _active_signal_handlers;
   volatile bool _is_async_processing_of_cpu_time_jfr_requests_triggered;
 
-  JfrCPUTimeThreadSampler(double rate, bool autoadapt);
+  JfrCPUTimeThreadSampler(double rate, bool auto_adapt);
 
   void start_thread();
 
@@ -182,9 +182,9 @@ class JfrCPUTimeThreadSampler : public NonJavaThread {
   void disenroll();
   void update_all_thread_timers();
 
-  void autoadapt_period_if_needed();
+  void auto_adapt_period_if_needed();
 
-  void set_rate(double rate, bool autoadapt);
+  void set_rate(double rate, bool auto_adapt);
   int64_t get_sampling_period() const { return Atomic::load(&_current_sampling_period_ns); };
 
   void sample_thread(JfrSampleRequest& request, void* ucontext, JavaThread* jt, JfrThreadLocal* tl);
@@ -210,11 +210,11 @@ public:
 };
 
 
-JfrCPUTimeThreadSampler::JfrCPUTimeThreadSampler(double rate, bool autoadapt) :
+JfrCPUTimeThreadSampler::JfrCPUTimeThreadSampler(double rate, bool auto_adapt) :
   _sample(),
   _sampler_thread(nullptr),
   _rate(rate),
-  _autoadapt(autoadapt),
+  _auto_adapt(auto_adapt),
   _current_sampling_period_ns(compute_sampling_period(rate)),
   _disenrolled(true),
   _stop_signals(false),
@@ -291,7 +291,7 @@ void JfrCPUTimeThreadSampler::disenroll() {
 void JfrCPUTimeThreadSampler::run() {
   assert(_sampler_thread == nullptr, "invariant");
   _sampler_thread = this;
-  int64_t last_autoadapt_check = os::javaTimeNanos();
+  int64_t last_auto_adapt_check = os::javaTimeNanos();
   while (true) {
     if (!_sample.trywait()) {
       // disenrolled
@@ -299,9 +299,9 @@ void JfrCPUTimeThreadSampler::run() {
     }
     _sample.signal();
 
-    if (os::javaTimeNanos() - last_autoadapt_check > AUTOADAPT_INTERVAL_MS * 1000000) {
-      autoadapt_period_if_needed();
-      last_autoadapt_check = os::javaTimeNanos();
+    if (os::javaTimeNanos() - last_auto_adapt_check > AUTOADAPT_INTERVAL_MS * 1000000) {
+      auto_adapt_period_if_needed();
+      last_auto_adapt_check = os::javaTimeNanos();
     }
 
     if (Atomic::load_acquire(&_is_async_processing_of_cpu_time_jfr_requests_triggered)) {
@@ -412,42 +412,42 @@ JfrCPUTimeThreadSampling::~JfrCPUTimeThreadSampling() {
   }
 }
 
-void JfrCPUTimeThreadSampling::create_sampler(double rate, bool autoadapt) {
+void JfrCPUTimeThreadSampling::create_sampler(double rate, bool auto_adapt) {
   assert(_sampler == nullptr, "invariant");
-  _sampler = new JfrCPUTimeThreadSampler(rate, autoadapt);
+  _sampler = new JfrCPUTimeThreadSampler(rate, auto_adapt);
   _sampler->start_thread();
   _sampler->enroll();
 }
 
-void JfrCPUTimeThreadSampling::update_run_state(double rate, bool autoadapt) {
+void JfrCPUTimeThreadSampling::update_run_state(double rate, bool auto_adapt) {
   if (rate != 0) {
     if (_sampler == nullptr) {
-      create_sampler(rate, autoadapt);
+      create_sampler(rate, auto_adapt);
     } else {
-      _sampler->set_rate(rate, autoadapt);
+      _sampler->set_rate(rate, auto_adapt);
       _sampler->enroll();
     }
     return;
   }
   if (_sampler != nullptr) {
-    _sampler->set_rate(rate /* 0 */, autoadapt);
+    _sampler->set_rate(rate /* 0 */, auto_adapt);
     _sampler->disenroll();
   }
 }
 
-void JfrCPUTimeThreadSampling::set_rate(double rate, bool autoadapt) {
+void JfrCPUTimeThreadSampling::set_rate(double rate, bool auto_adapt) {
   assert(rate >= 0, "invariant");
   if (_instance == nullptr) {
     return;
   }
-  instance().set_rate_value(rate, autoadapt);
+  instance().set_rate_value(rate, auto_adapt);
 }
 
-void JfrCPUTimeThreadSampling::set_rate_value(double rate, bool autoadapt) {
+void JfrCPUTimeThreadSampling::set_rate_value(double rate, bool auto_adapt) {
   if (_sampler != nullptr) {
-    _sampler->set_rate(rate, autoadapt);
+    _sampler->set_rate(rate, auto_adapt);
   }
-  update_run_state(rate, autoadapt);
+  update_run_state(rate, auto_adapt);
 }
 
 void JfrCPUTimeThreadSampling::on_javathread_create(JavaThread *thread) {
@@ -639,9 +639,9 @@ void JfrCPUTimeThreadSampler::stop_timer() {
   VMThread::execute(&op);
 }
 
-void JfrCPUTimeThreadSampler::autoadapt_period_if_needed() {
+void JfrCPUTimeThreadSampler::auto_adapt_period_if_needed() {
   int64_t current_period = get_sampling_period();
-  if (_autoadapt || current_period == -1) {
+  if (_auto_adapt || current_period == -1) {
     int64_t period = compute_sampling_period(_rate);
     if (period != current_period) {
       Atomic::store(&_current_sampling_period_ns, period);
@@ -650,11 +650,11 @@ void JfrCPUTimeThreadSampler::autoadapt_period_if_needed() {
   }
 }
 
-void JfrCPUTimeThreadSampler::set_rate(double rate, bool autoadapt) {
+void JfrCPUTimeThreadSampler::set_rate(double rate, bool auto_adapt) {
   _rate = rate;
-  _autoadapt = autoadapt;
+  _auto_adapt = auto_adapt;
   if (_rate > 0 && Atomic::load(&_disenrolled) == false) {
-    autoadapt_period_if_needed();
+    auto_adapt_period_if_needed();
   } else {
     Atomic::store(&_current_sampling_period_ns, compute_sampling_period(rate));
   }
@@ -702,7 +702,7 @@ void JfrCPUTimeThreadSampling::destroy() {
   _instance = nullptr;
 }
 
-void JfrCPUTimeThreadSampling::set_rate(double rate, bool autoadapt) {
+void JfrCPUTimeThreadSampling::set_rate(double rate, bool auto_adapt) {
   if (rate != 0) {
     warn();
   }

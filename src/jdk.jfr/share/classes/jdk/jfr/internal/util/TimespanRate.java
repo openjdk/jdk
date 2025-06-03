@@ -30,7 +30,7 @@ import jdk.jfr.internal.settings.CPUThrottleSetting;
 /**
  * A rate or fixed period, see {@link jdk.jfr.internal.Rate}
  */
-public record TimespanRate(double rate, boolean autoadapt) {
+public record TimespanRate(double rate, boolean autoAdapt) {
 
     public static TimespanRate of(String text) {
         if (text.equals("off")) {
@@ -60,7 +60,7 @@ public record TimespanRate(double rate, boolean autoadapt) {
 
     @Override
     public String toString() {
-        if (autoadapt) {
+        if (autoAdapt) {
             return String.format("%d/ns", (long)(rate * 1_000_000_000L));
         }
         return String.format("%dns", (long)(Runtime.getRuntime().availableProcessors() / rate * 1_000_000_000L));

@@ -65,7 +65,7 @@ public final class CPUThrottleSetting extends SettingControl {
                 if (max == null || rate.isHigher(max)) {
                     max = rate;
                 }
-                max = new TimespanRate(max.rate(), max.autoadapt() || rate.autoadapt());
+                max = new TimespanRate(max.rate(), max.autoAdapt() || rate.autoAdapt());
             }
         }
         // "off" is not supported

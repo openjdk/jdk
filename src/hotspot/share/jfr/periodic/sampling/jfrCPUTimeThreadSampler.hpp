@@ -102,8 +102,8 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
 
   JfrCPUTimeThreadSampler* _sampler;
 
-  void create_sampler(double rate, bool autoadapt);
-  void set_rate_value(double rate, bool autoadapt);
+  void create_sampler(double rate, bool auto_adapt);
+  void set_rate_value(double rate, bool auto_adapt);
 
   JfrCPUTimeThreadSampling();
   ~JfrCPUTimeThreadSampling();
@@ -112,10 +112,10 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   static JfrCPUTimeThreadSampling* create();
   static void destroy();
 
-  void update_run_state(double rate, bool autoadapt);
+  void update_run_state(double rate, bool auto_adapt);
 
  public:
-  static void set_rate(double rate, bool autoadapt);
+  static void set_rate(double rate, bool auto_adapt);
 
   static void on_javathread_create(JavaThread* thread);
   static void on_javathread_terminate(JavaThread* thread);
@@ -142,7 +142,7 @@ private:
   static void destroy();
 
  public:
-  static void set_rate(double rate, bool autoadapt);
+  static void set_rate(double rate, bool auto_adapt);
 
   static void on_javathread_create(JavaThread* thread);
   static void on_javathread_terminate(JavaThread* thread);

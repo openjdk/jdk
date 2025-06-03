@@ -199,7 +199,7 @@ public final class PlatformEventType extends Type {
     public void setCPUThrottle(TimespanRate rate) {
         if (isCPUTimeMethodSampling) {
             this.cpuRate = rate;
-            JVM.setCPUThrottle(rate.rate(), rate.autoadapt());
+            JVM.setCPUThrottle(rate.rate(), rate.autoAdapt());
         }
     }
 
@@ -265,7 +265,7 @@ public final class PlatformEventType extends Type {
                 JVM.setMethodSamplingPeriod(getId(), p);
             } else if (isCPUTimeMethodSampling) {
                 TimespanRate r = enabled ? cpuRate : new TimespanRate(0, false);
-                JVM.setCPUThrottle(r.rate(), r.autoadapt());
+                JVM.setCPUThrottle(r.rate(), r.autoAdapt());
             } else {
                 JVM.setEnabled(getId(), enabled);
             }
