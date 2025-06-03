@@ -281,10 +281,6 @@ CodeBlob* CodeBlob::create(CodeBlob* archived_blob,
                            const char* name,
                            address archived_reloc_data,
                            ImmutableOopMapSet* archived_oop_maps
-#ifndef PRODUCT
-                           , AsmRemarks& archived_asm_remarks
-                           , DbgStrings& archived_dbg_strings
-#endif // PRODUCT
                           )
 {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
@@ -301,10 +297,6 @@ CodeBlob* CodeBlob::create(CodeBlob* archived_blob,
                                     name,
                                     archived_reloc_data,
                                     archived_oop_maps);
-#ifndef PRODUCT
-      blob->use_remarks(archived_asm_remarks);
-      blob->use_strings(archived_dbg_strings);
-#endif // PRODUCT
 
       assert(blob != nullptr, "sanity check");
       // Flush the code block

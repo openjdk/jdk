@@ -426,6 +426,8 @@ class AsmRemarks {
   AsmRemarks();
  ~AsmRemarks();
 
+  void init();
+
   const char* insert(uint offset, const char* remstr);
 
   bool is_empty() const;
@@ -451,6 +453,8 @@ class DbgStrings {
  public:
   DbgStrings();
  ~DbgStrings();
+
+  void init();
 
   const char* insert(const char* dbgstr);
 
@@ -821,6 +825,11 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 #ifndef PRODUCT
   AsmRemarks &asm_remarks() { return _asm_remarks; }
   DbgStrings &dbg_strings() { return _dbg_strings; }
+
+  void clear_strings() {
+    _asm_remarks.clear();
+    _dbg_strings.clear();
+  }
 #endif
 
   // Code generation
