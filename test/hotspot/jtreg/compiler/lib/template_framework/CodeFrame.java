@@ -89,10 +89,10 @@ class CodeFrame {
     /**
      * Creates a special frame, which has a {@link #parent} but uses the {@link NameSet}
      * from the parent frame, allowing {@link Template#addDataName}/
-     * {@link Template#addStructuralName} to persist in the outer frame when the current frame 
-     * is exited. This is necessary for {@link Hook#insert},  where we would possibly want to 
-     * make field or variable definitions during the insertion that are not just local to the 
-     * insertion but affect the {@link CodeFrame} that we {@link Hook#anchor} earlier and are 
+     * {@link Template#addStructuralName} to persist in the outer frame when the current frame
+     * is exited. This is necessary for {@link Hook#insert},  where we would possibly want to
+     * make field or variable definitions during the insertion that are not just local to the
+     * insertion but affect the {@link CodeFrame} that we {@link Hook#anchor} earlier and are
      * now {@link Hook#insert}ing into.
      */
     public static CodeFrame makeTransparentForNames(CodeFrame parent) {
