@@ -185,8 +185,8 @@ address StubGenerator::generate_libmCos() {
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
 #ifdef _WIN64
-    __ push(rsi, true /*is_pair*/);
-    __ push(rdi, true /*is_pair*/);
+  __ push(rsi, true /*is_pair*/);
+  __ push(rdi, true /*is_pair*/);
 #endif
 
   __ push(rbx, true /*is_pair*/);
@@ -612,8 +612,8 @@ address StubGenerator::generate_libmCos() {
   __ pop(rbx, true /*is_pair*/);
 
 #ifdef _WIN64
-    __ pop(rdi, true /*is_pair*/);
-    __ pop(rsi, true /*is_pair*/);
+  __ pop(rdi, true /*is_pair*/);
+  __ pop(rsi, true /*is_pair*/);
 #endif
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
