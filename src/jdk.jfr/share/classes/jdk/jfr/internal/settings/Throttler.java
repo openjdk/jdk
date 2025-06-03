@@ -139,11 +139,11 @@ public final class Throttler {
 
     private long deriveSamplingInterval(double sampleSize, ThrottlerWindow expired) {
         double populationSize = projectPopulationSize(expired);
-        if (adjustBoundary(populationSize) <= adjustBoundary(sampleSize)) {
+        if (populationSize <= sampleSize) {
             return 1;
         }
-        double projectProbability = adjustBoundary(sampleSize) / adjustBoundary(populationSize);
-        return nextGeometric(adjustBoundary(projectProbability), randomGenerator.nextDouble());
+        double projectProbability = sampleSize / populationSize;
+        return nextGeometric(projectProbability, randomGenerator.nextDouble());
     }
 
     private double projectPopulationSize(ThrottlerWindow expired) {
@@ -213,7 +213,7 @@ public final class Throttler {
     }
 
     private double exponentiallyWeightedMovingAverage(double y, double alpha, double s) {
-        return adjustBoundary(alpha) * adjustBoundary(y) + (1 - adjustBoundary(alpha)) * adjustBoundary(s);
+        return alpha * y + (1 - alpha) * s;
     }
 
     private double computeEwmaAlphaCoefficient(long lookBackCount) {
