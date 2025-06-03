@@ -122,7 +122,7 @@ public final class AquaFonts {
     /**
      * All fonts derived from this type will also be of this type, and not a plain java.awt.Font
      */
-    static final class DerivedUIResourceFont extends FontUIResource implements UIResource {
+    static class DerivedUIResourceFont extends FontUIResource implements UIResource {
         public DerivedUIResourceFont(final Font font) {
             super(font);
         }

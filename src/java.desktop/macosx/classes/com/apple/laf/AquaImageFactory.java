@@ -459,7 +459,7 @@ public final class AquaImageFactory {
     // when we use SystemColors, we need to proxy the color with something that implements UIResource,
     // so that it will be uninstalled when the look and feel is changed.
     @SuppressWarnings("serial") // JDK implementation class
-    private static final class SystemColorProxy extends Color implements UIResource {
+    private static class SystemColorProxy extends Color implements UIResource {
         final Color color;
         public SystemColorProxy(final Color color) {
             super(color.getRGB());
