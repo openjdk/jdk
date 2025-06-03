@@ -230,10 +230,9 @@ public final class HttpCookie implements Cloneable {
     // ---------------- Public operations --------------
 
     /**
-     * Reports whether this HTTP cookie has expired or not. The calculation is based
-     * on either the {@code expires} or {@code max-age} attribute if only one of them
-     * is specified. If both attributes are specified, then the result is based on
-     * {@code max-age}
+     * Reports whether this HTTP cookie has expired or not. This is
+     * based on whether {@link #getMaxAge()} seconds have elapsed since
+     * this object was created.
      *
      * @return  {@code true} to indicate this HTTP cookie has expired;
      *          otherwise, {@code false}
@@ -414,8 +413,16 @@ public final class HttpCookie implements Cloneable {
     }
 
     /**
-     * Returns the maximum age of the cookie, specified in seconds. By default,
-     * {@code -1} indicating the cookie will persist until browser shutdown.
+     * Returns the maximum age of the cookie, specified in seconds from the time
+     * the object was created. By default, {@code -1} indicating the cookie will
+     * persist until browser shutdown.
+     *
+     * The value of this attribute is determined by the following steps:
+     * <ol><li>If {@link #setMaxAge(long)} was called, return the value set</li>
+     * <li>If previous step failed, and an {@code expires} attribute was parsed
+     * then return that value</li>
+     * <li>If previous step failed, and an {@code expiry-date} attribute was parsed
+     * then the maxAge calculated at parsing time, is returned</li></ol>
      *
      * @return  an integer specifying the maximum age of the cookie in seconds
      *
