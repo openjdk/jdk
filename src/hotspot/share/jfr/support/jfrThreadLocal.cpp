@@ -572,11 +572,11 @@ timer_t* JfrThreadLocal::cpu_timer() const {
 }
 
 bool JfrThreadLocal::is_cpu_time_jfr_enqueue_locked() {
-  return Atomic::load(&_cpu_time_jfr_locked) == ENQUEUE;
+  return Atomic::load_acquire(&_cpu_time_jfr_locked) == ENQUEUE;
 }
 
 bool JfrThreadLocal::is_cpu_time_jfr_dequeue_locked() {
-  return Atomic::load(&_cpu_time_jfr_locked) == DEQUEUE;
+  return Atomic::load_acquire(&_cpu_time_jfr_locked) == DEQUEUE;
 }
 
 bool JfrThreadLocal::acquire_cpu_time_jfr_enqueue_lock() {
@@ -602,7 +602,7 @@ void JfrThreadLocal::acquire_cpu_time_jfr_dequeue_lock() {
 }
 
 void JfrThreadLocal::release_cpu_time_jfr_queue_lock() {
-  Atomic::store(&_cpu_time_jfr_locked, UNLOCKED);
+  Atomic::release_store(&_cpu_time_jfr_locked, UNLOCKED);
 }
 
 void JfrThreadLocal::set_has_cpu_time_jfr_requests(bool has_requests) {

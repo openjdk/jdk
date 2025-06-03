@@ -119,7 +119,7 @@ void JfrCPUTimeTraceQueue::set_capacity(u4 capacity) {
 }
 
 bool JfrCPUTimeTraceQueue::is_empty() const {
-  return Atomic::load(&_head) == 0;
+  return Atomic::load_acquire(&_head) == 0;
 }
 
 s4 JfrCPUTimeTraceQueue::lost_samples() const {
@@ -228,7 +228,7 @@ JfrCPUTimeThreadSampler::JfrCPUTimeThreadSampler(double rate, bool autoadapt) :
 }
 
 void JfrCPUTimeThreadSampler::trigger_async_processing_of_cpu_time_jfr_requests() {
-  Atomic::store(&_is_async_processing_of_cpu_time_jfr_requests_triggered, true);
+  Atomic::release_store(&_is_async_processing_of_cpu_time_jfr_requests_triggered, true);
 }
 
 void JfrCPUTimeThreadSampler::on_javathread_create(JavaThread* thread) {
@@ -308,8 +308,8 @@ void JfrCPUTimeThreadSampler::run() {
       last_autoadapt_check = os::javaTimeNanos();
     }
 
-    if (Atomic::load(&_is_async_processing_of_cpu_time_jfr_requests_triggered)) {
-      Atomic::store(&_is_async_processing_of_cpu_time_jfr_requests_triggered, false);
+    if (Atomic::load_acquire(&_is_async_processing_of_cpu_time_jfr_requests_triggered)) {
+      Atomic::release_store(&_is_async_processing_of_cpu_time_jfr_requests_triggered, false);
       stackwalk_threads_in_native();
     }
     os::naked_sleep(100);
@@ -325,7 +325,7 @@ void JfrCPUTimeThreadSampler::stackwalk_threads_in_native() {
     JavaThread* jt = tlh.list()->thread_at(i);
     JfrThreadLocal* tl = jt->jfr_thread_local();
     if (tl->wants_async_processing_of_cpu_time_jfr_requests()) {
-      if (!jt->has_last_Java_frame() || !tl->try_acquire_cpu_time_jfr_dequeue_lock()) {
+      if (!jt->has_last_Java_frame() || jt->thread_state() != _thread_in_native || !tl->try_acquire_cpu_time_jfr_dequeue_lock()) {
         tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
         continue; // thread doesn't have a last Java frame or queue is already being processed
       }
