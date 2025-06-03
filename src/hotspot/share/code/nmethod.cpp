@@ -1968,7 +1968,7 @@ void nmethod::log_state_change(ChangeReason change_reason) const {
   if (LogCompilation) {
     if (xtty != nullptr) {
       ttyLocker ttyl;  // keep the following output all in one block
-      xtty->begin_elem("make_not_entrant thread='%zu' change_reason='%s'",
+      xtty->begin_elem("make_not_entrant thread='%zu' reason='%s'",
                        os::current_thread_id(), change_reason_to_string(change_reason));
       log_identity(xtty);
       xtty->stamp();
