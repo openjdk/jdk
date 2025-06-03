@@ -2127,22 +2127,14 @@ void nmethod::purge(bool unregister_nmethod) {
   LogTarget(Debug, codecache) lt;
   if (lt.is_enabled()) {
     ResourceMark rm;
-    const char* name = method()->name()->as_C_string();
-    const char* is_jvmci = "";
+    LogStream ls(lt);
+    const char* method_name = method()->name()->as_C_string();
     const size_t codecache_capacity = CodeCache::capacity()/1024;
     const size_t codecache_free_space = CodeCache::unallocated_capacity(CodeCache::get_code_blob_type(this))/1024;
-#if INCLUDE_JVMCI
-    if (is_compiled_by_jvmci()) {
-      if (jvmci_name() != nullptr) {
-        name = jvmci_name();
-      }
-      is_jvmci = "JVMCI compiled ";
-    }
-#endif
-    log_debug(codecache)("Flushing nmethod %3d/" INTPTR_FORMAT ", level=%d, osr=%d, cold=%d, epoch=" UINT64_FORMAT ", cold_count=" UINT64_FORMAT ". "
-                       "Cache capacity: %zuKb, free space: %zuKb. %smethod %s",
-                       _compile_id, p2i(this), _comp_level, is_osr_method(), is_cold(), _gc_epoch, CodeCache::cold_gc_count(),
-                       codecache_capacity, codecache_free_space, is_jvmci, name);
+    ls.print("Flushing nmethod %6d/" INTPTR_FORMAT ", level=%d, osr=%d, cold=%d, epoch=" UINT64_FORMAT ", cold_count=" UINT64_FORMAT ". "
+              "Cache capacity: %zuKb, free space: %zuKb. method %s (%s)",
+              _compile_id, p2i(this), _comp_level, is_osr_method(), is_cold(), _gc_epoch, CodeCache::cold_gc_count(),
+              codecache_capacity, codecache_free_space, method_name, compiler_name());
   }
 
   // We need to deallocate any ExceptionCache data.
