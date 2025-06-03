@@ -110,8 +110,6 @@ public class TestVectorRotateScalarCount {
     public static void check_pattern3(Object param) {
        Verify.checkEQ(GOLD_PATTERN3, param);
     }
-
-
     @Test
     @IR(counts = {IRNode.URSHIFT_VL, IRNode.VECTOR_SIZE_2, "1",
                   IRNode.LSHIFT_VL, IRNode.VECTOR_SIZE_2, "1",
