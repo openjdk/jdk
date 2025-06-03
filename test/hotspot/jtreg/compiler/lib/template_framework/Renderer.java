@@ -335,6 +335,16 @@ final class Renderer {
         }
     }
 
+    /**
+     * We split a {@link String} by "#" and "$", and then look at each part.
+     * Example:
+     *
+     *  s:    "abcdefghijklmnop #name abcdefgh${var_name} 12345#{name2}_con $field_name something"
+     *  parts: --------0-------- ------1------ --------2------- ------3----- ----------4---------
+     *  start: ^                 ^             ^                ^            ^
+     *  next:                   ^             ^                ^            ^                    ^
+     *         none             hashtag       dollar           hashtag      dollar               done
+     */
     private void renderStringWithDollarAndHashtagReplacements(String s) {
         int count = 0; // First part needs special handling
         int start = 0;
@@ -343,45 +353,77 @@ final class Renderer {
             // Find the next "$" or "#", after start.
             int dollar  = s.indexOf("$", start);
             int hashtag = s.indexOf("#", start);
+            // If the character was not found, we want to have the rest of the
+            // String s, so instead of "-1" take the end/length of the String.
             dollar  = (dollar == -1)  ? s.length() : dollar;
             hashtag = (hashtag == -1) ? s.length() : hashtag;
+            // Take the first one.
             int next = Math.min(dollar, hashtag);
             String part = s.substring(start, next);
+
             if (count == 0) {
                 // First part has no "#" or "$" before it.
                 currentCodeFrame.addString(part);
             } else {
                 // All others must do the replacement.
-                final boolean isDollar = startIsAfterDollar; // final alias for lambda capture.
-                Matcher matcher = NAME_PATTERN.matcher(part);
-                // Let's catch cases where we have bad patterns, such as:
-                //  "##name" or "#1name" or "anything#" etc.
-                if (!matcher.find()) {
-                    String replacement = isDollar ? "$" : "#";
-                    throw new RendererException("Is not a valid '" + replacement + "' replacement pattern: '" +
-                                                replacement + part + "' in '" + s + "'.");
-                }
-                currentCodeFrame.addString(matcher.replaceFirst(
-                    (MatchResult result) -> {
-                        // There are two groups: (1) for "name" and (2) for "{name}"
-                        String name = result.group(1) != null ? result.group(1) : result.group(2);
-                        if (isDollar) {
-                            return $(name);
-                        } else {
-                            // replaceFirst needs some special escaping of backslashes and ollar signs.
-                            return getHashtagReplacement(name).replace("\\", "\\\\").replace("$", "\\$");
-                        }
-                    }
-                ));
+                renderStringWithDollarAndHashtagReplacementsPart(s, part, startIsAfterDollar);
             }
+
             if (next == s.length()) {
-                // No new "#" or "$" was found, terminate now.
+                // No new "#" or "$" was found, we just processed the rest of the String,
+                // terminate now.
                 return;
             }
-            start = next + 1; // drop the "#" or "$"
-            startIsAfterDollar = next == dollar;
+            start = next + 1; // skip over the "#" or "$"
+            startIsAfterDollar = next == dollar; // remember which character we just split with
             count++;
         } while (true);
+    }
+
+    /**
+     * We are parsing a part now. Befor the part, there was either a "#" or "$":
+     * isDollar = false:
+     *   "#part"
+     *   "#name abcdefgh"
+     *     ----
+     *   "#{name2}_con "
+     *     -------
+     *
+     * isDollar = true:
+     *   "$part"
+     *   "${var_name} 12345"
+     *     ----------
+     *   "$field_name something"
+     *     ----------
+     *
+     * We now want to find the name pattern at the beginning of the part, and replace
+     * it according to the hashtag or dollar replacement strategy.
+     */
+    private void renderStringWithDollarAndHashtagReplacementsPart(String s, String part, final boolean isDollar) {
+        Matcher matcher = NAME_PATTERN.matcher(part);
+        // If the string has a "#" or "$" that is not followed by a correct name
+        // pattern, then the matcher will not match. These can be cases like:
+        //   "##name" -> the first hashtag leads to an empty part, and an empty name.
+        //   "#1name" -> the name pattern does not allow a digit as the first character.
+        //   "anything#" -> a hashtag at the end of the string leads to an empty name.
+        if (!matcher.find()) {
+            String replacement = isDollar ? "$" : "#";
+            throw new RendererException("Is not a valid '" + replacement + "' replacement pattern: '" +
+                                        replacement + part + "' in '" + s + "'.");
+        }
+        // We know that there is a correct pattern, and now we replace it.
+        currentCodeFrame.addString(matcher.replaceFirst(
+            (MatchResult result) -> {
+                // There are two groups: (1) for "name" and (2) for "{name}"
+                String name = result.group(1) != null ? result.group(1) : result.group(2);
+                if (isDollar) {
+                    return $(name);
+                } else {
+                    // replaceFirst needs some special escaping of backslashes and ollar signs.
+                    return getHashtagReplacement(name).replace("\\", "\\\\").replace("$", "\\$");
+                }
+            }
+        ));
     }
 
     boolean isAnchored(Hook hook) {

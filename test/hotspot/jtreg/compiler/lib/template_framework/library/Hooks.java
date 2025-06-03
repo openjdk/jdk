@@ -28,7 +28,7 @@ import compiler.lib.template_framework.Hook;
 /**
  * Provides a hook for class and method scopes, to be used in Templates.
  */
-public abstract class Hooks {
+public final class Hooks {
     private Hooks() {} // Avoid instantiation and need for documentation.
 
     /**

@@ -53,7 +53,7 @@ sealed interface Token permits StringToken,
         return outputList;
     }
 
-    private static void parseList(List<Object> inputList, List<Token> outputList) {
+    private static void parseList(List<?> inputList, List<Token> outputList) {
         for (Object o : inputList) {
             parseToken(o, outputList);
         }
@@ -71,7 +71,7 @@ sealed interface Token permits StringToken,
             case Double s  -> outputList.add(new StringToken(Renderer.format(s)));
             case Float s   -> outputList.add(new StringToken(Renderer.format(s)));
             case Boolean s -> outputList.add(new StringToken(Renderer.format(s)));
-            case List l    -> parseList(l, outputList);
+            case List<?> l -> parseList(l, outputList);
             default -> throw new IllegalArgumentException("Unexpected token: " + o);
         }
     }

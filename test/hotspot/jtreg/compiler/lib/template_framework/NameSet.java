@@ -84,6 +84,9 @@ class NameSet {
     public Name sample(Predicate predicate) {
         long w = weight(predicate);
         if (w <= 0) {
+            if (w < 0) {
+                throw new RuntimeException("Negative weight not allowed: " + w);
+            }
             return null;
         }
 
