@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,11 @@
  *      8187946 8195478 8181157 8179071 8193552 8202026 8204269 8202537 8208746
  *      8209775 8221432 8227127 8230284 8231273 8233579 8234288 8250665 8255086
  *      8251317 8274658 8283277 8283805 8265315 8287868 8295564 8284840 8296715
- *      8301206 8303472 8317979 8306116 8174269 8333582
+ *      8301206 8303472 8317979 8306116 8174269 8333582 8357075 8357882
  * @summary Verify locale data
  * @modules java.base/sun.util.resources
  * @modules jdk.localedata
- * @run main LocaleDataTest -cldr
+ * @run main LocaleDataTest
  *
  */
 
@@ -91,9 +91,8 @@
  *    pairs delimited by newline characters, with the keys separated from the values
  *    by = signs.  The keys are similar in syntax to a Unix pathname, with keys at
  *    successive levels of containment in the resource-data hierarchy separated by
- *    slashes.  The file is in ISO 8859-1 encoding, with control characters and
- *    non-ASCII characters denoted with backslash-u escape sequences.  The program also allows
- *    blank lines and comment lines to be interspersed with the data.  Comment lines
+ *    slashes.  The file is in UTF-8 encoding. The program also allows blank lines
+ *    and comment lines to be interspersed with the data.  Comment lines
  *    begin with '#'.
  *
  *    A data file for this test would look something like this:<pre>
@@ -102,8 +101,8 @@
  *        LocaleNames//US=United States
  *        LocaleNames//FR=France
  *        FormatData/fr_FR/MonthNames/0=janvier
- *        FormatData/fr_FR/MonthNames/1=f\u00e9vrier
- *        LocaleNames/fr_FR/US=\u00c9tats-Unis
+ *        FormatData/fr_FR/MonthNames/1=février
+ *        LocaleNames/fr_FR/US=États-Unis
  *        LocaleNames/fr_FR/FR=France</pre>
  *
  *    Second field which designates locale is in the form of:
@@ -118,7 +117,7 @@
  *        FormatData/sr-Latn-BA/DayNames/2=utorak</pre>
  *
  *    The command-line syntax of this test is
- *        <tt>java --add-exports java.base/sun.util.resources=ALL-UNNAMED LocaleDataTest.java [-w] [{ -s | <filename> }] [-cldr]</tt>
+ *        <tt>java --add-exports java.base/sun.util.resources=ALL-UNNAMED LocaleDataTest.java [-w] [{ -s | <filename> }]</tt>
  *
  *    This program always sends its results to standard output.   If -w is not specified,
  *    this program prints out only the differences between the data file and the actual
@@ -130,14 +129,11 @@
  *    The user can specify an optional filename or -s.  If the user specifies a filename,
  *    the program uses that file as the data file.  If the user specifies -s, the program
  *    reads its input from standard input rather than from a file.  If the user specifies
- *    neither, the program reads its input from a file called LocaleData in the same
+ *    neither, the program reads its input from a file called LocaleData.cldr in the same
  *    directory the program itself resides in.
  *
  *    The -nothrow option prevents the program from throwing an exception when it
  *    gets an error.  -w implies -nothrow.
- *
- *    -cldr option specifies to test CLDR locale data. The default data file name for this
- *    option is "LocaleData.cldr".
  *
  *    Other command-line options can be specified, but are ignored.
  *
@@ -147,7 +143,7 @@
  *    date/time format of SimpleDateFormat by making sure that the full date and time
  *    patterns include sufficient data.  The test of this is not whether changes were
  *    made to the locale data; it's whether using this data gives round-trip integrity.
- *    Likewise, changing the currency patterns to use \u00a4 instead of local currency
+ *    Likewise, changing the currency patterns to use ¤ instead of local currency
  *    symbols isn't something that can be tested by this test; instead, you want to
  *    actually format currency values and make sure the proper currency symbol was used.
  *
@@ -163,14 +159,10 @@
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FilterReader;
-import java.io.FilterWriter;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -178,10 +170,9 @@ import sun.util.resources.LocaleData;
 
 public class LocaleDataTest
 {
-    static final String TEXT_RESOURCES_PACKAGE ="sun.text.resources";
-    static final String UTIL_RESOURCES_PACKAGE ="sun.util.resources";
-    static final String DEFAULT_DATAFILE ="LocaleData";
-    static String cldrSuffix = "";
+    static final String TEXT_RESOURCES_PACKAGE = "sun.text.resources.cldr";
+    static final String UTIL_RESOURCES_PACKAGE = "sun.util.resources.cldr";
+    static final String DEFAULT_DATAFILE = "LocaleData.cldr";
 
     public static void main(String[] args) throws Exception {
 
@@ -202,24 +193,18 @@ public class LocaleDataTest
             else if (args[i].equals("-nothrow"))
                 doThrow = false;
 
-            else if (args[i].equals("-cldr")) {
-                cldrSuffix = ".cldr";
-            }
-
             else if (args[i].equals("-s") && in == null)
-                in = new BufferedReader(new EscapeReader(new InputStreamReader(System.in,
-                                "ISO8859_1")));
+                in = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
             else if (!args[i].startsWith("-") && in == null)
-                in = new BufferedReader(new EscapeReader(new InputStreamReader(new
-                                FileInputStream(args[i]), "ISO8859_1")));
+                in = new BufferedReader(new InputStreamReader(new
+                                FileInputStream(args[i]), StandardCharsets.UTF_8));
         }
         if (in == null) {
-            File localeData = new File(System.getProperty("test.src", "."), DEFAULT_DATAFILE + cldrSuffix);
-            in = new BufferedReader(new EscapeReader(new InputStreamReader(new
-                            FileInputStream(localeData), "ISO8859_1")));
+            File localeData = new File(System.getProperty("test.src", "."), DEFAULT_DATAFILE);
+            in = new BufferedReader(new InputStreamReader(new
+                            FileInputStream(localeData), StandardCharsets.UTF_8));
         }
-        out = new PrintWriter(new EscapeWriter(new OutputStreamWriter(System.out,
-                        "ISO8859_1")), true);
+        out = new PrintWriter(new OutputStreamWriter(System.out, StandardCharsets.UTF_8));
 
         // perform the actual test
         int errorCount = doTest(in, out, writeNewFile);
@@ -315,7 +300,7 @@ public class LocaleDataTest
             index = key.length();
         resTag = key.substring(oldIndex, index);
 
-        // TimeZone name may have "/" in it, for example "Asia/Taipei", so use "Asia\/Taipei in LocaleData.
+        // TimeZone name may have "/" in it, for example "Asia/Taipei", so use "Asia\/Taipei in LocaleData.cldr.
         if(resTag.endsWith("\\")) {
             resTag = resTag.substring(0, resTag.length() - 1);
             oldIndex = index;
@@ -337,9 +322,9 @@ public class LocaleDataTest
                     || rbName.equals("CurrencyNames")
                     || rbName.equals("LocaleNames")
                     || rbName.equals("TimeZoneNames")) {
-                fullName = UTIL_RESOURCES_PACKAGE + cldrSuffix + "." + rbName;
+                fullName = UTIL_RESOURCES_PACKAGE + "." + rbName;
             } else {
-                fullName = TEXT_RESOURCES_PACKAGE + cldrSuffix + "." + rbName;
+                fullName = TEXT_RESOURCES_PACKAGE + "." + rbName;
             }
             Locale locale;
             if (use_tag) {
@@ -401,98 +386,4 @@ public class LocaleDataTest
         }
         return true;
     }
-}
-
-class EscapeReader extends FilterReader {
-    public EscapeReader(Reader in) {
-        super(in);
-    }
-
-    public int read() throws IOException {
-        if (buffer != null) {
-            String b = buffer.toString();
-            int result = b.charAt(0);
-            if (b.length() > 1)
-                buffer = new StringBuffer(b.substring(1));
-            else
-                buffer = null;
-            return result;
-        }
-        else {
-            int result = super.read();
-            if (result != '\\')
-                return result;
-            else {
-                buffer = new StringBuffer();
-                result = super.read();
-                buffer.append((char)result);
-                if (result == 'u') {
-                    for (int i = 0; i < 4; i++) {
-                        result = super.read();
-                        if (result == -1)
-                            break;
-                        buffer.append((char)result);
-                    }
-                    String number = buffer.toString().substring(1);
-                    result = Integer.parseInt(number, 16);
-                    buffer = null;
-                    return result;
-                }
-                return '\\';
-            }
-        }
-    }
-
-    public int read(char[] cbuf, int start, int len) throws IOException {
-        int p = start;
-        int end = start + len;
-        int c = 0;
-        while (c != -1 && p < end) {
-            c = read();
-            if (c != -1)
-                cbuf[p++] = (char)c;
-        }
-        if (c == -1 && p == start)
-            return -1;
-        else
-            return p - start;
-    }
-
-    private StringBuffer buffer = null;
-}
-
-class EscapeWriter extends FilterWriter {
-    public EscapeWriter(Writer out) {
-        super(out);
-    }
-
-    public void write(int c) throws IOException {
-        if ((c >= ' ' && c <= '\u007e') || c == '\r' || c == '\n')
-            super.write(c);
-        else {
-            super.write('\\');
-            super.write('u');
-            String number = Integer.toHexString(c);
-            if (number.length() < 4)
-                number = zeros.substring(0, 4 - number.length()) + number;
-            super.write(number.charAt(0));
-            super.write(number.charAt(1));
-            super.write(number.charAt(2));
-            super.write(number.charAt(3));
-        }
-    }
-
-    public void write(char[] cbuf, int off, int len) throws IOException {
-        int end = off + len;
-        while (off < end)
-            write(cbuf[off++]);
-    }
-
-    public void write(String str, int off, int len) throws IOException {
-        int end = off + len;
-        while (off < end)
-            write(str.charAt(off++));
-    }
-
-    private static String zeros = "0000";
 }

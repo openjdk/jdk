@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 import jdk.jpackage.internal.util.PathUtils;
 
 
@@ -142,7 +143,18 @@ public final class FileAssociations {
             switch (invocationType) {
                 case DesktopOpenAssociatedFile: {
                     TKit.trace(String.format("Use desktop to open [%s] file", testFile));
-                    Desktop.getDesktop().open(testFile.toFile());
+                    if (!HelloApp.CLEAR_JAVA_ENV_VARS) {
+                        Desktop.getDesktop().open(testFile.toFile());
+                    } else {
+                        final var jsScript = TKit.createTempFile(Path.of("fa-scripts", testFile.getFileName().toString() + ".jsh"));
+                        TKit.createTextFile(jsScript, List.of(
+                                "import java.awt.Desktop",
+                                "import java.io.File",
+                                String.format("Desktop.getDesktop().open(new File(\"%s\"))", testFile.toString().replace('\\', '/')),
+                                "/exit"));
+                        final var exec = Executor.of(JavaTool.JSHELL.getPath().toString(), jsScript.toString());
+                        HelloApp.configureEnvironment(exec).dumpOutput().execute();
+                    }
                     return List.of(testFile.toString());
                 }
                 case WinCommandLine: {

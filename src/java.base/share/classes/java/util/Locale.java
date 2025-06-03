@@ -1691,37 +1691,37 @@ public final class Locale implements Cloneable, Serializable {
         LanguageTag tag = LanguageTag.parseLocale(baseLocale, localeExtensions);
         StringBuilder buf = new StringBuilder();
 
-        String subtag = tag.getLanguage();
+        String subtag = tag.language();
         if (!subtag.isEmpty()) {
             buf.append(LanguageTag.canonicalizeLanguage(subtag));
         }
 
-        subtag = tag.getScript();
+        subtag = tag.script();
         if (!subtag.isEmpty()) {
             buf.append(LanguageTag.SEP);
             buf.append(LanguageTag.canonicalizeScript(subtag));
         }
 
-        subtag = tag.getRegion();
+        subtag = tag.region();
         if (!subtag.isEmpty()) {
             buf.append(LanguageTag.SEP);
             buf.append(LanguageTag.canonicalizeRegion(subtag));
         }
 
-        List<String>subtags = tag.getVariants();
+        List<String>subtags = tag.variants();
         for (String s : subtags) {
             buf.append(LanguageTag.SEP);
             // preserve casing
             buf.append(s);
         }
 
-        subtags = tag.getExtensions();
+        subtags = tag.extensions();
         for (String s : subtags) {
             buf.append(LanguageTag.SEP);
             buf.append(LanguageTag.canonicalizeExtension(s));
         }
 
-        subtag = tag.getPrivateuse();
+        subtag = tag.privateuse();
         if (!subtag.isEmpty()) {
             if (buf.length() > 0) {
                 buf.append(LanguageTag.SEP);
@@ -1800,7 +1800,7 @@ public final class Locale implements Cloneable, Serializable {
      * to {@link Locale.Builder#setLanguageTag(String)} which throws an exception
      * in this case.
      *
-     * <p>The following <b>conversions</b> are performed:<ul>
+     * <p>The following <b id="langtag_conversions">conversions</b> are performed:<ul>
      *
      * <li>The language code "und" is mapped to language "".
      *
@@ -1826,13 +1826,19 @@ public final class Locale implements Cloneable, Serializable {
      *     loc.getExtension('x'); // returns "urp"
      * }
      *
-     * <li>When the languageTag argument contains an extlang subtag,
-     * the first such subtag is used as the language, and the primary
-     * language subtag and other extlang subtags are ignored:
+     * <li> BCP 47 language tags permit up to three extlang subtags. However,
+     * the second and third extlang subtags are always ignored. As such,
+     * the first extlang subtag in {@code languageTag} is used as the language,
+     * and the primary language subtag and other extlang subtags are ignored.
+     * Language tags that exceed three extlang subtags are considered
+     * ill-formed starting at the offending extlang subtag.
      *
      * {@snippet lang=java :
      *     Locale.forLanguageTag("ar-aao").getLanguage(); // returns "aao"
      *     Locale.forLanguageTag("en-abc-def-us").toString(); // returns "abc_US"
+     *     Locale.forLanguageTag("zh-yue-gan-cmn-czh-CN").toString();
+     *     // returns "yue"; "czh" exceeds the extlang limit, and subsequent
+     *     // subtags are considered ill-formed
      * }
      *
      * <li>Case is normalized except for variant tags, which are left
@@ -2786,6 +2792,9 @@ public final class Locale implements Cloneable, Serializable {
          * thrown (unlike {@code Locale.forLanguageTag}, which
          * just discards ill-formed and following portions of the
          * tag).
+         *
+         * <p>See {@link Locale##langtag_conversions converions} for a full list
+         * of conversions that are performed on {@code languageTag}.
          *
          * @param languageTag the language tag
          * @return This builder.
