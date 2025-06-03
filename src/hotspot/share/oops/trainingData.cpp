@@ -73,6 +73,9 @@ void TrainingData::initialize() {
     guarantee(have_data() != need_data(), "Iterative training is not supported");
     TrainingDataLocker::initialize();
   }
+  if (need_data()) {
+    training_data_set()->initialize();
+  }
 }
 
 static void verify_archived_entry(TrainingData* td, const TrainingData::Key* k) {
@@ -433,11 +436,8 @@ void KlassTrainingData::print_on(outputStream* st, bool name_only) const {
 
 KlassTrainingData::KlassTrainingData(InstanceKlass* klass) : TrainingData(klass) {
   assert(klass != nullptr, "");
-  Handle hm(JavaThread::current(), klass->java_mirror());
-  jobject hmj = JNIHandles::make_global(hm);
-  _holder_mirror = hmj;
+  training_data_set()->keep_alive(klass);
   _holder = klass;
-  assert(holder() == klass, "");
 }
 
 void KlassTrainingData::notice_fully_initialized() {
@@ -759,7 +759,6 @@ void TrainingData::DepList<T>::prepare(ClassLoaderData* loader_data) {
 
 void KlassTrainingData::remove_unshareable_info() {
   TrainingData::remove_unshareable_info();
-  _holder_mirror = nullptr;
   _comp_deps.remove_unshareable_info();
 }
 
