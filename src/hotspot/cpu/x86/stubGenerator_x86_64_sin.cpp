@@ -199,7 +199,7 @@ address StubGenerator::generate_libmSin() {
     __ push(rdi, true /*is_pair*/);
 #endif
 
-  __ push(rbx,  true /*is_pair*/);
+  __ push(rbx, true /*is_pair*/);
   __ subq(rsp, 16);
   __ movsd(Address(rsp, 8), xmm0);
   __ movl(rax, Address(rsp, 12));

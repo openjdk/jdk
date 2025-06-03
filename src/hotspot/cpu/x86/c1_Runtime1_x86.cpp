@@ -1070,10 +1070,10 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
         };
 
         __ set_info("slow_subtype_check", dont_gc_arguments);
-        __ push(rdi);
-        __ push(rsi);
-        __ push(rcx);
-        __ push(rax);
+        __ push(rdi, true /*is_pair*/);
+        __ push(rsi, true /*is_pair*/);
+        __ push(rcx, true /*is_pair*/);
+        __ push(rax, true /*is_pair*/);
 
         // This is called by pushing args and not with C abi
         __ movptr(rsi, Address(rsp, (klass_off) * VMRegImpl::stack_slot_size)); // subclass
@@ -1084,10 +1084,10 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
 
         // fallthrough on success:
         __ movptr(Address(rsp, (result_off) * VMRegImpl::stack_slot_size), 1); // result
-        __ pop(rax);
-        __ pop(rcx);
-        __ pop(rsi);
-        __ pop(rdi);
+        __ pop(rax, true /*is_pair*/);
+        __ pop(rcx, true /*is_pair*/);
+        __ pop(rsi, true /*is_pair*/);
+        __ pop(rdi, true /*is_pair*/);
         __ ret(0);
 
         __ bind(miss);

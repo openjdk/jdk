@@ -1004,8 +1004,8 @@ public:
   static bool supports_clflush(); // Can't inline due to header file conflict
 
   // Note: CPU_FLUSHOPT and CPU_CLWB bits should always be zero for 32-bit
-  static bool supports_clflushopt() { return (_features.supports_feature(CPU_FLUSHOPT)); }
-  static bool supports_clwb() { return (_features.supports_feature(CPU_CLWB)); }
+  static bool supports_clflushopt() { return false; } //(_features.supports_feature(CPU_FLUSHOPT)); }
+  static bool supports_clwb() { return false; } //(_features.supports_feature(CPU_CLWB)); }
 
   // Old CPUs perform lea on AGU which causes additional latency transferring the
   // value from/to ALU for other operations
