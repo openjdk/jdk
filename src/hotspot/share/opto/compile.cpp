@@ -26,12 +26,14 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "ci/ciReplay.hpp"
 #include "classfile/javaClasses.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/exceptionHandlerTable.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/compilationFailureInfo.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
@@ -575,6 +577,10 @@ void Compile::print_compile_messages() {
 }
 
 #ifndef PRODUCT
+void Compile::print_phase(const char* phase_name) {
+  tty->print_cr("%u.\t%s", ++_phase_counter, phase_name);
+}
+
 void Compile::print_ideal_ir(const char* phase_name) {
   // keep the following output all in one block
   // This output goes directly to the tty, not the compiler log.
@@ -630,6 +636,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _ilt(nullptr),
       _stub_function(nullptr),
       _stub_name(nullptr),
+      _stub_id(-1),
       _stub_entry_point(nullptr),
       _max_node_limit(MaxNodeLimit),
       _post_loop_opts_phase(false),
@@ -729,7 +736,8 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   }
 
   if (StressLCM || StressGCM || StressIGVN || StressCCP ||
-      StressIncrementalInlining || StressMacroExpansion || StressUnstableIfTraps || StressBailout) {
+      StressIncrementalInlining || StressMacroExpansion || StressUnstableIfTraps || StressBailout ||
+      StressLoopPeeling) {
     initialize_stress_seed(directive);
   }
 
@@ -899,6 +907,7 @@ Compile::Compile(ciEnv* ci_env,
                  TypeFunc_generator generator,
                  address stub_function,
                  const char* stub_name,
+                 int stub_id,
                  int is_fancy_jump,
                  bool pass_tls,
                  bool return_pc,
@@ -910,6 +919,7 @@ Compile::Compile(ciEnv* ci_env,
       _entry_bci(InvocationEntryBci),
       _stub_function(stub_function),
       _stub_name(stub_name),
+      _stub_id(stub_id),
       _stub_entry_point(nullptr),
       _max_node_limit(MaxNodeLimit),
       _post_loop_opts_phase(false),
@@ -960,6 +970,16 @@ Compile::Compile(ciEnv* ci_env,
 #endif
       _allowed_reasons(0) {
   C = this;
+
+  // try to reuse an existing stub
+  {
+    CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, _stub_id, stub_name);
+    if (blob != nullptr) {
+      RuntimeStub* rs = blob->as_runtime_stub();
+      _stub_entry_point = rs->entry_point();
+      return;
+    }
+  }
 
   TraceTime t1(nullptr, &_t_totalCompilation, CITime, false);
   TraceTime t2(nullptr, &_t_stubCompilation, CITime, false);
@@ -1054,6 +1074,7 @@ void Compile::Init(bool aliasing) {
   set_decompile_count(0);
 
 #ifndef PRODUCT
+  _phase_counter = 0;
   Copy::zero_to_bytes(_igv_phase_iter, sizeof(_igv_phase_iter));
 #endif
 
@@ -5134,7 +5155,10 @@ void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
   if (should_print_igv(level)) {
     _igv_printer->print_graph(name);
   }
-  if (should_print_phase(cpt)) {
+  if (should_print_phase(level)) {
+    print_phase(name);
+  }
+  if (should_print_ideal_phase(cpt)) {
     print_ideal_ir(CompilerPhaseTypeHelper::to_name(cpt));
   }
 #endif
@@ -5165,26 +5189,26 @@ void Compile::end_method() {
 #endif
 }
 
-bool Compile::should_print_phase(CompilerPhaseType cpt) {
 #ifndef PRODUCT
-  if (_directive->should_print_phase(cpt)) {
-    return true;
-  }
-#endif
-  return false;
+bool Compile::should_print_phase(const int level) const {
+  return PrintPhaseLevel > 0 && directive()->PhasePrintLevelOption >= level &&
+         _method != nullptr; // Do not print phases for stubs.
 }
 
-#ifndef PRODUCT
+bool Compile::should_print_ideal_phase(CompilerPhaseType cpt) const {
+  return _directive->should_print_ideal_phase(cpt);
+}
+
 void Compile::init_igv() {
   if (_igv_printer == nullptr) {
     _igv_printer = IdealGraphPrinter::printer();
     _igv_printer->set_compile(this);
   }
 }
-#endif
 
 bool Compile::should_print_igv(const int level) {
-#ifndef PRODUCT
+  PRODUCT_RETURN_(return false;);
+
   if (PrintIdealGraphLevel < 0) { // disabled by the user
     return false;
   }
@@ -5194,12 +5218,8 @@ bool Compile::should_print_igv(const int level) {
     Compile::init_igv();
   }
   return need;
-#else
-  return false;
-#endif
 }
 
-#ifndef PRODUCT
 IdealGraphPrinter* Compile::_debug_file_printer = nullptr;
 IdealGraphPrinter* Compile::_debug_network_printer = nullptr;
 
@@ -5288,7 +5308,7 @@ void Compile::igv_print_graph_to_network(const char* name, GrowableArray<const N
   tty->print_cr("Method printed over network stream to IGV");
   _debug_network_printer->print(name, C->root(), visible_nodes, fr);
 }
-#endif
+#endif // !PRODUCT
 
 Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res) {
   if (type != nullptr && phase->type(value)->higher_equal(type)) {

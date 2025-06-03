@@ -49,6 +49,7 @@
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.inline.hpp"
+#include "oops/trainingData.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
@@ -505,11 +506,15 @@ C2V_VMENTRY_NULL(jobject, getResolvedJavaType0, (JNIEnv* env, jobject, jobject b
       }
     } else if (JVMCIENV->isa_HotSpotMethodData(base_object)) {
       jlong base_address = (intptr_t) JVMCIENV->asMethodData(base_object);
-      klass = *((Klass**) (intptr_t) (base_address + offset));
-      if (klass == nullptr || !klass->is_loader_alive()) {
+      Klass* k = *((Klass**) (intptr_t) (base_address + offset));
+      if (k == nullptr || k->class_loader_data() == nullptr || !TrainingData::is_klass_loaded(k)) {
+        return nullptr;
+      }
+      if (!k->is_loader_alive()) {
         // Klasses in methodData might be concurrently unloading so return null in that case.
         return nullptr;
       }
+      klass = k;
     } else {
       goto unexpected;
     }
@@ -2831,7 +2836,7 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
         if (data != nullptr) {
           // Only the mirror in the HotSpot heap is accessible
           // through JVMCINMethodData
-          oop nmethod_mirror = data->get_nmethod_mirror(nm, /* phantom_ref */ true);
+          oop nmethod_mirror = data->get_nmethod_mirror(nm);
           if (nmethod_mirror != nullptr) {
             result = HotSpotJVMCI::wrap(nmethod_mirror);
           }
@@ -2863,7 +2868,7 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
           if (data == nullptr) {
             JVMCI_THROW_MSG_0(IllegalArgumentException, "Missing HotSpotNmethod data");
           }
-          if (data->get_nmethod_mirror(nm, /* phantom_ref */ false) != nullptr) {
+          if (data->get_nmethod_mirror(nm) != nullptr) {
             JVMCI_THROW_MSG_0(IllegalArgumentException, "Cannot overwrite existing HotSpotNmethod mirror for nmethod");
           }
           oop nmethod_mirror = HotSpotJVMCI::resolve(result);

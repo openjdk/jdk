@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,12 +208,21 @@ public enum VectorShape {
         }
     }
 
-    // non-public support for computing preferred shapes
-
-    /*package-private*/
-    static VectorShape largestShapeFor(Class<?> etype) {
+    /**
+     * Finds the largest vector shape supported by the current
+     * platform for the element type {@code etype}.
+     *
+     * @param etype the element type
+     * @return the largest vector shape supported by the platform
+     *         for {@code etype}
+     * @throws IllegalArgumentException if no such vector shape exists
+     *         for the element type or the type is not a valid {@code ETYPE}.
+     */
+    public static VectorShape largestShapeFor(Class<?> etype) {
         return VectorShape.forBitSize(getMaxVectorBitSize(etype));
     }
+
+    // non-public support for computing preferred shapes
 
     /**
      * Finds the vector shape preferred by the current platform

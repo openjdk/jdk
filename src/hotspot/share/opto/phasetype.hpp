@@ -100,6 +100,7 @@
   flags(MATCHING,                       "After matching") \
   flags(GLOBAL_CODE_MOTION,             "Global code motion") \
   flags(INITIAL_LIVENESS,               "Initial liveness") \
+  flags(LIVE_RANGE_STRETCHING,          "Live range stretching") \
   flags(AGGRESSIVE_COALESCING,          "Aggressive coalescing") \
   flags(INITIAL_SPILLING,               "Initial spilling") \
   flags(CONSERVATIVE_COALESCING,        "Conservative coalescing") \

@@ -308,6 +308,7 @@ class Compile : public Phase {
   InlineTree*           _ilt;                   // Ditto (temporary).
   address               _stub_function;         // VM entry for stub being compiled, or null
   const char*           _stub_name;             // Name of stub or adapter being compiled, or null
+  int                   _stub_id;               // unique id for stub or -1
   address               _stub_entry_point;      // Compile code entry for generated stub, or null
 
   // Control of this compilation.
@@ -346,6 +347,7 @@ class Compile : public Phase {
   bool                  _print_inlining;        // True if we should print inlining for this compilation
   bool                  _print_intrinsics;      // True if we should print intrinsics for this compilation
 #ifndef PRODUCT
+  uint                  _phase_counter;         // Counter for the number of already printed phases
   uint                  _igv_idx;               // Counter for IGV node identifiers
   uint                  _igv_phase_iter[PHASE_NUM_TYPES]; // Counters for IGV phase iterations
   bool                  _trace_opto_output;
@@ -570,6 +572,7 @@ public:
   InlineTree*       ilt() const                 { return _ilt; }
   address           stub_function() const       { return _stub_function; }
   const char*       stub_name() const           { return _stub_name; }
+  int               stub_id() const             { return _stub_id; }
   address           stub_entry_point() const    { return _stub_entry_point; }
   void          set_stub_entry_point(address z) { _stub_entry_point = z; }
 
@@ -640,13 +643,14 @@ public:
   void          set_has_scoped_access(bool v)    { _has_scoped_access = v; }
 
   // check the CompilerOracle for special behaviours for this compile
-  bool          method_has_option(CompileCommandEnum option) {
+  bool          method_has_option(CompileCommandEnum option) const {
     return method() != nullptr && method()->has_option(option);
   }
 
 #ifndef PRODUCT
   uint          next_igv_idx()                  { return _igv_idx++; }
   bool          trace_opto_output() const       { return _trace_opto_output; }
+  void          print_phase(const char* phase_name);
   void          print_ideal_ir(const char* phase_name);
   bool          should_print_ideal() const      { return _directive->PrintIdealOption; }
   bool              parsed_irreducible_loop() const { return _parsed_irreducible_loop; }
@@ -664,12 +668,13 @@ public:
 
   void begin_method();
   void end_method();
-  bool should_print_igv(int level);
-  bool should_print_phase(CompilerPhaseType cpt);
 
   void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr);
 
 #ifndef PRODUCT
+  bool should_print_igv(int level);
+  bool should_print_phase(int level) const;
+  bool should_print_ideal_phase(CompilerPhaseType cpt) const;
   void init_igv();
   void dump_igv(const char* graph_name, int level = 3) {
     if (should_print_igv(level)) {
@@ -1140,7 +1145,7 @@ public:
   // convention.
   Compile(ciEnv* ci_env, const TypeFunc *(*gen)(),
           address stub_function, const char *stub_name,
-          int is_fancy_jump, bool pass_tls,
+          int stub_id, int is_fancy_jump, bool pass_tls,
           bool return_pc, DirectiveSet* directive);
 
   ~Compile();
