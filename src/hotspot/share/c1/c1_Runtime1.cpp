@@ -800,7 +800,7 @@ JRT_ENTRY(void, Runtime1::deoptimize(JavaThread* current, jint trap_request))
   Deoptimization::DeoptReason reason = Deoptimization::trap_request_reason(trap_request);
 
   if (action == Deoptimization::Action_make_not_entrant) {
-    if (nm->make_not_entrant(nmethod::NMethodChangeReason::C1_deoptimize)) {
+    if (nm->make_not_entrant(nmethod::ChangeReason::C1_deoptimize)) {
       if (reason == Deoptimization::Reason_tenured) {
         MethodData* trap_mdo = Deoptimization::get_method_data(current, method, true /*create_if_missing*/);
         if (trap_mdo != nullptr) {
@@ -1092,7 +1092,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
     // safepoint, but if it's still alive then make it not_entrant.
     nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
     if (nm != nullptr) {
-      nm->make_not_entrant(nmethod::NMethodChangeReason::C1_codepatch);
+      nm->make_not_entrant(nmethod::ChangeReason::C1_codepatch);
     }
 
     Deoptimization::deoptimize_frame(current, caller_frame.id());
@@ -1468,7 +1468,7 @@ JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* current))
 
   nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
   assert (nm != nullptr, "no more nmethod?");
-  nm->make_not_entrant(nmethod::NMethodChangeReason::C1_predicate_failed_trap);
+  nm->make_not_entrant(nmethod::ChangeReason::C1_predicate_failed_trap);
 
   methodHandle m(current, nm->method());
   MethodData* mdo = m->method_data();
