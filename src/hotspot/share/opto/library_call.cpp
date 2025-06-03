@@ -5567,7 +5567,10 @@ void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, No
 #endif
     auto move_proj = [=](ProjNode* proj) {
       int alias_idx = C->get_alias_index(proj->adr_type());
-      assert(alias_idx == Compile::AliasIdxRaw || alias_idx == elemidx || alias_idx == mark_idx || alias_idx == klass_idx, "should be raw memory or array element type");
+      assert(alias_idx == Compile::AliasIdxRaw ||
+             alias_idx == elemidx ||
+             alias_idx == mark_idx ||
+             alias_idx == klass_idx, "should be raw memory or array element type");
       set_memory(proj, alias_idx);
       return false;
     };
