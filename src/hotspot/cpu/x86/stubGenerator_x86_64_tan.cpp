@@ -483,11 +483,24 @@ address StubGenerator::generate_libmTan() {
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
 #ifdef _WIN64
-  __ push(rsi);
-  __ push(rdi);
+  if (VM_Version::supports_apx_f()) {
+    __ pushp(rsi);
+  } else {
+    __ push(rsi);
+  }
+
+  if (VM_Version::supports_apx_f()) {
+    __ pushp(rdi);
+  } else {
+    __ push(rdi);
+  }
 #endif
 
-  __ push(rbx);
+  if (VM_Version::supports_apx_f()) {
+    __ pushp(rbx);
+  } else {
+    __ push(rbx);
+  }
   __ subq(rsp, 16);
   __ movsd(Address(rsp, 8), xmm0);
 
@@ -1015,11 +1028,24 @@ address StubGenerator::generate_libmTan() {
 
   __ bind(B1_4);
   __ addq(rsp, 16);
-  __ pop(rbx);
+  if (VM_Version::supports_apx_f()) {
+    __ popp(rbx);
+  } else {
+    __ pop(rbx);
+  }
 
 #ifdef _WIN64
-  __ pop(rdi);
-  __ pop(rsi);
+  if (VM_Version::supports_apx_f()) {
+    __ popp(rdi);
+  } else {
+    __ pop(rdi);
+  }
+
+  if (VM_Version::supports_apx_f()) {
+    __ popp(rsi);
+  } else {
+    __ pop(rsi);
+  }
 #endif
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
