@@ -1340,7 +1340,7 @@ void Runtime1::patch_code(JavaThread* current, C1StubId stub_id) {
     // Make sure the nmethod is invalidated, i.e. made not entrant.
     nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
     if (nm != nullptr) {
-      nm->make_not_entrant(nmethod::NMethodChangeReason::C1_deoptimize_for_patching);
+      nm->make_not_entrant(nmethod::ChangeReason::C1_deoptimize_for_patching);
     }
   }
 
