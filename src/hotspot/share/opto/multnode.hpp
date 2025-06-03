@@ -52,6 +52,11 @@ public:
   uint number_of_projs(uint which_proj) const;
   uint number_of_projs(uint which_proj, bool is_io_use) const;
 
+  enum ApplyToProjs {
+    CONTINUE,
+    BREAK_AND_RETURN_CURRENT_PROJ
+  };
+
   // Run callback on all Proj projection from this node
   template<class Callback> ProjNode* apply_to_projs(Callback callback) const {
     DUIterator_Fast imax, i = fast_outs(imax);
@@ -123,9 +128,11 @@ protected:
       Node* p = i.current();
       if (p->is_Proj()) {
         ProjNode* proj = p->as_Proj();
-        if (callback(proj)) {
+        ApplyToProjs result = callback(proj);
+        if (result == BREAK_AND_RETURN_CURRENT_PROJ) {
           return proj;
         }
+        assert(result == CONTINUE, "should be either break or continue");
       } else {
         assert(p == this && is_Start(), "else must be proj");
       }
@@ -225,9 +232,9 @@ public:
 template <class Callback> ProjNode* MultiNode::apply_to_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback, uint which_proj) const {
   auto filter = [&](ProjNode* proj) {
     if (proj->_con == which_proj && callback(proj)) {
-      return true;
+      return BREAK_AND_RETURN_CURRENT_PROJ;
     }
-    return false;
+    return CONTINUE;
   };
   return apply_to_projs(imax, i, filter);
 }

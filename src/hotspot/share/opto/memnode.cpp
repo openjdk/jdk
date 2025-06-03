@@ -5454,7 +5454,7 @@ Node* InitializeNode::complete_stores(Node* rawctl, Node* rawmem, Node* rawptr,
 void InitializeNode::replace_mem_projs_by(Node* mem, Compile* C) {
   auto replace_proj = [&](ProjNode* proj) {
     C->gvn_replace_by(proj, mem);
-    return false;
+    return CONTINUE;
   };
   apply_to_projs(replace_proj, TypeFunc::Memory);
 }
@@ -5464,7 +5464,7 @@ void InitializeNode::replace_mem_projs_by(Node* mem, PhaseIterGVN* igvn) {
   auto replace_proj = [&](ProjNode* proj) {
     igvn->replace_node(proj, mem);
     --i; --imax;
-    return false;
+    return CONTINUE;
   };
   apply_to_projs(imax, i, replace_proj, TypeFunc::Memory);
 }
@@ -5478,16 +5478,16 @@ template <class Callback> ProjNode* InitializeNode::apply_to_narrow_mem_projs(Ca
 template<class Callback> ProjNode* InitializeNode::apply_to_narrow_mem_projs(Callback callback, const TypePtr* adr_type) const {
   auto filter = [&](NarrowMemProjNode* proj) {
     if (proj->adr_type() == adr_type && callback(proj->as_NarrowMemProj())) {
-      return true;
+      return BREAK_AND_RETURN_CURRENT_PROJ;
     }
-    return false;
+    return CONTINUE;
   };
   return apply_to_narrow_mem_projs(filter);
 }
 
 bool InitializeNode::already_has_narrow_mem_proj_with_adr_type(const TypePtr* adr_type) const {
   auto find_proj = [](ProjNode* proj) {
-    return true;
+    return BREAK_AND_RETURN_CURRENT_PROJ;
   };
   return apply_to_narrow_mem_projs(find_proj, adr_type) != nullptr;
 }

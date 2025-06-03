@@ -1649,7 +1649,7 @@ void PhaseMacroExpand::expand_initialize_membar(AllocateNode* alloc, InitializeN
           assert(existing_raw_mem_proj == nullptr, "only one expected");
           existing_raw_mem_proj = proj;
         }
-        return false;
+        return MultiNode::CONTINUE;
       };
       init->apply_to_projs(find_raw_mem, TypeFunc::Memory);
       Node* raw_mem_proj = new ProjNode(init, TypeFunc::Memory);

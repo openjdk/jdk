@@ -49,7 +49,7 @@ ProjNode* MultiNode::proj_out_or_null(uint which_proj) const {
   auto find_proj = [&](ProjNode* proj) {
     assert((Opcode() != Op_If && Opcode() != Op_RangeCheck) || proj->Opcode() == (which_proj ? Op_IfTrue : Op_IfFalse),
            "bad if #2");
-    return true;
+    return BREAK_AND_RETURN_CURRENT_PROJ;
   };
   return apply_to_projs(find_proj, which_proj);
 }
@@ -57,7 +57,7 @@ ProjNode* MultiNode::proj_out_or_null(uint which_proj) const {
 ProjNode* MultiNode::proj_out_or_null(uint which_proj, bool is_io_use) const {
   assert(number_of_projs(which_proj, is_io_use) <= 1, "only when there's a single projection");
   auto find_proj = [](ProjNode* proj) {
-    return true;
+    return BREAK_AND_RETURN_CURRENT_PROJ;
   };
   return apply_to_projs(find_proj, which_proj, is_io_use);
 }
@@ -65,9 +65,9 @@ ProjNode* MultiNode::proj_out_or_null(uint which_proj, bool is_io_use) const {
 template<class Callback> ProjNode* MultiNode::apply_to_projs(Callback callback, uint which_proj, bool is_io_use) const {
   auto filter = [&](ProjNode* proj) {
     if (proj->_is_io_use == is_io_use && callback(proj)) {
-      return true;
+      return BREAK_AND_RETURN_CURRENT_PROJ;
     }
-    return false;
+    return CONTINUE;
   };
   return apply_to_projs(filter, which_proj);
 }
@@ -76,7 +76,7 @@ uint MultiNode::number_of_projs(uint which_proj) const {
   uint cnt = 0;
   auto count_projs = [&](ProjNode* proj) {
     cnt++;
-    return false;
+    return CONTINUE;
   };
   apply_to_projs(count_projs, which_proj);
   return cnt;
@@ -86,7 +86,7 @@ uint MultiNode::number_of_projs(uint which_proj, bool is_io_use) const {
   uint cnt = 0;
   auto count_projs = [&](ProjNode* proj) {
     cnt++;
-    return false;
+    return CONTINUE;
   };
   apply_to_projs(count_projs, which_proj, is_io_use);
   return cnt;

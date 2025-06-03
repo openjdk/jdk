@@ -5576,7 +5576,7 @@ void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, No
              alias_idx == mark_idx ||
              alias_idx == klass_idx, "should be raw memory or array element type");
       set_memory(proj, alias_idx);
-      return false;
+      return MultiNode::CONTINUE;
     };
     init->apply_to_projs(move_proj, TypeFunc::Memory);
 

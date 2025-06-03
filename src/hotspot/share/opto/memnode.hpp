@@ -1406,9 +1406,9 @@ private:
   template <class Callback, class Iterator> ProjNode* apply_to_narrow_mem_projs_any_iterator(Iterator i, Callback callback) const {
     auto filter = [&](ProjNode* proj) {
       if (proj->is_NarrowMemProj() && callback(proj->as_NarrowMemProj())) {
-        return true;
+        return BREAK_AND_RETURN_CURRENT_PROJ;
       }
-      return false;
+      return CONTINUE;
     };
     return apply_to_projs_any_iterator(i, filter);
   }

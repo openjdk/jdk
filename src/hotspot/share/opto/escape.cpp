@@ -4460,7 +4460,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
             record_for_optimizer(new_proj);
             set_map(proj, new_proj); // record it so ConnectionGraph::find_inst_mem() can find it
           }
-          return false;
+          return MultiNode::CONTINUE;
         };
         init->apply_to_narrow_mem_projs(i, process_narrow_proj);
 
