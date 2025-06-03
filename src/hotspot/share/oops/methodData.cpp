@@ -1996,6 +1996,9 @@ void MethodData::release_C_heap_structures() {
 #if INCLUDE_CDS
 void MethodData::remove_unshareable_info() {
   _extra_data_lock = nullptr;
+#if INCLUDE_JVMCI
+  _failed_speculations = nullptr;
+#endif
 }
 
 void MethodData::restore_unshareable_info(TRAPS) {
