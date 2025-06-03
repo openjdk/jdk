@@ -35,6 +35,7 @@ import java.util.HashSet;
 import sun.net.util.IPAddressUtil;
 import sun.nio.ch.IOUtil;
 import sun.nio.ch.Net;
+import sun.nio.ch.NIOUtil;
 import com.sun.nio.sctp.SctpSocketOption;
 import static com.sun.nio.sctp.SctpStandardSocketOptions.*;
 
@@ -74,7 +75,7 @@ public class SctpNet {
      */
     static FileDescriptor socket(boolean oneToOne) throws IOException {
         int nativefd = socket0(oneToOne);
-        return IOUtil.newFD(nativefd);
+        return NIOUtil.newFD(nativefd);
     }
 
     static void bindx(int fd, InetAddress[] addrs, int port, boolean add)
@@ -251,7 +252,7 @@ public class SctpNet {
 
     static FileDescriptor branch(int fd, int assocId) throws IOException {
         int nativefd = branch0(fd, assocId);
-        return IOUtil.newFD(nativefd);
+        return NIOUtil.newFD(nativefd);
     }
 
     /* Native Methods */
@@ -306,7 +307,7 @@ public class SctpNet {
 
     @SuppressWarnings("restricted")
     private static void loadSctpLibrary() {
-        IOUtil.load();   // loads nio & net native libraries
+        NIOUtil.load();   // loads nio & net native libraries
         System.loadLibrary("sctp");
         init();
     }
