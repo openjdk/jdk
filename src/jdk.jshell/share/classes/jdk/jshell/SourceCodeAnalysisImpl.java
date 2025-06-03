@@ -359,8 +359,9 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         return computeSuggestions(codeWrap, cursor, identifier, suggestionConvertor);
     }
 
+    private static List<String> COMPLETION_EXTRA_PARAMETERS = List.of("-parameters");
     private <Suggestion> List<Suggestion> computeSuggestions(OuterWrap code, int cursor, String prefix, Function<List<ElementSuggestion>, List<Suggestion>> suggestionConvertor) {
-        return proc.taskFactory.analyze(code, at -> {
+        return proc.taskFactory.analyze(code, COMPLETION_EXTRA_PARAMETERS, at -> {
             try (JavadocHelper javadoc = JavadocHelper.create(at.task, findSources())) {
             SourcePositions sp = at.trees().getSourcePositions();
             CompilationUnitTree topLevel = at.firstCuTree();
