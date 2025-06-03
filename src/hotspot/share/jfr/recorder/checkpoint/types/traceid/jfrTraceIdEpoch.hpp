@@ -44,7 +44,7 @@
  * An epoch shift or alternation on each rotation enables concurrent tagging.
  * The epoch shift happens only during a safepoint.
  *
- *   _generation - mainly used with virtual threads
+ *   _generation - mainly used with virtual threads, but also for the generational string pool in Java.
  *   _tag_state  - signals an incremental modification to artifact tagging (klasses, methods, CLDs, etc)
  *                   purpose of which is to trigger a collection of artifacts.
  *   _method_tracer_state - a special notification state only used with method timing and tracing.
