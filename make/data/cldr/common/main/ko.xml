@@ -948,6 +948,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="KN">세인트키츠 네비스</territory>
 			<territory type="KP">북한</territory>
 			<territory type="KR">대한민국</territory>
+			<territory type="KR" alt="short">한국</territory>
 			<territory type="KW">쿠웨이트</territory>
 			<territory type="KY">케이맨 제도</territory>
 			<territory type="KZ">카자흐스탄</territory>

@@ -146,7 +146,7 @@
 			<dayPeriodRule type="evening1" from="18:00" before="22:00"/>	<!-- seară -->
 			<dayPeriodRule type="night1" from="22:00" before="05:00"/>	<!-- noapte -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="fr">
+		<dayPeriodRules locales="fr scn">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- minuit -->
 			<dayPeriodRule type="noon" at="12:00"/>	<!-- midi -->
 			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- matin -->
@@ -271,21 +271,6 @@
 			<dayPeriodRule type="evening1" from="18:00" before="20:00"/>	<!-- شام -->
 			<dayPeriodRule type="night1" from="20:00" before="04:00"/>	<!-- رات -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="hi">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- आधी रात -->
-			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- सुबह -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="16:00"/>	<!-- दोपहर -->
-			<dayPeriodRule type="evening1" from="16:00" before="20:00"/>	<!-- शाम -->
-			<dayPeriodRule type="night1" from="20:00" before="04:00"/>	<!-- रात -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="hi_Latn"> <!-- Also needs noon defined since it inherits from en_IN -->
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- आधी रात -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- noon -->
-			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- सुबह -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="16:00"/>	<!-- दोपहर -->
-			<dayPeriodRule type="evening1" from="16:00" before="20:00"/>	<!-- शाम -->
-			<dayPeriodRule type="night1" from="20:00" before="04:00"/>	<!-- रात -->
-		</dayPeriodRules>
 		<dayPeriodRules locales="bn ccp">
 			<dayPeriodRule type="morning1" from="04:00" before="06:00"/>	<!-- ভোর -->
 			<dayPeriodRule type="morning2" from="06:00" before="12:00"/>	<!-- সকাল -->
@@ -294,12 +279,20 @@
 			<dayPeriodRule type="evening1" from="18:00" before="20:00"/>	<!-- সন্ধ্যা -->
 			<dayPeriodRule type="night1" from="20:00" before="04:00"/>	<!-- রাত্রি -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="gu">
+		<dayPeriodRules locales="gu hi kok kok_Latn">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- મધ્યરાત્રિ -->
 			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- સવાર -->
 			<dayPeriodRule type="afternoon1" from="12:00" before="16:00"/>	<!-- બપોર -->
 			<dayPeriodRule type="evening1" from="16:00" before="20:00"/>	<!-- સાંજ -->
 			<dayPeriodRule type="night1" from="20:00" before="04:00"/>	<!-- રાત્રિ -->
+		</dayPeriodRules>
+		<dayPeriodRules locales="hi_Latn"> <!-- Also needs noon defined since it inherits from en_IN -->
+			<dayPeriodRule type="midnight" at="00:00"/>	<!-- आधी रात -->
+			<dayPeriodRule type="noon" at="12:00"/>	<!-- noon -->
+			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- सुबह -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="16:00"/>	<!-- दोपहर -->
+			<dayPeriodRule type="evening1" from="16:00" before="20:00"/>	<!-- शाम -->
+			<dayPeriodRule type="night1" from="20:00" before="04:00"/>	<!-- रात -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="mr">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- मध्यरात्र -->
@@ -366,7 +359,7 @@
 			<dayPeriodRule type="afternoon2" from="13:00" before="19:00"/> <!-- عصر -->
 			<dayPeriodRule type="night1" from="19:00" before="24:00"/> <!-- شب -->
 			<dayPeriodRule type="night2" from="00:00" before="01:00"/> <!-- نیمه‌شب -->
-        </dayPeriodRules>
+		</dayPeriodRules>
 		<dayPeriodRules locales="ta">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- நள்ளிரவு -->
 			<dayPeriodRule type="noon" at="12:00"/>	<!-- நண்பகல் -->
@@ -804,7 +797,7 @@
 			<dayPeriodRule type="evening1" from="18:00" before="22:00"/>	<!-- seară -->
 			<dayPeriodRule type="night1" from="22:00" before="05:00"/>	<!-- noapte -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="fr">
+		<dayPeriodRules locales="fr scn">
 			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- matin -->
 			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- après-midi -->
 			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- soir -->
@@ -934,12 +927,6 @@
 			<dayPeriodRule type="evening1" from="18:00" before="20:00"/>	<!-- شام -->
 			<dayPeriodRule type="night1" from="20:00" before="04:00"/>	<!-- رات -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="hi">
-			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- सुबह -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="16:00"/>	<!-- दोपहर -->
-			<dayPeriodRule type="evening1" from="16:00" before="20:00"/>	<!-- शाम -->
-			<dayPeriodRule type="night1" from="20:00" before="04:00"/>	<!-- रात -->
-		</dayPeriodRules>
 		<dayPeriodRules locales="bn ccp">
 			<dayPeriodRule type="morning1" from="04:00" before="06:00"/>	<!-- ভোর -->
 			<dayPeriodRule type="morning2" from="06:00" before="12:00"/>	<!-- সকাল -->
@@ -948,7 +935,7 @@
 			<dayPeriodRule type="evening1" from="18:00" before="20:00"/>	<!-- সন্ধ্যা -->
 			<dayPeriodRule type="night1" from="20:00" before="04:00"/>	<!-- রাত্রি -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="gu">
+		<dayPeriodRules locales="gu hi kok kok_Latn">
 			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- સવાર -->
 			<dayPeriodRule type="afternoon1" from="12:00" before="16:00"/>	<!-- બપોર -->
 			<dayPeriodRule type="evening1" from="16:00" before="20:00"/>	<!-- સાંજ -->
@@ -1236,14 +1223,6 @@
 			<dayPeriodRule type="afternoon1" from="12:00" before="16:00"/>	<!-- gɩshilikɔnɔ -->
 			<dayPeriodRule type="afternoon2" from="16:00" before="20:00"/>	<!-- gɩteŋshile -->
 			<dayPeriodRule type="evening1" from="20:00" before="24:00"/>	<!-- gɩjibɔŋɔ -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="scn">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- menzanotti -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- menzujornu -->
-			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- matina -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- doppumanciatu -->
-			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- sira -->
-			<dayPeriodRule type="night1" from="00:00" before="04:00"/>	<!-- notti -->
 		</dayPeriodRules>
 	</dayPeriodRuleSet>
 </supplementalData>

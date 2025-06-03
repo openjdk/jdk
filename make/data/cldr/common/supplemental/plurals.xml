@@ -19,7 +19,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
         <!-- 2: one,other -->
 
-        <pluralRules locales="am as bn doi fa gu hi kn pcm zu">
+        <pluralRules locales="am as bn doi fa gu hi kn kok kok_Latn pcm zu">
             <pluralRule count="one">i = 0 or n = 1 @integer 0, 1 @decimal 0.0~1.0, 0.00~0.04</pluralRule>
             <pluralRule count="other"> @integer 2~17, 100, 1000, 10000, 100000, 1000000, … @decimal 1.1~2.6, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …</pluralRule>
         </pluralRules>
@@ -224,6 +224,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
             <pluralRule count="few">v = 0 and i % 100 = 0,20,40,60,80 @integer 0, 20, 40, 60, 80, 100, 120, 140, 1000, 10000, 100000, 1000000, …</pluralRule>
             <pluralRule count="many">v != 0   @decimal 0.0~1.5, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …</pluralRule>
             <pluralRule count="other"> @integer 3~10, 13~19, 23, 103, 1003, …</pluralRule>
+        </pluralRules>
+        <pluralRules locales="sgs">
+            <pluralRule count="one">n % 10 = 1 and n % 100 != 11 @integer 1, 21, 31, 41, 51, 61, 71, 81, 101, 1001, … @decimal 1.0, 21.0, 31.0, 41.0, 51.0, 61.0, 71.0, 81.0, 101.0, 1001.0, …</pluralRule>
+            <pluralRule count="two">n = 2 @integer 2 @decimal 2.0 </pluralRule>
+            <pluralRule count="few">n != 2 and n % 10 = 2..9 and n % 100 != 11..19 @integer 3~9, 22~29, 102, 1002, … @decimal 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 22.0, 102.0, 1002.0, …</pluralRule>
+            <pluralRule count="many">f != 0 @decimal 0.1~0.9, 1.1~1.7, 10.1, 100.1, 1000.1, …</pluralRule>
+            <pluralRule count="other"> @integer 0, 10~20, 30, 40, 50, 60, 100, 1000, 10000, 100000, 1000000, … @decimal 0.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …</pluralRule>
         </pluralRules>
 
         <!-- 6: zero,one,two,few,many,other -->

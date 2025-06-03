@@ -3732,6 +3732,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Chuuk Saati</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<short>
+					<generic>TSİ</generic>
+				</short>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Türkmenistan Saati</generic>
