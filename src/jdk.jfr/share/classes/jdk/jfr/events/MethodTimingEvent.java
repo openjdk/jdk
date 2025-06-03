@@ -43,7 +43,7 @@ public final class MethodTimingEvent extends AbstractJDKEvent {
     public long invocations;
 
     @Label("Average Time")
-    @Timespan
+    @Timespan(Timespan.TICKS)
     public long average;
 
     public static void commit(long start, long method, long invocations, long average) {
