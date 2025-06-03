@@ -168,17 +168,9 @@ class HandshakeState {
   // This flag is true when the thread owning this
   // HandshakeState (the _handshakee) is suspended.
   volatile bool _suspended;
-  // This flag is true while there is async handshake (trap)
-  // on queue. Since we do only need one, we can reuse it if
-  // thread gets suspended again (after a resume)
-  // and we have not yet processed it.
-  bool _async_suspend_handshake;
 
   bool is_suspended()                       { return Atomic::load(&_suspended); }
   void set_suspended(bool to, bool register_vthread_SR);
-
-  bool has_async_suspend_handshake()        { return _async_suspend_handshake; }
-  void set_async_suspend_handshake(bool to) { _async_suspend_handshake = to; }
 };
 
 class HandshakeSuspender {
@@ -193,6 +185,12 @@ public:
   HandshakeSuspender(JavaThread* thread, Monitor* state_lock);
 
 private:
+
+  // This flag is true while there is async handshake (trap)
+  // on queue. Since we do only need one, we can reuse it if
+  // thread gets suspended again (after a resume)
+  // and we have not yet processed it.
+  bool _async_suspend_handshake;
 
   bool suspend(HandshakeState* state, bool register_vthread_SR);
   bool resume(HandshakeState* state, bool register_vthread_SR);
@@ -212,13 +210,8 @@ private:
     return state->is_suspended();
   }
 
-  bool has_async_suspend_handshake(HandshakeState* state) {
-    return state->has_async_suspend_handshake();
-  }
-
-  void set_async_suspend_handshake(HandshakeState* state, bool to) {
-    state->set_async_suspend_handshake(to);
-  }
+  bool has_async_suspend_handshake() { return _async_suspend_handshake; }
+  void set_async_suspend_handshake(bool to) { _async_suspend_handshake = to; }
 
 };
 

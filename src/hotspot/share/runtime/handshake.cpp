@@ -466,8 +466,7 @@ HandshakeState::HandshakeState(JavaThread* target) :
   _lock(Monitor::nosafepoint, "HandshakeState_lock"),
   _active_handshaker(),
   _async_exceptions_blocked(false),
-  _suspended(false),
-  _async_suspend_handshake(false) {
+  _suspended(false) {
 }
 
 HandshakeState::~HandshakeState() {
@@ -712,7 +711,7 @@ class ThreadSelfSuspensionHandshake : public AsyncHandshakeClosure {
     current->set_thread_state(_thread_blocked);
     current->handshake_suspender()->do_self_suspend(current->handshake_state());
     current->set_thread_state(jts);
-    current->handshake_suspender()->set_async_suspend_handshake(current->handshake_state(), false);
+    current->handshake_suspender()->set_async_suspend_handshake(false);
   }
   virtual bool is_suspend() { return true; }
 };
@@ -820,7 +819,7 @@ bool HandshakeSuspender::suspend_with_handshake(HandshakeState* state, bool regi
     log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " exiting", p2i(_handshakee));
     return false;
   }
-  if (has_async_suspend_handshake(state)) {
+  if (has_async_suspend_handshake()) {
     if (is_suspended(state)) {
       // Target is already suspended.
       log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " already suspended", p2i(_handshakee));
@@ -838,11 +837,11 @@ bool HandshakeSuspender::suspend_with_handshake(HandshakeState* state, bool regi
   // Thread is safe, so it must execute the request, thus we can count it as suspended
   // from this point.
   set_suspended(state, true, register_vthread_SR);
-  set_async_suspend_handshake(state, true);
+  set_async_suspend_handshake(true);
   log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended, arming ThreadSuspension", p2i(_handshakee));
   ThreadSelfSuspensionHandshake* ts = new ThreadSelfSuspensionHandshake();
   Handshake::execute(ts, _handshakee);
   return true;
 }
 
-HandshakeSuspender::HandshakeSuspender(JavaThread* thread, Monitor* state_lock) : _handshakee(thread), _state_lock(state_lock) {}
+HandshakeSuspender::HandshakeSuspender(JavaThread* thread, Monitor* state_lock) : _handshakee(thread), _state_lock(state_lock), _async_suspend_handshake(false) {}
