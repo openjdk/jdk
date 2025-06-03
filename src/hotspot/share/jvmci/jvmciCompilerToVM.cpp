@@ -2224,6 +2224,26 @@ C2V_VMENTRY_NULL(jobjectArray, getDeclaredMethods, (JNIEnv* env, jobject, ARGUME
   return JVMCIENV->get_jobjectArray(methods);
 C2V_END
 
+C2V_VMENTRY_NULL(jobjectArray, getAllMethods, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass)))
+  Klass* klass = UNPACK_PAIR(Klass, klass);
+  if (klass == nullptr) {
+    JVMCI_THROW_NULL(NullPointerException);
+  }
+  if (!klass->is_instance_klass()) {
+    JVMCIObjectArray methods = JVMCIENV->new_ResolvedJavaMethod_array(0, JVMCI_CHECK_NULL);
+    return JVMCIENV->get_jobjectArray(methods);
+  }
+
+  InstanceKlass* iklass = InstanceKlass::cast(klass);
+  JVMCIObjectArray methods = JVMCIENV->new_ResolvedJavaMethod_array(iklass->methods()->length(), JVMCI_CHECK_NULL);
+  for (int i = 0; i < iklass->methods()->length(); i++) {
+    methodHandle mh(THREAD, iklass->methods()->at(i));
+    JVMCIObject method = JVMCIENV->get_jvmci_method(mh, JVMCI_CHECK_NULL);
+    JVMCIENV->put_object_at(methods, i, method);
+  }
+  return JVMCIENV->get_jobjectArray(methods);
+C2V_END
+
 C2V_VMENTRY_NULL(jobjectArray, getDeclaredFieldsInfo, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass)))
   Klass* klass = UNPACK_PAIR(Klass, klass);
   if (klass == nullptr) {
@@ -3359,6 +3379,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "boxPrimitive",                                 CC "(" OBJECT ")" OBJECTCONSTANT,                                                     FN_PTR(boxPrimitive)},
   {CC "getDeclaredConstructors",                      CC "(" HS_KLASS2 ")[" RESOLVED_METHOD,                                                FN_PTR(getDeclaredConstructors)},
   {CC "getDeclaredMethods",                           CC "(" HS_KLASS2 ")[" RESOLVED_METHOD,                                                FN_PTR(getDeclaredMethods)},
+  {CC "getAllMethods",                                CC "(" HS_KLASS2 ")[" RESOLVED_METHOD,                                                FN_PTR(getAllMethods)},
   {CC "getDeclaredFieldsInfo",                        CC "(" HS_KLASS2 ")[" FIELDINFO,                                                      FN_PTR(getDeclaredFieldsInfo)},
   {CC "readStaticFieldValue",                         CC "(" HS_KLASS2 "JC)" JAVACONSTANT,                                                  FN_PTR(readStaticFieldValue)},
   {CC "readFieldValue",                               CC "(" OBJECTCONSTANT HS_KLASS2 "JC)" JAVACONSTANT,                                   FN_PTR(readFieldValue)},
