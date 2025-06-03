@@ -2508,8 +2508,8 @@ jint AwtWindow::_GetScreenImOn(void *param)
     }
 
     jboolean destroyed = JNI_GET_DESTROYED(self);
-    if (destroyed == JNI_TRUE){   
-        env->DeleteGlobalRef(self);        
+    if (destroyed == JNI_TRUE){
+        env->DeleteGlobalRef(self);
         return AwtWin32GraphicsDevice::GetDefaultDeviceIndex();
     }
 
