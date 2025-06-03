@@ -60,10 +60,7 @@ static JavaThread* get_java_thread_if_valid() {
   }
   assert(raw_thread->is_Java_thread(), "invariant");
   JavaThread* jt = JavaThread::cast(raw_thread);
-  if (is_excluded(jt)) {
-    return nullptr;
-  }
-  if (jt->is_exiting()) {
+  if (is_excluded(jt) || jt->is_exiting()) {
     return nullptr;
   }
   return jt;
