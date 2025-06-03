@@ -26,7 +26,7 @@ import java.awt.Frame;
 /**
  * @test
  * @bug 8346952
- * @summary  Floods the EDT with updateGC() events then brutally disposes the frame.
+ * @summary Floods the EDT with updateGC() events then brutally disposes the frame.
  * @key headful
  */
 
