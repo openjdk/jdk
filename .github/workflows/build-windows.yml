@@ -63,7 +63,7 @@ env:
 jobs:
   build-windows:
     name: build
-    runs-on: windows-2022
+    runs-on: windows-2025
     defaults:
       run:
         shell: bash
@@ -98,25 +98,6 @@ jobs:
         id: gtest
         uses: ./.github/actions/get-gtest
 
-      - name: 'check computer'
-        id: check-files
-        run: |
-          echo listing '/c/Program Files'
-          find '/c/Program Files' -type d
-          echo listing '/c/Program Files (x86)'
-          find '/c/Program Files (x86)' -type d
-          echo using ls:
-          echo listing '/c/Program Files'
-          ls -lR '/c/Program Files'
-          echo listing '/c/Program Files (x86)'
-          echo using ls:
-          ls -lR '/c/Program Files (x86)'
-        env:
-          # We need a minimal PATH on Windows
-          # Set PATH to "", so just GITHUB_PATH is included
-          PATH: ''
-        shell: env /usr/bin/bash --login -eo pipefail {0}
-
       - name: 'Check toolchain installed'
         id: toolchain-check
         run: |
@@ -147,6 +128,7 @@ jobs:
           --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
           --with-jtreg=${{ steps.jtreg.outputs.path }}
           --with-gtest=${{ steps.gtest.outputs.path }}
+          --with-msvc-toolset-version=${{ inputs.msvc-toolset-version }}
           --with-jmod-compress=zip-1
           ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
           echo "Dumping config.log:" &&
