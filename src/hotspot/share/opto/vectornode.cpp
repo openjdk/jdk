@@ -1145,6 +1145,12 @@ bool VectorNode::can_push_broadcasts_across_vector_operation(BasicType bt) {
     return false;
   }
 
+  // Skip over predicated vector operations for now, for masked lanes we preserve
+  // destination/first source vector contents.
+  if (is_predicated_vector()) {
+    return false;
+  }
+
   //FIXME: Currently only handling most common binary vector operations.
   if (req() != 3) {
     return false;
@@ -1222,7 +1228,7 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   // VectorOperation (VectorBroadcast INP1,  VectorBroadcast INP2) =>
-  //   VectorBroadcast (ScalarOpration INP1, INP2)
+  //   VectorBroadcast (ScalarOperation INP1, INP2)
   BasicType bt = vect_type()->element_basic_type();
   if (can_push_broadcasts_across_vector_operation(bt)) {
 
