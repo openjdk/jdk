@@ -418,11 +418,13 @@ public final class HttpCookie implements Cloneable {
      * persist until browser shutdown.
      *
      * The value of this attribute is determined by the following steps:
-     * <ol><li>If {@link #setMaxAge(long)} was called, return the value set</li>
+     *
+     * <ol><li>If {@link #setMaxAge(long)} was called, return the value set.</li>
      * <li>If previous step failed, and an {@code expires} attribute was parsed
-     * then return that value</li>
+     * then return that value.</li>
      * <li>If previous step failed, and an {@code expiry-date} attribute was parsed
-     * then the maxAge calculated at parsing time, is returned</li></ol>
+     * then the maxAge calculated at parsing time from that date, is returned</li>
+     * <li>If previous step failed, then return {@code -1}.</li></ol>
      *
      * @return  an integer specifying the maximum age of the cookie in seconds
      *
