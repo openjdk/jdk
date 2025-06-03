@@ -102,8 +102,7 @@ public final class Http3ClientImpl implements AutoCloseable {
     private final Logger debug = Utils.getDebugLogger(this::dbgString);
 
     final HttpClientImpl client;
-    /* Map key is "scheme:host:port" */
-    private final Map<String,Http3Connection> connections = new ConcurrentHashMap<>();
+    private final Http3ConnectionPool connections = new Http3ConnectionPool(debug);
     private final Map<String,ConnectionRecovery> reconnections = new ConcurrentHashMap<>();
     private final Set<Http3Connection> pendingClose = ConcurrentHashMap.newKeySet();
     private final Set<String> noH3 = ConcurrentHashMap.newKeySet();
@@ -244,7 +243,7 @@ public final class Http3ClientImpl implements AutoCloseable {
                 throws IOException {
         if (request.secure() && request.proxy() == null) {
             var config = request.http3Discovery();
-            final var pooled = connections.get(connectionKey(request));
+            final var pooled = connections.lookupFor(request);
             if (pooled == null) {
                 return null;
             }
@@ -266,41 +265,15 @@ public final class Http3ClientImpl implements AutoCloseable {
                         return null;
                     }
                 }
-                boolean suitable = switch (config) {
-                    case HTTP_3_URI_ONLY -> {
-                        if (altService == null) {
-                            // the pooled connection was created as a result of a direct connection
-                            // against the origin, so is a valid one to use for HTTP_3_URI_ONLY request
-                            yield true;
-                        }
-                        // At this point, we have found a pooled connection which matches the request's
-                        // authority and that pooled connection was created because some origin
-                        // advertised the authority as an alternate service. We can use this pooled
-                        // connection with HTTP_3_URI_ONLY, only if the authority of the
-                        // alternate service is the same as the authority of the origin that
-                        // advertised it
-                        yield altService.originHasSameAuthority();
-                    }
-                    // can't use the connection with ALT_SVC unless the endpoint
-                    // was advertised through altService
-                    case ALT_SVC -> altService != null && altService.wasAdvertised();
-                    default -> true;
-                };
-                if (suitable) {
-                    // found a valid connection in pool, return it
-                    if (debug.on()) {
-                        debug.log("Found Http3Connection in connection pool");
-                    }
-                    return pooled;
-                }
                 if (debug.on()) {
-                    if (altService != null) {
-                        debug.log("pooled connection for alt-service %s cannot be used for %s",
-                                altService, config);
-                    }
+                    debug.log("Found Http3Connection in connection pool");
                 }
-                return null;
+                // found a valid connection in pool, return it
+                return pooled;
             } else {
+                if (debug.on()) {
+                    debug.log("Pooled connection expired. Removing it.");
+                }
                 removeFromPool(pooled);
             }
         }
@@ -706,7 +679,7 @@ public final class Http3ClientImpl implements AutoCloseable {
             lock.lock();
             try {
                 closed = true;
-                connectionList = new ArrayList<>(connections.values());
+                connectionList = new ArrayList<>(connections.values().toList());
                 connectionList.addAll(pendingClose);
                 pendingClose.clear();
                 connections.clear();
