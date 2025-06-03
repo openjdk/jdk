@@ -2506,6 +2506,13 @@ jint AwtWindow::_GetScreenImOn(void *param)
                         "Peer null in JNI");
         return 0;
     }
+
+    jboolean destroyed = JNI_GET_DESTROYED(self);
+    if (destroyed == JNI_TRUE){   
+        env->DeleteGlobalRef(self);        
+        return AwtWin32GraphicsDevice::GetDefaultDeviceIndex();
+    }
+
     PDATA pData = JNI_GET_PDATA(self);
     if (pData == NULL) {
         JNU_ThrowByName(env, "java/awt/IllegalComponentStateException",
