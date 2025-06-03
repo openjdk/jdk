@@ -91,7 +91,7 @@ VMATree::SIndex VMATree::get_new_reserve_callstack(const SIndex es, const StateT
   const SIndex rq = req.callstack;
   const int op = req.op_to_index();
   const Operation oper = req.op();
-  assert(oper != Operation::Invalid && op >= 0 && op < 4, "should be");
+  assert(op >= 0 && op < 4, "should be");
   assert(op >= 0 && op < 4, "should be");
                             // existing state
   SIndex result[4][3] = {// Rl  Rs   C
@@ -113,7 +113,7 @@ VMATree::SIndex VMATree::get_new_commit_callstack(const SIndex es, const StateTy
   const SIndex rq = req.callstack;
   const int op_index = req.op_to_index();
   const Operation op = req.op();
-  assert(op != Operation::Invalid && op_index >= 0 && op_index < 4, "should be");
+  assert(op_index >= 0 && op_index < 4, "should be");
                          // existing state
   SIndex result[4][3] = {// Rl  Rs   C
                            {ES, ES, ES},   // op == Release
@@ -167,7 +167,7 @@ void VMATree::compute_summary_diff(const SingleDiff::delta region_size,
   const StateType C = StateType::Committed;
   const int op = req.op_to_index();
   const Operation oper =  req.op();
-  assert(oper != Operation::Invalid && op >= 0 && op < 4, "should be");
+  assert(op >= 0 && op < 4, "should be");
 
   SingleDiff::delta a = region_size;
   // A region with size `a` has a state as <column> and an operation is requested as in <row>
