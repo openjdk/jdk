@@ -375,6 +375,13 @@ static void drain_enqueued_cpu_time_requests(const JfrTicks& now, JfrThreadLocal
 #endif
 }
 
+// Entry point for a thread that has been sampled in native code and has a pending JFR CPU time request.
+void JfrThreadSampling::process_cpu_time_request(JavaThread* jt, JfrThreadLocal* tl, Thread* current, bool lock) {
+  assert(jt != nullptr, "invariant");
+
+  const JfrTicks now = JfrTicks::now();
+  drain_enqueued_cpu_time_requests(now, tl, jt, current, lock);
+}
 
 static void drain_all_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl, JavaThread* jt, Thread* current, bool has_cpu_time_sample_request) {
   assert(tl != nullptr, "invariant");
@@ -475,10 +482,3 @@ void JfrThreadSampling::process_sample_request(JavaThread* jt, bool has_cpu_time
   drain_all_enqueued_requests(now, tl, jt, jt, has_cpu_time_sample_request);
 }
 
-// Entry point for a thread that has been sampled in native code and has a pending JFR CPU time request.
-void JfrThreadSampling::process_cpu_time_request(JavaThread* jt, JfrThreadLocal* tl, Thread* current, bool lock) {
-  assert(jt != nullptr, "invariant");
-
-  const JfrTicks now = JfrTicks::now();
-  drain_enqueued_cpu_time_requests(now, tl, jt, current, lock);
-}
