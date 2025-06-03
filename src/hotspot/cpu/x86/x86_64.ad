@@ -10617,6 +10617,7 @@ instruct xorI_rReg_im1_ndd(rRegI dst, rRegI src, immI_M1 imm)
 // Xor Register with Immediate
 instruct xorI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
 %{
+  // Strict predicate check to make selection of xorI_rReg_im1 cost agnostic if immI src is -1.
   predicate(!UseAPX && n->in(2)->bottom_type()->is_int()->get_con() != -1);
   match(Set dst (XorI dst src));
   effect(KILL cr);
@@ -10631,6 +10632,7 @@ instruct xorI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
 
 instruct xorI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2, rFlagsReg cr)
 %{
+  // Strict predicate check to make selection of xorI_rReg_im1_ndd cost agnostic if immI src2 is -1.
   predicate(UseAPX && n->in(2)->bottom_type()->is_int()->get_con() != -1);
   match(Set dst (XorI src1 src2));
   effect(KILL cr);
@@ -10646,7 +10648,7 @@ instruct xorI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2, rFlagsReg cr)
 // Xor Memory with Immediate
 instruct xorI_rReg_mem_imm_ndd(rRegI dst, memory src1, immI src2, rFlagsReg cr)
 %{
-  predicate(UseAPX && n->in(2)->bottom_type()->is_int()->get_con() != -1);
+  predicate(UseAPX);
   match(Set dst (XorI (LoadI src1) src2));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
@@ -11335,6 +11337,7 @@ instruct xorL_rReg_imm(rRegL dst, immL32 src, rFlagsReg cr)
 
 instruct xorL_rReg_rReg_imm(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr)
 %{
+  // Strict predicate check to make selection of xorL_rReg_im1_ndd cost agnostic if immL32 src2 is -1.
   predicate(UseAPX && n->in(2)->bottom_type()->is_long()->get_con() != -1L);
   match(Set dst (XorL src1 src2));
   effect(KILL cr);
@@ -11350,7 +11353,7 @@ instruct xorL_rReg_rReg_imm(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr)
 // Xor Memory with Immediate
 instruct xorL_rReg_mem_imm(rRegL dst, memory src1, immL32 src2, rFlagsReg cr)
 %{
-  predicate(UseAPX && n->in(2)->bottom_type()->is_long()->get_con() != -1L);
+  predicate(UseAPX);
   match(Set dst (XorL (LoadL src1) src2));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
