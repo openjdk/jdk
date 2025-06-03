@@ -2217,7 +2217,7 @@ class AdapterFingerPrint : public MetaspaceObj {
 
   // Call deallocate instead
   ~AdapterFingerPrint() {
-    FreeHeap(this);
+    ShouldNotCallThis();
   }
 
   static int length(int total_args) {
@@ -2226,7 +2226,7 @@ class AdapterFingerPrint : public MetaspaceObj {
 
   static int compute_size(int total_args_passed, BasicType* sig_bt) {
     int len = length(total_args_passed);
-    return sizeof(AdapterFingerPrint) + (len * sizeof(int));
+    return BytesPerWord * (int)heap_word_size(sizeof(AdapterFingerPrint) + (len * sizeof(int)));
   }
 
   // Remap BasicTypes that are handled equivalently by the adapters.
@@ -2290,11 +2290,13 @@ class AdapterFingerPrint : public MetaspaceObj {
  public:
   static AdapterFingerPrint* allocate(int total_args_passed, BasicType* sig_bt) {
     int size_in_bytes = compute_size(total_args_passed, sig_bt);
-    return new (size_in_bytes) AdapterFingerPrint(total_args_passed, sig_bt);
+    AdapterFingerPrint* afp = new (size_in_bytes) AdapterFingerPrint(total_args_passed, sig_bt);
+    assert((afp->size() * BytesPerWord) == size_in_bytes, "should match");
+    return afp;
   }
 
   static void deallocate(AdapterFingerPrint* fp) {
-    fp->~AdapterFingerPrint();
+    FreeHeap(fp);
   }
 
   int value(int index) {
