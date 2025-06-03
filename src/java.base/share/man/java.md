@@ -1020,11 +1020,6 @@ These `java` options can be used to enable other advanced options.
 
 These `java` options control the runtime behavior of the Java HotSpot VM.
 
-`-XX:+UseCompactObjectHeaders`
-:   Enables compact object headers. By default, this option is disabled.
-    Enabling this option reduces memory footprint in the Java heap by
-    4 bytes per object (on average).
-
 `-XX:ActiveProcessorCount=`*x*
 :   Overrides the number of CPUs that the VM will use to calculate the size of
     thread pools it will use for various operations such as Garbage Collection
@@ -1518,6 +1513,15 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     ```
 
     This option is similar to `-Xss`.
+
+`-XX:+UseCompactObjectHeaders`
+:   Enables compact object headers. By default, this option is disabled.
+    Enabling this option reduces memory footprint in the Java heap by
+    4 bytes per object (on average).
+
+    The feature remains disabled by default in this release whilst it
+    continues to be evaluated. In a future release it is expected to be
+    enabled by default, and eventually will be the only mode of operation.
 
 `-XX:-UseCompressedOops`
 :   Disables the use of compressed pointers. By default, this option is
