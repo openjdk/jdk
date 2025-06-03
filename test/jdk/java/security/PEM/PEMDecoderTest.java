@@ -374,6 +374,7 @@ public class PEMDecoderTest {
 
     // Run test with a given Entry
     static DEREncodable test(PEMData.Entry entry, boolean withFactory) {
+        System.out.printf("Testing %s %s%n", entry.name(), entry.provider());
         try {
             PEMDecoder pemDecoder;
             if (withFactory) {
