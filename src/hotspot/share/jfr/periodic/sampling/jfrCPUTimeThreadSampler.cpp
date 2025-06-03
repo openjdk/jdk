@@ -46,8 +46,10 @@
 
 static const int64_t AUTOADAPT_INTERVAL_MS = 100;
 
-static bool is_excluded(JavaThread* thread) {
-  return thread->is_hidden_from_external_view() || thread->jfr_thread_local()->is_excluded();
+static bool is_excluded(JavaThread* jt) {
+  return jt->is_hidden_from_external_view() ||
+         jt->jfr_thread_local()->is_excluded() ||
+         jt->is_JfrRecorder_thread();
 }
 
 static JavaThread* get_java_thread_if_valid() {
