@@ -1111,7 +1111,7 @@ Use of `noexcept` exception specifications
 are permitted with restrictions described below.
 
 * Only the argument-less form of `noexcept` exception specifications are
-permitted. `noexcept` exception specifications with arguments are forbidden.
+permitted.
 * Allocation functions that may return `nullptr` to indicate allocation
 failure must be declared `noexcept`.
 * All other uses of `noexcept` exception specifications are forbidden.
