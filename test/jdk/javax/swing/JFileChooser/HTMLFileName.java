@@ -125,7 +125,7 @@ public class HTMLFileName {
         jfc.putClientProperty("html.disable", htmlDisabled);
         jfc.setControlButtonsAreShown(false);
 
-        JFrame frame = new JFrame(htmlDisabled ? "HTML enabled" : "HTML disabled");
+        JFrame frame = new JFrame(htmlDisabled ? "HTML disabled" : "HTML enabled");
         frame.add(jfc);
         frame.pack();
         return frame;
