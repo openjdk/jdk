@@ -118,7 +118,7 @@ public class CertificateBuilder {
         CertificateBuilder builder = new CertificateBuilder()
                 .setSubjectName(subjectName)
                 .setPublicKey(publicKey)
-                .setNotAfter(Date.from(Instant.now().minus(1, ChronoUnit.HOURS)))
+                .setNotBefore(Date.from(Instant.now().minus(1, ChronoUnit.HOURS)))
                 .setNotAfter(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
                 .setSerialNumber(BigInteger.valueOf(random.nextLong(1000000)+1))
                 .addSubjectKeyIdExt(publicKey)
