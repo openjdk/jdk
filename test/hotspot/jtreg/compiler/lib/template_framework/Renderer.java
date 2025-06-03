@@ -342,7 +342,7 @@ final class Renderer {
      *  next:                   ^             ^                ^            ^                    ^
      *         none             hashtag       dollar           hashtag      dollar               done
      */
-    private void renderStringWithDollarAndHashtagReplacements(String s) {
+    private void renderStringWithDollarAndHashtagReplacements(final String s) {
         int count = 0; // First part needs special handling
         int start = 0;
         boolean startIsAfterDollar = false;
@@ -396,7 +396,7 @@ final class Renderer {
      * We now want to find the name pattern at the beginning of the part, and replace
      * it according to the hashtag or dollar replacement strategy.
      */
-    private void renderStringWithDollarAndHashtagReplacementsPart(String s, String part, final boolean isDollar) {
+    private void renderStringWithDollarAndHashtagReplacementsPart(final String s, final String part, final boolean isDollar) {
         Matcher matcher = NAME_PATTERN.matcher(part);
         // If the string has a "#" or "$" that is not followed by a correct name
         // pattern, then the matcher will not match. These can be cases like:
