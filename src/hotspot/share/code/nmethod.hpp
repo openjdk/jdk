@@ -469,8 +469,8 @@ class nmethod : public CodeBlob {
   void oops_do_set_strong_done(nmethod* old_head);
 
 public:
-  enum NMethodChangeReason : s4 {
-    C1_deoptimize = 0,
+  enum class NMethodChangeReason : u1 {
+    C1_deoptimize,
     C1_codepatch,
     C1_predicate_failed_trap,
     C1_deoptimize_for_patching,
@@ -479,20 +479,71 @@ public:
     not_used,
     OSR_invalidation_for_compiling_with_C1,
     OSR_invalidation_back_branch,
-    JVMCI_reprofile,
-    JVMCI_materialize_virtual_object,
-    JVMCI_invalidate_nmethod_mirror,
-    JVMCI_register_method,
     OSR_invalidation_of_lower_level,
     set_native_function,
     whitebox_deoptimization,
     missing_exception_handler,
     uncommon_trap,
     zombie,
+    JVMCI_reprofile,
+    JVMCI_materialize_virtual_object,
+    JVMCI_invalidate_nmethod_mirror,
+    JVMCI_register_method,
     JVMCI_invalidate_nmethod,
     JVMCI_new_installation,
     JVMCI_replacing_with_new_code,
   };
+
+
+  static const char* NMethodChangeReason_to_string(NMethodChangeReason reason) {
+    if (reason == nmethod::NMethodChangeReason::C1_deoptimize) {
+        return "C1 deoptimized";
+    } else if (reason == nmethod::NMethodChangeReason::C1_codepatch) {
+        return "C1 code patch";
+    } else if (reason == nmethod::NMethodChangeReason::C1_predicate_failed_trap) {
+        return "C1 predicate failed trap";
+    } else if (reason == nmethod::NMethodChangeReason::C1_deoptimize_for_patching) {
+        return "C1 deoptimize for patching";
+    } else if (reason == nmethod::NMethodChangeReason::CI_replay) {
+        return "CI replay";
+    } else if (reason == nmethod::NMethodChangeReason::marked_for_deoptimization) {
+        return "marked for deoptimization";
+    } else if (reason == nmethod::NMethodChangeReason::not_used) {
+        return "not used";
+    } else if (reason == nmethod::NMethodChangeReason::OSR_invalidation_for_compiling_with_C1) {
+        return "OSR invalidation for compiling with C1";
+    } else if (reason == nmethod::NMethodChangeReason::OSR_invalidation_back_branch) {
+        return "OSR invalidation back branch";
+    } else if (reason == nmethod::NMethodChangeReason::JVMCI_reprofile) {
+        return "JVMCI reprofile";
+    } else if (reason == nmethod::NMethodChangeReason::JVMCI_materialize_virtual_object) {
+        return "JVMCI materialize virtual object";
+    } else if (reason == nmethod::NMethodChangeReason::JVMCI_invalidate_nmethod_mirror) {
+        return "JVMCI invalidate nmethod mirror";
+    } else if (reason == nmethod::NMethodChangeReason::JVMCI_register_method) {
+        return "JVMCI register method";
+    } else if (reason == nmethod::NMethodChangeReason::OSR_invalidation_of_lower_level) {
+        return "OSR invalidation of lower level";
+    } else if (reason == nmethod::NMethodChangeReason::set_native_function) {
+        return "set native function";
+    } else if (reason == nmethod::NMethodChangeReason::whitebox_deoptimization) {
+        return "whitebox deoptimization";
+    } else if (reason == nmethod::NMethodChangeReason::missing_exception_handler) {
+        return "missing exception handler";
+    } else if (reason == nmethod::NMethodChangeReason::uncommon_trap) {
+        return "uncommon trap";
+    } else if (reason == nmethod::NMethodChangeReason::JVMCI_invalidate_nmethod) {
+        return "JVMCI invalidate nmethod";
+    } else if (reason == nmethod::NMethodChangeReason::zombie) {
+        return "zombie";
+    } else if (reason == nmethod::NMethodChangeReason::JVMCI_new_installation) {
+        return "JVMCI new installation";
+    } else if (reason == nmethod::NMethodChangeReason::JVMCI_replacing_with_new_code) {
+        return "JVMCI replacing with new code";
+    } else {
+        return "Unknown";
+    }
+  }
 
   // create nmethod with entry_bci
   static nmethod* new_nmethod(const methodHandle& method,
@@ -657,7 +708,7 @@ public:
   // if this thread changed the state of the nmethod or false if
   // another thread performed the transition.
   bool  make_not_entrant(NMethodChangeReason reason);
-  bool  make_not_used()    { return make_not_entrant(nmethod::not_used); }
+  bool  make_not_used()    { return make_not_entrant(NMethodChangeReason::not_used); }
 
   bool  is_marked_for_deoptimization() const { return deoptimization_status() != not_marked; }
   bool  has_been_deoptimized() const { return deoptimization_status() == deoptimize_done; }

@@ -1968,8 +1968,8 @@ void nmethod::log_state_change(NMethodChangeReason reason) const {
   if (LogCompilation) {
     if (xtty != nullptr) {
       ttyLocker ttyl;  // keep the following output all in one block
-      xtty->begin_elem("make_not_entrant thread='%zu' reason='%d'",
-                       os::current_thread_id(), reason);
+      xtty->begin_elem("make_not_entrant thread='%zu' reason='%s'",
+                       os::current_thread_id(), NMethodChangeReason_to_string(reason));
       log_identity(xtty);
       xtty->stamp();
       xtty->end_elem();
@@ -1978,7 +1978,7 @@ void nmethod::log_state_change(NMethodChangeReason reason) const {
 
   ResourceMark rm;
   stringStream ss(NEW_RESOURCE_ARRAY(char, 256), 256);
-  ss.print("made not entrant: %d", reason);
+  ss.print("made not entrant: %s", NMethodChangeReason_to_string(reason));
 
   CompileTask::print_ul(this, ss.freeze());
   if (PrintCompilation) {
