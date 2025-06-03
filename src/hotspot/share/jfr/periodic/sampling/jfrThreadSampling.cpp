@@ -356,6 +356,7 @@ static void drain_enqueued_cpu_time_requests(const JfrTicks& now, JfrThreadLocal
   assert(tl != nullptr, "invariant");
   assert(jt != nullptr, "invariant");
   assert(current != nullptr, "invariant");
+#ifdef LINUX
   tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
   if (lock) {
     tl->acquire_cpu_time_jfr_dequeue_lock();
@@ -373,6 +374,7 @@ static void drain_enqueued_cpu_time_requests(const JfrTicks& now, JfrThreadLocal
   if (lock) {
     tl->release_cpu_time_jfr_queue_lock();
   }
+#endif
 }
 
 
@@ -381,11 +383,9 @@ static void drain_all_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl,
   assert(jt != nullptr, "invariant");
   assert(current != nullptr, "invariant");
   drain_enqueued_requests(now, tl, jt, current);
-#ifdef LINUX
   if (has_cpu_time_sample_request) {
     drain_enqueued_cpu_time_requests(now, tl, jt, current, true);
   }
-#endif
 }
 
 class SampleMonitor : public StackObj {
