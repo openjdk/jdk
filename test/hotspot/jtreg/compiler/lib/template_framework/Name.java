@@ -51,12 +51,5 @@ sealed interface Name permits DataName, StructuralName {
      */
     int weight();
 
-    interface Type {
-        /**
-         * The name of the type, that can be used in code.
-         *
-         * @return The {@link String} name of the type, that can be used in code.
-         */
-        String name();
-    }
+    interface Type {}
 }
