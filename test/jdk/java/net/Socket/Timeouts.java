@@ -233,8 +233,9 @@ class Timeouts {
     }
 
     /**
-     * Test concurrent reading with a timeout of 2s. The read method should throw
-     * SocketTimeoutException after 2s, not after 2s, 4s, 6s, 8s, ...
+     * Test 100 threads concurrently reading the same Socket with a timeout of 2s.
+     * Each read should throw SocketTimeoutException after 2s, not 2s for the first,
+     * 4s for the second, 6s for the third, up to 200s for the last thread.
      */
     @Test
     void testTimedRead10() throws Exception {
