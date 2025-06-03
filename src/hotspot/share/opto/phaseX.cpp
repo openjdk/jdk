@@ -1105,12 +1105,20 @@ void PhaseIterGVN::verify_optimize() {
     assert(!failure, "Missed optimization opportunity in PhaseIterGVN");
   }
 
+  verify_empty_worklist(nullptr);
+}
+
+void PhaseIterGVN::verify_empty_worklist(Node* node) {
   // Verify that the igvn worklist is empty. If no optimization happened, then
   // nothing needs to be on the worklist.
   for (uint j = 0; j < _worklist.size(); j++) {
     Node* n = _worklist.at(j);
     tty->print("igvn.worklist[%d] ", j);
     n->dump();
+  }
+  if (_worklist.size() != 0 && node != 0) {
+    tty->print_cr("Previously optimized:");
+    node->dump();
   }
   assert(_worklist.size() == 0, "igvn worklist must still be empty after verify");
 }
@@ -1720,11 +1728,13 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     // Found with:
     //   compiler/eliminateAutobox/TestShortBoxing.java
     //   -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
+    return false;
   }
 
   Node* i = n->Ideal(this, can_reshape);
   // If there was no new Idealization, we are happy.
   if (i == nullptr) {
+    verify_empty_worklist(n);
     return false;
   }
 
@@ -1907,6 +1917,7 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
   Node* i = n->Identity(this);
   // If we cannot find any other Identity, we are happy.
   if (i == n) {
+    verify_empty_worklist(n);
     return false;
   }
 

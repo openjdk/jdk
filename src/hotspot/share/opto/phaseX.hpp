@@ -497,6 +497,7 @@ public:
   bool verify_node_Value(Node* n);
   bool verify_node_Ideal(Node* n, bool can_reshape);
   bool verify_node_Identity(Node* n);
+  void verify_empty_worklist(Node* n);
 #endif
 
 #ifndef PRODUCT
