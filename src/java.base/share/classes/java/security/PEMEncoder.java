@@ -288,7 +288,7 @@ public final class PEMEncoder {
         }
 
         // If `keySpec` is non-null, then `key` hasn't been established.
-        // Setting a `key` prevents repeated key generations operations.
+        // Setting a `key` prevents repeated key generation operations.
         // withEncryption() is a configuration method and cannot throw an
         // exception; therefore generation is delayed.
         if (keySpec != null) {

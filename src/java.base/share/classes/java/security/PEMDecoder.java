@@ -90,7 +90,7 @@ import java.util.Objects;
  * If the class parameter is set to {@code X509EncodedKeySpec.class}, the
  * public key will be returned in that format.  Any type of PEM data can be
  * decoded into a {@code PEMRecord} by specifying {@code PEMRecord.class}.
- * If the class parameter doesn't match the PEM content, an
+ * If the class parameter doesn't match the PEM content, a
  * {@linkplain ClassCastException} will be thrown.
  *
  * <p> A new {@code PEMDecoder} instance is created when configured
@@ -122,7 +122,7 @@ import java.util.Objects;
  *     byte[] pemData = pd.decode(privKey);
  * }
  *
- * @implNote An implementation may support other PEM types and
+ * @implNote An implementation may support the following other PEM types and
  * {@code DEREncodable} objects. This implementation additionally supports
  * PEM types:  {@code X509 CERTIFICATE}, {@code X.509 CERTIFICATE}, {@code CRL},
  * and {@code RSA PRIVATE KEY}.
