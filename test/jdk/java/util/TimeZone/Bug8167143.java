@@ -236,11 +236,11 @@ public class Bug8167143 {
      * BreakIteratorProvider and CollatorProvider.
      */
     private static void testImplicitFallbackLocales() {
-        LocaleProviderAdapter jre = LocaleProviderAdapter.forType(Type.FALLBACK);
+        LocaleProviderAdapter fallback = LocaleProviderAdapter.forType(Type.FALLBACK);
         checkPresenceFallback("BreakIteratorProvider",
-                jre.getBreakIteratorProvider().getAvailableLocales());
+                fallback.getBreakIteratorProvider().getAvailableLocales());
         checkPresenceFallback("CollatorProvider",
-                jre.getCollatorProvider().getAvailableLocales());
+                fallback.getCollatorProvider().getAvailableLocales());
     }
 
     private static void checkPresenceFallback(String testName, Locale[] got) {
