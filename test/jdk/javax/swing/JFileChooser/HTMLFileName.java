@@ -120,12 +120,12 @@ public class HTMLFileName {
         return List.of(createFileChooser(true), createFileChooser(false));
     }
 
-    private static JFrame createFileChooser(boolean htmlEnabled) {
+    private static JFrame createFileChooser(boolean htmlDisabled) {
         JFileChooser jfc = new JFileChooser(new VirtualFileSystemView());
-        jfc.putClientProperty("html.disable", htmlEnabled);
+        jfc.putClientProperty("html.disable", htmlDisabled);
         jfc.setControlButtonsAreShown(false);
 
-        JFrame frame = new JFrame((!htmlEnabled) ? "HTML enabled" : "HTML disabled");
+        JFrame frame = new JFrame(htmlDisabled ? "HTML enabled" : "HTML disabled");
         frame.add(jfc);
         frame.pack();
         return frame;
