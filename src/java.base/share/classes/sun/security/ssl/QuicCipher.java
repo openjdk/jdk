@@ -184,9 +184,8 @@ abstract class QuicCipher {
     static void safeDiscard(final SecretKey secretKey) {
         try {
             secretKey.destroy();
-        } catch (DestroyFailedException | SecurityException e) {
+        } catch (DestroyFailedException e) {
             // ignore
-            // TODO: log this
         }
     }
 
