@@ -47,7 +47,8 @@ compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8225370 generic-
 
 compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 
-compiler/runtime/Test8168712.java 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
+compiler/runtime/Test8168712.java#with-dtrace 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
+compiler/runtime/Test8168712.java#without-dtrace 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
 compiler/loopopts/TestUnreachableInnerLoop.java 8288981 linux-s390x
 
 compiler/c2/Test8004741.java 8235801 generic-all
@@ -88,15 +89,8 @@ gc/g1/logging/TestG1LoggingFailure.java 8169634 generic-all
 gc/g1/humongousObjects/TestHeapCounters.java 8178918 generic-all
 gc/TestAllocHumongousFragment.java#adaptive 8298781 generic-all
 gc/TestAllocHumongousFragment.java#aggressive 8298781 generic-all
-gc/TestAllocHumongousFragment.java#iu-aggressive 8298781 generic-all
 gc/TestAllocHumongousFragment.java#g1 8298781 generic-all
 gc/TestAllocHumongousFragment.java#static 8298781 generic-all
-gc/TestAlwaysPreTouchBehavior.java#ParallelCollector 8334513 generic-all
-gc/TestAlwaysPreTouchBehavior.java#SerialCollector 8334513 generic-all
-gc/TestAlwaysPreTouchBehavior.java#Shenandoah 8334513 generic-all
-gc/TestAlwaysPreTouchBehavior.java#G1 8334513 generic-all
-gc/TestAlwaysPreTouchBehavior.java#Z 8334513 generic-all
-gc/TestAlwaysPreTouchBehavior.java#Epsilon 8334513 generic-all
 gc/shenandoah/oom/TestAllocOutOfMemory.java#large 8344312 linux-ppc64le
 gc/shenandoah/TestEvilSyncBug.java#generational 8345501 generic-all
 
@@ -160,12 +154,14 @@ serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStr
 
 #############################################################################
 
+vmTestbase/gc/gctests/FinalizeTest04/FinalizeTest04.java 8284234 generic-all
+vmTestbase/gc/gctests/PhantomReference/phantom001/phantom001.java 8284234 generic-all
+
 vmTestbase/metaspace/gc/firstGC_10m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_50m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_99m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_default/TestDescription.java 8208250 generic-all
 
-vmTestbase/nsk/jvmti/AttachOnDemand/attach045/TestDescription.java 8202971 generic-all
 vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8073470 linux-all
 vmTestbase/nsk/jvmti/InterruptThread/intrpthrd003/TestDescription.java 8288911 macosx-all
 

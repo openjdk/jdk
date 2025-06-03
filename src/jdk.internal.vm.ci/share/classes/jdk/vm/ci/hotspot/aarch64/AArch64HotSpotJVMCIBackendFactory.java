@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,33 +52,11 @@ public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
         return HotSpotJVMCIBackendFactory.convertFeatures(CPUFeature.class, constants, config.vmVersionFeatures, emptyMap());
     }
 
-    private static EnumSet<AArch64.Flag> computeFlags(AArch64HotSpotVMConfig config) {
-        EnumSet<AArch64.Flag> flags = EnumSet.noneOf(AArch64.Flag.class);
-
-        if (config.useCRC32) {
-            flags.add(AArch64.Flag.UseCRC32);
-        }
-        if (config.useSIMDForMemoryOps) {
-            flags.add(AArch64.Flag.UseSIMDForMemoryOps);
-        }
-        if (config.avoidUnalignedAccesses) {
-            flags.add(AArch64.Flag.AvoidUnalignedAccesses);
-        }
-        if (config.useLSE) {
-            flags.add(AArch64.Flag.UseLSE);
-        }
-        if (config.useBlockZeroing) {
-            flags.add(AArch64.Flag.UseBlockZeroing);
-        }
-
-        return flags;
-    }
-
     private static TargetDescription createTarget(AArch64HotSpotVMConfig config) {
         final int stackFrameAlignment = 16;
         final int implicitNullCheckLimit = 4096;
         final boolean inlineObjects = true;
-        Architecture arch = new AArch64(computeFeatures(config), computeFlags(config));
+        Architecture arch = new AArch64(computeFeatures(config));
         return new TargetDescription(arch, true, stackFrameAlignment, implicitNullCheckLimit, inlineObjects);
     }
 
@@ -113,9 +91,7 @@ public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
     }
 
     @Override
-    @SuppressWarnings("try")
     public JVMCIBackend createJVMCIBackend(HotSpotJVMCIRuntime runtime, JVMCIBackend host) {
-
         assert host == null;
         AArch64HotSpotVMConfig config = new AArch64HotSpotVMConfig(runtime.getConfigStore());
         TargetDescription target = createTarget(config);
@@ -125,24 +101,24 @@ public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
         ConstantReflectionProvider constantReflection;
         HotSpotMetaAccessProvider metaAccess;
         StackIntrospection stackIntrospection;
-        try (InitTimer t = timer("create providers")) {
-            try (InitTimer rt = timer("create MetaAccess provider")) {
+        try (InitTimer _ = timer("create providers")) {
+            try (InitTimer _ = timer("create MetaAccess provider")) {
                 metaAccess = createMetaAccess(runtime);
             }
-            try (InitTimer rt = timer("create RegisterConfig")) {
+            try (InitTimer _ = timer("create RegisterConfig")) {
                 regConfig = createRegisterConfig(config, target);
             }
-            try (InitTimer rt = timer("create CodeCache provider")) {
+            try (InitTimer _ = timer("create CodeCache provider")) {
                 codeCache = createCodeCache(runtime, target, regConfig);
             }
-            try (InitTimer rt = timer("create ConstantReflection provider")) {
+            try (InitTimer _ = timer("create ConstantReflection provider")) {
                 constantReflection = createConstantReflection(runtime);
             }
-            try (InitTimer rt = timer("create StackIntrospection provider")) {
+            try (InitTimer _ = timer("create StackIntrospection provider")) {
                 stackIntrospection = new HotSpotStackIntrospection(runtime);
             }
         }
-        try (InitTimer rt = timer("instantiate backend")) {
+        try (InitTimer _ = timer("instantiate backend")) {
             return createBackend(metaAccess, codeCache, constantReflection, stackIntrospection);
         }
     }
