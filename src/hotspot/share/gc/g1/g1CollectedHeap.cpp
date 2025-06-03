@@ -354,7 +354,9 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
     // Policy: We could not find enough regions for the humongous object in the
     // free list. Look through the heap to find a mix of free and uncommitted regions.
     // If so, expand the heap and allocate the humongous object.
-    humongous_start = _hrm.expand_and_allocate_humongous(obj_regions);
+    if (obj_regions <= num_available_regions()) {
+      humongous_start = _hrm.expand_and_allocate_humongous(obj_regions);
+    }
     if (humongous_start != nullptr) {
       // We managed to find a region by expanding the heap.
       log_debug(gc, ergo, heap)("Heap expansion (humongous allocation request). Allocation request: %zuB",
