@@ -26,7 +26,6 @@
 #define SHARE_JFR_PERIODIC_SAMPLING_JFRCPUTIMETHREADSAMPLER_HPP
 
 #include "jfr/utilities/jfrAllocation.hpp"
-#include "jfr/utilities/jfrTypes.hpp"
 
 class JavaThread;
 class NonJavaThread;
@@ -34,6 +33,7 @@ class NonJavaThread;
 #if defined(LINUX)
 
 #include "jfr/periodic/sampling/jfrSampleRequest.hpp"
+#include "jfr/utilities/jfrTypes.hpp"
 
 struct JfrCPUTimeSampleRequest {
   JfrSampleRequest _request;

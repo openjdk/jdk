@@ -23,24 +23,24 @@
  */
 
 #include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
-#include "jfr/periodic/sampling/jfrThreadSampling.hpp"
-#include "jfr/support/jfrThreadLocal.hpp"
-#include "memory/resourceArea.hpp"
-#include "runtime/atomic.hpp"
-#include "utilities/ticks.hpp"
+
 
 #if defined(LINUX)
-
+#include "jfr/periodic/sampling/jfrThreadSampling.hpp"
+#include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "jfrfiles/jfrEventClasses.hpp"
+#include "memory/resourceArea.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmOperation.hpp"
 #include "runtime/vmThread.hpp"
+#include "utilities/ticks.hpp"
 
 #include "signals_posix.hpp"
 
