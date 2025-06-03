@@ -26,12 +26,13 @@ package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.AppImageFile.getBooleanExtraFieldValue;
 
+import jdk.jpackage.internal.model.ExternalApplication;
 import jdk.jpackage.internal.model.MacApplication.ExtraAppImageFileField;
 
 record MacAppImageFileExtras(boolean signed, boolean appStore) {
 
-    MacAppImageFileExtras(AppImageFile appImageFile) {
-        this(getBooleanExtraFieldValue(ExtraAppImageFileField.SIGNED.fieldName(), appImageFile),
-                getBooleanExtraFieldValue(ExtraAppImageFileField.APP_STORE.fieldName(), appImageFile));
+    MacAppImageFileExtras(ExternalApplication app) {
+        this(getBooleanExtraFieldValue(ExtraAppImageFileField.SIGNED.fieldName(), app),
+                getBooleanExtraFieldValue(ExtraAppImageFileField.APP_STORE.fieldName(), app));
     }
 }

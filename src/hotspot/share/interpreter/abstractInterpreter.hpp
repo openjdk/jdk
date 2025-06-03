@@ -39,7 +39,7 @@
 
 // Organization of the interpreter(s). There exists two different interpreters in hotpot
 // an assembly language version (aka template interpreter) and a high level language version
-// (aka c++ interpreter). Th division of labor is as follows:
+// (aka c++ interpreter). The division of labor is as follows:
 
 // Template Interpreter          Zero Interpreter       Functionality
 //
@@ -73,6 +73,7 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_cos,                                         // implementation of java.lang.Math.cos   (x)
     java_lang_math_tan,                                         // implementation of java.lang.Math.tan   (x)
     java_lang_math_tanh,                                        // implementation of java.lang.Math.tanh  (x)
+    java_lang_math_cbrt,                                        // implementation of java.lang.Math.cbrt  (x)
     java_lang_math_abs,                                         // implementation of java.lang.Math.abs   (x)
     java_lang_math_sqrt,                                        // implementation of java.lang.Math.sqrt  (x)
     java_lang_math_sqrt_strict,                                 // implementation of java.lang.StrictMath.sqrt(x)
@@ -152,6 +153,7 @@ class AbstractInterpreter: AllStatic {
       case vmIntrinsics::_dcos  : // fall thru
       case vmIntrinsics::_dtan  : // fall thru
       case vmIntrinsics::_dtanh : // fall thru
+      case vmIntrinsics::_dcbrt : // fall thru
       case vmIntrinsics::_dabs  : // fall thru
       case vmIntrinsics::_dsqrt : // fall thru
       case vmIntrinsics::_dsqrt_strict : // fall thru
