@@ -204,10 +204,6 @@ private:
   // Called from the suspend handshake.
   bool suspend_with_handshake(HandshakeState* state, bool register_vthread_SR);
 
-  JavaThread* get_handshakee(HandshakeState* state) {
-    return state->_handshakee;
-  }
-
   void set_suspended(HandshakeState* state, bool to, bool register_vthread_SR) {
     state->set_suspended(to, register_vthread_SR);
   }

@@ -772,9 +772,9 @@ void HandshakeState::handle_unsafe_access_error() {
 }
 
 bool HandshakeSuspender::suspend(HandshakeState *state, bool register_vthread_SR) {
-  JVMTI_ONLY(assert(!get_handshakee(state)->is_in_VTMS_transition(), "no suspend allowed in VTMS transition");)
+  JVMTI_ONLY(assert(!_handshakee->is_in_VTMS_transition(), "no suspend allowed in VTMS transition");)
   JavaThread* self = JavaThread::current();
-  if (get_handshakee(state) == self) {
+  if (_handshakee == self) {
     // If target is the current thread we can bypass the handshake machinery
     // and just suspend directly
     ThreadBlockInVM tbivm(self);
@@ -784,7 +784,7 @@ bool HandshakeSuspender::suspend(HandshakeState *state, bool register_vthread_SR
     return true;
   } else {
     SuspendThreadHandshake st(register_vthread_SR);
-    Handshake::execute(&st, get_handshakee(state));
+    Handshake::execute(&st, _handshakee);
     return st.did_suspend();
   }
 }
@@ -792,7 +792,7 @@ bool HandshakeSuspender::suspend(HandshakeState *state, bool register_vthread_SR
 bool HandshakeSuspender::resume(HandshakeState* state, bool register_vthread_SR) {
   MutexLocker ml(_state_lock, Mutex::_no_safepoint_check_flag);
   if (!is_suspended(state)) {
-    assert(!get_handshakee(state)->is_suspended(), "cannot be suspended without a suspend request");
+    assert(!_handshakee->is_suspended(), "cannot be suspended without a suspend request");
     return false;
   }
   // Resume the thread.
@@ -802,33 +802,33 @@ bool HandshakeSuspender::resume(HandshakeState* state, bool register_vthread_SR)
 }
 
 void HandshakeSuspender::do_self_suspend(HandshakeState* state) {
-  assert(Thread::current() == get_handshakee(state), "should call from _handshakee");
+  assert(Thread::current() == _handshakee, "should call from _handshakee");
   assert(_state_lock->owned_by_self(), "Lock must be held");
-  assert(!get_handshakee(state)->has_last_Java_frame() || get_handshakee(state)->frame_anchor()->walkable(), "should have walkable stack");
-  assert(get_handshakee(state)->thread_state() == _thread_blocked, "Caller should have transitioned to _thread_blocked");
+  assert(!_handshakee->has_last_Java_frame() || _handshakee->frame_anchor()->walkable(), "should have walkable stack");
+  assert(_handshakee->thread_state() == _thread_blocked, "Caller should have transitioned to _thread_blocked");
 
   while (is_suspended(state)) {
-    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended", p2i(get_handshakee(state)));
+    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended", p2i(_handshakee));
     _state_lock->wait_without_safepoint_check();
   }
-  log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " resumed", p2i(get_handshakee(state)));
+  log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " resumed", p2i(_handshakee));
 }
 
 bool HandshakeSuspender::suspend_with_handshake(HandshakeState* state, bool register_vthread_SR) {
-  assert(get_handshakee(state)->threadObj() != nullptr, "cannot suspend with a null threadObj");
-  if (get_handshakee(state)->is_exiting()) {
-    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " exiting", p2i(get_handshakee(state)));
+  assert(_handshakee->threadObj() != nullptr, "cannot suspend with a null threadObj");
+  if (_handshakee->is_exiting()) {
+    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " exiting", p2i(_handshakee));
     return false;
   }
   if (has_async_suspend_handshake(state)) {
     if (is_suspended(state)) {
       // Target is already suspended.
-      log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " already suspended", p2i(get_handshakee(state)));
+      log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " already suspended", p2i(_handshakee));
       return false;
     } else {
       // Target is going to wake up and leave suspension.
       // Let's just stop the thread from doing that.
-      log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " re-suspended", p2i(get_handshakee(state)));
+      log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " re-suspended", p2i(_handshakee));
       set_suspended(state, true, register_vthread_SR);
       return true;
     }
@@ -839,9 +839,9 @@ bool HandshakeSuspender::suspend_with_handshake(HandshakeState* state, bool regi
   // from this point.
   set_suspended(state, true, register_vthread_SR);
   set_async_suspend_handshake(state, true);
-  log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended, arming ThreadSuspension", p2i(get_handshakee(state)));
+  log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended, arming ThreadSuspension", p2i(_handshakee));
   ThreadSelfSuspensionHandshake* ts = new ThreadSelfSuspensionHandshake();
-  Handshake::execute(ts, get_handshakee(state));
+  Handshake::execute(ts, _handshakee);
   return true;
 }
 
