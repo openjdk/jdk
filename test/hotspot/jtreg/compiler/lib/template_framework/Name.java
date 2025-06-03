@@ -23,11 +23,6 @@
 
 package compiler.lib.template_framework;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.List;
-
 sealed interface Name permits DataName, StructuralName {
     /**
      * The name of the name, that can be used in code.

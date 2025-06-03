@@ -23,8 +23,6 @@
 
 package compiler.lib.template_framework;
 
-import java.util.List;
-
 /**
  * {@link Hook}s can be {@link #anchor}ed for a certain scope in a Template, and all nested
  * Templates in this scope, and then from within this scope, any Template can

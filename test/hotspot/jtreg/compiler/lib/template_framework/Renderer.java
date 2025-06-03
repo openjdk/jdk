@@ -23,13 +23,10 @@
 
 package compiler.lib.template_framework;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 /**
  * The {@link Renderer} class renders a tokenized {@link Template} in the form of a {@link TemplateToken}.
@@ -381,7 +378,7 @@ final class Renderer {
     }
 
     /**
-     * We are parsing a part now. Befor the part, there was either a "#" or "$":
+     * We are parsing a part now. Before the part, there was either a "#" or "$":
      * isDollar = false:
      *   "#part"
      *   "#name abcdefgh"
