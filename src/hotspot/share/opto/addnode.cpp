@@ -960,7 +960,35 @@ const Node* MergePrimitiveLoads::bypass_i2l(const Node* n) {
 
 /*
  * Check the _combine operator is the last one of combine operators
- * It can be a candidate for merge load optimization
+ * It can be a candidate for merge load optimization.
+ *
+ * The combine operator chain is like:
+ *     Or1
+ *      |
+ *      +--> Or2
+ *            |
+ *            +--> Or3
+ *                  |
+ *                  +--> Or4
+ *
+ * The middle combine operator has unique output of another combine operator
+ * The last one has multiple outputs or the unique output is not a combine operator.
+ *
+ * A special case is the merged value is used by a combine operator, like
+ *     long l =  ((long)(s[0] & 0xffff))        |
+ *              (((long)(s[1] & 0xffff)) << 16) |
+ *              (((long)(s[2] & 0xffff)) << 32) |
+ *              (((long)(s[3] & 0xffff)) << 48) |
+ *               ((long)(s[4] & 0xffff));
+ *
+ *  s[0-3] can be merged and the code can be optimized like:
+ *     long l = LoadLong(s[0]) | (long)(s[4] & 0xffff);
+ *
+ *  To identify this case, we need mark the checked combine node.
+ *     1) Check OrL with s[4], it's the last operator of combine operators.
+ *        Merge failed, but it will be marked as merge_memops_checked
+ *     2) Check OrL with s[3], we can find the next combine operator is checked before
+ *        and take this one as last combine operator.
  */
 bool MergePrimitiveLoads::has_no_merge_load_combine_below() const {
   assert(is_supported_combine_opcode(_combine->Opcode()), "sanity");
