@@ -28,15 +28,19 @@
   @key headful
   @run main ConcurrentClipboardAccessTest
  */
-import java.awt.*;
+import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 
 public class ConcurrentClipboardAccessTest {
 
     public static void main(String[] args) {
-        new Thread(new ClipboardLoader()).start();
-        new Thread(new ClipboardLoader()).start();
+        Thread clipboardLoader1 = new Thread(new ClipboardLoader());
+        clipboardLoader1.setDaemon(true);
+        clipboardLoader1.start();
+        Thread clipboardLoader2 = new Thread(new ClipboardLoader());
+        clipboardLoader2.setDaemon(true);
+        clipboardLoader2.start();
         long start = System.currentTimeMillis();
         while (true) {
             try {
@@ -48,6 +52,10 @@ public class ConcurrentClipboardAccessTest {
                 break;
             }
         }
+        // Test is considered successful if the concurrent repeated reading
+        // from clipboard succeeds for the allotted time and the JVM does not
+        // crash.
+        System.out.println("Shutdown normally");
     }
 
     public static class ClipboardLoader implements Runnable {

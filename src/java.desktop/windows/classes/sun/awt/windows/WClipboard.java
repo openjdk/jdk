@@ -110,7 +110,8 @@ final class WClipboard extends SunClipboard {
 
     /**
      * Call the Win32 OpenClipboard function. If newOwner is non-null,
-     * we also call EmptyClipboard and take ownership.
+     * we also call EmptyClipboard and take ownership. If this method call
+     * succeeds, it must be followed by a call to {@link #closeClipboard()}.
      *
      * @throws IllegalStateException if the clipboard has not been opened
      */
@@ -127,6 +128,10 @@ final class WClipboard extends SunClipboard {
         }
     }
 
+    /**
+     * Call the Win32 CloseClipboard function if we have clipboard ownership,
+     * does nothing if we have not ownership.
+     */
     @Override
     public void closeClipboard() {
         if (clipboardLocked.isLocked()) {
@@ -186,7 +191,7 @@ final class WClipboard extends SunClipboard {
             long[] formats = getClipboardFormats();
             checkChange(formats);
         } catch (Throwable ex) {
-            System.getLogger(WClipboard.class.getName()).log(Level.WARNING, "Failed to process handleContentsChanged", ex);
+            System.getLogger(WClipboard.class.getName()).log(Level.DEBUG, "Failed to process handleContentsChanged", ex);
         }
     }
 
