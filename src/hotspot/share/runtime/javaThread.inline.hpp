@@ -110,7 +110,7 @@ class UnsafeAccessErrorHandshake : public AsyncHandshakeClosure {
     JavaThread* self = JavaThread::cast(thr);
     assert(self == JavaThread::current(), "must be");
 
-    self->handshake_state()->handle_unsafe_access_error();
+    self->handshake_state()->handle_unsafe_access_error(self->handshake_suspender());
   }
   bool is_async_exception()   { return true; }
 };

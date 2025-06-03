@@ -744,8 +744,23 @@ void HandshakeState::set_suspended(bool is_suspend, bool register_vthread_SR) {
   Atomic::store(&_suspended, is_suspend);
 }
 
-void HandshakeState::handle_unsafe_access_error() {
-  if (is_suspended()) {
+void HandshakeSuspender::set_suspended(HandshakeState* state, bool is_suspend, bool register_vthread_SR) {
+#if INCLUDE_JVMTI
+  if (register_vthread_SR) {
+    assert(_handshakee->is_vthread_mounted(), "sanity check");
+    if (is_suspend) {
+      JvmtiVTSuspender::register_vthread_suspend(_handshakee->vthread());
+    }
+    else {
+      JvmtiVTSuspender::register_vthread_resume(_handshakee->vthread());
+    }
+  }
+#endif
+  Atomic::store(&_suspended, is_suspend);
+}
+
+void HandshakeState::handle_unsafe_access_error(HandshakeSuspender* suspender) {
+  if (suspender->is_suspended(this)) {
     // A suspend handshake was added to the queue after the
     // unsafe access error. Since the suspender has already
     // considered this JT as suspended and assumes it won't go
@@ -844,4 +859,4 @@ bool HandshakeSuspender::suspend_with_handshake(HandshakeState* state, bool regi
   return true;
 }
 
-HandshakeSuspender::HandshakeSuspender(JavaThread* thread, Monitor* state_lock) : _handshakee(thread), _state_lock(state_lock), _async_suspend_handshake(false) {}
+HandshakeSuspender::HandshakeSuspender(JavaThread* thread, Monitor* state_lock) : _handshakee(thread), _state_lock(state_lock), _suspended(false), _async_suspend_handshake(false) {}
