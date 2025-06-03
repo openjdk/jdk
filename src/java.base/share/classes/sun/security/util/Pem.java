@@ -339,7 +339,7 @@ public class Pem {
      * @return PEM in a string
      */
     public static String pemEncoded(PEMRecord pem) {
-        String p = pem.pem().replaceAll("(.{64})", "$1\r\n");
+        String p = pem.content().replaceAll("(.{64})", "$1\r\n");
         return pemEncoded(pem.type(), p);
     }
 }
