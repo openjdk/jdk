@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_SUSPENSRESUMEMANAGER_HPP
-#define SHARE_RUNTIME_SUSPENSRESUMEMANAGER_HPP
+#ifndef SHARE_RUNTIME_SUSPENDRESUMEMANAGER_HPP
+#define SHARE_RUNTIME_SUSPENDRESUMEMANAGER_HPP
 
 #include "runtime/handshake.hpp"
 #include "runtime/javaThread.hpp"
@@ -69,4 +69,4 @@ private:
   void set_async_suspend_handshake(bool to) { _async_suspend_handshake = to; }
 };
 
-#endif // SHARE_RUNTIME_SUSPENSRESUMEMANAGER_HPP
+#endif // SHARE_RUNTIME_SUSPENDRESUMEMANAGER_HPP
