@@ -420,9 +420,9 @@ public final class HttpCookie implements Cloneable {
      * The value of this attribute is determined by the following steps:
      *
      * <ol><li>If {@link #setMaxAge(long)} was called, return the value set.</li>
-     * <li>If previous step failed, and an {@code expires} attribute was parsed
+     * <li>If previous step failed, and a {@code Max-Age} attribute was parsed
      * then return that value.</li>
-     * <li>If previous step failed, and an {@code expiry-date} attribute was parsed
+     * <li>If previous step failed, and an {@code Expires} attribute was parsed
      * then the maxAge calculated at parsing time from that date, is returned</li>
      * <li>If previous step failed, then return {@code -1}.</li></ol>
      *
@@ -852,6 +852,10 @@ public final class HttpCookie implements Cloneable {
             throw new IllegalArgumentException("Empty cookie header string");
         }
 
+        // Attributes that require special handling
+        String expiresValue = null;
+        String maxAgeValue = null;
+
         // remaining name-value pairs are cookie's attributes
         while (tokenizer.hasMoreTokens()) {
             namevaluePair = tokenizer.nextToken();
@@ -864,10 +868,19 @@ public final class HttpCookie implements Cloneable {
                 name = namevaluePair.trim();
                 value = null;
             }
+            if (name.equalsIgnoreCase("max-age")) {
+                maxAgeValue = value;
+                continue;
+            }
+            if (name.equalsIgnoreCase("expires")) {
+                expiresValue = value;
+                continue;
+            }
 
             // assign attribute to cookie
             assignAttribute(cookie, name, value);
         }
+        assignMaxAgeAttribute(cookie, expiresValue, maxAgeValue);
 
         return cookie;
     }
@@ -982,6 +995,30 @@ public final class HttpCookie implements Cloneable {
                 }
             });
     }
+
+    private static void assignMaxAgeAttribute(HttpCookie cookie,
+                                               String expiresValue,
+                                               String maxAgeValue)
+    {
+	if (cookie.getMaxAge() != MAX_AGE_UNSPECIFIED)
+            return;
+
+        try {
+            if (maxAgeValue != null) {
+                long maxAge = Long.parseLong(maxAgeValue);
+                cookie.setMaxAge(maxAge);
+                return;
+            }
+        } catch (NumberFormatException ignored) {}
+
+        try {
+            if (expiresValue != null) {
+		long delta = cookie.expiryDate2DeltaSeconds(expiresValue);
+		cookie.setMaxAge(delta > 0 ? delta : 0);
+            }
+        } catch (NumberFormatException ignored) {}
+    }
+
     private static void assignAttribute(HttpCookie cookie,
                                         String attrName,
                                         String attrValue)
