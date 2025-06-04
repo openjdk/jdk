@@ -203,6 +203,36 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     return true;
   }
 
+  double adjustment_factor = 1.0;
+  if (old_generation->is_idle()) {
+    // As old-gen size approaches its trigger threshold, arrange slightly more aggressive young collections in order
+    // to allow old to reach its threshold so we can beging collecting old.  Promotions are sometimes bursty, especially
+    // with workloads that have inconsistent behavior (e.g. occasional rebuilding of long-lasting cache data structures).
+    // If we trigger solely on depletion of the young allocation pool, we may find ourselves overwhelming the old generation
+    // on a subsequent GC cycle, and this will result in starvation of young while we try to urgently reclaim the garbage
+    // in old.
+    const ShenandoahOldGeneration* old_gen = heap->old_generation();
+    const size_t old_usage = old_gen->used_including_humongous_waste();
+    if (old_usage >= (ShenandoahIgnoreOldGrowthBelowPercentage * heap->capacity()) / 100) {
+      const size_t old_live_at_prev = old_gen->get_live_bytes_at_last_mark();
+      const size_t trigger_threshold = old_gen->usage_trigger_threshold();
+      if (old_usage > old_live_at_prev) {
+        const size_t old_growth = old_usage - old_live_at_prev;
+        const size_t target_growth = trigger_threshold - old_live_at_prev;
+        const size_t percent_of_target = (100 * old_growth) / target_growth;
+        if (percent_of_target > 80) {
+          adjustment_factor = 3.0;
+        } else if (percent_of_target > 60) {
+          adjustment_factor = 2.0;
+        } else if (percent_of_target > 40) {
+          adjustment_factor = 1.5;
+        } else if (percent_of_target > 20) {
+          adjustment_factor = 1.25;
+        }
+      }
+    }
+  }
+
   // Check if allocation headroom is still okay. This also factors in:
   //   1. Some space to absorb allocation spikes (ShenandoahAllocSpikeFactor)
   //   2. Accumulated penalties from Degenerated and Full GC
@@ -218,18 +248,28 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
 
   // The predicted gc time accounts for reality that mixed cycles and cycles that promote heavily typicaly require more
   // than the average GC cycle time.
-  double calculated_gc_time = predict_gc_time();
+  double calculated_gc_time = predict_gc_time() * adjustment_factor;
   double avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
 
   log_debug(gc)("calculated GC time: %.2f ms, allocation rate: %.0f %s/s",
 		calculated_gc_time * 1000, byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate));
   if (calculated_gc_time * avg_alloc_rate > allocation_headroom) {
-    log_trigger("Calculated GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s)"
-                " to deplete free headroom (%zu%s) (margin of error = %.2f)",
-		calculated_gc_time * 1000,
-                byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate),
-                byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
-                _margin_of_error_sd);
+    if (adjustment_factor > 1.0) {
+      log_trigger("Calculated GC time (%.2f ms) (scaled by %.1f to facilitate Old)"
+                  " is above the time for average allocation rate (%.0f %sB/s)"
+                  " to deplete free headroom (%zu%s) (margin of error = %.2f)",
+                  calculated_gc_time * 1000, adjustment_factor,
+                  byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate),
+                  byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
+                  _margin_of_error_sd);
+    } else {
+      log_trigger("Calculated GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s)"
+                  " to deplete free headroom (%zu%s) (margin of error = %.2f)",
+                  calculated_gc_time * 1000,
+                  byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate),
+                  byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
+                  _margin_of_error_sd);
+    }
     log_info(gc, ergo)("Free headroom: %zu%s (free) - %zu%s (spike) - %zu%s (penalties) = %zu%s",
                        byte_size_in_proper_unit(available),           proper_unit_for_byte_size(available),
                        byte_size_in_proper_unit(spike_headroom),      proper_unit_for_byte_size(spike_headroom),

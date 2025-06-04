@@ -231,7 +231,7 @@ void ShenandoahArguments::initialize_alignments() {
   HeapAlignment = align;
 
   if (FLAG_IS_DEFAULT(TLABSize)) {
-    TLABSize = MIN2(ShenandoahHeapRegion::region_size_bytes() / 128, (size_t) 64 * 1024);
+    TLABSize = MAX2(ShenandoahHeapRegion::region_size_bytes() / 256, (size_t) 32 * 1024);
   }
 #undef KELVIN_ARGUMENTS
 #ifdef KELVIN_ARGUMENTS
