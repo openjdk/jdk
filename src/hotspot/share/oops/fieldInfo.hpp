@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,8 @@ class FieldInfo {
 
  public:
 
-  FieldInfo() : _name_index(0),
+  FieldInfo() : _index(0),
+                _name_index(0),
                 _signature_index(0),
                 _offset(0),
                 _access_flags(AccessFlags(0)),
@@ -147,6 +148,7 @@ class FieldInfo {
                 _contention_group(0) { }
 
   FieldInfo(AccessFlags access_flags, u2 name_index, u2 signature_index, u2 initval_index, FieldInfo::FieldFlags fflags) :
+            _index(0),
             _name_index(name_index),
             _signature_index(signature_index),
             _offset(0),
