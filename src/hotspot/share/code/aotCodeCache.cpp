@@ -915,25 +915,21 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name, int entry_offset_co
     oop_maps = read_oop_map_set();
   }
 
-#ifndef PRODUCT
-  AsmRemarks asm_remarks;
-  read_asm_remarks(asm_remarks);
-  DbgStrings dbg_strings;
-  read_dbg_strings(dbg_strings);
-#endif // PRODUCT
-
   CodeBlob* code_blob = CodeBlob::create(archived_blob,
                                          stored_name,
                                          reloc_data,
                                          oop_maps
-#ifndef PRODUCT
-                                         , asm_remarks
-                                         , dbg_strings
-#endif
                                         );
   if (code_blob == nullptr) { // no space left in CodeCache
     return nullptr;
   }
+
+#ifndef PRODUCT
+  code_blob->asm_remarks().init();
+  read_asm_remarks(code_blob->asm_remarks());
+  code_blob->dbg_strings().init();
+  read_dbg_strings(code_blob->dbg_strings());
+#endif // PRODUCT
 
   fix_relocations(code_blob);
 
