@@ -489,21 +489,19 @@ public abstract class ResourceBundle {
      * A Set of the keys contained only in this ResourceBundle.
      */
     private final Supplier<Set<String>> keySet = StableValue.supplier(
-            new Supplier<Set<String>>() {
-                @Override
-                public Set<String> get() {
-                    final Set<String> keys = new HashSet<>();
-                    final Enumeration<String> enumKeys = getKeys();
-                    while (enumKeys.hasMoreElements()) {
-                        final String key = enumKeys.nextElement();
-                        if (handleGetObject(key) != null) {
-                            keys.add(key);
-                        }
-                    }
-                    return keys;
-                }
+            new Supplier<>() { public Set<String> get() { return keySet0(); }});
+
+    private Set<String> keySet0() {
+        final Set<String> keys = new HashSet<>();
+        final Enumeration<String> enumKeys = getKeys();
+        while (enumKeys.hasMoreElements()) {
+            final String key = enumKeys.nextElement();
+            if (handleGetObject(key) != null) {
+                keys.add(key);
             }
-    );
+        }
+        return keys;
+    }
 
     /**
      * Sole constructor.  (For invocation by subclass constructors, typically

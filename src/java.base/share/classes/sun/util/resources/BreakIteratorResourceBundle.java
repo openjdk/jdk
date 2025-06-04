@@ -51,16 +51,14 @@ public abstract class BreakIteratorResourceBundle extends ResourceBundle {
     private static final Set<String> NON_DATA_KEYS = Set.of("BreakIteratorClasses");
 
     private final Supplier<Set<String>> keys = StableValue.supplier(
-            new Supplier<Set<String>>() {
-                @Override
-                public Set<String> get() {
-                    final ResourceBundle info = getBreakIteratorInfo();
-                    final Set<String> k = info.keySet();
-                    k.removeAll(NON_DATA_KEYS);
-                    return k;
-                }
-            }
-    );
+            new Supplier<>() { public Set<String> get() { return keys0(); }});
+
+    private Set<String> keys0() {
+        final ResourceBundle info = getBreakIteratorInfo();
+        final Set<String> k = info.keySet();
+        k.removeAll(NON_DATA_KEYS);
+        return k;
+    }
 
     /**
      * Returns an instance of the corresponding {@code BreakIteratorInfo} (basename).

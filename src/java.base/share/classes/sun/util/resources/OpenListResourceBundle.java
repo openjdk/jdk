@@ -120,32 +120,30 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
     }
 
     private final Supplier<Map<String, Object>> lookup = StableValue.supplier(
-            new Supplier<Map<String, Object>>() {
-                @Override
-                public Map<String, Object> get() {
-                    final Object[][] contents = getContents();
-                    final Map<String, Object> temp = createMap(contents.length);
-                    for (Object[] content : contents) {
-                        // key must be non-null String, value must be non-null
-                        final String key = Objects.requireNonNull((String) content[0]);
-                        final Object value = Objects.requireNonNull(content[1]);
-                        temp.put(key, value);
-                    }
-                    return temp;
-                }
-            }
-    );
+            new Supplier<>() { public Map<String, Object> get() { return lookup0(); }});
+
+    private Map<String, Object> lookup0() {
+        final Object[][] contents = getContents();
+        final Map<String, Object> temp = createMap(contents.length);
+        for (Object[] content : contents) {
+            // key must be non-null String, value must be non-null
+            final String key = Objects.requireNonNull((String) content[0]);
+            final Object value = Objects.requireNonNull(content[1]);
+            temp.put(key, value);
+        }
+        return temp;
+    }
+
     private final Supplier<Set<String>> keyset = StableValue.supplier(
-            new Supplier<Set<String>>() {
-                @Override
-                public Set<String> get() {
-                    final Set<String> ks = createSet();
-                    ks.addAll(handleKeySet());
-                    if (parent != null) {
-                        ks.addAll(parent.keySet());
-                    }
-                    return ks;
-                }
-            }
-    );
+            new Supplier<>() { public Set<String> get() { return keyset0(); }});
+
+    private Set<String> keyset0() {
+        final Set<String> ks = createSet();
+        ks.addAll(handleKeySet());
+        if (parent != null) {
+            ks.addAll(parent.keySet());
+        }
+        return ks;
+    }
+
 }
