@@ -245,7 +245,7 @@ import compiler.lib.ir_framework.TestFramework;
  *         addDataName($("v2"), someType, MUTABLE),
  *         // The count is still not different to "c1".
  *         let("c3", dataNames(MUTABLE).exactOf(someType).count()),
- *         // We nest a Template. This creats a TemplateToken, which is later evaluated.
+ *         // We nest a Template. This creates a TemplateToken, which is later evaluated.
  *         // By the time the TemplateToken is evaluated, the tokens from above will
  *         // be already evaluated. Hence, "v1" and "v2" are added by then, and if the
  *         // "otherTemplate" were to count the DataNames, the count would be increased
@@ -549,7 +549,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * Good practice but not enforced: {@code arg1Name} and {@code arg2Name} should match the lambda argument names.
      *
      * <p>
-     * Here an example with template arguments {@code 'a'} and {@code 'b'}, captured once as string names
+     * Here is an example with template arguments {@code 'a'} and {@code 'b'}, captured once as string names
      * for use in hashtag replacements, and captured once as lambda arguments with the corresponding types
      * of the generic arguments.
      * {@snippet lang=java :
@@ -593,7 +593,7 @@ public sealed interface Template permits Template.ZeroArgs,
 
     /**
      * Creates a {@link TemplateBody} from a list of tokens, which can be {@link String}s,
-     * boxed primitive types (e.g. {@link Integer} or auto-boxed {@code int}), any {@link Token},
+     * boxed primitive types (for example {@link Integer} or auto-boxed {@code int}), any {@link Token},
      * or {@link List}s of any of these.
      *
      * <p>
@@ -624,7 +624,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * dollar replacement as the string use {@code "$name"}.
      *
      * <p>
-     * Here an example where a Template creates a local variable {@code 'var'},
+     * Here is an example where a Template creates a local variable {@code 'var'},
      * with an implicit dollar replacement, and then captures that dollar replacement
      * using {@link #$} for the use inside a nested template.
      * {@snippet lang=java :

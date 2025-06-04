@@ -274,7 +274,7 @@ public class TestTutorial {
                     template1.asToken(7),
                     // Fourth Template use with template2, no use of dollar, so
                     // no "_4" shows up in the generated code. Internally, it
-                    // calls template1, shich is the fifth Template use, with
+                    // calls template1, which is the fifth Template use, with
                     // ID = 5 -> var_5
                     template2.asToken(2),
                     // Sixth and Seventh Template use -> var_7
@@ -829,7 +829,7 @@ public class TestTutorial {
     }
 
     // Having defined these helper methods, let us start with the first example.
-    // You should start reading this example bottum-up, starting at
+    // You should start reading this example bottom-up, starting at
     // templateClass, then going to templateMain and last to templateInner.
     public static String generateWithDataNamesAndScopes1() {
 
