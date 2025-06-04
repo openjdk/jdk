@@ -408,12 +408,14 @@ alias sun.gc.policy.collectors                    // 1.5.0 b39
 	hotspot.gc.policy.collectors              // 1.4.2
 alias sun.gc.policy.desiredSurvivorSize           // 1.5.0 b39
 	hotspot.gc.policy.desired_survivor_size   // 1.5.0 b21
+	hotspot.gc.agetable.dss                   // 1.4.1
 alias sun.gc.policy.gcTimeLimitExceeded           // 1.5.0 b39
 	hotspot.gc.policy.gc_time_limit_exceeded  // 1.5.0 b21
 alias sun.gc.policy.generations                   // 1.5.0 b39
 	hotspot.gc.policy.generations             // 1.4.2
 alias sun.gc.policy.maxTenuringThreshold          // 1.5.0 b39
 	hotspot.gc.max_tenuring_threshold         // 1.5.0 b21
+	hotspot.gc.agetable.mtt                   // 1.4.1
 alias sun.gc.policy.name                          // 1.5.0 b39
 	hotspot.gc.policy.name                    // 1.5.0 b21
 alias sun.gc.policy.tenuringThreshold             // 1.5.0 b39
