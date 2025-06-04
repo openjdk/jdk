@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,8 @@ import javax.print.attribute.standard.PrinterIsAcceptingJobs;
 import javax.print.attribute.standard.RequestingUserName;
 import javax.print.attribute.standard.SheetCollate;
 import javax.print.attribute.standard.Sides;
+
+import static sun.font.FontUtilities.isIgnorableWhitespace;
 
 /**
  * A class which rasterizes a printer job.
@@ -2482,7 +2484,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
 
         for (int i = 0; i < len; i++) {
             char c = in_chars[i];
-            if (c > '\r' || c < '\t' || c == '\u000b' || c == '\u000c')  {
+            if (!isIgnorableWhitespace(c)) {
                out_chars[pos++] = c;
             }
         }

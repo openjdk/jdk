@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import jdk.jfr.internal.query.Configuration.Truncate;
@@ -280,6 +281,11 @@ final class QueryParser implements AutoCloseable {
                 if (text.startsWith("cell-height:")) {
                     yield cellHeight(text.substring("cell-height:".length()));
                 }
+                // This option is experimental and may not work properly
+                // with rounding and truncation.
+                if (text.startsWith("ms-precision:")) {
+                    yield millisPrecision(text.substring("ms-precision:".length()));
+                }
                 throw new ParseException("Unknown formatter '" + text + "'", position());
             }
         };
@@ -303,6 +309,18 @@ final class QueryParser implements AutoCloseable {
             return field -> field.cellHeight = h;
         } catch (NumberFormatException nfe) {
             throw new ParseException("Not valid number for 'cell-height:' " + height, position());
+        }
+    }
+
+    private Consumer<Field> millisPrecision(String digits) throws ParseException {
+        try {
+            int d = Integer.parseInt(digits);
+            if (d < 0) {
+                throw new ParseException("Expected 'precision:' to be at least 0' ", position());
+            }
+            return field -> field.precision = d;
+        } catch (NumberFormatException nfe) {
+            throw new ParseException("Not valid number for 'precision:' " + digits, position());
         }
     }
 

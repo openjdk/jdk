@@ -1985,6 +1985,23 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   __ leave();
 
+  #if INCLUDE_JFR
+  // We need to do a poll test after unwind in case the sampler
+  // managed to sample the native frame after returning to Java.
+  Label L_return;
+  __ ldr(rscratch1, Address(rthread, JavaThread::polling_word_offset()));
+  address poll_test_pc = __ pc();
+  __ relocate(relocInfo::poll_return_type);
+  __ tbz(rscratch1, log2i_exact(SafepointMechanism::poll_bit()), L_return);
+  assert(SharedRuntime::polling_page_return_handler_blob() != nullptr,
+    "polling page return stub not created yet");
+  address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
+  __ adr(rscratch1, InternalAddress(poll_test_pc));
+  __ str(rscratch1, Address(rthread, JavaThread::saved_exception_pc_offset()));
+  __ far_jump(RuntimeAddress(stub));
+  __ bind(L_return);
+#endif // INCLUDE_JFR
+
   // Any exception pending?
   __ ldr(rscratch1, Address(rthread, in_bytes(Thread::pending_exception_offset())));
   __ cbnz(rscratch1, exception_pending);

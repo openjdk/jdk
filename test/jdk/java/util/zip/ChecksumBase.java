@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,15 @@
  * questions.
  */
 
-/**
- * Base class for Checksum tests
- */
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.Checksum;
 
+/**
+ * Base class for Checksum tests
+ */
 public class ChecksumBase {
 
     private static final byte[] BYTES_123456789 = "123456789".getBytes(StandardCharsets.US_ASCII);
@@ -36,6 +37,7 @@ public class ChecksumBase {
     public static void testAll(Checksum checksum, long expected) {
         testBytes(checksum, expected);
         testByteArray(checksum, expected);
+        testWrappedMemorySegment(checksum, expected);
         testWrappedByteBuffer(checksum, expected);
         testReadonlyByteBuffer(checksum, expected);
         testDirectByteBuffer(checksum, expected);
@@ -65,6 +67,13 @@ public class ChecksumBase {
     private static void testWrappedByteBuffer(Checksum checksum, long expected) {
         checksum.reset();
         ByteBuffer bb = ByteBuffer.wrap(BYTES_123456789);
+        checksum.update(bb);
+        checkChecksum(checksum, expected);
+    }
+
+    private static void testWrappedMemorySegment(Checksum checksum, long expected) {
+        checksum.reset();
+        ByteBuffer bb = MemorySegment.ofArray(BYTES_123456789).asByteBuffer();
         checksum.update(bb);
         checkChecksum(checksum, expected);
     }

@@ -60,6 +60,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
+#include "oops/trainingData.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/atomic.hpp"
@@ -408,6 +409,12 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
 
 void Method::remove_unshareable_info() {
   unlink_method();
+  if (method_data() != nullptr) {
+    method_data()->remove_unshareable_info();
+  }
+  if (method_counters() != nullptr) {
+    method_counters()->remove_unshareable_info();
+  }
   if (CDSConfig::is_dumping_adapters() && _adapter != nullptr) {
     _adapter->remove_unshareable_info();
     _adapter = nullptr;
@@ -417,6 +424,12 @@ void Method::remove_unshareable_info() {
 
 void Method::restore_unshareable_info(TRAPS) {
   assert(is_method() && is_valid_method(this), "ensure C++ vtable is restored");
+  if (method_data() != nullptr) {
+    method_data()->restore_unshareable_info(CHECK);
+  }
+  if (method_counters() != nullptr) {
+    method_counters()->restore_unshareable_info(CHECK);
+  }
   if (_adapter != nullptr) {
     assert(_adapter->is_linked(), "must be");
     _from_compiled_entry = _adapter->get_c2i_entry();
@@ -588,9 +601,43 @@ void Method::print_invocation_count(outputStream* st) {
 #endif
 }
 
+MethodTrainingData* Method::training_data_or_null() const {
+  MethodCounters* mcs = method_counters();
+  if (mcs == nullptr) {
+    return nullptr;
+  } else {
+    MethodTrainingData* mtd = mcs->method_training_data();
+    if (mtd == mcs->method_training_data_sentinel()) {
+      return nullptr;
+    }
+    return mtd;
+  }
+}
+
+bool Method::init_training_data(MethodTrainingData* td) {
+  MethodCounters* mcs = method_counters();
+  if (mcs == nullptr) {
+    return false;
+  } else {
+    return mcs->init_method_training_data(td);
+  }
+}
+
+bool Method::install_training_method_data(const methodHandle& method) {
+  MethodTrainingData* mtd = MethodTrainingData::find(method);
+  if (mtd != nullptr && mtd->final_profile() != nullptr) {
+    Atomic::replace_if_null(&method->_method_data, mtd->final_profile());
+    return true;
+  }
+  return false;
+}
+
 // Build a MethodData* object to hold profiling information collected on this
 // method when requested.
 void Method::build_profiling_method_data(const methodHandle& method, TRAPS) {
+  if (install_training_method_data(method)) {
+    return;
+  }
   // Do not profile the method if metaspace has hit an OOM previously
   // allocating profiling data. Callers clear pending exception so don't
   // add one here.
@@ -1163,6 +1210,12 @@ void Method::unlink_method() {
 
   clear_method_data();
   clear_method_counters();
+  clear_is_not_c1_compilable();
+  clear_is_not_c1_osr_compilable();
+  clear_is_not_c2_compilable();
+  clear_is_not_c2_osr_compilable();
+  clear_queued_for_compilation();
+
   remove_unshareable_flags();
 }
 

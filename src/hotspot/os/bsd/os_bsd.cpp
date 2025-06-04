@@ -53,7 +53,6 @@
 #include "runtime/perfMemory.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
@@ -142,7 +141,9 @@ julong os::free_memory() {
   return Bsd::available_memory();
 }
 
-// available here means free
+// Available here means free. Note that this number is of no much use. As an estimate
+// for future memory pressure it is far too conservative, since MacOS will use a lot
+// of unused memory for caches, and return it willingly in case of needs.
 julong os::Bsd::available_memory() {
   uint64_t available = physical_memory() >> 2;
 #ifdef __APPLE__

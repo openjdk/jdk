@@ -57,11 +57,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import jdk.jpackage.internal.AppImageFile.LauncherInfo;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.ExternalApplication.LauncherInfo;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.RuntimeLayout;
@@ -103,7 +103,7 @@ final class FromParams {
 
             if (hasPredefinedAppImage(params)) {
                 final var appImageFile = PREDEFINED_APP_IMAGE_FILE.fetchFrom(params);
-                appBuilder.initFromAppImage(appImageFile, launcherInfo -> {
+                appBuilder.initFromExternalApplication(appImageFile, launcherInfo -> {
                     var launcherParams = mapLauncherInfo(launcherInfo);
                     return launcherMapper.apply(mergeParams(params, launcherParams));
                 });

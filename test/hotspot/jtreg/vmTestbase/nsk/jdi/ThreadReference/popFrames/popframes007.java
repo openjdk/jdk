@@ -106,29 +106,29 @@ public class popframes007 {
             return quitDebuggee();
         }
 
-        // debuggee main class
-        ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
-
-        ThreadReference mainThread =
-            debuggee.threadByFieldName(rType, "mainThread", DEBUGGEE_MAIN_THREAD_NAME);
-        if (mainThread == null) {
-            log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
-                         + DEBUGGEE_MAIN_THREAD_NAME);
-            tot_res = Consts.TEST_FAILED;
-            return quitDebuggee();
-        }
-
-        ThreadReference auxThread =
-            debuggee.threadByFieldName(rType, "auxThr", DEBUGGEE_AUX_THREAD_NAME);
-        if (auxThread == null) {
-            log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
-                         + DEBUGGEE_AUX_THREAD_NAME);
-            tot_res = Consts.TEST_FAILED;
-            return quitDebuggee();
-        }
-
         Field doExit = null;
         try {
+            // debuggee main class
+            ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
+
+            ThreadReference mainThread =
+                debuggee.threadByFieldName(rType, "mainThread", DEBUGGEE_MAIN_THREAD_NAME);
+            if (mainThread == null) {
+                log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
+                             + DEBUGGEE_MAIN_THREAD_NAME);
+                tot_res = Consts.TEST_FAILED;
+                return quitDebuggee();
+            }
+
+            ThreadReference auxThread =
+                debuggee.threadByFieldName(rType, "auxThr", DEBUGGEE_AUX_THREAD_NAME);
+            if (auxThread == null) {
+                log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
+                             + DEBUGGEE_AUX_THREAD_NAME);
+                tot_res = Consts.TEST_FAILED;
+                return quitDebuggee();
+            }
+
             suspendAtBP(rType, DEBUGGEE_STOPATLINE);
 
             // debuggee field used to indicate that popping has been done

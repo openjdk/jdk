@@ -158,11 +158,6 @@ public:
   size_t capacity() const override;
   size_t used() const override;
 
-  // Return "true" if all generations have reached the
-  // maximal committed limit that they can reach, without a garbage
-  // collection.
-  bool is_maximal_no_gc() const override;
-
   void register_nmethod(nmethod* nm) override;
   void unregister_nmethod(nmethod* nm) override;
   void verify_nmethod(nmethod* nm) override;

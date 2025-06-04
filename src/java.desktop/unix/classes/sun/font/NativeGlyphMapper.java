@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.util.Locale;
  * XMap classes could be merged, however its cleaner to make them separate
  * classes so we can build caches for a particular font.
  */
-public class NativeGlyphMapper extends CharToGlyphMapper {
+public final class NativeGlyphMapper extends CharToGlyphMapper {
 
     NativeFont font;
     XMap xmapper;
@@ -55,10 +55,12 @@ public class NativeGlyphMapper extends CharToGlyphMapper {
         missingGlyph = 0;
     }
 
+    @Override
     public int getNumGlyphs() {
         return numGlyphs;
     }
 
+    @Override
     public int charToGlyph(char unicode) {
         if (unicode >= xmapper.convertedGlyphs.length) {
             return 0;
@@ -67,6 +69,7 @@ public class NativeGlyphMapper extends CharToGlyphMapper {
         }
     }
 
+    @Override
     public int charToGlyph(int unicode) {
         if (unicode >= xmapper.convertedGlyphs.length) {
             return 0;
@@ -75,6 +78,12 @@ public class NativeGlyphMapper extends CharToGlyphMapper {
         }
     }
 
+    @Override
+    public int charToGlyphRaw(int unicode) {
+        return charToGlyph(unicode);
+    }
+
+    @Override
     public void charsToGlyphs(int count, char[] unicodes, int[] glyphs) {
         for (int i=0; i<count; i++) {
             char code = unicodes[i];
@@ -86,11 +95,13 @@ public class NativeGlyphMapper extends CharToGlyphMapper {
         }
     }
 
+    @Override
     public boolean charsToGlyphsNS(int count, char[] unicodes, int[] glyphs) {
         charsToGlyphs(count, unicodes, glyphs);
         return false;
     }
 
+    @Override
     public void charsToGlyphs(int count, int[] unicodes, int[] glyphs) {
         for (int i=0; i<count; i++) {
             char code = (char)unicodes[i];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static sun.net.httpserver.Utils.isValidName;
@@ -93,7 +95,7 @@ class ServerImpl {
     private final Set<HttpConnection> rspConnections;
     private List<Event> events;
     private final Object lolock = new Object();
-    private volatile boolean finished = false;
+    private final CountDownLatch finishedLatch = new CountDownLatch(1);
     private volatile boolean terminating = false;
     private boolean bound = false;
     private boolean started = false;
@@ -179,7 +181,7 @@ class ServerImpl {
     }
 
     public void start () {
-        if (!bound || started || finished) {
+        if (!bound || started || finished()) {
             throw new IllegalStateException ("server in wrong state");
         }
         if (executor == null) {
@@ -222,45 +224,75 @@ class ServerImpl {
         return httpsConfig;
     }
 
-    public final boolean isFinishing() {
-        return finished;
+    private final boolean finished(){
+        // if the latch is 0, the server is finished
+        return finishedLatch.getCount() == 0;
     }
 
+    public final boolean isFinishing() {
+        return finished();
+    }
+
+    /**
+     * This method stops the server by adding a stop request event and
+     * waiting for the server until the event is triggered or until the maximum delay is triggered.
+     * <p>
+     * This ensures that the server is stopped immediately after all exchanges are complete. HttpConnections will be forcefully closed if active exchanges do not
+     * complete within the imparted delay.
+     *
+     * @param delay maximum delay to wait for exchanges completion, in seconds
+     */
     public void stop (int delay) {
         if (delay < 0) {
             throw new IllegalArgumentException ("negative delay parameter");
         }
+
+        logger.log(Level.TRACE, "stopping");
+        // posting a stop event, which will flip finished flag if it finishes
+        // before the timeout in this method
         terminating = true;
+
+        addEvent(new Event.StopRequested());
+
         try { schan.close(); } catch (IOException e) {}
         selector.wakeup();
-        long latest = System.currentTimeMillis() + delay * 1000;
-        while (System.currentTimeMillis() < latest) {
-            delay();
-            if (finished) {
-                break;
+
+        try {
+            // waiting for the duration of the delay, unless released before
+            finishedLatch.await(delay, TimeUnit.SECONDS);
+
+        } catch (InterruptedException e) {
+            logger.log(Level.TRACE, "Error in awaiting the delay");
+
+        } finally {
+
+            logger.log(Level.TRACE, "closing connections");
+            finishedLatch.countDown();
+            selector.wakeup();
+            synchronized (allConnections) {
+                for (HttpConnection c : allConnections) {
+                    c.close();
+                }
             }
-        }
-        finished = true;
-        selector.wakeup();
-        synchronized (allConnections) {
-            for (HttpConnection c : allConnections) {
-                c.close();
+            allConnections.clear();
+            idleConnections.clear();
+            newlyAcceptedConnections.clear();
+            timer.cancel();
+            if (reqRspTimeoutEnabled) {
+                timer1.cancel();
             }
-        }
-        allConnections.clear();
-        idleConnections.clear();
-        newlyAcceptedConnections.clear();
-        timer.cancel();
-        if (reqRspTimeoutEnabled) {
-            timer1.cancel();
-        }
-        if (dispatcherThread != null && dispatcherThread != Thread.currentThread()) {
-            try {
-                dispatcherThread.join();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                logger.log (Level.TRACE, "ServerImpl.stop: ", e);
+            logger.log(Level.TRACE, "connections closed");
+
+            if (dispatcherThread != null && dispatcherThread != Thread.currentThread()) {
+                logger.log(Level.TRACE, "waiting for dispatcher thread");
+                try {
+                    dispatcherThread.join();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    logger.log(Level.TRACE, "ServerImpl.stop: ", e);
+                }
             }
+            logger.log(Level.TRACE, "server stopped");
         }
     }
 
@@ -382,15 +414,34 @@ class ServerImpl {
     class Dispatcher implements Runnable {
 
         private void handleEvent (Event r) {
+
+            // Stopping marking the state as finished if stop is requested,
+            // termination is in progress and exchange count is 0
+            if (r instanceof Event.StopRequested) {
+                logger.log(Level.TRACE, "Handling Stop Requested Event");
+
+                // checking if terminating is set to true
+                final boolean terminatingCopy = terminating;
+                assert terminatingCopy;
+
+                if (getExchangeCount() == 0 && reqConnections.isEmpty()) {
+                    finishedLatch.countDown();
+                } else {
+                    logger.log(Level.TRACE, "Some requests are still pending");
+                }
+                return;
+            }
+
             ExchangeImpl t = r.exchange;
             HttpConnection c = t.getConnection();
+
             try {
-                if (r instanceof WriteFinishedEvent) {
+                if (r instanceof Event.WriteFinished) {
 
                     logger.log(Level.TRACE, "Write Finished");
                     int exchanges = endExchange();
-                    if (terminating && exchanges == 0) {
-                        finished = true;
+                    if (terminating && exchanges == 0 && reqConnections.isEmpty()) {
+                        finishedLatch.countDown();
                     }
                     LeftOverInputStream is = t.getOriginalInputStream();
                     if (!is.isEOF()) {
@@ -440,11 +491,12 @@ class ServerImpl {
         }
 
         public void run() {
-            while (!finished) {
+            // finished() will be true when there are no active exchange after terminating
+             while (!finished()) {
                 try {
                     List<Event> list = null;
                     synchronized (lolock) {
-                        if (events.size() > 0) {
+                        if (!events.isEmpty()) {
                             list = events;
                             events = new ArrayList<>();
                         }
@@ -591,18 +643,18 @@ class ServerImpl {
         conn.close();
         allConnections.remove(conn);
         switch (conn.getState()) {
-        case REQUEST:
-            reqConnections.remove(conn);
-            break;
-        case RESPONSE:
-            rspConnections.remove(conn);
-            break;
-        case IDLE:
-            idleConnections.remove(conn);
-            break;
-        case NEWLY_ACCEPTED:
-            newlyAcceptedConnections.remove(conn);
-            break;
+            case REQUEST:
+                reqConnections.remove(conn);
+                break;
+            case RESPONSE:
+                rspConnections.remove(conn);
+                break;
+            case IDLE:
+                idleConnections.remove(conn);
+                break;
+            case NEWLY_ACCEPTED:
+                newlyAcceptedConnections.remove(conn);
+                break;
         }
         assert !reqConnections.remove(conn);
         assert !rspConnections.remove(conn);
@@ -925,17 +977,14 @@ class ServerImpl {
         logger.log (Level.DEBUG, message);
     }
 
-    void delay () {
-        Thread.yield();
-        try {
-            Thread.sleep (200);
-        } catch (InterruptedException e) {}
-    }
-
     private int exchangeCount = 0;
 
     synchronized void startExchange () {
         exchangeCount ++;
+    }
+
+    synchronized int getExchangeCount() {
+        return exchangeCount;
     }
 
     synchronized int endExchange () {

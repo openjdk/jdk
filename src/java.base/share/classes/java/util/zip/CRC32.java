@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package java.util.zip;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
-import sun.nio.ch.DirectBuffer;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -99,7 +98,7 @@ public class CRC32 implements Checksum {
         if (buffer.isDirect()) {
             NIO_ACCESS.acquireSession(buffer);
             try {
-                crc = updateByteBuffer(crc, ((DirectBuffer)buffer).address(), pos, rem);
+                crc = updateByteBuffer(crc, NIO_ACCESS.getBufferAddress(buffer), pos, rem);
             } finally {
                 NIO_ACCESS.releaseSession(buffer);
             }

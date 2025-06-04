@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package javax.net.ssl;
 
 import java.util.List;
+import javax.crypto.SecretKey;
 
 /**
  * Extends the {@code SSLSession} interface to support additional
@@ -162,5 +163,114 @@ public abstract class ExtendedSSLSession implements SSLSession {
      */
     public List<byte[]> getStatusResponses() {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Generates Exported Keying Material (EKM) calculated according to the
+     * algorithms defined in RFCs 5705/8446.
+     * <P>
+     * RFC 5705 (for (D)TLSv1.2 and earlier) calculates different EKM
+     * values depending on whether {@code context} is null or non-null/empty.
+     * RFC 8446 (TLSv1.3) treats a null context as non-null/empty.
+     * <P>
+     * {@code label} will be converted to bytes using
+     * the {@link java.nio.charset.StandardCharsets#UTF_8}
+     * character encoding.
+     *
+     * @spec https://www.rfc-editor.org/info/rfc5705
+     *     RFC 5705: Keying Material Exporters for Transport Layer
+     *     Security (TLS)
+     * @spec https://www.rfc-editor.org/info/rfc8446
+     *     RFC 8446: The Transport Layer Security (TLS) Protocol Version 1.3
+     *
+     * @implSpec The default implementation throws
+     *           {@code UnsupportedOperationException}.
+     *
+     * @param keyAlg  the algorithm of the resultant {@code SecretKey} object.
+     *                See the SecretKey Algorithms section in the
+     *                <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
+     *                Java Security Standard Algorithm Names Specification</a>
+     *                for information about standard secret key algorithm
+     *                names.
+     * @param label   the label bytes used in the EKM calculation.
+     *                {@code label} will be converted to a {@code byte[]}
+     *                before the operation begins.
+     * @param context the context bytes used in the EKM calculation, or null
+     * @param length  the number of bytes of EKM material needed
+     *
+     * @throws SSLKeyException if the key cannot be generated
+     * @throws IllegalArgumentException if {@code keyAlg} is empty,
+     *         {@code length} is non-positive, or if the {@code label} or
+     *         {@code context} length can not be accommodated
+     * @throws NullPointerException if {@code keyAlg} or {@code label} is null
+     * @throws IllegalStateException if this session does not have the
+     *         necessary key generation material (for example, a session
+     *         under construction during handshaking)
+     * @throws UnsupportedOperationException if the underlying provider
+     *         does not implement the operation
+     *
+     * @return a {@code SecretKey} that contains {@code length} bytes of the
+     *         EKM material
+     *
+     * @since 25
+     */
+    public SecretKey exportKeyingMaterialKey(String keyAlg,
+            String label, byte[] context, int length) throws SSLKeyException {
+        throw new UnsupportedOperationException(
+                "Underlying provider does not implement the method");
+    }
+
+    /**
+     * Generates Exported Keying Material (EKM) calculated according to the
+     * algorithms defined in RFCs 5705/8446.
+     * <P>
+     * RFC 5705 (for (D)TLSv1.2 and earlier) calculates different EKM
+     * values depending on whether {@code context} is null or non-null/empty.
+     * RFC 8446 (TLSv1.3) treats a null context as non-null/empty.
+     * <P>
+     * {@code label} will be converted to bytes using
+     * the {@link java.nio.charset.StandardCharsets#UTF_8}
+     * character encoding.
+     * <P>
+     * Depending on the chosen underlying key derivation mechanism, the
+     * raw bytes might not be extractable/exportable.  In such cases, the
+     * {@link #exportKeyingMaterialKey(String, String, byte[], int)} method
+     * should be used instead to access the generated key material.
+     *
+     * @spec https://www.rfc-editor.org/info/rfc5705
+     *     RFC 5705: Keying Material Exporters for Transport Layer
+     *     Security (TLS)
+     * @spec https://www.rfc-editor.org/info/rfc8446
+     *     RFC 8446: The Transport Layer Security (TLS) Protocol Version 1.3
+     *
+     * @implSpec The default implementation throws
+     *           {@code UnsupportedOperationException}.
+     *
+     * @param label   the label bytes used in the EKM calculation.
+     *                {@code label} will be converted to a {@code byte[]}
+     *                before the operation begins.
+     * @param context the context bytes used in the EKM calculation, or null
+     * @param length  the number of bytes of EKM material needed
+     *
+     * @throws SSLKeyException if the key cannot be generated
+     * @throws IllegalArgumentException if {@code length} is non-positive,
+     *         or if the {@code label} or {@code context} length can
+     *         not be accommodated
+     * @throws NullPointerException if {@code label} is null
+     * @throws IllegalStateException if this session does not have the
+     *         necessary key generation material (for example, a session
+     *         under construction during handshaking)
+     * @throws UnsupportedOperationException if the underlying provider
+     *         does not implement the operation, or if the derived
+     *         keying material is not extractable
+     *
+     * @return a byte array of size {@code length} that contains the EKM
+     *         material
+     * @since 25
+     */
+    public byte[] exportKeyingMaterialData(
+            String label, byte[] context, int length) throws SSLKeyException {
+        throw new UnsupportedOperationException(
+                "Underlying provider does not implement the method");
     }
 }

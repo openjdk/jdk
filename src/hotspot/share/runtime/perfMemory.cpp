@@ -34,7 +34,6 @@
 #include "runtime/perfData.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/statSampler.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -66,16 +65,16 @@ void perfMemory_exit() {
   if (!UsePerfData) return;
   if (!PerfMemory::is_usable()) return;
 
-  // Only destroy PerfData objects if we're at a safepoint and the
-  // StatSampler is not active. Otherwise, we risk removing PerfData
-  // objects that are currently being used by running JavaThreads
-  // or the StatSampler. This method is invoked while we are not at
+  // Only destroy PerfData objects if we're at a safepoint.
+  // Otherwise, we risk removing PerfData objects
+  // that are currently being used by running JavaThreads.
+  // This method is invoked while we are not at
   // a safepoint during a VM abort so leaving the PerfData objects
   // around may also help diagnose the failure. In rare cases,
   // PerfData objects are used in parallel with a safepoint. See
   // the work around in PerfDataManager::destroy().
   //
-  if (SafepointSynchronize::is_at_safepoint() && !StatSampler::is_active()) {
+  if (SafepointSynchronize::is_at_safepoint()) {
     PerfDataManager::destroy();
   }
 

@@ -2250,6 +2250,16 @@ void MacroAssembler::evmovdqaq(XMMRegister dst, AddressLiteral src, int vector_l
   }
 }
 
+void MacroAssembler::movapd(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    Assembler::movapd(dst, as_Address(src));
+  } else {
+    lea(rscratch, src);
+    Assembler::movapd(dst, Address(rscratch, 0));
+  }
+}
 
 void MacroAssembler::movdqa(XMMRegister dst, AddressLiteral src, Register rscratch) {
   assert(rscratch != noreg || always_reachable(src), "missing");
@@ -5402,24 +5412,27 @@ void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
 }
 
 void MacroAssembler::encode_klass_not_null(Register r, Register tmp) {
+  BLOCK_COMMENT("encode_klass_not_null {");
   assert_different_registers(r, tmp);
   if (CompressedKlassPointers::base() != nullptr) {
     if (AOTCodeCache::is_on_for_dump()) {
       movptr(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
     } else {
-      mov64(tmp, (int64_t)CompressedKlassPointers::base());
+      movptr(tmp, (intptr_t)CompressedKlassPointers::base());
     }
     subq(r, tmp);
   }
   if (CompressedKlassPointers::shift() != 0) {
     shrq(r, CompressedKlassPointers::shift());
   }
+  BLOCK_COMMENT("} encode_klass_not_null");
 }
 
 void MacroAssembler::encode_and_move_klass_not_null(Register dst, Register src) {
+  BLOCK_COMMENT("encode_and_move_klass_not_null {");
   assert_different_registers(src, dst);
   if (CompressedKlassPointers::base() != nullptr) {
-    mov64(dst, -(int64_t)CompressedKlassPointers::base());
+    movptr(dst, -(intptr_t)CompressedKlassPointers::base());
     addq(dst, src);
   } else {
     movptr(dst, src);
@@ -5427,9 +5440,11 @@ void MacroAssembler::encode_and_move_klass_not_null(Register dst, Register src) 
   if (CompressedKlassPointers::shift() != 0) {
     shrq(dst, CompressedKlassPointers::shift());
   }
+  BLOCK_COMMENT("} encode_and_move_klass_not_null");
 }
 
 void  MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
+  BLOCK_COMMENT("decode_klass_not_null {");
   assert_different_registers(r, tmp);
   // Note: it will change flags
   assert(UseCompressedClassPointers, "should only be used for compressed headers");
@@ -5443,13 +5458,15 @@ void  MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
     if (AOTCodeCache::is_on_for_dump()) {
       movptr(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
     } else {
-      mov64(tmp, (int64_t)CompressedKlassPointers::base());
+      movptr(tmp, (intptr_t)CompressedKlassPointers::base());
     }
     addq(r, tmp);
   }
+  BLOCK_COMMENT("} decode_klass_not_null");
 }
 
 void  MacroAssembler::decode_and_move_klass_not_null(Register dst, Register src) {
+  BLOCK_COMMENT("decode_and_move_klass_not_null {");
   assert_different_registers(src, dst);
   // Note: it will change flags
   assert (UseCompressedClassPointers, "should only be used for compressed headers");
@@ -5465,7 +5482,7 @@ void  MacroAssembler::decode_and_move_klass_not_null(Register dst, Register src)
   } else {
     if (CompressedKlassPointers::shift() <= Address::times_8) {
       if (CompressedKlassPointers::base() != nullptr) {
-        mov64(dst, (int64_t)CompressedKlassPointers::base());
+        movptr(dst, (intptr_t)CompressedKlassPointers::base());
       } else {
         xorq(dst, dst);
       }
@@ -5477,9 +5494,9 @@ void  MacroAssembler::decode_and_move_klass_not_null(Register dst, Register src)
       }
     } else {
       if (CompressedKlassPointers::base() != nullptr) {
-        const uint64_t base_right_shifted =
-            (uint64_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift();
-        mov64(dst, base_right_shifted);
+        const intptr_t base_right_shifted =
+            (intptr_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift();
+        movptr(dst, base_right_shifted);
       } else {
         xorq(dst, dst);
       }
@@ -5487,6 +5504,7 @@ void  MacroAssembler::decode_and_move_klass_not_null(Register dst, Register src)
       shlq(dst, CompressedKlassPointers::shift());
     }
   }
+  BLOCK_COMMENT("} decode_and_move_klass_not_null");
 }
 
 void  MacroAssembler::set_narrow_oop(Register dst, jobject obj) {

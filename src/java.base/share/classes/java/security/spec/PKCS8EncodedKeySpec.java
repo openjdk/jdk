@@ -25,24 +25,34 @@
 
 package java.security.spec;
 
+import java.security.DEREncodable;
+
 /**
  * This class represents the ASN.1 encoding of a private key,
- * encoded according to the ASN.1 type {@code PrivateKeyInfo}.
- * The {@code PrivateKeyInfo} syntax is defined in the PKCS#8 standard
+ * encoded according to the ASN.1 type {@code OneAsymmetricKey}.
+ * The {@code OneAsymmetricKey} syntax is defined in the PKCS#8 standard
  * as follows:
  *
  * <pre>
- * PrivateKeyInfo ::= SEQUENCE {
+ * OneAsymmetricKey ::= SEQUENCE {
  *   version Version,
  *   privateKeyAlgorithm PrivateKeyAlgorithmIdentifier,
  *   privateKey PrivateKey,
- *   attributes [0] IMPLICIT Attributes OPTIONAL }
+ *   attributes       [0] Attributes OPTIONAL,
+ *   ...,
+ *   [[2: publicKey  [1] PublicKey OPTIONAL ]],
+ *   ...
+ * }
  *
- * Version ::= INTEGER
+ * PrivateKeyInfo ::= OneAsymmetricKey
+ *
+ * Version ::= INTEGER { v1(0), v2(1) }
  *
  * PrivateKeyAlgorithmIdentifier ::= AlgorithmIdentifier
  *
  * PrivateKey ::= OCTET STRING
+ *
+ * PublicKey ::= BIT STRING
  *
  * Attributes ::= SET OF Attribute
  * </pre>
@@ -56,11 +66,14 @@ package java.security.spec;
  * @see EncodedKeySpec
  * @see X509EncodedKeySpec
  *
+ * @spec https://www.rfc-editor.org/info/rfc5958
+ *     RFC 5958: Asymmetric Key Packages
+ *
  * @since 1.2
  */
 
-public class PKCS8EncodedKeySpec extends EncodedKeySpec {
-
+public non-sealed class PKCS8EncodedKeySpec extends EncodedKeySpec implements
+    DEREncodable {
     /**
      * Creates a new {@code PKCS8EncodedKeySpec} with the given encoded key.
      *

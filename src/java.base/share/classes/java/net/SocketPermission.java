@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,8 @@ import sun.security.util.RegisteredDomain;
 import sun.security.util.SecurityConstants;
 import sun.security.util.Debug;
 
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * This class represents access to a network via sockets.
@@ -392,8 +394,8 @@ public final class SocketPermission extends Permission
             if (rb != -1) {
                 host = host.substring(start, rb);
             } else {
-                throw new
-                    IllegalArgumentException("invalid host/port: "+host);
+                throw new IllegalArgumentException(
+                    formatMsg("invalid host/port%s", filterNonSocketInfo(host).prefixWith(": ")));
             }
             sep = hostport.indexOf(':', rb+1);
         } else {
@@ -410,8 +412,8 @@ public final class SocketPermission extends Permission
             try {
                 portrange = parsePort(port);
             } catch (Exception e) {
-                throw new
-                    IllegalArgumentException("invalid port range: "+port);
+                throw new IllegalArgumentException(
+                    formatMsg("invalid port range%s", filterNonSocketInfo(port).prefixWith(": ")));
             }
         } else {
             portrange = new int[] { PORT_MIN, PORT_MAX };
@@ -784,7 +786,7 @@ public final class SocketPermission extends Permission
             throw uhe;
         }  catch (IndexOutOfBoundsException iobe) {
             invalid = true;
-            throw new UnknownHostException(getName());
+            throw new UnknownHostException(formatMsg("%s", filterNonSocketInfo(getName())));
         }
     }
 

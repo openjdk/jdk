@@ -44,7 +44,7 @@ class MacroAssembler: public Assembler {
 
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
-  void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
+  void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp_reg = t0);
 
   // Alignment
   int align(int modulus, int extra_offset = 0);

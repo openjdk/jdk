@@ -157,10 +157,10 @@ public final class Long extends Number
             }
 
             while (i <= -radix) {
-                buf[charPos--] = (byte)Integer.digits[(int)(-(i % radix))];
+                buf[charPos--] = Integer.digits[(int)(-(i % radix))];
                 i = i / radix;
             }
-            buf[charPos] = (byte)Integer.digits[(int)(-i)];
+            buf[charPos] = Integer.digits[(int)(-i)];
 
             if (negative) {
                 buf[--charPos] = '-';
@@ -422,7 +422,7 @@ public final class Long extends Number
         int radix = 1 << shift;
         int mask = radix - 1;
         do {
-            buf[--charPos] = (byte)Integer.digits[((int) val) & mask];
+            buf[--charPos] = Integer.digits[((int) val) & mask];
             val >>>= shift;
         } while (charPos > offset);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @bug 8215181 8230284 8231273 8284840
  * @summary Tests the "u-cf" extension
  * @modules jdk.localedata
- * @run testng/othervm -Djava.locale.providers=CLDR CurrencyFormatTests
+ * @run testng CurrencyFormatTests
  */
 
 import static org.testng.Assert.assertEquals;

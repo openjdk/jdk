@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.ExternalApplication;
 import static jdk.jpackage.internal.ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.model.RuntimeBuilder.getDefaultModulePath;
 
@@ -93,8 +94,8 @@ final class StandardBundlerParam {
                     null
             );
 
-    static final BundlerParamInfo<AppImageFile> PREDEFINED_APP_IMAGE_FILE = BundlerParamInfo.createBundlerParam(
-            AppImageFile.class, params -> {
+    static final BundlerParamInfo<ExternalApplication> PREDEFINED_APP_IMAGE_FILE = BundlerParamInfo.createBundlerParam(
+            ExternalApplication.class, params -> {
                 if (hasPredefinedAppImage(params)) {
                     var appImage = getPredefinedAppImage(params);
                     return AppImageFile.load(appImage, PLATFORM_APPLICATION_LAYOUT);
