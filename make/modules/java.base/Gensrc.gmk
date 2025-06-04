@@ -61,7 +61,8 @@ $(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
 	    -basemodule \
 	    -year $(COPYRIGHT_YEAR) \
 	    -zntempfile $(ZONENAME_TEMPLATE) \
-	    -tzdatadir $(TZ_DATA_DIR))
+	    -tzdatadir $(TZ_DATA_DIR) \
+	    -utf8)
 	$(TOUCH) $@
 
 TARGETS += $(CLDR_GEN_DONE)
