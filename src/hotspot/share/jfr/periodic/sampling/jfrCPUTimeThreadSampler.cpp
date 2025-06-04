@@ -581,11 +581,10 @@ static void set_timer_time(timer_t timerid, int64_t period_nanos) {
 }
 
 bool JfrCPUSamplerThread::create_timer_for_thread(JavaThread* thread, timer_t& timerid) {
-  timer_t t;
   struct sigevent sev;
   sev.sigev_notify = SIGEV_THREAD_ID;
   sev.sigev_signo = SIG;
-  sev.sigev_value.sival_ptr = &t;
+  sev.sigev_value.sival_ptr = &timerid;
   ((int*)&sev.sigev_notify)[1] = thread->osthread()->thread_id();
   clockid_t clock;
   int err = pthread_getcpuclockid(thread->osthread()->pthread_id(), &clock);
@@ -593,14 +592,13 @@ bool JfrCPUSamplerThread::create_timer_for_thread(JavaThread* thread, timer_t& t
     log_error(jfr)("Failed to get clock for thread sampling: %s", os::strerror(err));
     return false;
   }
-  if (timer_create(clock, &sev, &t) < 0) {
+  if (timer_create(clock, &sev, &timerid) < 0) {
     return false;
   }
   int64_t period = get_sampling_period();
   if (period != 0) {
-    set_timer_time(t, period);
+    set_timer_time(timerid, period);
   }
-  timerid = t;
   return true;
 }
 
