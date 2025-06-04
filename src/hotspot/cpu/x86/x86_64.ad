@@ -10651,6 +10651,7 @@ instruct xorI_rReg_mem_imm_ndd(rRegI dst, memory src1, immI src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (XorI (LoadI src1) src2));
   effect(KILL cr);
+  ins_cost(150);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
 
   format %{ "exorl    $dst, $src1, $src2\t# int ndd" %}
@@ -11357,6 +11358,7 @@ instruct xorL_rReg_mem_imm(rRegL dst, memory src1, immL32 src2, rFlagsReg cr)
   match(Set dst (XorL (LoadL src1) src2));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  ins_cost(150);
 
   format %{ "exorq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
