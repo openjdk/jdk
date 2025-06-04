@@ -1099,12 +1099,17 @@ CHeapString::~CHeapString() {
 // offset is a byte offset into an instruction stream (CodeBuffer, CodeBlob or
 // other memory buffer) and remark is a string (comment).
 //
-AsmRemarks::AsmRemarks() : _remarks(new AsmRemarkCollection()) {
+AsmRemarks::AsmRemarks() {
+  init();
   assert(_remarks != nullptr, "Allocation failure!");
 }
 
 AsmRemarks::~AsmRemarks() {
   assert(_remarks == nullptr, "Must 'clear()' before deleting!");
+}
+
+void AsmRemarks::init() {
+  _remarks = new AsmRemarkCollection();
 }
 
 const char* AsmRemarks::insert(uint offset, const char* remstr) {
@@ -1151,12 +1156,17 @@ uint AsmRemarks::print(uint offset, outputStream* strm) const {
 // Acting as interface to reference counted collection of (debug) strings used
 // in the code generated, and thus requiring a fixed address.
 //
-DbgStrings::DbgStrings() : _strings(new DbgStringCollection()) {
+DbgStrings::DbgStrings() {
+  init();
   assert(_strings != nullptr, "Allocation failure!");
 }
 
 DbgStrings::~DbgStrings() {
   assert(_strings == nullptr, "Must 'clear()' before deleting!");
+}
+
+void DbgStrings::init() {
+  _strings = new DbgStringCollection();
 }
 
 const char* DbgStrings::insert(const char* dbgstr) {
