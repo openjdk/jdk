@@ -263,15 +263,15 @@ Node* ConvF2HFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // Detects following ideal graph pattern
   //      ConvF2HF(binopF(conF, ConvHF2F(varS))) =>
   //              ReinterpretHF2SNode(binopHF(conHF, ReinterpretS2HFNode(varS)))
-  Node* conF = nullptr;
-  Node* varS = nullptr;
   if (Float16NodeFactory::is_float32_binary_oper(in(1)->Opcode())) {
     Node* binopF = in(1);
-    // Check if incoming binary operation has one floating point constant
-    // input and other a half precision to single precision upcasting node.
-    // We land here because prior HalfFloat to Float conversion promotes
-    // integral constant holding Float16 value to a floating point constant
+    // Check if the incoming binary operation has one floating point constant
+    // input and the other input is a half precision to single precision upcasting node.
+    // We land here because a prior HalfFloat to Float conversion promotes
+    // an integral constant holding Float16 value to a floating point constant.
     // i.e. ConvHF2F ConI(short) => ConF
+    Node* conF = nullptr;
+    Node* varS = nullptr;
     if (binopF->in(1)->is_Con() && binopF->in(2)->Opcode() == Op_ConvHF2F) {
       conF = binopF->in(1);
       varS = binopF->in(2)->in(1);
