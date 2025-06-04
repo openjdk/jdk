@@ -331,6 +331,7 @@ void JfrCPUSamplerThread::run() {
 
 void JfrCPUSamplerThread::stackwalk_threads_in_native() {
   ResourceMark rm;
+  MutexLocker tlock(Threads_lock);
   ThreadsListHandle tlh;
   Thread* current = Thread::current();
   for (size_t i = 0; i < tlh.list()->length(); i++) {
