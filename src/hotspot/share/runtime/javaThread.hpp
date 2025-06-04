@@ -40,6 +40,7 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stackOverflow.hpp"
+#include "runtime/suspendResumeManager.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadHeapSampler.hpp"
 #include "runtime/threadIdentifier.hpp"
