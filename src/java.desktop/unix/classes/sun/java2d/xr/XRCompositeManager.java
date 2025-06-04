@@ -44,7 +44,7 @@ import sun.java2d.loops.XORComposite;
  * @author Clemens Eisserer
  */
 
-public class XRCompositeManager {
+public final class XRCompositeManager {
     private static boolean enableGradCache = true;
     private static XRCompositeManager instance;
 

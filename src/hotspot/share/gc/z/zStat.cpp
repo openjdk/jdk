@@ -1531,7 +1531,7 @@ void ZStatRelocation::print_page_summary() {
   };
 
   print_summary("Small", small_summary, _small_in_place_count);
-  if (ZPageSizeMedium != 0) {
+  if (ZPageSizeMediumEnabled) {
     print_summary("Medium", medium_summary, _medium_in_place_count);
   }
   print_summary("Large", large_summary, 0 /* in_place_count */);

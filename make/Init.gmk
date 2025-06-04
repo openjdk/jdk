@@ -37,10 +37,6 @@ include MakeFileStart.gmk
 include $(TOPDIR)/make/InitSupport.gmk
 include LogUtils.gmk
 
-# Force early generation of module-deps.gmk
-GENERATE_MODULE_DEPS_FILE := true
-include Modules.gmk
-
 # Inclusion of this pseudo-target will cause make to execute this file
 # serially, regardless of -j.
 .NOTPARALLEL:
@@ -114,7 +110,18 @@ reconfigure:
 	    CUSTOM_CONFIG_DIR="$(CUSTOM_CONFIG_DIR)" \
 	    $(RECONFIGURE_COMMAND) )
 
-.PHONY: print-modules print-targets print-tests print-configuration reconfigure
+# Create files that are needed to run most targets in Main.gmk
+create-make-helpers:
+	( cd $(TOPDIR) && \
+	    $(MAKE) $(MAKE_ARGS) -j 1 -f make/GenerateFindTests.gmk \
+	    $(USER_MAKE_VARS) )
+	( cd $(TOPDIR) && \
+	    $(MAKE) $(MAKE_ARGS) -j 1 -f make/Main.gmk $(USER_MAKE_VARS) \
+	    UPDATE_MODULE_DEPS=true NO_RECIPES=true \
+	    create-main-targets-include )
+
+.PHONY: print-modules print-targets print-tests print-configuration \
+    reconfigure create-make-helpers
 
 ##############################################################################
 # The main target. This will delegate all other targets into Main.gmk.
@@ -134,7 +141,7 @@ TARGET_DESCRIPTION := target$(if $(word 2, $(MAIN_TARGETS)),s) \
 # variables are explicitly propagated using $(USER_MAKE_VARS).
 main: MAKEOVERRIDES :=
 
-main: $(INIT_TARGETS)
+main: $(INIT_TARGETS) create-make-helpers
         ifneq ($(SEQUENTIAL_TARGETS)$(PARALLEL_TARGETS), )
 	  $(call RotateLogFiles)
 	  $(ECHO) "Building $(TARGET_DESCRIPTION)" $(BUILD_LOG_PIPE_SIMPLE)
@@ -144,6 +151,9 @@ main: $(INIT_TARGETS)
 	    ( cd $(TOPDIR) && \
 	        $(MAKE) $(MAKE_ARGS) -j 1 -f make/Main.gmk $(USER_MAKE_VARS) \
 	        $(SEQUENTIAL_TARGETS) )
+            # We might have cleaned away essential files, recreate them.
+	    ( cd $(TOPDIR) && \
+	        $(MAKE) $(MAKE_ARGS) -j 1 -f make/Init.gmk create-make-helpers )
           endif
           ifneq ($(PARALLEL_TARGETS), )
 	    $(call PrepareFailureLogs)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
  *          java.base/sun.util.spi
  *          jdk.localedata
  * @run main Bug8167143 testTimeZone
- * @run main/othervm -Djava.locale.providers=CLDR Bug8167143 testCldr
+ * @run main Bug8167143 testCldr
  * @run main Bug8167143 testCache
  * @run main Bug8167143 testCandidateLocales
  */
@@ -236,40 +236,40 @@ public class Bug8167143 {
     private static void testImplicitCompatLocales() {
         LocaleProviderAdapter jre = LocaleProviderAdapter.forJRE();
         checkPresenceCompat("BreakIteratorProvider",
-            jre.getBreakIteratorProvider().getAvailableLocales());
+                jre.getBreakIteratorProvider().getAvailableLocales());
         checkPresenceCompat("CollatorProvider",
-            jre.getCollatorProvider().getAvailableLocales());
+                jre.getCollatorProvider().getAvailableLocales());
         checkPresenceCompat("DateFormatProvider",
-            jre.getDateFormatProvider().getAvailableLocales());
+                jre.getDateFormatProvider().getAvailableLocales());
         checkPresenceCompat("DateFormatSymbolsProvider",
-            jre.getDateFormatSymbolsProvider().getAvailableLocales());
+                jre.getDateFormatSymbolsProvider().getAvailableLocales());
         checkPresenceCompat("DecimalFormatSymbolsProvider",
-            jre.getDecimalFormatSymbolsProvider().getAvailableLocales());
+                jre.getDecimalFormatSymbolsProvider().getAvailableLocales());
         checkPresenceCompat("NumberFormatProvider",
-            jre.getNumberFormatProvider().getAvailableLocales());
+                jre.getNumberFormatProvider().getAvailableLocales());
         checkPresenceCompat("CurrencyNameProvider",
-            jre.getCurrencyNameProvider().getAvailableLocales());
+                jre.getCurrencyNameProvider().getAvailableLocales());
         checkPresenceCompat("LocaleNameProvider",
-            jre.getLocaleNameProvider().getAvailableLocales());
+                jre.getLocaleNameProvider().getAvailableLocales());
         checkPresenceCompat("TimeZoneNameProvider",
-            jre.getTimeZoneNameProvider().getAvailableLocales());
+                jre.getTimeZoneNameProvider().getAvailableLocales());
         checkPresenceCompat("CalendarDataProvider",
-            jre.getCalendarDataProvider().getAvailableLocales());
+                jre.getCalendarDataProvider().getAvailableLocales());
         checkPresenceCompat("CalendarNameProvider",
-            jre.getCalendarNameProvider().getAvailableLocales());
+                jre.getCalendarNameProvider().getAvailableLocales());
         checkPresenceCompat("CalendarProvider",
-            jre.getCalendarProvider().getAvailableLocales());
+                jre.getCalendarProvider().getAvailableLocales());
     }
 
     private static void checkPresenceCompat(String testName, Locale[] got) {
         List<Locale> gotLocalesList = Arrays.asList(got);
         List<Locale> gotList = new ArrayList<>(gotLocalesList);
-            if (!gotList.removeAll(COMPAT_IMPLICIT_LOCS)) {
-                // check which Implicit locale are not present in retrievedLocales List.
-                List<Locale> implicitLocales = new ArrayList<>(COMPAT_IMPLICIT_LOCS);
-                implicitLocales.removeAll(gotList);
-                throw new RuntimeException("Locales those not correctly reflected are "
-                        + implicitLocales + " for test " + testName);
-            }
+        if (!gotList.removeAll(COMPAT_IMPLICIT_LOCS)) {
+            // check which Implicit locale are not present in retrievedLocales List.
+            List<Locale> implicitLocales = new ArrayList<>(COMPAT_IMPLICIT_LOCS);
+            implicitLocales.removeAll(gotList);
+            throw new RuntimeException("Locales those not correctly reflected are "
+                    + implicitLocales + " for test " + testName);
+        }
     }
 }

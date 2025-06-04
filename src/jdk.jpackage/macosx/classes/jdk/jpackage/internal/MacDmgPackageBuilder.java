@@ -54,14 +54,6 @@ final class MacDmgPackageBuilder {
 
     MacDmgPackage create() throws ConfigException {
         final var superPkgBuilder = pkgBuilder.pkgBuilder();
-        superPkgBuilder.installDir().ifPresent(installDir -> {
-            final var defaultInstallDirLocation = superPkgBuilder.defaultInstallDir().map(Path::getParent).orElseThrow();
-            if (!defaultInstallDirLocation.equals(installDir)) {
-                Log.info(I18N.format("message.install-dir-ignored", defaultInstallDirLocation));
-                superPkgBuilder.installDir(defaultInstallDirLocation);
-            }
-        });
-
         final var pkg = pkgBuilder.create();
 
         return MacDmgPackage.create(pkg, new MacDmgPackageMixin.Stub(
