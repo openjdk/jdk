@@ -321,7 +321,7 @@ bool Peephole::lea_remove_redundant(Block* block, int block_index, PhaseCFG* cfg
   }
 
   // Ensure the MachProj is in the same block as the decode and the lea.
-  if (!block->contains(proj)) {
+  if (proj == nullptr || !block->contains(proj)) {
     return false;
   }
 
