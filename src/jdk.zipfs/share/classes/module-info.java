@@ -192,7 +192,7 @@ import java.util.Set;
  *   <td>
  *       If the value is {@code true}, the ZIP file system provider creates a
  *       new ZIP or JAR file if it does not exist. Specifying the {@code create}
- *       property as {@code true} with the {@code accessMode} as {@code readOnly}
+ *       property as {@code true} with the {@code accessMode} as {@code "readOnly"}
  *       will cause an {@code IllegalArgumentException} to be thrown when creating
  *       the ZIP file system.
  *   </td>
