@@ -1120,7 +1120,7 @@ public sealed class ICC_Profile implements Serializable
      * byte array. The returned byte array is not cloned. It must not be exposed
      * to or used by public APIs. It is intended strictly for internal use only.
      *
-     * @param  p the ICC profile from which to retrieve the tag data
+     * @param  p the CMM profile from which to retrieve the tag data
      * @param  tagSignature the ICC tag signature for the data to retrieve
      * @return a non-null byte array containing the tag data
      * @throws CMMException if the specified tag doesn't exist
