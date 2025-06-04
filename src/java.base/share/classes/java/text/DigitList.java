@@ -189,7 +189,7 @@ final class DigitList implements Cloneable {
         // we'd get a parse failure.
         long v = Long.parseUnsignedLong(new String(digits, 0, count));
         if (v < 0) {
-            if (Long.compareUnsigned(v, Long.MIN_VALUE) == 0) {
+            if (v == Long.MIN_VALUE) {
                 return Long.MIN_VALUE;
             }
             throw new NumberFormatException("Unexpected negative value");
