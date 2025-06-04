@@ -38,36 +38,57 @@
 import javax.swing.Action;
 import javax.swing.JPasswordField;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.basic.BasicTextUI;
 import javax.swing.text.DefaultEditorKit;
 import java.awt.event.ActionEvent;
 
 public class PasswordSelectionWordTest {
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            String str = "one two three";
-            JPasswordField field = new JPasswordField(str);
-            if (!(field.getUI() instanceof BasicTextUI)) {
-                System.out.println("Skipping PasswordSelectionWordTest " +
-                        "because the JPasswordField UI was " + field.getUI());
-                return;
-            }
+        for (UIManager.LookAndFeelInfo laf :
+                UIManager.getInstalledLookAndFeels()) {
+            System.out.println("Testing LAF: " + laf.getClassName());
+            SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
+            SwingUtilities.invokeAndWait(() -> runTest());
+        }
+    }
 
-            // do something (anything) to initialize the Views:
-            field.setSize(100, 100);
-            field.addNotify();
+    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
+        try {
+            UIManager.setLookAndFeel(laf.getClassName());
+        } catch (UnsupportedLookAndFeelException ignored) {
+            System.out.println("Unsupported LAF: " + laf.getClassName());
+        } catch (ClassNotFoundException | InstantiationException
+                 | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-            Action action = field.getActionMap().get(
-                    DefaultEditorKit.selectWordAction);
-            action.actionPerformed(new ActionEvent(field, 0, ""));
-            int selectionStart = field.getSelectionStart();
-            int selectionEnd = field.getSelectionEnd();
-            System.out.println("selectionStart = " + selectionStart);
-            System.out.println("selectionEnd = " + selectionEnd);
-            if (selectionStart != 0 || selectionEnd != str.length()) {
-                throw new Error("selectionStart = " + selectionStart +
-                        " and selectionEnd = " + selectionEnd);
-            }
-        });
+    private static void runTest() {
+        String str = "one two three";
+        JPasswordField field = new JPasswordField(str);
+        if (!(field.getUI() instanceof BasicTextUI)) {
+            System.out.println("Skipping PasswordSelectionWordTest " +
+                    "because the JPasswordField UI was " + field.getUI());
+            return;
+        }
+        System.out.println("Testing "+ field.getUI());
+
+        // do something (anything) to initialize the Views:
+        field.setSize(100, 100);
+        field.addNotify();
+
+        Action action = field.getActionMap().get(
+                DefaultEditorKit.selectWordAction);
+        action.actionPerformed(new ActionEvent(field, 0, ""));
+        int selectionStart = field.getSelectionStart();
+        int selectionEnd = field.getSelectionEnd();
+        System.out.println("selectionStart = " + selectionStart);
+        System.out.println("selectionEnd = " + selectionEnd);
+        if (selectionStart != 0 || selectionEnd != str.length()) {
+            throw new Error("selectionStart = " + selectionStart +
+                    " and selectionEnd = " + selectionEnd);
+        }
     }
 }
