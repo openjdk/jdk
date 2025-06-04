@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.io.BufferedReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -30,61 +29,47 @@ import jdk.test.lib.process.ProcessTools;
 import static jdk.test.lib.Utils.*;
 
 import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 /**
  * @test
- * @bug 8356985
- * @summary Tests if "stdin.encoding" is reflected for reading
- *          the console. "expect" command in Windows/Cygwin does
- *          not work as expected. Ignoring tests on Windows.
- * @requires (os.family == "linux" | os.family == "mac")
+ * @bug 8264208 8265918 8356985 8358158
+ * @summary Tests if "stdout.encoding" property is reflected in
+ *          Console.charset() method. "expect" command in Windows/Cygwin
+ *          does not work as expected. Ignoring tests on Windows.
+ * @requires (os.family == "linux") | (os.family == "mac")
  * @library /test/lib
- * @build csp/*
- * @run junit StdinEncodingTest
+ * @run junit StdoutEncodingTest
  */
-public class StdinEncodingTest {
+public class StdoutEncodingTest {
 
-    @Test
-    public void testStdinEncoding() throws Throwable {
+    @ParameterizedTest
+    @CsvSource({
+        "en_US.ISO8859-1, ISO-8859-1",
+        "en_US.US-ASCII, US-ASCII",
+        "en_US.UTF-8, UTF-8"
+    })
+    void testCharset(String locale, String expectedCharset) throws Exception {
         // check "expect" command availability
         var expect = Paths.get("/usr/bin/expect");
         Assumptions.assumeTrue(Files.exists(expect) && Files.isExecutable(expect),
-            "'" + expect + "' not found");
+            "'" + expect + "' not found. Test ignored.");
 
         // invoking "expect" command
         OutputAnalyzer output = ProcessTools.executeProcess(
-            "expect",
-            "-n",
-            TEST_SRC + "/stdinEncoding.exp",
-            TEST_JDK + "/bin/java",
-            "--module-path",
-            TEST_CLASSES + "/modules",
-            "-Dstdin.encoding=Uppercasing", // <- gist of this test
-            "StdinEncodingTest");
+                "expect",
+                "-n",
+                TEST_SRC + "/stdoutEncoding.exp",
+                TEST_JDK + "/bin/java",
+                locale,
+                expectedCharset,
+                TEST_CLASSES);
         output.reportDiagnosticSummary();
         output.shouldHaveExitValue(0);
     }
 
-    public static void main(String... args) throws Throwable {
-        // check stdin.encoding
-        if (!"Uppercasing".equals(System.getProperty("stdin.encoding"))) {
-            throw new RuntimeException("Uppercasing charset was not set in stdin.encoding");
-        }
-        var con = System.console();
-
-        // Console.readLine()
-        System.out.print(con.readLine());
-
-        // Console.readPassword()
-        System.out.print(String.valueOf(con.readPassword()));
-
-        // Console.reader()
-        try (var br = new BufferedReader(con.reader())) {
-            System.out.print(br.readLine());
-        }
-
-        // Wait till the test receives the result
-        con.readLine();
+    public static void main(String... args) {
+        System.out.println(System.console().charset());
     }
 }
