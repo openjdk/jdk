@@ -44,13 +44,13 @@ public class MaxAgeExpires {
             String s = sb.toString();
             System.out.println(s);
             var cookie = HttpCookie.parse(s).get(0);
- 
+
             if (expectedAge != -1 && cookie.getMaxAge() != expectedAge()) {
                 System.out.println("getMaxAge() returned " + cookie.getMaxAge());
                 System.out.println("expectedAge() was " + expectedAge());
                 throw new RuntimeException("Test failed: wrong age");
             }
-            
+
             if (cookie.hasExpired() != hasExpired()) {
                 System.out.println("cookie.hasExpired() returned " + cookie.hasExpired());
                 System.out.println("hasExpired() was " + hasExpired());
@@ -61,7 +61,7 @@ public class MaxAgeExpires {
     }
 
     static Test[] tests = new Test[] {
-        // Date string in past. 
+        // Date string in past.
         new Test(-1, "Thu, 01 Jan 2024 00:00:00 GMT", 0, true),
         new Test(1000, "Thu, 01 Jan 2024 00:00:00 GMT", 1000, false),
         new Test(0, "Thu, 01 Jan 2024 00:00:00 GMT", 0, true),
