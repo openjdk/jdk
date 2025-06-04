@@ -169,13 +169,7 @@ final class DigitList implements Cloneable {
         if (count == 0) {
             return 0.0;
         }
-
-        return Double.parseDouble(getStringBuilder()
-                .append('.')
-                .append(digits, 0, count)
-                .append('E')
-                .append(decimalAt)
-                .toString());
+        return FloatingDecimal.parseDoubleDigits(decimalAt, digits, count);
     }
 
     /**
@@ -190,17 +184,18 @@ final class DigitList implements Cloneable {
             return 0;
         }
 
-        // We have to check for this, because this is the one NEGATIVE value
+        // Parse as unsigned to handle Long.MIN_VALUE, which is the one NEGATIVE value
         // we represent.  If we tried to just pass the digits off to parseLong,
         // we'd get a parse failure.
-        if (isLongMIN_VALUE()) {
-            return Long.MIN_VALUE;
+        long v = Long.parseUnsignedLong(new String(digits, 0, count));
+        if (v < 0) {
+            if (Long.compareUnsigned(v, Long.MIN_VALUE) == 0) {
+                return Long.MIN_VALUE;
+            }
+            throw new NumberFormatException("Unexpected negative value");
         }
-
-        StringBuilder temp = getStringBuilder();
-        temp.append(digits, 0, count);
-        temp.append("0".repeat(Math.max(0, decimalAt - count)));
-        return Long.parseLong(temp.toString());
+        long pow10 = Math.powExact(10L, Math.max(0, decimalAt - count));
+        return Math.multiplyExact(v, pow10);
     }
 
     /**
@@ -730,7 +725,6 @@ final class DigitList implements Cloneable {
             // not carry significant information. They will be recreated on demand.
             // Setting them to null is needed to avoid sharing across clones.
             other.data = null;
-            other.tempBuilder = null;
 
             return other;
         } catch (CloneNotSupportedException e) {
@@ -738,23 +732,7 @@ final class DigitList implements Cloneable {
         }
     }
 
-    /**
-     * Returns true if this DigitList represents Long.MIN_VALUE;
-     * false, otherwise.  This is required so that getLong() works.
-     */
-    private boolean isLongMIN_VALUE() {
-        if (decimalAt != count || count != MAX_COUNT) {
-            return false;
-        }
-
-        for (int i = 0; i < count; ++i) {
-            if (digits[i] != LONG_MIN_REP[i]) return false;
-        }
-
-        return true;
-    }
-
-    private static final int parseInt(char[] str, int offset, int strLen) {
+    private static int parseInt(char[] str, int offset, int strLen) {
         char c;
         boolean positive = true;
         if ((c = str[offset]) == '-') {
@@ -785,17 +763,6 @@ final class DigitList implements Cloneable {
         }
 
         return "0." + new String(digits, 0, count) + "x10^" + decimalAt;
-    }
-
-    private StringBuilder tempBuilder;
-
-    private StringBuilder getStringBuilder() {
-        if (tempBuilder == null) {
-            tempBuilder = new StringBuilder(MAX_COUNT);
-        } else {
-            tempBuilder.setLength(0);
-        }
-        return tempBuilder;
     }
 
     private void extendDigits(int len) {

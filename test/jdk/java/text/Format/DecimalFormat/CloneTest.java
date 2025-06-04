@@ -95,11 +95,6 @@ public class CloneTest {
                     assertNotSame(data, valFromDigitList(dfClone, "data"));
                 }
 
-                Object tempBuilder = valFromDigitList(original, "tempBuilder");
-                if (tempBuilder != null) {
-                    assertNotSame(data, valFromDigitList(dfClone, "data"));
-                }
-
                 assertEquals(digitListField.get(original), digitListField.get(dfClone));
             } catch (ReflectiveOperationException e) {
                 throw new SkippedException("reflective access in white-box test failed", e);
