@@ -197,7 +197,7 @@ public:
     TrainingDataSet(Arg... arg)
       : _table(arg...), _mirror_refs(nullptr) {
     }
-    void initialize() {
+    void initialize_oopstorage() {
       assert(_mirror_refs == nullptr, "Already initialized");
       _mirror_refs = OopStorageSet::create_strong("Training data mirror references", mtInternal);
     }

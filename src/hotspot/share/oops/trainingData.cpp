@@ -73,9 +73,8 @@ void TrainingData::initialize() {
     guarantee(have_data() != need_data(), "Iterative training is not supported");
     TrainingDataLocker::initialize();
   }
-  if (need_data()) {
-    training_data_set()->initialize();
-  }
+  // This has to be done because OopStorageSet expects it.
+  training_data_set()->initialize_oopstorage();
 }
 
 static void verify_archived_entry(TrainingData* td, const TrainingData::Key* k) {
