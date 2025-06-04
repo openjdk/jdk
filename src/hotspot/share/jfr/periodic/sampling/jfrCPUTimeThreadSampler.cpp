@@ -584,7 +584,7 @@ bool JfrCPUSamplerThread::create_timer_for_thread(JavaThread* thread, timer_t& t
   struct sigevent sev;
   sev.sigev_notify = SIGEV_THREAD_ID;
   sev.sigev_signo = SIG;
-  sev.sigev_value.sival_ptr = &timerid;
+  sev.sigev_value.sival_ptr = nullptr;
   ((int*)&sev.sigev_notify)[1] = thread->osthread()->thread_id();
   clockid_t clock;
   int err = pthread_getcpuclockid(thread->osthread()->pthread_id(), &clock);
