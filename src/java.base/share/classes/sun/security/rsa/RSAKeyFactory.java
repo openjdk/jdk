@@ -320,71 +320,83 @@ public class RSAKeyFactory extends KeyFactorySpi {
     // internal implementation of generatePublic. See JCA doc
     private PublicKey generatePublic(KeySpec keySpec)
             throws GeneralSecurityException {
-        if (keySpec instanceof X509EncodedKeySpec) {
-            return RSAPublicKeyImpl.newKey(type, "X.509",
-                    ((X509EncodedKeySpec)keySpec).getEncoded());
-        } else if (keySpec instanceof RSAPublicKeySpec rsaSpec) {
-            try {
-                return new RSAPublicKeyImpl(
-                    type, rsaSpec.getParams(),
-                    rsaSpec.getModulus(),
-                    rsaSpec.getPublicExponent()
-                );
-            } catch (ProviderException e) {
-                throw new InvalidKeySpecException(e);
+        return switch (keySpec) {
+            case X509EncodedKeySpec x509 ->
+                RSAPublicKeyImpl.newKey(type, "X.509", x509.getEncoded());
+
+            case RSAPublicKeySpec rsaSpec -> {
+                try {
+                    yield new RSAPublicKeyImpl(
+                        type, rsaSpec.getParams(),
+                        rsaSpec.getModulus(),
+                        rsaSpec.getPublicExponent()
+                    );
+                } catch (ProviderException e) {
+                    throw new InvalidKeySpecException(e);
+                }
             }
-        } else if (keySpec instanceof PKCS8EncodedKeySpec p8) {
-            PKCS8Key p8key = new PKCS8Key(p8.getEncoded());
-            if (!p8key.hasPublicKey()) {
-                throw new InvalidKeySpecException("No public key found.");
+            case PKCS8EncodedKeySpec p8 -> {
+                PKCS8Key p8key = new PKCS8Key(p8.getEncoded());
+                if (!p8key.hasPublicKey()) {
+                    throw new InvalidKeySpecException("No public key found.");
+                }
+                yield RSAPublicKeyImpl.newKey(type, "X.509",
+                    p8key.getPubKeyEncoded());
             }
-            return RSAPublicKeyImpl.newKey(type, "X.509",
-                p8key.getPubKeyEncoded());
-        } else {
-            throw new InvalidKeySpecException(keySpec.getClass().getName() + " not supported.");
-        }
+            case null -> throw new InvalidKeySpecException(
+                "keySpec must not be null");
+            default ->
+                throw new InvalidKeySpecException(keySpec.getClass().getName() +
+                    " not supported.");
+        };
     }
 
     // internal implementation of generatePrivate. See JCA doc
     private PrivateKey generatePrivate(KeySpec keySpec)
             throws GeneralSecurityException {
-        if (keySpec instanceof PKCS8EncodedKeySpec) {
-            byte[] encoded = ((PKCS8EncodedKeySpec)keySpec).getEncoded();
-            try {
-                return RSAPrivateCrtKeyImpl.newKey(type, "PKCS#8", encoded);
-            } finally {
-                Arrays.fill(encoded, (byte)0);
+        return switch (keySpec) {
+            case PKCS8EncodedKeySpec p8 -> {
+                byte[] encoded = p8.getEncoded();
+                try {
+                    yield RSAPrivateCrtKeyImpl.newKey(type, "PKCS#8", encoded);
+                } finally {
+                    Arrays.fill(encoded, (byte) 0);
+                }
             }
-        } else if (keySpec instanceof RSAPrivateCrtKeySpec rsaSpec) {
-            try {
-                return new RSAPrivateCrtKeyImpl(
-                    type, rsaSpec.getParams(),
-                    rsaSpec.getModulus(),
-                    rsaSpec.getPublicExponent(),
-                    rsaSpec.getPrivateExponent(),
-                    rsaSpec.getPrimeP(),
-                    rsaSpec.getPrimeQ(),
-                    rsaSpec.getPrimeExponentP(),
-                    rsaSpec.getPrimeExponentQ(),
-                    rsaSpec.getCrtCoefficient()
-                );
-            } catch (ProviderException e) {
-                throw new InvalidKeySpecException(e);
+            case RSAPrivateCrtKeySpec rsaSpec -> {
+                try {
+                    yield new RSAPrivateCrtKeyImpl(
+                        type, rsaSpec.getParams(),
+                        rsaSpec.getModulus(),
+                        rsaSpec.getPublicExponent(),
+                        rsaSpec.getPrivateExponent(),
+                        rsaSpec.getPrimeP(),
+                        rsaSpec.getPrimeQ(),
+                        rsaSpec.getPrimeExponentP(),
+                        rsaSpec.getPrimeExponentQ(),
+                        rsaSpec.getCrtCoefficient()
+                    );
+                } catch (ProviderException e) {
+                    throw new InvalidKeySpecException(e);
+                }
             }
-        } else if (keySpec instanceof RSAPrivateKeySpec rsaSpec) {
-            try {
-                return new RSAPrivateKeyImpl(
-                    type, rsaSpec.getParams(),
-                    rsaSpec.getModulus(),
-                    rsaSpec.getPrivateExponent()
-                );
-            } catch (ProviderException e) {
-                throw new InvalidKeySpecException(e);
+            case RSAPrivateKeySpec rsaSpec -> {
+                try {
+                    yield new RSAPrivateKeyImpl(
+                        type, rsaSpec.getParams(),
+                        rsaSpec.getModulus(),
+                        rsaSpec.getPrivateExponent()
+                    );
+                } catch (ProviderException e) {
+                    throw new InvalidKeySpecException(e);
+                }
             }
-        } else {
-            throw new InvalidKeySpecException("Only RSAPrivate(Crt)KeySpec "
-                + "and PKCS8EncodedKeySpec supported for RSA private keys");
-        }
+            case null -> throw new InvalidKeySpecException(
+                "keySpec must not be null");
+            default ->
+                throw new InvalidKeySpecException(keySpec.getClass().getName() +
+                    " not supported.");
+        };
     }
 
     protected <T extends KeySpec> T engineGetKeySpec(Key key, Class<T> keySpec)

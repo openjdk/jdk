@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,29 +23,14 @@
  * questions.
  */
 
-/*
- * (C) Copyright Taligent, Inc. 1996, 1997 - All Rights Reserved
- * (C) Copyright IBM Corp. 1996 - 1998 - All Rights Reserved
- *
- * The original version of this source code and documentation
- * is copyrighted and owned by Taligent, Inc., a wholly-owned
- * subsidiary of IBM. These materials are provided under terms
- * of a License Agreement between Taligent and Sun. This technology
- * is protected by multiple US and International patents.
- *
- * This notice and attribution to Taligent may not be removed.
- * Taligent is a registered trademark of Taligent, Inc.
- *
- */
+#include "jni.h"
+#include "jvm.h"
 
-package sun.util.resources.ext;
+#include "jdk_internal_vm_ThreadSnapshot.h"
 
-import sun.util.resources.TimeZoneNamesBundle;
 
-public final class TimeZoneNames_en_CA extends TimeZoneNamesBundle {
-
-    protected final Object[][] getContents() {
-        return new Object[][] {
-        };
-    }
+JNIEXPORT jobject JNICALL
+Java_jdk_internal_vm_ThreadSnapshot_create(JNIEnv *env, jclass cls, jobject thread)
+{
+  return JVM_CreateThreadSnapshot(env, thread);
 }
