@@ -240,7 +240,7 @@ bool Peephole::test_may_remove(Block* block, int block_index, PhaseCFG* cfg_, Ph
 // match to leaPCompressedOopOffset, leaP8Narow, or leaP32Narrow. This happens for ideal graphs
 // of the form LoadN -> DecodeN -> AddP. Matching with any leaP* rule consumes both the AddP and
 // the DecodeN. However, after matching the DecodeN is added back as the base for the leaP*,
-// which is nessecary if the oop derived by the leaP* gets added to an OopMap, because OopMaps
+// which is necessary if the oop derived by the leaP* gets added to an OopMap, because OopMaps
 // cannot contain derived oops with narrow oops as a base.
 // This results in the following graph after matching:
 //  LoadN
@@ -251,8 +251,8 @@ bool Peephole::test_may_remove(Block* block, int block_index, PhaseCFG* cfg_, Ph
 // The decode_heap_oop_not_null will emit a lea with an unused result if the derived oop does
 // not end up in an OopMap.
 // This peephole recognizes graphs of the shape as shown above, ensures that the result of the
-// decode is only used by the derived oop and removes that decode if this is the case. Futher,
-// multipe leaP*s can have the same decode as their base. This peephole will remove the decode
+// decode is only used by the derived oop and removes that decode if this is the case. Further,
+// multiple leaP*s can have the same decode as their base. This peephole will remove the decode
 // if all leaP*s and the decode share the same parent.
 // Additionally, if the register allocator spills the result of the LoadN we can get such a graph:
 //               LoadN
@@ -264,8 +264,8 @@ bool Peephole::test_may_remove(Block* block, int block_index, PhaseCFG* cfg_, Ph
 //           | decodeHeapOop_not_null
 //           |   /              \
 //           leaP*          MachProj (leaf)
-// In this case where te common parent of the leaP* and the decode is one MemToRegSpill Copy
-// away, this peephole can als recognize the decode as redundant and also remove the spill copy
+// In this case where the common parent of the leaP* and the decode is one MemToRegSpill Copy
+// away, this peephole can also recognize the decode as redundant and also remove the spill copy
 // if that is only used by the decode.
 bool Peephole::lea_remove_redundant(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
                                     MachNode* (*new_root)(), uint inst0_rule) {

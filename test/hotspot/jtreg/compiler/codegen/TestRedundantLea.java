@@ -152,7 +152,7 @@ public class TestRedundantLea {
 }
 
 // This generates a leaP* rule for the chained dereference of obj.value that
-// gets passed to the get and set VM instrinsic.
+// gets passed to the get and set VM intrinsic.
 class GetAndSetTest {
     private static final Object CURRENT = new Object();
     private final AtomicReference<Object> obj = new AtomicReference<Object>();
@@ -230,7 +230,7 @@ class StringEqualsTestHelper {
 // leaP* rule is generated). With VM intrinsics enabled (this is the case
 // here) leaP* rules are also generated for the string_equals and arrays_hashcode
 // VM instrinsics.
-// This generates a larger number of decodes for -XX:UseAVX={0,1} thank for
+// This generates a larger number of decodes for -XX:UseAVX={0,1} than for
 // other flags.
 class StringInflateTest {
     @Setup
