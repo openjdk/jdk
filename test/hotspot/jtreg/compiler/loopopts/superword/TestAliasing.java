@@ -21,18 +21,6 @@
  * questions.
  */
 
-package compiler.loopopts.superword;
-
-import jdk.test.lib.Utils;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Random;
-
-import compiler.lib.ir_framework.*;
-import compiler.lib.verify.*;
-import static compiler.lib.generators.Generators.G;
-import compiler.lib.generators.Generator;
-
 /*
  * @test
  * @bug 8324751
@@ -49,6 +37,21 @@ import compiler.lib.generators.Generator;
  * @run driver compiler.loopopts.superword.TestAliasing noSlowLoopOptimizations
  */
 
+package compiler.loopopts.superword;
+
+import jdk.test.lib.Utils;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Random;
+
+import compiler.lib.ir_framework.*;
+import compiler.lib.verify.*;
+import static compiler.lib.generators.Generators.G;
+import compiler.lib.generators.Generator;
+
+/**
+ * More complicated test cases can be found in {@link TestAliasingFuzzing}.
+ */
 public class TestAliasing {
     static int SIZE = 1024*8;
     static int SIZE_FINAL = 1024*8;
