@@ -60,6 +60,16 @@ public class TestSubwordTruncation {
         return new Object[] { arr };
     }
 
+    @Setup
+    static Object[] setupCharArray() {
+        char[] arr = new char[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            arr[i] = (char) G.next().shortValue();
+        }
+
+        return new Object[] { arr };
+    }
+
     // Shorts
 
     @Test
@@ -156,6 +166,108 @@ public class TestSubwordTruncation {
 
         for (int i = 0; i < SIZE; i++) {
             short val = (short) Integer.bitCount(in[i]);
+            if (res[i] != val) {
+                throw new IllegalStateException("Expected " + val + " but got " + res[i] + " for " + in[i]);
+            }
+        }
+    }
+
+    // Chars
+
+    @Test
+    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @Arguments(setup = "setupCharArray")
+    public Object[] testCharLeadingZeros(char[] in) {
+        char[] res = new char[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+             res[i] = (char) Integer.numberOfLeadingZeros(in[i]);
+        }
+
+        return new Object[] { in, res };
+    }
+
+    @Check(test = "testCharLeadingZeros")
+    public void checkTestCharLeadingZeros(Object[] vals) {
+        char[] in = (char[]) vals[0];
+        char[] res = (char[]) vals[1];
+
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char) Integer.numberOfLeadingZeros(in[i]);
+            if (res[i] != val) {
+                throw new IllegalStateException("Expected " + val + " but got " + res[i] + " for " + in[i]);
+            }
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @Arguments(setup = "setupCharArray")
+    public Object[] testCharTrailingZeros(char[] in) {
+        char[] res = new char[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+             res[i] = (char) Integer.numberOfTrailingZeros(in[i]);
+        }
+
+        return new Object[] { in, res };
+    }
+
+    @Check(test = "testCharTrailingZeros")
+    public void checkTestCharTrailingZeros(Object[] vals) {
+        char[] in = (char[]) vals[0];
+        char[] res = (char[]) vals[1];
+
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char) Integer.numberOfTrailingZeros(in[i]);
+            if (res[i] != val) {
+                throw new IllegalStateException("Expected " + val + " but got " + res[i] + " for " + in[i]);
+            }
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @Arguments(setup = "setupCharArray")
+    public Object[] testCharReverse(char[] in) {
+        char[] res = new char[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+             res[i] = (char) Integer.reverse(in[i]);
+        }
+
+        return new Object[] { in, res };
+    }
+
+    @Check(test = "testCharReverse")
+    public void checkTestCharReverse(Object[] vals) {
+        char[] in = (char[]) vals[0];
+        char[] res = (char[]) vals[1];
+
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char) Integer.reverse(in[i]);
+            if (res[i] != val) {
+                throw new IllegalStateException("Expected " + val + " but got " + res[i] + " for " + in[i]);
+            }
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @Arguments(setup = "setupCharArray")
+    public Object[] testCharBitCount(char[] in) {
+        char[] res = new char[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+             res[i] = (char) Integer.bitCount(in[i]);
+        }
+
+        return new Object[] { in, res };
+    }
+
+    @Check(test = "testCharBitCount")
+    public void checkTestCharBitCount(Object[] vals) {
+        char[] in = (char[]) vals[0];
+        char[] res = (char[]) vals[1];
+
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char) Integer.bitCount(in[i]);
             if (res[i] != val) {
                 throw new IllegalStateException("Expected " + val + " but got " + res[i] + " for " + in[i]);
             }
