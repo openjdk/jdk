@@ -119,6 +119,9 @@
           "Cache for improving start up and warm up")                       \
           constraint(AOTCacheConstraintFunc, AtParse)                       \
                                                                             \
+  product(ccstr, AOTCacheOutput, nullptr,                                   \
+          "Specifies the file name for writing the AOT cache")              \
+                                                                            \
   product(bool, AOTInvokeDynamicLinking, false, DIAGNOSTIC,                 \
           "AOT-link JVM_CONSTANT_InvokeDynamic entries in cached "          \
           "ConstantPools")                                                  \

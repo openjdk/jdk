@@ -28,6 +28,7 @@
 #include "code/nmethod.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jfr/periodic/sampling/jfrSampleMonitor.hpp"
 #include "jfr/periodic/sampling/jfrSampleRequest.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampling.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTrace.hpp"
@@ -307,24 +308,6 @@ static void drain_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl, Jav
   assert(!tl->has_enqueued_requests(), "invariant");
 }
 
-class SampleMonitor : public StackObj {
- private:
-  JfrThreadLocal* const _tl;
-  Monitor* const _sample_monitor;
- public:
-  SampleMonitor(JfrThreadLocal* tl) : _tl(tl), _sample_monitor(tl->sample_monitor()) {
-    assert(tl != nullptr, "invariant");
-    assert(_sample_monitor != nullptr, "invariant");
-    _sample_monitor->lock_without_safepoint_check();
-  }
-  ~SampleMonitor() {
-    assert_lock_strong(_sample_monitor);
-    _tl->set_sample_state(NO_SAMPLE);
-    _sample_monitor->notify_all();
-    _sample_monitor->unlock();
-  }
-};
-
 // Only entered by the JfrSampler thread.
 bool JfrThreadSampling::process_native_sample_request(JfrThreadLocal* tl, JavaThread* jt, Thread* sampler_thread) {
   assert(tl != nullptr, "invairant");
@@ -334,7 +317,9 @@ bool JfrThreadSampling::process_native_sample_request(JfrThreadLocal* tl, JavaTh
   assert(tl == jt->jfr_thread_local(), "invariant");
   assert(jt != sampler_thread, "only asynchronous processing of native samples");
   assert(jt->has_last_Java_frame(), "invariant");
-  assert(tl->sample_state() == NATIVE_SAMPLE, "invariant");
+  assert(tl->sample_state() >= NATIVE_SAMPLE, "invariant");
+
+  assert_lock_strong(Threads_lock);
 
   const JfrTicks start_time = JfrTicks::now();
 
@@ -342,7 +327,7 @@ bool JfrThreadSampling::process_native_sample_request(JfrThreadLocal* tl, JavaTh
   traceid sid;
 
   {
-    SampleMonitor sm(tl);
+    JfrSampleMonitor sm(tl);
 
     // Because the thread was in native, it is in a walkable state, because
     // it will hit a safepoint poll on the way back from native. To ensure timely
@@ -384,10 +369,14 @@ void JfrThreadSampling::process_sample_request(JavaThread* jt) {
   for (;;) {
     const int sample_state = tl->sample_state();
     if (sample_state == NATIVE_SAMPLE) {
+      tl->set_sample_state(WAITING_FOR_NATIVE_SAMPLE);
       // Wait until stack trace is processed.
       ml.wait();
     } else if (sample_state == JAVA_SAMPLE) {
       tl->enqueue_request();
+    } else if (sample_state == WAITING_FOR_NATIVE_SAMPLE) {
+      // Handle spurious wakeups. Again wait until stack trace is processed.
+      ml.wait();
     } else {
       // State has been processed.
       break;
