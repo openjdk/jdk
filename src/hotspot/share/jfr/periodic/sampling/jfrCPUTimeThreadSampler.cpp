@@ -77,6 +77,7 @@ JfrCPUTimeTraceQueue::~JfrCPUTimeTraceQueue() {
 
 bool JfrCPUTimeTraceQueue::enqueue(JfrCPUTimeSampleRequest& request) {
   assert(JavaThread::current()->jfr_thread_local()->is_cpu_time_jfr_enqueue_locked(), "invariant");
+  assert(&JavaThread::current()->jfr_thread_local()->cpu_time_jfr_queue() == this, "invariant");
   u4 elementIndex;
   do {
     elementIndex = Atomic::load_acquire(&_head);
@@ -93,7 +94,7 @@ JfrCPUTimeSampleRequest& JfrCPUTimeTraceQueue::at(u4 index) {
   return _data[index];
 }
 
-volatile u4 _lost_samples_sum = 0;
+static volatile u4 _lost_samples_sum = 0;
 
 u4 JfrCPUTimeTraceQueue::size() const {
   return Atomic::load_acquire(&_head);
@@ -118,7 +119,7 @@ bool JfrCPUTimeTraceQueue::is_empty() const {
   return Atomic::load_acquire(&_head) == 0;
 }
 
-s4 JfrCPUTimeTraceQueue::lost_samples() const {
+u4 JfrCPUTimeTraceQueue::lost_samples() const {
   return Atomic::load(&_lost_samples);
 }
 
@@ -128,12 +129,7 @@ void JfrCPUTimeTraceQueue::increment_lost_samples() {
 }
 
 u4 JfrCPUTimeTraceQueue::get_and_reset_lost_samples() {
-  s4 lost_samples = Atomic::load(&_lost_samples);
-  s4 new_lost_samples;
-  while ((new_lost_samples = Atomic::cmpxchg(&_lost_samples, lost_samples, 0)) != lost_samples) {
-    lost_samples = new_lost_samples;
-  }
-  return lost_samples;
+  return Atomic::xchg(&_lost_samples, (u4)0);
 }
 
 void JfrCPUTimeTraceQueue::resize(u4 capacity) {
@@ -161,7 +157,7 @@ static int64_t compute_sampling_period(double rate) {
   return os::active_processor_count() * 1000000000.0 / rate;
 }
 
-class JfrCPUTimeThreadSampler : public NonJavaThread {
+class JfrCPUSamplerThread : public NonJavaThread {
   friend class JfrCPUTimeThreadSampling;
  private:
   Semaphore _sample;
@@ -174,7 +170,7 @@ class JfrCPUTimeThreadSampler : public NonJavaThread {
   volatile int _active_signal_handlers;
   volatile bool _is_async_processing_of_cpu_time_jfr_requests_triggered;
 
-  JfrCPUTimeThreadSampler(double rate, bool auto_adapt);
+  JfrCPUSamplerThread(double rate, bool auto_adapt);
 
   void start_thread();
 
@@ -191,43 +187,47 @@ class JfrCPUTimeThreadSampler : public NonJavaThread {
 
   // process the queues for all threads that are in native state (and requested to be processed)
   void stackwalk_threads_in_native();
+  bool create_timer_for_thread(JavaThread* thread, timer_t &timerid);
 
 protected:
   virtual void post_run();
 public:
-  virtual const char* name() const { return "JFR CPU Time Thread Sampler"; }
-  virtual const char* type_name() const { return "JfrCPUTimeThreadSampler"; }
+  virtual const char* name() const { return "JFR CPU Sampler Thread"; }
+  virtual const char* type_name() const { return "JfrCPUTimeSampler"; }
   void run();
   void on_javathread_create(JavaThread* thread);
-  bool create_timer_for_thread(JavaThread* thread, timer_t &timerid);
   void on_javathread_terminate(JavaThread* thread);
 
   void handle_timer_signal(siginfo_t* info, void* context);
-  void init_timers();
+  bool init_timers();
   void stop_timer();
 
   void trigger_async_processing_of_cpu_time_jfr_requests();
 };
 
+// we have two stop signals, to remove a data race
+// and this works even when the _instance is null
+static volatile bool _static_stop_signals = true;
 
-JfrCPUTimeThreadSampler::JfrCPUTimeThreadSampler(double rate, bool auto_adapt) :
+
+JfrCPUSamplerThread::JfrCPUSamplerThread(double rate, bool auto_adapt) :
   _sample(),
   _sampler_thread(nullptr),
   _rate(rate),
   _auto_adapt(auto_adapt),
   _current_sampling_period_ns(compute_sampling_period(rate)),
   _disenrolled(true),
-  _stop_signals(false),
+  _stop_signals(true),
   _active_signal_handlers(0),
   _is_async_processing_of_cpu_time_jfr_requests_triggered(false) {
   assert(rate >= 0, "invariant");
 }
 
-void JfrCPUTimeThreadSampler::trigger_async_processing_of_cpu_time_jfr_requests() {
+void JfrCPUSamplerThread::trigger_async_processing_of_cpu_time_jfr_requests() {
   Atomic::release_store(&_is_async_processing_of_cpu_time_jfr_requests_triggered, true);
 }
 
-void JfrCPUTimeThreadSampler::on_javathread_create(JavaThread* thread) {
+void JfrCPUSamplerThread::on_javathread_create(JavaThread* thread) {
   if (thread->is_hidden_from_external_view() || thread->is_JfrRecorder_thread()) {
     return;
   }
@@ -237,10 +237,12 @@ void JfrCPUTimeThreadSampler::on_javathread_create(JavaThread* thread) {
   timer_t timerid;
   if (create_timer_for_thread(thread, timerid)) {
     tl->set_cpu_timer(&timerid);
+  } else {
+    tl->deallocate_cpu_time_jfr_queue();
   }
 }
 
-void JfrCPUTimeThreadSampler::on_javathread_terminate(JavaThread* thread) {
+void JfrCPUSamplerThread::on_javathread_terminate(JavaThread* thread) {
   JfrThreadLocal* tl = thread->jfr_thread_local();
   assert(tl != nullptr, "invariant");
   timer_t* timer = tl->cpu_timer();
@@ -256,7 +258,7 @@ void JfrCPUTimeThreadSampler::on_javathread_terminate(JavaThread* thread) {
   }
 }
 
-void JfrCPUTimeThreadSampler::start_thread() {
+void JfrCPUSamplerThread::start_thread() {
   if (os::create_thread(this, os::os_thread)) {
     os::start_thread(this);
   } else {
@@ -264,31 +266,39 @@ void JfrCPUTimeThreadSampler::start_thread() {
   }
 }
 
-void JfrCPUTimeThreadSampler::enroll() {
+void JfrCPUSamplerThread::enroll() {
   if (Atomic::cmpxchg(&_disenrolled, true, false)) {
+    Atomic::release_store(&_static_stop_signals, false);
+    Atomic::release_store(&_stop_signals, false);
     log_trace(jfr)("Enrolling CPU thread sampler");
     _sample.signal();
-    init_timers();
+    if (!init_timers()) {
+      log_error(jfr)("Failed to initialize timers for CPU thread sampler");
+      disenroll();
+      return;
+    }
     log_trace(jfr)("Enrolled CPU thread sampler");
   }
 }
 
-void JfrCPUTimeThreadSampler::disenroll() {
+void JfrCPUSamplerThread::disenroll() {
   if (!Atomic::cmpxchg(&_disenrolled, false, true)) {
     log_trace(jfr)("Disenrolling CPU thread sampler");
     stop_timer();
-    Atomic::store(&_stop_signals, true);
+    Atomic::release_store(&_static_stop_signals, true);
+    Atomic::release_store(&_stop_signals, true);
     while (Atomic::load_acquire(&_active_signal_handlers) > 0) {
       // wait for all signal handlers to finish
       os::naked_short_nanosleep(1000);
     }
     _sample.wait();
-    Atomic::store(&_stop_signals, false);
+    Atomic::release_store(&_static_stop_signals, false);
+    Atomic::release_store(&_stop_signals, false);
     log_trace(jfr)("Disenrolled CPU thread sampler");
   }
 }
 
-void JfrCPUTimeThreadSampler::run() {
+void JfrCPUSamplerThread::run() {
   assert(_sampler_thread == nullptr, "invariant");
   _sampler_thread = this;
   int64_t last_auto_adapt_check = os::javaTimeNanos();
@@ -304,15 +314,14 @@ void JfrCPUTimeThreadSampler::run() {
       last_auto_adapt_check = os::javaTimeNanos();
     }
 
-    if (Atomic::load_acquire(&_is_async_processing_of_cpu_time_jfr_requests_triggered)) {
-      Atomic::release_store(&_is_async_processing_of_cpu_time_jfr_requests_triggered, false);
+    if (Atomic::cmpxchg(&_is_async_processing_of_cpu_time_jfr_requests_triggered, true, false)) {
       stackwalk_threads_in_native();
     }
     os::naked_sleep(100);
   }
 }
 
-void JfrCPUTimeThreadSampler::stackwalk_threads_in_native() {
+void JfrCPUSamplerThread::stackwalk_threads_in_native() {
   ResourceMark rm;
   MutexLocker tlock(Threads_lock);
   ThreadsListHandle tlh;
@@ -323,7 +332,7 @@ void JfrCPUTimeThreadSampler::stackwalk_threads_in_native() {
     if (tl->wants_async_processing_of_cpu_time_jfr_requests()) {
       if (jt->thread_state() != _thread_in_native || !tl->try_acquire_cpu_time_jfr_dequeue_lock()) {
         tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
-        continue; // thread doesn't have a last Java frame or queue is already being processed
+        continue;
       }
       if (jt->has_last_Java_frame()) {
         JfrThreadSampling::process_cpu_time_request(jt, tl, current, false);
@@ -380,7 +389,7 @@ void JfrCPUTimeThreadSampling::send_lost_event(const JfrTicks &time, traceid tid
   event.commit();
 }
 
-void JfrCPUTimeThreadSampler::post_run() {
+void JfrCPUSamplerThread::post_run() {
   this->NonJavaThread::post_run();
   delete this;
 }
@@ -414,7 +423,7 @@ JfrCPUTimeThreadSampling::~JfrCPUTimeThreadSampling() {
 
 void JfrCPUTimeThreadSampling::create_sampler(double rate, bool auto_adapt) {
   assert(_sampler == nullptr, "invariant");
-  _sampler = new JfrCPUTimeThreadSampler(rate, auto_adapt);
+  _sampler = new JfrCPUSamplerThread(rate, auto_adapt);
   _sampler->start_thread();
   _sampler->enroll();
 }
@@ -470,21 +479,28 @@ void JfrCPUTimeThreadSampling::trigger_async_processing_of_cpu_time_jfr_requests
 
 void handle_timer_signal(int signo, siginfo_t* info, void* context) {
   assert(_instance != nullptr, "invariant");
+  if (Atomic::load_acquire(&_static_stop_signals)) {
+    return;
+  }
   _instance->handle_timer_signal(info, context);
 }
 
 
 void JfrCPUTimeThreadSampling::handle_timer_signal(siginfo_t* info, void* context) {
   assert(_sampler != nullptr, "invariant");
-  if (Atomic::load(&_sampler->_stop_signals)) {
+  if (info->si_signo != SIGPROF) {
+    // not the signal we are interested in
     return;
   }
+
   Atomic::inc(&_sampler->_active_signal_handlers, memory_order_acq_rel);
-  _sampler->handle_timer_signal(info, context);
+  if (!Atomic::load_acquire(&_sampler->_stop_signals)) {
+    _sampler->handle_timer_signal(info, context);
+  }
   Atomic::dec(&_sampler->_active_signal_handlers, memory_order_acq_rel);
 }
 
-void JfrCPUTimeThreadSampler::sample_thread(JfrSampleRequest& request, void* ucontext, JavaThread* jt, JfrThreadLocal* tl) {
+void JfrCPUSamplerThread::sample_thread(JfrSampleRequest& request, void* ucontext, JavaThread* jt, JfrThreadLocal* tl) {
   JfrSampleRequestBuilder::build_cpu_time_sample_request(request, ucontext, jt, jt->jfr_thread_local());
 }
 
@@ -498,7 +514,7 @@ static bool check_state(JavaThread* thread) {
   }
 }
 
-void JfrCPUTimeThreadSampler::handle_timer_signal(siginfo_t* info, void* context) {
+void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
   JavaThread* jt = get_java_thread_if_valid();
   if (jt == nullptr) {
     return;
@@ -506,7 +522,7 @@ void JfrCPUTimeThreadSampler::handle_timer_signal(siginfo_t* info, void* context
   JfrThreadLocal* tl = jt->jfr_thread_local();
   JfrCPUTimeTraceQueue& queue = tl->cpu_time_jfr_queue();
   if (!check_state(jt)) {
-      queue.increment_lost_samples();
+    queue.increment_lost_samples();
     return;
   }
   if (!tl->acquire_cpu_time_jfr_enqueue_lock()) {
@@ -559,7 +575,7 @@ static void set_timer_time(timer_t timerid, int64_t period_nanos) {
   }
 }
 
-bool JfrCPUTimeThreadSampler::create_timer_for_thread(JavaThread* thread, timer_t& timerid) {
+bool JfrCPUSamplerThread::create_timer_for_thread(JavaThread* thread, timer_t& timerid) {
   timer_t t;
   struct sigevent sev;
   sev.sigev_notify = SIGEV_THREAD_ID;
@@ -573,7 +589,6 @@ bool JfrCPUTimeThreadSampler::create_timer_for_thread(JavaThread* thread, timer_
     return false;
   }
   if (timer_create(clock, &sev, &t) < 0) {
-    log_error(jfr)("Failed to register the signal handler for thread sampling: %s", os::strerror(os::get_last_error()));
     return false;
   }
   int64_t period = get_sampling_period();
@@ -586,10 +601,10 @@ bool JfrCPUTimeThreadSampler::create_timer_for_thread(JavaThread* thread, timer_
 
 class VM_CPUTimeSamplerThreadInitializer : public VM_Operation {
  private:
-  JfrCPUTimeThreadSampler *_sampler;
+  JfrCPUSamplerThread *_sampler;
  public:
 
-  VM_CPUTimeSamplerThreadInitializer(JfrCPUTimeThreadSampler* sampler) : _sampler(sampler) {
+  VM_CPUTimeSamplerThreadInitializer(JfrCPUSamplerThread* sampler) : _sampler(sampler) {
   }
 
   VMOp_Type type() const { return VMOp_CPUTimeSamplerThreadInitializer; }
@@ -601,20 +616,22 @@ class VM_CPUTimeSamplerThreadInitializer : public VM_Operation {
   };
 };
 
-void JfrCPUTimeThreadSampler::init_timers() {
+bool JfrCPUSamplerThread::init_timers() {
   // install sig handler for sig
-  PosixSignals::install_generic_signal_handler(SIG, (void*)::handle_timer_signal);
-
+  if ((s8)PosixSignals::install_generic_signal_handler(SIG, (void*)::handle_timer_signal) == -1) {
+    return false;
+  }
   VM_CPUTimeSamplerThreadInitializer op(this);
   VMThread::execute(&op);
+  return true;
 }
 
 class VM_CPUTimeSamplerThreadTerminator : public VM_Operation {
  private:
-  JfrCPUTimeThreadSampler *_sampler;
+  JfrCPUSamplerThread *_sampler;
  public:
 
-  VM_CPUTimeSamplerThreadTerminator(JfrCPUTimeThreadSampler* sampler) : _sampler(sampler) {
+  VM_CPUTimeSamplerThreadTerminator(JfrCPUSamplerThread* sampler) : _sampler(sampler) {
   }
 
   VMOp_Type type() const { return VMOp_CPUTimeSamplerThreadTerminator; }
@@ -634,12 +651,12 @@ class VM_CPUTimeSamplerThreadTerminator : public VM_Operation {
   };
 };
 
-void JfrCPUTimeThreadSampler::stop_timer() {
+void JfrCPUSamplerThread::stop_timer() {
   VM_CPUTimeSamplerThreadTerminator op(this);
   VMThread::execute(&op);
 }
 
-void JfrCPUTimeThreadSampler::auto_adapt_period_if_needed() {
+void JfrCPUSamplerThread::auto_adapt_period_if_needed() {
   int64_t current_period = get_sampling_period();
   if (_auto_adapt || current_period == -1) {
     int64_t period = compute_sampling_period(_rate);
@@ -650,17 +667,17 @@ void JfrCPUTimeThreadSampler::auto_adapt_period_if_needed() {
   }
 }
 
-void JfrCPUTimeThreadSampler::set_rate(double rate, bool auto_adapt) {
+void JfrCPUSamplerThread::set_rate(double rate, bool auto_adapt) {
   _rate = rate;
   _auto_adapt = auto_adapt;
-  if (_rate > 0 && Atomic::load(&_disenrolled) == false) {
+  if (_rate > 0 && Atomic::load_acquire(&_disenrolled) == false) {
     auto_adapt_period_if_needed();
   } else {
     Atomic::store(&_current_sampling_period_ns, compute_sampling_period(rate));
   }
 }
 
-void JfrCPUTimeThreadSampler::update_all_thread_timers() {
+void JfrCPUSamplerThread::update_all_thread_timers() {
   int64_t period_millis = get_sampling_period();
   MutexLocker tlock(Threads_lock);
   ThreadsListHandle tlh;

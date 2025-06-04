@@ -78,7 +78,7 @@ class JavaThread;
 //       - WorkerThread
 //     - WatcherThread
 //     - JfrThreadSampler
-//     - JfrCPUTimeThreadSampler
+//     - JfrCPUSamplerThread
 //     - LogAsyncWriter
 //
 // All Thread subclasses must be either JavaThread or NonJavaThread.

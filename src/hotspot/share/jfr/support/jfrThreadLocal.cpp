@@ -139,8 +139,8 @@ void JfrThreadLocal::on_start(Thread* t) {
     JfrCheckpointManager::write_checkpoint(t);
     if (t->is_Java_thread()) {
       JavaThread *const jt = JavaThread::cast(t);
-      send_java_thread_start_event(jt);
       JfrCPUTimeThreadSampling::on_javathread_create(jt);
+      send_java_thread_start_event(jt);
     }
   }
   if (t->jfr_thread_local()->has_cached_stack_trace()) {

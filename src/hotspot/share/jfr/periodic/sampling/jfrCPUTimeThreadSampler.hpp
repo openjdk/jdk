@@ -28,7 +28,6 @@
 #include "jfr/utilities/jfrAllocation.hpp"
 
 class JavaThread;
-class NonJavaThread;
 
 #if defined(LINUX)
 
@@ -55,7 +54,7 @@ class JfrCPUTimeTraceQueue {
   // next unfilled index
   volatile u4 _head;
 
-  volatile s4 _lost_samples;
+  volatile u4 _lost_samples;
 
 public:
   JfrCPUTimeTraceQueue(u4 capacity);
@@ -78,7 +77,7 @@ public:
 
   bool is_empty() const;
 
-  s4 lost_samples() const;
+  u4 lost_samples() const;
 
   void increment_lost_samples();
 
@@ -94,13 +93,13 @@ public:
 };
 
 
-class JfrCPUTimeThreadSampler;
+class JfrCPUSamplerThread;
 
 class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   friend class JfrRecorder;
  private:
 
-  JfrCPUTimeThreadSampler* _sampler;
+  JfrCPUSamplerThread* _sampler;
 
   void create_sampler(double rate, bool auto_adapt);
   void set_rate_value(double rate, bool auto_adapt);
@@ -125,7 +124,7 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   static void send_event(const JfrTicks& start_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased);
   static void send_lost_event(const JfrTicks& time, traceid tid, s4 lost_samples);
 
-  // Trigger sampling while a thread is not in a safepoint, from a seperate thread
+  // Trigger sampling while a thread is not in a safepoint, from a separate thread
   static void trigger_async_processing_of_cpu_time_jfr_requests();
 };
 
