@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,10 @@ import jdk.javadoc.internal.doclets.formats.html.HtmlDoclet;
 
 /**
  * This doclet generates HTML-formatted documentation for the specified modules,
- * packages and types.
+ * packages and types. It is the doclet that is used by the
+ * <a href="{@docRoot}/../specs/man/javadoc.html"><em>javadoc</em></a> tool
+ * and the {@linkplain javax.tools.ToolProvider#getSystemDocumentationTool
+ * system documentation tool} when no other doclet is specified to be used.
  *
  * <h2><a id="user-defined-taglets">User-Defined Taglets</a></h2>
  *
@@ -63,8 +66,10 @@ import jdk.javadoc.internal.doclets.formats.html.HtmlDoclet;
  *      of {@code <dt>} and {@code <dd>} elements.
  * </dl>
  *
- * @see <a href="{@docRoot}/../specs/javadoc/doc-comment-spec.html">
- *      Documentation Comment Specification for the Standard Doclet</a>
+ * @spec javadoc/doc-comment-spec.html Documentation Comment Specification for the Standard Doclet
+ * @spec https://www.w3.org/TR/html52 HTML Standard
+ *
+ * @since 9
  */
 public class StandardDoclet implements Doclet {
 
@@ -74,6 +79,7 @@ public class StandardDoclet implements Doclet {
      * Creates an instance of the standard doclet, used to generate HTML-formatted
      * documentation.
      */
+    @SuppressWarnings("this-escape")
     public StandardDoclet() {
         htmlDoclet = new HtmlDoclet(this);
     }

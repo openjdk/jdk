@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8193125 8196623
+ * @bug 8193125 8196623 8335989
  * @summary test modifiers with java.base
  * @library /tools/lib
  * @modules
@@ -31,35 +31,31 @@
  *      jdk.compiler/com.sun.tools.javac.jvm
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.compiler/com.sun.tools.javac.platform
- *      jdk.jdeps/com.sun.tools.classfile
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main JavaBaseTest
  */
 
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.StreamSupport;
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.Attributes;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ClassWriter;
-import com.sun.tools.classfile.Module_attribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.platform.JDKPlatformProvider;
+import java.util.function.Supplier;
 
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.ToolBox;
 
 public class JavaBaseTest {
+
+    private static final String CURRENT_VERSION = System.getProperty("java.specification.version");
 
     public static void main(String... args) throws Exception {
         JavaBaseTest t = new JavaBaseTest();
@@ -80,13 +76,11 @@ public class JavaBaseTest {
 
     void run() throws Exception {
         Set<String> targets = new LinkedHashSet<>();
-        StreamSupport.stream(new JDKPlatformProvider().getSupportedPlatformNames()
-                                                      .spliterator(),
-                             false)
-                     .filter(p -> Integer.parseInt(p) >= 9)
-                     .forEach(targets::add);
-        //run without --release:
+        targets.add("9");
+        targets.add("10");
+        targets.add("21");
         targets.add("current");
+        targets.add("current-preview");
         for (List<String> mods : modifiers) {
             for (String target : targets) {
                 for (Mode mode : Mode.values()) {
@@ -109,12 +103,8 @@ public class JavaBaseTest {
                     .resolve(target).resolve(mode.name().toLowerCase());
             Files.createDirectories(base);
             switch (mode) {
-                case SOURCE:
-                    testSource(base, mods, target);
-                    break;
-                case CLASS:
-                    testClass(base, mods, target);
-                    break;
+                case SOURCE -> testSource(base, mods, target);
+                case CLASS -> testClass(base, mods, target);
             }
         } catch (Exception e) {
             error("Exception: " + e);
@@ -128,15 +118,43 @@ public class JavaBaseTest {
         tb.writeJavaFiles(src,
                 "module m { requires " + String.join(" ", mods) + " java.base; }");
         Path modules = Files.createDirectories(base.resolve("modules"));
-        boolean expectOK = target.equals("9");
+        boolean expectOK;
 
         JavacTask jct = new JavacTask(tb)
             .outdir(modules);
 
-        if (target.equals("current"))
-            jct.options("-XDrawDiagnostics");
-        else
-            jct.options("-XDrawDiagnostics", "--release", target);
+        List<String> options = new ArrayList<>();
+
+        switch (target) {
+            case "current":
+                options.add("--release");
+                options.add(CURRENT_VERSION);
+                expectOK = true;
+                break;
+            case "current-preview":
+                options.add("--enable-preview");
+                options.add("--release");
+                options.add(CURRENT_VERSION);
+                expectOK = true;
+                break;
+            case "9":
+                options.add("--release");
+                options.add(target);
+                expectOK = true;
+                break;
+            default:
+                options.add("--release");
+                options.add(target);
+                expectOK = false;
+                break;
+        }
+
+        if (mods.contains("static") && !"9".equals(target)) {
+            expectOK = false;
+        }
+
+        options.add("-XDrawDiagnostics");
+        jct.options(options);
 
         String log = jct.files(tb.findJavaFiles(src))
             .run(expectOK ? Task.Expect.SUCCESS : Task.Expect.FAIL)
@@ -147,9 +165,9 @@ public class JavaBaseTest {
             boolean foundErrorMessage = false;
             for (String mod : mods) {
                 String key = mod.equals("static")
-                    ? "compiler.err.mod.not.allowed.here"
-                    : "compiler.err.modifier.not.allowed.here";
-                String message = "module-info.java:1:12: " + key + ": " + mod;
+                    ? "compiler.err.mod.not.allowed.here: " + mod
+                    : "compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.java.base.transitive), $(VERSION), 25".replace("$(VERSION)", target);
+                String message = "module-info.java:1:12: " + key;
                 if (log.contains(message)) {
                     foundErrorMessage = true;
                 }
@@ -161,18 +179,53 @@ public class JavaBaseTest {
     }
 
     void testClass(Path base, List<String> mods, String target) throws Exception {
-        createClass(base, mods, target);
+        boolean expectOK = true;
+        List<String> options = new ArrayList<>();
+
+        switch (target) {
+            case "current":
+                options.add("--release");
+                options.add(CURRENT_VERSION);
+                break;
+            case "current-preview":
+                options.add("--enable-preview");
+                options.add("--release");
+                options.add(CURRENT_VERSION);
+                break;
+            case "9":
+                options.add("--release");
+                options.add(target);
+                break;
+            default:
+                options.add("--release");
+                options.add(target);
+                break;
+        }
+
+        if (mods.contains("static") && !"9".equals(target)) {
+            expectOK = false;
+        }
+
+        createClass(base, mods, options);
+
+        List<String> testOptions = new ArrayList<>();
+
+        testOptions.add("-XDrawDiagnostics");
+        testOptions.add("--module-path"); testOptions.add(base.resolve("test-modules").toString());
+
+        if (options.contains("--enable-preview")) {
+            testOptions.add("--enable-preview");
+            testOptions.add("--source"); testOptions.add(CURRENT_VERSION);
+        }
 
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module mx { requires m; }");
         Path modules = Files.createDirectories(base.resolve("modules"));
 
-        boolean expectOK = target.equals("9");
         String log = new JavacTask(tb)
                 .outdir(modules)
-                .options("-XDrawDiagnostics",
-                        "--module-path", base.resolve("test-modules").toString())
+                .options(testOptions)
                 .files(tb.findJavaFiles(src))
                 .run(expectOK ? Task.Expect.SUCCESS : Task.Expect.FAIL)
                 .writeAll()
@@ -197,7 +250,7 @@ public class JavaBaseTest {
         }
     }
 
-    void createClass(Path base, List<String> mods, String target) throws Exception {
+    void createClass(Path base, List<String> mods, List<String> options) throws Exception {
         Path src1 = base.resolve("interim-src");
         tb.writeJavaFiles(src1,
                 "module m { requires java.base; }");
@@ -206,64 +259,57 @@ public class JavaBaseTest {
         JavacTask jct = new JavacTask(tb)
             .outdir(modules1);
 
-        if (!target.equals("current")) {
-            jct.options("--release", target);
-        }
+        jct.options(options);
 
         jct.files(tb.findJavaFiles(src1))
             .run(Task.Expect.SUCCESS);
 
-        ClassFile cf1 = ClassFile.read(modules1.resolve("module-info.class"));
+        ClassModel cm1 = ClassFile.of().parse(modules1.resolve("module-info.class"));
 
-        Map<String,Attribute> attrMap = new LinkedHashMap<>(cf1.attributes.map);
-        Module_attribute modAttr1 = (Module_attribute) attrMap.get("Module");
-        Module_attribute.RequiresEntry[] requires =
-                new Module_attribute.RequiresEntry[modAttr1.requires_count];
-        for (int i = 0; i < modAttr1.requires_count; i++) {
-            Module_attribute.RequiresEntry e1 = modAttr1.requires[i];
-            int flags = e1.requires_flags;
-            Module_attribute.RequiresEntry e2;
-            if (e1.getRequires(cf1.constant_pool).equals("java.base")) {
+        ModuleAttribute modAttr1 = cm1.findAttribute(Attributes.module()).orElseThrow();
+        List<ModuleRequireInfo> requires = Arrays.asList(new ModuleRequireInfo[modAttr1.requires().size()]);
+        for (int i = 0; i < modAttr1.requires().size(); ++i) {
+            ModuleRequireInfo e1 = modAttr1.requires().get(i);
+            int flags = e1.requiresFlagsMask();
+            ModuleRequireInfo e2;
+            if (e1.requires().name().equalsString("java.base")) {
                 for (String mod : mods) {
                     switch (mod) {
-                        case "static":
-                            flags |= Module_attribute.ACC_STATIC_PHASE;
-                            break;
-                        case "transitive":
-                            flags |= Module_attribute.ACC_TRANSITIVE;
-                            break;
+                        case "static" -> flags |= ClassFile.ACC_STATIC_PHASE;
+                        case "transitive" -> flags |= ClassFile.ACC_TRANSITIVE;
                     }
                 }
-                e2 = new Module_attribute.RequiresEntry(
-                        e1.requires_index,
-                        flags,
-                        e1.requires_version_index);
+                e2 = ModuleRequireInfo.of(e1.requires(), flags, e1.requiresVersion().orElse(null));
             } else {
                 e2 = e1;
             }
-            requires[i] = e2;
+            requires.set(i, e2);
         }
-        Module_attribute modAttr2 = new Module_attribute(
-                modAttr1.attribute_name_index,
-                modAttr1.module_name,
-                modAttr1.module_flags,
-                modAttr1.module_version_index,
-                requires,
-                modAttr1.exports,
-                modAttr1.opens,
-                modAttr1.uses_index,
-                modAttr1.provides);
-        attrMap.put("Module", modAttr2);
-        Attributes attributes = new Attributes(attrMap);
 
-        ClassFile cf2 = new ClassFile(
-                cf1.magic, cf1.minor_version, cf1.major_version,
-                cf1.constant_pool, cf1.access_flags,
-                cf1.this_class, cf1.super_class, cf1.interfaces,
-                cf1.fields, cf1.methods, attributes);
+        boolean preview = options.contains("--enable-preview");
+
+        ModuleAttribute modAttr2 = ModuleAttribute.of(
+                modAttr1.moduleName(),
+                modAttr1.moduleFlagsMask(),
+                modAttr1.moduleVersion().orElse(null),
+                requires,
+                modAttr1.exports(),
+                modAttr1.opens(),
+                modAttr1.uses(),
+                modAttr1.provides());
         Path modInfo = base.resolve("test-modules").resolve("module-info.class");
         Files.createDirectories(modInfo.getParent());
-        new ClassWriter().write(cf2, modInfo.toFile());
+        ClassTransform replace = (builder, element) -> {
+            switch (element) {
+                case ClassFileVersion cfv when preview -> builder.withVersion(cfv.majorVersion(), 0xFFFF);
+                case ModuleAttribute _ -> builder.with(modAttr2);
+                default -> builder.with(element);
+            }
+        };
+        byte[] newBytes = ClassFile.of().transformClass(cm1, replace);
+        try (OutputStream out = Files.newOutputStream(modInfo)) {
+            out.write(newBytes);
+        }
     }
 
     private void error(String message) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,12 @@
 
 /*
  * @test
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
- * @modules jdk.incubator.foreign/jdk.internal.foreign
- * @run testng/othervm --enable-native-access=ALL-UNNAMED TestNative
+ * @run testng/othervm/native --enable-native-access=ALL-UNNAMED TestNative
  */
 
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemoryLayout.PathElement;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.SequenceLayout;
-import jdk.incubator.foreign.ValueLayout;
+import java.lang.foreign.*;
+import java.lang.foreign.MemoryLayout.PathElement;
+
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -54,7 +48,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static jdk.incubator.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static org.testng.Assert.*;
 
 public class TestNative extends NativeTestHelper {
@@ -96,7 +90,7 @@ public class TestNative extends NativeTestHelper {
     static VarHandle doubleHandle = doubles.varHandle(PathElement.sequenceElement());
 
     static void initBytes(MemorySegment base, SequenceLayout seq, BiConsumer<MemorySegment, Long> handleSetter) {
-        for (long i = 0; i < seq.elementCount().getAsLong() ; i++) {
+        for (long i = 0; i < seq.elementCount() ; i++) {
             handleSetter.accept(base, i);
         }
     }
@@ -106,13 +100,13 @@ public class TestNative extends NativeTestHelper {
                                               Function<ByteBuffer, Z> bufferFactory,
                                               BiFunction<Z, Integer, Object> nativeBufferExtractor,
                                               BiFunction<Long, Integer, Object> nativeRawExtractor) {
-        long nelems = layout.elementCount().getAsLong();
+        long nelems = layout.elementCount();
         ByteBuffer bb = base.asByteBuffer();
         Z z = bufferFactory.apply(bb);
         for (long i = 0 ; i < nelems ; i++) {
             Object handleValue = handleExtractor.apply(base, i);
             Object bufferValue = nativeBufferExtractor.apply(z, (int)i);
-            Object rawValue = nativeRawExtractor.apply(base.address().toRawLongValue(), (int)i);
+            Object rawValue = nativeRawExtractor.apply(base.address(), (int)i);
             if (handleValue instanceof Number) {
                 assertEquals(((Number)handleValue).longValue(), i);
                 assertEquals(((Number)bufferValue).longValue(), i);
@@ -145,8 +139,8 @@ public class TestNative extends NativeTestHelper {
 
     @Test(dataProvider="nativeAccessOps")
     public void testNativeAccess(Consumer<MemorySegment> checker, Consumer<MemorySegment> initializer, SequenceLayout seq) {
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = MemorySegment.allocateNative(seq, scope);
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = arena.allocate(seq);;
             initializer.accept(segment);
             checker.accept(segment);
         }
@@ -155,8 +149,8 @@ public class TestNative extends NativeTestHelper {
     @Test(dataProvider="buffers")
     public void testNativeCapacity(Function<ByteBuffer, Buffer> bufferFunction, int elemSize) {
         int capacity = (int)doubles.byteSize();
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = MemorySegment.allocateNative(doubles, scope);
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = arena.allocate(doubles);;
             ByteBuffer bb = segment.asByteBuffer();
             Buffer buf = bufferFunction.apply(bb);
             int expected = capacity / elemSize;
@@ -167,21 +161,21 @@ public class TestNative extends NativeTestHelper {
 
     @Test
     public void testDefaultAccessModes() {
-        MemoryAddress addr = allocateMemory(12);
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            scope.addCloseAction(() -> freeMemory(addr));
-            MemorySegment mallocSegment = MemorySegment.ofAddress(addr, 12, scope);
+        MemorySegment addr = allocateMemory(12);
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment mallocSegment = addr.asSlice(0, 12)
+                    .reinterpret(arena, TestNative::freeMemory);
             assertFalse(mallocSegment.isReadOnly());
         }
     }
 
     @Test
     public void testMallocSegment() {
-        MemoryAddress addr = allocateMemory(12);
+        MemorySegment addr = allocateMemory(12);
         MemorySegment mallocSegment = null;
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            scope.addCloseAction(() -> freeMemory(addr));
-            mallocSegment = MemorySegment.ofAddress(addr, 12, scope);
+        try (Arena arena = Arena.ofConfined()) {
+            mallocSegment = addr.asSlice(0, 12)
+                    .reinterpret(arena, TestNative::freeMemory);
             assertEquals(mallocSegment.byteSize(), 12);
             //free here
         }
@@ -190,17 +184,18 @@ public class TestNative extends NativeTestHelper {
 
     @Test
     public void testAddressAccess() {
-        MemoryAddress addr = allocateMemory(4);
+        MemorySegment addr = allocateMemory(4);
         addr.set(JAVA_INT, 0, 42);
         assertEquals(addr.get(JAVA_INT, 0), 42);
         freeMemory(addr);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadResize() {
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = MemorySegment.allocateNative(4, 1, scope);
-            MemorySegment.ofAddress(segment.address(), 0, ResourceScope.globalScope());
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = arena.allocate(4, 1);
+            assertThrows(IllegalArgumentException.class, () -> segment.reinterpret(-1));
+            assertThrows(IllegalArgumentException.class, () -> segment.reinterpret(-1, Arena.ofAuto(), null));
         }
     }
 
@@ -211,34 +206,34 @@ public class TestNative extends NativeTestHelper {
     @DataProvider(name = "nativeAccessOps")
     public Object[][] nativeAccessOps() {
         Consumer<MemorySegment> byteInitializer =
-                (base) -> initBytes(base, bytes, (addr, pos) -> byteHandle.set(addr, pos, (byte)(long)pos));
+                (base) -> initBytes(base, bytes, (addr, pos) -> byteHandle.set(addr, 0L, pos, (byte)(long)pos));
         Consumer<MemorySegment> charInitializer =
-                (base) -> initBytes(base, chars, (addr, pos) -> charHandle.set(addr, pos, (char)(long)pos));
+                (base) -> initBytes(base, chars, (addr, pos) -> charHandle.set(addr, 0L, pos, (char)(long)pos));
         Consumer<MemorySegment> shortInitializer =
-                (base) -> initBytes(base, shorts, (addr, pos) -> shortHandle.set(addr, pos, (short)(long)pos));
+                (base) -> initBytes(base, shorts, (addr, pos) -> shortHandle.set(addr, 0L, pos, (short)(long)pos));
         Consumer<MemorySegment> intInitializer =
-                (base) -> initBytes(base, ints, (addr, pos) -> intHandle.set(addr, pos, (int)(long)pos));
+                (base) -> initBytes(base, ints, (addr, pos) -> intHandle.set(addr, 0L, pos, (int)(long)pos));
         Consumer<MemorySegment> floatInitializer =
-                (base) -> initBytes(base, floats, (addr, pos) -> floatHandle.set(addr, pos, (float)(long)pos));
+                (base) -> initBytes(base, floats, (addr, pos) -> floatHandle.set(addr, 0L, pos, (float)(long)pos));
         Consumer<MemorySegment> longInitializer =
-                (base) -> initBytes(base, longs, (addr, pos) -> longHandle.set(addr, pos, (long)pos));
+                (base) -> initBytes(base, longs, (addr, pos) -> longHandle.set(addr, 0L, pos, (long)pos));
         Consumer<MemorySegment> doubleInitializer =
-                (base) -> initBytes(base, doubles, (addr, pos) -> doubleHandle.set(addr, pos, (double)(long)pos));
+                (base) -> initBytes(base, doubles, (addr, pos) -> doubleHandle.set(addr, 0L, pos, (double)(long)pos));
 
         Consumer<MemorySegment> byteChecker =
-                (base) -> checkBytes(base, bytes, byteHandle::get, bb -> bb, TestNative::getByteBuffer, TestNative::getByteRaw);
+                (base) -> checkBytes(base, bytes, (addr, pos) -> byteHandle.get(addr, 0L, pos), bb -> bb, TestNative::getByteBuffer, TestNative::getByteRaw);
         Consumer<MemorySegment> charChecker =
-                (base) -> checkBytes(base, chars, charHandle::get, ByteBuffer::asCharBuffer, TestNative::getCharBuffer, TestNative::getCharRaw);
+                (base) -> checkBytes(base, chars, (addr, pos) -> charHandle.get(addr, 0L, pos), ByteBuffer::asCharBuffer, TestNative::getCharBuffer, TestNative::getCharRaw);
         Consumer<MemorySegment> shortChecker =
-                (base) -> checkBytes(base, shorts, shortHandle::get, ByteBuffer::asShortBuffer, TestNative::getShortBuffer, TestNative::getShortRaw);
+                (base) -> checkBytes(base, shorts, (addr, pos) -> shortHandle.get(addr, 0L, pos), ByteBuffer::asShortBuffer, TestNative::getShortBuffer, TestNative::getShortRaw);
         Consumer<MemorySegment> intChecker =
-                (base) -> checkBytes(base, ints, intHandle::get, ByteBuffer::asIntBuffer, TestNative::getIntBuffer, TestNative::getIntRaw);
+                (base) -> checkBytes(base, ints, (addr, pos) -> intHandle.get(addr, 0L, pos), ByteBuffer::asIntBuffer, TestNative::getIntBuffer, TestNative::getIntRaw);
         Consumer<MemorySegment> floatChecker =
-                (base) -> checkBytes(base, floats, floatHandle::get, ByteBuffer::asFloatBuffer, TestNative::getFloatBuffer, TestNative::getFloatRaw);
+                (base) -> checkBytes(base, floats, (addr, pos) -> floatHandle.get(addr, 0L, pos), ByteBuffer::asFloatBuffer, TestNative::getFloatBuffer, TestNative::getFloatRaw);
         Consumer<MemorySegment> longChecker =
-                (base) -> checkBytes(base, longs, longHandle::get, ByteBuffer::asLongBuffer, TestNative::getLongBuffer, TestNative::getLongRaw);
+                (base) -> checkBytes(base, longs, (addr, pos) -> longHandle.get(addr, 0L, pos), ByteBuffer::asLongBuffer, TestNative::getLongBuffer, TestNative::getLongRaw);
         Consumer<MemorySegment> doubleChecker =
-                (base) -> checkBytes(base, doubles, doubleHandle::get, ByteBuffer::asDoubleBuffer, TestNative::getDoubleBuffer, TestNative::getDoubleRaw);
+                (base) -> checkBytes(base, doubles, (addr, pos) -> doubleHandle.get(addr, 0L, pos), ByteBuffer::asDoubleBuffer, TestNative::getDoubleBuffer, TestNative::getDoubleRaw);
 
         return new Object[][]{
                 {byteChecker, byteInitializer, bytes},

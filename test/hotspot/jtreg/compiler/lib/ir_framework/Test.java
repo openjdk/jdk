@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.lang.annotation.RetentionPolicy;
  * Let {@code m} be a test method specifying the {@code @Test} annotation. If {@code m} is neither part of a
  * <b>checked test</b> (an additional method specifying {@link Check @Check} with {@code @Check(test = "m")}) nor part
  * of a <b>custom run test</b> (an additional method specifying {@link Run @Run} with {@code @Run(test = "m")}),
- * then {@code m} is a so-called <b>base test</b> and the the framework invokes {@code m} in the following way:
+ * then {@code m} is a so-called <b>base test</b> and the framework invokes {@code m} in the following way:
  * <ol>
  *     <li><p>The framework warms {@code m} up by invoking it for a predefined number of iterations (default: 2000)
  *     or any number specified by an additional {@link Warmup @Warmup} annotation at {@code m} or by using
@@ -71,7 +71,7 @@ import java.lang.annotation.RetentionPolicy;
  * </ul>
  *
  * <p>
- * Examples on how to write base tests can be found in {@link ir_framework.examples.BaseTestExample}
+ * Examples on how to write base tests can be found in {@link ir_framework.examples.NormalTestExample}
  * and also as part of the internal testing in the package {@link ir_framework.tests}.
  *
  * @see Arguments
@@ -84,4 +84,12 @@ public @interface Test {
      * available level which is usually {@link CompLevel#C2}.
      */
     CompLevel compLevel() default CompLevel.ANY;
+
+    /**
+     * In rare cases, methods may not be compilable because of a compilation bailout. By default, this leads to a
+     * test failure. However, if such cases are expected in a specific test, this flag can be set to true, which
+     * allows the test to pass even if there is no compilation. Any associated {@link IR} rule is only executed
+     * if the test method was compiled, and else it is ignored silently.
+     */
+    boolean allowNotCompilable() default false;
 }

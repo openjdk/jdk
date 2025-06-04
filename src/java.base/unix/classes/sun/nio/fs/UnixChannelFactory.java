@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 
 package sun.nio.fs;
 
+import java.io.FileDescriptor;
 import java.nio.file.*;
 import java.nio.channels.*;
-import java.io.FileDescriptor;
 import java.util.Set;
 
 import jdk.internal.access.SharedSecrets;
@@ -108,7 +108,6 @@ class UnixChannelFactory {
      */
     static FileChannel newFileChannel(int dfd,
                                       UnixPath path,
-                                      String pathForPermissionCheck,
                                       Set<? extends OpenOption> options,
                                       int mode)
         throws UnixException
@@ -130,9 +129,9 @@ class UnixChannelFactory {
         if (flags.append && flags.truncateExisting)
             throw new IllegalArgumentException("APPEND + TRUNCATE_EXISTING not allowed");
 
-        FileDescriptor fdObj = open(dfd, path, pathForPermissionCheck, flags, mode);
-        return FileChannelImpl.open(fdObj, path.toString(), flags.read,
-                flags.write, flags.direct, null);
+        FileDescriptor fdObj = open(dfd, path, flags, mode);
+        return FileChannelImpl.open(fdObj, path.toString(), flags.read, flags.write,
+                (flags.sync || flags.dsync), flags.direct, null);
     }
 
     /**
@@ -143,7 +142,7 @@ class UnixChannelFactory {
                                       int mode)
         throws UnixException
     {
-        return newFileChannel(-1, path, null, options, mode);
+        return newFileChannel(-1, path, options, mode);
     }
 
     /**
@@ -167,8 +166,8 @@ class UnixChannelFactory {
             throw new UnsupportedOperationException("APPEND not allowed");
 
         // for now use simple implementation
-        FileDescriptor fdObj = open(-1, path, null, flags, mode);
-        return SimpleAsynchronousFileChannelImpl.open(fdObj, flags.read, flags.write, pool);
+        FileDescriptor fdObj = open(-1, path, flags, mode);
+        return SimpleAsynchronousFileChannelImpl.open(fdObj, path.toString(), flags.read, flags.write, pool);
     }
 
     /**
@@ -177,7 +176,6 @@ class UnixChannelFactory {
      */
     protected static FileDescriptor open(int dfd,
                                          UnixPath path,
-                                         String pathForPermissionCheck,
                                          Flags flags,
                                          int mode)
         throws UnixException
@@ -197,7 +195,7 @@ class UnixChannelFactory {
 
             // create flags
             if (flags.createNew) {
-                byte[] pathForSysCall = path.asByteArray();
+                byte[] pathForSysCall = path.getByteArrayForSysCalls();
 
                 // throw exception if file name is "." to avoid confusing error
                 if ((pathForSysCall[pathForSysCall.length-1] == '.') &&
@@ -235,20 +233,6 @@ class UnixChannelFactory {
             oflags |= O_SYNC;
         if (flags.direct)
             oflags |= O_DIRECT;
-
-        // permission check before we open the file
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            if (pathForPermissionCheck == null)
-                pathForPermissionCheck = path.getPathForPermissionCheck();
-            if (flags.read)
-                sm.checkRead(pathForPermissionCheck);
-            if (flags.write)
-                sm.checkWrite(pathForPermissionCheck);
-            if (flags.deleteOnClose)
-                sm.checkDelete(pathForPermissionCheck);
-        }
 
         int fd;
         try {

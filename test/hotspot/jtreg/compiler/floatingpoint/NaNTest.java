@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
  * @summary Verify if signaling NaNs are preserved.
  * @library /test/lib /
  *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   compiler.floatingpoint.NaNTest
  */
@@ -36,7 +36,7 @@ package compiler.floatingpoint;
 
 import jdk.test.lib.Platform;
 import jtreg.SkippedException;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class NaNTest {
     static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
@@ -82,9 +82,10 @@ public class NaNTest {
         // native methods that use FPU instructions, and those strip the
         // signaling NaNs.
         if (Platform.isX86()) {
-            int sse = WHITE_BOX.getIntxVMFlag("UseSSE").intValue();
-            expectStableFloats = (sse >= 1);
-            expectStableDoubles = (sse >= 2);
+            int sse = WHITE_BOX.getIntVMFlag("UseSSE").intValue();
+            boolean stubsPresent = WHITE_BOX.getBooleanVMFlag("InlineIntrinsics");
+            expectStableFloats = (sse >= 1) && stubsPresent;
+            expectStableDoubles = (sse >= 2) && stubsPresent;
         }
 
         if (expectStableFloats) {

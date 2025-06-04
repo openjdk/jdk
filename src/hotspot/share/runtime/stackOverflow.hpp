@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,6 +293,16 @@ class StackOverflow {
     return _shadow_zone_safe_limit;
   }
 
+  address shadow_zone_growth_watermark() const {
+    assert(_shadow_zone_growth_watermark != nullptr, "Don't call this before the field is initialized.");
+    return _shadow_zone_growth_watermark;
+  }
+
+  void set_shadow_zone_growth_watermark(address new_watermark) {
+    assert(_shadow_zone_growth_watermark != nullptr, "Don't call this before the field is initialized.");
+    _shadow_zone_growth_watermark = new_watermark;
+  }
+
   void create_stack_guard_pages();
   void remove_stack_guard_pages();
 
@@ -300,7 +310,6 @@ class StackOverflow {
   void disable_stack_reserved_zone();
   void enable_stack_yellow_reserved_zone();
   void disable_stack_yellow_reserved_zone();
-  void enable_stack_red_zone();
   void disable_stack_red_zone();
 
   bool stack_guard_zone_unused() const { return _stack_guard_state == stack_guard_unused; }
@@ -353,6 +362,8 @@ class StackOverflow {
     _shadow_zone_growth_watermark =
       stack_base();
   }
+
+  address stack_overflow_limit() const { return _stack_overflow_limit; }
 };
 
 #endif // SHARE_RUNTIME_STACKOVERFLOW_HPP

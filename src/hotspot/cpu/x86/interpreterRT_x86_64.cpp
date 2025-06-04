@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -41,7 +40,6 @@
 InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(const methodHandle& method, CodeBuffer* buffer) :
     NativeSignatureIterator(method) {
   _masm = new MacroAssembler(buffer);
-#ifdef AMD64
 #ifdef _WIN64
   _num_args = (method->is_static() ? 1 : 0);
   _stack_offset = (Argument::n_int_register_parameters_c+1)* wordSize; // don't overwrite return address
@@ -50,7 +48,6 @@ InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(const m
   _num_fp_args = 0;
   _stack_offset = wordSize; // don't overwrite return address
 #endif // _WIN64
-#endif // AMD64
 }
 
 Register InterpreterRuntime::SignatureHandlerGenerator::from() { return r14; }
@@ -348,10 +345,10 @@ class SlowSignatureHandler
     intptr_t *from_addr = (intptr_t*)(_from + Interpreter::local_offset_in_bytes(0));
     _from -= Interpreter::stackElementSize;
     if (_num_args < Argument::n_int_register_parameters_c-1) {
-      *_reg_args++ = (*from_addr == 0) ? NULL : (intptr_t) from_addr;
+      *_reg_args++ = (*from_addr == 0) ? NULL_WORD : (intptr_t) from_addr;
       _num_args++;
     } else {
-      *_to++ = (*from_addr == 0) ? NULL : (intptr_t) from_addr;
+      *_to++ = (*from_addr == 0) ? NULL_WORD : (intptr_t) from_addr;
     }
   }
 
@@ -443,10 +440,10 @@ class SlowSignatureHandler
     _from -= Interpreter::stackElementSize;
 
     if (_num_int_args < Argument::n_int_register_parameters_c-1) {
-      *_int_args++ = (*from_addr == 0) ? NULL : (intptr_t)from_addr;
+      *_int_args++ = (*from_addr == 0) ? NULL_WORD : (intptr_t)from_addr;
       _num_int_args++;
     } else {
-      *_to++ = (*from_addr == 0) ? NULL : (intptr_t) from_addr;
+      *_to++ = (*from_addr == 0) ? NULL_WORD : (intptr_t) from_addr;
     }
   }
 

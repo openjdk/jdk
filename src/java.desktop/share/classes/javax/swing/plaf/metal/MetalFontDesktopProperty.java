@@ -76,7 +76,7 @@ final class MetalFontDesktopProperty extends DesktopProperty {
     }
 
     /**
-     * Overriden to create a Font with the size coming from the desktop
+     * Overridden to create a Font with the size coming from the desktop
      * and the style and name coming from DefaultMetalTheme.
      */
     protected Object configureValue(Object value) {

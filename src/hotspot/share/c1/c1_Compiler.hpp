@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,14 @@
 #define SHARE_C1_C1_COMPILER_HPP
 
 #include "compiler/abstractCompiler.hpp"
-#include "compiler/compilerDirectives.hpp"
+
+class DirectiveSet;
 
 // There is one instance of the Compiler per CompilerThread.
 
 class Compiler: public AbstractCompiler {
  private:
-  static void init_c1_runtime();
+  static bool init_c1_runtime();
   BufferBlob* init_buffer_blob();
 
  public:
@@ -55,8 +56,11 @@ class Compiler: public AbstractCompiler {
   // Check if the C1 compiler supports an intrinsic for 'method'.
   virtual bool is_intrinsic_supported(const methodHandle& method);
 
+  // Return true if the intrinsic `id` is supported by C1
+  static bool is_intrinsic_supported(vmIntrinsics::ID id);
+
   // Size of the code buffer
-  static int code_buffer_size();
+  static uint code_buffer_size();
 };
 
 #endif // SHARE_C1_C1_COMPILER_HPP

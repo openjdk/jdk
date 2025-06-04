@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
@@ -66,17 +65,17 @@ void InterpreterCodelet::verify() {}
 void InterpreterCodelet::print_on(outputStream* st) const {
   ttyLocker ttyl;
 
-  if (PrintInterpreter) {
+  if (AbstractInterpreter::should_print_instructions()) {
     st->cr();
     st->print_cr("----------------------------------------------------------------------");
   }
 
-  if (description() != NULL) st->print("%s  ", description());
+  if (description() != nullptr) st->print("%s  ", description());
   if (bytecode()    >= 0   ) st->print("%d %s  ", bytecode(), Bytecodes::name(bytecode()));
   st->print_cr("[" INTPTR_FORMAT ", " INTPTR_FORMAT "]  %d bytes",
                 p2i(code_begin()), p2i(code_end()), code_size());
 
-  if (PrintInterpreter) {
+  if (AbstractInterpreter::should_print_instructions()) {
     st->cr();
     Disassembler::decode(code_begin(), code_end(), st NOT_PRODUCT(COMMA &_asm_remarks));
   }
@@ -90,7 +89,7 @@ CodeletMark::CodeletMark(InterpreterMacroAssembler*& masm,
   _clet((InterpreterCodelet*)AbstractInterpreter::code()->request(codelet_size())),
   _cb(_clet->code_begin(), _clet->code_size()) {
   // Request all space (add some slack for Codelet data).
-  assert(_clet != NULL, "we checked not enough space already");
+  assert(_clet != nullptr, "we checked not enough space already");
 
   // Initialize Codelet attributes.
   _clet->initialize(description, bytecode);
@@ -114,9 +113,14 @@ CodeletMark::~CodeletMark() {
     NOT_PRODUCT(_clet->use_strings((*_masm)->code()->dbg_strings()));
 
     AbstractInterpreter::code()->commit(committed_code_size);
+  } else {
+    // InterpreterCodelet is not being commited and may be re-used. We need to free the storage for
+    // remarks and strings.
+    NOT_PRODUCT(_clet->clear_remarks());
+    NOT_PRODUCT(_clet->clear_strings());
   }
   // Make sure nobody can use _masm outside a CodeletMark lifespan.
-  *_masm = NULL;
+  *_masm = nullptr;
 }
 
 // The reason that interpreter initialization is split into two parts is that the first part
@@ -135,9 +139,6 @@ void interpreter_init_stub() {
 
 void interpreter_init_code() {
   Interpreter::initialize_code();
-#ifndef PRODUCT
-  if (TraceBytecodes) BytecodeTracer::set_closure(BytecodeTracer::std_closure());
-#endif // PRODUCT
   // need to hit every safepoint in order to call zapping routine
   // register the interpreter
   Forte::register_stub(

@@ -41,7 +41,6 @@ import org.w3c.dom.Element;
  * (section 6.4). The KeyValue element may include externally defined public
  * keys values represented as PCDATA or element types from an external
  * namespace.
- *
  */
 public class KeyValue extends SignatureElementProxy implements KeyInfoContent {
 
@@ -121,6 +120,20 @@ public class KeyValue extends SignatureElementProxy implements KeyInfoContent {
     }
 
     /**
+     * Verifies that the XML KeyValue encoding is supported for the given key type. If the
+     * encoding is supported, it returns true else false.
+     *
+     * @return true if the public key has a KeyValue encoding, false otherwise.
+     */
+    public static boolean isSupportedKeyType(PublicKey publicKey) {
+
+        return publicKey instanceof java.security.interfaces.DSAPublicKey
+                || publicKey instanceof java.security.interfaces.RSAPublicKey
+                || publicKey instanceof java.security.interfaces.ECPublicKey;
+
+    }
+
+    /**
      * Constructor KeyValue
      *
      * @param element
@@ -160,6 +173,7 @@ public class KeyValue extends SignatureElementProxy implements KeyInfoContent {
     }
 
     /** {@inheritDoc} */
+    @Override
     public String getBaseLocalName() {
         return Constants._TAG_KEYVALUE;
     }

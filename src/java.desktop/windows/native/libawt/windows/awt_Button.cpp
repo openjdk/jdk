@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ AwtButton* AwtButton::Create(jobject self, jobject parent)
         if (label == NULL) {
             labelStr = L"";
         } else {
-            labelStr = JNU_GetStringPlatformChars(env, label, JNI_FALSE);
+            labelStr = JNU_GetStringPlatformChars(env, label, NULL);
         }
         style = 0;
 
@@ -242,7 +242,7 @@ AwtButton::OwnerDrawItem(UINT /*ctrlId*/, DRAWITEMSTRUCT& drawInfo)
         RECT focusRect;
         VERIFY(::CopyRect(&focusRect, &rect));
         VERIFY(::InflateRect(&focusRect,-inf,-inf));
-        if(::DrawFocusRect(hDC, &focusRect) == 0)
+        if (!::IsRectEmpty(&focusRect) && (::DrawFocusRect(hDC, &focusRect) == 0))
             VERIFY(::GetLastError() == 0);
     }
 
@@ -307,11 +307,11 @@ void AwtButton::_SetLabel(void *param)
     {
         LPCTSTR labelStr = NULL;
 
-        // By convension null label means empty string
+        // By convention null label means empty string
         if (label == NULL) {
             labelStr = TEXT("");
         } else {
-            labelStr = JNU_GetStringPlatformChars(env, label, JNI_FALSE);
+            labelStr = JNU_GetStringPlatformChars(env, label, NULL);
         }
 
         if (labelStr == NULL) {

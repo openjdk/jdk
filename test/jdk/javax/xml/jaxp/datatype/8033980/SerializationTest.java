@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,160 +25,145 @@
  * @test
  * @bug 8033980
  * @summary verify serialization compatibility for XMLGregorianCalendar and Duration
- * @run main SerializationTest read
+ * @run junit SerializationTest
  */
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.stream.Stream;
+
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
 /**
- * use "read" to test compatibility
- * SerializationTest read
- *
- * use "write" to create test files
- * SerializationTest write javaVersion
- * where javaVersion is 6, 7, 8, or 9
- *
+ * Verify serialization compatibility for XMLGregorianCalendar and Duration
  * @author huizhe.wang@oracle.com</a>
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SerializationTest {
 
-    final String FILENAME_CAL = "_XMLGregorianCalendar.ser";
-    final String FILENAME_DURATION = "_Duration.ser";
-    String filePath;
-
-    {
-        filePath = System.getProperty("test.src");
-        if (filePath == null) {
-            //current directory
-            filePath = System.getProperty("user.dir");
-        }
-        filePath += File.separator;
-    }
     final String EXPECTED_CAL = "0001-01-01T00:00:00.0000000-05:00";
     final String EXPECTED_DURATION = "P1Y1M1DT1H1M1S";
-    static String[] JDK = {"JDK6", "JDK7", "JDK8", "JDK9"};
+    static String[] JDK = {System.getProperty("java.version"), "JDK6", "JDK7", "JDK8", "JDK9"};
 
-    public static void main(String[] args) {
-        SerializationTest test = new SerializationTest();
+    // If needed to add serialized data of more JDK versions, serialized data source file can be generated using
+    // GregorianCalAndDurSerDataUtil class.
+    private GregorianCalendarAndDurationSerData[] gregorianCalendarAndDurationSerData = {null, new JDK6GregorianCalendarAndDurationSerData(),
+    new JDK7GregorianCalendarAndDurationSerData(), new JDK8GregorianCalendarAndDurationSerData(), new JDK9GregorianCalendarAndDurationSerData()};
 
-        if (args[0].equalsIgnoreCase("read")) {
-            test.testReadCal();
-            test.testReadDuration();
-            test.report();
-        } else {
-            int ver = Integer.valueOf(args[1]).intValue();
-            test.createTestFile(JDK[ver - 6]);
-        }
-
-    }
-
-    public void testReadCal() {
-        try {
-            for (String javaVersion : JDK) {
-                XMLGregorianCalendar d1 = (XMLGregorianCalendar) fromFile(
-                        javaVersion + FILENAME_CAL);
-                if (!d1.toString().equalsIgnoreCase(EXPECTED_CAL)) {
-                    fail("Java version: " + javaVersion
-                            + "\nExpected: " + EXPECTED_CAL
-                            + "\nActual: " + d1.toString());
-                } else {
-                    success("testReadCal: read " + javaVersion + " serialized file, passed.");
+    /**
+     * Create the serialized Bytes array and serialized bytes base64 string for GregorianCalender and Duration
+     * with jdk under test.
+     * @throws DatatypeConfigurationException Unexpected.
+     * @throws IOException Unexpected.
+     */
+    @BeforeAll
+    public void setup() throws DatatypeConfigurationException, IOException {
+        DatatypeFactory dtf = DatatypeFactory.newInstance();
+        XMLGregorianCalendar xmlGregorianCalendar = dtf.newXMLGregorianCalendar(EXPECTED_CAL);
+        Duration duration = dtf.newDuration(EXPECTED_DURATION);
+        try(ByteArrayOutputStream baos = new ByteArrayOutputStream(); ObjectOutputStream oos = new ObjectOutputStream(baos);
+            ByteArrayOutputStream baos2 = new ByteArrayOutputStream(); ObjectOutputStream oos2 = new ObjectOutputStream(baos2)) {
+            //Serialize the given xmlGregorianCalendar
+            oos.writeObject(xmlGregorianCalendar);
+            //Serialize the given xml Duration
+            oos2.writeObject(duration);
+            // Create the Data for JDK under test.
+            gregorianCalendarAndDurationSerData[0] = new GregorianCalendarAndDurationSerData() {
+                @Override
+                public byte[] getGregorianCalendarByteArray() {
+                    return baos.toByteArray();
                 }
-            }
-        } catch (ClassNotFoundException ex) {
-            fail("testReadCal: " + ex.getMessage());
-        } catch (IOException ex) {
-            fail("testReadCal: " + ex.getMessage());
-        }
-    }
 
-    public void testReadDuration() {
-        try {
-            for (String javaVersion : JDK) {
-                Duration d1 = (Duration) fromFile(
-                        javaVersion + FILENAME_DURATION);
-                if (!d1.toString().equalsIgnoreCase(EXPECTED_DURATION)) {
-                    fail("Java version: " + javaVersion
-                            + "\nExpected: " + EXPECTED_DURATION
-                            + "\nActual: " + d1.toString());
-                } else {
-                    success("testReadDuration: read " + javaVersion + " serialized file, passed.");
+                @Override
+                public byte[] getDurationBytes() {
+                    return baos2.toByteArray();
                 }
-            }
-        } catch (ClassNotFoundException ex) {
-            fail("testReadDuration: " + ex.getMessage());
-        } catch (IOException ex) {
-            fail("testReadDuration: " + ex.getMessage());
+            };
         }
     }
 
     /**
-     * Create test files
-     *
-     * @param javaVersion JDK version
+     * Provide data for JDK version and Gregorian Calendar serialized bytes.
+     * @return A Stream of arguments where each element is an array of size three. First element contain JDK version,
+     * second element contain object reference to GregorianCalendarAndDurationSerData specific to JDK version
+     * and third element contain expected Gregorian Calendar as string.
      */
-    public void createTestFile(String javaVersion) {
-        try {
-            DatatypeFactory dtf = DatatypeFactory.newInstance();
-            XMLGregorianCalendar c = dtf.newXMLGregorianCalendar(EXPECTED_CAL);
-            Duration d = dtf.newDuration(EXPECTED_DURATION);
-            toFile((Serializable) c, filePath + javaVersion + FILENAME_CAL);
-            toFile((Serializable) d, filePath + javaVersion + FILENAME_DURATION);
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
+
+    public Stream<Arguments> gregorianCalendarDataBytes() {
+        return Stream.of(
+                Arguments.of(JDK[0], gregorianCalendarAndDurationSerData[0], EXPECTED_CAL),
+                Arguments.of(JDK[1], gregorianCalendarAndDurationSerData[1], EXPECTED_CAL),
+                Arguments.of(JDK[2], gregorianCalendarAndDurationSerData[2], EXPECTED_CAL),
+                Arguments.of(JDK[3], gregorianCalendarAndDurationSerData[3], EXPECTED_CAL),
+                Arguments.of(JDK[4], gregorianCalendarAndDurationSerData[4], EXPECTED_CAL)
+        );
     }
 
     /**
-     * Read the object from a file.
+     * Provide data for JDK version and Duration serialized bytes.
+     * @return A Stream of arguments where each element is an array of size three. First element contain JDK version,
+     * second element contain object reference to GregorianCalendarAndDurationSerData specific to JDK version
+     * and third element contain expected Duration as string.
      */
-    private static Object fromFile(String filePath) throws IOException,
+
+    public Stream<Arguments> durationData() {
+        return Stream.of(Arguments.of(JDK[0], gregorianCalendarAndDurationSerData[0], EXPECTED_DURATION),
+                Arguments.of(JDK[1], gregorianCalendarAndDurationSerData[1], EXPECTED_DURATION),
+                Arguments.of(JDK[2], gregorianCalendarAndDurationSerData[2], EXPECTED_DURATION),
+                Arguments.of(JDK[3], gregorianCalendarAndDurationSerData[3], EXPECTED_DURATION),
+                Arguments.of(JDK[4], gregorianCalendarAndDurationSerData[4], EXPECTED_DURATION));
+    }
+
+    /**
+     * Verify that GregorianCalendar serialized with different old JDK versions can be deserialized correctly with
+     * JDK under test.
+     * @param javaVersion JDK version used to GregorianCalendar serialization.
+     * @param gcsd JDK version specific GregorianCalendarAndDurationSerData.
+     * @param gregorianDate String representation of GregorianCalendar Date.
+     * @throws IOException Unexpected.
+     * @throws ClassNotFoundException Unexpected.
+     */
+
+    @ParameterizedTest
+    @MethodSource("gregorianCalendarDataBytes")
+    public void testReadCalBytes(String javaVersion, GregorianCalendarAndDurationSerData gcsd, String gregorianDate) throws IOException,
             ClassNotFoundException {
-        InputStream streamIn = SerializationTest.class.getResourceAsStream(
-            filePath);
-        ObjectInputStream objectinputstream = new ObjectInputStream(streamIn);
-        Object o = objectinputstream.readObject();
-        return o;
+        final ByteArrayInputStream bais = new ByteArrayInputStream(gcsd.getGregorianCalendarByteArray());
+        final ObjectInputStream ois = new ObjectInputStream(bais);
+        final XMLGregorianCalendar xgc = (XMLGregorianCalendar) ois.readObject();
+        assertEquals(gregorianDate, xgc.toString());
     }
 
     /**
-     * Write the object to a file.
+     * Verify that Duration serialized with different old JDK versions can be deserialized correctly with
+     * JDK under test.
+     * @param javaVersion JDK version used to GregorianCalendar serialization.
+     * @param gcsd JDK version specific GregorianCalendarAndDurationSerData.
+     * @param duration String representation of Duration.
+     * @throws IOException Unexpected.
+     * @throws ClassNotFoundException Unexpected.
      */
-    private static void toFile(Serializable o, String filePath) throws IOException {
-        FileOutputStream fout = new FileOutputStream(filePath, true);
-        ObjectOutputStream oos = new ObjectOutputStream(fout);
-        oos.writeObject(o);
-        oos.close();
-    }
 
-    static String errMessage;
-    int passed = 0, failed = 0;
-
-    void fail(String errMsg) {
-        if (errMessage == null) {
-            errMessage = errMsg;
-        } else {
-            errMessage = errMessage + "\n" + errMsg;
-        }
-        failed++;
-    }
-
-    void success(String msg) {
-        passed++;
-        System.out.println(msg);
-    }
-
-    public void report() {
-
-        System.out.println("\nNumber of tests passed: " + passed);
-        System.out.println("Number of tests failed: " + failed + "\n");
-
-        if (errMessage != null) {
-            throw new RuntimeException(errMessage);
-        }
+    @ParameterizedTest
+    @MethodSource("durationData")
+    public void testReadDurationBytes(String javaVersion, GregorianCalendarAndDurationSerData gcsd, String duration) throws IOException,
+            ClassNotFoundException {
+        final ByteArrayInputStream bais = new ByteArrayInputStream(gcsd.getDurationBytes());
+        final ObjectInputStream ois = new ObjectInputStream(bais);
+        final Duration d1 = (Duration) ois.readObject();
+        assertEquals(duration, d1.toString().toUpperCase());
     }
 }

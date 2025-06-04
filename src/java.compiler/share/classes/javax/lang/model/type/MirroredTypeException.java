@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,25 +25,24 @@
 
 package javax.lang.model.type;
 
-import java.io.ObjectInputStream;
 import java.io.IOException;
-import javax.lang.model.element.Element;
+import java.io.ObjectInputStream;
+import java.io.Serial;
 
+import javax.lang.model.element.Element;
 
 /**
  * Thrown when an application attempts to access the {@link Class} object
  * corresponding to a {@link TypeMirror}.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see MirroredTypesException
  * @see Element#getAnnotation(Class)
  * @since 1.6
  */
 public class MirroredTypeException extends MirroredTypesException {
 
-    private static final long serialVersionUID = 269;
+    @Serial
+    private static final long serialVersionUID = 269L;
 
     private transient TypeMirror type;          // cannot be serialized
 
@@ -75,6 +74,7 @@ public class MirroredTypeException extends MirroredTypesException {
      * deserialization
      * @throws IOException for an IO problem during deserialization
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
         s.defaultReadObject();

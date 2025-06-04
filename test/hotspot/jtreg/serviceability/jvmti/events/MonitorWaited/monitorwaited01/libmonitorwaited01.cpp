@@ -1,0 +1,250 @@
+/*
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+#include <stdio.h>
+#include <string.h>
+#include <jvmti.h>
+#include "jvmti_common.hpp"
+#include "jvmti_thread.hpp"
+
+
+extern "C" {
+
+const int MAX_COUNT = 50;
+
+/* scaffold objects */
+static jvmtiEnv *jvmti = nullptr;
+static jlong timeout = 0;
+
+/* test objects */
+static jthread expected_thread = nullptr;
+static jobject expected_object = nullptr;
+static volatile int eventsCount = 0;
+
+static void check_stack_trace(JNIEnv* env, jthread thr);
+
+void JNICALL
+MonitorWaited(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr, jobject obj, jboolean timed_out) {
+
+  LOG("MonitorWaited event:\n\tthread: %p, object: %p, timed_out: %s\n",
+      thr, obj, (timed_out == JNI_TRUE) ? "true" : "false");
+
+  print_thread_info(jvmti, jni, thr);
+
+  if (expected_thread == nullptr) {
+    jni->FatalError("expected_thread is null.");
+  }
+
+  if (expected_object == nullptr) {
+    jni->FatalError("expected_object is null.");
+  }
+
+  /* check if event is for tested thread and for tested object */
+  if (jni->IsSameObject(expected_thread, thr) &&
+      jni->IsSameObject(expected_object, obj)) {
+    eventsCount++;
+    if (timed_out == JNI_TRUE) {
+      COMPLAIN("Unexpected timed_out value: true\n");
+      set_agent_fail_status();
+    }
+  }
+
+  if (jni->IsVirtualThread(thr)) {
+    check_stack_trace(jni, thr);
+  }
+}
+
+/* ========================================================================== */
+
+static void check_stack_trace(JNIEnv* jni, jthread thr) {
+  jvmtiError err;
+  jint count = 0;
+  jint skipped = 0;
+
+  print_stack_trace(jvmti, jni, nullptr);
+
+  jvmtiFrameInfo frameInfo[MAX_COUNT];
+
+  err = jvmti->GetStackTrace(thr, 0, MAX_COUNT, frameInfo, &count);
+  check_jvmti_status(jni, err, "event handler: error in JVMTI GetStackTrace call");
+
+  const int expected_count = 8;
+  const char* expected_methods[expected_count] = {"wait0", "wait", "run", "runWith", "run", "run", "enter0", "enter"};
+
+  if (count != expected_count) {
+    LOG("Expected 8 methods in the stack but found %d", count);
+    jni->FatalError("Unexpected method count");
+  }
+
+  for (int idx = 0; idx < count; idx++) {
+    jclass declaringClass = nullptr;
+    char *clasSignature = nullptr;
+    char *methodName = nullptr;
+
+    err = jvmti->GetMethodName(frameInfo[idx].method, &methodName, nullptr, nullptr);
+    check_jvmti_status(jni, err, "event handler: error in JVMTI GetMethodName call");
+
+    if (strcmp(methodName, expected_methods[idx]) != 0) {
+      LOG("Expected method %s but found %s", expected_methods[idx], methodName);
+      jni->FatalError("Unexpected method found");
+    }
+  }
+}
+
+static int prepare() {
+  /* enable MonitorWait event */
+  jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAITED, nullptr);
+  if (err != JVMTI_ERROR_NONE) {
+    LOG("Prepare: 11\n");
+    return JNI_FALSE;
+  }
+  return JNI_TRUE;
+}
+
+static int clean() {
+  /* disable MonitorWaited event */
+  jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_MONITOR_WAITED, nullptr);
+  if (err != JVMTI_ERROR_NONE) {
+    set_agent_fail_status();
+  }
+  return JNI_TRUE;
+}
+
+static void JNICALL
+agentProc(jvmtiEnv *jvmti, JNIEnv *agentJNI, void *arg) {
+
+  /* wait for initial sync */
+  if (!agent_wait_for_sync(timeout))
+    return;
+
+  if (!prepare()) {
+    set_agent_fail_status();
+    return;
+  }
+
+  /* clear events count */
+  eventsCount = 0;
+
+  /* resume debugee to catch MonitorWaited event */
+  if (!((agent_resume_sync() == JNI_TRUE) && (agent_wait_for_sync(timeout) == JNI_TRUE))) {
+    return;
+  }
+
+  LOG("Number of MonitorWaited events: %d\n", eventsCount);
+
+  if (eventsCount == 0) {
+    COMPLAIN("No any MonitorWaited event\n");
+    set_agent_fail_status();
+  }
+
+  if (!clean()) {
+    set_agent_fail_status();
+    return;
+  }
+
+  /* resume debugee after last sync */
+  if (!agent_resume_sync())
+    return;
+}
+
+jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
+  jvmtiCapabilities caps;
+  jvmtiEventCallbacks callbacks;
+  jvmtiError err;
+  jint res;
+
+  timeout = 60000;
+  LOG("Timeout: %d msc\n", (int) timeout);
+
+  res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
+  if (res != JNI_OK || jvmti == nullptr) {
+    LOG("Wrong result of a valid call to GetEnv!\n");
+    return JNI_ERR;
+  }
+
+  err = init_agent_data(jvmti, &agent_data);
+  if (err != JVMTI_ERROR_NONE) {
+    return JNI_ERR;
+  }
+
+  memset(&caps, 0, sizeof(jvmtiCapabilities));
+  caps.can_generate_monitor_events = 1;
+  caps.can_support_virtual_threads = 1;
+
+  err = jvmti->AddCapabilities(&caps);
+  if (err != JVMTI_ERROR_NONE) {
+    LOG("(AddCapabilities) unexpected error: %s (%d)\n",
+           TranslateError(err), err);
+    return JNI_ERR;
+  }
+
+  err = jvmti->GetCapabilities(&caps);
+  if (err != JVMTI_ERROR_NONE) {
+    LOG("(GetCapabilities) unexpected error: %s (%d)\n",
+           TranslateError(err), err);
+    return JNI_ERR;
+  }
+
+  if (!caps.can_generate_monitor_events) {
+    return JNI_ERR;
+  }
+
+  memset(&callbacks, 0, sizeof(callbacks));
+  callbacks.MonitorWaited = &MonitorWaited;
+  err = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
+  if (err != JVMTI_ERROR_NONE) {
+    return JNI_ERR;
+  }
+
+  /* register agent proc and arg */
+  set_agent_proc(agentProc, nullptr);
+
+  return JNI_OK;
+}
+
+JNIEXPORT void JNICALL Java_monitorwaited01_setExpected(JNIEnv *jni, jobject clz, jobject obj, jobject thread) {
+  LOG("Remembering global reference for monitor object is %p\n", obj);
+  /* make object accessible for a long time */
+  expected_object = jni->NewGlobalRef(obj);
+  if (expected_object == nullptr) {
+    jni->FatalError("Error saving global reference to monitor.\n");
+  }
+
+  /* make thread accessable for a long time */
+  expected_thread = jni->NewGlobalRef(thread);
+  if (thread == nullptr) {
+    jni->FatalError("Error saving global reference to thread.\n");
+  }
+
+  return;
+}
+
+JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+  return Agent_Initialize(jvm, options, reserved);
+}
+
+JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM *jvm, char *options, void *reserved) {
+  return Agent_Initialize(jvm, options, reserved);
+}
+
+}

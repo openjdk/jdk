@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,8 +113,9 @@ char* getLineFlags(DWORD flags) {
     }
     if (flags!=0) {
         UINT_PTR r = (UINT_PTR) ret;
-        r += strlen(ret);
-        sprintf((char*) r, "%d", flags);
+        size_t usedLen = strlen(ret);
+        r += usedLen;
+        snprintf((char*) r, sizeof(ret) - usedLen, "%d", flags);
     }
     return ret;
 }
@@ -219,8 +220,9 @@ char* getControlState(DWORD controlState) {
     }
     if (controlState!=0) {
         UINT_PTR r = (UINT_PTR) ret;
-        r += strlen(ret);
-        sprintf((char*) r, "%d", controlState);
+        size_t usedLen = strlen(ret);
+        r += usedLen;
+        snprintf((char*) r, sizeof(ret) - usedLen, "%d", controlState);
     }
     return ret;
 }
@@ -249,7 +251,7 @@ void printInfo(PortInfo* info) {
     TRACE5(" PortInfo %p: handle=%p, mixerIndex=%d, dstLineCount=%d, dstLines=%p, ", info, (void*) info->handle, info->mixerIndex, info->dstLineCount, info->dstLines);
     TRACE5("srcLineCount=%d, srcLines=%p, targetPortCount=%d, sourcePortCount=%d, ports=%p, ", info->srcLineCount, info->srcLines, info->targetPortCount, info->sourcePortCount, info->ports);
     TRACE3("maxControlCount=%d, usedControlIDs=%d, controlIDs=%p \n", info->maxControlCount, info->usedControlIDs, info->controlIDs);
-    TRACE2("usedMuxData=%d, muxData=%p, controlIDs=%p \n", info->usedMuxData, info->muxData);
+    TRACE3("usedMuxData=%d, muxData=%p, controlIDs=%p \n", info->usedMuxData, info->muxData, info->controlIDs);
 }
 
 #endif // USE_TRACE
@@ -359,7 +361,7 @@ INT32 PORT_GetPortMixerDescription(INT32 mixerIndex, PortMixerDescription* descr
     MIXERCAPSW mixerCaps;
     if (mixerGetDevCapsW(mixerIndex, &mixerCaps, sizeof(MIXERCAPSW)) == MMSYSERR_NOERROR) {
         UnicodeToUTF8AndCopy(description->name, mixerCaps.szPname, PORT_STRING_LENGTH);
-        sprintf(description->version, "%d.%d", (mixerCaps.vDriverVersion & 0xFF00) >> 8, mixerCaps.vDriverVersion & 0xFF);
+        snprintf(description->version, sizeof(description->version), "%d.%d", (mixerCaps.vDriverVersion & 0xFF00) >> 8, mixerCaps.vDriverVersion & 0xFF);
         strncpy(description->description, "Port Mixer", PORT_STRING_LENGTH-1);
         return TRUE;
     }

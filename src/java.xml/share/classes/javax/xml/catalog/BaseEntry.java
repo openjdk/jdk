@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,9 +223,11 @@ abstract class BaseEntry {
 
         try {
             if (base != null) {
-                url = new URL(base, uri);
+                @SuppressWarnings("deprecation")
+                URL _unused = url = new URL(base, uri);
             } else {
-                url = new URL(uri);
+                @SuppressWarnings("deprecation")
+                URL _unused = url = new URL(uri);
             }
         } catch (MalformedURLException e) {
             CatalogMessages.reportIAE(ERR_INVALID_ARGUMENT,

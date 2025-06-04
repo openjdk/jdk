@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ char* MIDI_IN_GetErrorStr(INT32 err) {
 INT32 MIDI_IN_GetNumDevices() {
 /* Workaround for 6842956: 32bit app on 64bit linux
  * gets assertion failure trying to open midiIn ports.
- * Untill the issue is fixed in ALSA
+ * Until the issue is fixed in ALSA
  * (https://bugtrack.alsa-project.org/alsa-bug/view.php?id=4807)
  * report no midi in devices in the configuration.
  */
@@ -218,7 +218,7 @@ MidiMessage* MIDI_IN_GetMessage(MidiDeviceHandle* handle) {
             return NULL;
         }
     }
-    jdk_message = (MidiMessage*) calloc(sizeof(MidiMessage), 1);
+    jdk_message = (MidiMessage*) calloc(1, sizeof(MidiMessage));
     if (!jdk_message) {
         ERROR0("< ERROR: MIDI_IN_GetMessage(): out of memory\n");
         return NULL;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 7073852 8008577
+ * @bug 7073852 8008577 8174269 8333582
  * @summary Support multiple scripts for digits and decimal symbols per locale
- * @run main/othervm -Djava.locale.providers=JRE,SPI MultipleNumberScriptTest
+ * @run main MultipleNumberScriptTest
  */
 
 import java.text.*;
@@ -34,9 +34,9 @@ import java.util.*;
 public class MultipleNumberScriptTest {
 
     static Locale[] locales = {
-        new Locale("ar"),
-        new Locale("ar", "EG"),
-        new Locale("ar", "DZ"),
+        Locale.of("ar"),
+        Locale.of("ar", "EG"),
+        Locale.of("ar", "DZ"),
         Locale.forLanguageTag("ar-EG-u-nu-arab"),
         Locale.forLanguageTag("ar-EG-u-nu-latn"),
         Locale.forLanguageTag("ar-DZ-u-nu-arab"),
@@ -44,7 +44,7 @@ public class MultipleNumberScriptTest {
         Locale.forLanguageTag("ee"),
         Locale.forLanguageTag("ee-GH"),
         Locale.forLanguageTag("ee-GH-u-nu-latn"),
-        new Locale("th", "TH", "TH"),
+        Locale.of("th", "TH", "TH"),
         Locale.forLanguageTag("th-TH"),
         Locale.forLanguageTag("th-TH-u-nu-thai"),
         Locale.forLanguageTag("th-TH-u-nu-hoge"),
@@ -52,8 +52,8 @@ public class MultipleNumberScriptTest {
 
     // expected numbering system for each locale
     static String[] expectedNumSystem = {
-        "latn", // ar
-        "latn", // ar-EG
+        "latn", // ar - CLDR-17553
+        "arab", // ar-EG
         "latn", // ar-DZ
         "arab", // ar-EG-u-nu-arab
         "latn", // ar-EG-u-nu-latn

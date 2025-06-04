@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 
 import java.io.File;
-import java.io.FilePermission;
 import java.io.IOException;
 
 import java.net.URI;
@@ -311,12 +310,6 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
                                 JobAttributes jobAttributes,
                                 PageAttributes pageAttributes) {
 
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPrintJobAccess();
-        }
-
         if (frame == null &&
             (jobAttributes == null ||
              jobAttributes.getDialog() == DialogType.NATIVE)) {
@@ -351,7 +344,6 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
         // Verify that the app has access to the file system
         DestinationType dest= this.jobAttributes.getDestination();
         if (dest == DestinationType.FILE) {
-            throwPrintToFile();
 
             // check if given filename is valid
             String destStr = jobAttributes.getFileName();
@@ -368,11 +360,6 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
                 } catch (IOException ioe) {
                     throw new IllegalArgumentException("Cannot write to file:"+
                                                        destStr);
-                } catch (SecurityException se) {
-                    //There is already file read/write access so at this point
-                    // only delete access is denied.  Just ignore it because in
-                    // most cases the file created in createNewFile gets overwritten
-                    // anyway.
                 }
 
                  File pFile = f.getParentFile();
@@ -678,29 +665,18 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
                 attributes.add(defaultDest);
             } else {
                 URI uri = null;
-                try {
-                    if (fileName != null) {
-                        if (fileName.isEmpty()) {
-                            fileName = ".";
-                        }
-                    } else {
-                        // defaultDest should not be null.  The following code
-                        // is only added to safeguard against a possible
-                        // buggy implementation of a PrintService having a
-                        // null default Destination.
-                        fileName = "out.prn";
+                if (fileName != null) {
+                    if (fileName.isEmpty()) {
+                        fileName = ".";
                     }
-                    uri = (new File(fileName)).toURI();
-                } catch (SecurityException se) {
-                    try {
-                        // '\\' file separator is illegal character in opaque
-                        // part and causes URISyntaxException, so we replace
-                        // it with '/'
-                        fileName = fileName.replace('\\', '/');
-                        uri = new URI("file:"+fileName);
-                    } catch (URISyntaxException e) {
-                    }
+                } else {
+                    // defaultDest should not be null.  The following code
+                    // is only added to safeguard against a possible
+                    // buggy implementation of a PrintService having a
+                    // null default Destination.
+                    fileName = "out.prn";
                 }
+                uri = (new File(fileName)).toURI();
                 if (uri != null) {
                     attributes.add(new Destination(uri));
                 }
@@ -824,7 +800,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
             /* In the PrintJob API, the origin is at the upper-
              * left of the imageable area when using the new "printable"
              * origin attribute, otherwise its the physical origin (for
-             * backwards compatibility. We emulate this by createing
+             * backwards compatibility. We emulate this by creating
              * a PageFormat which matches and then performing the
              * translate to the origin. This is a no-op if physical
              * origin is specified.
@@ -966,7 +942,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
      * @return PAGE_EXISTS if the page is rendered successfully
      *         or NO_SUCH_PAGE if {@code pageIndex} specifies a
      *         non-existent page.
-     * @exception java.awt.print.PrinterException
+     * @throws java.awt.print.PrinterException
      *         thrown when the print job is terminated.
      */
     public int print(Graphics graphics, PageFormat pageFormat, int pageIndex)
@@ -976,9 +952,9 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
 
         /* This method will be called by the PrinterJob on a thread other
          * that the application's thread. We hold on to the graphics
-         * until we can rendevous with the application's thread and
+         * until we can rendezvous with the application's thread and
          * hand over the graphics. The application then does all the
-         * drawing. When the application is done drawing we rendevous
+         * drawing. When the application is done drawing we rendezvous
          * again with the PrinterJob thread and release the Graphics
          * so that it knows we are done.
          */
@@ -1262,19 +1238,6 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
             str = media.toString();
         }
         props.setProperty(PAPERSIZE_PROP, str);
-    }
-
-    private void throwPrintToFile() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        FilePermission printToFilePermission = null;
-        if (security != null) {
-            if (printToFilePermission == null) {
-                printToFilePermission =
-                    new FilePermission("<<ALL FILES>>", "read,write");
-            }
-            security.checkPermission(printToFilePermission);
-        }
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary Basic (sanity) test for JDK-under-test inside a docker image.
- * @requires docker.support
+ * @requires container.support
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -53,6 +53,7 @@ public class DockerBasicTest {
         try {
             testJavaVersion();
             testHelloDocker();
+            testJavaVersionWithCgMounts();
         } finally {
             if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
                 DockerTestUtils.removeDockerImage(imageNameAndTag);
@@ -80,5 +81,18 @@ public class DockerBasicTest {
         DockerTestUtils.dockerRunJava(opts)
             .shouldHaveExitValue(0)
             .shouldContain("Hello Docker");
+    }
+
+
+    private static void testJavaVersionWithCgMounts() throws Exception {
+        DockerRunOptions opts =
+            new DockerRunOptions(imageNameAndTag, "/jdk/bin/java", "-version")
+            .addDockerOpts("-v", "/sys/fs/cgroup:/cgroups-in:ro");
+
+        // Duplicated cgroup mounts should be handled by the container detection
+        // code and should not cause any error/warning output.
+        DockerTestUtils.dockerRunJava(opts)
+            .shouldHaveExitValue(0)
+            .shouldNotMatch("\\[os,container *\\]");
     }
 }

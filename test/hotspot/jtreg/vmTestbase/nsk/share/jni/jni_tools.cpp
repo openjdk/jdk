@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,12 +40,9 @@
 
 /*************************************************************/
 
-#include "nsk_tools.h"
-#include "jni_tools.h"
+#include "nsk_tools.hpp"
+#include "jni_tools.hpp"
 
-/*************************************************************/
-
-extern "C" {
 
 /*************************************************************/
 
@@ -54,7 +51,7 @@ int nsk_jni_check_exception(JNIEnv* jni, const char file[], int line)
     jthrowable throwable;
 
     NSK_TRACE(throwable = jni->ExceptionOccurred());
-    if (throwable != NULL) {
+    if (throwable != nullptr) {
         nsk_lcomplain(file, line, "Exception in JNI call (cleared):\n");
         NSK_TRACE(jni->ExceptionDescribe());
         NSK_TRACE(jni->ExceptionClear());
@@ -101,54 +98,6 @@ int nsk_jni_lverify_void(JNIEnv* jni, const char file[], int line,
     return !failure;
 }
 
-char *jlong_to_string(jlong value, char *string) {
-    char buffer[32];
-    char *pbuf, *pstr;
-
-    pstr = string;
-    if (value == 0) {
-        *pstr++ = '0';
-    } else {
-        if (value < 0) {
-            *pstr++ = '-';
-            value = -value;
-        }
-        pbuf = buffer;
-        while (value != 0) {
-            *pbuf++ = '0' + (char)(value % 10);
-            value = value / 10;
-        }
-        while (pbuf != buffer) {
-            *pstr++ = *--pbuf;
-        }
-    }
-    *pstr = '\0';
-
-    return string;
-}
-
-char *julong_to_string(julong value, char *string) {
-    char buffer[32];
-    char *pbuf, *pstr;
-
-    pstr = string;
-    if (value == 0) {
-        *pstr++ = '0';
-    } else {
-        pbuf = buffer;
-        while (value != 0) {
-            *pbuf++ = '0' + (char)(value % 10);
-            value = value / 10;
-        }
-        while (pbuf != buffer) {
-            *pstr++ = *--pbuf;
-        }
-    }
-    *pstr = '\0';
-
-    return string;
-}
-
 void mssleep(long millis) {
 #if (defined(WIN32) || defined(_WIN32))
    Sleep(millis);
@@ -158,7 +107,7 @@ void mssleep(long millis) {
    struct timeval timeout;
    timeout.tv_sec = millis / 1000;
    timeout.tv_usec = (millis % 1000) * 1000;
-   select(0, NULL, NULL, NULL, &timeout);
+   select(0, nullptr, nullptr, nullptr, &timeout);
 #endif
 }
 
@@ -182,7 +131,7 @@ JavaVMOption*
 jni_create_vmoptions(int size, char *args[], int argsCnt)
 {
    int i;
-   JavaVMOption *options = NULL;
+   JavaVMOption *options = nullptr;
 
    if (size <= 0)
       return options;
@@ -197,4 +146,3 @@ jni_create_vmoptions(int size, char *args[], int argsCnt)
 
 /*************************************************************/
 
-}

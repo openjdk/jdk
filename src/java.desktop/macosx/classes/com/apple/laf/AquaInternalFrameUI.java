@@ -752,7 +752,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
                 @Override
                 public void paint(final Graphics g, int x, int y, int w, int h) {
                     g.setColor(new Color(0, 0, 0, 64));
-                    g.drawLine(x + 2, y - 8, x + w - 2, y - 8);
+                    g.drawLine(x + 5, y - 8, x + w - 5, y - 8);
                 }
             },
             0, 7, 1.1f, 1.0f, 24, 51, 51, 25, 25, 25, 25);
@@ -771,7 +771,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
                 @Override
                 public void paint(final Graphics g, int x, int y, int w, int h) {
                     g.setColor(new Color(0, 0, 0, 32));
-                    g.drawLine(x, y - 11, x + w - 1, y - 11);
+                    g.drawLine(x + 10, y - 11, x + w - 10, y - 11);
                 }
             },
             0, 0, 3.0f, 1.0f, 10, 51, 51, 25, 25, 25, 25);

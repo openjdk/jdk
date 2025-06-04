@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,66 +41,6 @@
  *     This test is almost the same as nsk.stress.strace.strace001 and
  *     nsk.stress.strace.strace003 except for the recursive methods are
  *     pure java and native one.
- * COMMENTS
- * Below assertion is revealed on engineer's build. It is needed to check
- * on a promoted build.
- * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- * waiting for all threads started ...
- * Unexpected Signal : 11 occurred at PC=0xFDBB7820
- * Function=[Unknown. Nearest: SUNWprivate_1.1+0x3B7820]
- * Library=java/vitp/jdk/4593133/solaris-sparc/jre/lib/sparc/client/libjvm.so
- * Current Java thread:
- *         at nsk.stress.strace.strace005Thread.recursiveMethod2(Native Method)
- *         at nsk.stress.strace.strace005Thread.recursiveMethod1(strace005.java:285)
- *     . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
- *         at nsk.stress.strace.strace005Thread.recursiveMethod2(Native Method)
- *         at nsk.stress.strace.strace005Thread.recursiveMethod1(strace005.java:285)
- *         at nsk.stress.strace.strace005Thread.recursiveMethod2(Native Method)
- * Dynamic libraries:
- * 0x10000         jdk/4593133/solaris-sparc/bin/java
- * 0xff350000      /usr/lib/libthread.so.1
- * 0xff390000      /usr/lib/libdl.so.1
- * 0xff200000      /usr/lib/libc.so.1
- * 0xff330000      /usr/platform/SUNW,Ultra-60/lib/libc_psr.so.1
- * 0xfd800000      java/vitp/jdk/4593133/solaris-sparc/jre/lib/sparc/client/libjvm.so
- * 0xff2d0000      /usr/lib/libCrun.so.1
- * 0xff1d0000      /usr/lib/libsocket.so.1
- * 0xff100000      /usr/lib/libnsl.so.1
- * 0xff0d0000      /usr/lib/libm.so.1
- * 0xff0b0000      /usr/lib/libsched.so.1
- * 0xff300000      /usr/lib/libw.so.1
- * 0xff090000      /usr/lib/libmp.so.2
- * 0xff050000      java/vitp/jdk/4593133/solaris-sparc/jre/lib/sparc/native_threads/libhpi.so
- * 0xfd7d0000      java/vitp/jdk/4593133/solaris-sparc/jre/lib/sparc/libverify.so
- * 0xfd790000      java/vitp/jdk/4593133/solaris-sparc/jre/lib/sparc/libjava.so
- * 0xfe7e0000      java/vitp/jdk/4593133/solaris-sparc/jre/lib/sparc/libzip.so
- * 0xfc6e0000      java/vitp/tests/4593133/src/libstrace005.so
- * Heap at VM Abort:
- * Heap
- *  def new generation   total 2112K, used 336K [0xf1800000, 0xf1a20000, 0xf1f10000)
- *   eden space 2048K,  16% used [0xf1800000, 0xf1854300, 0xf1a00000)
- *   from space 64K,   0% used [0xf1a00000, 0xf1a00000, 0xf1a10000)
- *   to   space 64K,   0% used [0xf1a10000, 0xf1a10000, 0xf1a20000)
- *  tenured generation   total 1408K, used 0K [0xf1f10000, 0xf2070000, 0xf5800000)
- *    the space 1408K,   0% used [0xf1f10000, 0xf1f10000, 0xf1f10200, 0xf2070000)
- *  compacting perm gen  total 4096K, used 1020K [0xf5800000, 0xf5c00000, 0xf9800000)
- *    the space 4096K,  24% used [0xf5800000, 0xf58ff028, 0xf58ff200, 0xf5c00000)
- * Local Time = Fri Apr 25 18:09:16 2003
- * Elapsed Time = 13
- * #
- * # HotSpot Virtual Machine Error : 11
- * # Error ID : src/share/vm/runtime/os.cpp, 753 [ Patched ]
- * # Please report this error at
- * # http://java.sun.com/cgi-bin/bugreport.cgi
- * #
- * # Java VM: Java HotSpot(TM) Client VM (1.4.1-internal-debug mixed mode)
- * #
- * # An error report file has been saved as hs_err_pid16847.log.
- * # Please refer to the file for further information.
- * #
- * Dumping core....
- * Abort
- * Finished at: Fri Apr 25 18:09:17 NSK 2003
  *
  * @library /vmTestbase
  *          /test/lib
@@ -109,11 +49,6 @@
 
 package nsk.stress.strace;
 
-import nsk.share.ArgumentParser;
-import nsk.share.Failure;
-import nsk.share.Log;
-
-import java.io.PrintStream;
 
 /**
  * The test checks up <code>java.lang.Thread.getStackTrace()</code> method for many threads,
@@ -122,51 +57,24 @@ import java.io.PrintStream;
  * <p>
  * <p>The test creates <code>THRD_COUNT</code> instances of <code>strace005Thread</code>
  * class, tries to get their stack traces and checks up that returned array contains
- * correct stack frames. Each stack frame must be corresponded to one of the following
- * methods defined by the <code>EXPECTED_METHODS</code> array.</p>
- * <p>These checking are performed <code>REPEAT_COUNT</code> times.</p>
+ * correct stack frames.</p>
  */
-public class strace005 {
+public class strace005 extends StraceBase {
 
     static final int DEPTH = 500;
     static final int THRD_COUNT = 100;
     static final int REPEAT_COUNT = 10;
-    static final String[] EXPECTED_METHODS = {
-            "java.lang.System.arraycopy",
-            "java.lang.Object.wait",
-            "java.lang.Thread.exit",
-            "java.lang.Thread.yield",
-            "java.lang.ThreadGroup.remove",
-            "java.lang.ThreadGroup.threadTerminated",
-            "nsk.stress.strace.strace005Thread.run",
-            "nsk.stress.strace.strace005Thread.recursiveMethod1",
-            "nsk.stress.strace.strace005Thread.recursiveMethod2"
-    };
-
 
     static volatile boolean isLocked = false;
-    static PrintStream out;
-    static long waitTime = 2;
 
     static Object waitStart = new Object();
 
     static strace005Thread[] threads;
     static StackTraceElement[][] snapshots = new StackTraceElement[THRD_COUNT][];
-    static Log log;
 
     volatile int achivedCount = 0;
 
     public static void main(String[] args) {
-        out = System.out;
-        int exitCode = run(args);
-        System.exit(exitCode + 95);
-    }
-
-    public static int run(String[] args) {
-        ArgumentParser argHandler = new ArgumentParser(args);
-        log = new Log(out, argHandler);
-        waitTime = argHandler.getWaitTime() * 60000;
-
         strace005 test = new strace005();
         boolean res = true;
 
@@ -180,11 +88,9 @@ public class strace005 {
         }
 
         if (!res) {
-            complain("***>>>Test failed<<<***");
-            return 2;
+            new RuntimeException("***>>>Test failed<<<***");
         }
 
-        return 0;
     }
 
     void startThreads() {
@@ -294,15 +200,6 @@ public class strace005 {
         return res;
     }
 
-    boolean checkElement(StackTraceElement element) {
-        String name = element.getClassName() + "." + element.getMethodName();
-        for (int i = 0; i < EXPECTED_METHODS.length; i++) {
-            if (EXPECTED_METHODS[i].compareTo(name) == 0)
-                return true;
-        }
-        return false;
-    }
-
     void finishThreads() {
         try {
             for (int i = 0; i < threads.length; i++) {
@@ -313,14 +210,6 @@ public class strace005 {
             complain("" + e);
         }
         isLocked = false;
-    }
-
-    static void display(String message) {
-        log.display(message);
-    }
-
-    static void complain(String message) {
-        log.complain(message);
     }
 
 }
@@ -377,7 +266,7 @@ class strace005Thread extends Thread {
                         strace005.complain("" + e);
                     }
                     if (alltime > strace005.waitTime) {
-                        throw new Failure("out of wait time");
+                        throw new RuntimeException("out of wait time");
                     }
                 }
             }

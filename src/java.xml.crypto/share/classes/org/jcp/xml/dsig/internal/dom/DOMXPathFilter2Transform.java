@@ -58,6 +58,7 @@ import org.w3c.dom.NamedNodeMap;
  */
 public final class DOMXPathFilter2Transform extends ApacheTransform {
 
+    @Override
     public void init(TransformParameterSpec params)
         throws InvalidAlgorithmParameterException
     {
@@ -70,6 +71,7 @@ public final class DOMXPathFilter2Transform extends ApacheTransform {
         this.params = params;
     }
 
+    @Override
     public void init(XMLStructure parent, XMLCryptoContext context)
         throws InvalidAlgorithmParameterException
     {
@@ -107,7 +109,7 @@ public final class DOMXPathFilter2Transform extends ApacheTransform {
             if (attributes != null) {
                 int length = attributes.getLength();
                 Map<String, String> namespaceMap =
-                    new HashMap<>(length);
+                    new HashMap<>((int) Math.ceil(length / 0.75));
                 for (int i = 0; i < length; i++) {
                     Attr attr = (Attr)attributes.item(i);
                     String prefix = attr.getPrefix();
@@ -125,6 +127,7 @@ public final class DOMXPathFilter2Transform extends ApacheTransform {
         this.params = new XPathFilter2ParameterSpec(list);
     }
 
+    @Override
     public void marshalParams(XMLStructure parent, XMLCryptoContext context)
         throws MarshalException
     {

@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -71,7 +69,7 @@ import static org.testng.Assert.fail;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.chrono.ThaiBuddhistDate;
+import java.time.chrono.HijrahDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
@@ -463,7 +461,7 @@ public class TCKIsoFields {
 
     @Test(dataProvider = "isofields", expectedExceptions = UnsupportedTemporalTypeException.class)
     public void test_nonisofields_rangerefinedby(TemporalField field, int value, ValueRange valueRange) {
-        field.rangeRefinedBy(ThaiBuddhistDate.now());
+        field.rangeRefinedBy(HijrahDate.now());
     }
 
     //-----------------------------------------------------------------------
@@ -477,7 +475,7 @@ public class TCKIsoFields {
 
     @Test(dataProvider = "isofields", expectedExceptions = UnsupportedTemporalTypeException.class)
     public void test_nonisofields_getFrom(TemporalField field, int value, ValueRange valueRange) {
-        field.getFrom(ThaiBuddhistDate.now());
+        field.getFrom(HijrahDate.now());
     }
 
     //-----------------------------------------------------------------------

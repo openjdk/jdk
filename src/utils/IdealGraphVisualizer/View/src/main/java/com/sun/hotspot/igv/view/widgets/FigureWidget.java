@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,36 +24,45 @@
 package com.sun.hotspot.igv.view.widgets;
 
 import com.sun.hotspot.igv.data.InputGraph;
+import com.sun.hotspot.igv.data.InputLiveRange;
+import com.sun.hotspot.igv.data.LivenessInfo;
 import com.sun.hotspot.igv.data.Properties;
-import com.sun.hotspot.igv.data.services.GraphViewer;
+import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Figure;
+import com.sun.hotspot.igv.graph.LiveRangeSegment;
+import com.sun.hotspot.igv.graph.Slot;
 import com.sun.hotspot.igv.util.DoubleClickAction;
 import com.sun.hotspot.igv.util.DoubleClickHandler;
+import com.sun.hotspot.igv.util.PropertiesConverter;
 import com.sun.hotspot.igv.util.PropertiesSheet;
 import com.sun.hotspot.igv.view.DiagramScene;
 import java.awt.*;
-import java.awt.event.ActionEvent;
+import java.awt.geom.Path2D;
+import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
-import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
+import javax.swing.border.Border;
+import javax.swing.border.LineBorder;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import org.netbeans.api.visual.action.PopupMenuProvider;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.layout.LayoutFactory;
+import org.netbeans.api.visual.layout.LayoutFactory.SerialAlignment;
 import org.netbeans.api.visual.model.ObjectState;
+import org.netbeans.api.visual.widget.ImageWidget;
 import org.netbeans.api.visual.widget.LabelWidget;
 import org.netbeans.api.visual.widget.Widget;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.nodes.Sheet;
-import org.openide.util.Lookup;
+import org.openide.util.ImageUtilities;
 
 /**
  *
@@ -61,17 +70,13 @@ import org.openide.util.Lookup;
  */
 public class FigureWidget extends Widget implements Properties.Provider, PopupMenuProvider, DoubleClickHandler {
 
-    public static final boolean VERTICAL_LAYOUT = true;
     private static final double LABEL_ZOOM_FACTOR = 0.3;
-    private Figure figure;
-    private Widget leftWidget;
-    private Widget rightWidget;
-    private Widget middleWidget;
-    private ArrayList<LabelWidget> labelWidgets;
-    private DiagramScene diagramScene;
+    private final Figure figure;
+    private final Widget middleWidget;
+    private final ArrayList<LabelWidget> labelWidgets;
+    private final DiagramScene diagramScene;
     private boolean boundary;
-    private final Node node;
-    private Widget dummyTop;
+    private static final Image warningSign = ImageUtilities.loadImage("com/sun/hotspot/igv/view/images/warning.png");
 
     public void setBoundary(boolean b) {
         boundary = b;
@@ -81,16 +86,35 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         return boundary;
     }
 
-    public Node getNode() {
-        return node;
-    }
-
     @Override
     public boolean isHitAt(Point localLocation) {
         return middleWidget.isHitAt(localLocation);
     }
 
-    public FigureWidget(final Figure f, WidgetAction hoverAction, WidgetAction selectAction, DiagramScene scene, Widget parent) {
+    private void formatExtraLabel(boolean selected) {
+        // If the figure contains an extra label, use a light italic font to
+        // differentiate it from the regular label.
+        if (getFigure().getProperties().get("extra_label") != null) {
+            LabelWidget extraLabelWidget = labelWidgets.get(labelWidgets.size() - 1);
+            extraLabelWidget.setFont(Diagram.FONT.deriveFont(Font.ITALIC));
+            extraLabelWidget.setForeground(getTextColorHelper(figure.getColor(), !selected));
+        }
+    }
+
+    public static Color getTextColor(Color color) {
+        return getTextColorHelper(color, false);
+    }
+
+    private static Color getTextColorHelper(Color bg, boolean useGrey) {
+        double brightness = bg.getRed() * 0.21 + bg.getGreen() * 0.72 + bg.getBlue() * 0.07;
+        if (brightness < 150) {
+            return useGrey ? Color.LIGHT_GRAY : Color.WHITE;
+        } else {
+            return useGrey ? Color.DARK_GRAY : Color.BLACK;
+        }
+    }
+
+    public FigureWidget(final Figure f, DiagramScene scene) {
         super(scene);
 
         assert this.getScene() != null;
@@ -99,22 +123,21 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         this.figure = f;
         this.setCheckClipping(true);
         this.diagramScene = scene;
-        parent.addChild(this);
-
-        Widget outer = new Widget(scene);
-        outer.setBackground(f.getColor());
-        outer.setLayout(LayoutFactory.createOverlayLayout());
 
         middleWidget = new Widget(scene);
-        middleWidget.setLayout(LayoutFactory.createVerticalFlowLayout(LayoutFactory.SerialAlignment.CENTER, 0));
-        middleWidget.setBackground(f.getColor());
+        middleWidget.setPreferredBounds(new Rectangle(0, 0, f.getWidth(), f.getHeight()));
+        middleWidget.setLayout(LayoutFactory.createHorizontalFlowLayout(SerialAlignment.CENTER, 0));
         middleWidget.setOpaque(true);
         middleWidget.getActions().addAction(new DoubleClickAction(this));
-        middleWidget.setCheckClipping(true);
+        middleWidget.setCheckClipping(false);
+        this.addChild(middleWidget);
 
-        dummyTop = new Widget(scene);
-        dummyTop.setMinimumSize(new Dimension(Figure.INSET / 2, 1));
-        middleWidget.addChild(dummyTop);
+        Widget textWidget = new Widget(scene);
+        SerialAlignment textAlign = scene.getModel().getShowCFG() ?
+                LayoutFactory.SerialAlignment.LEFT_TOP :
+                LayoutFactory.SerialAlignment.CENTER;
+        textWidget.setLayout(LayoutFactory.createVerticalFlowLayout(textAlign, 0));
+        middleWidget.addChild(textWidget);
 
         String[] strings = figure.getLines();
         labelWidgets = new ArrayList<>(strings.length);
@@ -122,24 +145,37 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         for (String displayString : strings) {
             LabelWidget lw = new LabelWidget(scene);
             labelWidgets.add(lw);
-            middleWidget.addChild(lw);
+            textWidget.addChild(lw);
             lw.setLabel(displayString);
-            lw.setFont(figure.getDiagram().getFont());
-            lw.setForeground(getTextColor());
+            lw.setFont(Diagram.FONT);
             lw.setAlignment(LabelWidget.Alignment.CENTER);
             lw.setVerticalAlignment(LabelWidget.VerticalAlignment.CENTER);
-            lw.setBorder(BorderFactory.createEmptyBorder());
+            lw.setCheckClipping(false);
+        }
+        formatExtraLabel(false);
+        refreshColor();
+
+        for (int i=1; i < labelWidgets.size(); i++) {
+            labelWidgets.get(i).setFont(Diagram.FONT.deriveFont(Font.ITALIC));
+            labelWidgets.get(i).setForeground(Color.DARK_GRAY);
         }
 
-        Widget dummyBottom = new Widget(scene);
-        dummyBottom.setMinimumSize(new Dimension(Figure.INSET / 2, 1));
-        middleWidget.addChild(dummyBottom);
 
-        middleWidget.setPreferredBounds(new Rectangle(0, Figure.SLOT_WIDTH - Figure.OVERLAPPING, f.getWidth(), f.getHeight()));
-        this.addChild(middleWidget);
+        int textHeight = f.getHeight() - 2 * Figure.PADDING - f.getSlotsHeight();
+        if (getFigure().getWarning() != null) {
+            ImageWidget warningWidget = new ImageWidget(scene, warningSign);
+            warningWidget.setToolTipText(getFigure().getWarning());
+            middleWidget.addChild(warningWidget);
+            int textWidth = f.getWidth() - 4 * Figure.BORDER;
+            textWidth -= Figure.WARNING_WIDTH + Figure.PADDING;
+            textWidget.setPreferredBounds(new Rectangle(0, 0, textWidth, textHeight));
+        } else {
+            int textWidth = f.getWidth() - 4 * Figure.BORDER;
+            textWidget.setPreferredBounds(new Rectangle(0, 0, textWidth, textHeight));
+        }
 
         // Initialize node for property sheet
-        node = new AbstractNode(Children.LEAF) {
+        Node node = new AbstractNode(Children.LEAF) {
 
             @Override
             protected Sheet createSheet() {
@@ -149,37 +185,78 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
             }
         };
         node.setDisplayName(getName());
+
+        this.setToolTipText(PropertiesConverter.convertToHTML(f.getProperties()));
     }
 
-    public Widget getLeftWidget() {
-        return leftWidget;
+    public void updatePosition() {
+        setPreferredLocation(figure.getPosition());
     }
 
-    public Widget getRightWidget() {
-        return rightWidget;
+    public int getFigureHeight() {
+        return middleWidget.getPreferredBounds().height;
+    }
+
+    public static class RoundedBorder extends LineBorder {
+
+        final float RADIUS = 3f;
+
+        public RoundedBorder(Color color, int thickness)  {
+            super(color, thickness);
+        }
+
+        @Override
+        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+            if ((this.thickness > 0) && (g instanceof Graphics2D)) {
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color oldColor = g2d.getColor();
+                g2d.setColor(this.lineColor);
+                int offs = this.thickness;
+                int size = offs + offs;
+                Shape outer = new RoundRectangle2D.Float(x, y, width, height, RADIUS, RADIUS);
+                Shape inner = new RoundRectangle2D.Float(x + offs, y + offs, width - size, height - size, RADIUS, RADIUS);
+                Path2D path = new Path2D.Float(Path2D.WIND_EVEN_ODD);
+                path.append(outer, false);
+                path.append(inner, false);
+                g2d.fill(path);
+                g2d.setColor(oldColor);
+            }
+        }
+    }
+
+    public void refreshColor() {
+        middleWidget.setBackground(figure.getColor());
+        for (LabelWidget lw : labelWidgets) {
+            lw.setForeground(getTextColor(figure.getColor()));
+        }
     }
 
     @Override
     protected void notifyStateChanged(ObjectState previousState, ObjectState state) {
         super.notifyStateChanged(previousState, state);
 
-        Font font = this.figure.getDiagram().getFont();
-        int thickness = 1;
-        if (state.isSelected()) {
-            font = this.figure.getDiagram().getBoldFont();
-            thickness = 2;
-        }
-
+        Font font = Diagram.FONT;
         Color borderColor = Color.BLACK;
         Color innerBorderColor = getFigure().getColor();
+        if (state.isSelected()) {
+            font = Diagram.BOLD_FONT;
+            innerBorderColor = Color.BLACK;
+        }
+
         if (state.isHighlighted()) {
             innerBorderColor = borderColor = Color.BLUE;
         }
 
-        middleWidget.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(borderColor, thickness), BorderFactory.createLineBorder(innerBorderColor, 1)));
+        Border innerBorder = new RoundedBorder(borderColor, Figure.BORDER);
+        Border outerBorder = new RoundedBorder(innerBorderColor, Figure.BORDER);
+        Border roundedBorder = BorderFactory.createCompoundBorder(innerBorder, outerBorder);
+        middleWidget.setBorder(roundedBorder);
+
         for (LabelWidget labelWidget : labelWidgets) {
             labelWidget.setFont(font);
         }
+        formatExtraLabel(state.isSelected());
         repaint();
     }
 
@@ -196,18 +273,9 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         return figure;
     }
 
-    private Color getTextColor() {
-        Color bg = figure.getColor();
-        double brightness = bg.getRed() * 0.21 + bg.getGreen() * 0.72 + bg.getBlue() * 0.07;
-        if (brightness < 150) {
-            return Color.WHITE;
-        } else {
-            return Color.BLACK;
-        }
-    }
-
     @Override
     protected void paintChildren() {
+        refreshColor();
         Composite oldComposite = null;
         if (boundary) {
             oldComposite = getScene().getGraphics().getComposite();
@@ -253,24 +321,44 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         menu.addSeparator();
         build(menu, getFigure(), this, true, diagramScene);
 
-        if (getFigure().getSubgraphs() != null) {
-            menu.addSeparator();
-            JMenu subgraphs = new JMenu("Subgraphs");
-            menu.add(subgraphs);
-
-            final GraphViewer viewer = Lookup.getDefault().lookup(GraphViewer.class);
-            for (final InputGraph subgraph : getFigure().getSubgraphs()) {
-                Action a = new AbstractAction() {
-
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        viewer.view(subgraph, true);
+        if (diagramScene.getModel().getShowCFG() &&
+            diagramScene.getModel().getShowLiveRanges()) {
+            InputGraph graph = diagramScene.getModel().getGraph();
+            LivenessInfo l = graph.getLivenessInfoForNode(getFigure().getInputNode());
+            if (l != null) {
+                Set<InputLiveRange> liveRanges = new HashSet<>();
+                if (l.def != null) {
+                    liveRanges.add(graph.getLiveRange(l.def));
+                }
+                if (l.use != null) {
+                    for (int use : l.use) {
+                        liveRanges.add(graph.getLiveRange(use));
                     }
-                };
-
-                a.setEnabled(true);
-                a.putValue(Action.NAME, subgraph.getName());
-                subgraphs.add(a);
+                }
+                if (l.join != null) {
+                    for (int join : l.join) {
+                        liveRanges.add(graph.getLiveRange(join));
+                    }
+                }
+                if (!liveRanges.isEmpty()) {
+                    menu.addSeparator();
+                    menu.add(diagramScene.createGotoLiveRangeAction("Select live ranges", liveRanges));
+                    menu.addSeparator();
+                    if (l.def != null) {
+                        menu.add(diagramScene.createGotoLiveRangeAction(graph.getLiveRange(l.def)));
+                    }
+                    menu.addSeparator();
+                    if (l.use != null) {
+                        for (int use : l.use) {
+                            menu.add(diagramScene.createGotoLiveRangeAction(graph.getLiveRange(use)));
+                        }
+                    }
+                    if (l.join != null) {
+                        for (int join : l.join) {
+                            menu.add(diagramScene.createGotoLiveRangeAction(graph.getLiveRange(join)));
+                        }
+                    }
+                }
             }
         }
 
@@ -350,20 +438,18 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
 
     @Override
     public void handleDoubleClick(Widget w, WidgetAction.WidgetMouseEvent e) {
-
         if (diagramScene.isAllVisible()) {
-            final Set<Integer> hiddenNodes = new HashSet<>(diagramScene.getModel().getGraphToView().getGroup().getAllNodes());
-            hiddenNodes.removeAll(this.getFigure().getSource().getSourceNodesAsSet());
-            this.diagramScene.getModel().showNot(hiddenNodes);
+            final Set<Integer> hiddenNodes = new HashSet<>(diagramScene.getModel().getGroup().getAllNodes());
+            hiddenNodes.remove(this.getFigure().getInputNode().getId());
+            this.diagramScene.getModel().setHiddenNodes(hiddenNodes);
         } else if (isBoundary()) {
-
             final Set<Integer> hiddenNodes = new HashSet<>(diagramScene.getModel().getHiddenNodes());
-            hiddenNodes.removeAll(this.getFigure().getSource().getSourceNodesAsSet());
-            this.diagramScene.getModel().showNot(hiddenNodes);
+            hiddenNodes.remove(this.getFigure().getInputNode().getId());
+            this.diagramScene.getModel().setHiddenNodes(hiddenNodes);
         } else {
             final Set<Integer> hiddenNodes = new HashSet<>(diagramScene.getModel().getHiddenNodes());
-            hiddenNodes.addAll(this.getFigure().getSource().getSourceNodesAsSet());
-            this.diagramScene.getModel().showNot(hiddenNodes);
+            hiddenNodes.add(this.getFigure().getInputNode().getId());
+            this.diagramScene.getModel().setHiddenNodes(hiddenNodes);
         }
     }
 }

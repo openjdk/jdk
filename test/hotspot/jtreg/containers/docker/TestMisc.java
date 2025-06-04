@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
 /*
  * @test
  * @summary Test miscellanous functionality related to JVM running in docker container
- * @requires docker.support
+ * @requires container.support
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar
- * @build CheckContainerized sun.hotspot.WhiteBox PrintContainerInfo
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @build CheckContainerized jdk.test.whitebox.WhiteBox PrintContainerInfo
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
  * @run driver TestMisc
  */
 import jdk.test.lib.containers.docker.Common;
@@ -117,11 +117,26 @@ public class TestMisc {
             "Maximum Memory Usage",
             "memory_max_usage_in_bytes",
             "maximum number of tasks",
-            "current number of tasks"
+            "current number of tasks",
+            "rss_usage_in_bytes",
+            "cache_usage_in_bytes"
         };
 
         for (String s : expectedToContain) {
             out.shouldContain(s);
+        }
+        String str = out.getOutput();
+        if (str.contains("cgroupv1")) {
+            out.shouldContain("kernel_memory_usage_in_bytes");
+            out.shouldContain("kernel_memory_max_usage_in_bytes");
+            out.shouldContain("kernel_memory_limit_in_bytes");
+        } else {
+            if (str.contains("cgroupv2")) {
+                out.shouldContain("memory_swap_current_in_bytes");
+                out.shouldContain("memory_swap_max_limit_in_bytes");
+            } else {
+                throw new RuntimeException("Output has to contain information about cgroupv1 or cgroupv2");
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,9 +232,7 @@ public abstract class ShellFolder extends File {
                 managerClass = null;
             }
         // swallow the exceptions below and use default shell folder
-        } catch(ClassNotFoundException e) {
-        } catch(NullPointerException e) {
-        } catch(SecurityException e) {
+        } catch (ClassNotFoundException | NullPointerException e) {
         }
 
         if (managerClass == null) {
@@ -253,13 +251,12 @@ public abstract class ShellFolder extends File {
 
     /**
      * Return a shell folder from a file object
-     * @exception FileNotFoundException if file does not exist
+     * @throws FileNotFoundException if file does not exist
      */
     public static ShellFolder getShellFolder(File file) throws FileNotFoundException {
         if (file instanceof ShellFolder) {
             return (ShellFolder)file;
         }
-
         if (!Files.exists(Paths.get(file.getPath()), LinkOption.NOFOLLOW_LINKS)) {
             throw new FileNotFoundException();
         }
@@ -513,7 +510,7 @@ public abstract class ShellFolder extends File {
 
     /**
      * Invokes the {@code task} which doesn't throw checked exceptions
-     * from its {@code call} method. If invokation is interrupted then Thread.currentThread().isInterrupted() will
+     * from its {@code call} method. If invocation is interrupted then Thread.currentThread().isInterrupted() will
      * be set and result will be {@code null}
      */
     public static <T> T invoke(Callable<T> task) {
@@ -526,7 +523,7 @@ public abstract class ShellFolder extends File {
 
     /**
      * Invokes the {@code task} which throws checked exceptions from its {@code call} method.
-     * If invokation is interrupted then Thread.currentThread().isInterrupted() will
+     * If invocation is interrupted then Thread.currentThread().isInterrupted() will
      * be set and InterruptedException will be thrown as well.
      */
     public static <T, E extends Throwable> T invoke(Callable<T> task, Class<E> exceptionClass)
@@ -564,7 +561,7 @@ public abstract class ShellFolder extends File {
          *
          * @param task a task to invoke
          * @throws Exception {@code InterruptedException} or an exception that was thrown from the {@code task}
-         * @return the result of {@code task}'s invokation
+         * @return the result of {@code task}'s invocation
          */
         <T> T invoke(Callable<T> task) throws Exception;
     }

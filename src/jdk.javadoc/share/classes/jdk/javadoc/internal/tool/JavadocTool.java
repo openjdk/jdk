@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,15 +57,10 @@ import jdk.javadoc.doclet.DocletEnvironment;
 import static jdk.javadoc.internal.tool.Main.Result.*;
 
 /**
- *  This class could be the main entry point for Javadoc when Javadoc is used as a
- *  component in a larger software system. It provides operations to
- *  construct a new javadoc processor, and to run it on a set of source
- *  files.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * This class could be the main entry point for Javadoc when Javadoc is used as a
+ * component in a larger software system. It provides operations to
+ * construct a new javadoc processor, and to run it on a set of source
+ * files.
  */
 public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
     ToolEnvironment toolEnv;
@@ -98,7 +93,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
     }
 
     /**
-     *  Construct a new javadoc tool.
+     * Construct a new javadoc tool.
      */
     public static JavadocTool make0(Context context) {
         JavadocLog log = null;
@@ -155,7 +150,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             return new DocEnvImpl(toolEnv, etable);
         }
 
-        ListBuffer<JCCompilationUnit> classTrees = new ListBuffer<>();
+        ListBuffer<JCCompilationUnit> compilationUnits = new ListBuffer<>();
 
         try {
             StandardJavaFileManager fm = toolEnv.fileManager instanceof StandardJavaFileManager sfm
@@ -166,7 +161,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             // Parse the files and collect the package names.
             for (String arg: javaNames) {
                 if (fm != null && arg.endsWith(".java") && isRegularFile(arg)) {
-                    parse(fm.getJavaFileObjects(arg), classTrees, true);
+                    parse(fm.getJavaFileObjects(arg), compilationUnits, true);
                 } else if (isValidPackageName(arg)) {
                     packageNames.add(arg);
                 } else if (arg.endsWith(".java")) {
@@ -184,10 +179,10 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             }
 
             // Parse file objects provide via the DocumentationTool API
-            parse(fileObjects, classTrees, true);
+            parse(fileObjects, compilationUnits, true);
 
             etable.packages(packageNames)
-                    .classTrees(classTrees.toList())
+                    .compilationUnits(compilationUnits.toList())
                     .scanSpecifiedItems();
 
             // abort, if errors were encountered during modules initialization
@@ -197,7 +192,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
 
             // Parse the files in the packages and subpackages to be documented
             ListBuffer<JCCompilationUnit> allTrees = new ListBuffer<>();
-            allTrees.addAll(classTrees);
+            allTrees.addAll(compilationUnits);
             parse(etable.getFilesToParse(), allTrees, false);
             modules.newRound();
             modules.initModules(allTrees.toList());
@@ -214,7 +209,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
                 return null;
             }
 
-            etable.setClassDeclList(listClasses(classTrees.toList()));
+            etable.setClassDeclList(listClasses(compilationUnits.toList()));
 
             dcfh.setHandler(dcfh.userCodeHandler);
             etable.analyze();

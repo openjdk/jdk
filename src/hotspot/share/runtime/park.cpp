@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/thread.hpp"
-#include "services/memTracker.hpp"
+#include "nmt/memTracker.hpp"
+#include "runtime/javaThread.hpp"
 
 // Lifecycle management for TSM ParkEvents.
 // ParkEvents are type-stable (TSM).
@@ -51,7 +50,7 @@
 // immediately.
 
 volatile int ParkEvent::ListLock = 0 ;
-ParkEvent * volatile ParkEvent::FreeList = NULL ;
+ParkEvent * volatile ParkEvent::FreeList = nullptr ;
 
 ParkEvent * ParkEvent::Allocate (Thread * t) {
   ParkEvent * ev ;
@@ -61,17 +60,17 @@ ParkEvent * ParkEvent::Allocate (Thread * t) {
   // Using a spin lock since we are part of the mutex impl.
   // 8028280: using concurrent free list without memory management can leak
   // pretty badly it turns out.
-  Thread::SpinAcquire(&ListLock, "ParkEventFreeListAllocate");
+  Thread::SpinAcquire(&ListLock);
   {
     ev = FreeList;
-    if (ev != NULL) {
+    if (ev != nullptr) {
       FreeList = ev->FreeNext;
     }
   }
   Thread::SpinRelease(&ListLock);
 
-  if (ev != NULL) {
-    guarantee (ev->AssociatedWith == NULL, "invariant") ;
+  if (ev != nullptr) {
+    guarantee (ev->AssociatedWith == nullptr, "invariant") ;
   } else {
     // Do this the hard way -- materialize a new ParkEvent.
     ev = new ParkEvent () ;
@@ -79,17 +78,17 @@ ParkEvent * ParkEvent::Allocate (Thread * t) {
   }
   ev->reset() ;                     // courtesy to caller
   ev->AssociatedWith = t ;          // Associate ev with t
-  ev->FreeNext       = NULL ;
+  ev->FreeNext       = nullptr ;
   return ev ;
 }
 
 void ParkEvent::Release (ParkEvent * ev) {
-  if (ev == NULL) return ;
-  guarantee (ev->FreeNext == NULL      , "invariant") ;
-  ev->AssociatedWith = NULL ;
+  if (ev == nullptr) return ;
+  guarantee (ev->FreeNext == nullptr      , "invariant") ;
+  ev->AssociatedWith = nullptr ;
   // Note that if we didn't have the TSM/immortal constraint, then
   // when reattaching we could trim the list.
-  Thread::SpinAcquire(&ListLock, "ParkEventFreeListRelease");
+  Thread::SpinAcquire(&ListLock);
   {
     ev->FreeNext = FreeList;
     FreeList = ev;

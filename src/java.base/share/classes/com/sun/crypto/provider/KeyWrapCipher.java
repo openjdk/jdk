@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,9 @@ import static com.sun.crypto.provider.KWUtil.*;
  * This class is the impl class for AES KeyWrap algorithms as defined in
  * <a href=https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-38F.pdf>
  * "Recommendation for Block Cipher Modes of Operation: Methods for Key Wrapping"
+ *
+ * @spec https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-38F.pdf
+ *      Recommendation for Block Cipher Modes of Operation: Methods for Key Wrapping
  */
 abstract class KeyWrapCipher extends CipherSpi {
 
@@ -121,6 +124,25 @@ abstract class KeyWrapCipher extends CipherSpi {
         public AES256_KWP_NoPadding() {
             super(new AESKeyWrapPadded(), null, 32);
         }
+    }
+
+    // validate the key algorithm/encoding and then returns the key bytes
+    // which callers should erase after use
+    private static byte[] checkKey(Key key, int fixedKeySize)
+            throws InvalidKeyException {
+
+        byte[] keyBytes = key.getEncoded();
+        if (keyBytes == null) {
+            throw new InvalidKeyException("Null key");
+        }
+        int keyLen = keyBytes.length;
+        if (!key.getAlgorithm().equalsIgnoreCase("AES") ||
+            !AESCrypt.isKeySizeValid(keyLen) ||
+            (fixedKeySize != -1 && fixedKeySize != keyLen)) {
+                throw new InvalidKeyException("Invalid key length: " +
+                        keyLen + " bytes");
+        }
+        return keyBytes;
     }
 
     // store the specified bytes, e.g. in[inOfs...(inOfs+inLen-1)] into
@@ -266,7 +288,7 @@ abstract class KeyWrapCipher extends CipherSpi {
                     padLen = SEMI_BLKSIZE - n;
                 }
             }
-            // then add the first semiblock and padLen to result
+            // then add the first semi-block and padLen to result
             result = Math.addExact(result, SEMI_BLKSIZE + padLen);
         } else {
             result = inLen - SEMI_BLKSIZE;
@@ -292,10 +314,8 @@ abstract class KeyWrapCipher extends CipherSpi {
     // actual impl for various engineInit(...) methods
     private void implInit(int opmode, Key key, byte[] iv, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
-        byte[] keyBytes = key.getEncoded();
-        if (keyBytes == null) {
-            throw new InvalidKeyException("Null key");
-        }
+        byte[] keyBytes = checkKey(key, fixedKeySize);
+
         this.opmode = opmode;
         boolean decrypting = (opmode == Cipher.DECRYPT_MODE ||
                 opmode == Cipher.UNWRAP_MODE);
@@ -322,7 +342,7 @@ abstract class KeyWrapCipher extends CipherSpi {
     protected void engineInit(int opmode, Key key, SecureRandom random)
         throws InvalidKeyException {
         try {
-            implInit(opmode, key, (byte[])null, random);
+            implInit(opmode, key, null, random);
         } catch (InvalidAlgorithmParameterException iae) {
             // should never happen
             throw new AssertionError(iae);
@@ -377,9 +397,9 @@ abstract class KeyWrapCipher extends CipherSpi {
         byte[] iv = null;
         if (params != null) {
             try {
-                AlgorithmParameterSpec spec =
+                IvParameterSpec spec =
                         params.getParameterSpec(IvParameterSpec.class);
-                iv = ((IvParameterSpec)spec).getIV();
+                iv = spec.getIV();
             } catch (InvalidParameterSpecException ispe) {
                 throw new InvalidAlgorithmParameterException(
                     "Only IvParameterSpec is accepted");
@@ -445,7 +465,7 @@ abstract class KeyWrapCipher extends CipherSpi {
         if (inLen <= 0) return;
 
         if (opmode == Cipher.ENCRYPT_MODE && dataIdx == 0) {
-            // the first semiblock is for iv, store data after it
+            // the first semi-block is for iv, store data after it
             dataIdx = SEMI_BLKSIZE;
         }
         store(in, inOfs, inLen);
@@ -545,7 +565,7 @@ abstract class KeyWrapCipher extends CipherSpi {
     // actual impl for various engineDoFinal(...) methods.
     // prepare 'out' buffer with the buffered bytes in 'dataBuf',
     // and the to-be-processed bytes in 'in', then perform single-part
-    // encryption/decrytion over 'out' buffer
+    // encryption/decryption over 'out' buffer
     private int implDoFinal(byte[] in, int inOfs, int inLen, byte[] out)
         throws IllegalBlockSizeException, BadPaddingException,
             ShortBufferException {
@@ -578,8 +598,8 @@ abstract class KeyWrapCipher extends CipherSpi {
     }
 
     // helper routine for in-place encryption.
-    // 'inBuf' = semiblock | plain text | extra bytes if padding is used
-    // 'inLen' = semiblock length + plain text length
+    // 'inBuf' = semi-block | plain text | extra bytes if padding is used
+    // 'inLen' = semi-block length + plain text length
     private int helperEncrypt(byte[] inBuf, int inLen)
             throws IllegalBlockSizeException, ShortBufferException {
 
@@ -629,7 +649,7 @@ abstract class KeyWrapCipher extends CipherSpi {
      */
     @Override
     protected AlgorithmParameters engineGetParameters() {
-        AlgorithmParameters params = null;
+        AlgorithmParameters params;
 
         byte[] iv = cipher.getIV();
         if (iv == null) {
@@ -656,21 +676,11 @@ abstract class KeyWrapCipher extends CipherSpi {
      * @exception InvalidKeyException if <code>key</code> is invalid.
      */
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
-        byte[] encoded = key.getEncoded();
-        if (encoded == null)  {
-            throw new InvalidKeyException("Cannot decide key length");
-        }
+        byte[] keyBytes = checkKey(key, fixedKeySize);
+        // only need length; erase immediately
+        Arrays.fill(keyBytes, (byte) 0);
+        return Math.multiplyExact(keyBytes.length, 8);
 
-        // only need length
-        Arrays.fill(encoded, (byte) 0);
-        int keyLen = encoded.length;
-        if (!key.getAlgorithm().equalsIgnoreCase("AES") ||
-            !AESCrypt.isKeySizeValid(keyLen) ||
-            (fixedKeySize != -1 && fixedKeySize != keyLen)) {
-            throw new InvalidKeyException("Invalid key length: " +
-                    keyLen + " bytes");
-        }
-        return Math.multiplyExact(keyLen, 8);
     }
 
     /**
@@ -704,7 +714,7 @@ abstract class KeyWrapCipher extends CipherSpi {
         // output size is known, allocate output buffer
         byte[] out = new byte[engineGetOutputSize(encoded.length)];
 
-        // reserve the first semiblock and do not write data
+        // reserve the first semi-block and do not write data
         int len = SEMI_BLKSIZE;
         System.arraycopy(encoded, 0, out, len, encoded.length);
         len += encoded.length;

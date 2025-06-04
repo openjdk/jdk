@@ -27,8 +27,9 @@
 
 #include "gc/shared/barrierSetConfig.hpp"
 #include "memory/allStatic.hpp"
-#include "metaprogramming/integralConstant.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#include <type_traits>
 
 // A decorator is an attribute or property that affects the way a memory access is performed in some way.
 // There are different groups of decorators. Some have to do with memory ordering, others to do with,
@@ -41,7 +42,7 @@ typedef uint64_t DecoratorSet;
 // The HasDecorator trait can help at compile-time determining whether a decorator set
 // has an intersection with a certain other decorator set
 template <DecoratorSet decorators, DecoratorSet decorator>
-struct HasDecorator: public IntegralConstant<bool, (decorators & decorator) != 0> {};
+struct HasDecorator: public std::integral_constant<bool, (decorators & decorator) != 0> {};
 
 // == General Decorators ==
 // * DECORATORS_NONE: This is the name for the empty decorator set (in absence of other decorators).
@@ -131,7 +132,7 @@ const DecoratorSet MO_DECORATOR_MASK = MO_UNORDERED | MO_RELAXED |
 // === Barrier Strength Decorators ===
 // * AS_RAW: The access will translate into a raw memory access, hence ignoring all semantic concerns
 //   except memory ordering and compressed oops. This will bypass runtime function pointer dispatching
-//   in the pipeline and hardwire to raw accesses without going trough the GC access barriers.
+//   in the pipeline and hardwire to raw accesses without going through the GC access barriers.
 //  - Accesses on oop* translate to raw memory accesses without runtime checks
 //  - Accesses on narrowOop* translate to encoded/decoded memory accesses without runtime checks
 //  - Accesses on HeapWord* translate to a runtime check choosing one of the above
@@ -236,10 +237,12 @@ namespace AccessInternal {
 
   // This function implements the above DecoratorFixup rules, but without meta
   // programming for code generation that does not use templates.
-  inline DecoratorSet decorator_fixup(DecoratorSet input_decorators) {
+  inline DecoratorSet decorator_fixup(DecoratorSet input_decorators, BasicType type) {
+    // Some call-sites don't specify that the access is performed on oops
+    DecoratorSet with_oop_decorators = input_decorators |= (is_reference_type(type) ? INTERNAL_VALUE_IS_OOP : 0);
     // If no reference strength has been picked, then strong will be picked
-    DecoratorSet ref_strength_default = input_decorators |
-      (((ON_DECORATOR_MASK & input_decorators) == 0 && (INTERNAL_VALUE_IS_OOP & input_decorators) != 0) ?
+    DecoratorSet ref_strength_default = with_oop_decorators |
+      (((ON_DECORATOR_MASK & with_oop_decorators) == 0 && (INTERNAL_VALUE_IS_OOP & input_decorators) != 0) ?
        ON_STRONG_OOP_REF : DECORATORS_NONE);
     // If no memory ordering has been picked, unordered will be picked
     DecoratorSet memory_ordering_default = ref_strength_default |

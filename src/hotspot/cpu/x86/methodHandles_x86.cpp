@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/macroAssembler.hpp"
 #include "classfile/vmClasses.hpp"
 #include "compiler/disassembler.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -78,28 +77,29 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
   InstanceKlass** klass_addr = vmClasses::klass_addr_at(klass_id);
   Klass* klass = vmClasses::klass_at(klass_id);
   Register temp = rdi;
-  Register temp2 = noreg;
-  LP64_ONLY(temp2 = rscratch1);  // used by MacroAssembler::cmpptr and load_klass
   Label L_ok, L_bad;
   BLOCK_COMMENT("verify_klass {");
   __ verify_oop(obj);
   __ testptr(obj, obj);
   __ jcc(Assembler::zero, L_bad);
-  __ push(temp); if (temp2 != noreg)  __ push(temp2);
-#define UNPUSH { if (temp2 != noreg)  __ pop(temp2);  __ pop(temp); }
-  __ load_klass(temp, obj, temp2);
-  __ cmpptr(temp, ExternalAddress((address) klass_addr));
+#define PUSH { __ push(temp); __ push(rscratch1);               }
+#define POP  {                __ pop(rscratch1);  __ pop(temp); }
+  PUSH;
+  __ load_klass(temp, obj, rscratch1);
+  __ cmpptr(temp, ExternalAddress((address) klass_addr), rscratch1);
   __ jcc(Assembler::equal, L_ok);
   intptr_t super_check_offset = klass->super_check_offset();
   __ movptr(temp, Address(temp, super_check_offset));
-  __ cmpptr(temp, ExternalAddress((address) klass_addr));
+  __ cmpptr(temp, ExternalAddress((address) klass_addr), rscratch1);
   __ jcc(Assembler::equal, L_ok);
-  UNPUSH;
+  POP;
   __ bind(L_bad);
   __ STOP(error_message);
   __ BIND(L_ok);
-  UNPUSH;
+  POP;
   BLOCK_COMMENT("} verify_klass");
+#undef POP
+#undef PUSH
 }
 
 void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, Register member_reg, Register temp) {
@@ -122,32 +122,73 @@ void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, Registe
   __ bind(L);
 }
 
-#endif //ASSERT
+void MethodHandles::verify_method(MacroAssembler* _masm, Register method, Register temp, vmIntrinsics::ID iid) {
+  BLOCK_COMMENT("verify_method {");
+  __ verify_method_ptr(method);
+  if (VerifyMethodHandles) {
+    Label L_ok;
+    assert_different_registers(method, temp);
+
+    const Register method_holder = temp;
+    __ load_method_holder(method_holder, method);
+    __ push(method_holder); // keep holder around for diagnostic purposes
+
+    switch (iid) {
+      case vmIntrinsicID::_invokeBasic:
+        // Require compiled LambdaForm class to be fully initialized.
+        __ cmpb(Address(method_holder, InstanceKlass::init_state_offset()), InstanceKlass::fully_initialized);
+        __ jccb(Assembler::equal, L_ok);
+        break;
+
+      case vmIntrinsicID::_linkToStatic:
+        __ clinit_barrier(method_holder, &L_ok);
+        break;
+
+      case vmIntrinsicID::_linkToVirtual:
+      case vmIntrinsicID::_linkToSpecial:
+      case vmIntrinsicID::_linkToInterface:
+        // Class initialization check is too strong here. Just ensure that initialization has been initiated.
+        __ cmpb(Address(method_holder, InstanceKlass::init_state_offset()), InstanceKlass::being_initialized);
+        __ jcc(Assembler::greaterEqual, L_ok);
+
+        // init_state check failed, but it may be an abstract interface method
+        __ load_unsigned_short(temp, Address(method, Method::access_flags_offset()));
+        __ testl(temp, JVM_ACC_ABSTRACT);
+        __ jccb(Assembler::notZero, L_ok);
+        break;
+
+      default:
+        fatal("unexpected intrinsic %d: %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
+    }
+
+    // clinit check failed for a concrete method
+    __ STOP("Method holder klass is not initialized");
+
+    __ BIND(L_ok);
+    __ pop(method_holder); // restore stack layout
+  }
+  BLOCK_COMMENT("} verify_method");
+}
+#endif // ASSERT
 
 void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register method, Register temp,
-                                            bool for_compiler_entry) {
+                                            bool for_compiler_entry, vmIntrinsics::ID iid) {
   assert(method == rbx, "interpreter calling convention");
 
    Label L_no_such_method;
    __ testptr(rbx, rbx);
    __ jcc(Assembler::zero, L_no_such_method);
 
-  __ verify_method_ptr(method);
+  verify_method(_masm, method, temp, iid);
 
   if (!for_compiler_entry && JvmtiExport::can_post_interpreter_events()) {
     Label run_compiled_code;
     // JVMTI events, such as single-stepping, are implemented partly by avoiding running
     // compiled code in threads for which the event is enabled.  Check here for
     // interp_only_mode if these events CAN be enabled.
-#ifdef _LP64
-    Register rthread = r15_thread;
-#else
-    Register rthread = temp;
-    __ get_thread(rthread);
-#endif
     // interp_only is an int, on little endian it is sufficient to test the byte only
     // Is a cmpl faster?
-    __ cmpb(Address(rthread, JavaThread::interp_only_mode_offset()), 0);
+    __ cmpb(Address(r15_thread, JavaThread::interp_only_mode_offset()), 0);
     __ jccb(Assembler::zero, run_compiled_code);
     __ jmp(Address(method, Method::interpreter_entry_offset()));
     __ BIND(run_compiled_code);
@@ -158,7 +199,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   __ jmp(Address(method, entry_offset));
 
   __ bind(L_no_such_method);
-  __ jump(RuntimeAddress(StubRoutines::throw_AbstractMethodError_entry()));
+  __ jump(RuntimeAddress(SharedRuntime::throw_AbstractMethodError_entry()));
 }
 
 void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
@@ -182,7 +223,7 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
   __ verify_oop(method_temp);
   __ access_load_at(T_ADDRESS, IN_HEAP, method_temp,
                     Address(method_temp, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset())),
-                    noreg, noreg);
+                    noreg);
 
   if (VerifyMethodHandles && !for_compiler_entry) {
     // make sure recv is already on stack
@@ -199,8 +240,23 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
     __ BIND(L);
   }
 
-  jump_from_method_handle(_masm, method_temp, temp2, for_compiler_entry);
+  jump_from_method_handle(_masm, method_temp, temp2, for_compiler_entry, vmIntrinsics::_invokeBasic);
   BLOCK_COMMENT("} jump_to_lambda_form");
+}
+
+void MethodHandles::jump_to_native_invoker(MacroAssembler* _masm, Register nep_reg, Register temp_target) {
+  BLOCK_COMMENT("jump_to_native_invoker {");
+  assert_different_registers(nep_reg, temp_target);
+  assert(nep_reg != noreg, "required register");
+
+  // Load the invoker, as NEP -> .invoker
+  __ verify_oop(nep_reg);
+  __ access_load_at(T_ADDRESS, IN_HEAP, temp_target,
+                    Address(nep_reg, NONZERO(jdk_internal_foreign_abi_NativeEntryPoint::downcall_stub_address_offset_in_bytes())),
+                    noreg);
+
+  __ jmp(temp_target);
+  BLOCK_COMMENT("} jump_to_native_invoker");
 }
 
 
@@ -215,14 +271,14 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     // They are linked to Java-generated adapters via MethodHandleNatives.linkMethod.
     // They all allow an appendix argument.
     __ hlt();           // empty stubs make SG sick
-    return NULL;
+    return nullptr;
   }
 
   // No need in interpreter entry for linkToNative for now.
   // Interpreter calls compiled entry through i2c.
   if (iid == vmIntrinsics::_linkToNative) {
     __ hlt();
-    return NULL;
+    return nullptr;
   }
 
   // rsi/r13: sender SP (must preserve; see prepare_to_jump_from_interpreted)
@@ -244,7 +300,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
 
     Label L;
     BLOCK_COMMENT("verify_intrinsic_id {");
-    __ cmpw(Address(rbx_method, Method::intrinsic_id_offset_in_bytes()), (int) iid);
+    __ cmpw(Address(rbx_method, Method::intrinsic_id_offset()), (int) iid);
     __ jcc(Assembler::equal, L);
     if (iid == vmIntrinsics::_linkToVirtual ||
         iid == vmIntrinsics::_linkToSpecial) {
@@ -309,40 +365,26 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   assert(is_signature_polymorphic(iid), "expected invoke iid");
   Register rbx_method = rbx;   // eventual target of this invocation
   // temps used in this code are not used in *either* compiled or interpreted calling sequences
-#ifdef _LP64
   Register temp1 = rscratch1;
   Register temp2 = rscratch2;
   Register temp3 = rax;
   if (for_compiler_entry) {
-    assert(receiver_reg == (iid == vmIntrinsics::_linkToStatic ? noreg : j_rarg0), "only valid assignment");
+    assert(receiver_reg == (iid == vmIntrinsics::_linkToStatic || iid == vmIntrinsics::_linkToNative ? noreg : j_rarg0), "only valid assignment");
     assert_different_registers(temp1,        j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5);
     assert_different_registers(temp2,        j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5);
     assert_different_registers(temp3,        j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5);
-  }
-#else
-  Register temp1 = (for_compiler_entry ? rsi : rdx);
-  Register temp2 = rdi;
-  Register temp3 = rax;
-  if (for_compiler_entry) {
-    assert(receiver_reg == (iid == vmIntrinsics::_linkToStatic ? noreg : rcx), "only valid assignment");
-    assert_different_registers(temp1,        rcx, rdx);
-    assert_different_registers(temp2,        rcx, rdx);
-    assert_different_registers(temp3,        rcx, rdx);
-  }
-#endif
-  else {
+  } else {
     assert_different_registers(temp1, temp2, temp3, saved_last_sp_register());  // don't trash lastSP
   }
   assert_different_registers(temp1, temp2, temp3, receiver_reg);
   assert_different_registers(temp1, temp2, temp3, member_reg);
 
-  if (iid == vmIntrinsics::_invokeBasic || iid == vmIntrinsics::_linkToNative) {
-    if (iid == vmIntrinsics::_linkToNative) {
-      assert(for_compiler_entry, "only compiler entry is supported");
-    }
+  if (iid == vmIntrinsics::_invokeBasic) {
     // indirect through MH.form.vmentry.vmtarget
     jump_to_lambda_form(_masm, receiver_reg, rbx_method, temp1, for_compiler_entry);
-
+  } else if (iid == vmIntrinsics::_linkToNative) {
+    assert(for_compiler_entry, "only compiler entry is supported");
+    jump_to_native_invoker(_masm, member_reg, temp1);
   } else {
     // The method is a member invoker used by direct method handles.
     if (VerifyMethodHandles) {
@@ -364,7 +406,6 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         __ null_check(receiver_reg);
       } else {
         // load receiver klass itself
-        __ null_check(receiver_reg, oopDesc::klass_offset_in_bytes());
         __ load_klass(temp1_recv_klass, receiver_reg, temp2);
         __ verify_klass_ptr(temp1_recv_klass);
       }
@@ -407,7 +448,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         verify_ref_kind(_masm, JVM_REF_invokeSpecial, member_reg, temp3);
       }
       __ load_heap_oop(rbx_method, member_vmtarget);
-      __ access_load_at(T_ADDRESS, IN_HEAP, rbx_method, vmtarget_method, noreg, noreg);
+      __ access_load_at(T_ADDRESS, IN_HEAP, rbx_method, vmtarget_method, noreg);
       break;
 
     case vmIntrinsics::_linkToStatic:
@@ -415,7 +456,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         verify_ref_kind(_masm, JVM_REF_invokeStatic, member_reg, temp3);
       }
       __ load_heap_oop(rbx_method, member_vmtarget);
-      __ access_load_at(T_ADDRESS, IN_HEAP, rbx_method, vmtarget_method, noreg, noreg);
+      __ access_load_at(T_ADDRESS, IN_HEAP, rbx_method, vmtarget_method, noreg);
       break;
 
     case vmIntrinsics::_linkToVirtual:
@@ -429,7 +470,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
       // pick out the vtable index from the MemberName, and then we can discard it:
       Register temp2_index = temp2;
-      __ access_load_at(T_ADDRESS, IN_HEAP, temp2_index, member_vmindex, noreg, noreg);
+      __ access_load_at(T_ADDRESS, IN_HEAP, temp2_index, member_vmindex, noreg);
 
       if (VerifyMethodHandles) {
         Label L_index_ok;
@@ -461,7 +502,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       __ verify_klass_ptr(temp3_intf);
 
       Register rbx_index = rbx_method;
-      __ access_load_at(T_ADDRESS, IN_HEAP, rbx_index, member_vmindex, noreg, noreg);
+      __ access_load_at(T_ADDRESS, IN_HEAP, rbx_index, member_vmindex, noreg);
       if (VerifyMethodHandles) {
         Label L;
         __ cmpl(rbx_index, 0);
@@ -491,12 +532,11 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     // After figuring out which concrete method to call, jump into it.
     // Note that this works in the interpreter with no data motion.
     // But the compiled version will require that rcx_recv be shifted out.
-    __ verify_method_ptr(rbx_method);
-    jump_from_method_handle(_masm, rbx_method, temp1, for_compiler_entry);
+    jump_from_method_handle(_masm, rbx_method, temp1, for_compiler_entry, iid);
 
     if (iid == vmIntrinsics::_linkToInterface) {
       __ bind(L_incompatible_class_change_error);
-      __ jump(RuntimeAddress(StubRoutines::throw_IncompatibleClassChangeError_entry()));
+      __ jump(RuntimeAddress(SharedRuntime::throw_IncompatibleClassChangeError_entry()));
     }
   }
 }
@@ -507,8 +547,8 @@ void trace_method_handle_stub(const char* adaptername,
                               intptr_t* saved_regs,
                               intptr_t* entry_sp) {
   // called as a leaf from native code: do not block the JVM!
-  bool has_mh = (strstr(adaptername, "/static") == NULL &&
-                 strstr(adaptername, "linkTo") == NULL);    // static linkers don't have MH
+  bool has_mh = (strstr(adaptername, "/static") == nullptr &&
+                 strstr(adaptername, "linkTo") == nullptr);    // static linkers don't have MH
   const char* mh_reg_name = has_mh ? "rcx_mh" : "rcx";
   log_info(methodhandles)("MH %s %s=" PTR_FORMAT " sp=" PTR_FORMAT, adaptername, mh_reg_name, p2i(mh), p2i(entry_sp));
 
@@ -517,15 +557,16 @@ void trace_method_handle_stub(const char* adaptername,
     ResourceMark rm;
     LogStream ls(lt);
     ls.print_cr("Registers:");
-    const int saved_regs_count = RegisterImpl::number_of_registers;
+    const int saved_regs_count = Register::number_of_registers;
     for (int i = 0; i < saved_regs_count; i++) {
       Register r = as_Register(i);
       // The registers are stored in reverse order on the stack (by pusha).
 #ifdef AMD64
-      assert(RegisterImpl::number_of_registers == 16, "sanity");
+      int num_regs = UseAPX ? 32 : 16;
+      assert(Register::available_gp_registers() == num_regs, "sanity");
       if (r == rsp) {
         // rsp is actually not stored by pusha(), compute the old rsp from saved_regs (rsp after pusha): saved_regs + 16 = old rsp
-        ls.print("%3s=" PTR_FORMAT, r->name(), (intptr_t)(&saved_regs[16]));
+        ls.print("%3s=" PTR_FORMAT, r->name(), (intptr_t)(&saved_regs[num_regs]));
       } else {
         ls.print("%3s=" PTR_FORMAT, r->name(), saved_regs[((saved_regs_count - 1) - i)]);
       }
@@ -557,7 +598,7 @@ void trace_method_handle_stub(const char* adaptername,
 
       frame cur_frame = os::current_frame();
 
-      if (cur_frame.fp() != 0) {  // not walkable
+      if (cur_frame.fp() != nullptr) { // not walkable
 
         // Robust search of trace_calling_frame (independent of inlining).
         // Assumes saved_regs comes from a pusha in the trace_calling_frame.
@@ -570,7 +611,7 @@ void trace_method_handle_stub(const char* adaptername,
         assert(cur_frame.sp() < saved_regs, "registers not saved on stack ?");
         frame trace_calling_frame = cur_frame;
         while (trace_calling_frame.fp() < saved_regs) {
-          assert(trace_calling_frame.cb() == NULL, "not a C frame");
+          assert(trace_calling_frame.cb() == nullptr, "not a C frame");
           trace_calling_frame = os::get_sender_for_C_frame(&trace_calling_frame);
         }
         assert(trace_calling_frame.sp() < saved_regs, "wrong frame");
@@ -631,23 +672,13 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   __ enter();
   __ andptr(rsp, -16); // align stack if needed for FPU state
   __ pusha();
-  __ mov(rbx, rsp); // for retreiving saved_regs
+  __ mov(rbx, rsp); // for retrieving saved_regs
   // Note: saved_regs must be in the entered frame for the
   // robust stack walking implemented in trace_method_handle_stub.
 
   // save FP result, valid at some call sites (adapter_opt_return_float, ...)
   __ decrement(rsp, 2 * wordSize);
-#ifdef _LP64
   __ movdbl(Address(rsp, 0), xmm0);
-#else
-  if  (UseSSE >= 2) {
-    __ movdbl(Address(rsp, 0), xmm0);
-  } else if (UseSSE == 1) {
-    __ movflt(Address(rsp, 0), xmm0);
-  } else {
-    __ fst_d(Address(rsp, 0));
-  }
-#endif // LP64
 
   // Incoming state:
   // rcx: method handle
@@ -658,21 +689,11 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   __ push(rbx);               // pusha saved_regs
   __ push(rcx);               // mh
   __ push(rcx);               // slot for adaptername
-  __ movptr(Address(rsp, 0), (intptr_t) adaptername);
+  __ movptr(Address(rsp, 0), (intptr_t) adaptername, rscratch1);
   __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, trace_method_handle_stub_wrapper), rsp);
   __ increment(rsp, sizeof(MethodHandleStubArguments));
 
-#ifdef _LP64
   __ movdbl(xmm0, Address(rsp, 0));
-#else
-  if  (UseSSE >= 2) {
-    __ movdbl(xmm0, Address(rsp, 0));
-  } else if (UseSSE == 1) {
-    __ movflt(xmm0, Address(rsp, 0));
-  } else {
-    __ fld_d(Address(rsp, 0));
-  }
-#endif // LP64
   __ increment(rsp, 2 * wordSize);
 
   __ popa();

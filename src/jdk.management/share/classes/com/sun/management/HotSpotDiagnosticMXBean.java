@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.lang.management.PlatformManagedObject;
  * <blockquote>
  *    {@code com.sun.management:type=HotSpotDiagnostic}
  * </blockquote>
-.*
+ *
  * It can be obtained by calling the
  * {@link PlatformManagedObject#getObjectName} method.
  *
@@ -47,6 +47,8 @@ import java.lang.management.PlatformManagedObject;
  * {@code null} unless it's stated otherwise.
  *
  * @see java.lang.management.ManagementFactory#getPlatformMXBeans(Class)
+ *
+ * @since 1.6
  */
 public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
     /**
@@ -67,11 +69,6 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
      * @throws UnsupportedOperationException if this operation is not supported.
      * @throws IllegalArgumentException if {@code outputFile} does not end with ".hprof" suffix.
      * @throws NullPointerException if {@code outputFile} is {@code null}.
-     * @throws SecurityException
-     *         If a security manager exists and its {@link
-     *         java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *         method denies write access to the named file
-     *         or the caller does not have ManagmentPermission("control").
      */
     public void dumpHeap(String outputFile, boolean live) throws IOException;
 
@@ -111,10 +108,50 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
      * @throws IllegalArgumentException if the new value is invalid.
      * @throws IllegalArgumentException if the VM option is not writable.
      * @throws NullPointerException if name or value is {@code null}.
-     *
-     * @throws  java.lang.SecurityException
-     *     if a security manager exists and the caller does not have
-     *     ManagementPermission("control").
      */
     public void setVMOption(String name, String value);
+
+    /**
+     * Generate a thread dump to the given file in the given format. The
+     * {@code outputFile} parameter must be an absolute path to a file that
+     * does not exist.
+     *
+     * <p> The thread dump will include output for all platform threads. It may
+     * include output for some or all virtual threads.
+     *
+     * @implSpec
+     * The default implementation throws {@code UnsupportedOperationException}.
+     *
+     * @apiNote
+     * The output file is required to be an absolute path as the MXBean may be
+     * accessed remotely from a tool or program with a different current working
+     * directory.
+     *
+     * @param  outputFile the path to the file to create
+     * @param  format the format to use
+     * @throws IllegalArgumentException if the file path is not absolute
+     * @throws IOException if the file already exists or an I/O exception is
+     *         thrown writing to the file
+     * @throws NullPointerException if either parameter is {@code null}
+     * @throws UnsupportedOperationException if this operation is not supported
+     * @since 21
+     */
+    default void dumpThreads(String outputFile, ThreadDumpFormat format) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Thread dump format.
+     * @since 21
+     */
+    public static enum ThreadDumpFormat {
+        /**
+         * Plain text format.
+         */
+        TEXT_PLAIN,
+        /**
+         * JSON (JavaScript Object Notation) format.
+         */
+        JSON,
+    }
 }

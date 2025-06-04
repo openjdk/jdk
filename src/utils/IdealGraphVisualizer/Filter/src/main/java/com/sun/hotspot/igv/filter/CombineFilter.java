@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,9 @@
  */
 package com.sun.hotspot.igv.filter;
 
-import com.sun.hotspot.igv.data.Properties;
-import com.sun.hotspot.igv.data.Properties.PropertyMatcher;
 import com.sun.hotspot.igv.graph.*;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  *
@@ -53,12 +49,11 @@ public class CombineFilter extends AbstractFilter {
     @Override
     public void apply(Diagram diagram) {
 
-        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(diagram.getFigures());
         for (CombineRule r : rules) {
 
-            List<Figure> list = selector.selectMultiple(r.getFirstMatcher());
-            Set<Figure> figuresToRemove = new HashSet<>();
-            for (Figure f : list) {
+            List<Figure> first = r.getFirstSelector().selected(diagram);
+            List<Figure> second = r.getSecondSelector().selected(diagram);
+            for (Figure f : first) {
 
                 List<Figure> successors = new ArrayList<>(f.getSuccessors());
                 if (r.isReversed()) {
@@ -67,16 +62,16 @@ public class CombineFilter extends AbstractFilter {
                         InputSlot slot = null;
 
                         for (InputSlot s : succ.getInputSlots()) {
-                            for (Connection c : s.getConnections()) {
+                            for (FigureConnection c : s.getConnections()) {
                                 if (c.getOutputSlot().getFigure() == f) {
                                     slot = s;
                                 }
                             }
                         }
 
-                        slot.getSource().addSourceNodes(f.getSource());
-                        if (r.getShortProperty() != null) {
-                            String s = f.getProperties().get(r.getShortProperty());
+                        slot.getSource().addSourceNode(f.getInputNode());
+                        if (r.getPropertyNames() != null && r.getPropertyNames().length > 0) {
+                            String s = r.getFirstMatchingProperty(f);
                             if (s != null && s.length() > 0) {
                                 slot.setShortName(s);
                                 slot.setText(s);
@@ -97,25 +92,22 @@ public class CombineFilter extends AbstractFilter {
                         }
 
                         for (InputSlot s : f.getInputSlots()) {
-                            for (Connection c : s.getConnections()) {
-                                Connection newConn = diagram.createConnection(slot, c.getOutputSlot(), c.getLabel(), c.getType());
+                            for (FigureConnection c : s.getConnections()) {
+                                FigureConnection newConn = diagram.createConnection(slot, c.getOutputSlot(), c.getLabel());
                                 newConn.setColor(c.getColor());
                                 newConn.setStyle(c.getStyle());
                             }
                         }
-
-                        figuresToRemove.add(f);
                     }
                 } else {
 
                     for (Figure succ : successors) {
-                        if (succ.getPredecessors().size() == 1 && succ.getInputSlots().size() == 1) {
-                            if (succ.getProperties().selectSingle(r.getSecondMatcher()) != null && succ.getOutputSlots().size() == 1) {
-
+                        if (succ.getPredecessors().size() == 1) {
+                            if (second.contains(succ) && succ.getOutputSlots().size() <= 1) {
 
                                 OutputSlot oldSlot = null;
                                 for (OutputSlot s : f.getOutputSlots()) {
-                                    for (Connection c : s.getConnections()) {
+                                    for (FigureConnection c : s.getConnections()) {
                                         if (c.getInputSlot().getFigure() == succ) {
                                             oldSlot = s;
                                         }
@@ -124,15 +116,19 @@ public class CombineFilter extends AbstractFilter {
 
                                 assert oldSlot != null;
 
-                                OutputSlot nextSlot = succ.getOutputSlots().get(0);
+                                OutputSlot nextSlot = null;
+                                if (succ.getOutputSlots().size() == 1) {
+                                    nextSlot = succ.getOutputSlots().get(0);
+                                }
+
                                 int pos = 0;
                                 if (succ.getProperties().get("con") != null) {
                                     pos = Integer.parseInt(succ.getProperties().get("con"));
                                 }
                                 OutputSlot slot = f.createOutputSlot(pos);
-                                slot.getSource().addSourceNodes(succ.getSource());
-                                if (r.getShortProperty() != null) {
-                                    String s = succ.getProperties().get(r.getShortProperty());
+                                slot.getSource().addSourceNode(succ.getInputNode());
+                                if (r.getPropertyNames() != null && r.getPropertyNames().length > 0) {
+                                    String s = r.getFirstMatchingProperty(succ);
                                     if (s != null && s.length() > 0) {
                                         slot.setShortName(s);
                                         slot.setText(s);
@@ -155,14 +151,15 @@ public class CombineFilter extends AbstractFilter {
                                         }
                                     }
                                 }
-                                for (Connection c : nextSlot.getConnections()) {
-                                    Connection newConn = diagram.createConnection(c.getInputSlot(), slot, c.getLabel(), c.getType());
-                                    newConn.setColor(c.getColor());
-                                    newConn.setStyle(c.getStyle());
+                                if (nextSlot != null) {
+                                    for (FigureConnection c : nextSlot.getConnections()) {
+                                        FigureConnection newConn = diagram.createConnection(c.getInputSlot(), slot, c.getLabel());
+                                        newConn.setColor(c.getColor());
+                                        newConn.setStyle(c.getStyle());
+                                    }
                                 }
 
-
-                                figuresToRemove.add(succ);
+                                diagram.removeFigure(succ);
 
                                 if (oldSlot.getConnections().size() == 0) {
                                     f.removeSlot(oldSlot);
@@ -172,8 +169,6 @@ public class CombineFilter extends AbstractFilter {
                     }
                 }
             }
-
-            diagram.removeAllFigures(figuresToRemove);
         }
     }
 
@@ -183,41 +178,36 @@ public class CombineFilter extends AbstractFilter {
 
     public static class CombineRule {
 
-        private PropertyMatcher first;
-        private PropertyMatcher second;
+        private Selector first;
+        private Selector second;
         private boolean reversed;
-        private String shortProperty;
+        private String[] propertyNames;
 
-        public CombineRule(PropertyMatcher first, PropertyMatcher second) {
-            this(first, second, false);
-
-        }
-
-        public CombineRule(PropertyMatcher first, PropertyMatcher second, boolean reversed) {
-            this(first, second, reversed, null);
-        }
-
-        public CombineRule(PropertyMatcher first, PropertyMatcher second, boolean reversed, String shortProperty) {
+        public CombineRule(Selector first, Selector second, boolean reversed, String[] propertyNames) {
             this.first = first;
             this.second = second;
             this.reversed = reversed;
-            this.shortProperty = shortProperty;
+            this.propertyNames = propertyNames;
         }
 
         public boolean isReversed() {
             return reversed;
         }
 
-        public PropertyMatcher getFirstMatcher() {
+        public Selector getFirstSelector() {
             return first;
         }
 
-        public PropertyMatcher getSecondMatcher() {
+        public Selector getSecondSelector() {
             return second;
         }
 
-        public String getShortProperty() {
-            return shortProperty;
+        public String[] getPropertyNames() {
+            return propertyNames;
+        }
+
+        public String getFirstMatchingProperty(Figure figure) {
+            return AbstractFilter.getFirstMatchingProperty(figure, propertyNames);
         }
     }
 }

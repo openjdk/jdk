@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,24 +24,21 @@
  */
 
 package java.lang.management;
-import java.io.FilePermission;
+
 import java.io.IOException;
 import javax.management.DynamicMBean;
+import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerFactory;
-import javax.management.MBeanServerPermission;
+import javax.management.NotCompliantMBeanException;
 import javax.management.NotificationEmitter;
 import javax.management.ObjectName;
+import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
 import javax.management.MalformedObjectNameException;
 import javax.management.StandardEmitterMBean;
 import javax.management.StandardMBean;
-import java.security.AccessController;
-import java.security.Permission;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -94,7 +91,6 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  * <p>
  * An application can access a platform MXBean in the following ways:
  * <h3>1. Direct access to an MXBean interface</h3>
- * <blockquote>
  * <ul>
  *     <li>Get an MXBean instance by calling the
  *         {@link #getPlatformMXBean(Class) getPlatformMXBean} or
@@ -129,7 +125,6 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  *         for details.
  *        </li>
  * </ul>
- * </blockquote>
  *
  * <p>
  * The {@link #getPlatformManagementInterfaces getPlatformManagementInterfaces}
@@ -246,8 +241,7 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  * @author  Mandy Chung
  * @since   1.5
  */
-@SuppressWarnings({"removal",
-                   "doclint:reference"}) // cross-module links
+@SuppressWarnings("doclint:reference") // cross-module links
 public class ManagementFactory {
     // A class with only static fields and methods.
     private ManagementFactory() {};
@@ -467,21 +461,10 @@ public class ManagementFactory {
      *         MXBeans are registered into the platform {@code MBeanServer}
      *         at the first time this method is called.
      *
-     * @throws SecurityException if there is a security manager
-     * and the caller does not have the permission required by
-     * {@link javax.management.MBeanServerFactory#createMBeanServer}.
-     *
      * @see javax.management.MBeanServerFactory
      * @see javax.management.MBeanServerFactory#createMBeanServer
      */
     public static synchronized MBeanServer getPlatformMBeanServer() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            Permission perm = new MBeanServerPermission("createMBeanServer");
-            sm.checkPermission(perm);
-        }
-
         if (platformMBeanServer == null) {
             platformMBeanServer = MBeanServerFactory.createMBeanServer();
             platformComponents()
@@ -600,10 +583,7 @@ public class ManagementFactory {
         // Only allow MXBean interfaces from the platform modules loaded by the
         // bootstrap or platform class loader
         final Class<?> cls = mxbeanInterface;
-        @SuppressWarnings("removal")
-        ClassLoader loader =
-            AccessController.doPrivileged(
-                (PrivilegedAction<ClassLoader>) () -> cls.getClassLoader());
+        ClassLoader loader = cls.getClassLoader();
         if (!jdk.internal.misc.VM.isSystemDomainLoader(loader)) {
             throw new IllegalArgumentException(mxbeanName +
                 " is not a platform MXBean");
@@ -632,7 +612,7 @@ public class ManagementFactory {
     // using newPlatformMXBeanProxy(mbs, on, LoggingMXBean.class)
     // even though the underlying MXBean no longer implements
     // java.util.logging.LoggingMXBean.
-    // Altough java.util.logging.LoggingMXBean is deprecated, an application
+    // Although java.util.logging.LoggingMXBean is deprecated, an application
     // that uses newPlatformMXBeanProxy(mbs, on, LoggingMXBean.class) will
     // continue to work.
     //
@@ -888,29 +868,22 @@ public class ManagementFactory {
     private static final String NOTIF_EMITTER =
         "javax.management.NotificationEmitter";
 
-    @SuppressWarnings("removal")
     private static void addMXBean(final MBeanServer mbs, String name, final Object pmo)
     {
         try {
             ObjectName oname = ObjectName.getInstance(name);
             // Make DynamicMBean out of MXBean by wrapping it with a StandardMBean
-            AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
-                final DynamicMBean dmbean;
-                if (pmo instanceof DynamicMBean) {
-                    dmbean = DynamicMBean.class.cast(pmo);
-                } else if (pmo instanceof NotificationEmitter) {
-                    dmbean = new StandardEmitterMBean(pmo, null, true, (NotificationEmitter) pmo);
-                } else {
-                    dmbean = new StandardMBean(pmo, null, true);
-                }
-
-                mbs.registerMBean(dmbean, oname);
-                return null;
-            });
-        } catch (MalformedObjectNameException mone) {
-            throw new IllegalArgumentException(mone);
-        } catch (PrivilegedActionException e) {
-            throw new RuntimeException(e.getException());
+            final DynamicMBean dmbean;
+            if (pmo instanceof DynamicMBean) {
+                dmbean = DynamicMBean.class.cast(pmo);
+            } else if (pmo instanceof NotificationEmitter) {
+                dmbean = new StandardEmitterMBean(pmo, null, true, (NotificationEmitter) pmo);
+            } else {
+                dmbean = new StandardMBean(pmo, null, true);
+            }
+            mbs.registerMBean(dmbean, oname);
+        } catch (MalformedObjectNameException | InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException e) {
+            throw new IllegalArgumentException(e);
         }
     }
 
@@ -924,20 +897,11 @@ public class ManagementFactory {
 
         static {
             // get all providers
-            @SuppressWarnings("removal")
-            List<PlatformMBeanProvider> providers = AccessController.doPrivileged(
-                new PrivilegedAction<List<PlatformMBeanProvider>>() {
-                    @Override
-                    public List<PlatformMBeanProvider> run() {
-                        List<PlatformMBeanProvider> all = new ArrayList<>();
-                        for (PlatformMBeanProvider provider : ServiceLoader.loadInstalled(PlatformMBeanProvider.class)) {
-                            all.add(provider);
-                        }
-                        all.add(new DefaultPlatformMBeanProvider());
-                        return all;
-                    }
-                }, null, new FilePermission("<<ALL FILES>>", "read"),
-                new RuntimePermission("sun.management.spi.PlatformMBeanProvider.subclass"));
+            List<PlatformMBeanProvider> providers = new ArrayList<>();
+            for (PlatformMBeanProvider provider : ServiceLoader.loadInstalled(PlatformMBeanProvider.class)) {
+                providers.add(provider);
+            }
+            providers.add(new DefaultPlatformMBeanProvider());
 
             // load all platform components into a map
             var map = new HashMap<String, PlatformComponent<?>>();
@@ -1020,11 +984,8 @@ public class ManagementFactory {
         loadNativeLib();
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings("restricted")
     private static void loadNativeLib() {
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            System.loadLibrary("management");
-            return null;
-        });
+        System.loadLibrary("management");
     }
 }

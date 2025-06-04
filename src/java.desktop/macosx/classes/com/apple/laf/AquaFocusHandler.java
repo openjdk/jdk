@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,21 @@
 
 package com.apple.laf;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
+import java.awt.Color;
+import java.awt.Window;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
-import javax.swing.*;
+import javax.swing.JComponent;
+import javax.swing.JTree;
+import javax.swing.JTable;
+import javax.swing.JList;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+
+import javax.swing.plaf.BorderUIResource;
 import javax.swing.plaf.UIResource;
 
 /**
@@ -113,22 +123,35 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
 
         final Color bg = c.getSelectionBackground();
         final Color fg = c.getSelectionForeground();
+
         if (!(bg instanceof UIResource) || !(fg instanceof UIResource)) return;
 
         if (Boolean.FALSE.equals(value)) {
-            setSelectionColors(c, "Table.selectionInactiveForeground", "Table.selectionInactiveBackground");
+            setSelectionColors(c, "Table.selectionInactiveForeground",
+                    "Table.selectionInactiveBackground");
             return;
         }
 
         if (Boolean.TRUE.equals(value)) {
-            setSelectionColors(c, "Table.selectionForeground", "Table.selectionBackground");
+            setSelectionColors(c, "Table.selectionForeground",
+                    "Table.selectionBackground");
             return;
         }
     }
 
     static void setSelectionColors(final JTable c, final String fgName, final String bgName) {
+
         c.setSelectionForeground(UIManager.getColor(fgName));
         c.setSelectionBackground(UIManager.getColor(bgName));
+
+        // focus ring changes for on-the-fly accent color changes
+        Color prominentFocusRing = AquaLookAndFeel.deriveProminentFocusRing(
+                UIManager.getColor("Table.cellFocusRing"));
+        BorderUIResource.LineBorderUIResource focusCellHighlightBorder =
+                new BorderUIResource.LineBorderUIResource(prominentFocusRing, 2);
+        UIManager.getDefaults().put("Table.focusCellHighlightBorder",
+                focusCellHighlightBorder);
+
     }
 
     static void swapSelectionColors(final String prefix, final JList<?> c, final Object value) {
@@ -139,12 +162,14 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
         if (!(bg instanceof UIResource) || !(fg instanceof UIResource)) return;
 
         if (Boolean.FALSE.equals(value)) {
-            setSelectionColors(c, "List.selectionInactiveForeground", "List.selectionInactiveBackground");
+            setSelectionColors(c, "List.selectionInactiveForeground",
+                    "List.selectionInactiveBackground");
             return;
         }
 
         if (Boolean.TRUE.equals(value)) {
-            setSelectionColors(c, "List.selectionForeground", "List.selectionBackground");
+            setSelectionColors(c, "List.selectionForeground",
+                    "List.selectionBackground");
             return;
         }
     }

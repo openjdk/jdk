@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import test.java.awt.regtesthelpers.Util;
 
 /**
  * AWT/Swing overlapping test for Panel and JPanel behavior during resizing.
- * <p>See <a href="https://bugs.openjdk.java.net/browse/JDK-6786219">JDK-6786219</a> for details
+ * <p>See <a href="https://bugs.openjdk.org/browse/JDK-6786219">JDK-6786219</a> for details
  */
 /*
  * @test

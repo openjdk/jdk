@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.regex.Grapheme;
 
 /**
  * A compiled representation of a regular expression.
@@ -158,7 +159,8 @@ import jdk.internal.util.ArraysSupport;
  * <tr><th style="vertical-align:top; font-weight:normal" id="any">{@code .}</th>
  *     <td headers="matches predef any">Any character (may or may not match <a href="#lt">line terminators</a>)</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="digit">{@code \d}</th>
- *     <td headers="matches predef digit">A digit: {@code [0-9]}</td></tr>
+ *     <td headers="matches predef digit">A digit: {@code [0-9]} if <a href="#UNICODE_CHARACTER_CLASS">
+ *          UNICODE_CHARACTER_CLASS</a> is not set. See <a href="#unicodesupport">Unicode Support</a>.</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="non_digit">{@code \D}</th>
  *     <td headers="matches predef non_digit">A non-digit: {@code [^0-9]}</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="horiz_white">{@code \h}</th>
@@ -167,7 +169,9 @@ import jdk.internal.util.ArraysSupport;
  * <tr><th style="vertical-align:top; font-weight:normal" id="non_horiz_white">{@code \H}</th>
  *     <td headers="matches predef non_horiz_white">A non-horizontal whitespace character: {@code [^\h]}</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="white">{@code \s}</th>
- *     <td headers="matches predef white">A whitespace character: {@code [ \t\n\x0B\f\r]}</td></tr>
+ *     <td headers="matches predef white">A whitespace character: {@code [ \t\n\x0B\f\r]} if
+ *     <a href="#UNICODE_CHARACTER_CLASS"> UNICODE_CHARACTER_CLASS</a> is not set. See
+ *     <a href="#unicodesupport">Unicode Support</a>.</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="non_white">{@code \S}</th>
  *     <td headers="matches predef non_white">A non-whitespace character: {@code [^\s]}</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="vert_white">{@code \v}</th>
@@ -176,7 +180,8 @@ import jdk.internal.util.ArraysSupport;
  * <tr><th style="vertical-align:top; font-weight:normal" id="non_vert_white">{@code \V}</th>
  *     <td headers="matches predef non_vert_white">A non-vertical whitespace character: {@code [^\v]}</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="word">{@code \w}</th>
- *     <td headers="matches predef word">A word character: {@code [a-zA-Z_0-9]}</td></tr>
+ *     <td headers="matches predef word">A word character: {@code [a-zA-Z_0-9]} if <a href="#UNICODE_CHARACTER_CLASS">
+ *         UNICODE_CHARACTER_CLASS</a> is not set. See <a href="#unicodesupport">Unicode Support</a>. </td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="non_word">{@code \W}</th>
  *     <td headers="matches predef non_word">A non-word character: {@code [^\w]}</td></tr>
  *
@@ -246,11 +251,13 @@ import jdk.internal.util.ArraysSupport;
  * <tr><th style="vertical-align:top; font-weight:normal" id="end_line">{@code $}</th>
  *     <td headers="matches bounds end_line">The end of a line</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="word_boundary">{@code \b}</th>
- *     <td headers="matches bounds word_boundary">A word boundary</td></tr>
+ *     <td headers="matches bounds word_boundary">A word boundary:
+ *     at the beginning or at the end of a line if a word character ({@code \w}) appears there;
+ *     or between a word ({@code \w}) and a non-word character ({@code \W}), in either order.</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="grapheme_cluster_boundary">{@code \b{g}}</th>
  *     <td headers="matches bounds grapheme_cluster_boundary">A Unicode extended grapheme cluster boundary</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="non_word_boundary">{@code \B}</th>
- *     <td headers="matches bounds non_word_boundary">A non-word boundary</td></tr>
+ *     <td headers="matches bounds non_word_boundary">A non-word boundary: {@code [^\b]}</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="begin_input">{@code \A}</th>
  *     <td headers="matches bounds begin_input">The beginning of the input</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="end_prev_match">{@code \G}</th>
@@ -478,9 +485,15 @@ import jdk.internal.util.ArraysSupport;
  * <p> The regular expression {@code .} matches any character except a line
  * terminator unless the {@link #DOTALL} flag is specified.
  *
- * <p> By default, the regular expressions {@code ^} and {@code $} ignore
- * line terminators and only match at the beginning and the end, respectively,
- * of the entire input sequence. If {@link #MULTILINE} mode is activated then
+ * <p> If {@link #MULTILINE} mode is not activated, the regular expression
+ * {@code ^} ignores line terminators and only matches at the beginning of
+ * the entire input sequence. The regular expression {@code $} matches at the
+ * end of the entire input sequence, but also matches just before the last line
+ * terminator if this is not followed by any other input character. Other line
+ * terminators are ignored, including the last one if it is followed by other
+ * input characters.
+ *
+ * <p> If {@link #MULTILINE} mode is activated then
  * {@code ^} matches at the beginning of input and after any line terminator
  * except at the end of input. When in {@link #MULTILINE} mode {@code $}
  * matches just before a line terminator or the end of the input sequence.
@@ -535,7 +548,7 @@ import jdk.internal.util.ArraysSupport;
  * that do not capture text and do not count towards the group total, or
  * <i>named-capturing</i> group.
  *
- * <h2> Unicode support </h2>
+ * <h2 id="unicodesupport"> Unicode support </h2>
  *
  * <p> This class is in conformance with Level 1 of <a
  * href="http://www.unicode.org/reports/tr18/"><i>Unicode Technical
@@ -626,6 +639,12 @@ import jdk.internal.util.ArraysSupport;
  *   <li> Join_Control
  *   <li> Noncharacter_Code_Point
  *   <li> Assigned
+ *   <li> Emoji
+ *   <li> Emoji_Presentation
+ *   <li> Emoji_Modifier
+ *   <li> Emoji_Modifier_Base
+ *   <li> Emoji_Component
+ *   <li> Extended_Pictographic
  * </ul>
  * <p>
  * The following <b>Predefined Character classes</b> and <b>POSIX character classes</b>
@@ -772,6 +791,7 @@ import jdk.internal.util.ArraysSupport;
  * O'Reilly and Associates, 2006.</a>
  * </p>
  *
+ * @spec https://www.unicode.org/reports/tr18 Unicode Regular Expressions
  * @see java.lang.String#split(String, int)
  * @see java.lang.String#split(String)
  *
@@ -904,7 +924,8 @@ public final class Pattern
      * <p> There is no embedded flag character for enabling canonical
      * equivalence.
      *
-     * <p> Specifying this flag may impose a performance penalty.  </p>
+     * <p> Specifying this flag may impose a performance penalty
+     * and a moderate risk of memory exhaustion.</p>
      */
     public static final int CANON_EQ = 0x80;
 
@@ -926,6 +947,8 @@ public final class Pattern
      * folding.
      * <p>
      * Specifying this flag may impose a performance penalty.  </p>
+     *
+     * @spec https://www.unicode.org/reports/tr18 Unicode Regular Expressions
      * @since 1.7
      */
     public static final int UNICODE_CHARACTER_CLASS = 0x100;
@@ -1083,6 +1106,9 @@ public final class Pattern
      * Compiles the given regular expression into a pattern with the given
      * flags.
      *
+     * <p>Setting {@link #CANON_EQ} among the flags may impose a moderate risk
+     * of memory exhaustion.</p>
+     *
      * @param  regex
      *         The expression to be compiled
      *
@@ -1100,6 +1126,10 @@ public final class Pattern
      *
      * @throws  PatternSyntaxException
      *          If the expression's syntax is invalid
+     *
+     * @implNote If {@link #CANON_EQ} is specified and the number of combining
+     * marks for any character is too large, an {@link java.lang.OutOfMemoryError}
+     * is thrown.
      */
     public static Pattern compile(String regex, int flags) {
         return new Pattern(regex, flags);
@@ -1133,6 +1163,13 @@ public final class Pattern
      *         The character sequence to be matched
      *
      * @return  A new matcher for this pattern
+     *
+     * @implNote When a {@link Pattern} is deserialized, compilation is deferred
+     * until a direct or indirect invocation of this method. Thus, if a
+     * deserialized pattern has {@link #CANON_EQ} among its flags and the number
+     * of combining marks for any character is too large, an
+     * {@link java.lang.OutOfMemoryError} is thrown,
+     * as in {@link #compile(String, int)}.
      */
     public Matcher matcher(CharSequence input) {
         if (!compiled) {
@@ -1266,6 +1303,100 @@ public final class Pattern
      *          around matches of this pattern
      */
     public String[] split(CharSequence input, int limit) {
+        return split(input, limit, false);
+    }
+
+    /**
+     * Splits the given input sequence around matches of this pattern and
+     * returns both the strings and the matching delimiters.
+     *
+     * <p> The array returned by this method contains each substring of the
+     * input sequence that is terminated by another subsequence that matches
+     * this pattern or is terminated by the end of the input sequence.
+     * Each substring is immediately followed by the subsequence (the delimiter)
+     * that matches this pattern, <em>except</em> for the last substring, which
+     * is not followed by anything.
+     * The substrings in the array and the delimiters are in the order in which
+     * they occur in the input.
+     * If this pattern does not match any subsequence of the input then the
+     * resulting array has just one element, namely the input sequence in string
+     * form.
+     *
+     * <p> When there is a positive-width match at the beginning of the input
+     * sequence then an empty leading substring is included at the beginning
+     * of the resulting array.
+     * A zero-width match at the beginning however never produces such empty
+     * leading substring nor the empty delimiter.
+     *
+     * <p> The {@code limit} parameter controls the number of times the
+     * pattern is applied and therefore affects the length of the resulting
+     * array.
+     * <ul>
+     *    <li> If the <i>limit</i> is positive then the pattern will be applied
+     *    at most <i>limit</i> - 1 times, the array's length will be
+     *    no greater than 2 &times; <i>limit</i> - 1, and the array's last
+     *    entry will contain all input beyond the last matched delimiter.</li>
+     *
+     *    <li> If the <i>limit</i> is zero then the pattern will be applied as
+     *    many times as possible, the array can have any length, and trailing
+     *    empty strings, whether substrings or delimiters, will be discarded.</li>
+     *
+     *    <li> If the <i>limit</i> is negative then the pattern will be applied
+     *    as many times as possible and the array can have any length.</li>
+     * </ul>
+     *
+     * <p> The input {@code "boo:::and::foo"}, for example, yields the following
+     * results with these parameters:
+     *
+     * <table class="plain" style="margin-left:2em;">
+     * <caption style="display:none">Split example showing regex, limit, and result</caption>
+     * <thead>
+     * <tr>
+     *     <th scope="col">Regex</th>
+     *     <th scope="col">Limit</th>
+     *     <th scope="col">Result</th>
+     * </tr>
+     * </thead>
+     * <tbody>
+     * <tr><th scope="row" rowspan="3" style="font-weight:normal">:+</th>
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">2</th>
+     *     <td>{@code { "boo", ":::", "and::foo" }}</td></tr>
+     * <tr><!-- : -->
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">5</th>
+     *     <td>{@code { "boo", ":::", "and", "::", "foo" }}</td></tr>
+     * <tr><!-- : -->
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">-1</th>
+     *     <td>{@code { "boo", ":::", "and", "::", "foo" }}</td></tr>
+     * <tr><th scope="row" rowspan="3" style="font-weight:normal">o</th>
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">5</th>
+     *     <td>{@code { "b", "o", "", "o", ":::and::f", "o", "", "o", "" }}</td></tr>
+     * <tr><!-- o -->
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">-1</th>
+     *     <td>{@code { "b", "o", "", "o", ":::and::f", "o", "", "o", "" }}</td></tr>
+     * <tr><!-- o -->
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">0</th>
+     *     <td>{@code { "b", "o", "", "o", ":::and::f", "o", "", "o" }}</td></tr>
+     * </tbody>
+     * </table>
+     *
+     * @param  input
+     *         The character sequence to be split
+     *
+     * @param  limit
+     *         The result threshold, as described above
+     *
+     * @return  The array of strings computed by splitting the input
+     *          around matches of this pattern, alternating
+     *          substrings and matching delimiters
+     *
+     * @since   21
+     */
+    public String[] splitWithDelimiters(CharSequence input, int limit) {
+        return split(input, limit, true);
+    }
+
+    private String[] split(CharSequence input, int limit, boolean withDelimiters) {
+        int matchCount = 0;
         int index = 0;
         boolean matchLimited = limit > 0;
         ArrayList<String> matchList = new ArrayList<>();
@@ -1273,7 +1404,7 @@ public final class Pattern
 
         // Add segments before each match found
         while(m.find()) {
-            if (!matchLimited || matchList.size() < limit - 1) {
+            if (!matchLimited || matchCount < limit - 1) {
                 if (index == 0 && index == m.start() && m.start() == m.end()) {
                     // no empty leading substring included for zero-width match
                     // at the beginning of the input char sequence.
@@ -1282,11 +1413,15 @@ public final class Pattern
                 String match = input.subSequence(index, m.start()).toString();
                 matchList.add(match);
                 index = m.end();
-            } else if (matchList.size() == limit - 1) { // last one
-                String match = input.subSequence(index,
-                                                 input.length()).toString();
+                if (withDelimiters) {
+                    matchList.add(input.subSequence(m.start(), index).toString());
+                }
+                ++matchCount;
+            } else if (matchCount == limit - 1) { // last one
+                String match = input.subSequence(index, input.length()).toString();
                 matchList.add(match);
                 index = m.end();
+                ++matchCount;
             }
         }
 
@@ -1295,14 +1430,16 @@ public final class Pattern
             return new String[] {input.toString()};
 
         // Add remaining segment
-        if (!matchLimited || matchList.size() < limit)
+        if (!matchLimited || matchCount < limit)
             matchList.add(input.subSequence(index, input.length()).toString());
 
         // Construct result
         int resultSize = matchList.size();
-        if (limit == 0)
-            while (resultSize > 0 && matchList.get(resultSize-1).isEmpty())
+        if (limit == 0) {
+            while (resultSize > 0 && matchList.get(resultSize-1).isEmpty()) {
                 resultSize--;
+            }
+        }
         String[] result = new String[resultSize];
         return matchList.subList(0, resultSize).toArray(result);
     }
@@ -1327,9 +1464,9 @@ public final class Pattern
      * </tr>
      * </thead>
      * <tbody>
-     * <tr><th scope="row" style="text-weight:normal">:</th>
+     * <tr><th scope="row" style="font-weight:normal">:</th>
      *     <td>{@code { "boo", "and", "foo" }}</td></tr>
-     * <tr><th scope="row" style="text-weight:normal">o</th>
+     * <tr><th scope="row" style="font-weight:normal">o</th>
      *     <td>{@code { "b", "", ":and:f" }}</td></tr>
      * </tbody>
      * </table>
@@ -1342,7 +1479,7 @@ public final class Pattern
      *          around matches of this pattern
      */
     public String[] split(CharSequence input) {
-        return split(input, 0);
+        return split(input, 0, false);
     }
 
     /**
@@ -1365,8 +1502,8 @@ public final class Pattern
             return "\\Q" + s + "\\E";
 
         int lenHint = s.length();
-        lenHint = (lenHint < Integer.MAX_VALUE - 8 - lenHint) ?
-                (lenHint << 1) : (Integer.MAX_VALUE - 8);
+        lenHint = (lenHint < ArraysSupport.SOFT_MAX_ARRAY_LENGTH - lenHint) ?
+                (lenHint << 1) : ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 
         StringBuilder sb = new StringBuilder(lenHint);
         sb.append("\\Q");
@@ -1606,14 +1743,30 @@ public final class Pattern
             return result;
         }
 
-        int length = 1;
+        /*
+         * Since
+         *      12! =   479_001_600 < Integer.MAX_VALUE
+         *      13! = 6_227_020_800 > Integer.MAX_VALUE
+         * the computation of n! using int arithmetic will overflow iff
+         *      n < 0 or n > 12
+         *
+         * Here, nCodePoints! is computed in the next for-loop below.
+         * As nCodePoints >= 0, the computation overflows iff nCodePoints > 12.
+         * In that case, throw OOME to simulate length > Integer.MAX_VALUE.
+         */
         int nCodePoints = countCodePoints(input);
-        for(int x=1; x<nCodePoints; x++)
-            length = length * (x+1);
+        if (nCodePoints > 12) {
+            throw new OutOfMemoryError("Pattern too complex");
+        }
 
+        /* Compute length = nCodePoints! */
+        int length = 1;
+        for (int x = 2; x <= nCodePoints; ++x) {
+            length *= x;
+        }
         String[] temp = new String[length];
 
-        int combClass[] = new int[nCodePoints];
+        int[] combClass = new int[nCodePoints];
         for(int x=0, i=0; x<nCodePoints; x++) {
             int c = Character.codePointAt(input, i);
             combClass[x] = getClass(c);
@@ -1837,12 +1990,24 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         topClosureNodes = null;
     }
 
-    Map<String, Integer> namedGroups() {
+    private Map<String, Integer> namedGroupsMap() {
         Map<String, Integer> groups = namedGroups;
         if (groups == null) {
             namedGroups = groups = new HashMap<>(2);
         }
         return groups;
+    }
+
+    /**
+     * Returns an unmodifiable map from capturing group names to group numbers.
+     * If there are no named groups, returns an empty map.
+     *
+     * @return an unmodifiable map from capturing group names to group numbers
+     *
+     * @since 20
+     */
+    public Map<String, Integer> namedGroups() {
+        return Map.copyOf(namedGroupsMap());
     }
 
     /**
@@ -2061,7 +2226,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                Character.isSurrogate((char)ch);
     }
 
-    /**
+    /*
      *  The following methods handle the main parsing. They are sorted
      *  according to their precedence order, the lowest one first.
      */
@@ -2118,10 +2283,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         }
     }
 
-    @SuppressWarnings("fallthrough")
     /**
      * Parsing of sequences between alternations.
      */
+    @SuppressWarnings("fallthrough")
     private Node sequence(Node end) {
         Node head = null;
         Node tail = null;
@@ -2245,10 +2410,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         return head;
     }
 
-    @SuppressWarnings("fallthrough")
     /**
      * Parse and add a new Single or Slice.
      */
+    @SuppressWarnings("fallthrough")
     private Node atom() {
         int first = 0;
         int prev = -1;
@@ -2548,14 +2713,15 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             if (read() != '<')
                 throw error("\\k is not followed by '<' for named capturing group");
             String name = groupname(read());
-            if (!namedGroups().containsKey(name))
+            Integer number = namedGroupsMap().get(name);
+            if (number == null)
                 throw error("named capturing group <" + name + "> does not exist");
             if (create) {
                 hasGroupRef = true;
                 if (has(CASE_INSENSITIVE))
-                    root = new CIBackRef(namedGroups().get(name), has(UNICODE_CASE));
+                    root = new CIBackRef(number, has(UNICODE_CASE));
                 else
-                    root = new BackRef(namedGroups().get(name));
+                    root = new BackRef(number);
             }
             return -1;
         case 'l':
@@ -3002,13 +3168,13 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                     if (ch != '=' && ch != '!') {
                         // named captured group
                         String name = groupname(ch);
-                        if (namedGroups().containsKey(name))
+                        if (namedGroupsMap().containsKey(name))
                             throw error("Named capturing group <" + name
                                         + "> is already defined");
                         capturingGroup = true;
                         head = createGroup(false);
                         tail = root;
-                        namedGroups().put(name, capturingGroupCount - 1);
+                        namedGroupsMap().put(name, capturingGroupCount - 1);
                         head.next = expr(tail);
                         break;
                     }
@@ -3107,10 +3273,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             if (head.study(info)) { // Deterministic
                 GroupTail temp = (GroupTail) tail;
                 head = root = new GroupCurly(head.next, curly.cmin,
-                                   curly.cmax, curly.type,
-                                   ((GroupTail)tail).localIndex,
-                                   ((GroupTail)tail).groupIndex,
-                                             capturingGroup);
+                        curly.cmax, curly.type,
+                        temp.localIndex,
+                        temp.groupIndex,
+                        capturingGroup);
                 return head;
             } else { // Non-deterministic
                 int temp = ((GroupHead) head).localIndex;
@@ -3157,10 +3323,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         return head;
     }
 
-    @SuppressWarnings("fallthrough")
     /**
      * Parses inlined match flags and set them appropriately.
      */
+    @SuppressWarnings("fallthrough")
     private void addFlag() {
         int ch = peek();
         for (;;) {
@@ -3199,7 +3365,6 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         }
     }
 
-    @SuppressWarnings("fallthrough")
     /**
      * Parses the second part of inlined match flags and turns off
      * flags appropriately.
@@ -3543,7 +3708,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         return hasSupplementary ? new SliceS(tmp) : new Slice(tmp);
     }
 
-    /**
+    /*
      * The following classes are the building components of the object
      * tree that represents a compiled regular expression. The object tree
      * is made of individual elements that handle constructs in the Pattern.
@@ -4005,8 +4170,9 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 }
                 if (j < matcher.to)
                     return false;
+            } else {
+                matcher.hitEnd = true;
             }
-            matcher.hitEnd = true;
             return false;
         }
 
@@ -4902,7 +5068,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 if (count < cmax) {
                     // Let's check if we have already tried and failed
                     // at this starting position "i" in the past.
-                    // If yes, then just return false wihtout trying
+                    // If yes, then just return false without trying
                     // again, to stop the exponential backtracking.
                     if (posIndex != -1 &&
                         matcher.localsPos[posIndex].contains(i)) {
@@ -5021,6 +5187,12 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             groupIndex = groupCount + groupCount;
         }
         boolean match(Matcher matcher, int i, CharSequence seq) {
+            // reference to not existing group must never match
+            // group does not exist if matcher didn't allocate space for it
+            if (groupIndex >= matcher.groups.length) {
+                return false;
+            }
+
             int j = matcher.groups[groupIndex];
             int k = matcher.groups[groupIndex+1];
 
@@ -5057,6 +5229,12 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             this.doUnicodeCase = doUnicodeCase;
         }
         boolean match(Matcher matcher, int i, CharSequence seq) {
+            // reference to not existing group must never match
+            // group does not exist if matcher didn't allocate space for it
+            if (groupIndex >= matcher.groups.length) {
+                return false;
+            }
+
             int j = matcher.groups[groupIndex];
             int k = matcher.groups[groupIndex+1];
 
@@ -5363,10 +5541,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      * they are ignored for purposes of finding word boundaries.
      */
     static final class Bound extends Node {
-        static int LEFT = 0x1;
-        static int RIGHT= 0x2;
-        static int BOTH = 0x3;
-        static int NONE = 0x4;
+        static final int LEFT = 0x1;
+        static final int RIGHT= 0x2;
+        static final int BOTH = 0x3;
+        static final int NONE = 0x4;
         int type;
         boolean useUWORD;
         Bound(int n, boolean useUWORD) {
@@ -5376,7 +5554,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
 
         boolean isWord(int ch) {
             return useUWORD ? CharPredicates.WORD().is(ch)
-                            : (ch == '_' || Character.isLetterOrDigit(ch));
+                            : CharPredicates.ASCII_WORD().is(ch);
         }
 
         int check(Matcher matcher, int i, CharSequence seq) {

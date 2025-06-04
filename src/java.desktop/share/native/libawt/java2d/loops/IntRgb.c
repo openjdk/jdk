@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@
 #include "ThreeByteBgr.h"
 #include "ByteGray.h"
 #include "Index12Gray.h"
+
+#include "ub.h"
 
 /*
  * This file declares, registers, and defines the various graphics
@@ -166,6 +168,7 @@ DEFINE_ALPHA_MASKBLIT(IntArgbPre, IntRgb, 4ByteArgb)
 
 DEFINE_ALPHA_MASKBLIT(IntRgb, IntRgb, 4ByteArgb)
 
+ATTRIBUTE_NO_UBSAN
 DEFINE_SOLID_DRAWGLYPHLISTAA(IntRgb, 3ByteRgb)
 
 DEFINE_SOLID_DRAWGLYPHLISTLCD(IntRgb, 3ByteRgb)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,13 @@ import java.util.List;
 public class TestFormat {
     private static final List<String> FAILURES = new ArrayList<>();
 
+    public static void checkAndReport(boolean test, String failureMessage) {
+        if (!test) {
+            FAILURES.add(failureMessage);
+            throwIfAnyFailures();
+        }
+    }
+
     public static void check(boolean test, String failureMessage) {
         if (!test) {
             fail(failureMessage);
@@ -44,6 +51,12 @@ public class TestFormat {
         }
     }
 
+    public static void checkNoReport(boolean test, String failureMessage) {
+        if (!test) {
+            throw new TestFormatException(failureMessage);
+        }
+    }
+
     public static void fail(String failureMessage) {
         FAILURES.add(failureMessage);
         throw new TestFormatException(failureMessage);
@@ -53,7 +66,7 @@ public class TestFormat {
         FAILURES.add(failureMessage);
     }
 
-    public static void reportIfAnyFailures() {
+    public static void throwIfAnyFailures() {
         if (FAILURES.isEmpty()) {
             // No format violation detected.
             return;

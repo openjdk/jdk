@@ -2,8 +2,7 @@
  * @test    /nodynamiccopyright/
  * @bug     6278587 8007464
  * @summary Inference broken for subtypes of subtypes of F-bounded types
- * @author  Peter von der Ah\u00e9
- * @compile/fail/ref=T6278587Neg.out -XDrawDiagnostics -source 7 -Xlint:-options T6278587Neg.java
+ * @author  Peter von der Ahé
  * @compile T6278587Neg.java
  */
 

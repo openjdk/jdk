@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,8 @@ import static sun.security.util.ResourcesMgr.getAuthResourceString;
  *      privateKeyPasswordURL must not be specified.</dd>
  *
  * </dl>
+ *
+ * @since 1.4
  */
 public class KeyStoreLoginModule implements LoginModule {
 
@@ -393,7 +395,7 @@ public class KeyStoreLoginModule implements LoginModule {
         }
         InputStream in = null;
         try {
-            in = new URL(keyStorePasswordURL).openStream();
+            in = newURL(keyStorePasswordURL).openStream();
             keyStorePassword = Password.readPassword(in);
         } catch (IOException e) {
             LoginException le = new LoginException
@@ -421,7 +423,7 @@ public class KeyStoreLoginModule implements LoginModule {
         } else {
             InputStream in = null;
             try {
-                in = new URL(privateKeyPasswordURL).openStream();
+                in = newURL(privateKeyPasswordURL).openStream();
                 privateKeyPassword = Password.readPassword(in);
             } catch (IOException e) {
                 LoginException le = new LoginException
@@ -599,7 +601,7 @@ public class KeyStoreLoginModule implements LoginModule {
                 // if using protected auth path, keyStorePassword will be null
                 keyStore.load(null, keyStorePassword);
             } else {
-                in = new URL(keyStoreURL).openStream();
+                in = newURL(keyStoreURL).openStream();
                 keyStore.load(in, keyStorePassword);
             }
         } catch (MalformedURLException e) {
@@ -607,12 +609,7 @@ public class KeyStoreLoginModule implements LoginModule {
                                 ("Incorrect keyStoreURL option");
             le.initCause(e);
             throw le;
-        } catch (GeneralSecurityException e) {
-            LoginException le = new LoginException
-                                ("Error initializing keystore");
-            le.initCause(e);
-            throw le;
-        } catch (IOException e) {
+        } catch (GeneralSecurityException | IOException e) {
             LoginException le = new LoginException
                                 ("Error initializing keystore");
             le.initCause(e);
@@ -667,21 +664,15 @@ public class KeyStoreLoginModule implements LoginModule {
             principal = certificate.getSubjectX500Principal();
 
             // if token, privateKeyPassword will be null
-            Key privateKey = keyStore.getKey(keyStoreAlias, privateKeyPassword);
-            if (privateKey == null
-                || !(privateKey instanceof PrivateKey))
-            {
+            Key key = keyStore.getKey(keyStoreAlias, privateKeyPassword);
+            if (!(key instanceof PrivateKey privateKey)) {
                 throw new FailedLoginException(
                     "Unable to recover key from keystore");
             }
 
             privateCredential = new X500PrivateCredential(
-                certificate, (PrivateKey) privateKey, keyStoreAlias);
-        } catch (KeyStoreException e) {
-            LoginException le = new LoginException("Error using keystore");
-            le.initCause(e);
-            throw le;
-        } catch (NoSuchAlgorithmException e) {
+                certificate, privateKey, keyStoreAlias);
+        } catch (KeyStoreException | NoSuchAlgorithmException e) {
             LoginException le = new LoginException("Error using keystore");
             le.initCause(e);
             throw le;
@@ -862,23 +853,25 @@ public class KeyStoreLoginModule implements LoginModule {
             certP = null;
             status = INITIALIZED;
             // destroy the private credential
-            Iterator<Object> it = subject.getPrivateCredentials().iterator();
-            while (it.hasNext()) {
-                Object obj = it.next();
-                if (privateCredential.equals(obj)) {
-                    privateCredential = null;
-                    try {
-                        ((Destroyable)obj).destroy();
-                        if (debug)
-                            debugPrint("Destroyed private credential, " +
-                                       obj.getClass().getName());
-                        break;
-                    } catch (DestroyFailedException dfe) {
-                        LoginException le = new LoginException
-                            ("Unable to destroy private credential, "
-                             + obj.getClass().getName());
-                        le.initCause(dfe);
-                        throw le;
+            if (privateCredential != null) {
+                Iterator<Object> it = subject.getPrivateCredentials().iterator();
+                while (it.hasNext()) {
+                    Object obj = it.next();
+                    if (privateCredential.equals(obj)) {
+                        privateCredential = null;
+                        try {
+                            ((Destroyable) obj).destroy();
+                            if (debug)
+                                debugPrint("Destroyed private credential, " +
+                                        obj.getClass().getName());
+                            break;
+                        } catch (DestroyFailedException dfe) {
+                            LoginException le = new LoginException
+                                    ("Unable to destroy private credential, "
+                                            + obj.getClass().getName());
+                            le.initCause(dfe);
+                            throw le;
+                        }
                     }
                 }
             }
@@ -919,5 +912,10 @@ public class KeyStoreLoginModule implements LoginModule {
         } else {
             System.err.println("Debug KeyStoreLoginModule: " + message);
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(String spec) throws MalformedURLException {
+        return new URL(spec);
     }
 }

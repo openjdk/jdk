@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -44,20 +44,15 @@ class CodeHeapState : public CHeapObj<mtCode> {
 
   enum blobType {
     noType = 0,             // must be! due to initialization by memset to zero
-    // The nMethod_* values correspond to the CompiledMethod enum values.
-    // We can't use the CompiledMethod values 1:1 because we depend on noType == 0.
+    // The nMethod_* values correspond to the nmethod enum values.
+    // We can't use the nmethod values 1:1 because we depend on noType == 0.
     nMethod_inconstruction, // under construction. Very soon, the type will transition to "in_use".
                             // can't be observed while holding Compile_lock and CodeCache_lock simultaneously.
                             // left in here for completeness (and to document we spent a thought).
     nMethod_inuse,          // executable. This is the "normal" state for a nmethod.
     nMethod_notused,        // assumed inactive, marked not entrant. Could be revived if necessary.
     nMethod_notentrant,     // no new activations allowed, marked for deoptimization. Old activations may still exist.
-                            // Will transition to "zombie" after all activations are gone.
-    nMethod_zombie,         // No more activations exist, ready for purge (remove from code cache).
-    nMethod_unloaded,       // No activations exist, should not be called. Transient state on the way to "zombie".
-    nMethod_alive = nMethod_notentrant, // Combined state: nmethod may have activations, thus can't be purged.
-    nMethod_dead  = nMethod_zombie,     // Combined state: nmethod does not have any activations.
-    runtimeStub   = nMethod_unloaded + 1,
+    runtimeStub,
     ricochetStub,
     deoptimizationStub,
     uncommonTrapStub,
@@ -93,9 +88,10 @@ class CodeHeapState : public CHeapObj<mtCode> {
   static void print_blobType_single(outputStream *ast, u2 /* blobType */ type);
   static void print_count_single(outputStream *ast, unsigned short count);
   static void print_space_single(outputStream *ast, unsigned short space);
-  static void print_age_single(outputStream *ast, unsigned int age);
+  static void print_age_single(outputStream *ast, int age);
   static void print_line_delim(outputStream* out, bufferedStream *sst, char* low_bound, unsigned int ix, unsigned int gpl);
   static void print_line_delim(outputStream* out, outputStream *sst, char* low_bound, unsigned int ix, unsigned int gpl);
+  static void print_aggregate_missing(outputStream* out, const char* heapName);
   static blobType get_cbType(CodeBlob* cb);
   static bool blob_access_is_safe(CodeBlob* this_blob);
   static bool nmethod_access_is_safe(nmethod* nm);
@@ -124,9 +120,9 @@ class CodeHeapState : public CHeapObj<mtCode> {
 class StatElement : public CHeapObj<mtCode> {
   public:
     // A note on ages: The compilation_id easily overflows unsigned short in large systems
-    unsigned int       t1_age;      // oldest compilation_id of tier1 nMethods.
-    unsigned int       t2_age;      // oldest compilation_id of tier2 nMethods.
-    unsigned int       tx_age;      // oldest compilation_id of inactive/not entrant nMethods.
+    int       t1_age;      // oldest compilation_id of tier1 nMethods.
+    int       t2_age;      // oldest compilation_id of tier2 nMethods.
+    int       tx_age;      // oldest compilation_id of inactive/not entrant nMethods.
     unsigned short     t1_space;    // in units of _segment_size to "prevent" overflow
     unsigned short     t2_space;    // in units of _segment_size to "prevent" overflow
     unsigned short     tx_space;    // in units of _segment_size to "prevent" overflow
@@ -204,7 +200,7 @@ struct SizeDistributionElement : public CHeapObj<mtCode> {
 //----------------
 //  Because we have to deal with multiple CodeHeaps, we need to
 //  collect "global" information in a segment-specific way as well.
-//  Thats what the CodeHeapStat and CodeHeapStatArray are used for.
+//  That's what the CodeHeapStat and CodeHeapStatArray are used for.
 //  Before a heap segment is processed, the contents of the CodeHeapStat
 //  element is copied to the global variables (get_HeapStatGlobals).
 //  When processing is done, the possibly modified global variables are

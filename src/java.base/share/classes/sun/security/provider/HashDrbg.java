@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ public class HashDrbg extends AbstractHashDrbg {
     private byte[] v;
     private byte[] c;
 
+    @SuppressWarnings("this-escape")
     public HashDrbg(SecureRandomParameters params) {
         mechName = "Hash_DRBG";
         configure(params);
@@ -138,10 +139,8 @@ public class HashDrbg extends AbstractHashDrbg {
             // Step 1 of 10.1.1.3: Prepend 0x01 || V
             inputs.add(0, ONE);
             inputs.add(1, v);
-            seed = hashDf(seedLen, inputs);
-        } else {
-            seed = hashDf(seedLen, inputs);
         }
+        seed = hashDf(seedLen, inputs);
 
         // Step 3. V = seed.
         v = seed;

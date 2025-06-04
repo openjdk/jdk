@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,6 @@ import javax.lang.model.element.TypeElement;
 
 /**
  * Standard DocPath objects.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- *
  */
 public class DocPaths {
     private final String moduleSeparator;
@@ -70,8 +64,17 @@ public class DocPaths {
     /** The name of the file for the element list. */
     public static final DocPath ELEMENT_LIST = DocPath.create("element-list");
 
-    /** The name of the image file showing a magnifying glass on the search box. */
-    public static final DocPath GLASS_IMG = DocPath.create("glass.png");
+    /** The name of the file for all references to external specifications. */
+    public static final DocPath EXTERNAL_SPECS = DocPath.create("external-specs.html");
+
+    /** The name of the sub-directory containing font resources. */
+    public static final DocPath FONTS = DocPath.create("fonts");
+
+    /** The name of the DejaVu web fonts CSS file. */
+    public static final DocPath DEJAVU_CSS = DocPath.create("dejavu.css");
+
+    /** The name of the svg file showing a magnifying glass on the search box. */
+    public static final DocPath GLASS_SVG = DocPath.create("glass.svg");
 
     /** The name of the file for help info. */
     public static final DocPath HELP_DOC = DocPath.create("help-doc.html");
@@ -95,22 +98,43 @@ public class DocPaths {
     }
 
     /** The name of the default javascript file. */
-    public static final DocPath JAVASCRIPT = DocPath.create("script.js");
+    public static final DocPath SCRIPT_JS = DocPath.create("script.js");
+
+    /** The name of the template of the default javascript file. */
+    public static final DocPath SCRIPT_JS_TEMPLATE = DocPath.create("script.js.template");
 
     /** The name of the copy-to-clipboard icon file. */
     public static final DocPath CLIPBOARD_SVG = DocPath.create("copy.svg");
 
-    /** The name of the stylesheet file overriding jQuery UI stylesheet. */
-    public static final DocPath JQUERY_OVERRIDES_CSS = DocPath.create("jquery-ui.overrides.css");
+    /** The name of the left pointing angle icon. */
+    public static final DocPath LEFT_SVG = DocPath.create("left.svg");
+
+    /** The name of the link icon file. */
+    public static final DocPath LINK_SVG = DocPath.create("link.svg");
+
+    /** The name of the right pointing angle icon. */
+    public static final DocPath RIGHT_SVG = DocPath.create("right.svg");
+
+    /** The name of the syntax highlighting style sheet. */
+    public static final DocPath HIGHLIGHT_CSS = DocPath.create("highlight.css");
+
+    /** The name of the syntax highlighting script file. */
+    public static final DocPath HIGHLIGHT_JS = DocPath.create("highlight.js");
+
+    /** The name of the default jQuery directory. */
+    public static final DocPath JQUERY_DIR = DocPath.create("jquery");
 
     /** The name of the default jQuery javascript file. */
-    public static final DocPath JQUERY_JS = DocPath.create("jquery-3.5.1.min.js");
+    public static final DocPath JQUERY_JS = DocPath.create("jquery-3.7.1.min.js");
 
     /** The name of the default jQuery UI stylesheet file. */
     public static final DocPath JQUERY_UI_CSS = DocPath.create("jquery-ui.min.css");
 
     /** The name of the default jQuery UI javascript file. */
     public static final DocPath JQUERY_UI_JS = DocPath.create("jquery-ui.min.js");
+
+    /** The name of the default jQuery file for legal notices. */
+    public static final DocPath JQUERY_MD = DocPath.create("jquery.md");
 
     /** The name of the directory for legal files. */
     public static final DocPath LEGAL = DocPath.create("legal");
@@ -148,8 +172,23 @@ public class DocPaths {
     /** The name of the file for preview elements. */
     public static final DocPath PREVIEW_LIST = DocPath.create("preview-list.html");
 
+    /** The name of the file for restricted methods. */
+    public static final DocPath RESTRICTED_LIST = DocPath.create("restricted-list.html");
+
+    /** The name of the doc-file for restricted methods. */
+    public static final DocPath RESTRICTED_DOC = DocPath.create("RestrictedMethods.html");
+
+    /** The name of the directory for the resource files. */
+    public static final DocPath RESOURCE_FILES = DocPath.create("resource-files");
+
     /** The name of the directory for the script files. */
-    public static final DocPath SCRIPT_DIR = DocPath.create("script-dir");
+    public static final DocPath SCRIPT_FILES = DocPath.create("script-files");
+
+    /** The name of the file for search page. */
+    public static final DocPath SEARCH_PAGE = DocPath.create("search.html");
+
+    /** The name of the file for search tags index page. */
+    public static final DocPath SEARCH_TAGS = DocPath.create("search-tags.html");
 
     /** The name of the file for all system properties. */
     public static final DocPath SYSTEM_PROPERTIES = DocPath.create("system-properties.html");
@@ -247,12 +286,13 @@ public class DocPaths {
     }
 
     /**
-     * The path for the output directory for module documentation files.
+     * Returns the path for a file within a module documentation output directory.
      * @param mdle the module
-     * @return the path
+     * @param path the path to append to the module path
+     * @return the module documentation path
      */
-    public DocPath moduleDocFiles(ModuleElement mdle) {
-        return createModulePath(mdle, "doc-files");
+    public DocPath modulePath(ModuleElement mdle, String path) {
+        return DocPath.create(mdle.getQualifiedName().toString()).resolve(path);
     }
 
     /**
@@ -290,6 +330,9 @@ public class DocPaths {
     /** The name of the template for the search javascript file. */
     public static final DocPath SEARCH_JS_TEMPLATE = DocPath.create("search.js.template");
 
+    /** The name of the search javascript file. */
+    public static final DocPath SEARCH_PAGE_JS = DocPath.create("search-page.js");
+
     /** The name of the file for the serialized form info. */
     public static final DocPath SERIALIZED_FORM = DocPath.create("serialized-form.html");
 
@@ -307,7 +350,7 @@ public class DocPaths {
     /** The name of the type search index js file. */
     public static final DocPath TYPE_SEARCH_INDEX_JS = DocPath.create("type-search-index.js");
 
-    /** The name of the image file for undo button on the search box. */
-    public static final DocPath X_IMG = DocPath.create("x.png");
+    /** The name of the svg file for undo button on the search box. */
+    public static final DocPath X_SVG = DocPath.create("x.svg");
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,9 @@ void launchApp() {
                 (const char*)productCodeUtf8.data(), productCodeUtf8.size()));
 
         // Uninstall product.
-        msi::uninstall().setProductCode(productCode)();
-        exitCode = 0;
+        msi::SuppressUI suppressUI;
+        exitCode = (int)msi::uninstall().setProductCode(productCode)(
+                                                    std::nothrow).getValue();
         return;
     }
 
@@ -82,7 +83,7 @@ void launchApp() {
 } // namespace
 
 
-int __stdcall WinMain(HINSTANCE, HINSTANCE, LPSTR lpCmdLine, int nShowCmd) {
+int WinMain(HINSTANCE, HINSTANCE, LPSTR lpCmdLine, int nShowCmd) {
     app::wlaunch(std::nothrow, launchApp);
     return exitCode;
 }

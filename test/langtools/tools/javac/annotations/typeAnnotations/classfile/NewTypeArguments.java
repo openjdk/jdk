@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,16 @@
  * questions.
  */
 
+import java.lang.classfile.*;
 import java.lang.annotation.*;
 import java.io.*;
 import java.net.URL;
 import java.util.List;
 
-import com.sun.tools.classfile.*;
 
 /*
  * @test ClassLiterals
  * @summary test that new type arguments are emitted to classfile
- * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 public class NewTypeArguments extends ClassfileTestHelper{
@@ -43,13 +42,13 @@ public class NewTypeArguments extends ClassfileTestHelper{
         expected_tinvisibles = 3;
         expected_tvisibles = 0;
 
-        ClassFile cf = getClassFile("NewTypeArguments$Test.class");
-        test(cf);
-        for (Field f : cf.fields) {
-            test(cf, f);
+        ClassModel cm = getClassFile("NewTypeArguments$Test.class");
+        test(cm);
+        for (FieldModel fm : cm.fields()) {
+            test(fm);
         }
-        for (Method m: cf.methods) {
-            test(cf, m, true);
+        for (MethodModel m: cm.methods()) {
+            test(m, true);
         }
 
         countAnnotations();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ import java.io.IOException;
  * If no content handler could be {@linkplain URLConnection#getContent() found},
  * URLConnection will look for a content handler in a user-definable set of places.
  * Users can define a vertical-bar delimited set of class prefixes
- * to search through by defining the <i>{@value java.net.URLConnection#contentPathProp}</i>
+ * to search through by defining the {@systemProperty java.content.handler.pkgs} system
  * property. The class name must be of the form:
  * <blockquote>
  *     <i>{package-prefix}.{major}.{minor}</i>
@@ -67,10 +67,6 @@ import java.io.IOException;
  * If no user-defined content handler is found, then the system
  * tries to load a specific <i>content-type</i> handler from one
  * of the built-in handlers, if one exists.
- * <p>
- * If the loading of the content handler class would be performed by
- * a classloader that is outside of the delegation chain of the caller,
- * the JVM will need the RuntimePermission "getClassLoader".
  *
  * @author  James Gosling
  * @see     java.net.ContentHandler#getContent(java.net.URLConnection)

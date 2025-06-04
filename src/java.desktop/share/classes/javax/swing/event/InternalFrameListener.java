@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public interface InternalFrameListener extends EventListener {
      * Invoked when a internal frame has been opened.
      *
      * @param e an {@code InternalFrameEvent} with information about the
-     *          {@code JInteralFrame} that originated the event
+     *          {@code JInternalFrame} that originated the event
      * @see javax.swing.JInternalFrame#show
      */
     public void internalFrameOpened(InternalFrameEvent e);
@@ -54,7 +54,7 @@ public interface InternalFrameListener extends EventListener {
      * The close operation can be overridden at this point.
      *
      * @param e an {@code InternalFrameEvent} with information about the
-     *          {@code JInteralFrame} that originated the event
+     *          {@code JInternalFrame} that originated the event
      * @see javax.swing.JInternalFrame#setDefaultCloseOperation
      */
     public void internalFrameClosing(InternalFrameEvent e);
@@ -63,7 +63,7 @@ public interface InternalFrameListener extends EventListener {
      * Invoked when an internal frame has been closed.
      *
      * @param e an {@code InternalFrameEvent} with information about the
-     *          {@code JInteralFrame} that originated the event
+     *          {@code JInternalFrame} that originated the event
      * @see javax.swing.JInternalFrame#setClosed
      */
     public void internalFrameClosed(InternalFrameEvent e);
@@ -72,7 +72,7 @@ public interface InternalFrameListener extends EventListener {
      * Invoked when an internal frame is iconified.
      *
      * @param e an {@code InternalFrameEvent} with information about the
-     *          {@code JInteralFrame} that originated the event
+     *          {@code JInternalFrame} that originated the event
      * @see javax.swing.JInternalFrame#setIcon
      */
     public void internalFrameIconified(InternalFrameEvent e);
@@ -81,7 +81,7 @@ public interface InternalFrameListener extends EventListener {
      * Invoked when an internal frame is de-iconified.
      *
      * @param e an {@code InternalFrameEvent} with information about the
-     *          {@code JInteralFrame} that originated the event
+     *          {@code JInternalFrame} that originated the event
      * @see javax.swing.JInternalFrame#setIcon
      */
     public void internalFrameDeiconified(InternalFrameEvent e);
@@ -90,7 +90,7 @@ public interface InternalFrameListener extends EventListener {
      * Invoked when an internal frame is activated.
      *
      * @param e an {@code InternalFrameEvent} with information about the
-     *          {@code JInteralFrame} that originated the event
+     *          {@code JInternalFrame} that originated the event
      * @see javax.swing.JInternalFrame#setSelected
      */
     public void internalFrameActivated(InternalFrameEvent e);
@@ -99,7 +99,7 @@ public interface InternalFrameListener extends EventListener {
      * Invoked when an internal frame is de-activated.
      *
      * @param e an {@code InternalFrameEvent} with information about the
-     *          {@code JInteralFrame} that originated the event
+     *          {@code JInternalFrame} that originated the event
      * @see javax.swing.JInternalFrame#setSelected
      */
     public void internalFrameDeactivated(InternalFrameEvent e);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,17 +62,8 @@ public abstract class PrinterJob {
      * should ensure that the array returned from
      * {@link #lookupPrintServices() lookupPrintServices} is not empty.
      * @return a new {@code PrinterJob}.
-     *
-     * @throws  SecurityException if a security manager exists and its
-     *          {@link java.lang.SecurityManager#checkPrintJobAccess}
-     *          method disallows this thread from creating a print job request
      */
     public static PrinterJob getPrinterJob() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPrintJobAccess();
-        }
         return sun.print.PlatformPrinterJobProxy.getPrinterJob();
     }
 
@@ -168,7 +159,7 @@ public abstract class PrinterJob {
      * cannot support the {@code Pageable} and
      * {@code Printable} interfaces necessary to support 2D printing.
      * @param service a print service that supports 2D printing
-     * @exception PrinterException if the specified service does not support
+     * @throws PrinterException if the specified service does not support
      * 2D printing, or this PrinterJob class does not support
      * setting a 2D print service, or the specified service is
      * otherwise not a valid print service.
@@ -212,7 +203,7 @@ public abstract class PrinterJob {
      * {@code document}.
      * @param document the pages to be printed. It can not be
      * {@code null}.
-     * @exception NullPointerException the {@code Pageable} passed in
+     * @throws NullPointerException the {@code Pageable} passed in
      * was {@code null}.
      * @see PageFormat
      * @see Printable
@@ -235,7 +226,7 @@ public abstract class PrinterJob {
      * selected by the user.
      * @return {@code true} if the user does not cancel the dialog;
      * {@code false} otherwise.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -279,9 +270,9 @@ public abstract class PrinterJob {
      * This parameter may not be null.
      * @return {@code true} if the user does not cancel the dialog;
      * {@code false} otherwise.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
-     * @exception NullPointerException if {@code attributes} parameter
+     * @throws NullPointerException if {@code attributes} parameter
      * is null.
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since     1.4
@@ -313,7 +304,7 @@ public abstract class PrinterJob {
      *            is cancelled; a new {@code PageFormat} object
      *            containing the format indicated by the user if the
      *            dialog is acknowledged.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since     1.2
@@ -342,9 +333,9 @@ public abstract class PrinterJob {
      * This parameter may not be null.
      * @return a page format if the user does not cancel the dialog;
      * {@code null} otherwise.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
-     * @exception NullPointerException if {@code attributes} parameter
+     * @throws NullPointerException if {@code attributes} parameter
      * is null.
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since     1.4
@@ -495,7 +486,7 @@ public abstract class PrinterJob {
 
     /**
      * Prints a set of pages.
-     * @exception PrinterException an error in the print system
+     * @throws PrinterException an error in the print system
      *            caused the job to be aborted.
      * @see Book
      * @see Pageable
@@ -533,7 +524,7 @@ public abstract class PrinterJob {
      * this print() method.
      *
      * @param attributes a set of attributes for the job
-     * @exception PrinterException an error in the print system
+     * @throws PrinterException an error in the print system
      *            caused the job to be aborted.
      * @see Book
      * @see Pageable
@@ -562,8 +553,6 @@ public abstract class PrinterJob {
     /**
      * Gets the name of the printing user.
      * @return the name of the printing user
-     * @throws SecurityException if a security manager exists and
-     *         PropertyPermission - user.name is not given in the policy file
      */
     public abstract String getUserName();
 

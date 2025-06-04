@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,27 +189,32 @@ public class AquaCaret extends DefaultCaret
         // intersection of the caret rectangle and the component less the border, if any.
         final Rectangle caretRect = new Rectangle(x, y, width, height);
         final Border border = getComponent().getBorder();
-        if (border != null) {
-            final Rectangle alloc = getComponent().getBounds();
-            alloc.x = alloc.y = 0;
+        final Rectangle alloc = getComponent().getBounds();
+        alloc.x = alloc.y = 0;
+        if (border != null && border.isBorderOpaque()) {
             final Insets borderInsets = border.getBorderInsets(getComponent());
             alloc.x += borderInsets.left;
             alloc.y += borderInsets.top;
             alloc.width -= borderInsets.left + borderInsets.right;
             alloc.height -= borderInsets.top + borderInsets.bottom;
             Rectangle2D.intersect(caretRect, alloc, caretRect);
+            x = caretRect.x;
+            y = caretRect.y;
+            width = Math.max(caretRect.width, 1);
+            height = Math.max(caretRect.height, 1);
+        } else {
+            x = alloc.x;
+            y = alloc.y;
+            width = alloc.width;
+            height = alloc.height;
         }
-        x = caretRect.x;
-        y = caretRect.y;
-        width = Math.max(caretRect.width, 1);
-        height = Math.max(caretRect.height, 1);
         repaint();
     }
 
     // See <rdar://problem/3833837> 1.4.2_05-141.3: JTextField performance with
     // Aqua L&F. We are getting into a circular condition with the BasicCaret
     // paint code since it doesn't know about the fact that our damage routine
-    // above elminates the border. Sadly we can't easily change either one, so
+    // above eliminates the border. Sadly we can't easily change either one, so
     // we will add a painting flag and not damage during a repaint.
     @Override
     public void paint(final Graphics g) {

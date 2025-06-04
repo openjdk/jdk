@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,9 +216,7 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
                     }
                     timeStamp = System.currentTimeMillis();
                     return true;
-                } catch (IOException e) {
-                    return false;
-                } catch (UndeclaredThrowableException e) {
+                } catch (IOException | UndeclaredThrowableException e) {
                     return false;
                 }
             }
@@ -426,9 +424,7 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
                                         }
                                     });
                                     sleep(30 * 1000);
-                                } catch (InterruptedException ex) {
-                                    // Ignore
-                                } catch (InvocationTargetException ex) {
+                                } catch (InterruptedException | InvocationTargetException ex) {
                                     // Ignore
                                 }
                                 SwingUtilities.invokeLater(new Runnable() {

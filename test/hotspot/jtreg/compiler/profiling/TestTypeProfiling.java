@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,26 +31,29 @@
   *
   * @comment the test can't be run w/ TieredStopAtLevel < 4
   * @requires vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4
+  * @requires vm.compMode != "Xcomp"
   *
   * @library /test/lib /
-  * @build sun.hotspot.WhiteBox
-  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+  * @build jdk.test.whitebox.WhiteBox
+  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
   * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
   *                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
   *                   -XX:CompileThreshold=10000
-  *                   -server -XX:-TieredCompilation -XX:TypeProfileLevel=020
+  *                   -XX:-TieredCompilation -XX:TypeProfileLevel=020
+  *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodSpecTrapLimit=5000 -XX:PerMethodTrapLimit=100
   *                    compiler.profiling.TestTypeProfiling
   * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
   *                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
   *                   -XX:CompileThreshold=10000
-  *                   -server -XX:-TieredCompilation -XX:TypeProfileLevel=200
+  *                   -XX:-TieredCompilation -XX:TypeProfileLevel=200
+  *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodSpecTrapLimit=5000 -XX:PerMethodTrapLimit=100
   *                    compiler.profiling.TestTypeProfiling
   */
 
 package compiler.profiling;
 
 import jdk.test.lib.Platform;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import compiler.whitebox.CompilerWhiteBoxTest;
 import java.lang.reflect.Method;
 
@@ -100,10 +103,10 @@ public class TestTypeProfiling {
         }
 
         Method method;
-        if (WHITE_BOX.getUintxVMFlag("TypeProfileLevel") == 20) {
+        if (WHITE_BOX.getUintVMFlag("TypeProfileLevel") == 20) {
             method = TestTypeProfiling.class.getMethod("mRetTypeCheck", Object.class);
         } else
-        if (WHITE_BOX.getUintxVMFlag("TypeProfileLevel") == 200) {
+        if (WHITE_BOX.getUintVMFlag("TypeProfileLevel") == 200) {
             method = TestTypeProfiling.class.getMethod("mParamTypeCheck", Object.class);
         } else {
             throw new RuntimeException("please setup method return/params type profilation: -XX:TypeProfileLevel=020/200");

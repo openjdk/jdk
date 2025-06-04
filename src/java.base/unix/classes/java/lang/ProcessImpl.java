@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,20 +35,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.Locale;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.OperatingSystem;
 import jdk.internal.util.StaticProperty;
-import sun.security.action.GetPropertyAction;
 
 /**
  * java.lang.Process subclass in the UNIX environment.
@@ -66,10 +63,17 @@ final class ProcessImpl extends Process {
     // Linux platforms support a normal (non-forcible) kill signal.
     static final boolean SUPPORTS_NORMAL_TERMINATION = true;
 
+    // Cache for JNU Charset. The encoding name is guaranteed
+    // to be supported in this environment.
+    static final Charset JNU_CHARSET = Charset.forName(StaticProperty.jnuEncoding());
+
     private final int pid;
     private final ProcessHandleImpl processHandle;
     private int exitcode;
     private boolean hasExited;
+
+    private final ReentrantLock lock = new ReentrantLock();
+    private final Condition condition = lock.newCondition();
 
     private /* final */ OutputStream stdin;
     private /* final */ InputStream  stdout;
@@ -82,71 +86,55 @@ final class ProcessImpl extends Process {
         VFORK
     }
 
-    private static enum Platform {
-
-        LINUX(LaunchMechanism.POSIX_SPAWN, LaunchMechanism.VFORK, LaunchMechanism.FORK),
-
-        BSD(LaunchMechanism.POSIX_SPAWN, LaunchMechanism.FORK),
-
-        AIX(LaunchMechanism.POSIX_SPAWN, LaunchMechanism.FORK);
-
-        final LaunchMechanism defaultLaunchMechanism;
-        final Set<LaunchMechanism> validLaunchMechanisms;
-
-        Platform(LaunchMechanism ... launchMechanisms) {
-            this.defaultLaunchMechanism = launchMechanisms[0];
-            this.validLaunchMechanisms =
-                EnumSet.copyOf(Arrays.asList(launchMechanisms));
+    /**
+     * {@return the default or requested launch mechanism}
+     * @throws Error if the requested launch mechanism is not found or valid
+     */
+    private static LaunchMechanism launchMechanism() {
+        String s = System.getProperty("jdk.lang.Process.launchMechanism");
+        if (s == null) {
+            return LaunchMechanism.POSIX_SPAWN;
         }
 
-        @SuppressWarnings("removal")
-        LaunchMechanism launchMechanism() {
-            return AccessController.doPrivileged(
-                (PrivilegedAction<LaunchMechanism>) () -> {
-                    String s = System.getProperty(
-                        "jdk.lang.Process.launchMechanism");
-                    LaunchMechanism lm;
-                    if (s == null) {
-                        lm = defaultLaunchMechanism;
-                        s = lm.name().toLowerCase(Locale.ENGLISH);
-                    } else {
-                        try {
-                            lm = LaunchMechanism.valueOf(
-                                s.toUpperCase(Locale.ENGLISH));
-                        } catch (IllegalArgumentException e) {
-                            lm = null;
-                        }
-                    }
-                    if (lm == null || !validLaunchMechanisms.contains(lm)) {
-                        throw new Error(
-                            s + " is not a supported " +
-                            "process launch mechanism on this platform."
-                        );
+        try {
+            // Should be value of a LaunchMechanism enum
+            LaunchMechanism lm = LaunchMechanism.valueOf(s.toUpperCase(Locale.ROOT));
+            switch (OperatingSystem.current()) {
+                case LINUX: {
+                    // All options are valid for Linux, but VFORK is deprecated and results
+                    // in a warning
+                    if (lm == LaunchMechanism.VFORK) {
+                        System.err.println("VFORK MODE DEPRECATED");
+                        System.err.println("""
+                                          The VFORK launch mechanism has been deprecated for being dangerous.
+                                          It will be removed in a future java version. Either remove the
+                                          jdk.lang.Process.launchMechanism property (preferred) or use FORK mode
+                                          instead (-Djdk.lang.Process.launchMechanism=FORK).
+                                          """);
                     }
                     return lm;
                 }
-            );
+                case AIX:
+                case MACOS:
+                    if (lm != LaunchMechanism.VFORK) {
+                        return lm; // All but VFORK are valid
+                    }
+                    break;
+            }
+        } catch (IllegalArgumentException e) {
         }
 
-        static Platform get() {
-            String osName = GetPropertyAction.privilegedGetProperty("os.name");
-
-            if (osName.equals("Linux")) { return LINUX; }
-            if (osName.contains("OS X")) { return BSD; }
-            if (osName.equals("AIX")) { return AIX; }
-
-            throw new Error(osName + " is not a supported OS platform.");
-        }
+        throw new Error(s + " is not a supported " +
+            "process launch mechanism on this platform: " + OperatingSystem.current());
     }
 
-    private static final Platform platform = Platform.get();
-    private static final LaunchMechanism launchMechanism = platform.launchMechanism();
+    private static final LaunchMechanism launchMechanism = launchMechanism();
     private static final byte[] helperpath = toCString(StaticProperty.javaHome() + "/lib/jspawnhelper");
 
     private static byte[] toCString(String s) {
         if (s == null)
             return null;
-        byte[] bytes = s.getBytes();
+        byte[] bytes = s.getBytes(JNU_CHARSET);
         byte[] result = new byte[bytes.length + 1];
         System.arraycopy(bytes, 0,
                          result, 0,
@@ -170,7 +158,7 @@ final class ProcessImpl extends Process {
         byte[][] args = new byte[cmdarray.length-1][];
         int size = args.length; // For added NUL bytes
         for (int i = 0; i < args.length; i++) {
-            args[i] = cmdarray[i+1].getBytes();
+            args[i] = cmdarray[i+1].getBytes(JNU_CHARSET);
             size += args[i].length;
         }
         byte[] argBlock = new byte[size];
@@ -300,7 +288,6 @@ final class ProcessImpl extends Process {
                                    boolean redirectErrorStream)
         throws IOException;
 
-    @SuppressWarnings("removal")
     private ProcessImpl(final byte[] prog,
                 final byte[] argBlock, final int argc,
                 final byte[] envBlock, final int envc,
@@ -320,14 +307,7 @@ final class ProcessImpl extends Process {
                           redirectErrorStream);
         processHandle = ProcessHandleImpl.getInternal(pid);
 
-        try {
-            AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
-                initStreams(fds, forceNullOutputStream);
-                return null;
-            });
-        } catch (PrivilegedActionException ex) {
-            throw (IOException) ex.getCause();
-        }
+        initStreams(fds, forceNullOutputStream);
     }
 
     static FileDescriptor newFileDescriptor(int fd) {
@@ -344,9 +324,9 @@ final class ProcessImpl extends Process {
      * @throws IOException
      */
     void initStreams(int[] fds, boolean forceNullOutputStream) throws IOException {
-        switch (platform) {
+        switch (OperatingSystem.current()) {
             case LINUX:
-            case BSD:
+            case MACOS:
                 stdin = (fds[0] == -1) ?
                         ProcessBuilder.NullOutputStream.INSTANCE :
                         new ProcessPipeOutputStream(fds[0]);
@@ -360,10 +340,13 @@ final class ProcessImpl extends Process {
                          new ProcessPipeInputStream(fds[2]);
 
                 ProcessHandleImpl.completion(pid, true).handle((exitcode, throwable) -> {
-                    synchronized (this) {
+                    lock.lock();
+                    try {
                         this.exitcode = (exitcode == null) ? -1 : exitcode.intValue();
                         this.hasExited = true;
-                        this.notifyAll();
+                        condition.signalAll();
+                    } finally {
+                        lock.unlock();
                     }
 
                     if (stdout instanceof ProcessPipeInputStream)
@@ -393,10 +376,13 @@ final class ProcessImpl extends Process {
                          new DeferredCloseProcessPipeInputStream(fds[2]);
 
                 ProcessHandleImpl.completion(pid, true).handle((exitcode, throwable) -> {
-                    synchronized (this) {
+                    lock.lock();
+                    try {
                         this.exitcode = (exitcode == null) ? -1 : exitcode.intValue();
                         this.hasExited = true;
-                        this.notifyAll();
+                        condition.signalAll();
+                    } finally {
+                        lock.unlock();
                     }
 
                     if (stdout instanceof DeferredCloseProcessPipeInputStream)
@@ -412,7 +398,9 @@ final class ProcessImpl extends Process {
                 });
                 break;
 
-            default: throw new AssertionError("Unsupported platform: " + platform);
+            default:
+                throw new AssertionError("Unsupported platform: " +
+                    OperatingSystem.current());
         }
     }
 
@@ -428,43 +416,49 @@ final class ProcessImpl extends Process {
         return stderr;
     }
 
-    public synchronized int waitFor() throws InterruptedException {
-        while (!hasExited) {
-            wait();
+    public int waitFor() throws InterruptedException {
+        lock.lock();
+        try {
+            while (!hasExited) {
+                condition.await();
+            }
+            return exitcode;
+        } finally {
+            lock.unlock();
         }
-        return exitcode;
     }
 
-    @Override
-    public synchronized boolean waitFor(long timeout, TimeUnit unit)
+    public boolean waitFor(long timeout, TimeUnit unit)
         throws InterruptedException
     {
-        long remainingNanos = unit.toNanos(timeout);    // throw NPE before other conditions
-        if (hasExited) return true;
-        if (timeout <= 0) return false;
-
-        long deadline = System.nanoTime() + remainingNanos;
-        do {
-            TimeUnit.NANOSECONDS.timedWait(this, remainingNanos);
-            if (hasExited) {
-                return true;
+        lock.lock();
+        try {
+            long remainingNanos = unit.toNanos(timeout);    // throw NPE before other conditions
+            while (remainingNanos > 0 && !hasExited) {
+                remainingNanos = condition.awaitNanos(remainingNanos);
             }
-            remainingNanos = deadline - System.nanoTime();
-        } while (remainingNanos > 0);
-        return hasExited;
+            return hasExited;
+        } finally {
+            lock.unlock();
+        }
     }
 
-    public synchronized int exitValue() {
-        if (!hasExited) {
-            throw new IllegalThreadStateException("process hasn't exited");
+    public int exitValue() {
+        lock.lock();
+        try {
+            if (!hasExited) {
+                throw new IllegalThreadStateException("process hasn't exited");
+            }
+            return exitcode;
+        } finally {
+            lock.unlock();
         }
-        return exitcode;
     }
 
     private void destroy(boolean force) {
-        switch (platform) {
+        switch (OperatingSystem.current()) {
             case LINUX:
-            case BSD:
+            case MACOS:
             case AIX:
                 // There is a risk that pid will be recycled, causing us to
                 // kill the wrong process!  So we only terminate processes
@@ -472,16 +466,19 @@ final class ProcessImpl extends Process {
                 // there is an unavoidable race condition here, but the window
                 // is very small, and OSes try hard to not recycle pids too
                 // soon, so this is quite safe.
-                synchronized (this) {
+                lock.lock();
+                try {
                     if (!hasExited)
                         processHandle.destroyProcess(force);
+                } finally {
+                    lock.unlock();
                 }
                 try { stdin.close();  } catch (IOException ignored) {}
                 try { stdout.close(); } catch (IOException ignored) {}
                 try { stderr.close(); } catch (IOException ignored) {}
                 break;
 
-            default: throw new AssertionError("Unsupported platform: " + platform);
+            default: throw new AssertionError("Unsupported platform: " + OperatingSystem.current());
         }
     }
 
@@ -508,11 +505,6 @@ final class ProcessImpl extends Process {
 
     @Override
     public ProcessHandle toHandle() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("manageProcess"));
-        }
         return processHandle;
     }
 
@@ -538,8 +530,13 @@ final class ProcessImpl extends Process {
     }
 
     @Override
-    public synchronized boolean isAlive() {
-        return !hasExited;
+    public boolean isAlive() {
+        lock.lock();
+        try {
+            return !hasExited;
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -622,7 +619,7 @@ final class ProcessImpl extends Process {
      */
     private static class ProcessPipeOutputStream extends BufferedOutputStream {
         ProcessPipeOutputStream(int fd) {
-            super(new FileOutputStream(newFileDescriptor(fd)));
+            super(new PipeOutputStream(newFileDescriptor(fd)));
         }
 
         /** Called by the process reaper thread when the process exits. */

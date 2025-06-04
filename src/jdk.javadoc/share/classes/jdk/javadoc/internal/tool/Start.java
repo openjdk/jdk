@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.io.PrintWriter;
 import java.text.BreakIterator;
 import java.text.Collator;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.IllformedLocaleException;
 import java.util.List;
@@ -41,6 +40,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
@@ -51,11 +51,13 @@ import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.main.Arguments;
-import com.sun.tools.javac.main.CommandLine;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.ModuleHelper;
 import com.sun.tools.javac.util.StringUtils;
+
+import jdk.internal.opt.CommandLine;
 
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.Doclet.Option;
@@ -72,11 +74,6 @@ import static jdk.javadoc.internal.tool.Main.Result.*;
 /**
  * Main program of Javadoc.
  * Previously named "Main".
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class Start {
 
@@ -215,7 +212,7 @@ public class Start {
     }
 
     private void showToolOptions(ToolOption.Kind kind) {
-        Comparator<ToolOption> comp = new Comparator<ToolOption>() {
+        var comp = new Comparator<ToolOption>() {
             final Collator collator = Collator.getInstance(Locale.US);
             { collator.setStrength(Collator.PRIMARY); }
 
@@ -256,7 +253,7 @@ public class Start {
         }
         showLinesUsingKey("main.doclet.usage.header", name);
 
-        Comparator<Doclet.Option> comp = new Comparator<Doclet.Option>() {
+        var comp = new Comparator<Doclet.Option>() {
             final Collator collator = Collator.getInstance(Locale.US);
             { collator.setStrength(Collator.PRIMARY); }
 
@@ -339,7 +336,6 @@ public class Start {
     /**
      * Main program - external wrapper.
      */
-    @SuppressWarnings("deprecation")
     Result begin(String... argv) {
         // Preprocess @file arguments
         List<String> allArgs;
@@ -349,7 +345,7 @@ public class Start {
             error("main.cant.read", e.getMessage());
             return ERROR;
         }
-        return begin(allArgs, Collections.emptySet());
+        return begin(allArgs, Set.of());
     }
 
     // Called by the JSR 199 API
@@ -462,6 +458,7 @@ public class Start {
             if (haveErrors && result.isOK()) {
                 result = ERROR;
             }
+            log.flush();
             log.printErrorWarningCounts();
             log.flush();
         }
@@ -558,10 +555,24 @@ public class Start {
         if (options.modules().isEmpty()) {
             if (options.subpackages().isEmpty()) {
                 if (javaNames.isEmpty() && isEmpty(fileObjects)) {
+                    showLinesUsingKey("main.usage.short");
+                    showLinesUsingKey("main.for-more-details-see-usage");
+                    log.flush();
                     String text = log.getText("main.No_modules_packages_or_classes_specified");
                     throw new ToolException(CMDERR, text);
                 }
             }
+        }
+
+        // Allow doclets to access internal API if the appropriate
+        // option is given on the command line.
+        // A better solution would be to modify the javadoc API to
+        // permit an instance of an appropriately configured instance
+        // of a doclet to be specified instead of the name of the
+        // doclet class and optional doclet path.
+        // See https://bugs.openjdk.org/browse/JDK-8263219
+        if (options.compilerOptions().isSet("accessInternalAPI")) {
+            ModuleHelper.addExports(ModuleHelper.class.getModule(), doclet.getClass().getModule());
         }
 
         JavadocTool comp = JavadocTool.make0(context);
@@ -638,7 +649,7 @@ public class Start {
                             text = log.getText("main.unnecessary_arg_provided", argBase);
                             throw new OptionException(ERROR, this::showUsage, text);
                         case 1:
-                            if (!opt.process(arg, Collections.singletonList(argVal))) {
+                            if (!opt.process(arg, List.of(argVal))) {
                                 m = -1;
                             }
                             break;
@@ -662,9 +673,42 @@ public class Start {
         // check if arg is accepted by the tool before emitting error
         if (!isToolOption) {
             text = log.getText("main.invalid_flag", arg);
-            throw new OptionException(ERROR, this::showUsage, text);
+            throw new OptionException(ERROR, () -> reportBadOption(arg), text);
         }
         return m * idx;
+    }
+
+    private void reportBadOption(String name) {
+        var allOptionNames = Stream.concat(
+                getToolOptions().getSupportedOptions().stream()
+                        .flatMap(o -> o.getNames().stream()),
+                docletOptions.stream()
+                        .flatMap(o -> o.getNames().stream()));
+        record Pair(String word, double similarity) { }
+        final double MIN_SIMILARITY = 0.7;
+        var suggestions = allOptionNames
+                .map(t -> new Pair(t, similarity(t, name)))
+                .sorted(Comparator.comparingDouble(Pair::similarity).reversed() /* more similar first */)
+                // .peek(p -> System.out.printf("%.3f, (%s ~ %s)%n", p.similarity, p.word, name)) // debug
+                .takeWhile(p -> Double.compare(p.similarity, MIN_SIMILARITY) >= 0)
+                .map(Pair::word)
+                .toList();
+        switch (suggestions.size()) {
+            case 0 -> { }
+            case 1 -> showLinesUsingKey("main.did-you-mean", suggestions.getFirst());
+            default -> showLinesUsingKey("main.did-you-mean-one-of", String.join(" ", suggestions));
+        }
+        showLinesUsingKey("main.for-more-details-see-usage");
+    }
+
+    // a value in [0, 1] range: the closer the value is to 1, the more similar
+    // the strings are
+    private static double similarity(String a, String b) {
+        // Normalize the distance so that similarity between "x" and "y" is
+        // less than that of "ax" and "ay". Use the greater of two lengths
+        // as normalizer, as it's an upper bound for the distance.
+        return 1.0 - ((double) StringUtils.DamerauLevenshteinDistance.of(a, b))
+                / Math.max(a.length(), b.length());
     }
 
     private static Set<? extends Option> getSupportedOptionsOf(Doclet doclet) {

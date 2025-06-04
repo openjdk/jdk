@@ -17,9 +17,13 @@ set -e
 # for details, see https://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
+package_type=deb
+LAUNCHER_AS_SERVICE_SCRIPTS
+
 case "$1" in
     configure)
 DESKTOP_COMMANDS_INSTALL
+LAUNCHER_AS_SERVICE_COMMANDS_INSTALL
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

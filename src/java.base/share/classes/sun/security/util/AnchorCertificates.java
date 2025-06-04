@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,7 @@ package sun.security.util;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.security.AccessController;
 import java.security.KeyStore;
-import java.security.PrivilegedAction;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -51,45 +49,37 @@ public class AnchorCertificates {
     private static Set<X500Principal> certIssuers = Collections.emptySet();
 
     static  {
-        @SuppressWarnings("removal")
-        var dummy = AccessController.doPrivileged(new PrivilegedAction<>() {
-            @Override
-            public Void run() {
-                File f = new File(FilePaths.cacerts());
-                try {
-                    KeyStore cacerts;
-                    cacerts = KeyStore.getInstance("JKS");
-                    try (FileInputStream fis = new FileInputStream(f)) {
-                        cacerts.load(fis, null);
-                        certs = new HashSet<>();
-                        certIssuers = new HashSet<>();
-                        Enumeration<String> list = cacerts.aliases();
-                        while (list.hasMoreElements()) {
-                            String alias = list.nextElement();
-                            // Check if this cert is labeled a trust anchor.
-                            if (alias.contains(" [jdk")) {
-                                X509Certificate cert = (X509Certificate) cacerts
-                                        .getCertificate(alias);
-                                String fp =
-                                    X509CertImpl.getFingerprint(HASH, cert, debug);
-                                // only add trust anchor if fingerprint can
-                                // be calculated
-                                if (fp != null) {
-                                    certs.add(fp);
-                                    certIssuers.add(cert.getSubjectX500Principal());
-                                }
-                            }
+        File f = new File(FilePaths.cacerts());
+        try {
+            KeyStore cacerts = KeyStore.getInstance("JKS");
+            try (FileInputStream fis = new FileInputStream(f)) {
+                cacerts.load(fis, null);
+                certs = new HashSet<>();
+                certIssuers = new HashSet<>();
+                Enumeration<String> list = cacerts.aliases();
+                while (list.hasMoreElements()) {
+                    String alias = list.nextElement();
+                    // Check if this cert is labeled a trust anchor.
+                    if (alias.contains(" [jdk")) {
+                        X509Certificate cert = (X509Certificate) cacerts
+                                .getCertificate(alias);
+                        String fp =
+                            X509CertImpl.getFingerprint(HASH, cert, debug);
+                        // only add trust anchor if fingerprint can
+                        // be calculated
+                        if (fp != null) {
+                            certs.add(fp);
+                            certIssuers.add(cert.getSubjectX500Principal());
                         }
                     }
-                } catch (Exception e) {
-                    if (debug != null) {
-                        debug.println("Error parsing cacerts");
-                        e.printStackTrace();
-                    }
                 }
-                return null;
             }
-        });
+        } catch (Exception e) {
+            if (debug != null) {
+                debug.println("Error parsing cacerts");
+                e.printStackTrace();
+            }
+        }
     }
 
     /**
@@ -100,7 +90,7 @@ public class AnchorCertificates {
      */
     public static boolean contains(X509Certificate cert) {
         String key = X509CertImpl.getFingerprint(HASH, cert, debug);
-        boolean result = (key == null ? false : certs.contains(key));
+        boolean result = (key != null && certs.contains(key));
         if (result && debug != null) {
             debug.println("AnchorCertificate.contains: matched " +
                     cert.getSubjectX500Principal());

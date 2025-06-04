@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -370,38 +370,9 @@ public class TestLibrary {
     }
 
     /**
-     * Allow test framework to control the security manager set in
-     * each test.
-     *
-     * @param managerClassName The class name of the security manager
-     *                         to be instantiated and set if no security
-     *                         manager has already been set.
-     */
-    public static void suggestSecurityManager(String managerClassName) {
-        SecurityManager manager = null;
-
-        if (System.getSecurityManager() == null) {
-            try {
-                if (managerClassName == null) {
-                    managerClassName = TestParams.defaultSecurityManager;
-                }
-                manager = ((SecurityManager) Class.
-                           forName(managerClassName).newInstance());
-            } catch (ClassNotFoundException cnfe) {
-                bomb("Security manager could not be found: " +
-                     managerClassName, cnfe);
-            } catch (Exception e) {
-                bomb("Error creating security manager. ", e);
-            }
-
-            System.setSecurityManager(manager);
-        }
-    }
-
-    /**
      * Creates an RMI {@link Registry} on a random, un-reserved port.
      *
-     * @returns an RMI Registry, using a random port.
+     * @return an RMI Registry, using a random port.
      * @throws RemoteException if there was a problem creating a Registry.
      */
     public static Registry createRegistryOnUnusedPort() throws RemoteException {
@@ -411,7 +382,7 @@ public class TestLibrary {
     /**
      * Creates an RMI {@link Registry} on an ephemeral port.
      *
-     * @returns an RMI Registry
+     * @return an RMI Registry
      * @throws RemoteException if there was a problem creating a Registry.
      */
     public static Registry createRegistryOnEphemeralPort() throws RemoteException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,14 +169,15 @@ import static java.util.Map.entry;
  * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
- * This abstract class has two implementations, both of which are immutable and thread-safe.
- * One implementation models region-based IDs, the other is {@code ZoneOffset} modelling
- * offset-based IDs. This difference is visible in serialization.
+ * This abstract sealed class permits two implementations, both of which are immutable and
+ * thread-safe. One implementation models region-based IDs, the other is {@code ZoneOffset}
+ * modelling offset-based IDs. This difference is visible in serialization.
  *
  * @since 1.8
+ * @sealedGraph
  */
 @jdk.internal.ValueBased
-public abstract class ZoneId implements Serializable {
+public abstract sealed class ZoneId implements Serializable permits ZoneOffset, ZoneRegion {
 
     /**
      * A map of zone overrides to enable the short time-zone names to be used.
@@ -185,15 +186,12 @@ public abstract class ZoneId implements Serializable {
      * This map allows the IDs to continue to be used via the
      * {@link #of(String, Map)} factory method.
      * <p>
-     * This map contains a mapping of the IDs that is in line with TZDB 2005r and
+     * This map contains a mapping of the IDs that is in line with TZDB 2024b and
      * later, where 'EST', 'MST' and 'HST' map to IDs which do not include daylight
-     * savings.
+     * savings since 1970. This mapping may change in update releases in support of new versions of TZDB.
      * <p>
      * This maps as follows:
      * <ul>
-     * <li>EST - -05:00</li>
-     * <li>HST - -10:00</li>
-     * <li>MST - -07:00</li>
      * <li>ACT - Australia/Darwin</li>
      * <li>AET - Australia/Sydney</li>
      * <li>AGT - America/Argentina/Buenos_Aires</li>
@@ -207,10 +205,13 @@ public abstract class ZoneId implements Serializable {
      * <li>CTT - Asia/Shanghai</li>
      * <li>EAT - Africa/Addis_Ababa</li>
      * <li>ECT - Europe/Paris</li>
+     * <li>EST - America/Panama</li>
+     * <li>HST - Pacific/Honolulu</li>
      * <li>IET - America/Indiana/Indianapolis</li>
      * <li>IST - Asia/Kolkata</li>
      * <li>JST - Asia/Tokyo</li>
      * <li>MIT - Pacific/Apia</li>
+     * <li>MST - America/Phoenix</li>
      * <li>NET - Asia/Yerevan</li>
      * <li>NST - Pacific/Auckland</li>
      * <li>PLT - Asia/Karachi</li>
@@ -248,9 +249,9 @@ public abstract class ZoneId implements Serializable {
         entry("PST", "America/Los_Angeles"),
         entry("SST", "Pacific/Guadalcanal"),
         entry("VST", "Asia/Ho_Chi_Minh"),
-        entry("EST", "-05:00"),
-        entry("MST", "-07:00"),
-        entry("HST", "-10:00")
+        entry("EST", "America/Panama"),
+        entry("MST", "America/Phoenix"),
+        entry("HST", "Pacific/Honolulu")
     );
     /**
      * Serialization version.
@@ -471,11 +472,7 @@ public abstract class ZoneId implements Serializable {
     /**
      * Constructor only accessible within the package.
      */
-    ZoneId() {
-        if (getClass() != ZoneOffset.class && getClass() != ZoneRegion.class) {
-            throw new AssertionError("Invalid subclass");
-        }
-    }
+    ZoneId() {}
 
     //-----------------------------------------------------------------------
     /**
@@ -587,6 +584,11 @@ public abstract class ZoneId implements Serializable {
         }
         return this;
     }
+
+    /**
+     * Get the effective offset for an instant at the given epochSecond.
+     */
+    /* package-private */ abstract ZoneOffset getOffset(long epochSecond);
 
     //-----------------------------------------------------------------------
     /**

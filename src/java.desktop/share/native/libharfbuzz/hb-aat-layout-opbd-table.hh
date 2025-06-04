@@ -42,7 +42,7 @@ struct OpticalBounds
   bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    return_trace (likely (c->check_struct (this)));
+    return_trace (c->check_struct (this));
   }
 
   FWORD         leftSide;
@@ -58,7 +58,7 @@ struct opbdFormat0
   bool get_bounds (hb_font_t *font, hb_codepoint_t glyph_id,
                    hb_glyph_extents_t *extents, const void *base) const
   {
-    const OffsetTo<OpticalBounds> *bounds_offset = lookupTable.get_value (glyph_id, font->face->get_num_glyphs ());
+    const Offset16To<OpticalBounds> *bounds_offset = lookupTable.get_value (glyph_id, font->face->get_num_glyphs ());
     if (!bounds_offset) return false;
     const OpticalBounds &bounds = base+*bounds_offset;
 
@@ -79,7 +79,7 @@ struct opbdFormat0
   }
 
   protected:
-  Lookup<OffsetTo<OpticalBounds>>
+  Lookup<Offset16To<OpticalBounds>>
                 lookupTable;    /* Lookup table associating glyphs with the four
                                  * int16 values for the left-side, top-side,
                                  * right-side, and bottom-side optical bounds. */
@@ -92,7 +92,7 @@ struct opbdFormat1
   bool get_bounds (hb_font_t *font, hb_codepoint_t glyph_id,
                    hb_glyph_extents_t *extents, const void *base) const
   {
-    const OffsetTo<OpticalBounds> *bounds_offset = lookupTable.get_value (glyph_id, font->face->get_num_glyphs ());
+    const Offset16To<OpticalBounds> *bounds_offset = lookupTable.get_value (glyph_id, font->face->get_num_glyphs ());
     if (!bounds_offset) return false;
     const OpticalBounds &bounds = base+*bounds_offset;
 
@@ -116,7 +116,7 @@ struct opbdFormat1
   }
 
   protected:
-  Lookup<OffsetTo<OpticalBounds>>
+  Lookup<Offset16To<OpticalBounds>>
                 lookupTable;    /* Lookup table associating glyphs with the four
                                  * int16 values for the left-side, top-side,
                                  * right-side, and bottom-side optical bounds. */
@@ -133,8 +133,8 @@ struct opbd
   {
     switch (format)
     {
-    case 0: return u.format0.get_bounds (font, glyph_id, extents, this);
-    case 1: return u.format1.get_bounds (font, glyph_id, extents, this);
+    case 0: hb_barrier (); return u.format0.get_bounds (font, glyph_id, extents, this);
+    case 1: hb_barrier (); return u.format1.get_bounds (font, glyph_id, extents, this);
     default:return false;
     }
   }
@@ -144,11 +144,12 @@ struct opbd
     TRACE_SANITIZE (this);
     if (unlikely (!c->check_struct (this) || version.major != 1))
       return_trace (false);
+    hb_barrier ();
 
     switch (format)
     {
-    case 0: return_trace (u.format0.sanitize (c, this));
-    case 1: return_trace (u.format1.sanitize (c, this));
+    case 0: hb_barrier (); return_trace (u.format0.sanitize (c, this));
+    case 1: hb_barrier (); return_trace (u.format1.sanitize (c, this));
     default:return_trace (true);
     }
   }

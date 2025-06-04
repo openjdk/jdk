@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,13 +42,13 @@ public class ImmutableDescriptor implements Descriptor {
     private static final long serialVersionUID = 8853308591080540165L;
 
     /**
-     * The names of the fields in this ImmutableDescriptor with their
+     * @serial The names of the fields in this ImmutableDescriptor with their
      * original case.  The names must be in alphabetical order as determined
      * by {@link String#CASE_INSENSITIVE_ORDER}.
      */
     private final String[] names;
     /**
-     * The values of the fields in this ImmutableDescriptor.  The
+     * @serial The values of the fields in this ImmutableDescriptor.  The
      * elements in this array match the corresponding elements in the
      * {@code names} array.
      */
@@ -108,7 +108,7 @@ public class ImmutableDescriptor implements Descriptor {
         if (fields == null)
             throw new IllegalArgumentException("Null Map");
         SortedMap<String, Object> map =
-                new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+                new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         for (Map.Entry<String, ?> entry : fields.entrySet()) {
             String name = entry.getKey();
             if (name == null || name.isEmpty())
@@ -164,7 +164,7 @@ public class ImmutableDescriptor implements Descriptor {
         if (fieldNames.length != fieldValues.length)
             throw new IllegalArgumentException("Different size arrays");
         SortedMap<String, Object> map =
-                new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+                new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         for (int i = 0; i < fieldNames.length; i++) {
             String name = fieldNames[i];
             if (name == null || name.isEmpty())
@@ -238,8 +238,7 @@ public class ImmutableDescriptor implements Descriptor {
                 && findNonEmpty(descriptors, index + 1) < 0)
             return (ImmutableDescriptor) descriptors[index];
 
-        Map<String, Object> map =
-            new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+        Map<String, Object> map = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         ImmutableDescriptor biggestImmutable = EMPTY_DESCRIPTOR;
         for (Descriptor d : descriptors) {
             if (d != null) {

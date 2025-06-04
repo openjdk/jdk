@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,16 @@ package com.sun.hotspot.igv.util;
 
 import com.sun.hotspot.igv.data.ChangedListener;
 import java.awt.*;
-import java.awt.geom.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Rectangle2D;
 import java.util.List;
-import javax.swing.*;
+import javax.swing.JComponent;
+import javax.swing.JViewport;
+import javax.swing.Scrollable;
+import javax.swing.SwingConstants;
 
 /**
  *
@@ -52,10 +56,13 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
     public static final Color BAR_SELECTION_COLOR = new Color(255, 0, 0, 120);
     public static final Color BAR_SELECTION_COLOR_ROLLOVER = new Color(255, 0, 255, 120);
     public static final Color BAR_SELECTION_COLOR_DRAG = new Color(0, 0, 255, 120);
-    private RangeSliderModel model;
+    private final RangeSliderModel model;
     private State state;
     private Point startPoint;
-    private RangeSliderModel tempModel;
+    private boolean tempModel = false;
+    private int tempFirstPos;
+    private int tempSecondPos;
+
     private boolean isOverBar;
 
     private enum State {
@@ -66,17 +73,10 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         DragSecondPosition
     }
 
-    public RangeSlider() {
+    public RangeSlider(RangeSliderModel newModel) {
         state = State.Initial;
         this.addMouseMotionListener(this);
         this.addMouseListener(this);
-    }
-
-    public void setModel(RangeSliderModel newModel) {
-        if (model != null) {
-            model.getChangedEvent().removeListener(this);
-            model.getColorChangedEvent().removeListener(this);
-        }
         if (newModel != null) {
             newModel.getChangedEvent().addListener(this);
             newModel.getColorChangedEvent().addListener(this);
@@ -85,11 +85,18 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         update();
     }
 
-    private RangeSliderModel getPaintingModel() {
-        if (tempModel != null) {
-            return tempModel;
+    private int getFirstPos() {
+        if (tempModel) {
+            return tempFirstPos;
         }
-        return model;
+        return model.getFirstPosition();
+    }
+
+    private int getSecondPos() {
+        if (tempModel) {
+            return tempSecondPos;
+        }
+        return model.getSecondPosition();
     }
 
     /**
@@ -133,14 +140,13 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
     public Dimension getPreferredSize() {
         Dimension d = super.getPreferredSize();
         d.height = HEIGHT;
-        d.width = Math.max(d.width, (int)(2 * BAR_CIRCLE_CONNECTOR_SIZE + getPaintingModel().getPositions().size() * (BAR_CIRCLE_SIZE + BAR_CIRCLE_CONNECTOR_SIZE)));
+        d.width = Math.max(d.width, (int)(2 * BAR_CIRCLE_CONNECTOR_SIZE + model.getPositions().size() * (BAR_CIRCLE_SIZE + BAR_CIRCLE_CONNECTOR_SIZE)));
         return d;
     }
 
     @Override
     public void changed(RangeSliderModel source) {
         revalidate();
-
         float barStartY = getBarStartY();
         int circleCenterY = (int)(barStartY + BAR_HEIGHT / 2);
         int startX = (int)getStartXPosition(model.getFirstPosition());
@@ -155,12 +161,12 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
     }
 
     private float getXPosition(int index) {
-        assert index >= 0 && index < getPaintingModel().getPositions().size();
+        assert index >= 0 && index < model.getPositions().size();
         return getXOffset() * (index + 1);
     }
 
     private float getXOffset() {
-        int size = getPaintingModel().getPositions().size();
+        int size = model.getPositions().size();
         float width = (float)getWidth();
         return (width / (size + 1));
     }
@@ -186,12 +192,12 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         g2.fill(new Rectangle2D.Float(0, 0, width, height));
 
         // Nothing to paint?
-        if (getPaintingModel() == null || getPaintingModel().getPositions().size() == 0) {
+        if (model == null || model.getPositions().size() == 0) {
             return;
         }
 
-        int firstPos = getPaintingModel().getFirstPosition();
-        int secondPos = getPaintingModel().getSecondPosition();
+        int firstPos = getFirstPos();
+        int secondPos = getSecondPos();
 
         paintSelected(g2, firstPos, secondPos);
         paintBar(g2);
@@ -199,11 +205,11 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
     }
 
     private float getBarStartY() {
-        return getHeight() / 2 - BAR_HEIGHT / 2;
+        return getHeight() / 2.0f - BAR_HEIGHT / 2.0f;
     }
 
     private void paintBar(Graphics2D g) {
-        List<String> list = getPaintingModel().getPositions();
+        List<String> list = model.getPositions();
         float barStartY = getBarStartY();
 
         g.setColor(BAR_COLOR);
@@ -212,7 +218,7 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         float circleCenterY = barStartY + BAR_HEIGHT / 2;
         for (int i = 0; i < list.size(); i++) {
             float curX = getXPosition(i);
-            g.setColor(getPaintingModel().getColors().get(i));
+            g.setColor(model.getColors().get(i));
             g.fill(new Ellipse2D.Float(curX - BAR_CIRCLE_SIZE / 2, circleCenterY - BAR_CIRCLE_SIZE / 2, BAR_CIRCLE_SIZE, BAR_CIRCLE_SIZE));
             g.setColor(Color.black);
             g.draw(new Ellipse2D.Float(curX - BAR_CIRCLE_SIZE / 2, circleCenterY - BAR_CIRCLE_SIZE / 2, BAR_CIRCLE_SIZE, BAR_CIRCLE_SIZE));
@@ -226,7 +232,7 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
                 Rectangle bounds = metrics.getStringBounds(curS, g).getBounds();
                 if (bounds.width < endX - startX && bounds.height < barStartY) {
                     g.setColor(Color.black);
-                    g.drawString(curS, startX + (endX - startX) / 2 - bounds.width / 2, barStartY / 2 + bounds.height / 2);
+                    g.drawString(curS, (startX + (endX - startX) / 2.0f - bounds.width / 2.0f), barStartY / 2.0f + bounds.height / 2.0f);
                 }
             }
         }
@@ -258,7 +264,7 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
 
     private boolean isOverSecondPosition(Point p) {
         if (p.y >= getBarStartY()) {
-            float destX = getEndXPosition(getPaintingModel().getSecondPosition());
+            float destX = getEndXPosition(getSecondPos());
             float off = Math.abs(destX - p.x);
             return off <= MOUSE_ENDING_OFFSET;
         }
@@ -267,7 +273,7 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
 
     private boolean isOverFirstPosition(Point p) {
         if (p.y >= getBarStartY()) {
-            float destX = getStartXPosition(getPaintingModel().getFirstPosition());
+            float destX = getStartXPosition(getFirstPos());
             float off = Math.abs(destX - p.x);
             return off <= MOUSE_ENDING_OFFSET;
         }
@@ -276,7 +282,7 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
 
     private boolean isOverSelection(Point p) {
         if (p.y >= getBarStartY() && !isOverFirstPosition(p) && !isOverSecondPosition(p)) {
-            return p.x > getStartXPosition(getPaintingModel().getFirstPosition()) && p.x < getEndXPosition(getPaintingModel().getSecondPosition());
+            return p.x > getStartXPosition(getFirstPos()) && p.x < getEndXPosition(getSecondPos());
         }
         return false;
     }
@@ -289,28 +295,25 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         if (state == State.DragBar) {
             float firstX = this.getStartXPosition(model.getFirstPosition());
             float newFirstX = firstX + e.getPoint().x - startPoint.x;
-            int newIndex = getIndexFromPosition(newFirstX) + 1;
-            if (newIndex + model.getSecondPosition() - model.getFirstPosition() >= model.getPositions().size()) {
-                newIndex = model.getPositions().size() - (model.getSecondPosition() - model.getFirstPosition()) - 1;
+            tempFirstPos = getIndexFromPosition(newFirstX) + 1;
+            if (tempFirstPos + model.getSecondPosition() - model.getFirstPosition() >= model.getPositions().size()) {
+                tempFirstPos = model.getPositions().size() - (model.getSecondPosition() - model.getFirstPosition()) - 1;
             }
-            int secondPosition = newIndex + model.getSecondPosition() - model.getFirstPosition();
-            tempModel.setPositions(newIndex, secondPosition);
+            tempSecondPos = tempFirstPos + model.getSecondPosition() - model.getFirstPosition();
             update();
         } else if (state == State.DragFirstPosition) {
-            int firstPosition = getIndexFromPosition(e.getPoint().x) + 1;
-            int secondPosition = model.getSecondPosition();
-            if (firstPosition > secondPosition) {
-                firstPosition--;
+            tempFirstPos = getIndexFromPosition(e.getPoint().x) + 1;
+            tempSecondPos = model.getSecondPosition();
+            if (tempFirstPos > tempSecondPos) {
+                tempFirstPos--;
             }
-            tempModel.setPositions(firstPosition, secondPosition);
             update();
         } else if (state == State.DragSecondPosition) {
-            int firstPosition = model.getFirstPosition();
-            int secondPosition = getIndexFromPosition(e.getPoint().x);
-            if (secondPosition < firstPosition) {
-                secondPosition++;
+            tempFirstPos = model.getFirstPosition();
+            tempSecondPos = getIndexFromPosition(e.getPoint().x);
+            if (tempSecondPos < tempFirstPos) {
+                tempSecondPos++;
             }
-            tempModel.setPositions(firstPosition, secondPosition);
             update();
         }
     }
@@ -319,19 +322,19 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         if (x < getXPosition(0)) {
             return -1;
         }
-        for (int i = 0; i < getPaintingModel().getPositions().size() - 1; i++) {
+        for (int i = 0; i < model.getPositions().size() - 1; i++) {
             float startX = getXPosition(i);
             float endX = getXPosition(i + 1);
             if (x >= startX && x <= endX) {
                 return i;
             }
         }
-        return getPaintingModel().getPositions().size() - 1;
+        return model.getPositions().size() - 1;
     }
 
     private int getCircleIndexFromPosition(int x) {
         int result = 0;
-        for (int i = 1; i < getPaintingModel().getPositions().size(); i++) {
+        for (int i = 1; i < model.getPositions().size(); i++) {
             if (x > getStartXPosition(i)) {
                 result = i;
             }
@@ -345,8 +348,6 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         if (model == null) {
             return;
         }
-
-
         Point p = e.getPoint();
         if (isOverFirstPosition(p) || isOverSecondPosition(p)) {
             setCursor(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR));
@@ -386,22 +387,21 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         }
 
         startPoint = e.getPoint();
-        tempModel = model.copy();
+        tempModel = true;
     }
 
     @Override
     public void mouseReleased(MouseEvent e) {
-        if (model == null || tempModel == null) {
+        if (model == null || !tempModel) {
             return;
         }
         state = State.Initial;
-        model.setPositions(tempModel.getFirstPosition(), tempModel.getSecondPosition());
-        tempModel = null;
+        model.setPositions(tempFirstPos, tempSecondPos);
+        tempModel = false;
     }
 
     @Override
-    public void mouseEntered(MouseEvent e) {
-    }
+    public void mouseEntered(MouseEvent e) { }
 
     @Override
     public void mouseExited(MouseEvent e) {

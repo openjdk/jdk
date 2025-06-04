@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.flagless
  * @library /test/lib
- * @build SharedStringsWb sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @build SharedStringsWb jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
  * @run driver SharedStrings
  */
 
@@ -44,10 +44,10 @@ public class SharedStrings {
         // This also serves as a reference on how to use this feature,
         // hence the command lines are spelled out instead of using the
         // test utils methods.
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=./SharedStrings.jsa",
-            "-Xlog:cds,cds+hashtables",
+            "-Xlog:cds,aot+hashtables",
             // Needed for bootclasspath match, for CDS to work with WhiteBox API
             "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"),
             "-Xshare:dump");
@@ -56,7 +56,7 @@ public class SharedStrings {
         CDSTestUtils.checkDump(out, "Shared string table stats");
 
 
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:SharedArchiveFile=./SharedStrings.jsa",
                 // needed for access to white box test API

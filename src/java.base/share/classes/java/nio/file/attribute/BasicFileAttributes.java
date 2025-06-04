@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,10 @@ package java.nio.file.attribute;
  * interface.
  *
  * <p> <b>Usage Example:</b>
- * <pre>
- *    Path file = ...
- *    BasicFileAttributes attrs = Files.readAttributes(file, BasicFileAttributes.class);
- * </pre>
+ * {@snippet lang=java :
+ *     Path file = ...
+ *     BasicFileAttributes attrs = Files.readAttributes(file, BasicFileAttributes.class);
+ * }
  *
  * @since 1.7
  *

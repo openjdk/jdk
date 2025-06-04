@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @bug 8142968 8166568 8166286 8170618 8168149 8240910 8276764 8276766
+ * @bug 8142968 8166568 8166286 8170618 8168149 8240910 8276764 8276766 8353267
  * @summary Basic test for jmod
  * @library /test/lib
  * @modules jdk.compiler
  *          jdk.jlink
+ *          java.base/jdk.internal.module
  * @build jdk.test.lib.compiler.CompilerUtils
  *        jdk.test.lib.util.FileUtils
  *        jdk.test.lib.Platform
@@ -45,6 +46,7 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.util.FileUtils;
+import jdk.test.lib.util.ModuleInfoWriter;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
@@ -682,7 +684,43 @@ public class JmodTest {
                  Set<String> pkgs = getModuleDescriptor(jmod).packages();
                  assertEquals(pkgs, expectedPackages);
              });
-        }
+    }
+
+    /**
+     * Test class files is the META-INF directory.
+     */
+    @Test
+    public void testClassInMetaInf() throws IOException {
+        Path jmod = MODS_DIR.resolve("baz.jmod");
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+
+        ModuleDescriptor descriptor = ModuleDescriptor.newModule("baz").build();
+        byte[] moduleInfo = ModuleInfoWriter.toBytes(descriptor);
+
+        Path dir = Files.createTempDirectory(Path.of("."), "baz");
+        Files.write(dir.resolve("module-info.class"), moduleInfo);
+        Files.createFile(Files.createDirectory(dir.resolve("p")).resolve("C.class"));
+
+        // META-INF/extra/q/C.class
+        Path extraClasses = dir.resolve("META-INF/extra/");
+        Files.createFile(Files.createDirectories(extraClasses.resolve("q")).resolve("C.class"));
+
+        Set<String> expectedPackages = Set.of("p");
+        Set<String> expectedContent = Set.of(
+                CLASSES_PREFIX + "module-info.class",
+                CLASSES_PREFIX + "p/C.class",
+                CLASSES_PREFIX + "META-INF/extra/q/C.class");
+
+        jmod("create",
+                "--class-path", dir.toString(),
+                jmod.toString())
+                .assertSuccess()
+                .resultChecker(r -> {
+                    Set<String> pkgs = getModuleDescriptor(jmod).packages();
+                    assertEquals(pkgs, expectedPackages);
+                    assertJmodContent(jmod, expectedContent);
+                });
+    }
 
     @Test
     public void testVersion() {
@@ -736,6 +774,101 @@ public class JmodTest {
             .resultChecker(r -> {
                 assertContains(r.output, "unnamed package");
                 assertTrue(Files.notExists(tmp), "Unexpected tmp file:" + tmp);
+            });
+    }
+
+    @Test
+    public void testCompressionLevel() throws IOException {
+        String cp = EXPLODED_DIR.resolve("foo").resolve("classes").toString();
+        Path jmod = MODS_DIR.resolve("foo.jmod");
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+
+        jmod("create",
+             "--class-path", cp,
+             "--compress", "zip-0",
+             jmod.toString())
+            .assertSuccess();
+
+        jmod("list",
+             "--compress", "zip-0",
+             jmod.toString())
+            .assertFailure()
+            .resultChecker(r -> {
+                assertTrue(r.output.contains("--compress is only accepted with create mode"), "Error message printed");
+            });
+
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+
+        jmod("create",
+             "--class-path", cp,
+             "--compress", "zip-9",
+             jmod.toString())
+            .assertSuccess();
+
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+
+        jmod("create",
+             "--class-path", cp,
+             "--compress", "zip--1",
+             jmod.toString())
+            .assertFailure()
+            .resultChecker(r -> {
+                assertTrue(r.output.contains("--compress value is invalid"), "Error message printed");
+            });
+
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+
+        jmod("create",
+             "--class-path", cp,
+             "--compress", "zip-1-something",
+             jmod.toString())
+            .assertFailure()
+            .resultChecker(r -> {
+                assertTrue(r.output.contains("--compress value is invalid"), "Error message printed");
+            });
+
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+
+        jmod("create",
+             "--class-path", cp,
+             "--compress", "zip-10",
+             jmod.toString())
+            .assertFailure()
+            .resultChecker(r -> {
+                assertTrue(r.output.contains("--compress value is invalid"), "Error message printed");
+            });
+
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+
+        jmod("create",
+             "--class-path", cp,
+             "--compress", "zip-",
+             jmod.toString())
+            .assertFailure()
+            .resultChecker(r -> {
+                assertTrue(r.output.contains("--compress value is invalid"), "Error message printed");
+            });
+
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+
+        jmod("create",
+             "--class-path", cp,
+             "--compress", "test",
+             jmod.toString())
+            .assertFailure()
+            .resultChecker(r -> {
+                assertTrue(r.output.contains("--compress value is invalid"), "Error message printed");
+            });
+
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+
+        jmod("create",
+             "--class-path", cp,
+             "--compress", "test-0",
+             jmod.toString())
+            .assertFailure()
+            .resultChecker(r -> {
+                assertTrue(r.output.contains("--compress value is invalid"), "Error message printed");
             });
     }
 

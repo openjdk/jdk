@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
  */
 package javax.swing;
 
+import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.ListIterator;
 import java.awt.Component;
 import java.awt.ComponentOrientation;
@@ -36,6 +36,13 @@ import java.awt.Window;
  * Comparator which attempts to sort Components based on their size and
  * position. Code adapted from original javax.swing.DefaultFocusManager
  * implementation.
+ * <p>
+ * <strong>Warning:</strong>
+ * Serialized objects of this class will not be compatible with
+ * future Swing releases. The current serialization support is
+ * appropriate for short term storage or RMI between applications running
+ * the same version of Swing.  As of 1.4, support for long term storage
+ * of all JavaBeans has been added to the <code>java.beans</code> package.
  *
  * @author David Mendenhall
  */
@@ -59,11 +66,11 @@ final class LayoutComparator implements Comparator<Component>, java.io.Serializa
 
         // Row/Column algorithm only applies to siblings. If 'a' and 'b'
         // aren't siblings, then we need to find their most inferior
-        // ancestors which share a parent. Compute the ancestory lists for
+        // ancestors which share a parent. Compute the ancestry lists for
         // each Component and then search from the Window down until the
         // hierarchy branches.
         if (a.getParent() != b.getParent()) {
-            LinkedList<Component> aAncestory = new LinkedList<Component>();
+            ArrayList<Component> aAncestory = new ArrayList<>();
 
             for(; a != null; a = a.getParent()) {
                 aAncestory.add(a);
@@ -76,7 +83,7 @@ final class LayoutComparator implements Comparator<Component>, java.io.Serializa
                 throw new ClassCastException();
             }
 
-            LinkedList<Component> bAncestory = new LinkedList<Component>();
+            ArrayList<Component> bAncestory = new ArrayList<>();
 
             for(; b != null; b = b.getParent()) {
                 bAncestory.add(b);

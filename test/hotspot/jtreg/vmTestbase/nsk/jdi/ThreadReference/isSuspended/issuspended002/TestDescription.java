@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
  *     com.sun.jdi.ThreadReference.isSuspended()
  *     complies with its spec:
  *     public boolean isSuspended()
- *     Determines whether the thread has been suspended by the the debugger.
+ *     Determines whether the thread has been suspended by the debugger.
  *     Returns: true if the thread is currently suspended; false otherwise.
  *     Throws: ObjectCollectedException -
  *             if this object has been garbage collected.
@@ -65,7 +65,7 @@
  *          /test/lib
  * @build nsk.jdi.ThreadReference.isSuspended.issuspended002
  *        nsk.jdi.ThreadReference.isSuspended.issuspended002a
- * @run main/othervm
+ * @run driver
  *      nsk.jdi.ThreadReference.isSuspended.issuspended002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -74,4 +74,3 @@
  *      -transport.address=dynamic
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
-

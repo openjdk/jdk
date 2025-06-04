@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8233922
  * @modules java.base/jdk.internal.module
  * @library /test/lib
- * @build ServiceBinding TestBootLayer
+ * @build ServiceBinding TestBootLayer jdk.test.lib.util.ModuleInfoWriter
  * @run testng ServiceBinding
  * @summary Test service binding with incubator modules
  */
@@ -43,17 +43,16 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.Stream;
 
 import static java.lang.module.ModuleDescriptor.newModule;
 
-import jdk.internal.module.ModuleInfoWriter;
 import jdk.internal.module.ModuleResolution;
 
 import org.testng.annotations.Test;
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.util.ModuleInfoWriter;
 
 @Test
 public class ServiceBinding {

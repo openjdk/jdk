@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 package jdk.internal.perf;
 
 import java.nio.ByteBuffer;
-import java.security.Permission;
-import java.security.PrivilegedAction;
 import java.io.IOException;
 
 import sun.nio.cs.UTF_8;
@@ -49,57 +47,13 @@ import jdk.internal.ref.CleanerFactory;
  * @author   Brian Doherty
  * @since    1.4.2
  * @see      #getPerf
- * @see      jdk.internal.perf.Perf.GetPerfAction
  * @see      java.nio.ByteBuffer
  */
 public final class Perf {
 
     private static Perf instance;
 
-    private static final int PERF_MODE_RO = 0;
-    private static final int PERF_MODE_RW = 1;
-
     private Perf() { }    // prevent instantiation
-
-    /**
-     * The GetPerfAction class is a convenience class for acquiring access
-     * to the singleton Perf instance using the
-     * <code>AccessController.doPrivileged()</code> method.
-     * <p>
-     * An instance of this class can be used as the argument to
-     * <code>AccessController.doPrivileged(PrivilegedAction)</code>.
-     * <p> Here is a suggested idiom for use of this class:
-     *
-     * <blockquote><pre>{@code
-     * class MyTrustedClass {
-     *   private static final Perf perf =
-     *       AccessController.doPrivileged(new Perf.GetPerfAction<Perf>());
-     *   ...
-     * }
-     * }</pre></blockquote>
-     * <p>
-     * In the presence of a security manager, the <code>MyTrustedClass</code>
-     * class in the above example will need to be granted the
-     * <em>"sun.misc.Perf.getPerf"</em> <code>RuntimePermission</code>
-     * permission in order to successfully acquire the singleton Perf instance.
-     * <p>
-     * Please note that the <em>"sun.misc.Perf.getPerf"</em> permission
-     * is not a JDK specified permission.
-     *
-     * @see  java.security.AccessController#doPrivileged(PrivilegedAction)
-     * @see  java.lang.RuntimePermission
-     */
-    public static class GetPerfAction implements PrivilegedAction<Perf>
-    {
-        /**
-         * Run the <code>Perf.getPerf()</code> method in a privileged context.
-         *
-         * @see #getPerf
-         */
-        public Perf run() {
-            return getPerf();
-        }
-    }
 
     /**
      * Return a reference to the singleton Perf instance.
@@ -109,11 +63,6 @@ public final class Perf {
      * for accessing the instrumentation buffer for this or another local
      * Java virtual machine.
      * <p>
-     * If a security manager is installed, its <code>checkPermission</code>
-     * method is called with a <code>RuntimePermission</code> with a target
-     * of <em>"sun.misc.Perf.getPerf"</em>. A security exception will result
-     * if the caller has not been granted this permission.
-     * <p>
      * Access to the returned <code>Perf</code> object should be protected
      * by its caller and not passed on to untrusted code. This object can
      * be used to attach to the instrumentation buffer provided by this Java
@@ -122,26 +71,12 @@ public final class Perf {
      * information. API's built on top of this interface may want to provide
      * finer grained access control to the contents of individual
      * instrumentation objects contained within the buffer.
-     * <p>
-     * Please note that the <em>"sun.misc.Perf.getPerf"</em> permission
-     * is not a JDK specified permission.
      *
      * @return  A reference to the singleton Perf instance.
-     * @throws SecurityException  if a security manager exists and its
-     *         <code>checkPermission</code> method doesn't allow access
-     *         to the <em>"jdk.internal.perf.Perf.getPerf""</em> target.
-     * @see  java.lang.RuntimePermission
      * @see  #attach
      */
     public static Perf getPerf()
     {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            Permission perm = new RuntimePermission("jdk.internal.perf.Perf.getPerf");
-            security.checkPermission(perm);
-        }
-
         return instance;
     }
 
@@ -171,106 +106,20 @@ public final class Perf {
      * for the Java virtual machine running this method, then the returned
      * <code>ByteBuffer</code> object will always be coherent and dynamically
      * changing.
-     * <p>
-     * The attach mode specifies the access permissions requested for the
-     * instrumentation buffer of the target virtual machine. The permitted
-     * access permissions are:
-     * <ul>
-     * <li>"r"  - Read only access. This Java virtual machine has only
-     * read access to the instrumentation buffer for the target Java
-     * virtual machine.
-     * <li>"rw"  - Read/Write access. This Java virtual machine has read and
-     * write access to the instrumentation buffer for the target Java virtual
-     * machine. This mode is currently not supported and is reserved for
-     * future enhancements.
-     * </ul>
      *
      * @param   lvmid            an integer that uniquely identifies the
      *                           target local Java virtual machine.
-     * @param   mode             a string indicating the attach mode.
      * @return  ByteBuffer       a direct allocated byte buffer
-     * @throws  IllegalArgumentException  The lvmid or mode was invalid.
+     * @throws  IllegalArgumentException  The lvmid was invalid.
      * @throws  IOException      An I/O error occurred while trying to acquire
      *                           the instrumentation buffer.
      * @throws  OutOfMemoryError The instrumentation buffer could not be mapped
      *                           into the virtual machine's address space.
      * @see     java.nio.ByteBuffer
      */
-    public ByteBuffer attach(int lvmid, String mode)
-           throws IllegalArgumentException, IOException
+    public ByteBuffer attach(int lvmid) throws IOException
     {
-        if (mode.compareTo("r") == 0) {
-            return attachImpl(null, lvmid, PERF_MODE_RO);
-        }
-        else if (mode.compareTo("rw") == 0) {
-            return attachImpl(null, lvmid, PERF_MODE_RW);
-        }
-        else {
-            throw new IllegalArgumentException("unknown mode");
-        }
-    }
-
-    /**
-     * Attach to the instrumentation buffer for the specified Java virtual
-     * machine owned by the given user.
-     * <p>
-     * This method behaves just as the <code>attach(int lvmid, String mode)
-     * </code> method, except that it only searches for Java virtual machines
-     * owned by the specified user.
-     *
-     * @param   user             A <code>String</code> object containing the
-     *                           name of the user that owns the target Java
-     *                           virtual machine.
-     * @param   lvmid            an integer that uniquely identifies the
-     *                           target local Java virtual machine.
-     * @param   mode             a string indicating the attach mode.
-     * @return  ByteBuffer       a direct allocated byte buffer
-     * @throws  IllegalArgumentException  The lvmid or mode was invalid.
-     * @throws  IOException      An I/O error occurred while trying to acquire
-     *                           the instrumentation buffer.
-     * @throws  OutOfMemoryError The instrumentation buffer could not be mapped
-     *                           into the virtual machine's address space.
-     * @see     java.nio.ByteBuffer
-     */
-    public ByteBuffer attach(String user, int lvmid, String mode)
-           throws IllegalArgumentException, IOException
-    {
-        if (mode.compareTo("r") == 0) {
-            return attachImpl(user, lvmid, PERF_MODE_RO);
-        }
-        else if (mode.compareTo("rw") == 0) {
-            return attachImpl(user, lvmid, PERF_MODE_RW);
-        }
-        else {
-            throw new IllegalArgumentException("unknown mode");
-        }
-    }
-
-    /**
-     * Call the implementation specific attach method.
-     * <p>
-     * This method calls into the Java virtual machine to perform the platform
-     * specific attach method. Buffers returned from this method are
-     * internally managed as <code>PhantomRefereces</code> to provide for
-     * guaranteed, secure release of the native resources.
-     *
-     * @param   user             A <code>String</code> object containing the
-     *                           name of the user that owns the target Java
-     *                           virtual machine.
-     * @param   lvmid            an integer that uniquely identifies the
-     *                           target local Java virtual machine.
-     * @param   mode             a string indicating the attach mode.
-     * @return  ByteBuffer       a direct allocated byte buffer
-     * @throws  IllegalArgumentException  The lvmid or mode was invalid.
-     * @throws  IOException      An I/O error occurred while trying to acquire
-     *                           the instrumentation buffer.
-     * @throws  OutOfMemoryError The instrumentation buffer could not be mapped
-     *                           into the virtual machine's address space.
-     */
-    private ByteBuffer attachImpl(String user, int lvmid, int mode)
-            throws IllegalArgumentException, IOException
-    {
-        final ByteBuffer b = attach(user, lvmid, mode);
+        final ByteBuffer b = attach0(lvmid);
 
         if (lvmid == 0) {
             // The native instrumentation buffer for this Java virtual
@@ -321,21 +170,16 @@ public final class Perf {
      * target Java virtual machine will result in two distinct ByteBuffer
      * objects returned by this method. This may change in a future release.
      *
-     * @param   user             A <code>String</code> object containing the
-     *                           name of the user that owns the target Java
-     *                           virtual machine.
      * @param   lvmid            an integer that uniquely identifies the
      *                           target local Java virtual machine.
-     * @param   mode             a string indicating the attach mode.
      * @return  ByteBuffer       a direct allocated byte buffer
-     * @throws  IllegalArgumentException  The lvmid or mode was invalid.
+     * @throws  IllegalArgumentException  The lvmid was invalid.
      * @throws  IOException      An I/O error occurred while trying to acquire
      *                           the instrumentation buffer.
      * @throws  OutOfMemoryError The instrumentation buffer could not be mapped
      *                           into the virtual machine's address space.
      */
-    private native ByteBuffer attach(String user, int lvmid, int mode)
-                   throws IllegalArgumentException, IOException;
+    private native ByteBuffer attach0(int lvmid) throws IOException;
 
     /**
      * Native method to perform the implementation specific detach mechanism.

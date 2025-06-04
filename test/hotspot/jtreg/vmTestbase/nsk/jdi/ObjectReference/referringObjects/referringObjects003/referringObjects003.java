@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,10 @@ import nsk.share.jpda.AbstractDebuggeeTest;
 public class referringObjects003 extends HeapwalkingDebugger {
 
     public static void main(String argv[]) {
-        System.exit(run(argv, System.out) + Consts.JCK_STATUS_BASE);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run(String argv[], PrintStream out) {
@@ -167,11 +170,10 @@ public class referringObjects003 extends HeapwalkingDebugger {
         List<ObjectReference> threads = HeapwalkingDebugger.filterObjectReferrence(threadsToFilter, HeapwalkingDebugger
                 .getObjectReferences("java.lang.Thread", vm));
 
-        expectedCount = 2 + HeapwalkingDebuggee.includedIntoReferrersCountTypes.size();
+        expectedCount = 1 + HeapwalkingDebuggee.includedIntoReferrersCountTypes.size();
 
-        // 1 referrer is debugee object + 1 referrer is thread group
-        // + 'includedIntoReferrersCountTypes.size()' referrers was additionally
-        // created
+        // 1 referrer is debugee object + 'includedIntoReferrersCountTypes.size()' referrers
+        // was additionally created (there is no longer a reference from ThreadGroup)
         checkThreadReferrersCount(threads, expectedCount);
 
         pipe.println(referringObjects003a.COMMAND_STOP_THREADS);

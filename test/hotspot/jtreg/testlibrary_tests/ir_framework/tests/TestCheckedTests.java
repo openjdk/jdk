@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 package ir_framework.tests;
 
 import compiler.lib.ir_framework.*;
-import compiler.lib.ir_framework.driver.IRViolationException;
+import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
 import compiler.lib.ir_framework.driver.TestVMException;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -51,7 +51,7 @@ public class TestCheckedTests {
         TestFramework.run();
         try {
             TestFramework.run(BadIRAndRuntimeCheckedTests.class);
-            Utils.shouldHaveThrownException(baos.toString());
+            Asserts.fail("Should have thrown exception");
         } catch (TestVMException e) {
             System.setOut(oldOut);
             Asserts.assertTrue(e.getExceptionInfo().contains("Test Failures (2)"));
@@ -64,7 +64,7 @@ public class TestCheckedTests {
         System.setOut(ps);
         try {
             TestFramework.run(BadIRCheckedTests.class);
-            Utils.shouldHaveThrownException(baos.toString());
+            Asserts.fail("Should have thrown exception");
         } catch (IRViolationException e) {
             System.setOut(oldOut);
             Asserts.assertTrue(e.getExceptionInfo().contains("Failed IR Rules (3)"));
@@ -96,7 +96,7 @@ public class TestCheckedTests {
     }
 
     @Test
-    @Arguments(Argument.NUMBER_42)
+    @Arguments(values = Argument.NUMBER_42)
     @IR(failOn = IRNode.LOAD)
     @IR(counts = {IRNode.STORE_I, "0"})
     public int testGood3(int x) {
@@ -139,7 +139,7 @@ class BadIRAndRuntimeCheckedTests {
     }
 
     @Test
-    @Arguments(Argument.NUMBER_42)
+    @Arguments(values = Argument.NUMBER_42)
     public int testBad3(int x) {
         return x;
     }
@@ -153,7 +153,7 @@ class BadIRAndRuntimeCheckedTests {
     }
 
     @Test
-    @Arguments(Argument.NUMBER_42)
+    @Arguments(values = Argument.NUMBER_42)
     @IR(failOn = IRNode.LOAD)
     @IR(counts = {IRNode.STORE_I, "1"})
     public int testBad4(int x) {
@@ -168,7 +168,7 @@ class BadIRAndRuntimeCheckedTests {
     }
 
     @Test
-    @Arguments(Argument.NUMBER_42)
+    @Arguments(values = Argument.NUMBER_42)
     public int testBad5(int x) {
         return x;
     }
@@ -210,7 +210,7 @@ class BadIRCheckedTests {
     }
 
     @Test
-    @Arguments(Argument.NUMBER_42)
+    @Arguments(values = Argument.NUMBER_42)
     @IR(failOn = IRNode.LOAD)
     @IR(counts = {IRNode.STORE_I, "1"})
     public int testBad4(int x) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,17 @@ import jdk.jfr.Category;
 import jdk.jfr.Description;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
+import jdk.jfr.internal.MirrorEvent;
 import jdk.jfr.internal.Type;
 
 @Name(Type.EVENT_NAME_PREFIX + "FileForce")
 @Label("File Force")
 @Category("Java Application")
 @Description("Force updates to be written to file")
-public final class FileForceEvent extends AbstractJDKEvent {
+public final class FileForceEvent extends MirrorEvent {
 
     // The order of these fields must be the same as the parameters in
-    // EventHandler::write(..., String, boolean)
+    // commit(..., String, boolean)
 
     @Label("Path")
     @Description("Full path of the file")
@@ -47,4 +48,5 @@ public final class FileForceEvent extends AbstractJDKEvent {
     @Label("Update Metadata")
     @Description("Whether the file metadata is updated")
     public boolean metaData;
+
 }

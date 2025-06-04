@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ package com.sun.hotspot.igv.data.services;
 
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
-import java.util.Set;
+import java.util.Collection;
 
 /**
  *
@@ -36,7 +36,11 @@ public interface InputGraphProvider {
 
     InputGraph getGraph();
 
-    void setSelectedNodes(Set<InputNode> nodes);
+    void centerSelectedNodes();
+
+    void addSelectedNodes(Collection<InputNode> nodes, boolean showIfHidden);
+
+    void clearSelectedElements();
 
     /**
      * @return an iterator walking forward through the {@link InputGraph}s following the {@link #getGraph()}

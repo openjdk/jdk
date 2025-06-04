@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package sun.tools.attach;
 
 import com.sun.tools.attach.VirtualMachineDescriptor;
-import com.sun.tools.attach.AttachPermission;
 import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.spi.AttachProvider;
 
@@ -47,16 +46,6 @@ public abstract class HotSpotAttachProvider extends AttachProvider {
     public HotSpotAttachProvider() {
     }
 
-    public void checkAttachPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(
-                new AttachPermission("attachVirtualMachine")
-            );
-        }
-    }
-
     /*
      * This listVirtualMachines implementation is based on jvmstat. Can override
      * this in platform implementations when there is a more efficient mechanism
@@ -74,9 +63,6 @@ public abstract class HotSpotAttachProvider extends AttachProvider {
         } catch (Throwable t) {
             if (t instanceof ExceptionInInitializerError) {
                 t = t.getCause();
-            }
-            if (t instanceof ThreadDeath) {
-                throw (ThreadDeath)t;
             }
             if (t instanceof SecurityException) {
                 return result;
@@ -101,9 +87,7 @@ public abstract class HotSpotAttachProvider extends AttachProvider {
                     result.add(new HotSpotVirtualMachineDescriptor(this, pid, name));
                 }
             } catch (Throwable t) {
-                if (t instanceof ThreadDeath) {
-                    throw (ThreadDeath)t;
-                }
+                // ignore
             } finally {
                 if (mvm != null) {
                     mvm.detach();
@@ -138,10 +122,6 @@ public abstract class HotSpotAttachProvider extends AttachProvider {
                 return;
             }
         } catch (Throwable t) {
-            if (t instanceof ThreadDeath) {
-                ThreadDeath td = (ThreadDeath)t;
-                throw td;
-            }
             // we do not know what this id is
             return;
         } finally {

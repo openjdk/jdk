@@ -212,7 +212,7 @@ RegionToYXBandedRectangles(JNIEnv *env,
 
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 #endif

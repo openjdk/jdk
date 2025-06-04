@@ -33,4 +33,3 @@
  *          /test/lib
  * @run main/othervm gc.memory.Churn.Churn3.Churn3 -tg -tf
  */
-

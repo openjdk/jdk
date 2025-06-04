@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -140,13 +140,13 @@ static task_t getTask(JNIEnv *env, jobject this_obj) {
   return (task_t)ptr;
 }
 
-#define CHECK_EXCEPTION_(value) if ((*env)->ExceptionOccurred(env)) { return value; }
-#define CHECK_EXCEPTION if ((*env)->ExceptionOccurred(env)) { return;}
+#define CHECK_EXCEPTION_(value) if ((*env)->ExceptionCheck(env)) { return value; }
+#define CHECK_EXCEPTION if ((*env)->ExceptionCheck(env)) { return;}
 #define THROW_NEW_DEBUGGER_EXCEPTION_(str, value) { throw_new_debugger_exception(env, str); return value; }
 #define THROW_NEW_DEBUGGER_EXCEPTION(str) { throw_new_debugger_exception(env, str); return;}
-#define CHECK_EXCEPTION_CLEAR if ((*env)->ExceptionOccurred(env)) { (*env)->ExceptionClear(env); }
-#define CHECK_EXCEPTION_CLEAR_VOID if ((*env)->ExceptionOccurred(env)) { (*env)->ExceptionClear(env); return; }
-#define CHECK_EXCEPTION_CLEAR_(value) if ((*env)->ExceptionOccurred(env)) { (*env)->ExceptionClear(env); return value; }
+#define CHECK_EXCEPTION_CLEAR if ((*env)->ExceptionCheck(env)) { (*env)->ExceptionClear(env); }
+#define CHECK_EXCEPTION_CLEAR_VOID if ((*env)->ExceptionCheck(env)) { (*env)->ExceptionClear(env); return; }
+#define CHECK_EXCEPTION_CLEAR_(value) if ((*env)->ExceptionCheck(env)) { (*env)->ExceptionClear(env); return value; }
 
 static void throw_new_debugger_exception(JNIEnv* env, const char* errMsg) {
   jclass exceptionClass = (*env)->FindClass(env, "sun/jvm/hotspot/debugger/DebuggerException");
@@ -238,7 +238,7 @@ jlong lookupByNameIncore(
     CHECK_EXCEPTION_(0);
   }
   symbolName_cstr = (*env)->GetStringUTFChars(env, symbolName, &isCopy);
-  if ((*env)->ExceptionOccurred(env)) {
+  if ((*env)->ExceptionCheck(env)) {
     if (objectName_cstr != NULL) {
       (*env)->ReleaseStringUTFChars(env, objectName, objectName_cstr);
     }
@@ -621,7 +621,7 @@ jlongArray getThreadIntegerRegisterSetFromCore(JNIEnv *env, jobject this_obj, lo
 #error UNSUPPORTED_ARCH
 #endif
 
-  (*env)->ReleaseLongArrayElements(env, array, regs, JNI_COMMIT);
+  (*env)->ReleaseLongArrayElements(env, array, regs, 0);
   return array;
 }
 
@@ -849,6 +849,9 @@ static bool ptrace_attach(pid_t pid) {
   return true;
 }
 
+#define GOT_HOTSPOT_TRAP (KERN_SUCCESS + 1)
+#define GOT_UNKNOWN_EXC  (KERN_SUCCESS + 2)
+
 kern_return_t catch_mach_exception_raise(
   mach_port_t exception_port, mach_port_t thread_port, mach_port_t task_port,
   exception_type_t exception_type, mach_exception_data_t codes,
@@ -858,20 +861,33 @@ kern_return_t catch_mach_exception_raise(
               "task port %d exc type = %d num_codes %d\n",
               exception_port, thread_port, task_port, exception_type, num_codes);
 
+  // Uncommon traps in the JVM can result in a "crash". We just ignore them.
+  // Returning a result other than KERN_SUCCESS means it will be passed on to the
+  // next handler, which should be in the JVM so it can do the right thing with it.
+  if (exception_type == EXC_BAD_INSTRUCTION || exception_type == EXC_BAD_ACCESS) {
+    return GOT_HOTSPOT_TRAP;
+  }
+
   // This message should denote a Unix soft signal, with
-  // 1. the exception type = EXC_SOFTWARE
-  // 2. codes[0] (which is the code) = EXC_SOFT_SIGNAL
-  // 3. codes[1] (which is the sub-code) = SIGSTOP
-  if (!(exception_type == EXC_SOFTWARE &&
-        codes[0] == EXC_SOFT_SIGNAL    &&
-        codes[num_codes -1] == SIGSTOP)) {
+  // 1. the exception type = EXC_SOFTWARE (5)
+  // 2. codes[0] (which is the code) = EXC_SOFT_SIGNAL (0x10003 / 65539)
+  // 3. codes[1] (which is the sub-code) = SIGSTOP (17)
+  if (exception_type != EXC_SOFTWARE || codes[0] != EXC_SOFT_SIGNAL) {
     print_error("catch_mach_exception_raise: Message doesn't denote a Unix "
                 "soft signal. exception_type = %d, codes[0] = %d, "
-                "codes[num_codes -1] = %d, num_codes = %d\n",
+                "codes[num_codes -1] = 0x%llx, num_codes = %d\n",
                 exception_type, codes[0], codes[num_codes - 1], num_codes);
-    return MACH_RCV_INVALID_TYPE;
+    return GOT_UNKNOWN_EXC;
   }
-  return KERN_SUCCESS;
+  int sig = codes[num_codes -1];
+  if (sig == SIGSTOP) {
+    return KERN_SUCCESS;
+  } else {
+    // Sometimes we get SIGTRAP(4) or SIGILL(5) instead of SIGSTOP (17) on aarch64.
+    // We currently can't deal with them. See JDK-8288429.
+    print_error("catch_mach_exception_raise: signal is not SIGSTOP (%d)\n", sig);
+    return GOT_UNKNOWN_EXC;
+  }
 }
 
 kern_return_t catch_mach_exception_raise_state(
@@ -892,8 +908,12 @@ kern_return_t catch_mach_exception_raise_state_identity(
   return MACH_RCV_INVALID_TYPE;
 }
 
+#define WAIT_SUCCESS 0
+#define WAIT_RETRY   1
+#define WAIT_FAILURE 2
+
 // wait to receive an exception message
-static bool wait_for_exception() {
+static int wait_for_exception() {
   kern_return_t result;
 
   result = mach_msg(&exc_msg.header,
@@ -907,17 +927,21 @@ static bool wait_for_exception() {
   if (result != MACH_MSG_SUCCESS) {
     print_error("attach: wait_for_exception: mach_msg() failed: '%s' (%d)\n",
                 mach_error_string(result), result);
-    return false;
+    return WAIT_FAILURE;
   }
 
-  if (mach_exc_server(&exc_msg.header, &rep_msg.header) == false ||
-      rep_msg.ret_code != KERN_SUCCESS) {
-    print_error("attach: wait_for_exception: mach_exc_server failure\n");
-    if (rep_msg.ret_code != KERN_SUCCESS) {
-      print_error("catch_mach_exception_raise() failed '%s' (%d)\n",
-                  mach_error_string(rep_msg.ret_code), rep_msg.ret_code);
-    }
-    return false;
+  if (!mach_exc_server(&exc_msg.header, &rep_msg.header)) {
+    print_error("attach: wait_for_exception: mach_exc_server failed\n");
+    return WAIT_FAILURE;
+  }
+  if (rep_msg.ret_code == GOT_UNKNOWN_EXC) {
+    print_error("attach: wait_for_exception: catch_mach_exception_raise() got unknown exception type\n");
+    return WAIT_FAILURE;
+  }
+  if (rep_msg.ret_code == GOT_HOTSPOT_TRAP) {
+    // hotspot uncommon trap. Just retry.
+    print_debug("attach: wait_for_exception: retrying\n");
+    return WAIT_RETRY;
   }
 
   print_debug("reply msg from mach_exc_server: (msg->{bits = %#x, size = %u, "
@@ -926,7 +950,7 @@ static bool wait_for_exception() {
               rep_msg.header.msgh_remote_port, rep_msg.header.msgh_local_port,
               rep_msg.header.msgh_reserved, rep_msg.header.msgh_id);
 
-  return true;
+  return WAIT_SUCCESS;
 }
 
 /*
@@ -1020,7 +1044,14 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__I(
     THROW_NEW_DEBUGGER_EXCEPTION("Can't ptrace attach to the process");
   }
 
-  if (wait_for_exception() != true) {
+  int retry_count = 0;
+  int wait_result;
+  do {
+    wait_result = wait_for_exception();
+  } while (wait_result == WAIT_RETRY && retry_count++ < 5);
+
+  if (wait_result != WAIT_SUCCESS) {
+    print_error("attach: wait_for_exception() failed. Retried %d times\n", retry_count);
     mach_port_deallocate(mach_task_self(), gTask);
     mach_port_deallocate(mach_task_self(), tgt_exception_port);
     THROW_NEW_DEBUGGER_EXCEPTION(
@@ -1105,7 +1136,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__Ljava_lang_String_2L
   execName_cstr = (*env)->GetStringUTFChars(env, execName, &isCopy);
   CHECK_EXCEPTION;
   coreName_cstr = (*env)->GetStringUTFChars(env, coreName, &isCopy);
-  if ((*env)->ExceptionOccurred(env)) {
+  if ((*env)->ExceptionCheck(env)) {
     (*env)->ReleaseStringUTFChars(env, execName, execName_cstr);
     return;
   }
@@ -1115,7 +1146,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__Ljava_lang_String_2L
   if ( (ph = Pgrab_core(execName_cstr, coreName_cstr)) == NULL) {
     (*env)->ReleaseStringUTFChars(env, execName, execName_cstr);
     (*env)->ReleaseStringUTFChars(env, coreName, coreName_cstr);
-    THROW_NEW_DEBUGGER_EXCEPTION("Can't attach to the core file");
+    THROW_NEW_DEBUGGER_EXCEPTION("Can't attach to the core file. For more information, export LIBSAPROC_DEBUG=1 and try again.");
   }
   (*env)->SetLongField(env, this_obj, p_ps_prochandle_ID, (jlong)(intptr_t)ph);
   (*env)->ReleaseStringUTFChars(env, execName, execName_cstr);

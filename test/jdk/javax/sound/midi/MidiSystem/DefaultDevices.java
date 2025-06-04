@@ -39,6 +39,7 @@ import com.sun.media.sound.JDK13Services;
  * @bug 4776511
  * @bug 4934509
  * @bug 4938236
+ * @key sound
  * @modules java.desktop/com.sun.media.sound
  * @run main/timeout=600 DefaultDevices
  * @summary RFE: Setting the default MixerProvider

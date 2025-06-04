@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,7 +20,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
-import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.XSLTC;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import java.io.InputStream;
@@ -39,9 +38,9 @@ import javax.xml.transform.stream.StreamSource;
 import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.XMLSecurityManager;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
@@ -51,9 +50,8 @@ import org.xml.sax.XMLReader;
  *
  * Added Catalog Support for URI resolution
  *
- * @LastModified: May 2021
+ * @LastModified: Jan 2025
  */
-@SuppressWarnings("deprecation") //org.xml.sax.helpers.XMLReaderFactory
 public final class Util {
     private static final String property = "org.xml.sax.driver";
 
@@ -91,8 +89,12 @@ public final class Util {
                     if (reader == null) {
                         boolean overrideDefaultParser = xsltc.getFeature(
                                 JdkXmlFeatures.XmlFeature.JDK_OVERRIDE_PARSER);
-                        reader = JdkXmlUtils.getXMLReader(overrideDefaultParser,
-                                xsltc.isSecureProcessing());
+                        reader = JdkXmlUtils.getXMLReader(
+                                (XMLSecurityManager)xsltc.getProperty(JdkConstants.SECURITY_MANAGER),
+                                overrideDefaultParser,
+                                xsltc.isSecureProcessing(),
+                                xsltc.getFeature(JdkXmlFeatures.XmlFeature.USE_CATALOG),
+                                (CatalogFeatures)xsltc.getProperty(JdkXmlFeatures.CATALOG_FEATURES));
                     } else {
                         // compatibility for legacy applications
                         reader.setFeature
@@ -106,25 +108,6 @@ public final class Util {
 
                     JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, JdkConstants.CDATA_CHUNK_SIZE,
                             xsltc.getProperty(JdkConstants.CDATA_CHUNK_SIZE), false);
-
-                    String lastProperty = "";
-                    try {
-                        XMLSecurityManager securityManager =
-                                (XMLSecurityManager)xsltc.getProperty(JdkConstants.SECURITY_MANAGER);
-                        if (securityManager != null) {
-                            for (XMLSecurityManager.Limit limit : XMLSecurityManager.Limit.values()) {
-                                lastProperty = limit.apiProperty();
-                                reader.setProperty(lastProperty,
-                                        securityManager.getLimitValueAsString(limit));
-                            }
-                            if (securityManager.printEntityCountInfo()) {
-                                lastProperty = JdkConstants.JDK_DEBUG_LIMIT;
-                                reader.setProperty(lastProperty, JdkConstants.JDK_YES);
-                            }
-                        }
-                    } catch (SAXException se) {
-                        XMLSecurityManager.printWarning(reader.getClass().getName(), lastProperty, se);
-                    }
 
                     boolean supportCatalog = true;
                     boolean useCatalog = xsltc.getFeature(JdkXmlFeatures.XmlFeature.USE_CATALOG);
@@ -221,10 +204,6 @@ public final class Util {
         catch (NullPointerException e) {
             ErrorMsg err = new ErrorMsg(ErrorMsg.JAXP_NO_SOURCE_ERR,
                                         "TransformerFactory.newTemplates()");
-            throw new TransformerConfigurationException(err.toString());
-        }
-        catch (SecurityException e) {
-            ErrorMsg err = new ErrorMsg(ErrorMsg.FILE_ACCESS_ERR, systemId);
             throw new TransformerConfigurationException(err.toString());
         }
         return input;

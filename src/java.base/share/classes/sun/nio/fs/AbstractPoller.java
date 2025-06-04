@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,10 @@
 
 package sun.nio.fs;
 
-import java.nio.file.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.io.IOException;
+import java.nio.file.*;
 import java.util.*;
+import jdk.internal.misc.InnocuousThread;
 
 /**
  * Base implementation of background poller thread used in watch service
@@ -54,22 +53,10 @@ abstract class AbstractPoller implements Runnable {
     /**
      * Starts the poller thread
      */
-    @SuppressWarnings("removal")
     public void start() {
-        final Runnable thisRunnable = this;
-        AccessController.doPrivileged(new PrivilegedAction<>() {
-            @Override
-            public Object run() {
-                Thread thr = new Thread(null,
-                                        thisRunnable,
-                                        "FileSystemWatchService",
-                                        0,
-                                        false);
-                thr.setDaemon(true);
-                thr.start();
-                return null;
-            }
-         });
+        Thread thr = InnocuousThread.newThread("FileSystemWatchService", this);
+        thr.setDaemon(true);
+        thr.start();
     }
 
     /**
@@ -105,7 +92,7 @@ abstract class AbstractPoller implements Runnable {
         // validate arguments before request to poller
         if (dir == null)
             throw new NullPointerException();
-        Set<WatchEvent.Kind<?>> eventSet = new HashSet<>(events.length);
+        Set<WatchEvent.Kind<?>> eventSet = HashSet.newHashSet(events.length);
         for (WatchEvent.Kind<?> event: events) {
             // standard events
             if (event == StandardWatchEventKinds.ENTRY_CREATE ||

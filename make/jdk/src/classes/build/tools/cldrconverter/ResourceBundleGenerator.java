@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,12 @@ import java.util.Formatter;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.stream.Collectors;
 
 class ResourceBundleGenerator implements BundleGenerator {
     // preferred timezones - keeping compatibility with JDK1.1 3 letter abbreviations
@@ -70,7 +70,6 @@ class ResourceBundleGenerator implements BundleGenerator {
     private static final String META_VALUE_PREFIX = "metaValue_";
 
     @Override
-    @SuppressWarnings("unchecked")
     public void generateBundle(String packageName, String baseName, String localeID, boolean useJava,
                                Map<String, ?> map, BundleType type) throws IOException {
         String suffix = useJava ? ".java" : ".properties";
@@ -144,61 +143,39 @@ class ResourceBundleGenerator implements BundleGenerator {
             map = newMap;
         } else {
             // generic reduction of duplicated values
-            Map<String, Object> newMap = null;
-            for (String key : map.keySet()) {
-                Object val = map.get(key);
-                String metaVal = null;
-
-                for (Map.Entry<String, ?> entry : map.entrySet()) {
-                    String k = entry.getKey();
-                    if (!k.equals(key) &&
-                        Objects.deepEquals(val, entry.getValue()) &&
-                        !(Objects.nonNull(newMap) && newMap.containsKey(k))) {
-                        if (Objects.isNull(newMap)) {
-                            newMap = new HashMap<>();
+            Map<String, Object> newMap = new LinkedHashMap<>(map);
+            Map<BundleEntryValue, BundleEntryValue> dedup = new HashMap<>(map.size());
+            for (Map.Entry<String, ?> entry : map.entrySet()) {
+                String key = entry.getKey();
+                Object val = entry.getValue();
+                BundleEntryValue newEntry = new BundleEntryValue(key, val);
+                BundleEntryValue oldEntry = dedup.putIfAbsent(newEntry, newEntry);
+                if (oldEntry != null) {
+                    if (oldEntry.meta()) {
+                        if (fmt == null) {
                             fmt = new Formatter();
                         }
-
-                        if (Objects.isNull(metaVal)) {
-                            metaVal = META_VALUE_PREFIX + key.replaceAll("[\\.-]", "_");
-
-                            if (val instanceof String[]) {
-                                fmt.format("        final String[] %s = new String[] {\n", metaVal);
-                                for (String s : (String[]) val) {
-                                    fmt.format("               \"%s\",\n", CLDRConverter.saveConvert(s, useJava));
-                                }
-                                fmt.format("            };\n");
-                            } else if (val instanceof List) {
-                                fmt.format("        final String[] %s = new String[] {\n", metaVal);
-                                for (String s : (List<String>) val) {
-                                    fmt.format("               \"%s\",\n", CLDRConverter.saveConvert(s, useJava));
-                                }
-                                fmt.format("            };\n");
-                            } else {
-                                fmt.format("        final String %s = \"%s\";\n", metaVal, CLDRConverter.saveConvert((String)val, useJava));
+                        String metaVal = oldEntry.metaKey();
+                        if (val instanceof String[] values) {
+                            fmt.format("        final String[] %s = new String[] {\n", metaVal);
+                            for (String s : values) {
+                                fmt.format("            \"%s\",\n", CLDRConverter.saveConvert(s, useJava));
                             }
+                            fmt.format("        };\n");
+                        } else {
+                            fmt.format("        final String %s = \"%s\";\n", metaVal, CLDRConverter.saveConvert((String)val, useJava));
                         }
-
-                        newMap.put(k, metaVal);
+                        newMap.put(oldEntry.key, oldEntry.metaKey());
                     }
-                }
-
-                if (Objects.nonNull(metaVal)) {
-                    newMap.put(key, metaVal);
+                    newMap.put(key, oldEntry.metaKey());
                 }
             }
-
-            if (Objects.nonNull(newMap)) {
-                for (String key : map.keySet()) {
-                    newMap.putIfAbsent(key, map.get(key));
-                }
-                map = newMap;
-            }
+            map = newMap;
         }
 
         try (PrintWriter out = new PrintWriter(file, encoding)) {
             // Output copyright headers
-            out.println(CopyrightHeaders.getOpenJDKCopyright(CLDRConverter.copyrightYear));
+            out.println(getOpenJDKCopyright());
             out.println(CopyrightHeaders.getUnicodeCopyright());
 
             if (useJava) {
@@ -247,6 +224,58 @@ class ResourceBundleGenerator implements BundleGenerator {
         }
     }
 
+    private static class BundleEntryValue {
+        private final String key;
+        private final Object value;
+        private final int hashCode;
+        private String metaKey;
+
+        BundleEntryValue(String key, Object value) {
+            this.key = Objects.requireNonNull(key);
+            this.value = Objects.requireNonNull(value);
+            if (value instanceof String) {
+                hashCode = value.hashCode();
+            } else if (value instanceof String[] arr) {
+                hashCode = Arrays.hashCode(arr);
+            } else {
+                throw new InternalError("Expected a string or a string array");
+            }
+        }
+
+        /**
+         * mark the entry as meta
+         * @return true if the entry was not meta before, false otherwise
+         */
+        public boolean meta() {
+            if (metaKey == null) {
+                metaKey = META_VALUE_PREFIX + key.replaceAll("[\\.-]", "_");
+                return true;
+            }
+            return false;
+        }
+
+        public String metaKey() {
+            return metaKey;
+        }
+
+        @Override
+        public int hashCode() {
+            return hashCode;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof BundleEntryValue entry) {
+                if (value instanceof String s) {
+                    return s.equals(entry.value);
+                } else if (entry.value instanceof String[] otherVal) {
+                    return Arrays.equals((String[]) value, otherVal);
+                }
+            }
+            return false;
+        }
+    }
+
     @Override
     public void generateMetaInfo(Map<String, SortedSet<String>> metaInfo) throws IOException {
         String dirName = CLDRConverter.DESTINATION_DIR + File.separator + "sun" + File.separator + "util" +
@@ -266,119 +295,156 @@ class ResourceBundleGenerator implements BundleGenerator {
         CLDRConverter.info("Generating file " + file);
 
         try (PrintWriter out = new PrintWriter(file, "us-ascii")) {
-            out.printf(CopyrightHeaders.getOpenJDKCopyright(CLDRConverter.copyrightYear));
+            out.printf(getOpenJDKCopyright());
 
-            out.printf((CLDRConverter.isBaseModule ? "package sun.util.cldr;\n\n" :
-                                  "package sun.util.resources.cldr.provider;\n\n")
-                      + "import java.util.HashMap;\n"
-                      + "import java.util.Locale;\n"
-                      + "import java.util.Map;\n"
-                      + "import sun.util.locale.provider.LocaleDataMetaInfo;\n"
-                      + "import sun.util.locale.provider.LocaleProviderAdapter;\n\n");
-            out.printf("public class %s implements LocaleDataMetaInfo {\n", className);
-            out.printf("    private static final Map<String, String> resourceNameToLocales = new HashMap<>();\n" +
-                       (CLDRConverter.isBaseModule ?
-                       "    private static final Map<Locale, String[]> parentLocalesMap = new HashMap<>();\n" +
-                       "    private static final Map<String, String> languageAliasMap = new HashMap<>();\n\n" :
-                       "\n") +
-                       "    static {\n");
+            out.printf("""
+                package sun.util.%s;
 
-            for (String key : metaInfo.keySet()) {
-                if (key.startsWith(CLDRConverter.PARENT_LOCALE_PREFIX)) {
-                    String parentTag = key.substring(CLDRConverter.PARENT_LOCALE_PREFIX.length());
-                    if ("root".equals(parentTag)) {
-                        out.printf("        parentLocalesMap.put(Locale.ROOT,\n");
-                    } else {
-                        out.printf("        parentLocalesMap.put(Locale.forLanguageTag(\"%s\"),\n",
-                                   parentTag);
-                    }
-                    String[] children = toLocaleList(metaInfo.get(key), true).split(" ");
-                    Arrays.sort(children);
-                    out.printf("             new String[] {\n" +
-                               "                 ");
-                    int count = 0;
-                    for (int i = 0; i < children.length; i++) {
-                        String child = children[i];
-                        out.printf("\"%s\", ", child);
-                        count += child.length() + 4;
-                        if (i != children.length - 1 && count > 64) {
-                            out.printf("\n                 ");
-                            count = 0;
+                import java.util.HashMap;
+                import java.util.Locale;
+                import java.util.Map;
+                import sun.util.locale.provider.LocaleDataMetaInfo;
+                import sun.util.locale.provider.LocaleProviderAdapter;
+
+                public class %s implements LocaleDataMetaInfo {
+                """,
+                    CLDRConverter.isBaseModule ? "cldr" : "resources.cldr.provider",
+                    className);
+
+            if (CLDRConverter.isBaseModule) {
+                out.printf("""
+                        private static final Map<Locale, String[]> parentLocalesMap = HashMap.newHashMap(%d);
+                        private static final Map<String, String> languageAliasMap = HashMap.newHashMap(%d);
+                        static final boolean nonlikelyScript = %s; // package access from CLDRLocaleProviderAdapter
+
+                        static {
+                    """.formatted(
+                        metaInfo.keySet().stream().filter(k -> k.startsWith(CLDRConverter.PARENT_LOCALE_PREFIX)).count(),
+                        CLDRConverter.handlerSupplMeta.getLanguageAliasData().size(),
+                        Boolean.valueOf(CLDRConverter.nonlikelyScript)));
+
+                for (String key : metaInfo.keySet()) {
+                    if (key.startsWith(CLDRConverter.PARENT_LOCALE_PREFIX)) {
+                        String parentTag = key.substring(CLDRConverter.PARENT_LOCALE_PREFIX.length());
+                        if ("root".equals(parentTag)) {
+                            out.printf("        parentLocalesMap.put(Locale.ROOT,\n");
+                        } else {
+                            out.printf("        parentLocalesMap.put(Locale.forLanguageTag(\"%s\"),\n",
+                                    parentTag);
                         }
-                    }
-                    out.printf("\n             });\n");
-                } else {
-                    if ("AvailableLocales".equals(key)) {
-                        out.printf("        resourceNameToLocales.put(\"%s\",\n", key);
-                        out.printf("              \"%s\");\n", toLocaleList(applyLanguageAliases(metaInfo.get(key)), false));
+                        generateStringArray(metaInfo.get(key), out);
                     }
                 }
-            }
-            // for languageAliasMap
-            if (CLDRConverter.isBaseModule) {
+                out.println();
+
+                // for languageAliasMap
                 CLDRConverter.handlerSupplMeta.getLanguageAliasData().forEach((key, value) -> {
                     out.printf("        languageAliasMap.put(\"%s\", \"%s\");\n", key, value);
                 });
-            }
+                out.printf("    }\n\n");
 
-            out.printf("    }\n\n");
+                // end of static initializer block.
 
-            // end of static initializer block.
+                // Delayed initialization section
+                out.printf("""
+                               private static class CLDRMapHolder {
+                                   private static final Map<String, String> tzCanonicalIDMap = HashMap.newHashMap(%d);
+                                   private static final Map<String, String> likelyScriptMap = HashMap.newHashMap(%d);
 
-            // Canonical TZ names for delayed initialization
-            if (CLDRConverter.isBaseModule) {
-                out.printf("    private static class TZCanonicalIDMapHolder {\n");
-                out.printf("        static final Map<String, String> tzCanonicalIDMap = new HashMap<>(600);\n");
-                out.printf("        static {\n");
+                                   static {
+                           """, CLDRConverter.handlerTimeZone.getData().size(),
+                                metaInfo.keySet().stream().filter(k -> k.startsWith(CLDRConverter.LIKELY_SCRIPT_PREFIX)).count());
                 CLDRConverter.handlerTimeZone.getData().entrySet().stream()
                     .forEach(e -> {
                         String[] ids = ((String)e.getValue()).split("\\s");
                         out.printf("            tzCanonicalIDMap.put(\"%s\", \"%s\");\n", e.getKey(),
-                                ids[0]);
+                            ids[0]);
                         for (int i = 1; i < ids.length; i++) {
                             out.printf("            tzCanonicalIDMap.put(\"%s\", \"%s\");\n", ids[i],
                                 ids[0]);
                         }
                     });
-                out.printf("        }\n    }\n\n");
+                out.println();
+
+                // for likelyScript map
+                for (String key : metaInfo.keySet()) {
+                    if (key.startsWith(CLDRConverter.LIKELY_SCRIPT_PREFIX)) {
+                        // ensure spaces at the begin/end for delimiting purposes
+                        out.printf("            likelyScriptMap.put(\"%s\", \"%s\");\n",
+                                key.substring(CLDRConverter.LIKELY_SCRIPT_PREFIX.length()),
+                                " " + metaInfo.get(key).stream().collect(Collectors.joining(" ")) + " ");
+                    }
+                }
+                out.printf("        }\n    }\n");
             }
+            out.println();
 
-            out.printf("    @Override\n" +
-                        "    public LocaleProviderAdapter.Type getType() {\n" +
-                        "        return LocaleProviderAdapter.Type.CLDR;\n" +
-                        "    }\n\n");
+            out.printf("""
+                    @Override
+                    public LocaleProviderAdapter.Type getType() {
+                        return LocaleProviderAdapter.Type.CLDR;
+                    }
 
-            out.printf("    @Override\n" +
-                        "    public String availableLanguageTags(String category) {\n" +
-                        "        return resourceNameToLocales.getOrDefault(category, \"\");\n" +
-                        "    }\n\n");
+                    @Override
+                    public String availableLanguageTags(String category) {
+                        return " %s";
+                    }
+                """,
+                toLocaleList(applyLanguageAliases(metaInfo.get("AvailableLocales")), false));
 
-            if (CLDRConverter.isBaseModule) {
-                out.printf("    @Override\n" +
-                           "    public Map<String, String> getLanguageAliasMap() {\n" +
-                           "        return languageAliasMap;\n" +
-                           "    }\n\n");
-                out.printf("    @Override\n" +
-                           "    public Map<String, String> tzCanonicalIDs() {\n" +
-                           "        return TZCanonicalIDMapHolder.tzCanonicalIDMap;\n" +
-                           "    }\n\n");
-                out.printf("    public Map<Locale, String[]> parentLocales() {\n" +
-                           "        return parentLocalesMap;\n" +
-                           "    }\n}");
-            } else {
-                out.printf("}");
+            if(CLDRConverter.isBaseModule) {
+                out.printf("""
+
+                    @Override
+                    public Map<String, String> getLanguageAliasMap() {
+                        return languageAliasMap;
+                    }
+
+                    @Override
+                    public Map<String, String> tzCanonicalIDs() {
+                        return CLDRMapHolder.tzCanonicalIDMap;
+                    }
+
+                    public Map<Locale, String[]> parentLocales() {
+                        return parentLocalesMap;
+                    }
+
+                    // package access from CLDRLocaleProviderAdapter
+                    Map<String, String> likelyScriptMap() {
+                        return CLDRMapHolder.likelyScriptMap;
+                    }
+                """);
+            }
+            out.printf("}\n");
+        }
+    }
+
+    private static void generateStringArray(SortedSet<String> set, PrintWriter out) throws IOException {
+        String[] children = toLocaleList(set, true).split(" ");
+        Arrays.sort(children);
+        out.printf("            new String[] {\n" +
+                "                ");
+        int count = 0;
+        for (int i = 0; i < children.length; i++) {
+            String child = children[i];
+            out.printf("\"%s\", ", child);
+            count += child.length() + 4;
+            if (i != children.length - 1 && count > 64) {
+                out.printf("\n                ");
+                count = 0;
             }
         }
+        out.printf("\n            });\n");
     }
 
     private static final Locale.Builder LOCALE_BUILDER = new Locale.Builder();
     private static boolean isBaseLocale(String localeID) {
         localeID = localeID.replaceAll("-", "_");
-        // ignore script here
         Locale locale = LOCALE_BUILDER
                             .clear()
                             .setLanguage(CLDRConverter.getLanguageCode(localeID))
                             .setRegion(CLDRConverter.getRegionCode(localeID))
+                            .setScript(CLDRConverter.getScriptCode(localeID))
                             .build();
         return CLDRConverter.BASE_LOCALES.contains(locale);
     }
@@ -390,7 +456,9 @@ class ResourceBundleGenerator implements BundleGenerator {
                 if (!all && CLDRConverter.isBaseModule ^ isBaseLocale(id)) {
                     continue;
                 }
-                sb.append(' ');
+                if (sb.length() > 0) {
+                    sb.append(' ');
+                }
                 sb.append(id);
             }
         }
@@ -404,5 +472,13 @@ class ResourceBundleGenerator implements BundleGenerator {
             }
         });
         return tags;
+    }
+
+    private static String getOpenJDKCopyright() {
+        if (CLDRConverter.jdkHeaderTemplate != null) {
+            return String.format(CLDRConverter.jdkHeaderTemplate, CLDRConverter.copyrightYear);
+        } else {
+            return CopyrightHeaders.getOpenJDKCopyright(CLDRConverter.copyrightYear);
+        }
     }
 }

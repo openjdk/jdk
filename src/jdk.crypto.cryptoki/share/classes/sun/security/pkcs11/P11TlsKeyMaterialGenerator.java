@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,6 +119,8 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
             mechanism = CKM_SSL3_KEY_AND_MAC_DERIVE;
         } else if (tlsVersion == 0x0301 || tlsVersion == 0x0302) {
             mechanism = CKM_TLS_KEY_AND_MAC_DERIVE;
+        } else if (tlsVersion == 0x0303) {
+            mechanism = CKM_TLS12_KEY_AND_MAC_DERIVE;
         }
     }
 
@@ -209,15 +211,19 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
             SecretKey clientMacKey, serverMacKey;
 
             // The MAC size may be zero for GCM mode.
-            //
-            // PKCS11 does not support GCM mode as the author made the comment,
-            // so the macBits is unlikely to be zero. It's only a place holder.
             if (macBits != 0) {
                 clientMacKey = P11Key.secretKey
                     (session, out.hClientMacSecret, "MAC", macBits, attributes);
                 serverMacKey = P11Key.secretKey
                     (session, out.hServerMacSecret, "MAC", macBits, attributes);
             } else {
+                // NSS allocates MAC keys even if macBits is zero
+                if (out.hClientMacSecret != CK_INVALID_HANDLE) {
+                    token.p11.C_DestroyObject(session.id(), out.hClientMacSecret);
+                }
+                if (out.hServerMacSecret != CK_INVALID_HANDLE) {
+                    token.p11.C_DestroyObject(session.id(), out.hServerMacSecret);
+                }
                 clientMacKey = null;
                 serverMacKey = null;
             }
@@ -229,6 +235,8 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
                 serverCipherKey = P11Key.secretKey(session, out.hServerKey,
                         cipherAlgorithm, expandedKeyBits, attributes);
             } else {
+                assert out.hClientKey == 0;
+                assert out.hServerKey == 0;
                 clientCipherKey = null;
                 serverCipherKey = null;
             }

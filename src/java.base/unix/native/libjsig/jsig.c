@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,18 +42,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#if (__STDC_VERSION__ >= 199901L)
-  #include <stdbool.h>
-#else
-  #define bool int
-  #define true 1
-  #define false 0
-#endif
+#include <stdbool.h>
 
 #define MAX_SIGNALS NSIG
 
 static struct sigaction sact[MAX_SIGNALS]; /* saved signal handlers */
+static bool deprecated_usage[MAX_SIGNALS]; /* usage of signal/sigset */
 
 static sigset_t jvmsigs; /* Signals used by jvm. */
 
@@ -76,6 +70,7 @@ static sigaction_t os_sigaction = 0; /* os's version of sigaction() */
 
 static bool jvm_signal_installing = false;
 static bool jvm_signal_installed = false;
+static bool warning_printed = false;
 
 
 static void signal_lock() {
@@ -96,15 +91,20 @@ static void signal_unlock() {
   pthread_mutex_unlock(&mutex);
 }
 
+static void print_deprecation_warning() {
+  if (!warning_printed) {
+    warning_printed = true;
+    fprintf(stderr, HOTSPOT_VM_DISTRO " VM warning: the use of signal() and sigset() "
+            "for signal chaining was deprecated in version 16.0 and will "
+            "be removed in a future release. Use sigaction() instead.\n");
+  }
+}
+
 static sa_handler_t call_os_signal(int sig, sa_handler_t disp,
                                    bool is_sigset) {
   sa_handler_t res;
 
   if (os_signal == NULL) {
-    // Deprecation warning first time through
-    printf(HOTSPOT_VM_DISTRO " VM warning: the use of signal() and sigset() "
-           "for signal chaining was deprecated in version 16.0 and will "
-           "be removed in a future release. Use sigaction() instead.\n");
     if (!is_sigset) {
       os_signal = (signal_function_t)dlsym(RTLD_NEXT, "signal");
     } else {
@@ -147,8 +147,11 @@ static sa_handler_t set_signal(int sig, sa_handler_t disp, bool is_sigset) {
 
   signal_lock();
 
+  deprecated_usage[sig] = true;
+
   sigused = sigismember(&jvmsigs, sig);
   if (jvm_signal_installed && sigused) {
+    print_deprecation_warning();
     /* jvm has installed its signal handler for this signal. */
     /* Save the handler. Don't really install it. */
     if (is_sigset) {
@@ -248,16 +251,30 @@ JNIEXPORT int sigaction(int sig, const struct sigaction *act, struct sigaction *
     signal_unlock();
     return 0;
   } else if (jvm_signal_installing) {
-    /* jvm is installing its signal handlers. Install the new
-     * handlers and save the old ones. */
-    res = call_os_sigaction(sig, act, &oldAct);
-    sact[sig] = oldAct;
-    if (oact != NULL) {
-      *oact = oldAct;
+    /* jvm is installing its signal handlers.
+     * - if this is a modifying sigaction call, we install a new signal handler and store the old one
+     *   as chained signal handler.
+     * - if this is a non-modifying sigaction call, we don't change any state; we just return the existing
+     *   signal handler in the system (not the stored one).
+     * This works under the assumption that there is only one modifying sigaction call for a specific signal
+     * within the JVM_begin_signal_setting-JVM_end_signal_setting-window. There can be any number of non-modifying
+     * calls, but they will only return the expected preexisting handler if executed before the modifying call.
+     */
+    if (deprecated_usage[sig] == true) {
+      print_deprecation_warning();
     }
-
-    /* Record the signals used by jvm. */
-    sigaddset(&jvmsigs, sig);
+    res = call_os_sigaction(sig, act, &oldAct);
+    if (res == 0) {
+      if (act != NULL) {
+        /* store pre-existing handler as chained handler */
+        sact[sig] = oldAct;
+        /* Record the signals used by jvm. */
+        sigaddset(&jvmsigs, sig);
+      }
+      if (oact != NULL) {
+        *oact = oldAct;
+      }
+    }
 
     signal_unlock();
     return res;

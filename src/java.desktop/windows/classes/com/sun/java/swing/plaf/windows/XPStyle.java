@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,30 +40,57 @@
 
 package com.sun.java.swing.plaf.windows;
 
-import java.awt.*;
-import java.awt.image.*;
-import java.security.AccessController;
-import java.util.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
+import java.awt.image.WritableRaster;
+import java.util.HashMap;
 
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.plaf.*;
+import javax.swing.AbstractButton;
+import javax.swing.CellRendererPane;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JRadioButton;
+import javax.swing.JToolBar;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.border.AbstractBorder;
+import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.plaf.ColorUIResource;
+import javax.swing.plaf.InsetsUIResource;
+import javax.swing.plaf.UIResource;
 import javax.swing.text.JTextComponent;
 
 import sun.awt.image.SunWritableRaster;
 import sun.awt.windows.ThemeReader;
-import sun.security.action.GetPropertyAction;
 import sun.swing.CachedPainter;
 
-import static com.sun.java.swing.plaf.windows.TMSchema.*;
-
+import static com.sun.java.swing.plaf.windows.TMSchema.Part;
+import static com.sun.java.swing.plaf.windows.TMSchema.Prop;
+import static com.sun.java.swing.plaf.windows.TMSchema.State;
+import static com.sun.java.swing.plaf.windows.TMSchema.TypeEnum;
 
 /**
  * Implements Windows XP Styles for the Windows Look and Feel.
  *
  * @author Leif Samuelsson
  */
-class XPStyle {
+final class XPStyle {
     // Singleton instance of this class
     private static XPStyle xp;
 
@@ -95,7 +122,6 @@ class XPStyle {
      * @return the singleton instance of this class or null if XP styles
      * are not active or if this is not Windows XP
      */
-    @SuppressWarnings("removal")
     static synchronized XPStyle getXP() {
         if (themeActive == null) {
             Toolkit toolkit = Toolkit.getDefaultToolkit();
@@ -105,9 +131,8 @@ class XPStyle {
                 themeActive = Boolean.FALSE;
             }
             if (themeActive.booleanValue()) {
-                GetPropertyAction propertyAction =
-                    new GetPropertyAction("swing.noxp");
-                if (AccessController.doPrivileged(propertyAction) == null &&
+                String propertyAction = System.getProperty("swing.noxp");
+                if (propertyAction == null &&
                     ThemeReader.isThemed() &&
                     !(UIManager.getLookAndFeel()
                       instanceof WindowsClassicLookAndFeel)) {
@@ -133,7 +158,7 @@ class XPStyle {
      *    in the current style
      *
      * This is currently only used by WindowsInternalFrameTitlePane for painting
-     * title foregound and can be removed when no longer needed
+     * title foreground and can be removed when no longer needed
      */
     String getString(Component c, Part part, State state, Prop prop) {
         return getTypeEnumName(c, part, state, prop);
@@ -193,7 +218,7 @@ class XPStyle {
      *    in the current style
      *
      * This is currently only used by WindowsInternalFrameTitlePane for painting
-     * title foregound and can be removed when no longer needed
+     * title foreground and can be removed when no longer needed
      */
     Point getPoint(Component c, Part part, State state, Prop prop) {
         Dimension d = ThemeReader.getPosition(part.getControlName(c), part.getValue(),
@@ -208,7 +233,7 @@ class XPStyle {
      *    in the current style
      *
      * This is currently only used to create borders and by
-     * WindowsInternalFrameTitlePane for painting title foregound.
+     * WindowsInternalFrameTitlePane for painting title foreground.
      * The return value is already cached in those places.
      */
     Insets getMargin(Component c, Part part, State state, Prop prop) {
@@ -306,6 +331,7 @@ class XPStyle {
             super(color, thickness);
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets)       {
             Insets margin = null;
             //
@@ -330,7 +356,7 @@ class XPStyle {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class XPStatefulFillBorder extends XPFillBorder {
+    private final class XPStatefulFillBorder extends XPFillBorder {
         private final Part part;
         private final Prop prop;
         XPStatefulFillBorder(Color color, int thickness, Part part, Prop prop) {
@@ -339,6 +365,7 @@ class XPStyle {
             this.prop = prop;
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
             State state = State.NORMAL;
             // special casing for comboboxes.
@@ -358,18 +385,20 @@ class XPStyle {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class XPImageBorder extends AbstractBorder implements UIResource {
+    private final class XPImageBorder extends AbstractBorder implements UIResource {
         Skin skin;
 
         XPImageBorder(Component c, Part part) {
             this.skin = getSkin(c, part);
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g,
                                 int x, int y, int width, int height) {
             skin.paintSkin(g, x, y, width, height, null);
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets)       {
             Insets margin = null;
             Insets borderInsets = skin.getContentMargin();
@@ -398,11 +427,12 @@ class XPStyle {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private static class XPEmptyBorder extends EmptyBorder implements UIResource {
+    private static final class XPEmptyBorder extends EmptyBorder implements UIResource {
         XPEmptyBorder(Insets m) {
             super(m.top+2, m.left+2, m.bottom+2, m.right+2);
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets)       {
             insets = super.getBorderInsets(c, insets);
 
@@ -469,7 +499,7 @@ class XPStyle {
      * (component type) and which provides methods for painting backgrounds
      * and glyphs
      */
-    static class Skin {
+    static final class Skin {
         final Component component;
         final Part part;
         final State state;
@@ -541,14 +571,17 @@ class XPStyle {
             return getHeight((state != null) ? state : State.NORMAL);
         }
 
+        @Override
         public String toString() {
             return string;
         }
 
+        @Override
         public boolean equals(Object obj) {
             return (obj instanceof Skin && ((Skin)obj).string.equals(string));
         }
 
+        @Override
         public int hashCode() {
             return string.hashCode();
         }
@@ -650,16 +683,18 @@ class XPStyle {
         }
     }
 
-    private static class SkinPainter extends CachedPainter {
+    private static final class SkinPainter extends CachedPainter {
         SkinPainter() {
             super(30);
             flush();
         }
 
+        @Override
         public void flush() {
             super.flush();
         }
 
+        @Override
         protected void paintToImage(Component c, Image image, Graphics g,
                                     int w, int h, Object[] args) {
             Skin skin = (Skin)args[0];
@@ -675,6 +710,11 @@ class XPStyle {
             w = bi.getWidth();
             h = bi.getHeight();
 
+            // Get DPI to pass further to ThemeReader.paintBackground()
+            Graphics2D g2d = (Graphics2D) g;
+            AffineTransform at = g2d.getTransform();
+            int dpi = (int)(at.getScaleX() * 96);
+
             WritableRaster raster = bi.getRaster();
             DataBufferInt dbi = (DataBufferInt)raster.getDataBuffer();
             // Note that stealData() requires a markDirty() afterwards
@@ -682,10 +722,12 @@ class XPStyle {
             ThemeReader.paintBackground(SunWritableRaster.stealData(dbi, 0),
                                         part.getControlName(c), part.getValue(),
                                         State.getValue(part, state),
-                                        0, 0, w, h, w);
+                                        0, 0, w, h, w, dpi);
+
             SunWritableRaster.markDirty(dbi);
         }
 
+        @Override
         protected Image createImage(Component c, int w, int h,
                                     GraphicsConfiguration config, Object[] args) {
             return new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
@@ -706,6 +748,7 @@ class XPStyle {
             setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
         }
 
+        @Override
         @SuppressWarnings("deprecation")
         public boolean isFocusTraversable() {
             return false;
@@ -723,6 +766,7 @@ class XPStyle {
             return state;
         }
 
+        @Override
         public void paintComponent(Graphics g) {
             if (XPStyle.getXP() == null || skin == null) {
                 return;
@@ -738,6 +782,7 @@ class XPStyle {
             repaint();
         }
 
+        @Override
         protected void paintBorder(Graphics g) {
         }
 

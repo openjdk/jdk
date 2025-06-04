@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,16 +53,40 @@ import javax.lang.model.util.*;
  * source of information is Java source code, then the elements will be
  * returned in source code order.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
+ * @apiNote
+ * The represented class or interface may have a {@linkplain
+ * javax.lang.model.util.Elements#getFileObjectOf(Element) reference
+ * representation} (either source code or executable output). Multiple
+ * classes and interfaces can share the same reference representation
+ * backing construct. For example, multiple classes and interfaces can
+ * be declared in the same source file, including, but not limited
+ * to:
+ * <ul>
+ * <li> a {@linkplain NestingKind#TOP_LEVEL top-level} class or
+ * interface and auxiliary classes and interfaces
+ * <li>a top-level class or interface and {@linkplain
+ * NestingKind#isNested() nested classes and interfaces} within it
+ * </ul>
+ * <p>In the context of annotation processing, a type element can
+ * be:
+ * <ul>
+ * <li>created from the initial inputs to a run of the tool
+ * <li>created from {@linkplain
+ * javax.annotation.processing.Filer#createSourceFile(CharSequence,
+ * Element...) source code} or {@linkplain
+ * javax.annotation.processing.Filer#createClassFile(CharSequence,
+ * Element...) class files} written by a processor
+ * <li>{@linkplain
+ * javax.lang.model.util.Elements#getAllTypeElements(CharSequence)
+ * queried for} in the configured environment
+ * </ul>
  * @see DeclaredType
  * @since 1.6
  */
 public interface TypeElement extends Element, Parameterizable, QualifiedNameable {
     /**
      * Returns the type defined by this class or interface element,
-     * returning the <i>prototypical</i> type for an element
+     * returning the <dfn>{@index "prototypical type"}</dfn> for an element
      * representing a generic type.
      *
      * <p>A generic element defines a family of types, not just one.
@@ -72,6 +96,12 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      * For example,
      * for the generic class element {@code C<N extends Number>},
      * the parameterized type {@code C<N>} is returned.
+     * Otherwise, for a non-generic class or interface, the
+     * prototypical type mirror corresponds to a use of the type.
+     * None of the components of the prototypical type are annotated,
+     * including the prototypical type itself.
+     *
+     * @apiNote
      * The {@link Types} utility interface has more general methods
      * for obtaining the full range of types defined by an element.
      *
@@ -123,8 +153,8 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
     /**
      * Returns the fully qualified name of this class or interface
      * element.  More precisely, it returns the <i>canonical</i> name.
-     * For local and anonymous classes, which do not have canonical
-     * names, an <a href=Name.html#empty_name>empty name</a> is
+     * For local, and anonymous classes, which do not have canonical
+     * names, an {@linkplain Name##empty_name empty name} is
      * returned.
      *
      * <p>The name of a generic class or interface does not include any reference
@@ -145,8 +175,8 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
     /**
      * Returns the simple name of this class or interface element.
      *
-     * For an anonymous class, an <a href=Name.html#empty_name> empty
-     * name</a> is returned.
+     * For an anonymous class, an {@linkplain Name##empty_name empty
+     * name} is returned.
      *
      * @return the simple name of this class or interface,
      * an empty name for an anonymous class
@@ -202,6 +232,8 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
     /**
      * Returns the permitted classes of this class or interface
      * element in declaration order.
+     * Note that for an interface, permitted subclasses and
+     * subinterfaces can be returned.
      *
      * @implSpec The default implementations of this method returns an
      * empty and unmodifiable list.
@@ -209,6 +241,8 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      * @return the permitted classes, or an empty list if there are none
      *
      * @since 17
+     * @jls 8.1.6 Permitted Direct Subclasses
+     * @jls 9.1.4 Permitted Direct Subclasses and Subinterfaces
      */
     default List<? extends TypeMirror> getPermittedSubclasses() {
         return List.of();

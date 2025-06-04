@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,17 +20,27 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+import jdk.test.lib.RandomFactory;
+import java.util.function.DoubleUnaryOperator;
+
 
 /*
  * @test
- * @bug 4851625
+ * @bug 4851625 8301444
+ * @key randomness
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
+ * @build Tests
+ * @build FdlibmTranslit
+ * @build HyperbolicTests
+ * @run main HyperbolicTests
  * @summary Tests for StrictMath.{sinh, cosh, tanh}
  */
 
 /**
  * The tests in ../Math/HyperbolicTests.java test properties that
  * should hold for any implementation of the hyperbolic functions
- * sinh, cos, and tanh, including the FDLIBM-based ones required by
+ * sinh, cosh, and tanh, including the FDLIBM-based ones required by
  * the StrictMath class.  Therefore, the test cases in
  * ../Math/HyperbolicTests.java are run against both the Math and
  * StrictMath versions of the hyperbolic methods.  The role of this
@@ -42,22 +52,208 @@
 public class HyperbolicTests {
     private HyperbolicTests(){}
 
-    static int testSinhCase(double input, double expected) {
+    public static void main(String... args) {
+        int failures = 0;
+
+        failures += testAgainstTranslitCommon();
+
+        failures += testAgainstTranslitSinh();
+        failures += testAgainstTranslitCosh();
+        failures += testAgainstTranslitTanh();
+
+        failures += testSinh();
+        failures += testCosh();
+        failures += testTanh();
+
+        if (failures > 0) {
+            System.err.println("Testing the hyperbolics incurred "
+                               + failures + " failures.");
+            throw new RuntimeException();
+        }
+    }
+
+    /**
+     * Bundle together groups of testing methods.
+     */
+    private static enum HyperbolicTest {
+        SINH(HyperbolicTests::testSinhCase, FdlibmTranslit::sinh),
+        COSH(HyperbolicTests::testCoshCase, FdlibmTranslit::cosh),
+        TANH(HyperbolicTests::testTanhCase, FdlibmTranslit::tanh);
+
+        private DoubleDoubleToInt testCase;
+        private DoubleUnaryOperator transliteration;
+
+        HyperbolicTest(DoubleDoubleToInt testCase, DoubleUnaryOperator transliteration) {
+            this.testCase = testCase;
+            this.transliteration = transliteration;
+        }
+
+        public DoubleDoubleToInt testCase() {return testCase;}
+        public DoubleUnaryOperator transliteration() {return transliteration;}
+    }
+
+    // Initialize shared random number generator
+    private static java.util.Random random = RandomFactory.getRandom();
+
+    /**
+     * Test against shared points of interest.
+     */
+    private static int testAgainstTranslitCommon() {
+        int failures = 0;
+        double[] pointsOfInterest = {
+            Double.MIN_NORMAL,
+            1.0,
+            Tests.createRandomDouble(random),
+        };
+
+        for (var testMethods : HyperbolicTest.values()) {
+            for (double testPoint : pointsOfInterest) {
+                failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000, testMethods);
+            }
+        }
+
+        return failures;
+    }
+
+    /**
+     * Test StrictMath.sinh against transliteration port of sinh.
+     */
+    private static int testAgainstTranslitSinh() {
+        int failures = 0;
+        double x;
+
+        // Probe near decision points in the FDLIBM algorithm.
+        double[] decisionPoints = {
+            0.0,
+
+             22.0,
+            -22.0,
+
+             0x1.0p-28,
+            -0x1.0p-28,
+
+            // StrictMath.log(Double.MAX_VALUE) ~= 709.782712893384
+             0x1.62e42fefa39efp9,
+            -0x1.62e42fefa39efp9,
+
+            // Largest argument with finite sinh, 710.4758600739439
+             0x1.633ce8fb9f87dp9,
+            -0x1.633ce8fb9f87dp9,
+        };
+
+        for (double testPoint : decisionPoints) {
+            failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000, HyperbolicTest.SINH);
+        }
+
+        return failures;
+    }
+
+    /**
+     * Test StrictMath.cosh against transliteration port of cosh.
+     */
+    private static int testAgainstTranslitCosh() {
+        int failures = 0;
+        double x;
+
+        // Probe near decision points in the FDLIBM algorithm.
+        double[] decisionPoints = {
+            0.0,
+
+             22.0,
+            -22.0,
+
+            // StrictMath.log(2)/2 ~= 0.34657359027997264
+             0x1.62e42fefa39efp-2,
+            -0x1.62e42fefa39efp-2,
+
+             0x1.0p-28,
+            -0x1.0p-28,
+
+            // StrictMath.log(Double.MAX_VALUE) ~= 709.782712893384
+             0x1.62e42fefa39efp9,
+            -0x1.62e42fefa39efp9,
+
+            // Largest argument with finite cosh, 710.4758600739439
+             0x1.633ce8fb9f87dp9,
+            -0x1.633ce8fb9f87dp9,
+        };
+
+        for (double testPoint : decisionPoints) {
+            failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000, HyperbolicTest.COSH);
+        }
+
+        return failures;
+    }
+
+    /**
+     * Test StrictMath.tanh against transliteration port of tanh
+     */
+    private static int testAgainstTranslitTanh() {
+        int failures = 0;
+        double x;
+
+        // Probe near decision points in the FDLIBM algorithm.
+        double[] decisionPoints = {
+             0.0,
+
+             0x1.0p-55,
+            -0x1.0p-55,
+
+             1.0,
+            -1.0,
+
+             22.0,
+        };
+
+        for (double testPoint : decisionPoints) {
+            failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000, HyperbolicTest.COSH);
+        }
+
+        return failures;
+    }
+
+    private interface DoubleDoubleToInt {
+        int apply(double x, double y);
+    }
+
+    private static int testRange(double start, double increment, int count,
+                                 HyperbolicTest testMethods) {
+        int failures = 0;
+        double x = start;
+        for (int i = 0; i < count; i++, x += increment) {
+            failures +=
+                testMethods.testCase().apply(x, testMethods.transliteration().applyAsDouble(x));
+        }
+        return failures;
+    }
+
+    private static int testRangeMidpoint(double midpoint, double increment, int count,
+                                         HyperbolicTest testMethods) {
+        int failures = 0;
+        double x = midpoint - increment*(count / 2) ;
+        for (int i = 0; i < count; i++, x += increment) {
+            failures +=
+                testMethods.testCase().apply(x, testMethods.transliteration().applyAsDouble(x));
+        }
+        return failures;
+    }
+
+    private static int testSinhCase(double input, double expected) {
         return Tests.test("StrictMath.sinh(double)", input,
                           StrictMath::sinh, expected);
     }
 
-    static int testCoshCase(double input, double expected) {
+    private static int testCoshCase(double input, double expected) {
         return Tests.test("StrictMath.cosh(double)", input,
                           StrictMath::cosh, expected);
     }
 
-    static int testTanhCase(double input, double expected) {
+    private static int testTanhCase(double input, double expected) {
         return Tests.test("StrictMath.tanh(double)", input,
                           StrictMath::tanh, expected);
     }
 
-    static int testSinh() {
+    private static int testSinh() {
         int failures = 0;
         double [][] testCases = {
             {0x1.5798ee2308c3ap-27,     0x1.5798ee2308c3bp-27},
@@ -144,15 +340,20 @@ public class HyperbolicTests {
             {0x1.fffffffffff68p4,       0x1.1f43fcc4b5b83p45},
             {0x1.fffffffffffd4p4,       0x1.1f43fcc4b6316p45},
             {0x1.0p5,                   0x1.1f43fcc4b662cp45},
+            // Empirical worst-case points in other libraries with
+            // larger worst-case errors than FDLIBM
+            {-0x1.633c654fee2bap+9,    -0x1.fdf25fc26e7cp1023},
+            {-0x1.633cae1335f26p+9,    -0x1.ff149489e50a1p1023},
+            { 0x1.9fcba01feb507p-2,     0x1.ab50d8e4d8c56p-2},
         };
 
         for (double[] testCase: testCases)
-            failures+=testSinhCase(testCase[0], testCase[1]);
+            failures += testSinhCase(testCase[0], testCase[1]);
 
         return failures;
     }
 
-    static int testCosh() {
+    private static int testCosh() {
         int failures = 0;
         double [][] testCases = {
             {0x1.fffffffffb49fp-8,      0x1.00020000aaaabp0},
@@ -185,15 +386,22 @@ public class HyperbolicTests {
             {0x1.0p4,                   0x1.0f2ebd0a8005cp22},
             {0x1.fffffffffffd4p4,       0x1.1f43fcc4b6316p45},
             {0x1.0p5,                   0x1.1f43fcc4b662cp45},
+            // Empirical worst-case points in other libraries with
+            // larger worst-case errors than FDLIBM
+            {-0x1.633c654fee2bap+9,     0x1.fdf25fc26e7cp1023},
+            { 0x1.ff76fb3f476d5p+0,     0x1.e0976c8f0ebdfp1},
+            { 0x1.633cc2ae1c934p+9,     0x1.ff66e0de4dc6fp1023},
+            {-0x1.1ff088806d82ep+3,     0x1.f97ccb0aef314p11},
+            {-0x1.628af341989dap+9,     0x1.fdf28623ef923p1021},
         };
 
         for (double[] testCase: testCases)
-            failures+=testCoshCase(testCase[0], testCase[1]);
+            failures += testCoshCase(testCase[0], testCase[1]);
 
         return failures;
     }
 
-    static int testTanh() {
+    private static int testTanh() {
         int failures = 0;
         double [][] testCases = {
             {0x1.5798ee2308c36p-27,     0x1.5798ee2308c36p-27},
@@ -254,26 +462,14 @@ public class HyperbolicTests {
             {0x1.fffffffffffe1p0,       0x1.ed9505e1bc3cfp-1},
             {0x1.ffffffffffed8p1,       0x1.ffa81708a0b4p-1},
             {0x1.fffffffffff92p1,       0x1.ffa81708a0b41p-1},
+            // Empirical worst-case points in other libraries with
+            // larger worst-case errors than FDLIBM
+            {-0x1.c41e527b70f43p-3,    -0x1.bcea047cc736cp-3},
         };
 
         for (double[] testCase: testCases)
-            failures+=testTanhCase(testCase[0], testCase[1]);
+            failures += testTanhCase(testCase[0], testCase[1]);
 
         return failures;
-    }
-
-
-    public static void main(String [] argv) {
-        int failures = 0;
-
-        failures += testSinh();
-        failures += testCosh();
-        failures += testTanh();
-
-        if (failures > 0) {
-            System.err.println("Testing the hyperbolics incurred "
-                               + failures + " failures.");
-            throw new RuntimeException();
-        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@ package gc.g1.numa;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UseG1GC -Xbootclasspath/a:. -XX:+UseNUMA
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   gc.g1.numa.TestG1NUMATouchRegions
@@ -41,7 +41,7 @@ package gc.g1.numa;
 import java.util.LinkedList;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestG1NUMATouchRegions {
     enum NUMASupportStatus {
@@ -95,7 +95,7 @@ public class TestG1NUMATouchRegions {
     }
 
     static long heapPageSize(OutputAnalyzer output) {
-        String HeapPageSizePattern = "Heap:  .*page_size=([^ ]+)";
+        String HeapPageSizePattern = "Heap:  .* page_size=(\\d+[BKMG])";
         String str = output.firstMatch(HeapPageSizePattern, 1);
 
         if (str == null) {
@@ -109,7 +109,7 @@ public class TestG1NUMATouchRegions {
     // 1. -UseLargePages: default page, page size < G1HeapRegionSize
     //    +UseLargePages: large page size <= G1HeapRegionSize
     //
-    //    Each 'int' represents a numa id of single HeapRegion (bottom page).
+    //    Each 'int' represents a numa id of single G1HeapRegion (bottom page).
     //    e.g. 1MB heap region, 2MB page size and 2 NUMA nodes system
     //         Check the first set(2 regions)
     //         0| ...omitted..| 0
@@ -181,7 +181,7 @@ public class TestG1NUMATouchRegions {
             return;
         }
 
-        ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilder(
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                                               "-Xbootclasspath/a:.",
                                               "-Xlog:pagesize,gc+heap+region=trace",
                                               "-XX:+UseG1GC",
@@ -195,7 +195,6 @@ public class TestG1NUMATouchRegions {
                                               largePagesSetting,
                                               "-XX:G1HeapRegionSize=" + regionSizeInMB + "m",
                                               GCTest.class.getName());
-        OutputAnalyzer output = new OutputAnalyzer(pb_enabled.start());
 
         // Check NUMA availability.
         if (status == NUMASupportStatus.NOT_CHECKED) {

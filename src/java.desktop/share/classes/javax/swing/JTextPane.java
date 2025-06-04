@@ -138,7 +138,7 @@ public class JTextPane extends JEditorPane {
      * must be a <code>StyledDocument</code>.
      *
      * @param doc  the document to display/edit
-     * @exception IllegalArgumentException  if <code>doc</code> can't
+     * @throws IllegalArgumentException  if <code>doc</code> can't
      *   be narrowed to a <code>StyledDocument</code> which is the
      *   required type of model for this text component
      */
@@ -480,7 +480,7 @@ public class JTextPane extends JEditorPane {
      * establishes the content type of the editor.
      *
      * @param kit the desired editor behavior
-     * @exception IllegalArgumentException if kit is not a
+     * @throws IllegalArgumentException if kit is not a
      *          <code>StyledEditorKit</code>
      */
     public final void setEditorKit(EditorKit kit) {

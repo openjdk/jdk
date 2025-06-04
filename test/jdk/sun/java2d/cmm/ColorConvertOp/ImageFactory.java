@@ -258,7 +258,7 @@ public class ImageFactory {
                         for (int j = 0; j < HEIGHT; j++) {
                             pixel[0] = (i/255.0)*(cs.getMaxValue(0) -
                                                   cs.getMinValue(0)) +
-                                       cs.getMinValue(0);;
+                                       cs.getMinValue(0);
                             sm.setPixel(i, j, pixel, data);
                         }
                     }
@@ -268,7 +268,7 @@ public class ImageFactory {
                         for (int j = 0; j < HEIGHT; j++) {
                             pixel[0] = (i/255.0f)*(cs.getMaxValue(0) -
                                                   cs.getMinValue(0)) +
-                                       cs.getMinValue(0);;
+                                       cs.getMinValue(0);
                             sm.setPixel(i, j, pixel, data);
                         }
                     }

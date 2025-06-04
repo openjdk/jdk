@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,14 @@
  * questions.
  */
 
-#include "precompiled.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include <type_traits>
+#include "utilities/ostream.hpp"
 #include "unittest.hpp"
+
+#include <type_traits>
 
 static ::testing::AssertionResult testPageAddress(
   const char* expected_addr_expr,
@@ -53,7 +55,7 @@ static ::testing::AssertionResult testPageAddress(
 }
 
 TEST_VM(globalDefinitions, clamp_address_in_page) {
-  const intptr_t page_sizes[] = {os::vm_page_size(), 4096, 8192, 65536, 2 * 1024 * 1024};
+  const intptr_t page_sizes[] = {static_cast<intptr_t>(os::vm_page_size()), 4096, 8192, 65536, 2 * 1024 * 1024};
   const int num_page_sizes = sizeof(page_sizes) / sizeof(page_sizes[0]);
 
   for (int i = 0; i < num_page_sizes; i++) {
@@ -215,4 +217,81 @@ TEST(globalDefinitions, array_size) {
     static_assert(6 == ARRAY_SIZE(test_array), "must be");
   }
 
+}
+
+#define check_format(format, value, expected)                  \
+  do {                                                         \
+    ResourceMark rm;                                           \
+    stringStream out;                                          \
+    out.print((format), (value));                              \
+    const char* result = out.as_string();                      \
+    EXPECT_STREQ((result), (expected)) << "Failed with"        \
+        << " format '"   << (format)   << "'"                  \
+        << " value '"    << (value);                           \
+  } while (false)
+
+TEST(globalDefinitions, format_specifiers) {
+  check_format(INT8_FORMAT_X_0,        (int8_t)0x01,      "0x01");
+  check_format(UINT8_FORMAT_X_0,       (uint8_t)0x01u,    "0x01");
+
+  check_format(INT16_FORMAT_X_0,       (int16_t)0x0123,   "0x0123");
+  check_format(UINT16_FORMAT_X_0,      (uint16_t)0x0123u, "0x0123");
+
+  check_format(INT32_FORMAT,           123,               "123");
+  check_format(INT32_FORMAT_X,         0x123,             "0x123");
+  check_format(INT32_FORMAT_X_0,       0x123,             "0x00000123");
+  check_format(INT32_FORMAT_W(5),      123,               "  123");
+  check_format(INT32_FORMAT_W(-5),     123,               "123  ");
+  check_format(UINT32_FORMAT,          123u,              "123");
+  check_format(UINT32_FORMAT_X,        0x123u,            "0x123");
+  check_format(UINT32_FORMAT_X_0,      0x123u,            "0x00000123");
+  check_format(UINT32_FORMAT_W(5),     123u,              "  123");
+  check_format(UINT32_FORMAT_W(-5),    123u,              "123  ");
+
+  check_format(INT64_FORMAT,           (int64_t)123,      "123");
+  check_format(INT64_FORMAT_X,         (int64_t)0x123,    "0x123");
+  check_format(INT64_FORMAT_X_0,       (int64_t)0x123,    "0x0000000000000123");
+  check_format(INT64_FORMAT_W(5),      (int64_t)123,      "  123");
+  check_format(INT64_FORMAT_W(-5),     (int64_t)123,      "123  ");
+
+  check_format(UINT64_FORMAT,          (uint64_t)123,     "123");
+  check_format(UINT64_FORMAT_X,        (uint64_t)0x123,   "0x123");
+  check_format(UINT64_FORMAT_X_0,      (uint64_t)0x123,   "0x0000000000000123");
+  check_format(UINT64_FORMAT_W(5),     (uint64_t)123,     "  123");
+  check_format(UINT64_FORMAT_W(-5),    (uint64_t)123,     "123  ");
+
+  check_format("%zd",                  (ssize_t)123,      "123");
+  check_format("%zd",                  (ssize_t)-123,     "-123");
+  check_format("%zd",                  (ssize_t)2147483647, "2147483647");
+  check_format("%zd",                  (ssize_t)-2147483647, "-2147483647");
+  check_format("%+zd",                 (ssize_t)123,      "+123");
+  check_format("%+zd",                 (ssize_t)-123,     "-123");
+  check_format("%+zd",                 (ssize_t)2147483647, "+2147483647");
+  check_format("%+zd",                 (ssize_t)-2147483647, "-2147483647");
+  check_format("%5zd",                 (ssize_t)123,      "  123");
+  check_format("%-5zd",                (ssize_t)123,      "123  ");
+  check_format("%zu",                  (size_t)123u,      "123");
+  check_format("0x%zx",                (size_t)0x123u,    "0x123");
+  check_format("%5zu",                 (size_t)123u,      "  123");
+  check_format("%-5zu",                (size_t)123u,      "123  ");
+  check_format(SIZE_FORMAT_X_0,        (size_t)0x123u,    "0x" LP64_ONLY("00000000") "00000123");
+
+  check_format("%zd",                  (intx)123,         "123");
+  check_format("%#zx",                 (intx)0x123,       "0x123");
+  check_format("%#zx",                 (intx)0x0,         "0");
+  check_format("0x%zx",                (intx)0x123,       "0x123");
+  check_format("0x%zx",                (intx)0x0,         "0x0");
+  check_format("%5zd",                 (intx)123,         "  123");
+  check_format("%-5zd",                (intx)123,         "123  ");
+
+  check_format("%zu",                  (uintx)123u,       "123");
+  check_format("%#zx",                 (uintx)0x123u,     "0x123");
+  check_format("%5zu",                 (uintx)123u,       "  123");
+  check_format("%-5zu",                (uintx)123u,       "123  ");
+
+  check_format(INTPTR_FORMAT,          (intptr_t)0x123,   "0x" LP64_ONLY("00000000") "00000123");
+  check_format(PTR_FORMAT,             (uintptr_t)0x123,  "0x" LP64_ONLY("00000000") "00000123");
+
+  // Check all platforms print this compatibly without leading 0x.
+  check_format(UINT64_FORMAT_0,        (u8)0x123,         "0000000000000123");
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,6 @@
 package java.io;
 
 import java.lang.reflect.Field;
-import jdk.internal.reflect.CallerSensitive;
-import jdk.internal.reflect.Reflection;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * A description of a Serializable field from a Serializable class.  An array
@@ -125,58 +122,6 @@ public class ObjectStreamField
     }
 
     /**
-     * Returns JVM type signature for given primitive.
-     */
-    private static String getPrimitiveSignature(Class<?> cl) {
-        if (cl == Integer.TYPE)
-            return "I";
-        else if (cl == Byte.TYPE)
-            return "B";
-        else if (cl == Long.TYPE)
-            return "J";
-        else if (cl == Float.TYPE)
-            return "F";
-        else if (cl == Double.TYPE)
-            return "D";
-        else if (cl == Short.TYPE)
-            return "S";
-        else if (cl == Character.TYPE)
-            return "C";
-        else if (cl == Boolean.TYPE)
-            return "Z";
-        else if (cl == Void.TYPE)
-            return "V";
-        else
-            throw new InternalError();
-    }
-
-    /**
-     * Returns JVM type signature for given class.
-     */
-    static String getClassSignature(Class<?> cl) {
-        if (cl.isPrimitive()) {
-            return getPrimitiveSignature(cl);
-        } else {
-            return appendClassSignature(new StringBuilder(), cl).toString();
-        }
-    }
-
-    static StringBuilder appendClassSignature(StringBuilder sbuf, Class<?> cl) {
-        while (cl.isArray()) {
-            sbuf.append('[');
-            cl = cl.getComponentType();
-        }
-
-        if (cl.isPrimitive()) {
-            sbuf.append(getPrimitiveSignature(cl));
-        } else {
-            sbuf.append('L').append(cl.getName().replace('.', '/')).append(';');
-        }
-
-        return sbuf;
-    }
-
-    /**
      * Creates an ObjectStreamField representing the given field with the
      * specified unshared setting.  For compatibility with the behavior of
      * earlier serialization implementations, a "showType" parameter is
@@ -190,7 +135,7 @@ public class ObjectStreamField
         name = field.getName();
         Class<?> ftype = field.getType();
         type = (showType || ftype.isPrimitive()) ? ftype : Object.class;
-        signature = getClassSignature(ftype).intern();
+        signature = ftype.descriptorString().intern();
     }
 
     /**
@@ -213,15 +158,7 @@ public class ObjectStreamField
      * @return  a {@code Class} object representing the type of the
      *          serializable field
      */
-    @SuppressWarnings("removal")
-    @CallerSensitive
     public Class<?> getType() {
-        if (System.getSecurityManager() != null) {
-            Class<?> caller = Reflection.getCallerClass();
-            if (ReflectUtil.needsPackageAccessCheck(caller.getClassLoader(), type.getClassLoader())) {
-                ReflectUtil.checkPackageAccess(type);
-            }
-        }
         return type;
     }
 
@@ -347,7 +284,7 @@ public class ObjectStreamField
         // of the public constructors are used, in which case type is always
         // initialized to the exact type we want the signature to represent.
         if (sig == null) {
-            typeSignature = sig = getClassSignature(type).intern();
+            typeSignature = sig = type.descriptorString().intern();
         }
         return sig;
     }

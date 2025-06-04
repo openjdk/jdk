@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,27 @@
 
 package compiler.lib.ir_framework;
 
-import compiler.lib.ir_framework.driver.*;
+import compiler.lib.ir_framework.driver.FlagVMProcess;
+import compiler.lib.ir_framework.driver.TestVMException;
+import compiler.lib.ir_framework.driver.TestVMProcess;
+import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
+import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
+import compiler.lib.ir_framework.driver.irmatching.Matchable;
+import compiler.lib.ir_framework.driver.irmatching.parser.TestClassParser;
 import compiler.lib.ir_framework.shared.*;
-import compiler.lib.ir_framework.test.*;
+import compiler.lib.ir_framework.test.TestVM;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jdk.test.lib.helpers.ClassFileInstaller;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -97,6 +107,7 @@ public class TestFramework {
      * performed when all these additional JTreg flags (does not include additionally added framework and scenario flags
      * by user code) are whitelisted.
      *
+     * <p>
      * A flag is whitelisted if it is a property flag (starting with -D), -ea, -esa, or if the flag name contains any of
      * the entries of this list as a substring (partial match).
      */
@@ -108,7 +119,6 @@ public class TestFramework {
                     "Trace",
                     "Print",
                     "Verify",
-                    "TLAB",
                     "UseNewCode",
                     "Xmn",
                     "Xms",
@@ -125,17 +135,29 @@ public class TestFramework {
                     "CompileThreshold",
                     "Xmixed",
                     "server",
+                    "AlignVector",
+                    "UseAVX",
+                    "UseSSE",
+                    "UseSVE",
                     "Xlog",
-                    "LogCompilation"
+                    "LogCompilation",
+                    "UseCompactObjectHeaders",
+                    "UseFMA",
+                    // Riscv
+                    "UseRVV",
+                    "UseZbb",
+                    "UseZfh",
+                    "UseZicond",
+                    "UseZvbb"
             )
     );
 
     public static final boolean VERBOSE = Boolean.getBoolean("Verbose");
+    public static final boolean PRINT_RULE_MATCHING_TIME = Boolean.getBoolean("PrintRuleMatchingTime");
     public static final boolean TESTLIST = !System.getProperty("Test", "").isEmpty();
     public static final boolean EXCLUDELIST = !System.getProperty("Exclude", "").isEmpty();
     private static final boolean REPORT_STDOUT = Boolean.getBoolean("ReportStdout");
     // Only used for internal testing and should not be used for normal user testing.
-    private static final boolean SKIP_WHITEBOX_INSTALL = Boolean.getBoolean("SkipWhiteBoxInstall");
 
     private static final String RERUN_HINT = """
                                                #############################################################
@@ -157,6 +179,8 @@ public class TestFramework {
     private Set<Integer> scenarioIndices;
     private List<String> flags;
     private int defaultWarmup = -1;
+    private boolean testClassesOnBootClassPath;
+    private boolean isAllowNotCompilable = false;
 
     /*
      * Public interface methods
@@ -175,7 +199,7 @@ public class TestFramework {
     /**
      * Creates an instance acting as a builder to test {@code testClass}.
      * Use this constructor if you want to use multiple run options (flags, helper classes, scenarios).
-     * Use the associated add methods ({@link #addFlags(String...)}, @link #addScenarios(Scenario...)},
+     * Use the associated add methods ({@link #addFlags(String...)}, {@link #addScenarios(Scenario...)},
      * {@link #addHelperClasses(Class...)}) to set up everything and then start the testing by invoking {@link #start()}.
      *
      * @param testClass the class to be tested by the framework.
@@ -291,8 +315,8 @@ public class TestFramework {
      * @return the same framework instance.
      */
     public TestFramework addScenarios(Scenario... scenarios) {
-        TestFormat.check(scenarios != null && Arrays.stream(scenarios).noneMatch(Objects::isNull),
-                         "A scenario cannot be null");
+        TestFormat.checkAndReport(scenarios != null && Arrays.stream(scenarios).noneMatch(Objects::isNull),
+                                  "A scenario cannot be null");
         if (this.scenarios == null) {
             this.scenarios = new ArrayList<>();
             this.scenarioIndices = new HashSet<>();
@@ -300,10 +324,20 @@ public class TestFramework {
 
         for (Scenario scenario : scenarios) {
             int scenarioIndex = scenario.getIndex();
-            TestFormat.check(scenarioIndices.add(scenarioIndex),
+            TestFormat.checkNoThrow(scenarioIndices.add(scenarioIndex),
                              "Cannot define two scenarios with the same index " + scenarioIndex);
             this.scenarios.add(scenario);
         }
+        TestFormat.throwIfAnyFailures();
+        return this;
+    }
+
+    /**
+     * Add test classes to boot classpath. This adds all classes found on path {@link jdk.test.lib.Utils#TEST_CLASSES}
+     * to the boot classpath with "-Xbootclasspath/a". This is useful when trying to run tests in a privileged mode.
+     */
+    public TestFramework addTestClassesToBootClassPath() {
+        this.testClassesOnBootClassPath = true;
         return this;
     }
 
@@ -312,9 +346,10 @@ public class TestFramework {
      * set test class.
      */
     public void start() {
-        if (!SKIP_WHITEBOX_INSTALL) {
+        if (shouldInstallWhiteBox()) {
             installWhiteBox();
         }
+        checkIRRuleCompilePhasesFormat();
         disableIRVerificationIfNotFeasible();
 
         if (scenarios == null) {
@@ -324,7 +359,6 @@ public class TestFramework {
                 System.err.println(System.lineSeparator() + e.getExceptionInfo() + RERUN_HINT);
                 throw e;
             } catch (IRViolationException e) {
-                System.out.println("Compilation(s) of failed match(es):");
                 System.out.println(e.getCompilations());
                 System.err.println(System.lineSeparator() + e.getExceptionInfo() + System.lineSeparator() + RERUN_HINT);
                 throw e;
@@ -332,6 +366,39 @@ public class TestFramework {
         } else {
             startWithScenarios();
         }
+    }
+
+    private void checkIRRuleCompilePhasesFormat() {
+        for (Method method : testClass.getDeclaredMethods()) {
+            for (IR irAnno : method.getAnnotationsByType(IR.class)) {
+                TestFormat.checkNoThrow(irAnno.phase().length > 0,
+                                        "@IR rule " + irAnno + " must specify a non-empty list of compile " +
+                                        "phases \"phase\" at " + method);
+            }
+        }
+        TestFormat.throwIfAnyFailures();
+    }
+
+    /**
+     * Try to load the Whitebox class from the user directory with a custom class loader. If the user has already built the
+     * Whitebox, we can load it. Otherwise, the framework needs to install it.
+     *
+     * @return true if the framework needs to install the Whitebox
+     */
+    private boolean shouldInstallWhiteBox() {
+        try {
+            URL url = Path.of(System.getProperty("user.dir")).toUri().toURL();
+            URLClassLoader userDirClassLoader =
+                    URLClassLoader.newInstance(new URL[] {url}, TestFramework.class.getClassLoader().getParent());
+            Class.forName(WhiteBox.class.getName(), false, userDirClassLoader);
+        } catch (MalformedURLException e) {
+            throw new TestFrameworkException("corrupted user.dir property", e);
+        } catch (ClassNotFoundException e) {
+            // We need to manually install the WhiteBox if we cannot load the WhiteBox class from the user directory.
+            // This happens when the user test does not explicitly install the WhiteBox as part of the test.
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -343,8 +410,21 @@ public class TestFramework {
      * @return the same framework instance.
      */
     public TestFramework setDefaultWarmup(int defaultWarmup) {
-        TestFormat.check(defaultWarmup >= 0, "Cannot specify a negative default warm-up");
+        TestFormat.checkAndReport(defaultWarmup >= 0, "Cannot specify a negative default warm-up");
         this.defaultWarmup = defaultWarmup;
+        return this;
+    }
+
+    /**
+     * In rare cases, methods may not be compilable because of a compilation bailout. By default, this leads to a
+     * test failure. However, if such cases are expected in multiple methods in a test class, this flag can be set to
+     * true, which allows any test to pass even if there is a compilation bailout. If only selected methods are prone
+     * to bail out, it is preferred to use {@link Test#allowNotCompilable()} instead for more fine-grained control.
+     * By setting this flag, any associated {@link IR} rule of a test is only executed if the test method was compiled,
+     * and else it is ignored silently.
+     */
+    public TestFramework allowNotCompilable() {
+        this.isAllowNotCompilable = true;
         return this;
     }
 
@@ -532,27 +612,42 @@ public class TestFramework {
      * Disable IR verification completely in certain cases.
      */
     private void disableIRVerificationIfNotFeasible() {
-        if (irVerificationPossible) {
-            irVerificationPossible = Platform.isDebugBuild() && !Platform.isInt() && !Platform.isComp();
-            if (!irVerificationPossible) {
-                System.out.println("IR verification disabled due to not running a debug build (required for PrintIdeal" +
-                                   "and PrintOptoAssembly), running with -Xint, or -Xcomp (use warm-up of 0 instead)");
-                return;
-            }
-
-            irVerificationPossible = hasIRAnnotations();
-            if (!irVerificationPossible) {
-                System.out.println("IR verification disabled due to test " + testClass + " not specifying any @IR annotations");
-                return;
-            }
-
-            // No IR verification is done if additional non-whitelisted JTreg VM or Javaoptions flag is specified.
-            irVerificationPossible = onlyWhitelistedJTregVMAndJavaOptsFlags();
-            if (!irVerificationPossible) {
-                System.out.println("IR verification disabled due to using non-whitelisted JTreg VM or Javaoptions flag(s)."
-                                   + System.lineSeparator());
-            }
+        if (!irVerificationPossible) {
+            return;
         }
+
+        boolean debugTest = Platform.isDebugBuild();
+        boolean intTest = !Platform.isInt();
+        boolean compTest = !Platform.isComp();
+        boolean irTest = hasIRAnnotations();
+        // No IR verification is done if additional non-whitelisted JTreg VM or Javaoptions flag is specified.
+        List<String> nonWhiteListedFlags = anyNonWhitelistedJTregVMAndJavaOptsFlags();
+        boolean nonWhiteListedTest = nonWhiteListedFlags.isEmpty();
+
+        irVerificationPossible = debugTest && intTest && compTest && irTest && nonWhiteListedTest;
+        if (irVerificationPossible) {
+            return;
+        }
+
+        System.out.println("IR verification disabled due to the following reason(s):");
+        if (!debugTest) {
+            System.out.println("- Not running a debug build (required for PrintIdeal and PrintOptoAssembly)");
+        }
+        if (!intTest) {
+            System.out.println("- Running with -Xint (no compilations)");
+        }
+        if (!compTest) {
+            System.out.println("- Running with -Xcomp (use warm-up of 0 instead)");
+        }
+        if (!irTest) {
+            System.out.println("- Test " + testClass + " not specifying any @IR annotations");
+        }
+        if (!nonWhiteListedTest) {
+            System.out.println("- Using non-whitelisted JTreg VM or Javaoptions flag(s):");
+            nonWhiteListedFlags.forEach((f) -> System.out.println("  - " + f));
+        }
+
+        System.out.println("");
     }
 
     /**
@@ -593,8 +688,9 @@ public class TestFramework {
             }
             if (e instanceof IRViolationException irException) {
                 // For IR violations, only show the actual violations and not the (uninteresting) stack trace.
-                System.out.println((scenario != null ? "Scenario #" + scenario.getIndex() + " - " : "")
-                                   + "Compilation(s) of failed matche(s):");
+                if (scenario != null) {
+                    System.out.println("Scenario #" + scenario.getIndex());
+                }
                 System.out.println(irException.getCompilations());
                 builder.append(errorMsg).append(System.lineSeparator()).append(irException.getExceptionInfo());
             } else if (e instanceof TestVMException testVMException) {
@@ -603,11 +699,11 @@ public class TestFramework {
                 // Print stack trace otherwise
                 StringWriter errors = new StringWriter();
                 e.printStackTrace(new PrintWriter(errors));
-                builder.append(errors.toString());
+                builder.append(errors);
             }
             builder.append(System.lineSeparator());
         }
-        System.err.println(builder.toString());
+        System.err.println(builder);
         if (!VERBOSE && !REPORT_STDOUT && !TESTLIST && !EXCLUDELIST) {
             // Provide a hint to the user how to get additional output/debugging information.
             System.err.println(RERUN_HINT);
@@ -676,28 +772,34 @@ public class TestFramework {
     }
 
     private boolean hasIRAnnotations() {
-        return Arrays.stream(testClass.getDeclaredMethods()).anyMatch(m -> m.getAnnotationsByType(IR.class) != null);
+        return Arrays.stream(testClass.getDeclaredMethods()).anyMatch(m -> m.getAnnotationsByType(IR.class).length > 0);
     }
 
-    private boolean onlyWhitelistedJTregVMAndJavaOptsFlags() {
+    private List<String> anyNonWhitelistedJTregVMAndJavaOptsFlags() {
         List<String> flags = Arrays.stream(Utils.getTestJavaOpts())
                                    .map(s -> s.replaceFirst("-XX:[+|-]?|-(?=[^D|^e])", ""))
                                    .collect(Collectors.toList());
+        List<String> nonWhiteListedFlags = new ArrayList();
         for (String flag : flags) {
             // Property flags (prefix -D), -ea and -esa are whitelisted.
             if (!flag.startsWith("-D") && !flag.startsWith("-e") && JTREG_WHITELIST_FLAGS.stream().noneMatch(flag::contains)) {
                 // Found VM flag that is not whitelisted
-                return false;
+                nonWhiteListedFlags.add(flag);
             }
         }
-        return true;
+        return nonWhiteListedFlags;
     }
 
     private void runTestVM(List<String> additionalFlags) {
-        TestVMProcess testVMProcess = new TestVMProcess(additionalFlags, testClass, helperClasses, defaultWarmup);
+        TestVMProcess testVMProcess = new TestVMProcess(additionalFlags, testClass, helperClasses, defaultWarmup,
+                                                        isAllowNotCompilable, testClassesOnBootClassPath);
         if (shouldVerifyIR) {
             try {
-                new IRMatcher(testVMProcess.getHotspotPidFileName(), testVMProcess.getIrEncoding(), testClass);
+                TestClassParser testClassParser = new TestClassParser(testClass, isAllowNotCompilable);
+                Matchable testClassMatchable = testClassParser.parse(testVMProcess.getHotspotPidFileName(),
+                                                                     testVMProcess.getIrEncoding());
+                IRMatcher matcher = new IRMatcher(testClassMatchable);
+                matcher.match();
             } catch (IRViolationException e) {
                 e.addCommandLine(testVMProcess.getCommandLine());
                 throw e;

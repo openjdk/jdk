@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,8 @@ import org.ietf.jgss.*;
 import sun.security.jgss.GSSCaller;
 import sun.security.jgss.spi.*;
 import sun.security.krb5.*;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-import java.security.AccessController;
 import javax.security.auth.DestroyFailedException;
+import javax.security.auth.login.LoginException;
 
 /**
  * Implements the krb5 acceptor credential element.
@@ -57,7 +55,6 @@ public class Krb5AcceptCredential
         this.screds = creds;
     }
 
-    @SuppressWarnings("removal")
     static Krb5AcceptCredential getInstance(final GSSCaller caller, Krb5NameElement name)
         throws GSSException {
 
@@ -66,18 +63,14 @@ public class Krb5AcceptCredential
 
         ServiceCreds creds = null;
         try {
-            creds = AccessController.doPrivilegedWithCombiner(
-                        new PrivilegedExceptionAction<ServiceCreds>() {
-                public ServiceCreds run() throws Exception {
-                    return Krb5Util.getServiceCreds(
-                        caller == GSSCaller.CALLER_UNKNOWN ? GSSCaller.CALLER_ACCEPT: caller,
-                        serverPrinc);
-                }});
-        } catch (PrivilegedActionException e) {
+            creds = Krb5Util.getServiceCreds(
+                caller == GSSCaller.CALLER_UNKNOWN ? GSSCaller.CALLER_ACCEPT: caller,
+                serverPrinc);
+        } catch (LoginException e) {
             GSSException ge =
                 new GSSException(GSSException.NO_CRED, -1,
                     "Attempt to obtain new ACCEPT credentials failed!");
-            ge.initCause(e.getException());
+            ge.initCause(e);
             throw ge;
         }
 
@@ -178,7 +171,7 @@ public class Krb5AcceptCredential
 
     /**
      * Impersonation is only available on the initiator side. The
-     * service must starts as an initiator to get an initial TGT to complete
+     * service must start as an initiator to get an initial TGT to complete
      * the S4U2self protocol.
      */
     @Override

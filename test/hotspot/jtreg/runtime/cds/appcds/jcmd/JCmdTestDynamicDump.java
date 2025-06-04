@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,11 @@
  * @summary Test jcmd to dump dynamic shared archive.
  * @requires vm.cds
  * @requires vm.flagless
- * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @modules jdk.jcmd/sun.tools.common:+open
- * @compile ../test-classes/Hello.java JCmdTestDumpBase.java
- * @build sun.hotspot.WhiteBox
- * @build JCmdTestLingeredApp JCmdTestDynamicDump
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.lib.apps.LingeredApp jdk.test.whitebox.WhiteBox Hello
+ *        JCmdTestDumpBase JCmdTestLingeredApp JCmdTestDynamicDump
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=480 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI JCmdTestDynamicDump
  */
 
@@ -134,7 +133,7 @@ public class JCmdTestDynamicDump extends JCmdTestDumpBase {
     private static void dumpStaticArchive(String archiveFile) throws Exception {
         String javapath = JDKToolFinder.getJDKTool("java");
         String cmd[] = {javapath, "-Xshare:dump",  "-XX:SharedArchiveFile=" + archiveFile};
-        // Do not use ProcessTools.createTestJvm(cmd) here, it copies jtreg env.
+        // Do not use ProcessTools.createTestJavaProcessBuilder(cmd) here, it copies jtreg env.
         ProcessBuilder pb = new ProcessBuilder(cmd);
         CDSTestUtils.executeAndLog(pb, "dump")
             .shouldHaveExitValue(0);

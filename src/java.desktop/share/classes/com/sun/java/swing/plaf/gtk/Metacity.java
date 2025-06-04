@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -118,11 +116,7 @@ class Metacity implements SynthConstants {
             try {
                 INSTANCE = new Metacity(themeName);
             } catch (FileNotFoundException ex) {
-            } catch (IOException ex) {
-                logError(themeName, ex);
-            } catch (ParserConfigurationException ex) {
-                logError(themeName, ex);
-            } catch (SAXException ex) {
+            } catch (IOException | ParserConfigurationException | SAXException ex) {
                 logError(themeName, ex);
             }
             }
@@ -161,6 +155,7 @@ class Metacity implements SynthConstants {
         this.themeName = themeName;
         themeDir = getThemeDir(themeName);
         if (themeDir != null) {
+            @SuppressWarnings("deprecation")
             URL themeURL = new URL(themeDir, "metacity-theme-1.xml");
             xmlDoc = getXMLDoc(themeURL);
             if (xmlDoc == null) {
@@ -509,21 +504,12 @@ class Metacity implements SynthConstants {
 
 
 
-    private static class Privileged implements PrivilegedAction<Object> {
+    private static class ThemeGetter {
         private static int GET_THEME_DIR  = 0;
         private static int GET_USER_THEME = 1;
         private static int GET_IMAGE      = 2;
-        private int type;
-        private Object arg;
 
-        @SuppressWarnings("removal")
-        public Object doPrivileged(int type, Object arg) {
-            this.type = type;
-            this.arg = arg;
-            return AccessController.doPrivileged(this);
-        }
-
-        public Object run() {
+        public Object getThemeItem(int type, Object arg) {
             if (type == GET_THEME_DIR) {
                 String sep = File.separator;
                 String[] dirs = new String[] {
@@ -562,7 +548,8 @@ class Metacity implements SynthConstants {
                     if (url != null) {
                         String str = url.toString();
                         try {
-                            themeDir = new URL(str.substring(0, str.lastIndexOf('/'))+"/");
+                            @SuppressWarnings("deprecation")
+                            var _unused = themeDir = new URL(str.substring(0, str.lastIndexOf('/'))+"/");
                         } catch (MalformedURLException ex) {
                             themeDir = null;
                         }
@@ -580,6 +567,7 @@ class Metacity implements SynthConstants {
                     }
                     // Note: this is a small file (< 1024 bytes) so it's not worth
                     // starting an XML parser or even to use a buffered reader.
+                    @SuppressWarnings("deprecation")
                     URL url = new URL(new File(userHome).toURI().toURL(),
                                       ".gconf/apps/metacity/general/%25gconf.xml");
                     // Pending: verify character encoding spec for gconf
@@ -606,8 +594,6 @@ class Metacity implements SynthConstants {
                             }
                         }
                     }
-                } catch (MalformedURLException ex) {
-                    // OK to just ignore. We'll use a fallback theme.
                 } catch (IOException ex) {
                     // OK to just ignore. We'll use a fallback theme.
                 }
@@ -621,11 +607,11 @@ class Metacity implements SynthConstants {
     }
 
     private static URL getThemeDir(String themeName) {
-        return (URL)new Privileged().doPrivileged(Privileged.GET_THEME_DIR, themeName);
+        return (URL)new ThemeGetter().getThemeItem(ThemeGetter.GET_THEME_DIR, themeName);
     }
 
     private static String getUserTheme() {
-        return (String)new Privileged().doPrivileged(Privileged.GET_USER_THEME, null);
+        return (String)new ThemeGetter().getThemeItem(ThemeGetter.GET_USER_THEME, null);
     }
 
     protected void tileImage(Graphics g, Image image, int x0, int y0, int w, int h, float[] alphas) {
@@ -674,8 +660,9 @@ class Metacity implements SynthConstants {
         if (image == null) {
             if (themeDir != null) {
                 try {
+                    @SuppressWarnings("deprecation")
                     URL url = new URL(themeDir, key);
-                    image = (Image)new Privileged().doPrivileged(Privileged.GET_IMAGE, url);
+                    image = (Image)new ThemeGetter().getThemeItem(ThemeGetter.GET_IMAGE, url);
                 } catch (MalformedURLException ex) {
                     //log("Bad image url: "+ themeDir + "/" + key);
                 }
@@ -1589,18 +1576,11 @@ class Metacity implements SynthConstants {
             documentBuilder =
                 DocumentBuilderFactory.newInstance().newDocumentBuilder();
         }
-        @SuppressWarnings("removal")
-        InputStream inputStream =
-            AccessController.doPrivileged(new PrivilegedAction<InputStream>() {
-                public InputStream run() {
-                    try {
-                        return new BufferedInputStream(xmlFile.openStream());
-                    } catch (IOException ex) {
-                        return null;
-                    }
-                }
-            });
-
+        InputStream inputStream = null;
+        try {
+            inputStream = new BufferedInputStream(xmlFile.openStream());
+        } catch (IOException ex) {
+        }
         Document doc = null;
         if (inputStream != null) {
             doc = documentBuilder.parse(inputStream);

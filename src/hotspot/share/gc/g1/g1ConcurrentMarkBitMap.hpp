@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@
 class G1CMBitMap;
 class G1CMTask;
 class G1ConcurrentMark;
-class HeapRegion;
 
 // Closure for iteration over bitmaps
 class G1CMBitMapClosure {
@@ -51,7 +50,7 @@ public:
 class G1CMBitMapMappingChangedListener : public G1MappingChangedListener {
   G1CMBitMap* _bm;
 public:
-  G1CMBitMapMappingChangedListener() : _bm(NULL) {}
+  G1CMBitMapMappingChangedListener() : _bm(nullptr) {}
 
   void set_bitmap(G1CMBitMap* bm) { _bm = bm; }
 
@@ -61,24 +60,16 @@ public:
 // A generic mark bitmap for concurrent marking.  This is essentially a wrapper
 // around the BitMap class that is based on HeapWords, with one bit per (1 << _shifter) HeapWords.
 class G1CMBitMap : public MarkBitMap {
-
   G1CMBitMapMappingChangedListener _listener;
 
-protected:
-
-  virtual void check_mark(HeapWord* addr) NOT_DEBUG_RETURN;
-
 public:
-
-  G1CMBitMap() : MarkBitMap(), _listener() { _listener.set_bitmap(this); }
+  G1CMBitMap();
 
   // Initializes the underlying BitMap to cover the given area.
   void initialize(MemRegion heap, G1RegionToSpaceMapper* storage);
 
   // Apply the closure to the addresses that correspond to marked bits in the bitmap.
   inline bool iterate(G1CMBitMapClosure* cl, MemRegion mr);
-
-  void clear_region(HeapRegion* hr);
 };
 
 #endif // SHARE_GC_G1_G1CONCURRENTMARKBITMAP_HPP

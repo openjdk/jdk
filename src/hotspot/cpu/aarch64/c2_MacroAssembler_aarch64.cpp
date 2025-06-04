@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,17 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "opto/c2_MacroAssembler.hpp"
+#include "opto/compile.hpp"
 #include "opto/intrinsicnode.hpp"
+#include "opto/matcher.hpp"
+#include "opto/output.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -42,7 +46,639 @@
 
 typedef void (MacroAssembler::* chr_insn)(Register Rt, const Address &adr);
 
+// jdk.internal.util.ArraysSupport.vectorizedHashCode
+address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register result,
+                                           FloatRegister vdata0, FloatRegister vdata1,
+                                           FloatRegister vdata2, FloatRegister vdata3,
+                                           FloatRegister vmul0, FloatRegister vmul1,
+                                           FloatRegister vmul2, FloatRegister vmul3,
+                                           FloatRegister vpow, FloatRegister vpowm,
+                                           BasicType eltype) {
+  ARRAYS_HASHCODE_REGISTERS;
+
+  Register tmp1 = rscratch1, tmp2 = rscratch2;
+
+  Label TAIL, STUB_SWITCH, STUB_SWITCH_OUT, LOOP, BR_BASE, LARGE, DONE;
+
+  // Vectorization factor. Number of array elements loaded to one SIMD&FP registers by the stubs. We
+  // use 8H load arrangements for chars and shorts and 8B for booleans and bytes. It's possible to
+  // use 4H for chars and shorts instead, but using 8H gives better performance.
+  const size_t vf = eltype == T_BOOLEAN || eltype == T_BYTE ? 8
+                    : eltype == T_CHAR || eltype == T_SHORT ? 8
+                    : eltype == T_INT                       ? 4
+                                                            : 0;
+  guarantee(vf, "unsupported eltype");
+
+  // Unroll factor for the scalar loop below. The value is chosen based on performance analysis.
+  const size_t unroll_factor = 4;
+
+  switch (eltype) {
+  case T_BOOLEAN:
+    BLOCK_COMMENT("arrays_hashcode(unsigned byte) {");
+    break;
+  case T_CHAR:
+    BLOCK_COMMENT("arrays_hashcode(char) {");
+    break;
+  case T_BYTE:
+    BLOCK_COMMENT("arrays_hashcode(byte) {");
+    break;
+  case T_SHORT:
+    BLOCK_COMMENT("arrays_hashcode(short) {");
+    break;
+  case T_INT:
+    BLOCK_COMMENT("arrays_hashcode(int) {");
+    break;
+  default:
+    ShouldNotReachHere();
+  }
+
+  // large_arrays_hashcode(T_INT) performs worse than the scalar loop below when the Neon loop
+  // implemented by the stub executes just once. Call the stub only if at least two iterations will
+  // be executed.
+  const size_t large_threshold = eltype == T_INT ? vf * 2 : vf;
+  cmpw(cnt, large_threshold);
+  br(Assembler::HS, LARGE);
+
+  bind(TAIL);
+
+  // The andr performs cnt % uf where uf = unroll_factor. The subtract shifted by 3 offsets past
+  // uf - (cnt % uf) pairs of load + madd insns i.e. it only executes cnt % uf load + madd pairs.
+  // Iteration eats up the remainder, uf elements at a time.
+  assert(is_power_of_2(unroll_factor), "can't use this value to calculate the jump target PC");
+  andr(tmp2, cnt, unroll_factor - 1);
+  adr(tmp1, BR_BASE);
+  // For Cortex-A53 offset is 4 because 2 nops are generated.
+  sub(tmp1, tmp1, tmp2, ext::sxtw, VM_Version::supports_a53mac() ? 4 : 3);
+  movw(tmp2, 0x1f);
+  br(tmp1);
+
+  bind(LOOP);
+  for (size_t i = 0; i < unroll_factor; ++i) {
+    load(tmp1, Address(post(ary, type2aelembytes(eltype))), eltype);
+    maddw(result, result, tmp2, tmp1);
+    // maddw generates an extra nop for Cortex-A53 (see maddw definition in macroAssembler).
+    // Generate 2nd nop to have 4 instructions per iteration.
+    if (VM_Version::supports_a53mac()) {
+      nop();
+    }
+  }
+  bind(BR_BASE);
+  subsw(cnt, cnt, unroll_factor);
+  br(Assembler::HS, LOOP);
+
+  b(DONE);
+
+  bind(LARGE);
+
+  RuntimeAddress stub = RuntimeAddress(StubRoutines::aarch64::large_arrays_hashcode(eltype));
+  assert(stub.target() != nullptr, "array_hashcode stub has not been generated");
+  address tpc = trampoline_call(stub);
+  if (tpc == nullptr) {
+    DEBUG_ONLY(reset_labels(TAIL, BR_BASE));
+    postcond(pc() == badAddress);
+    return nullptr;
+  }
+
+  bind(DONE);
+
+  BLOCK_COMMENT("} // arrays_hashcode");
+
+  postcond(pc() != badAddress);
+  return pc();
+}
+
+void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register tmpReg,
+                                  Register tmp2Reg, Register tmp3Reg) {
+  Register oop = objectReg;
+  Register box = boxReg;
+  Register disp_hdr = tmpReg;
+  Register tmp = tmp2Reg;
+  Label cont;
+  Label object_has_monitor;
+  Label count, no_count;
+
+  assert(LockingMode != LM_LIGHTWEIGHT, "lightweight locking should use fast_lock_lightweight");
+  assert_different_registers(oop, box, tmp, disp_hdr, rscratch2);
+
+  // Load markWord from object into displaced_header.
+  ldr(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
+
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
+    load_klass(tmp, oop);
+    ldrb(tmp, Address(tmp, Klass::misc_flags_offset()));
+    tst(tmp, KlassFlags::_misc_is_value_based_class);
+    br(Assembler::NE, cont);
+  }
+
+  // Check for existing monitor
+  tbnz(disp_hdr, exact_log2(markWord::monitor_value), object_has_monitor);
+
+  if (LockingMode == LM_MONITOR) {
+    tst(oop, oop); // Set NE to indicate 'failure' -> take slow-path. We know that oop != 0.
+    b(cont);
+  } else {
+    assert(LockingMode == LM_LEGACY, "must be");
+    // Set tmp to be (markWord of object | UNLOCK_VALUE).
+    orr(tmp, disp_hdr, markWord::unlocked_value);
+
+    // Initialize the box. (Must happen before we update the object mark!)
+    str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+
+    // Compare object markWord with an unlocked value (tmp) and if
+    // equal exchange the stack address of our box with object markWord.
+    // On failure disp_hdr contains the possibly locked markWord.
+    cmpxchg(oop, tmp, box, Assembler::xword, /*acquire*/ true,
+            /*release*/ true, /*weak*/ false, disp_hdr);
+    br(Assembler::EQ, cont);
+
+    assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
+
+    // If the compare-and-exchange succeeded, then we found an unlocked
+    // object, will have now locked it will continue at label cont
+
+    // Check if the owner is self by comparing the value in the
+    // markWord of object (disp_hdr) with the stack pointer.
+    mov(rscratch1, sp);
+    sub(disp_hdr, disp_hdr, rscratch1);
+    mov(tmp, (address) (~(os::vm_page_size()-1) | markWord::lock_mask_in_place));
+    // If condition is true we are cont and hence we can store 0 as the
+    // displaced header in the box, which indicates that it is a recursive lock.
+    ands(tmp/*==0?*/, disp_hdr, tmp);   // Sets flags for result
+    str(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+    b(cont);
+  }
+
+  // Handle existing monitor.
+  bind(object_has_monitor);
+
+  // Try to CAS owner (no owner => current thread's _monitor_owner_id).
+  ldr(rscratch2, Address(rthread, JavaThread::monitor_owner_id_offset()));
+  add(tmp, disp_hdr, (in_bytes(ObjectMonitor::owner_offset())-markWord::monitor_value));
+  cmpxchg(tmp, zr, rscratch2, Assembler::xword, /*acquire*/ true,
+          /*release*/ true, /*weak*/ false, tmp3Reg); // Sets flags for result
+
+  // Store a non-null value into the box to avoid looking like a re-entrant
+  // lock. The fast-path monitor unlock code checks for
+  // markWord::monitor_value so use markWord::unused_mark which has the
+  // relevant bit set, and also matches ObjectSynchronizer::enter.
+  mov(tmp, (address)markWord::unused_mark().value());
+  str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+
+  br(Assembler::EQ, cont); // CAS success means locking succeeded
+
+  cmp(tmp3Reg, rscratch2);
+  br(Assembler::NE, cont); // Check for recursive locking
+
+  // Recursive lock case
+  increment(Address(disp_hdr, in_bytes(ObjectMonitor::recursions_offset()) - markWord::monitor_value), 1);
+  // flag == EQ still from the cmp above, checking if this is a reentrant lock
+
+  bind(cont);
+  // flag == EQ indicates success
+  // flag == NE indicates failure
+  br(Assembler::NE, no_count);
+
+  bind(count);
+  if (LockingMode == LM_LEGACY) {
+    inc_held_monitor_count(rscratch1);
+  }
+
+  bind(no_count);
+}
+
+void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Register tmpReg,
+                                    Register tmp2Reg) {
+  Register oop = objectReg;
+  Register box = boxReg;
+  Register disp_hdr = tmpReg;
+  Register owner_addr = tmpReg;
+  Register tmp = tmp2Reg;
+  Label cont;
+  Label object_has_monitor;
+  Label count, no_count;
+  Label unlocked;
+
+  assert(LockingMode != LM_LIGHTWEIGHT, "lightweight locking should use fast_unlock_lightweight");
+  assert_different_registers(oop, box, tmp, disp_hdr);
+
+  if (LockingMode == LM_LEGACY) {
+    // Find the lock address and load the displaced header from the stack.
+    ldr(disp_hdr, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+
+    // If the displaced header is 0, we have a recursive unlock.
+    cmp(disp_hdr, zr);
+    br(Assembler::EQ, cont);
+  }
+
+  // Handle existing monitor.
+  ldr(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
+  tbnz(tmp, exact_log2(markWord::monitor_value), object_has_monitor);
+
+  if (LockingMode == LM_MONITOR) {
+    tst(oop, oop); // Set NE to indicate 'failure' -> take slow-path. We know that oop != 0.
+    b(cont);
+  } else {
+    assert(LockingMode == LM_LEGACY, "must be");
+    // Check if it is still a light weight lock, this is is true if we
+    // see the stack address of the basicLock in the markWord of the
+    // object.
+
+    cmpxchg(oop, box, disp_hdr, Assembler::xword, /*acquire*/ false,
+            /*release*/ true, /*weak*/ false, tmp);
+    b(cont);
+  }
+
+  assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
+
+  // Handle existing monitor.
+  bind(object_has_monitor);
+  STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
+  add(tmp, tmp, -(int)markWord::monitor_value); // monitor
+
+  ldr(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset()));
+
+  Label notRecursive;
+  cbz(disp_hdr, notRecursive);
+
+  // Recursive lock
+  sub(disp_hdr, disp_hdr, 1u);
+  str(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset()));
+  cmp(disp_hdr, disp_hdr); // Sets flags for result
+  b(cont);
+
+  bind(notRecursive);
+
+  // Compute owner address.
+  lea(owner_addr, Address(tmp, ObjectMonitor::owner_offset()));
+
+  // Set owner to null.
+  // Release to satisfy the JMM
+  stlr(zr, owner_addr);
+  // We need a full fence after clearing owner to avoid stranding.
+  // StoreLoad achieves this.
+  membar(StoreLoad);
+
+  // Check if the entry_list is empty.
+  ldr(rscratch1, Address(tmp, ObjectMonitor::entry_list_offset()));
+  cmp(rscratch1, zr);
+  br(Assembler::EQ, cont);     // If so we are done.
+
+  // Check if there is a successor.
+  ldr(rscratch1, Address(tmp, ObjectMonitor::succ_offset()));
+  cmp(rscratch1, zr);
+  br(Assembler::NE, unlocked); // If so we are done.
+
+  // Save the monitor pointer in the current thread, so we can try to
+  // reacquire the lock in SharedRuntime::monitor_exit_helper().
+  str(tmp, Address(rthread, JavaThread::unlocked_inflated_monitor_offset()));
+
+  cmp(zr, rthread); // Set Flag to NE => slow path
+  b(cont);
+
+  bind(unlocked);
+  cmp(zr, zr); // Set Flag to EQ => fast path
+
+  // Intentional fall-through
+
+  bind(cont);
+  // flag == EQ indicates success
+  // flag == NE indicates failure
+  br(Assembler::NE, no_count);
+
+  bind(count);
+  if (LockingMode == LM_LEGACY) {
+    dec_held_monitor_count(rscratch1);
+  }
+
+  bind(no_count);
+}
+
+void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Register t1,
+                                              Register t2, Register t3) {
+  assert(LockingMode == LM_LIGHTWEIGHT, "must be");
+  assert_different_registers(obj, box, t1, t2, t3, rscratch2);
+
+  // Handle inflated monitor.
+  Label inflated;
+  // Finish fast lock successfully. MUST branch to with flag == EQ
+  Label locked;
+  // Finish fast lock unsuccessfully. MUST branch to with flag == NE
+  Label slow_path;
+
+  if (UseObjectMonitorTable) {
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
+    str(zr, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+  }
+
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
+    load_klass(t1, obj);
+    ldrb(t1, Address(t1, Klass::misc_flags_offset()));
+    tst(t1, KlassFlags::_misc_is_value_based_class);
+    br(Assembler::NE, slow_path);
+  }
+
+  const Register t1_mark = t1;
+  const Register t3_t = t3;
+
+  { // Lightweight locking
+
+    // Push lock to the lock stack and finish successfully. MUST branch to with flag == EQ
+    Label push;
+
+    const Register t2_top = t2;
+
+    // Check if lock-stack is full.
+    ldrw(t2_top, Address(rthread, JavaThread::lock_stack_top_offset()));
+    cmpw(t2_top, (unsigned)LockStack::end_offset() - 1);
+    br(Assembler::GT, slow_path);
+
+    // Check if recursive.
+    subw(t3_t, t2_top, oopSize);
+    ldr(t3_t, Address(rthread, t3_t));
+    cmp(obj, t3_t);
+    br(Assembler::EQ, push);
+
+    // Relaxed normal load to check for monitor. Optimization for monitor case.
+    ldr(t1_mark, Address(obj, oopDesc::mark_offset_in_bytes()));
+    tbnz(t1_mark, exact_log2(markWord::monitor_value), inflated);
+
+    // Not inflated
+    assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a lea");
+
+    // Try to lock. Transition lock-bits 0b01 => 0b00
+    orr(t1_mark, t1_mark, markWord::unlocked_value);
+    eor(t3_t, t1_mark, markWord::unlocked_value);
+    cmpxchg(/*addr*/ obj, /*expected*/ t1_mark, /*new*/ t3_t, Assembler::xword,
+            /*acquire*/ true, /*release*/ false, /*weak*/ false, noreg);
+    br(Assembler::NE, slow_path);
+
+    bind(push);
+    // After successful lock, push object on lock-stack.
+    str(obj, Address(rthread, t2_top));
+    addw(t2_top, t2_top, oopSize);
+    strw(t2_top, Address(rthread, JavaThread::lock_stack_top_offset()));
+    b(locked);
+  }
+
+  { // Handle inflated monitor.
+    bind(inflated);
+
+    const Register t1_monitor = t1;
+
+    if (!UseObjectMonitorTable) {
+      assert(t1_monitor == t1_mark, "should be the same here");
+    } else {
+      Label monitor_found;
+
+      // Load cache address
+      lea(t3_t, Address(rthread, JavaThread::om_cache_oops_offset()));
+
+      const int num_unrolled = 2;
+      for (int i = 0; i < num_unrolled; i++) {
+        ldr(t1, Address(t3_t));
+        cmp(obj, t1);
+        br(Assembler::EQ, monitor_found);
+        increment(t3_t, in_bytes(OMCache::oop_to_oop_difference()));
+      }
+
+      Label loop;
+
+      // Search for obj in cache.
+      bind(loop);
+
+      // Check for match.
+      ldr(t1, Address(t3_t));
+      cmp(obj, t1);
+      br(Assembler::EQ, monitor_found);
+
+      // Search until null encountered, guaranteed _null_sentinel at end.
+      increment(t3_t, in_bytes(OMCache::oop_to_oop_difference()));
+      cbnz(t1, loop);
+      // Cache Miss, NE set from cmp above, cbnz does not set flags
+      b(slow_path);
+
+      bind(monitor_found);
+      ldr(t1_monitor, Address(t3_t, OMCache::oop_to_monitor_difference()));
+    }
+
+    const Register t2_owner_addr = t2;
+    const Register t3_owner = t3;
+    const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
+    const Address owner_address(t1_monitor, ObjectMonitor::owner_offset() - monitor_tag);
+    const Address recursions_address(t1_monitor, ObjectMonitor::recursions_offset() - monitor_tag);
+
+    Label monitor_locked;
+
+    // Compute owner address.
+    lea(t2_owner_addr, owner_address);
+
+    // Try to CAS owner (no owner => current thread's _monitor_owner_id).
+    ldr(rscratch2, Address(rthread, JavaThread::monitor_owner_id_offset()));
+    cmpxchg(t2_owner_addr, zr, rscratch2, Assembler::xword, /*acquire*/ true,
+            /*release*/ false, /*weak*/ false, t3_owner);
+    br(Assembler::EQ, monitor_locked);
+
+    // Check if recursive.
+    cmp(t3_owner, rscratch2);
+    br(Assembler::NE, slow_path);
+
+    // Recursive.
+    increment(recursions_address, 1);
+
+    bind(monitor_locked);
+    if (UseObjectMonitorTable) {
+      str(t1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+    }
+  }
+
+  bind(locked);
+
+#ifdef ASSERT
+  // Check that locked label is reached with Flags == EQ.
+  Label flag_correct;
+  br(Assembler::EQ, flag_correct);
+  stop("Fast Lock Flag != EQ");
+#endif
+
+  bind(slow_path);
+#ifdef ASSERT
+  // Check that slow_path label is reached with Flags == NE.
+  br(Assembler::NE, flag_correct);
+  stop("Fast Lock Flag != NE");
+  bind(flag_correct);
+#endif
+  // C2 uses the value of Flags (NE vs EQ) to determine the continuation.
+}
+
+void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Register t1,
+                                                Register t2, Register t3) {
+  assert(LockingMode == LM_LIGHTWEIGHT, "must be");
+  assert_different_registers(obj, box, t1, t2, t3);
+
+  // Handle inflated monitor.
+  Label inflated, inflated_load_mark;
+  // Finish fast unlock successfully. MUST branch to with flag == EQ
+  Label unlocked;
+  // Finish fast unlock unsuccessfully. MUST branch to with flag == NE
+  Label slow_path;
+
+  const Register t1_mark = t1;
+  const Register t2_top = t2;
+  const Register t3_t = t3;
+
+  { // Lightweight unlock
+
+    Label push_and_slow_path;
+
+    // Check if obj is top of lock-stack.
+    ldrw(t2_top, Address(rthread, JavaThread::lock_stack_top_offset()));
+    subw(t2_top, t2_top, oopSize);
+    ldr(t3_t, Address(rthread, t2_top));
+    cmp(obj, t3_t);
+    // Top of lock stack was not obj. Must be monitor.
+    br(Assembler::NE, inflated_load_mark);
+
+    // Pop lock-stack.
+    DEBUG_ONLY(str(zr, Address(rthread, t2_top));)
+    strw(t2_top, Address(rthread, JavaThread::lock_stack_top_offset()));
+
+    // Check if recursive.
+    subw(t3_t, t2_top, oopSize);
+    ldr(t3_t, Address(rthread, t3_t));
+    cmp(obj, t3_t);
+    br(Assembler::EQ, unlocked);
+
+    // Not recursive.
+    // Load Mark.
+    ldr(t1_mark, Address(obj, oopDesc::mark_offset_in_bytes()));
+
+    // Check header for monitor (0b10).
+    // Because we got here by popping (meaning we pushed in locked)
+    // there will be no monitor in the box. So we need to push back the obj
+    // so that the runtime can fix any potential anonymous owner.
+    tbnz(t1_mark, exact_log2(markWord::monitor_value), UseObjectMonitorTable ? push_and_slow_path : inflated);
+
+    // Try to unlock. Transition lock bits 0b00 => 0b01
+    assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
+    orr(t3_t, t1_mark, markWord::unlocked_value);
+    cmpxchg(/*addr*/ obj, /*expected*/ t1_mark, /*new*/ t3_t, Assembler::xword,
+            /*acquire*/ false, /*release*/ true, /*weak*/ false, noreg);
+    br(Assembler::EQ, unlocked);
+
+    bind(push_and_slow_path);
+    // Compare and exchange failed.
+    // Restore lock-stack and handle the unlock in runtime.
+    DEBUG_ONLY(str(obj, Address(rthread, t2_top));)
+    addw(t2_top, t2_top, oopSize);
+    str(t2_top, Address(rthread, JavaThread::lock_stack_top_offset()));
+    b(slow_path);
+  }
+
+
+  { // Handle inflated monitor.
+    bind(inflated_load_mark);
+    ldr(t1_mark, Address(obj, oopDesc::mark_offset_in_bytes()));
+#ifdef ASSERT
+    tbnz(t1_mark, exact_log2(markWord::monitor_value), inflated);
+    stop("Fast Unlock not monitor");
+#endif
+
+    bind(inflated);
+
+#ifdef ASSERT
+    Label check_done;
+    subw(t2_top, t2_top, oopSize);
+    cmpw(t2_top, in_bytes(JavaThread::lock_stack_base_offset()));
+    br(Assembler::LT, check_done);
+    ldr(t3_t, Address(rthread, t2_top));
+    cmp(obj, t3_t);
+    br(Assembler::NE, inflated);
+    stop("Fast Unlock lock on stack");
+    bind(check_done);
+#endif
+
+    const Register t1_monitor = t1;
+
+    if (!UseObjectMonitorTable) {
+      assert(t1_monitor == t1_mark, "should be the same here");
+
+      // Untag the monitor.
+      add(t1_monitor, t1_mark, -(int)markWord::monitor_value);
+    } else {
+      ldr(t1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+      // null check with Flags == NE, no valid pointer below alignof(ObjectMonitor*)
+      cmp(t1_monitor, checked_cast<uint8_t>(alignof(ObjectMonitor*)));
+      br(Assembler::LO, slow_path);
+    }
+
+    const Register t2_recursions = t2;
+    Label not_recursive;
+
+    // Check if recursive.
+    ldr(t2_recursions, Address(t1_monitor, ObjectMonitor::recursions_offset()));
+    cbz(t2_recursions, not_recursive);
+
+    // Recursive unlock.
+    sub(t2_recursions, t2_recursions, 1u);
+    str(t2_recursions, Address(t1_monitor, ObjectMonitor::recursions_offset()));
+    // Set flag == EQ
+    cmp(t2_recursions, t2_recursions);
+    b(unlocked);
+
+    bind(not_recursive);
+
+    const Register t2_owner_addr = t2;
+
+    // Compute owner address.
+    lea(t2_owner_addr, Address(t1_monitor, ObjectMonitor::owner_offset()));
+
+    // Set owner to null.
+    // Release to satisfy the JMM
+    stlr(zr, t2_owner_addr);
+    // We need a full fence after clearing owner to avoid stranding.
+    // StoreLoad achieves this.
+    membar(StoreLoad);
+
+    // Check if the entry_list is empty.
+    ldr(rscratch1, Address(t1_monitor, ObjectMonitor::entry_list_offset()));
+    cmp(rscratch1, zr);
+    br(Assembler::EQ, unlocked);  // If so we are done.
+
+    // Check if there is a successor.
+    ldr(rscratch1, Address(t1_monitor, ObjectMonitor::succ_offset()));
+    cmp(rscratch1, zr);
+    br(Assembler::NE, unlocked);  // If so we are done.
+
+    // Save the monitor pointer in the current thread, so we can try to
+    // reacquire the lock in SharedRuntime::monitor_exit_helper().
+    str(t1_monitor, Address(rthread, JavaThread::unlocked_inflated_monitor_offset()));
+
+    cmp(zr, rthread); // Set Flag to NE => slow path
+    b(slow_path);
+  }
+
+  bind(unlocked);
+  cmp(zr, zr); // Set Flags to EQ => fast path
+
+#ifdef ASSERT
+  // Check that unlocked label is reached with Flags == EQ.
+  Label flag_correct;
+  br(Assembler::EQ, flag_correct);
+  stop("Fast Unlock Flag != EQ");
+#endif
+
+  bind(slow_path);
+#ifdef ASSERT
+  // Check that slow_path label is reached with Flags == NE.
+  br(Assembler::NE, flag_correct);
+  stop("Fast Unlock Flag != NE");
+  bind(flag_correct);
+#endif
+  // C2 uses the value of Flags (NE vs EQ) to determine the continuation.
+}
+
 // Search for str1 in str2 and return index or -1
+// Clobbers: rscratch1, rscratch2, rflags. May also clobber v0-v1, when icnt1==-1.
 void C2_MacroAssembler::string_indexof(Register str2, Register str1,
                                        Register cnt2, Register cnt1,
                                        Register tmp1, Register tmp2,
@@ -80,7 +716,7 @@ void C2_MacroAssembler::string_indexof(Register str2, Register str1,
   // if (substr.count == 0) return 0;
 
   // We have two strings, a source string in str2, cnt2 and a pattern string
-  // in str1, cnt1. Find the 1st occurence of pattern in source or return -1.
+  // in str1, cnt1. Find the 1st occurrence of pattern in source or return -1.
 
   // For larger pattern and source we use a simplified Boyer Moore algorithm.
   // With a small pattern and source we use linear scan.
@@ -284,18 +920,23 @@ void C2_MacroAssembler::string_indexof(Register str2, Register str1,
     cmp(cnt1, (u1)16); // small patterns still should be handled by simple algorithm
     br(LT, LINEAR_MEDIUM);
     mov(result, zr);
-    RuntimeAddress stub = NULL;
+    RuntimeAddress stub = nullptr;
     if (isL) {
       stub = RuntimeAddress(StubRoutines::aarch64::string_indexof_linear_ll());
-      assert(stub.target() != NULL, "string_indexof_linear_ll stub has not been generated");
+      assert(stub.target() != nullptr, "string_indexof_linear_ll stub has not been generated");
     } else if (str1_isL) {
       stub = RuntimeAddress(StubRoutines::aarch64::string_indexof_linear_ul());
-       assert(stub.target() != NULL, "string_indexof_linear_ul stub has not been generated");
+       assert(stub.target() != nullptr, "string_indexof_linear_ul stub has not been generated");
     } else {
       stub = RuntimeAddress(StubRoutines::aarch64::string_indexof_linear_uu());
-      assert(stub.target() != NULL, "string_indexof_linear_uu stub has not been generated");
+      assert(stub.target() != nullptr, "string_indexof_linear_uu stub has not been generated");
     }
-    trampoline_call(stub);
+    address call = trampoline_call(stub);
+    if (call == nullptr) {
+      DEBUG_ONLY(reset_labels(LINEARSEARCH, LINEAR_MEDIUM, DONE, NOMATCH, MATCH));
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
     b(DONE);
   }
 
@@ -676,7 +1317,8 @@ void C2_MacroAssembler::stringL_indexof_char(Register str1, Register cnt1,
 // Compare strings.
 void C2_MacroAssembler::string_compare(Register str1, Register str2,
     Register cnt1, Register cnt2, Register result, Register tmp1, Register tmp2,
-    FloatRegister vtmp1, FloatRegister vtmp2, FloatRegister vtmp3, int ae) {
+    FloatRegister vtmp1, FloatRegister vtmp2, FloatRegister vtmp3,
+    PRegister pgtmp1, PRegister pgtmp2, int ae) {
   Label DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, TAIL, STUB,
       DIFF, NEXT_WORD, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT,
       SHORT_LOOP_START, TAIL_CHECK;
@@ -709,7 +1351,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
 
   BLOCK_COMMENT("string_compare {");
 
-  // Bizzarely, the counts are passed in bytes, regardless of whether they
+  // Bizarrely, the counts are passed in bytes, regardless of whether they
   // are L or U strings, however the result is always in characters.
   if (!str1_isL) asrw(cnt1, cnt1, 1);
   if (!str2_isL) asrw(cnt2, cnt2, 1);
@@ -835,7 +1477,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   }
 
   bind(STUB);
-    RuntimeAddress stub = NULL;
+    RuntimeAddress stub = nullptr;
     switch(ae) {
       case StrIntrinsicNode::LL:
         stub = RuntimeAddress(StubRoutines::aarch64::compare_long_string_LL());
@@ -852,8 +1494,13 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       default:
         ShouldNotReachHere();
      }
-    assert(stub.target() != NULL, "compare_long_string stub has not been generated");
-    trampoline_call(stub);
+    assert(stub.target() != nullptr, "compare_long_string stub has not been generated");
+    address call = trampoline_call(stub);
+    if (call == nullptr) {
+      DEBUG_ONLY(reset_labels(DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT, SHORT_LOOP_START));
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
     b(DONE);
 
   bind(SHORT_STRING);
@@ -904,43 +1551,47 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
 }
 
 void C2_MacroAssembler::neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,
-                                     FloatRegister src2, int cond, bool isQ) {
+                                     FloatRegister src2, Condition cond, bool isQ) {
+  SIMD_Arrangement size = esize2arrangement((unsigned)type2aelembytes(bt), isQ);
+  FloatRegister zn = src1, zm = src2;
+  bool needs_negation = false;
+  switch (cond) {
+    case LT: cond = GT; zn = src2; zm = src1; break;
+    case LE: cond = GE; zn = src2; zm = src1; break;
+    case LO: cond = HI; zn = src2; zm = src1; break;
+    case LS: cond = HS; zn = src2; zm = src1; break;
+    case NE: cond = EQ; needs_negation = true; break;
+    default:
+      break;
+  }
+
+  if (is_floating_point_type(bt)) {
+    fcm(cond, dst, size, zn, zm);
+  } else {
+    cm(cond, dst, size, zn, zm);
+  }
+
+  if (needs_negation) {
+    notr(dst, isQ ? T16B : T8B, dst);
+  }
+}
+
+void C2_MacroAssembler::neon_compare_zero(FloatRegister dst, BasicType bt, FloatRegister src,
+                                          Condition cond, bool isQ) {
   SIMD_Arrangement size = esize2arrangement((unsigned)type2aelembytes(bt), isQ);
   if (bt == T_FLOAT || bt == T_DOUBLE) {
-    switch (cond) {
-      case BoolTest::eq: fcmeq(dst, size, src1, src2); break;
-      case BoolTest::ne: {
-        fcmeq(dst, size, src1, src2);
-        notr(dst, T16B, dst);
-        break;
-      }
-      case BoolTest::ge: fcmge(dst, size, src1, src2); break;
-      case BoolTest::gt: fcmgt(dst, size, src1, src2); break;
-      case BoolTest::le: fcmge(dst, size, src2, src1); break;
-      case BoolTest::lt: fcmgt(dst, size, src2, src1); break;
-      default:
-        assert(false, "unsupported");
-        ShouldNotReachHere();
+    if (cond == Assembler::NE) {
+      fcm(Assembler::EQ, dst, size, src);
+      notr(dst, isQ ? T16B : T8B, dst);
+    } else {
+      fcm(cond, dst, size, src);
     }
   } else {
-    switch (cond) {
-      case BoolTest::eq: cmeq(dst, size, src1, src2); break;
-      case BoolTest::ne: {
-        cmeq(dst, size, src1, src2);
-        notr(dst, T16B, dst);
-        break;
-      }
-      case BoolTest::ge: cmge(dst, size, src1, src2); break;
-      case BoolTest::gt: cmgt(dst, size, src1, src2); break;
-      case BoolTest::le: cmge(dst, size, src2, src1); break;
-      case BoolTest::lt: cmgt(dst, size, src2, src1); break;
-      case BoolTest::uge: cmhs(dst, size, src1, src2); break;
-      case BoolTest::ugt: cmhi(dst, size, src1, src2); break;
-      case BoolTest::ult: cmhi(dst, size, src2, src1); break;
-      case BoolTest::ule: cmhs(dst, size, src2, src1); break;
-      default:
-        assert(false, "unsupported");
-        ShouldNotReachHere();
+    if (cond == Assembler::NE) {
+      cm(Assembler::EQ, dst, size, src);
+      notr(dst, isQ ? T16B : T8B, dst);
+    } else {
+      cm(cond, dst, size, src);
     }
   }
 }
@@ -958,59 +1609,157 @@ void C2_MacroAssembler::bytemask_compress(Register dst) {
 
 // Pack the lowest-numbered bit of each mask element in src into a long value
 // in dst, at most the first 64 lane elements.
-// Clobbers: rscratch1
+// Clobbers: rscratch1, if UseSVE=1 or the hardware doesn't support FEAT_BITPERM.
 void C2_MacroAssembler::sve_vmask_tolong(Register dst, PRegister src, BasicType bt, int lane_cnt,
-                                         FloatRegister vtmp1, FloatRegister vtmp2, PRegister pgtmp) {
-  assert(pgtmp->is_governing(), "This register has to be a governing predicate register.");
+                                         FloatRegister vtmp1, FloatRegister vtmp2) {
   assert(lane_cnt <= 64 && is_power_of_2(lane_cnt), "Unsupported lane count");
   assert_different_registers(dst, rscratch1);
+  assert_different_registers(vtmp1, vtmp2);
 
   Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
+  // Example:   src = 0b01100101 10001101, bt = T_BYTE, lane_cnt = 16
+  // Expected:  dst = 0x658D
 
-  // Pack the mask into vector with sequential bytes.
+  // Convert the mask into vector with sequential bytes.
+  // vtmp1 = 0x00010100 0x00010001 0x01000000 0x01010001
   sve_cpy(vtmp1, size, src, 1, false);
   if (bt != T_BYTE) {
     sve_vector_narrow(vtmp1, B, vtmp1, size, vtmp2);
   }
 
-  // Compress the lowest 8 bytes.
-  fmovd(dst, vtmp1);
-  bytemask_compress(dst);
-  if (lane_cnt <= 8) return;
+  if (UseSVE > 1 && VM_Version::supports_svebitperm()) {
+    // Given a vector with the value 0x00 or 0x01 in each byte, the basic idea
+    // is to compress each significant bit of the byte in a cross-lane way. Due
+    // to the lack of a cross-lane bit-compress instruction, we use BEXT
+    // (bit-compress in each lane) with the biggest lane size (T = D) then
+    // concatenate the results.
 
-  // Repeat on higher bytes and join the results.
-  // Compress 8 bytes in each iteration.
-  for (int idx = 1; idx < (lane_cnt / 8); idx++) {
-    idx == 1 ? fmovhid(rscratch1, vtmp1) : sve_extract(rscratch1, D, pgtmp, vtmp1, idx);
-    bytemask_compress(rscratch1);
-    orr(dst, dst, rscratch1, Assembler::LSL, idx << 3);
+    // The second source input of BEXT, initialized with 0x01 in each byte.
+    // vtmp2 = 0x01010101 0x01010101 0x01010101 0x01010101
+    sve_dup(vtmp2, B, 1);
+
+    // BEXT vtmp1.D, vtmp1.D, vtmp2.D
+    // vtmp1 = 0x0001010000010001 | 0x0100000001010001
+    // vtmp2 = 0x0101010101010101 | 0x0101010101010101
+    //         ---------------------------------------
+    // vtmp1 = 0x0000000000000065 | 0x000000000000008D
+    sve_bext(vtmp1, D, vtmp1, vtmp2);
+
+    // Concatenate the lowest significant 8 bits in each 8 bytes, and extract the
+    // result to dst.
+    // vtmp1 = 0x0000000000000000 | 0x000000000000658D
+    // dst   = 0x658D
+    if (lane_cnt <= 8) {
+      // No need to concatenate.
+      umov(dst, vtmp1, B, 0);
+    } else if (lane_cnt <= 16) {
+      ins(vtmp1, B, vtmp1, 1, 8);
+      umov(dst, vtmp1, H, 0);
+    } else {
+      // As the lane count is 64 at most, the final expected value must be in
+      // the lowest 64 bits after narrowing vtmp1 from D to B.
+      sve_vector_narrow(vtmp1, B, vtmp1, D, vtmp2);
+      umov(dst, vtmp1, D, 0);
+    }
+  } else if (UseSVE > 0) {
+    // Compress the lowest 8 bytes.
+    fmovd(dst, vtmp1);
+    bytemask_compress(dst);
+    if (lane_cnt <= 8) return;
+
+    // Repeat on higher bytes and join the results.
+    // Compress 8 bytes in each iteration.
+    for (int idx = 1; idx < (lane_cnt / 8); idx++) {
+      sve_extract_integral(rscratch1, T_LONG, vtmp1, idx, vtmp2);
+      bytemask_compress(rscratch1);
+      orr(dst, dst, rscratch1, Assembler::LSL, idx << 3);
+    }
+  } else {
+    assert(false, "unsupported");
+    ShouldNotReachHere();
   }
 }
 
+// Unpack the mask, a long value in src, into predicate register dst based on the
+// corresponding data type. Note that dst can support at most 64 lanes.
+// Below example gives the expected dst predicate register in different types, with
+// a valid src(0x658D) on a 1024-bit vector size machine.
+// BYTE:  dst = 0x00 00 00 00 00 00 00 00 00 00 00 00 00 00 65 8D
+// SHORT: dst = 0x00 00 00 00 00 00 00 00 00 00 00 00 14 11 40 51
+// INT:   dst = 0x00 00 00 00 00 00 00 00 01 10 01 01 10 00 11 01
+// LONG:  dst = 0x00 01 01 00 00 01 00 01 01 00 00 00 01 01 00 01
+//
+// The number of significant bits of src must be equal to lane_cnt. E.g., 0xFF658D which
+// has 24 significant bits would be an invalid input if dst predicate register refers to
+// a LONG type 1024-bit vector, which has at most 16 lanes.
+void C2_MacroAssembler::sve_vmask_fromlong(PRegister dst, Register src, BasicType bt, int lane_cnt,
+                                           FloatRegister vtmp1, FloatRegister vtmp2) {
+  assert(UseSVE == 2 && VM_Version::supports_svebitperm() &&
+         lane_cnt <= 64 && is_power_of_2(lane_cnt), "unsupported");
+  Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
+  // Example:   src = 0x658D, bt = T_BYTE, size = B, lane_cnt = 16
+  // Expected:  dst = 0b01101001 10001101
+
+  // Put long value from general purpose register into the first lane of vector.
+  // vtmp1 = 0x0000000000000000 | 0x000000000000658D
+  sve_dup(vtmp1, B, 0);
+  mov(vtmp1, D, 0, src);
+
+  // As sve_cmp generates mask value with the minimum unit in byte, we should
+  // transform the value in the first lane which is mask in bit now to the
+  // mask in byte, which can be done by SVE2's BDEP instruction.
+
+  // The first source input of BDEP instruction. Deposite each byte in every 8 bytes.
+  // vtmp1 = 0x0000000000000065 | 0x000000000000008D
+  if (lane_cnt <= 8) {
+    // Nothing. As only one byte exsits.
+  } else if (lane_cnt <= 16) {
+    ins(vtmp1, B, vtmp1, 8, 1);
+    mov(vtmp1, B, 1, zr);
+  } else {
+    sve_vector_extend(vtmp1, D, vtmp1, B);
+  }
+
+  // The second source input of BDEP instruction, initialized with 0x01 for each byte.
+  // vtmp2 = 0x01010101 0x01010101 0x01010101 0x01010101
+  sve_dup(vtmp2, B, 1);
+
+  // BDEP vtmp1.D, vtmp1.D, vtmp2.D
+  // vtmp1 = 0x0000000000000065 | 0x000000000000008D
+  // vtmp2 = 0x0101010101010101 | 0x0101010101010101
+  //         ---------------------------------------
+  // vtmp1 = 0x0001010000010001 | 0x0100000001010001
+  sve_bdep(vtmp1, D, vtmp1, vtmp2);
+
+  if (bt != T_BYTE) {
+    sve_vector_extend(vtmp1, size, vtmp1, B);
+  }
+  // Generate mask according to the given vector, in which the elements have been
+  // extended to expected type.
+  // dst = 0b01101001 10001101
+  sve_cmp(Assembler::NE, dst, size, ptrue, vtmp1, 0);
+}
+
+// Clobbers: rflags
 void C2_MacroAssembler::sve_compare(PRegister pd, BasicType bt, PRegister pg,
-                                    FloatRegister zn, FloatRegister zm, int cond) {
+                                    FloatRegister zn, FloatRegister zm, Condition cond) {
   assert(pg->is_governing(), "This register has to be a governing predicate register");
   FloatRegister z1 = zn, z2 = zm;
-  // Convert the original BoolTest condition to Assembler::condition.
-  Condition condition;
   switch (cond) {
-    case BoolTest::eq: condition = Assembler::EQ; break;
-    case BoolTest::ne: condition = Assembler::NE; break;
-    case BoolTest::le: z1 = zm; z2 = zn; condition = Assembler::GE; break;
-    case BoolTest::ge: condition = Assembler::GE; break;
-    case BoolTest::lt: z1 = zm; z2 = zn; condition = Assembler::GT; break;
-    case BoolTest::gt: condition = Assembler::GT; break;
+    case LE: z1 = zm; z2 = zn; cond = GE; break;
+    case LT: z1 = zm; z2 = zn; cond = GT; break;
+    case LO: z1 = zm; z2 = zn; cond = HI; break;
+    case LS: z1 = zm; z2 = zn; cond = HS; break;
     default:
-      assert(false, "unsupported compare condition");
-      ShouldNotReachHere();
+      break;
   }
 
   SIMD_RegVariant size = elemType_to_regVariant(bt);
-  if (bt == T_FLOAT || bt == T_DOUBLE) {
-    sve_fcm(condition, pd, size, pg, z1, z2);
+  if (is_floating_point_type(bt)) {
+    sve_fcm(cond, pd, size, pg, z1, z2);
   } else {
     assert(is_integral_type(bt), "unsupported element type");
-    sve_cmp(condition, pd, size, pg, z1, z2);
+    sve_cmp(cond, pd, size, pg, z1, z2);
   }
 }
 
@@ -1024,35 +1773,91 @@ void C2_MacroAssembler::sve_vmask_lasttrue(Register dst, BasicType bt, PRegister
   subw(dst, rscratch1, dst);
 }
 
+// Extend integer vector src to dst with the same lane count
+// but larger element size, e.g. 4B -> 4I
+void C2_MacroAssembler::neon_vector_extend(FloatRegister dst, BasicType dst_bt, unsigned dst_vlen_in_bytes,
+                                           FloatRegister src, BasicType src_bt, bool is_unsigned) {
+  if (src_bt == T_BYTE) {
+    if (dst_bt == T_SHORT) {
+      // 4B/8B to 4S/8S
+      _xshll(is_unsigned, dst, T8H, src, T8B, 0);
+    } else {
+      // 4B to 4I
+      assert(dst_vlen_in_bytes == 16 && dst_bt == T_INT, "unsupported");
+      _xshll(is_unsigned, dst, T8H, src, T8B, 0);
+      _xshll(is_unsigned, dst, T4S, dst, T4H, 0);
+    }
+  } else if (src_bt == T_SHORT) {
+    // 4S to 4I
+    assert(dst_vlen_in_bytes == 16 && dst_bt == T_INT, "unsupported");
+    _xshll(is_unsigned, dst, T4S, src, T4H, 0);
+  } else if (src_bt == T_INT) {
+    // 2I to 2L
+    assert(dst_vlen_in_bytes == 16 && dst_bt == T_LONG, "unsupported");
+    _xshll(is_unsigned, dst, T2D, src, T2S, 0);
+  } else {
+    ShouldNotReachHere();
+  }
+}
+
+// Narrow integer vector src down to dst with the same lane count
+// but smaller element size, e.g. 4I -> 4B
+void C2_MacroAssembler::neon_vector_narrow(FloatRegister dst, BasicType dst_bt,
+                                           FloatRegister src, BasicType src_bt, unsigned src_vlen_in_bytes) {
+  if (src_bt == T_SHORT) {
+    // 4S/8S to 4B/8B
+    assert(src_vlen_in_bytes == 8 || src_vlen_in_bytes == 16, "unsupported");
+    assert(dst_bt == T_BYTE, "unsupported");
+    xtn(dst, T8B, src, T8H);
+  } else if (src_bt == T_INT) {
+    // 4I to 4B/4S
+    assert(src_vlen_in_bytes == 16, "unsupported");
+    assert(dst_bt == T_BYTE || dst_bt == T_SHORT, "unsupported");
+    xtn(dst, T4H, src, T4S);
+    if (dst_bt == T_BYTE) {
+      xtn(dst, T8B, dst, T8H);
+    }
+  } else if (src_bt == T_LONG) {
+    // 2L to 2I
+    assert(src_vlen_in_bytes == 16, "unsupported");
+    assert(dst_bt == T_INT, "unsupported");
+    xtn(dst, T2S, src, T2D);
+  } else {
+    ShouldNotReachHere();
+  }
+}
+
 void C2_MacroAssembler::sve_vector_extend(FloatRegister dst, SIMD_RegVariant dst_size,
-                                          FloatRegister src, SIMD_RegVariant src_size) {
+                                          FloatRegister src, SIMD_RegVariant src_size,
+                                          bool is_unsigned) {
   assert(dst_size > src_size && dst_size <= D && src_size <= S, "invalid element size");
+
   if (src_size == B) {
     switch (dst_size) {
     case H:
-      sve_sunpklo(dst, H, src);
+      _sve_xunpk(is_unsigned, /* is_high */ false, dst, H, src);
       break;
     case S:
-      sve_sunpklo(dst, H, src);
-      sve_sunpklo(dst, S, dst);
+      _sve_xunpk(is_unsigned, /* is_high */ false, dst, H, src);
+      _sve_xunpk(is_unsigned, /* is_high */ false, dst, S, dst);
       break;
     case D:
-      sve_sunpklo(dst, H, src);
-      sve_sunpklo(dst, S, dst);
-      sve_sunpklo(dst, D, dst);
+      _sve_xunpk(is_unsigned, /* is_high */ false, dst, H, src);
+      _sve_xunpk(is_unsigned, /* is_high */ false, dst, S, dst);
+      _sve_xunpk(is_unsigned, /* is_high */ false, dst, D, dst);
       break;
     default:
       ShouldNotReachHere();
     }
   } else if (src_size == H) {
     if (dst_size == S) {
-      sve_sunpklo(dst, S, src);
+      _sve_xunpk(is_unsigned, /* is_high */ false, dst, S, src);
     } else { // D
-      sve_sunpklo(dst, S, src);
-      sve_sunpklo(dst, D, dst);
+      _sve_xunpk(is_unsigned, /* is_high */ false, dst, S, src);
+      _sve_xunpk(is_unsigned, /* is_high */ false, dst, D, dst);
     }
   } else if (src_size == S) {
-    sve_sunpklo(dst, D, src);
+    _sve_xunpk(is_unsigned, /* is_high */ false, dst, D, src);
   }
 }
 
@@ -1070,10 +1875,12 @@ void C2_MacroAssembler::sve_vector_narrow(FloatRegister dst, SIMD_RegVariant dst
       sve_uzp1(dst, S, src, tmp);
       break;
     case H:
+      assert_different_registers(dst, tmp);
       sve_uzp1(dst, S, src, tmp);
       sve_uzp1(dst, H, dst, tmp);
       break;
     case B:
+      assert_different_registers(dst, tmp);
       sve_uzp1(dst, S, src, tmp);
       sve_uzp1(dst, H, dst, tmp);
       sve_uzp1(dst, B, dst, tmp);
@@ -1085,6 +1892,7 @@ void C2_MacroAssembler::sve_vector_narrow(FloatRegister dst, SIMD_RegVariant dst
     if (dst_size == H) {
       sve_uzp1(dst, H, src, tmp);
     } else { // B
+      assert_different_registers(dst, tmp);
       sve_uzp1(dst, H, src, tmp);
       sve_uzp1(dst, B, dst, tmp);
     }
@@ -1115,24 +1923,303 @@ void C2_MacroAssembler::sve_vmaskcast_extend(PRegister dst, PRegister src,
 
 // Narrow src predicate to dst predicate with the same lane count but
 // smaller element size, e.g. 512Long -> 64Byte
-void C2_MacroAssembler::sve_vmaskcast_narrow(PRegister dst, PRegister src,
+void C2_MacroAssembler::sve_vmaskcast_narrow(PRegister dst, PRegister src, PRegister ptmp,
                                              uint dst_element_length_in_bytes, uint src_element_length_in_bytes) {
   // The insignificant bits in src predicate are expected to be zero.
+  // To ensure the higher order bits of the resultant narrowed vector are 0, an all-zero predicate is
+  // passed as the second argument. An example narrowing operation with a given mask would be -
+  // 128Long -> 64Int on a 128-bit machine i.e 2L -> 2I
+  // Mask (for 2 Longs) : TF
+  // Predicate register for the above mask (16 bits) : 00000001 00000000
+  // After narrowing (uzp1 dst.b, src.b, ptmp.b) : 0000 0000 0001 0000
+  // Which translates to mask for 2 integers as : TF (lower half is considered while upper half is 0)
+  assert_different_registers(src, ptmp);
+  assert_different_registers(dst, ptmp);
+  sve_pfalse(ptmp);
   if (dst_element_length_in_bytes * 2 == src_element_length_in_bytes) {
-    sve_uzp1(dst, B, src, src);
+    sve_uzp1(dst, B, src, ptmp);
   } else if (dst_element_length_in_bytes * 4 == src_element_length_in_bytes) {
-    sve_uzp1(dst, H, src, src);
-    sve_uzp1(dst, B, dst, dst);
+    sve_uzp1(dst, H, src, ptmp);
+    sve_uzp1(dst, B, dst, ptmp);
   } else if (dst_element_length_in_bytes * 8 == src_element_length_in_bytes) {
-    sve_uzp1(dst, S, src, src);
-    sve_uzp1(dst, H, dst, dst);
-    sve_uzp1(dst, B, dst, dst);
+    sve_uzp1(dst, S, src, ptmp);
+    sve_uzp1(dst, H, dst, ptmp);
+    sve_uzp1(dst, B, dst, ptmp);
   } else {
     assert(false, "unsupported");
     ShouldNotReachHere();
   }
 }
 
+// Vector reduction add for integral type with ASIMD instructions.
+void C2_MacroAssembler::neon_reduce_add_integral(Register dst, BasicType bt,
+                                                 Register isrc, FloatRegister vsrc,
+                                                 unsigned vector_length_in_bytes,
+                                                 FloatRegister vtmp) {
+  assert(vector_length_in_bytes == 8 || vector_length_in_bytes == 16, "unsupported");
+  assert_different_registers(dst, isrc);
+  bool isQ = vector_length_in_bytes == 16;
+
+  BLOCK_COMMENT("neon_reduce_add_integral {");
+    switch(bt) {
+      case T_BYTE:
+        addv(vtmp, isQ ? T16B : T8B, vsrc);
+        smov(dst, vtmp, B, 0);
+        addw(dst, dst, isrc, ext::sxtb);
+        break;
+      case T_SHORT:
+        addv(vtmp, isQ ? T8H : T4H, vsrc);
+        smov(dst, vtmp, H, 0);
+        addw(dst, dst, isrc, ext::sxth);
+        break;
+      case T_INT:
+        isQ ? addv(vtmp, T4S, vsrc) : addpv(vtmp, T2S, vsrc, vsrc);
+        umov(dst, vtmp, S, 0);
+        addw(dst, dst, isrc);
+        break;
+      case T_LONG:
+        assert(isQ, "unsupported");
+        addpd(vtmp, vsrc);
+        umov(dst, vtmp, D, 0);
+        add(dst, dst, isrc);
+        break;
+      default:
+        assert(false, "unsupported");
+        ShouldNotReachHere();
+    }
+  BLOCK_COMMENT("} neon_reduce_add_integral");
+}
+
+// Vector reduction multiply for integral type with ASIMD instructions.
+// Note: temporary registers vtmp1 and vtmp2 are not used in some cases.
+// Clobbers: rscratch1
+void C2_MacroAssembler::neon_reduce_mul_integral(Register dst, BasicType bt,
+                                                 Register isrc, FloatRegister vsrc,
+                                                 unsigned vector_length_in_bytes,
+                                                 FloatRegister vtmp1, FloatRegister vtmp2) {
+  assert(vector_length_in_bytes == 8 || vector_length_in_bytes == 16, "unsupported");
+  bool isQ = vector_length_in_bytes == 16;
+
+  BLOCK_COMMENT("neon_reduce_mul_integral {");
+    switch(bt) {
+      case T_BYTE:
+        if (isQ) {
+          // Multiply the lower half and higher half of vector iteratively.
+          // vtmp1 = vsrc[8:15]
+          ins(vtmp1, D, vsrc, 0, 1);
+          // vtmp1[n] = vsrc[n] * vsrc[n + 8], where n=[0, 7]
+          mulv(vtmp1, T8B, vtmp1, vsrc);
+          // vtmp2 = vtmp1[4:7]
+          ins(vtmp2, S, vtmp1, 0, 1);
+          // vtmp1[n] = vtmp1[n] * vtmp1[n + 4], where n=[0, 3]
+          mulv(vtmp1, T8B, vtmp2, vtmp1);
+        } else {
+          ins(vtmp1, S, vsrc, 0, 1);
+          mulv(vtmp1, T8B, vtmp1, vsrc);
+        }
+        // vtmp2 = vtmp1[2:3]
+        ins(vtmp2, H, vtmp1, 0, 1);
+        // vtmp2[n] = vtmp1[n] * vtmp1[n + 2], where n=[0, 1]
+        mulv(vtmp2, T8B, vtmp2, vtmp1);
+        // dst = vtmp2[0] * isrc * vtmp2[1]
+        umov(rscratch1, vtmp2, B, 0);
+        mulw(dst, rscratch1, isrc);
+        sxtb(dst, dst);
+        umov(rscratch1, vtmp2, B, 1);
+        mulw(dst, rscratch1, dst);
+        sxtb(dst, dst);
+        break;
+      case T_SHORT:
+        if (isQ) {
+          ins(vtmp2, D, vsrc, 0, 1);
+          mulv(vtmp2, T4H, vtmp2, vsrc);
+          ins(vtmp1, S, vtmp2, 0, 1);
+          mulv(vtmp1, T4H, vtmp1, vtmp2);
+        } else {
+          ins(vtmp1, S, vsrc, 0, 1);
+          mulv(vtmp1, T4H, vtmp1, vsrc);
+        }
+        umov(rscratch1, vtmp1, H, 0);
+        mulw(dst, rscratch1, isrc);
+        sxth(dst, dst);
+        umov(rscratch1, vtmp1, H, 1);
+        mulw(dst, rscratch1, dst);
+        sxth(dst, dst);
+        break;
+      case T_INT:
+        if (isQ) {
+          ins(vtmp1, D, vsrc, 0, 1);
+          mulv(vtmp1, T2S, vtmp1, vsrc);
+        } else {
+          vtmp1 = vsrc;
+        }
+        umov(rscratch1, vtmp1, S, 0);
+        mul(dst, rscratch1, isrc);
+        umov(rscratch1, vtmp1, S, 1);
+        mul(dst, rscratch1, dst);
+        break;
+      case T_LONG:
+        umov(rscratch1, vsrc, D, 0);
+        mul(dst, isrc, rscratch1);
+        umov(rscratch1, vsrc, D, 1);
+        mul(dst, dst, rscratch1);
+        break;
+      default:
+        assert(false, "unsupported");
+        ShouldNotReachHere();
+    }
+  BLOCK_COMMENT("} neon_reduce_mul_integral");
+}
+
+// Vector reduction multiply for floating-point type with ASIMD instructions.
+void C2_MacroAssembler::neon_reduce_mul_fp(FloatRegister dst, BasicType bt,
+                                           FloatRegister fsrc, FloatRegister vsrc,
+                                           unsigned vector_length_in_bytes,
+                                           FloatRegister vtmp) {
+  assert(vector_length_in_bytes == 8 || vector_length_in_bytes == 16, "unsupported");
+  bool isQ = vector_length_in_bytes == 16;
+
+  BLOCK_COMMENT("neon_reduce_mul_fp {");
+    switch(bt) {
+      case T_FLOAT:
+        fmuls(dst, fsrc, vsrc);
+        ins(vtmp, S, vsrc, 0, 1);
+        fmuls(dst, dst, vtmp);
+        if (isQ) {
+          ins(vtmp, S, vsrc, 0, 2);
+          fmuls(dst, dst, vtmp);
+          ins(vtmp, S, vsrc, 0, 3);
+          fmuls(dst, dst, vtmp);
+         }
+        break;
+      case T_DOUBLE:
+        assert(isQ, "unsupported");
+        fmuld(dst, fsrc, vsrc);
+        ins(vtmp, D, vsrc, 0, 1);
+        fmuld(dst, dst, vtmp);
+        break;
+      default:
+        assert(false, "unsupported");
+        ShouldNotReachHere();
+    }
+  BLOCK_COMMENT("} neon_reduce_mul_fp");
+}
+
+// Helper to select logical instruction
+void C2_MacroAssembler::neon_reduce_logical_helper(int opc, bool is64, Register Rd,
+                                                   Register Rn, Register Rm,
+                                                   enum shift_kind kind, unsigned shift) {
+  switch(opc) {
+    case Op_AndReductionV:
+      is64 ? andr(Rd, Rn, Rm, kind, shift) : andw(Rd, Rn, Rm, kind, shift);
+      break;
+    case Op_OrReductionV:
+      is64 ? orr(Rd, Rn, Rm, kind, shift) : orrw(Rd, Rn, Rm, kind, shift);
+      break;
+    case Op_XorReductionV:
+      is64 ? eor(Rd, Rn, Rm, kind, shift) : eorw(Rd, Rn, Rm, kind, shift);
+      break;
+    default:
+      assert(false, "unsupported");
+      ShouldNotReachHere();
+  }
+}
+
+// Vector reduction logical operations And, Or, Xor
+// Clobbers: rscratch1
+void C2_MacroAssembler::neon_reduce_logical(int opc, Register dst, BasicType bt,
+                                            Register isrc, FloatRegister vsrc,
+                                            unsigned vector_length_in_bytes) {
+  assert(opc == Op_AndReductionV || opc == Op_OrReductionV || opc == Op_XorReductionV,
+         "unsupported");
+  assert(vector_length_in_bytes == 8 || vector_length_in_bytes == 16, "unsupported");
+  assert_different_registers(dst, isrc);
+  bool isQ = vector_length_in_bytes == 16;
+
+  BLOCK_COMMENT("neon_reduce_logical {");
+    umov(rscratch1, vsrc, isQ ? D : S, 0);
+    umov(dst, vsrc, isQ ? D : S, 1);
+    neon_reduce_logical_helper(opc, /* is64 */ true, dst, dst, rscratch1);
+    switch(bt) {
+      case T_BYTE:
+        if (isQ) {
+          neon_reduce_logical_helper(opc, /* is64 */ true, dst, dst, dst, Assembler::LSR, 32);
+        }
+        neon_reduce_logical_helper(opc, /* is64 */ false, dst, dst, dst, Assembler::LSR, 16);
+        neon_reduce_logical_helper(opc, /* is64 */ false, dst, dst, dst, Assembler::LSR, 8);
+        neon_reduce_logical_helper(opc, /* is64 */ false, dst, isrc, dst);
+        sxtb(dst, dst);
+        break;
+      case T_SHORT:
+        if (isQ) {
+          neon_reduce_logical_helper(opc, /* is64 */ true, dst, dst, dst, Assembler::LSR, 32);
+        }
+        neon_reduce_logical_helper(opc, /* is64 */ false, dst, dst, dst, Assembler::LSR, 16);
+        neon_reduce_logical_helper(opc, /* is64 */ false, dst, isrc, dst);
+        sxth(dst, dst);
+        break;
+      case T_INT:
+        if (isQ) {
+          neon_reduce_logical_helper(opc, /* is64 */ true, dst, dst, dst, Assembler::LSR, 32);
+        }
+        neon_reduce_logical_helper(opc, /* is64 */ false, dst, isrc, dst);
+        break;
+      case T_LONG:
+        assert(isQ, "unsupported");
+        neon_reduce_logical_helper(opc, /* is64 */ true, dst, isrc, dst);
+        break;
+      default:
+        assert(false, "unsupported");
+        ShouldNotReachHere();
+    }
+  BLOCK_COMMENT("} neon_reduce_logical");
+}
+
+// Vector reduction min/max for integral type with ASIMD instructions.
+// Note: vtmp is not used and expected to be fnoreg for T_LONG case.
+// Clobbers: rscratch1, rflags
+void C2_MacroAssembler::neon_reduce_minmax_integral(int opc, Register dst, BasicType bt,
+                                                    Register isrc, FloatRegister vsrc,
+                                                    unsigned vector_length_in_bytes,
+                                                    FloatRegister vtmp) {
+  assert(opc == Op_MinReductionV || opc == Op_MaxReductionV, "unsupported");
+  assert(vector_length_in_bytes == 8 || vector_length_in_bytes == 16, "unsupported");
+  assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported");
+  assert_different_registers(dst, isrc);
+  bool isQ = vector_length_in_bytes == 16;
+  bool is_min = opc == Op_MinReductionV;
+
+  BLOCK_COMMENT("neon_reduce_minmax_integral {");
+    if (bt == T_LONG) {
+      assert(vtmp == fnoreg, "should be");
+      assert(isQ, "should be");
+      umov(rscratch1, vsrc, D, 0);
+      cmp(isrc, rscratch1);
+      csel(dst, isrc, rscratch1, is_min ? LT : GT);
+      umov(rscratch1, vsrc, D, 1);
+      cmp(dst, rscratch1);
+      csel(dst, dst, rscratch1, is_min ? LT : GT);
+    } else {
+      SIMD_Arrangement size = esize2arrangement((unsigned)type2aelembytes(bt), isQ);
+      if (size == T2S) {
+        is_min ? sminp(vtmp, size, vsrc, vsrc) : smaxp(vtmp, size, vsrc, vsrc);
+      } else {
+        is_min ? sminv(vtmp, size, vsrc) : smaxv(vtmp, size, vsrc);
+      }
+      if (bt == T_INT) {
+        umov(dst, vtmp, S, 0);
+      } else {
+        smov(dst, vtmp, elemType_to_regVariant(bt), 0);
+      }
+      cmpw(dst, isrc);
+      cselw(dst, dst, isrc, is_min ? LT : GT);
+    }
+  BLOCK_COMMENT("} neon_reduce_minmax_integral");
+}
+
+// Vector reduction for integral type with SVE instruction.
+// Supported operations are Add, And, Or, Xor, Max, Min.
+// rflags would be clobbered if opc is Op_MaxReductionV or Op_MinReductionV.
 void C2_MacroAssembler::sve_reduce_integral(int opc, Register dst, BasicType bt, Register src1,
                                             FloatRegister src2, PRegister pg, FloatRegister tmp) {
   assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
@@ -1143,12 +2230,14 @@ void C2_MacroAssembler::sve_reduce_integral(int opc, Register dst, BasicType bt,
   switch (opc) {
     case Op_AddReductionVI: {
       sve_uaddv(tmp, size, pg, src2);
-      smov(dst, tmp, size, 0);
       if (bt == T_BYTE) {
+        smov(dst, tmp, size, 0);
         addw(dst, src1, dst, ext::sxtb);
       } else if (bt == T_SHORT) {
+        smov(dst, tmp, size, 0);
         addw(dst, src1, dst, ext::sxth);
       } else {
+        umov(dst, tmp, size, 0);
         addw(dst, dst, src1);
       }
       break;
@@ -1161,45 +2250,57 @@ void C2_MacroAssembler::sve_reduce_integral(int opc, Register dst, BasicType bt,
     }
     case Op_AndReductionV: {
       sve_andv(tmp, size, pg, src2);
-      if (bt == T_LONG) {
+      if (bt == T_INT || bt == T_LONG) {
         umov(dst, tmp, size, 0);
-        andr(dst, dst, src1);
       } else {
         smov(dst, tmp, size, 0);
+      }
+      if (bt == T_LONG) {
+        andr(dst, dst, src1);
+      } else {
         andw(dst, dst, src1);
       }
       break;
     }
     case Op_OrReductionV: {
       sve_orv(tmp, size, pg, src2);
-      if (bt == T_LONG) {
+      if (bt == T_INT || bt == T_LONG) {
         umov(dst, tmp, size, 0);
-        orr(dst, dst, src1);
       } else {
         smov(dst, tmp, size, 0);
+      }
+      if (bt == T_LONG) {
+        orr(dst, dst, src1);
+      } else {
         orrw(dst, dst, src1);
       }
       break;
     }
     case Op_XorReductionV: {
       sve_eorv(tmp, size, pg, src2);
-      if (bt == T_LONG) {
+      if (bt == T_INT || bt == T_LONG) {
         umov(dst, tmp, size, 0);
-        eor(dst, dst, src1);
       } else {
         smov(dst, tmp, size, 0);
+      }
+      if (bt == T_LONG) {
+        eor(dst, dst, src1);
+      } else {
         eorw(dst, dst, src1);
       }
       break;
     }
     case Op_MaxReductionV: {
       sve_smaxv(tmp, size, pg, src2);
-      if (bt == T_LONG) {
+      if (bt == T_INT || bt == T_LONG) {
         umov(dst, tmp, size, 0);
+      } else {
+        smov(dst, tmp, size, 0);
+      }
+      if (bt == T_LONG) {
         cmp(dst, src1);
         csel(dst, dst, src1, Assembler::GT);
       } else {
-        smov(dst, tmp, size, 0);
         cmpw(dst, src1);
         cselw(dst, dst, src1, Assembler::GT);
       }
@@ -1207,12 +2308,15 @@ void C2_MacroAssembler::sve_reduce_integral(int opc, Register dst, BasicType bt,
     }
     case Op_MinReductionV: {
       sve_sminv(tmp, size, pg, src2);
-      if (bt == T_LONG) {
+      if (bt == T_INT || bt == T_LONG) {
         umov(dst, tmp, size, 0);
+      } else {
+        smov(dst, tmp, size, 0);
+      }
+      if (bt == T_LONG) {
         cmp(dst, src1);
         csel(dst, dst, src1, Assembler::LT);
       } else {
-        smov(dst, tmp, size, 0);
         cmpw(dst, src1);
         cselw(dst, dst, src1, Assembler::LT);
       }
@@ -1232,38 +2336,520 @@ void C2_MacroAssembler::sve_reduce_integral(int opc, Register dst, BasicType bt,
   }
 }
 
-// Set elements of the dst predicate to true if the element number is
-// in the range of [0, lane_cnt), or to false otherwise.
-void C2_MacroAssembler::sve_ptrue_lanecnt(PRegister dst, SIMD_RegVariant size, int lane_cnt) {
+// Set elements of the dst predicate to true for lanes in the range of [0, lane_cnt), or
+// to false otherwise. The input "lane_cnt" should be smaller than or equal to the supported
+// max vector length of the basic type. Clobbers: rscratch1 and the rFlagsReg.
+void C2_MacroAssembler::sve_gen_mask_imm(PRegister dst, BasicType bt, uint32_t lane_cnt) {
+  uint32_t max_vector_length = Matcher::max_vector_size(bt);
+  assert(lane_cnt <= max_vector_length, "unsupported input lane_cnt");
+
+  // Set all elements to false if the input "lane_cnt" is zero.
+  if (lane_cnt == 0) {
+    sve_pfalse(dst);
+    return;
+  }
+
+  SIMD_RegVariant size = elemType_to_regVariant(bt);
   assert(size != Q, "invalid size");
+
+  // Set all true if "lane_cnt" equals to the max lane count.
+  if (lane_cnt == max_vector_length) {
+    sve_ptrue(dst, size, /* ALL */ 0b11111);
+    return;
+  }
+
+  // Fixed numbers for "ptrue".
   switch(lane_cnt) {
-    case 1: /* VL1 */
-    case 2: /* VL2 */
-    case 3: /* VL3 */
-    case 4: /* VL4 */
-    case 5: /* VL5 */
-    case 6: /* VL6 */
-    case 7: /* VL7 */
-    case 8: /* VL8 */
-      sve_ptrue(dst, size, lane_cnt);
+  case 1: /* VL1 */
+  case 2: /* VL2 */
+  case 3: /* VL3 */
+  case 4: /* VL4 */
+  case 5: /* VL5 */
+  case 6: /* VL6 */
+  case 7: /* VL7 */
+  case 8: /* VL8 */
+    sve_ptrue(dst, size, lane_cnt);
+    return;
+  case 16:
+    sve_ptrue(dst, size, /* VL16 */ 0b01001);
+    return;
+  case 32:
+    sve_ptrue(dst, size, /* VL32 */ 0b01010);
+    return;
+  case 64:
+    sve_ptrue(dst, size, /* VL64 */ 0b01011);
+    return;
+  case 128:
+    sve_ptrue(dst, size, /* VL128 */ 0b01100);
+    return;
+  case 256:
+    sve_ptrue(dst, size, /* VL256 */ 0b01101);
+    return;
+  default:
+    break;
+  }
+
+  // Special patterns for "ptrue".
+  if (lane_cnt == round_down_power_of_2(max_vector_length)) {
+    sve_ptrue(dst, size, /* POW2 */ 0b00000);
+  } else if (lane_cnt == max_vector_length - (max_vector_length % 4)) {
+    sve_ptrue(dst, size, /* MUL4 */ 0b11101);
+  } else if (lane_cnt == max_vector_length - (max_vector_length % 3)) {
+    sve_ptrue(dst, size, /* MUL3 */ 0b11110);
+  } else {
+    // Encode to "whileltw" for the remaining cases.
+    mov(rscratch1, lane_cnt);
+    sve_whileltw(dst, size, zr, rscratch1);
+  }
+}
+
+// Pack active elements of src, under the control of mask, into the lowest-numbered elements of dst.
+// Any remaining elements of dst will be filled with zero.
+// Clobbers: rscratch1
+// Preserves: src, mask
+void C2_MacroAssembler::sve_compress_short(FloatRegister dst, FloatRegister src, PRegister mask,
+                                           FloatRegister vtmp1, FloatRegister vtmp2,
+                                           PRegister pgtmp) {
+  assert(pgtmp->is_governing(), "This register has to be a governing predicate register");
+  assert_different_registers(dst, src, vtmp1, vtmp2);
+  assert_different_registers(mask, pgtmp);
+
+  // Example input:   src   = 8888 7777 6666 5555 4444 3333 2222 1111
+  //                  mask  = 0001 0000 0000 0001 0001 0000 0001 0001
+  // Expected result: dst   = 0000 0000 0000 8888 5555 4444 2222 1111
+  sve_dup(vtmp2, H, 0);
+
+  // Extend lowest half to type INT.
+  // dst = 00004444 00003333 00002222 00001111
+  sve_uunpklo(dst, S, src);
+  // pgtmp = 00000001 00000000 00000001 00000001
+  sve_punpklo(pgtmp, mask);
+  // Pack the active elements in size of type INT to the right,
+  // and fill the remainings with zero.
+  // dst = 00000000 00004444 00002222 00001111
+  sve_compact(dst, S, dst, pgtmp);
+  // Narrow the result back to type SHORT.
+  // dst = 0000 0000 0000 0000 0000 4444 2222 1111
+  sve_uzp1(dst, H, dst, vtmp2);
+  // Count the active elements of lowest half.
+  // rscratch1 = 3
+  sve_cntp(rscratch1, S, ptrue, pgtmp);
+
+  // Repeat to the highest half.
+  // pgtmp = 00000001 00000000 00000000 00000001
+  sve_punpkhi(pgtmp, mask);
+  // vtmp1 = 00008888 00007777 00006666 00005555
+  sve_uunpkhi(vtmp1, S, src);
+  // vtmp1 = 00000000 00000000 00008888 00005555
+  sve_compact(vtmp1, S, vtmp1, pgtmp);
+  // vtmp1 = 0000 0000 0000 0000 0000 0000 8888 5555
+  sve_uzp1(vtmp1, H, vtmp1, vtmp2);
+
+  // Compressed low:   dst   = 0000 0000 0000 0000 0000 4444 2222 1111
+  // Compressed high:  vtmp1 = 0000 0000 0000 0000 0000 0000 8888  5555
+  // Left shift(cross lane) compressed high with TRUE_CNT lanes,
+  // TRUE_CNT is the number of active elements in the compressed low.
+  neg(rscratch1, rscratch1);
+  // vtmp2 = {4 3 2 1 0 -1 -2 -3}
+  sve_index(vtmp2, H, rscratch1, 1);
+  // vtmp1 = 0000 0000 0000 8888 5555 0000 0000 0000
+  sve_tbl(vtmp1, H, vtmp1, vtmp2);
+
+  // Combine the compressed high(after shifted) with the compressed low.
+  // dst = 0000 0000 0000 8888 5555 4444 2222 1111
+  sve_orr(dst, dst, vtmp1);
+}
+
+// Clobbers: rscratch1, rscratch2
+// Preserves: src, mask
+void C2_MacroAssembler::sve_compress_byte(FloatRegister dst, FloatRegister src, PRegister mask,
+                                          FloatRegister vtmp1, FloatRegister vtmp2,
+                                          FloatRegister vtmp3, FloatRegister vtmp4,
+                                          PRegister ptmp, PRegister pgtmp) {
+  assert(pgtmp->is_governing(), "This register has to be a governing predicate register");
+  assert_different_registers(dst, src, vtmp1, vtmp2, vtmp3, vtmp4);
+  assert_different_registers(mask, ptmp, pgtmp);
+  // Example input:   src   = 88 77 66 55 44 33 22 11
+  //                  mask  = 01 00 00 01 01 00 01 01
+  // Expected result: dst   = 00 00 00 88 55 44 22 11
+
+  sve_dup(vtmp4, B, 0);
+  // Extend lowest half to type SHORT.
+  // vtmp1 = 0044 0033 0022 0011
+  sve_uunpklo(vtmp1, H, src);
+  // ptmp = 0001 0000 0001 0001
+  sve_punpklo(ptmp, mask);
+  // Count the active elements of lowest half.
+  // rscratch2 = 3
+  sve_cntp(rscratch2, H, ptrue, ptmp);
+  // Pack the active elements in size of type SHORT to the right,
+  // and fill the remainings with zero.
+  // dst = 0000 0044 0022 0011
+  sve_compress_short(dst, vtmp1, ptmp, vtmp2, vtmp3, pgtmp);
+  // Narrow the result back to type BYTE.
+  // dst = 00 00 00 00 00 44 22 11
+  sve_uzp1(dst, B, dst, vtmp4);
+
+  // Repeat to the highest half.
+  // ptmp = 0001 0000 0000 0001
+  sve_punpkhi(ptmp, mask);
+  // vtmp1 = 0088 0077 0066 0055
+  sve_uunpkhi(vtmp2, H, src);
+  // vtmp1 = 0000 0000 0088 0055
+  sve_compress_short(vtmp1, vtmp2, ptmp, vtmp3, vtmp4, pgtmp);
+
+  sve_dup(vtmp4, B, 0);
+  // vtmp1 = 00 00 00 00 00 00 88 55
+  sve_uzp1(vtmp1, B, vtmp1, vtmp4);
+
+  // Compressed low:   dst   = 00 00 00 00 00 44 22 11
+  // Compressed high:  vtmp1 = 00 00 00 00 00 00 88 55
+  // Left shift(cross lane) compressed high with TRUE_CNT lanes,
+  // TRUE_CNT is the number of active elements in the compressed low.
+  neg(rscratch2, rscratch2);
+  // vtmp2 = {4 3 2 1 0 -1 -2 -3}
+  sve_index(vtmp2, B, rscratch2, 1);
+  // vtmp1 = 00 00 00 88 55 00 00 00
+  sve_tbl(vtmp1, B, vtmp1, vtmp2);
+  // Combine the compressed high(after shifted) with the compressed low.
+  // dst = 00 00 00 88 55 44 22 11
+  sve_orr(dst, dst, vtmp1);
+}
+
+void C2_MacroAssembler::neon_reverse_bits(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ) {
+  assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported basic type");
+  SIMD_Arrangement size = isQ ? T16B : T8B;
+  if (bt == T_BYTE) {
+    rbit(dst, size, src);
+  } else {
+    neon_reverse_bytes(dst, src, bt, isQ);
+    rbit(dst, size, dst);
+  }
+}
+
+void C2_MacroAssembler::neon_reverse_bytes(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ) {
+  assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported basic type");
+  SIMD_Arrangement size = isQ ? T16B : T8B;
+  switch (bt) {
+    case T_BYTE:
+      if (dst != src) {
+        orr(dst, size, src, src);
+      }
       break;
-    case 16:
-      sve_ptrue(dst, size, /* VL16 */ 0b01001);
+    case T_SHORT:
+      rev16(dst, size, src);
       break;
-    case 32:
-      sve_ptrue(dst, size, /* VL32 */ 0b01010);
+    case T_INT:
+      rev32(dst, size, src);
       break;
-    case 64:
-      sve_ptrue(dst, size, /* VL64 */ 0b01011);
-      break;
-    case 128:
-      sve_ptrue(dst, size, /* VL128 */ 0b01100);
-      break;
-    case 256:
-      sve_ptrue(dst, size, /* VL256 */ 0b01101);
+    case T_LONG:
+      rev64(dst, size, src);
       break;
     default:
       assert(false, "unsupported");
       ShouldNotReachHere();
+  }
+}
+
+// VectorRearrange implementation for short/int/float/long/double types with NEON
+// instructions. For VectorRearrange short/int/float, we use NEON tbl instruction.
+// But since it supports bytes table only, we need to lookup 2/4 bytes as a group.
+// For VectorRearrange long/double, we compare the shuffle input with iota indices,
+// and use bsl to implement the operation.
+void C2_MacroAssembler::neon_rearrange_hsd(FloatRegister dst, FloatRegister src,
+                                           FloatRegister shuffle, FloatRegister tmp,
+                                           BasicType bt, bool isQ) {
+  assert_different_registers(dst, src, shuffle, tmp);
+  SIMD_Arrangement size1 = isQ ? T16B : T8B;
+  SIMD_Arrangement size2 = esize2arrangement((uint)type2aelembytes(bt), isQ);
+
+  // Here is an example that rearranges a NEON vector with 4 ints:
+  // Rearrange V1 int[a0, a1, a2, a3] to V2 int[a2, a3, a0, a1]
+  //   1. We assume the shuffle input is Vi int[2, 3, 0, 1].
+  //   2. Multiply Vi int[2, 3, 0, 1] with constant int vector
+  //      [0x04040404, 0x04040404, 0x04040404, 0x04040404], and get
+  //      tbl base Vm int[0x08080808, 0x0c0c0c0c, 0x00000000, 0x04040404].
+  //   3. Add Vm with constant int[0x03020100, 0x03020100, 0x03020100, 0x03020100],
+  //      and get tbl index Vm int[0x0b0a0908, 0x0f0e0d0c, 0x03020100, 0x07060504]
+  //   4. Use Vm as index register, and use V1 as table register.
+  //      Then get V2 as the result by tbl NEON instructions.
+  switch (bt) {
+    case T_SHORT:
+      mov(tmp, size1, 0x02);
+      mulv(dst, size2, shuffle, tmp);
+      mov(tmp, size2, 0x0100);
+      addv(dst, size1, dst, tmp);
+      tbl(dst, size1, src, 1, dst);
+      break;
+    case T_INT:
+    case T_FLOAT:
+      mov(tmp, size1, 0x04);
+      mulv(dst, size2, shuffle, tmp);
+      mov(tmp, size2, 0x03020100);
+      addv(dst, size1, dst, tmp);
+      tbl(dst, size1, src, 1, dst);
+      break;
+    case T_LONG:
+    case T_DOUBLE:
+      // Load the iota indices for Long type. The indices are ordered by
+      // type B/S/I/L/F/D, and the offset between two types is 16; Hence
+      // the offset for L is 48.
+      lea(rscratch1,
+          ExternalAddress(StubRoutines::aarch64::vector_iota_indices() + 48));
+      ldrq(tmp, rscratch1);
+      // Check whether the input "shuffle" is the same with iota indices.
+      // Return "src" if true, otherwise swap the two elements of "src".
+      cm(EQ, dst, size2, shuffle, tmp);
+      ext(tmp, size1, src, src, 8);
+      bsl(dst, size1, src, tmp);
+      break;
+    default:
+      assert(false, "unsupported element type");
+      ShouldNotReachHere();
+  }
+}
+
+// Extract a scalar element from an sve vector at position 'idx'.
+// The input elements in src are expected to be of integral type.
+void C2_MacroAssembler::sve_extract_integral(Register dst, BasicType bt, FloatRegister src,
+                                             int idx, FloatRegister vtmp) {
+  assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
+  Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
+  if (regVariant_to_elemBits(size) * idx < 128) { // generate lower cost NEON instruction
+    if (bt == T_INT || bt == T_LONG) {
+      umov(dst, src, size, idx);
+    } else {
+      smov(dst, src, size, idx);
+    }
+  } else {
+    sve_orr(vtmp, src, src);
+    sve_ext(vtmp, vtmp, idx << size);
+    if (bt == T_INT || bt == T_LONG) {
+      umov(dst, vtmp, size, 0);
+    } else {
+      smov(dst, vtmp, size, 0);
+    }
+  }
+}
+
+// java.lang.Math::round intrinsics
+
+// Clobbers: rscratch1, rflags
+void C2_MacroAssembler::vector_round_neon(FloatRegister dst, FloatRegister src, FloatRegister tmp1,
+                                          FloatRegister tmp2, FloatRegister tmp3, SIMD_Arrangement T) {
+  assert_different_registers(tmp1, tmp2, tmp3, src, dst);
+  switch (T) {
+    case T2S:
+    case T4S:
+      fmovs(tmp1, T, 0.5f);
+      mov(rscratch1, jint_cast(0x1.0p23f));
+      break;
+    case T2D:
+      fmovd(tmp1, T, 0.5);
+      mov(rscratch1, julong_cast(0x1.0p52));
+      break;
+    default:
+      assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");
+  }
+  fadd(tmp1, T, tmp1, src);
+  fcvtms(tmp1, T, tmp1);
+  // tmp1 = floor(src + 0.5, ties to even)
+
+  fcvtas(dst, T, src);
+  // dst = round(src), ties to away
+
+  fneg(tmp3, T, src);
+  dup(tmp2, T, rscratch1);
+  cm(HS, tmp3, T, tmp3, tmp2);
+  // tmp3 is now a set of flags
+
+  bif(dst, T16B, tmp1, tmp3);
+  // result in dst
+}
+
+// Clobbers: rscratch1, rflags
+void C2_MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, FloatRegister tmp1,
+                                         FloatRegister tmp2, PRegister pgtmp, SIMD_RegVariant T) {
+  assert(pgtmp->is_governing(), "This register has to be a governing predicate register");
+  assert_different_registers(tmp1, tmp2, src, dst);
+
+  switch (T) {
+    case S:
+      mov(rscratch1, jint_cast(0x1.0p23f));
+      break;
+    case D:
+      mov(rscratch1, julong_cast(0x1.0p52));
+      break;
+    default:
+      assert(T == S || T == D, "invalid register variant");
+  }
+
+  sve_frinta(dst, T, ptrue, src);
+  // dst = round(src), ties to away
+
+  Label none;
+
+  sve_fneg(tmp1, T, ptrue, src);
+  sve_dup(tmp2, T, rscratch1);
+  sve_cmp(HS, pgtmp, T, ptrue, tmp2, tmp1);
+  br(EQ, none);
+  {
+    sve_cpy(tmp1, T, pgtmp, 0.5);
+    sve_fadd(tmp1, T, pgtmp, src);
+    sve_frintm(dst, T, pgtmp, tmp1);
+    // dst = floor(src + 0.5, ties to even)
+  }
+  bind(none);
+
+  sve_fcvtzs(dst, T, ptrue, dst, T);
+  // result in dst
+}
+
+void C2_MacroAssembler::vector_signum_neon(FloatRegister dst, FloatRegister src, FloatRegister zero,
+                                           FloatRegister one, SIMD_Arrangement T) {
+  assert_different_registers(dst, src, zero, one);
+  assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");
+
+  facgt(dst, T, src, zero);
+  ushr(dst, T, dst, 1); // dst=0 for +-0.0 and NaN. 0x7FF..F otherwise
+  bsl(dst, T == T2S ? T8B : T16B, one, src); // Result in dst
+}
+
+void C2_MacroAssembler::vector_signum_sve(FloatRegister dst, FloatRegister src, FloatRegister zero,
+                                          FloatRegister one, FloatRegister vtmp, PRegister pgtmp, SIMD_RegVariant T) {
+    assert_different_registers(dst, src, zero, one, vtmp);
+    assert(pgtmp->is_governing(), "This register has to be a governing predicate register");
+
+    sve_orr(vtmp, src, src);
+    sve_fac(Assembler::GT, pgtmp, T, ptrue, src, zero); // pmtp=0 for +-0.0 and NaN. 0x1 otherwise
+    switch (T) {
+    case S:
+      sve_and(vtmp, T, min_jint); // Extract the sign bit of float value in every lane of src
+      sve_orr(vtmp, T, jint_cast(1.0)); // OR it with +1 to make the final result +1 or -1 depending
+                                        // on the sign of the float value
+      break;
+    case D:
+      sve_and(vtmp, T, min_jlong);
+      sve_orr(vtmp, T, jlong_cast(1.0));
+      break;
+    default:
+      assert(false, "unsupported");
+      ShouldNotReachHere();
+    }
+    sve_sel(dst, T, pgtmp, vtmp, src); // Select either from src or vtmp based on the predicate register pgtmp
+                                       // Result in dst
+}
+
+bool C2_MacroAssembler::in_scratch_emit_size() {
+  if (ciEnv::current()->task() != nullptr) {
+    PhaseOutput* phase_output = Compile::current()->output();
+    if (phase_output != nullptr && phase_output->in_scratch_emit_size()) {
+      return true;
+    }
+  }
+  return MacroAssembler::in_scratch_emit_size();
+}
+
+static void abort_verify_int_in_range(uint idx, jint val, jint lo, jint hi) {
+  fatal("Invalid CastII, idx: %u, val: %d, lo: %d, hi: %d", idx, val, lo, hi);
+}
+
+void C2_MacroAssembler::verify_int_in_range(uint idx, const TypeInt* t, Register rval, Register rtmp) {
+  assert(!t->empty() && !t->singleton(), "%s", Type::str(t));
+  if (t == TypeInt::INT) {
+    return;
+  }
+  BLOCK_COMMENT("verify_int_in_range {");
+  Label L_success, L_failure;
+
+  jint lo = t->_lo;
+  jint hi = t->_hi;
+
+  if (lo != min_jint && hi != max_jint) {
+    subsw(rtmp, rval, lo);
+    br(Assembler::LT, L_failure);
+    subsw(rtmp, rval, hi);
+    br(Assembler::LE, L_success);
+  } else if (lo != min_jint) {
+    subsw(rtmp, rval, lo);
+    br(Assembler::GE, L_success);
+  } else if (hi != max_jint) {
+    subsw(rtmp, rval, hi);
+    br(Assembler::LE, L_success);
+  } else {
+    ShouldNotReachHere();
+  }
+
+  bind(L_failure);
+  movw(c_rarg0, idx);
+  mov(c_rarg1, rval);
+  movw(c_rarg2, lo);
+  movw(c_rarg3, hi);
+  reconstruct_frame_pointer(rtmp);
+  rt_call(CAST_FROM_FN_PTR(address, abort_verify_int_in_range), rtmp);
+  hlt(0);
+
+  bind(L_success);
+  BLOCK_COMMENT("} verify_int_in_range");
+}
+
+static void abort_verify_long_in_range(uint idx, jlong val, jlong lo, jlong hi) {
+  fatal("Invalid CastLL, idx: %u, val: " JLONG_FORMAT ", lo: " JLONG_FORMAT ", hi: " JLONG_FORMAT, idx, val, lo, hi);
+}
+
+void C2_MacroAssembler::verify_long_in_range(uint idx, const TypeLong* t, Register rval, Register rtmp) {
+  assert(!t->empty() && !t->singleton(), "%s", Type::str(t));
+  if (t == TypeLong::LONG) {
+    return;
+  }
+  BLOCK_COMMENT("verify_long_in_range {");
+  Label L_success, L_failure;
+
+  jlong lo = t->_lo;
+  jlong hi = t->_hi;
+
+  if (lo != min_jlong && hi != max_jlong) {
+    subs(rtmp, rval, lo);
+    br(Assembler::LT, L_failure);
+    subs(rtmp, rval, hi);
+    br(Assembler::LE, L_success);
+  } else if (lo != min_jlong) {
+    subs(rtmp, rval, lo);
+    br(Assembler::GE, L_success);
+  } else if (hi != max_jlong) {
+    subs(rtmp, rval, hi);
+    br(Assembler::LE, L_success);
+  } else {
+    ShouldNotReachHere();
+  }
+
+  bind(L_failure);
+  movw(c_rarg0, idx);
+  mov(c_rarg1, rval);
+  mov(c_rarg2, lo);
+  mov(c_rarg3, hi);
+  reconstruct_frame_pointer(rtmp);
+  rt_call(CAST_FROM_FN_PTR(address, abort_verify_long_in_range), rtmp);
+  hlt(0);
+
+  bind(L_success);
+  BLOCK_COMMENT("} verify_long_in_range");
+}
+
+void C2_MacroAssembler::reconstruct_frame_pointer(Register rtmp) {
+  const int framesize = Compile::current()->output()->frame_size_in_bytes();
+  if (PreserveFramePointer) {
+    // frame pointer is valid
+#ifdef ASSERT
+    // Verify frame pointer value in rfp.
+    add(rtmp, sp, framesize - 2 * wordSize);
+    Label L_success;
+    cmp(rfp, rtmp);
+    br(Assembler::EQ, L_success);
+    stop("frame pointer mismatch");
+    bind(L_success);
+#endif // ASSERT
+  } else {
+    add(rfp, sp, framesize - 2 * wordSize);
   }
 }

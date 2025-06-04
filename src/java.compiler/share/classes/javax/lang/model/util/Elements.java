@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,6 @@ import javax.lang.model.element.*;
  * <p><b>Compatibility Note:</b> Methods may be added to this interface
  * in future releases of the platform.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see javax.annotation.processing.ProcessingEnvironment#getElementUtils
  * @since 1.6
  */
@@ -59,11 +56,11 @@ public interface Elements {
      * <ul>
      *     <li>find non-empty packages with the given name returned by
      *         {@link #getPackageElement(ModuleElement, CharSequence)},
-     *         where the provided ModuleSymbol is any
-     *         <a href="../../../../../java.base/java/lang/module/package-summary.html#root-modules">root module</a>,
+     *         where the provided ModuleElement is any
+     *         {@linkplain java.lang.module##root-modules root module},
      *     </li>
      *     <li>if the above yields an empty list, search
-     *         {@link #getAllModuleElements() all modules} for observable
+     *         {@linkplain #getAllModuleElements() all modules} for observable
      *         packages with the given name
      *     </li>
      * </ul>
@@ -84,8 +81,8 @@ public interface Elements {
      * @implSpec The default implementation of this method returns
      * {@code null}.
      *
-     * @param name  fully qualified package name, or an empty string for an unnamed package
      * @param module module relative to which the lookup should happen
+     * @param name  fully qualified package name, or an empty string for an unnamed package
      * @return the specified package, or {@code null} if it cannot be found
      * @see #getAllPackageElements
      * @since 9
@@ -146,11 +143,11 @@ public interface Elements {
      * <ul>
      *     <li>find type elements with the given name returned by
      *         {@link #getTypeElement(ModuleElement, CharSequence)},
-     *         where the provided ModuleSymbol is any
-     *         <a href="../../../../../java.base/java/lang/module/package-summary.html#root-modules">root module</a>,
+     *         where the provided ModuleElement is any
+     *         {@linkplain java.lang.module##root-modules root module},
      *     </li>
      *     <li>if the above yields an empty list, search
-     *         {@link #getAllModuleElements() all modules} for observable
+     *         {@linkplain #getAllModuleElements() all modules} for observable
      *         type elements with the given name
      *     </li>
      * </ul>
@@ -170,8 +167,8 @@ public interface Elements {
      * @implSpec The default implementation of this method returns
      * {@code null}.
      *
-     * @param name  the canonical name
      * @param module module relative to which the lookup should happen
+     * @param name  the canonical name
      * @return the named type element, or {@code null} if it cannot be found
      * @see #getAllTypeElements
      * @since 9
@@ -257,6 +254,11 @@ public interface Elements {
      * @implSpec The default implementation of this method returns
      * an empty set.
      *
+     * @apiNote
+     * When an environment includes modules, both named modules and
+     * {@linkplain ModuleElement#isUnnamed() unnamed modules} may be
+     * returned.
+     *
      * @return the known module elements, or an empty set if there are no modules
      * @see #getModuleElement(CharSequence)
      * @since 9
@@ -275,30 +277,123 @@ public interface Elements {
             getElementValuesWithDefaults(AnnotationMirror a);
 
     /**
-     * Returns the text of the documentation (&quot;Javadoc&quot;)
+     * Returns the text of the documentation (&quot;JavaDoc&quot;)
      * comment of an element.
      *
-     * <p> A documentation comment of an element is a comment that
-     * begins with "{@code /**}", ends with a separate
-     * "<code>*&#47;</code>", and immediately precedes the element,
-     * ignoring white space.  Therefore, a documentation comment
-     * contains at least three "{@code *}" characters.  The text
+     * <p>A documentation comment of an element is a particular kind
+     * of comment that immediately precedes the element, ignoring
+     * white space, annotations and any other comments that are
+     * not themselves documentation comments.
+     *
+     * <p>There are two kinds of documentation comments, either based on
+     * <em>traditional comments</em> or based on a series of
+     * <em>end-of-line comments</em>. For both kinds, the text
      * returned for the documentation comment is a processed form of
-     * the comment as it appears in source code.  The leading "{@code /**}"
-     * and trailing "<code>*&#47;</code>" are removed.  For lines
-     * of the comment starting after the initial "{@code /**}",
-     * leading white space characters are discarded as are any
+     * the comment as it appears in source code, as described below.
+     *
+     * <p>A {@linkplain DocCommentKind#TRADITIONAL traditional
+     * documentation comment} is a traditional comment that begins
+     * with "{@code /**}", and ends with a separate "<code>*&#47;</code>".
+     * (Therefore, such a comment contains at least three "{@code *}"
+     * characters.)
+     * The lines of such a comment are processed as follows:
+     * <ul>
+     * <li>The leading "{@code /**}" is removed, as are any
+     * immediately following space characters on that line. If all the
+     * characters of the line are removed, it makes no contribution to
+     * the returned comment.
+     * <li>For subsequent lines
+     * of the doc comment starting after the initial "{@code /**}",
+     * if the lines start with <em>zero</em> or more whitespace characters
+     * followed by <em>one</em> or more "{@code *}" characters,
+     * those leading whitespace characters are discarded as are any
      * consecutive "{@code *}" characters appearing after the white
-     * space or starting the line.  The processed lines are then
-     * concatenated together (including line terminators) and
-     * returned.
+     * space or starting the line.
+     * Otherwise, if a line does not have a prefix of the described
+     * form, the entire line is retained.
+     * <li> The trailing "<code>*&#47;</code>" is removed. The line
+     * with the trailing" <code>*&#47;</code>" also undergoes leading
+     * space and "{@code *}" character removal as described above.
+     * <li>The processed lines are then concatenated together,
+     * separated by newline ("{@code \n}") characters, and returned.
+     * </ul>
+     *
+     * <p>An {@linkplain DocCommentKind#END_OF_LINE end-of-line
+     * documentation comment} is a series of adjacent end-of-line
+     * comments, each on a line by itself, ignoring any whitespace
+     * characters at the beginning of the line, and each beginning
+     * with "{@code ///}".
+     * The lines of such a comment are processed as follows:
+     * <ul>
+     * <li>Any leading whitespace and the three initial "{@code /}"
+     * characters are removed from each line.
+     * <li>The lines are shifted left, by removing leading whitespace
+     * characters, until the non-blank line with the least leading
+     * whitespace characters has no remaining leading whitespace
+     * characters.
+     * <li>Additional leading whitespace characters and any trailing
+     * whitespace characters in each line are preserved.
+     * <li>
+     * The processed lines are then concatenated together,
+     * separated by newline ("{@code \n}") characters, and returned.
+     * If the last line is not blank, the returned value will not be
+     * terminated by a newline character.
+     * </ul>
      *
      * @param e  the element being examined
      * @return the documentation comment of the element, or {@code null}
      *          if there is none
      * @jls 3.6 White Space
+     * @jls 3.7 Comments
+     *
+     * @apiNote
+     * Documentation comments are processed by the standard doclet
+     * used by the {@code javadoc} tool to generate API documentation.
      */
     String getDocComment(Element e);
+
+    /**
+     * {@return the kind of the documentation comment for the given element,
+     * or {@code null} if there is no comment or the kind is not known}
+     *
+     * @implSpec The default implementation of this method returns
+     * {@code null}.
+     *
+     * @param e the element being examined
+     * @since 23
+     */
+    default DocCommentKind getDocCommentKind(Element e) {
+        return null;
+    }
+
+    /**
+     * The kind of documentation comment.
+     *
+     * @since 23
+     */
+    enum DocCommentKind {
+        /**
+         * The kind of comments whose lines are prefixed by {@code ///}.
+         *
+         * @apiNote
+         * The standard doclet used by the {@code javadoc} tool treats these comments
+         * as containing Markdown and documentation comment tags.
+         *
+         *
+         * @see <a href="https://openjdk.org/jeps/467">
+         * JEP 467: Markdown Documentation Comments</a>
+         */
+        END_OF_LINE,
+
+        /**
+         * The kind of comments that begin with {@code /**}.
+         *
+         * @apiNote
+         * The standard doclet used by the {@code javadoc} tool treats these comments
+         * as containing HTML and documentation comment tags.
+         */
+        TRADITIONAL
+    }
 
     /**
      * {@return {@code true} if the element is deprecated, {@code false} otherwise}
@@ -353,7 +448,7 @@ public interface Elements {
      *
      * @param c the construct the annotation mirror modifies
      * @param a the annotation mirror being examined
-     * @jls 9.6.3 Repeatable Annotation Types
+     * @jls 9.6.3 Repeatable Annotation Interfaces
      * @jls 9.7.5 Multiple Annotations of the Same Interface
      * @since 9
      */
@@ -428,7 +523,7 @@ public interface Elements {
          * @jls 8.8.9 Default Constructor
          * @jls 8.9.3 Enum Members
          * @jls 8.10.3 Record Members
-         * @jls 9.6.3 Repeatable Annotation Types
+         * @jls 9.6.3 Repeatable Annotation Interfaces
          * @jls 9.7.5 Multiple Annotations of the Same Interface
          */
         MANDATED,
@@ -522,7 +617,7 @@ public interface Elements {
 
     /**
      * Returns all members of a type element, whether inherited or
-     * declared directly.  For a class the result also includes its
+     * declared directly.  For a class, the result also includes its
      * constructors, but not local or anonymous classes.
      *
      * @apiNote Elements of certain kinds can be isolated using
@@ -625,6 +720,8 @@ public interface Elements {
      * overrides another method.
      * When a non-abstract method overrides an abstract one, the
      * former is also said to <i>implement</i> the latter.
+     * As implied by JLS {@jls 8.4.8.1}, a method does <em>not</em>
+     * override itself. The overrides relation is <i>irreflexive</i>.
      *
      * <p> In the simplest and most typical usage, the value of the
      * {@code type} parameter will simply be the class or interface
@@ -662,6 +759,30 @@ public interface Elements {
      * {@code assert elements.overrides(m1, m2,
      *          elements.getTypeElement("C")); }
      * </blockquote>
+     *
+     * Consistent with the usage of the {@link Override @Override}
+     * annotation, if an interface declares a method
+     * override-equivalent to a {@code public} method of {@link Object
+     * java.lang.Object}, such a method of the interface is regarded
+     * as overriding the corresponding {@code Object} method; for
+     * example:
+     *
+     * {@snippet lang=java :
+     * interface I {
+     *   @Override
+     *   String toString();
+     * }
+     * ...
+     * assert elements.overrides(elementForItoString,
+     *                           elementForObjecttoString,
+     *                           elements.getTypeElement("I"));
+     * }
+     *
+     * @apiNote This method examines the method's name, signature, subclass relationship, and accessibility
+     * in determining whether one method overrides another, as specified in JLS {@jls 8.4.8.1}.
+     * In addition, an implementation may have stricter checks including method modifiers, return types and
+     * exception types as described in JLS {@jls 8.4.8.1} and {@jls 8.4.8.3}.
+     * Note that such additional compile-time checks are not guaranteed and may vary between implementations.
      *
      * @param overrider  the first method, possible overrider
      * @param overridden  the second method, possibly being overridden
@@ -735,15 +856,38 @@ public interface Elements {
     }
 
     /**
+     * {@return the class body of an {@code enum} constant if the
+     * argument is an {@code enum} constant declared with an optional
+     * class body, {@code null} otherwise}
+     *
+     * @implSpec
+     * The default implementation of this method throws {@code
+     * UnsupportedOperationException} if the argument is an {@code
+     * enum} constant and throws an {@code IllegalArgumentException}
+     * if it is not.
+     *
+     * @param enumConstant an enum constant
+     * @throws IllegalArgumentException if the argument is not an {@code enum} constant
+     * @jls 8.9.1 Enum Constants
+     * @since 22
+     */
+    default TypeElement getEnumConstantBody(VariableElement enumConstant) {
+        switch(enumConstant.getKind()) {
+        case ENUM_CONSTANT -> throw new UnsupportedOperationException();
+        default            -> throw new IllegalArgumentException("Argument not an enum constant");
+        }
+    }
+
+    /**
      * Returns the record component for the given accessor. Returns
      * {@code null} if the given method is not a record component
      * accessor.
      *
      * @implSpec The default implementation of this method checks if the element
-     * enclosing the accessor has kind {@link ElementKind#RECORD RECORD} if that is
-     * the case, then all the record components on the accessor's enclosing element
-     * are retrieved by invoking {@link ElementFilter#recordComponentsIn(Iterable)}.
-     * If the accessor of at least one of the record components retrieved happen to
+     * enclosing the accessor has kind {@link ElementKind#RECORD RECORD}, if that is
+     * the case, then all the record components of the accessor's enclosing element
+     * are isolated by invoking {@link ElementFilter#recordComponentsIn(Iterable)}.
+     * If the accessor of at least one of the record components retrieved happens to
      * be equal to the accessor passed as a parameter to this method, then that
      * record component is returned, in any other case {@code null} is returned.
      *
@@ -764,12 +908,57 @@ public interface Elements {
     }
 
     /**
+     * {@return {@code true} if the executable element can be
+     * determined to be a canonical constructor of a record, {@code
+     * false} otherwise}
+     * Note that in some cases there may be insufficient information
+     * to determine if a constructor is a canonical constructor, such
+     * as if the executable element is built backed by a class
+     * file. In such cases, {@code false} is returned.
+     *
+     * @implSpec
+     * The default implementation of this method unconditionally
+     * returns {@code false}.
+     *
+     * @param e  the executable being examined
+     * @jls 8.10.4.1 Normal Canonical Constructors
+     * @since 20
+     */
+    default boolean isCanonicalConstructor(ExecutableElement e) {
+        return false;
+    }
+
+    /**
+     * {@return {@code true} if the executable element can be
+     * determined to be a compact constructor of a record, {@code
+     * false} otherwise}
+     * By definition, a compact constructor is also a {@linkplain
+     * #isCanonicalConstructor(ExecutableElement) canonical
+     * constructor}.
+     * Note that in some cases there may be insufficient information
+     * to determine if a constructor is a compact constructor, such as
+     * if the executable element is built backed by a class file. In
+     * such cases, {@code false} is returned.
+     *
+     * @implSpec
+     * The default implementation of this method unconditionally
+     * returns {@code false}.
+     *
+     * @param e  the executable being examined
+     * @jls 8.10.4.2 Compact Canonical Constructors
+     * @since 20
+     */
+    default boolean isCompactConstructor(ExecutableElement e) {
+        return false;
+    }
+
+    /**
      * {@return the file object for this element or {@code null} if
      * there is no such file object}
      *
-     * <p>The returned file object is for the <a
-     * href="../element/package-summary.html#accurate_model">reference
-     * representation</a> of the information used to construct the
+     * <p>The returned file object is for the {@linkplain
+     * javax.lang.model.element##accurate_model reference
+     * representation} of the information used to construct the
      * element. For example, if during compilation or annotation
      * processing, a source file for class {@code Foo} is compiled
      * into a class file, the file object returned for the element

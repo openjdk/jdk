@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
-import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.SinceTree;
+
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
 import javax.lang.model.element.Element;
@@ -39,31 +40,29 @@ import static com.sun.source.doctree.DocTree.Kind.SINCE;
  * that were added in one of the releases specified by the {@code --since}
  * option. The release names must exactly match the names used in the javadoc
  * {@code @since} tags of the respective elements.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class NewAPIBuilder extends SummaryAPIListBuilder {
 
     public final List<String> releases;
 
     public NewAPIBuilder(BaseConfiguration configuration, List<String> releases) {
-        super(configuration, element -> isNewAPI(element, configuration.utils, releases));
+        super(configuration);
         this.releases = releases;
         buildSummaryAPIInfo();
     }
 
-    private static boolean isNewAPI(Element e, Utils utils, List<String> releases) {
-        if (!utils.hasDocCommentTree(e)) {
+    @Override
+    protected boolean belongsToSummary(Element element) {
+        if (!utils.hasDocCommentTree(element)) {
             return false;
         }
-        List<? extends DocTree> since = utils.getBlockTags(e, SINCE);
-        if (since.isEmpty()) {
+        var sinceTrees = utils.getBlockTags(element, SINCE, SinceTree.class);
+        if (sinceTrees.isEmpty()) {
             return false;
         }
-        CommentHelper ch = utils.getCommentHelper(e);
-        return since.stream().anyMatch(tree -> releases.contains(ch.getBody(tree).toString()));
+
+        // assumes a simple string value with no formatting
+        return sinceTrees.stream()
+                .anyMatch(tree -> releases.contains(tree.getBody().getFirst().toString()));
     }
 }

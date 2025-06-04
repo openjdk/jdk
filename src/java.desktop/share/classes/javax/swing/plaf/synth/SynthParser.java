@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,7 @@ import java.awt.Toolkit;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -67,7 +65,6 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import com.sun.beans.decoder.DocumentHandler;
-import sun.reflect.misc.ReflectUtil;
 
 class SynthParser extends DefaultHandler {
     //
@@ -124,8 +121,8 @@ class SynthParser extends DefaultHandler {
 
     /**
      * Indicates the depth of how many elements we've encountered but don't
-     * understand. This is used when forwarding to beans persistance to know
-     * when we hsould stop forwarding.
+     * understand. This is used when forwarding to beans persistence to know
+     * when we should stop forwarding.
      */
     private int _depth;
 
@@ -162,14 +159,9 @@ class SynthParser extends DefaultHandler {
     private String _inputMapID;
 
     /**
-     * Object references outside the scope of persistance.
+     * Object references outside the scope of persistence.
      */
     private Map<String,Object> _mapping;
-
-    /**
-     * Based URL used to resolve paths.
-     */
-    private URL _urlResourceBase;
 
     /**
      * Based class used to resolve paths.
@@ -182,7 +174,7 @@ class SynthParser extends DefaultHandler {
     private List<ColorType> _colorTypes;
 
     /**
-     * defaultsPropertys are placed here.
+     * Default properties are placed here.
      */
     private Map<String, Object> _defaultsMap;
 
@@ -208,47 +200,36 @@ class SynthParser extends DefaultHandler {
     /**
      * Parses a set of styles from <code>inputStream</code>, adding the
      * resulting styles to the passed in DefaultSynthStyleFactory.
-     * Resources are resolved either from a URL or from a Class. When calling
-     * this method, one of the URL or the Class must be null but not both at
-     * the same time.
      *
      * @param inputStream XML document containing the styles to read
      * @param factory DefaultSynthStyleFactory that new styles are added to
-     * @param urlResourceBase the URL used to resolve any resources, such as Images
      * @param classResourceBase the Class used to resolve any resources, such as Images
      * @param defaultsMap Map that UIDefaults properties are placed in
      */
     public void parse(InputStream inputStream,
                       DefaultSynthStyleFactory factory,
-                      URL urlResourceBase, Class<?> classResourceBase,
+                      Class<?> classResourceBase,
                       Map<String, Object> defaultsMap)
                       throws ParseException, IllegalArgumentException {
-        if (inputStream == null || factory == null ||
-            (urlResourceBase == null && classResourceBase == null)) {
+        if (inputStream == null || factory == null || classResourceBase == null) {
             throw new IllegalArgumentException(
-                "You must supply an InputStream, StyleFactory and Class or URL");
+                "You must supply an InputStream, StyleFactory and Class");
         }
-
-        assert(!(urlResourceBase != null && classResourceBase != null));
 
         _factory = factory;
         _classResourceBase = classResourceBase;
-        _urlResourceBase = urlResourceBase;
         _defaultsMap = defaultsMap;
         try {
             try {
                 SAXParser saxParser = SAXParserFactory.newInstance().
                                                    newSAXParser();
                 saxParser.parse(new BufferedInputStream(inputStream), this);
-            } catch (ParserConfigurationException e) {
+            } catch (ParserConfigurationException | IOException e) {
                 throw new ParseException("Error parsing: " + e, 0);
             }
             catch (SAXException se) {
                 throw new ParseException("Error parsing: " + se + " " +
                                          se.getException(), 0);
-            }
-            catch (IOException ioe) {
-                throw new ParseException("Error parsing: " + ioe, 0);
             }
         } finally {
             reset();
@@ -259,15 +240,7 @@ class SynthParser extends DefaultHandler {
      * Returns the path to a resource.
      */
     private URL getResource(String path) {
-        if (_classResourceBase != null) {
-            return _classResourceBase.getResource(path);
-        } else {
-            try {
-                return new URL(_urlResourceBase, path);
-            } catch (MalformedURLException mue) {
-                return null;
-            }
-        }
+        return _classResourceBase.getResource(path);
     }
 
     /**
@@ -284,32 +257,19 @@ class SynthParser extends DefaultHandler {
     }
 
     /**
-     * Returns true if we are forwarding to persistance.
+     * Returns true if we are forwarding to persistence.
      */
     private boolean isForwarding() {
         return (_depth > 0);
     }
 
     /**
-     * Handles beans persistance.
+     * Handles beans persistence.
      */
     private DocumentHandler getHandler() {
         if (_handler == null) {
             _handler = new DocumentHandler();
-            if (_urlResourceBase != null) {
-                // getHandler() is never called before parse() so it is safe
-                // to create a URLClassLoader with _resourceBase.
-                //
-                // getResource(".") is called to ensure we have the directory
-                // containing the resources in the case the resource base is a
-                // .class file.
-                URL[] urls = new URL[] { getResource(".") };
-                ClassLoader parent = Thread.currentThread().getContextClassLoader();
-                ClassLoader urlLoader = new URLClassLoader(urls, parent);
-                _handler.setClassLoader(urlLoader);
-            } else {
-                _handler.setClassLoader(_classResourceBase.getClassLoader());
-            }
+            _handler.setClassLoader(_classResourceBase.getClassLoader());
 
             for (String key : _mapping.keySet()) {
                 _handler.setVariable(key, _mapping.get(key));
@@ -628,9 +588,7 @@ class SynthParser extends DefaultHandler {
                     try {
                         color = new ColorUIResource((Color)Color.class.
                               getField(value.toUpperCase()).get(Color.class));
-                    } catch (NoSuchFieldException nsfe) {
-                        throw new SAXException("Invalid color name: " + value);
-                    } catch (IllegalAccessException iae) {
+                    } catch (NoSuchFieldException | IllegalAccessException e) {
                         throw new SAXException("Invalid color name: " + value);
                     }
                 }
@@ -649,7 +607,7 @@ class SynthParser extends DefaultHandler {
                     }
                     else {
                         try {
-                            typeClass = ReflectUtil.forName(typeName.substring(
+                            typeClass = Class.forName(typeName.substring(
                                                       0, classIndex));
                         } catch (ClassNotFoundException cnfe) {
                             throw new SAXException("Unknown class: " +
@@ -661,10 +619,7 @@ class SynthParser extends DefaultHandler {
                         _colorTypes.add((ColorType)checkCast(typeClass.
                               getField(typeName.substring(classIndex)).
                               get(typeClass), ColorType.class));
-                    } catch (NoSuchFieldException nsfe) {
-                        throw new SAXException("Unable to find color type: " +
-                                               typeName);
-                    } catch (IllegalAccessException iae) {
+                    } catch (NoSuchFieldException | IllegalAccessException e) {
                         throw new SAXException("Unable to find color type: " +
                                                typeName);
                     }
@@ -672,7 +627,7 @@ class SynthParser extends DefaultHandler {
             }
         }
         if (color == null) {
-            throw new SAXException("color: you must specificy a value");
+            throw new SAXException("color: you must specify a value");
         }
         register(id, color);
         if (_stateInfo != null && _colorTypes.size() > 0) {

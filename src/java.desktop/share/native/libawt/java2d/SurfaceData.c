@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ GetSDOps(JNIEnv *env, jobject sData, jboolean callSetup)
     }
     ops = (SurfaceDataOps *)JNU_GetLongFieldAsPtr(env, sData, pDataID);
     if (ops == NULL) {
-        if (!(*env)->ExceptionOccurred(env) &&
+        if (!(*env)->ExceptionCheck(env) &&
             !(*env)->IsInstanceOf(env, sData, pNullSurfaceDataClass))
         {
             if (!(*env)->GetBooleanField(env, sData, validID)) {
@@ -139,13 +139,13 @@ SurfaceData_GetOps(JNIEnv *env, jobject sData)
     return GetSDOps(env, sData, JNI_TRUE);
 }
 
-JNIEXPORT SurfaceDataOps * JNICALL
+SurfaceDataOps *
 SurfaceData_GetOpsNoSetup(JNIEnv *env, jobject sData)
 {
     return GetSDOps(env, sData, JNI_FALSE);
 }
 
-JNIEXPORT void JNICALL
+void
 SurfaceData_SetOps(JNIEnv *env, jobject sData, SurfaceDataOps *ops)
 {
     if (JNU_GetLongFieldAsPtr(env, sData, pDataID) == NULL) {

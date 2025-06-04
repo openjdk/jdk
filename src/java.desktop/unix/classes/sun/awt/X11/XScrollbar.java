@@ -801,7 +801,7 @@ abstract class XScrollbar {
             factor = trueSize / range;
 
             // A naive notion of the size of the slider in pixels
-            // in thermo, slider_size is 0 ans is ignored
+            // in thermo, slider_size is 0 and is ignored
             slideSize = vis * factor;
 
         if (alignment == ALIGNMENT_HORIZONTAL) {
@@ -858,13 +858,14 @@ abstract class XScrollbar {
         return retVal;
     }
 
+    @Override
     public String toString() {
         return getClass() + "[" + width + "x" + height + "," + barWidth + "x" + barLength + "]";
     }
 }
 
 
-class XScrollRepeater implements Runnable {
+final class XScrollRepeater implements Runnable {
     /**
      * Time to pause before the first scroll repeat.
      */
@@ -922,6 +923,7 @@ class XScrollRepeater implements Runnable {
         newScroll = true;
     }
 
+    @Override
     public void run () {
         synchronized(this) {
             if (shouldSkip) {

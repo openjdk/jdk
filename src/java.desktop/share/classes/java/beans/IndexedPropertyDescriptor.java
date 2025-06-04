@@ -63,7 +63,7 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
      *
      * @param propertyName The programmatic name of the property.
      * @param beanClass The Class object for the target bean.
-     * @exception IntrospectionException if an exception occurs during
+     * @throws IntrospectionException if an exception occurs during
      *              introspection.
      */
     public IndexedPropertyDescriptor(String propertyName, Class<?> beanClass)
@@ -94,7 +94,7 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
      * @param indexedWriteMethodName The name of the method used for writing
      *          an indexed property value.
      *          May be null if the property is read-only.
-     * @exception IntrospectionException if an exception occurs during
+     * @throws IntrospectionException if an exception occurs during
      *              introspection.
      */
     public IndexedPropertyDescriptor(String propertyName, Class<?> beanClass,
@@ -129,7 +129,7 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
      *          May be null if the property is write-only.
      * @param indexedWriteMethod The method used for writing an indexed property value.
      *          May be null if the property is read-only.
-     * @exception IntrospectionException if an exception occurs during
+     * @throws IntrospectionException if an exception occurs during
      *              introspection.
      */
     public IndexedPropertyDescriptor(String propertyName, Method readMethod, Method writeMethod,

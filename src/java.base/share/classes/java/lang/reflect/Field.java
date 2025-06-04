@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.scope.ClassScope;
 import java.lang.annotation.Annotation;
 import java.util.Map;
+import java.util.Set;
 import java.util.Objects;
 import sun.reflect.annotation.AnnotationParser;
 import sun.reflect.annotation.AnnotationSupport;
@@ -75,22 +76,18 @@ class Field extends AccessibleObject implements Member {
     private final boolean             trustedFinal;
     // Generics and annotations support
     private final transient String    signature;
-    // generic info repository; lazily initialized
-    private transient FieldRepository genericInfo;
     private final byte[]              annotations;
-    // Cached field accessor created without override
-    @Stable
-    private FieldAccessor fieldAccessor;
-    // Cached field accessor created with override
-    @Stable
-    private FieldAccessor overrideFieldAccessor;
-    // For sharing of FieldAccessors. This branching structure is
-    // currently only two levels deep (i.e., one root Field and
-    // potentially many Field objects pointing to it.)
-    //
-    // If this branching structure would ever contain cycles, deadlocks can
-    // occur in annotation code.
-    private Field               root;
+
+    /**
+     * Fields are mutable due to {@link AccessibleObject#setAccessible(boolean)}.
+     * Thus, we return a new copy of a root each time a field is returned.
+     * Some lazily initialized immutable states can be stored on root and shared to the copies.
+     */
+    private Field root;
+    private transient volatile FieldRepository genericInfo;
+    private @Stable FieldAccessor fieldAccessor; // access control enabled
+    private @Stable FieldAccessor overrideFieldAccessor; // access control suppressed
+    // End shared states
 
     // Generics infrastructure
 
@@ -105,15 +102,18 @@ class Field extends AccessibleObject implements Member {
 
     // Accessor for generic info repository
     private FieldRepository getGenericInfo() {
-        // lazily initialize repository if necessary
+        var genericInfo = this.genericInfo;
         if (genericInfo == null) {
-            // create and cache generic info repository
-            genericInfo = FieldRepository.make(getGenericSignature(),
-                                               getFactory());
+            var root = this.root;
+            if (root != null) {
+                genericInfo = root.getGenericInfo();
+            } else {
+                genericInfo = FieldRepository.make(getGenericSignature(), getFactory());
+            }
+            this.genericInfo = genericInfo;
         }
-        return genericInfo; //return cached repository
+        return genericInfo;
     }
-
 
     /**
      * Package-private constructor
@@ -159,18 +159,17 @@ class Field extends AccessibleObject implements Member {
         // Might as well eagerly propagate this if already present
         res.fieldAccessor = fieldAccessor;
         res.overrideFieldAccessor = overrideFieldAccessor;
+        res.genericInfo = genericInfo;
 
         return res;
     }
 
     /**
      * @throws InaccessibleObjectException {@inheritDoc}
-     * @throws SecurityException {@inheritDoc}
      */
     @Override
     @CallerSensitive
     public void setAccessible(boolean flag) {
-        AccessibleObject.checkPermission();
         if (flag) checkCanSetAccessible(Reflection.getCallerClass());
         setAccessible0(flag);
     }
@@ -202,11 +201,24 @@ class Field extends AccessibleObject implements Member {
      * be used to decode the modifiers.
      *
      * @see Modifier
+     * @see #accessFlags()
      * @jls 8.3 Field Declarations
      * @jls 9.3 Field (Constant) Declarations
      */
     public int getModifiers() {
         return modifiers;
+    }
+
+    /**
+     * {@return an unmodifiable set of the {@linkplain AccessFlag
+     * access flags} for this field, possibly empty}
+     * @see #getModifiers()
+     * @jvms 4.5 Fields
+     * @since 20
+     */
+    @Override
+    public Set<AccessFlag> accessFlags() {
+        return reflectionFactory.parseAccessFlags(getModifiers(), AccessFlag.Location.FIELD, getDeclaringClass());
     }
 
     /**
@@ -1142,7 +1154,6 @@ class Field extends AccessibleObject implements Member {
                     modifiers);
     }
 
-    // security check is done before calling this method
     private FieldAccessor getFieldAccessor() {
         FieldAccessor a = fieldAccessor;
         return (a != null) ? a : acquireFieldAccessor();

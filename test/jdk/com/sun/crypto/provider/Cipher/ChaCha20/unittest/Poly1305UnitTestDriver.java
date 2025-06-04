@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,3 +28,41 @@
  * @run main java.base/com.sun.crypto.provider.Poly1305UnitTest
  * @summary Unit test for com.sun.crypto.provider.Poly1305.
  */
+
+/*
+ * @test
+ * @key randomness
+ * @modules java.base/com.sun.crypto.provider
+ * @run main java.base/com.sun.crypto.provider.Poly1305IntrinsicFuzzTest
+ * @summary Unit test for com.sun.crypto.provider.Poly1305.
+ */
+
+/*
+ * @test
+ * @modules java.base/com.sun.crypto.provider
+ * @run main java.base/com.sun.crypto.provider.Poly1305KAT
+ * @summary Unit test for com.sun.crypto.provider.Poly1305.
+ */
+
+/*
+ * @test
+ * @key randomness
+ * @modules java.base/com.sun.crypto.provider
+ * @summary Unit test for IntrinsicCandidate in com.sun.crypto.provider.Poly1305.
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+ForceUnreachable java.base/com.sun.crypto.provider.Poly1305IntrinsicFuzzTest
+ */
+
+/*
+ * @test
+ * @modules java.base/com.sun.crypto.provider
+ * @summary Unit test for IntrinsicCandidate in com.sun.crypto.provider.Poly1305.
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+ForceUnreachable java.base/com.sun.crypto.provider.Poly1305KAT
+ */
+
+package com.sun.crypto.provider.Cipher.ChaCha20;
+
+public class Poly1305UnitTestDriver {
+    static public void main(String[] args) {
+        System.out.println("Passed");
+    }
+}

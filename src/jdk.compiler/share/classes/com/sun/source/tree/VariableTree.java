@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import javax.lang.model.element.Name;
  * </pre>
  *
  * @jls 8.3 Field Declarations
- * @jls 14.4 Local Variable Declaration Statements
+ * @jls 14.4 Local Variable Declarations
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons
@@ -51,7 +51,8 @@ public interface VariableTree extends StatementTree {
     ModifiersTree getModifiers();
 
     /**
-     * Returns the name of the variable being declared.
+     * Returns the name of the variable being declared or empty name if both the variable
+     * is unnamed and the preview features are enabled (Unnamed Patterns and Variables).
      * @return the name
      */
     Name getName();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ import java.util.function.BiFunction;
  * using the {@link #getSession()} method.
  * <P>
  * The {@code SSLSocket} class provides much of the same security
- * functionality, but all of the inbound and outbound data is
+ * functionality, but all the inbound and outbound data is
  * automatically transported using the underlying {@link
  * java.net.Socket Socket}, which by design uses a blocking model.
  * While this is appropriate for many applications, this model does not
@@ -377,14 +377,6 @@ import java.util.function.BiFunction;
  *     }
  * </pre></blockquote>
  *
- * <P>
- * Applications might choose to process delegated tasks in different
- * threads.  When an {@code SSLEngine}
- * is created, the current {@link java.security.AccessControlContext}
- * is saved.  All future delegated tasks will be processed using this
- * context:  that is, all access control decisions will be made using the
- * context captured at engine creation.
- *
  * <HR>
  *
  * <B>Concurrency Notes</B>:
@@ -413,6 +405,8 @@ import java.util.function.BiFunction;
  *      because there is no way to guarantee the eventual packet ordering.
  * </OL>
  *
+ * @spec https://www.rfc-editor.org/info/rfc2246
+ *      RFC 2246: The TLS Protocol Version 1.0
  * @see SSLContext
  * @see SSLSocket
  * @see SSLServerSocket
@@ -755,8 +749,8 @@ public abstract class SSLEngine {
      * The underlying memory used by the {@code src} and
      * {@code dsts ByteBuffer}s must not be the same.
      * <P>
-     * The inbound network buffer may be modified as a result of this
-     * call:  therefore if the network data packet is required for some
+     * The inbound network buffer, {@code src}, may be modified as a result of
+     * this call:  therefore if the network data packet is required for some
      * secondary purpose, the data should be duplicated before calling this
      * method.  Note:  the network data will not be useful to a second
      * SSLEngine, as each SSLEngine contains unique random state which
@@ -816,9 +810,6 @@ public abstract class SSLEngine {
      * {@code run} method returns, the {@code Runnable} object
      * is no longer needed and may be discarded.
      * <P>
-     * Delegated tasks run in the {@code AccessControlContext}
-     * in place when this object was created.
-     * <P>
      * A call to this method will return each outstanding task
      * exactly once.
      * <P>
@@ -859,6 +850,8 @@ public abstract class SSLEngine {
      *          if this engine has not received the proper SSL/TLS/DTLS close
      *          notification message from the peer.
      *
+     * @spec https://www.rfc-editor.org/info/rfc2246
+     *      RFC 2246: The TLS Protocol Version 1.0
      * @see     #isInboundDone()
      * @see     #isOutboundDone()
      */
@@ -870,7 +863,7 @@ public abstract class SSLEngine {
      * accept any more inbound data messages.
      *
      * @return  true if the {@code SSLEngine} will not
-     *          consume anymore network data (and by implication,
+     *          consume any more network data (and by implication,
      *          will not produce any more application data.)
      * @see     #closeInbound()
      */
@@ -924,6 +917,7 @@ public abstract class SSLEngine {
      * Algorithm Names Specification, and may also include other cipher
      * suites that the provider supports.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return  an array of cipher suite names
      * @see     #getEnabledCipherSuites()
      * @see     #setEnabledCipherSuites(String[])
@@ -950,6 +944,7 @@ public abstract class SSLEngine {
      * Algorithm Names Specification, and may also include other cipher
      * suites that the provider supports.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return  an array of cipher suite names
      * @see     #getSupportedCipherSuites()
      * @see     #setEnabledCipherSuites(String[])
@@ -974,9 +969,10 @@ public abstract class SSLEngine {
      * for a certain cipher suite.
      * <P>
      * See {@link #getEnabledCipherSuites()} for more information
-     * on why a specific cipher suite may never be used on a engine.
+     * on why a specific cipher suite may never be used on an engine.
      *
      * @param   suites Names of all the cipher suites to enable
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @throws  IllegalArgumentException when one or more of the ciphers
      *          named by the parameter is not supported, or when the
      *          parameter is null.
@@ -1031,7 +1027,7 @@ public abstract class SSLEngine {
      * Returns the {@code SSLSession} in use in this
      * {@code SSLEngine}.
      * <P>
-     * These can be long lived, and frequently correspond to an entire
+     * These can be long-lived, and frequently correspond to an entire
      * login session for some user.  The session specifies a particular
      * cipher suite which is being actively used by all connections in
      * that session, as well as the identities of the session's client
@@ -1336,10 +1332,8 @@ public abstract class SSLEngine {
         }
         if (params.getNeedClientAuth()) {
             setNeedClientAuth(true);
-        } else if (params.getWantClientAuth()) {
-            setWantClientAuth(true);
         } else {
-            setWantClientAuth(false);
+            setWantClientAuth(params.getWantClientAuth());
         }
     }
 
@@ -1353,6 +1347,8 @@ public abstract class SSLEngine {
      * Application-Layer Protocol Negotiation (ALPN), can negotiate
      * application-level values between peers.
      *
+     * @spec https://www.rfc-editor.org/info/rfc7301
+     *      RFC 7301: Transport Layer Security (TLS) Application-Layer Protocol Negotiation Extension
      * @implSpec
      * The implementation in this class throws
      * {@code UnsupportedOperationException} and performs no other action.

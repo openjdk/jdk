@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,18 @@ package jdk.vm.ci.code.test;
 
 import jdk.vm.ci.aarch64.AArch64;
 import jdk.vm.ci.amd64.AMD64;
+import jdk.vm.ci.riscv64.RISCV64;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.code.test.aarch64.AArch64TestAssembler;
 import jdk.vm.ci.code.test.amd64.AMD64TestAssembler;
+import jdk.vm.ci.code.test.riscv64.RISCV64TestAssembler;
 import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+import jdk.vm.ci.hotspot.HotSpotNmethod;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -54,6 +57,7 @@ public class CodeInstallationTest {
     protected final TargetDescription target;
     protected final ConstantReflectionProvider constantReflection;
     protected final TestHotSpotVMConfig config;
+    protected final Architecture arch;
 
     public CodeInstallationTest() {
         JVMCIBackend backend = JVMCI.getRuntime().getHostJVMCIBackend();
@@ -61,7 +65,8 @@ public class CodeInstallationTest {
         codeCache = backend.getCodeCache();
         target = backend.getTarget();
         constantReflection = backend.getConstantReflection();
-        config = new TestHotSpotVMConfig(HotSpotJVMCIRuntime.runtime().getConfigStore());
+        arch = codeCache.getTarget().arch;
+        config = new TestHotSpotVMConfig(HotSpotJVMCIRuntime.runtime().getConfigStore(), arch);
     }
 
     protected interface TestCompiler {
@@ -70,11 +75,12 @@ public class CodeInstallationTest {
     }
 
     private TestAssembler createAssembler() {
-        Architecture arch = codeCache.getTarget().arch;
         if (arch instanceof AMD64) {
             return new AMD64TestAssembler(codeCache, config);
         } else if (arch instanceof AArch64) {
             return new AArch64TestAssembler(codeCache, config);
+        } else if (arch instanceof RISCV64) {
+            return new RISCV64TestAssembler(codeCache, config);
         } else {
             Assert.fail("unsupported architecture");
             return null;
@@ -90,7 +96,7 @@ public class CodeInstallationTest {
         }
     }
 
-    protected void test(TestCompiler compiler, Method method, Object... args) {
+    protected HotSpotNmethod test(TestCompiler compiler, Method method, Object... args) {
         try {
             HotSpotResolvedJavaMethod resolvedMethod = (HotSpotResolvedJavaMethod) metaAccess.lookupJavaMethod(method);
             TestAssembler asm = createAssembler();
@@ -110,9 +116,9 @@ public class CodeInstallationTest {
             Object expected = method.invoke(null, args);
             Object actual = installed.executeVarargs(args);
             Assert.assertEquals(expected, actual);
+            return (HotSpotNmethod) installed;
         } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail(e.toString());
+            throw new AssertionError(e);
         }
     }
 }

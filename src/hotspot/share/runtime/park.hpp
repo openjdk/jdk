@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,14 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+#if defined(LINUX) || defined(AIX) || defined(BSD)
+# include "park_posix.hpp"
+#else
+# include OS_HEADER(park)
+#endif
+
+class Thread;
+
 /*
  * Per-thread blocking support for JSR166. See the Java-level
  * documentation for rationale. Basically, park acts like wait, unpark
@@ -39,7 +47,7 @@
  * ThreadsListHandle.
  *
  * Class Parker is declared in shared code and extends the platform-specific
- * os::PlatformParker class, which contains the actual implementation
+ * PlatformParker class, which contains the actual implementation
  * mechanics (condvars/events etc). The implementation for park() and unpark()
  * are also in the platform-specific os_<os>.cpp files.
  *
@@ -49,7 +57,7 @@
  *
  */
 
-class Parker : public os::PlatformParker {
+class Parker : public PlatformParker {
  private:
   NONCOPYABLE(Parker);
  public:
@@ -102,18 +110,12 @@ class Parker : public os::PlatformParker {
 // We'll want to eventually merge these redundant facilities and use ParkEvent.
 
 
-class ParkEvent : public os::PlatformEvent {
+class ParkEvent : public PlatformEvent {
   private:
     ParkEvent * FreeNext ;
 
     // Current association
     Thread * AssociatedWith ;
-
-  public:
-    // MCS-CLH list linkage and Native Mutex/Monitor
-    ParkEvent * volatile ListNext ;
-    volatile int TState ;
-    volatile int Notified ;             // for native monitor construct
 
   private:
     static ParkEvent * volatile FreeList ;
@@ -129,11 +131,8 @@ class ParkEvent : public os::PlatformEvent {
     ~ParkEvent() { guarantee (0, "invariant") ; }
 
     ParkEvent() : PlatformEvent() {
-       AssociatedWith = NULL ;
-       FreeNext       = NULL ;
-       ListNext       = NULL ;
-       TState         = 0 ;
-       Notified       = 0 ;
+       AssociatedWith = nullptr ;
+       FreeNext       = nullptr ;
     }
 
     // We use placement-new to force ParkEvent instances to be

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package sun.nio.ch;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.channels.*;
 import java.util.concurrent.*;
 import java.nio.ByteBuffer;
@@ -33,6 +35,8 @@ import java.io.IOException;
 import java.io.FileDescriptor;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
+import jdk.internal.event.FileForceEvent;
+import jdk.internal.invoke.MhUtil;
 
 /**
  * Windows implementation of AsynchronousFileChannel using overlapped I/O.
@@ -63,6 +67,9 @@ public class WindowsAsynchronousFileChannelImpl
     // Used for force/truncate/size methods
     private static final FileDispatcher nd = new FileDispatcherImpl();
 
+    // file path
+    private final String path;
+
     // The handle is extracted for use in native methods invoked from this class.
     private final long handle;
 
@@ -79,6 +86,7 @@ public class WindowsAsynchronousFileChannelImpl
 
 
     private WindowsAsynchronousFileChannelImpl(FileDescriptor fdObj,
+                                               String path,
                                                boolean reading,
                                                boolean writing,
                                                Iocp iocp,
@@ -86,6 +94,7 @@ public class WindowsAsynchronousFileChannelImpl
         throws IOException
     {
         super(fdObj, reading, writing, iocp.executor());
+        this.path = path;
         this.handle = fdAccess.getHandle(fdObj);
         this.iocp = iocp;
         this.isDefaultIocp = isDefaultIocp;
@@ -94,6 +103,7 @@ public class WindowsAsynchronousFileChannelImpl
     }
 
     public static AsynchronousFileChannel open(FileDescriptor fdo,
+                                               String path,
                                                boolean reading,
                                                boolean writing,
                                                ThreadPool pool)
@@ -109,8 +119,7 @@ public class WindowsAsynchronousFileChannelImpl
             isDefaultIocp = false;
         }
         try {
-            return new
-                WindowsAsynchronousFileChannelImpl(fdo, reading, writing, iocp, isDefaultIocp);
+            return new WindowsAsynchronousFileChannelImpl(fdo, path, reading, writing, iocp, isDefaultIocp);
         } catch (IOException x) {
             // error binding to port so need to close it (if created for this channel)
             if (!isDefaultIocp)
@@ -196,14 +205,24 @@ public class WindowsAsynchronousFileChannelImpl
         return this;
     }
 
-    @Override
-    public void force(boolean metaData) throws IOException {
+    private void implForce(boolean metaData) throws IOException {
         try {
             begin();
             nd.force(fdObj, metaData);
         } finally {
             end();
         }
+    }
+
+    @Override
+    public void force(boolean metaData) throws IOException {
+        if (!FileForceEvent.enabled()) {
+            implForce(metaData);
+            return;
+        }
+        long start = FileForceEvent.timestamp();
+        implForce(metaData);
+        FileForceEvent.offer(start, path, metaData);
     }
 
     // -- file locking --
@@ -367,10 +386,13 @@ public class WindowsAsynchronousFileChannelImpl
      * Task that initiates read operation and handles completion result.
      */
     private class ReadTask<A> implements Runnable, Iocp.ResultHandler {
+        private static final VarHandle RELEASED = MhUtil.findVarHandle(MethodHandles.lookup(),
+                "released", boolean.class);
         private final ByteBuffer dst;
         private final int pos, rem;     // buffer position/remaining
         private final long position;    // file position
         private final PendingFuture<Integer,A> result;
+        private volatile boolean released;
 
         // set to dst if direct; otherwise set to substituted direct buffer
         private volatile ByteBuffer buf;
@@ -389,8 +411,9 @@ public class WindowsAsynchronousFileChannelImpl
         }
 
         void releaseBufferIfSubstituted() {
-            if (buf != dst)
+            if (buf != dst && RELEASED.compareAndSet(this, false, true)) {
                 Util.releaseTemporaryDirectBuffer(buf);
+            }
         }
 
         void updatePosition(int bytesTransferred) {
@@ -553,10 +576,13 @@ public class WindowsAsynchronousFileChannelImpl
      * Task that initiates write operation and handles completion result.
      */
     private class WriteTask<A> implements Runnable, Iocp.ResultHandler {
+        private static final VarHandle RELEASED = MhUtil.findVarHandle(MethodHandles.lookup(),
+                "released", boolean.class);
         private final ByteBuffer src;
         private final int pos, rem;     // buffer position/remaining
         private final long position;    // file position
         private final PendingFuture<Integer,A> result;
+        private volatile boolean released;
 
         // set to src if direct; otherwise set to substituted direct buffer
         private volatile ByteBuffer buf;
@@ -575,8 +601,9 @@ public class WindowsAsynchronousFileChannelImpl
         }
 
         void releaseBufferIfSubstituted() {
-            if (buf != src)
+            if (buf != src && RELEASED.compareAndSet(this, false, true)) {
                 Util.releaseTemporaryDirectBuffer(buf);
+            }
         }
 
         void updatePosition(int bytesTransferred) {

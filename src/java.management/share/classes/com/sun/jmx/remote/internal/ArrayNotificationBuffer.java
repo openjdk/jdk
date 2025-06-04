@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,6 @@
 
 package com.sun.jmx.remote.internal;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -116,8 +112,8 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
     private static final Object globalLock = new Object();
     private static final
         HashMap<MBeanServer,ArrayNotificationBuffer> mbsToBuffer =
-        new HashMap<MBeanServer,ArrayNotificationBuffer>(1);
-    private final Collection<ShareBuffer> sharers = new HashSet<ShareBuffer>(1);
+        new HashMap<>(1);
+    private final Collection<ShareBuffer> sharers = new HashSet<>(1);
 
     public static NotificationBuffer getNotificationBuffer(
             MBeanServer mbs, Map<String, ?> env) {
@@ -251,7 +247,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
 
         this.mBeanServer = mbs;
         this.queueSize = queueSize;
-        this.queue = new ArrayQueue<NamedNotification>(queueSize);
+        this.queue = new ArrayQueue<>(queueSize);
         this.earliestSequenceNumber = System.currentTimeMillis();
         this.nextSequenceNumber = this.earliestSequenceNumber;
 
@@ -353,8 +349,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
            to the earliest notification we examined.  */
         long earliestSeq = -1;
         long nextSeq = startSequenceNumber;
-        List<TargetedNotification> notifs =
-            new ArrayList<TargetedNotification>();
+        List<TargetedNotification> notifs = new ArrayList<>();
 
         /* On exit from this loop, notifs, earliestSeq, and nextSeq must
            all be correct values for the returned NotificationResult.  */
@@ -397,20 +392,6 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
 
                 if (nextSeq < nextSequenceNumber()) {
                     candidate = notificationAt(nextSeq);
-                    // Skip security check if NotificationBufferFilter is not overloaded
-                    if (!(filter instanceof ServerNotifForwarder.NotifForwarderBufferFilter)) {
-                        try {
-                            ServerNotifForwarder.checkMBeanPermission(this.mBeanServer,
-                                                      candidate.getObjectName(),"addNotificationListener");
-                        } catch (InstanceNotFoundException | SecurityException e) {
-                            if (logger.debugOn()) {
-                                logger.debug("fetchNotifications", "candidate: " + candidate + " skipped. exception " + e);
-                            }
-                            ++nextSeq;
-                            continue;
-                        }
-                    }
-
                     if (logger.debugOn()) {
                         logger.debug("fetchNotifications", "candidate: " +
                                      candidate);
@@ -437,7 +418,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
                     if (isDisposed()) {
                         if (logger.debugOn())
                             logger.debug("fetchNotifications",
-                                         "dispose callled, no wait");
+                                         "dispose called, no wait");
                         return new NotificationResult(earliestSequenceNumber(),
                                                   nextSequenceNumber(),
                                                   new TargetedNotification[0]);
@@ -459,8 +440,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
                potentially slow filters.  */
             ObjectName name = candidate.getObjectName();
             Notification notif = candidate.getNotification();
-            List<TargetedNotification> matchedNotifs =
-                new ArrayList<TargetedNotification>();
+            List<TargetedNotification> matchedNotifs = new ArrayList<>();
             logger.debug("fetchNotifications",
                          "applying filter to candidate");
             filter.apply(matchedNotifs, name, notif);
@@ -601,7 +581,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
         logger.debug("createListeners", "starts");
 
         synchronized (this) {
-            createdDuringQuery = new HashSet<ObjectName>();
+            createdDuringQuery = new HashSet<>();
         }
 
         try {
@@ -618,7 +598,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
         /* Spec doesn't say whether Set returned by QueryNames can be modified
            so we clone it. */
         Set<ObjectName> names = queryNames(null, broadcasterQuery);
-        names = new HashSet<ObjectName>(names);
+        names = new HashSet<>(names);
 
         synchronized (this) {
             names.addAll(createdDuringQuery);
@@ -655,54 +635,27 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
         }
     }
 
-    @SuppressWarnings("removal")
     private void addNotificationListener(final ObjectName name,
                                          final NotificationListener listener,
                                          final NotificationFilter filter,
                                          final Object handback)
             throws Exception {
-        try {
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                public Void run() throws InstanceNotFoundException {
-                    mBeanServer.addNotificationListener(name,
-                                                        listener,
-                                                        filter,
-                                                        handback);
-                    return null;
-                }
-            });
-        } catch (Exception e) {
-            throw extractException(e);
-        }
+        mBeanServer.addNotificationListener(name,
+                                                listener,
+                                                filter,
+                                                handback);
     }
 
-    @SuppressWarnings("removal")
     private void removeNotificationListener(final ObjectName name,
                                             final NotificationListener listener)
             throws Exception {
-        try {
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                public Void run() throws Exception {
-                    mBeanServer.removeNotificationListener(name, listener);
-                    return null;
-                }
-            });
-        } catch (Exception e) {
-            throw extractException(e);
-        }
+        mBeanServer.removeNotificationListener(name, listener);
     }
 
-    @SuppressWarnings("removal")
     private Set<ObjectName> queryNames(final ObjectName name,
                                        final QueryExp query) {
-        PrivilegedAction<Set<ObjectName>> act =
-            new PrivilegedAction<Set<ObjectName>>() {
-                public Set<ObjectName> run() {
-                    return mBeanServer.queryNames(name, query);
-                }
-            };
         try {
-            return AccessController.doPrivileged(act);
+            return mBeanServer.queryNames(name, query);
         } catch (RuntimeException e) {
             logger.fine("queryNames", "Failed to query names: " + e);
             logger.debug("queryNames", e);
@@ -710,18 +663,11 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
         }
     }
 
-    @SuppressWarnings("removal")
     private static boolean isInstanceOf(final MBeanServer mbs,
                                         final ObjectName name,
                                         final String className) {
-        PrivilegedExceptionAction<Boolean> act =
-            new PrivilegedExceptionAction<Boolean>() {
-                public Boolean run() throws InstanceNotFoundException {
-                    return mbs.isInstanceOf(name, className);
-                }
-            };
         try {
-            return AccessController.doPrivileged(act);
+            return mbs.isInstanceOf(name, className);
         } catch (Exception e) {
             logger.fine("isInstanceOf", "failed: " + e);
             logger.debug("isInstanceOf", e);
@@ -825,17 +771,6 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
     private void checkNoLocks() {
         if (Thread.holdsLock(this) || Thread.holdsLock(globalLock))
             logger.warning("checkNoLocks", "lock protocol violation");
-    }
-
-    /**
-     * Iterate until we extract the real exception
-     * from a stack of PrivilegedActionExceptions.
-     */
-    private static Exception extractException(Exception e) {
-        while (e instanceof PrivilegedActionException) {
-            e = ((PrivilegedActionException)e).getException();
-        }
-        return e;
     }
 
     private static final ClassLogger logger =

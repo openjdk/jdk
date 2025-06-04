@@ -94,11 +94,8 @@ public class T7022337 extends JavacTestingAbstractProcessor {
     void generate(String name) {
         try {
             JavaFileObject fo = filer.createSourceFile(name);
-            Writer out = fo.openWriter();
-            try {
+            try (Writer out = fo.openWriter()) {
                 out.write("class " + name + " { }");
-            } finally {
-                out.close();
             }
         } catch (IOException e) {
             throw new Error(e);

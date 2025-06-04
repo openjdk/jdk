@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
  */
 
 /*
- * @test
+ * @test id=Z
  * @bug 8273456
  * @summary Test that ttyLock is ranked above StackWatermark_lock
  * @requires !vm.graal.enabled & vm.gc.Z
@@ -67,17 +67,22 @@ public class TestDeoptOOM {
 
     static LinkedList ll;
 
-    static void consume_all_memory() {
-        int size = 128 * 1024 * 1024;
-        while(size > 0) {
-            try {
-                while(true) {
-                    ll = new LinkedList(ll, size);
-                }
-            } catch(OutOfMemoryError oom) {
+    static void alloc_in_chunks(int size) {
+        try {
+            while(true) {
+                ll = new LinkedList(ll, size);
             }
-            size = size / 2;
+        } catch(OutOfMemoryError oom) {
         }
+    }
+
+    static void consume_all_memory() {
+        // O(MiB) allocations
+        alloc_in_chunks(1024*1024);
+        // O(KiB) allocations
+        alloc_in_chunks(1024);
+        // O(B) allocations
+        alloc_in_chunks(1);
     }
 
     static void free_memory() {

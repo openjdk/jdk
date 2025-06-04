@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map.Entry;
 
 import javax.tools.*;
@@ -93,6 +92,7 @@ public class RuleParsingTest {
         assert tool != null;
         DiagnosticListener<JavaFileObject> noErrors = d -> { throw new AssertionError(d.getMessage(null)); };
 
+        String version = System.getProperty("java.specification.version");
         StringWriter out = new StringWriter();
         JavacTask ct = (JavacTask) tool.getTask(out, null, noErrors,
             List.of(), null,

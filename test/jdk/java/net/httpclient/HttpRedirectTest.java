@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,14 +20,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
+import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static org.testng.Assert.*;
 
 import javax.net.ssl.SSLContext;
@@ -57,20 +58,16 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
 
 /**
  * @test
  * @bug 8232625
  * @summary This test verifies that the HttpClient works correctly when redirecting a post request.
- * @library /test/lib http2/server
- * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters DigestEchoServer HttpRedirectTest
- * @modules java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.logging
- *          java.base/sun.net.www.http
- *          java.base/sun.net.www
- *          java.base/sun.net
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext DigestEchoServer HttpRedirectTest
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
+ *        jdk.httpclient.test.lib.common.TestServerConfigurator
  * @run testng/othervm -Dtest.requiresHost=true
  *                   -Djdk.httpclient.HttpClient.log=headers
  *                   -Djdk.internal.httpclient.debug=false
@@ -167,9 +164,7 @@ public class HttpRedirectTest implements HttpServerAdapters {
             InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 
             // HTTP/1.1
-            HttpServer server1 = HttpServer.create(sa, 0);
-            server1.setExecutor(executor);
-            http1Server = HttpTestServer.of(server1);
+            http1Server = HttpTestServer.create(HTTP_1_1, null, executor);
             http1Server.addHandler(new HttpTestRedirectHandler("http", http1Server),
                     "/HttpRedirectTest/http1/");
             http1Server.start();
@@ -179,7 +174,7 @@ public class HttpRedirectTest implements HttpServerAdapters {
             // HTTPS/1.1
             HttpsServer sserver1 = HttpsServer.create(sa, 100);
             sserver1.setExecutor(executor);
-            sserver1.setHttpsConfigurator(new HttpsConfigurator(context));
+            sserver1.setHttpsConfigurator(new TestServerConfigurator(sa.getAddress(), context));
             https1Server = HttpTestServer.of(sserver1);
             https1Server.addHandler(new HttpTestRedirectHandler("https", https1Server),
                     "/HttpRedirectTest/https1/");
@@ -187,16 +182,14 @@ public class HttpRedirectTest implements HttpServerAdapters {
             https1URI = new URI("https://" + https1Server.serverAuthority() + "/HttpRedirectTest/https1/");
 
             // HTTP/2.0
-            http2Server = HttpTestServer.of(
-                    new Http2TestServer("localhost", false, 0));
+            http2Server = HttpTestServer.create(HTTP_2);
             http2Server.addHandler(new HttpTestRedirectHandler("http", http2Server),
                     "/HttpRedirectTest/http2/");
             http2Server.start();
             http2URI = new URI("http://" + http2Server.serverAuthority() + "/HttpRedirectTest/http2/");
 
             // HTTPS/2.0
-            https2Server = HttpTestServer.of(
-                    new Http2TestServer("localhost", true, 0));
+            https2Server = HttpTestServer.create(HTTP_2, SSLContext.getDefault());
             https2Server.addHandler(new HttpTestRedirectHandler("https", https2Server),
                     "/HttpRedirectTest/https2/");
             https2Server.start();

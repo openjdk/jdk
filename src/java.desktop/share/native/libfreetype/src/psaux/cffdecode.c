@@ -4,7 +4,7 @@
  *
  *   PostScript CFF (Type 2) decoding routines (body).
  *
- * Copyright (C) 2017-2020 by
+ * Copyright (C) 2017-2024 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -17,6 +17,7 @@
 
 
 #include <freetype/freetype.h>
+#include <freetype/internal/ftcalc.h>
 #include <freetype/internal/ftdebug.h>
 #include <freetype/internal/ftserv.h>
 #include <freetype/internal/services/svcfftl.h>
@@ -248,7 +249,7 @@
     else
 #endif /* FT_CONFIG_OPTION_INCREMENTAL */
     {
-      CFF_Font cff = (CFF_Font)(face->extra.data);
+      CFF_Font cff = (CFF_Font)( face->extra.data );
 
 
       bchar_index = cff_lookup_glyph_by_stdcharcode( cff, bchar );
@@ -1752,22 +1753,9 @@
 
           /* without upper limit the loop below might not finish */
           if ( args[0] > 0x7FFFFFFFL )
-            args[0] = 46341;
+            args[0] = 0xB504F4L;    /* sqrt( 32768.0044 ) */
           else if ( args[0] > 0 )
-          {
-            FT_Fixed  root = args[0];
-            FT_Fixed  new_root;
-
-
-            for (;;)
-            {
-              new_root = ( root + FT_DivFix( args[0], root ) + 1 ) >> 1;
-              if ( new_root == root )
-                break;
-              root = new_root;
-            }
-            args[0] = new_root;
-          }
+            args[0] = (FT_Fixed)FT_SqrtFixed( args[0] );
           else
             args[0] = 0;
           args++;
@@ -1871,7 +1859,7 @@
         case cff_op_put:
           {
             FT_Fixed  val = args[0];
-            FT_Int    idx = (FT_Int)( args[1] >> 16 );
+            FT_UInt   idx = (FT_UInt)( args[1] >> 16 );
 
 
             FT_TRACE4(( " put\n" ));
@@ -1880,20 +1868,20 @@
             /* didn't give a hard-coded size limit of the temporary */
             /* storage array; instead, an argument of the           */
             /* `MultipleMaster' operator set the size               */
-            if ( idx >= 0 && idx < CFF_MAX_TRANS_ELEMENTS )
+            if ( idx < CFF_MAX_TRANS_ELEMENTS )
               decoder->buildchar[idx] = val;
           }
           break;
 
         case cff_op_get:
           {
-            FT_Int    idx = (FT_Int)( args[0] >> 16 );
+            FT_UInt   idx = (FT_UInt)( args[0] >> 16 );
             FT_Fixed  val = 0;
 
 
             FT_TRACE4(( " get\n" ));
 
-            if ( idx >= 0 && idx < CFF_MAX_TRANS_ELEMENTS )
+            if ( idx < CFF_MAX_TRANS_ELEMENTS )
               val = decoder->buildchar[idx];
 
             args[0] = val;
@@ -1914,9 +1902,9 @@
           /* this operator was removed from the Type2 specification */
           /* in version 16-March-2000                               */
           {
-            FT_Int  reg_idx = (FT_Int)args[0];
-            FT_Int  idx     = (FT_Int)args[1];
-            FT_Int  count   = (FT_Int)args[2];
+            FT_UInt  reg_idx = (FT_UInt)args[0];
+            FT_UInt  idx     = (FT_UInt)args[1];
+            FT_UInt  count   = (FT_UInt)args[2];
 
 
             FT_TRACE4(( " load\n" ));
@@ -1924,11 +1912,11 @@
             /* since we currently don't handle interpolation of multiple */
             /* master fonts, we store a vector [1 0 0 ...] in the        */
             /* temporary storage array regardless of the Registry index  */
-            if ( reg_idx >= 0 && reg_idx <= 2             &&
-                 idx >= 0 && idx < CFF_MAX_TRANS_ELEMENTS &&
-                 count >= 0 && count <= num_axes          )
+            if ( reg_idx <= 2                 &&
+                 idx < CFF_MAX_TRANS_ELEMENTS &&
+                 count <= num_axes            )
             {
-              FT_Int  end, i;
+              FT_UInt  end, i;
 
 
               end = FT_MIN( idx + count, CFF_MAX_TRANS_ELEMENTS );
@@ -2153,7 +2141,7 @@
                                       decoder->locals_bias );
 
 
-            FT_TRACE4(( " callsubr (idx %d, entering level %d)\n",
+            FT_TRACE4(( " callsubr (idx %d, entering level %td)\n",
                         idx,
                         zone - decoder->zones + 1 ));
 
@@ -2197,7 +2185,7 @@
                                       decoder->globals_bias );
 
 
-            FT_TRACE4(( " callgsubr (idx %d, entering level %d)\n",
+            FT_TRACE4(( " callgsubr (idx %d, entering level %td)\n",
                         idx,
                         zone - decoder->zones + 1 ));
 
@@ -2236,7 +2224,7 @@
           break;
 
         case cff_op_return:
-          FT_TRACE4(( " return (leaving level %d)\n",
+          FT_TRACE4(( " return (leaving level %td)\n",
                       decoder->zone - decoder->zones ));
 
           if ( decoder->zone <= decoder->zones )
@@ -2271,7 +2259,8 @@
 
     } /* while ip < limit */
 
-    FT_TRACE4(( "..end..\n\n" ));
+    FT_TRACE4(( "..end..\n" ));
+    FT_TRACE4(( "\n" ));
 
   Fail:
     return error;

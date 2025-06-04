@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,16 @@
 /**
 * @test
 * @summary Test vectorization of popcount for Long
-* @requires vm.cpu.features ~= ".*avx512dq.*"
-* @requires vm.cpu.features ~= ".*vpopcntdq.*"
 * @requires vm.compiler2.enabled
-* @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64"
+* @requires ((os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64") & vm.cpu.features ~= ".*avx512bw.*") |
+*           os.simpleArch == "aarch64" |
+*           (os.arch == "riscv64" & vm.cpu.features ~= ".*zvbb.*")
 * @library /test/lib /
 * @run driver compiler.vectorization.TestPopCountVectorLong
 */
 
 package compiler.vectorization;
+
 import compiler.lib.ir_framework.*;
 import java.util.Random;
 
@@ -58,21 +59,27 @@ public class TestPopCountVectorLong {
 
     @Test // needs to be run in (fast) debug mode
     @Warmup(10000)
-    @IR(counts = {"PopCountVL", ">= 1"}) // Atleast one PopCountVL node is generated if vectorization is successful
+    @IR(counts = {IRNode.POPCOUNT_VL, ">= 1"}) // At least one PopCountVL node is generated if vectorization is successful
     public void vectorizeBitCount() {
         for (int i = 0; i < LEN; ++i) {
             output[i] = Long.bitCount(input[i]);
         }
-        checkResult();
+        if (checkResult() > 0) {
+            throw new RuntimeException("Error!");
+        }
     }
 
-    public void checkResult() {
+    public int checkResult() {
+        int err = 0;
         for (int i = 0; i < LEN; ++i) {
             int expected = Long.bitCount(input[i]);
             if (output[i] != expected) {
-                throw new RuntimeException("Invalid result: output[" + i + "] = " + output[i] + " != " + expected);
+                err++;
+                System.err.println("Invalid result: output[" + i + "] = " + output[i] + " != " + expected +
+                                   ", input[" + i + "] == " + Long.toBinaryString(input[i]));
             }
         }
+        return err;
     }
 }
 

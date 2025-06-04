@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.text.DateFormat;
 import java.text.MessageFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -129,8 +130,8 @@ import sun.awt.shell.ShellFolderColumnInfo;
  * this public API.
  * <p>
  * This component is intended to be used in a subclass of
- * javax.swing.plaf.basic.BasicFileChooserUI. It realies heavily on the
- * implementation of BasicFileChooserUI, and is intended to be API compatible
+ * javax.swing.plaf.basic.BasicFileChooserUI. It relies heavily on the
+ * implementation of BasicFileChooserUI and is intended to be API compatible
  * with earlier implementations of MetalFileChooserUI and WindowsFileChooserUI.
  *
  * @author Leif Samuelsson
@@ -658,7 +659,6 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         JPanel p = new JPanel(new BorderLayout());
         final JFileChooser fileChooser = getFileChooser();
 
-        @SuppressWarnings("serial") // anonymous class
         final JList<Object> list = new JList<Object>() {
             public int getNextMatch(String prefix, int startIndex, Position.Bias bias) {
                 ListModel<?> model = getModel();
@@ -1121,13 +1121,17 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
     @SuppressWarnings("serial") // JDK-implementation class
     class DetailsTableCellRenderer extends DefaultTableCellRenderer {
-        JFileChooser chooser;
-        DateFormat df;
+        private final JFileChooser chooser;
+        private final DateFormat df;
+        private final MessageFormat mf = new MessageFormat("");
+        private final NumberFormat nf = NumberFormat.getNumberInstance();
+        private static final double baseFileSize = 1000.0;
 
         DetailsTableCellRenderer(JFileChooser chooser) {
             this.chooser = chooser;
             df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT,
                                                 chooser.getLocale());
+            nf.setMinimumFractionDigits(1);
         }
 
         public void setBounds(int x, int y, int width, int height) {
@@ -1189,21 +1193,38 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                 Icon icon = chooser.getIcon(file);
                 setIcon(icon);
 
-            } else if (value instanceof Long) {
-                long len = ((Long) value) / 1024L;
+            } else if (value instanceof final Long len) {
+                /*
+                 * This code block is relevant to Linux.
+                 * File size is displayed up to 1 decimal precision.
+                 * Base-10 number system is used for formatting file size
+                 * similar to how it's formatted in file managers on Linux.
+                 * Empty file size is shown as 0.0 KB,
+                 * 1-100-byte files are shown as 0.1 KB,
+                 * 101-200-byte files are shown as 0.2 KB and so on.
+                 */
+                Object[] displayedFileSize = new Object[1];
+
                 if (listViewWindowsStyle) {
-                    text = MessageFormat.format(kiloByteString, len + 1);
-                } else if (len < 1024L) {
-                    text = MessageFormat.format(kiloByteString, (len == 0L) ? 1L : len);
+                    updateMessageFormatPattern(kiloByteString);
+                    displayedFileSize[0] = roundToOneDecimalPlace(len);
                 } else {
-                    len /= 1024L;
-                    if (len < 1024L) {
-                        text = MessageFormat.format(megaByteString, len);
+                    double kbVal = roundToOneDecimalPlace(len);
+                    if (kbVal < baseFileSize) {
+                        updateMessageFormatPattern(kiloByteString);
+                        displayedFileSize[0] = kbVal;
                     } else {
-                        len /= 1024L;
-                        text = MessageFormat.format(gigaByteString, len);
+                        double mbVal = roundToOneDecimalPlace(Math.ceil(kbVal));
+                        if (mbVal < baseFileSize) {
+                            updateMessageFormatPattern(megaByteString);
+                            displayedFileSize[0] = mbVal;
+                        } else {
+                            updateMessageFormatPattern(gigaByteString);
+                            displayedFileSize[0] = roundToOneDecimalPlace(Math.ceil(mbVal));
+                        }
                     }
                 }
+                text = mf.format(displayedFileSize);
 
             } else if (value instanceof Date) {
                 text = df.format((Date)value);
@@ -1214,7 +1235,26 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
             setText(text);
 
+            putClientProperty("html.disable", getFileChooser().getClientProperty("html.disable"));
+
             return this;
+        }
+
+        private void updateMessageFormatPattern(String pattern) {
+            mf.applyPattern(pattern);
+            mf.setFormat(0, nf);
+        }
+
+        /**
+         * Rounds a value to one decimal place. It's used to format
+         * file size similar to how it's formatted in file managers on Linux.
+         * For example, the file size of 1200 bytes is rounded to 1.2 KB.
+         *
+         * @param fileSize the file size to round to one decimal place
+         * @return file size rounded to one decimal place
+         */
+        private static double roundToOneDecimalPlace(double fileSize) {
+            return Math.ceil(fileSize / 100.0d) / 10.0d;
         }
     }
 
@@ -1223,7 +1263,6 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
         JPanel p = new JPanel(new BorderLayout());
 
-        @SuppressWarnings("serial") // anonymous class
         final JTable detailsTable = new JTable(getDetailsTableModel()) {
             // Handle Escape key events here
             protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
@@ -1278,13 +1317,6 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             detailsTable.addFocusListener(repaintListener);
         }
 
-        // TAB/SHIFT-TAB should transfer focus and ENTER should select an item.
-        // We don't want them to navigate within the table
-        ActionMap am = SwingUtilities.getUIActionMap(detailsTable);
-        am.remove("selectNextRowCell");
-        am.remove("selectPreviousRowCell");
-        am.remove("selectNextColumnCell");
-        am.remove("selectPreviousColumnCell");
         detailsTable.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS,
                      null);
         detailsTable.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS,
@@ -1543,7 +1575,6 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
     protected Action newFolderAction;
 
-    @SuppressWarnings("serial") // anonymous class inside
     public Action getNewFolderAction() {
         if (!readOnly && newFolderAction == null) {
             newFolderAction = new AbstractAction(newFolderActionLabelText) {
@@ -1601,6 +1632,8 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                     setText(fileName+File.separator);
                 }
             }
+
+            putClientProperty("html.disable", getFileChooser().getClientProperty("html.disable"));
 
             return this;
         }
@@ -1751,11 +1784,12 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     }
 
     private void doMultiSelectionChanged(PropertyChangeEvent e) {
+        clearSelection();
         if (getFileChooser().isMultiSelectionEnabled()) {
             listSelectionModel.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+            getFileChooser().setSelectedFile(null);
         } else {
             listSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-            clearSelection();
             getFileChooser().setSelectedFiles(null);
         }
     }
@@ -1892,6 +1926,8 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         if (viewMenu != null) {
             viewMenu.getPopupMenu().setInvoker(viewMenu);
         }
+
+        contextMenu.applyComponentOrientation(getFileChooser().getComponentOrientation());
         return contextMenu;
     }
 
@@ -1911,6 +1947,10 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         @SuppressWarnings("deprecation")
         public void mouseClicked(MouseEvent evt) {
             JComponent source = (JComponent)evt.getSource();
+
+            if (!source.isEnabled()) {
+                return;
+            }
 
             int index;
             if (source instanceof JList) {
@@ -2083,24 +2123,20 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             return false;
         }
 
-        try {
-            if (f instanceof ShellFolder) {
-                return f.canWrite();
-            } else {
-                if (usesShellFolder(getFileChooser())) {
-                    try {
-                        return ShellFolder.getShellFolder(f).canWrite();
-                    } catch (FileNotFoundException ex) {
-                        // File doesn't exist
-                        return false;
-                    }
-                } else {
-                    // Ordinary file
-                    return f.canWrite();
+        if (f instanceof ShellFolder) {
+            return f.canWrite();
+        } else {
+            if (usesShellFolder(getFileChooser())) {
+                try {
+                    return ShellFolder.getShellFolder(f).canWrite();
+                } catch (FileNotFoundException ex) {
+                    // File doesn't exist
+                    return false;
                 }
+            } else {
+                // Ordinary file
+                return f.canWrite();
             }
-        } catch (SecurityException e) {
-            return false;
         }
     }
 

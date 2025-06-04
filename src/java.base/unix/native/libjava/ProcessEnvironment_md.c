@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@
  * The declaration is standardized as part of UNIX98, but there is
  * no standard (not even de-facto) header file where the
  * declaration is to be found.  See:
- * http://www.opengroup.org/onlinepubs/009695399/functions/environ.html
- * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_02.html
+ * https://pubs.opengroup.org/onlinepubs/009695399/functions/environ.html
+ * https://pubs.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_02.html
  *
  * "All identifiers in this volume of IEEE Std 1003.1-2001, except
  * environ, are defined in at least one of the headers" (!)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,12 +44,12 @@ class ciInstanceKlass : public ciKlass {
   friend class ciMethod;
   friend class ciField;
   friend class ciReplay;
+  friend class CompileTrainingData;
 
 private:
   enum SubklassValue { subklass_unknown, subklass_false, subklass_true };
 
   jobject                _loader;
-  jobject                _protection_domain;
 
   InstanceKlass::ClassState _init_state;           // state of class
   bool                   _is_shared;
@@ -59,6 +59,7 @@ private:
   bool                   _has_nonstatic_concrete_methods;
   bool                   _is_hidden;
   bool                   _is_record;
+  bool                   _has_trusted_loader;
 
   ciFlags                _flags;
 
@@ -67,21 +68,23 @@ private:
   ciInstance*            _java_mirror;
 
   ciConstantPoolCache*   _field_cache;  // cached map index->field
-  GrowableArray<ciField*>* _nonstatic_fields;
+  GrowableArray<ciField*>* _nonstatic_fields;  // ordered by JavaFieldStream
   int                    _has_injected_fields; // any non static injected fields? lazily initialized.
 
   // The possible values of the _implementor fall into following three cases:
-  //   NULL: no implementor.
+  //   null: no implementor.
   //   A ciInstanceKlass that's not itself: one implementor.
   //   Itself: more than one implementor.
   ciInstanceKlass*       _implementor;
+  GrowableArray<ciInstanceKlass*>* _transitive_interfaces;
 
   void compute_injected_fields();
   bool compute_injected_fields_helper();
+  void compute_transitive_interfaces();
 
 protected:
   ciInstanceKlass(Klass* k);
-  ciInstanceKlass(ciSymbol* name, jobject loader, jobject protection_domain);
+  ciInstanceKlass(ciSymbol* name, jobject loader);
 
   InstanceKlass* get_instanceKlass() const {
     return InstanceKlass::cast(get_Klass());
@@ -89,9 +92,6 @@ protected:
 
   oop loader();
   jobject loader_handle();
-
-  oop protection_domain();
-  jobject protection_domain_handle();
 
   const char* type_string() { return "ciInstanceKlass"; }
 
@@ -107,6 +107,7 @@ protected:
   bool compute_shared_has_subklass();
   int  compute_nonstatic_fields();
   GrowableArray<ciField*>* compute_nonstatic_fields_impl(GrowableArray<ciField*>* super_fields);
+  bool compute_has_trusted_loader();
 
   // Update the init_state for shared klasses
   void update_if_shared(InstanceKlass::ClassState expected) {
@@ -179,7 +180,7 @@ public:
     ciInstanceKlass* impl;
     assert(is_loaded(), "must be loaded");
     impl = implementor();
-    if (impl == NULL) {
+    if (impl == nullptr) {
       return 0;
     } else if (impl != this) {
       return 1;
@@ -206,7 +207,7 @@ public:
 
   // total number of nonstatic fields (including inherited):
   int nof_nonstatic_fields() {
-    if (_nonstatic_fields == NULL)
+    if (_nonstatic_fields == nullptr)
       return compute_nonstatic_fields();
     else
       return _nonstatic_fields->length();
@@ -223,7 +224,7 @@ public:
 
   // nth nonstatic field (presented by ascending address)
   ciField* nonstatic_field_at(int i) {
-    assert(_nonstatic_fields != NULL, "");
+    assert(_nonstatic_fields != nullptr, "");
     return _nonstatic_fields->at(i);
   }
 
@@ -254,7 +255,7 @@ public:
   ciInstanceKlass* unique_implementor() {
     assert(is_loaded(), "must be loaded");
     ciInstanceKlass* impl = implementor();
-    return (impl != this ? impl : NULL);
+    return (impl != this ? impl : nullptr);
   }
 
   // Is the defining class loader of this class the default loader?
@@ -265,7 +266,6 @@ public:
   BasicType box_klass_type() const;
   bool is_box_klass() const;
   bool is_boxed_value_offset(int offset) const;
-  bool is_box_cache_valid() const;
 
   // Is this klass in the given package?
   bool is_in_package(const char* packagename) {
@@ -280,13 +280,18 @@ public:
     if (is_loaded() && is_final() && !is_interface()) {
       return this;
     }
-    return NULL;
+    return nullptr;
   }
 
   bool can_be_instantiated() {
     assert(is_loaded(), "must be loaded");
     return !is_interface() && !is_abstract();
   }
+
+  bool has_trusted_loader() const {
+    return _has_trusted_loader;
+  }
+  GrowableArray<ciInstanceKlass*>* transitive_interfaces() const;
 
   // Replay support
 

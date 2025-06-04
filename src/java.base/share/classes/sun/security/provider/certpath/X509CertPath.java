@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,7 @@
 
 package sun.security.provider.certpath;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -70,7 +67,7 @@ public class X509CertPath extends CertPath {
      * List of certificates in this chain
      */
     @SuppressWarnings("serial") // Not statically typed as Serializable
-    private List<X509Certificate> certs;
+    private final List<X509Certificate> certs;
 
     /**
      * The names of our encodings.  PkiPath is the default.
@@ -114,7 +111,7 @@ public class X509CertPath extends CertPath {
         // don't use
         //     for (Certificate obj : certs)
         for (Object obj : certs) {
-            if (obj instanceof X509Certificate == false) {
+            if (!(obj instanceof X509Certificate)) {
                 throw new CertificateException
                     ("List is not all X509Certificates: "
                     + obj.getClass().getName());
@@ -126,7 +123,7 @@ public class X509CertPath extends CertPath {
         // and the methods in the Sun JDK 1.4 implementation of ArrayList that
         // allow read-only access are thread-safe.
         this.certs = Collections.unmodifiableList(
-                new ArrayList<X509Certificate>((List<X509Certificate>)certs));
+                new ArrayList<>((List<X509Certificate>) certs));
     }
 
     /**
@@ -177,22 +174,22 @@ public class X509CertPath extends CertPath {
      */
     private static List<X509Certificate> parsePKIPATH(InputStream is)
             throws CertificateException {
-        List<X509Certificate> certList = null;
-        CertificateFactory certFac = null;
+        List<X509Certificate> certList;
+        CertificateFactory certFac;
 
         if (is == null) {
             throw new CertificateException("input stream is null");
         }
 
         try {
-            DerInputStream dis = new DerInputStream(readAllBytes(is));
+            DerInputStream dis = new DerInputStream(is.readAllBytes());
             DerValue[] seq = dis.getSequence(3);
             if (seq.length == 0) {
-                return Collections.<X509Certificate>emptyList();
+                return Collections.emptyList();
             }
 
             certFac = CertificateFactory.getInstance("X.509");
-            certList = new ArrayList<X509Certificate>(seq.length);
+            certList = new ArrayList<>(seq.length);
 
             // append certs in reverse order (target to trust anchor)
             for (int i = seq.length-1; i >= 0; i--) {
@@ -225,10 +222,10 @@ public class X509CertPath extends CertPath {
         }
 
         try {
-            if (is.markSupported() == false) {
+            if (!is.markSupported()) {
                 // Copy the entire input stream into an InputStream that does
                 // support mark
-                is = new ByteArrayInputStream(readAllBytes(is));
+                is = new ByteArrayInputStream(is.readAllBytes());
             }
             PKCS7 pkcs7 = new PKCS7(is);
 
@@ -238,7 +235,7 @@ public class X509CertPath extends CertPath {
                 certList = Arrays.asList(certArray);
             } else {
                 // no certs provided
-                certList = new ArrayList<X509Certificate>(0);
+                certList = new ArrayList<>(0);
             }
         } catch (IOException ioe) {
             throw new CertificateException("IOException parsing PKCS7 data: " +
@@ -249,22 +246,6 @@ public class X509CertPath extends CertPath {
         // and the methods in the Sun JDK 1.4 implementation of ArrayList that
         // allow read-only access are thread-safe.
         return Collections.unmodifiableList(certList);
-    }
-
-    /*
-     * Reads the entire contents of an InputStream into a byte array.
-     *
-     * @param is the InputStream to read from
-     * @return the bytes read from the InputStream
-     */
-    private static byte[] readAllBytes(InputStream is) throws IOException {
-        byte[] buffer = new byte[8192];
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(2048);
-        int n;
-        while ((n = is.read(buffer)) != -1) {
-            baos.write(buffer, 0, n);
-        }
-        return baos.toByteArray();
     }
 
     /**
@@ -325,7 +306,7 @@ public class X509CertPath extends CertPath {
     private byte[] encodePKCS7() throws CertificateEncodingException {
         PKCS7 p7 = new PKCS7(new AlgorithmId[0],
                              new ContentInfo(ContentInfo.DATA_OID, null),
-                             certs.toArray(new X509Certificate[certs.size()]),
+                             certs.toArray(new X509Certificate[0]),
                              new SignerInfo[0]);
         DerOutputStream derout = new DerOutputStream();
         try {
@@ -395,5 +376,21 @@ public class X509CertPath extends CertPath {
     @Override
     public List<X509Certificate> getCertificates() {
         return certs;
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     * <p>
+     * Deserialization of this object is not supported.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        throw new InvalidObjectException(
+                "X509CertPaths are not directly deserializable");
     }
 }

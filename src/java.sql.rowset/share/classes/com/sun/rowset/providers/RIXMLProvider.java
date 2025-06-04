@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,10 +169,10 @@ public final class RIXMLProvider extends SyncProvider {
     /**
      * Returns the <code>SyncProvider</code> grade of syncrhonization that
      * <code>RowSet</code> object instances can expect when using this
-     * implementation. As this implementation provides no synchonization
+     * implementation. As this implementation provides no synchronization
      * facilities to the XML data source, the lowest grade is returned.
      *
-     * @return the <code>SyncProvider</code> syncronization grade of this
+     * @return the <code>SyncProvider</code> synchronization grade of this
      *     provider; must be one of the following constants:
      *       <PRE>
      *          SyncProvider.GRADE_NONE,
@@ -236,8 +236,8 @@ public final class RIXMLProvider extends SyncProvider {
     }
 
     /**
-     * Returns the vendor name of the Reference Implemntation Optimistic
-     * Syncchronication Provider
+     * Returns the vendor name of the Reference Implementation Optimistic
+     * Synchronization Provider
      *
      * @return the <code>String</code> detailing the vendor name of this
      *      SyncProvider

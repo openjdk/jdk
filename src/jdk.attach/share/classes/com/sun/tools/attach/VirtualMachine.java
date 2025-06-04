@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,12 +174,6 @@ public abstract class VirtualMachine {
      *
      * @return  A VirtualMachine representing the target VM.
      *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link com.sun.tools.attach.AttachPermission AttachPermission}
-     *          {@code ("attachVirtualMachine")}, or another permission
-     *          required by the implementation.
-     *
      * @throws  AttachNotSupportedException
      *          If the {@code attachVirtualmachine} method of all installed
      *          providers throws {@code AttachNotSupportedException}, or
@@ -226,12 +220,6 @@ public abstract class VirtualMachine {
      *          The virtual machine descriptor.
      *
      * @return  A VirtualMachine representing the target VM.
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link com.sun.tools.attach.AttachPermission AttachPermission}
-     *          {@code ("attachVirtualMachine")}, or another permission
-     *          required by the implementation.
      *
      * @throws  AttachNotSupportedException
      *          If the attach provider's {@code attachVirtualmachine}
@@ -666,7 +654,7 @@ public abstract class VirtualMachine {
 
     /**
      * Returns a hash-code value for this VirtualMachine. The hash
-     * code is based upon the VirtualMachine's components, and satifies
+     * code is based upon the VirtualMachine's components, and satisfies
      * the general contract of the {@link java.lang.Object#hashCode()
      * Object.hashCode} method.
      *

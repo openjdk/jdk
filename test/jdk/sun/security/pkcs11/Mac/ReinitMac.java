@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,13 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm ReinitMac
- * @run main/othervm -Djava.security.manager=allow ReinitMac sm
  */
 
 import java.security.Provider;
 import java.util.Random;
 import java.util.List;
 import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.SecretKey;
 
 public class ReinitMac extends PKCS11Test {
 
@@ -51,13 +50,12 @@ public class ReinitMac extends PKCS11Test {
         Random random = new Random();
         byte[] data = new byte[10 * 1024];
         random.nextBytes(data);
-        byte[] keyVal = new byte[16];
-        random.nextBytes(keyVal);
 
         boolean success = true;
         for (String alg : algorithms) {
+            SecretKey skey = generateKey(alg, 16);
             try {
-                doTest(alg, p, keyVal, data);
+                doTest(alg, p, skey, data);
             } catch (Exception e) {
                 System.out.println("Unexpected exception: " + e);
                 e.printStackTrace();
@@ -72,10 +70,9 @@ public class ReinitMac extends PKCS11Test {
         }
     }
 
-    private void doTest(String alg, Provider p, byte[] keyVal, byte[] data)
+    private void doTest(String alg, Provider p, SecretKey key, byte[] data)
             throws Exception {
         System.out.println("Testing " + alg);
-        SecretKeySpec key = new SecretKeySpec(keyVal, alg);
         Mac mac = Mac.getInstance(alg, p);
         mac.init(key);
         mac.init(key);

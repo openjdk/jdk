@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/taskqueue.hpp"
-#include "oops/oop.inline.hpp"
 #include "logging/log.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/stack.inline.hpp"
 
@@ -75,10 +74,9 @@ void TaskQueueStats::print_header(unsigned int line, outputStream* const stream,
 
 void TaskQueueStats::print(outputStream* stream, unsigned int width) const
 {
-  #define FMT SIZE_FORMAT_W(*)
-  stream->print(FMT, width, _stats[0]);
+  stream->print("%*zu", width, _stats[0]);
   for (unsigned int i = 1; i < last_stat_id; ++i) {
-    stream->print(" " FMT, width, _stats[i]);
+    stream->print(" %*zu", width, _stats[i]);
   }
   #undef FMT
 }
@@ -118,7 +116,7 @@ void TaskQueueStats::verify() const
 
 #ifdef ASSERT
 bool ObjArrayTask::is_valid() const {
-  return _obj != NULL && _obj->is_objArray() && _index >= 0 &&
+  return _obj != nullptr && _obj->is_objArray() && _index >= 0 &&
       _index < objArrayOop(_obj)->length();
 }
 #endif // ASSERT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,15 @@ import sun.awt.image.VolatileSurfaceManager;
 import sun.awt.windows.WComponentPeer;
 import sun.java2d.InvalidPipeException;
 import sun.java2d.SurfaceData;
-import static sun.java2d.pipe.hw.AccelSurface.*;
-import static sun.java2d.d3d.D3DContext.D3DContextCaps.*;
 import sun.java2d.windows.GDIWindowSurfaceData;
 
-public class D3DVolatileSurfaceManager
+import static sun.java2d.d3d.D3DContext.D3DContextCaps.CAPS_RT_PLAIN_ALPHA;
+import static sun.java2d.d3d.D3DContext.D3DContextCaps.CAPS_RT_TEXTURE_ALPHA;
+import static sun.java2d.pipe.hw.AccelSurface.RT_TEXTURE;
+import static sun.java2d.pipe.hw.AccelSurface.TEXTURE;
+import static sun.java2d.pipe.hw.AccelSurface.UNDEFINED;
+
+public final class D3DVolatileSurfaceManager
     extends VolatileSurfaceManager
 {
     private boolean accelerationEnabled;
@@ -71,6 +75,7 @@ public class D3DVolatileSurfaceManager
               gd.isCapPresent(CAPS_RT_TEXTURE_ALPHA)));
     }
 
+    @Override
     protected boolean isAccelerationEnabled() {
         return accelerationEnabled;
     }
@@ -82,6 +87,7 @@ public class D3DVolatileSurfaceManager
      * Create a pbuffer-based SurfaceData object (or init the backbuffer
      * of an existing window if this is a double buffered GraphicsConfig).
      */
+    @Override
     protected SurfaceData initAcceleratedSurface() {
         SurfaceData sData;
         Component comp = vImg.getComponent();
@@ -113,17 +119,14 @@ public class D3DVolatileSurfaceManager
                                                   cm, vImg,
                                                   type);
             }
-        } catch (NullPointerException ex) {
-            sData = null;
-        } catch (OutOfMemoryError er) {
-            sData = null;
-        } catch (InvalidPipeException ipe) {
+        } catch (NullPointerException | OutOfMemoryError | InvalidPipeException e) {
             sData = null;
         }
 
         return sData;
     }
 
+    @Override
     protected boolean isConfigValid(GraphicsConfiguration gc) {
         return ((gc == null) || (gc == vImg.getGraphicsConfig()));
     }
@@ -162,16 +165,6 @@ public class D3DVolatileSurfaceManager
             // REMIND: alternatively, we could try this:
 //            ((D3DSurfaceData)sdAccel).restoreSurface();
         }
-    }
-
-    /**
-     * We're asked to restore contents by the accelerated surface, which means
-     * that it had been lost.
-     */
-    @Override
-    public SurfaceData restoreContents() {
-        acceleratedSurfaceLost();
-        return super.restoreContents();
     }
 
     /**

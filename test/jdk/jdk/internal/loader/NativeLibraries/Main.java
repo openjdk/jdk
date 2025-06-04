@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8240975 8281335
+ * @library /test/lib
  * @modules java.base/jdk.internal.loader
  * @build java.base/* p.Test Main
  * @run main/othervm/native -Xcheck:jni Main
@@ -31,6 +32,7 @@
  */
 
 import jdk.internal.loader.NativeLibrariesTest;
+import jdk.test.lib.Platform;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -45,19 +47,22 @@ public class Main {
         NativeLibrariesTest test = new NativeLibrariesTest();
         test.runTest();
 
-        try {
-            System.loadLibrary(NativeLibrariesTest.LIB_NAME);
-        } catch (UnsatisfiedLinkError e) { e.printStackTrace(); }
-
-        // unload the native library and then System::loadLibrary should succeed
-        test.unload();
+        // System::loadLibrary succeeds even the library is loaded as raw library
         System.loadLibrary(NativeLibrariesTest.LIB_NAME);
 
         // expect NativeLibraries to succeed even the library has been loaded by System::loadLibrary
-        test.load(true);
+        test.loadTestLibrary();
+
+        // unload all NativeLibrary instances
+        test.unload();
 
         // load zip library from JDK
-        test.load(System.mapLibraryName("zip"));
+        if (!Platform.isStatic()) {
+            test.load(System.mapLibraryName("zip"), true /* succeed */);
+        }
+
+        // load non-existent library
+        test.load(System.mapLibraryName("NotExist"), false /* fail to load */);
     }
     /*
      * move p/Test.class out from classpath to the scratch directory

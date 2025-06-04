@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,7 @@ void threadControl_onDisconnect(void);
 jvmtiError threadControl_popFrames(jthread thread, FrameNumber fnum);
 
 struct bag *threadControl_onEventHandlerEntry(jbyte sessionID, EventInfo *evinfo, jobject currentException);
-void threadControl_onEventHandlerExit(EventIndex ei, jthread thread, struct bag *);
-
+void threadControl_onEventHandlerExit(EventIndex ei, jthread thread, struct bag *, jobject currentException);
 
 jvmtiError threadControl_suspendThread(jthread thread, jboolean deferred);
 jvmtiError threadControl_resumeThread(jthread thread, jboolean do_unblock);
@@ -74,11 +73,11 @@ void threadControl_saveCLEInfo(JNIEnv *env, jthread thread, EventIndex ei,
                                jlocation location);
 jlong threadControl_getFrameGeneration(jthread thread);
 
-/***** debugging *****/
+jthread *threadControl_allVThreads(jint *numVThreads);
 
-#ifdef DEBUG
+/***** APIs for debugging the debug agent *****/
+
 void threadControl_dumpAllThreads();
 void threadControl_dumpThread(jthread thread);
-#endif
 
 #endif

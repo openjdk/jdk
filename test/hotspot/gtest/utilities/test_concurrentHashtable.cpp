@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,9 @@
  * questions.
  */
 
-#include "precompiled.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/os.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
@@ -42,10 +43,10 @@ struct Pointer : public AllStatic {
     return (uintx)value;
   }
   static void* allocate_node(void* context, size_t size, const Value& value) {
-    return ::malloc(size);
+    return os::malloc(size, mtTest);
   }
   static void free_node(void* context, void* memory, const Value& value) {
-    ::free(memory);
+    os::free(memory);
   }
 };
 
@@ -60,7 +61,7 @@ struct Allocator {
   uint cur_index;
 
   Allocator() : cur_index(0) {
-    elements = (TableElement*)::malloc(nelements * sizeof(TableElement));
+    elements = (TableElement*)os::malloc(nelements * sizeof(TableElement), mtTest);
   }
 
   void* allocate_node() {
@@ -74,7 +75,7 @@ struct Allocator {
   }
 
   ~Allocator() {
-    ::free(elements);
+    os::free(elements);
   }
 };
 
@@ -103,10 +104,13 @@ struct SimpleTestLookup {
   uintptr_t _val;
   SimpleTestLookup(uintptr_t val) : _val(val) {}
   uintx get_hash() {
-    return Pointer::get_hash(_val, NULL);
+    return Pointer::get_hash(_val, nullptr);
   }
-  bool equals(const uintptr_t* value, bool* is_dead) {
+  bool equals(const uintptr_t* value) {
     return _val == *value;
+  }
+  bool is_dead(const uintptr_t* value) {
+    return false;
   }
 };
 
@@ -114,7 +118,7 @@ struct ValueGet {
   uintptr_t _return;
   ValueGet() : _return(0) {}
   void operator()(uintptr_t* value) {
-    EXPECT_NE(value, (uintptr_t*)NULL) << "expected valid value";
+    EXPECT_NE(value, (uintptr_t*)nullptr) << "expected valid value";
     _return = *value;
   }
   uintptr_t get_value() const {
@@ -211,36 +215,62 @@ static void cht_getinsert_bulkdelete_insert_verified(Thread* thr, SimpleTestTabl
 }
 
 static void cht_getinsert_bulkdelete(Thread* thr) {
-  uintptr_t val1 = 1;
-  uintptr_t val2 = 2;
-  uintptr_t val3 = 3;
-  SimpleTestLookup stl1(val1), stl2(val2), stl3(val3);
+  SimpleTestTable a[] = {SimpleTestTable(), SimpleTestTable(2, 2, 14) /* force long lists in the buckets*/ };
+  const unsigned iter = 1000;
+  for (auto& table: a) {
+    for (unsigned i = 0; i < iter; ++i) {
+      uintptr_t val1 = i * 10 + 1;
+      uintptr_t val2 = i * 10 + 2;
+      uintptr_t val3 = i * 10 + 3;
+      SimpleTestLookup stl1(val1), stl2(val2), stl3(val3);
+      cht_getinsert_bulkdelete_insert_verified(thr, &table, val1, false, true);
+      cht_getinsert_bulkdelete_insert_verified(thr, &table, val2, false, true);
+      cht_getinsert_bulkdelete_insert_verified(thr, &table, val3, false, true);
 
-  SimpleTestTable* cht = new SimpleTestTable();
-  cht_getinsert_bulkdelete_insert_verified(thr, cht, val1, false, true);
-  cht_getinsert_bulkdelete_insert_verified(thr, cht, val2, false, true);
-  cht_getinsert_bulkdelete_insert_verified(thr, cht, val3, false, true);
+      EXPECT_TRUE(table.remove(thr, stl2)) << "Remove did not find value.";
 
-  EXPECT_TRUE(cht->remove(thr, stl2)) << "Remove did not find value.";
+      cht_getinsert_bulkdelete_insert_verified(thr, &table, val1, true, false); // val1 should be present
+      cht_getinsert_bulkdelete_insert_verified(thr, &table, val2, false, true); // val2 should be inserted
+      cht_getinsert_bulkdelete_insert_verified(thr, &table, val3, true, false); // val3 should be present
 
-  cht_getinsert_bulkdelete_insert_verified(thr, cht, val1, true, false); // val1 should be present
-  cht_getinsert_bulkdelete_insert_verified(thr, cht, val2, false, true); // val2 should be inserted
-  cht_getinsert_bulkdelete_insert_verified(thr, cht, val3, true, false); // val3 should be present
+      EXPECT_EQ(cht_get_copy(&table, thr, stl1), val1) << "Get did not find value.";
+      EXPECT_EQ(cht_get_copy(&table, thr, stl2), val2) << "Get did not find value.";
+      EXPECT_EQ(cht_get_copy(&table, thr, stl3), val3) << "Get did not find value.";
+    }
 
-  EXPECT_EQ(cht_get_copy(cht, thr, stl1), val1) << "Get did not find value.";
-  EXPECT_EQ(cht_get_copy(cht, thr, stl2), val2) << "Get did not find value.";
-  EXPECT_EQ(cht_get_copy(cht, thr, stl3), val3) << "Get did not find value.";
+    unsigned delete_count = 0;
+    unsigned scan_count = 0;
+    auto eval_odd_f = [](uintptr_t* val)                  { return *val & 0x1; };
+    auto eval_true_f = [](uintptr_t* val)                 { return true; };
+    auto scan_count_f = [&scan_count](uintptr_t* val)     { scan_count++; return true; };
+    auto delete_count_f = [&delete_count](uintptr_t* val) { delete_count++; };
+    table.bulk_delete(thr, eval_odd_f, delete_count_f);
+    EXPECT_EQ(iter*2, delete_count) << "All odd values should have been deleted";
+    table.do_scan(thr, scan_count_f);
+    EXPECT_EQ(iter, scan_count) << "All odd values should have been deleted";
 
-  // Removes all odd values.
-  cht->bulk_delete(thr, getinsert_bulkdelete_eval, getinsert_bulkdelete_del);
+    for (unsigned i = 0; i < iter; ++i) {
+      uintptr_t val1 = i * 10 + 1;
+      uintptr_t val2 = i * 10 + 2;
+      uintptr_t val3 = i * 10 + 3;
+      SimpleTestLookup stl1(val1), stl2(val2), stl3(val3);
+      EXPECT_EQ(cht_get_copy(&table, thr, stl1), (uintptr_t)0) << "Odd value should not exist.";
+      EXPECT_FALSE(table.remove(thr, stl1)) << "Odd value should not exist.";
+      EXPECT_EQ(cht_get_copy(&table, thr, stl2), val2) << "Even value should not have been removed.";
+      EXPECT_EQ(cht_get_copy(&table, thr, stl3), (uintptr_t)0) << "Add value should not exists.";
+      EXPECT_FALSE(table.remove(thr, stl3)) << "Odd value should not exists.";
+    }
 
-  EXPECT_EQ(cht_get_copy(cht, thr, stl1), (uintptr_t)0) << "Odd value should not exist.";
-  EXPECT_FALSE(cht->remove(thr, stl1)) << "Odd value should not exist.";
-  EXPECT_EQ(cht_get_copy(cht, thr, stl2), val2) << "Even value should not have been removed.";
-  EXPECT_EQ(cht_get_copy(cht, thr, stl3), (uintptr_t)0) << "Add value should not exists.";
-  EXPECT_FALSE(cht->remove(thr, stl3)) << "Odd value should not exists.";
-
-  delete cht;
+    scan_count = 0;
+    table.do_scan(thr, scan_count_f);
+    EXPECT_EQ(iter, scan_count) << "All values should have been deleted";
+    delete_count = 0;
+    table.bulk_delete(thr, eval_true_f, delete_count_f);
+    EXPECT_EQ(iter, delete_count) << "All odd values should have been deleted";
+    scan_count = 0;
+    table.do_scan(thr, scan_count_f);
+    EXPECT_EQ(0u, scan_count) << "All values should have been deleted";
+  }
 }
 
 static void cht_getinsert_bulkdelete_task(Thread* thr) {
@@ -291,7 +321,7 @@ static void cht_reset_shrink(Thread* thr) {
 
   Allocator mem_allocator;
   const uint initial_log_table_size = 4;
-  CustomTestTable* cht = new CustomTestTable(&mem_allocator);
+  CustomTestTable* cht = new CustomTestTable(Mutex::nosafepoint-2, &mem_allocator);
 
   cht_insert_and_find(thr, cht, val1);
   cht_insert_and_find(thr, cht, val2);
@@ -368,7 +398,8 @@ static void cht_move_to(Thread* thr) {
   EXPECT_TRUE(from_cht->insert(thr, stl3, val3)) << "Insert unique value failed.";
 
   SimpleTestTable* to_cht = new SimpleTestTable();
-  EXPECT_TRUE(from_cht->try_move_nodes_to(thr, to_cht)) << "Moving nodes to new table failed";
+  // This is single threaded and not shared
+  from_cht->rehash_nodes_to(thr, to_cht);
 
   ChtCountScan scan_old;
   EXPECT_TRUE(from_cht->try_scan(thr, scan_old)) << "Scanning table should work.";
@@ -531,10 +562,13 @@ struct TestLookup {
   uintptr_t _val;
   TestLookup(uintptr_t val) : _val(val) {}
   uintx get_hash() {
-    return TestInterface::get_hash(_val, NULL);
+    return TestInterface::get_hash(_val, nullptr);
   }
-  bool equals(const uintptr_t* value, bool* is_dead) {
+  bool equals(const uintptr_t* value) {
     return _val == *value;
+  }
+  bool is_dead(const uintptr_t* value) {
+    return false;
   }
 };
 
@@ -650,7 +684,7 @@ class RunnerSimpleInserterThread : public CHTTestThread {
 public:
   Semaphore _done;
 
-  RunnerSimpleInserterThread(Semaphore* post) : CHTTestThread(0, 0, NULL, post) {
+  RunnerSimpleInserterThread(Semaphore* post) : CHTTestThread(0, 0, nullptr, post) {
     _cht = new TestTable(SIZE_32, SIZE_32);
   };
   virtual ~RunnerSimpleInserterThread(){}
@@ -734,7 +768,7 @@ class RunnerDeleteInserterThread : public CHTTestThread {
 public:
   Semaphore _done;
 
-  RunnerDeleteInserterThread(Semaphore* post) : CHTTestThread(0, 0, NULL, post) {
+  RunnerDeleteInserterThread(Semaphore* post) : CHTTestThread(0, 0, nullptr, post) {
     _cht = new TestTable(SIZE_32, SIZE_32);
   };
   virtual ~RunnerDeleteInserterThread(){}
@@ -761,7 +795,7 @@ public:
         TestLookup tl(v);
         TestGetHandle value_handle(this, _cht);
         uintptr_t* tmp = value_handle.get(tl);
-        tv = tmp != NULL ? *tmp : 0;
+        tv = tmp != nullptr ? *tmp : 0;
       }
       EXPECT_TRUE(tv == 0 || tv == v) << "Got unknown value.";
     }
@@ -860,7 +894,7 @@ public:
   uintptr_t _range;
   Semaphore _done;
 
-  RunnerGSInserterThread(Semaphore* post) : CHTTestThread(0, 0, NULL, post) {
+  RunnerGSInserterThread(Semaphore* post) : CHTTestThread(0, 0, nullptr, post) {
     _cht = new TestTable(START_SIZE, END_SIZE, 2);
   };
   virtual ~RunnerGSInserterThread(){}
@@ -1002,7 +1036,7 @@ public:
   Semaphore _done;
   uintptr_t _start;
   uintptr_t _range;
-  RunnerGI_BD_InserterThread(Semaphore* post) : CHTTestThread(0, 0, NULL, post) {
+  RunnerGI_BD_InserterThread(Semaphore* post) : CHTTestThread(0, 0, nullptr, post) {
     _cht = new TestTable(GI_BD_GI_BD_START_SIZE, GI_BD_END_SIZE, 2);
   };
   virtual ~RunnerGI_BD_InserterThread(){}
@@ -1143,4 +1177,80 @@ public:
 
 TEST_VM(ConcurrentHashTable, concurrent_mt_bulk_delete) {
   mt_test_doer<Driver_BD_Thread>();
+}
+
+class CHTParallelScanTask: public WorkerTask {
+  TestTable* _cht;
+  TestTable::ScanTask* _scan_task;
+  size_t *_total_scanned;
+
+public:
+  CHTParallelScanTask(TestTable* cht,
+                      TestTable::ScanTask* bc,
+                      size_t *total_scanned) :
+    WorkerTask("CHT Parallel Scan"),
+    _cht(cht),
+    _scan_task(bc),
+    _total_scanned(total_scanned)
+  { }
+
+  void work(uint worker_id) {
+    ChtCountScan par_scan;
+    _scan_task->do_safepoint_scan(par_scan);
+    Atomic::add(_total_scanned, par_scan._count);
+  }
+};
+
+class CHTWorkers : AllStatic {
+  static WorkerThreads* _workers;
+  static WorkerThreads* workers() {
+    if (_workers == nullptr) {
+      _workers = new WorkerThreads("CHT Workers", MaxWorkers);
+      _workers->initialize_workers();
+      _workers->set_active_workers(MaxWorkers);
+    }
+    return _workers;
+  }
+
+public:
+  static const uint MaxWorkers = 8;
+  static void run_task(WorkerTask* task) {
+    workers()->run_task(task);
+  }
+};
+
+WorkerThreads* CHTWorkers::_workers = nullptr;
+
+class CHTParallelScan: public VM_GTestExecuteAtSafepoint {
+  TestTable* _cht;
+  uintptr_t _num_items;
+public:
+  CHTParallelScan(TestTable* cht, uintptr_t num_items) :
+    _cht(cht), _num_items(num_items)
+  {}
+
+  void doit() {
+    size_t total_scanned = 0;
+    TestTable::ScanTask scan_task(_cht, 64);
+
+    CHTParallelScanTask task(_cht, &scan_task, &total_scanned);
+    CHTWorkers::run_task(&task);
+
+     EXPECT_TRUE(total_scanned == (size_t)_num_items) << " Should scan all inserted items: " << total_scanned;
+  }
+};
+
+TEST_VM(ConcurrentHashTable, concurrent_par_scan) {
+  TestTable* cht = new TestTable(16, 16, 2);
+
+  uintptr_t num_items = 999999;
+  for (uintptr_t v = 1; v <= num_items; v++ ) {
+    TestLookup tl(v);
+    EXPECT_TRUE(cht->insert(JavaThread::current(), tl, v)) << "Inserting an unique value should work.";
+  }
+
+  // Run the test at a safepoint.
+  CHTParallelScan op(cht, num_items);
+  ThreadInVMfromNative invm(JavaThread::current());
+  VMThread::execute(&op);
 }

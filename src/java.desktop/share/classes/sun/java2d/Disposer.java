@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,8 @@ import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.PhantomReference;
 import java.lang.ref.WeakReference;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
  * This class is used for registering and disposing the native
@@ -50,7 +48,7 @@ import java.util.Hashtable;
  *
  * @see DisposerRecord
  */
-@SuppressWarnings("removal")
+@SuppressWarnings("restricted")
 public class Disposer implements Runnable {
     private static final ReferenceQueue<Object> queue = new ReferenceQueue<>();
     private static final Hashtable<java.lang.ref.Reference<Object>, DisposerRecord> records =
@@ -62,16 +60,9 @@ public class Disposer implements Runnable {
     public static int refType = PHANTOM;
 
     static {
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("awt");
-                    return null;
-                }
-            });
+        System.loadLibrary("awt");
         initIDs();
-        String type = java.security.AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction("sun.java2d.reftype"));
+        String type = System.getProperty("sun.java2d.reftype");
         if (type != null) {
             if (type.equals("weak")) {
                 refType = WEAK;
@@ -82,16 +73,13 @@ public class Disposer implements Runnable {
             }
         }
         disposerInstance = new Disposer();
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            String name = "Java2D Disposer";
-            ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
-            Thread t = new Thread(rootTG, disposerInstance, name, 0, false);
-            t.setContextClassLoader(null);
-            t.setDaemon(true);
-            t.setPriority(Thread.MAX_PRIORITY);
-            t.start();
-            return null;
-        });
+        String name = "Java2D Disposer";
+        ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
+        Thread t = new Thread(rootTG, disposerInstance, name, 0, false);
+        t.setContextClassLoader(null);
+        t.setDaemon(true);
+        t.setPriority(Thread.MAX_PRIORITY);
+        t.start();
     }
 
     /**
@@ -145,7 +133,7 @@ public class Disposer implements Runnable {
                 Reference<?> obj = queue.remove();
                 obj.clear();
                 DisposerRecord rec = records.remove(obj);
-                rec.dispose();
+                safeDispose(rec);
                 obj = null;
                 rec = null;
                 clearDeferredRecords();
@@ -162,23 +150,25 @@ public class Disposer implements Runnable {
      * which happens to be the Toolkit thread, is in use.
      */
     public static interface PollDisposable {
-    };
+    }
 
-    private static ArrayList<DisposerRecord> deferredRecords = null;
+    private static ConcurrentLinkedDeque<DisposerRecord> deferredRecords = new ConcurrentLinkedDeque<>();
+
+    private static void safeDispose(DisposerRecord rec) {
+        try {
+            rec.dispose();
+        } catch (final Exception e) {
+            System.out.println("Exception while disposing deferred rec.");
+        }
+    }
 
     private static void clearDeferredRecords() {
-        if (deferredRecords == null || deferredRecords.isEmpty()) {
-            return;
-        }
-        for (int i=0;i<deferredRecords.size(); i++) {
-            try {
-                DisposerRecord rec = deferredRecords.get(i);
-                rec.dispose();
-            } catch (Exception e) {
-                System.out.println("Exception while disposing deferred rec.");
+        while (!deferredRecords.isEmpty()) {
+            final DisposerRecord rec = deferredRecords.pollFirst();
+            if (rec != null) {
+                safeDispose(rec);
             }
         }
-        deferredRecords.clear();
     }
 
     /*
@@ -211,7 +201,7 @@ public class Disposer implements Runnable {
                 obj.clear();
                 DisposerRecord rec = records.remove(obj);
                 if (rec instanceof PollDisposable) {
-                    rec.dispose();
+                    safeDispose(rec);
                     obj = null;
                     rec = null;
                 } else {
@@ -219,10 +209,7 @@ public class Disposer implements Runnable {
                         continue;
                     }
                     deferred++;
-                    if (deferredRecords == null) {
-                      deferredRecords = new ArrayList<DisposerRecord>(5);
-                    }
-                    deferredRecords.add(rec);
+                    deferredRecords.offerLast(rec);
                 }
             }
         } catch (Exception e) {
@@ -242,7 +229,6 @@ public class Disposer implements Runnable {
      * so will clutter the records hashmap and no one will be cleaning up
      * the reference queue.
      */
-    @SuppressWarnings("unchecked")
     public static void addReference(Reference<Object> ref, DisposerRecord rec) {
         records.put(ref, rec);
     }

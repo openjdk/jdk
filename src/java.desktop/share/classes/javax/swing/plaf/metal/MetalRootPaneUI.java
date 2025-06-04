@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,6 @@ import javax.swing.plaf.basic.BasicRootPaneUI;
  * @author Terry Kellerman
  * @since 1.4
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class MetalRootPaneUI extends BasicRootPaneUI
 {
     /**
@@ -313,9 +312,9 @@ public class MetalRootPaneUI extends BasicRootPaneUI
         setTitlePane(root, null);
         uninstallLayout(root);
         // We have to revalidate/repaint root if the style is JRootPane.NONE
-        // only. When we needs to call revalidate/repaint with other styles
+        // only. When we need to call revalidate/repaint with other styles
         // the installClientDecorations is always called after this method
-        // imediatly and it will cause the revalidate/repaint at the proper
+        // immediately and it will cause the revalidate/repaint at the proper
         // time.
         int style = root.getWindowDecorationStyle();
         if (style == JRootPane.NONE) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ class AwtDropTarget;
 enum MsgRouting {
     mrPassAlong,    /* pass along to next in chain */
     mrDoDefault,    /* skip right to underlying default behavior */
-    mrConsume,      /* consume msg & terminate routing immediatly,
+    mrConsume,      /* consume msg & terminate routing immediately,
                      * don't pass anywhere
                      */
 };
@@ -402,13 +402,6 @@ public:
                              jint scrollAmount, jint wheelRotation,
                              jdouble preciseWheelRotation, MSG *msg = NULL);
 
-    /*
-     * Allocate and initialize a new java.awt.event.FocusEvent, and
-     * post it to the peer's target object.  No response is expected
-     * from the target.
-     */
-    void SendFocusEvent(jint id, HWND opposite);
-
     /* Forward a filtered event directly to the subclassed window.
        synthetic should be TRUE iff the message was generated because
        of a synthetic Java event, rather than a native event. */
@@ -543,7 +536,7 @@ public:
     virtual MsgRouting WmIMEChar(UINT character, UINT repCnt, UINT flags, BOOL system);
     virtual MsgRouting WmInputLangChange(UINT charset, HKL hKeyBoardLayout);
     virtual MsgRouting WmForwardChar(WCHAR character, LPARAM lParam,
-                                     BOOL synthethic);
+                                     BOOL synthetic);
     virtual MsgRouting WmPaste();
 
     virtual void SetCompositionWindow(RECT &r);
@@ -740,7 +733,7 @@ protected:
 
     /*
      * The function sets the focus-restore flag ON/OFF.
-     * When the flag is ON, focus is restored immidiately after the proxy loses it.
+     * When the flag is ON, focus is restored immediately after the proxy loses it.
      * All focus messages are suppressed. It's also assumed that sm_focusedWindow and
      * sm_focusOwner don't change after the flag is set ON and before it's set OFF.
      */
@@ -849,7 +842,7 @@ private:
     /*
      * The association list of children's IDs and corresponding components.
      * Some components like Choice or List are required their sizes while
-     * the creations of themselfs are in progress.
+     * the creations of themselves are in progress.
      */
     class ChildListItem {
     public:

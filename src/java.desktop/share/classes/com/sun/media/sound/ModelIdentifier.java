@@ -39,7 +39,7 @@ public final class ModelIdentifier {
      *
      *  // INPUT parameters
      *  noteon    keynumber                7 bit midi value
-     *            velocity                 7 bit midi vale
+     *            velocity                 7 bit midi value
      *            on                       1 or 0
      *
      *  midi      pitch                    14 bit midi value

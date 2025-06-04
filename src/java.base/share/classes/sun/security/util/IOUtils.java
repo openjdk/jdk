@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,15 @@
  * questions.
  */
 
-/**
- * IOUtils: A collection of IO-related public static methods.
- */
-
 package sun.security.util;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * IOUtils: A collection of IO-related public static methods.
+ */
 public class IOUtils {
 
     /**

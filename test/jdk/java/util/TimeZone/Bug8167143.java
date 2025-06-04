@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,21 @@
 
 /*
  * @test
- * @bug 8167143
+ * @bug 8167143 8174269
  * @summary Test
- * Timezone parsing works for all locales for default providers prefernce
- * as well as when  prefernce list is [COMPAT, CLDR],
- * CLDR implict locales are correctly reflected,
+ * Timezone parsing works for all locales for default providers preference
+ * CLDR implicit locales are correctly reflected,
  * th_TH bundle is not wrongly cached in DateFormatSymbols,
  * correct candidate locale list is retrieved for
  * zh_Hant and zh_Hans and
- * Implict COMPAT Locales nn-NO, nb-NO are reflected in available locales
- * for all Providers for COMPAT.
+ * Implicit COMPAT Locales nn-NO, nb-NO are reflected in available locales
  * @modules java.base/sun.util.locale.provider
  *          java.base/sun.util.spi
  *          jdk.localedata
- * @run main/othervm -Djava.locale.providers=COMPAT,CLDR Bug8167143 testTimeZone
- * @run main/othervm  Bug8167143 testTimeZone
+ * @run main Bug8167143 testTimeZone
  * @run main/othervm -Djava.locale.providers=CLDR Bug8167143 testCldr
- * @run main/othervm  Bug8167143 testCache
- * @run main/othervm  Bug8167143 testCandidateLocales
- * @run main/othervm  -Djava.locale.providers=COMPAT Bug8167143 testCompat
+ * @run main Bug8167143 testCache
+ * @run main Bug8167143 testCandidateLocales
  */
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -115,7 +111,7 @@ public class Bug8167143 {
      * all Available Locales.
      */
     private static void testTimeZoneParsing() {
-        Set<Locale> locales = Set.of(Locale.forLanguageTag("zh-hant"), new Locale("no", "NO", "NY"));
+        Set<Locale> locales = Set.of(Locale.forLanguageTag("zh-hant"), Locale.of("no", "NO", "NY"));
         // Set<Locale> locales = Set.of(Locale.getAvailableLocales());
         locales.forEach((locale) -> {
             final SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd z", locale);
@@ -180,8 +176,8 @@ public class Bug8167143 {
      * for th-TH should not be cached in cache of DateFormatSymbols class.
      */
     private static void testDateFormatSymbolsCache() {
-        Locale th_TH_TH = new Locale("th", "TH", "TH");
-        Locale th_TH = new Locale("th", "TH");
+        Locale th_TH_TH = Locale.of("th", "TH", "TH");
+        Locale th_TH = Locale.of("th", "TH");
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd z", th_TH_TH);
         String[][] thTHTHZoneStrings = sdf.getDateFormatSymbols().getZoneStrings();
         String[][] thTHZoneStrings = sdf.getDateFormatSymbols().getZoneStrings();

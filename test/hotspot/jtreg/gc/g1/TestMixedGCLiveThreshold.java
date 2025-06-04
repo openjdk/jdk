@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,10 @@ package gc.g1;
  * @summary Test G1MixedGCLiveThresholdPercent=0. Fill up a region to at least 33 percent,
  * the region should not be selected for mixed GC cycle.
  * @requires vm.gc.G1
+ * @requires test.thread.factory != "Virtual"
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver gc.g1.TestMixedGCLiveThreshold 0 false
  */
 
@@ -39,9 +40,10 @@ package gc.g1;
  * @summary Test G1MixedGCLiveThresholdPercent=25. Fill up a region to at least 33 percent,
  * the region should not be selected for mixed GC cycle.
  * @requires vm.gc.G1
+ * @requires test.thread.factory != "Virtual"
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver gc.g1.TestMixedGCLiveThreshold 25 false
  */
 
@@ -50,9 +52,10 @@ package gc.g1;
  * @summary Test G1MixedGCLiveThresholdPercent=100. Fill up a region to at least 33 percent,
  * the region should be selected for mixed GC cycle.
  * @requires vm.gc.G1
+ * @requires test.thread.factory != "Virtual"
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver gc.g1.TestMixedGCLiveThreshold 100 true
  */
 
@@ -64,7 +67,7 @@ import java.util.regex.Matcher;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Asserts;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestMixedGCLiveThreshold {
     private static final String pattern = "Remembered Set Tracking update regions total ([0-9]+), selected ([0-9]+)$";
@@ -109,9 +112,7 @@ public class TestMixedGCLiveThreshold {
 
         basicOpts.add(GCTest.class.getName());
 
-        ProcessBuilder procBuilder =  ProcessTools.createJavaProcessBuilder(basicOpts);
-        OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
-        return analyzer;
+        return ProcessTools.executeLimitedTestJava(basicOpts);
     }
 
     private static boolean regionsSelectedForRebuild(String output) throws Exception {
@@ -135,12 +136,7 @@ public class TestMixedGCLiveThreshold {
 
             // Memory objects have been promoted to old by full GC.
             // Concurrent cycle may select regions for rebuilding
-            wb.g1StartConcMarkCycle(); // concurrent-start, remark and cleanup
-
-            // Sleep to make sure concurrent cycle is done
-            while (wb.g1InConcurrentMark()) {
-                Thread.sleep(1000);
-            }
+            wb.g1RunConcurrentGC();
             System.out.println(used);
         }
 

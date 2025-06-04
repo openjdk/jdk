@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,14 +39,19 @@ import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.Soundbank;
 import javax.sound.midi.spi.SoundbankReader;
 
-import sun.reflect.misc.ReflectUtil;
-
 /**
  * JarSoundbankReader is used to read soundbank object from jar files.
  *
  * @author Karl Helgason
  */
 public final class JARSoundbankReader extends SoundbankReader {
+
+    /**
+     * Value of the system property that enables the Jar soundbank loading
+     * {@code true} if jar sound bank is allowed to be loaded default is
+     * {@code false}.
+     */
+    private static final boolean JAR_SOUNDBANK_ENABLED = Boolean.getBoolean("jdk.sound.jarsoundbank");
 
     private static boolean isZIP(URL url) {
         boolean ok = false;
@@ -70,8 +75,10 @@ public final class JARSoundbankReader extends SoundbankReader {
     @SuppressWarnings("deprecation")
     public Soundbank getSoundbank(URL url)
             throws InvalidMidiDataException, IOException {
-        if (!isZIP(url))
+        Objects.requireNonNull(url);
+        if (!JAR_SOUNDBANK_ENABLED || !isZIP(url))
             return null;
+
         ArrayList<Soundbank> soundbanks = new ArrayList<>();
         URLClassLoader ucl = URLClassLoader.newInstance(new URL[]{url});
         InputStream stream = ucl.getResourceAsStream(
@@ -86,7 +93,6 @@ public final class JARSoundbankReader extends SoundbankReader {
                     try {
                         Class<?> c = Class.forName(line.trim(), false, ucl);
                         if (Soundbank.class.isAssignableFrom(c)) {
-                            ReflectUtil.checkPackageAccess(c);
                             Object o = c.newInstance();
                             soundbanks.add((Soundbank) o);
                         }
@@ -116,6 +122,7 @@ public final class JARSoundbankReader extends SoundbankReader {
     @Override
     public Soundbank getSoundbank(File file)
             throws InvalidMidiDataException, IOException {
+        Objects.requireNonNull(file);
         return getSoundbank(file.toURI().toURL());
     }
 }

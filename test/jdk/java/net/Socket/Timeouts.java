@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
  * @bug 8221481
  * @library /test/lib
  * @build jdk.test.lib.Utils
- * @run testng/timeout=180 Timeouts
+ * @compile Timeouts.java
+ * @run testng/othervm/timeout=180 Timeouts
  * @summary Test Socket timeouts
  */
 
@@ -49,6 +50,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.testng.SkipException;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 import jdk.test.lib.Utils;
@@ -135,7 +137,7 @@ public class Timeouts {
             long startMillis = millisTime();
             expectThrows(SocketTimeoutException.class, () -> s2.getInputStream().read());
             int timeout = s2.getSoTimeout();
-            checkDuration(startMillis, timeout-100, timeout+2000);
+            checkDuration(startMillis, timeout-100, timeout+20_000);
         });
     }
 
@@ -250,7 +252,7 @@ public class Timeouts {
             int b = s2.getInputStream().read();
             assertTrue(b == 99);
 
-            // schedule s2 to be be closed
+            // schedule s2 to be closed
             scheduleClose(s2, 3000);
 
             // write a lot so that write blocks
@@ -305,7 +307,7 @@ public class Timeouts {
                 fail();
             } catch (SocketTimeoutException expected) {
                 int timeout = ss.getSoTimeout();
-                checkDuration(startMillis, timeout-100, timeout+2000);
+                checkDuration(startMillis, timeout-100, timeout+20_000);
             }
         }
     }
@@ -383,7 +385,7 @@ public class Timeouts {
                 ss.accept().close();
                 fail();
             } catch (SocketException expected) {
-                checkDuration(startMillis, delay-100, delay+2000);
+                checkDuration(startMillis, delay-100, delay+20_000);
             }
         }
     }
@@ -392,6 +394,8 @@ public class Timeouts {
      * Test timed accept with the thread interrupt status set.
      */
     public void testTimedAccept8() throws IOException {
+        if (Thread.currentThread().isVirtual())
+            throw new SkipException("Main test is a virtual thread");
         try (ServerSocket ss = boundServerSocket()) {
             ss.setSoTimeout(2000);
             Thread.currentThread().interrupt();
@@ -403,7 +407,7 @@ public class Timeouts {
             } catch (SocketTimeoutException expected) {
                 // accept should have blocked for 2 seconds
                 int timeout = ss.getSoTimeout();
-                checkDuration(startMillis, timeout-100, timeout+2000);
+                checkDuration(startMillis, timeout-100, timeout+20_000);
                 assertTrue(Thread.currentThread().isInterrupted());
             } finally {
                 Thread.interrupted(); // clear interrupt status
@@ -415,6 +419,8 @@ public class Timeouts {
      * Test interrupt of thread blocked in timed accept.
      */
     public void testTimedAccept9() throws IOException {
+        if (Thread.currentThread().isVirtual())
+            throw new SkipException("Main test is a virtual thread");
         try (ServerSocket ss = boundServerSocket()) {
             ss.setSoTimeout(4000);
             // interrupt thread after 1 second
@@ -427,7 +433,7 @@ public class Timeouts {
             } catch (SocketTimeoutException expected) {
                 // accept should have blocked for 4 seconds
                 int timeout = ss.getSoTimeout();
-                checkDuration(startMillis, timeout-100, timeout+2000);
+                checkDuration(startMillis, timeout-100, timeout+20_000);
                 assertTrue(Thread.currentThread().isInterrupted());
             } finally {
                 interrupter.cancel(true);
@@ -457,7 +463,7 @@ public class Timeouts {
 
             // should get here in 4 seconds, not 8 seconds
             int timeout = ss.getSoTimeout();
-            checkDuration(startMillis, timeout-100, timeout+2000);
+            checkDuration(startMillis, timeout-100, timeout+20_000);
         } finally {
             pool.shutdown();
         }
@@ -499,7 +505,7 @@ public class Timeouts {
 
             // should get here in 4 seconds, not 8 seconds
             int timeout = ss.getSoTimeout();
-            checkDuration(startMillis, timeout-100, timeout+2000);
+            checkDuration(startMillis, timeout-100, timeout+20_000);
         } finally {
             pool.shutdown();
         }

@@ -25,6 +25,7 @@
 /**
  * @test
  * @bug 8262470
+ * @key printer
  * @requires (os.family == "windows")
  * @summary Check that a GlyphVector outline is printed with good quility on low dpi printers
  * @run main/othervm/manual PathPrecisionScaleFactorTextTest

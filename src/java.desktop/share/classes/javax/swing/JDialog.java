@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -513,9 +513,6 @@ public class JDialog extends Dialog implements WindowConstants,
      *     if the {@code owner}'s {@code GraphicsConfiguration} is not from a screen device
      * @throws HeadlessException
      *     when {@code GraphicsEnvironment.isHeadless()} returns {@code true}
-     * @throws SecurityException
-     *     if the calling thread does not have permission to create modal dialogs
-     *     with the given {@code modalityType}
      *
      * @see java.awt.Dialog.ModalityType
      * @see java.awt.Dialog#setModal
@@ -580,9 +577,6 @@ public class JDialog extends Dialog implements WindowConstants,
      *     if the {@code owner}'s {@code GraphicsConfiguration} is not from a screen device
      * @throws HeadlessException
      *     when {@code GraphicsEnvironment.isHeadless()} returns {@code true}
-     * @throws SecurityException
-     *     if the calling thread does not have permission to create modal dialogs
-     *     with the given {@code modalityType}
      *
      * @see java.awt.Dialog.ModalityType
      * @see java.awt.Dialog#setModal
@@ -625,9 +619,6 @@ public class JDialog extends Dialog implements WindowConstants,
      *     if the {@code owner}'s {@code GraphicsConfiguration} is not from a screen device
      * @throws HeadlessException
      *     when {@code GraphicsEnvironment.isHeadless()} returns {@code true}
-     * @throws SecurityException
-     *     if the calling thread does not have permission to create modal dialogs
-     *     with the given {@code modalityType}
      *
      * @see java.awt.Dialog.ModalityType
      * @see java.awt.Dialog#setModal
@@ -673,7 +664,7 @@ public class JDialog extends Dialog implements WindowConstants,
         JRootPane rp = new JRootPane();
         // NOTE: this uses setOpaque vs LookAndFeel.installProperty as there
         // is NO reason for the RootPane not to be opaque. For painting to
-        // work the contentPane must be opaque, therefor the RootPane can
+        // work the contentPane must be opaque, therefore the RootPane can
         // also be opaque.
         rp.setOpaque(true);
         return rp;

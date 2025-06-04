@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logTestUtils.inline.hpp"
 #include "logging/logFileOutput.hpp"
@@ -90,7 +89,7 @@ TEST_VM(LogFileOutput, parse_invalid) {
 // Test for overflows with filesize
 TEST_VM(LogFileOutput, filesize_overflow) {
   char buf[256];
-  int ret = jio_snprintf(buf, sizeof(buf), "filesize=" SIZE_FORMAT "K", SIZE_MAX);
+  int ret = jio_snprintf(buf, sizeof(buf), "filesize=%zuK", SIZE_MAX);
   ASSERT_GT(ret, 0) << "Buffer too small";
 
   ResourceMark rm;
@@ -108,7 +107,7 @@ TEST_VM(LogFileOutput, startup_rotation) {
   for (size_t i = 0; i < rotations; i++) {
     size_t len = strlen(filename) + 3;
     rotated_file[i] = NEW_RESOURCE_ARRAY(char, len);
-    int ret = jio_snprintf(rotated_file[i], len, "%s." SIZE_FORMAT, filename, i);
+    int ret = jio_snprintf(rotated_file[i], len, "%s.%zu", filename, i);
     ASSERT_NE(-1, ret);
     delete_file(rotated_file[i]);
   }
@@ -169,12 +168,26 @@ TEST_VM(LogFileOutput, invalid_file) {
   ResourceMark rm;
   stringStream ss;
 
+  // Generate sufficiently unique directory path and log spec for that path
+  ss.print("%s%s%s%d", os::get_temp_directory(), os::file_separator(), "tmplogdir", os::current_process_id());
+  char* path = ss.as_string();
+  ss.reset();
+
+  ss.print("%s%s", "file=", path);
+  char* log_spec = ss.as_string();
+  ss.reset();
+
+  ss.print("%s is not a regular file", path);
+  char* expected_output_substring = ss.as_string();
+  ss.reset();
+
   // Attempt to log to a directory (existing log not a regular file)
-  create_directory("tmplogdir");
-  LogFileOutput bad_file("file=tmplogdir");
+  create_directory(path);
+  LogFileOutput bad_file(log_spec);
   EXPECT_FALSE(bad_file.initialize("", &ss))
     << "file was initialized when there was an existing directory with the same name";
-  EXPECT_TRUE(string_contains_substring(ss.as_string(), "tmplogdir is not a regular file"))
-    << "missing expected error message, received msg: %s" << ss.as_string();
-  delete_empty_directory("tmplogdir");
+  char* logger_output = ss.as_string();
+  EXPECT_THAT(logger_output, testing::HasSubstr(expected_output_substring))
+    << "missing expected error message, received msg: %s" << logger_output;
+  delete_empty_directory(path);
 }

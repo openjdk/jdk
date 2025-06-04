@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,11 @@
 
 package com.sun.hotspot.igv.view;
 
-import com.sun.hotspot.igv.graph.Figure;
-import java.awt.Component;
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
+import com.sun.hotspot.igv.data.ChangedEvent;
+import com.sun.hotspot.igv.data.InputLiveRange;
+import com.sun.hotspot.igv.data.InputNode;
+import java.awt.*;
 import java.util.Collection;
-import java.util.List;
 import javax.swing.JComponent;
 import org.openide.awt.UndoRedo;
 import org.openide.util.Lookup;
@@ -38,39 +37,62 @@ import org.openide.util.Lookup;
  *
  * @author Thomas Wuerthinger
  */
-interface DiagramViewer {
+public interface DiagramViewer {
 
     enum InteractionMode {
         SELECTION,
         PANNING,
     }
 
-    public void paint(Graphics2D generator);
+    DiagramViewModel getModel();
 
-    public Lookup getLookup();
+    void paint(Graphics2D generator);
 
-    public JComponent createSatelliteView();
+    Lookup getLookup();
 
-    public Component getComponent();
+    JComponent createSatelliteView();
 
-    public void zoomOut();
+    Component getComponent();
 
-    public void zoomIn();
+    double getZoomMinFactor();
 
-    public UndoRedo getUndoRedo();
+    double getZoomMaxFactor();
 
-    public void componentHidden();
+    void zoomOut(Point zoomCenter, double speed);
 
-    public void componentShowing();
+    void zoomIn(Point zoomCenter, double speed);
 
-    public void initialize();
+    void setZoomPercentage(int percentage);
 
-    public void setSelection(Collection<Figure> list);
+    int getZoomPercentage();
 
-    public void centerFigures(List<Figure> list);
+    ChangedEvent<DiagramViewer> getZoomChangedEvent();
 
-    public void setInteractionMode(InteractionMode mode);
+    void resetUndoRedoManager();
 
-    public Rectangle getBounds();
+    UndoRedo getUndoRedo();
 
+    void componentHidden();
+
+    void componentShowing();
+
+    void centerSelectedFigures();
+
+    void centerSelectedLiveRanges();
+
+    void addSelectedNodes(Collection<InputNode> nodes, boolean showIfHidden);
+
+    void addSelectedLiveRanges(Collection<InputLiveRange> liveRanges, boolean showIfHidden);
+
+    void addSelectedElements(Collection<InputNode> nodes, Collection<InputLiveRange> liveRanges, boolean showIfHidden);
+
+    void clearSelectedElements();
+
+    void setInteractionMode(InteractionMode mode);
+
+    Rectangle getBounds();
+
+    JComponent getView();
+
+    void colorSelectedFigures(Color color);
 }

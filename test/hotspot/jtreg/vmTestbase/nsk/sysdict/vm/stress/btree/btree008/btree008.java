@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * VM Testbase keywords: [stress, sysdict, stressopt, nonconcurrent]
  * VM Testbase readme:
  * DESCRIPTION
- *     Single thread loads a tree of classes with signle loader.
+ *     Single thread loads a tree of classes with single loader.
  *     Then, memory stress is induced to unload the classes.
  *     The test is deemed failed if loading attempt fails;
  *     or if the tested VM crashes.
@@ -51,5 +51,6 @@
  *      -jarpath btree.jar${path.separator}fats.jar
  *      -useSingleLoader
  *      -stressHeap
+ *      -t 1
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.util.Locale;
 public class NumberFormatProviderImpl extends NumberFormatProvider {
 
     private static final Locale[] locales = {Locale.FRENCH, Locale.JAPANESE,
-            new Locale("hi", "IN"), new Locale("xx", "YY")};
+            Locale.of("hi", "IN"), Locale.of("xx", "YY")};
 
     @Override
     public NumberFormat getCurrencyInstance(Locale locale) {

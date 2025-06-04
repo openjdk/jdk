@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciConstantPoolCache.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "memory/allocation.hpp"
@@ -37,7 +36,7 @@
 ciConstantPoolCache::ciConstantPoolCache(Arena* arena,
                                  int expected_size) {
   _elements =
-    new (arena) GrowableArray<void*>(arena, expected_size, 0, 0);
+    new (arena) GrowableArray<void*>(arena, expected_size, 0, nullptr);
   _keys = new (arena) GrowableArray<int>(arena, expected_size, 0, 0);
 }
 
@@ -57,7 +56,7 @@ void* ciConstantPoolCache::get(int index) {
   int pos = _keys->find_sorted<int, ciConstantPoolCache::key_compare>(index, found);
   if (!found) {
     // This element is not present in the cache.
-    return NULL;
+    return nullptr;
   }
   return _elements->at(pos);
 }

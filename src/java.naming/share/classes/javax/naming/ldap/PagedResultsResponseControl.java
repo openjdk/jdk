@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import com.sun.jndi.ldap.BerDecoder;
  * <p>
  * This class implements the LDAPv3 Response Control for
  * paged-results as defined in
- * <a href="http://www.ietf.org/rfc/rfc2696">RFC 2696</a>.
+ * <a href="https://www.ietf.org/rfc/rfc2696.txt">RFC 2696</a>.
  *
  * The control's value has the following ASN.1 definition:
  * <pre>

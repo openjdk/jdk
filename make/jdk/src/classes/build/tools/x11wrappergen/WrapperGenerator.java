@@ -135,7 +135,7 @@ public class WrapperGenerator {
                 type = TYPE_ARRAY;
             else if (str.equals("ulong"))
                 type = TYPE_ULONG;
-            else throw new IllegalArgumentException("Uknown type string: " + str);
+            else throw new IllegalArgumentException("Unknown type string: " + str);
 
             return type;
         }
@@ -321,7 +321,7 @@ public class WrapperGenerator {
             else if (access.equals("Short")) return 2;
             else if (access.equals("ULong")) return 8;
             else if (access.equals("UInt")) return 4;
-            else throw new IllegalArgumentException("Unknow access type: " + access);
+            else throw new IllegalArgumentException("Unknown access type: " + access);
         }
 
         String getJavaConversion(String offset, String value) {
@@ -440,7 +440,7 @@ public class WrapperGenerator {
                   return "Long";
               case TYPE_ULONG:
                   return "ULong";
-              default: throw new IllegalArgumentException("Uknown type");
+              default: throw new IllegalArgumentException("Unknown type");
             }
         }
         public int getOffset()
@@ -468,7 +468,7 @@ public class WrapperGenerator {
         /**
          * Construct new structured type.
          * Description is used for name and type definition and has the following format:
-         * structName [ '[' base classe ']' ] [ '{' interfaces '}' ] [ '|' javaClassName ]
+         * structName [ '[' base class ']' ] [ '{' interfaces '}' ] [ '|' javaClassName ]
          */
         public StructType(String _desc)
         {

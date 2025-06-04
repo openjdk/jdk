@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,10 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.security.Security;
 import java.security.URIParameter;
 import java.text.MessageFormat;
 import java.util.*;
-import javax.security.auth.AuthPermission;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.AppConfigurationEntry.LoginModuleControlFlag;
 import javax.security.auth.login.Configuration;
@@ -123,8 +118,8 @@ public final class ConfigFile extends Configuration {
         private StreamTokenizer st;
         private int lookahead;
 
-        private static Debug debugConfig = Debug.getInstance("configfile");
-        private static Debug debugParser = Debug.getInstance("configparser");
+        private static final Debug debugConfig = Debug.getInstance("configfile");
+        private static final Debug debugParser = Debug.getInstance("configparser");
 
         /**
          * Creates a new {@code ConfigurationSpi} object.
@@ -159,34 +154,18 @@ public final class ConfigFile extends Configuration {
             }
         }
 
-        @SuppressWarnings("removal")
         public Spi(final Configuration.Parameters params) throws IOException {
 
-            // call in a doPrivileged
-            //
-            // we have already passed the Configuration.getInstance
-            // security check.  also this class is not freely accessible
-            // (it is in the "sun" package).
-
-            try {
-                AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                    public Void run() throws IOException {
-                        if (params == null) {
-                            init();
-                        } else {
-                            if (!(params instanceof URIParameter)) {
-                                throw new IllegalArgumentException
-                                        ("Unrecognized parameter: " + params);
-                            }
-                            URIParameter uriParam = (URIParameter)params;
-                            url = uriParam.getURI().toURL();
-                            init();
-                        }
-                        return null;
-                    }
-                });
-            } catch (PrivilegedActionException pae) {
-                throw (IOException)pae.getException();
+            if (params == null) {
+                init();
+            } else {
+                if (!(params instanceof URIParameter)) {
+                    throw new IllegalArgumentException
+                            ("Unrecognized parameter: " + params);
+                }
+                URIParameter uriParam = (URIParameter)params;
+                url = uriParam.getURI().toURL();
+                init();
             }
 
             // if init() throws some other RuntimeException,
@@ -198,8 +177,6 @@ public final class ConfigFile extends Configuration {
          * configured URL.
          *
          * @throws IOException if the Configuration can not be initialized
-         * @throws SecurityException if the caller does not have permission
-         *                           to initialize the Configuration
          */
         private void init() throws IOException {
 
@@ -207,7 +184,7 @@ public final class ConfigFile extends Configuration {
 
             // For policy.expandProperties, check if either a security or system
             // property is set to false (old code erroneously checked the system
-            // prop so we must check both to preserve compatibility).
+            // prop, so we must check both to preserve compatibility).
             String expand = Security.getProperty("policy.expandProperties");
             if (expand == null) {
                 expand = System.getProperty("policy.expandProperties");
@@ -220,7 +197,7 @@ public final class ConfigFile extends Configuration {
             Map<String, List<AppConfigurationEntry>> newConfig = new HashMap<>();
 
             if (url != null) {
-                /**
+                /*
                  * If the caller specified a URI via Configuration.getInstance,
                  * we only read from that URI
                  */
@@ -232,7 +209,7 @@ public final class ConfigFile extends Configuration {
                 return;
             }
 
-            /**
+            /*
              * Caller did not specify URI via Configuration.getInstance.
              * Read from URLs listed in the java.security properties file.
              */
@@ -254,9 +231,9 @@ public final class ConfigFile extends Configuration {
                                           extra_config);
                     }
 
-                    URL configURL = null;
+                    URL configURL;
                     try {
-                        configURL = new URL(extra_config);
+                        configURL = newURL(extra_config);
                     } catch (MalformedURLException mue) {
                         File configFile = new File(extra_config);
                         if (configFile.exists()) {
@@ -293,7 +270,7 @@ public final class ConfigFile extends Configuration {
                     if (debugConfig != null) {
                         debugConfig.println("\tReading config: " + config_url);
                     }
-                    init(new URL(config_url), newConfig);
+                    init(newURL(config_url), newConfig);
                     initialized = true;
                 } catch (PropertyExpander.ExpandException peee) {
                     throw ioException("Unable.to.properly.expand.config",
@@ -302,7 +279,7 @@ public final class ConfigFile extends Configuration {
                 n++;
             }
 
-            if (initialized == false && n == 1 && config_url == null) {
+            if (!initialized && n == 1) {
 
                 // get the config from the user's home directory
                 if (debugConfig != null) {
@@ -353,7 +330,7 @@ public final class ConfigFile extends Configuration {
         public AppConfigurationEntry[] engineGetAppConfigurationEntry
             (String applicationName) {
 
-            List<AppConfigurationEntry> list = null;
+            List<AppConfigurationEntry> list;
             synchronized (configuration) {
                 list = configuration.get(applicationName);
             }
@@ -375,33 +352,17 @@ public final class ConfigFile extends Configuration {
         }
 
         /**
-         * Refresh and reload the Configuration by re-reading all of the
+         * Refresh and reload the Configuration by re-reading all the
          * login configurations.
-         *
-         * @throws SecurityException if the caller does not have permission
-         *                           to refresh the Configuration.
          */
-        @SuppressWarnings("removal")
         @Override
         public synchronized void engineRefresh() {
 
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(
-                    new AuthPermission("refreshLoginConfiguration"));
+            try {
+                init();
+            } catch (IOException ioe) {
+                throw new SecurityException(ioe.getLocalizedMessage(), ioe);
             }
-
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    try {
-                        init();
-                    } catch (IOException ioe) {
-                        throw new SecurityException(ioe.getLocalizedMessage(),
-                                                    ioe);
-                    }
-                    return null;
-                }
-            });
         }
 
         private void readConfig(Reader reader,
@@ -448,7 +409,7 @@ public final class ConfigFile extends Configuration {
             match("{");
 
             // get the modules
-            while (peek("}") == false) {
+            while (!peek("}")) {
                 // get the module class name
                 String moduleClass = match("module class name");
 
@@ -476,7 +437,7 @@ public final class ConfigFile extends Configuration {
 
                 // get the args
                 Map<String, String> options = new HashMap<>();
-                while (peek(";") == false) {
+                while (!peek(";")) {
                     String key = match("option key");
                     match("=");
                     try {
@@ -668,5 +629,10 @@ public final class ConfigFile extends Configuration {
                 ResourcesMgr.getAuthResourceString(resourceKey));
             return new IOException(form.format(args));
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(String spec) throws MalformedURLException {
+        return new URL(spec);
     }
 }

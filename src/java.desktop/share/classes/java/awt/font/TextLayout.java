@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -789,7 +789,7 @@ public final class TextLayout implements Cloneable {
      * For best results, it should not be too different from the current
      * advance of the line.
      * @return a {@code TextLayout} justified to the specified width.
-     * @exception Error if this layout has already been justified, an Error is
+     * @throws Error if this layout has already been justified, an Error is
      * thrown.
      */
     public TextLayout getJustifiedLayout(float justificationWidth) {
@@ -2638,6 +2638,9 @@ public final class TextLayout implements Cloneable {
 
     static byte getBaselineFromGraphic(GraphicAttribute graphic) {
 
+        if (graphic == null) {
+            return (byte)GraphicAttribute.ROMAN_BASELINE;
+        }
         byte alignment = (byte) graphic.getAlignment();
 
         if (alignment == GraphicAttribute.BOTTOM_ALIGNMENT ||
@@ -2660,10 +2663,19 @@ public final class TextLayout implements Cloneable {
      */
     public Shape getOutline(AffineTransform tx) {
         ensureCache();
-        Shape result = textLine.getOutline(tx);
+        Shape result = textLine.getOutline();
         LayoutPathImpl lp = textLine.getLayoutPath();
         if (lp != null) {
             result = lp.mapShape(result);
+        }
+        if (tx != null) {
+            if (result instanceof GeneralPath gp) {
+                // transform in place
+                gp.transform(tx);
+            } else {
+                // create a transformed copy
+                result = tx.createTransformedShape(result);
+            }
         }
         return result;
     }

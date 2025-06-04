@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class MetalComboBoxEditor extends BasicComboBoxEditor {
                     }
                     super.setText(s);
                 }
-            // The preferred and minimum sizes are overriden and padded by
+            // The preferred and minimum sizes are overridden and padded by
             // 4 to keep the size as it previously was.  Refer to bugs
             // 4775789 and 4517214 for details.
             public Dimension getPreferredSize() {
@@ -135,7 +135,6 @@ public class MetalComboBoxEditor extends BasicComboBoxEditor {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
-    @SuppressWarnings("serial") // Same-version serialization only
     public static class UIResource extends MetalComboBoxEditor
     implements javax.swing.plaf.UIResource {
         /**

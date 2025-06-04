@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import jdk.test.lib.jfr.FileHelper;
 /**
  * @test
  * @summary Set destination to a long path
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.destination.TestDestLongPath
@@ -58,7 +58,7 @@ public class TestDestLongPath {
         Asserts.assertTrue(Files.exists(dest), "No recording file: " + dest);
         List<RecordedEvent> events = RecordingFile.readAllEvents(dest);
         Asserts.assertFalse(events.isEmpty(), "No event found");
-        System.out.printf("Found event %s%n", events.get(0).getEventType().getName());
+        System.out.printf("Found event %s%n", events.getFirst().getEventType().getName());
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,8 +25,6 @@ import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.XMLAttributesImpl;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLStringBuffer;
-import com.sun.org.apache.xerces.internal.utils.XMLLimitAnalyzer;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.XMLDTDContentModelHandler;
 import com.sun.org.apache.xerces.internal.xni.XMLDTDHandler;
 import com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier;
@@ -41,6 +39,8 @@ import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.xml.internal.stream.dtd.nonvalidating.DTDGrammar;
 import java.io.EOFException;
 import java.io.IOException;
+import jdk.xml.internal.XMLLimitAnalyzer;
+import jdk.xml.internal.XMLSecurityManager;
 
 /**
  * This class is responsible for scanning the declarations found
@@ -63,7 +63,7 @@ import java.io.IOException;
  * @author Glenn Marcy, IBM
  * @author Eric Ye, IBM
  *
- * @LastModified: Feb 2020
+ * @LastModified: Feb 2025
  */
 public class XMLDTDScannerImpl
 extends XMLScanner
@@ -388,6 +388,7 @@ implements XMLDTDScanner, XMLComponent, XMLEntityHandler {
             return false;
 
         fStringBuffer.clear();
+        fEntityScanner = fEntityManager.getEntityScanner();
         while (fEntityScanner.scanData("]", fStringBuffer, 0)) {
             int c = fEntityScanner.peekChar();
             if (c != -1) {
@@ -669,7 +670,10 @@ implements XMLDTDScanner, XMLComponent, XMLEntityHandler {
         //fIncludeSectDepth != 0 or fExtEntityDepth != 0 throw Exception
         if (augs != null && Boolean.TRUE.equals(augs.getItem(Constants.LAST_ENTITY))
             && ( fMarkUpDepth != 0 || fExtEntityDepth !=0 || fIncludeSectDepth != 0)){
-            throw new EOFException();
+            fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
+                    "PrematureEOF",
+                    new Object[]{ name },
+                    XMLErrorReporter.SEVERITY_FATAL_ERROR);
         }
 
     } // endEntity(String)

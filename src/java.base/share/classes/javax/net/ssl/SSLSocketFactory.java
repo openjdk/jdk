@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@ import java.io.InputStream;
 import java.security.*;
 import java.util.Locale;
 
-import sun.security.action.GetPropertyAction;
-
 /**
  * <code>SSLSocketFactory</code>s create <code>SSLSocket</code>s.
  *
@@ -46,7 +44,7 @@ public abstract class SSLSocketFactory extends SocketFactory {
     static final boolean DEBUG;
 
     static {
-        String s = GetPropertyAction.privilegedGetProperty(
+        String s = System.getProperty(
                 "javax.net.debug", "").toLowerCase(Locale.ENGLISH);
         DEBUG = s.contains("all") || s.contains("ssl");
     }
@@ -86,21 +84,15 @@ public abstract class SSLSocketFactory extends SocketFactory {
         }
     }
 
-    @SuppressWarnings("removal")
     static String getSecurityProperty(final String name) {
-        return AccessController.doPrivileged(new PrivilegedAction<>() {
-            @Override
-            public String run() {
-                String s = java.security.Security.getProperty(name);
-                if (s != null) {
-                    s = s.trim();
-                    if (s.isEmpty()) {
-                        s = null;
-                    }
-                }
-                return s;
+        String s = Security.getProperty(name);
+        if (s != null) {
+            s = s.trim();
+            if (s.isEmpty()) {
+                s = null;
             }
-        });
+        }
+        return s;
     }
 
     /**
@@ -117,6 +109,7 @@ public abstract class SSLSocketFactory extends SocketFactory {
      * Algorithm Names Specification, and may also include other cipher suites
      * that the provider supports.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @see #getSupportedCipherSuites()
      * @return array of the cipher suites enabled by default
      */
@@ -136,6 +129,7 @@ public abstract class SSLSocketFactory extends SocketFactory {
      * Algorithm Names Specification, and may also include other cipher suites
      * that the provider supports.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @see #getDefaultCipherSuites()
      * @return an array of cipher suite names
      */
@@ -175,7 +169,7 @@ public abstract class SSLSocketFactory extends SocketFactory {
      * underlying {@link InputStream} should be loaded into the
      * {@code consumed} stream before this method is called, perhaps
      * using a {@link java.io.ByteArrayInputStream}.  When this
-     * {@link Socket} begins handshaking, it will read all of the data in
+     * {@link Socket} begins handshaking, it will read all the data in
      * {@code consumed} until it reaches {@code EOF}, then all further
      * data is read from the underlying {@link InputStream} as
      * usual.
@@ -201,6 +195,8 @@ public abstract class SSLSocketFactory extends SocketFactory {
      *         does not implement the operation
      * @throws NullPointerException if {@code s} is {@code null}
      *
+     * @spec https://www.rfc-editor.org/info/rfc6066
+     *      RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
      * @since 1.8
      */
     public Socket createSocket(Socket s, InputStream consumed,
@@ -256,15 +252,14 @@ public abstract class SSLSocketFactory extends SocketFactory {
 // file private
 class DefaultSSLSocketFactory extends SSLSocketFactory
 {
-    private Exception reason;
+    private final Exception reason;
 
     DefaultSSLSocketFactory(Exception reason) {
         this.reason = reason;
     }
 
     private Socket throwException() throws SocketException {
-        throw (SocketException)
-            new SocketException(reason.toString()).initCause(reason);
+        throw new SocketException(reason.toString(), reason);
     }
 
     @Override

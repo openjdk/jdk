@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -24,6 +24,7 @@ import java.util.ListResourceBundle;
 
 /**
  * @author Morten Jorgensen
+ * @LastModified: Dec 2024
  */
 public class ErrorMessages extends ListResourceBundle {
 
@@ -552,6 +553,15 @@ public class ErrorMessages extends ListResourceBundle {
         "Cannot convert data-type ''{0}'' to ''{1}''."},
 
         /*
+         * Note to translators:  property name "jdk.xml.enableExtensionFunctions"
+         * and value "true" should not be translated.
+         */
+        {ErrorMsg.UNSUPPORTED_EXT_FUNC_ERR,
+        "Use of the extension function ''{0}'' is not allowed when extension "
+              + "functions are disabled by the secure processing feature or "
+              + "the property ''jdk.xml.enableExtensionFunctions''. "
+              + "To enable extension functions, set ''jdk.xml.enableExtensionFunctions'' to ''true''."},
+        /*
          * Note to translators:  "Templates" is a Java class name that should
          * not be translated.
          */
@@ -1027,12 +1037,17 @@ public class ErrorMessages extends ListResourceBundle {
          "smaller templates."
         },
 
-         {ErrorMsg.DESERIALIZE_TRANSLET_ERR, "When Java security is enabled, " +
-                        "support for deserializing TemplatesImpl is disabled." +
-                        "This can be overridden by setting the jdk.xml.enableTemplatesImplDeserialization" +
-                        " system property to true."}
+        {ErrorMsg.XPATH_GROUP_LIMIT,
+            "JAXP0801001: the compiler encountered an XPath expression containing "
+              + "''{0}'' groups that exceeds the ''{1}'' limit set by ''{2}''."},
 
-    };
+        {ErrorMsg.XPATH_OPERATOR_LIMIT,
+            "JAXP0801002: the compiler encountered an XPath expression containing "
+              + "''{0}'' operators that exceeds the ''{1}'' limit set by ''{2}''."},
+        {ErrorMsg.XPATH_TOTAL_OPERATOR_LIMIT,
+            "JAXP0801003: the compiler encountered XPath expressions with an accumulated "
+              + "''{0}'' operators that exceeds the ''{1}'' limit set by ''{2}''."},
+      };
 
     }
 }

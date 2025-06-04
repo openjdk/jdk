@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,25 +71,42 @@ public enum LogTag {
      */
     JFR_SYSTEM_THROTTLE(8),
     /**
+     *  Covers periodic task work (for Hotspot developer)
+     */
+    JFR_SYSTEM_PERIODIC(9),
+    /**
+     *  Covers sampling work (for Hotspot developer)
+     */
+    JFR_SYSTEM_SAMPLING(10),
+    /**
+     *  Covers periodic event work (for users of the JDK)
+     */
+    JFR_PERIODIC(11),
+    /**
      *  Covers metadata for Java user (for Hotspot developers)
      */
-    JFR_METADATA(9),
+    JFR_METADATA(12),
     /**
      * Covers events (for users of the JDK)
      */
-    JFR_EVENT(10),
+    JFR_EVENT(13),
     /**
      * Covers setting (for users of the JDK)
      */
-    JFR_SETTING(11),
+    JFR_SETTING(14),
     /**
      * Covers usage of jcmd with JFR
      */
-    JFR_DCMD(12),
+    JFR_DCMD(15),
     /**
      * -XX:StartFlightRecording
      */
-    JFR_START(13);
+    JFR_START(16),
+    /**
+     *  Covers usage of MethodTiming and MethodTrace events
+     */
+    JFR_METHODTRACE(17),
+    ;
 
     /* set from native side */
     volatile int tagSetLevel = 100; // prevent logging if JVM log system has not been initialized

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package com.sun.hotspot.igv.view;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
-import java.util.Set;
+import java.util.Collection;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -37,9 +37,11 @@ import org.openide.util.lookup.ServiceProvider;
 @ServiceProvider(service=InputGraphProvider.class)
 public class EditorInputGraphProvider implements InputGraphProvider {
 
-    private EditorTopComponent editor;
+    private final EditorTopComponent editor;
 
-    public EditorInputGraphProvider() {}
+    public EditorInputGraphProvider() {
+        editor = null;
+    }
 
     public EditorInputGraphProvider(EditorTopComponent editor) {
         this.editor = editor;
@@ -47,21 +49,52 @@ public class EditorInputGraphProvider implements InputGraphProvider {
 
     @Override
     public InputGraph getGraph() {
-        return editor.getDiagramModel().getGraphToView();
+        if (editor != null && EditorTopComponent.isOpen(editor)) {
+            return editor.getModel().getGraph();
+        } else {
+            return null;
+        }
     }
 
     @Override
-    public void setSelectedNodes(Set<InputNode> nodes) {
-        editor.setSelectedNodes(nodes);
+    public void centerSelectedNodes() {
+        if (editor != null && EditorTopComponent.isOpen(editor)) {
+            editor.centerSelectedNodes();
+            editor.requestActive();
+        }
+    }
+
+    @Override
+    public void addSelectedNodes(Collection<InputNode> nodes, boolean showIfHidden) {
+        if (editor != null && EditorTopComponent.isOpen(editor)) {
+            editor.addSelectedNodes(nodes, showIfHidden);
+            editor.requestActive();
+        }
+    }
+
+    @Override
+    public void clearSelectedElements() {
+        if (editor != null && EditorTopComponent.isOpen(editor)) {
+            editor.clearSelectedElements();
+            editor.requestActive();
+        }
     }
 
     @Override
     public Iterable<InputGraph> searchBackward() {
-        return editor.getDiagramModel().getGraphsBackward();
+        if (editor != null && EditorTopComponent.isOpen(editor)) {
+            return editor.getModel().getGraphsBackward();
+        } else {
+            return null;
+        }
     }
 
     @Override
     public Iterable<InputGraph> searchForward() {
-        return editor.getDiagramModel().getGraphsForward();
+        if (editor != null && EditorTopComponent.isOpen(editor)) {
+            return editor.getModel().getGraphsForward();
+        } else {
+            return null;
+        }
     }
 }

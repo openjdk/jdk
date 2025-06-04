@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.lang.ref.WeakReference;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -248,8 +246,8 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
     private volatile StateValue state;
 
     /**
-     * everything is run inside this FutureTask. Also it is used as
-     * a delegatee for the Future API.
+     * Everything is run inside this FutureTask. Also it is used as
+     * a delegate for the Future API.
      */
     private final FutureTask<T> future;
 
@@ -259,7 +257,7 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
     private final PropertyChangeSupport propertyChangeSupport;
 
     /**
-     * handler for {@code process} mehtod.
+     * Handler for {@code process} method.
      */
     private AccumulativeRunnable<V> doProcess;
 
@@ -301,17 +299,16 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
                 new Callable<T>() {
                     public T call() throws Exception {
                         setState(StateValue.STARTED);
-                        return doInBackground();
+                        try {
+                            return doInBackground();
+                        } finally {
+                            doneEDT();
+                            setState(StateValue.DONE);
+                        }
                     }
                 };
 
-        future = new FutureTask<T>(callable) {
-                       @Override
-                       protected void done() {
-                           doneEDT();
-                           setState(StateValue.DONE);
-                       }
-                   };
+       future = new FutureTask<T>(callable);
 
        state = StateValue.PENDING;
        propertyChangeSupport = new SwingWorkerPropertyChangeSupport(this);
@@ -475,7 +472,7 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
      * invocation argument only.
      *
      * <p>
-     * For example, the following invokations:
+     * For example, the following invocations:
      *
      * <pre>
      * setProgress(1);
@@ -720,7 +717,7 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
      */
     public final StateValue getState() {
         /*
-         * DONE is a speacial case
+         * DONE is a special case
          * to keep getState and isDone is sync
          */
         if (isDone()) {
@@ -798,7 +795,6 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
             final ExecutorService es = executorService;
             appContext.addPropertyChangeListener(AppContext.DISPOSED_PROPERTY_NAME,
                 new PropertyChangeListener() {
-                    @SuppressWarnings("removal")
                     @Override
                     public void propertyChange(PropertyChangeEvent pce) {
                         boolean disposed = (Boolean)pce.getNewValue();
@@ -808,14 +804,7 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
                             final ExecutorService executorService =
                                 executorServiceRef.get();
                             if (executorService != null) {
-                                AccessController.doPrivileged(
-                                    new PrivilegedAction<Void>() {
-                                        public Void run() {
-                                            executorService.shutdown();
-                                            return null;
-                                        }
-                                    }
-                                );
+                                executorService.shutdown();
                             }
                         }
                     }

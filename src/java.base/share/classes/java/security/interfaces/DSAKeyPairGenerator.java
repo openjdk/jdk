@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,8 +88,7 @@ public interface DSAKeyPairGenerator {
      * @throws    InvalidParameterException if the {@code params}
      * value is invalid, null, or unsupported.
      */
-   public void initialize(DSAParams params, SecureRandom random)
-   throws InvalidParameterException;
+   void initialize(DSAParams params, SecureRandom random);
 
     /**
      * Initializes the key pair generator for a given modulus length
@@ -106,16 +105,15 @@ public interface DSAKeyPairGenerator {
      * @param modlen the modulus length in bits. Valid values are any
      * multiple of 64 between 512 and 1024, inclusive, 2048, and 3072.
      *
+     * @param genParams whether to generate new parameters for
+     * the modulus length requested.
+     *
      * @param random the random bit source to use to generate key bits;
      * can be null.
-     *
-     * @param genParams whether or not to generate new parameters for
-     * the modulus length requested.
      *
      * @throws    InvalidParameterException if {@code modlen} is
      * invalid, or unsupported, or if {@code genParams} is false and there
      * are no precomputed parameters for the requested modulus length.
      */
-    public void initialize(int modlen, boolean genParams, SecureRandom random)
-    throws InvalidParameterException;
+    void initialize(int modlen, boolean genParams, SecureRandom random);
 }

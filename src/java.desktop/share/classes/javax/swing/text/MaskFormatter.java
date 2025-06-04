@@ -695,7 +695,7 @@ public class MaskFormatter extends DefaultFormatter {
      * result in a legal edit.  This may set the <code>value</code>
      * field of <code>rh</code>.
      * <p>
-     * This is overriden to return true for a partial match.
+     * This is overridden to return true for a partial match.
      */
     boolean isValidEdit(ReplaceHolder rh) {
         if (!getAllowsInvalid()) {
@@ -721,7 +721,7 @@ public class MaskFormatter extends DefaultFormatter {
      *     matches the literal character at the position), allow it
      * <li>Else if the position identifies a literal character, add it. This
      *     allows for the user to paste in text that may/may not contain
-     *     the literals.  For example, in pasing in 5551212 into ###-####
+     *     the literals.  For example, in passing in 5551212 into ###-####
      *     when the 1 is evaluated it is illegal (by the first test), but there
      *     is a literal at this position (-), so it is used.  NOTE: This has
      *     a problem that you can't tell (without looking ahead) if you should
@@ -831,7 +831,7 @@ public class MaskFormatter extends DefaultFormatter {
 
 
     //
-    // Interal classes used to represent the mask.
+    // Internal classes used to represent the mask.
     //
     private class MaskCharacter {
         /**
@@ -844,7 +844,7 @@ public class MaskFormatter extends DefaultFormatter {
         }
 
         /**
-         * Returns true if <code>aChar</code> is a valid reprensentation of
+         * Returns true if <code>aChar</code> is a valid representation of
          * the receiver. The default implementation returns true if the
          * receiver represents a literal character and <code>getChar</code>
          * == aChar. Otherwise, this will return true is <code>aChar</code>

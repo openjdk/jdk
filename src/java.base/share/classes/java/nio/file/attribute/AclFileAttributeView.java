@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ import java.io.IOException;
  *
  * <p> <b>Usage Example:</b>
  * Suppose we wish to add an entry to an existing ACL to grant "joe" access:
- * <pre>
+ * {@snippet lang=java :
  *     // lookup "joe"
  *     UserPrincipal joe = file.getFileSystem().getUserPrincipalLookupService()
  *         .lookupPrincipalByName("joe");
@@ -85,10 +85,10 @@ import java.io.IOException;
  *         .build();
  *
  *     // read ACL, insert ACE, re-write ACL
- *     List&lt;AclEntry&gt; acl = view.getAcl();
+ *     List<AclEntry> acl = view.getAcl();
  *     acl.add(0, entry);   // insert before any DENY entries
  *     view.setAcl(acl);
- * </pre>
+ * }
  *
  * <h2> Dynamic Access </h2>
  * <p> Where dynamic access to file attributes is required, the attributes
@@ -139,6 +139,8 @@ import java.io.IOException;
  * any attempt to create a file that would be less secure as a result of the
  * translation.
  *
+ * @spec https://www.rfc-editor.org/info/rfc3530
+ *      RFC 3530: Network File System (NFS) version 4 Protocol
  * @since 1.7
  */
 
@@ -168,11 +170,6 @@ public interface AclFileAttributeView
      *
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, a security manager is
-     *          installed, and it denies {@link RuntimePermission}{@code ("accessUserInformation")}
-     *          or its {@link SecurityManager#checkRead(String) checkRead} method
-     *          denies read access to the file.
      */
     List<AclEntry> getAcl() throws IOException;
 
@@ -204,11 +201,6 @@ public interface AclFileAttributeView
      *
      * @throws  IOException
      *          if an I/O error occurs or the ACL is invalid
-     * @throws  SecurityException
-     *          In the case of the default provider, a security manager is
-     *          installed, it denies {@link RuntimePermission}{@code ("accessUserInformation")}
-     *          or its {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method denies write access to the file.
      */
     void setAcl(List<AclEntry> acl) throws IOException;
 }

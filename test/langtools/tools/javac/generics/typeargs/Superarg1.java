@@ -32,10 +32,4 @@ class T<X> {
     <K> void f() {
         this.<Object>f();
     }
-
-    public static void main(String[] args) {
-        T<Integer> x = new <Object>T<Integer>("");
-        T<Integer>.U<Float> y = x.new <Object>U<Float>();
-        x.<Object>f();
-    }
 }

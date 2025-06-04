@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -376,7 +376,6 @@ class VirtualMachineImpl extends MirrorImpl
         }
         Iterator<?> it = classToBytes.entrySet().iterator();
         for (int i = 0; it.hasNext(); i++) {
-            @SuppressWarnings("rawtypes")
             Map.Entry<?, ?> entry = (Map.Entry)it.next();
             ReferenceTypeImpl refType = (ReferenceTypeImpl)entry.getKey();
             validateMirror(refType);
@@ -830,6 +829,10 @@ class VirtualMachineImpl extends MirrorImpl
     public boolean canGetModuleInfo() {
         validateVM();
         return versionInfo().jdwpMajor >= 9;
+    }
+
+    boolean mayCreateVirtualThreads() {
+        return versionInfo().jdwpMajor >= 19;
     }
 
     public void setDebugTraceMode(int traceFlags) {
@@ -1320,7 +1323,7 @@ class VirtualMachineImpl extends MirrorImpl
             int size = batchedDisposeRequests.size();
             if (size >= DISPOSE_THRESHOLD) {
                 if ((traceFlags & TRACE_OBJREFS) != 0) {
-                    printTrace("Dispose threashold reached. Will dispose "
+                    printTrace("Dispose threshold reached. Will dispose "
                                + size + " object references...");
                 }
                 requests = new JDWP.VirtualMachine.DisposeObjects.Request[size];
@@ -1364,10 +1367,17 @@ class VirtualMachineImpl extends MirrorImpl
         //if ((traceFlags & TRACE_OBJREFS) != 0) {
         //    printTrace("Checking for softly reachable objects");
         //}
+        boolean found = false;
         while ((ref = referenceQueue.poll()) != null) {
             SoftObjectReference softRef = (SoftObjectReference)ref;
             removeObjectMirror(softRef);
             batchForDispose(softRef);
+            found = true;
+        }
+
+        if (found) {
+            // If we batched any ObjectReferences for disposing, we can dispose them now.
+            processBatchedDisposes();
         }
     }
 
@@ -1441,24 +1451,7 @@ class VirtualMachineImpl extends MirrorImpl
         return object;
     }
 
-    synchronized void removeObjectMirror(ObjectReferenceImpl object) {
-        // Handle any queue elements that are not strongly reachable
-        processQueue();
-
-        SoftObjectReference ref = objectsByID.remove(object.ref());
-        if (ref != null) {
-            batchForDispose(ref);
-        } else {
-            /*
-             * If there's a live ObjectReference about, it better be part
-             * of the cache.
-             */
-            throw new InternalException("ObjectReference " + object.ref() +
-                                        " not found in object cache");
-        }
-    }
-
-    synchronized void removeObjectMirror(SoftObjectReference ref) {
+    private synchronized void removeObjectMirror(SoftObjectReference ref) {
         /*
          * This will remove the soft reference if it has not been
          * replaced in the cache.

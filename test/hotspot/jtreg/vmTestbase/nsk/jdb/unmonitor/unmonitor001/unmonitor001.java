@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@
  * @clean nsk.jdb.unmonitor.unmonitor001.unmonitor001a
  * @compile -g:lines,source,vars unmonitor001a.java
  *
- * @run main/othervm
+ * @run driver
  *      nsk.jdb.unmonitor.unmonitor001.unmonitor001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
@@ -79,14 +79,10 @@ import java.util.*;
 public class unmonitor001 extends JdbTest {
 
     public static void main (String argv[])  {
-        System.exit(run(argv, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String argv[], PrintStream out) {
         debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
-        return new unmonitor001().runTest(argv, out);
+        new unmonitor001().runTest(argv);
     }
 
     static final String PACKAGE_NAME = "nsk.jdb.unmonitor.unmonitor001";
@@ -172,7 +168,7 @@ public class unmonitor001 extends JdbTest {
     private boolean checkCommands(String[] reply) {
         Paragrep grep;
         String found;
-        Vector v = new Vector();;
+        Vector v = new Vector();
         boolean result = true;
         int count;
 
@@ -184,9 +180,13 @@ public class unmonitor001 extends JdbTest {
             result = false;
         }
 
-        // check 'threads'
+        // check 'threads', searching for "java.lang.Thread" followed by the main thread name.
         v.add("java.lang.Thread");
-        v.add("main");
+        if (System.getProperty("test.thread.factory") != null) {
+            v.add(nsk.share.MainWrapper.OLD_MAIN_THREAD_NAME);
+        } else {
+            v.add("main");
+        }
         if ((count = grep.find(v)) != 1) {
             log.complain("Wrong number of execution of monitored command: " + CHECKED_COMMANDS[1]);
             log.complain("    Expected: 1; found: " + count);

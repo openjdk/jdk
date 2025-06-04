@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.security.jgss.krb5;
 
 import org.ietf.jgss.*;
-import javax.security.auth.kerberos.DelegationPermission;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Inet4Address;
@@ -68,7 +67,7 @@ abstract class InitialToken extends Krb5Token {
 
     protected class OverloadedChecksum {
 
-        private byte[] checksumBytes = null;
+        private final byte[] checksumBytes;
         private Credentials delegCreds = null;
         private int flags = 0;
 
@@ -105,7 +104,7 @@ abstract class InitialToken extends Krb5Token {
             }
 
             if (context.getCredDelegState()) {
-                KrbCred krbCred = null;
+                KrbCred krbCred;
                 CipherHelper cipherHelper =
                     context.getCipherHelper(serviceTicket.getSessionKey());
                 if (useNullKey(cipherHelper)) {
@@ -171,14 +170,6 @@ abstract class InitialToken extends Krb5Token {
                 String realm = delegateTo.getRealmAsString();
                 sb.append(" \"krbtgt/").append(realm).append('@');
                 sb.append(realm).append('\"');
-                @SuppressWarnings("removal")
-                SecurityManager sm = System.getSecurityManager();
-                if (sm != null) {
-                    DelegationPermission perm =
-                        new DelegationPermission(sb.toString());
-                    sm.checkPermission(perm);
-                }
-
 
                 /*
                  * Write 1 in little endian but in two bytes
@@ -216,8 +207,6 @@ abstract class InitialToken extends Krb5Token {
         public OverloadedChecksum(Krb5Context context, Checksum checksum,
                                   EncryptionKey key, EncryptionKey subKey)
             throws GSSException, KrbException, IOException {
-
-            int pos = 0;
 
             if (checksum == null) {
                 GSSException ge = new GSSException(GSSException.FAILURE, -1,
@@ -296,12 +285,8 @@ abstract class InitialToken extends Krb5Token {
 
         // check if KRB-CRED message should use NULL_KEY for encryption
         private boolean useNullKey(CipherHelper ch) {
-            boolean flag = true;
             // for "newer" etypes and RC4-HMAC do not use NULL KEY
-            if ((ch.getProto() == 1) || ch.isArcFour()) {
-                flag = false;
-            }
-            return flag;
+            return (ch.getProto() != 1) && !ch.isArcFour();
         }
 
         public Checksum getChecksum() throws KrbException {

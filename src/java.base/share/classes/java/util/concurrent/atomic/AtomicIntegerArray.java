@@ -51,6 +51,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
     private static final long serialVersionUID = 2862133569453604235L;
     private static final VarHandle AA
         = MethodHandles.arrayElementVarHandle(int[].class);
+    /** @serial */
     private final int[] array;
 
     /**
@@ -366,8 +367,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
     }
 
     /**
-     * Returns the String representation of the current values of array.
-     * @return the String representation of the current values of array
+     * {@return the String representation of the current values of array}
      */
     public String toString() {
         int iMax = array.length - 1;
@@ -470,7 +470,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
      * @param i the index
      * @param expectedValue the expected value
      * @param newValue the new value
-     * @return the witness value, which will be the same as the
+     * @return the <em>witness value</em>, which will be the same as the
      * expected value if successful
      * @since 9
      */
@@ -488,7 +488,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
      * @param i the index
      * @param expectedValue the expected value
      * @param newValue the new value
-     * @return the witness value, which will be the same as the
+     * @return the <em>witness value</em>, which will be the same as the
      * expected value if successful
      * @since 9
      */
@@ -506,7 +506,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
      * @param i the index
      * @param expectedValue the expected value
      * @param newValue the new value
-     * @return the witness value, which will be the same as the
+     * @return the <em>witness value</em>, which will be the same as the
      * expected value if successful
      * @since 9
      */

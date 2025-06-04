@@ -34,6 +34,7 @@ import javax.sound.midi.Sequencer;
 
 /**
  * @test
+ * @key sound
  * @bug 4913027
  * @summary several Sequencer methods should specify behaviour on closed Sequencer
  */
@@ -54,7 +55,7 @@ public class SequencerState {
 
 
     public static void main(String[] args) throws Exception {
-        out("4913027: several Sequencer methods should should specify behaviour on closed Sequencer");
+        out("4913027: several Sequencer methods should specify behaviour on closed Sequencer");
         if (hasSequencer()) {
             boolean passed = testAll();
             if (passed) {

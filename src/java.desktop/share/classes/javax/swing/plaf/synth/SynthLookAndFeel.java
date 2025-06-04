@@ -45,7 +45,6 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.net.URL;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Locale;
@@ -279,7 +278,7 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
     }
 
     /**
-     * A convience method that will reset the Style of StyleContext if
+     * A convenience method that will reset the Style of StyleContext if
      * necessary.
      *
      * @return newStyle
@@ -604,38 +603,7 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
         }
 
         new SynthParser().parse(input, (DefaultSynthStyleFactory) factory,
-                                null, resourceBase, defaultsMap);
-    }
-
-    /**
-     * Loads the set of <code>SynthStyle</code>s that will be used by
-     * this <code>SynthLookAndFeel</code>. Path based resources are resolved
-     * relatively to the specified <code>URL</code> of the style. For example
-     * an <code>Image</code> would be resolved by
-     * <code>new URL(synthFile, path)</code>. Refer to
-     * <a href="doc-files/synthFileFormat.html">Synth File Format</a> for more
-     * information.
-     *
-     * @param url the <code>URL</code> to load the set of
-     *     <code>SynthStyle</code> from
-     * @throws ParseException if there is an error in parsing
-     * @throws IllegalArgumentException if synthSet is <code>null</code>
-     * @throws IOException if synthSet cannot be opened as an <code>InputStream</code>
-     * @since 1.6
-     */
-    public void load(URL url) throws ParseException, IOException {
-        if (url == null) {
-            throw new IllegalArgumentException(
-                "You must supply a valid Synth set URL");
-        }
-
-        if (defaultsMap == null) {
-            defaultsMap = new HashMap<String, Object>();
-        }
-
-        InputStream input = url.openStream();
-        new SynthParser().parse(input, (DefaultSynthStyleFactory) factory,
-                                url, null, defaultsMap);
+                                resourceBase, defaultsMap);
     }
 
     /**
@@ -720,6 +688,15 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
                    "RIGHT", "selectParent",
                 "KP_RIGHT", "selectParent",
                   });
+
+        table.put("Menu.shortcutKeys",
+                  new int[] {
+                          SwingUtilities2.getSystemMnemonicKeyMask(),
+                          SwingUtilities2.setAltGraphMask(
+                             SwingUtilities2.getSystemMnemonicKeyMask())
+                  });
+
+        table.put("PasswordField.echoChar", '*');
 
         // enabled antialiasing depending on desktop settings
         flushUnreferenced();
@@ -993,6 +970,9 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
                 SynthStyle style = context.getStyle();
                 int state = context.getComponentState();
 
+                if (style == null) {
+                    return;
+                }
                 // Get the current background color.
                 Color currBG = style.getColor(context, ColorType.BACKGROUND);
 

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021, DataDog. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, DataDog. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,8 @@ package jdk.jfr.events;
 import jdk.jfr.Category;
 import jdk.jfr.DataAmount;
 import jdk.jfr.Description;
-import jdk.jfr.Enabled;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
-import jdk.jfr.Period;
-import jdk.jfr.StackTrace;
-import jdk.jfr.Threshold;
 import jdk.jfr.Timespan;
 import jdk.jfr.internal.Type;
 
@@ -41,7 +37,7 @@ import jdk.jfr.internal.Type;
 @Label("Container Configuration")
 @Category({"Operating System"})
 @Description("A set of container specific attributes")
-public final class ContainerConfigurationEvent extends AbstractJDKEvent {
+public final class ContainerConfigurationEvent extends AbstractPeriodicEvent {
     @Label("Container Type")
     @Description("Container type information")
     public String containerType;
@@ -79,4 +75,14 @@ public final class ContainerConfigurationEvent extends AbstractJDKEvent {
     @Description("Maximum amount of physical memory and swap space, in bytes, that can be allocated in the container")
     @DataAmount
     public long swapMemoryLimit;
+
+    @Label("Container Host Total Memory")
+    @Description("Total memory of the host running the container")
+    @DataAmount
+    public long hostTotalMemory;
+
+    @Label("Container Host Total Swap Memory")
+    @Description("Total swap memory of the host running the container")
+    @DataAmount
+    public long hostTotalSwapMemory;
 }

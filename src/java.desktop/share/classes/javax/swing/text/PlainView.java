@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package javax.swing.text;
 import java.awt.*;
 import java.awt.font.FontRenderContext;
 import java.awt.geom.Rectangle2D;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Objects;
 import javax.swing.event.*;
 import java.lang.ref.SoftReference;
@@ -179,7 +177,7 @@ public class PlainView extends View implements TabExpander {
      * @param p0 the beginning position in the model &gt;= 0
      * @param p1 the ending position in the model &gt;= 0
      * @return the X location of the end of the range &gt;= 0
-     * @exception BadLocationException if the range is invalid
+     * @throws BadLocationException if the range is invalid
      *
      * @deprecated replaced by
      *     {@link #drawUnselectedText(Graphics2D, float, float, int, int)}
@@ -224,7 +222,7 @@ public class PlainView extends View implements TabExpander {
      * @param p0 the beginning position in the model {@code >= 0}
      * @param p1 the ending position in the model {@code >= 0}
      * @return the X location of the end of the range {@code >= 0}
-     * @exception BadLocationException if the range is invalid
+     * @throws BadLocationException if the range is invalid
      *
      * @since 9
      */
@@ -245,7 +243,7 @@ public class PlainView extends View implements TabExpander {
      * @param p0 the beginning position in the model &gt;= 0
      * @param p1 the ending position in the model &gt;= 0
      * @return the location of the end of the range
-     * @exception BadLocationException if the range is invalid
+     * @throws BadLocationException if the range is invalid
      *
      * @deprecated replaced by
      *     {@link #drawSelectedText(Graphics2D, float, float, int, int)}
@@ -294,7 +292,7 @@ public class PlainView extends View implements TabExpander {
      * @param p0 the beginning position in the model {@code >= 0}
      * @param p1 the ending position in the model {@code >= 0}
      * @return the location of the end of the range
-     * @exception BadLocationException if the range is invalid
+     * @throws BadLocationException if the range is invalid
      *
      * @since 9
      */
@@ -351,7 +349,7 @@ public class PlainView extends View implements TabExpander {
      *           Typically the view is told to render into the span
      *           that is returned, although there is no guarantee.
      *           The parent may choose to resize or break the view.
-     * @exception IllegalArgumentException for an invalid axis
+     * @throws IllegalArgumentException for an invalid axis
      */
     public float getPreferredSpan(int axis) {
         updateMetrics();
@@ -468,7 +466,7 @@ public class PlainView extends View implements TabExpander {
      * @param pos the position to convert &gt;= 0
      * @param a the allocated region to render into
      * @return the bounding box of the given position
-     * @exception BadLocationException  if the given position does not
+     * @throws BadLocationException  if the given position does not
      *   represent a valid location in the associated document
      * @see View#modelToView
      */
@@ -724,12 +722,12 @@ public class PlainView extends View implements TabExpander {
     /**
      * Repaint the given line range.
      *
-     * @param host the component hosting the view (used to call repaint)
-     * @param a  the region allocated for the view to render into
      * @param line0 the starting line number to repaint.  This must
      *   be a valid line number in the model.
      * @param line1 the ending line number to repaint.  This must
      *   be a valid line number in the model.
+     * @param a  the region allocated for the view to render into
+     * @param host the component hosting the view (used to call repaint)
      * @since 1.4
      */
     protected void damageLineRange(int line0, int line1, Shape a, Component host) {
@@ -839,20 +837,13 @@ public class PlainView extends View implements TabExpander {
         return isFPMethodOverridden;
     }
 
-    @SuppressWarnings("removal")
     private static boolean checkFPMethodOverridden(final Class<?> className,
                                                    final String methodName,
                                                    final FPMethodArgs methodArgs) {
 
-        return AccessController
-                .doPrivileged(new PrivilegedAction<Boolean>() {
-                    @Override
-                    public Boolean run() {
-                        return isFPMethodOverridden(methodName, className,
-                                                    methodArgs.getMethodArguments(false),
-                                                    methodArgs.getMethodArguments(true));
-                    }
-                });
+        return isFPMethodOverridden(methodName, className,
+                                    methodArgs.getMethodArguments(false),
+                                    methodArgs.getMethodArguments(true));
     }
 
     private static boolean isFPMethodOverridden(String method,

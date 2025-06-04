@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,6 +238,11 @@ static int ParseLocale(JNIEnv* env, int cat, char ** std_language, char ** std_s
         *std_language = "en";
         if (language != NULL && mapLookup(language_names, language, std_language) == 0) {
             *std_language = malloc(strlen(language)+1);
+            if (*std_language == NULL) {
+                free(encoding_variant);
+                JNU_ThrowOutOfMemoryError(env, NULL);
+                return 0;
+            }
             strcpy(*std_language, language);
         }
     }
@@ -246,6 +251,11 @@ static int ParseLocale(JNIEnv* env, int cat, char ** std_language, char ** std_s
     if (std_country != NULL && country != NULL) {
         if (mapLookup(country_names, country, std_country) == 0) {
             *std_country = malloc(strlen(country)+1);
+            if (*std_country == NULL) {
+                free(encoding_variant);
+                JNU_ThrowOutOfMemoryError(env, NULL);
+                return 0;
+            }
             strcpy(*std_country, country);
         }
     }
@@ -353,7 +363,6 @@ java_props_t *
 GetJavaProperties(JNIEnv *env)
 {
     static java_props_t sprops;
-    char *v; /* tmp var */
 
     if (sprops.user_dir) {
         return &sprops;
@@ -454,11 +463,15 @@ GetJavaProperties(JNIEnv *env)
 #else
     sprops.sun_jnu_encoding = sprops.encoding;
 #endif
+
+    if (isatty(STDIN_FILENO) == 1) {
+        sprops.stdin_encoding = sprops.encoding;
+    }
     if (isatty(STDOUT_FILENO) == 1) {
-        sprops.sun_stdout_encoding = sprops.encoding;
+        sprops.stdout_encoding = sprops.encoding;
     }
     if (isatty(STDERR_FILENO) == 1) {
-        sprops.sun_stderr_encoding = sprops.encoding;
+        sprops.stderr_encoding = sprops.encoding;
     }
 
 #ifdef _ALLBSD_SOURCE
@@ -488,8 +501,16 @@ GetJavaProperties(JNIEnv *env)
 #else
         sprops.user_home = pwent ? strdup(pwent->pw_dir) : NULL;
 #endif
-        if (sprops.user_home == NULL) {
-            sprops.user_home = "?";
+        if (sprops.user_home == NULL || sprops.user_home[0] == '\0' ||
+            sprops.user_home[1] == '\0') {
+            // If the OS supplied home directory is not defined or less than two characters long
+            // $HOME is the backup source for the home directory, if defined
+            char* user_home = getenv("HOME");
+            if ((user_home != NULL) && (user_home[0] != '\0')) {
+                sprops.user_home = user_home;
+            } else {
+                sprops.user_home = "?";
+            }
         }
     }
 
@@ -504,11 +525,14 @@ GetJavaProperties(JNIEnv *env)
     {
         char buf[MAXPATHLEN];
         errno = 0;
-        if (getcwd(buf, sizeof(buf))  == NULL)
+        if (getcwd(buf, sizeof(buf)) == NULL) {
             JNU_ThrowByName(env, "java/lang/Error",
-             "Properties init: Could not determine current working directory.");
-        else
+            "Properties init: Could not determine current working directory.");
+            return NULL;
+        }
+        else {
             sprops.user_dir = strdup(buf);
+        }
     }
 
     sprops.file_separator = "/";

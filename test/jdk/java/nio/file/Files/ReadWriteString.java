@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,18 @@
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
-import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_16;
+import static java.nio.charset.StandardCharsets.UTF_16BE;
+import static java.nio.charset.StandardCharsets.UTF_16LE;
+import static java.nio.charset.StandardCharsets.UTF_32;
+import static java.nio.charset.StandardCharsets.UTF_32BE;
+import static java.nio.charset.StandardCharsets.UTF_32LE;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
@@ -38,19 +45,20 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.Callable;
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
-import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /* @test
- * @bug 8201276 8205058 8209576
+ * @bug 8201276 8205058 8209576 8287541 8288589 8325590
  * @build ReadWriteString PassThroughFileSystem
  * @run testng ReadWriteString
  * @summary Unit test for methods for Files readString and write methods.
  * @key randomness
+ * @modules jdk.charsets
  */
 @Test(groups = "readwrite")
 public class ReadWriteString {
@@ -58,12 +66,10 @@ public class ReadWriteString {
     // data for text files
     final String TEXT_UNICODE = "\u201CHello\u201D";
     final String TEXT_ASCII = "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n abcdefghijklmnopqrstuvwxyz\n 1234567890\n";
+    final static String TEXT_PERSON_CART_WHEELING = "\ud83e\udd38";
     private static final String JA_STRING = "\u65e5\u672c\u8a9e\u6587\u5b57\u5217";
-
-    // malformed input: a high surrogate without the low surrogate
-    static char[] illChars = {
-        '\u00fa', '\ud800'
-    };
+    private static final Charset WINDOWS_1252 = Charset.forName("windows-1252");
+    private static final Charset WINDOWS_31J = Charset.forName("windows-31j");
 
     static byte[] data = getData();
 
@@ -92,12 +98,14 @@ public class ReadWriteString {
      */
     @DataProvider(name = "malformedWrite")
     public Object[][] getMalformedWrite() throws IOException {
-        Path path = Files.createTempFile("malformedWrite", null);
+        Path path = Files.createFile(Path.of("malformedWrite"));
         return new Object[][]{
             {path, "\ud800", null},  //the default Charset is UTF_8
             {path, "\u00A0\u00A1", US_ASCII},
             {path, "\ud800", UTF_8},
             {path, JA_STRING, ISO_8859_1},
+            {path, "\u041e", WINDOWS_1252}, // cyrillic capital letter O
+            {path, "\u091c", WINDOWS_31J}, // devanagari letter ja
         };
     }
 
@@ -107,10 +115,23 @@ public class ReadWriteString {
      */
     @DataProvider(name = "illegalInput")
     public Object[][] getIllegalInput() throws IOException {
-        Path path = Files.createTempFile("illegalInput", null);
+        Path path = Files.createFile(Path.of("illegalInput"));
         return new Object[][]{
             {path, data, ISO_8859_1, null},
             {path, data, ISO_8859_1, UTF_8}
+        };
+    }
+
+    /*
+     * DataProvider for illegal input bytes test
+     */
+    @DataProvider(name = "illegalInputBytes")
+    public Object[][] getIllegalInputBytes() throws IOException {
+        return new Object[][]{
+            {new byte[] {(byte)0x00, (byte)0x20, (byte)0x00}, UTF_16, MalformedInputException.class},
+            {new byte[] {-50}, UTF_16, MalformedInputException.class},
+            {new byte[] {(byte)0x81}, WINDOWS_1252, UnmappableCharacterException.class}, // unused in Cp1252
+            {new byte[] {(byte)0x81, (byte)0xff}, WINDOWS_31J, UnmappableCharacterException.class}, // invalid trailing byte
         };
     }
 
@@ -119,7 +140,7 @@ public class ReadWriteString {
      * Writes the data using both the existing and new method and compares the results.
      */
     @DataProvider(name = "testWriteString")
-    public Object[][] getWriteString() throws IOException {
+    public Object[][] getWriteString() {
 
         return new Object[][]{
             {testFiles[1], testFiles[2], TEXT_ASCII, US_ASCII, null},
@@ -134,28 +155,29 @@ public class ReadWriteString {
      * Reads the file using both the existing and new method and compares the results.
      */
     @DataProvider(name = "testReadString")
-    public Object[][] getReadString() throws IOException {
-        Path path = Files.createTempFile("readString_file1", null);
+    public Object[][] getReadString() {
         return new Object[][]{
             {testFiles[1], TEXT_ASCII, US_ASCII, US_ASCII},
             {testFiles[1], TEXT_ASCII, US_ASCII, UTF_8},
             {testFiles[1], TEXT_UNICODE, UTF_8, null},
-            {testFiles[1], TEXT_UNICODE, UTF_8, UTF_8}
+            {testFiles[1], TEXT_UNICODE, UTF_8, UTF_8},
+            {testFiles[1], TEXT_ASCII, US_ASCII, ISO_8859_1},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_16, UTF_16},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_16BE, UTF_16BE},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_16LE, UTF_16LE},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_32, UTF_32},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_32BE, UTF_32BE},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_32LE, UTF_32LE},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, WINDOWS_1252, WINDOWS_1252},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, WINDOWS_31J, WINDOWS_31J}
         };
     }
 
     @BeforeClass
     void setup() throws IOException {
-        testFiles[0] = Files.createTempFile("readWriteString", null);
-        testFiles[1] = Files.createTempFile("writeString_file1", null);
-        testFiles[2] = Files.createTempFile("writeString_file2", null);
-    }
-
-    @AfterClass
-    void cleanup() throws IOException {
-        for (Path path : testFiles) {
-            Files.deleteIfExists(path);
-        }
+        testFiles[0] = Files.createFile(Path.of("readWriteString"));
+        testFiles[1] = Files.createFile(Path.of("writeString_file1"));
+        testFiles[2] = Files.createFile(Path.of("writeString_file2"));
     }
 
     /**
@@ -244,11 +266,10 @@ public class ReadWriteString {
      */
     @Test(dataProvider = "malformedWrite", expectedExceptions = UnmappableCharacterException.class)
     public void testMalformedWrite(Path path, String s, Charset cs) throws IOException {
-        path.toFile().deleteOnExit();
         if (cs == null) {
-            Files.writeString(path, s, CREATE);
+            Files.writeString(path, s);
         } else {
-            Files.writeString(path, s, cs, CREATE);
+            Files.writeString(path, s, cs);
         }
     }
 
@@ -264,15 +285,53 @@ public class ReadWriteString {
      */
     @Test(dataProvider = "illegalInput", expectedExceptions = MalformedInputException.class)
     public void testMalformedRead(Path path, byte[] data, Charset csWrite, Charset csRead) throws IOException {
-        path.toFile().deleteOnExit();
         String temp = new String(data, csWrite);
-        Files.writeString(path, temp, csWrite, CREATE);
-        String s;
+        Files.writeString(path, temp, csWrite);
         if (csRead == null) {
-            s = Files.readString(path);
+            Files.readString(path);
         } else {
-            s = Files.readString(path, csRead);
+            Files.readString(path, csRead);
         }
+    }
+
+    /**
+     * Verifies that IOException is thrown when reading a file containing
+     * illegal bytes
+     *
+     * @param data the data used for the test
+     * @param csRead the Charset to use for reading the file
+     * @param expected exception class
+     * @throws IOException when the Charset used for reading the file is incorrect
+     */
+    @Test(dataProvider = "illegalInputBytes")
+    public void testMalformedReadBytes(byte[] data, Charset csRead, Class<CharacterCodingException> expected)
+            throws IOException {
+        Path path = Path.of("illegalInputBytes");
+        Files.write(path, data);
+        try {
+            Files.readString(path, csRead);
+        } catch (MalformedInputException | UnmappableCharacterException e) {
+            if (expected.isInstance(e)) {
+                // success
+                return;
+            }
+        }
+        throw new RuntimeException("An instance of " + expected + " should be thrown");
+    }
+
+    // Verify File.readString with UTF16 to confirm proper string length and contents.
+    // A regression test for 8325590
+    @Test
+    public void testSingleUTF16() throws IOException {
+        String original = "🤸";    // "\ud83e\udd38";
+        Files.writeString(testFiles[0], original, UTF_16);
+        String actual = Files.readString(testFiles[0], UTF_16);
+        if (!actual.equals(original)) {
+            System.out.printf("expected (%s), was (%s)\n", original, actual);
+            System.out.printf("expected UTF_16 bytes: %s\n", Arrays.toString(original.getBytes(UTF_16)));
+            System.out.printf("actual UTF_16 bytes: %s\n", Arrays.toString(actual.getBytes(UTF_16)));
+        }
+        assertEquals(actual, original, "Round trip string mismatch with multi-byte encoding");
     }
 
     private void checkNullPointerException(Callable<?> c) {

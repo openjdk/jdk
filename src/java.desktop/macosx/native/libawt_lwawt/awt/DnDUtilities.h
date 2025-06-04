@@ -55,7 +55,7 @@
 @end
 
 
-// Global debugging flag (for drag-and-drop) - this can be overriden locally per file:
+// Global debugging flag (for drag-and-drop) - this can be overridden locally per file:
 #ifndef DND_DEBUG
 //    #define DND_DEBUG TRUE
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@
  *     found referenceTypeID and list of fieldIDs as arguments, writes packet
  *     to the transport channel, and waits for a reply packet.
  *     When reply packet is received, debugger parses the packet structure
- *     and and checks that there is no data in the reply packet.
+ *     and checks that there is no data in the reply packet.
  *     Then debugger sends signal RUN to debuggee to ask it to verify
  *     new fields values of tested class. Debuggee compares compares
  *     these values with original and terget values and sends ERROR signal
@@ -66,7 +66,7 @@
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
  * @build nsk.jdwp.ClassType.SetValues.setvalues001a
- * @run main/othervm
+ * @run driver
  *      nsk.jdwp.ClassType.SetValues.setvalues001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

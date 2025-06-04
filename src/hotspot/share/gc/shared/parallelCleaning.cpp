@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,21 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "classfile/symbolTable.hpp"
 #include "classfile/stringTable.hpp"
+#include "classfile/symbolTable.hpp"
 #include "code/codeCache.hpp"
 #include "gc/shared/parallelCleaning.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
-#include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 
-CodeCacheUnloadingTask::CodeCacheUnloadingTask(uint num_workers, BoolObjectClosure* is_alive, bool unloading_occurred) :
-  _unloading_scope(is_alive),
+CodeCacheUnloadingTask::CodeCacheUnloadingTask(uint num_workers, bool unloading_occurred) :
   _unloading_occurred(unloading_occurred),
   _num_workers(num_workers),
-  _first_nmethod(NULL),
-  _claimed_nmethod(NULL) {
+  _first_nmethod(nullptr),
+  _claimed_nmethod(nullptr) {
   // Get first alive nmethod
-  CompiledMethodIterator iter(CompiledMethodIterator::only_alive);
+  NMethodIterator iter(NMethodIterator::all);
   if(iter.next()) {
     _first_nmethod = iter.method();
   }
@@ -48,20 +45,19 @@ CodeCacheUnloadingTask::CodeCacheUnloadingTask(uint num_workers, BoolObjectClosu
 
 CodeCacheUnloadingTask::~CodeCacheUnloadingTask() {
   CodeCache::verify_clean_inline_caches();
-  CodeCache::verify_icholder_relocations();
 }
 
-void CodeCacheUnloadingTask::claim_nmethods(CompiledMethod** claimed_nmethods, int *num_claimed_nmethods) {
-  CompiledMethod* first;
-  CompiledMethodIterator last(CompiledMethodIterator::only_alive);
+void CodeCacheUnloadingTask::claim_nmethods(nmethod** claimed_nmethods, int *num_claimed_nmethods) {
+  nmethod* first;
+  NMethodIterator last(NMethodIterator::all);
 
   do {
     *num_claimed_nmethods = 0;
 
     first = _claimed_nmethod;
-    last = CompiledMethodIterator(CompiledMethodIterator::only_alive, first);
+    last = NMethodIterator(NMethodIterator::all, first);
 
-    if (first != NULL) {
+    if (first != nullptr) {
 
       for (int i = 0; i < MaxClaimNmethods; i++) {
         if (!last.next()) {
@@ -77,13 +73,13 @@ void CodeCacheUnloadingTask::claim_nmethods(CompiledMethod** claimed_nmethods, i
 
 void CodeCacheUnloadingTask::work(uint worker_id) {
   // The first nmethods is claimed by the first worker.
-  if (worker_id == 0 && _first_nmethod != NULL) {
+  if (worker_id == 0 && _first_nmethod != nullptr) {
     _first_nmethod->do_unloading(_unloading_occurred);
-    _first_nmethod = NULL;
+    _first_nmethod = nullptr;
   }
 
   int num_claimed_nmethods;
-  CompiledMethod* claimed_nmethods[MaxClaimNmethods];
+  nmethod* claimed_nmethods[MaxClaimNmethods];
 
   while (true) {
     claim_nmethods(claimed_nmethods, &num_claimed_nmethods);
@@ -115,7 +111,7 @@ InstanceKlass* KlassCleaningTask::claim_next_klass() {
   Klass* klass;
   do {
     klass =_klass_iterator.next_klass();
-  } while (klass != NULL && !klass->is_instance_klass());
+  } while (klass != nullptr && !klass->is_instance_klass());
 
   // this can be null so don't call InstanceKlass::cast
   return static_cast<InstanceKlass*>(klass);
@@ -131,7 +127,7 @@ void KlassCleaningTask::work() {
 
   // All workers will help cleaning the classes,
   InstanceKlass* klass;
-  while ((klass = claim_next_klass()) != NULL) {
+  while ((klass = claim_next_klass()) != nullptr) {
     clean_klass(klass);
   }
 }

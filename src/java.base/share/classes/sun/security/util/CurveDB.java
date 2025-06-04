@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,19 +39,24 @@ import java.util.*;
  * @author  Andreas Sterbenz
  */
 public class CurveDB {
+
+    public static final NamedCurve P_256;
+    public static final NamedCurve P_384;
+    public static final NamedCurve P_521;
+
     private static final int P  = 1; // prime curve
     private static final int B  = 2; // binary curve
     private static final int PD = 5; // prime curve, mark as default
     private static final int BD = 6; // binary curve, mark as default
 
     private static final Map<String,NamedCurve> oidMap =
-        new LinkedHashMap<String,NamedCurve>();
+            new LinkedHashMap<>();
     private static final Map<String,NamedCurve> nameMap =
-        new HashMap<String,NamedCurve>();
+            new HashMap<>();
     private static final Map<Integer,NamedCurve> lengthMap =
-        new HashMap<Integer,NamedCurve>();
+            new HashMap<>();
 
-    private static Collection<? extends NamedCurve> specCollection;
+    private static final Collection<? extends NamedCurve> specCollection;
 
     // Return a NamedCurve for the specified OID/name or null if unknown.
     public static NamedCurve lookup(String name) {
@@ -109,7 +114,7 @@ public class CurveDB {
         return new BigInteger(s, 16);
     }
 
-    private static void add(KnownOIDs o, int type, String sfield,
+    private static NamedCurve add(KnownOIDs o, int type, String sfield,
             String a, String b, String x, String y, String n, int h) {
         BigInteger p = bi(sfield);
         ECField field;
@@ -143,6 +148,8 @@ public class CurveDB {
             // the curve is marked as a default curve.
             lengthMap.put(len, params);
         }
+
+        return params;
     }
 
     static {
@@ -255,7 +262,7 @@ public class CurveDB {
             "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141",
             1);
 
-        add(KnownOIDs.secp256r1, PD,
+        P_256 = add(KnownOIDs.secp256r1, PD,
             "FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF",
             "FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC",
             "5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B",
@@ -264,7 +271,7 @@ public class CurveDB {
             "FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551",
             1);
 
-        add(KnownOIDs.secp384r1, PD,
+        P_384 = add(KnownOIDs.secp384r1, PD,
             "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFF0000000000000000FFFFFFFF",
             "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFF0000000000000000FFFFFFFC",
             "B3312FA7E23EE7E4988E056BE3F82D19181D9C6EFE8141120314088F5013875AC656398D8A2ED19D2A85C8EDD3EC2AEF",
@@ -273,7 +280,7 @@ public class CurveDB {
             "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFC7634D81F4372DDF581A0DB248B0A77AECEC196ACCC52973",
             1);
 
-        add(KnownOIDs.secp521r1, PD,
+        P_521 = add(KnownOIDs.secp521r1, PD,
             "01FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
             "01FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFC",
             "0051953EB9618E1C9A1F929A21A0B68540EEA2DA725B99B315F3B8B489918EF109E156193951EC7E937B1652C0BD3BB1BF073573DF883D2C34F1EF451FD46B503F00",

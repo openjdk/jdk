@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8270139 8273039
+ * @bug 8270139 8273039 8286895 8332230
  * @summary Verify error recovery in JShell
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -53,6 +53,22 @@ public class ErrorRecoveryTest extends KullaTesting {
 
     public void testBrokenName() {
         assertEval("int strictfp = 0;",
+                   DiagCheck.DIAG_ERROR,
+                   DiagCheck.DIAG_IGNORE,
+                   ste(MAIN_SNIPPET, NONEXISTENT, REJECTED, false, null));
+    }
+
+    public void testBooleanPatternExpression() {
+        assertEval("Number n = 0;");
+        assertEval("if (!n instanceof Integer i) {}",
+                   DiagCheck.DIAG_ERROR,
+                   DiagCheck.DIAG_IGNORE,
+                   ste(MAIN_SNIPPET, NONEXISTENT, REJECTED, false, null));
+    }
+
+    //JDK-8332230:
+    public void testAnnotationsd() {
+        assertEval("k=aa:a.@a",
                    DiagCheck.DIAG_ERROR,
                    DiagCheck.DIAG_IGNORE,
                    ste(MAIN_SNIPPET, NONEXISTENT, REJECTED, false, null));

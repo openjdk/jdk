@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,28 +29,9 @@
 
 DIR=`dirname $0`
 
-if echo $* | grep linux-musl >/dev/null ; then
-    echo $*
-    exit
-fi
-
 # Allow wsl
 if echo $* | grep pc-wsl >/dev/null ; then
     echo $*
-    exit
-fi
-
-# Allow msys2
-if echo $* | grep pc-msys >/dev/null ; then
-    echo $*
-    exit
-fi
-
-# Filter out everything that doesn't begin with "aarch64-"
-if ! echo $* | grep '^aarch64-' >/dev/null ; then
-    . $DIR/autoconf-config.sub "$@"
-    # autoconf-config.sub exits, so we never reach here, but just in
-    # case we do:
     exit
 fi
 
@@ -58,10 +39,6 @@ while test $# -gt 0 ; do
     case $1 in
         -- )   # Stop option processing
             shift; break ;;
-        aarch64-* )
-            config=`echo $1 | sed 's/^aarch64-/arm-/'`
-            sub_args="$sub_args $config"
-            shift; ;;
         - )    # Use stdin as input.
             sub_args="$sub_args $1"
             shift; break ;;
@@ -74,8 +51,5 @@ done
 result=`. $DIR/autoconf-config.sub $sub_args "$@"`
 exitcode=$?
 
-result=`echo $result | sed "s/^arm-/aarch64-/"`
-
 echo $result
 exit $exitcode
-

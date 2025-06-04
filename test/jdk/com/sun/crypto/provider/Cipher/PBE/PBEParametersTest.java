@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4944783 6383200
+ * @bug 4944783 6383200 8288050
  * @summary ensure that the AlgorithmParameters object returned by
  * PBE ciphers have the matching algorithm name.
  * @author Valerie Peng
@@ -49,7 +49,9 @@ public class PBEParametersTest {
         "PBEWithHmacSHA224AndAES_128",
         "PBEWithHmacSHA256AndAES_128",
         "PBEWithHmacSHA384AndAES_128",
-        "PBEWithHmacSHA512AndAES_128"
+        "PBEWithHmacSHA512AndAES_128",
+        "PBEWithHmacSHA512/224AndAES_128",
+        "PBEWithHmacSHA512/256AndAES_128",
         // skip "PBEWithHmacSHAxxxAndAES_256" since they require Unlimited
         // version of JCE jurisdiction policy files.
     };
@@ -59,7 +61,8 @@ public class PBEParametersTest {
             String algo = PBE_ALGOS[i];
             SecretKeyFactory skf = SecretKeyFactory.getInstance(algo);
             SecretKey key = skf.generateSecret(ks);
-            Cipher c = Cipher.getInstance(algo, "SunJCE");
+            Cipher c = Cipher.getInstance(algo,
+                                System.getProperty("test.provider.name", "SunJCE"));
             c.init(Cipher.ENCRYPT_MODE, key);
             c.doFinal(new byte[10]); // force the generation of parameters
             AlgorithmParameters params = c.getParameters();

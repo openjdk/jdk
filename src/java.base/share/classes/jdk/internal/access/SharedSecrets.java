@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,16 +30,18 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.ObjectInputFilter;
 import java.lang.invoke.MethodHandles;
 import java.lang.module.ModuleDescriptor;
+import java.security.Security;
 import java.security.spec.EncodedKeySpec;
 import java.util.ResourceBundle;
+import java.util.concurrent.ForkJoinPool;
 import java.util.jar.JarFile;
 import java.io.Console;
 import java.io.FileDescriptor;
 import java.io.FilePermission;
 import java.io.ObjectInputStream;
 import java.io.RandomAccessFile;
-import java.security.ProtectionDomain;
 import java.security.Signature;
+import javax.security.auth.x500.X500Principal;
 
 /** A repository of "shared secrets", which are a mechanism for
     calling implementation-private methods in another package without
@@ -48,7 +50,13 @@ import java.security.Signature;
     within that package; the object implementing that interface is
     provided through a third package to which access is restricted.
     This framework avoids the primary disadvantage of using reflection
-    for this purpose, namely the loss of compile-time checking. */
+    for this purpose, namely the loss of compile-time checking.
+ * <p><strong>
+ * Usage of these APIs often means bad encapsulation designs,
+ * increased complexity and lack of sustainability.
+ * Use this only as a last resort!
+ * </strong>
+ */
 
 public class SharedSecrets {
     private static JavaAWTAccess javaAWTAccess;
@@ -61,25 +69,28 @@ public class SharedSecrets {
     private static JavaLangReflectAccess javaLangReflectAccess;
     private static JavaIOAccess javaIOAccess;
     private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
-    private static JavaIOFilePermissionAccess javaIOFilePermissionAccess;
     private static JavaIORandomAccessFileAccess javaIORandomAccessFileAccess;
     private static JavaObjectInputStreamReadString javaObjectInputStreamReadString;
     private static JavaObjectInputStreamAccess javaObjectInputStreamAccess;
     private static JavaObjectInputFilterAccess javaObjectInputFilterAccess;
+    private static JavaObjectStreamReflectionAccess javaObjectStreamReflectionAccess;
     private static JavaNetInetAddressAccess javaNetInetAddressAccess;
     private static JavaNetHttpCookieAccess javaNetHttpCookieAccess;
     private static JavaNetUriAccess javaNetUriAccess;
     private static JavaNetURLAccess javaNetURLAccess;
     private static JavaNioAccess javaNioAccess;
     private static JavaUtilCollectionAccess javaUtilCollectionAccess;
+    private static JavaUtilConcurrentTLRAccess javaUtilConcurrentTLRAccess;
+    private static JavaUtilConcurrentFJPAccess javaUtilConcurrentFJPAccess;
     private static JavaUtilJarAccess javaUtilJarAccess;
     private static JavaUtilZipFileAccess javaUtilZipFileAccess;
     private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
-    private static JavaSecurityAccess javaSecurityAccess;
+    private static JavaSecurityPropertiesAccess javaSecurityPropertiesAccess;
     private static JavaSecuritySignatureAccess javaSecuritySignatureAccess;
     private static JavaSecuritySpecAccess javaSecuritySpecAccess;
     private static JavaxCryptoSealedObjectAccess javaxCryptoSealedObjectAccess;
     private static JavaxCryptoSpecAccess javaxCryptoSpecAccess;
+    private static JavaxSecurityAccess javaxSecurityAccess;
 
     public static void setJavaUtilCollectionAccess(JavaUtilCollectionAccess juca) {
         javaUtilCollectionAccess = juca;
@@ -92,6 +103,34 @@ public class SharedSecrets {
                 Class.forName("java.util.ImmutableCollections$Access", true, null);
                 access = javaUtilCollectionAccess;
             } catch (ClassNotFoundException e) {}
+        }
+        return access;
+    }
+
+    public static void setJavaUtilConcurrentTLRAccess(JavaUtilConcurrentTLRAccess access) {
+        javaUtilConcurrentTLRAccess = access;
+    }
+
+    public static JavaUtilConcurrentTLRAccess getJavaUtilConcurrentTLRAccess() {
+        var access = javaUtilConcurrentTLRAccess;
+        if (access == null) {
+            try {
+                Class.forName("java.util.concurrent.ThreadLocalRandom$Access", true, null);
+                access = javaUtilConcurrentTLRAccess;
+            } catch (ClassNotFoundException e) {}
+        }
+        return access;
+    }
+
+    public static void setJavaUtilConcurrentFJPAccess(JavaUtilConcurrentFJPAccess access) {
+        javaUtilConcurrentFJPAccess = access;
+    }
+
+    public static JavaUtilConcurrentFJPAccess getJavaUtilConcurrentFJPAccess() {
+        var access = javaUtilConcurrentFJPAccess;
+        if (access == null) {
+            ensureClassInitialized(ForkJoinPool.class);
+            access = javaUtilConcurrentFJPAccess;
         }
         return access;
     }
@@ -247,19 +286,6 @@ public class SharedSecrets {
         javaIOFileDescriptorAccess = jiofda;
     }
 
-    public static JavaIOFilePermissionAccess getJavaIOFilePermissionAccess() {
-        var access = javaIOFilePermissionAccess;
-        if (access == null) {
-            ensureClassInitialized(FilePermission.class);
-            access = javaIOFilePermissionAccess;
-        }
-        return access;
-    }
-
-    public static void setJavaIOFilePermissionAccess(JavaIOFilePermissionAccess jiofpa) {
-        javaIOFilePermissionAccess = jiofpa;
-    }
-
     public static JavaIOFileDescriptorAccess getJavaIOFileDescriptorAccess() {
         var access = javaIOFileDescriptorAccess;
         if (access == null) {
@@ -269,15 +295,15 @@ public class SharedSecrets {
         return access;
     }
 
-    public static void setJavaSecurityAccess(JavaSecurityAccess jsa) {
-        javaSecurityAccess = jsa;
+    public static void setJavaSecurityPropertiesAccess(JavaSecurityPropertiesAccess jspa) {
+        javaSecurityPropertiesAccess = jspa;
     }
 
-    public static JavaSecurityAccess getJavaSecurityAccess() {
-        var access = javaSecurityAccess;
+    public static JavaSecurityPropertiesAccess getJavaSecurityPropertiesAccess() {
+        var access = javaSecurityPropertiesAccess;
         if (access == null) {
-            ensureClassInitialized(ProtectionDomain.class);
-            access = javaSecurityAccess;
+            ensureClassInitialized(Security.class);
+            access = javaSecurityPropertiesAccess;
         }
         return access;
     }
@@ -375,6 +401,21 @@ public class SharedSecrets {
         javaObjectInputFilterAccess = access;
     }
 
+    public static JavaObjectStreamReflectionAccess getJavaObjectStreamReflectionAccess() {
+        var access = javaObjectStreamReflectionAccess;
+        if (access == null) {
+            try {
+                Class.forName("java.io.ObjectStreamReflection$Access", true, null);
+                access = javaObjectStreamReflectionAccess;
+            } catch (ClassNotFoundException e) {}
+        }
+        return access;
+    }
+
+    public static void setJavaObjectStreamReflectionAccess(JavaObjectStreamReflectionAccess access) {
+        javaObjectStreamReflectionAccess = access;
+    }
+
     public static void setJavaIORandomAccessFileAccess(JavaIORandomAccessFileAccess jirafa) {
         javaIORandomAccessFileAccess = jirafa;
     }
@@ -406,10 +447,12 @@ public class SharedSecrets {
     }
 
     public static JavaSecuritySpecAccess getJavaSecuritySpecAccess() {
-        if (javaSecuritySpecAccess == null) {
+        var access = javaSecuritySpecAccess;
+        if (access == null) {
             ensureClassInitialized(EncodedKeySpec.class);
+            access = javaSecuritySpecAccess;
         }
-        return javaSecuritySpecAccess;
+        return access;
     }
 
     public static void setJavaxCryptoSpecAccess(JavaxCryptoSpecAccess jcsa) {
@@ -417,10 +460,12 @@ public class SharedSecrets {
     }
 
     public static JavaxCryptoSpecAccess getJavaxCryptoSpecAccess() {
-        if (javaxCryptoSpecAccess == null) {
+        var access = javaxCryptoSpecAccess;
+        if (access == null) {
             ensureClassInitialized(SecretKeySpec.class);
+            access = javaxCryptoSpecAccess;
         }
-        return javaxCryptoSpecAccess;
+        return access;
     }
 
     public static void setJavaxCryptoSealedObjectAccess(JavaxCryptoSealedObjectAccess jcsoa) {
@@ -432,6 +477,19 @@ public class SharedSecrets {
         if (access == null) {
             ensureClassInitialized(SealedObject.class);
             access = javaxCryptoSealedObjectAccess;
+        }
+        return access;
+    }
+
+    public static void setJavaxSecurityAccess(JavaxSecurityAccess jsa) {
+        javaxSecurityAccess = jsa;
+    }
+
+    public static JavaxSecurityAccess getJavaxSecurityAccess() {
+        var access = javaxSecurityAccess;
+        if (access == null) {
+            ensureClassInitialized(X500Principal.class);
+            access = javaxSecurityAccess;
         }
         return access;
     }

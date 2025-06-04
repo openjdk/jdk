@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +28,6 @@
 
 extern BOOL      useD3D;             // d3d enabled flag
 extern BOOL      forceD3DUsage;      // force d3d on or off
-extern jboolean  g_offscreenSharing; // JAWT accelerated surface sharing
 extern BOOL      setHighDPIAware;    // whether to set High DPI Aware flag on Vista
 
 void SetD3DEnabledFlag(JNIEnv *env, BOOL d3dEnabled, BOOL d3dSet);
@@ -37,4 +35,4 @@ void SetD3DEnabledFlag(JNIEnv *env, BOOL d3dEnabled, BOOL d3dSet);
 BOOL IsD3DEnabled();
 BOOL IsD3DForced();
 
-#endif WINDOWSFLAGS_H
+#endif // WINDOWSFLAGS_H

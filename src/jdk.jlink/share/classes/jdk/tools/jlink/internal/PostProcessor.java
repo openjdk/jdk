@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package jdk.tools.jlink.internal;
 import java.util.List;
 
 /**
- * Plugin wishing to post-proces must implement this interface. PostProcessors
+ * Plugin wishing to post-process must implement this interface. PostProcessors
  * are called once the image has been generated and is executable.
  **/
 public interface PostProcessor {

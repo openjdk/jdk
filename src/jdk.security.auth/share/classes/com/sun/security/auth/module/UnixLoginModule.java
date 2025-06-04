@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import com.sun.security.auth.UnixNumericGroupPrincipal;
  * If set to true in the login Configuration,
  * debug messages will be output to the output stream, System.out.
  *
+ * @since 1.4
  */
 public class UnixLoginModule implements LoginModule {
 
@@ -277,11 +278,18 @@ public class UnixLoginModule implements LoginModule {
                     ("logout Failed: Subject is Readonly");
             }
         // remove the added Principals from the Subject
-        subject.getPrincipals().remove(userPrincipal);
-        subject.getPrincipals().remove(UIDPrincipal);
-        subject.getPrincipals().remove(GIDPrincipal);
-        for (int i = 0; i < supplementaryGroups.size(); i++) {
-            subject.getPrincipals().remove(supplementaryGroups.get(i));
+        if (userPrincipal != null) {
+            subject.getPrincipals().remove(userPrincipal);
+        }
+        if (UIDPrincipal != null) {
+            subject.getPrincipals().remove(UIDPrincipal);
+        }
+        if (GIDPrincipal != null) {
+            subject.getPrincipals().remove(GIDPrincipal);
+        }
+        for (UnixNumericGroupPrincipal gp : supplementaryGroups) {
+            // gp is never null
+            subject.getPrincipals().remove(gp);
         }
 
         // clean out state

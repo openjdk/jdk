@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import javax.swing.event.MenuKeyListener;
  * @author Rich Schiavi
  * @since 1.2
  */
-public class ToolTipManager extends MouseAdapter implements MouseMotionListener  {
+public final class ToolTipManager extends MouseAdapter implements MouseMotionListener  {
     Timer enterTimer, exitTimer, insideTimer;
     String toolTipText;
     Point  preferredLocation;
@@ -220,7 +220,7 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
     /**
      * Returns the reshow delay property.
      *
-     * @return reshown delay property
+     * @return reshow delay property
      * @see #setReshowDelay
      */
     public int getReshowDelay() {
@@ -265,13 +265,19 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
                 toFind = new Point(screenLocation.x + preferredLocation.x,
                         screenLocation.y + preferredLocation.y);
             } else {
-                toFind = mouseEvent.getLocationOnScreen();
+                if (mouseEvent != null) {
+                    toFind = mouseEvent.getLocationOnScreen();
+                } else {
+                    toFind = screenLocation;
+                }
             }
 
             GraphicsConfiguration gc = getDrawingGC(toFind);
             if (gc == null) {
-                toFind = mouseEvent.getLocationOnScreen();
-                gc = getDrawingGC(toFind);
+                if (mouseEvent != null) {
+                    toFind = mouseEvent.getLocationOnScreen();
+                    gc = getDrawingGC(toFind);
+                }
                 if (gc == null) {
                     gc = insideComponent.getGraphicsConfiguration();
                 }
@@ -301,8 +307,12 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
             location.x -= size.width;
         }
             } else {
-                location = new Point(screenLocation.x + mouseEvent.getX(),
-                        screenLocation.y + mouseEvent.getY() + 20);
+                if (mouseEvent != null) {
+                    location = new Point(screenLocation.x + mouseEvent.getX(),
+                            screenLocation.y + mouseEvent.getY() + 20);
+                } else {
+                    location = screenLocation;
+                }
         if (!leftToRight) {
             if(location.x - size.width>=0) {
                 location.x -= size.width;

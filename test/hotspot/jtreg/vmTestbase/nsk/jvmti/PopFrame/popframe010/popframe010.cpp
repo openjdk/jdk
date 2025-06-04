@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -33,13 +33,13 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
-static jmethodID midCheckPoint = NULL;
-static jmethodID midRun = NULL;
+static jmethodID midCheckPoint = nullptr;
+static jmethodID midRun = nullptr;
 static jint framesExpected = 0;
 static jint framesCount = 0;
 static const char *cls_exp = "Lnsk/jvmti/PopFrame/popframe010$TestThread;";
@@ -52,7 +52,7 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jmethodID mid, jlocation loc, jint 
     jclass cls;
     jlocation loc_exp = (i == 0) ? 15 : 8;
     char *sigClass, *name, *sig, *generic;
-    jvmtiLocalVariableEntry *table = NULL;
+    jvmtiLocalVariableEntry *table = nullptr;
     jint entryCount = 0;
     jint argValue;
     jint j;
@@ -85,7 +85,7 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jmethodID mid, jlocation loc, jint 
                i, TranslateError(err), err);
         result = STATUS_FAILED;
     }
-    if (table != NULL) {
+    if (table != nullptr) {
         for (j = 0; j < entryCount; j++) {
             if (strcmp(table[j].name, argName) == 0) {
                 err = jvmti_env->GetLocalInt(thr, 0,
@@ -105,17 +105,17 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jmethodID mid, jlocation loc, jint 
         printf(", arg value: %d\n", argValue);
     }
 
-    if (sigClass == NULL || strcmp(sigClass, cls_exp) != 0) {
+    if (sigClass == nullptr || strcmp(sigClass, cls_exp) != 0) {
         printf("(step %d) wrong class sig: \"%s\",\n", i, sigClass);
         printf(" expected: \"%s\"\n", cls_exp);
         result = STATUS_FAILED;
     }
-    if (name == NULL || strcmp(name, name_exp) != 0) {
+    if (name == nullptr || strcmp(name, name_exp) != 0) {
         printf("(step %d) wrong method name: \"%s\",", i, name);
         printf(" expected: \"%s\"\n", name_exp);
         result = STATUS_FAILED;
     }
-    if (sig == NULL || strcmp(sig, sig_exp) != 0) {
+    if (sig == nullptr || strcmp(sig, sig_exp) != 0) {
         printf("(step %d) wrong method sig: \"%s\",", i, sig);
         printf(" expected: \"%s\"\n", sig_exp);
         result = STATUS_FAILED;
@@ -132,16 +132,16 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jmethodID mid, jlocation loc, jint 
         result = STATUS_FAILED;
     }
 
-    if (sigClass != NULL) {
+    if (sigClass != nullptr) {
         jvmti_env->Deallocate((unsigned char*)sigClass);
     }
-    if (name != NULL) {
+    if (name != nullptr) {
         jvmti_env->Deallocate((unsigned char*)name);
     }
-    if (sig != NULL) {
+    if (sig != nullptr) {
         jvmti_env->Deallocate((unsigned char*)sig);
     }
-    if (table != NULL) {
+    if (table != nullptr) {
         for (j = 0; j < entryCount; j++) {
             jvmti_env->Deallocate((unsigned char*)(table[j].name));
             jvmti_env->Deallocate((unsigned char*)(table[j].signature));
@@ -232,12 +232,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError err;
     jint res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -288,7 +288,7 @@ JNIEXPORT void JNICALL
 Java_nsk_jvmti_PopFrame_popframe010_getReady(JNIEnv *env, jclass c, jclass cls, jint depth) {
     jvmtiError err;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         result = STATUS_FAILED;
         return;
@@ -301,14 +301,14 @@ Java_nsk_jvmti_PopFrame_popframe010_getReady(JNIEnv *env, jclass c, jclass cls, 
     }
 
     midRun = env->GetMethodID(cls, "run", "()V");
-    if (midRun == NULL) {
+    if (midRun == nullptr) {
         printf("Cannot find Method ID for method run\n");
         result = STATUS_FAILED;
         return;
     }
 
     midCheckPoint = env->GetMethodID(cls, "checkPoint", "()V");
-    if (midCheckPoint == NULL) {
+    if (midCheckPoint == nullptr) {
         printf("Cannot find Method ID for method checkPoint\n");
         result = STATUS_FAILED;
         return;
@@ -323,7 +323,7 @@ Java_nsk_jvmti_PopFrame_popframe010_getReady(JNIEnv *env, jclass c, jclass cls, 
     }
 
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-        JVMTI_EVENT_BREAKPOINT, NULL);
+        JVMTI_EVENT_BREAKPOINT, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable BREAKPOINT event: %s (%d)\n",
                TranslateError(err), err);

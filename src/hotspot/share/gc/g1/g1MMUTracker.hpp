@@ -35,9 +35,9 @@ private:
   double _end_time;
 
 public:
-  inline double start_time() { return _start_time; }
-  inline double end_time()   { return _end_time; }
-  inline double duration()   { return _end_time - _start_time; }
+  inline double start_time() const { return _start_time; }
+  inline double end_time()   const { return _end_time; }
+  inline double duration()   const { return _end_time - _start_time; }
 
   G1MMUTrackerElem() {
     _start_time = 0.0;
@@ -95,25 +95,28 @@ private:
   int _tail_index;
   int _no_entries;
 
-  inline int trim_index(int index) {
+  inline int trim_index(int index) const {
     return (index + QueueLength) % QueueLength;
   }
 
   void remove_expired_entries(double current_time);
-  double calculate_gc_time(double current_time);
-
+  // Returns the amount of time spent in gc pauses in the time slice before the
+  // given timestamp.
+  double calculate_gc_time(double current_timestamp);
 public:
   G1MMUTracker(double time_slice, double max_gc_time);
 
   void add_pause(double start, double end);
 
-  double when_sec(double current_time, double pause_time);
+  // Minimum delay required from current_timestamp until a GC pause of duration
+  // pause_time may be scheduled without violating the MMU constraint.
+  double when_sec(double current_timestamp, double pause_time) const;
 
   double max_gc_time() const {
     return _max_gc_time;
   }
 
-  double when_max_gc_sec(double current_time) {
+  double when_max_gc_sec(double current_time) const {
     return when_sec(current_time, max_gc_time());
   }
 };

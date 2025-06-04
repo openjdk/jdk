@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import sun.nio.cs.StreamEncoder;
 
-
 /**
  * An OutputStreamWriter is a bridge from character streams to byte streams:
  * Characters written to it are encoded into bytes using a specified {@link
@@ -46,10 +45,9 @@ import sun.nio.cs.StreamEncoder;
  * <p> For top efficiency, consider wrapping an OutputStreamWriter within a
  * BufferedWriter so as to avoid frequent converter invocations.  For example:
  *
- * <pre>
- * Writer out
- *   = new BufferedWriter(new OutputStreamWriter(anOutputStream));
- * </pre>
+ * {@snippet lang=java :
+ *     Writer out = new BufferedWriter(new OutputStreamWriter(anOutputStream));
+ * }
  *
  * <p> A <i>surrogate pair</i> is a character represented by a sequence of two
  * {@code char} values: A <i>high</i> surrogate in the range '&#92;uD800' to
@@ -74,7 +72,6 @@ import sun.nio.cs.StreamEncoder;
  */
 
 public class OutputStreamWriter extends Writer {
-
     private final StreamEncoder se;
 
     /**
@@ -89,6 +86,7 @@ public class OutputStreamWriter extends Writer {
      * @throws     UnsupportedEncodingException
      *             If the named encoding is not supported
      */
+    @SuppressWarnings("this-escape")
     public OutputStreamWriter(OutputStream out, String charsetName)
         throws UnsupportedEncodingException
     {
@@ -106,6 +104,7 @@ public class OutputStreamWriter extends Writer {
      * @param  out  An OutputStream
      * @see Charset#defaultCharset()
      */
+    @SuppressWarnings("this-escape")
     public OutputStreamWriter(OutputStream out) {
         super(out);
         se = StreamEncoder.forOutputStreamWriter(out, this,
@@ -123,6 +122,7 @@ public class OutputStreamWriter extends Writer {
      *
      * @since 1.4
      */
+    @SuppressWarnings("this-escape")
     public OutputStreamWriter(OutputStream out, Charset cs) {
         super(out);
         if (cs == null)
@@ -141,6 +141,7 @@ public class OutputStreamWriter extends Writer {
      *
      * @since 1.4
      */
+    @SuppressWarnings("this-escape")
     public OutputStreamWriter(OutputStream out, CharsetEncoder enc) {
         super(out);
         if (enc == null)
@@ -164,8 +165,6 @@ public class OutputStreamWriter extends Writer {
      *         {@code null} if the stream has been closed
      *
      * @see Charset
-     *
-     * @revised 1.4
      */
     public String getEncoding() {
         return se.getEncoding();

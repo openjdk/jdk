@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,10 +219,14 @@ public class BasicSplitPaneDivider extends Container
      * Sets the size of the divider to {@code newSize}. That is
      * the width if the splitpane is {@code HORIZONTAL_SPLIT}, or
      * the height of {@code VERTICAL_SPLIT}.
+     * Divider sizes {@code newSize < 0} are ignored.
      *
      * @param newSize a new size
      */
     public void setDividerSize(int newSize) {
+        if (newSize < 0) {
+            return;
+        }
         dividerSize = newSize;
     }
 
@@ -311,7 +315,7 @@ public class BasicSplitPaneDivider extends Container
      */
     public Dimension getPreferredSize() {
         // Ideally this would return the size from the layout manager,
-        // but that could result in the layed out size being different from
+        // but that could result in the laid out size being different from
         // the dividerSize, which may break developers as well as
         // BasicSplitPaneUI.
         if (orientation == JSplitPane.HORIZONTAL_SPLIT) {
@@ -356,6 +360,20 @@ public class BasicSplitPaneDivider extends Container
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * @param enabled {@inheritDoc}
+     */
+    @Override
+    public void setEnabled(boolean enabled) {
+        if (splitPane.isOneTouchExpandable() &&
+                rightButton != null &&
+                leftButton != null) {
+
+            rightButton.setEnabled(enabled);
+            leftButton.setEnabled(enabled);
+        }
+    }
 
     /**
      * Paints the divider.
@@ -376,7 +394,10 @@ public class BasicSplitPaneDivider extends Container
 
     /**
      * Messaged when the oneTouchExpandable value of the JSplitPane the
-     * divider is contained in changes. Will create the
+     * divider is contained in changes.
+     * If a particular L&amp;F supports this Swing
+     * "SplitPane.supportsOneTouchButtons" property
+     * it will create the
      * <code>leftButton</code> and <code>rightButton</code> if they are null
      * and corresponding JSplitPane supports oneTouchExpandable property.
      * Invalidates the corresponding JSplitPane as well.
@@ -468,6 +489,7 @@ public class BasicSplitPaneDivider extends Container
         b.setFocusPainted(false);
         b.setBorderPainted(false);
         b.setRequestFocusEnabled(false);
+        b.setEnabled(splitPane.isEnabled());
         return b;
     }
 
@@ -525,6 +547,7 @@ public class BasicSplitPaneDivider extends Container
         b.setFocusPainted(false);
         b.setBorderPainted(false);
         b.setRequestFocusEnabled(false);
+        b.setEnabled(splitPane.isEnabled());
         return b;
     }
 
@@ -723,7 +746,6 @@ public class BasicSplitPaneDivider extends Container
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
-    @SuppressWarnings("serial") // Same-version serialization only
     protected class DragController
     {
         /**
@@ -966,7 +988,7 @@ public class BasicSplitPaneDivider extends Container
             newY = Math.min(maxX, Math.max(minX, newY - offset));
             return newY;
         }
-    } // End of BasicSplitPaneDividier.VerticalDragController
+    } // End of BasicSplitPaneDivider.VerticalDragController
 
 
     /**
@@ -1114,7 +1136,7 @@ public class BasicSplitPaneDivider extends Container
             int     newLoc;
 
             // We use the location from the UI directly, as the location the
-            // JSplitPane itself maintains is not necessarly correct.
+            // JSplitPane itself maintains is not necessarily correct.
             if (toMinimum) {
                 if (orientation == JSplitPane.VERTICAL_SPLIT) {
                     if (currentLoc >= (splitPane.getHeight() -

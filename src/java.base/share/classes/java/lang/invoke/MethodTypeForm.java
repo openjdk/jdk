@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ final class MethodTypeForm {
     final MethodType basicType;         // the canonical erasure, with primitives simplified
 
     // Cached adapter information:
-    final SoftReference<MethodHandle>[] methodHandles;
+    private final SoftReference<MethodHandle>[] methodHandles;
 
     // Indexes into methodHandles:
     static final int
@@ -61,7 +61,9 @@ final class MethodTypeForm {
             MH_LIMIT          =  3;
 
     // Cached lambda form information, for basic types only:
-    final SoftReference<LambdaForm>[] lambdaForms;
+    private final SoftReference<LambdaForm>[] lambdaForms;
+
+    private SoftReference<MemberName> interpretEntry;
 
     // Indexes into lambdaForms:
     static final int
@@ -71,7 +73,6 @@ final class MethodTypeForm {
             LF_NEWINVSPECIAL           =  3,
             LF_INVINTERFACE            =  4,
             LF_INVSTATIC_INIT          =  5,  // DMH invokeStatic with <clinit> barrier
-            LF_INTERPRET               =  6,  // LF interpreter
             LF_REBIND                  =  7,  // BoundMethodHandle
             LF_DELEGATE                =  8,  // DelegatingMethodHandle
             LF_DELEGATE_BLOCK_INLINING =  9,  // Counting DelegatingMethodHandle w/ @DontInline
@@ -116,12 +117,9 @@ final class MethodTypeForm {
 
     public synchronized MethodHandle setCachedMethodHandle(int which, MethodHandle mh) {
         // Simulate a CAS, to avoid racy duplication of results.
-        SoftReference<MethodHandle> entry = methodHandles[which];
-        if (entry != null) {
-            MethodHandle prev = entry.get();
-            if (prev != null) {
-                return prev;
-            }
+        MethodHandle prev = cachedMethodHandle(which);
+        if (prev != null) {
+            return prev;
         }
         methodHandles[which] = new SoftReference<>(mh);
         return mh;
@@ -134,15 +132,25 @@ final class MethodTypeForm {
 
     public synchronized LambdaForm setCachedLambdaForm(int which, LambdaForm form) {
         // Simulate a CAS, to avoid racy duplication of results.
-        SoftReference<LambdaForm> entry = lambdaForms[which];
-        if (entry != null) {
-            LambdaForm prev = entry.get();
-            if (prev != null) {
-                return prev;
-            }
+        LambdaForm prev = cachedLambdaForm(which);
+        if (prev != null) {
+            return prev;
         }
         lambdaForms[which] = new SoftReference<>(form);
         return form;
+    }
+
+    public MemberName cachedInterpretEntry() {
+        return (interpretEntry == null) ? null : interpretEntry.get();
+    }
+
+    public synchronized MemberName setCachedInterpretEntry(MemberName mn) {
+        MemberName prev = cachedInterpretEntry();
+        if (prev != null) {
+            return prev;
+        }
+        this.interpretEntry = new SoftReference<>(mn);
+        return mn;
     }
 
     /**
@@ -194,7 +202,7 @@ final class MethodTypeForm {
             this.lambdaForms   = new SoftReference[LF_LIMIT];
             this.methodHandles = new SoftReference[MH_LIMIT];
         } else {
-            this.basicType = MethodType.makeImpl(basicReturnType, basicPtypes, true);
+            this.basicType = MethodType.methodType(basicReturnType, basicPtypes, true);
             // fill in rest of data from the basic type:
             MethodTypeForm that = this.basicType.form();
             assert(this != that);
@@ -250,7 +258,7 @@ final class MethodTypeForm {
         // Find the erased version of the method type:
         if (rtypeCanonical == null)  rtypeCanonical = rtype;
         if (ptypesCanonical == null)  ptypesCanonical = ptypes;
-        return MethodType.makeImpl(rtypeCanonical, ptypesCanonical, true);
+        return MethodType.methodType(rtypeCanonical, ptypesCanonical, true);
     }
 
     /** Canonicalize the given return or param type.

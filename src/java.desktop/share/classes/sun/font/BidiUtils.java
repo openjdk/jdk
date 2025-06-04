@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public final class BidiUtils {
     static final char NUMLEVELS = 62;
 
     /**
-     * Given level data, compute a a visual to logical mapping.
+     * Given level data, compute a visual to logical mapping.
      * The leftmost (or topmost) character is at visual index zero.  The
      * logical index of the character is derived from the visual index
      * by the expression {@code li = map[vi];}.
@@ -195,7 +195,7 @@ public final class BidiUtils {
         }
 
         // now we'll sort result[], with the following comparison:
-        // result[i] lessthan result[j] iff values[result[i]] < values[result[j]]
+        // result[i] less than result[j] iff values[result[i]] < values[result[j]]
 
         // selection sort for now;  use more elaborate sorts if desired
         for (int i=0; i < result.length-1; i++) {
@@ -245,7 +245,7 @@ public final class BidiUtils {
      * @param levels the levels corresponding to the values
      * @param start the starting offset in the values and levels arrays
      * @param limit the limiting offset in the values and levels arrays
-     * @return the normlized map
+     * @return the normalized map
      */
     public static int[] createNormalizedMap(int[] values, byte[] levels,
                                            int start, int limit) {

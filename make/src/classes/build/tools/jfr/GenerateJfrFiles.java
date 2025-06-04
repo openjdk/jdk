@@ -1,3 +1,28 @@
+/*
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
 package build.tools.jfr;
 
 import java.io.BufferedOutputStream;
@@ -173,6 +198,7 @@ public class GenerateJfrFiles {
         String period = "";
         boolean cutoff;
         boolean throttle;
+        String level = "";
         boolean experimental;
         boolean internal;
         long id;
@@ -197,6 +223,7 @@ public class GenerateJfrFiles {
             pos.writeUTF(period);
             pos.writeBoolean(cutoff);
             pos.writeBoolean(throttle);
+            pos.writeUTF(level);
             pos.writeBoolean(experimental);
             pos.writeBoolean(internal);
             pos.writeLong(id);
@@ -495,6 +522,7 @@ public class GenerateJfrFiles {
                 currentType.startTime = getBoolean(attributes, "startTime", true);
                 currentType.period = getString(attributes, "period");
                 currentType.cutoff = getBoolean(attributes, "cutoff", false);
+                currentType.level = getString(attributes, "level");
                 currentType.throttle = getBoolean(attributes, "throttle", false);
                 currentType.commitState = getString(attributes, "commitState");
                 currentType.isEvent = "Event".equals(qName);
@@ -573,9 +601,13 @@ public class GenerateJfrFiles {
             out.write("#include \"jfrfiles/jfrEventIds.hpp\"");
             out.write("#include \"memory/allocation.hpp\"");
             out.write("");
+            out.write("enum PeriodicType {BEGIN_CHUNK, INTERVAL, END_CHUNK};");
+            out.write("");
             out.write("class JfrPeriodicEventSet : public AllStatic {");
             out.write(" public:");
-            out.write("  static void requestEvent(JfrEventId id) {");
+            out.write("  static void requestEvent(JfrEventId id, jlong timestamp, PeriodicType periodicType) {");
+            out.write("    _timestamp = Ticks(timestamp);");
+            out.write("    _type = periodicType;");
             out.write("    switch(id) {");
             out.write("  ");
             for (TypeElement e : metadata.getPeriodicEvents()) {
@@ -595,6 +627,10 @@ public class GenerateJfrFiles {
                 out.write("  static void request" + e.name + "(void);");
                 out.write("");
             }
+            out.write(" static Ticks timestamp(void);");
+            out.write(" static Ticks _timestamp;");
+            out.write(" static PeriodicType type(void);");
+            out.write(" static PeriodicType _type;");
             out.write("};");
             out.write("");
             out.write("#endif // INCLUDE_JFR");
@@ -618,7 +654,7 @@ public class GenerateJfrFiles {
             out.write("");
             out.write("struct jfrNativeEventSetting {");
             out.write("  jlong  threshold_ticks;");
-            out.write("  jlong  cutoff_ticks;");
+            out.write("  jlong  miscellaneous;");
             out.write("  u1     stacktrace;");
             out.write("  u1     enabled;");
             out.write("  u1     large;");
@@ -627,12 +663,12 @@ public class GenerateJfrFiles {
             out.write("");
             out.write("union JfrNativeSettings {");
             out.write("  // Array version.");
-            out.write("  jfrNativeEventSetting bits[NUMBER_OF_EVENTS];");
+            out.write("  jfrNativeEventSetting bits[NUMBER_OF_EVENTS + NUMBER_OF_RESERVED_EVENTS];");
             out.write("  // Then, to make it easy to debug,");
             out.write("  // add named struct members also.");
             out.write("  struct {");
             out.write("    jfrNativeEventSetting pad[NUMBER_OF_RESERVED_EVENTS];");
-            for (TypeElement t : metadata.getEventsAndStructs()) {
+            for (TypeElement t : metadata.getEvents()) {
                 out.write("    jfrNativeEventSetting " + t.name + ";");
             }
             out.write("  } ev;");
@@ -732,14 +768,14 @@ public class GenerateJfrFiles {
             out.write("#ifndef JFRFILES_JFREVENTCLASSES_HPP");
             out.write("#define JFRFILES_JFREVENTCLASSES_HPP");
             out.write("");
-            out.write("#include \"oops/klass.hpp\"");
             out.write("#include \"jfrfiles/jfrTypes.hpp\"");
             out.write("#include \"jfr/utilities/jfrTypes.hpp\"");
+            out.write("#include \"oops/klass.hpp\"");
+            out.write("#include \"runtime/thread.hpp\"");
             out.write("#include \"utilities/macros.hpp\"");
             out.write("#include \"utilities/ticks.hpp\"");
             out.write("#if INCLUDE_JFR");
             out.write("#include \"jfr/recorder/service/jfrEvent.hpp\"");
-            out.write("#include \"jfr/support/jfrEpochSynchronization.hpp\"");
             out.write("/*");
             out.write(" * Each event class has an assert member function verify() which is invoked");
             out.write(" * just before the engine writes the event and its fields to the data stream.");
@@ -754,6 +790,7 @@ public class GenerateJfrFiles {
             out.write(" */");
             out.write("");
             printTypes(out, metadata, false);
+            printHelpers(out, false);
             out.write("");
             out.write("");
             out.write("#else // !INCLUDE_JFR");
@@ -771,11 +808,41 @@ public class GenerateJfrFiles {
             out.write("};");
             out.write("");
             printTypes(out, metadata, true);
+            printHelpers(out, true);
             out.write("");
             out.write("");
             out.write("#endif // INCLUDE_JFR");
             out.write("#endif // JFRFILES_JFREVENTCLASSES_HPP");
         }
+    }
+
+    private static void printHelpers(Printer out, boolean empty) {
+        out.write("template <typename EventType>");
+        out.write("class JfrNonReentrant : public EventType {");
+        if (!empty) {
+            out.write(" private:");
+            out.write("  Thread* const _thread;");
+            out.write("  int32_t _previous_nesting;");
+        }
+        out.write(" public:");
+        out.write("  JfrNonReentrant(EventStartTime timing = TIMED)");
+        if (empty) {
+            out.write("  {}");
+        } else {
+            out.write("    : EventType(timing), _thread(Thread::current()), _previous_nesting(JfrThreadLocal::make_non_reentrant(_thread)) {}");
+            out.write("");
+            out.write("  JfrNonReentrant(Thread* thread, EventStartTime timing = TIMED)");
+            out.write("    : EventType(timing), _thread(thread), _previous_nesting(JfrThreadLocal::make_non_reentrant(_thread)) {}");
+        }
+        if (!empty) {
+          out.write("");
+          out.write("  ~JfrNonReentrant() {");
+          out.write("    if (_previous_nesting != -1) {");
+          out.write("      JfrThreadLocal::make_reentrant(_thread, _previous_nesting);");
+          out.write("    }");
+          out.write("  }");
+        }
+        out.write("}; ");
     }
 
     private static void printTypes(Printer out, Metadata metadata, boolean empty) {
@@ -868,10 +935,6 @@ public class GenerateJfrFiles {
         out.write("  void writeData(Writer& w) {");
         if (type.isEvent && type.internal) {
             out.write("    JfrEventSetting::unhide_internal_types();");
-        }
-        if (("_thread_in_native").equals(type.commitState)) {
-            out.write("    // explicit epoch synchronization check");
-            out.write("    JfrEpochSynchronization sync;");
         }
         for (FieldElement field : type.fields) {
             if (field.struct) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/exceptionHandlerTable.hpp"
 #include "code/nmethod.hpp"
 #include "memory/allocation.inline.hpp"
@@ -53,7 +52,7 @@ HandlerTableEntry* ExceptionHandlerTable::subtable_for(int catch_pco) const {
       i += t->len() + 1; // +1 for header
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 
@@ -65,10 +64,10 @@ ExceptionHandlerTable::ExceptionHandlerTable(int initial_size) {
 }
 
 
-ExceptionHandlerTable::ExceptionHandlerTable(const CompiledMethod* cm) {
-  _table  = (HandlerTableEntry*)cm->handler_table_begin();
-  _length = cm->handler_table_size() / sizeof(HandlerTableEntry);
-  _size   = 0; // no space allocated by ExeptionHandlerTable!
+ExceptionHandlerTable::ExceptionHandlerTable(const nmethod* nm) {
+  _table  = (HandlerTableEntry*)nm->handler_table_begin();
+  _length = nm->handler_table_size() / sizeof(HandlerTableEntry);
+  _size   = 0; // no space allocated by ExceptionHandlerTable!
 }
 
 
@@ -78,16 +77,16 @@ void ExceptionHandlerTable::add_subtable(
   GrowableArray<intptr_t>* scope_depths_from_top_scope,
   GrowableArray<intptr_t>* handler_pcos
 ) {
-  assert(subtable_for(catch_pco) == NULL, "catch handlers for this catch_pco added twice");
+  assert(subtable_for(catch_pco) == nullptr, "catch handlers for this catch_pco added twice");
   assert(handler_bcis->length() == handler_pcos->length(), "bci & pc table have different length");
-  assert(scope_depths_from_top_scope == NULL || handler_bcis->length() == scope_depths_from_top_scope->length(), "bci & scope_depths table have different length");
+  assert(scope_depths_from_top_scope == nullptr || handler_bcis->length() == scope_depths_from_top_scope->length(), "bci & scope_depths table have different length");
   if (handler_bcis->length() > 0) {
     // add subtable header
     add_entry(HandlerTableEntry(handler_bcis->length(), catch_pco, 0));
     // add individual entries
     for (int i = 0; i < handler_bcis->length(); i++) {
       intptr_t scope_depth = 0;
-      if (scope_depths_from_top_scope != NULL) {
+      if (scope_depths_from_top_scope != nullptr) {
         scope_depth = scope_depths_from_top_scope->at(i);
       }
       add_entry(HandlerTableEntry(handler_bcis->at(i), handler_pcos->at(i), scope_depth));
@@ -98,9 +97,9 @@ void ExceptionHandlerTable::add_subtable(
 }
 
 
-void ExceptionHandlerTable::copy_to(CompiledMethod* cm) {
-  assert(size_in_bytes() == cm->handler_table_size(), "size of space allocated in compiled method incorrect");
-  copy_bytes_to(cm->handler_table_begin());
+void ExceptionHandlerTable::copy_to(nmethod* nm) {
+  assert(size_in_bytes() == nm->handler_table_size(), "size of space allocated in compiled method incorrect");
+  copy_bytes_to(nm->handler_table_begin());
 }
 
 void ExceptionHandlerTable::copy_bytes_to(address addr) {
@@ -109,20 +108,20 @@ void ExceptionHandlerTable::copy_bytes_to(address addr) {
 
 HandlerTableEntry* ExceptionHandlerTable::entry_for(int catch_pco, int handler_bci, int scope_depth) const {
   HandlerTableEntry* t = subtable_for(catch_pco);
-  if (t != NULL) {
+  if (t != nullptr) {
     int l = t->len();
     while (l-- > 0) {
       t++;
       if (t->bci() == handler_bci && t->scope_depth() == scope_depth) return t;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 
 void ExceptionHandlerTable::print_subtable(HandlerTableEntry* t, address base) const {
   int l = t->len();
-  bool have_base_addr = (base != NULL);
+  bool have_base_addr = (base != nullptr);
   if (have_base_addr) {
     tty->print_cr("catch_pco = %d (pc=" INTPTR_FORMAT ", %d entries)", t->pco(), p2i(base + t->pco()), l);
   } else {
@@ -154,7 +153,7 @@ void ExceptionHandlerTable::print(address base) const {
 void ExceptionHandlerTable::print_subtable_for(int catch_pco) const {
   HandlerTableEntry* subtable = subtable_for(catch_pco);
 
-  if( subtable != NULL ) { print_subtable( subtable ); }
+  if( subtable != nullptr ) { print_subtable( subtable ); }
 }
 
 // ----------------------------------------------------------------------------
@@ -191,7 +190,7 @@ uint ImplicitExceptionTable::continuation_offset( uint exec_off ) const {
   for( uint i=0; i<l; i++ )
     if( *adr(i) == exec_off )
       return *(adr(i)+1);
-  return 0;                     // Failed to find any execption offset
+  return 0;                     // Failed to find any exception offset
 }
 
 void ImplicitExceptionTable::print(address base) const {
@@ -215,10 +214,10 @@ void ImplicitExceptionTable::print(address base) const {
   }
 }
 
-ImplicitExceptionTable::ImplicitExceptionTable(const CompiledMethod* nm) {
+ImplicitExceptionTable::ImplicitExceptionTable(const nmethod* nm) {
   if (nm->nul_chk_table_size() == 0) {
     _len = 0;
-    _data = NULL;
+    _data = nullptr;
   } else {
     // the first word is the length if non-zero, so read it out and
     // skip to the next word to get the table.

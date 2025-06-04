@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,241 +36,101 @@
 #include "runtime/vmOperations.hpp"
 #include "utilities/ostream.hpp"
 
-//
-// Forward Declarations
-//
-
-class JvmtiBreakpoint;
-class JvmtiBreakpoints;
-
-
-///////////////////////////////////////////////////////////////
-//
-// class GrowableCache, GrowableElement
-// Used by              : JvmtiBreakpointCache
-// Used by JVMTI methods: none directly.
-//
-// GrowableCache is a permanent CHeap growable array of <GrowableElement *>
-//
-// In addition, the GrowableCache maintains a NULL terminated cache array of type address
-// that's created from the element array using the function:
-//     address GrowableElement::getCacheValue().
-//
-// Whenever the GrowableArray changes size, the cache array gets recomputed into a new C_HEAP allocated
-// block of memory. Additionally, every time the cache changes its position in memory, the
-//    void (*_listener_fun)(void *this_obj, address* cache)
-// gets called with the cache's new address. This gives the user of the GrowableCache a callback
-// to update its pointer to the address cache.
-//
-
-class GrowableElement : public CHeapObj<mtInternal> {
-public:
-  virtual ~GrowableElement() {}
-  virtual address getCacheValue()          =0;
-  virtual bool equals(GrowableElement* e)  =0;
-  virtual GrowableElement *clone()         =0;
-};
-
-class GrowableCache {
-
-private:
-  // Object pointer passed into cache & listener functions.
-  void *_this_obj;
-
-  // Array of elements in the collection
-  GrowableArray<GrowableElement *> *_elements;
-
-  // Parallel array of cached values
-  address *_cache;
-
-  // Listener for changes to the _cache field.
-  // Called whenever the _cache field has it's value changed
-  // (but NOT when cached elements are recomputed).
-  void (*_listener_fun)(void *, address*);
-
-  static bool equals(void *, GrowableElement *);
-
-  // recache all elements after size change, notify listener
-  void recache();
-
-public:
-   GrowableCache();
-   ~GrowableCache();
-
-  void initialize(void *this_obj, void listener_fun(void *, address*) );
-
-  // number of elements in the collection
-  int length();
-  // get the value of the index element in the collection
-  GrowableElement* at(int index);
-  // find the index of the element, -1 if it doesn't exist
-  int find(GrowableElement* e);
-  // append a copy of the element to the end of the collection, notify listener
-  void append(GrowableElement* e);
-  // remove the element at index, notify listener
-  void remove (int index);
-  // clear out all elements and release all heap space, notify listener
-  void clear();
-};
-
-
-///////////////////////////////////////////////////////////////
-//
-// class JvmtiBreakpointCache
-// Used by              : JvmtiBreakpoints
-// Used by JVMTI methods: none directly.
-// Note   : typesafe wrapper for GrowableCache of JvmtiBreakpoint
-//
-
-class JvmtiBreakpointCache : public CHeapObj<mtInternal> {
-
-private:
-  GrowableCache _cache;
-
-public:
-  JvmtiBreakpointCache()  {}
-  ~JvmtiBreakpointCache() {}
-
-  void initialize(void *this_obj, void listener_fun(void *, address*) ) {
-    _cache.initialize(this_obj, listener_fun);
-  }
-
-  int length()                          { return _cache.length(); }
-  JvmtiBreakpoint& at(int index)        { return (JvmtiBreakpoint&) *(_cache.at(index)); }
-  int find(JvmtiBreakpoint& e)          { return _cache.find((GrowableElement *) &e); }
-  void append(JvmtiBreakpoint& e)       { _cache.append((GrowableElement *) &e); }
-  void remove (int index)               { _cache.remove(index); }
-};
-
 
 ///////////////////////////////////////////////////////////////
 //
 // class JvmtiBreakpoint
-// Used by              : JvmtiBreakpoints
-// Used by JVMTI methods: SetBreakpoint, ClearBreakpoint, ClearAllBreakpoints
-// Note: Extends GrowableElement for use in a GrowableCache
 //
 // A JvmtiBreakpoint describes a location (class, method, bci) to break at.
 //
 
 typedef void (Method::*method_action)(int _bci);
 
-class JvmtiBreakpoint : public GrowableElement {
+class JvmtiBreakpoint : public CHeapObj<mtInternal> {
 private:
   Method*               _method;
   int                   _bci;
   OopHandle             _class_holder;  // keeps _method memory from being deallocated
 
 public:
-  JvmtiBreakpoint() : _method(NULL), _bci(0) {}
   JvmtiBreakpoint(Method* m_method, jlocation location);
+  JvmtiBreakpoint(const JvmtiBreakpoint& bp);
   virtual ~JvmtiBreakpoint();
-  bool equals(JvmtiBreakpoint& bp);
-  void copy(JvmtiBreakpoint& bp);
+  bool equals(const JvmtiBreakpoint& bp) const;
   address getBcp() const;
   void each_method_version_do(method_action meth_act);
   void set();
   void clear();
   void print_on(outputStream* out) const;
 
-  Method* method() { return _method; }
-
-  // GrowableElement implementation
-  address getCacheValue()         { return getBcp(); }
-  bool equals(GrowableElement* e) { return equals((JvmtiBreakpoint&) *e); }
-
-  GrowableElement *clone()        {
-    JvmtiBreakpoint *bp = new JvmtiBreakpoint();
-    bp->copy(*this);
-    return bp;
-  }
+  Method* method() const { return _method; }
 };
-
 
 ///////////////////////////////////////////////////////////////
 //
 // class JvmtiBreakpoints
-// Used by              : JvmtiCurrentBreakpoints
-// Used by JVMTI methods: none directly
-// Note: A Helper class
 //
-// JvmtiBreakpoints is a GrowableCache of JvmtiBreakpoint.
-// All changes to the GrowableCache occur at a safepoint using VM_ChangeBreakpoints.
-//
-// Because _bps is only modified at safepoints, its possible to always use the
-// cached byte code pointers from _bps without doing any synchronization (see JvmtiCurrentBreakpoints).
-//
-// It would be possible to make JvmtiBreakpoints a static class, but I've made it
-// CHeap allocated to emphasize its similarity to JvmtiFramePops.
+// Contains growable array of JvmtiBreakpoint.
+// All changes to the array occur at a safepoint.
 //
 
 class JvmtiBreakpoints : public CHeapObj<mtInternal> {
 private:
+  GrowableArray<JvmtiBreakpoint*> _elements;
 
-  JvmtiBreakpointCache _bps;
+  int length() { return _elements.length(); }
+  JvmtiBreakpoint& at(int index) { return *_elements.at(index); }
+  int find(JvmtiBreakpoint& e) {
+    return _elements.find_if([&](const JvmtiBreakpoint * other_e) { return e.equals(*other_e); });
+  }
+  void append(JvmtiBreakpoint& e) {
+    JvmtiBreakpoint* new_e = new JvmtiBreakpoint(e);
+    _elements.append(new_e);
+  }
+  void remove(int index) {
+    JvmtiBreakpoint* e = _elements.at(index);
+    assert(e != nullptr, "e != nullptr");
+    _elements.remove_at(index);
+    delete e;
+  }
 
-  // These should only be used by VM_ChangeBreakpoints
-  // to insure they only occur at safepoints.
-  // Todo: add checks for safepoint
-  friend class VM_ChangeBreakpoints;
-  void set_at_safepoint(JvmtiBreakpoint& bp);
-  void clear_at_safepoint(JvmtiBreakpoint& bp);
+  friend class JvmtiCurrentBreakpoints;
+  JvmtiBreakpoints(); // accessible only for JvmtiCurrentBreakpoints
 
 public:
-  JvmtiBreakpoints(void listener_fun(void *, address *));
   ~JvmtiBreakpoints();
 
-  int length();
   void print();
 
   int  set(JvmtiBreakpoint& bp);
   int  clear(JvmtiBreakpoint& bp);
+
+  // used by VM_ChangeBreakpoints
+  void set_at_safepoint(JvmtiBreakpoint& bp);
+  void clear_at_safepoint(JvmtiBreakpoint& bp);
+  // used by VM_RedefineClasses
   void clearall_in_class_at_safepoint(Klass* klass);
 };
-
 
 ///////////////////////////////////////////////////////////////
 //
 // class JvmtiCurrentBreakpoints
 //
-// A static wrapper class for the JvmtiBreakpoints that provides:
-// 1. a fast inlined function to check if a byte code pointer is a breakpoint (is_breakpoint).
-// 2. a function for lazily creating the JvmtiBreakpoints class (this is not strictly necessary,
-//    but I'm copying the code from JvmtiThreadState which needs to lazily initialize
-//    JvmtiFramePops).
-// 3. An oops_do entry point for GC'ing the breakpoint array.
+// A static wrapper class for the JvmtiBreakpoints that provides
+// a function for lazily creating the JvmtiBreakpoints class.
 //
 
 class JvmtiCurrentBreakpoints : public AllStatic {
-
 private:
-
   // Current breakpoints, lazily initialized by get_jvmti_breakpoints();
   static JvmtiBreakpoints *_jvmti_breakpoints;
 
-  // NULL terminated cache of byte-code pointers corresponding to current breakpoints.
-  // Updated only at safepoints (with listener_fun) when the cache is moved.
-  // It exists only to make is_breakpoint fast.
-  static address          *_breakpoint_list;
-  static inline void set_breakpoint_list(address *breakpoint_list) { _breakpoint_list = breakpoint_list; }
-
-  // Listener for the GrowableCache in _jvmti_breakpoints, updates _breakpoint_list.
-  static void listener_fun(void *this_obj, address *cache);
-
 public:
-  static void initialize();
-  static void destroy();
-
-  // lazily create _jvmti_breakpoints and _breakpoint_list
+  // lazily create _jvmti_breakpoints
   static JvmtiBreakpoints& get_jvmti_breakpoints();
 };
 
 ///////////////////////////////////////////////////////////////
-//
-// class VM_ChangeBreakpoints
-// Used by              : JvmtiBreakpoints
-// Used by JVMTI methods: none directly.
-// Note: A Helper class.
 //
 // VM_ChangeBreakpoints implements a VM_Operation for ALL modifications to the JvmtiBreakpoints class.
 //
@@ -289,7 +149,7 @@ public:
     _breakpoints = &current_bps;
     _bp = bp;
     _operation = operation;
-    assert(bp != NULL, "bp != NULL");
+    assert(bp != nullptr, "bp != null");
   }
 
   VMOp_Type type() const { return VMOp_ChangeBreakpoints; }
@@ -310,9 +170,8 @@ public:
 // to prevent compiledVFrames from trying to add deferred updates
 // to the thread simultaneously.
 //
-class VM_GetOrSetLocal : public VM_Operation {
+class VM_BaseGetOrSetLocal : public VM_Operation {
  protected:
-  JavaThread* _thread;
   JavaThread* _calling_thread;
   jint        _depth;
   jint        _index;
@@ -320,8 +179,9 @@ class VM_GetOrSetLocal : public VM_Operation {
   jvalue      _value;
   javaVFrame* _jvf;
   bool        _set;
+  bool        _self;
 
-  EscapeBarrier _eb;
+  static const jvalue _DEFAULT_VALUE;
 
   // It is possible to get the receiver out of a non-static native wrapper
   // frame.  Use VM_GetReceiver to do this.
@@ -329,33 +189,49 @@ class VM_GetOrSetLocal : public VM_Operation {
 
   jvmtiError  _result;
 
-  vframe* get_vframe();
-  javaVFrame* get_java_vframe();
+  virtual javaVFrame* get_java_vframe() = 0;
   bool check_slot_type_lvt(javaVFrame* vf);
   bool check_slot_type_no_lvt(javaVFrame* vf);
 
 public:
-  // Constructor for non-object getter
-  VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type);
+  VM_BaseGetOrSetLocal(JavaThread* calling_thread, jint depth, jint index,
+                       BasicType type, jvalue value, bool set, bool self);
 
-  // Constructor for object or non-object setter
-  VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type, jvalue value);
-
-  // Constructor for object getter
-  VM_GetOrSetLocal(JavaThread* thread, JavaThread* calling_thread, jint depth,
-                   int index);
-
-  VMOp_Type type() const { return VMOp_GetOrSetLocal; }
   jvalue value()         { return _value; }
   jvmtiError result()    { return _result; }
 
-  bool doit_prologue();
   void doit();
   bool allow_nested_vm_operations() const;
-  const char* name() const                       { return "get/set locals"; }
+  virtual const char* name() const = 0;
 
   // Check that the klass is assignable to a type with the given signature.
   static bool is_assignable(const char* ty_sign, Klass* klass, Thread* thread);
+};
+
+
+class VM_GetOrSetLocal : public VM_BaseGetOrSetLocal {
+ protected:
+  JavaThread* _thread;
+  EscapeBarrier _eb;
+
+  vframe* get_vframe();
+  javaVFrame* get_java_vframe();
+
+public:
+  // Constructor for non-object getter
+  VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type, bool self);
+
+  // Constructor for object or non-object setter
+  VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type, jvalue value, bool self);
+
+  // Constructor for object getter
+  VM_GetOrSetLocal(JavaThread* thread, JavaThread* calling_thread, jint depth, int index, bool self);
+
+  VMOp_Type type() const { return VMOp_GetOrSetLocal; }
+
+  bool doit_prologue();
+
+  const char* name() const                       { return "get/set locals"; }
 };
 
 class VM_GetReceiver : public VM_GetOrSetLocal {
@@ -363,30 +239,42 @@ class VM_GetReceiver : public VM_GetOrSetLocal {
   virtual bool getting_receiver() const { return true; }
 
  public:
-  VM_GetReceiver(JavaThread* thread, JavaThread* calling_thread, jint depth);
+  VM_GetReceiver(JavaThread* thread, JavaThread* calling_thread, jint depth, bool self);
   const char* name() const                       { return "get receiver"; }
 };
 
+// VM operation to get or set virtual thread local.
+class VM_VirtualThreadGetOrSetLocal : public VM_BaseGetOrSetLocal {
+ protected:
+  JvmtiEnv *_env;
+  Handle _vthread_h;
 
-///////////////////////////////////////////////////////////////
-//
-// class JvmtiSuspendControl
-//
-// Convenience routines for suspending and resuming threads.
-//
-// All attempts by JVMTI to suspend and resume threads must go through the
-// JvmtiSuspendControl interface.
-//
-// methods return true if successful
-//
-class JvmtiSuspendControl : public AllStatic {
+  javaVFrame* get_java_vframe();
+
 public:
-  // suspend the thread, taking it to a safepoint
-  static bool suspend(JavaThread *java_thread);
-  // resume the thread
-  static bool resume(JavaThread *java_thread);
+  // Constructor for non-object getter.
+  VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, jint depth, jint index, BasicType type, bool self);
 
-  static void print();
+  // Constructor for object or non-object setter.
+  VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, jint depth,
+                                jint index, BasicType type, jvalue value, bool self);
+
+  // Constructor for object getter.
+  VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, JavaThread* calling_thread,
+                                jint depth, int index, bool self);
+
+  VMOp_Type type() const { return VMOp_VirtualThreadGetOrSetLocal; }
+
+  const char* name() const                       { return "virtual thread get/set locals"; }
+};
+
+class VM_VirtualThreadGetReceiver : public VM_VirtualThreadGetOrSetLocal {
+ protected:
+  virtual bool getting_receiver() const { return true; }
+
+ public:
+  VM_VirtualThreadGetReceiver(JvmtiEnv* env, Handle vthread_h, JavaThread* calling_thread, jint depth, bool self);
+  const char* name() const                       { return "virtual thread get receiver"; }
 };
 
 
@@ -450,10 +338,10 @@ class JvmtiDeferredEvent {
   void post() NOT_JVMTI_RETURN;
   void post_compiled_method_load_event(JvmtiEnv* env) NOT_JVMTI_RETURN;
   void run_nmethod_entry_barriers() NOT_JVMTI_RETURN;
-  // Sweeper support to keep nmethods from being zombied while in the queue.
-  void nmethods_do(CodeBlobClosure* cf) NOT_JVMTI_RETURN;
+  // GC support to keep nmethods from unloading while in the queue.
+  void nmethods_do(NMethodClosure* cf) NOT_JVMTI_RETURN;
   // GC support to keep nmethod from being unloaded while in the queue.
-  void oops_do(OopClosure* f, CodeBlobClosure* cf) NOT_JVMTI_RETURN;
+  void oops_do(OopClosure* f, NMethodClosure* cf) NOT_JVMTI_RETURN;
 };
 
 /**
@@ -471,7 +359,7 @@ class JvmtiDeferredEventQueue : public CHeapObj<mtInternal> {
 
    public:
     QueueNode(const JvmtiDeferredEvent& event)
-      : _event(event), _next(NULL) {}
+      : _event(event), _next(nullptr) {}
 
     JvmtiDeferredEvent& event() { return _event; }
     QueueNode* next() const { return _next; }
@@ -483,7 +371,7 @@ class JvmtiDeferredEventQueue : public CHeapObj<mtInternal> {
   QueueNode* _queue_tail;
 
  public:
-  JvmtiDeferredEventQueue() : _queue_head(NULL), _queue_tail(NULL) {}
+  JvmtiDeferredEventQueue() : _queue_head(nullptr), _queue_tail(nullptr) {}
 
   bool has_events() NOT_JVMTI_RETURN_(false);
   JvmtiDeferredEvent dequeue() NOT_JVMTI_RETURN_(JvmtiDeferredEvent());
@@ -493,13 +381,13 @@ class JvmtiDeferredEventQueue : public CHeapObj<mtInternal> {
   void enqueue(JvmtiDeferredEvent event) NOT_JVMTI_RETURN;
   void run_nmethod_entry_barriers();
 
-  // Sweeper support to keep nmethods from being zombied while in the queue.
-  void nmethods_do(CodeBlobClosure* cf) NOT_JVMTI_RETURN;
+  // GC support to keep nmethods from unloading while in the queue.
+  void nmethods_do(NMethodClosure* cf) NOT_JVMTI_RETURN;
   // GC support to keep nmethod from being unloaded while in the queue.
-  void oops_do(OopClosure* f, CodeBlobClosure* cf) NOT_JVMTI_RETURN;
+  void oops_do(OopClosure* f, NMethodClosure* cf) NOT_JVMTI_RETURN;
 };
 
-// Utility macro that checks for NULL pointers:
-#define NULL_CHECK(X, Y) if ((X) == NULL) { return (Y); }
+// Utility macro that checks for null pointers:
+#define NULL_CHECK(X, Y) if ((X) == nullptr) { return (Y); }
 
 #endif // SHARE_PRIMS_JVMTIIMPL_HPP

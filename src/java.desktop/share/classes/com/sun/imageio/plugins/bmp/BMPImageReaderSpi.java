@@ -28,18 +28,18 @@ package com.sun.imageio.plugins.bmp;
 import java.util.Locale;
 import javax.imageio.spi.ImageReaderSpi;
 import javax.imageio.stream.ImageInputStream;
-import javax.imageio.spi.IIORegistry;
 import javax.imageio.spi.ServiceRegistry;
 import java.io.IOException;
 import javax.imageio.ImageReader;
 import javax.imageio.IIOException;
+import com.sun.imageio.plugins.common.ReaderUtil;
 
 public class BMPImageReaderSpi extends ImageReaderSpi {
 
     private static String [] writerSpiNames =
         {"com.sun.imageio.plugins.bmp.BMPImageWriterSpi"};
     private static String[] formatNames = {"bmp", "BMP"};
-    private static String[] entensions = {"bmp"};
+    private static String[] extensions = {"bmp"};
     private static String[] mimeType = {"image/bmp"};
 
     private boolean registered = false;
@@ -48,7 +48,7 @@ public class BMPImageReaderSpi extends ImageReaderSpi {
         super("Oracle Corporation",
               "1.0",
               formatNames,
-              entensions,
+              extensions,
               mimeType,
               "com.sun.imageio.plugins.bmp.BMPImageReader",
               new Class<?>[] { ImageInputStream.class },
@@ -81,10 +81,10 @@ public class BMPImageReaderSpi extends ImageReaderSpi {
         ImageInputStream stream = (ImageInputStream)source;
         byte[] b = new byte[2];
         stream.mark();
-        stream.readFully(b);
+        boolean full = ReaderUtil.tryReadFully(stream, b);
         stream.reset();
 
-        return (b[0] == 0x42) && (b[1] == 0x4d);
+        return full && (b[0] == 0x42) && (b[1] == 0x4d);
     }
 
     public ImageReader createReaderInstance(Object extension)

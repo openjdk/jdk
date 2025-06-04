@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,10 @@ import jdk.test.lib.security.TestCertificate;
  * @test
  * @bug 8148188
  * @summary Enhance the security libraries to record events of interest
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
- * @modules jdk.jfr/jdk.jfr.events
+ * @modules jdk.jfr/jdk.jfr.events java.base/sun.security.x509 java.base/sun.security.tools.keytool
  * @run main/othervm jdk.jfr.event.security.TestX509ValidationEvent
  */
 public class TestX509ValidationEvent {
@@ -128,8 +128,9 @@ public class TestX509ValidationEvent {
             switch (pos) {
                 // use public key of cert provided in TrustAnchor
                 case 1:
-                    Asserts.assertEquals(e.getLong("certificateId"),
-                        Long.valueOf(TestCertificate.ROOT_CA.certificate().getPublicKey().hashCode()));
+                    int hash = TestCertificate.ROOT_CA.certificate().getPublicKey().hashCode();
+                    Long id = Integer.toUnsignedLong(hash);
+                    Asserts.assertEquals(e.getLong("certificateId"), id);
                     break;
                 case 2:
                     Events.assertField(e, "certificateId")

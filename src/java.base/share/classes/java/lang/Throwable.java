@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.lang;
 
 import java.io.*;
 import java.util.*;
+import jdk.internal.event.ThrowableTracer;
 
 /**
  * The {@code Throwable} class is the superclass of all errors and
@@ -115,6 +116,12 @@ public class Throwable implements Serializable {
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
     @java.io.Serial
     private static final long serialVersionUID = -3042686055658047285L;
+
+    /**
+     * Flag set by jdk.internal.event.JFRTracing to indicate if
+     * exceptions should be traced by JFR.
+     */
+    static volatile boolean jfrTracing;
 
     /**
      * The JVM saves some indication of the stack backtrace in this slot.
@@ -252,8 +259,12 @@ public class Throwable implements Serializable {
      * <p>The {@link #fillInStackTrace()} method is called to initialize
      * the stack trace data in the newly created throwable.
      */
+    @SuppressWarnings("this-escape")
     public Throwable() {
         fillInStackTrace();
+        if (jfrTracing) {
+            ThrowableTracer.traceThrowable(getClass(), null);
+        }
     }
 
     /**
@@ -267,9 +278,13 @@ public class Throwable implements Serializable {
      * @param   message   the detail message. The detail message is saved for
      *          later retrieval by the {@link #getMessage()} method.
      */
+    @SuppressWarnings("this-escape")
     public Throwable(String message) {
         fillInStackTrace();
         detailMessage = message;
+        if (jfrTracing) {
+            ThrowableTracer.traceThrowable(getClass(), message);
+        }
     }
 
     /**
@@ -289,10 +304,14 @@ public class Throwable implements Serializable {
      *         unknown.)
      * @since  1.4
      */
+    @SuppressWarnings("this-escape")
     public Throwable(String message, Throwable cause) {
         fillInStackTrace();
         detailMessage = message;
         this.cause = cause;
+        if (jfrTracing) {
+            ThrowableTracer.traceThrowable(getClass(), message);
+        }
     }
 
     /**
@@ -312,10 +331,14 @@ public class Throwable implements Serializable {
      *         unknown.)
      * @since  1.4
      */
+    @SuppressWarnings("this-escape")
     public Throwable(Throwable cause) {
         fillInStackTrace();
         detailMessage = (cause==null ? null : cause.toString());
         this.cause = cause;
+        if (jfrTracing) {
+            ThrowableTracer.traceThrowable(getClass(), null);
+        }
     }
 
     /**
@@ -358,6 +381,7 @@ public class Throwable implements Serializable {
      * @see ArithmeticException
      * @since 1.7
      */
+    @SuppressWarnings("this-escape")
     protected Throwable(String message, Throwable cause,
                         boolean enableSuppression,
                         boolean writableStackTrace) {
@@ -368,8 +392,12 @@ public class Throwable implements Serializable {
         }
         detailMessage = message;
         this.cause = cause;
-        if (!enableSuppression)
+        if (!enableSuppression) {
             suppressedExceptions = null;
+        }
+        if (jfrTracing) {
+            ThrowableTracer.traceThrowable(getClass(), message);
+        }
     }
 
     /**
@@ -664,7 +692,7 @@ public class Throwable implements Serializable {
         Set<Throwable> dejaVu = Collections.newSetFromMap(new IdentityHashMap<>());
         dejaVu.add(this);
 
-        synchronized (s.lock()) {
+        synchronized(s.lock()) {
             // Print our stack trace
             s.println(this);
             StackTraceElement[] trace = getOurStackTrace();
@@ -833,11 +861,13 @@ public class Throwable implements Serializable {
     private synchronized StackTraceElement[] getOurStackTrace() {
         // Initialize stack trace field with information from
         // backtrace if this is the first call to this method
-        if (stackTrace == UNASSIGNED_STACK ||
-            (stackTrace == null && backtrace != null) /* Out of protocol state */) {
-            stackTrace = StackTraceElement.of(this, depth);
-        } else if (stackTrace == null) {
-            return UNASSIGNED_STACK;
+        if (stackTrace == UNASSIGNED_STACK || stackTrace == null) {
+            if (backtrace != null) { /* Out of protocol state */
+                stackTrace = StackTraceElement.of(backtrace, depth);
+            } else {
+                // no backtrace, fillInStackTrace overridden or not called
+                return UNASSIGNED_STACK;
+            }
         }
         return stackTrace;
     }

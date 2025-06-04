@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.nio.*;
  * memory buffer.
  * <p>
  * The structure of the 2.0 entry is defined in struct PerfDataEnry
- * as decsribed in perfMemory.hpp. This structure looks like:
+ * as described in perfMemory.hpp. This structure looks like:
  * <pre>
  * typedef struct {
  *   jint entry_length;         // entry length in bytes
@@ -72,7 +72,7 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
      * These are primarily for documentary purposes and the match up
      * with the PerfDataEntry structure in perfMemory.hpp. They are
      * generally unused in this code, but they are kept consistent with
-     * the data structure just in case some unforseen need arrises.
+     * the data structure just in case some unforeseen need arrises.
      */
     private static final int PERFDATA_ENTRYLENGTH_OFFSET=0;
     private static final int PERFDATA_ENTRYLENGTH_SIZE=4;   // sizeof(int)
@@ -152,7 +152,7 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
          * we are parsing it. The map will contain all the counters
          * found, but the number recorded in numEntries might be small
          * than what than the number we actually parsed (due to asynchronous
-         * updates). This discrepency is handled by ignoring any re-parsed
+         * updates). This discrepancy is handled by ignoring any re-parsed
          * entries when updating the Map in getNewMonitors().
          */
         lastNumEntries = numEntries;
@@ -292,7 +292,7 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
                     + Integer.toHexString(nextEntry));
         }
 
-        // protect againt a corrupted shard memory region.
+        // protect against a corrupted shared memory region.
         if ((nextEntry < 0)  || (nextEntry > buffer.limit())) {
             throw new MonitorStructureException(
                     "Entry index out of bounds: "
@@ -455,7 +455,7 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
                 if (units != Units.STRING) {
                     // only byte arrays of type STRING are currently supported
                     throw new MonitorTypeException(
-                            "Unexpected vector type encounterd:"
+                            "Unexpected vector type encountered:"
                             + " entry_offset = "
                             + Integer.toHexString(nextEntry)
                             + ", name = " + name

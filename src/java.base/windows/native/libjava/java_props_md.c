@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,6 @@
  * questions.
  */
 
-/* Access APIs for Windows Vista and above */
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0601
-#endif
-
 #include "jni.h"
 #include "jni_util.h"
 
@@ -45,17 +40,13 @@
 #include "locale_str.h"
 #include "java_props.h"
 
-#ifndef VER_PLATFORM_WIN32_WINDOWS
-#define VER_PLATFORM_WIN32_WINDOWS 1
-#endif
-
 #ifndef PROCESSOR_ARCHITECTURE_AMD64
 #define PROCESSOR_ARCHITECTURE_AMD64 9
 #endif
 
 typedef void (WINAPI *PGNSI)(LPSYSTEM_INFO);
-static boolean SetupI18nProps(LCID lcid, char** language, char** script, char** country,
-               char** variant, char** encoding);
+static BOOL SetupI18nProps(LCID lcid, char** language, char** script, char** country,
+               char** variant);
 
 #define PROPSIZE 9      // eight-letter + null terminator
 #define SNAMESIZE 86    // max number of chars for LOCALE_SNAME is 85
@@ -63,19 +54,19 @@ static boolean SetupI18nProps(LCID lcid, char** language, char** script, char** 
 static char *
 getEncodingInternal(LCID lcid)
 {
-    int codepage;
+    int codepage = 0;
     char * ret = malloc(16);
     if (ret == NULL) {
         return NULL;
     }
 
-    if (GetLocaleInfo(lcid,
+    if (lcid == 0) { // for sun.jnu.encoding
+        codepage = GetACP();
+        _itoa_s(codepage, ret + 2, 14, 10);
+    } else if (GetLocaleInfo(lcid,
                       LOCALE_IDEFAULTANSICODEPAGE,
-                      ret+2, 14) == 0) {
-        codepage = 1252;
-        strcpy(ret+2, "1252");
-    } else {
-        codepage = atoi(ret+2);
+                      ret + 2, 14) != 0) {
+        codepage = atoi(ret + 2);
     }
 
     switch (codepage) {
@@ -137,20 +128,30 @@ getEncodingInternal(LCID lcid)
     return ret;
 }
 
-static char* getConsoleEncoding()
+static char* getConsoleEncoding(BOOL output)
 {
-    char* buf = malloc(16);
+    size_t buflen = 16;
+    char* buf = malloc(buflen);
     int cp;
     if (buf == NULL) {
         return NULL;
     }
-    cp = GetConsoleCP();
-    if (cp >= 874 && cp <= 950)
-        sprintf(buf, "ms%d", cp);
-    else if (cp == 65001)
-        sprintf(buf, "UTF-8");
-    else
-        sprintf(buf, "cp%d", cp);
+    if (output) {
+        cp = GetConsoleOutputCP();
+    } else {
+        cp = GetConsoleCP();
+    }
+    if (cp >= 874 && cp <= 950) {
+        snprintf(buf, buflen, "ms%d", cp);
+    } else if (cp == 65001) {
+        snprintf(buf, buflen, "UTF-8");
+    } else if (cp == 0) {
+        // Failed to get the console code page
+        free(buf);
+        buf = NULL;
+    } else {
+        snprintf(buf, buflen, "cp%d", cp);
+    }
     return buf;
 }
 
@@ -165,7 +166,7 @@ getEncodingFromLangID(LANGID langID)
 DllExport const char *
 getJavaIDFromLangID(LANGID langID)
 {
-    char * elems[5]; // lang, script, ctry, variant, encoding
+    char * elems[4]; // lang, script, ctry, variant
     char * ret;
     int index;
 
@@ -174,12 +175,12 @@ getJavaIDFromLangID(LANGID langID)
         return NULL;
     }
 
-    for (index = 0; index < 5; index++) {
+    for (index = 0; index < 4; index++) {
         elems[index] = NULL;
     }
 
     if (SetupI18nProps(MAKELCID(langID, SORT_DEFAULT),
-                   &(elems[0]), &(elems[1]), &(elems[2]), &(elems[3]), &(elems[4]))) {
+                   &(elems[0]), &(elems[1]), &(elems[2]), &(elems[3]))) {
 
         // there always is the "language" tag
         strcpy(ret, elems[0]);
@@ -196,7 +197,7 @@ getJavaIDFromLangID(LANGID langID)
         ret = NULL;
     }
 
-    for (index = 0; index < 5; index++) {
+    for (index = 0; index < 4; index++) {
         if (elems[index] != NULL) {
             free(elems[index]);
         }
@@ -217,45 +218,19 @@ getHomeFromShell32()
      */
     static WCHAR *u_path = NULL;
     if (u_path == NULL) {
-        HRESULT hr;
-
-        /*
-         * SHELL32 DLL is delay load DLL and we can use the trick with
-         * __try/__except block.
-         */
-        __try {
-            /*
-             * For Windows Vista and later (or patched MS OS) we need to use
-             * [SHGetKnownFolderPath] call to avoid MAX_PATH length limitation.
-             * Shell32.dll (version 6.0.6000 or later)
-             */
-            hr = SHGetKnownFolderPath(&FOLDERID_Profile, KF_FLAG_DONT_VERIFY, NULL, &u_path);
-        } __except(EXCEPTION_EXECUTE_HANDLER) {
-            /* Exception: no [SHGetKnownFolderPath] entry */
-            hr = E_FAIL;
-        }
+        WCHAR *tmpPath = NULL;
+        HRESULT hr = SHGetKnownFolderPath(&FOLDERID_Profile, KF_FLAG_DONT_VERIFY, NULL, &tmpPath);
 
         if (FAILED(hr)) {
-            WCHAR path[MAX_PATH+1];
-
-            /* fallback solution for WinXP and Windows 2000 */
-            hr = SHGetFolderPathW(NULL, CSIDL_FLAG_DONT_VERIFY | CSIDL_PROFILE, NULL, SHGFP_TYPE_CURRENT, path);
-            if (FAILED(hr)) {
-                /* we can't find the shell folder. */
-                u_path = NULL;
-            } else {
-                /* Just to be sure about the path length until Windows Vista approach.
-                 * [S_FALSE] could not be returned due to [CSIDL_FLAG_DONT_VERIFY] flag and UNICODE version.
-                 */
-                path[MAX_PATH] = 0;
-                u_path = _wcsdup(path);
-            }
+            CoTaskMemFree(tmpPath);
+        } else {
+            u_path = tmpPath;
         }
     }
     return u_path;
 }
 
-static boolean
+static BOOL
 haveMMX(void)
 {
     return IsProcessorFeaturePresent(PF_MMX_INSTRUCTIONS_AVAILABLE);
@@ -267,9 +242,6 @@ cpu_isalist(void)
     SYSTEM_INFO info;
     GetSystemInfo(&info);
     switch (info.wProcessorArchitecture) {
-#ifdef PROCESSOR_ARCHITECTURE_IA64
-    case PROCESSOR_ARCHITECTURE_IA64: return "ia64";
-#endif
 #ifdef PROCESSOR_ARCHITECTURE_AMD64
     case PROCESSOR_ARCHITECTURE_AMD64: return "amd64";
 #endif
@@ -288,9 +260,9 @@ cpu_isalist(void)
     return NULL;
 }
 
-static boolean
+static BOOL
 SetupI18nProps(LCID lcid, char** language, char** script, char** country,
-               char** variant, char** encoding) {
+               char** variant) {
     /* script */
     char tmp[SNAMESIZE];
     *script = malloc(PROPSIZE);
@@ -347,11 +319,6 @@ SetupI18nProps(LCID lcid, char** language, char** script, char** country,
         strcpy(*variant, "NY");
     }
 
-    /* encoding */
-    *encoding = getEncodingInternal(lcid);
-    if (*encoding == NULL) {
-        return FALSE;
-    }
     return TRUE;
 }
 
@@ -380,8 +347,8 @@ GetJavaProperties(JNIEnv* env)
     /* OS properties */
     {
         char buf[100];
-        boolean is_workstation;
-        boolean is_64bit;
+        BOOL is_workstation;
+        BOOL is_64bit;
         DWORD platformId;
         {
             OSVERSIONINFOEX ver;
@@ -478,6 +445,8 @@ GetJavaProperties(JNIEnv* env)
          *       where (buildNumber > 17762)
          * Windows Server 2022          10              0  (!VER_NT_WORKSTATION)
          *       where (buildNumber > 20347)
+         * Windows Server 2025          10              0  (!VER_NT_WORKSTATION)
+         *       where (buildNumber > 26039)
          *
          * This mapping will presumably be augmented as new Windows
          * versions are released.
@@ -561,9 +530,12 @@ GetJavaProperties(JNIEnv* env)
                     case  0:
                         /* Windows server 2019 GA 10/2018 build number is 17763 */
                         /* Windows server 2022 build number is 20348 */
-                        if (buildNumber > 20347) {
+                        /* Windows server 2025 Preview build is 26040 */
+                        if (buildNumber > 26039) {
+                            sprops.os_name = "Windows Server 2025";
+                        } else if (buildNumber > 20347) {
                             sprops.os_name = "Windows Server 2022";
-                        } else if (buildNumber > 17676) {
+                        } else if (buildNumber > 17762) {
                             sprops.os_name = "Windows Server 2019";
                         } else {
                             sprops.os_name = "Windows Server 2016";
@@ -580,12 +552,10 @@ GetJavaProperties(JNIEnv* env)
             sprops.os_name = "Windows (unknown)";
             break;
         }
-        sprintf(buf, "%d.%d", majorVersion, minorVersion);
+        snprintf(buf, sizeof(buf), "%d.%d", majorVersion, minorVersion);
         sprops.os_version = _strdup(buf);
 #if defined(_M_AMD64)
         sprops.os_arch = "amd64";
-#elif defined(_X86_)
-        sprops.os_arch = "x86";
 #elif defined(_M_ARM64)
         sprops.os_arch = "aarch64";
 #else
@@ -660,13 +630,11 @@ GetJavaProperties(JNIEnv* env)
          * (which is a Windows LCID value),
          */
         LCID userDefaultLCID = GetUserDefaultLCID();
-        LCID systemDefaultLCID = GetSystemDefaultLCID();
         LANGID userDefaultUILang = GetUserDefaultUILanguage();
         LCID userDefaultUILCID = MAKELCID(userDefaultUILang, SORTIDFROMLCID(userDefaultLCID));
 
         {
-            char * display_encoding;
-            HANDLE hStdOutErr;
+            HANDLE hStdHandle;
 
             // Windows UI Language selection list only cares "language"
             // information of the UI Language. For example, the list
@@ -684,16 +652,19 @@ GetJavaProperties(JNIEnv* env)
                            &sprops.format_language,
                            &sprops.format_script,
                            &sprops.format_country,
-                           &sprops.format_variant,
-                           &sprops.encoding);
+                           &sprops.format_variant);
             SetupI18nProps(userDefaultUILCID,
                            &sprops.display_language,
                            &sprops.display_script,
                            &sprops.display_country,
-                           &sprops.display_variant,
-                           &display_encoding);
+                           &sprops.display_variant);
 
-            sprops.sun_jnu_encoding = getEncodingInternal(systemDefaultLCID);
+            sprops.sun_jnu_encoding = getEncodingInternal(0);
+            if (sprops.sun_jnu_encoding == NULL) {
+                sprops.sun_jnu_encoding = "UTF-8";
+            }
+            sprops.encoding = sprops.sun_jnu_encoding;
+
             if (LANGIDFROMLCID(userDefaultLCID) == 0x0c04 && majorVersion == 6) {
                 // MS claims "Vista has built-in support for HKSCS-2004.
                 // All of the HKSCS-2004 characters have Unicode 4.1.
@@ -706,18 +677,23 @@ GetJavaProperties(JNIEnv* env)
                 sprops.sun_jnu_encoding = "MS950_HKSCS";
             }
 
-            hStdOutErr = GetStdHandle(STD_OUTPUT_HANDLE);
-            if (hStdOutErr != INVALID_HANDLE_VALUE &&
-                GetFileType(hStdOutErr) == FILE_TYPE_CHAR) {
-                sprops.sun_stdout_encoding = getConsoleEncoding();
+            hStdHandle = GetStdHandle(STD_INPUT_HANDLE);
+            if (hStdHandle != INVALID_HANDLE_VALUE &&
+                GetFileType(hStdHandle) == FILE_TYPE_CHAR) {
+                sprops.stdin_encoding = getConsoleEncoding(FALSE);
             }
-            hStdOutErr = GetStdHandle(STD_ERROR_HANDLE);
-            if (hStdOutErr != INVALID_HANDLE_VALUE &&
-                GetFileType(hStdOutErr) == FILE_TYPE_CHAR) {
-                if (sprops.sun_stdout_encoding != NULL)
-                    sprops.sun_stderr_encoding = sprops.sun_stdout_encoding;
+            hStdHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+            if (hStdHandle != INVALID_HANDLE_VALUE &&
+                GetFileType(hStdHandle) == FILE_TYPE_CHAR) {
+                sprops.stdout_encoding = getConsoleEncoding(TRUE);
+            }
+            hStdHandle = GetStdHandle(STD_ERROR_HANDLE);
+            if (hStdHandle != INVALID_HANDLE_VALUE &&
+                GetFileType(hStdHandle) == FILE_TYPE_CHAR) {
+                if (sprops.stdout_encoding != NULL)
+                    sprops.stderr_encoding = sprops.stdout_encoding;
                 else
-                    sprops.sun_stderr_encoding = getConsoleEncoding();
+                    sprops.stderr_encoding = getConsoleEncoding(TRUE);
             }
         }
     }

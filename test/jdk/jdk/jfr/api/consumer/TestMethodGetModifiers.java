@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import jdk.test.lib.jfr.SimpleEvent;
 /**
  * @test
  * @summary Verifies that a recorded method has the correct modifier
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm -Xint jdk.jfr.api.consumer.TestMethodGetModifiers
@@ -57,7 +57,7 @@ public final class TestMethodGetModifiers {
 
             List<RecordedEvent> recordedEvents = Events.fromRecording(recording);
             Events.hasEvents(recordedEvents);
-            RecordedEvent recordedEvent = recordedEvents.get(0);
+            RecordedEvent recordedEvent = recordedEvents.getFirst();
 
             System.out.println(recordedEvent);
 

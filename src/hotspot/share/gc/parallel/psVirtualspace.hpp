@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_GC_PARALLEL_PSVIRTUALSPACE_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/reservedSpace.hpp"
 #include "memory/virtualspace.hpp"
 
 // VirtualSpace for the parallel scavenge collector.
@@ -35,7 +36,7 @@
 
 class PSVirtualSpace : public CHeapObj<mtGC> {
   friend class VMStructs;
- protected:
+
   // The space is committed/uncommitted in chunks of size _alignment.  The
   // ReservedSpace passed to initialize() must be aligned to this value.
   const size_t _alignment;
@@ -52,16 +53,10 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
   // os::commit_memory() or os::uncommit_memory().
   bool _special;
 
-  // Convenience wrapper.
-  inline static size_t pointer_delta(const char* left, const char* right);
-
  public:
   PSVirtualSpace(ReservedSpace rs, size_t alignment);
 
   ~PSVirtualSpace();
-
-  PSVirtualSpace();
-  void initialize(ReservedSpace rs);
 
   bool is_in_committed(const void* p) const {
     return (p >= committed_low_addr()) && (p < committed_high_addr());
@@ -94,10 +89,7 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
 
 #ifndef PRODUCT
   // Debugging
-  static  bool is_aligned(size_t val, size_t align);
-          bool is_aligned(size_t val) const;
-          bool is_aligned(char* val) const;
-          void verify() const;
+  void verify() const;
 
   // Helper class to verify a space when entering/leaving a block.
   class PSVirtualSpaceVerifier: public StackObj {
@@ -127,17 +119,13 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
 //
 // PSVirtualSpace inlines.
 //
-inline size_t
-PSVirtualSpace::pointer_delta(const char* left, const char* right) {
-  return ::pointer_delta((void *)left, (void*)right, sizeof(char));
-}
 
 inline size_t PSVirtualSpace::committed_size() const {
-  return pointer_delta(committed_high_addr(), committed_low_addr());
+  return pointer_delta(committed_high_addr(), committed_low_addr(), sizeof(char));
 }
 
 inline size_t PSVirtualSpace::reserved_size() const {
-  return pointer_delta(reserved_high_addr(), reserved_low_addr());
+  return pointer_delta(reserved_high_addr(), reserved_low_addr(), sizeof(char));
 }
 
 inline size_t PSVirtualSpace::uncommitted_size() const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ public class TestStdDoclet {
 
     /**
      * More dummy comments.
-     * @throws DoesNotExist   oops, javadoc does not see this
      * @see DoesNotExist
      */
     void run() throws Exception {
@@ -56,6 +55,8 @@ public class TestStdDoclet {
         List<String> cmdArgs = new ArrayList<>();
         cmdArgs.add(javadoc.getPath());
         cmdArgs.addAll(Arrays.asList(
+                "-J-Duser.language=en",
+                "-J-Duser.country=US",
                 "-classpath", ".", // insulates us from ambient classpath
                 "-Xdoclint:none",
                 "-package",

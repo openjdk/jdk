@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,7 @@
 package jdk.javadoc.internal.doclets.toolkit;
 
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -54,13 +48,10 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleElementVisitor14;
-import javax.tools.DocumentationTool;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
-import javax.tools.StandardJavaFileManager;
 
 import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.util.DocTreePath;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -69,12 +60,9 @@ import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.doclet.StandardDoclet;
 import jdk.javadoc.doclet.Taglet;
-import jdk.javadoc.internal.doclets.toolkit.builders.BuilderFactory;
-import jdk.javadoc.internal.doclets.toolkit.taglets.TagletManager;
 import jdk.javadoc.internal.doclets.toolkit.util.Comparators;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileFactory;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.Extern;
 import jdk.javadoc.internal.doclets.toolkit.util.Group;
 import jdk.javadoc.internal.doclets.toolkit.util.MetaKeywords;
@@ -85,32 +73,18 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils.Pair;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberCache;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 import jdk.javadoc.internal.doclint.DocLint;
+import jdk.javadoc.internal.tool.AccessLevel;
 
 /**
- * Configure the output based on the options. Doclets should sub-class
+ * Configure the output based on the options. Doclets should subclass
  * BaseConfiguration, to configure and add their own options. This class contains
  * all user options which are supported by the standard doclet.
- *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own risk.
- * This code and its internal interfaces are subject to change or
- * deletion without notice.</b>
  */
 public abstract class BaseConfiguration {
     /**
      * The doclet that created this configuration.
      */
     public final Doclet doclet;
-
-    /**
-     * The factory for builders.
-     */
-    protected BuilderFactory builderFactory;
-
-    /**
-     * The taglet manager.
-     */
-    public TagletManager tagletManager;
 
     /**
      * The meta tag keywords instance.
@@ -206,7 +180,7 @@ public abstract class BaseConfiguration {
     protected static final String sharedResourceBundleName =
             "jdk.javadoc.internal.doclets.toolkit.resources.doclets";
 
-    VisibleMemberCache visibleMemberCache = null;
+    private VisibleMemberCache visibleMemberCache;
 
     public PropertyUtils propertyUtils = null;
 
@@ -269,18 +243,6 @@ public abstract class BaseConfiguration {
         includedTypeElements = Collections.unmodifiableSet(includedSplitter.tset);
     }
 
-    /**
-     * Return the builder factory for this doclet.
-     *
-     * @return the builder factory for this doclet.
-     */
-    public BuilderFactory getBuilderFactory() {
-        if (builderFactory == null) {
-            builderFactory = new BuilderFactory(this);
-        }
-        return builderFactory;
-    }
-
     public Reporter getReporter() {
         return this.reporter;
     }
@@ -324,15 +286,15 @@ public abstract class BaseConfiguration {
     private void initModules() {
         Comparators comparators = utils.comparators;
         // Build the modules structure used by the doclet
-        modules = new TreeSet<>(comparators.makeModuleComparator());
+        modules = new TreeSet<>(comparators.moduleComparator());
         modules.addAll(getSpecifiedModuleElements());
 
-        modulePackages = new TreeMap<>(comparators.makeModuleComparator());
+        modulePackages = new TreeMap<>(comparators.moduleComparator());
         for (PackageElement p : packages) {
             ModuleElement mdle = docEnv.getElementUtils().getModuleOf(p);
             if (mdle != null && !mdle.isUnnamed()) {
                 Set<PackageElement> s = modulePackages
-                        .computeIfAbsent(mdle, m -> new TreeSet<>(comparators.makePackageComparator()));
+                        .computeIfAbsent(mdle, m -> new TreeSet<>(comparators.packageComparator()));
                 s.add(p);
             }
         }
@@ -341,13 +303,13 @@ public abstract class BaseConfiguration {
             ModuleElement mdle = docEnv.getElementUtils().getModuleOf(p);
             if (mdle != null && !mdle.isUnnamed()) {
                 Set<PackageElement> s = modulePackages
-                        .computeIfAbsent(mdle, m -> new TreeSet<>(comparators.makePackageComparator()));
+                        .computeIfAbsent(mdle, m -> new TreeSet<>(comparators.packageComparator()));
                 s.add(p);
             }
         }
 
         // add entries for modules which may not have exported packages
-        modules.forEach(mdle -> modulePackages.computeIfAbsent(mdle, m -> Collections.emptySet()));
+        modules.forEach(mdle -> modulePackages.computeIfAbsent(mdle, m -> Set.of()));
 
         modules.addAll(modulePackages.keySet());
         showModules = !modules.isEmpty();
@@ -357,7 +319,7 @@ public abstract class BaseConfiguration {
     }
 
     private void initPackages() {
-        packages = new TreeSet<>(utils.comparators.makePackageComparator());
+        packages = new TreeSet<>(utils.comparators.packageComparator());
         // add all the included packages
         packages.addAll(includedPackageElements);
     }
@@ -381,28 +343,6 @@ public abstract class BaseConfiguration {
         }
         typeElementCatalog = new TypeElementCatalog(includedTypeElements, this);
 
-        String snippetPath = options.snippetPath();
-        if (snippetPath != null) {
-            Messages messages = getMessages();
-            JavaFileManager fm = getFileManager();
-            if (fm instanceof StandardJavaFileManager) {
-                try {
-                    List<Path> sp = Arrays.stream(snippetPath.split(File.pathSeparator))
-                            .map(Path::of)
-                            .toList();
-                    StandardJavaFileManager sfm = (StandardJavaFileManager) fm;
-                    sfm.setLocationFromPaths(DocumentationTool.Location.SNIPPET_PATH, sp);
-                } catch (IOException | InvalidPathException e) {
-                    throw new SimpleDocletException(messages.getResources().getText(
-                            "doclet.error_setting_snippet_path", snippetPath, e), e);
-                }
-            } else {
-                throw new SimpleDocletException(messages.getResources().getText(
-                        "doclet.cannot_use_snippet_path", snippetPath));
-            }
-        }
-
-        initTagletManager(options.customTagStrs());
         options.groupPairs().forEach(grp -> {
             if (showModules) {
                 group.checkModuleGroups(grp.first, grp.second);
@@ -456,99 +396,6 @@ public abstract class BaseConfiguration {
             }
         }
         DocFileFactory.getFactory(this).setDestDir(destDirName);
-    }
-
-    /**
-     * Initialize the taglet manager.  The strings to initialize the simple custom tags should
-     * be in the following format:  "[tag name]:[location str]:[heading]".
-     *
-     * @param customTagStrs the set two dimensional arrays of strings.  These arrays contain
-     *                      either -tag or -taglet arguments.
-     */
-    private void initTagletManager(Set<List<String>> customTagStrs) {
-        tagletManager = tagletManager != null ? tagletManager : new TagletManager(this);
-        JavaFileManager fileManager = getFileManager();
-        Messages messages = getMessages();
-        try {
-            tagletManager.initTagletPath(fileManager);
-            tagletManager.loadTaglets(fileManager);
-
-            for (List<String> args : customTagStrs) {
-                if (args.get(0).equals("-taglet")) {
-                    tagletManager.addCustomTag(args.get(1), fileManager);
-                    continue;
-                }
-                List<String> tokens = tokenize(args.get(1), TagletManager.SIMPLE_TAGLET_OPT_SEPARATOR, 3);
-                switch (tokens.size()) {
-                    case 1:
-                        String tagName = args.get(1);
-                        if (tagletManager.isKnownCustomTag(tagName)) {
-                            //reorder a standard tag
-                            tagletManager.addNewSimpleCustomTag(tagName, null, "");
-                        } else {
-                            //Create a simple tag with the heading that has the same name as the tag.
-                            StringBuilder heading = new StringBuilder(tagName + ":");
-                            heading.setCharAt(0, Character.toUpperCase(tagName.charAt(0)));
-                            tagletManager.addNewSimpleCustomTag(tagName, heading.toString(), "a");
-                        }
-                        break;
-
-                    case 2:
-                        //Add simple taglet without heading, probably to excluding it in the output.
-                        tagletManager.addNewSimpleCustomTag(tokens.get(0), tokens.get(1), "");
-                        break;
-
-                    case 3:
-                        tagletManager.addNewSimpleCustomTag(tokens.get(0), tokens.get(2), tokens.get(1));
-                        break;
-
-                    default:
-                        messages.error("doclet.Error_invalid_custom_tag_argument", args.get(1));
-                }
-            }
-        } catch (IOException e) {
-            messages.error("doclet.taglet_could_not_set_location", e.toString());
-        }
-    }
-
-    /**
-     * Given a string, return an array of tokens.  The separator can be escaped
-     * with the '\' character.  The '\' character may also be escaped by the
-     * '\' character.
-     *
-     * @param s         the string to tokenize.
-     * @param separator the separator char.
-     * @param maxTokens the maximum number of tokens returned.  If the
-     *                  max is reached, the remaining part of s is appended
-     *                  to the end of the last token.
-     * @return an array of tokens.
-     */
-    private List<String> tokenize(String s, char separator, int maxTokens) {
-        List<String> tokens = new ArrayList<>();
-        StringBuilder token = new StringBuilder();
-        boolean prevIsEscapeChar = false;
-        for (int i = 0; i < s.length(); i += Character.charCount(i)) {
-            int currentChar = s.codePointAt(i);
-            if (prevIsEscapeChar) {
-                // Case 1:  escaped character
-                token.appendCodePoint(currentChar);
-                prevIsEscapeChar = false;
-            } else if (currentChar == separator && tokens.size() < maxTokens - 1) {
-                // Case 2:  separator
-                tokens.add(token.toString());
-                token = new StringBuilder();
-            } else if (currentChar == '\\') {
-                // Case 3:  escape character
-                prevIsEscapeChar = true;
-            } else {
-                // Case 4:  regular character
-                token.appendCodePoint(currentChar);
-            }
-        }
-        if (token.length() > 0) {
-            tokens.add(token.toString());
-        }
-        return tokens;
     }
 
     /**
@@ -618,13 +465,6 @@ public abstract class BaseConfiguration {
     }
 
     /**
-     * Return the doclet specific instance of a writer factory.
-     *
-     * @return the {@link WriterFactory} for the doclet.
-     */
-    public abstract WriterFactory getWriterFactory();
-
-    /**
      * Return the Locale for this document.
      *
      * @return the current locale
@@ -644,10 +484,6 @@ public abstract class BaseConfiguration {
      * @return JavaFileManager
      */
     public abstract JavaFileManager getFileManager();
-
-    public abstract boolean showMessage(DocTreePath path, String key);
-
-    public abstract boolean showMessage(Element e, String key);
 
     /*
      * Splits the elements in a collection to its individual
@@ -709,7 +545,7 @@ public abstract class BaseConfiguration {
         return getOptions().allowScriptInComments();
     }
 
-    public synchronized VisibleMemberTable getVisibleMemberTable(TypeElement te) {
+    public VisibleMemberTable getVisibleMemberTable(TypeElement te) {
         return visibleMemberCache.getVisibleMemberTable(te);
     }
 
@@ -731,7 +567,7 @@ public abstract class BaseConfiguration {
 
     //<editor-fold desc="DocLint support">
 
-    private DocLint doclint;
+    protected DocLint doclint;
 
     Map<CompilationUnitTree, Boolean> shouldCheck = new HashMap<>();
 
@@ -808,8 +644,20 @@ public abstract class BaseConfiguration {
                 doclintOpts.toArray(new String[0]));
     }
 
-    public boolean haveDocLint() {
-        return (doclint != null);
+    public boolean isDocLintReferenceGroupEnabled() {
+        return isDocLintGroupEnabled(jdk.javadoc.internal.doclint.Messages.Group.REFERENCE);
+    }
+
+    public boolean isDocLintSyntaxGroupEnabled() {
+        return isDocLintGroupEnabled(jdk.javadoc.internal.doclint.Messages.Group.SYNTAX);
+    }
+
+    private boolean isDocLintGroupEnabled(jdk.javadoc.internal.doclint.Messages.Group group) {
+        // Use AccessKind.PUBLIC as a stand-in, since it is not common to
+        // set DocLint options per access level (as is common with javac.)
+        // A more sophisticated solution might be to derive the access level from the
+        // element owning the comment, and its enclosing elements.
+        return doclint != null && doclint.isGroupEnabled(group, AccessLevel.PUBLIC);
     }
     //</editor-fold>
 }

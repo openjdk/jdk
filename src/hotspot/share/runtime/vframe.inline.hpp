@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,40 @@
 
 #include "runtime/vframe.hpp"
 
+#include "classfile/javaClasses.inline.hpp"
+#include "oops/stackChunkOop.inline.hpp"
+#include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/frame.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 
-inline vframeStreamCommon::vframeStreamCommon(JavaThread* thread, bool process_frames) : _reg_map(thread, false, process_frames) {
-  _thread = thread;
+inline vframeStreamCommon::vframeStreamCommon(JavaThread* thread,
+                                              RegisterMap::UpdateMap update_map,
+                                              RegisterMap::ProcessFrames process_frames,
+                                              RegisterMap::WalkContinuation walk_cont)
+        : _reg_map(thread, update_map, process_frames, walk_cont), _cont_entry(nullptr) {
+  _thread = _reg_map.thread();
 }
 
-inline intptr_t* vframeStreamCommon::frame_id() const        { return _frame.id(); }
+inline oop vframeStreamCommon::continuation() const {
+  if (_reg_map.cont() != nullptr) {
+    return _reg_map.cont();
+  } else if (_cont_entry != nullptr) {
+    return _cont_entry->cont_oop(_reg_map.thread());
+  } else {
+    return nullptr;
+  }
+}
+
+inline intptr_t* vframeStreamCommon::frame_id() const {
+  if (_frame.is_heap_frame()) {
+    // Make something sufficiently unique
+    intptr_t id = _reg_map.stack_chunk_index() << 16;
+    id += _frame.offset_unextended_sp();
+    return reinterpret_cast<intptr_t*>(id);
+  }
+  return _frame.id();
+}
 
 inline int vframeStreamCommon::vframe_id() const {
   assert(_mode == compiled_mode, "unexpected mode: %d", _mode);
@@ -48,21 +74,49 @@ inline int vframeStreamCommon::decode_offset() const {
 
 inline bool vframeStreamCommon::is_interpreted_frame() const { return _frame.is_interpreted_frame(); }
 
-inline bool vframeStreamCommon::is_entry_frame() const       { return _frame.is_entry_frame(); }
-
 inline void vframeStreamCommon::next() {
   // handle frames with inlining
   if (_mode == compiled_mode    && fill_in_compiled_inlined_sender()) return;
 
   // handle general case
   do {
-    _prev_frame = _frame;
+    bool is_enterSpecial_frame  = false;
+    if (Continuation::is_continuation_enterSpecial(_frame)) {
+      assert(!_reg_map.in_cont(), "");
+      assert(_cont_entry != nullptr, "");
+      // Reading oops are only safe if process_frames() is true, and we fix the oops.
+      assert(!_reg_map.process_frames() || _cont_entry->cont_oop(_reg_map.thread()) != nullptr, "_cont: " INTPTR_FORMAT, p2i(_cont_entry));
+      is_enterSpecial_frame = true;
+
+      // TODO: handle ShowCarrierFrames
+      if (_cont_entry->is_virtual_thread() ||
+          (_continuation_scope.not_null() && _cont_entry->scope(_reg_map.thread()) == _continuation_scope())) {
+        _mode = at_end_mode;
+        break;
+      }
+    } else if (_reg_map.in_cont() && Continuation::is_continuation_entry_frame(_frame, &_reg_map)) {
+      assert(_reg_map.cont() != nullptr, "");
+      oop scope = jdk_internal_vm_Continuation::scope(_reg_map.cont());
+      if (scope == java_lang_VirtualThread::vthread_scope() ||
+          (_continuation_scope.not_null() && scope == _continuation_scope())) {
+        _mode = at_end_mode;
+        break;
+      }
+    }
+
     _frame = _frame.sender(&_reg_map);
+
+    if (is_enterSpecial_frame) {
+      _cont_entry = _cont_entry->parent();
+    }
   } while (!fill_from_frame());
 }
 
-inline vframeStream::vframeStream(JavaThread* thread, bool stop_at_java_call_stub, bool process_frame)
-  : vframeStreamCommon(thread, process_frame /* process_frames */) {
+inline vframeStream::vframeStream(JavaThread* thread, bool stop_at_java_call_stub, bool process_frame, bool vthread_carrier)
+  : vframeStreamCommon(thread,
+                       RegisterMap::UpdateMap::include,
+                       process_frame ? RegisterMap::ProcessFrames::include : RegisterMap::ProcessFrames::skip ,
+                       RegisterMap::WalkContinuation::include) {
   _stop_at_java_call_stub = stop_at_java_call_stub;
 
   if (!thread->has_last_Java_frame()) {
@@ -70,9 +124,21 @@ inline vframeStream::vframeStream(JavaThread* thread, bool stop_at_java_call_stu
     return;
   }
 
-  _frame = _thread->last_frame();
+  if (thread->is_vthread_mounted()) {
+    _frame = vthread_carrier ? _thread->carrier_last_frame(&_reg_map) : _thread->vthread_last_frame();
+    if (Continuation::is_continuation_enterSpecial(_frame)) {
+      // This can happen when calling async_get_stack_trace() and catching the target
+      // vthread at the JRT_BLOCK_END in freeze_internal() or when posting the Monitor
+      // Waited event after target vthread was preempted. Since all continuation frames
+      // are freezed we get the top frame from the stackChunk instead.
+      _frame = Continuation::last_frame(java_lang_VirtualThread::continuation(_thread->vthread()), &_reg_map);
+    }
+  } else {
+    _frame = _thread->last_frame();
+  }
+
+  _cont_entry = _thread->last_continuation();
   while (!fill_from_frame()) {
-    _prev_frame = _frame;
     _frame = _frame.sender(&_reg_map);
   }
 }
@@ -104,14 +170,16 @@ inline void vframeStreamCommon::fill_from_compiled_frame(int decode_offset) {
     // as it were a native compiled frame (no Java-level assumptions).
 #ifdef ASSERT
     if (WizardMode) {
-      ttyLocker ttyl;
-      tty->print_cr("Error in fill_from_frame: pc_desc for "
-                    INTPTR_FORMAT " not found or invalid at %d",
-                    p2i(_frame.pc()), decode_offset);
-      nm()->print();
-      nm()->method()->print_codes();
-      nm()->print_code();
-      nm()->print_pcs();
+      // Keep tty output consistent. To avoid ttyLocker, we buffer in stream, and print all at once.
+      stringStream ss;
+      ss.print_cr("Error in fill_from_frame: pc_desc for "
+                  INTPTR_FORMAT " not found or invalid at %d",
+                  p2i(_frame.pc()), decode_offset);
+      nm()->print_on(&ss);
+      nm()->method()->print_codes_on(&ss);
+      nm()->print_code_on(&ss);
+      nm()->print_pcs_on(&ss);
+      tty->print("%s", ss.as_string()); // print all at once
     }
     found_bad_method_frame();
 #endif
@@ -149,14 +217,15 @@ inline bool vframeStreamCommon::fill_from_frame() {
 
   // Compiled frame
 
-  if (cb() != NULL && cb()->is_compiled()) {
+  if (cb() != nullptr && cb()->is_nmethod()) {
+    assert(nm()->method() != nullptr, "must be");
     if (nm()->is_native_method()) {
-      // Do not rely on scopeDesc since the pc might be unprecise due to the _last_native_pc trick.
+      // Do not rely on scopeDesc since the pc might be imprecise due to the _last_native_pc trick.
       fill_from_compiled_native_frame();
     } else {
       PcDesc* pc_desc = nm()->pc_desc_at(_frame.pc());
       int decode_offset;
-      if (pc_desc == NULL) {
+      if (pc_desc == nullptr) {
         // Should not happen, but let fill_from_compiled_frame handle it.
 
         // If we are trying to walk the stack of a thread that is not
@@ -173,7 +242,7 @@ inline bool vframeStreamCommon::fill_from_frame() {
         // fill_from_compiled_frame handle it.
 
 
-        JavaThreadState state = _thread->thread_state();
+        JavaThreadState state = _thread != nullptr ? _thread->thread_state() : _thread_in_Java;
 
         // in_Java should be good enough to test safepoint safety
         // if state were say in_Java_trans then we'd expect that
@@ -205,6 +274,7 @@ inline bool vframeStreamCommon::fill_from_frame() {
         decode_offset = pc_desc->scope_decode_offset();
       }
       fill_from_compiled_frame(decode_offset);
+
       _vframe_id = 0;
     }
     return true;
@@ -216,18 +286,26 @@ inline bool vframeStreamCommon::fill_from_frame() {
     return true;
   }
 
+  assert(!Continuation::is_continuation_enterSpecial(_frame), "");
   return false;
 }
 
 
 inline void vframeStreamCommon::fill_from_interpreter_frame() {
-  Method* method = _frame.interpreter_frame_method();
-  address   bcp    = _frame.interpreter_frame_bcp();
-  int       bci    = method->validate_bci_from_bcp(bcp);
+  Method* method;
+  address bcp;
+  if (!_reg_map.in_cont()) {
+    method = _frame.interpreter_frame_method();
+    bcp    = _frame.interpreter_frame_bcp();
+  } else {
+    method = _reg_map.stack_chunk()->interpreter_frame_method(_frame);
+    bcp    = _reg_map.stack_chunk()->interpreter_frame_bcp(_frame);
+  }
+  int bci  = method->validate_bci_from_bcp(bcp);
   // 6379830 AsyncGetCallTrace sometimes feeds us wild frames.
   // AsyncGetCallTrace interrupts the VM asynchronously. As a result
   // it is possible to access an interpreter frame for which
-  // no Java-level information is yet available (e.g., becasue
+  // no Java-level information is yet available (e.g., because
   // the frame was being created when the VM interrupted it).
   // In this scenario, pretend that the interpreter is at the point
   // of entering the method.

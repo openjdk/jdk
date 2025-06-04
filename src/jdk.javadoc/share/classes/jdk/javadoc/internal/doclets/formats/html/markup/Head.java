@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,24 +31,23 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.html.Comment;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Script;
 
 /**
  * An HTML {@code <head>} element.
  *
  * Many methods return the current object, to facilitate fluent builder-style usage.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class Head extends Content {
     private final Runtime.Version docletVersion;
@@ -61,20 +60,22 @@ public class Head extends Content {
     private String generator;
     private boolean showTimestamp;
     private DocPath mainStylesheet;
-    private List<DocPath> additionalStylesheets = Collections.emptyList();
+    private List<DocPath> additionalStylesheets = List.of();
+    private List<DocPath> localStylesheets = List.of();
     private boolean index;
     private Script mainBodyScript;
     private final List<Script> scripts;
     // Scripts added via --add-script option
-    private List<DocPath> additionalScripts = Collections.emptyList();
+    private List<HtmlConfiguration.JavaScriptFile> additionalScripts = List.of();
     private final List<Content> extraContent;
     private boolean addDefaultScript = true;
     private DocPath canonicalLink;
+    private boolean syntaxHighlight = false;
 
     /**
      * Creates a {@code Head} object, for a given file and HTML version.
      * The file is used to help determine the relative paths to stylesheet and script files.
-     * The HTML version is used to determine the the appropriate form of a META element
+     * The HTML version is used to determine the appropriate form of a META element
      * recording the time the file was created.
      * The doclet version should also be provided for recording in the file.
      * @param path the path for the file that will include this HEAD element
@@ -101,7 +102,7 @@ public class Head extends Content {
     }
 
     /**
-     * Sets the charset to be declared in a META [@code Content-TYPE} element.
+     * Sets the charset to be declared in a META {@code Content-TYPE} element.
      *
      * @param charset the charset
      * @return this object
@@ -130,7 +131,7 @@ public class Head extends Content {
     }
 
     /**
-     * Adds a list of keywords to appear in META [@code keywords} elements.
+     * Adds a list of keywords to appear in META {@code keywords} elements.
      *
      * @param keywords the list of keywords, or null if none need to be added
      * @return this object
@@ -164,11 +165,13 @@ public class Head extends Content {
      *
      * @param main the main stylesheet, or null to use the default
      * @param additional a list of any additional stylesheets to be included
+     * @param local a list of module- or package-local stylesheets to be included
      * @return  this object
      */
-    public Head setStylesheets(DocPath main, List<DocPath> additional) {
+    public Head setStylesheets(DocPath main, List<DocPath> additional, List<DocPath> local) {
         this.mainStylesheet = main;
         this.additionalStylesheets = additional;
+        this.localStylesheets = local;
         return this;
     }
 
@@ -180,7 +183,7 @@ public class Head extends Content {
      * @param scripts the list of additional script files
      * @return this object
      */
-    public Head setAdditionalScripts(List<DocPath> scripts) {
+    public Head setAdditionalScripts(List<HtmlConfiguration.JavaScriptFile> scripts) {
         this.additionalScripts = scripts;
         return this;
     }
@@ -237,6 +240,16 @@ public class Head extends Content {
     }
 
     /**
+     * Enables or disables support for syntax highlighting.
+     * @param value {@code true} to enable syntax highligting
+     * @return this object
+     */
+    public Head setSyntaxHighlight(boolean value) {
+        this.syntaxHighlight = value;
+        return this;
+    }
+
+    /**
      * Adds additional content to be included in the HEAD element.
      *
      * @param contents the content
@@ -260,8 +273,8 @@ public class Head extends Content {
     }
 
     @Override
-    public boolean write(Writer out, boolean atNewline) throws IOException {
-        return toContent().write(out, atNewline);
+    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
+        return toContent().write(out, newline, atNewline);
     }
 
     /**
@@ -270,47 +283,46 @@ public class Head extends Content {
      * @return the HTML
      */
     private Content toContent() {
-        HtmlTree tree = new HtmlTree(TagName.HEAD);
-        tree.add(getGeneratedBy(showTimestamp, generatedDate));
-        tree.add(HtmlTree.TITLE(title));
+        var head = HtmlTree.of(HtmlTag.HEAD)
+            .add(getGeneratedBy(showTimestamp, generatedDate))
+            .add(HtmlTree.TITLE(title));
 
-        tree.add(HtmlTree.META("viewport", "width=device-width, initial-scale=1"));
+        head.add(HtmlTree.META("viewport", "width=device-width, initial-scale=1"));
 
         if (charset != null) { // compatibility; should this be allowed?
-            tree.add(HtmlTree.META("Content-Type", "text/html", charset));
+            head.add(HtmlTree.META("Content-Type", "text/html", charset));
         }
 
         if (showTimestamp) {
             DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            tree.add(HtmlTree.META("dc.created", generatedDate.format(dateFormat)));
+            head.add(HtmlTree.META("dc.created", generatedDate.format(dateFormat)));
         }
 
         if (description != null) {
-            tree.add(HtmlTree.META("description", description));
+            head.add(HtmlTree.META("description", description));
         }
 
         if (generator != null) {
-            tree.add(HtmlTree.META("generator", generator));
+            head.add(HtmlTree.META("generator", generator));
         }
 
         for (String k : keywords) {
-            tree.add(HtmlTree.META("keywords", k));
+            head.add(HtmlTree.META("keywords", k));
         }
 
         if (canonicalLink != null) {
-            HtmlTree link = new HtmlTree(TagName.LINK);
-            link.put(HtmlAttr.REL, "canonical");
-            link.put(HtmlAttr.HREF, canonicalLink.getPath());
-            tree.add(link);
+            var link = HtmlTree.of(HtmlTag.LINK)
+                .put(HtmlAttr.REL, "canonical")
+                .put(HtmlAttr.HREF, canonicalLink.getPath());
+            head.add(link);
         }
 
-        addStylesheets(tree);
-        addScripts(tree);
-        extraContent.forEach(tree::add);
+        addStylesheets(head);
+        addScripts(head);
+        extraContent.forEach(head::add);
 
-        return tree;
+        return head;
     }
-
 
     private Comment getGeneratedBy(boolean timestamp, ZonedDateTime buildDate) {
         String text = "Generated by javadoc"; // marker string, deliberately not localized
@@ -323,53 +335,70 @@ public class Head extends Content {
         return new Comment(text);
     }
 
-    private void addStylesheets(HtmlTree tree) {
+    private void addStylesheets(HtmlTree head) {
+        if (index) {
+            // Add JQuery-UI stylesheet first so its rules can be overridden.
+            addStylesheet(head, DocPaths.RESOURCE_FILES.resolve(DocPaths.JQUERY_UI_CSS));
+        }
+
         if (mainStylesheet == null) {
             mainStylesheet = DocPaths.STYLESHEET;
         }
-        addStylesheet(tree, mainStylesheet);
+        addStylesheet(head, DocPaths.RESOURCE_FILES.resolve(mainStylesheet));
 
         for (DocPath path : additionalStylesheets) {
-            addStylesheet(tree, path);
+            addStylesheet(head, DocPaths.RESOURCE_FILES.resolve(path));
         }
 
-        if (index) {
-            // The order of the addStylesheet(...) calls is important
-            addStylesheet(tree, DocPaths.SCRIPT_DIR.resolve(DocPaths.JQUERY_UI_CSS));
-            addStylesheet(tree, DocPaths.JQUERY_OVERRIDES_CSS);
+        if (syntaxHighlight) {
+            addStylesheet(head, DocPaths.RESOURCE_FILES.resolve(DocPaths.HIGHLIGHT_CSS));
+        }
+
+        for (DocPath path : localStylesheets) {
+            // Local stylesheets are contained in doc-files, so omit resource-files prefix
+            addStylesheet(head, path);
         }
     }
 
-    private void addStylesheet(HtmlTree tree, DocPath stylesheet) {
-        tree.add(HtmlTree.LINK("stylesheet", "text/css",
-                pathToRoot.resolve(stylesheet).getPath(), "Style"));
+    private void addStylesheet(HtmlTree head, DocPath stylesheet) {
+        head.add(HtmlTree.LINK("stylesheet", "text/css",
+                pathToRoot.resolve(stylesheet).getPath()));
     }
 
-    private void addScripts(HtmlTree tree) {
+    private void addScripts(HtmlTree head) {
+        if (syntaxHighlight) {
+            addScriptElement(head, DocPaths.HIGHLIGHT_JS);
+        }
         if (addDefaultScript) {
-            tree.add(HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.JAVASCRIPT).getPath()));
+            addScriptElement(head, DocPaths.SCRIPT_JS);
         }
         if (index) {
             if (pathToRoot != null && mainBodyScript != null) {
                 String ptrPath = pathToRoot.isEmpty() ? "." : pathToRoot.getPath();
-                mainBodyScript.append("var pathtoroot = ")
+                mainBodyScript.append("const pathtoroot = ")
                         .appendStringLiteral(ptrPath + "/")
                         .append(";\n")
                         .append("loadScripts(document, 'script');");
             }
-            addScriptElement(tree, DocPaths.JQUERY_JS);
-            addScriptElement(tree, DocPaths.JQUERY_UI_JS);
+            addScriptElement(head, DocPaths.JQUERY_JS);
+            addScriptElement(head, DocPaths.JQUERY_UI_JS);
         }
-        for (DocPath path : additionalScripts) {
-            addScriptElement(tree, path);
+        for (HtmlConfiguration.JavaScriptFile javaScriptFile : additionalScripts) {
+            addScriptElement(head, javaScriptFile);
         }
         for (Script script : scripts) {
-            tree.add(script.asContent());
+            head.add(script.asContent());
         }
     }
 
-    private void addScriptElement(HtmlTree tree, DocPath filePath) {
-        DocPath scriptFile = pathToRoot.resolve(DocPaths.SCRIPT_DIR).resolve(filePath);
-        tree.add(HtmlTree.SCRIPT(scriptFile.getPath()));
+    private void addScriptElement(HtmlTree head, DocPath filePath) {
+        DocPath scriptFile = pathToRoot.resolve(DocPaths.SCRIPT_FILES).resolve(filePath);
+        head.add(HtmlTree.SCRIPT(scriptFile.getPath()));
+    }
+
+    private void addScriptElement(HtmlTree head, HtmlConfiguration.JavaScriptFile script) {
+        DocPath scriptFile = pathToRoot.resolve(DocPaths.SCRIPT_FILES).resolve(script.path());
+        HtmlTree scriptTag = HtmlTree.SCRIPT(scriptFile.getPath());
+        head.add(script.isModule() ? scriptTag.put(HtmlAttr.TYPE, "module") : scriptTag);
     }
 }

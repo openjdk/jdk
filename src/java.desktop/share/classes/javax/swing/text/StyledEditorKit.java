@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,7 +171,6 @@ public class StyledEditorKit extends DefaultEditorKit {
     /**
      * Creates the AttributeSet used for the selection.
      */
-    @SuppressWarnings("serial") // anonymous class
     private void createInputAttributes() {
         inputAttributes = new SimpleAttributeSet() {
             public AttributeSet getResolveParent() {
@@ -243,7 +242,7 @@ public class StyledEditorKit extends DefaultEditorKit {
             currentParagraph = doc.getParagraphElement(start);
             if (currentParagraph.getStartOffset() == start || dot != mark) {
                 // Get the attributes from the character at the selection
-                // if in a different paragrah!
+                // if in a different paragraph!
                 run = doc.getCharacterElement(start);
             }
             else {
@@ -411,7 +410,7 @@ public class StyledEditorKit extends DefaultEditorKit {
          *
          * @param e the editor
          * @return the document
-         * @exception IllegalArgumentException for the wrong document type
+         * @throws IllegalArgumentException for the wrong document type
          */
         protected final StyledDocument getStyledDocument(JEditorPane e) {
             Document d = e.getDocument();
@@ -426,7 +425,7 @@ public class StyledEditorKit extends DefaultEditorKit {
          *
          * @param e the editor pane
          * @return the kit
-         * @exception IllegalArgumentException for the wrong document type
+         * @throws IllegalArgumentException for the wrong document type
          */
         protected final StyledEditorKit getStyledEditorKit(JEditorPane e) {
             EditorKit k = e.getEditorKit();

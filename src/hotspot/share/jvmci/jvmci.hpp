@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "utilities/exceptions.hpp"
 
 class BoolObjectClosure;
+class CompilerThread;
 class constantPoolHandle;
 class JavaThread;
 class JVMCIEnv;
@@ -46,13 +47,47 @@ typedef FormatStringEventLog<256> StringEventLog;
 struct _jmetadata;
 typedef struct _jmetadata *jmetadata;
 
+// A stack object that manages a scope in which the current thread, if
+// it's a CompilerThread, can have its CompilerThread::_can_call_java
+// field changed. This allows restricting libjvmci better in terms
+// of when it can make Java calls. If a Java call on a CompilerThread
+// reaches a clinit, there's a risk of dead-lock when async compilation
+// is disabled (e.g. -Xbatch or -Xcomp) as the non-CompilerThread thread
+// waiting for the blocking compilation may hold the clinit lock.
+//
+// This scope is primarily used to disable Java calls when libjvmci enters
+// the VM via a C2V (i.e. CompilerToVM) native method.
+class CompilerThreadCanCallJava : StackObj {
+ private:
+  CompilerThread* _current; // Only non-null if state of thread changed
+public:
+  // If the current thread is a CompilerThread associated with
+  // a JVMCI compiler where CompilerThread::_can_call_java != new_state,
+  // then _can_call_java is set to `new_state`
+  // Returns nullptr if no change was made, otherwise the current CompilerThread
+  static CompilerThread* update(JavaThread* current, bool new_state);
+
+  CompilerThreadCanCallJava(JavaThread* current, bool new_state);
+
+  // Resets CompilerThread::_can_call_java of the current thread if the
+  // constructor changed it.
+  ~CompilerThreadCanCallJava();
+};
+
 class JVMCI : public AllStatic {
   friend class JVMCIRuntime;
   friend class JVMCIEnv;
 
  private:
-  // Access to the HotSpotJVMCIRuntime used by the CompileBroker.
-  static JVMCIRuntime* _compiler_runtime;
+  // List of libjvmci based JVMCIRuntimes.
+  // Should only be accessed under JVMCI_lock.
+  static JVMCIRuntime* _compiler_runtimes;
+
+  // Special libjvmci based JVMCIRuntime reserved for
+  // threads trying to attach when in JVMCI shutdown.
+  // This preserves the invariant that JVMCIRuntime::for_thread()
+  // never returns null.
+  static JVMCIRuntime* _shutdown_compiler_runtime;
 
   // True when at least one JVMCIRuntime::initialize_HotSpotJVMCIRuntime()
   // execution has completed successfully.
@@ -81,8 +116,8 @@ class JVMCI : public AllStatic {
   // The path of the file underlying _fatal_log_fd if it is a normal file.
   static const char* _fatal_log_filename;
 
-  // Native thread id of thread that will initialize _fatal_log_fd.
-  static volatile intx _fatal_log_init_thread;
+  // Thread id of the first thread reporting a libjvmci error.
+  static volatile intx _first_error_tid;
 
   // JVMCI event log (shows up in hs_err crash logs).
   static StringEventLog* _events;
@@ -91,29 +126,50 @@ class JVMCI : public AllStatic {
     max_EventLog_level = 4
   };
 
-  // Gets the Thread* value for the current thread or NULL if it's not available.
+  // Gets the Thread* value for the current thread or null if it's not available.
   static Thread* current_thread_or_null();
 
+  // Writes into `pathbuf` the path to the existing JVMCI shared library file.
+  // If the file cannot be found and `fail_is_fatal` is true, then
+  // a fatal error occurs.
+  // Returns whether the path to an existing file was written into `pathbuf`.
+  static bool get_shared_library_path(char* pathbuf, size_t pathlen, bool fail_is_fatal);
+
  public:
+
   enum CodeInstallResult {
      ok,
      dependencies_failed,
      cache_full,
-     nmethod_reclaimed, // code cache sweeper reclaimed nmethod in between its creation and being marked "in_use"
+     nmethod_reclaimed,
      code_too_large,
      first_permanent_bailout = code_too_large
   };
 
+  // Returns true iff JVMCIThreadsPerNativeLibraryRuntime == 0.
+  static bool using_singleton_shared_library_runtime() {
+    return JVMCIThreadsPerNativeLibraryRuntime == 0;
+  }
+
+  // Returns true iff there is a new shared library JavaVM per compilation.
+  static bool one_shared_library_javavm_per_compilation() {
+    return JVMCIThreadsPerNativeLibraryRuntime == 1 && JVMCICompilerIdleDelay == 0;
+  }
+
+  // Determines if the JVMCI shared library exists. This does not
+  // take into account whether loading the library would succeed
+  // if it's not already loaded.
+  static bool shared_library_exists();
+
   // Gets the handle to the loaded JVMCI shared library, loading it
   // first if not yet loaded and `load` is true. The path from
-  // which the library is loaded is returned in `path`. If
-  // `load` is true then JVMCI_lock must be locked.
+  // which the library is loaded is returned in `path`.
   static void* get_shared_library(char*& path, bool load);
 
   // Logs the fatal crash data in `buf` to the appropriate stream.
   static void fatal_log(const char* buf, size_t count);
 
-  // Gets the name of the opened JVMCI shared library crash data file or NULL
+  // Gets the name of the opened JVMCI shared library crash data file or null
   // if this file has not been created.
   static const char* fatal_log_filename() { return _fatal_log_filename; }
 
@@ -121,7 +177,7 @@ class JVMCI : public AllStatic {
 
   static void metadata_do(void f(Metadata*));
 
-  static void shutdown();
+  static void shutdown(JavaThread* thread);
 
   // Returns whether JVMCI::shutdown has been called.
   static bool in_shutdown();
@@ -135,7 +191,8 @@ class JVMCI : public AllStatic {
 
   static void initialize_globals();
 
-  static void initialize_compiler(TRAPS);
+  // Initializes the JVMCI compiler during VM startup.
+  static void initialize_compiler_in_create_vm(TRAPS);
 
   // Ensures the boxing cache classes (e.g., java.lang.Integer.IntegerCache) are initialized.
   static void ensure_box_caches_initialized(TRAPS);
@@ -145,10 +202,15 @@ class JVMCI : public AllStatic {
   // Returns `thread`.
   static JavaThread* compilation_tick(JavaThread* thread);
 
-  static JVMCIRuntime* compiler_runtime() { return _compiler_runtime; }
   // Gets the single runtime for JVMCI on the Java heap. This is the only
   // JVMCI runtime available when !UseJVMCINativeLibrary.
   static JVMCIRuntime* java_runtime()     { return _java_runtime; }
+
+  // Gets the JVMCI shared library runtime associated with `thread`.
+  // This must only be called when UseJVMCINativeLibrary is true.
+  // If `create` is true and there is no runtime currently associated with
+  // `thread`, this method creates one.
+  static JVMCIRuntime* compiler_runtime(JavaThread* thread, bool create=true);
 
   // Appends an event to the JVMCI event log if JVMCIEventLogLevel >= `level`
   static void vlog(int level, const char* format, va_list ap) ATTRIBUTE_PRINTF(2, 0);

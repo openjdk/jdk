@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Enumeration;
 
 import sun.security.util.*;
 
@@ -55,19 +53,9 @@ import sun.security.util.*;
  * SkipCerts ::= INTEGER (0..MAX)
  * }</pre>
  * @author Anne Anderson
- * @see CertAttrSet
  * @see Extension
  */
-public class InhibitAnyPolicyExtension extends Extension
-implements CertAttrSet<String> {
-
-    private static final Debug debug = Debug.getInstance("certpath");
-
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.extensions.InhibitAnyPolicy";
+public class InhibitAnyPolicyExtension extends Extension {
 
     /**
      * Object identifier for "any-policy"
@@ -75,17 +63,13 @@ implements CertAttrSet<String> {
     public static ObjectIdentifier AnyPolicy_Id =
             ObjectIdentifier.of(KnownOIDs.CE_CERT_POLICIES_ANY);
 
-    /**
-     * Attribute names.
-     */
     public static final String NAME = "InhibitAnyPolicy";
-    public static final String SKIP_CERTS = "skip_certs";
 
     // Private data members
     private int skipCerts = Integer.MAX_VALUE;
 
     // Encode this extension value
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         DerOutputStream out = new DerOutputStream();
         out.putInteger(skipCerts);
         this.extensionValue = out.toByteArray();
@@ -97,9 +81,9 @@ implements CertAttrSet<String> {
      * @param skipCerts specifies the depth of the certification path.
      *                  Use value of -1 to request unlimited depth.
      */
-    public InhibitAnyPolicyExtension(int skipCerts) throws IOException {
+    public InhibitAnyPolicyExtension(int skipCerts) {
         if (skipCerts < -1)
-            throw new IOException("Invalid value for skipCerts");
+            throw new IllegalArgumentException("Invalid value for skipCerts");
         if (skipCerts == -1)
             this.skipCerts = Integer.MAX_VALUE;
         else
@@ -126,7 +110,7 @@ implements CertAttrSet<String> {
         if (!critical.booleanValue())
             throw new IOException("Criticality cannot be false for " +
                                   "InhibitAnyPolicy");
-        this.critical = critical.booleanValue();
+        this.critical = true;
 
         this.extensionValue = (byte[]) value;
         DerValue val = new DerValue(this.extensionValue);
@@ -147,108 +131,39 @@ implements CertAttrSet<String> {
         }
     }
 
-     /**
-      * Return user readable form of extension.
-      */
-     public String toString() {
-         String s = super.toString() + "InhibitAnyPolicy: " + skipCerts + "\n";
-         return s;
-     }
-
-     /**
-      * Encode this extension value to the output stream.
-      *
-      * @param out the DerOutputStream to encode the extension to.
-      */
-     public void encode(OutputStream out) throws IOException {
-         DerOutputStream tmp = new DerOutputStream();
-         if (extensionValue == null) {
-             this.extensionId = PKIXExtensions.InhibitAnyPolicy_Id;
-             critical = true;
-             encodeThis();
-         }
-         super.encode(tmp);
-
-         out.write(tmp.toByteArray());
-     }
-
     /**
-     * Set the attribute value.
-     *
-     * @param name name of attribute to set. Must be SKIP_CERTS.
-     * @param obj  value to which attribute is to be set.  Must be Integer
-     *             type.
-     * @throws IOException on error
+     * Return user readable form of extension.
      */
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(SKIP_CERTS)) {
-            if (!(obj instanceof Integer))
-                throw new IOException("Attribute value should be of type Integer.");
-            int skipCertsValue = ((Integer)obj).intValue();
-            if (skipCertsValue < -1)
-                throw new IOException("Invalid value for skipCerts");
-            if (skipCertsValue == -1) {
-                skipCerts = Integer.MAX_VALUE;
-            } else {
-                skipCerts = skipCertsValue;
-            }
-        } else
-            throw new IOException("Attribute name not recognized by " +
-                                  "CertAttrSet:InhibitAnyPolicy.");
-        encodeThis();
+    public String toString() {
+        return super.toString() + "InhibitAnyPolicy: " + skipCerts + "\n";
     }
 
     /**
-     * Get the attribute value.
+     * Encode this extension value to the output stream.
      *
-     * @param name name of attribute to get.  Must be SKIP_CERTS.
-     * @return value of the attribute.  In this case it will be of type
-     *          Integer.
-     * @throws IOException on error
+     * @param out the DerOutputStream to encode the extension to.
      */
-    public Integer get(String name) throws IOException {
-        if (name.equalsIgnoreCase(SKIP_CERTS))
-            return (skipCerts);
-        else
-            throw new IOException("Attribute name not recognized by " +
-                                  "CertAttrSet:InhibitAnyPolicy.");
+    @Override
+    public void encode(DerOutputStream out) {
+        if (extensionValue == null) {
+            this.extensionId = PKIXExtensions.InhibitAnyPolicy_Id;
+            critical = true;
+            encodeThis();
+        }
+        super.encode(out);
+    }
+
+    public int getSkipCerts() {
+        return skipCerts;
     }
 
     /**
-     * Delete the attribute value.
+     * Return the name of this extension.
      *
-     * @param name name of attribute to delete. Must be SKIP_CERTS.
-     * @throws IOException on error.  In this case, IOException will always be
-     *                     thrown, because the only attribute, SKIP_CERTS, is
-     *                     required.
+     * @return name of extension.
      */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(SKIP_CERTS))
-            throw new IOException("Attribute " + SKIP_CERTS +
-                                  " may not be deleted.");
-        else
-            throw new IOException("Attribute name not recognized by " +
-                                  "CertAttrSet:InhibitAnyPolicy.");
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     *
-     * @return enumeration of elements
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(SKIP_CERTS);
-        return (elements.elements());
-    }
-
-    /**
-     * Return the name of this attribute.
-     *
-     * @return name of attribute.
-     */
+    @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 }

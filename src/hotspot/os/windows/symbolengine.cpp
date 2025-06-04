@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "symbolengine.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include "windbghelp.hpp"
 
 #include <windows.h>
@@ -91,7 +91,7 @@ class SimpleBufferWithFallback {
 public:
 
   SimpleBufferWithFallback<T, MINIMAL_CAPACITY, OPTIMAL_CAPACITY> ()
-    : _p(NULL), _capacity(0)
+    : _p(nullptr), _capacity(0)
   {}
 
   // Note: no destructor because these buffers should, once
@@ -101,17 +101,17 @@ public:
   // Note: We use raw ::malloc/::free here instead of os::malloc()/os::free
   // to prevent circularities or secondary crashes during error reporting.
   virtual void initialize () {
-    assert(_p == NULL && _capacity == 0, "Only call once.");
+    assert(_p == nullptr && _capacity == 0, "Only call once.");
     const size_t bytes = OPTIMAL_CAPACITY * sizeof(T);
-    T* q = (T*) ::malloc(bytes);
-    if (q != NULL) {
+    T* q = (T*) permit_forbidden_function::malloc(bytes);
+    if (q != nullptr) {
       _p = q;
       _capacity = OPTIMAL_CAPACITY;
     } else {
       _p = _fallback_buffer;
       _capacity = (int)(sizeof(_fallback_buffer) / sizeof(T));
     }
-    _p[0] = '\0';
+    _p[0] = 0;
     imprint_sentinel();
   }
 
@@ -119,11 +119,11 @@ public:
   // case, where two buffers need to be of identical capacity.
   void reset_to_fallback_capacity() {
     if (_p != _fallback_buffer) {
-      ::free(_p);
+      permit_forbidden_function::free(_p);
     }
     _p = _fallback_buffer;
     _capacity = (int)(sizeof(_fallback_buffer) / sizeof(T));
-    _p[0] = '\0';
+    _p[0] = 0;
     imprint_sentinel();
   }
 
@@ -206,7 +206,7 @@ public:
   // Search PDB path for a directory. Search is case insensitive. Returns
   // true if directory was found in the path, false otherwise.
   bool contains_directory(const char* directory) {
-    if (ptr() == NULL) {
+    if (ptr() == nullptr) {
       return false;
     }
     const size_t len = strlen(directory);
@@ -216,16 +216,16 @@ public:
     char* p = ptr();
     for(;;) {
       char* q = strchr(p, ';');
-      if (q != NULL) {
+      if (q != nullptr) {
         if (len == (q - p)) {
-          if (strnicmp(p, directory, len) == 0) {
+          if (_strnicmp(p, directory, len) == 0) {
             return true;
           }
         }
         p = q + 1;
       } else {
         // tail
-        return stricmp(p, directory) == 0 ? true : false;
+        return _stricmp(p, directory) == 0;
       }
     }
     return false;
@@ -309,7 +309,7 @@ static struct {
 // For each loaded module, add the directory it is located in to the pdb search
 // path, but avoid duplicates. Prior search path content is preserved.
 //
-// If p_search_path_was_updated is not NULL, points to a bool which, upon
+// If p_search_path_was_updated is not null, points to a bool which, upon
 // successful return from the function, contains true if the search path
 // was updated, false if no update was needed because no new DLLs were
 // loaded or unloaded.
@@ -386,7 +386,7 @@ static bool recalc_search_path_locked(bool* p_search_path_was_updated) {
 
     // Cut file name part off.
     char* last_slash = ::strrchr(filebuffer, '\\');
-    if (last_slash == NULL) {
+    if (last_slash == nullptr) {
       last_slash = ::strrchr(filebuffer, '/');
     }
     if (last_slash) {
@@ -433,10 +433,10 @@ static bool decode_locked(const void* addr, char* buf, int buflen, int* offset, 
 
   assert(g_buffers.decode_buffer.capacity() >= (sizeof(IMAGEHLP_SYMBOL64) + MINIMUM_SYMBOL_NAME_LEN),
          "Decode buffer too small.");
-  assert(buf != NULL && buflen > 0 && offset != NULL, "invalid output buffer.");
+  assert(buf != nullptr && buflen > 0 && offset != nullptr, "invalid output buffer.");
 
   DWORD64 displacement;
-  PIMAGEHLP_SYMBOL64 pSymbol = NULL;
+  PIMAGEHLP_SYMBOL64 pSymbol = nullptr;
   bool success = false;
 
   pSymbol = (PIMAGEHLP_SYMBOL64) g_buffers.decode_buffer.ptr();
@@ -492,7 +492,7 @@ static void initialize() {
   HANDLE hProcess = ::GetCurrentProcess();
   WindowsDbgHelp::symSetOptions(SYMOPT_FAIL_CRITICAL_ERRORS | SYMOPT_DEFERRED_LOADS |
                         SYMOPT_EXACT_SYMBOLS | SYMOPT_LOAD_LINES);
-  if (!WindowsDbgHelp::symInitialize(hProcess, NULL, TRUE)) {
+  if (!WindowsDbgHelp::symInitialize(hProcess, nullptr, TRUE)) {
     return;
   }
 
@@ -500,7 +500,7 @@ static void initialize() {
   // usable enough.
   g_state = state_ready;
 
-  (void)recalc_search_path_locked(NULL);
+  (void)recalc_search_path_locked(nullptr);
 
 }
 
@@ -526,18 +526,18 @@ namespace { // Do not export.
   };
 }
 
-// Called at DLL_PROCESS_ATTACH.
+// Called at DLL_PROCESS_ATTACH for dynamic builds, and from os::init() for static builds.
 void SymbolEngine::pre_initialize() {
   ::InitializeCriticalSection(&g_cs);
 }
 
 bool SymbolEngine::decode(const void* addr, char* buf, int buflen, int* offset, bool do_demangle) {
 
-  assert(buf != NULL && buflen > 0 && offset != NULL, "Argument error");
+  assert(buf != nullptr && buflen > 0 && offset != nullptr, "Argument error");
   buf[0] = '\0';
   *offset = -1;
 
-  if (addr == NULL) {
+  if (addr == nullptr) {
     return false;
   }
 
@@ -576,14 +576,19 @@ bool SymbolEngine::recalc_search_path(bool* p_search_path_was_updated) {
 
 }
 
+bool SymbolEngine::refreshModuleList() {
+  SymbolEngineEntry entry_guard;
+  return WindowsDbgHelp::symRefreshModuleList(::GetCurrentProcess());
+}
+
 bool SymbolEngine::get_source_info(const void* addr, char* buf, size_t buflen,
                                    int* line_no)
 {
-  assert(buf != NULL && buflen > 0 && line_no != NULL, "Argument error");
+  assert(buf != nullptr && buflen > 0 && line_no != nullptr, "Argument error");
   buf[0] = '\0';
   *line_no = -1;
 
-  if (addr == NULL) {
+  if (addr == nullptr) {
     return false;
   }
 
@@ -595,7 +600,7 @@ bool SymbolEngine::get_source_info(const void* addr, char* buf, size_t buflen,
   DWORD displacement;
   if (WindowsDbgHelp::symGetLineFromAddr64(::GetCurrentProcess(), (DWORD64)addr,
                                            &displacement, &lineinfo)) {
-    if (buf != NULL && buflen > 0 && lineinfo.FileName != NULL) {
+    if (buf != nullptr && buflen > 0 && lineinfo.FileName != nullptr) {
       // We only return the file name, not the whole path.
       char* p = lineinfo.FileName;
       char* q = strrchr(lineinfo.FileName, '\\');

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import sun.security.jca.GetInstance.Instance;
 import sun.security.util.Debug;
 
 /**
- * The KeyPairGenerator class is used to generate pairs of
+ * The {@code KeyPairGenerator} class is used to generate pairs of
  * public and private keys. Key pair generators are constructed using the
  * {@code getInstance} factory methods (static methods that
  * return instances of a given class).
@@ -57,7 +57,7 @@ import sun.security.util.Debug;
  * corresponds to the length of the modulus).
  * There is an
  * {@link #initialize(int, java.security.SecureRandom) initialize}
- * method in this KeyPairGenerator class that takes these two universally
+ * method in this {@code KeyPairGenerator} class that takes these two universally
  * shared types of arguments. There is also one that takes just a
  * {@code keysize} argument, and uses the {@code SecureRandom}
  * implementation of the highest-priority installed provider as the source
@@ -68,16 +68,9 @@ import sun.security.util.Debug;
  * <p>Since no other parameters are specified when you call the above
  * algorithm-independent {@code initialize} methods, it is up to the
  * provider what to do about the algorithm-specific parameters (if any) to be
- * associated with each of the keys.
- *
- * <p>If the algorithm is the <i>DSA</i> algorithm, and the keysize (modulus
- * size) is 512, 768, 1024, or 2048, then the <i>Sun</i> provider uses a set of
- * precomputed values for the {@code p}, {@code q}, and
- * {@code g} parameters. If the modulus size is not one of the above
- * values, the <i>Sun</i> provider creates a new set of parameters. Other
- * providers might have precomputed parameter sets for more than just the
- * modulus sizes mentioned above. Still others might not have a list of
- * precomputed parameters at all and instead always create new parameter sets.
+ * associated with each of the keys. See the
+ * {@extLink security_guide_jdk_providers JDK Providers} document for information
+ * on the default algorithm-specific parameters used by JDK providers.
  *
  * <li><b>Algorithm-Specific Initialization</b>
  * <p>For situations where a set of algorithm-specific parameters already
@@ -92,17 +85,18 @@ import sun.security.util.Debug;
  * used.)
  * </ul>
  *
- * <p>In case the client does not explicitly initialize the KeyPairGenerator
+ * <p>In case the client does not explicitly initialize the
+ * {@code KeyPairGenerator}
  * (via a call to an {@code initialize} method), each provider must
  * supply (and document) a default initialization.
  * See the Keysize Restriction sections of the
  * {@extLink security_guide_jdk_providers JDK Providers}
- * document for information on the KeyPairGenerator defaults used by
+ * document for information on the {@code KeyPairGenerator} defaults used by
  * JDK providers.
  * However, note that defaults may vary across different providers.
  * Additionally, the default value for a provider may change in a future
  * version. Therefore, it is recommended to explicitly initialize the
- * KeyPairGenerator instead of relying on provider-specific defaults.
+ * {@code KeyPairGenerator} instead of relying on provider-specific defaults.
  *
  * <p>Note that this class is abstract and extends from
  * {@code KeyPairGeneratorSpi} for historical reasons.
@@ -112,12 +106,16 @@ import sun.security.util.Debug;
  * supply their own implementations of key pair generators.
  *
  * <p> Every implementation of the Java platform is required to support the
- * following standard {@code KeyPairGenerator} algorithms and keysizes in
- * parentheses:
+ * following standard {@code KeyPairGenerator} algorithms. For the "EC"
+ * algorithm, implementations must support the curves in parentheses. For other
+ * algorithms, implementations must support the key sizes in parentheses.
  * <ul>
- * <li>{@code DiffieHellman} (1024, 2048, 4096)</li>
+ * <li>{@code DiffieHellman} (1024, 2048, 3072, 4096)</li>
  * <li>{@code DSA} (1024, 2048)</li>
- * <li>{@code RSA} (1024, 2048, 4096)</li>
+ * <li>{@code EC} (secp256r1, secp384r1)</li>
+ * <li>{@code RSA} (1024, 2048, 3072, 4096)</li>
+ * <li>{@code RSASSA-PSS} (2048, 3072, 4096)</li>
+ * <li>{@code X25519}</li>
  * </ul>
  * These algorithms are described in the <a href=
  * "{@docRoot}/../specs/security/standard-names.html#keypairgenerator-algorithms">
@@ -126,6 +124,7 @@ import sun.security.util.Debug;
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @author Benjamin Renaud
  * @since 1.1
  *
@@ -145,13 +144,14 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
     Provider provider;
 
     /**
-     * Creates a KeyPairGenerator object for the specified algorithm.
+     * Creates a {@code KeyPairGenerator} object for the specified algorithm.
      *
      * @param algorithm the standard string name of the algorithm.
      * See the KeyPairGenerator section in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#keypairgenerator-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     protected KeyPairGenerator(String algorithm) {
         this.algorithm = algorithm;
@@ -164,6 +164,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the standard string name of the algorithm.
      */
     public String getAlgorithm() {
@@ -190,14 +191,14 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
     }
 
     /**
-     * Returns a KeyPairGenerator object that generates public/private
+     * Returns a {@code KeyPairGenerator} object that generates public/private
      * key pairs for the specified algorithm.
      *
      * <p> This method traverses the list of registered security Providers,
      * starting with the most preferred Provider.
-     * A new KeyPairGenerator object encapsulating the
-     * KeyPairGeneratorSpi implementation from the first
-     * Provider that supports the specified algorithm is returned.
+     * A new {@code KeyPairGenerator} object encapsulating the
+     * {@code KeyPairGeneratorSpi} implementation from the first
+     * provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -207,7 +208,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
      * the preferred provider order for the specified algorithm. This
-     * may be different than the order of providers returned by
+     * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param algorithm the standard string name of the algorithm.
@@ -216,6 +217,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KeyPairGenerator} object
      *
      * @throws NoSuchAlgorithmException if no {@code Provider} supports a
@@ -229,10 +231,8 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
     public static KeyPairGenerator getInstance(String algorithm)
             throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
-        List<Service> list =
-                GetInstance.getServices("KeyPairGenerator", algorithm);
-        Iterator<Service> t = list.iterator();
-        if (t.hasNext() == false) {
+        Iterator<Service> t = GetInstance.getServices("KeyPairGenerator", algorithm);
+        if (!t.hasNext()) {
             throw new NoSuchAlgorithmException
                 (algorithm + " KeyPairGenerator not available");
         }
@@ -258,11 +258,11 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
     }
 
     /**
-     * Returns a KeyPairGenerator object that generates public/private
+     * Returns a {@code KeyPairGenerator} object that generates public/private
      * key pairs for the specified algorithm.
      *
-     * <p> A new KeyPairGenerator object encapsulating the
-     * KeyPairGeneratorSpi implementation from the specified provider
+     * <p> A new {@code KeyPairGenerator} object encapsulating the
+     * {@code KeyPairGeneratorSpi} implementation from the specified provider
      * is returned.  The specified provider must be registered
      * in the security provider list.
      *
@@ -277,6 +277,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      *
      * @param provider the string name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KeyPairGenerator} object
      *
      * @throws IllegalArgumentException if the provider name is {@code null}
@@ -303,13 +304,13 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
     }
 
     /**
-     * Returns a KeyPairGenerator object that generates public/private
+     * Returns a {@code KeyPairGenerator} object that generates public/private
      * key pairs for the specified algorithm.
      *
-     * <p> A new KeyPairGenerator object encapsulating the
-     * KeyPairGeneratorSpi implementation from the specified Provider
-     * object is returned.  Note that the specified Provider object
-     * does not have to be registered in the provider list.
+     * <p> A new {@code KeyPairGenerator} object encapsulating the
+     * {@code KeyPairGeneratorSpi} implementation from the specified provider
+     * is returned.  Note that the specified provider does not
+     * have to be registered in the provider list.
      *
      * @param algorithm the standard string name of the algorithm.
      * See the KeyPairGenerator section in the <a href=
@@ -317,6 +318,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @param provider the provider.
      *
      * @return the new {@code KeyPairGenerator} object
@@ -370,7 +372,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * number of bits.
      *
      * @throws    InvalidParameterException if the {@code keysize} is not
-     * supported by this KeyPairGenerator object.
+     * supported by this {@code KeyPairGenerator} object.
      */
     public void initialize(int keysize) {
         initialize(keysize, JCAUtil.getDefSecureRandom());
@@ -386,7 +388,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * @param random the source of randomness.
      *
      * @throws    InvalidParameterException if the {@code keysize} is not
-     * supported by this KeyPairGenerator object.
+     * supported by this {@code KeyPairGenerator} object.
      *
      * @since 1.2
      */
@@ -422,8 +424,8 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * from the highest-priority installed provider or system-provided if none
      * of the installed providers supply one).
      * That {@code initialize} method always throws an
-     * UnsupportedOperationException if it is not overridden by the provider.
-     *
+     * {@code UnsupportedOperationException} if it is not overridden
+     * by the provider.
      * @param params the parameter set used to generate the keys.
      *
      * @throws    InvalidAlgorithmParameterException if the given parameters
@@ -448,8 +450,8 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * java.security.SecureRandom) initialize} method,
      * passing it {@code params} and {@code random}.
      * That {@code initialize}
-     * method always throws an
-     * UnsupportedOperationException if it is not overridden by the provider.
+     * method always throws an {@code UnsupportedOperationException}
+     * if it is not overridden by the provider.
      *
      * @param params the parameter set used to generate the keys.
      * @param random the source of randomness.
@@ -478,7 +480,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
     /**
      * Generates a key pair.
      *
-     * <p>If this KeyPairGenerator has not been initialized explicitly,
+     * <p>If this {@code KeyPairGenerator} has not been initialized explicitly,
      * provider-specific defaults will be used for the size and other
      * (algorithm-specific) values of the generated keys.
      *
@@ -498,7 +500,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
     /**
      * Generates a key pair.
      *
-     * <p>If this KeyPairGenerator has not been initialized explicitly,
+     * <p>If this {@code KeyPairGenerator} has not been initialized explicitly,
      * provider-specific defaults will be used for the size and other
      * (algorithm-specific) values of the generated keys.
      *
@@ -603,9 +605,9 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
 
         /**
          * Update the active spi of this class and return the next
-         * implementation for failover. If no more implemenations are
-         * available, this method returns null. However, the active spi of
-         * this class is never set to null.
+         * implementation for failover. If no more implementations are
+         * available, this method returns {@code null}. However, the
+         * active spi of this class is never set to {@code null}.
          */
         private KeyPairGeneratorSpi nextSpi(KeyPairGeneratorSpi oldSpi,
                 boolean reinit) {

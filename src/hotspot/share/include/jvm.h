@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@
 #include <sys/stat.h>
 
 #include "jni.h"
-#include "jvm_md.h"
 #include "jvm_constants.h"
 #include "jvm_io.h"
+#include "jvm_md.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -150,6 +150,9 @@ JVM_ActiveProcessorCount(void);
 JNIEXPORT jboolean JNICALL
 JVM_IsUseContainerSupport(void);
 
+JNIEXPORT jboolean JNICALL
+JVM_IsContainerized(void);
+
 JNIEXPORT void * JNICALL
 JVM_LoadZipLibrary();
 
@@ -167,6 +170,18 @@ JVM_IsSupportedJNIVersion(jint version);
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetVmArguments(JNIEnv *env);
+
+JNIEXPORT jboolean JNICALL
+JVM_IsPreviewEnabled(void);
+
+JNIEXPORT jboolean JNICALL
+JVM_IsContinuationsSupported(void);
+
+JNIEXPORT jboolean JNICALL
+JVM_IsForeignLinkerSupported(void);
+
+JNIEXPORT jboolean JNICALL
+JVM_IsStaticallyLinked(void);
 
 JNIEXPORT void JNICALL
 JVM_InitializeFromArchive(JNIEnv* env, jclass cls);
@@ -188,14 +203,8 @@ JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env, jclass caller,
                                       jobject implementationMember,
                                       jobject dynamicMethodType);
 
-JNIEXPORT jboolean JNICALL
-JVM_IsCDSDumpingEnabled(JNIEnv* env);
-
-JNIEXPORT jboolean JNICALL
-JVM_IsSharingEnabled(JNIEnv* env);
-
-JNIEXPORT jboolean JNICALL
-JVM_IsDumpingClassList(JNIEnv* env);
+JNIEXPORT jint JNICALL
+JVM_GetCDSConfigStatus();
 
 JNIEXPORT jlong JNICALL
 JVM_GetRandomSeedForDumping();
@@ -209,6 +218,9 @@ JVM_DumpClassListToFile(JNIEnv* env, jstring fileName);
 JNIEXPORT void JNICALL
 JVM_DumpDynamicArchive(JNIEnv* env, jstring archiveName);
 
+JNIEXPORT jboolean JNICALL
+JVM_NeedsClassInitBarrierForCDS(JNIEnv* env, jclass cls);
+
 /*
  * java.lang.Throwable
  */
@@ -219,7 +231,7 @@ JVM_FillInStackTrace(JNIEnv *env, jobject throwable);
  * java.lang.StackTraceElement
  */
 JNIEXPORT void JNICALL
-JVM_InitStackTraceElementArray(JNIEnv *env, jobjectArray elements, jobject throwable);
+JVM_InitStackTraceElementArray(JNIEnv *env, jobjectArray elements, jobject backtrace, jint depth);
 
 JNIEXPORT void JNICALL
 JVM_InitStackTraceElement(JNIEnv* env, jobject element, jobject stackFrameInfo);
@@ -235,21 +247,26 @@ JVM_GetExtendedNPEMessage(JNIEnv *env, jthrowable throwable);
  * java.lang.StackWalker
  */
 enum {
-  JVM_STACKWALK_FILL_CLASS_REFS_ONLY       = 0x2,
-  JVM_STACKWALK_GET_CALLER_CLASS           = 0x04,
+  JVM_STACKWALK_CLASS_INFO_ONLY            = 0x2,
   JVM_STACKWALK_SHOW_HIDDEN_FRAMES         = 0x20,
   JVM_STACKWALK_FILL_LIVE_STACK_FRAMES     = 0x100
 };
 
+JNIEXPORT void JNICALL
+JVM_ExpandStackFrameInfo(JNIEnv *env, jobject obj);
+
 JNIEXPORT jobject JNICALL
-JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jlong mode,
-                  jint skip_frames, jint frame_count, jint start_index,
-                  jobjectArray frames);
+JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jint mode,
+                  jint skip_frames, jobject contScope, jobject cont,
+                  jint buffer_size, jint start_index, jobjectArray frames);
 
 JNIEXPORT jint JNICALL
-JVM_MoreStackWalk(JNIEnv *env, jobject stackStream, jlong mode, jlong anchor,
-                  jint frame_count, jint start_index,
+JVM_MoreStackWalk(JNIEnv *env, jobject stackStream, jint mode, jlong anchor,
+                  jint last_batch_count, jint buffer_size, jint start_index,
                   jobjectArray frames);
+
+JNIEXPORT void JNICALL
+JVM_SetStackWalkContinuation(JNIEnv *env, jobject stackStream, jlong anchor, jobjectArray frames, jobject cont);
 
 /*
  * java.lang.Thread
@@ -258,28 +275,22 @@ JNIEXPORT void JNICALL
 JVM_StartThread(JNIEnv *env, jobject thread);
 
 JNIEXPORT void JNICALL
-JVM_StopThread(JNIEnv *env, jobject thread, jobject exception);
-
-JNIEXPORT jboolean JNICALL
-JVM_IsThreadAlive(JNIEnv *env, jobject thread);
-
-JNIEXPORT void JNICALL
-JVM_SuspendThread(JNIEnv *env, jobject thread);
-
-JNIEXPORT void JNICALL
-JVM_ResumeThread(JNIEnv *env, jobject thread);
-
-JNIEXPORT void JNICALL
 JVM_SetThreadPriority(JNIEnv *env, jobject thread, jint prio);
 
 JNIEXPORT void JNICALL
 JVM_Yield(JNIEnv *env, jclass threadClass);
 
 JNIEXPORT void JNICALL
-JVM_Sleep(JNIEnv *env, jclass threadClass, jlong millis);
+JVM_SleepNanos(JNIEnv *env, jclass threadClass, jlong nanos);
+
+JNIEXPORT jobject JNICALL
+JVM_CurrentCarrierThread(JNIEnv *env, jclass threadClass);
 
 JNIEXPORT jobject JNICALL
 JVM_CurrentThread(JNIEnv *env, jclass threadClass);
+
+JNIEXPORT void JNICALL
+JVM_SetCurrentThread(JNIEnv *env, jobject thisThread, jobject theThread);
 
 JNIEXPORT void JNICALL
 JVM_Interrupt(JNIEnv *env, jobject thread);
@@ -287,8 +298,8 @@ JVM_Interrupt(JNIEnv *env, jobject thread);
 JNIEXPORT jboolean JNICALL
 JVM_HoldsLock(JNIEnv *env, jclass threadClass, jobject obj);
 
-JNIEXPORT void JNICALL
-JVM_DumpAllStacks(JNIEnv *env, jclass unused);
+JNIEXPORT jobject JNICALL
+JVM_GetStackTrace(JNIEnv *env, jobject thread);
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetAllThreads(JNIEnv *env, jclass dummy);
@@ -300,11 +311,23 @@ JVM_SetNativeThreadName(JNIEnv *env, jobject jthread, jstring name);
 JNIEXPORT jobjectArray JNICALL
 JVM_DumpThreads(JNIEnv *env, jclass threadClass, jobjectArray threads);
 
+JNIEXPORT jobject JNICALL
+JVM_ScopedValueCache(JNIEnv *env, jclass threadClass);
+
+JNIEXPORT void JNICALL
+JVM_SetScopedValueCache(JNIEnv *env, jclass threadClass, jobject theCache);
+
+JNIEXPORT jobject JNICALL
+JVM_FindScopedValueBindings(JNIEnv *env, jclass threadClass);
+
+JNIEXPORT jlong JNICALL
+JVM_GetNextThreadIdOffset(JNIEnv *env, jclass threadClass);
+
 /*
- * java.lang.SecurityManager
+ * jdk.internal.vm.Continuation
  */
-JNIEXPORT jobjectArray JNICALL
-JVM_GetClassContext(JNIEnv *env);
+JNIEXPORT void JNICALL
+JVM_RegisterContinuationMethods(JNIEnv *env, jclass cls);
 
 /*
  * java.lang.Package
@@ -393,7 +416,7 @@ JVM_FindPrimitiveClass(JNIEnv *env, const char *utf);
 
 
 /*
- * Find a class from a boot class loader. Returns NULL if class not found.
+ * Find a class from a boot class loader. Returns null if class not found.
  */
 JNIEXPORT jclass JNICALL
 JVM_FindClassFromBootLoader(JNIEnv *env, const char *name);
@@ -449,7 +472,7 @@ JVM_LookupDefineClass(JNIEnv *env, jclass lookup, const char *name, const jbyte 
                       jsize len, jobject pd, jboolean init, int flags, jobject classData);
 
 /*
- * Module support funcions
+ * Module support functions
  */
 
 /*
@@ -526,26 +549,8 @@ JVM_GetClassInterfaces(JNIEnv *env, jclass cls);
 JNIEXPORT jboolean JNICALL
 JVM_IsInterface(JNIEnv *env, jclass cls);
 
-JNIEXPORT jobjectArray JNICALL
-JVM_GetClassSigners(JNIEnv *env, jclass cls);
-
-JNIEXPORT void JNICALL
-JVM_SetClassSigners(JNIEnv *env, jclass cls, jobjectArray signers);
-
-JNIEXPORT jobject JNICALL
-JVM_GetProtectionDomain(JNIEnv *env, jclass cls);
-
-JNIEXPORT jboolean JNICALL
-JVM_IsArrayClass(JNIEnv *env, jclass cls);
-
-JNIEXPORT jboolean JNICALL
-JVM_IsPrimitiveClass(JNIEnv *env, jclass cls);
-
 JNIEXPORT jboolean JNICALL
 JVM_IsHiddenClass(JNIEnv *env, jclass cls);
-
-JNIEXPORT jint JNICALL
-JVM_GetClassModifiers(JNIEnv *env, jclass cls);
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetDeclaredClasses(JNIEnv *env, jclass ofClass);
@@ -704,13 +709,6 @@ JNIEXPORT jobjectArray JNICALL
 JVM_GetMethodParameters(JNIEnv *env, jobject method);
 
 /*
- * java.security.*
- */
-
-JNIEXPORT jobject JNICALL
-JVM_GetInheritedAccessControlContext(JNIEnv *env, jclass cls);
-
-/*
  * Ensure that code doing a stackwalk and using javaVFrame::locals() to
  * get the value will see a materialized value and not a scalar-replaced
  * null value.
@@ -718,9 +716,8 @@ JVM_GetInheritedAccessControlContext(JNIEnv *env, jclass cls);
 #define JVM_EnsureMaterializedForStackWalk(env, value) \
     do {} while(0) // Nothing to do.  The fact that the value escaped
                    // through a native method is enough.
-
-JNIEXPORT jobject JNICALL
-JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls);
+JNIEXPORT void JNICALL
+JVM_EnsureMaterializedForStackWalk_func(JNIEnv* env, jobject vthread, jobject value);
 
 /*
  * Signal support, used to implement the shutdown sequence.  Every VM must
@@ -749,12 +746,6 @@ JVM_DesiredAssertionStatus(JNIEnv *env, jclass unused, jclass cls);
  */
 JNIEXPORT jobject JNICALL
 JVM_AssertionStatusDirectives(JNIEnv *env, jclass unused);
-
-/*
- * java.util.concurrent.atomic.AtomicLong
- */
-JNIEXPORT jboolean JNICALL
-JVM_SupportsCX8(void);
 
 /*
  * java.lang.ref.Finalizer
@@ -1110,6 +1101,42 @@ JVM_GetTemporaryDirectory(JNIEnv *env);
  */
 JNIEXPORT jobjectArray JNICALL
 JVM_GetEnclosingMethodInfo(JNIEnv* env, jclass ofClass);
+
+/*
+ * Virtual thread support.
+ */
+JNIEXPORT void JNICALL
+JVM_VirtualThreadStart(JNIEnv* env, jobject vthread);
+
+JNIEXPORT void JNICALL
+JVM_VirtualThreadEnd(JNIEnv* env, jobject vthread);
+
+JNIEXPORT void JNICALL
+JVM_VirtualThreadMount(JNIEnv* env, jobject vthread, jboolean hide);
+
+JNIEXPORT void JNICALL
+JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean hide);
+
+JNIEXPORT void JNICALL
+JVM_VirtualThreadDisableSuspend(JNIEnv* env, jclass clazz, jboolean enter);
+
+JNIEXPORT void JNICALL
+JVM_VirtualThreadPinnedEvent(JNIEnv* env, jclass clazz, jstring op);
+
+JNIEXPORT jobject JNICALL
+JVM_TakeVirtualThreadListToUnblock(JNIEnv* env, jclass ignored);
+
+/*
+ * Core reflection support.
+ */
+JNIEXPORT jint JNICALL
+JVM_GetClassFileVersion(JNIEnv *env, jclass current);
+
+/*
+ * Return JNI_TRUE if warnings are printed when agents are dynamically loaded.
+ */
+JNIEXPORT jboolean JNICALL
+JVM_PrintWarningAtDynamicAgentLoad(void);
 
 /*
  * This structure is used by the launcher to get the default thread

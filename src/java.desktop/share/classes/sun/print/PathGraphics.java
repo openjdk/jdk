@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,29 +25,23 @@
 
 package sun.print;
 
-import java.lang.ref.SoftReference;
-import java.util.Hashtable;
+import sun.awt.image.SunWritableRaster;
+import sun.awt.image.ToolkitImage;
 import sun.font.CharToGlyphMapper;
 import sun.font.CompositeFont;
 import sun.font.Font2D;
 import sun.font.Font2DHandle;
-import sun.font.FontManager;
-import sun.font.FontManagerFactory;
 import sun.font.FontUtilities;
 
 import java.awt.AlphaComposite;
-import java.awt.Composite;
 import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Paint;
 import java.awt.Polygon;
 import java.awt.Shape;
-
-import java.awt.geom.Path2D;
-import java.text.AttributedCharacterIterator;
-
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.font.TextAttribute;
@@ -57,10 +51,11 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Arc2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
+import java.awt.geom.Path2D;
+import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
-import java.awt.geom.PathIterator;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
@@ -69,21 +64,21 @@ import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferInt;
 import java.awt.image.ImageObserver;
 import java.awt.image.IndexColorModel;
+import java.awt.image.MultiResolutionImage;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.awt.image.SampleModel;
 import java.awt.image.SinglePixelPackedSampleModel;
 import java.awt.image.VolatileImage;
-import sun.awt.image.ByteComponentRaster;
-import sun.awt.image.ToolkitImage;
-import sun.awt.image.SunWritableRaster;
 
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
-import java.awt.print.PrinterGraphics;
 import java.awt.print.PrinterJob;
 
+import java.lang.ref.SoftReference;
+import java.text.AttributedCharacterIterator;
+import java.util.Hashtable;
 import java.util.Map;
 
 public abstract class PathGraphics extends ProxyGraphics2D {
@@ -140,7 +135,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
     }
 
      /**
-      * Redraw a rectanglular area using a proxy graphics
+      * Redraw a rectangular area using a proxy graphics
       */
     public abstract void redrawRegion(Rectangle2D region,
                                       double scaleX, double scaleY,
@@ -488,9 +483,9 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * 1&nbsp;&le;&nbsp;<i>i</i>&nbsp;&le;&nbsp;{@code nPoints}.
      * The figure is automatically closed by drawing a line connecting
      * the final point to the first point, if those points are different.
-     * @param        xPoints   a an array of {@code x} coordinates.
-     * @param        yPoints   a an array of {@code y} coordinates.
-     * @param        nPoints   a the total number of points.
+     * @param        xPoints   an array of {@code x} coordinates.
+     * @param        yPoints   an array of {@code y} coordinates.
+     * @param        nPoints   the total number of points.
      * @see          java.awt.Graphics#fillPolygon
      * @see          java.awt.Graphics#drawPolyline
      */
@@ -526,9 +521,9 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * <p>
      * The area inside the polygon is defined using an
      * even-odd fill rule, also known as the alternating rule.
-     * @param        xPoints   a an array of {@code x} coordinates.
-     * @param        yPoints   a an array of {@code y} coordinates.
-     * @param        nPoints   a the total number of points.
+     * @param        xPoints   an array of {@code x} coordinates.
+     * @param        yPoints   an array of {@code y} coordinates.
+     * @param        nPoints   the total number of points.
      * @see          java.awt.Graphics#drawPolygon(int[], int[], int)
      */
     public void fillPolygon(int[] xPoints, int[] yPoints,
@@ -939,7 +934,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
 
         /* If we reach here we have mapped all the glyphs back
          * one-to-one to simple unicode chars that we know are in the font.
-         * We can call "drawChars" on each one of them in turn, setting
+         * We can call "drawString" on each one of them in turn, setting
          * the position based on the glyph positions.
          * There's typically overhead in this. If numGlyphs is 'large',
          * it may even be better to try printGlyphVector() in this case.
@@ -947,15 +942,28 @@ public abstract class PathGraphics extends ProxyGraphics2D {
          * should be able to recover the text from simple glyph vectors
          * and we can avoid penalising the more common case - although
          * this is already a minority case.
+         * If we do use "drawString" on each character, we need to use a
+         * font without translation transform, since the font translation
+         * transform will already be reflected in the glyph positions, and
+         * we do not want to apply the translation twice.
          */
         if (numGlyphs > 10 && printGlyphVector(g, x, y)) {
             return true;
         }
 
+        Font font2 = font;
+        if (font.isTransformed()) {
+            AffineTransform t = font.getTransform();
+            if ((t.getType() & AffineTransform.TYPE_TRANSLATION) != 0) {
+                t.setTransform(t.getScaleX(), t.getShearY(), t.getShearX(), t.getScaleY(), 0, 0);
+                font2 = font.deriveFont(t);
+            }
+        }
+
         for (int i=0; i<numGlyphs; i++) {
             String s = new String(chars, i, 1);
             drawString(s, x+positions[i*2], y+positions[i*2+1],
-                       font, gvFrc, 0f);
+                       font2, gvFrc, 0f);
         }
         return true;
     }
@@ -1138,6 +1146,9 @@ public abstract class PathGraphics extends ProxyGraphics2D {
             // VI needs to make a new BI: this is unavoidable but
             // I don't expect VI's to be "huge" in any case.
             return ((VolatileImage)img).getSnapshot();
+        } else if (img instanceof MultiResolutionImage) {
+            return convertToBufferedImage((MultiResolutionImage) img,
+                                           img.getWidth(null), img.getHeight(null));
         } else {
             // may be null or may be some non-standard Image which
             // shouldn't happen as Image is implemented by the platform
@@ -1146,6 +1157,18 @@ public abstract class PathGraphics extends ProxyGraphics2D {
             // will need to support it here similarly to VI.
             return null;
         }
+    }
+
+    protected BufferedImage convertToBufferedImage(MultiResolutionImage multiResolutionImage,
+                                                       double width, double height ) {
+        Image resolutionImage = multiResolutionImage.getResolutionVariant(width, height);
+        BufferedImage bufferedImage = new BufferedImage(resolutionImage.getWidth(null),
+                                                        resolutionImage.getHeight(null),
+                                                        BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = bufferedImage.createGraphics();
+        g2d.drawImage(resolutionImage, 0, 0, (int) width, (int) height, null);
+        g2d.dispose();
+        return bufferedImage;
     }
 
     /**

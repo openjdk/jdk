@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,26 @@ public enum Target {
     JDK1_18("18", 62, 0),
 
     /** JDK 19. */
-    JDK1_19("19", 63, 0);
+    JDK1_19("19", 63, 0),
+
+    /** JDK 20. */
+    JDK1_20("20", 64, 0),
+
+    /** JDK 21. */
+    JDK1_21("21", 65, 0),
+
+    /** JDK 22. */
+    JDK1_22("22", 66, 0),
+
+    /** JDK 23. */
+    JDK1_23("23", 67, 0),
+
+    /** JDK 24. */
+    JDK1_24("24", 68, 0),
+
+    /** JDK 25. */
+    JDK1_25("25", 69, 0),
+    ; // Reduce code churn when appending new constants
 
     private static final Context.Key<Target> targetKey = new Context.Key<>();
 
@@ -107,9 +126,11 @@ public enum Target {
         return instance;
     }
 
-    public static final Target MIN = Target.JDK1_7;
+    public static final Target MIN = Target.JDK1_8;
 
     private static final Target MAX = values()[values().length - 1];
+
+    public static final Target DEFAULT = MAX;
 
     private static final Map<String,Target> tab = new HashMap<>();
     static {
@@ -132,8 +153,6 @@ public enum Target {
         this.majorVersion = majorVersion;
         this.minorVersion = minorVersion;
     }
-
-    public static final Target DEFAULT = values()[values().length - 1];
 
     public static Target lookup(String name) {
         return tab.get(name);
@@ -212,5 +231,25 @@ public enum Target {
      */
     public boolean optimizeOuterThis() {
         return compareTo(JDK1_18) >= 0;
+    }
+
+    /** Releases prior to JDK 23 expect a less precise SwitchBootstraps.typeSwitch signature on the selectorType
+     */
+    public boolean usesReferenceOnlySelectorTypes() {
+        return compareTo(Target.JDK1_23) < 0;
+    }
+
+    /**
+     * Should we emit a null check against incoming outer this argument by default?
+     */
+    public boolean nullCheckOuterThisByDefault() {
+        return compareTo(JDK1_25) >= 0;
+    }
+
+    /** Releases prior to JDK 23 don't allow primitive types as case labels in
+     *  SwitchBootstrap.typeSwitch
+     */
+    public boolean switchBootstrapOnlyAllowsReferenceTypesAsCaseLabels() {
+        return compareTo(Target.JDK1_23) < 0;
     }
 }

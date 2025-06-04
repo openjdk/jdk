@@ -274,7 +274,7 @@ public class ToolCommandOptionTest extends ReplToolTesting {
                 (a) -> assertCommand(a, "/set start DEFAULT PRINTING",
                         ""),
                 (a) -> assertCommandOutputContains(a, "/set start",
-                        "/set start DEFAULT PRINTING", "void println", "import java.util.*"),
+                        "/set start DEFAULT PRINTING", "void println", "import module java.base;"),
                 (a) -> assertCommand(a, "/set start " + startup.toString(),
                         ""),
                 (a) -> assertCommandOutputContains(a, "/set start",
@@ -333,7 +333,7 @@ public class ToolCommandOptionTest extends ReplToolTesting {
                         "|  ---- PRINTING ----\n",
                         "|  int iAmHere = 1234;\n",
                         "|  void println(String s)",
-                        "|  import java.io.*;")
+                        "|  import module java.base;")
         );
     }
 

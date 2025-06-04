@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@ package gc.TestJNIWeak;
  * marking, verifying the use of the load barrier to keep the
  * referent alive.
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/native
  *    -Xbootclasspath/a:.
  *    -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -43,8 +43,8 @@ package gc.TestJNIWeak;
  *    gc.TestJNIWeak.TestJNIWeak
  */
 
-import sun.hotspot.gc.GC;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.gc.GC;
+import jdk.test.whitebox.WhiteBox;
 import jtreg.SkippedException;
 import java.lang.ref.Reference;
 

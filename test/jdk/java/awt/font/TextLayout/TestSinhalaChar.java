@@ -22,7 +22,7 @@
  */
 
 /**
- * @test @(#)TestSinhalaChar.java
+ * @test
  * @key headful
  * @summary verify lack of crash on U+0DDD.
  * @bug 6795060

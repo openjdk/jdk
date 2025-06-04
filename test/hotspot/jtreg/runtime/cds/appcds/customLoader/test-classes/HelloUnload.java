@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.classloader.ClassUnloadCommon;
+import java.util.List;
+import java.util.Set;
 
 public class HelloUnload {
     private static String className = "CustomLoadee";
@@ -99,22 +101,11 @@ public class HelloUnload {
         ClassUnloadCommon.failIf(!wb.isClassAlive(className), "should be live here");
 
         if (doUnload) {
-            String loaderName = urlClassLoader.getName();
-            int loadedRefcount = wb.getSymbolRefcount(loaderName);
-            System.out.println("Refcount of symbol " + loaderName + " is " + loadedRefcount);
-
             urlClassLoader = null; c = null; o = null;
-            ClassUnloadCommon.triggerUnloading();
+            Set<String> aliveClasses = ClassUnloadCommon.triggerUnloading(List.of(className));
             System.out.println("Is CustomLoadee alive? " + wb.isClassAlive(className));
-            ClassUnloadCommon.failIf(wb.isClassAlive(className), "should have been unloaded");
+            ClassUnloadCommon.failIf(!aliveClasses.isEmpty(), "should have been unloaded: " + aliveClasses);
 
-            int unloadedRefcount = wb.getSymbolRefcount(loaderName);
-            System.out.println("Refcount of symbol " + loaderName + " is " + unloadedRefcount);
-
-            // refcount of a permanent symbol will not be decremented
-            if (loadedRefcount != 65535) {
-                ClassUnloadCommon.failIf(unloadedRefcount != (loadedRefcount - 1), "Refcount must be decremented");
-            }
         }
     }
 }

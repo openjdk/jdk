@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,16 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail VirtualAllocAttemptReserveMemoryAt
  *
  */
 
-import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.JDKToolFinder;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import static jdk.test.lib.Asserts.*;
 
@@ -48,7 +47,6 @@ public class VirtualAllocAttemptReserveMemoryAt {
     public static void main(String args[]) throws Exception {
         long reserveSize = 4 * 1024 * 1024; // 4096KB
 
-        String pid = Long.toString(ProcessTools.getProcessId());
         ProcessBuilder pb = new ProcessBuilder();
 
         // Find an address
@@ -67,8 +65,7 @@ public class VirtualAllocAttemptReserveMemoryAt {
 
         assertEQ(addr, attempt_addr);
 
-        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid,
-                "VM.native_memory", "detail" });
+        pb.command(new PidJcmdExecutor().getCommandLine("VM.native_memory", "detail"));
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 

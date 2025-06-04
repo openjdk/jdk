@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,7 +169,7 @@ public class JFrame  extends Frame implements WindowConstants,
      * This constructor sets the component's locale property to the value
      * returned by <code>JComponent.getDefaultLocale</code>.
      *
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see Component#setSize
@@ -193,7 +193,7 @@ public class JFrame  extends Frame implements WindowConstants,
      *          to construct the new <code>Frame</code>;
      *          if <code>gc</code> is <code>null</code>, the system
      *          default <code>GraphicsConfiguration</code> is assumed
-     * @exception IllegalArgumentException if <code>gc</code> is not from
+     * @throws IllegalArgumentException if <code>gc</code> is not from
      *          a screen device.  This exception is always thrown when
      *      GraphicsEnvironment.isHeadless() returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
@@ -213,7 +213,7 @@ public class JFrame  extends Frame implements WindowConstants,
      * returned by <code>JComponent.getDefaultLocale</code>.
      *
      * @param title the title for the frame
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see Component#setSize
@@ -239,7 +239,7 @@ public class JFrame  extends Frame implements WindowConstants,
      *          to construct the new <code>JFrame</code> with;
      *          if <code>gc</code> is <code>null</code>, the system
      *          default <code>GraphicsConfiguration</code> is assumed
-     * @exception IllegalArgumentException if <code>gc</code> is not from
+     * @throws IllegalArgumentException if <code>gc</code> is not from
      *          a screen device.  This exception is always thrown when
      *      GraphicsEnvironment.isHeadless() returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
@@ -279,7 +279,7 @@ public class JFrame  extends Frame implements WindowConstants,
         JRootPane rp = new JRootPane();
         // NOTE: this uses setOpaque vs LookAndFeel.installProperty as there
         // is NO reason for the RootPane not to be opaque. For painting to
-        // work the contentPane must be opaque, therefor the RootPane can
+        // work the contentPane must be opaque, therefore the RootPane can
         // also be opaque.
         rp.setOpaque(true);
         return rp;
@@ -357,15 +357,11 @@ public class JFrame  extends Frame implements WindowConstants,
      *
      * @param operation the operation which should be performed when the
      *        user closes the frame
-     * @exception IllegalArgumentException if defaultCloseOperation value
+     * @throws IllegalArgumentException if defaultCloseOperation value
      *             isn't one of the above valid values
      * @see #addWindowListener
      * @see #getDefaultCloseOperation
      * @see WindowConstants
-     * @throws  SecurityException
-     *        if <code>EXIT_ON_CLOSE</code> has been specified and the
-     *        <code>SecurityManager</code> will
-     *        not allow the caller to invoke <code>System.exit</code>
      * @see        java.lang.Runtime#exit(int)
      */
     @BeanProperty(preferred = true, enumerationValues = {
@@ -384,13 +380,6 @@ public class JFrame  extends Frame implements WindowConstants,
                     + " DISPOSE_ON_CLOSE, or EXIT_ON_CLOSE");
         }
 
-        if (operation == EXIT_ON_CLOSE) {
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
-            if (security != null) {
-                security.checkExit(0);
-            }
-        }
         if (this.defaultCloseOperation != operation) {
             int oldValue = this.defaultCloseOperation;
             this.defaultCloseOperation = operation;
@@ -540,10 +529,10 @@ public class JFrame  extends Frame implements WindowConstants,
      * @param comp the component to be enhanced
      * @param constraints the constraints to be respected
      * @param index the index
-     * @exception IllegalArgumentException if <code>index</code> is invalid
-     * @exception IllegalArgumentException if adding the container's parent
+     * @throws IllegalArgumentException if <code>index</code> is invalid
+     * @throws IllegalArgumentException if adding the container's parent
      *                  to itself
-     * @exception IllegalArgumentException if adding a window to a container
+     * @throws IllegalArgumentException if adding a window to a container
      *
      * @see #setRootPaneCheckingEnabled
      * @see javax.swing.RootPaneContainer
@@ -668,7 +657,7 @@ public class JFrame  extends Frame implements WindowConstants,
      *
      * @param contentPane the <code>contentPane</code> object for this frame
      *
-     * @exception java.awt.IllegalComponentStateException (a runtime
+     * @throws java.awt.IllegalComponentStateException (a runtime
      *            exception) if the content pane parameter is <code>null</code>
      * @see #getContentPane
      * @see RootPaneContainer#setContentPane
@@ -696,7 +685,7 @@ public class JFrame  extends Frame implements WindowConstants,
      * This method is called by the constructor.
      * @param layeredPane the <code>layeredPane</code> object for this frame
      *
-     * @exception java.awt.IllegalComponentStateException (a runtime
+     * @throws java.awt.IllegalComponentStateException (a runtime
      *            exception) if the layered pane parameter is <code>null</code>
      * @see #getLayeredPane
      * @see RootPaneContainer#setLayeredPane

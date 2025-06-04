@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,14 +38,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLProtocolException;
@@ -137,12 +130,16 @@ final class CertificateMessage {
                     byte[] encodedCert = Record.getBytes24(m);
                     listLen -= (3 + encodedCert.length);
                     encodedCerts.add(encodedCert);
-                    if (encodedCerts.size() > SSLConfiguration.maxCertificateChainLength) {
+                    int maxAllowedChainLength = handshakeContext.sslConfig.isClientMode ?
+                            SSLConfiguration.maxInboundServerCertChainLen :
+                            SSLConfiguration.maxInboundClientCertChainLen;
+
+                    if (encodedCerts.size() > maxAllowedChainLength) {
                         throw new SSLProtocolException(
                                 "The certificate chain length ("
                                 + encodedCerts.size()
                                 + ") exceeds the maximum allowed length ("
-                                + SSLConfiguration.maxCertificateChainLength
+                                + maxAllowedChainLength
                                 + ")");
                     }
 
@@ -194,7 +191,7 @@ final class CertificateMessage {
                 for (byte[] encodedCert : encodedCertChain) {
                     Object obj;
                     try {
-                        obj = (X509Certificate)cf.generateCertificate(
+                        obj = cf.generateCertificate(
                                     new ByteArrayInputStream(encodedCert));
                     } catch (CertificateException ce) {
                         obj = encodedCert;
@@ -210,9 +207,10 @@ final class CertificateMessage {
             }
 
             MessageFormat messageFormat = new MessageFormat(
-                    "\"Certificates\": [\n" +
-                    "{0}\n" +
-                    "]",
+                    """
+                            "Certificates": [
+                            {0}
+                            ]""",
                     Locale.ENGLISH);
             Object[] messageFields = {
                 SSLLogger.toString(x509Certs)
@@ -387,8 +385,8 @@ final class CertificateMessage {
                 if (shc.sslConfig.clientAuthType !=
                         ClientAuthType.CLIENT_AUTH_REQUESTED) {
                     // unexpected or require client authentication
-                    throw shc.conContext.fatal(Alert.BAD_CERTIFICATE,
-                        "Empty server certificate chain");
+                    throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        "Empty client certificate chain");
                 } else {
                     return;
                 }
@@ -405,7 +403,7 @@ final class CertificateMessage {
                 }
             } catch (CertificateException ce) {
                 throw shc.conContext.fatal(Alert.BAD_CERTIFICATE,
-                    "Failed to parse server certificates", ce);
+                    "Failed to parse client certificates", ce);
             }
 
             checkClientCerts(shc, x509Certs);
@@ -573,7 +571,7 @@ final class CertificateMessage {
                     if ((subAltDnsName != null) && !subAltDnsName.isEmpty()) {
                         if (subAltDnsNames == null) {
                             subAltDnsNames =
-                                    new HashSet<>(subjectAltNames.size());
+                                    HashSet.newHashSet(subjectAltNames.size());
                         }
                         subAltDnsNames.add(subAltDnsName);
                     }
@@ -587,7 +585,7 @@ final class CertificateMessage {
                 Collection<String> prevSubAltNames) {
             for (String thisSubAltName : thisSubAltNames) {
                 for (String prevSubAltName : prevSubAltNames) {
-                    // Only allow the exactly match.  No wildcard character
+                    // Only allow exact match.  No wildcard character
                     // checking.
                     if (thisSubAltName.equalsIgnoreCase(prevSubAltName)) {
                         return true;
@@ -613,8 +611,8 @@ final class CertificateMessage {
 
             X509TrustManager tm = chc.sslContext.getX509TrustManager();
 
-            // find out the key exchange algorithm used
-            // use "RSA" for non-ephemeral "RSA_EXPORT"
+            // Find out the key exchange algorithm used.
+            // Use "RSA" for non-ephemeral "RSA_EXPORT".
             String keyExchangeString;
             if (chc.negotiatedCipherSuite.keyExchange ==
                     CipherSuite.KeyExchange.K_RSA_EXPORT ||
@@ -627,8 +625,7 @@ final class CertificateMessage {
 
             try {
                 if (tm instanceof X509ExtendedTrustManager) {
-                    if (chc.conContext.transport instanceof SSLEngine) {
-                        SSLEngine engine = (SSLEngine)chc.conContext.transport;
+                    if (chc.conContext.transport instanceof SSLEngine engine) {
                         ((X509ExtendedTrustManager)tm).checkServerTrusted(
                             certs.clone(),
                             keyExchangeString,
@@ -677,8 +674,7 @@ final class CertificateMessage {
 
             try {
                 if (tm instanceof X509ExtendedTrustManager) {
-                    if (shc.conContext.transport instanceof SSLEngine) {
-                        SSLEngine engine = (SSLEngine)shc.conContext.transport;
+                    if (shc.conContext.transport instanceof SSLEngine engine) {
                         ((X509ExtendedTrustManager)tm).checkClientTrusted(
                             certs.clone(),
                             authType,
@@ -699,48 +695,6 @@ final class CertificateMessage {
             } catch (CertificateException ce) {
                 throw shc.conContext.fatal(Alert.CERTIFICATE_UNKNOWN, ce);
             }
-        }
-
-        /**
-         * When a failure happens during certificate checking from an
-         * {@link X509TrustManager}, determine what TLS alert description
-         * to use.
-         *
-         * @param cexc The exception thrown by the {@link X509TrustManager}
-         *
-         * @return A byte value corresponding to a TLS alert description number.
-         */
-        private static Alert getCertificateAlert(
-                ClientHandshakeContext chc, CertificateException cexc) {
-            // The specific reason for the failure will determine how to
-            // set the alert description value
-            Alert alert = Alert.CERTIFICATE_UNKNOWN;
-
-            Throwable baseCause = cexc.getCause();
-            if (baseCause instanceof CertPathValidatorException) {
-                CertPathValidatorException cpve =
-                        (CertPathValidatorException)baseCause;
-                Reason reason = cpve.getReason();
-                if (reason == BasicReason.REVOKED) {
-                    alert = chc.staplingActive ?
-                            Alert.BAD_CERT_STATUS_RESPONSE :
-                            Alert.CERTIFICATE_REVOKED;
-                } else if (
-                        reason == BasicReason.UNDETERMINED_REVOCATION_STATUS) {
-                    alert = chc.staplingActive ?
-                            Alert.BAD_CERT_STATUS_RESPONSE :
-                            Alert.CERTIFICATE_UNKNOWN;
-                } else if (reason == BasicReason.ALGORITHM_CONSTRAINED) {
-                    alert = Alert.UNSUPPORTED_CERTIFICATE;
-                } else if (reason == BasicReason.EXPIRED) {
-                    alert = Alert.CERTIFICATE_EXPIRED;
-                } else if (reason == BasicReason.INVALID_SIGNATURE ||
-                        reason == BasicReason.NOT_YET_VALID) {
-                    alert = Alert.BAD_CERTIFICATE;
-                }
-            }
-
-            return alert;
         }
 
     }
@@ -767,13 +721,16 @@ final class CertificateMessage {
 
         @Override
         public String toString() {
+            // X.509 certificate
             MessageFormat messageFormat = new MessageFormat(
-                "\n'{'\n" +
-                "{0}\n" +                       // X.509 certificate
-                "  \"extensions\": '{'\n" +
-                "{1}\n" +
-                "  '}'\n" +
-                "'}',", Locale.ENGLISH);
+                    """
+
+                            '{'
+                            {0}
+                              "extensions": '{'
+                            {1}
+                              '}'
+                            '}',""", Locale.ENGLISH);
 
             Object x509Certs;
             try {
@@ -868,12 +825,16 @@ final class CertificateMessage {
                 SSLExtensions extensions =
                         new SSLExtensions(this, m, enabledExtensions);
                 certList.add(new CertificateEntry(encodedCert, extensions));
-                if (certList.size() > SSLConfiguration.maxCertificateChainLength) {
+                int maxAllowedChainLength = handshakeContext.sslConfig.isClientMode ?
+                        SSLConfiguration.maxInboundServerCertChainLen :
+                        SSLConfiguration.maxInboundClientCertChainLen;
+
+                if (certList.size() > maxAllowedChainLength) {
                     throw new SSLProtocolException(
                             "The certificate chain length ("
                             + certList.size()
                             + ") exceeds the maximum allowed length ("
-                            + SSLConfiguration.maxCertificateChainLength
+                            + maxAllowedChainLength
                             + ")");
                 }
             }
@@ -919,10 +880,12 @@ final class CertificateMessage {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"Certificate\": '{'\n" +
-                "  \"certificate_request_context\": \"{0}\",\n" +
-                "  \"certificate_list\": [{1}\n]\n" +
-                "'}'",
+                    """
+                            "Certificate": '{'
+                              "certificate_request_context": "{0}",
+                              "certificate_list": [{1}
+                            ]
+                            '}'""",
                 Locale.ENGLISH);
 
             StringBuilder builder = new StringBuilder(512);
@@ -983,12 +946,11 @@ final class CertificateMessage {
                         "No available authentication scheme");
             }
 
-            if (!(pos instanceof X509Possession)) {
+            if (!(pos instanceof X509Possession x509Possession)) {
                 throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "No X.509 certificate for server authentication");
             }
 
-            X509Possession x509Possession = (X509Possession)pos;
             X509Certificate[] localCerts = x509Possession.popCerts;
             if (localCerts == null || localCerts.length == 0) {
                 throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
@@ -1009,8 +971,8 @@ final class CertificateMessage {
             }
 
             // Check the OCSP stapling extensions and attempt
-            // to get responses.  If the resulting stapleParams is non
-            // null, it implies that stapling is enabled on the server side.
+            // to get responses.  If the resulting stapleParams is non-null,
+            // it implies that stapling is enabled on the server side.
             shc.stapleParams = StatusResponseManager.processStapling(shc);
             shc.staplingActive = (shc.stapleParams != null);
 
@@ -1037,7 +999,7 @@ final class CertificateMessage {
 
         private static SSLPossession choosePossession(
                 HandshakeContext hc,
-                ClientHelloMessage clientHello) throws IOException {
+                ClientHelloMessage clientHello) {
             if (hc.peerRequestedCertSignSchemes == null ||
                     hc.peerRequestedCertSignSchemes.isEmpty()) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -1047,46 +1009,22 @@ final class CertificateMessage {
                 return null;
             }
 
-            Collection<String> checkedKeyTypes = new HashSet<>();
-            List<String> supportedKeyTypes = new ArrayList<>();
-            for (SignatureScheme ss : hc.peerRequestedCertSignSchemes) {
-                if (checkedKeyTypes.contains(ss.keyAlgorithm)) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.warning(
-                            "Unsupported authentication scheme: " + ss.name);
-                    }
-                    continue;
-                }
-                checkedKeyTypes.add(ss.keyAlgorithm);
-
-                // Don't select a signature scheme unless we will be able to
-                // produce a CertificateVerify message later
-                if (SignatureScheme.getPreferableAlgorithm(
-                        hc.algorithmConstraints,
-                        hc.peerRequestedSignatureSchemes,
-                        ss, hc.negotiatedProtocol) == null) {
-
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.warning(
-                            "Unable to produce CertificateVerify for " +
-                            "signature scheme: " + ss.name);
-                    }
-                    continue;
-                }
-
-                X509Authentication ka = X509Authentication.valueOf(ss);
-                if (ka == null) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.warning(
-                            "Unsupported authentication scheme: " + ss.name);
-                    }
-                    continue;
-                }
-                supportedKeyTypes.add(ss.keyAlgorithm);
-            }
+            String[] supportedKeyTypes = hc.peerRequestedCertSignSchemes
+                    .stream()
+                    .map(ss -> ss.keyAlgorithm)
+                    .distinct()
+                    .filter(ka -> SignatureScheme.getPreferableAlgorithm(   // Don't select a signature scheme unless
+                            hc.algorithmConstraints,                        //  we will be able to produce
+                            hc.peerRequestedSignatureSchemes,               //  a CertificateVerify message later
+                            ka, hc.negotiatedProtocol) != null
+                            || SSLLogger.logWarning("ssl,handshake",
+                                    "Unable to produce CertificateVerify for key algorithm: " + ka))
+                    .filter(ka -> X509Authentication.valueOfKeyAlgorithm(ka) != null
+                            || SSLLogger.logWarning("ssl,handshake", "Unsupported key algorithm: " + ka))
+                    .toArray(String[]::new);
 
             SSLPossession pos = X509Authentication
-                    .createPossession(hc, supportedKeyTypes.toArray(String[]::new));
+                    .createPossession(hc, supportedKeyTypes);
             if (pos == null) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning("No available authentication scheme");
@@ -1107,14 +1045,13 @@ final class CertificateMessage {
                 localCerts = new X509Certificate[0];
             } else {
                 chc.handshakePossessions.add(pos);
-                if (!(pos instanceof X509Possession)) {
+                if (!(pos instanceof X509Possession x509Possession)) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine(
                             "No X.509 certificate for client authentication");
                     }
                     localCerts = new X509Certificate[0];
                 } else {
-                    X509Possession x509Possession = (X509Possession)pos;
                     localCerts = x509Possession.popCerts;
                     chc.handshakeSession.setLocalPrivateKey(
                             x509Possession.popPrivateKey);
@@ -1186,7 +1123,7 @@ final class CertificateMessage {
                 shc.handshakeConsumers.remove(
                         SSLHandshake.CERTIFICATE_VERIFY.id);
                 if (shc.sslConfig.clientAuthType == CLIENT_AUTH_REQUIRED) {
-                    throw shc.conContext.fatal(Alert.BAD_CERTIFICATE,
+                    throw shc.conContext.fatal(Alert.CERTIFICATE_REQUIRED,
                         "Empty client certificate chain");
                 } else {
                     // optional client authentication
@@ -1210,14 +1147,14 @@ final class CertificateMessage {
                 T13CertificateMessage certificateMessage )throws IOException {
             if (certificateMessage.certEntries == null ||
                     certificateMessage.certEntries.isEmpty()) {
-                throw chc.conContext.fatal(Alert.BAD_CERTIFICATE,
+                throw chc.conContext.fatal(Alert.DECODE_ERROR,
                     "Empty server certificate chain");
             }
 
             // Each CertificateEntry will have its own set of extensions
             // which must be consumed.
             SSLExtension[] enabledExtensions =
-                chc.sslConfig.getEnabledExtensions(SSLHandshake.CERTIFICATE);
+                    chc.sslConfig.getEnabledExtensions(SSLHandshake.CERTIFICATE);
             for (CertificateEntry certEnt : certificateMessage.certEntries) {
                 certEnt.extensions.consumeOnLoad(chc, enabledExtensions);
             }
@@ -1248,7 +1185,7 @@ final class CertificateMessage {
                 }
             } catch (CertificateException ce) {
                 throw shc.conContext.fatal(Alert.BAD_CERTIFICATE,
-                    "Failed to parse server certificates", ce);
+                    "Failed to parse client certificates", ce);
             }
 
             // find out the types of client authentication used
@@ -1269,8 +1206,7 @@ final class CertificateMessage {
             try {
                 X509TrustManager tm = shc.sslContext.getX509TrustManager();
                 if (tm instanceof X509ExtendedTrustManager) {
-                    if (shc.conContext.transport instanceof SSLEngine) {
-                        SSLEngine engine = (SSLEngine)shc.conContext.transport;
+                    if (shc.conContext.transport instanceof SSLEngine engine) {
                         ((X509ExtendedTrustManager)tm).checkClientTrusted(
                             certs.clone(),
                             authType,
@@ -1325,8 +1261,7 @@ final class CertificateMessage {
             try {
                 X509TrustManager tm = chc.sslContext.getX509TrustManager();
                 if (tm instanceof X509ExtendedTrustManager) {
-                    if (chc.conContext.transport instanceof SSLEngine) {
-                        SSLEngine engine = (SSLEngine)chc.conContext.transport;
+                    if (chc.conContext.transport instanceof SSLEngine engine) {
                         ((X509ExtendedTrustManager)tm).checkServerTrusted(
                             certs.clone(),
                             authType,
@@ -1355,39 +1290,57 @@ final class CertificateMessage {
             return certs;
         }
 
-        /**
-         * When a failure happens during certificate checking from an
-         * {@link X509TrustManager}, determine what TLS alert description
-         * to use.
-         *
-         * @param cexc The exception thrown by the {@link X509TrustManager}
-         *
-         * @return A byte value corresponding to a TLS alert description number.
-         */
-        private static Alert getCertificateAlert(
-                ClientHandshakeContext chc, CertificateException cexc) {
-            // The specific reason for the failure will determine how to
-            // set the alert description value
-            Alert alert = Alert.CERTIFICATE_UNKNOWN;
+    }
 
-            Throwable baseCause = cexc.getCause();
-            if (baseCause instanceof CertPathValidatorException) {
-                CertPathValidatorException cpve =
-                        (CertPathValidatorException)baseCause;
-                Reason reason = cpve.getReason();
-                if (reason == BasicReason.REVOKED) {
-                    alert = chc.staplingActive ?
-                            Alert.BAD_CERT_STATUS_RESPONSE :
-                            Alert.CERTIFICATE_REVOKED;
-                } else if (
-                        reason == BasicReason.UNDETERMINED_REVOCATION_STATUS) {
-                    alert = chc.staplingActive ?
-                            Alert.BAD_CERT_STATUS_RESPONSE :
-                            Alert.CERTIFICATE_UNKNOWN;
+    /**
+     * When a failure happens during certificate checking from an
+     * {@link X509TrustManager}, determine what TLS alert description
+     * to use.
+     *
+     * @param cexc The exception thrown by the {@link X509TrustManager}
+     * @return A byte value corresponding to a TLS alert description number.
+     */
+    private static Alert getCertificateAlert(
+            ClientHandshakeContext chc, CertificateException cexc) {
+        // The specific reason for the failure will determine how to
+        // set the alert description value
+        Alert alert = Alert.CERTIFICATE_UNKNOWN;
+
+        Throwable baseCause = cexc.getCause();
+        if (baseCause instanceof CertPathValidatorException cpve) {
+            Reason reason = cpve.getReason();
+            if (reason == BasicReason.REVOKED) {
+                alert = chc.staplingActive ?
+                        Alert.BAD_CERT_STATUS_RESPONSE :
+                        Alert.CERTIFICATE_REVOKED;
+            } else if (reason == BasicReason.UNDETERMINED_REVOCATION_STATUS) {
+                alert = chc.staplingActive ?
+                        Alert.BAD_CERT_STATUS_RESPONSE :
+                        Alert.CERTIFICATE_UNKNOWN;
+            } else if (reason == BasicReason.EXPIRED) {
+                alert = Alert.CERTIFICATE_EXPIRED;
+            } else if (reason == BasicReason.INVALID_SIGNATURE
+                    || reason == BasicReason.NOT_YET_VALID) {
+                alert = Alert.BAD_CERTIFICATE;
+            } else if (reason == BasicReason.ALGORITHM_CONSTRAINED) {
+                alert = Alert.UNSUPPORTED_CERTIFICATE;
+
+                // Per TLSv1.3 RFC we MUST abort the handshake with a
+                // "bad_certificate" alert if we reject certificate
+                // because of the signature using MD5 or SHA1 algorithm.
+                if (chc.negotiatedProtocol != null
+                        && chc.negotiatedProtocol.useTLS13PlusSpec()) {
+                    final String exMsg = cexc.getMessage().toUpperCase();
+
+                    if (exMsg.contains("MD5WITH")
+                            || exMsg.contains("SHA1WITH")) {
+                        alert = Alert.BAD_CERTIFICATE;
+                    }
                 }
             }
-
-            return alert;
         }
+
+        return alert;
     }
+
 }

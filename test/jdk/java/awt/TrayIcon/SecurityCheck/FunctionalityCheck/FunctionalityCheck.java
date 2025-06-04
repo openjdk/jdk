@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,12 @@ import java.awt.image.BufferedImage;
  * @test
  * @key headful
  * @summary Check for MouseEvents with all mouse buttons
- * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
  * @modules java.desktop/java.awt:open
  * @library /java/awt/patchlib
  * @library /lib/client ../../
  * @build java.desktop/java.awt.Helper
  * @build ExtendedRobot SystemTrayIconHelper
- * @run main/othervm/policy=tray.policy -Djava.security.manager FunctionalityCheck
+ * @run main FunctionalityCheck
  */
 
 public class FunctionalityCheck {
@@ -55,12 +54,12 @@ public class FunctionalityCheck {
     boolean mouseReleased = false;
     boolean mouseClicked = false;
     boolean mouseMoved = false;
-    static boolean isOEL7;
+    static boolean isOel7orLater;
 
     static final int[] buttonTypes = {
-        InputEvent.BUTTON1_MASK,
-        InputEvent.BUTTON2_MASK,
-        InputEvent.BUTTON3_MASK
+        InputEvent.BUTTON1_DOWN_MASK,
+        InputEvent.BUTTON2_DOWN_MASK,
+        InputEvent.BUTTON3_DOWN_MASK
     };
 
     static final String[] buttonNames = {
@@ -74,7 +73,7 @@ public class FunctionalityCheck {
             System.out.println("SystemTray not supported on the platform under test. " +
                                "Marking the test passed");
         } else {
-            isOEL7 = SystemTrayIconHelper.isOel7();
+            isOel7orLater = SystemTrayIconHelper.isOel7orLater();
             new FunctionalityCheck().doTest();
         }
     }
@@ -194,7 +193,7 @@ public class FunctionalityCheck {
         Point iconPosition = SystemTrayIconHelper.getTrayIconLocation(icon);
         if (iconPosition == null)
             throw new RuntimeException("Unable to find the icon location!");
-        if (isOEL7) {
+        if (isOel7orLater) {
             // close tray
             robot.mouseMove(100,100);
             robot.click(InputEvent.BUTTON1_MASK);
@@ -203,7 +202,7 @@ public class FunctionalityCheck {
 
         robot.mouseMove(iconPosition.x, iconPosition.y);
         robot.waitForIdle();
-        if(!isOEL7) {
+        if(!isOel7orLater) {
             SystemTrayIconHelper.doubleClick(robot);
 
             if (!actionPerformed) {
@@ -220,7 +219,7 @@ public class FunctionalityCheck {
 
         for (int i = 0; i < buttonTypes.length; i++) {
             mousePressed = false;
-            if(isOEL7) {
+            if(isOel7orLater) {
                 SystemTrayIconHelper.openTrayIfNeeded(robot);
                 robot.mouseMove(iconPosition.x, iconPosition.y);
                 robot.click(buttonTypes[i]);
@@ -243,7 +242,7 @@ public class FunctionalityCheck {
 
             mouseReleased = false;
             mouseClicked = false;
-            if(isOEL7) {
+            if(isOel7orLater) {
                 SystemTrayIconHelper.openTrayIfNeeded(robot);
                 robot.mouseMove(iconPosition.x, iconPosition.y);
                 robot.click(buttonTypes[i]);
@@ -275,7 +274,7 @@ public class FunctionalityCheck {
                 throw new RuntimeException("FAIL: mouseClicked not triggered when " +
                         buttonNames[i] + " pressed & released");
         }
-        if(!isOEL7) {
+        if(!isOel7orLater) {
             mouseMoved = false;
             robot.mouseMove(iconPosition.x + 100, iconPosition.y);
             robot.glide(iconPosition.x, iconPosition.y);

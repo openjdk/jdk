@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,8 +97,11 @@ public class exception001 {
     /**
      * Start test from command line.
      */
-    public static void main(String argv[]) {
-        System.exit(run(argv,System.out) + JCK_STATUS_BASE);
+    public static void main (String argv[]) {
+        int result = run(argv, System.out);
+        if (result != 0) {
+            throw new RuntimeException("Test failed");
+        }
     }
 
     /**
@@ -267,7 +270,7 @@ public class exception001 {
                                                         JDWP.SuspendPolicy.ALL);
         log.display("  ... breakpoint reached with threadID: " + testedThreadID);
 
-        // get excepion objectID value for static field
+        // get exception objectID value for static field
         log.display("Getting exception objectID from static field: " + EXCEPTION_FIELD_NAME);
         JDWP.Value value = debugee.getStaticFieldValue(testedClassID,  EXCEPTION_FIELD_NAME, JDWP.Tag.OBJECT);
         exceptionObjectID = ((Long)value.getValue()).longValue();

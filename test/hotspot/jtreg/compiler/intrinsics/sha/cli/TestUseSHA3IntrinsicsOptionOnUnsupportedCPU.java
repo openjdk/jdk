@@ -29,8 +29,8 @@
  * @library /test/lib /
  * @requires vm.flagless
  *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   compiler.intrinsics.sha.cli.TestUseSHA3IntrinsicsOptionOnUnsupportedCPU
@@ -38,21 +38,15 @@
 
 package compiler.intrinsics.sha.cli;
 
-import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForOtherCPU;
-import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForUnsupportedAArch64CPU;
-import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForUnsupportedX86CPU;
+import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForUnsupportedCPU;
 import compiler.intrinsics.sha.cli.testcases.UseSHAIntrinsicsSpecificTestCaseForUnsupportedCPU;
 
 public class TestUseSHA3IntrinsicsOptionOnUnsupportedCPU {
     public static void main(String args[]) throws Throwable {
         new DigestOptionsBase(
-                new GenericTestCaseForUnsupportedX86CPU(
-                        DigestOptionsBase.USE_SHA3_INTRINSICS_OPTION),
-                new GenericTestCaseForUnsupportedAArch64CPU(
+                new GenericTestCaseForUnsupportedCPU(
                         DigestOptionsBase.USE_SHA3_INTRINSICS_OPTION),
                 new UseSHAIntrinsicsSpecificTestCaseForUnsupportedCPU(
-                        DigestOptionsBase.USE_SHA3_INTRINSICS_OPTION),
-                new GenericTestCaseForOtherCPU(
                         DigestOptionsBase.USE_SHA3_INTRINSICS_OPTION)).test();
     }
 }

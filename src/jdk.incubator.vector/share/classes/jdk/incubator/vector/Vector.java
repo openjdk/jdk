@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
  */
 package jdk.incubator.vector;
 
-import java.nio.ByteBuffer;
+import java.lang.foreign.MemorySegment;
+
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
@@ -91,7 +92,7 @@ import java.util.Arrays;
  * Other lane-wise operations, such as the {@code min} operator, are defined as a
  * partially serviced (not a full-service) named operation, where a corresponding
  * method on {@code Vector} and/or a subclass provide some but all possible
- * overloadings and overrides (commonly the unmasked varient with scalar-broadcast
+ * overloadings and overrides (commonly the unmasked variant with scalar-broadcast
  * overloadings).
  *
  * Finally, all lane-wise operations (those named as previously described,
@@ -145,7 +146,7 @@ import java.util.Arrays;
  * {@code VSHAPE}.  Each possible {@code VSHAPE} is represented by
  * a member of the {@link VectorShape} enumeration, and represents
  * an implementation format shared in common by all vectors of
- * that shape.  Thus, the {@linkplain #bitSize() size in bits} of
+ * that shape.  Thus, the {@linkplain #bitSize() size in bits}
  * of a vector is determined by appealing to its vector shape.
  *
  * <p> Some Java platforms give special support to only one shape,
@@ -194,12 +195,12 @@ import java.util.Arrays;
  * <h2><a id="subtypes"></a>Vector subtypes</h2>
  *
  * Vector declares a set of vector operations (methods) that are common to all
- * element types (such as addition).  Sub-classes of Vector with a concrete
+ * element types (such as addition).  Subclasses of Vector with a concrete
  * element type declare further operations that are specific to that
  * element type (such as access to element values in lanes, logical operations
  * on values of integral elements types, or transcendental operations on values
  * of floating point element types).
- * There are six abstract sub-classes of Vector corresponding to the supported set
+ * There are six abstract subclasses of Vector corresponding to the supported set
  * of element types, {@link ByteVector}, {@link ShortVector},
  * {@link IntVector}, {@link LongVector}, {@link FloatVector}, and
  * {@link DoubleVector}. Along with type-specific operations these classes
@@ -324,7 +325,7 @@ import java.util.Arrays;
  * this API has no support for
  * lane-wise n-ary operations.
  *
- * For each lane of all of the input vectors {@code v[j]},
+ * For each lane of all the input vectors {@code v[j]},
  * the underlying scalar operator is applied to the lane values.
  * The result is placed into the vector result in the same lane.
  * The following pseudocode illustrates the behavior of this operation
@@ -554,7 +555,7 @@ import java.util.Arrays;
  * <p> An operation suppressed by a mask will never cause an exception
  * or side effect of any sort, even if the underlying scalar operator
  * can potentially do so.  For example, an unset lane that seems to
- * access an out of bounds array element or divide an integral value
+ * access an out-of-bounds array element or divide an integral value
  * by zero will simply be ignored.  Values in suppressed lanes never
  * participate or appear in the result of the overall operation.
  *
@@ -577,7 +578,7 @@ import java.util.Arrays;
  * does not exist (because it is out of an array's index range).</li>
  *
  * <li>If the operation is a cross-lane operation with an operand
- * which supplies lane indexes (of type {@code VectorShuffle} or
+ * which supplies lane indexes (of type {@code VectorShuffle}) or
  * {@code Vector}, suppressed lanes are not computed, and are filled
  * with the zero default value.  Normally, invalid lane indexes elicit
  * an {@code IndexOutOfBoundsException}, but if a lane is unset, the
@@ -686,7 +687,7 @@ import java.util.Arrays;
  * because it is relatively rare to find algorithms where, given two
  * adjacent vector lanes, one lane is somehow more arithmetically
  * significant than its neighbor, and even in those cases, there is no
- * general way to know which neighbor is the the more significant.
+ * general way to know which neighbor is the more significant.
  *
  * <p> Putting the terms together, we view the information structure
  * of a vector as a temporal sequence of lanes ("first", "next",
@@ -738,11 +739,11 @@ import java.util.Arrays;
  * byte order is slightly preferable to an equivalent big-endian
  * fiction, because some related formulas are much simpler,
  * specifically those which renumber bytes after lane structure
- * changes.  The earliest byte is invariantly earliest across all lane
- * structure changes, but only if little-endian convention are used.
+ * changes.  The earliest byte is invariantly the earliest across all
+ * lane structure changes, but only if little-endian convention are used.
  * The root cause of this is that bytes in scalars are numbered from
  * the least significant (rightmost) to the most significant
- * (leftmost), and almost never vice-versa.  If we habitually numbered
+ * (leftmost), and almost never vice versa.  If we habitually numbered
  * sign bits as zero (as on some computers) then this API would reach
  * for big-endian fictions to create unified addressing of vector
  * bytes.
@@ -763,11 +764,11 @@ import java.util.Arrays;
  * first vector lane value occupies the first position in memory, and so on,
  * up to the length of the vector. Further, the memory order of stored
  * vector lanes corresponds to increasing index values in a Java array or
- * in a {@link java.nio.ByteBuffer}.
+ * in a {@link java.lang.foreign.MemorySegment}.
  *
  * <p> Byte order for lane storage is chosen such that the stored
  * vector values can be read or written as single primitive values,
- * within the array or buffer that holds the vector, producing the
+ * within the array or segment that holds the vector, producing the
  * same values as the lane-wise values within the vector.
  * This fact is independent of the convenient fiction that lane values
  * inside of vectors are stored in little-endian order.
@@ -982,7 +983,7 @@ import java.util.Arrays;
  * {@linkplain #bitSize() vector bit-size} of its input is
  * crammed into a smaller (respectively, dropped into a larger)
  * output container by a factor of {@code M}.
- * Otherwise it is an in-place operation.
+ * Otherwise, it is an in-place operation.
  *
  * Since this method is a reinterpretation cast that can erase and
  * redraw lane boundaries as well as modify shape, the input vector's
@@ -1034,10 +1035,16 @@ import java.util.Arrays;
  * methods, which select an arbitrary set of {@code VLENGTH} lanes
  * from one or two input vectors, and assemble them in an arbitrary
  * order.  The selection and order of lanes is controlled by a
- * {@code VectorShuffle} object, which acts as an routing table
+ * {@code VectorShuffle} object, which acts as a routing table
  * mapping source lanes to destination lanes.  A {@code VectorShuffle}
  * can encode a mathematical permutation as well as many other
  * patterns of data movement.
+ *
+ * <li>The {@link #compress(VectorMask)} and {@link #expand(VectorMask)}
+ * methods, which select up to {@code VLENGTH} lanes from an
+ * input vector, and assemble them in lane order.  The selection of lanes
+ * is controlled by a {@code VectorMask}, with set lane elements mapping, by
+ * compression or expansion in lane order, source lanes to destination lanes.
  *
  * </ul>
  * <p> Some vector operations are not lane-wise, but rather move data
@@ -1104,7 +1111,7 @@ import java.util.Arrays;
  *
  * <li> ARM AArch64 platforms supporting NEON.  Although the API has
  * been designed to ensure ARM SVE instructions can be supported
- * (vector sizes between 128 to 2048 bits) there is currently no
+ * (vector sizes between 128 and 2048 bits) there is currently no
  * implementation of such instructions and the general masking
  * capability.
  *
@@ -1934,14 +1941,14 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * of the vector's native {@code ETYPE}.
      * (In the case of floating point types, the value
      * {@code NEGATIVE_INFINITY} is used, and will appear
-     * after casting as {@code Long.MIN_VALUE}.
+     * after casting as {@code Long.MIN_VALUE}.)
      * <li>
      * If the operation is {@code MIN},
      * then the identity value is the {@code MAX_VALUE}
      * of the vector's native {@code ETYPE}.
      * (In the case of floating point types, the value
      * {@code POSITIVE_INFINITY} is used, and will appear
-     * after casting as {@code Long.MAX_VALUE}.
+     * after casting as {@code Long.MAX_VALUE}.)
      * </ul>
      * <p>
      * In the case of operations {@code ADD} and {@code MUL},
@@ -2250,9 +2257,9 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * in lane {@code N} of the current vector.
      *
      * <p> The scale must not be so large, and the element size must
-     * not be so small, that that there would be an overflow when
+     * not be so small, that there would be an overflow when
      * computing any of the {@code N*scale} or {@code VLENGTH*scale},
-     * when the the result is represented using the vector
+     * when the result is represented using the vector
      * lane type {@code ETYPE}.
      *
      * <p>
@@ -2332,7 +2339,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      *
      * <li>To shift lanes backward to the back of the vector, supply a
      * zero vector for the <em>first</em> operand, and specify the
-     * negative shift count as the origin (modulo {@code VLENGTH}.
+     * negative shift count as the origin (modulo {@code VLENGTH}).
      * For example: {@code v.broadcast(0).slice(v.length()-shift, v)}.
      *
      * <li>To rotate lanes forward toward the front end of the vector,
@@ -2347,7 +2354,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * {@code v.slice(v.length() - rotate, v)}.
      *
      * <li>
-     * Since {@code origin} values less then zero or more than
+     * Since {@code origin} values less than zero or more than
      * {@code VLENGTH} will be rejected, if you need to rotate
      * by an unpredictable multiple of {@code VLENGTH}, be sure
      * to reduce the origin value into the required range.
@@ -2419,7 +2426,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * @see #slice(int,Vector)
      * @see #unslice(int,Vector,int,VectorMask)
      */
-    // This doesn't pull its weight, but its symmetrical with
+    // This doesn't pull its weight, but it's symmetrical with
     // masked unslice, and might cause questions if missing.
     // It could make for clearer code.
     public abstract Vector<E> slice(int origin, Vector<E> v1, VectorMask<E> m);
@@ -2442,7 +2449,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      *
      * @param origin the first input lane to transfer into the slice
      * @return the last {@code VLENGTH-origin} input lanes,
-     *         placed starting in the first lane of the ouput,
+     *         placed starting in the first lane of the output,
      *         padded at the end with zeroes
      * @throws ArrayIndexOutOfBoundsException if {@code origin}
      *         is negative or greater than {@code VLENGTH}
@@ -2607,17 +2614,14 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * elements of this vector.
      *
      * For each lane {@code N} of the shuffle, and for each lane
-     * source index {@code I=s.laneSource(N)} in the shuffle,
+     * source index {@code I=s.wrapIndex(s.laneSource(N))} in the shuffle,
      * the output lane {@code N} obtains the value from
      * the input vector at lane {@code I}.
      *
      * @param s the shuffle controlling lane index selection
      * @return the rearrangement of the lane elements of this vector
-     * @throws IndexOutOfBoundsException if there are any exceptional
-     *        source indexes in the shuffle
      * @see #rearrange(VectorShuffle,VectorMask)
      * @see #rearrange(VectorShuffle,Vector)
-     * @see VectorShuffle#laneIsValid()
      */
     public abstract Vector<E> rearrange(VectorShuffle<E> s);
 
@@ -2629,27 +2633,22 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * elements of this vector.
      *
      * For each lane {@code N} of the shuffle, and for each lane
-     * source index {@code I=s.laneSource(N)} in the shuffle,
+     * source index {@code I=s.wrapIndex(s.laneSource(N))} in the shuffle,
      * the output lane {@code N} obtains the value from
      * the input vector at lane {@code I} if the mask is set.
-     * Otherwise the output lane {@code N} is set to zero.
+     * Otherwise, the output lane {@code N} is set to zero.
      *
      * <p> This method returns the value of this pseudocode:
      * <pre>{@code
-     * Vector<E> r = this.rearrange(s.wrapIndexes());
-     * VectorMask<E> valid = s.laneIsValid();
-     * if (m.andNot(valid).anyTrue()) throw ...;
+     * Vector<E> r = this.rearrange(s);
      * return broadcast(0).blend(r, m);
      * }</pre>
      *
      * @param s the shuffle controlling lane index selection
      * @param m the mask controlling application of the shuffle
      * @return the rearrangement of the lane elements of this vector
-     * @throws IndexOutOfBoundsException if there are any exceptional
-     *        source indexes in the shuffle where the mask is set
      * @see #rearrange(VectorShuffle)
      * @see #rearrange(VectorShuffle,Vector)
-     * @see VectorShuffle#laneIsValid()
      */
     public abstract Vector<E> rearrange(VectorShuffle<E> s, VectorMask<E> m);
 
@@ -2690,6 +2689,46 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
     public abstract Vector<E> rearrange(VectorShuffle<E> s, Vector<E> v);
 
     /**
+     * Compresses the lane elements of this vector selecting lanes
+     * under the control of a specific mask.
+     *
+     * This is a cross-lane operation that compresses the lane
+     * elements of this vector as selected by the specified mask.
+     *
+     * For each lane {@code N} of the mask, if the mask at
+     * lane {@code N} is set, the element at lane {@code N}
+     * of input vector is selected and stored into the output
+     * vector contiguously starting from the lane {@code 0}.
+     * All the upper remaining lanes, if any, of the output
+     * vector are set to zero.
+     *
+     * @param m the mask controlling the compression
+     * @return the compressed lane elements of this vector
+     * @since 19
+     */
+    public abstract Vector<E> compress(VectorMask<E> m);
+
+    /**
+     * Expands the lane elements of this vector
+     * under the control of a specific mask.
+     *
+     * This is a cross-lane operation that expands the contiguous lane
+     * elements of this vector into lanes of an output vector
+     * as selected by the specified mask.
+     *
+     * For each lane {@code N} of the mask, if the mask at
+     * lane {@code N} is set, the next contiguous element of input vector
+     * starting from lane {@code 0} is selected and stored into the output
+     * vector at lane {@code N}.
+     * All the remaining lanes, if any, of the output vector are set to zero.
+     *
+     * @param m the mask controlling the compression
+     * @return the expanded lane elements of this vector
+     * @since 19
+     */
+    public abstract Vector<E> expand(VectorMask<E> m);
+
+    /**
      * Using index values stored in the lanes of this vector,
      * assemble values stored in second vector {@code v}.
      * The second vector thus serves as a table, whose
@@ -2700,7 +2739,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * this vector.
      *
      * For each lane {@code N} of this vector, and for each lane
-     * value {@code I=this.lane(N)} in this vector,
+     * value {@code I=wrapIndex(this.lane(N))} in this vector,
      * the output lane {@code N} obtains the value from
      * the argument vector at lane {@code I}.
      *
@@ -2713,11 +2752,64 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      *
      * @param v the vector supplying the result values
      * @return the rearrangement of the lane elements of {@code v}
-     * @throws IndexOutOfBoundsException if any invalid
-     *         source indexes are found in {@code this}
      * @see #rearrange(VectorShuffle)
      */
     public abstract Vector<E> selectFrom(Vector<E> v);
+
+    /**
+     * Using values stored in the lanes of this vector,
+     * assemble values stored in the second vector {@code v1}
+     * and third vector {@code v2}. The second and third vectors thus
+     * serve as a table, whose elements are selected by indexes
+     * in this vector.
+     *
+     * This is a cross-lane operation that rearranges the lane
+     * elements of the argument vectors, under the control of
+     * this vector.
+     *
+     * For each lane {@code N} of this vector, and for each lane
+     * value {@code I=wrapIndex(this.lane(N)} in this vector,
+     * the output lane {@code N} obtains the value from
+     * the second vector at lane {@code I} if {@code I < VLENGTH}.
+     * Otherwise, the output lane {@code N} obtains the value from
+     * the third vector at lane {@code I - VLENGTH}.
+     *
+     * Here, {@code VLENGTH} is the result of {@code this.length()},
+     * and for integral values {@code wrapIndex} computes the result of
+     * {@code Math.floorMod(E, 2 * VLENGTH)}, where {@code E} is the index
+     * to be wrapped. As long as {@code VLENGTH} is a power of two, then the
+     * result is also equal to {@code E & (2 * VLENGTH - 1)}.
+     *
+     * For floating point values {@code wrapIndex} computes
+     * {@code Math.floorMod(convert(E), 2 * VLENGTH)}, where {@code convert}
+     * converts the floating point value to an integral value with the same
+     * number of representational bits - as in converting a double value to
+     * a long value ({@code (long)doubleVal}), or a float value to an int value
+     * ({@code (int)floatVal}).
+     *
+     * In this way, the result contains only values stored in the
+     * argument vectors {@code v1} and {@code v2}, but presented in
+     * an order which depends on the index values in {@code this}.
+     *
+     * The result for integral values is the same as the expression
+     * {@snippet lang=java :
+     * v1.rearrange(
+     * this.lanewise(VectorOperators.AND, 2 * VLENGTH - 1).toShuffle(),
+     * v2)
+     * }
+     * when {@code VLENGTH} is a power of two.
+     * The lane-wise {@code AND} operation results in a vector whose
+     * elements are in the range {@code [0, 2 * VLENGTH - 1])}. The shuffle
+     * conversion results in a partially wrapped shuffle whose indexes are
+     * in the range {@code [-VLENGTH, VLENGTH - 1])}, where exceptional
+     * indexes are used to select elements in the third vector.
+     *
+     * @param v1 the first input vector
+     * @param v2 the second input vector
+     * @return the rearrangement of lane elements of {@code v1} and {@code v2}
+     * @see #rearrange(VectorShuffle,Vector)
+     */
+    public abstract Vector<E> selectFrom(Vector<E> v1, Vector<E> v2);
 
     /**
      * Using index values stored in the lanes of this vector,
@@ -2740,9 +2832,6 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * @param v the vector supplying the result values
      * @param m the mask controlling selection from {@code v}
      * @return the rearrangement of the lane elements of {@code v}
-     * @throws IndexOutOfBoundsException if any invalid
-     *         source indexes are found in {@code this},
-     *         in a lane which is set in the mask
      * @see #selectFrom(Vector)
      * @see #rearrange(VectorShuffle,VectorMask)
      */
@@ -2779,7 +2868,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      *
      * @apiNote
      * Subtypes improve on this method by sharpening
-     * the method return type and
+     * the method return type
      * and the type of the scalar parameter {@code e}.
      *
      * @param e the value to broadcast
@@ -2845,7 +2934,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * <p>
      * The underlying bits of this vector are copied to the resulting
      * vector without modification, but those bits, before copying,
-     * may be truncated if the this vector's bit-size is greater than
+     * may be truncated if this vector's bit-size is greater than
      * desired vector's bit size, or filled with zero bits if this
      * vector's bit-size is less than desired vector's bit-size.
      *
@@ -2854,9 +2943,8 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * implementation costs.
      *
      * <p> The method behaves as if this vector is stored into a byte
-     * buffer or array using little-endian byte ordering and then the
-     * desired vector is loaded from the same byte buffer or array
-     * using the same ordering.
+     * array using little-endian byte ordering and then the desired vector is loaded from the same byte
+     * array using the same ordering.
      *
      * <p> The following pseudocode illustrates the behavior:
      * <pre>{@code
@@ -2865,15 +2953,15 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * int M = (domSize > ranSize ? domSize / ranSize : ranSize / domSize);
      * assert Math.abs(part) < M;
      * assert (part == 0) || (part > 0) == (domSize > ranSize);
-     * byte[] ra = new byte[Math.max(domSize, ranSize)];
+     * MemorySegment ms = MemorySegment.ofArray(new byte[Math.max(domSize, ranSize)]);
      * if (domSize > ranSize) {  // expansion
-     *     this.intoByteArray(ra, 0, ByteOrder.native());
+     *     this.intoMemorySegment(ms, 0, ByteOrder.native());
      *     int origin = part * ranSize;
-     *     return species.fromByteArray(ra, origin, ByteOrder.native());
+     *     return species.fromMemorySegment(ms, origin, ByteOrder.native());
      * } else {  // contraction or size-invariant
      *     int origin = (-part) * domSize;
-     *     this.intoByteArray(ra, origin, ByteOrder.native());
-     *     return species.fromByteArray(ra, 0, ByteOrder.native());
+     *     this.intoMemorySegment(ms, origin, ByteOrder.native());
+     *     return species.fromMemorySegment(ms, 0, ByteOrder.native());
      * }
      * }</pre>
      *
@@ -2910,8 +2998,8 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      *
      * @return a {@code ByteVector} with the same shape and information content
      * @see Vector#reinterpretShape(VectorSpecies,int)
-     * @see IntVector#intoByteArray(byte[], int, ByteOrder)
-     * @see FloatVector#intoByteArray(byte[], int, ByteOrder)
+     * @see IntVector#intoMemorySegment(java.lang.foreign.MemorySegment, long, java.nio.ByteOrder)
+     * @see FloatVector#intoMemorySegment(java.lang.foreign.MemorySegment, long, java.nio.ByteOrder)
      * @see VectorSpecies#withLanes(Class)
      */
     public abstract ByteVector reinterpretAsBytes();
@@ -3099,7 +3187,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * documented, conversion operations <em>never change vector
      * shape</em>, regardless of how they may change <em>lane sizes</em>.
      *
-     * Therefore an <em>expanding</em> conversion cannot store all of its
+     * Therefore, an <em>expanding</em> conversion cannot store all of its
      * results in its output vector, because the output vector has fewer
      * lanes of larger size, in order to have the same overall bit-size as
      * its input.
@@ -3111,7 +3199,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * <p> As an example, a conversion from {@code byte} to {@code long}
      * ({@code M=8}) will discard 87.5% of the input values in order to
      * convert the remaining 12.5% into the roomy {@code long} lanes of
-     * the output vector. The inverse conversion will convert back all of
+     * the output vector. The inverse conversion will convert back all
      * the large results, but will waste 87.5% of the lanes in the output
      * vector.
      *
@@ -3319,8 +3407,8 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
     //Array stores
 
     /**
-     * Stores this vector into a byte array starting at an offset
-     * using explicit byte order.
+     * Stores this vector into a {@linkplain MemorySegment memory segment}
+     * starting at an offset using explicit byte order.
      * <p>
      * Bytes are extracted from primitive lane elements according
      * to the specified byte ordering.
@@ -3328,88 +3416,33 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * <a href="Vector.html#lane-order">memory ordering</a>.
      * <p>
      * This method behaves as if it calls
-     * {@link #intoByteBuffer(ByteBuffer,int,ByteOrder,VectorMask)
-     * intoByteBuffer()} as follows:
-     * <pre>{@code
-     * var bb = ByteBuffer.wrap(a);
-     * var m = maskAll(true);
-     * intoByteBuffer(bb, offset, bo, m);
-     * }</pre>
-     *
-     * @param a the byte array
-     * @param offset the offset into the array
-     * @param bo the intended byte order
-     * @throws IndexOutOfBoundsException
-     *         if {@code offset+N*ESIZE < 0}
-     *         or {@code offset+(N+1)*ESIZE > a.length}
-     *         for any lane {@code N} in the vector
-     */
-    public abstract void intoByteArray(byte[] a, int offset,
-                                       ByteOrder bo);
-
-    /**
-     * Stores this vector into a byte array starting at an offset
-     * using explicit byte order and a mask.
-     * <p>
-     * Bytes are extracted from primitive lane elements according
-     * to the specified byte ordering.
-     * The lanes are stored according to their
-     * <a href="Vector.html#lane-order">memory ordering</a>.
-     * <p>
-     * This method behaves as if it calls
-     * {@link #intoByteBuffer(ByteBuffer,int,ByteOrder,VectorMask)
-     * intoByteBuffer()} as follows:
-     * <pre>{@code
-     * var bb = ByteBuffer.wrap(a);
-     * intoByteBuffer(bb, offset, bo, m);
-     * }</pre>
-     *
-     * @param a the byte array
-     * @param offset the offset into the array
-     * @param bo the intended byte order
-     * @param m the mask controlling lane selection
-     * @throws IndexOutOfBoundsException
-     *         if {@code offset+N*ESIZE < 0}
-     *         or {@code offset+(N+1)*ESIZE > a.length}
-     *         for any lane {@code N} in the vector
-     *         where the mask is set
-     */
-    public abstract void intoByteArray(byte[] a, int offset,
-                                       ByteOrder bo,
-                                       VectorMask<E> m);
-
-    /**
-     * Stores this vector into a byte buffer starting at an offset
-     * using explicit byte order.
-     * <p>
-     * Bytes are extracted from primitive lane elements according
-     * to the specified byte ordering.
-     * The lanes are stored according to their
-     * <a href="Vector.html#lane-order">memory ordering</a>.
-     * <p>
-     * This method behaves as if it calls
-     * {@link #intoByteBuffer(ByteBuffer,int,ByteOrder,VectorMask)
-     * intoByteBuffer()} as follows:
+     * {@link #intoMemorySegment(MemorySegment,long,ByteOrder,VectorMask)
+     * intoMemorySegment()} as follows:
      * <pre>{@code
      * var m = maskAll(true);
-     * intoByteBuffer(bb, offset, bo, m);
+     * intoMemorySegment(ms, offset, bo, m);
      * }</pre>
      *
-     * @param bb the byte buffer
-     * @param offset the offset into the array
+     * @param ms the memory segment
+     * @param offset the offset into the memory segment
      * @param bo the intended byte order
      * @throws IndexOutOfBoundsException
      *         if {@code offset+N*ESIZE < 0}
-     *         or {@code offset+(N+1)*ESIZE > bb.limit()}
+     *         or {@code offset+(N+1)*ESIZE > ms.byteSize()}
      *         for any lane {@code N} in the vector
-     * @throws java.nio.ReadOnlyBufferException
-     *         if the byte buffer is read-only
+     * @throws UnsupportedOperationException
+     *         if the memory segment is read-only
+     * @throws IllegalArgumentException if the memory segment is a heap segment that is
+     *         not backed by a {@code byte[]} array.
+     * @throws IllegalStateException if the memory segment's session is not alive,
+     *         or if access occurs from a thread other than the thread owning the session.
+     * @since 19
      */
-    public abstract void intoByteBuffer(ByteBuffer bb, int offset, ByteOrder bo);
+    public abstract void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo);
 
     /**
-     * Stores this vector into a byte buffer starting at an offset
-     * using explicit byte order and a mask.
+     * Stores this vector into a {@linkplain MemorySegment memory segment}
+     * starting at an offset using explicit byte order and a mask.
      * <p>
      * Bytes are extracted from primitive lane elements according
      * to the specified byte ordering.
@@ -3417,27 +3450,17 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * <a href="Vector.html#lane-order">memory ordering</a>.
      * <p>
      * The following pseudocode illustrates the behavior, where
-     * the primitive element type is not of {@code byte},
-     * {@code EBuffer} is the primitive buffer type, {@code ETYPE} is the
+     * {@code JAVA_E} is the layout of the primitive element type, {@code ETYPE} is the
      * primitive element type, and {@code EVector} is the primitive
      * vector type for this vector:
      * <pre>{@code
-     * EBuffer eb = bb.duplicate()
-     *     .position(offset)
-     *     .order(bo).asEBuffer();
      * ETYPE[] a = this.toArray();
+     * var slice = ms.asSlice(offset)
      * for (int n = 0; n < a.length; n++) {
      *     if (m.laneIsSet(n)) {
-     *         eb.put(n, a[n]);
+     *         slice.setAtIndex(ValueLayout.JAVA_E.withBitAlignment(8), n);
      *     }
      * }
-     * }</pre>
-     * When the primitive element type is of {@code byte} the primitive
-     * byte buffer is obtained as follows, where operation on the buffer
-     * remains the same as in the prior pseudocode:
-     * <pre>{@code
-     * ByteBuffer eb = bb.duplicate()
-     *     .position(offset);
      * }</pre>
      *
      * @implNote
@@ -3451,20 +3474,25 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * {@code byte}, the byte order argument is
      * ignored.
      *
-     * @param bb the byte buffer
-     * @param offset the offset into the array
+     * @param ms the memory segment
+     * @param offset the offset into the memory segment
      * @param bo the intended byte order
      * @param m the mask controlling lane selection
      * @throws IndexOutOfBoundsException
      *         if {@code offset+N*ESIZE < 0}
-     *         or {@code offset+(N+1)*ESIZE > bb.limit()}
+     *         or {@code offset+(N+1)*ESIZE > ms.byteSize()}
      *         for any lane {@code N} in the vector
      *         where the mask is set
-     * @throws java.nio.ReadOnlyBufferException
-     *         if the byte buffer is read-only
+     * @throws UnsupportedOperationException
+     *         if the memory segment is read-only
+     * @throws IllegalArgumentException if the memory segment is a heap segment that is
+     *         not backed by a {@code byte[]} array.
+     * @throws IllegalStateException if the memory segment's session is not alive,
+     *         or if access occurs from a thread other than the thread owning the session.
+     * @since 19
      */
-    public abstract void intoByteBuffer(ByteBuffer bb, int offset,
-                                        ByteOrder bo, VectorMask<E> m);
+    public abstract void intoMemorySegment(MemorySegment ms, long offset,
+                                           ByteOrder bo, VectorMask<E> m);
 
     /**
      * Returns a packed array containing all the lane values.

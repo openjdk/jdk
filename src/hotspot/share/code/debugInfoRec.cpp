@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/oopMap.hpp"
@@ -82,7 +81,7 @@ public:
         return that;
       }
     }
-    return NULL;
+    return nullptr;
   }
 
   static int compare(DIR_Chunk* const & a, DIR_Chunk* const & b) {
@@ -137,11 +136,11 @@ DebugInformationRecorder::DebugInformationRecorder(OopRecorder* oop_recorder)
   _oop_recorder = oop_recorder;
 
   _all_chunks    = new GrowableArray<DIR_Chunk*>(300);
-  _next_chunk = _next_chunk_limit = NULL;
+  _next_chunk = _next_chunk_limit = nullptr;
 
   add_new_pc_offset(PcDesc::lower_offset_limit);  // sentinel record
 
-  debug_only(_recording_state = rs_null);
+  DEBUG_ONLY(_recording_state = rs_null);
 }
 
 
@@ -160,7 +159,7 @@ void DebugInformationRecorder::add_safepoint(int pc_offset, OopMap* map) {
   add_new_pc_offset(pc_offset);
 
   assert(_recording_state == rs_null, "nesting of recording calls");
-  debug_only(_recording_state = rs_safepoint);
+  DEBUG_ONLY(_recording_state = rs_safepoint);
 }
 
 void DebugInformationRecorder::add_non_safepoint(int pc_offset) {
@@ -170,12 +169,12 @@ void DebugInformationRecorder::add_non_safepoint(int pc_offset) {
   add_new_pc_offset(pc_offset);
 
   assert(_recording_state == rs_null, "nesting of recording calls");
-  debug_only(_recording_state = rs_non_safepoint);
+  DEBUG_ONLY(_recording_state = rs_non_safepoint);
 }
 
 void DebugInformationRecorder::add_new_pc_offset(int pc_offset) {
   assert(_pcs_length == 0 || last_pc()->pc_offset() < pc_offset,
-         "must specify a new, larger pc offset");
+         "must specify a new, larger pc offset: %d >= %d", last_pc()->pc_offset(), pc_offset);
 
   // add the pcdesc
   if (_pcs_length == _pcs_size) {
@@ -196,7 +195,7 @@ void DebugInformationRecorder::add_new_pc_offset(int pc_offset) {
 
 
 int DebugInformationRecorder::serialize_monitor_values(GrowableArray<MonitorValue*>* monitors) {
-  if (monitors == NULL || monitors->is_empty()) return DebugInformationRecorder::serialized_null;
+  if (monitors == nullptr || monitors->is_empty()) return DebugInformationRecorder::serialized_null;
   assert(_recording_state == rs_safepoint, "must be recording a safepoint");
   int result = stream()->position();
   stream()->write_int(monitors->length());
@@ -217,7 +216,7 @@ int DebugInformationRecorder::serialize_monitor_values(GrowableArray<MonitorValu
 
 
 int DebugInformationRecorder::serialize_scope_values(GrowableArray<ScopeValue*>* values) {
-  if (values == NULL || values->is_empty()) return DebugInformationRecorder::serialized_null;
+  if (values == nullptr || values->is_empty()) return DebugInformationRecorder::serialized_null;
   assert(_recording_state == rs_safepoint, "must be recording a safepoint");
   int result = stream()->position();
   assert(result != serialized_null, "sanity");
@@ -244,14 +243,11 @@ static
 struct dir_stats_struct {
   int chunks_queried;
   int chunks_shared;
-  int chunks_reshared;
   int chunks_elided;
 
   void print() {
-    tty->print_cr("Debug Data Chunks: %d, shared %d+%d, non-SP's elided %d",
-                  chunks_queried,
-                  chunks_shared, chunks_reshared,
-                  chunks_elided);
+    tty->print_cr("Debug Data Chunks: %d, shared %d, non-SP's elided %d",
+                  chunks_queried, chunks_shared, chunks_elided);
   }
 } dir_stats;
 #endif //PRODUCT
@@ -288,7 +284,6 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
                                               bool        reexecute,
                                               bool        rethrow_exception,
                                               bool        is_method_handle_invoke,
-                                              bool        is_optimized_linkToNative,
                                               bool        return_oop,
                                               bool        has_ea_local_in_scope,
                                               bool        arg_escape,
@@ -307,27 +302,26 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
   last_pd->set_should_reexecute(reexecute);
   last_pd->set_rethrow_exception(rethrow_exception);
   last_pd->set_is_method_handle_invoke(is_method_handle_invoke);
-  last_pd->set_is_optimized_linkToNative(is_optimized_linkToNative);
   last_pd->set_return_oop(return_oop);
   last_pd->set_has_ea_local_in_scope(has_ea_local_in_scope);
   last_pd->set_arg_escape(arg_escape);
 
-  // serialize sender stream offest
+  // serialize sender stream offset
   stream()->write_int(sender_stream_offset);
 
   // serialize scope
   Metadata* method_enc;
-  if (method != NULL) {
+  if (method != nullptr) {
     method_enc = method->constant_encoding();
   } else if (methodH.not_null()) {
     method_enc = methodH();
   } else {
-    method_enc = NULL;
+    method_enc = nullptr;
   }
   int method_enc_index = oop_recorder()->find_index(method_enc);
   stream()->write_int(method_enc_index);
   stream()->write_bci(bci);
-  assert(method == NULL ||
+  assert(method == nullptr ||
          (method->is_native() && bci == 0) ||
          (!method->is_native() && 0 <= bci && bci < method->code_size()) ||
          bci == -1, "illegal bci");
@@ -354,7 +348,7 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
 void DebugInformationRecorder::dump_object_pool(GrowableArray<ScopeValue*>* objects) {
   guarantee( _pcs_length > 0, "safepoint must exist before describing scopes");
   PcDesc* last_pd = &_pcs[_pcs_length-1];
-  if (objects != NULL) {
+  if (objects != nullptr) {
     for (int i = objects->length() - 1; i >= 0; i--) {
       objects->at(i)->as_ObjectValue()->set_visited(false);
     }
@@ -366,7 +360,7 @@ void DebugInformationRecorder::dump_object_pool(GrowableArray<ScopeValue*>* obje
 void DebugInformationRecorder::end_scopes(int pc_offset, bool is_safepoint) {
   assert(_recording_state == (is_safepoint? rs_safepoint: rs_non_safepoint),
          "nesting of recording calls");
-  debug_only(_recording_state = rs_null);
+  DEBUG_ONLY(_recording_state = rs_null);
 
   // Try to compress away an equivalent non-safepoint predecessor.
   // (This only works because we have previously recognized redundant
@@ -419,13 +413,13 @@ DebugToken* DebugInformationRecorder::create_monitor_values(GrowableArray<Monito
 
 
 int DebugInformationRecorder::data_size() {
-  debug_only(mark_recorders_frozen());  // mark it "frozen" for asserts
+  DEBUG_ONLY(mark_recorders_frozen());  // mark it "frozen" for asserts
   return _stream->position();
 }
 
 
 int DebugInformationRecorder::pcs_size() {
-  debug_only(mark_recorders_frozen());  // mark it "frozen" for asserts
+  DEBUG_ONLY(mark_recorders_frozen());  // mark it "frozen" for asserts
   if (last_pc()->pc_offset() != PcDesc::upper_offset_limit)
     add_new_pc_offset(PcDesc::upper_offset_limit);
   return _pcs_length * sizeof(PcDesc);

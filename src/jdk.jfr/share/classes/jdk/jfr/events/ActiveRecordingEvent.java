@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,19 +29,19 @@ import jdk.jfr.Category;
 import jdk.jfr.Label;
 import jdk.jfr.DataAmount;
 import jdk.jfr.Name;
-import jdk.jfr.StackTrace;
 import jdk.jfr.Timespan;
 import jdk.jfr.Timestamp;
+import jdk.jfr.internal.RemoveFields;
 import jdk.jfr.internal.Type;
 
 @Name(Type.EVENT_NAME_PREFIX + "ActiveRecording")
 @Label("Flight Recording")
 @Category("Flight Recorder")
-@StackTrace(false)
+@RemoveFields({"duration", "eventThread", "stackTrace"})
 public final class ActiveRecordingEvent extends AbstractJDKEvent {
 
-    // To be accessed when holding recorder lock
-    public static final ActiveRecordingEvent EVENT = new ActiveRecordingEvent();
+    // The order of these fields must be the same as the parameters in
+    // commit(... , long, String, String, long, long, long, long, long)
 
     @Label("Id")
     public long id;
@@ -51,6 +51,9 @@ public final class ActiveRecordingEvent extends AbstractJDKEvent {
 
     @Label("Destination")
     public String destination;
+
+    @Label("To Disk")
+    public boolean disk;
 
     @Label("Max Age")
     @Timespan(Timespan.MILLISECONDS)
@@ -71,4 +74,14 @@ public final class ActiveRecordingEvent extends AbstractJDKEvent {
     @Label("Recording Duration")
     @Timespan(Timespan.MILLISECONDS)
     public long recordingDuration;
+
+    public static boolean enabled() {
+        return false; // Generated
+    }
+
+    public static void commit(long timestamp, long id, String name,
+                              String destination, boolean disk, long maxAge, long flushInterval,
+                              long maxSize, long recordingStart, long recordingDuration) {
+        // Generated
+    }
 }

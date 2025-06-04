@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import jdk.jfr.consumer.EventStream;
 /**
  * @test
  * @summary Test that a stream ends/closes when an application crashes.
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @modules jdk.jfr jdk.attach java.base/jdk.internal.misc
@@ -40,10 +40,29 @@ import jdk.jfr.consumer.EventStream;
  */
 public class TestJVMCrash {
 
-    public static void main(String... args) throws Exception  {
+    /*
+     * We don't run if -esa is specified, because parser invariants are not
+     * guaranteed for emergency dumps, which are provided on a best-effort basis only.
+     */
+    private static boolean hasIncompatibleTestOptions() {
+        String testVmOpts[] = System.getProperty("test.vm.opts","").split("\\s+");
+        for (String s : testVmOpts) {
+            if (s.equals("-esa")) {
+                System.out.println("Incompatible option: " + s + " specified. Skipping test.");
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static void main(String... args) {
+        if (hasIncompatibleTestOptions()) {
+            return;
+        }
+
         int id = 1;
         while (true) {
-            try (TestProcess process = new TestProcess("crash-application-" + id++))  {
+            try (TestProcess process = new TestProcess("crash-application-" + id++, false /* createCore */))  {
                 AtomicInteger eventCounter = new AtomicInteger();
                 try (EventStream es = EventStream.openRepository(process.getRepository())) {
                     // Start from first event in repository
@@ -61,6 +80,9 @@ public class TestJVMCrash {
                     }
                     System.out.println("Incorrect event count. Retrying...");
                 }
+            } catch (Exception e) {
+                System.out.println("Exception: " + e.getMessage());
+                System.out.println("Retrying...");
             }
         }
     }

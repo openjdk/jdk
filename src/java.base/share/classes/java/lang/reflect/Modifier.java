@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,15 @@ import java.util.StringJoiner;
  * {@jvms 4.1}, {@jvms 4.4}, {@jvms 4.5}, and {@jvms 4.7} of
  * <cite>The Java Virtual Machine Specification</cite>.
  *
+ * @apiNote
+ * Not all modifiers that are syntactic Java language modifiers are
+ * represented in this class, only those modifiers that <em>also</em>
+ * have a corresponding JVM {@linkplain AccessFlag access flag} are
+ * included. In particular the {@code default} method modifier (JLS
+ * {@jls 9.4.3}) and the {@code sealed} and {@code non-sealed} class
+ * (JLS {@jls 8.1.1.2}) and interface (JLS {@jls 9.1.1.4}) modifiers
+ * are <em>not</em> represented in this class.
+ *
  * @see Class#getModifiers()
  * @see Member#getModifiers()
  *
@@ -43,7 +52,7 @@ import java.util.StringJoiner;
  * @author Kenneth Russell
  * @since 1.1
  */
-public class Modifier {
+public final class Modifier {
     /**
      * Do not call.
      */
@@ -208,6 +217,7 @@ public class Modifier {
      * public protected private abstract static final transient
      * volatile synchronized native strictfp
      * interface } </blockquote>
+     *
      * The {@code interface} modifier discussed in this class is
      * not a true modifier in the Java language and it appears after
      * all other modifiers listed by this method.  This method may
@@ -220,6 +230,22 @@ public class Modifier {
      * such as a constructor or method, first AND the argument of
      * {@code toString} with the appropriate mask from a method like
      * {@link #constructorModifiers} or {@link #methodModifiers}.
+     *
+     * @apiNote
+     * To make a high-fidelity representation of the Java source
+     * modifiers of a class or member, source-level modifiers that do
+     * <em>not</em> have a constant in this class should be included
+     * and appear in an order consistent with the full recommended
+     * ordering for that kind of declaration as given in <cite>The
+     * Java Language Specification</cite>. For example, for a
+     * {@linkplain Method#toGenericString() method} the "{@link
+     * Method#isDefault() default}" modifier is ordered immediately
+     * before "{@code static}" (JLS {@jls 9.4}). For a {@linkplain
+     * Class#toGenericString() class object}, the "{@link
+     * Class#isSealed() sealed}" or {@code "non-sealed"} modifier is
+     * ordered immediately after "{@code final}" for a class (JLS
+     * {@jls 8.1.1}) and immediately after "{@code static}" for an
+     * interface (JLS {@jls 9.1.1}).
      *
      * @param   mod a set of modifiers
      * @return  a string representation of the set of modifiers
@@ -254,72 +280,84 @@ public class Modifier {
     /**
      * The {@code int} value representing the {@code public}
      * modifier.
+     * @see AccessFlag#PUBLIC
      */
     public static final int PUBLIC           = 0x00000001;
 
     /**
      * The {@code int} value representing the {@code private}
      * modifier.
+     * @see AccessFlag#PRIVATE
      */
     public static final int PRIVATE          = 0x00000002;
 
     /**
      * The {@code int} value representing the {@code protected}
      * modifier.
+     * @see AccessFlag#PROTECTED
      */
     public static final int PROTECTED        = 0x00000004;
 
     /**
      * The {@code int} value representing the {@code static}
      * modifier.
+     * @see AccessFlag#STATIC
      */
     public static final int STATIC           = 0x00000008;
 
     /**
      * The {@code int} value representing the {@code final}
      * modifier.
+     * @see AccessFlag#FINAL
      */
     public static final int FINAL            = 0x00000010;
 
     /**
      * The {@code int} value representing the {@code synchronized}
      * modifier.
+     * @see AccessFlag#SYNCHRONIZED
      */
     public static final int SYNCHRONIZED     = 0x00000020;
 
     /**
      * The {@code int} value representing the {@code volatile}
      * modifier.
+     * @see AccessFlag#VOLATILE
      */
     public static final int VOLATILE         = 0x00000040;
 
     /**
      * The {@code int} value representing the {@code transient}
      * modifier.
+     * @see AccessFlag#TRANSIENT
      */
     public static final int TRANSIENT        = 0x00000080;
 
     /**
      * The {@code int} value representing the {@code native}
      * modifier.
+     * @see AccessFlag#NATIVE
      */
     public static final int NATIVE           = 0x00000100;
 
     /**
      * The {@code int} value representing the {@code interface}
      * modifier.
+     * @see AccessFlag#INTERFACE
      */
     public static final int INTERFACE        = 0x00000200;
 
     /**
      * The {@code int} value representing the {@code abstract}
      * modifier.
+     * @see AccessFlag#ABSTRACT
      */
     public static final int ABSTRACT         = 0x00000400;
 
     /**
      * The {@code int} value representing the {@code strictfp}
      * modifier.
+     * @see AccessFlag#STRICT
      */
     public static final int STRICT           = 0x00000800;
 
@@ -410,6 +448,8 @@ public class Modifier {
      * @return an {@code int} value OR-ing together the source language
      * modifiers that can be applied to a class.
      *
+     * @see AccessFlag.Location#CLASS
+     * @see AccessFlag.Location#INNER_CLASS
      * @jls 8.1.1 Class Modifiers
      * @since 1.7
      */
@@ -423,6 +463,8 @@ public class Modifier {
      * @return an {@code int} value OR-ing together the source language
      * modifiers that can be applied to an interface.
      *
+     * @see AccessFlag.Location#CLASS
+     * @see AccessFlag.Location#INNER_CLASS
      * @jls 9.1.1 Interface Modifiers
      * @since 1.7
      */
@@ -436,6 +478,7 @@ public class Modifier {
      * @return an {@code int} value OR-ing together the source language
      * modifiers that can be applied to a constructor.
      *
+     * @see AccessFlag.Location#METHOD
      * @jls 8.8.3 Constructor Modifiers
      * @since 1.7
      */
@@ -449,6 +492,7 @@ public class Modifier {
      * @return an {@code int} value OR-ing together the source language
      * modifiers that can be applied to a method.
      *
+     * @see AccessFlag.Location#METHOD
      * @jls 8.4.3 Method Modifiers
      * @since 1.7
      */
@@ -462,6 +506,7 @@ public class Modifier {
      * @return an {@code int} value OR-ing together the source language
      * modifiers that can be applied to a field.
      *
+     * @see AccessFlag.Location#FIELD
      * @jls 8.3.1 Field Modifiers
      * @since 1.7
      */
@@ -475,6 +520,7 @@ public class Modifier {
      * @return an {@code int} value OR-ing together the source language
      * modifiers that can be applied to a parameter.
      *
+     * @see AccessFlag.Location#METHOD_PARAMETER
      * @jls 8.4.1 Formal Parameters
      * @since 1.8
      */

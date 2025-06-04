@@ -7,7 +7,7 @@
  * @compile/fail/ref=NonasciiDigit.out -XDrawDiagnostics  NonasciiDigit.java
  */
 public class NonasciiDigit {
-    public static void main(String[] args) {
+    public static void meth() {
         // error: only ASCII allowed in constants
         int i1 = \uff11;
         int i2 = 1\uff11;

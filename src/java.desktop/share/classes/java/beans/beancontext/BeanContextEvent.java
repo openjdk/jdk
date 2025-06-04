@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,8 @@ import java.util.EventObject;
  * @see         java.beans.beancontext.BeanContext
  */
 
+@SuppressWarnings("removal")
+@Deprecated(since = "23", forRemoval = true)
 public abstract class BeanContextEvent extends EventObject {
 
     /**
@@ -55,7 +57,7 @@ public abstract class BeanContextEvent extends EventObject {
     private static final long serialVersionUID = 7267998073569045052L;
 
     /**
-     * Contruct a BeanContextEvent
+     * Construct a BeanContextEvent
      *
      * @param bc        The BeanContext source
      */
@@ -103,6 +105,8 @@ public abstract class BeanContextEvent extends EventObject {
 
     /**
      * The {@code BeanContext} from which this event was propagated
+     *
+     * @serial
      */
     @SuppressWarnings("serial") // Not statically typed as Serializable
     protected BeanContext propagatedFrom;

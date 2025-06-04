@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,21 @@
  */
 package jdk.jpackage.test;
 
+import java.awt.Desktop;
+import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import jdk.jpackage.internal.IOUtils;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Stream;
+import jdk.jpackage.internal.util.PathUtils;
 
 
-final public class FileAssociations {
+public final class FileAssociations {
     public FileAssociations(String faSuffixName) {
         suffixName = faSuffixName;
         setFilename("fa");
@@ -72,7 +80,7 @@ final public class FileAssociations {
         if (icon == null) {
             return null;
         }
-        return Path.of(getMime().replace('/', '-') + IOUtils.getSuffix(icon));
+        return Path.of(getMime().replace('/', '-') + PathUtils.getSuffix(icon));
     }
 
     Path getPropertiesFile() {
@@ -97,8 +105,158 @@ final public class FileAssociations {
         });
     }
 
+    Iterable<TestRun> getTestRuns() {
+        return Optional.ofNullable(testRuns).orElseGet(() -> {
+            var builder = createTestRuns()
+                    .setCurrentInvocationType(InvocationType.DesktopOpenAssociatedFile)
+                    .addTestRunForFilenames("test_desktop_open_file");
+            if (TKit.isWindows()) {
+                builder.setCurrentInvocationType(InvocationType.WinCommandLine)
+                        .addTestRunForFilenames("test_cmd_line")
+                        .setCurrentInvocationType(InvocationType.WinDesktopOpenShortcut)
+                        .addTestRunForFilenames("test_desktop_open_shortcut");
+            }
+            return builder.testRuns;
+        });
+    }
+
+    public static TestRunsBuilder createTestRuns() {
+        return new TestRunsBuilder();
+    }
+
+    static class TestRun {
+        Iterable<String> getFileNames() {
+            return testFileNames;
+        }
+
+        List<String> openFiles(List<Path> testFiles) throws IOException {
+            // current supported invocation types work only on single files
+            Path testFile = testFiles.get(0);
+
+            // To test unicode arguments on Windows manually:
+            // 1. add the following argument ("Hello" in Bulgarian) to the
+            //    additionalArgs list: "\u0417\u0434\u0440\u0430\u0432\u0435\u0439\u0442\u0435"
+            // 2. in Control Panel -> Region -> Administrative -> Language for non-Unicode programs
+            //    change the system locale to "Bulgarian (Bulgaria)"
+            // 3. reboot Windows and re-run the test
+
+            switch (invocationType) {
+                case DesktopOpenAssociatedFile: {
+                    TKit.trace(String.format("Use desktop to open [%s] file", testFile));
+                    if (!HelloApp.CLEAR_JAVA_ENV_VARS) {
+                        Desktop.getDesktop().open(testFile.toFile());
+                    } else {
+                        final var jsScript = TKit.createTempFile(Path.of("fa-scripts", testFile.getFileName().toString() + ".jsh"));
+                        TKit.createTextFile(jsScript, List.of(
+                                "import java.awt.Desktop",
+                                "import java.io.File",
+                                String.format("Desktop.getDesktop().open(new File(\"%s\"))", testFile.toString().replace('\\', '/')),
+                                "/exit"));
+                        final var exec = Executor.of(JavaTool.JSHELL.getPath().toString(), jsScript.toString());
+                        HelloApp.configureEnvironment(exec).dumpOutput().execute();
+                    }
+                    return List.of(testFile.toString());
+                }
+                case WinCommandLine: {
+                    List<String> additionalArgs = List.of("foo", "bar baz", "boo");
+                    TKit.trace(String.format("Use command line to open [%s] file", testFile));
+                    ArrayList<String> cmdLine = new ArrayList<>(List.of("cmd", "/c", testFile.toString()));
+                    cmdLine.addAll(additionalArgs);
+                    Executor.of(cmdLine.toArray(new String[0])).execute();
+                    ArrayList<String> expectedArgs = new ArrayList<>(List.of(testFile.toString()));
+                    expectedArgs.addAll(additionalArgs);
+                    return expectedArgs;
+                }
+                case WinDesktopOpenShortcut: {
+                    Path testDir = testFile.getParent();
+                    List<String> additionalArgs = List.of("foo", "bar baz", "boo");
+                    // create a shortcut and open it with desktop
+                    final Path createShortcutVbs = testDir.resolve("createShortcut.vbs");
+                    final Path shortcutLnk = testDir.resolve("shortcut.lnk");
+                    StringBuilder shortcutArgs = new StringBuilder();
+                    for (int i = 0; i < additionalArgs.size(); i++) {
+                        String arg = additionalArgs.get(i);
+                        if (arg.contains(" ")) {
+                            shortcutArgs.append(String.format("\"\"%s\"\"", arg));
+                        } else {
+                            shortcutArgs.append(arg);
+                        }
+                        if (i < additionalArgs.size() - 1) {
+                            shortcutArgs.append(" ");
+                        }
+                    }
+                    TKit.createTextFile(createShortcutVbs, List.of(
+                            "Dim sc, shell",
+                            "Set shell = WScript.CreateObject (\"WScript.Shell\")",
+                            String.format("Set sc = shell.CreateShortcut (\"%s\")", shortcutLnk),
+                            String.format("sc.TargetPath = \"\"\"%s\"\"\"", testFile),
+                            String.format("sc.Arguments = \"%s\"", shortcutArgs.toString()),
+                            String.format("sc.WorkingDirectory = \"\"\"%s\"\"\"", testDir),
+                            "sc.Save()"
+                    ));
+                    Executor.of("cscript", "/nologo", createShortcutVbs.toString()).execute();
+                    TKit.assertFileExists(shortcutLnk);
+                    TKit.trace(String.format("Use desktop to open [%s] file", shortcutLnk));
+                    Desktop.getDesktop().open(shortcutLnk.toFile());
+                    ArrayList<String> expectedArgs = new ArrayList<>(List.of(testFile.toString()));
+                    expectedArgs.addAll(additionalArgs);
+                    return expectedArgs;
+                }
+                default:
+                    throw new IllegalStateException(String.format(
+                            "Invalid invocationType: [%s]", invocationType));
+            }
+        }
+
+        private TestRun(Collection<String> testFileNames,
+                InvocationType invocationType) {
+
+            Objects.requireNonNull(invocationType);
+
+            if (testFileNames.size() == 0) {
+                throw new IllegalArgumentException("Empty test file names list");
+            }
+
+            if (invocationType == InvocationType.DesktopOpenAssociatedFile && testFileNames.size() != 1) {
+                throw new IllegalArgumentException("Only one file can be configured for opening with the desktop");
+            }
+
+            this.testFileNames = testFileNames;
+            this.invocationType = invocationType;
+        }
+
+        private final Collection<String> testFileNames;
+        private final InvocationType invocationType;
+    }
+
+    public static class TestRunsBuilder {
+        public TestRunsBuilder setCurrentInvocationType(InvocationType v) {
+            curInvocationType = v;
+            return this;
+        }
+
+        public TestRunsBuilder addTestRunForFilenames(String ... filenames) {
+            testRuns.add(new TestRun(List.of(filenames), curInvocationType));
+            return this;
+        }
+
+        public void applyTo(FileAssociations fa) {
+            fa.testRuns = testRuns;
+        }
+
+        private InvocationType curInvocationType = InvocationType.DesktopOpenAssociatedFile;
+        private List<TestRun> testRuns = new ArrayList<>();
+    }
+
+    public static enum InvocationType {
+        DesktopOpenAssociatedFile,
+        WinCommandLine,
+        WinDesktopOpenShortcut
+    }
+
     private Path file;
-    final private String suffixName;
+    private final String suffixName;
     private String description;
     private Path icon;
+    private Collection<TestRun> testRuns;
 }

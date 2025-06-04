@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,12 @@ abstract class StructuredWriter {
     private final PrintWriter out;
     private final StringBuilder builder = new StringBuilder(4000);
 
-    private char[] indentionArray = new char[0];
+    private String indention = "";
     private int indent = 0;
     private int column;
     // print first event immediately so tool feels responsive
     private boolean first = true;
-    private String lineSeparator = String.format("%n");
+    private String lineSeparator = System.lineSeparator();
 
     StructuredWriter(PrintWriter p) {
         out = p;
@@ -65,7 +65,7 @@ abstract class StructuredWriter {
     }
 
     public final void printIndent() {
-        builder.append(indentionArray, 0, indent);
+        builder.append(indention, 0, indent);
         column += indent;
     }
 
@@ -114,11 +114,8 @@ abstract class StructuredWriter {
     }
 
     private void updateIndent() {
-        if (indent > indentionArray.length) {
-            indentionArray = new char[indent];
-            for (int i = 0; i < indentionArray.length; i++) {
-                indentionArray[i] = ' ';
-            }
+        if (indent > indention.length()) {
+            indention = " ".repeat(2 * indent);
         }
     }
 }

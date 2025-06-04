@@ -5,7 +5,7 @@
  *   Miscellaneous macros for stand-alone rasterizer (specification
  *   only).
  *
- * Copyright (C) 2005-2020 by
+ * Copyright (C) 2005-2024 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used
@@ -47,11 +47,8 @@
   typedef signed long    FT_F26Dot6;
   typedef int            FT_Error;
 
-#define FT_MAKE_TAG( _x1, _x2, _x3, _x4 ) \
-          ( ( (FT_ULong)_x1 << 24 ) |     \
-            ( (FT_ULong)_x2 << 16 ) |     \
-            ( (FT_ULong)_x3 <<  8 ) |     \
-              (FT_ULong)_x4         )
+
+#define FT_STATIC_BYTE_CAST( type, var )  (type)(FT_Byte)(var)
 
 
   /* from include/freetype/ftsystem.h */
@@ -93,27 +90,6 @@
   typedef int64_t  FT_Int64;
 
 #endif
-
-
-  static FT_Long
-  FT_MulDiv( FT_Long  a,
-             FT_Long  b,
-             FT_Long  c )
-  {
-    FT_Int   s;
-    FT_Long  d;
-
-
-    s = 1;
-    if ( a < 0 ) { a = -a; s = -1; }
-    if ( b < 0 ) { b = -b; s = -s; }
-    if ( c < 0 ) { c = -c; s = -s; }
-
-    d = (FT_Long)( c > 0 ? ( (FT_Int64)a * b + ( c >> 1 ) ) / c
-                         : 0x7FFFFFFFL );
-
-    return ( s > 0 ) ? d : -d;
-  }
 
 
   static FT_Long

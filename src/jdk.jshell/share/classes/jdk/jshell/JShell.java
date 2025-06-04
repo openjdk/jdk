@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -92,6 +93,7 @@ public class JShell implements AutoCloseable {
     final InputStream in;
     final PrintStream out;
     final PrintStream err;
+    final Optional<JShellConsole> console;
     final Supplier<String> tempVariableNameGenerator;
     final BiFunction<Snippet, Integer, String> idGenerator;
     final List<String> extraRemoteVMOptions;
@@ -116,6 +118,7 @@ public class JShell implements AutoCloseable {
         this.in = b.in;
         this.out = b.out;
         this.err = b.err;
+        this.console = Optional.ofNullable(b.console);
         this.tempVariableNameGenerator = b.tempVariableNameGenerator;
         this.idGenerator = b.idGenerator;
         this.extraRemoteVMOptions = b.extraRemoteVMOptions;
@@ -170,6 +173,7 @@ public class JShell implements AutoCloseable {
         InputStream in = new ByteArrayInputStream(new byte[0]);
         PrintStream out = System.out;
         PrintStream err = System.err;
+        JShellConsole console = null;
         Supplier<String> tempVariableNameGenerator = null;
         BiFunction<Snippet, Integer, String> idGenerator = null;
         List<String> extraRemoteVMOptions = new ArrayList<>();
@@ -235,6 +239,22 @@ public class JShell implements AutoCloseable {
          */
         public Builder err(PrintStream err) {
             this.err = err;
+            return this;
+        }
+
+        /**
+         * Sets the console for the running evalution.
+         * <p>
+         * The default, if this is not set, is no console ({@code System.console()}
+         * will return {@code null} while running a snippet).
+         *
+         * @param console console to use while a snippet is run
+         * @return the {@code Builder} instance (for use in chained
+         * initialization)
+         * @since 21
+         */
+        public Builder console(JShellConsole console) {
+            this.console = console;
             return this;
         }
 
@@ -658,6 +678,12 @@ public class JShell implements AutoCloseable {
      * Return the diagnostics of the most recent evaluation of the snippet.
      * The evaluation can either because of an explicit {@code eval()} call or
      * an automatic update triggered by a dependency.
+     *
+     * <p>This method will return best-effort diagnostics for snippets returned
+     * from {@link SourceCodeAnalysis#sourceToSnippets(java.lang.String) }. The
+     * diagnostics returned for such snippets may differ from diagnostics provided
+     * after the snippet is {@link #eval(java.lang.String) }-ed.
+     *
      * @param snippet the {@code Snippet} to look up
      * @return the diagnostics corresponding to this snippet.  This does not
      * include unresolvedDependencies references reported in {@code unresolvedDependencies()}.
@@ -666,7 +692,7 @@ public class JShell implements AutoCloseable {
      * this {@code JShell} instance.
      */
     public Stream<Diag> diagnostics(Snippet snippet) {
-        return checkValidSnippet(snippet).diagnostics().stream();
+        return checkValidSnippet(snippet, true).diagnostics().stream();
     }
 
     /**
@@ -706,7 +732,7 @@ public class JShell implements AutoCloseable {
         }
         String value;
         try {
-            value = executionControl().varValue(snippet.classFullName(), snippet.name());
+            value = executionControl().varValue(snippet.classFullName(), snippet.fieldName());
         } catch (EngineTerminationException ex) {
             throw new IllegalStateException(ex.getMessage());
         } catch (ExecutionControlException ex) {
@@ -795,6 +821,11 @@ public class JShell implements AutoCloseable {
             JShell.this.closeDown();
         }
 
+        @Override
+        public Optional<JShellConsole> console() {
+            return console;
+        }
+
     }
 
     // --- private / package-private implementation support ---
@@ -876,10 +907,22 @@ public class JShell implements AutoCloseable {
      * @return the input Snippet (for chained calls)
      */
     private Snippet checkValidSnippet(Snippet sn) {
+        return checkValidSnippet(sn, false);
+    }
+
+    /**
+     * Check a Snippet parameter coming from the API user
+     * @param sn the Snippet to check
+     * @param acceptUnassociated  accept snippets that are unassociated
+     * @throws NullPointerException if Snippet parameter is null
+     * @throws IllegalArgumentException if Snippet is not from this JShell
+     * @return the input Snippet (for chained calls)
+     */
+    private Snippet checkValidSnippet(Snippet sn, boolean acceptUnassociated) {
         if (sn == null) {
             throw new NullPointerException(messageFormat("jshell.exc.null"));
         } else {
-            if (sn.key().state() != this || sn.id() == Snippet.UNASSOCIATED_ID) {
+            if (sn.key().state() != this || (!acceptUnassociated && sn.id() == Snippet.UNASSOCIATED_ID)) {
                 throw new IllegalArgumentException(messageFormat("jshell.exc.alien", sn.toString()));
             }
             return sn;

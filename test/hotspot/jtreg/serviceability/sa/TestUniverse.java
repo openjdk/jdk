@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-import sun.hotspot.code.Compiler;
+import jdk.test.whitebox.code.Compiler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,17 +29,17 @@ import java.util.Map;
 import java.util.HashMap;
 import jdk.test.lib.apps.LingeredApp;
 import jtreg.SkippedException;
-import sun.hotspot.gc.GC;
+import jdk.test.whitebox.gc.GC;
 
 /**
  * @test
  * @summary Test the 'universe' command of jhsdb clhsdb.
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @bug 8190307
  * @library /test/lib
- * @build jdk.test.lib.apps.*
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. TestUniverse
  */
 
@@ -54,7 +54,8 @@ public class TestUniverse {
 
         switch (gc) {
         case Serial:
-            expStrings.add("Gen 1:   old");
+            expStrings.add("SerialHeap");
+            expStrings.add("eden");
             break;
 
         case Parallel:
@@ -79,6 +80,9 @@ public class TestUniverse {
 
         case Z:
             expStrings.add("ZHeap");
+            expStrings.add("used");
+            expStrings.add(" capacity ");
+            expStrings.add("max capacity");
             break;
 
         case Shenandoah:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,7 @@ public final class RSACore {
             throws BadPaddingException {
 
         BigInteger c = parseMsg(msg, n);
-        BlindingRandomPair brp = null;
+        BlindingRandomPair brp;
         BigInteger m;
         if (ENABLE_BLINDING) {
             brp = getBlindingRandomPair(null, exp, n);
@@ -468,7 +468,7 @@ public final class RSACore {
             }
         }
 
-        // If this parameters are still usable, put them back into the queue.
+        // If parameters are still usable, put them back into the queue.
         if (bps.isReusable()) {
             queue.add(bps);
         }

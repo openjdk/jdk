@@ -46,6 +46,7 @@ class XCanvasPeer extends XComponentPeer implements CanvasPeer {
         super(target);
     }
 
+    @Override
     void preInit(XCreateWindowParams params) {
         super.preInit(params);
         if (SunToolkit.getSunAwtNoerasebackground()) {
@@ -56,40 +57,38 @@ class XCanvasPeer extends XComponentPeer implements CanvasPeer {
     /* Get a GraphicsConfig with the same visual on the new
      * screen, which should be easy in Xinerama mode.
      */
+    @Override
     public GraphicsConfiguration getAppropriateGraphicsConfiguration(
                                     GraphicsConfiguration gc)
     {
         if (graphicsConfig == null || gc == null) {
             return gc;
         }
-        // Opt: Only need to do if we're not using the default GC
 
-        int screenNum = ((X11GraphicsDevice)gc.getDevice()).getScreen();
+        final X11GraphicsDevice newDev = getSameScreenDevice(gc);
+        final int visualToLookFor = graphicsConfig.getVisual();
 
-        X11GraphicsConfig parentgc;
-        // save vis id of current gc
-        int visual = graphicsConfig.getVisual();
-
-        X11GraphicsDevice newDev = (X11GraphicsDevice) GraphicsEnvironment.
-            getLocalGraphicsEnvironment().
-            getScreenDevices()[screenNum];
-
-        for (int i = 0; i < newDev.getNumConfigs(screenNum); i++) {
-            if (visual == newDev.getConfigVisualId(i, screenNum)) {
-                // use that
-                graphicsConfig = (X11GraphicsConfig)newDev.getConfigurations()[i];
-                break;
+        final GraphicsConfiguration[] configurations = newDev.getConfigurations();
+        for (final GraphicsConfiguration config : configurations) {
+            final X11GraphicsConfig x11gc = (X11GraphicsConfig) config;
+            if (visualToLookFor == x11gc.getVisual()) {
+                graphicsConfig = x11gc;
             }
-        }
-        // just in case...
-        if (graphicsConfig == null) {
-            graphicsConfig = (X11GraphicsConfig) GraphicsEnvironment.
-                getLocalGraphicsEnvironment().
-                getScreenDevices()[screenNum].
-                getDefaultConfiguration();
         }
 
         return graphicsConfig;
+    }
+
+    private X11GraphicsDevice getSameScreenDevice(GraphicsConfiguration gc) {
+        XToolkit.awtLock(); // so that the number of screens doesn't change during
+        try {
+            final int screenNum = ((X11GraphicsDevice) gc.getDevice()).getScreen();
+            return (X11GraphicsDevice) GraphicsEnvironment.
+                    getLocalGraphicsEnvironment().
+                    getScreenDevices()[screenNum];
+        } finally {
+            XToolkit.awtUnlock();
+        }
     }
 
     protected boolean shouldFocusOnClick() {
@@ -100,6 +99,7 @@ class XCanvasPeer extends XComponentPeer implements CanvasPeer {
     public void disableBackgroundErase() {
         eraseBackgroundDisabled = true;
     }
+    @Override
     protected boolean doEraseBackground() {
         return !eraseBackgroundDisabled;
     }

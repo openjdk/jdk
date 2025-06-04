@@ -29,7 +29,7 @@
 # Fail fast
 set -e; set -o pipefail;
 
-# $JT_BUNDLE_URL (Link can be obtained from https://openjdk.java.net/jtreg/ page)
+# $JT_BUNDLE_URL (Link can be obtained from https://openjdk.org/jtreg/ page)
 jtreg_bundle=$JT_BUNDLE_URL
 workdir=/tmp/jpackage_jtreg_testing
 jtreg_jar=$workdir/jtreg/lib/jtreg.jar
@@ -231,7 +231,7 @@ fi
 
 if [ -z "$JT_HOME" ]; then
   if [ -z "$JT_BUNDLE_URL" ]; then
-    fatal 'JT_HOME or JT_BUNDLE_URL environment variable is not set. Link to JTREG bundle can be found at https://openjdk.java.net/jtreg/'.
+    fatal 'JT_HOME or JT_BUNDLE_URL environment variable is not set. Link to JTREG bundle can be found at https://openjdk.org/jtreg/'.
   fi
 fi
 
@@ -252,6 +252,14 @@ fi
 
 if [ -z "$run_all_tests" ]; then
   jtreg_args+=(-Djpackage.test.SQETest=yes)
+fi
+
+if [ -n "$APPDATA" ]; then
+  # Looks like this is Windows.
+  # Explicitly add LOCALAPPDATA and APPDATA environment variables to the list
+  # of environment variables jtreg will pass to tests as by default it will not.
+  # This is needed for PerUserCfgTest test.
+  jtreg_args+=("-e:LOCALAPPDATA,APPDATA")
 fi
 
 jtreg_args+=("$test_actions")

@@ -30,6 +30,7 @@ import javax.sound.sampled.SourceDataLine;
 
 /**
  * @test
+ * @key sound
  * @bug 4515126
  * @summary Verify that the buffer passed to SourceDataLine.write() and
  *          Clip.open() will not be changed

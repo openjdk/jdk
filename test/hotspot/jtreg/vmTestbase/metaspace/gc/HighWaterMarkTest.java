@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package metaspace.gc;
 
 import java.util.Arrays;
-import vm.share.VMRuntimeEnvUtils;
 
 /**
  * Test metaspace ergonomic.
@@ -153,7 +152,7 @@ public class HighWaterMarkTest extends FirstGCTest {
         int maxAttempts = 10_000;
 
         // in between metaspaceSize and maxMetaspaceSize
-        // no OOM is exepcted.
+        // no OOM is expected.
         long committedLevel = (metaspaceSize + maxMetaspaceSize) / 2;
 
         while (getCommitted() < committedLevel && attempts < maxAttempts) {

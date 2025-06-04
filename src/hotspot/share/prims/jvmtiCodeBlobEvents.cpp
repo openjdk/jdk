@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/scopeDesc.hpp"
@@ -53,7 +52,7 @@
 //
 // collector.collect();
 // JvmtiCodeBlobDesc* blob = collector.first();
-// while (blob != NULL) {
+// while (blob != nullptr) {
 //   :
 //   blob = collector.next();
 // }
@@ -70,11 +69,11 @@ class CodeBlobCollector : StackObj {
   static void do_vtable_stub(VtableStub* vs);
  public:
   CodeBlobCollector() {
-    _code_blobs = NULL;
+    _code_blobs = nullptr;
     _pos = -1;
   }
   ~CodeBlobCollector() {
-    if (_code_blobs != NULL) {
+    if (_code_blobs != nullptr) {
       for (int i=0; i<_code_blobs->length(); i++) {
         FreeHeap(_code_blobs->at(i));
       }
@@ -87,9 +86,9 @@ class CodeBlobCollector : StackObj {
 
   // iteration support - return first code blob
   JvmtiCodeBlobDesc* first() {
-    assert(_code_blobs != NULL, "not collected");
+    assert(_code_blobs != nullptr, "not collected");
     if (_code_blobs->length() == 0) {
-      return NULL;
+      return nullptr;
     }
     _pos = 0;
     return _code_blobs->at(0);
@@ -99,7 +98,7 @@ class CodeBlobCollector : StackObj {
   JvmtiCodeBlobDesc* next() {
     assert(_pos >= 0, "iteration not started");
     if (_pos+1 >= _code_blobs->length()) {
-      return NULL;
+      return nullptr;
     }
     return _code_blobs->at(++_pos);
   }
@@ -125,7 +124,7 @@ void CodeBlobCollector::do_blob(CodeBlob* cb) {
     return;
   }
   // exclude VtableStubs, which are processed separately
-  if (cb->is_buffer_blob() && strcmp(cb->name(), "vtable chunks") == 0) {
+  if (cb->is_vtable_blob()) {
     return;
   }
 
@@ -157,7 +156,7 @@ void CodeBlobCollector::do_vtable_stub(VtableStub* vs) {
 //
 // The created list is growable array of JvmtiCodeBlobDesc - each one describes
 // a CodeBlob. Note that the list is static - this is because CodeBlob::blobs_do
-// requires a a C or static function so we can't use an instance function. This
+// requires a C or static function so we can't use an instance function. This
 // isn't a problem as the iteration is serial anyway as we need the CodeCache_lock
 // to iterate over the code cache.
 //
@@ -170,13 +169,13 @@ void CodeBlobCollector::do_vtable_stub(VtableStub* vs) {
 
 void CodeBlobCollector::collect() {
   assert_locked_or_safepoint(CodeCache_lock);
-  assert(_global_code_blobs == NULL, "checking");
+  assert(_global_code_blobs == nullptr, "checking");
 
   // create the global list
-  _global_code_blobs = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<JvmtiCodeBlobDesc*>(50, mtServiceability);
+  _global_code_blobs = new (mtServiceability) GrowableArray<JvmtiCodeBlobDesc*>(50, mtServiceability);
 
   // iterate over the stub code descriptors and put them in the list first.
-  for (StubCodeDesc* desc = StubCodeDesc::first(); desc != NULL; desc = StubCodeDesc::next(desc)) {
+  for (StubCodeDesc* desc = StubCodeDesc::first(); desc != nullptr; desc = StubCodeDesc::next(desc)) {
     _global_code_blobs->append(new JvmtiCodeBlobDesc(desc->name(), desc->begin(), desc->end()));
   }
 
@@ -192,7 +191,7 @@ void CodeBlobCollector::collect() {
   // make the global list the instance list so that it can be used
   // for other iterations.
   _code_blobs = _global_code_blobs;
-  _global_code_blobs = NULL;
+  _global_code_blobs = nullptr;
 }
 
 
@@ -212,7 +211,7 @@ jvmtiError JvmtiCodeBlobEvents::generate_dynamic_code_events(JvmtiEnv* env) {
 
   // iterate over the collected list and post an event for each blob
   JvmtiCodeBlobDesc* blob = collector.first();
-  while (blob != NULL) {
+  while (blob != nullptr) {
     JvmtiExport::post_dynamic_code_generated(env, blob->name(), blob->code_begin(), blob->code_end());
     blob = collector.next();
   }
@@ -234,7 +233,7 @@ jvmtiError JvmtiCodeBlobEvents::generate_compiled_method_load_events(JvmtiEnv* e
       // Save events to the queue for posting outside the CodeCache_lock.
       MutexLocker mu(java_thread, CodeCache_lock, Mutex::_no_safepoint_check_flag);
       // Iterate over non-profiled and profiled nmethods
-      NMethodIterator iter(NMethodIterator::only_alive_and_not_unloading);
+      NMethodIterator iter(NMethodIterator::not_unloading);
       while(iter.next()) {
         nmethod* current = iter.method();
         current->post_compiled_method_load_event(state);
@@ -262,7 +261,7 @@ void JvmtiCodeBlobEvents::build_jvmti_addr_location_map(nmethod *nm,
                                                         jint *map_length_ptr)
 {
   ResourceMark rm;
-  jvmtiAddrLocationMap* map = NULL;
+  jvmtiAddrLocationMap* map = nullptr;
   jint map_length = 0;
 
 
@@ -271,9 +270,7 @@ void JvmtiCodeBlobEvents::build_jvmti_addr_location_map(nmethod *nm,
 
   if (!mh->is_native()) {
     PcDesc *pcd;
-    int pcds_in_method;
-
-    pcds_in_method = (nm->scopes_pcs_end() - nm->scopes_pcs_begin());
+    int pcds_in_method = pointer_delta_as_int(nm->scopes_pcs_end(), nm->scopes_pcs_begin());
     map = NEW_C_HEAP_ARRAY(jvmtiAddrLocationMap, pcds_in_method, mtInternal);
 
     address scopes_data = nm->scopes_data_begin();

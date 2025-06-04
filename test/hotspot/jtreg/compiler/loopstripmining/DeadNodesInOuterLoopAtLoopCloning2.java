@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +27,7 @@
  * @bug 8234350
  * @summary loop unrolling breaks when outer strip mined loop contains dead node
  *
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=DeadNodesInOuterLoopAtLoopCloning2 DeadNodesInOuterLoopAtLoopCloning2
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=DeadNodesInOuterLoopAtLoopCloning2::* DeadNodesInOuterLoopAtLoopCloning2
  *
  */
 

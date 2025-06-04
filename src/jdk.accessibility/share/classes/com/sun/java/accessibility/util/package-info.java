@@ -62,6 +62,6 @@
  * <p>The class {@code Translator} provides a translation to interface {@code Accessible}
  * for objects that do not implement interface {@code Accessible}.
  *
- * @since JDK1.7
+ * @since 1.7
  */
 package com.sun.java.accessibility.util;

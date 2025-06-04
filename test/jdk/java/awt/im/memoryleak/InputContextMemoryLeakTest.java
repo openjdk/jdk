@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 import java.awt.FlowLayout;
 import java.awt.Robot;
-import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,10 +61,12 @@ public class InputContextMemoryLeakTest {
                 button = new JButton("Test");
                 p1.add(button);
                 frame.add(p1);
-                text = new WeakReference<JTextField>(new JTextField("Text"));
-                p = new WeakReference<JPanel>(new JPanel(new FlowLayout()));
-                p.get().add(text.get());
-                frame.add(p.get());
+                JTextField tf = new JTextField("Text");
+                text = new WeakReference<JTextField>(tf);
+                JPanel jp = new JPanel(new FlowLayout());
+                p = new WeakReference<JPanel>(jp);
+                jp.add(tf);
+                frame.add(jp);
                 frame.setBounds(500, 400, 200, 200);
                 frame.setVisible(true);
             }
@@ -80,15 +81,26 @@ public class InputContextMemoryLeakTest {
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
             public void run() {
+                // after this the JTextField as well as the JPanel
+                // are eligible to be GC'd
                 frame.remove(p.get());
             }
         });
 
         Util.waitForIdle(null);
         //After the next caret blink it automatically TextField references
-        Thread.sleep(text.get().getCaret().getBlinkRate() * 2);
+        JTextField tf = text.get();
+        if (tf != null) {
+            Thread.sleep(tf.getCaret().getBlinkRate() * 2);
+            tf = null; // allow to be GCed
+        }
         Util.waitForIdle(null);
-        assertGC();
+
+        try {
+            assertGC();
+        } finally {
+            SwingUtilities.invokeAndWait(() -> frame.dispose());
+        }
     }
 
       public static void assertGC() throws Throwable {

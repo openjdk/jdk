@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@ import java.io.File;
 import java.io.IOException;
 
 /*
- * Solaris/Linux implementation of jdk.internal.agent.FileSystem
+ * Linux implementation of jdk.internal.agent.FileSystem
  */
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "restricted"})
 public class FileSystemImpl extends FileSystem {
 
     public boolean supportsFileSecurity(File f) throws IOException {
@@ -39,6 +39,10 @@ public class FileSystemImpl extends FileSystem {
     }
 
     public boolean isAccessUserOnly(File f) throws IOException {
+        String path = f.getPath();
+        if (path.indexOf(0) >= 0) {
+            throw new IOException("illegal filename");
+        }
         return isAccessUserOnly0(f.getPath());
     }
 
@@ -49,12 +53,6 @@ public class FileSystemImpl extends FileSystem {
     // Initialization
 
     static {
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("management_agent");
-                    return null;
-                }
-            });
+        System.loadLibrary("management_agent");
     }
 }

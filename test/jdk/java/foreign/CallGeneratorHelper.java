@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -22,32 +22,29 @@
  *
  */
 
-import jdk.incubator.foreign.Addressable;
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.GroupLayout;
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.NativeSymbol;
-import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.SegmentAllocator;
-import jdk.incubator.foreign.ValueLayout;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.lang.foreign.*;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.VarHandle;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import jdk.internal.foreign.Utils;
 import org.testng.annotations.*;
 
-import static org.testng.Assert.*;
-
 public class CallGeneratorHelper extends NativeTestHelper {
+
+    static final List<MemoryLayout> STACK_PREFIX_LAYOUTS = Stream.concat(
+            Stream.generate(() -> (MemoryLayout) C_LONG_LONG).limit(8),
+            Stream.generate(() -> (MemoryLayout)  C_DOUBLE).limit(8)
+        ).toList();
 
     static SegmentAllocator THROWING_ALLOCATOR = (size, align) -> {
         throw new UnsupportedOperationException();
@@ -58,33 +55,6 @@ public class CallGeneratorHelper extends NativeTestHelper {
     static final int MAX_FIELDS = 3;
     static final int MAX_PARAMS = 3;
     static final int CHUNK_SIZE = 600;
-
-    public static void assertStructEquals(MemorySegment actual, MemorySegment expected, MemoryLayout layout) {
-        assertEquals(actual.byteSize(), expected.byteSize());
-        GroupLayout g = (GroupLayout) layout;
-        for (MemoryLayout field : g.memberLayouts()) {
-            if (field instanceof ValueLayout) {
-                VarHandle vh = g.varHandle(MemoryLayout.PathElement.groupElement(field.name().orElseThrow()));
-                assertEquals(vh.get(actual), vh.get(expected));
-            }
-        }
-    }
-
-    private static Class<?> vhCarrier(MemoryLayout layout) {
-        if (layout instanceof ValueLayout) {
-            if (isIntegral(layout)) {
-                if (layout.bitSize() == 64) {
-                    return long.class;
-                }
-                return int.class;
-            } else if (layout.bitSize() == 32) {
-                return float.class;
-            }
-            return double.class;
-        } else {
-            throw new IllegalStateException("Unexpected layout: " + layout);
-        }
-    }
 
     enum Ret {
         VOID,
@@ -143,19 +113,10 @@ public class CallGeneratorHelper extends NativeTestHelper {
 
         MemoryLayout layout(List<StructFieldType> fields) {
             if (this == STRUCT) {
-                long offset = 0L;
-                List<MemoryLayout> layouts = new ArrayList<>();
-                for (StructFieldType field : fields) {
-                    MemoryLayout l = field.layout();
-                    long padding = offset % l.bitSize();
-                    if (padding != 0) {
-                        layouts.add(MemoryLayout.paddingLayout(padding));
-                        offset += padding;
-                    }
-                    layouts.add(l.withName("field" + offset));
-                    offset += l.bitSize();
-                }
-                return MemoryLayout.structLayout(layouts.toArray(new MemoryLayout[0]));
+                return Utils.computePaddedStructLayout(
+                        IntStream.range(0, fields.size())
+                            .mapToObj(i -> fields.get(i).layout().withName("f" + i))
+                            .toArray(MemoryLayout[]::new));
             } else {
                 return layout;
             }
@@ -231,7 +192,7 @@ public class CallGeneratorHelper extends NativeTestHelper {
         return elems.stream().map(p -> p.name().charAt(0) + "").collect(Collectors.joining());
     }
 
-    static void generateStructDecl(List<StructFieldType> fields) {
+    private static void generateStructDecl(PrintStream out, List<StructFieldType> fields) {
         String structCode = sigCode(fields);
         List<String> fieldDecls = new ArrayList<>();
         for (int i = 0 ; i < fields.size() ; i++) {
@@ -239,62 +200,88 @@ public class CallGeneratorHelper extends NativeTestHelper {
         }
         String res = String.format("struct S_%s { %s };", structCode,
                 fieldDecls.stream().collect(Collectors.joining(" ")));
-        System.out.println(res);
+        out.println(res);
     }
 
-    /* this can be used to generate the test header/implementation */
-    public static void main(String[] args) {
-        boolean header = args.length > 0 && args[0].equals("header");
-        boolean upcall = args.length > 1 && args[1].equals("upcall");
-        if (upcall) {
-            generateUpcalls(header);
-        } else {
-            generateDowncalls(header);
+    private static PrintStream printStream(String first) throws IOException {
+        return new PrintStream(Files.newOutputStream(Path.of(first)));
+    }
+
+    // This can be used to generate the test implementation.
+    // From the test/jdk/java/foreign directory, run this class using:
+    // java -cp <jtreg_home>\lib\testng-7.3.0.jar --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED ./CallGeneratorHelper.java
+    // Copyright header has to be added manually, and on Windows line endings have to be changed from \r\n to just \n
+    public static void main(String[] args) throws IOException {
+        try (PrintStream shared = printStream("shared.h");
+                 PrintStream libTestDowncall = printStream("libTestDowncall.c");
+                 PrintStream libTestDowncallStack = printStream("libTestDowncallStack.c");
+                 PrintStream libTestUpcall = printStream("libTestUpcall.c");
+                 PrintStream libTestUpcallStack = printStream("libTestUpcallStack.c")) {
+            generateShared(shared);
+            generateDowncalls(libTestDowncall, false);
+            generateDowncalls(libTestDowncallStack, true);
+            generateUpcalls(libTestUpcall, false);
+            generateUpcalls(libTestUpcallStack, true);
         }
     }
 
-    static void generateDowncalls(boolean header) {
-        if (header) {
-            System.out.println(
-                "#ifdef _WIN64\n" +
-                "#define EXPORT __declspec(dllexport)\n" +
-                "#else\n" +
-                "#define EXPORT\n" +
-                "#endif\n"
-            );
+    private static void generateShared(PrintStream out) {
+        out.println("""
+            #include "export.h"
 
-            for (int j = 1; j <= MAX_FIELDS; j++) {
-                for (List<StructFieldType> fields : StructFieldType.perms(j)) {
-                    generateStructDecl(fields);
-                }
+            #ifdef __clang__
+            #pragma clang optimize off
+            #elif defined __GNUC__
+            #pragma GCC optimize ("O0")
+            #elif defined _MSC_BUILD
+            #pragma optimize( "", off )
+            #endif
+
+            #ifdef _AIX
+            #pragma align (natural)
+            #endif
+             """);
+
+        for (int j = 1; j <= MAX_FIELDS; j++) {
+            for (List<StructFieldType> fields : StructFieldType.perms(j)) {
+                generateStructDecl(out, fields);
             }
-        } else {
-            System.out.println(
-                "#include \"libh\"\n" +
-                "#ifdef __clang__\n" +
-                "#pragma clang optimize off\n" +
-                "#elif defined __GNUC__\n" +
-                "#pragma GCC optimize (\"O0\")\n" +
-                "#elif defined _MSC_BUILD\n" +
-                "#pragma optimize( \"\", off )\n" +
-                "#endif\n"
-            );
         }
+
+        out.print("""
+
+            #ifdef _AIX
+            #pragma align (reset)
+            #endif
+            """);
+    }
+
+    private static void generateDowncalls(PrintStream out, boolean stack) {
+        out.println("#include \"shared.h\"\n");
 
         for (Object[] downcall : functions()) {
-            String fName = (String)downcall[0];
-            Ret r = (Ret)downcall[1];
+            String fName = (String)downcall[1];
+            Ret r = (Ret)downcall[2];
             @SuppressWarnings("unchecked")
-            List<ParamType> ptypes = (List<ParamType>)downcall[2];
+            List<ParamType> ptypes = (List<ParamType>)downcall[3];
             @SuppressWarnings("unchecked")
-            List<StructFieldType> fields = (List<StructFieldType>)downcall[3];
-            generateDowncallFunction(fName, r, ptypes, fields, header);
+            List<StructFieldType> fields = (List<StructFieldType>)downcall[4];
+            generateDowncallFunction(out, fName, r, ptypes, fields, stack);
         }
     }
 
-    static void generateDowncallFunction(String fName, Ret ret, List<ParamType> params, List<StructFieldType> fields, boolean declOnly) {
+    private static final List<String> stackParamTypes = Stream.concat(Stream.generate(() -> "long long").limit(8),
+                Stream.generate(() -> "double").limit(8)).toList();
+    private static final List<String> stackParamNames = IntStream.range(0, 16).mapToObj(i -> "pf" + i).toList();
+    private static final List<String> stackParamDecls = IntStream.range(0, 16)
+            .mapToObj(i -> stackParamTypes.get(i) + " " + stackParamNames.get(i)).toList();
+
+    private static void generateDowncallFunction(PrintStream out, String fName, Ret ret, List<ParamType> params, List<StructFieldType> fields, boolean stack) {
         String retType = ret == Ret.VOID ? "void" : params.get(0).type(fields);
         List<String> paramDecls = new ArrayList<>();
+        if (stack) {
+            paramDecls.addAll(stackParamDecls);
+        }
         for (int i = 0 ; i < params.size() ; i++) {
             paramDecls.add(String.format("%s p%d", params.get(i).type(fields), i));
         }
@@ -302,153 +289,60 @@ public class CallGeneratorHelper extends NativeTestHelper {
                 "void" :
                 paramDecls.stream().collect(Collectors.joining(", "));
         String body = ret == Ret.VOID ? "{ }" : "{ return p0; }";
-        String res = String.format("EXPORT %s f%s(%s) %s", retType, fName,
-                sig, declOnly ? ";" : body);
-        System.out.println(res);
+        String res = String.format("EXPORT %s %s%s(%s) %s", retType, stack ? "s" : "", fName,
+                sig, body);
+        out.println(res);
     }
 
-    static void generateUpcalls(boolean header) {
-        if (header) {
-            System.out.println(
-                "#ifdef _WIN64\n" +
-                "#define EXPORT __declspec(dllexport)\n" +
-                "#else\n" +
-                "#define EXPORT\n" +
-                "#endif\n"
-            );
-
-            for (int j = 1; j <= MAX_FIELDS; j++) {
-                for (List<StructFieldType> fields : StructFieldType.perms(j)) {
-                    generateStructDecl(fields);
-                }
-            }
-        } else {
-            System.out.println(
-                "#include \"libh\"\n" +
-                "#ifdef __clang__\n" +
-                "#pragma clang optimize off\n" +
-                "#elif defined __GNUC__\n" +
-                "#pragma GCC optimize (\"O0\")\n" +
-                "#elif defined _MSC_BUILD\n" +
-                "#pragma optimize( \"\", off )\n" +
-                "#endif\n"
-            );
-        }
+    private static void generateUpcalls(PrintStream out, boolean stack) {
+        out.println("#include \"shared.h\"\n");
 
         for (Object[] downcall : functions()) {
-            String fName = (String)downcall[0];
-            Ret r = (Ret)downcall[1];
+            String fName = (String)downcall[1];
+            Ret r = (Ret)downcall[2];
             @SuppressWarnings("unchecked")
-            List<ParamType> ptypes = (List<ParamType>)downcall[2];
+            List<ParamType> ptypes = (List<ParamType>)downcall[3];
             @SuppressWarnings("unchecked")
-            List<StructFieldType> fields = (List<StructFieldType>)downcall[3];
-            generateUpcallFunction(fName, r, ptypes, fields, header);
+            List<StructFieldType> fields = (List<StructFieldType>)downcall[4];
+            generateUpcallFunction(out, fName, r, ptypes, fields, stack);
         }
     }
 
-    static void generateUpcallFunction(String fName, Ret ret, List<ParamType> params, List<StructFieldType> fields, boolean declOnly) {
+    private static void generateUpcallFunction(PrintStream out, String fName, Ret ret, List<ParamType> params, List<StructFieldType> fields, boolean stack) {
         String retType = ret == Ret.VOID ? "void" : params.get(0).type(fields);
         List<String> paramDecls = new ArrayList<>();
+        if (stack) {
+            paramDecls.addAll(stackParamDecls);
+        }
         for (int i = 0 ; i < params.size() ; i++) {
             paramDecls.add(String.format("%s p%d", params.get(i).type(fields), i));
         }
-        String paramNames = IntStream.range(0, params.size())
-                .mapToObj(i -> "p" + i)
-                .collect(Collectors.joining(","));
+        Stream<String> prefixParamNames = stack ? stackParamNames.stream() : Stream.of();
+        String paramNames = Stream.concat(prefixParamNames, IntStream.range(0, params.size())
+                .mapToObj(i -> "p" + i))
+                .collect(Collectors.joining(", "));
         String sig = paramDecls.isEmpty() ?
                 "" :
                 paramDecls.stream().collect(Collectors.joining(", ")) + ", ";
         String body = String.format(ret == Ret.VOID ? "{ cb(%s); }" : "{ return cb(%s); }", paramNames);
         List<String> paramTypes = params.stream().map(p -> p.type(fields)).collect(Collectors.toList());
+        if (stack) {
+            paramTypes.addAll(0, stackParamTypes);
+        }
         String cbSig = paramTypes.isEmpty() ?
                 "void" :
                 paramTypes.stream().collect(Collectors.joining(", "));
         String cbParam = String.format("%s (*cb)(%s)",
                 retType, cbSig);
 
-        String res = String.format("EXPORT %s %s(%s %s) %s", retType, fName,
-                sig, cbParam, declOnly ? ";" : body);
-        System.out.println(res);
+        String res = String.format("EXPORT %s %s%s(%s %s) %s", retType, stack ? "s" : "", fName,
+                sig, cbParam, body);
+        out.println(res);
     }
 
     //helper methods
 
-    @SuppressWarnings("unchecked")
-    static Object makeArg(MemoryLayout layout, List<Consumer<Object>> checks, boolean check) throws ReflectiveOperationException {
-        if (layout instanceof GroupLayout) {
-            MemorySegment segment = MemorySegment.allocateNative(layout, ResourceScope.newImplicitScope());
-            initStruct(segment, (GroupLayout)layout, checks, check);
-            return segment;
-        } else if (isPointer(layout)) {
-            MemorySegment segment = MemorySegment.allocateNative(1, ResourceScope.newImplicitScope());
-            if (check) {
-                checks.add(o -> {
-                    try {
-                        assertEquals(o, segment.address());
-                    } catch (Throwable ex) {
-                        throw new IllegalStateException(ex);
-                    }
-                });
-            }
-            return segment.address();
-        } else if (layout instanceof ValueLayout) {
-            if (isIntegral(layout)) {
-                if (check) {
-                    checks.add(o -> assertEquals(o, 42));
-                }
-                return 42;
-            } else if (layout.bitSize() == 32) {
-                if (check) {
-                    checks.add(o -> assertEquals(o, 12f));
-                }
-                return 12f;
-            } else {
-                if (check) {
-                    checks.add(o -> assertEquals(o, 24d));
-                }
-                return 24d;
-            }
-        } else {
-            throw new IllegalStateException("Unexpected layout: " + layout);
-        }
-    }
-
-    static void initStruct(MemorySegment str, GroupLayout g, List<Consumer<Object>> checks, boolean check) throws ReflectiveOperationException {
-        for (MemoryLayout l : g.memberLayouts()) {
-            if (l.isPadding()) continue;
-            VarHandle accessor = g.varHandle(MemoryLayout.PathElement.groupElement(l.name().get()));
-            List<Consumer<Object>> fieldsCheck = new ArrayList<>();
-            Object value = makeArg(l, fieldsCheck, check);
-            //set value
-            accessor.set(str, value);
-            //add check
-            if (check) {
-                assertTrue(fieldsCheck.size() == 1);
-                checks.add(o -> {
-                    MemorySegment actual = (MemorySegment)o;
-                    try {
-                        fieldsCheck.get(0).accept(accessor.get(actual));
-                    } catch (Throwable ex) {
-                        throw new IllegalStateException(ex);
-                    }
-                });
-            }
-        }
-    }
-
-    static Class<?> carrier(MemoryLayout layout, boolean param) {
-        if (layout instanceof GroupLayout) {
-            return MemorySegment.class;
-        } if (isPointer(layout)) {
-            return param ? Addressable.class : MemoryAddress.class;
-        } else if (layout instanceof ValueLayout valueLayout) {
-            return valueLayout.carrier();
-        } else {
-            throw new IllegalStateException("Unexpected layout: " + layout);
-        }
-    }
-
-    MethodHandle downcallHandle(CLinker abi, NativeSymbol symbol, SegmentAllocator allocator, FunctionDescriptor descriptor) {
+    MethodHandle downcallHandle(Linker abi, MemorySegment symbol, SegmentAllocator allocator, FunctionDescriptor descriptor) {
         MethodHandle mh = abi.downcallHandle(symbol, descriptor);
         if (descriptor.returnLayout().isPresent() && descriptor.returnLayout().get() instanceof GroupLayout) {
             mh = mh.bindTo(allocator);

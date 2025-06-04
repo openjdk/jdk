@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,9 @@ import java.util.List;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.jfr.Event;
-import jdk.jfr.internal.handlers.EventHandler;
+import jdk.jfr.internal.event.EventConfiguration;
+import jdk.jfr.internal.event.EventWriter;
+import jdk.jfr.internal.management.HiddenWait;
 
 /**
  * Interface against the JVM.
@@ -38,12 +40,14 @@ import jdk.jfr.internal.handlers.EventHandler;
 public final class JVM {
     private static final JVM jvm = new JVM();
 
-    // JVM signals file changes by doing Object#notify on this object
-    static final Object FILE_DELTA_CHANGE = new Object();
-
     static final long RESERVED_CLASS_ID_LIMIT = 500;
 
-    private volatile boolean nativeOK;
+    /*
+     * The JVM uses the chunk rotation monitor to notify Java that a rotation is warranted.
+     */
+    public static final Object CHUNK_ROTATION_MONITOR = new HiddenWait();
+
+    private static volatile boolean nativeOK;
 
     private static native void registerNatives();
 
@@ -56,37 +60,25 @@ public final class JVM {
     }
 
     /**
-     * Get the one and only JVM.
-     *
-     * @return the JVM
-     */
-    public static JVM getJVM() {
-        return jvm;
-    }
-
-    private JVM() {
-    }
-
-    /**
      * Marks current chunk as final
      * <p>
      * This allows streaming clients to read the chunk header and
      * close the stream when no more data will be written into
      * the current repository.
      */
-    public native void markChunkFinal();
+    public static native void markChunkFinal();
 
     /**
      * Begin recording events
      *
      * Requires that JFR has been started with {@link #createNativeJFR()}
      */
-    public native void beginRecording();
+    public static native void beginRecording();
 
     /**
      * Return true if the JVM is recording
      */
-    public native boolean isRecording();
+    public static native boolean isRecording();
 
     /**
      * End recording events, which includes flushing data in thread buffers
@@ -94,7 +86,7 @@ public final class JVM {
      * Requires that JFR has been started with {@link #createNativeJFR()}
      *
      */
-    public native void endRecording();
+    public static native void endRecording();
 
     /**
      * Return ticks
@@ -111,25 +103,25 @@ public final class JVM {
      * @param eventTypeId type id
      *
      * @param timestamp commit time for event
-     * @param when when it is being done {@link Periodic.When}
+     * @param periodicType when it is being done {@link PeriodicType.When}
      *
      * @return true if the event was committed
      */
-    public native boolean emitEvent(long eventTypeId, long timestamp, long when);
+    public static native boolean emitEvent(long eventTypeId, long timestamp, long periodicType);
 
     /**
      * Return a list of all classes deriving from {@link jdk.internal.event.Event}
      *
      * @return list of event classes.
      */
-    public native List<Class<? extends jdk.internal.event.Event>> getAllEventClasses();
+    public static native List<Class<? extends jdk.internal.event.Event>> getAllEventClasses();
 
     /**
      * Return a count of the number of unloaded classes deriving from {@link Event}
      *
      * @return number of unloaded event classes.
      */
-    public native long getUnloadedEventClassCount();
+    public static native long getUnloadedEventClassCount();
 
     /**
      * Return a unique identifier for a class. The class is marked as being
@@ -147,17 +139,22 @@ public final class JVM {
      *
      * @return process identifier
      */
-    public native String getPid();
+    public static native String getPid();
 
     /**
      * Return unique identifier for stack trace.
      *
      * Requires that JFR has been started with {@link #createNativeJFR()}
      *
-     * @param skipCount number of frames to skip
+     * @param skipCount number of frames to skip, or 0 if no frames should be
+     *                  skipped
+     *
+     * @param ID        ID of the filter that should be used, or -1 if no filter should
+     *                  be used
+     *
      * @return a unique stack trace identifier
      */
-    public native long getStackTraceId(int skipCount);
+    public static native long getStackTraceId(int skipCount, long stackFilerId);
 
     /**
      * Return identifier for thread
@@ -165,14 +162,19 @@ public final class JVM {
      * @param t thread
      * @return a unique thread identifier
      */
-    public native long getThreadId(Thread t);
+    public static native long getThreadId(Thread t);
 
     /**
      * Frequency, ticks per second
      *
      * @return frequency
      */
-    public native long getTicksFrequency();
+    public static native long getTicksFrequency();
+
+    /**
+     * Returns the same clock that sets the start time of a chunk (in nanos).
+     */
+    public static native long nanosNow();
 
     /**
      * Write message to log. Should swallow null or empty message, and be able
@@ -211,7 +213,7 @@ public final class JVM {
      *
      * @throws IllegalStateException if wrong JVMTI phase.
      */
-    public synchronized native void retransformClasses(Class<?>[] classes);
+     public static synchronized native void retransformClasses(Class<?>[] classes);
 
     /**
      * Enable event
@@ -220,14 +222,14 @@ public final class JVM {
      *
      * @param enabled enable event
      */
-    public native void setEnabled(long eventTypeId, boolean enabled);
+    public static native void setEnabled(long eventTypeId, boolean enabled);
 
     /**
      * Interval at which the JVM should notify on {@link #FILE_DELTA_CHANGE}
      *
      * @param delta number of bytes, reset after file rotation
      */
-    public native void setFileNotification(long delta);
+    public static native void setFileNotification(long delta);
 
     /**
      * Set the number of global buffers to use
@@ -237,7 +239,7 @@ public final class JVM {
      * @throws IllegalArgumentException if count is not within a valid range
      * @throws IllegalStateException if value can't be changed
      */
-    public native void setGlobalBufferCount(long count) throws IllegalArgumentException, IllegalStateException;
+    public static native void setGlobalBufferCount(long count) throws IllegalArgumentException, IllegalStateException;
 
     /**
      * Set size of a global buffer
@@ -247,7 +249,7 @@ public final class JVM {
      * @throws IllegalArgumentException if buffer size is not within a valid
      *         range
      */
-    public native void setGlobalBufferSize(long size) throws IllegalArgumentException;
+    public static native void setGlobalBufferSize(long size) throws IllegalArgumentException;
 
     /**
      * Set overall memory size
@@ -257,16 +259,16 @@ public final class JVM {
      * @throws IllegalArgumentException if memory size is not within a valid
      *         range
      */
-    public native void setMemorySize(long size) throws IllegalArgumentException;
+    public static native void setMemorySize(long size) throws IllegalArgumentException;
 
     /**
-     * Set interval for method samples, in milliseconds.
+     * Set period for method samples, in milliseconds.
      *
-     * Setting interval to 0 turns off the method sampler.
+     * Setting period to 0 turns off the method sampler.
      *
-     * @param intervalMillis the sampling interval
+     * @param periodMillis the sampling period
      */
-    public native void setMethodSamplingInterval(long type, long intervalMillis);
+    public static native void setMethodSamplingPeriod(long type, long periodMillis);
 
     /**
      * Sets the file where data should be written.
@@ -291,7 +293,7 @@ public final class JVM {
      * @param file the file where data should be written, or null if it should
      *        not be copied out (in memory).
      */
-    public native void setOutput(String file);
+    public static native void setOutput(String file);
 
     /**
      * Controls if a class deriving from jdk.jfr.Event should
@@ -299,7 +301,7 @@ public final class JVM {
      *
      * @param force, true to force initialization, false otherwise
      */
-    public native void setForceInstrumentation(boolean force);
+    public static native void setForceInstrumentation(boolean force);
 
     /**
      * Turn on/off compressed integers.
@@ -309,7 +311,7 @@ public final class JVM {
      *
      * @throws IllegalStateException if state can't be changed.
      */
-    public native void setCompressedIntegers(boolean compressed) throws IllegalStateException;
+    public static native void setCompressedIntegers(boolean compressed) throws IllegalStateException;
 
     /**
      * Set stack depth.
@@ -319,7 +321,7 @@ public final class JVM {
      * @throws IllegalArgumentException if not within a valid range
      * @throws IllegalStateException if depth can't be changed
      */
-    public native void setStackDepth(int depth) throws IllegalArgumentException, IllegalStateException;
+    public static native void setStackDepth(int depth) throws IllegalArgumentException, IllegalStateException;
 
     /**
      * Turn on stack trace for an event
@@ -328,7 +330,7 @@ public final class JVM {
      *
      * @param enabled if stack traces should be enabled
      */
-    public native void setStackTraceEnabled(long eventTypeId, boolean enabled);
+    public static native void setStackTraceEnabled(long eventTypeId, boolean enabled);
 
     /**
      * Set thread buffer size.
@@ -338,7 +340,7 @@ public final class JVM {
      * @throws IllegalArgumentException if size is not within a valid range
      * @throws IllegalStateException if size can't be changed
      */
-    public native void setThreadBufferSize(long size) throws IllegalArgumentException, IllegalStateException;
+    public static native void setThreadBufferSize(long size) throws IllegalArgumentException, IllegalStateException;
 
     /**
      * Set threshold for event,
@@ -349,7 +351,7 @@ public final class JVM {
      * @param ticks threshold in ticks,
      * @return true, if it could be set
      */
-    public native boolean setThreshold(long eventTypeId, long ticks);
+    public static native boolean setThreshold(long eventTypeId, long ticks);
 
     /**
      * Store the metadata descriptor that is to be written at the end of a
@@ -360,7 +362,7 @@ public final class JVM {
      *
      * @param bytes binary representation of metadata descriptor
      */
-    public native void storeMetadataDescriptor(byte[] bytes);
+    public static native void storeMetadataDescriptor(byte[] bytes);
 
     /**
      * If the JVM supports JVM TI and retransformation has not been disabled this
@@ -369,7 +371,7 @@ public final class JVM {
      *
      * @return if transform is allowed
      */
-    public native boolean getAllowedToDoEventRetransforms();
+    public static native boolean getAllowedToDoEventRetransforms();
 
     /**
      * Set up native resources, data structures, threads etc. for JFR
@@ -380,7 +382,7 @@ public final class JVM {
      * @throws IllegalStateException if native part of JFR could not be created.
      *
      */
-    private native boolean createJFR(boolean simulateFailure) throws IllegalStateException;
+    static native boolean createJFR(boolean simulateFailure) throws IllegalStateException;
 
     /**
      * Destroys native part of JFR. If already destroy, call is ignored.
@@ -390,37 +392,19 @@ public final class JVM {
      * @return if an instance was actually destroyed.
      *
      */
-    private native boolean destroyJFR();
-
-    public boolean createFailedNativeJFR() throws IllegalStateException {
-        return createJFR(true);
-    }
-
-    public void createNativeJFR() {
-        nativeOK = createJFR(false);
-    }
-
-    public boolean destroyNativeJFR() {
-        boolean result = destroyJFR();
-        nativeOK = !result;
-        return result;
-    }
-
-    public boolean hasNativeJFR() {
-        return nativeOK;
-    }
+    static native boolean destroyJFR();
 
     /**
      * Cheap test to check if JFR functionality is available.
      *
      * @return
      */
-    public native boolean isAvailable();
+    public static native boolean isAvailable();
 
     /**
      * To convert ticks to wall clock time.
      */
-    public native double getTimeConversionFactor();
+    public static native double getTimeConversionFactor();
 
     /**
      * Return a unique identifier for a class. Compared to {@link #getClassId(Class)},
@@ -430,7 +414,7 @@ public final class JVM {
      *
      * @return a unique class identifier
      */
-    public native long getTypeId(Class<?> clazz);
+    public static native long getTypeId(Class<?> clazz);
 
     /**
      * Fast path fetching the EventWriter using VM intrinsics
@@ -438,7 +422,7 @@ public final class JVM {
      * @return thread local EventWriter
      */
     @IntrinsicCandidate
-    public static native Object getEventWriter();
+    public static native EventWriter getEventWriter();
 
     /**
      * Create a new EventWriter
@@ -450,7 +434,17 @@ public final class JVM {
     /**
      * Flushes the EventWriter for this thread.
      */
-    public static native boolean flush(EventWriter writer, int uncommittedSize, int requestedSize);
+    public static native void flush(EventWriter writer, int uncommittedSize, int requestedSize);
+
+    /**
+     * Commits an event to the underlying buffer by setting the nextPosition.
+     *
+     * @param nextPosition
+     *
+     * @return the next startPosition
+     */
+    @IntrinsicCandidate
+    public static native long commit(long nextPosition);
 
     /**
      * Flushes all thread buffers to disk and the constant pool data needed to read
@@ -461,35 +455,35 @@ public final class JVM {
      * the generation id.
      *
      */
-    public native void flush();
+    public static native void flush();
 
     /**
      * Sets the location of the disk repository.
      *
      * @param dirText
      */
-    public native void setRepositoryLocation(String dirText);
+    public static native void setRepositoryLocation(String dirText);
 
     /**
      * Sets the path to emergency dump.
      *
      * @param dumpPathText
      */
-    public native void setDumpPath(String dumpPathText);
+    public static native void setDumpPath(String dumpPathText);
 
     /**
      * Gets the path to emergency dump.
      *
      * @return The path to emergency dump.
      */
-    public native String getDumpPath();
+    public static native String getDumpPath();
 
    /**
     * Access to VM termination support.
     *
     * @param errorMsg descriptive message to be include in VM termination sequence
     */
-    public native void abort(String errorMsg);
+    public static native void abort(String errorMsg);
 
     /**
      * Adds a string to the string constant pool.
@@ -504,7 +498,7 @@ public final class JVM {
      */
     public static native boolean addStringConstant(long id, String s);
 
-    public native void uncaughtException(Thread thread, Throwable t);
+    public static native void uncaughtException(Thread thread, Throwable t);
 
     /**
      * Sets cutoff for event.
@@ -517,7 +511,7 @@ public final class JVM {
      * @param cutoffTicks cutoff in ticks,
      * @return true, if it could be set
      */
-    public native boolean setCutoff(long eventTypeId, long cutoffTicks);
+    public static native boolean setCutoff(long eventTypeId, long cutoffTicks);
 
     /**
      * Sets the event emission rate in event sample size per time unit.
@@ -529,7 +523,7 @@ public final class JVM {
      * @param period_ms time period in milliseconds
      * @return true, if it could be set
      */
-    public native boolean setThrottle(long eventTypeId, long eventSampleSize, long period_ms);
+    public static native boolean setThrottle(long eventTypeId, long eventSampleSize, long period_ms);
 
     /**
      * Emit old object sample events.
@@ -538,60 +532,78 @@ public final class JVM {
      * @param emitAll emit all samples in old object queue
      * @param skipBFS don't use BFS when searching for path to GC root
      */
-    public native void emitOldObjectSamples(long cutoff, boolean emitAll, boolean skipBFS);
+    public static native void emitOldObjectSamples(long cutoff, boolean emitAll, boolean skipBFS);
 
     /**
      * Test if a chunk rotation is warranted.
      *
      * @return if it is time to perform a chunk rotation
      */
-    public native boolean shouldRotateDisk();
+    public static native boolean shouldRotateDisk();
 
     /**
      * Exclude a thread from the jfr system
      *
      */
-    public native void exclude(Thread thread);
+    public static native void exclude(Thread thread);
 
     /**
      * Include a thread back into the jfr system
      *
      */
-    public native void include(Thread thread);
+    public static native void include(Thread thread);
 
     /**
-     * Test if a thread ius currently excluded from the jfr system.
+     * Test if a thread is currently excluded from the jfr system.
      *
      * @return is thread currently excluded
      */
-    public native boolean isExcluded(Thread thread);
+    public static native boolean isExcluded(Thread thread);
+
+    /**
+     * Test if a class is excluded from the jfr system.
+     *
+     * @param eventClass the class, not {@code null}
+     *
+     * @return is class excluded
+     */
+    public static native boolean isExcluded(Class<? extends jdk.internal.event.Event> eventClass);
+
+    /**
+     * Test if a class is instrumented.
+     *
+     * @param eventClass the class, not {@code null}
+     *
+     * @return is class instrumented
+     */
+    public static native boolean isInstrumented(Class<? extends jdk.internal.event.Event> eventClass);
 
     /**
      * Get the start time in nanos from the header of the current chunk
      *
      * @return start time of the recording in nanos, -1 in case of in-memory
      */
-    public native long getChunkStartNanos();
+    public static native long getChunkStartNanos();
 
     /**
-     * Stores an EventHandler to the eventHandler field of an event class.
+     * Stores an EventConfiguration to the configuration field of an event class.
      *
      * @param eventClass the class, not {@code null}
      *
-     * @param handler the handler, may be {@code null}
+     * @param configuration the configuration, may be {@code null}
      *
      * @return if the field could be set
      */
-    public native boolean setHandler(Class<? extends jdk.internal.event.Event> eventClass, EventHandler handler);
+    public static native boolean setConfiguration(Class<? extends jdk.internal.event.Event> eventClass, EventConfiguration configuration);
 
     /**
-     * Retrieves the EventHandler for an event class.
+     * Retrieves the EventConfiguration for an event class.
      *
      * @param eventClass the class, not {@code null}
      *
-     * @return the handler, may be {@code null}
+     * @return the configuration, may be {@code null}
      */
-    public native Object getHandler(Class<? extends jdk.internal.event.Event> eventClass);
+    public static native Object getConfiguration(Class<? extends jdk.internal.event.Event> eventClass);
 
     /**
      * Returns the id for the Java types defined in metadata.xml.
@@ -600,5 +612,138 @@ public final class JVM {
      *
      * @return the id, or a negative value if it does not exists.
      */
-    public native long getTypeId(String name);
+    public static native long getTypeId(String name);
+
+    /**
+     * Returns {@code true}, if the JVM is running in a container, {@code false} otherwise.
+     * <p>
+     * If -XX:-UseContainerSupport has been specified, this method returns {@code false},
+     * which is questionable, but Container.metrics() returns {@code null}, so events
+     * can't be emitted anyway.
+     */
+    public static native boolean isContainerized();
+
+    /**
+     * Returns the total amount of memory of the host system whether or not this
+     * JVM runs in a container.
+     */
+    public static native long hostTotalMemory();
+
+    /**
+     * Returns the total amount of swap memory of the host system whether or not this
+     * JVM runs in a container.
+     */
+    public static native long hostTotalSwapMemory();
+
+    /**
+     * Emit a jdk.DataLoss event for the specified amount of bytes.
+     *
+     * @param bytes number of bytes that were lost
+     */
+    public static native void emitDataLoss(long bytes);
+
+    /**
+     * Registers stack filters that should be used with getStackTrace(int, long)
+     * <p>
+     * Method name at an array index is for class at the same array index.
+     * <p>
+     * This method should be called holding the MetadataRepository lock and before
+     * bytecode for the associated event class has been added.
+     *
+     * @param classes, name of classes, for example {"java/lang/String"}, not
+     *                 {@code null}
+     * @param methods, name of method, for example {"toString"}, not {@code null}
+     *
+     * @return an ID that can be used to unregister the start frames, or -1 if it could not be registered
+     */
+    public static native long registerStackFilter(String[] classes, String[] methods);
+
+    /**
+     * Unregisters a set of stack filters.
+     * <p>
+     * This method should be called holding the MetadataRepository lock and after
+     * the associated event class has been unloaded.
+     *
+     * @param stackFilterId the stack filter ID to unregister
+     */
+    public static native void unregisterStackFilter(long stackFilterId);
+
+    /**
+     * Sets bits used for event settings, like cutoff(ticks) and level
+     *
+     * @param eventTypeId the id of the event type
+     * @param value
+     */
+    public static native void setMiscellaneous(long eventTypeId, long value);
+
+    /**
+     * Returns whether the current build is a product build.
+     *
+     * @return {@code true} if this is a product build, {@code false} otherwise.
+     */
+    public static native boolean isProduct();
+
+    /**
+     * Sets method tracing filters.
+     *
+     * A filter can be a class, a method, or an annotation.
+     *
+     * For example, the following three filters:
+     * <ul>
+     * <li>Method timing on all methods in class com.foo.Bar</li>
+     * <li>Method tracing on the method com.foo.Bar::baz</li>
+     * <li>Method timing and tracing on all methods or classes with the annotation @com.foo.Foo</li>
+     * </ul>
+     * can be set using the following code:
+     * <pre>
+     * String[] classes = new String[3];
+     * classes[0] = "com/foo/Bar";
+     * classes[1] = "com/foo/Bar";
+     * classes[2] = null;
+     *
+     * String[] methods = new String[3];
+     * methods[0] = null;
+     * methods[1] = "baz";
+     * methods[2] = null;
+     *
+     * String[] annotations = new String[3];
+     * annotations[0] = null;
+     * annotations[1] = null;
+     * annotations[2] = "com/foo/Foo";
+     *
+     * int[] modifications = new int[3];
+     * modifications[0] = 1; // filter should apply to timing
+     * modifications[1] = 2; // filter should apply to tracing
+     * modifications[2] = 1 | 2; // filter should apply to both timing and tracing
+     *
+     * JVM.setMethodTraceFilters(classes, methods, annotations, modifications);
+     * </pre>
+     * The filter will be applied to currently and future loaded classes.
+     * <p>
+     * If a method is overloaded, the filter matches against all methods. It's not possible
+     * to match specific method parameters or annotation values.
+     * <p>
+     * Only one type of a filter - class, method, or annotation - can be used per array index.
+     * <p>
+     * If the filter is matched, JVMUpcalls::onMethodTrace will be invoked with
+     * the bytecode. If a filter is replaced, and method no longer requires instrumentation,
+     * the method will also be called with modification = 0;
+     *
+     * @param classes, not {@code null}, array of class names
+     * @param methods, not {@code null}, array of method names
+     * @param annotations, not {@code null}, array of annotation names
+     * @param modifications, not {@code null}, array of modification flags
+     * @return the published IDs, or null if no classes has been published.
+     */
+    public static native long[] setMethodTraceFilters(
+            String[] classes,
+            String[] methods,
+            String[] annotations,
+            int[] modification);
+    /**
+     * Returns IDs for method-traced classes that have been unloaded.
+     *
+     * @return the unloaded IDs, or null if no unloading has occurred.
+     */
+    public static native long[] drainStaleMethodTracerIds();
 }

@@ -30,7 +30,7 @@ import java.security.spec.*;
 
 /**
  * This class defines the <i>Service Provider Interface</i> (<b>SPI</b>)
- * for the <code>KeyGenerator</code> class.
+ * for the {@code KeyGenerator} class.
  * All the abstract methods in this class must be implemented by each
  * cryptographic service provider who wishes to supply the implementation
  * of a key generator for a particular algorithm.
@@ -74,7 +74,7 @@ public abstract class KeyGeneratorSpi {
      * @param params the key generation parameters
      * @param random the source of randomness for this key generator
      *
-     * @exception InvalidAlgorithmParameterException if <code>params</code> is
+     * @exception InvalidAlgorithmParameterException if {@code params} is
      * inappropriate for this key generator
      */
     protected abstract void engineInit(AlgorithmParameterSpec params,

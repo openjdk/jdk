@@ -31,18 +31,7 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.security.AlgorithmConstraints;
 import java.security.CryptoPrimitive;
-import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.function.Function;
+import java.util.*;
 import javax.crypto.SecretKey;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLHandshakeException;
@@ -138,6 +127,7 @@ abstract class HandshakeContext implements ConnectionContext {
 
     // SignatureScheme
     List<SignatureScheme>                   localSupportedSignAlgs;
+    List<SignatureScheme>                   localSupportedCertSignAlgs;
     List<SignatureScheme>                   peerRequestedSignatureSchemes;
     List<SignatureScheme>                   peerRequestedCertSignSchemes;
 
@@ -169,10 +159,10 @@ abstract class HandshakeContext implements ConnectionContext {
         this.conContext = conContext;
         this.sslConfig = (SSLConfiguration)conContext.sslConfig.clone();
 
-        this.algorithmConstraints = new SSLAlgorithmConstraints(
+        this.algorithmConstraints = SSLAlgorithmConstraints.wrap(
                 sslConfig.userSpecifiedAlgorithmConstraints);
-        this.activeProtocols = getActiveProtocols(sslConfig.enabledProtocols,
-                sslConfig.enabledCipherSuites, algorithmConstraints);
+        this.activeProtocols =
+                getActiveProtocols(sslConfig, algorithmConstraints);
         if (activeProtocols.isEmpty()) {
             throw new SSLHandshakeException(
                 "No appropriate protocol (protocol is disabled or " +
@@ -187,8 +177,8 @@ abstract class HandshakeContext implements ConnectionContext {
             }
         }
         this.maximumActiveProtocol = maximumVersion;
-        this.activeCipherSuites = getActiveCipherSuites(this.activeProtocols,
-                sslConfig.enabledCipherSuites, algorithmConstraints);
+        this.activeCipherSuites = getActiveCipherSuites(sslConfig,
+                this.activeProtocols, algorithmConstraints);
         if (activeCipherSuites.isEmpty()) {
             throw new SSLHandshakeException("No appropriate cipher suite");
         }
@@ -270,12 +260,11 @@ abstract class HandshakeContext implements ConnectionContext {
     }
 
     private static List<ProtocolVersion> getActiveProtocols(
-            List<ProtocolVersion> enabledProtocols,
-            List<CipherSuite> enabledCipherSuites,
+            SSLConfiguration sslConfig,
             AlgorithmConstraints algorithmConstraints) {
         boolean enabledSSL20Hello = false;
         ArrayList<ProtocolVersion> protocols = new ArrayList<>(4);
-        for (ProtocolVersion protocol : enabledProtocols) {
+        for (ProtocolVersion protocol : sslConfig.enabledProtocols) {
             if (!enabledSSL20Hello && protocol == ProtocolVersion.SSL20Hello) {
                 enabledSSL20Hello = true;
                 continue;
@@ -291,9 +280,9 @@ abstract class HandshakeContext implements ConnectionContext {
             boolean found = false;
             Map<NamedGroupSpec, Boolean> cachedStatus =
                     new EnumMap<>(NamedGroupSpec.class);
-            for (CipherSuite suite : enabledCipherSuites) {
+            for (CipherSuite suite : sslConfig.enabledCipherSuites) {
                 if (suite.isAvailable() && suite.supports(protocol)) {
-                    if (isActivatable(suite,
+                    if (isActivatable(sslConfig, suite,
                             algorithmConstraints, cachedStatus)) {
                         protocols.add(protocol);
                         found = true;
@@ -323,15 +312,15 @@ abstract class HandshakeContext implements ConnectionContext {
     }
 
     private static List<CipherSuite> getActiveCipherSuites(
+            SSLConfiguration sslConfig,
             List<ProtocolVersion> enabledProtocols,
-            List<CipherSuite> enabledCipherSuites,
             AlgorithmConstraints algorithmConstraints) {
 
         List<CipherSuite> suites = new LinkedList<>();
         if (enabledProtocols != null && !enabledProtocols.isEmpty()) {
             Map<NamedGroupSpec, Boolean> cachedStatus =
                     new EnumMap<>(NamedGroupSpec.class);
-            for (CipherSuite suite : enabledCipherSuites) {
+            for (CipherSuite suite : sslConfig.enabledCipherSuites) {
                 if (!suite.isAvailable()) {
                     continue;
                 }
@@ -341,7 +330,7 @@ abstract class HandshakeContext implements ConnectionContext {
                     if (!suite.supports(protocol)) {
                         continue;
                     }
-                    if (isActivatable(suite,
+                    if (isActivatable(sslConfig, suite,
                             algorithmConstraints, cachedStatus)) {
                         suites.add(suite);
                         isSupported = true;
@@ -441,7 +430,7 @@ abstract class HandshakeContext implements ConnectionContext {
                 // action and SSLEngine.getHandshakeStatus() to indicate the
                 // FINISHED handshake status.
                 //
-                // To workaround this special user case, the follow-on call to
+                // To work around this special user case, the follow-on call to
                 // SSLEngine.wrap() method will return HandshakeStatus.FINISHED
                 // status if needed.
                 //
@@ -470,7 +459,14 @@ abstract class HandshakeContext implements ConnectionContext {
         if (handshakeType == SSLHandshake.HELLO_REQUEST.id) {
             // For TLS 1.2 and prior versions, the HelloRequest message MAY
             // be sent by the server at any time.
-            consumer = SSLHandshake.HELLO_REQUEST;
+
+            // If we're in server mode, we want the consumer to be null so
+            // that we don't attempt to cast a Server object as a Client object
+            // further down in the stack. Having the consumer be null forces
+            // the check a few lines later to pass and throws the message for
+            // "Unexpected handshake message".
+            consumer = conContext.sslConfig.isClientMode ?
+                    SSLHandshake.HELLO_REQUEST : null;
         } else {
             consumer = handshakeConsumers.get(handshakeType);
         }
@@ -539,7 +535,9 @@ abstract class HandshakeContext implements ConnectionContext {
         return activeProtocols.contains(protocolVersion);
     }
 
-    private static boolean isActivatable(CipherSuite suite,
+    private static boolean isActivatable(
+            SSLConfiguration sslConfig,
+            CipherSuite suite,
             AlgorithmConstraints algorithmConstraints,
             Map<NamedGroupSpec, Boolean> cachedStatus) {
 
@@ -557,8 +555,8 @@ abstract class HandshakeContext implements ConnectionContext {
                 if (groupType != NAMED_GROUP_NONE) {
                     Boolean checkedStatus = cachedStatus.get(groupType);
                     if (checkedStatus == null) {
-                        groupAvailable = SupportedGroups.isActivatable(
-                                algorithmConstraints, groupType);
+                        groupAvailable = NamedGroup.isActivatable(
+                                sslConfig, algorithmConstraints, groupType);
                         cachedStatus.put(groupType, groupAvailable);
 
                         if (!groupAvailable &&
@@ -590,9 +588,8 @@ abstract class HandshakeContext implements ConnectionContext {
     }
 
     List<SNIServerName> getRequestedServerNames() {
-        if (requestedServerNames == null) {
-            return Collections.emptyList();
-        }
-        return requestedServerNames;
+        return Objects.requireNonNullElse(requestedServerNames,
+                Collections.emptyList());
     }
 }
+

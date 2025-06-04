@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,11 @@ public class TestRegisterNativesWarning {
 
     /*
      * We will replace:
-     *   java/lang/Thread.java:    public static native void yield();
+     *   java/lang/Thread.java:    private static native void yield0();
      *
      * as it is simple and innocuous.
      */
-    native static void test(Class<?> jlThread);
+    static native void test(Class<?> jlThread);
 
     // Using a nested class that invokes an enclosing method makes it
     // easier to setup and use the native library.
@@ -61,21 +61,21 @@ public class TestRegisterNativesWarning {
     }
 
     public static void main(String[] args) throws Exception {
-        String warning = "Re-registering of platform native method: java.lang.Thread.yield()V from code in a different classloader";
+        String warning = "Re-registering of platform native method: java.lang.Thread.yield0()V from code in a different classloader";
 
         String cp = Utils.TEST_CLASS_PATH;
         String libp = Utils.TEST_NATIVE_PATH;
-        OutputAnalyzer output = ProcessTools.executeTestJvm("-Djava.library.path=" + libp,
-                                                            Tester.class.getName());
+        OutputAnalyzer output = ProcessTools.executeTestJava("-Djava.library.path=" + libp,
+                                                             Tester.class.getName());
         output.shouldContain(warning);
         output.shouldHaveExitValue(0);
         output.reportDiagnosticSummary();
 
         // If we run everything from the "boot" loader there should be no warning
-        output = ProcessTools.executeTestJvm("-Djava.library.path=" + libp,
-                                             "-Xbootclasspath/a:" + cp,
-                                             "-Dsun.boot.library.path=" + libp,
-                                             Tester.class.getName());
+        output = ProcessTools.executeTestJava("-Djava.library.path=" + libp,
+                                              "-Xbootclasspath/a:" + cp,
+                                              "-Dsun.boot.library.path=" + libp,
+                                              Tester.class.getName());
         output.shouldNotContain(warning);
         output.shouldHaveExitValue(0);
         output.reportDiagnosticSummary();

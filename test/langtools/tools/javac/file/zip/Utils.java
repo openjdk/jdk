@@ -66,18 +66,13 @@ public class Utils {
     }
 
     public static void createJavaFile(File outFile, File superClass) throws IOException {
-        PrintStream ps = null;
         String srcStr = "public class " + getSimpleName(outFile) + " ";
         if (superClass != null) {
             srcStr = srcStr.concat("extends " + getSimpleName(superClass) + " ");
         }
         srcStr = srcStr.concat("{}");
-        try {
-            FileOutputStream fos = new FileOutputStream(outFile);
-            ps = new PrintStream(fos);
+        try (PrintStream ps = new PrintStream(new FileOutputStream(outFile))) {
             ps.println(srcStr);
-        } finally {
-            close(ps);
         }
     }
 
@@ -116,22 +111,12 @@ public class Utils {
     }
 
     public static void cat(File output, File... files) throws IOException {
-        BufferedInputStream bis = null;
-        BufferedOutputStream bos = null;
-        FileOutputStream fos = null;
-        try {
-            fos = new FileOutputStream(output);
-            bos = new BufferedOutputStream(fos);
-            for (File x : files) {
-                FileInputStream fis = new FileInputStream(x);
-                bis = new BufferedInputStream(fis);
-                copyStream(bis, bos);
-                Utils.close(bis);
+        try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(output))) {
+            for (File file : files) {
+                try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
+                    copyStream(bis, bos);
+                }
             }
-        } finally {
-            Utils.close(bis);
-            Utils.close(bos);
-            Utils.close(fos);
         }
     }
 }

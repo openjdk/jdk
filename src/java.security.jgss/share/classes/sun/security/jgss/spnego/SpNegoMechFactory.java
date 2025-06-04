@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,6 @@ package sun.security.jgss.spnego;
 import org.ietf.jgss.*;
 import sun.security.jgss.*;
 import sun.security.jgss.spi.*;
-import sun.security.jgss.krb5.Krb5MechFactory;
-import sun.security.jgss.krb5.Krb5InitCredential;
-import sun.security.jgss.krb5.Krb5AcceptCredential;
-import sun.security.jgss.krb5.Krb5NameElement;
 import java.security.Provider;
 import java.util.Vector;
 
@@ -52,7 +48,7 @@ public final class SpNegoMechFactory implements MechanismFactory {
     static final Oid GSS_SPNEGO_MECH_OID =
         GSSUtil.createOid("1.3.6.1.5.5.2");
 
-    private static Oid[] nameTypes =
+    private static final Oid[] nameTypes =
         new Oid[] { GSSName.NT_USER_NAME,
                         GSSName.NT_HOSTBASED_SERVICE,
                         GSSName.NT_EXPORT_NAME};
@@ -75,25 +71,8 @@ public final class SpNegoMechFactory implements MechanismFactory {
             GSSUtil.searchSubject(name, GSS_SPNEGO_MECH_OID,
                 initiate, SpNegoCredElement.class);
 
-        SpNegoCredElement result = ((creds == null || creds.isEmpty()) ?
-                                    null : creds.firstElement());
-
-        // Force permission check before returning the cred to caller
-        if (result != null) {
-            GSSCredentialSpi cred = result.getInternalCred();
-            if (GSSUtil.isKerberosMech(cred.getMechanism())) {
-                if (initiate) {
-                    Krb5InitCredential krbCred = (Krb5InitCredential) cred;
-                    Krb5MechFactory.checkInitCredPermission
-                        ((Krb5NameElement) krbCred.getName());
-                } else {
-                    Krb5AcceptCredential krbCred = (Krb5AcceptCredential) cred;
-                    Krb5MechFactory.checkAcceptCredPermission
-                        ((Krb5NameElement) krbCred.getName(), name);
-                }
-            }
-        }
-        return result;
+        return ((creds == null || creds.isEmpty()) ?
+                null : creds.firstElement());
     }
 
     public SpNegoMechFactory() {
@@ -182,7 +161,7 @@ public final class SpNegoMechFactory implements MechanismFactory {
         return new SpNegoContext(this, exportedContext);
     }
 
-    public final Oid getMechanismOid() {
+    public Oid getMechanismOid() {
         return GSS_SPNEGO_MECH_OID;
     }
 

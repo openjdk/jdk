@@ -25,7 +25,7 @@
   @test PrintDialog.java
   @bug 4257903
   @summary  Confirm that the you see the print dialog.
-  @author prr: area=PrinterJob
+  @key printer
   @run main/manual PrintDialog
 */
 
@@ -41,9 +41,6 @@
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.print.*;
-
-// This test is a "main" test as applets would need Runtime permission
-// "queuePrintJob".
 
 public class PrintDialog {
 

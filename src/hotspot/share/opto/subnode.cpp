@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
@@ -34,10 +33,12 @@
 #include "opto/matcher.hpp"
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/opaquenode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/reverse_bits.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -52,30 +53,26 @@ Node* SubNode::Identity(PhaseGVN* phase) {
   assert(in(1) != this, "Must already have called Value");
   assert(in(2) != this, "Must already have called Value");
 
-  // Remove double negation
-  const Type *zero = add_id();
-  if( phase->type( in(1) )->higher_equal( zero ) &&
+  const Type* zero = add_id();
+
+  // Remove double negation if it is not a floating point number since negation
+  // is not the same as subtraction for floating point numbers
+  // (cf. JLS § 15.15.4). `0-(0-(-0.0))` must be equal to positive 0.0 according to
+  // JLS § 15.8.2, but would result in -0.0 if this folding would be applied.
+  if (phase->type(in(1))->higher_equal(zero) &&
       in(2)->Opcode() == Opcode() &&
-      phase->type( in(2)->in(1) )->higher_equal( zero ) ) {
+      phase->type(in(2)->in(1))->higher_equal(zero) &&
+      !phase->type(in(2)->in(2))->is_floatingpoint()) {
     return in(2)->in(2);
   }
 
   // Convert "(X+Y) - Y" into X and "(X+Y) - X" into Y
-  if (in(1)->Opcode() == Op_AddI) {
+  if (in(1)->Opcode() == Op_AddI || in(1)->Opcode() == Op_AddL) {
     if (in(1)->in(2) == in(2)) {
       return in(1)->in(1);
     }
     if (in(1)->in(1) == in(2)) {
       return in(1)->in(2);
-    }
-
-    // Also catch: "(X + Opaque2(Y)) - Y".  In this case, 'Y' is a loop-varying
-    // trip counter and X is likely to be loop-invariant (that's how O2 Nodes
-    // are originally used, although the optimizer sometimes jiggers things).
-    // This folding through an O2 removes a loop-exit use of a loop-varying
-    // value and generally lowers register pressure in and around the loop.
-    if (in(1)->in(2)->Opcode() == Op_Opaque2 && in(1)->in(2)->in(1) == in(2)) {
-      return in(1)->in(1);
     }
   }
 
@@ -84,7 +81,7 @@ Node* SubNode::Identity(PhaseGVN* phase) {
 
 //------------------------------Value------------------------------------------
 // A subtract node differences it's two inputs.
-const Type* SubNode::Value_common(PhaseTransform *phase) const {
+const Type* SubNode::Value_common(PhaseValues* phase) const {
   const Node* in1 = in(1);
   const Node* in2 = in(2);
   // Either input is TOP ==> the result is TOP
@@ -101,12 +98,12 @@ const Type* SubNode::Value_common(PhaseTransform *phase) const {
   if( t1 == Type::BOTTOM || t2 == Type::BOTTOM )
     return bottom_type();
 
-  return NULL;
+  return nullptr;
 }
 
 const Type* SubNode::Value(PhaseGVN* phase) const {
   const Type* t = Value_common(phase);
-  if (t != NULL) {
+  if (t != nullptr) {
     return t;
   }
   const Type* t1 = phase->type(in(1));
@@ -124,7 +121,7 @@ SubNode* SubNode::make(Node* in1, Node* in2, BasicType bt) {
     default:
       fatal("Not implemented for %s", type2name(bt));
   }
-  return NULL;
+  return nullptr;
 }
 
 //=============================================================================
@@ -159,6 +156,16 @@ static bool ok_to_convert(Node* inc, Node* var) {
   return !(is_cloop_increment(inc) || var->is_cloop_ind_var());
 }
 
+static bool is_cloop_condition(BoolNode* bol) {
+  for (DUIterator_Fast imax, i = bol->fast_outs(imax); i < imax; i++) {
+    Node* out = bol->fast_out(i);
+    if (out->is_BaseCountedLoopEnd()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 //------------------------------Ideal------------------------------------------
 Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
   Node *in1 = in(1);
@@ -177,12 +184,12 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
 #endif
 
   const Type *t2 = phase->type( in2 );
-  if( t2 == Type::TOP ) return NULL;
+  if( t2 == Type::TOP ) return nullptr;
   // Convert "x-c0" into "x+ -c0".
   if( t2->base() == Type::Int ){        // Might be bottom or top...
     const TypeInt *i = t2->is_int();
     if( i->is_con() )
-      return new AddINode(in1, phase->intcon(-i->get_con()));
+      return new AddINode(in1, phase->intcon(java_negate(i->get_con())));
   }
 
   // Convert "(x+c0) - y" into (x-y) + c0"
@@ -212,13 +219,13 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
     } else {
       // Match x
       Node* sub2 = phase->transform(new SubINode(in1, in21));
-      Node* neg_c0 = phase->intcon(-c0);
+      Node* neg_c0 = phase->intcon(java_negate(c0));
       return new AddINode(sub2, neg_c0);
     }
   }
 
   const Type *t1 = phase->type( in1 );
-  if( t1 == Type::TOP ) return NULL;
+  if( t1 == Type::TOP ) return nullptr;
 
 #ifdef ASSERT
   // Check for dead loop
@@ -278,9 +285,9 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
 
   // Associative
   if (op1 == Op_MulI && op2 == Op_MulI) {
-    Node* sub_in1 = NULL;
-    Node* sub_in2 = NULL;
-    Node* mul_in = NULL;
+    Node* sub_in1 = nullptr;
+    Node* sub_in2 = nullptr;
+    Node* mul_in = nullptr;
 
     if (in1->in(1) == in2->in(1)) {
       // Convert "a*b-a*c into a*(b-c)
@@ -304,7 +311,7 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
       mul_in = in1->in(1);
     }
 
-    if (mul_in != NULL) {
+    if (mul_in != nullptr) {
       Node* sub = phase->transform(new SubINode(sub_in1, sub_in2));
       return new MulINode(mul_in, sub);
     }
@@ -322,7 +329,7 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------sub--------------------------------------------
@@ -362,12 +369,12 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 #endif
 
-  if( phase->type( in2 ) == Type::TOP ) return NULL;
+  if( phase->type( in2 ) == Type::TOP ) return nullptr;
   const TypeLong *i = phase->type( in2 )->isa_long();
   // Convert "x-c0" into "x+ -c0".
   if( i &&                      // Might be bottom or top...
       i->is_con() )
-    return new AddLNode(in1, phase->longcon(-i->get_con()));
+    return new AddLNode(in1, phase->longcon(java_negate(i->get_con())));
 
   // Convert "(x+c0) - y" into (x-y) + c0"
   // Do not collapse (x+c0)-y if "+" is a loop increment or
@@ -396,13 +403,13 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       return new SubLNode(sub2, in21);
     } else {
       Node* sub2 = phase->transform(new SubLNode(in1, in21));
-      Node* neg_c0 = phase->longcon(-c0);
+      Node* neg_c0 = phase->longcon(java_negate(c0));
       return new AddLNode(sub2, neg_c0);
     }
   }
 
   const Type *t1 = phase->type( in1 );
-  if( t1 == Type::TOP ) return NULL;
+  if( t1 == Type::TOP ) return nullptr;
 
 #ifdef ASSERT
   // Check for dead loop
@@ -416,6 +423,10 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Convert "x - (x+y)" into "-y"
   if (op2 == Op_AddL && in1 == in2->in(1)) {
     return new SubLNode(phase->makecon(TypeLong::ZERO), in2->in(2));
+  }
+  // Convert "(x-y) - x" into "-y"
+  if (op1 == Op_SubL && in1->in(1) == in2) {
+    return new SubLNode(phase->makecon(TypeLong::ZERO), in1->in(2));
   }
   // Convert "x - (y+x)" into "-y"
   if (op2 == Op_AddL && in1 == in2->in(2)) {
@@ -451,9 +462,9 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Associative
   if (op1 == Op_MulL && op2 == Op_MulL) {
-    Node* sub_in1 = NULL;
-    Node* sub_in2 = NULL;
-    Node* mul_in = NULL;
+    Node* sub_in1 = nullptr;
+    Node* sub_in2 = nullptr;
+    Node* mul_in = nullptr;
 
     if (in1->in(1) == in2->in(1)) {
       // Convert "a*b-a*c into a*(b+c)
@@ -477,7 +488,7 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       mul_in = in1->in(1);
     }
 
-    if (mul_in != NULL) {
+    if (mul_in != nullptr) {
       Node* sub = phase->transform(new SubLNode(sub_in1, sub_in2));
       return new MulLNode(mul_in, sub);
     }
@@ -495,7 +506,7 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------sub--------------------------------------------
@@ -546,6 +557,24 @@ const Type* SubFPNode::Value(PhaseGVN* phase) const {
 
 
 //=============================================================================
+//------------------------------sub--------------------------------------------
+// A subtract node differences its two inputs.
+const Type* SubHFNode::sub(const Type* t1, const Type* t2) const {
+  // no folding if one of operands is infinity or NaN, do not do constant folding
+  if(g_isfinite(t1->getf()) && g_isfinite(t2->getf())) {
+    return TypeH::make(t1->getf() - t2->getf());
+  }
+  else if(g_isnan(t1->getf())) {
+    return t1;
+  }
+  else if(g_isnan(t2->getf())) {
+    return t2;
+  }
+  else {
+    return Type::HALF_FLOAT;
+  }
+}
+
 //------------------------------Ideal------------------------------------------
 Node *SubFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const Type *t2 = phase->type( in(2) );
@@ -559,7 +588,7 @@ Node *SubFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   //if( phase->type(in(1)) == TypeF::ZERO )
   //return new (phase->C, 2) NegFNode(in(2));
 
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------sub--------------------------------------------
@@ -594,7 +623,7 @@ Node *SubDNode::Ideal(PhaseGVN *phase, bool can_reshape){
   //if( phase->type(in(1)) == TypeD::ZERO )
   //return new (phase->C, 2) NegDNode(in(2));
 
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------sub--------------------------------------------
@@ -624,38 +653,6 @@ Node* CmpNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-#ifndef PRODUCT
-//----------------------------related------------------------------------------
-// Related nodes of comparison nodes include all data inputs (until hitting a
-// control boundary) as well as all outputs until and including control nodes
-// as well as their projections. In compact mode, data inputs till depth 1 and
-// all outputs till depth 1 are considered.
-void CmpNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  if (compact) {
-    this->collect_nodes(in_rel, 1, false, true);
-    this->collect_nodes(out_rel, -1, false, false);
-  } else {
-    this->collect_nodes_in_all_data(in_rel, false);
-    this->collect_nodes_out_all_ctrl_boundary(out_rel);
-    // Now, find all control nodes in out_rel, and include their projections
-    // and projection targets (if any) in the result.
-    GrowableArray<Node*> proj(Compile::current()->unique());
-    for (GrowableArrayIterator<Node*> it = out_rel->begin(); it != out_rel->end(); ++it) {
-      Node* n = *it;
-      if (n->is_CFG() && !n->is_Proj()) {
-        // Assume projections and projection targets are found at levels 1 and 2.
-        n->collect_nodes(&proj, -2, false, false);
-        for (GrowableArrayIterator<Node*> p = proj.begin(); p != proj.end(); ++p) {
-          out_rel->append_if_missing(*p);
-        }
-        proj.clear();
-      }
-    }
-  }
-}
-
-#endif
-
 CmpNode *CmpNode::make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp) {
   switch (bt) {
     case T_INT:
@@ -668,10 +665,18 @@ CmpNode *CmpNode::make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp) {
         return new CmpULNode(in1, in2);
       }
       return new CmpLNode(in1, in2);
+    case T_OBJECT:
+    case T_ARRAY:
+    case T_ADDRESS:
+    case T_METADATA:
+      return new CmpPNode(in1, in2);
+    case T_NARROWOOP:
+    case T_NARROWKLASS:
+      return new CmpNNode(in1, in2);
     default:
       fatal("Not implemented for %s", type2name(bt));
   }
-  return NULL;
+  return nullptr;
 }
 
 //=============================================================================
@@ -696,6 +701,47 @@ const Type *CmpINode::sub( const Type *t1, const Type *t2 ) const {
     return TypeInt::CC_GE;
   return TypeInt::CC;           // else use worst case results
 }
+
+const Type* CmpINode::Value(PhaseGVN* phase) const {
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  // If this test is the zero trip guard for a main or post loop, check whether, with the opaque node removed, the test
+  // would constant fold so the loop is never entered. If so return the type of the test without the opaque node removed:
+  // make the loop unreachable.
+  // The reason for this is that the iv phi captures the bounds of the loop and if the loop becomes unreachable, it can
+  // become top. In that case, the loop must be removed.
+  // This is safe because:
+  // - as optimizations proceed, the range of iterations executed by the main loop narrows. If no iterations remain, then
+  // we're done with optimizations for that loop.
+  // - the post loop is initially not reachable but as long as there's a main loop, the zero trip guard for the post
+  // loop takes a phi that merges the pre and main loop's iv and can't constant fold the zero trip guard. Once, the main
+  // loop is removed, there's no need to preserve the zero trip guard for the post loop anymore.
+  if (in1 != nullptr && in2 != nullptr) {
+    uint input = 0;
+    Node* cmp = nullptr;
+    BoolTest::mask test;
+    if (in1->Opcode() == Op_OpaqueZeroTripGuard && phase->type(in1) != Type::TOP) {
+      cmp = new CmpINode(in1->in(1), in2);
+      test = ((OpaqueZeroTripGuardNode*)in1)->_loop_entered_mask;
+    }
+    if (in2->Opcode() == Op_OpaqueZeroTripGuard && phase->type(in2) != Type::TOP) {
+      assert(cmp == nullptr, "A cmp with 2 OpaqueZeroTripGuard inputs");
+      cmp = new CmpINode(in1, in2->in(1));
+      test = ((OpaqueZeroTripGuardNode*)in2)->_loop_entered_mask;
+    }
+    if (cmp != nullptr) {
+      const Type* cmp_t = cmp->Value(phase);
+      const Type* t = BoolTest(test).cc2logical(cmp_t);
+      cmp->destruct(phase);
+      if (t == TypeInt::ZERO) {
+        return cmp_t;
+      }
+    }
+  }
+
+  return SubNode::Value(phase);
+}
+
 
 // Simplify a CmpU (compare 2 integers) node, based on local information.
 // If both inputs are constants, compare them.
@@ -762,7 +808,7 @@ const Type *CmpUNode::sub( const Type *t1, const Type *t2 ) const {
 
 const Type* CmpUNode::Value(PhaseGVN* phase) const {
   const Type* t = SubNode::Value_common(phase);
-  if (t != NULL) {
+  if (t != nullptr) {
     return t;
   }
   const Node* in1 = in(1);
@@ -773,6 +819,9 @@ const Type* CmpUNode::Value(PhaseGVN* phase) const {
   if (t2 == TypeInt::INT) { // Compare to bottom?
     return bottom_type();
   }
+
+  const Type* t_sub = sub(t1, t2); // compare based on immediate inputs
+
   uint in1_op = in1->Opcode();
   if (in1_op == Op_AddI || in1_op == Op_SubI) {
     // The problem rise when result of AddI(SubI) may overflow
@@ -823,16 +872,17 @@ const Type* CmpUNode::Value(PhaseGVN* phase) const {
         int w = MAX2(r0->_widen, r1->_widen); // _widen does not matter here
         const TypeInt* tr1 = TypeInt::make(lo_tr1, hi_tr1, w);
         const TypeInt* tr2 = TypeInt::make(lo_tr2, hi_tr2, w);
-        const Type* cmp1 = sub(tr1, t2);
-        const Type* cmp2 = sub(tr2, t2);
-        if (cmp1 == cmp2) {
-          return cmp1; // Hit!
-        }
+        const TypeInt* cmp1 = sub(tr1, t2)->is_int();
+        const TypeInt* cmp2 = sub(tr2, t2)->is_int();
+        // Compute union, so that cmp handles all possible results from the two cases
+        const Type* t_cmp = cmp1->meet(cmp2);
+        // Pick narrowest type, based on overflow computation and on immediate inputs
+        return t_sub->filter(t_cmp);
       }
     }
   }
 
-  return sub(t1, t2);            // Local flavor of type subtraction
+  return t_sub;
 }
 
 bool CmpUNode::is_index_range_check() const {
@@ -845,8 +895,12 @@ bool CmpUNode::is_index_range_check() const {
 Node *CmpINode::Ideal( PhaseGVN *phase, bool can_reshape ) {
   if (phase->type(in(2))->higher_equal(TypeInt::ZERO)) {
     switch (in(1)->Opcode()) {
+    case Op_CmpU3:              // Collapse a CmpU3/CmpI into a CmpU
+      return new CmpUNode(in(1)->in(1),in(1)->in(2));
     case Op_CmpL3:              // Collapse a CmpL3/CmpI into a CmpL
       return new CmpLNode(in(1)->in(1),in(1)->in(2));
+    case Op_CmpUL3:             // Collapse a CmpUL3/CmpI into a CmpUL
+      return new CmpULNode(in(1)->in(1),in(1)->in(2));
     case Op_CmpF3:              // Collapse a CmpF3/CmpI into a CmpF
       return new CmpFNode(in(1)->in(1),in(1)->in(2));
     case Op_CmpD3:              // Collapse a CmpD3/CmpI into a CmpD
@@ -857,7 +911,7 @@ Node *CmpINode::Ideal( PhaseGVN *phase, bool can_reshape ) {
       // This is handled (with more general cases) by Ideal_sub_algebra.
     }
   }
-  return NULL;                  // No change
+  return nullptr;                  // No change
 }
 
 Node *CmpLNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
@@ -868,7 +922,7 @@ Node *CmpLNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
       return new CmpINode(in(1)->in(1), phase->intcon((jint)con));
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 //=============================================================================
@@ -966,77 +1020,44 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
   }
 
   // See if it is 2 unrelated classes.
-  const TypeOopPtr* oop_p0 = r0->isa_oopptr();
-  const TypeOopPtr* oop_p1 = r1->isa_oopptr();
-  bool both_oop_ptr = oop_p0 && oop_p1;
-
-  if (both_oop_ptr) {
-    Node* in1 = in(1)->uncast();
-    Node* in2 = in(2)->uncast();
-    AllocateNode* alloc1 = AllocateNode::Ideal_allocation(in1, NULL);
-    AllocateNode* alloc2 = AllocateNode::Ideal_allocation(in2, NULL);
-    if (MemNode::detect_ptr_independence(in1, alloc1, in2, alloc2, NULL)) {
-      return TypeInt::CC_GT;  // different pointers
-    }
-  }
-
-  const TypeKlassPtr* klass_p0 = r0->isa_klassptr();
-  const TypeKlassPtr* klass_p1 = r1->isa_klassptr();
-
-  if (both_oop_ptr || (klass_p0 && klass_p1)) { // both or neither are klass pointers
-    ciKlass* klass0 = NULL;
-    bool    xklass0 = false;
-    ciKlass* klass1 = NULL;
-    bool    xklass1 = false;
-
-    if (oop_p0) {
-      klass0 = oop_p0->klass();
-      xklass0 = oop_p0->klass_is_exact();
-    } else {
-      assert(klass_p0, "must be non-null if oop_p0 is null");
-      klass0 = klass_p0->klass();
-      xklass0 = klass_p0->klass_is_exact();
-    }
-
-    if (oop_p1) {
-      klass1 = oop_p1->klass();
-      xklass1 = oop_p1->klass_is_exact();
-    } else {
-      assert(klass_p1, "must be non-null if oop_p1 is null");
-      klass1 = klass_p1->klass();
-      xklass1 = klass_p1->klass_is_exact();
-    }
-
-    if (klass0 && klass1 &&
-        klass0->is_loaded() && !klass0->is_interface() && // do not trust interfaces
-        klass1->is_loaded() && !klass1->is_interface() &&
-        (!klass0->is_obj_array_klass() ||
-         !klass0->as_obj_array_klass()->base_element_klass()->is_interface()) &&
-        (!klass1->is_obj_array_klass() ||
-         !klass1->as_obj_array_klass()->base_element_klass()->is_interface())) {
-      bool unrelated_classes = false;
-      // See if neither subclasses the other, or if the class on top
-      // is precise.  In either of these cases, the compare is known
-      // to fail if at least one of the pointers is provably not null.
-      if (klass0->equals(klass1)) {  // if types are unequal but klasses are equal
-        // Do nothing; we know nothing for imprecise types
-      } else if (klass0->is_subtype_of(klass1)) {
-        // If klass1's type is PRECISE, then classes are unrelated.
-        unrelated_classes = xklass1;
-      } else if (klass1->is_subtype_of(klass0)) {
-        // If klass0's type is PRECISE, then classes are unrelated.
-        unrelated_classes = xklass0;
-      } else {                  // Neither subtypes the other
-        unrelated_classes = true;
+  const TypeOopPtr* p0 = r0->isa_oopptr();
+  const TypeOopPtr* p1 = r1->isa_oopptr();
+  const TypeKlassPtr* k0 = r0->isa_klassptr();
+  const TypeKlassPtr* k1 = r1->isa_klassptr();
+  if ((p0 && p1) || (k0 && k1)) {
+    if (p0 && p1) {
+      Node* in1 = in(1)->uncast();
+      Node* in2 = in(2)->uncast();
+      AllocateNode* alloc1 = AllocateNode::Ideal_allocation(in1);
+      AllocateNode* alloc2 = AllocateNode::Ideal_allocation(in2);
+      if (MemNode::detect_ptr_independence(in1, alloc1, in2, alloc2, nullptr)) {
+        return TypeInt::CC_GT;  // different pointers
       }
-      if (unrelated_classes) {
-        // The oops classes are known to be unrelated. If the joined PTRs of
-        // two oops is not Null and not Bottom, then we are sure that one
-        // of the two oops is non-null, and the comparison will always fail.
-        TypePtr::PTR jp = r0->join_ptr(r1->_ptr);
-        if (jp != TypePtr::Null && jp != TypePtr::BotPTR) {
-          return TypeInt::CC_GT;
-        }
+    }
+    bool    xklass0 = p0 ? p0->klass_is_exact() : k0->klass_is_exact();
+    bool    xklass1 = p1 ? p1->klass_is_exact() : k1->klass_is_exact();
+    bool unrelated_classes = false;
+
+    if ((p0 && p0->is_same_java_type_as(p1)) ||
+        (k0 && k0->is_same_java_type_as(k1))) {
+    } else if ((p0 && !p1->maybe_java_subtype_of(p0) && !p0->maybe_java_subtype_of(p1)) ||
+               (k0 && !k1->maybe_java_subtype_of(k0) && !k0->maybe_java_subtype_of(k1))) {
+      unrelated_classes = true;
+    } else if ((p0 && !p1->maybe_java_subtype_of(p0)) ||
+               (k0 && !k1->maybe_java_subtype_of(k0))) {
+      unrelated_classes = xklass1;
+    } else if ((p0 && !p0->maybe_java_subtype_of(p1)) ||
+               (k0 && !k0->maybe_java_subtype_of(k1))) {
+      unrelated_classes = xklass0;
+    }
+
+    if (unrelated_classes) {
+      // The oops classes are known to be unrelated. If the joined PTRs of
+      // two oops is not Null and not Bottom, then we are sure that one
+      // of the two oops is non-null, and the comparison will always fail.
+      TypePtr::PTR jp = r0->join_ptr(r1->_ptr);
+      if (jp != TypePtr::Null && jp != TypePtr::BotPTR) {
+        return TypeInt::CC_GT;
       }
     }
   }
@@ -1059,25 +1080,25 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
 static inline Node* isa_java_mirror_load(PhaseGVN* phase, Node* n) {
   // Return the klass node for (indirect load from OopHandle)
   //   LoadBarrier?(LoadP(LoadP(AddP(foo:Klass, #java_mirror))))
-  //   or NULL if not matching.
+  //   or null if not matching.
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
     n = bs->step_over_gc_barrier(n);
 
-  if (n->Opcode() != Op_LoadP) return NULL;
+  if (n->Opcode() != Op_LoadP) return nullptr;
 
   const TypeInstPtr* tp = phase->type(n)->isa_instptr();
-  if (!tp || tp->klass() != phase->C->env()->Class_klass()) return NULL;
+  if (!tp || tp->instance_klass() != phase->C->env()->Class_klass()) return nullptr;
 
   Node* adr = n->in(MemNode::Address);
   // First load from OopHandle: ((OopHandle)mirror)->resolve(); may need barrier.
-  if (adr->Opcode() != Op_LoadP || !phase->type(adr)->isa_rawptr()) return NULL;
+  if (adr->Opcode() != Op_LoadP || !phase->type(adr)->isa_rawptr()) return nullptr;
   adr = adr->in(MemNode::Address);
 
   intptr_t off = 0;
   Node* k = AddPNode::Ideal_base_and_offset(adr, phase, off);
-  if (k == NULL)  return NULL;
+  if (k == nullptr)  return nullptr;
   const TypeKlassPtr* tkp = phase->type(k)->isa_klassptr();
-  if (!tkp || off != in_bytes(Klass::java_mirror_offset())) return NULL;
+  if (!tkp || off != in_bytes(Klass::java_mirror_offset())) return nullptr;
 
   // We've found the klass node of a Java mirror load.
   return k;
@@ -1085,26 +1106,26 @@ static inline Node* isa_java_mirror_load(PhaseGVN* phase, Node* n) {
 
 static inline Node* isa_const_java_mirror(PhaseGVN* phase, Node* n) {
   // for ConP(Foo.class) return ConP(Foo.klass)
-  // otherwise return NULL
-  if (!n->is_Con()) return NULL;
+  // otherwise return null
+  if (!n->is_Con()) return nullptr;
 
   const TypeInstPtr* tp = phase->type(n)->isa_instptr();
-  if (!tp) return NULL;
+  if (!tp) return nullptr;
 
   ciType* mirror_type = tp->java_mirror_type();
-  // TypeInstPtr::java_mirror_type() returns non-NULL for compile-
+  // TypeInstPtr::java_mirror_type() returns non-null for compile-
   // time Class constants only.
-  if (!mirror_type) return NULL;
+  if (!mirror_type) return nullptr;
 
   // x.getClass() == int.class can never be true (for all primitive types)
-  // Return a ConP(NULL) node for this case.
+  // Return a ConP(null) node for this case.
   if (mirror_type->is_classless()) {
     return phase->makecon(TypePtr::NULL_PTR);
   }
 
   // return the ConP(Foo.klass)
   assert(mirror_type->is_klass(), "mirror_type should represent a Klass*");
-  return phase->makecon(TypeKlassPtr::make(mirror_type->as_klass()));
+  return phase->makecon(TypeKlassPtr::make(mirror_type->as_klass(), Type::trust_interfaces));
 }
 
 //------------------------------Ideal------------------------------------------
@@ -1134,7 +1155,7 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
 
     if (k1 && (k2 || conk2)) {
       Node* lhs = k1;
-      Node* rhs = (k2 != NULL) ? k2 : conk2;
+      Node* rhs = (k2 != nullptr) ? k2 : conk2;
       set_req_X(1, lhs, phase);
       set_req_X(2, rhs, phase);
       return this;
@@ -1143,25 +1164,25 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
 
   // Constant pointer on right?
   const TypeKlassPtr* t2 = phase->type(in(2))->isa_klassptr();
-  if (t2 == NULL || !t2->klass_is_exact())
-    return NULL;
+  if (t2 == nullptr || !t2->klass_is_exact())
+    return nullptr;
   // Get the constant klass we are comparing to.
-  ciKlass* superklass = t2->klass();
+  ciKlass* superklass = t2->exact_klass();
 
   // Now check for LoadKlass on left.
   Node* ldk1 = in(1);
   if (ldk1->is_DecodeNKlass()) {
     ldk1 = ldk1->in(1);
     if (ldk1->Opcode() != Op_LoadNKlass )
-      return NULL;
+      return nullptr;
   } else if (ldk1->Opcode() != Op_LoadKlass )
-    return NULL;
+    return nullptr;
   // Take apart the address of the LoadKlass:
   Node* adr1 = ldk1->in(MemNode::Address);
   intptr_t con2 = 0;
   Node* ldk2 = AddPNode::Ideal_base_and_offset(adr1, phase, con2);
-  if (ldk2 == NULL)
-    return NULL;
+  if (ldk2 == nullptr)
+    return nullptr;
   if (con2 == oopDesc::klass_offset_in_bytes()) {
     // We are inspecting an object's concrete class.
     // Short-circuit the check if the query is abstract.
@@ -1178,13 +1199,13 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
   if (ldk2->is_DecodeNKlass()) {
     // Keep ldk2 as DecodeN since it could be used in CmpP below.
     if (ldk2->in(1)->Opcode() != Op_LoadNKlass )
-      return NULL;
+      return nullptr;
   } else if (ldk2->Opcode() != Op_LoadKlass)
-    return NULL;
+    return nullptr;
 
   // Verify that we understand the situation
   if (con2 != (intptr_t) superklass->super_check_offset())
-    return NULL;                // Might be element-klass loading from array klass
+    return nullptr;                // Might be element-klass loading from array klass
 
   // If 'superklass' has no subklasses and is not an interface, then we are
   // assured that the only input which will pass the type check is
@@ -1202,7 +1223,7 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
   }
   if (superklass->is_instance_klass()) {
     ciInstanceKlass* ik = superklass->as_instance_klass();
-    if (ik->has_subklass() || ik->is_interface())  return NULL;
+    if (ik->has_subklass() || ik->is_interface())  return nullptr;
     // Add a dependency if there is a chance that a subclass will be added later.
     if (!ik->is_final()) {
       phase->C->dependencies()->assert_leaf_type(ik);
@@ -1210,7 +1231,7 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
   }
 
   // Bypass the dependent load, and compare directly
-  this->set_req(1,ldk2);
+  this->set_req_X(1, ldk2, phase);
 
   return this;
 }
@@ -1226,7 +1247,7 @@ const Type *CmpNNode::sub( const Type *t1, const Type *t2 ) const {
 
 //------------------------------Ideal------------------------------------------
 Node *CmpNNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
-  return NULL;
+  return nullptr;
 }
 
 //=============================================================================
@@ -1326,7 +1347,7 @@ Node *CmpDNode::Ideal(PhaseGVN *phase, bool can_reshape){
     }
     // Testing value required the precision of a double
   }
-  return NULL;                  // No change
+  return nullptr;                  // No change
 }
 
 
@@ -1417,9 +1438,7 @@ Node* BoolNode::make_predicate(Node* test_value, PhaseGVN* phase) {
 //--------------------------------as_int_value---------------------------------
 Node* BoolNode::as_int_value(PhaseGVN* phase) {
   // Inverse to make_predicate.  The CMove probably boils down to a Conv2B.
-  Node* cmov = CMoveNode::make(NULL, this,
-                               phase->intcon(0), phase->intcon(1),
-                               TypeInt::BOOL);
+  Node* cmov = CMoveNode::make(this, phase->intcon(0), phase->intcon(1), TypeInt::BOOL);
   return phase->transform(cmov);
 }
 
@@ -1439,8 +1458,8 @@ Node* BoolNode::fold_cmpI(PhaseGVN* phase, SubNode* cmp, Node* cmp1, int cmp_op,
     // Skip cases were inputs of add/sub are not integers or of bottom type
     const TypeInt* r0 = phase->type(cmp1->in(1))->isa_int();
     const TypeInt* r1 = phase->type(cmp1->in(2))->isa_int();
-    if ((r0 != NULL) && (r0 != TypeInt::INT) &&
-        (r1 != NULL) && (r1 != TypeInt::INT) &&
+    if ((r0 != nullptr) && (r0 != TypeInt::INT) &&
+        (r1 != nullptr) && (r1 != TypeInt::INT) &&
         (cmp2_type != TypeInt::INT)) {
       // Compute exact (long) type range of add/sub result
       jlong lo_long = r0->_lo;
@@ -1474,14 +1493,14 @@ Node* BoolNode::fold_cmpI(PhaseGVN* phase, SubNode* cmp, Node* cmp1, int cmp_op,
       }
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 static bool is_counted_loop_cmp(Node *cmp) {
   Node *n = cmp->in(1)->in(1);
-  return n != NULL &&
+  return n != nullptr &&
          n->is_Phi() &&
-         n->in(0) != NULL &&
+         n->in(0) != nullptr &&
          n->in(0)->is_CountedLoop() &&
          n->in(0)->as_CountedLoop()->phi() == n;
 }
@@ -1491,15 +1510,18 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Change "bool tst (cmp con x)" into "bool ~tst (cmp x con)".
   // This moves the constant to the right.  Helps value-numbering.
   Node *cmp = in(1);
-  if( !cmp->is_Sub() ) return NULL;
+  if( !cmp->is_Sub() ) return nullptr;
   int cop = cmp->Opcode();
-  if( cop == Op_FastLock || cop == Op_FastUnlock || cmp->is_SubTypeCheck()) return NULL;
+  if( cop == Op_FastLock || cop == Op_FastUnlock ||
+      cmp->is_SubTypeCheck() || cop == Op_VectorTest ) {
+    return nullptr;
+  }
   Node *cmp1 = cmp->in(1);
   Node *cmp2 = cmp->in(2);
-  if( !cmp1 ) return NULL;
+  if( !cmp1 ) return nullptr;
 
   if (_test._test == BoolTest::overflow || _test._test == BoolTest::no_overflow) {
-    return NULL;
+    return nullptr;
   }
 
   const int cmp1_op = cmp1->Opcode();
@@ -1510,7 +1532,7 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Move constants to the right of compare's to canonicalize.
   // Do not muck with Opaque1 nodes, as this indicates a loop
   // guard that cannot change shape.
-  if( con->is_Con() && !cmp2->is_Con() && cmp2_op != Op_Opaque1 &&
+  if (con->is_Con() && !cmp2->is_Con() && cmp2_op != Op_OpaqueZeroTripGuard &&
       // Because of NaN's, CmpD and CmpF are not commutative
       cop != Op_CmpD && cop != Op_CmpF &&
       // Protect against swapping inputs to a compare when it is used by a
@@ -1523,6 +1545,21 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     cmp->swap_edges(1, 2);
     cmp = phase->transform( cmp );
     return new BoolNode( cmp, _test.commute() );
+  }
+
+  // Change "bool eq/ne (cmp (cmove (bool tst (cmp2)) 1 0) 0)" into "bool tst/~tst (cmp2)"
+  if (cop == Op_CmpI &&
+      (_test._test == BoolTest::eq || _test._test == BoolTest::ne) &&
+      cmp1_op == Op_CMoveI && cmp2->find_int_con(1) == 0) {
+    // 0 should be on the true branch
+    if (cmp1->in(CMoveNode::Condition)->is_Bool() &&
+        cmp1->in(CMoveNode::IfTrue)->find_int_con(1) == 0 &&
+        cmp1->in(CMoveNode::IfFalse)->find_int_con(0) != 0) {
+      BoolNode* target = cmp1->in(CMoveNode::Condition)->as_Bool();
+      return new BoolNode(target->in(1),
+                          (_test._test == BoolTest::eq) ? target->_test._test :
+                                                          target->_test.negate());
+    }
   }
 
   // Change "bool eq/ne (cmp (and X 16) 16)" into "bool ne/eq (cmp (and X 16) 0)".
@@ -1557,13 +1594,15 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // and    "cmp (add X min_jint) c" into "cmpu X (c + min_jint)"
   if (cop == Op_CmpI &&
       cmp1_op == Op_AddI &&
-      phase->type(cmp1->in(2)) == TypeInt::MIN) {
+      phase->type(cmp1->in(2)) == TypeInt::MIN &&
+      !is_cloop_condition(this)) {
     if (cmp2_op == Op_ConI) {
       Node* ncmp2 = phase->intcon(java_add(cmp2->get_int(), min_jint));
       Node* ncmp = phase->transform(new CmpUNode(cmp1->in(1), ncmp2));
       return new BoolNode(ncmp, _test._test);
     } else if (cmp2_op == Op_AddI &&
-               phase->type(cmp2->in(2)) == TypeInt::MIN) {
+               phase->type(cmp2->in(2)) == TypeInt::MIN &&
+               !is_cloop_condition(this)) {
       Node* ncmp = phase->transform(new CmpUNode(cmp1->in(1), cmp2->in(1)));
       return new BoolNode(ncmp, _test._test);
     }
@@ -1573,13 +1612,15 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // and    "cmp (add X min_jlong) c" into "cmpu X (c + min_jlong)"
   if (cop == Op_CmpL &&
       cmp1_op == Op_AddL &&
-      phase->type(cmp1->in(2)) == TypeLong::MIN) {
+      phase->type(cmp1->in(2)) == TypeLong::MIN &&
+      !is_cloop_condition(this)) {
     if (cmp2_op == Op_ConL) {
       Node* ncmp2 = phase->longcon(java_add(cmp2->get_long(), min_jlong));
       Node* ncmp = phase->transform(new CmpULNode(cmp1->in(1), ncmp2));
       return new BoolNode(ncmp, _test._test);
     } else if (cmp2_op == Op_AddL &&
-               phase->type(cmp2->in(2)) == TypeLong::MIN) {
+               phase->type(cmp2->in(2)) == TypeLong::MIN &&
+               !is_cloop_condition(this)) {
       Node* ncmp = phase->transform(new CmpULNode(cmp1->in(1), cmp2->in(1)));
       return new BoolNode(ncmp, _test._test);
     }
@@ -1589,7 +1630,7 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // The XOR-1 is an idiom used to flip the sense of a bool.  We flip the
   // test instead.
   const TypeInt* cmp2_type = phase->type(cmp2)->isa_int();
-  if (cmp2_type == NULL)  return NULL;
+  if (cmp2_type == nullptr)  return nullptr;
   Node* j_xor = cmp1;
   if( cmp2_type == TypeInt::ZERO &&
       cmp1_op == Op_XorI &&
@@ -1602,57 +1643,31 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return new BoolNode( ncmp, _test.negate() );
   }
 
-  // Change ((x & m) u<= m) or ((m & x) u<= m) to always true
-  // Same with ((x & m) u< m+1) and ((m & x) u< m+1)
-  if (cop == Op_CmpU &&
-      cmp1_op == Op_AndI) {
-    Node* bound = NULL;
-    if (_test._test == BoolTest::le) {
-      bound = cmp2;
-    } else if (_test._test == BoolTest::lt &&
-               cmp2->Opcode() == Op_AddI &&
-               cmp2->in(2)->find_int_con(0) == 1) {
-      bound = cmp2->in(1);
-    }
-    if (cmp1->in(2) == bound || cmp1->in(1) == bound) {
-      return ConINode::make(1);
-    }
-  }
-
-  // Change ((x & (m - 1)) u< m) into (m > 0)
-  // This is the off-by-one variant of the above
-  if (cop == Op_CmpU &&
-      _test._test == BoolTest::lt &&
-      cmp1_op == Op_AndI) {
-    Node* l = cmp1->in(1);
-    Node* r = cmp1->in(2);
-    for (int repeat = 0; repeat < 2; repeat++) {
-      bool match = r->Opcode() == Op_AddI && r->in(2)->find_int_con(0) == -1 &&
-                   r->in(1) == cmp2;
-      if (match) {
-        // arraylength known to be non-negative, so a (arraylength != 0) is sufficient,
-        // but to be compatible with the array range check pattern, use (arraylength u> 0)
-        Node* ncmp = cmp2->Opcode() == Op_LoadRange
-                     ? phase->transform(new CmpUNode(cmp2, phase->intcon(0)))
-                     : phase->transform(new CmpINode(cmp2, phase->intcon(0)));
-        return new BoolNode(ncmp, BoolTest::gt);
-      } else {
-        // commute and try again
-        l = cmp1->in(2);
-        r = cmp1->in(1);
+  // Transform: "((x & (m - 1)) <u m)" or "(((m - 1) & x) <u m)" into "(m >u 0)"
+  // This is case [CMPU_MASK] which is further described at the method comment of BoolNode::Value_cmpu_and_mask().
+  if (cop == Op_CmpU && _test._test == BoolTest::lt && cmp1_op == Op_AndI) {
+    Node* m = cmp2; // RHS: m
+    for (int add_idx = 1; add_idx <= 2; add_idx++) { // LHS: "(m + (-1)) & x" or "x & (m + (-1))"?
+      Node* maybe_m_minus_1 = cmp1->in(add_idx);
+      if (maybe_m_minus_1->Opcode() == Op_AddI &&
+          maybe_m_minus_1->in(2)->find_int_con(0) == -1 &&
+          maybe_m_minus_1->in(1) == m) {
+        Node* m_cmpu_0 = phase->transform(new CmpUNode(m, phase->intcon(0)));
+        return new BoolNode(m_cmpu_0, BoolTest::gt);
       }
     }
   }
 
   // Change x u< 1 or x u<= 0 to x == 0
+  // and    x u> 0 or u>= 1   to x != 0
   if (cop == Op_CmpU &&
       cmp1_op != Op_LoadRange &&
-      ((_test._test == BoolTest::lt &&
+      (((_test._test == BoolTest::lt || _test._test == BoolTest::ge) &&
         cmp2->find_int_con(-1) == 1) ||
-       (_test._test == BoolTest::le &&
+       ((_test._test == BoolTest::le || _test._test == BoolTest::gt) &&
         cmp2->find_int_con(-1) == 0))) {
     Node* ncmp = phase->transform(new CmpINode(cmp1, phase->intcon(0)));
-    return new BoolNode(ncmp, BoolTest::eq);
+    return new BoolNode(ncmp, _test.is_less() ? BoolTest::eq : BoolTest::ne);
   }
 
   // Change (arraylength <= 0) or (arraylength == 0)
@@ -1701,7 +1716,7 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if ((_test._test == BoolTest::eq || _test._test == BoolTest::ne) &&
       cop == Op_CmpI &&
       cmp1_op == Op_AddI &&
-      cmp1->in(2) != NULL &&
+      cmp1->in(2) != nullptr &&
       phase->type(cmp1->in(2))->isa_int() &&
       phase->type(cmp1->in(2))->is_int()->is_con() &&
       cmp2_type == TypeInt::ZERO &&
@@ -1774,18 +1789,18 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   //    // counter.  If they use the PRE-incremented counter, then the counter has
   //    // to be incremented in a private block on a loop backedge.
   //    if( du && du->cnt(this) && du->out(this)[0]->Opcode() == Op_CountedLoopEnd )
-  //      return NULL;
+  //      return nullptr;
   //  #ifndef PRODUCT
   //    // Do not do this in a wash GVN pass during verification.
   //    // Gets triggered by too many simple optimizations to be bothered with
   //    // re-trying it again and again.
-  //    if( !phase->allow_progress() ) return NULL;
+  //    if( !phase->allow_progress() ) return nullptr;
   //  #endif
   //    // Not valid for unsigned compare because of corner cases in involving zero.
   //    // For example, replacing "X-1 <u Y" with "X <=u Y" fails to throw an
   //    // exception in case X is 0 (because 0-1 turns into 4billion unsigned but
   //    // "0 <=u Y" is always true).
-  //    if( cmp->Opcode() == Op_CmpU ) return NULL;
+  //    if( cmp->Opcode() == Op_CmpU ) return nullptr;
   //    int cmp2_op = cmp2->Opcode();
   //    if( _test._test == BoolTest::le ) {
   //      if( cmp1_op == Op_AddI &&
@@ -1804,10 +1819,95 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   //    }
 }
 
-//------------------------------Value------------------------------------------
+// We use the following Lemmas/insights for the following two transformations (1) and (2):
+//   x & y <=u y, for any x and y           (Lemma 1, masking always results in a smaller unsigned number)
+//   y <u y + 1 is always true if y != -1   (Lemma 2, (uint)(-1 + 1) == (uint)(UINT_MAX + 1) which overflows)
+//   y <u 0 is always false for any y       (Lemma 3, 0 == UINT_MIN and nothing can be smaller than that)
+//
+// (1a) Always:     Change ((x & m) <=u m  ) or ((m & x) <=u m  ) to always true   (true by Lemma 1)
+// (1b) If m != -1: Change ((x & m) <u  m + 1) or ((m & x) <u  m + 1) to always true:
+//    x & m <=u m          is always true   // (Lemma 1)
+//    x & m <=u m <u m + 1 is always true   // (Lemma 2: m <u m + 1, if m != -1)
+//
+// A counter example for (1b), if we allowed m == -1:
+//     (x & m)  <u m + 1
+//     (x & -1) <u 0
+//      x       <u 0
+//   which is false for any x (Lemma 3)
+//
+// (2) Change ((x & (m - 1)) <u m) or (((m - 1) & x) <u m) to (m >u 0)
+// This is the off-by-one variant of the above.
+//
+// We now prove that this replacement is correct. This is the same as proving
+//   "m >u 0" if and only if "x & (m - 1) <u m", i.e. "m >u 0 <=> x & (m - 1) <u m"
+//
+// We use (Lemma 1) and (Lemma 3) from above.
+//
+// Case "x & (m - 1) <u m => m >u 0":
+//   We prove this by contradiction:
+//     Assume m <=u 0 which is equivalent to m == 0:
+//   and thus
+//     x & (m - 1) <u m = 0               // m == 0
+//     y           <u     0               // y = x & (m - 1)
+//   by Lemma 3, this is always false, i.e. a contradiction to our assumption.
+//
+// Case "m >u 0 => x & (m - 1) <u m":
+//   x & (m - 1) <=u (m - 1)              // (Lemma 1)
+//   x & (m - 1) <=u (m - 1) <u m         // Using assumption m >u 0, no underflow of "m - 1"
+//
+//
+// Note that the signed version of "m > 0":
+//   m > 0 <=> x & (m - 1) <u m
+// does not hold:
+//   Assume m == -1 and x == -1:
+//     x  & (m - 1) <u m
+//     -1 & -2      <u -1
+//     -2           <u -1
+//     UINT_MAX - 1 <u UINT_MAX           // Signed to unsigned numbers
+// which is true while
+//   m > 0
+// is false which is a contradiction.
+//
+// (1a) and (1b) is covered by this method since we can directly return a true value as type while (2) is covered
+// in BoolNode::Ideal since we create a new non-constant node (see [CMPU_MASK]).
+const Type* BoolNode::Value_cmpu_and_mask(PhaseValues* phase) const {
+  Node* cmp = in(1);
+  if (cmp != nullptr && cmp->Opcode() == Op_CmpU) {
+    Node* cmp1 = cmp->in(1);
+    Node* cmp2 = cmp->in(2);
+
+    if (cmp1->Opcode() == Op_AndI) {
+      Node* m = nullptr;
+      if (_test._test == BoolTest::le) {
+        // (1a) "((x & m) <=u m)", cmp2 = m
+        m = cmp2;
+      } else if (_test._test == BoolTest::lt && cmp2->Opcode() == Op_AddI && cmp2->in(2)->find_int_con(0) == 1) {
+        // (1b) "(x & m) <u m + 1" and "(m & x) <u m + 1", cmp2 = m + 1
+        Node* rhs_m = cmp2->in(1);
+        const TypeInt* rhs_m_type = phase->type(rhs_m)->isa_int();
+        if (rhs_m_type->_lo > -1 || rhs_m_type->_hi < -1) {
+          // Exclude any case where m == -1 is possible.
+          m = rhs_m;
+        }
+      }
+
+      if (cmp1->in(2) == m || cmp1->in(1) == m) {
+        return TypeInt::ONE;
+      }
+    }
+  }
+
+  return nullptr;
+}
+
 // Simplify a Bool (convert condition codes to boolean (1 or 0)) node,
 // based on local information.   If the input is constant, do it.
 const Type* BoolNode::Value(PhaseGVN* phase) const {
+  const Type* t = Value_cmpu_and_mask(phase);
+  if (t != nullptr) {
+    return t;
+  }
+
   return _test.cc2logical( phase->type( in(1) ) );
 }
 
@@ -1818,20 +1918,6 @@ void BoolNode::dump_spec(outputStream *st) const {
   st->print("[");
   _test.dump_on(st);
   st->print("]");
-}
-
-//-------------------------------related---------------------------------------
-// A BoolNode's related nodes are all of its data inputs, and all of its
-// outputs until control nodes are hit, which are included. In compact
-// representation, inputs till level 3 and immediate outputs are included.
-void BoolNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  if (compact) {
-    this->collect_nodes(in_rel, 3, false, true);
-    this->collect_nodes(out_rel, -1, false, false);
-  } else {
-    this->collect_nodes_in_all_data(in_rel, false);
-    this->collect_nodes_out_all_ctrl_boundary(out_rel);
-  }
 }
 #endif
 
@@ -1857,14 +1943,14 @@ const Type* AbsNode::Value(PhaseGVN* phase) const {
   case Type::Int: {
     const TypeInt* ti = t1->is_int();
     if (ti->is_con()) {
-      return TypeInt::make(uabs(ti->get_con()));
+      return TypeInt::make(g_uabs(ti->get_con()));
     }
     break;
   }
   case Type::Long: {
     const TypeLong* tl = t1->is_long();
     if (tl->is_con()) {
-      return TypeLong::make(uabs(tl->get_con()));
+      return TypeLong::make(g_uabs(tl->get_con()));
     }
     break;
   }
@@ -1902,7 +1988,7 @@ Node* AbsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     set_req_X(1, in1->in(2), phase);
     return this;
   }
-  return NULL;
+  return nullptr;
 }
 
 //=============================================================================
@@ -1924,4 +2010,68 @@ const Type* SqrtFNode::Value(PhaseGVN* phase) const {
   float f = t1->getf();
   if( f < 0.0f ) return Type::FLOAT;
   return TypeF::make( (float)sqrt( (double)f ) );
+}
+
+const Type* SqrtHFNode::Value(PhaseGVN* phase) const {
+  const Type* t1 = phase->type(in(1));
+  if (t1 == Type::TOP) { return Type::TOP; }
+  if (t1->base() != Type::HalfFloatCon) { return Type::HALF_FLOAT; }
+  float f = t1->getf();
+  if (f < 0.0f) return Type::HALF_FLOAT;
+  return TypeH::make((float)sqrt((double)f));
+}
+
+static const Type* reverse_bytes(int opcode, const Type* con) {
+  switch (opcode) {
+    case Op_ReverseBytesS:  return TypeInt::make(byteswap(checked_cast<jshort>(con->is_int()->get_con())));
+    case Op_ReverseBytesUS: return TypeInt::make(byteswap(checked_cast<jchar>(con->is_int()->get_con())));
+    case Op_ReverseBytesI:  return TypeInt::make(byteswap(checked_cast<jint>(con->is_int()->get_con())));
+    case Op_ReverseBytesL:  return TypeLong::make(byteswap(checked_cast<jlong>(con->is_long()->get_con())));
+    default: ShouldNotReachHere();
+  }
+}
+
+const Type* ReverseBytesNode::Value(PhaseGVN* phase) const {
+  const Type* type = phase->type(in(1));
+  if (type == Type::TOP) {
+    return Type::TOP;
+  }
+  if (type->singleton()) {
+    return reverse_bytes(Opcode(), type);
+  }
+  return bottom_type();
+}
+
+const Type* ReverseINode::Value(PhaseGVN* phase) const {
+  const Type *t1 = phase->type( in(1) );
+  if (t1 == Type::TOP) {
+    return Type::TOP;
+  }
+  const TypeInt* t1int = t1->isa_int();
+  if (t1int && t1int->is_con()) {
+    jint res = reverse_bits(t1int->get_con());
+    return TypeInt::make(res);
+  }
+  return bottom_type();
+}
+
+const Type* ReverseLNode::Value(PhaseGVN* phase) const {
+  const Type *t1 = phase->type( in(1) );
+  if (t1 == Type::TOP) {
+    return Type::TOP;
+  }
+  const TypeLong* t1long = t1->isa_long();
+  if (t1long && t1long->is_con()) {
+    jlong res = reverse_bits(t1long->get_con());
+    return TypeLong::make(res);
+  }
+  return bottom_type();
+}
+
+Node* InvolutionNode::Identity(PhaseGVN* phase) {
+  // Op ( Op x ) => x
+  if (in(1)->Opcode() == Opcode()) {
+    return in(1)->in(1);
+  }
+  return this;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public class ProviderTest {
                 "-classpath",
                 classpath,
                 "ProviderTest$TestMain" };
-        OutputAnalyzer output = ProcessTools.executeTestJvm(args);
+        OutputAnalyzer output = ProcessTools.executeTestJava(args);
         output.shouldHaveExitValue(0);
     }
 
@@ -107,7 +107,7 @@ public class ProviderTest {
     public static class TestMain {
         public static void main(String args[]) throws Exception {
             // deal with internal builds where classes are loaded from the
-            // 'classes' directory rather than rt.jar
+            // 'classes' directory rather than the runtime image
             ClassLoader cl = AttachProvider.class.getClassLoader();
             if (cl != ClassLoader.getSystemClassLoader()) {
                 System.out.println("Attach API not loaded by system class loader - test skipped");

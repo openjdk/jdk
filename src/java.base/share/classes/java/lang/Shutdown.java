@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,11 +70,11 @@ class Shutdown {
      * be added to the delete on exit list by the application shutdown
      * hooks.
      *
-     * @params slot  the slot in the shutdown hook array, whose element
-     *               will be invoked in order during shutdown
-     * @params registerShutdownInProgress true to allow the hook
-     *               to be registered even if the shutdown is in progress.
-     * @params hook  the hook to be registered
+     * @param slot  the slot in the shutdown hook array, whose element
+     *              will be invoked in order during shutdown
+     * @param registerShutdownInProgress true to allow the hook
+     *              to be registered even if the shutdown is in progress.
+     * @param hook  the hook to be registered
      *
      * @throws IllegalStateException
      *         if registerShutdownInProgress is false and shutdown is in progress; or
@@ -129,9 +129,7 @@ class Shutdown {
                 }
                 if (hook != null) hook.run();
             } catch (Throwable t) {
-                if (t instanceof ThreadDeath td) {
-                    throw td;
-                }
+                // ignore
             }
         }
 
@@ -159,12 +157,8 @@ class Shutdown {
      * which should pass a nonzero status code.
      */
     static void exit(int status) {
-        synchronized (lock) {
-            if (status != 0 && VM.isShutdown()) {
-                /* Halt immediately on nonzero status */
-                halt(status);
-            }
-        }
+        logRuntimeExit(status);         // Log without holding the lock;
+
         synchronized (Shutdown.class) {
             /* Synchronize on the class object, causing any other thread
              * that attempts to initiate shutdown to stall indefinitely
@@ -175,6 +169,27 @@ class Shutdown {
         }
     }
 
+    /* Locate the logger and log the Runtime.exit(status).
+     * Catch and ignore any and all exceptions.
+     */
+    private static void logRuntimeExit(int status) {
+        try {
+            System.Logger log = System.getLogger("java.lang.Runtime");
+            if (log.isLoggable(System.Logger.Level.DEBUG)) {
+                Throwable throwable = new Throwable("Runtime.exit(" + status + ")");
+                log.log(System.Logger.Level.DEBUG, "Runtime.exit() called with status: " + status,
+                        throwable);
+            }
+        } catch (Throwable throwable) {
+            try {
+                // Exceptions from the Logger are printed but do not prevent exit
+                System.err.println("Runtime.exit(" + status + ") logging failed: " +
+                        throwable.getMessage());
+            } catch (Throwable throwable2) {
+                // Ignore
+            }
+        }
+    }
 
     /* Invoked by the JNI DestroyJavaVM procedure when the last non-daemon
      * thread has finished.  Unlike the exit method, this method does not

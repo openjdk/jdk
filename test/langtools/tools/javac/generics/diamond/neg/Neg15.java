@@ -23,7 +23,7 @@ class Neg15 {
             throw new Error("Blew it");
     }
 
-    public static void main(String[] args) {
+    public static void meth() {
 
         someMethod(new Predicate<Integer>() {
             public boolean test(Integer n) {

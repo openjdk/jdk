@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,6 @@ import java.util.Arrays;
 import java.util.Map;
 import javax.net.ssl.X509ExtendedKeyManager;
 
-import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
-
 enum X509Authentication implements SSLAuthentication {
     // Require rsaEncryption public key
     RSA         ("RSA",         "RSA"),
@@ -50,7 +48,7 @@ enum X509Authentication implements SSLAuthentication {
 
     // Require rsaEncryption or RSASSA-PSS public key
     //
-    // Note that this is a specifical scheme for TLS 1.2. (EC)DHE_RSA cipher
+    // Note that this is a specific scheme for TLS 1.2. (EC)DHE_RSA cipher
     // suites of TLS 1.2 can use either rsaEncryption or RSASSA-PSS public
     // key for authentication and handshake.
     RSA_OR_PSS  ("RSA_OR_PSS",  "RSA", "RSASSA-PSS"),
@@ -66,15 +64,15 @@ enum X509Authentication implements SSLAuthentication {
     final String keyAlgorithm;
     final String[] keyTypes;
 
-    private X509Authentication(String keyAlgorithm,
-            String... keyTypes) {
+    X509Authentication(String keyAlgorithm,
+                       String... keyTypes) {
         this.keyAlgorithm = keyAlgorithm;
         this.keyTypes = keyTypes;
     }
 
-    static X509Authentication valueOf(SignatureScheme signatureScheme) {
+    static X509Authentication valueOfKeyAlgorithm(String keyAlgorithm) {
         for (X509Authentication au : X509Authentication.values()) {
-            if (au.keyAlgorithm.equals(signatureScheme.keyAlgorithm)) {
+            if (au.keyAlgorithm.equals(keyAlgorithm)) {
                 return au;
             }
         }
@@ -203,6 +201,10 @@ enum X509Authentication implements SSLAuthentication {
     private static SSLPossession createClientPossession(
             ClientHandshakeContext chc, String[] keyTypes) {
         X509ExtendedKeyManager km = chc.sslContext.getX509KeyManager();
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+            SSLLogger.finest("X509KeyManager class: " +
+                    km.getClass().getName());
+        }
         String clientAlias = null;
         if (chc.conContext.transport instanceof SSLSocketImpl socket) {
             clientAlias = km.chooseClientAlias(
@@ -272,8 +274,12 @@ enum X509Authentication implements SSLAuthentication {
     private static SSLPossession createServerPossession(
             ServerHandshakeContext shc, String[] keyTypes) {
         X509ExtendedKeyManager km = shc.sslContext.getX509KeyManager();
-        String serverAlias = null;
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+            SSLLogger.finest("X509KeyManager class: " +
+                    km.getClass().getName());
+        }
         for (String keyType : keyTypes) {
+            String serverAlias = null;
             if (shc.conContext.transport instanceof SSLSocketImpl socket) {
                 serverAlias = km.chooseServerAlias(keyType,
                         shc.peerSupportedAuthorities == null ? null :
@@ -322,7 +328,7 @@ enum X509Authentication implements SSLAuthentication {
                 continue;
             }
 
-            // For TLS 1.2 and prior versions, the public key of a EC cert
+            // For TLS 1.2 and prior versions, the public key of an EC cert
             // MUST use a curve and point format supported by the client.
             // But for TLS 1.3, signature algorithms are negotiated
             // independently via the "signature_algorithms" extension.
@@ -344,7 +350,7 @@ enum X509Authentication implements SSLAuthentication {
                         ((ECPublicKey) serverPublicKey).getParams();
                 NamedGroup namedGroup = NamedGroup.valueOf(params);
                 if ((namedGroup == null) ||
-                        (!SupportedGroups.isSupported(namedGroup)) ||
+                        (!NamedGroup.isEnabled(shc.sslConfig, namedGroup)) ||
                         ((shc.clientRequestedNamedGroups != null) &&
                                 !shc.clientRequestedNamedGroups.contains(namedGroup))) {
 

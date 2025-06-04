@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,10 @@
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
- * @build NestApp sun.hotspot.WhiteBox LambdaVerification
+ * @build NestApp jdk.test.whitebox.WhiteBox LambdaVerification
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar nest_app.jar NestApp NestApp$InnerA NestApp$InnerB NestApp$InnerA$InnerInnerA
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. NestTest
  */
 
@@ -58,7 +58,7 @@ public class NestTest extends DynamicArchiveTestBase {
             use_whitebox_jar,
             "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
-                output.shouldContain("Archiving hidden NestApp$InnerA$InnerInnerA$$Lambda$")
+                output.shouldContain("Archiving hidden NestApp$InnerA$InnerInnerA$$Lambda")
                       .shouldHaveExitValue(0);
             });
 
@@ -69,7 +69,7 @@ public class NestTest extends DynamicArchiveTestBase {
             "-Xlog:class+load=debug,class+resolve=debug,class+unload=info",
             "-cp", appJar, mainClass, "run")
             .assertNormalExit(output -> {
-                output.shouldMatch(".class.load.* NestApp[$]InnerA[$]InnerInnerA[$][$]Lambda[$].*/0x.*source:.*shared.*objects.*file.*(top)")
+                output.shouldMatch(".class.load.* NestApp[$]InnerA[$]InnerInnerA[$][$]Lambda.*/0x.*source:.*shared.*objects.*file.*(top)")
                       .shouldHaveExitValue(0);
             });
     }

@@ -42,7 +42,7 @@ class TestC<T>{
     }
 }
 public class T6326754{
-    public static void main(String... arg){
+    public static void meth() {
         TestC tC =new TestC();
         tC.setT();
         TestConstructor tc = new TestConstructor("saaa");

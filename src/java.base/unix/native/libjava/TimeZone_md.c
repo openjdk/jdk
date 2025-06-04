@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,31 +37,15 @@
 #include <unistd.h>
 
 #include "jvm.h"
+#include "jni_util.h"
 #include "TimeZone_md.h"
 #include "path_util.h"
-
-static char *isFileIdentical(char* buf, size_t size, char *pathname);
-
-#define SKIP_SPACE(p)   while (*p == ' ' || *p == '\t') p++;
-
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
 
 #define fileopen        fopen
 #define filegets        fgets
 #define fileclose       fclose
 
-#if defined(_ALLBSD_SOURCE)
-#define stat64 stat
-#define lstat64 lstat
-#define fstat64 fstat
-#endif
-
 #if defined(__linux__) || defined(_ALLBSD_SOURCE)
-static const char *ETC_TIMEZONE_FILE = "/etc/timezone";
 static const char *ZONEINFO_DIR = "/usr/share/zoneinfo";
 static const char *DEFAULT_ZONEINFO_FILE = "/etc/localtime";
 #else
@@ -72,11 +56,8 @@ static const char *DEFAULT_ZONEINFO_FILE = "/usr/share/lib/zoneinfo/localtime";
 
 static const char popularZones[][4] = {"UTC", "GMT"};
 
-#if defined(_AIX)
-static const char *ETC_ENVIRONMENT_FILE = "/etc/environment";
-#endif
-
 #if defined(__linux__) || defined(MACOSX)
+static char *isFileIdentical(char* buf, size_t size, char *pathname);
 
 /*
  * remove repeated path separators ('/') in the given 'path'.
@@ -151,7 +132,6 @@ findZoneinfoFile(char *buf, size_t size, const char *dir)
     struct dirent *dp = NULL;
     char *pathname = NULL;
     char *tz = NULL;
-    int res;
 
     if (strcmp(dir, ZONEINFO_DIR) == 0) {
         /* fast path for 1st iteration */
@@ -220,12 +200,12 @@ static char *
 isFileIdentical(char *buf, size_t size, char *pathname)
 {
     char *possibleMatch = NULL;
-    struct stat64 statbuf;
+    struct stat statbuf;
     char *dbuf = NULL;
     int fd = -1;
     int res;
 
-    RESTARTABLE(stat64(pathname, &statbuf), res);
+    RESTARTABLE(stat(pathname, &statbuf), res);
     if (res == -1) {
         return NULL;
     }
@@ -265,44 +245,17 @@ isFileIdentical(char *buf, size_t size, char *pathname)
 static char *
 getPlatformTimeZoneID()
 {
-    struct stat64 statbuf;
+    struct stat statbuf;
     char *tz = NULL;
-    FILE *fp;
     int fd;
     char *buf;
     size_t size;
     int res;
 
-#if defined(__linux__)
     /*
-     * Try reading the /etc/timezone file for Debian distros. There's
-     * no spec of the file format available. This parsing assumes that
-     * there's one line of an Olson tzid followed by a '\n', no
-     * leading or trailing spaces, no comments.
+     * Try /etc/localtime to find the zone ID.
      */
-    if ((fp = fopen(ETC_TIMEZONE_FILE, "r")) != NULL) {
-        char line[256];
-
-        if (fgets(line, sizeof(line), fp) != NULL) {
-            char *p = strchr(line, '\n');
-            if (p != NULL) {
-                *p = '\0';
-            }
-            if (strlen(line) > 0) {
-                tz = strdup(line);
-            }
-        }
-        (void) fclose(fp);
-        if (tz != NULL) {
-            return tz;
-        }
-    }
-#endif /* defined(__linux__) */
-
-    /*
-     * Next, try /etc/localtime to find the zone ID.
-     */
-    RESTARTABLE(lstat64(DEFAULT_ZONEINFO_FILE, &statbuf), res);
+    RESTARTABLE(lstat(DEFAULT_ZONEINFO_FILE, &statbuf), res);
     if (res == -1) {
         return NULL;
     }
@@ -344,7 +297,7 @@ getPlatformTimeZoneID()
         return NULL;
     }
 
-    RESTARTABLE(fstat64(fd, &statbuf), res);
+    RESTARTABLE(fstat(fd, &statbuf), res);
     if (res == -1) {
         (void) close(fd);
         return NULL;
@@ -370,6 +323,7 @@ getPlatformTimeZoneID()
 }
 
 #elif defined(_AIX)
+static const char *ETC_ENVIRONMENT_FILE = "/etc/environment";
 
 static char *
 getPlatformTimeZoneID()
@@ -409,12 +363,11 @@ mapPlatformToJavaTimezone(const char *java_home_dir, const char *tz) {
     size_t tz_len = 0;
 
     /* On AIX, the TZ environment variable may end with a comma
-     * followed by modifier fields. These are ignored here. */
-    temp_tz = strchr(tz, ',');
-    tz_len = (temp_tz == NULL) ? strlen(tz) : temp_tz - tz;
-    tz_buf = (char *)malloc(tz_len + 1);
-    memcpy(tz_buf, tz, tz_len);
-    tz_buf[tz_len] = 0;
+     * followed by modifier fields until early AIX6.1.
+     * This restriction has been removed from AIX7. */
+
+    tz_buf = strdup(tz);
+    tz_len = strlen(tz_buf);
 
     /* Open tzmappings file, with buffer overrun check */
     if ((strlen(java_home_dir) + 15) > PATH_MAX) {
@@ -497,7 +450,7 @@ tzerr:
 /*
  * findJavaTZ_md() maps platform time zone ID to Java time zone ID
  * using <java_home>/lib/tzmappings. If the TZ value is not found, it
- * trys some libc implementation dependent mappings. If it still
+ * tries some libc implementation dependent mappings. If it still
  * can't map to a Java time zone ID, it falls back to the GMT+/-hh:mm
  * form.
  */
@@ -555,58 +508,50 @@ findJavaTZ_md(const char *java_home_dir)
 /**
  * Returns a GMT-offset-based zone ID. (e.g., "GMT-08:00")
  */
+char *
+getGMTOffsetID()
+{
+    char buf[32];
+    char offset[6];
+    struct tm localtm;
+    time_t clock = time(NULL);
+    if (localtime_r(&clock, &localtm) == NULL) {
+        return strdup("GMT");
+    }
 
 #if defined(MACOSX)
-
-char *
-getGMTOffsetID()
-{
-    time_t offset;
-    char sign, buf[32];
-    struct tm local_tm;
-    time_t clock;
-
-    clock = time(NULL);
-    if (localtime_r(&clock, &local_tm) == NULL) {
+    time_t gmt_offset;
+    gmt_offset = (time_t)localtm.tm_gmtoff;
+    if (gmt_offset == 0) {
         return strdup("GMT");
     }
-    offset = (time_t)local_tm.tm_gmtoff;
-    if (offset == 0) {
-        return strdup("GMT");
-    }
-    if (offset > 0) {
-        sign = '+';
-    } else {
-        offset = -offset;
-        sign = '-';
-    }
-    sprintf(buf, (const char *)"GMT%c%02d:%02d",
-            sign, (int)(offset/3600), (int)((offset%3600)/60));
-    return strdup(buf);
-}
-
 #else
-
-char *
-getGMTOffsetID()
-{
-    time_t offset;
-    char sign, buf[32];
-    offset = timezone;
-
-    if (offset == 0) {
+    struct tm gmt;
+    if (gmtime_r(&clock, &gmt) == NULL) {
         return strdup("GMT");
     }
 
-    /* Note that the time offset direction is opposite. */
-    if (offset > 0) {
-        sign = '-';
-    } else {
-        offset = -offset;
-        sign = '+';
+    if(localtm.tm_hour == gmt.tm_hour && localtm.tm_min == gmt.tm_min) {
+        return strdup("GMT");
     }
-    sprintf(buf, (const char *)"GMT%c%02d:%02d",
-            sign, (int)(offset/3600), (int)((offset%3600)/60));
+#endif
+
+#if defined(_AIX)
+    // strftime() with "%z" does not return ISO 8601 format by AIX default.
+    // XPG_SUS_ENV=ON environment variable is required.
+    // But Hotspot does not support XPG_SUS_ENV=ON.
+    // Ignore daylight saving settings to calculate current time difference
+    localtm.tm_isdst = 0;
+    int gmt_off = (int)(difftime(mktime(&localtm), mktime(&gmt)) / 60.0);
+    snprintf(buf, sizeof(buf), (const char *)"GMT%c%02.2d:%02.2d",
+            gmt_off < 0 ? '-' : '+' , abs(gmt_off / 60), gmt_off % 60);
+#else
+    if (strftime(offset, 6, "%z", &localtm) != 5) {
+        return strdup("GMT");
+    }
+
+    snprintf(buf, sizeof(buf), (const char *)"GMT%c%c%c:%c%c", offset[0], offset[1], offset[2],
+        offset[3], offset[4]);
+#endif
     return strdup(buf);
 }
-#endif /* MACOSX */

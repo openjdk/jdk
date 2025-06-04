@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,12 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/logLevel.hpp"
 #include "logging/logSelection.hpp"
 #include "logging/logTagSet.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 #include "logTestUtils.inline.hpp"
 #include "unittest.hpp"
 
@@ -41,9 +41,9 @@ void PrintTo(const LogSelection& sel, ::std::ostream* os) {
     *os << "LogSelection::Invalid";
     return;
   }
-  char buf[256];
-  sel.describe(buf, sizeof(buf));
-  *os << buf;
+  stringStream ss;
+  sel.describe_on(&ss);
+  *os << ss.freeze();
 }
 
 TEST(LogSelection, sanity) {
@@ -199,19 +199,19 @@ TEST(LogSelection, consists_of) {
 }
 
 TEST(LogSelection, describe_tags) {
-  char buf[256];
+  stringStream ss;
   LogTagType tags[LogTag::MaxTags] = { PREFIX_LOG_TAG(logging), PREFIX_LOG_TAG(test), PREFIX_LOG_TAG(_NO_TAG) };
   LogSelection selection(tags, true, LogLevel::Off);
-  selection.describe_tags(buf, sizeof(buf));
-  EXPECT_STREQ("logging+test*", buf);
+  selection.describe_tags_on(&ss);
+  EXPECT_STREQ("logging+test*", ss.freeze());
 }
 
 TEST(LogSelection, describe) {
-  char buf[256];
+  stringStream ss;
   LogTagType tags[LogTag::MaxTags] = { PREFIX_LOG_TAG(logging), PREFIX_LOG_TAG(test), PREFIX_LOG_TAG(_NO_TAG) };
   LogSelection selection(tags, true, LogLevel::Off);
-  selection.describe(buf, sizeof(buf));
-  EXPECT_STREQ("logging+test*=off", buf);
+  selection.describe_on(&ss);
+  EXPECT_STREQ("logging+test*=off", ss.freeze());
 }
 
 #endif

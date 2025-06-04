@@ -3,8 +3,8 @@
  * @bug 8043893
  * @summary Inference doesn't report error on incompatible upper bounds
  *
- * @compile -source 7 T8043893.java
- * @compile/fail/ref=T8043893.out -Xlint:-options -XDrawDiagnostics -source 8 T8043893.java
+ *
+ * @compile/fail/ref=T8043893.out -XDrawDiagnostics T8043893.java
  */
 
 class T8043893<X> {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,12 @@ import javax.lang.model.type.*;
 
 /**
  * Represents a method, constructor, or initializer (static or
- * instance) of a class or interface, including annotation type
+ * instance) of a class or interface, including annotation interface
  * elements.
+ * Annotation interface elements are methods restricted to have no
+ * formal parameters, no type parameters, and no {@code throws}
+ * clause, among other restrictions; see JLS {@jls 9.6.1} for details.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see ExecutableType
  * @since 1.6
  */
@@ -88,6 +88,17 @@ public interface ExecutableElement extends Element, Parameterizable {
      * An executable which is a static method, or a constructor of a
      * non-inner class, or an initializer (static or instance), has no
      * receiver type.
+     *
+     * <p>The receiver <em>parameter</em> is a syntactic device added
+     * to the language for the purpose of hosting annotations. Even
+     * when source code is used as the basis for creating an
+     * executable, if a receiver parameter is not present in the
+     * source code, an implementation may elect to return a {@code
+     * NoType} object even in cases where a receiver <em>type</em> is
+     * nominally defined on the executable in question, such as an
+     * instance method.  When a receiver parameter is present and
+     * hosting annotations, a suitably annotated receiver type is
+     * returned.
      *
      * @return the receiver type of this executable
      * @since 1.8
@@ -142,7 +153,7 @@ public interface ExecutableElement extends Element, Parameterizable {
      * initializer}  For a constructor, the name {@code "<init>"} is
      * returned, for a static initializer, the name {@code "<clinit>"}
      * is returned, and for an anonymous class or instance
-     * initializer, an <a href=Name.html#empty_name>empty name</a> is
+     * initializer, an {@linkplain Name##empty_name empty name} is
      * returned.
      */
     @Override

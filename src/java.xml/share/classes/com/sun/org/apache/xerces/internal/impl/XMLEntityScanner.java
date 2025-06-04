@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -32,9 +32,6 @@ import com.sun.org.apache.xerces.internal.util.EncodingMap;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLStringBuffer;
-import com.sun.org.apache.xerces.internal.utils.XMLLimitAnalyzer;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager.Limit;
 import com.sun.org.apache.xerces.internal.xni.*;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
@@ -48,6 +45,9 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Locale;
+import jdk.xml.internal.XMLLimitAnalyzer;
+import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityManager.Limit;
 
 /**
  * Implements the entity scanner methods.
@@ -57,7 +57,7 @@ import java.util.Locale;
  * @author Arnaud  Le Hors, IBM
  * @author K.Venugopal Sun Microsystems
  *
- * @LastModified: Sep 2021
+ * @LastModified: Nov 2024
  */
 public class XMLEntityScanner implements XMLLocator  {
 
@@ -1009,7 +1009,7 @@ public class XMLEntityScanner implements XMLLocator  {
             fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN, "TotalEntitySizeLimit",
                     new Object[]{fLimitAnalyzer.getTotalValue(Limit.TOTAL_ENTITY_SIZE_LIMIT),
                 fSecurityManager.getLimit(Limit.TOTAL_ENTITY_SIZE_LIMIT),
-                fSecurityManager.getStateLiteral(Limit.TOTAL_ENTITY_SIZE_LIMIT)},
+                Limit.TOTAL_ENTITY_SIZE_LIMIT.systemProperty()},
                     XMLErrorReporter.SEVERITY_FATAL_ERROR);
         }
     }
@@ -1156,7 +1156,7 @@ public class XMLEntityScanner implements XMLLocator  {
             c = fCurrentEntity.ch[fCurrentEntity.position];
             if ((c == quote &&
                     (!fCurrentEntity.literal || isExternal)) ||
-                    c == '%' || !XMLChar.isContent(c)) {
+                    c == '%' || !XMLChar.isContent(c) || c == '\r' && !isExternal) {
                 break;
             }
             if (whiteSpaceInfoNeeded && c == '\t') {
@@ -2162,7 +2162,7 @@ public class XMLEntityScanner implements XMLLocator  {
                             break;
                         }
                     }
-                    if (c == '\r') {
+                    if (c == '\r' && isExternal) {
                         int cc = fCurrentEntity.ch[fCurrentEntity.position];
                         if (cc == '\n' || (version == XML_VERSION_1_1 && cc == 0x85)) {
                             fCurrentEntity.position++;

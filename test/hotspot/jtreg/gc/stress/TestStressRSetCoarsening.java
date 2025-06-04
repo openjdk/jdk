@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,45 +24,99 @@
 package gc.stress;
 
 import java.util.concurrent.TimeoutException;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 /*
- * @test TestStressRSetCoarsening.java
+ * @test
  * @key stress
  * @bug 8146984 8147087
  * @requires vm.gc.G1
  * @requires os.maxMemory > 3G
  * @requires vm.opt.MaxGCPauseMillis == "null"
- *
  * @summary Stress G1 Remembered Set by creating a lot of cross region links
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=300
  *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
- *     -Xmx500m -XX:G1HeapRegionSize=1m gc.stress.TestStressRSetCoarsening  1  0 300
+ *     -Xmx500m -XX:G1HeapRegionSize=1m gc.stress.TestStressRSetCoarsening 1 0 300
+ */
+
+/*
+ * @test
+ * @requires vm.gc.G1
+ * @requires os.maxMemory > 3G
+ * @requires vm.opt.MaxGCPauseMillis == "null"
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=300
  *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
- *     -Xmx500m -XX:G1HeapRegionSize=8m gc.stress.TestStressRSetCoarsening  1 10 300
+ *     -Xmx500m -XX:G1HeapRegionSize=8m gc.stress.TestStressRSetCoarsening 1 10 300
+ */
+
+/*
+ * @test
+ * @requires vm.gc.G1
+ * @requires os.maxMemory > 3G
+ * @requires vm.opt.MaxGCPauseMillis == "null"
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=300
  *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
  *     -Xmx500m -XX:G1HeapRegionSize=32m gc.stress.TestStressRSetCoarsening 42 10 300
+ */
+
+/*
+ * @test
+ * @requires vm.gc.G1
+ * @requires os.maxMemory > 3G
+ * @requires vm.opt.MaxGCPauseMillis == "null"
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=300
  *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
- *     -Xmx500m -XX:G1HeapRegionSize=1m gc.stress.TestStressRSetCoarsening  2 0 300
+ *     -Xmx500m -XX:G1HeapRegionSize=1m gc.stress.TestStressRSetCoarsening 2 0 300
+ */
+
+/*
+ * @test
+ * @requires vm.gc.G1
+ * @requires os.maxMemory > 3G
+ * @requires vm.opt.MaxGCPauseMillis == "null"
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=1800
  *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
- *     -Xmx1G -XX:G1HeapRegionSize=1m gc.stress.TestStressRSetCoarsening 500 0  1800
+ *     -Xmx1G -XX:G1HeapRegionSize=1m gc.stress.TestStressRSetCoarsening 500 0 1800
+ */
+
+/*
+ * @test
+ * @requires vm.gc.G1
+ * @requires os.maxMemory > 3G
+ * @requires vm.opt.MaxGCPauseMillis == "null"
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=1800
  *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
- *     -Xmx1G -XX:G1HeapRegionSize=1m gc.stress.TestStressRSetCoarsening 10  10 1800
+ *     -Xmx1G -XX:G1HeapRegionSize=1m gc.stress.TestStressRSetCoarsening 10 10 1800
  */
 
 /**
@@ -95,7 +149,7 @@ public class TestStressRSetCoarsening {
         }
         int objectsPerRegion = Integer.parseInt(args[0]); // 1 means humongous
         int regsToRefresh = Integer.parseInt(args[1]);  // 0 means no regions to refresh at the end of cycle
-        int timeout = Integer.parseInt(args[2]); // in seconds, test should stop working eariler
+        int timeout = Integer.parseInt(args[2]); // in seconds, test should stop working earlier
         new TestStressRSetCoarsening(objectsPerRegion, regsToRefresh, timeout).go();
     }
 
@@ -139,23 +193,23 @@ public class TestStressRSetCoarsening {
     /**
      * Initial time.
      */
-    public final long start;
+    public final long startNanos;
 
     /**
      * Time when the test should stop working.
      */
-    public final long finishAt;
+    public final long finishAtNanos;
 
     /**
      * Does pre-calculation and allocate necessary objects.
      *
      * @param objPerRegions how many objects per G1 heap region
      */
-    TestStressRSetCoarsening(int objPerRegions, int regsToRefresh, int timeout) {
+    TestStressRSetCoarsening(int objPerRegions, int regsToRefresh, int timeoutSec) {
         this.K = objPerRegions;
         this.regsToRefresh = regsToRefresh;
-        this.start = System.currentTimeMillis();
-        this.finishAt = start + timeout * 900; // 10% ahead of jtreg timeout
+        this.startNanos = System.nanoTime();
+        this.finishAtNanos = startNanos + (timeoutSec * 900_000_000L); // 10% ahead of jtreg timeout
 
         long regionSize = WB.g1RegionSize();
 
@@ -240,7 +294,7 @@ public class TestStressRSetCoarsening {
         final int HOWL_TO_FULL_THRESHOLD = (cardsPerRegion * coarsenHowlToFullPercent) / 100;
 
         // regToRegRefCounts - array of reference counts from region to region
-        // at the the end of iteration.
+        // at the end of iteration.
         // The number of test iterations is array length - 1.
         // If c[i] > c[i-1] then during the iteration i more references will
         // be created.
@@ -284,7 +338,7 @@ public class TestStressRSetCoarsening {
                         for (int rn = pre; rn != cur; rn += step) {
                             Object[] rnArray = storage.getArrayAt(getY(to, from, rn));
                             rnArray[getX(to, from, rn)] = celebrity;
-                            if (System.currentTimeMillis() > finishAt) {
+                            if (System.nanoTime() - finishAtNanos > 0) {
                                 throw new TimeoutException();
                             }
                         }
@@ -293,10 +347,7 @@ public class TestStressRSetCoarsening {
                 if (pre > cur) {
                     // Number of references went down.
                     // Need to provoke recalculation of RSet.
-                    WB.g1StartConcMarkCycle();
-                    while (WB.g1InConcurrentMark()) {
-                        Thread.sleep(1);
-                    }
+                    WB.g1RunConcurrentGC(false);
                 }
 
                 // To force the use of rememebered set entries we need to provoke a GC.
@@ -325,9 +376,9 @@ public class TestStressRSetCoarsening {
         } catch (TimeoutException e) {
             System.out.println("%% TIMEOUT!!!");
         }
-        long now = System.currentTimeMillis();
+        long nowNanos = System.nanoTime();
         System.out.println("%% Summary");
-        System.out.println("%%   Time spent          : " + ((now - start) / 1000) + " seconds");
+        System.out.println("%%   Time spent          : " + ((nowNanos - startNanos) / 1_000_000_000L) + " seconds");
         System.out.println("%%   Free memory left    : " + Runtime.getRuntime().freeMemory() / KB + "K");
         System.out.println("%% Test passed");
     }

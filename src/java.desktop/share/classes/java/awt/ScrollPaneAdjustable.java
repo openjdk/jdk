@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import sun.awt.AWTAccessor;
  *
  * @since       1.4
  */
-public class ScrollPaneAdjustable implements Adjustable, Serializable {
+public final class ScrollPaneAdjustable implements Adjustable, Serializable {
 
     /**
      * The {@code ScrollPane} this object is a scrollbar of.
@@ -140,7 +140,7 @@ public class ScrollPaneAdjustable implements Adjustable, Serializable {
     private int blockIncrement = 1;
 
     /**
-     * Specified adjustment listener to receive adjustment events from this
+     * @serial Specified adjustment listener to receive adjustment events from this
      * {@code ScrollPaneAdjustable}.
      */
     @SuppressWarnings("serial") // Not statically typed as Serializable

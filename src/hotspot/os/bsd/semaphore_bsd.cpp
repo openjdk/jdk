@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "semaphore_bsd.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
@@ -84,7 +83,7 @@ bool OSXSemaphore::timedwait(int64_t millis) {
 
   kr = semaphore_timedwait(_semaphore, waitspec);
   while (kr == KERN_ABORTED) {
-    // reduce the timout and try again
+    // reduce the timeout and try again
     int64_t totalwait = millis_to_nanos(millis);
     int64_t current = os::javaTimeNanos();
     int64_t passedtime = current - starttime;

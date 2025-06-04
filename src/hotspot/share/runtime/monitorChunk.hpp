@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
 #ifndef SHARE_RUNTIME_MONITORCHUNK_HPP
 #define SHARE_RUNTIME_MONITORCHUNK_HPP
 
-#include "runtime/synchronizer.hpp"
+#include "memory/allocation.hpp"
+
+class BasicObjectLock;
+class OopClosure;
 
 // Data structure for holding monitors for one activation during
 // deoptimization.
@@ -35,25 +38,16 @@ class MonitorChunk: public CHeapObj<mtSynchronizer> {
   int              _number_of_monitors;
   BasicObjectLock* _monitors;
   BasicObjectLock* monitors() const { return _monitors; }
-  MonitorChunk*    _next;
  public:
   // Constructor
   MonitorChunk(int number_on_monitors);
   ~MonitorChunk();
-
-  // link operations
-  MonitorChunk* next() const                { return _next; }
-  void set_next(MonitorChunk* next)         { _next = next; }
-
-  // Tells whether the monitor chunk is linked into the JavaThread
-  bool is_linked() const                    { return next() != NULL; }
 
   // Returns the number of monitors
   int number_of_monitors() const { return _number_of_monitors; }
 
   // Returns the index'th monitor
   BasicObjectLock* at(int index)            { assert(index >= 0 && index < number_of_monitors(), "out of bounds check"); return &monitors()[index]; }
-
 
   // Memory management
   void oops_do(OopClosure* f);

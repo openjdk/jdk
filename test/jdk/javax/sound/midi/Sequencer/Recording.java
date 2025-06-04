@@ -34,7 +34,7 @@ import javax.sound.midi.Track;
 /**
  * @test
  * @bug 4932841
- * @key intermittent
+ * @key intermittent sound
  * @summary Sequencer's recording feature does not work
  */
 public class Recording {

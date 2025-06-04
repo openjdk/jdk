@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #ifndef SHARE_CDS_CLASSLISTWRITER_HPP
 #define SHARE_CDS_CLASSLISTWRITER_HPP
 
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/ostream.hpp"
 
 class ClassFileStream;
@@ -34,6 +34,8 @@ class ClassFileStream;
 class ClassListWriter {
 #if INCLUDE_CDS
   class IDTable;
+  class WriteResolveConstantsCLDClosure;
+
   static fileStream* _classlist_file;
   static IDTable* _id_table;
   static int _total_ids;
@@ -42,6 +44,7 @@ class ClassListWriter {
   static int get_id(const InstanceKlass* k);
   static bool has_id(const InstanceKlass* k);
   static void assert_locked() { assert_lock_strong(ClassListFile_lock); }
+  static void write_resolved_constants_for(InstanceKlass* klass);
 public:
   ClassListWriter() : _locker(Thread::current(), ClassListFile_lock, Mutex::_no_safepoint_check_flag) {}
 
@@ -52,7 +55,7 @@ public:
   void handle_class_unloading(const InstanceKlass* klass);
 
   static bool is_enabled() {
-    return _classlist_file != NULL && _classlist_file->is_open();
+    return _classlist_file != nullptr && _classlist_file->is_open();
   }
 
 #else
@@ -65,7 +68,8 @@ public:
 
   static void init() NOT_CDS_RETURN;
   static void write(const InstanceKlass* k, const ClassFileStream* cfs) NOT_CDS_RETURN;
-  static void write_to_stream(const InstanceKlass* k, outputStream* stream, const ClassFileStream* cfs = NULL) NOT_CDS_RETURN;
+  static void write_to_stream(const InstanceKlass* k, outputStream* stream, const ClassFileStream* cfs = nullptr) NOT_CDS_RETURN;
+  static void write_resolved_constants() NOT_CDS_RETURN;
   static void delete_classlist() NOT_CDS_RETURN;
 };
 

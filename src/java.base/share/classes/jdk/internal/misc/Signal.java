@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,8 +71,8 @@ import java.util.Objects;
  * @since    9
  */
 public final class Signal {
-    private static Hashtable<Signal, Signal.Handler> handlers = new Hashtable<>(4);
-    private static Hashtable<Integer, Signal> signals = new Hashtable<>(4);
+    private static final Hashtable<Signal, Signal.Handler> handlers = new Hashtable<>(4);
+    private static final Hashtable<Integer, Signal> signals = new Hashtable<>(4);
 
     private int number;
     private String name;
@@ -161,7 +161,7 @@ public final class Signal {
      * @see jdk.internal.misc.Signal.Handler#SIG_IGN
      */
     public static synchronized Signal.Handler handle(Signal sig,
-                                                    Signal.Handler handler)
+                                                     Signal.Handler handler)
         throws IllegalArgumentException {
         Objects.requireNonNull(sig, "sig");
         Objects.requireNonNull(handler, "handler");
@@ -173,21 +173,20 @@ public final class Signal {
                 ("Signal already used by VM or OS: " + sig);
         }
         signals.put(sig.number, sig);
-        synchronized (handlers) {
-            Signal.Handler oldHandler = handlers.get(sig);
-            handlers.remove(sig);
-            if (newH == 2) {
-                handlers.put(sig, handler);
-            }
-            if (oldH == 0) {
-                return Signal.Handler.SIG_DFL;
-            } else if (oldH == 1) {
-                return Signal.Handler.SIG_IGN;
-            } else if (oldH == 2) {
-                return oldHandler;
-            } else {
-                return new NativeHandler(oldH);
-            }
+        Signal.Handler oldHandler;
+        if (newH == 2) {
+            oldHandler = handlers.put(sig, handler);
+        } else {
+            oldHandler = handlers.remove(sig);
+        }
+        if (oldH == 0) {
+            return Signal.Handler.SIG_DFL;
+        } else if (oldH == 1) {
+            return Signal.Handler.SIG_IGN;
+        } else if (oldH == 2) {
+            return oldHandler;
+        } else {
+            return new NativeHandler(oldH);
         }
     }
 

@@ -44,7 +44,7 @@ import sun.java2d.pipe.Region;
  * This class is a collection of utility methods that operate
  * with native windows.
  */
-public class XlibUtil
+public final class XlibUtil
 {
     /**
      * The constructor is made private to eliminate any
@@ -406,7 +406,7 @@ public class XlibUtil
 
     static int getButtonMask(int button) {
         // Button indices start with 1. The first bit in the button mask is the 8th.
-        // The state mask does not support button indicies > 5, so we need to
+        // The state mask does not support button indices > 5, so we need to
         // cut there.
         if (button <= 0 || button > XConstants.MAX_BUTTONS) {
             return 0;

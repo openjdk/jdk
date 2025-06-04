@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ final class RenegoInfoExtension {
      * The "renegotiation_info" extension.
      */
     static final class RenegotiationInfoSpec implements SSLExtensionSpec {
-        // A nominal object that does not holding any real renegotiation info.
+        // A nominal object that does not hold any real renegotiation info.
         static final RenegotiationInfoSpec NOMINAL =
                 new RenegotiationInfoSpec(new byte[0]);
 
@@ -92,17 +92,17 @@ final class RenegoInfoExtension {
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
                 "\"renegotiated connection\": '['{0}']'", Locale.ENGLISH);
+            Object[] messageFields;
             if (renegotiatedConnection.length == 0) {
-                Object[] messageFields = {
+                messageFields = new Object[]{
                         "<no renegotiated connection>"
-                    };
-                return messageFormat.format(messageFields);
+                };
             } else {
-                Object[] messageFields = {
+                messageFields = new Object[]{
                         Utilities.toHexString(renegotiatedConnection)
-                    };
-                return messageFormat.format(messageFields);
+                };
             }
+            return messageFormat.format(messageFields);
         }
     }
 
@@ -311,7 +311,7 @@ final class RenegoInfoExtension {
                     }
                 } else {
                     // Unsafe renegotiation should have been aborted in
-                    // ealier processes.
+                    // earlier processes.
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine("Terminate insecure renegotiation");
                     }
@@ -419,7 +419,7 @@ final class RenegoInfoExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // In response to the client renegotiation_info extension request
-            // or SCSV signling, which is mandatory for ClientHello message.
+            // or SCSV signaling, which is mandatory for ClientHello message.
             RenegotiationInfoSpec requestedSpec = (RenegotiationInfoSpec)
                     chc.handshakeExtensions.get(CH_RENEGOTIATION_INFO);
             if (requestedSpec == null &&
@@ -497,7 +497,7 @@ final class RenegoInfoExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // In response to the client renegotiation_info extension request
-            // or SCSV signling, which is mandatory for ClientHello message.
+            // or SCSV signaling, which is mandatory for ClientHello message.
             RenegotiationInfoSpec requestedSpec = (RenegotiationInfoSpec)
                     chc.handshakeExtensions.get(CH_RENEGOTIATION_INFO);
             if (requestedSpec == null &&
@@ -532,7 +532,7 @@ final class RenegoInfoExtension {
                     }
                 } else {
                     // Unsafe renegotiation should have been aborted in
-                    // ealier processes.
+                    // earlier processes.
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine("Terminate insecure renegotiation");
                     }

@@ -73,7 +73,7 @@ INT32 MIDI_OUT_CloseDevice(MidiDeviceHandle* handle) {
 
     // issue a "SUSTAIN OFF" message to each MIDI channel, 0 to 15.
     // "CONTROL CHANGE" is 176, "SUSTAIN CONTROLLER" is 64, and the value is 0.
-    // $$fb 2002-04-04: It is responsability of the application developer to
+    // $$fb 2002-04-04: It is the responsibility of the application developer to
     // leave the device in a consistent state. So I put this in comments
     /*
       for (channel = 0; channel < 16; channel++)

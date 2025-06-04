@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic;
-import com.sun.tools.javac.util.Position;
 
 import static com.sun.tools.javac.util.Position.NOPOS;
 
@@ -159,6 +158,11 @@ public abstract class DCTree implements DocTree {
         }
 
         switch (getKind()) {
+            case MARKDOWN -> {
+                DCRawText markdown = (DCRawText) this;
+                return markdown.pos + markdown.code.length();
+            }
+
             case TEXT -> {
                 DCText text = (DCText) this;
                 return text.pos + text.text.length();
@@ -167,6 +171,11 @@ public abstract class DCTree implements DocTree {
             case ERRONEOUS -> {
                 DCErroneous err = (DCErroneous) this;
                 return err.pos + err.body.length();
+            }
+
+            case ESCAPE -> {
+                DCEscape esc = (DCEscape) this;
+                return esc.pos + 2;
             }
 
             case IDENTIFIER -> {
@@ -223,6 +232,14 @@ public abstract class DCTree implements DocTree {
         }
 
         return NOPOS;
+    }
+
+    public boolean isBlank() {
+        return false;
+    }
+
+    public static boolean isBlank(List<? extends DCTree> list) {
+        return list.stream().allMatch(DCTree::isBlank);
     }
 
     /**
@@ -388,7 +405,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public abstract static class DCInlineTag extends DCEndPosTree<DCInlineTag> implements InlineTagTree {
+    public abstract static class DCInlineTag<T extends DCEndPosTree<T>> extends DCEndPosTree<T> implements InlineTagTree {
         @Override @DefinedBy(Api.COMPILER_TREE)
         public String getTagName() {
             return getKind().tagName;
@@ -502,7 +519,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCDocRoot extends DCInlineTag implements DocRootTree {
+    public static class DCDocRoot extends DCInlineTag<DCDocRoot> implements DocRootTree {
 
         @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
@@ -634,7 +651,29 @@ public abstract class DCTree implements DocTree {
             this.prefPos = prefPos;
             return this;
         }
+    }
 
+    public static class DCEscape extends DCTree implements EscapeTree {
+        public final char ch;
+
+        DCEscape(char ch) {
+            this.ch = ch;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() {
+            return Kind.ESCAPE;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
+            return v.visitEscape(this, d);
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public String getBody() {
+            return String.valueOf(ch);
+        }
     }
 
     public static class DCHidden extends DCBlockTag implements HiddenTree {
@@ -683,7 +722,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCIndex extends DCInlineTag implements IndexTree {
+    public static class DCIndex extends DCInlineTag<DCIndex> implements IndexTree {
         public final DCTree term;
         public final List<DCTree> description;
 
@@ -713,10 +752,21 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCInheritDoc extends DCInlineTag implements InheritDocTree {
+    public static class DCInheritDoc extends DCInlineTag<DCInheritDoc> implements InheritDocTree {
+        public final DCReference supertype;
+
+        public DCInheritDoc(DCReference supertype) {
+            this.supertype = supertype;
+        }
+
         @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.INHERIT_DOC;
+        }
+
+        @Override
+        public ReferenceTree getSupertype() {
+            return supertype;
         }
 
         @Override @DefinedBy(Api.COMPILER_TREE)
@@ -725,7 +775,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCLink extends DCInlineTag implements LinkTree {
+    public static class DCLink extends DCInlineTag<DCLink> implements LinkTree {
         public final Kind kind;
         public final DCReference ref;
         public final List<DCTree> label;
@@ -758,7 +808,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCLiteral extends DCInlineTag implements LiteralTree {
+    public static class DCLiteral extends DCInlineTag<DCLiteral> implements LiteralTree {
         public final Kind kind;
         public final DCText body;
 
@@ -851,6 +901,39 @@ public abstract class DCTree implements DocTree {
         }
     }
 
+    public static class DCRawText extends DCTree implements RawTextTree {
+        public final Kind kind;
+        public final String code;
+
+        DCRawText(Kind kind, String code) {
+            if (kind != Kind.MARKDOWN) {
+                throw new IllegalArgumentException(String.valueOf(kind));
+            }
+            this.kind = kind;
+            this.code = code;
+        }
+
+        @Override
+        public boolean isBlank() {
+            return code.isBlank();
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() {
+            return Kind.MARKDOWN;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
+            return v.visitRawText(this, d);
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public String getContent() {
+            return code;
+        }
+    }
+
     public static class DCReference extends DCEndPosTree<DCReference> implements ReferenceTree {
         public final String signature;
 
@@ -865,8 +948,8 @@ public abstract class DCTree implements DocTree {
         DCReference(String signature, JCTree.JCExpression moduleName, JCTree qualExpr, Name member, List<JCTree> paramTypes) {
             this.signature = signature;
             this.moduleName = moduleName;
-            qualifierExpression = qualExpr;
-            memberName = member;
+            this.qualifierExpression = qualExpr;
+            this.memberName = member;
             this.paramTypes = paramTypes;
         }
 
@@ -1050,7 +1133,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCSnippet extends DCInlineTag implements SnippetTree {
+    public static class DCSnippet extends DCInlineTag<DCSnippet> implements SnippetTree {
         public final List<? extends DocTree> attributes;
         public final DCText body;
 
@@ -1077,6 +1160,41 @@ public abstract class DCTree implements DocTree {
         @Override @DefinedBy(Api.COMPILER_TREE)
         public TextTree getBody() {
             return body;
+        }
+    }
+
+    public static class DCSpec extends DCBlockTag implements SpecTree {
+        public final DCText uri;
+        public final List<DCTree> title;
+
+        DCSpec(DCText uri, List<DCTree> title) {
+            this.uri = uri;
+            this.title = title;
+        }
+
+        @Override
+        public String getTagName() {
+            return "spec";
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() {
+            return Kind.SPEC;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
+            return v.visitSpec(this, d);
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public TextTree getURL() {
+            return uri;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public List<? extends DocTree> getTitle() {
+            return title;
         }
     }
 
@@ -1117,7 +1235,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCSummary extends DCInlineTag implements SummaryTree {
+    public static class DCSummary extends DCInlineTag<DCSummary> implements SummaryTree {
         public final List<DCTree> summary;
 
         DCSummary(List<DCTree> summary) {
@@ -1140,7 +1258,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCSystemProperty extends DCInlineTag implements SystemPropertyTree {
+    public static class DCSystemProperty extends DCInlineTag<DCSystemProperty> implements SystemPropertyTree {
         public final Name propertyName;
 
         DCSystemProperty(Name propertyName) {
@@ -1168,6 +1286,11 @@ public abstract class DCTree implements DocTree {
 
         DCText(String text) {
             this.text = text;
+        }
+
+        @Override
+        public boolean isBlank() {
+            return text.isBlank();
         }
 
         @Override @DefinedBy(Api.COMPILER_TREE)
@@ -1249,7 +1372,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCUnknownInlineTag extends DCInlineTag implements UnknownInlineTagTree {
+    public static class DCUnknownInlineTag extends DCInlineTag<DCUnknownInlineTag> implements UnknownInlineTagTree {
         public final Name name;
         public final List<DCTree> content;
 
@@ -1309,10 +1432,12 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCValue extends DCInlineTag implements ValueTree {
+    public static class DCValue extends DCInlineTag<DCValue> implements ValueTree {
+        public final DCText format;
         public final DCReference ref;
 
-        DCValue(DCReference ref) {
+        DCValue(DCText format, DCReference ref) {
+            this.format = format;
             this.ref = ref;
         }
 
@@ -1324,6 +1449,11 @@ public abstract class DCTree implements DocTree {
         @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitValue(this, d);
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public TextTree getFormat() {
+            return format;
         }
 
         @Override @DefinedBy(Api.COMPILER_TREE)

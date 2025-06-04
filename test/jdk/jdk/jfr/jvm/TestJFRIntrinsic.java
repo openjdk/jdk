@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 /**
  * @test
  * @summary Intrinsic for JFR
- * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
  *
@@ -32,9 +31,9 @@
  *          java.base/jdk.internal.misc
  *          java.management
  *
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm -Xbootclasspath/a:. -ea -Xmixed -Xbatch -XX:TieredStopAtLevel=4 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      jdk.jfr.jvm.TestJFRIntrinsic
@@ -49,17 +48,23 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 import jdk.jfr.internal.JVM;
+import jdk.jfr.internal.JVMSupport;
 import jdk.test.lib.Platform;
-import sun.hotspot.WhiteBox;
-import sun.hotspot.code.NMethod;
+import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.code.NMethod;
 
 public class TestJFRIntrinsic {
-
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
+    public Class<?> eventWriterClazz;
     public Object eventWriter;
 
+    TestJFRIntrinsic() throws Exception {
+        // the intrinsic is premised on this class being loaded already - the event writer object is massaged heavily before returning
+        eventWriterClazz = Class.forName("jdk.jfr.internal.event.EventWriter", true, TestJFRIntrinsic.class.getClassLoader());
+    }
+
     public static void main(String... args) throws Exception {
-        JVM.getJVM().createNativeJFR();
+        JVMSupport.createJFR();
         TestJFRIntrinsic ti = new TestJFRIntrinsic();
         Method classid = TestJFRIntrinsic.class.getDeclaredMethod("getClassIdIntrinsic",  Class.class);
         ti.runIntrinsicTest(classid);

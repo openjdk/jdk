@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,39 @@
 
 package com.sun.java.swing.plaf.windows;
 
-import java.awt.*;
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.plaf.*;
-import javax.swing.plaf.basic.*;
-import javax.swing.table.*;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Insets;
 
-import static com.sun.java.swing.plaf.windows.TMSchema.*;
-import static com.sun.java.swing.plaf.windows.XPStyle.*;
-import sun.swing.table.*;
+import javax.swing.Icon;
+import javax.swing.JComponent;
+import javax.swing.JTable;
+import javax.swing.SortOrder;
+import javax.swing.UIManager;
+import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.UIResource;
+import javax.swing.plaf.basic.BasicTableHeaderUI;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
+
 import sun.swing.SwingUtilities2;
+import sun.swing.table.DefaultTableCellHeaderRenderer;
 
+import static com.sun.java.swing.plaf.windows.TMSchema.Part;
+import static com.sun.java.swing.plaf.windows.TMSchema.State;
+import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 
-public class WindowsTableHeaderUI extends BasicTableHeaderUI {
+public final class WindowsTableHeaderUI extends BasicTableHeaderUI {
     private TableCellRenderer originalHeaderRenderer;
 
     public static ComponentUI createUI(JComponent h) {
         return new WindowsTableHeaderUI();
     }
 
+    @Override
     public void installUI(JComponent c) {
         super.installUI(c);
 
@@ -56,6 +69,7 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
         }
     }
 
+    @Override
     public void uninstallUI(JComponent c) {
         if (header.getDefaultRenderer() instanceof XPDefaultRenderer) {
             header.setDefaultRenderer(originalHeaderRenderer);
@@ -72,7 +86,7 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
     }
 
     @SuppressWarnings("serial") // JDK-implementation class
-    private class XPDefaultRenderer extends DefaultTableCellHeaderRenderer {
+    private final class XPDefaultRenderer extends DefaultTableCellHeaderRenderer {
         Skin skin;
         boolean isSelected, hasFocus, hasRollover;
         int column;
@@ -81,6 +95,7 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
             setHorizontalAlignment(LEADING);
         }
 
+        @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                                                        boolean isSelected, boolean hasFocus,
                                                        int row, int column) {
@@ -89,6 +104,9 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
             this.isSelected = isSelected;
             this.hasFocus = hasFocus;
             this.column = column;
+            if (table != null) {
+                header = table.getTableHeader();
+            }
             this.hasRollover = (column == getRolloverColumn());
             if (skin == null) {
                 XPStyle xp = XPStyle.getXP();
@@ -166,6 +184,7 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
             return this;
         }
 
+        @Override
         public void paint(Graphics g) {
             Dimension size = getSize();
             State state = State.NORMAL;
@@ -212,7 +231,7 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
      * A border with an Icon at the middle of the top side.
      * Outer insets can be provided for this border.
      */
-    private static class IconBorder implements Border, UIResource{
+    private static final class IconBorder implements Border, UIResource{
         private final Icon icon;
         private final int top;
         private final int left;
@@ -231,12 +250,15 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
             this.bottom = bottom;
             this.right = right;
         }
+        @Override
         public Insets getBorderInsets(Component c) {
             return new Insets(icon.getIconHeight() + top, left, bottom, right);
         }
+        @Override
         public boolean isBorderOpaque() {
             return false;
         }
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int width, int height) {
             icon.paintIcon(c, g,

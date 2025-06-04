@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@ import java.util.Objects;
 import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.Utils;
-import jdk.jfr.internal.WriteableUserPath;
+import jdk.jfr.internal.util.Utils;
+import jdk.jfr.internal.WriteablePath;
 
 /**
  * Provides means to configure, start, stop and dump recording data to disk.
@@ -70,7 +70,8 @@ public final class Recording implements Closeable {
 
         @Override
         public EventSettings with(String name, String value) {
-            Objects.requireNonNull(value);
+            Objects.requireNonNull(name, "name");
+            Objects.requireNonNull(value, "value");
             recording.setSetting(identifier + "#" + name, value);
             return this;
         }
@@ -95,13 +96,11 @@ public final class Recording implements Closeable {
      *         example, if the Java Virtual Machine (JVM) lacks Flight Recorder
      *         support, or if the file repository can't be created or accessed)
      *
-     * @throws SecurityException If a security manager is used and
-     *         FlightRecorderPermission "accessFlightRecorder" is not set.
-     *
      * @see jdk.jfr
+     * @since 11
      */
     public Recording(Map<String, String> settings) {
-        Objects.requireNonNull(settings);
+        Objects.requireNonNull(settings, "settings");
         Map<String, String> sanitized = Utils.sanitizeNullFreeStringMap(settings);
         PlatformRecorder r = FlightRecorder.getFlightRecorder().getInternal();
         synchronized (r) {
@@ -122,9 +121,6 @@ public final class Recording implements Closeable {
      * @throws IllegalStateException if Flight Recorder can't be created (for
      *         example, if the Java Virtual Machine (JVM) lacks Flight Recorder
      *         support, or if the file repository can't be created or accessed)
-     *
-     * @throws SecurityException If a security manager is used and
-     *         FlightRecorderPermission "accessFlightRecorder" is not set.
      */
     public Recording() {
         this(Map.of());
@@ -149,13 +145,10 @@ public final class Recording implements Closeable {
      *         example, if the Java Virtual Machine (JVM) lacks Flight Recorder
      *         support, or if the file repository can't be created or accessed)
      *
-     * @throws SecurityException if a security manager is used and
-     *         FlightRecorderPermission "accessFlightRecorder" is not set.
-     *
      * @see Configuration
      */
     public Recording(Configuration configuration) {
-        this(configuration.getSettings());
+        this(Objects.requireNonNull(configuration, "configuration").getSettings());
     }
 
     /**
@@ -187,7 +180,7 @@ public final class Recording implements Closeable {
      * @throws IllegalStateException if the recording is not it the {@code NEW} state
      */
     public void scheduleStart(Duration delay) {
-        Objects.requireNonNull(delay);
+        Objects.requireNonNull(delay, "delay");
         internal.scheduleStart(delay);
     }
 
@@ -205,10 +198,6 @@ public final class Recording implements Closeable {
      * @return {@code true} if recording is stopped, {@code false} otherwise
      *
      * @throws IllegalStateException if the recording is not started or is already stopped
-     *
-     * @throws SecurityException if a security manager exists and the caller
-     *         doesn't have {@code FilePermission} to write to the destination
-     *         path
      *
      * @see #setDestination(Path)
      *
@@ -318,7 +307,7 @@ public final class Recording implements Closeable {
      * @param settings the settings to set, not {@code null}
      */
     public void setSettings(Map<String, String> settings) {
-        Objects.requireNonNull(settings);
+        Objects.requireNonNull(settings, "settings");
         Map<String, String> sanitized = Utils.sanitizeNullFreeStringMap(settings);
         internal.setSettings(sanitized);
     }
@@ -347,7 +336,7 @@ public final class Recording implements Closeable {
 
     /**
      * Returns a clone of this recording, with a new recording ID and name.
-     *
+     * <p>
      * Clones are useful for dumping data without stopping the recording. After
      * a clone is created, the amount of data to copy is constrained
      * with the {@link #setMaxAge(Duration)} method and the {@link #setMaxSize(long)}method.
@@ -363,21 +352,23 @@ public final class Recording implements Closeable {
     /**
      * Writes recording data to a file.
      * <p>
-     * Recording must be started, but not necessarily stopped.
+     * For a dump to succeed, the recording must either be 1) running, or 2) stopped
+     * and to disk. If the recording is in any other state, an
+     * {@link IOException} is thrown.
      *
      * @param destination the location where recording data is written, not
      *        {@code null}
      *
-     * @throws IOException if the recording can't be copied to the specified
-     *         location
+     * @throws IOException if recording data can't be copied to the specified
+     *         location, for example, if the recording is closed or the
+     *         destination path is not writable
      *
-     * @throws SecurityException if a security manager exists and the caller doesn't
-     *         have {@code FilePermission} to write to the destination path
+     * @see #getState()
+     * @see #isToDisk()
      */
     public void dump(Path destination) throws IOException {
-        Objects.requireNonNull(destination);
-        internal.dump(new WriteableUserPath(destination));
-
+        Objects.requireNonNull(destination, "destination");
+        internal.dump(new WriteablePath(destination));
     }
 
     /**
@@ -467,14 +458,10 @@ public final class Recording implements Closeable {
      * @throws IllegalStateException if recording is in the {@code STOPPED} or
      *         {@code CLOSED} state.
      *
-     * @throws SecurityException if a security manager exists and the caller
-     *         doesn't have {@code FilePermission} to read, write, and delete the
-     *         {@code destination} file
-     *
      * @throws IOException if the path is not writable
      */
     public void setDestination(Path destination) throws IOException {
-        internal.setDestination(destination != null ? new WriteableUserPath(destination) : null);
+        internal.setDestination(destination != null ? new WriteablePath(destination) : null);
     }
 
     /**
@@ -484,11 +471,11 @@ public final class Recording implements Closeable {
      * @return the destination file, or {@code null} if not set.
      */
     public Path getDestination() {
-        WriteableUserPath usp = internal.getDestination();
-        if (usp == null) {
+        WriteablePath wp = internal.getDestination();
+        if (wp == null) {
             return null;
         } else {
-            return usp.getPotentiallyMaliciousOriginal();
+            return wp.getPath();
         }
     }
 
@@ -509,7 +496,7 @@ public final class Recording implements Closeable {
      * @throws IllegalStateException if the recording is in {@code CLOSED} state
      */
     public void setName(String name) {
-        Objects.requireNonNull(name);
+        Objects.requireNonNull(name, "name");
         internal.setName(name);
     }
 
@@ -619,7 +606,7 @@ public final class Recording implements Closeable {
      * @see EventType
      */
     public EventSettings enable(String name) {
-        Objects.requireNonNull(name);
+        Objects.requireNonNull(name, "name");
         RecordingSettings rs = new RecordingSettings(this, name);
         rs.with("enabled", "true");
         return rs;
@@ -640,7 +627,7 @@ public final class Recording implements Closeable {
      *
      */
     public EventSettings disable(String name) {
-        Objects.requireNonNull(name);
+        Objects.requireNonNull(name, "name");
         RecordingSettings rs = new RecordingSettings(this, name);
         rs.with("enabled", "false");
         return rs;
@@ -657,7 +644,7 @@ public final class Recording implements Closeable {
      * @return an event setting for further configuration, not {@code null}
      */
     public EventSettings enable(Class<? extends Event> eventClass) {
-        Objects.requireNonNull(eventClass);
+        Objects.requireNonNull(eventClass, "eventClass");
         RecordingSettings rs = new RecordingSettings(this, eventClass);
         rs.with("enabled", "true");
         return rs;
@@ -675,7 +662,7 @@ public final class Recording implements Closeable {
      *
      */
     public EventSettings disable(Class<? extends Event> eventClass) {
-        Objects.requireNonNull(eventClass);
+        Objects.requireNonNull(eventClass, "eventClass");
         RecordingSettings rs = new RecordingSettings(this, eventClass);
         rs.with("enabled", "false");
         return rs;
@@ -687,8 +674,8 @@ public final class Recording implements Closeable {
     }
 
     private void setSetting(String id, String value) {
-        Objects.requireNonNull(id);
-        Objects.requireNonNull(value);
+        Objects.requireNonNull(id, "id");
+        Objects.requireNonNull(value, "value");
         internal.setSetting(id, value);
     }
 

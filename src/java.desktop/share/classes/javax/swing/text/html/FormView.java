@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,58 @@
  */
 package javax.swing.text.html;
 
-import java.net.*;
-import java.io.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.text.*;
+import java.awt.Component;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.BitSet;
+
+import javax.swing.AbstractListModel;
+import javax.swing.Box;
+import javax.swing.ButtonModel;
+import javax.swing.ComboBoxModel;
+import javax.swing.DefaultButtonModel;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JEditorPane;
+import javax.swing.JFileChooser;
+import javax.swing.JList;
+import javax.swing.JPasswordField;
+import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.JToggleButton;
+import javax.swing.ListModel;
+import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.ListDataListener;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.ComponentView;
+import javax.swing.text.Document;
+import javax.swing.text.Element;
+import javax.swing.text.ElementIterator;
+import javax.swing.text.PlainDocument;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.View;
 
 /**
  * Component decorator that implements the view interface
@@ -232,6 +276,7 @@ public class FormView extends ComponentView implements ActionListener {
             JButton button;
             try {
                 URL base = ((HTMLDocument)getElement().getDocument()).getBase();
+                @SuppressWarnings("deprecation")
                 URL srcURL = new URL(base, srcAtt);
                 Icon icon = new ImageIcon(srcURL);
                 button  = new JButton(icon);
@@ -337,7 +382,6 @@ public class FormView extends ComponentView implements ActionListener {
             // BasicListUI$Handler.
             // For JComboBox, there are 2 stale ListDataListeners, which are
             // BasicListUI$Handler and BasicComboBoxUI$Handler.
-            @SuppressWarnings("unchecked")
             AbstractListModel<?> listModel = (AbstractListModel) model;
             String listenerClass1 =
                     "javax.swing.plaf.basic.BasicListUI$Handler";
@@ -380,7 +424,7 @@ public class FormView extends ComponentView implements ActionListener {
      *           Typically the view is told to render into the span
      *           that is returned, although there is no guarantee.
      *           The parent may choose to resize or break the view.
-     * @exception IllegalArgumentException for an invalid axis
+     * @throws IllegalArgumentException for an invalid axis
      */
     public float getMaximumSpan(int axis) {
         switch (axis) {
@@ -471,13 +515,15 @@ public class FormView extends ComponentView implements ActionListener {
         String action = (String) attrs.getAttribute(HTML.Attribute.ACTION);
         URL actionURL;
         try {
-            actionURL = (action == null)
+            @SuppressWarnings("deprecation")
+            var _unused = actionURL = (action == null)
                 ? new URL(base.getProtocol(), base.getHost(),
                                         base.getPort(), base.getFile())
                 : new URL(base, action);
             if (!isPostMethod) {
                 String query = data.toString();
-                actionURL = new URL(actionURL + "?" + query);
+                @SuppressWarnings("deprecation")
+                var _unused2 = actionURL = new URL(actionURL + "?" + query);
             }
         } catch (MalformedURLException e) {
             actionURL = null;
@@ -617,12 +663,12 @@ public class FormView extends ComponentView implements ActionListener {
     }
 
 
-    /**
+    /*
      * The following methods provide functionality required to
-     * iterate over a the elements of the form and in the case
+     * iterate over the elements of the form and in the case
      * of a form submission, extract the data from each model
      * that is associated with each form element, and in the
-     * case of reset, reinitialize the each model to its
+     * case of reset, reinitialize each model to its
      * initial state.
      */
 
@@ -803,7 +849,6 @@ public class FormView extends ComponentView implements ActionListener {
                 }
             }
         } else if (m instanceof ComboBoxModel) {
-            @SuppressWarnings("unchecked")
             ComboBoxModel<?> model = (ComboBoxModel)m;
             Option option = (Option)model.getSelectedItem();
             if (option != null) {
@@ -915,7 +960,6 @@ public class FormView extends ComponentView implements ActionListener {
                         } catch (BadLocationException e) {
                         }
                     } else if (m instanceof OptionListModel) {
-                        @SuppressWarnings("unchecked")
                         OptionListModel<?> model = (OptionListModel) m;
                         int size = model.getSize();
                         for (int i = 0; i < size; i++) {
@@ -928,7 +972,6 @@ public class FormView extends ComponentView implements ActionListener {
                             }
                         }
                     } else if (m instanceof OptionComboBoxModel) {
-                        @SuppressWarnings("unchecked")
                         OptionComboBoxModel<?> model = (OptionComboBoxModel) m;
                         Option option = model.getInitialSelection();
                         if (option != null) {

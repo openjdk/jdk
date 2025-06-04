@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciMethod.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/klass.inline.hpp"
@@ -44,7 +43,7 @@ int AbstractInterpreter::size_activation(int max_stack,
   int overhead = frame::sender_sp_offset -
                  frame::interpreter_frame_initial_sp_offset;
   // Our locals were accounted for by the caller (or last_frame_adjust
-  // on the transistion) Since the callee parameters already account
+  // on the transition) Since the callee parameters already account
   // for the callee's params we only need to account for the extra
   // locals.
   int size = overhead +
@@ -88,7 +87,10 @@ void AbstractInterpreter::layout_activation(Method* method,
 
 #ifdef ASSERT
   if (caller->is_interpreted_frame()) {
-    assert(locals < caller->fp() + frame::interpreter_frame_initial_sp_offset, "bad placement");
+    // Test exact placement on top of caller args
+    intptr_t* l2 = caller->interpreter_frame_last_sp() + caller_actual_parameters - 1;
+    assert(l2 <= caller->interpreter_frame_expression_stack(), "bad placement");
+    assert(l2 >= locals, "bad placement");
   }
 #endif
 

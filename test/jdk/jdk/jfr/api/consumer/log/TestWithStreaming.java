@@ -35,7 +35,7 @@ import jdk.jfr.consumer.RecordingStream;
 /**
  * @test
  * @summary Checks that it is possible to stream together with log stream
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @build jdk.jfr.api.consumer.log.LogAnalyzer

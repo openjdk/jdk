@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +42,8 @@ public class TestObjItrWithHeapDump {
         String[] cmds = Arrays.copyOf(args, args.length + 2);
         cmds[args.length] = TestObjItrWithHeapDump.class.getName();
         cmds[args.length + 1] = "test";
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(cmds);
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(cmds);
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.shouldContain("Class Histogram (before full gc)");
         output.shouldContain("Class Histogram (after full gc)");
@@ -56,9 +56,9 @@ public class TestObjItrWithHeapDump {
         }
 
         String[][][] modeHeuristics = new String[][][] {
-             {{"satb"},    {"adaptive", "compact", "static", "aggressive"}},
-             {{"iu"},      {"adaptive", "aggressive"}},
-             {{"passive"}, {"passive"}}
+             {{"satb"},         {"adaptive", "compact", "static", "aggressive"}},
+             {{"generational"}, {"adaptive"}},
+             {{"passive"},      {"passive"}}
         };
 
         for (String[][] mh : modeHeuristics) {

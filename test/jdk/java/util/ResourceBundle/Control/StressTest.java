@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,11 @@ import java.util.concurrent.atomic.*;
 
 // Usage: java StressTest [threadsFactor [duration]]
 public class StressTest {
-    static final Locale ROOT_LOCALE = new Locale("");
     static final Random rand = new Random();
     static final Locale[] locales = {
         Locale.US,
         Locale.CHINA,
-        ROOT_LOCALE,
+        Locale.ROOT,
         Locale.JAPAN,
         Locale.CANADA,
         Locale.KOREA
@@ -160,7 +159,7 @@ public class StressTest {
             id = i;
             index = i % locales.length;
             locale = locales[index];
-            cleaner = locale.equals(ROOT_LOCALE);
+            cleaner = locale.equals(Locale.ROOT);
             str = expected[index];
             max = rand.nextInt((index + 1) * 500) + 1000;
             control = new TestControl(max);

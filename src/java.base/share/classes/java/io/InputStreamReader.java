@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import sun.nio.cs.StreamDecoder;
 
-
 /**
  * An InputStreamReader is a bridge from byte streams to character streams: It
  * reads bytes and decodes them into characters using a specified {@link
@@ -47,21 +46,27 @@ import sun.nio.cs.StreamDecoder;
  * <p> For top efficiency, consider wrapping an InputStreamReader within a
  * BufferedReader.  For example:
  *
- * <pre>
- * BufferedReader in
- *   = new BufferedReader(new InputStreamReader(anInputStream));
- * </pre>
+ * {@snippet lang=java :
+ *     BufferedReader in = new BufferedReader(new InputStreamReader(anInputStream));
+ * }
+ *
+ * <P>To read from {@link System#in}, use the system property value
+ * {@link System##stdin.encoding stdin.encoding} as the {@code Charset}:
+ *
+ * {@snippet lang=java :
+ *     new InputStreamReader(System.in, System.getProperty("stdin.encoding"));
+ * }
  *
  * @see BufferedReader
  * @see InputStream
  * @see Charset
+ * @see System##stdin.encoding stdin.encoding
  *
  * @author      Mark Reinhold
  * @since       1.1
  */
 
 public class InputStreamReader extends Reader {
-
     private final StreamDecoder sd;
 
     /**
@@ -72,10 +77,11 @@ public class InputStreamReader extends Reader {
      *
      * @see Charset#defaultCharset()
      */
+    @SuppressWarnings("this-escape")
     public InputStreamReader(InputStream in) {
         super(in);
-        sd = StreamDecoder.forInputStreamReader(in, this,
-                Charset.defaultCharset()); // ## check lock object
+        Charset cs = Charset.defaultCharset();
+        sd = StreamDecoder.forInputStreamReader(in, this, cs);
     }
 
     /**
@@ -90,6 +96,7 @@ public class InputStreamReader extends Reader {
      * @throws     UnsupportedEncodingException
      *             If the named charset is not supported
      */
+    @SuppressWarnings("this-escape")
     public InputStreamReader(InputStream in, String charsetName)
         throws UnsupportedEncodingException
     {
@@ -107,6 +114,7 @@ public class InputStreamReader extends Reader {
      *
      * @since 1.4
      */
+    @SuppressWarnings("this-escape")
     public InputStreamReader(InputStream in, Charset cs) {
         super(in);
         if (cs == null)
@@ -122,6 +130,7 @@ public class InputStreamReader extends Reader {
      *
      * @since 1.4
      */
+    @SuppressWarnings("this-escape")
     public InputStreamReader(InputStream in, CharsetDecoder dec) {
         super(in);
         if (dec == null)
@@ -145,8 +154,6 @@ public class InputStreamReader extends Reader {
      *         {@code null} if the stream has been closed
      *
      * @see Charset
-     *
-     * @revised 1.4
      */
     public String getEncoding() {
         return sd.getEncoding();

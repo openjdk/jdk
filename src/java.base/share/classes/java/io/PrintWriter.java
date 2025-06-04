@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ public class PrintWriter extends Writer {
      *
      * @param  out        A character-output stream
      */
-    public PrintWriter (Writer out) {
+    public PrintWriter(Writer out) {
         this(out, false);
     }
 
@@ -107,8 +107,7 @@ public class PrintWriter extends Writer {
      *                    {@code printf}, or {@code format} methods will
      *                    flush the output buffer
      */
-    public PrintWriter(Writer out,
-                       boolean autoFlush) {
+    public PrintWriter(Writer out, boolean autoFlush) {
         super(out);
         this.out = out;
         this.autoFlush = autoFlush;
@@ -193,10 +192,6 @@ public class PrintWriter extends Writer {
      *          created, or if some other error occurs while opening or
      *          creating the file
      *
-     * @throws  SecurityException
-     *          If a security manager is present and {@link
-     *          SecurityManager#checkWrite checkWrite(fileName)} denies write
-     *          access to the file
      * @see Charset#defaultCharset()
      *
      * @since  1.5
@@ -204,6 +199,15 @@ public class PrintWriter extends Writer {
     public PrintWriter(String fileName) throws FileNotFoundException {
         this(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileName))),
              false);
+    }
+
+    /* Package private constructor, using the specified lock
+     * for synchronization.
+     */
+    PrintWriter(Writer out, Object lock) {
+        super(lock);
+        this.out = out;
+        this.autoFlush = false;
     }
 
     /* Private constructor */
@@ -236,11 +240,6 @@ public class PrintWriter extends Writer {
      *          created, or if some other error occurs while opening or
      *          creating the file
      *
-     * @throws  SecurityException
-     *          If a security manager is present and {@link
-     *          SecurityManager#checkWrite checkWrite(fileName)} denies write
-     *          access to the file
-     *
      * @throws  UnsupportedEncodingException
      *          If the named charset is not supported
      *
@@ -271,11 +270,6 @@ public class PrintWriter extends Writer {
      * @throws  IOException
      *          if an I/O error occurs while opening or creating the file
      *
-     * @throws  SecurityException
-     *          If a security manager is present and {@link
-     *          SecurityManager#checkWrite checkWrite(fileName)} denies write
-     *          access to the file
-     *
      * @since  10
      */
     public PrintWriter(String fileName, Charset charset) throws IOException {
@@ -302,10 +296,6 @@ public class PrintWriter extends Writer {
      *          created, or if some other error occurs while opening or
      *          creating the file
      *
-     * @throws  SecurityException
-     *          If a security manager is present and {@link
-     *          SecurityManager#checkWrite checkWrite(file.getPath())}
-     *          denies write access to the file
      * @see Charset#defaultCharset()
      *
      * @since  1.5
@@ -337,11 +327,6 @@ public class PrintWriter extends Writer {
      *          created, or if some other error occurs while opening or
      *          creating the file
      *
-     * @throws  SecurityException
-     *          If a security manager is present and {@link
-     *          SecurityManager#checkWrite checkWrite(file.getPath())}
-     *          denies write access to the file
-     *
      * @throws  UnsupportedEncodingException
      *          If the named charset is not supported
      *
@@ -372,11 +357,6 @@ public class PrintWriter extends Writer {
      * @throws  IOException
      *          if an I/O error occurs while opening or creating the file
      *
-     * @throws  SecurityException
-     *          If a security manager is present and {@link
-     *          SecurityManager#checkWrite checkWrite(file.getPath())}
-     *          denies write access to the file
-     *
      * @since  10
      */
     public PrintWriter(File file, Charset charset) throws IOException {
@@ -394,14 +374,13 @@ public class PrintWriter extends Writer {
      * @see #checkError()
      */
     public void flush() {
-        try {
-            synchronized (lock) {
+        synchronized (lock) {
+            try {
                 ensureOpen();
                 out.flush();
+            } catch (IOException x) {
+                trouble = true;
             }
-        }
-        catch (IOException x) {
-            trouble = true;
         }
     }
 
@@ -412,25 +391,24 @@ public class PrintWriter extends Writer {
      * @see #checkError()
      */
     public void close() {
-        try {
-            synchronized (lock) {
-                if (out == null)
-                    return;
-                out.close();
-                out = null;
+        synchronized (lock) {
+            try {
+                if (out != null) {
+                    out.close();
+                    out = null;
+                }
+            } catch (IOException x) {
+                trouble = true;
             }
-        }
-        catch (IOException x) {
-            trouble = true;
         }
     }
 
     /**
      * Flushes the stream if it's not closed and checks its error state.
      *
-     * @return {@code true} if the print stream has encountered an error,
-     *          either on the underlying output stream or during a format
-     *          conversion.
+     * @return {@code true} if and only if this stream has encountered an
+     *         {@code IOException}, or the {@code setError} method has been
+     *         invoked
      */
     public boolean checkError() {
         if (out != null) {
@@ -445,7 +423,7 @@ public class PrintWriter extends Writer {
     }
 
     /**
-     * Indicates that an error has occurred.
+     * Sets the error state of the stream to {@code true}.
      *
      * <p> This method will cause subsequent invocations of {@link
      * #checkError()} to return {@code true} until {@link
@@ -478,17 +456,15 @@ public class PrintWriter extends Writer {
      * @param c int specifying a character to be written.
      */
     public void write(int c) {
-        try {
-            synchronized (lock) {
+        synchronized (lock) {
+            try {
                 ensureOpen();
                 out.write(c);
+            } catch (InterruptedIOException x) {
+                Thread.currentThread().interrupt();
+            } catch (IOException x) {
+                trouble = true;
             }
-        }
-        catch (InterruptedIOException x) {
-            Thread.currentThread().interrupt();
-        }
-        catch (IOException x) {
-            trouble = true;
         }
     }
 
@@ -504,17 +480,15 @@ public class PrintWriter extends Writer {
      *          to throw an {@code IndexOutOfBoundsException}
      */
     public void write(char[] buf, int off, int len) {
-        try {
-            synchronized (lock) {
+        synchronized (lock) {
+            try {
                 ensureOpen();
                 out.write(buf, off, len);
+            } catch (InterruptedIOException x) {
+                Thread.currentThread().interrupt();
+            } catch (IOException x) {
+                trouble = true;
             }
-        }
-        catch (InterruptedIOException x) {
-            Thread.currentThread().interrupt();
-        }
-        catch (IOException x) {
-            trouble = true;
         }
     }
 
@@ -539,17 +513,15 @@ public class PrintWriter extends Writer {
      *          to throw an {@code IndexOutOfBoundsException}
      */
     public void write(String s, int off, int len) {
-        try {
-            synchronized (lock) {
+        synchronized (lock) {
+            try {
                 ensureOpen();
                 out.write(s, off, len);
+            } catch (InterruptedIOException x) {
+                Thread.currentThread().interrupt();
+            } catch (IOException x) {
+                trouble = true;
             }
-        }
-        catch (InterruptedIOException x) {
-            Thread.currentThread().interrupt();
-        }
-        catch (IOException x) {
-            trouble = true;
         }
     }
 
@@ -563,19 +535,17 @@ public class PrintWriter extends Writer {
     }
 
     private void newLine() {
-        try {
-            synchronized (lock) {
+        synchronized (lock) {
+            try {
                 ensureOpen();
                 out.write(System.lineSeparator());
                 if (autoFlush)
                     out.flush();
+            } catch (InterruptedIOException x) {
+                Thread.currentThread().interrupt();
+            } catch (IOException x) {
+                trouble = true;
             }
-        }
-        catch (InterruptedIOException x) {
-            Thread.currentThread().interrupt();
-        }
-        catch (IOException x) {
-            trouble = true;
         }
     }
 
@@ -861,9 +831,9 @@ public class PrintWriter extends Writer {
      * {@code out.printf(format, args)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     out.format(format, args)
-     * }</pre>
+     * }
      *
      * @param  format
      *         A format string as described in <a
@@ -909,9 +879,9 @@ public class PrintWriter extends Writer {
      * {@code out.printf(l, format, args)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     out.format(l, format, args)
-     * }</pre>
+     * }
      *
      * @param  l
      *         The {@linkplain java.util.Locale locale} to apply during
@@ -994,8 +964,8 @@ public class PrintWriter extends Writer {
      * @since  1.5
      */
     public PrintWriter format(String format, Object ... args) {
-        try {
-            synchronized (lock) {
+        synchronized (lock) {
+            try {
                 ensureOpen();
                 if ((formatter == null)
                     || (formatter.locale() != Locale.getDefault()))
@@ -1003,11 +973,11 @@ public class PrintWriter extends Writer {
                 formatter.format(Locale.getDefault(), format, args);
                 if (autoFlush)
                     out.flush();
+            } catch (InterruptedIOException x) {
+                Thread.currentThread().interrupt();
+            } catch (IOException x) {
+                trouble = true;
             }
-        } catch (InterruptedIOException x) {
-            Thread.currentThread().interrupt();
-        } catch (IOException x) {
-            trouble = true;
         }
         return this;
     }
@@ -1054,19 +1024,19 @@ public class PrintWriter extends Writer {
      * @since  1.5
      */
     public PrintWriter format(Locale l, String format, Object ... args) {
-        try {
-            synchronized (lock) {
+        synchronized (lock) {
+            try {
                 ensureOpen();
                 if ((formatter == null) || (formatter.locale() != l))
                     formatter = new Formatter(this, l);
                 formatter.format(l, format, args);
                 if (autoFlush)
                     out.flush();
+            } catch (InterruptedIOException x) {
+                Thread.currentThread().interrupt();
+            } catch (IOException x) {
+                trouble = true;
             }
-        } catch (InterruptedIOException x) {
-            Thread.currentThread().interrupt();
-        } catch (IOException x) {
-            trouble = true;
         }
         return this;
     }
@@ -1075,11 +1045,12 @@ public class PrintWriter extends Writer {
      * Appends the specified character sequence to this writer.
      *
      * <p> An invocation of this method of the form {@code out.append(csq)}
-     * behaves in exactly the same way as the invocation
+     * when {@code csq} is not {@code null}, behaves in exactly the same way
+     * as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     out.write(csq.toString())
-     * }</pre>
+     * }
      *
      * <p> Depending on the specification of {@code toString} for the
      * character sequence {@code csq}, the entire sequence may not be
@@ -1109,9 +1080,9 @@ public class PrintWriter extends Writer {
      * when {@code csq} is not {@code null}, behaves in
      * exactly the same way as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     out.write(csq.subSequence(start, end).toString())
-     * }</pre>
+     * }
      *
      * @param  csq
      *         The character sequence from which a subsequence will be
@@ -1146,9 +1117,9 @@ public class PrintWriter extends Writer {
      * <p> An invocation of this method of the form {@code out.append(c)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     out.write(c)
-     * }</pre>
+     * }
      *
      * @param  c
      *         The 16-bit character to append

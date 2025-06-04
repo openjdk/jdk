@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.util.Map;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
-import java.security.AccessController;
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.JMX;
 import javax.management.MBeanServerConnection;
@@ -95,7 +94,7 @@ public class MXBeanLookup {
             MXBeanLookup lookup = (weakLookup == null) ? null : weakLookup.get();
             if (lookup == null) {
                 lookup = new MXBeanLookup(mbsc);
-                mbscToLookup.put(mbsc, new WeakReference<MXBeanLookup>(lookup));
+                mbscToLookup.put(mbsc, new WeakReference<>(lookup));
             }
             return lookup;
         }
@@ -109,7 +108,7 @@ public class MXBeanLookup {
                 return type.cast(proxy);
         }
         T proxy = JMX.newMXBeanProxy(mbsc, name, type);
-        objectNameToProxy.put(name, new WeakReference<Object>(proxy));
+        objectNameToProxy.put(name, new WeakReference<>(proxy));
         return proxy;
     }
 
@@ -145,13 +144,8 @@ public class MXBeanLookup {
     throws InstanceAlreadyExistsException {
         ObjectName existing = mxbeanToObjectName.get(mxbean);
         if (existing != null) {
-            @SuppressWarnings("removal")
-            String multiname = AccessController.doPrivileged(
-                    new GetPropertyAction("jmx.mxbean.multiname"));
-            if (!"true".equalsIgnoreCase(multiname)) {
-                throw new InstanceAlreadyExistsException(
+            throw new InstanceAlreadyExistsException(
                         "MXBean already registered with name " + existing);
-            }
         }
         mxbeanToObjectName.put(mxbean, name);
     }
@@ -176,7 +170,7 @@ public class MXBeanLookup {
     }
 
     private static final ThreadLocal<MXBeanLookup> currentLookup =
-            new ThreadLocal<MXBeanLookup>();
+            new ThreadLocal<>();
 
     private final MBeanServerConnection mbsc;
     private final WeakIdentityHashMap<Object, ObjectName>

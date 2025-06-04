@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +62,7 @@ package test.java.time;
 
 import static org.testng.Assert.assertSame;
 
+import java.util.Set;
 import java.time.ZoneOffset;
 
 import org.testng.annotations.Test;
@@ -73,12 +75,27 @@ public class TestZoneOffset extends AbstractTest {
 
     @Test
     public void test_immutable() {
-        assertImmutable(ZoneOffset.class);
+        assertImmutable(ZoneOffset.class, /* ignore field */ Set.of("rules"));
     }
 
     @Test
     public void test_factory_ofTotalSecondsSame() {
         assertSame(ZoneOffset.ofTotalSeconds(0), ZoneOffset.UTC);
+    }
+
+    @Test
+    public void test_quarter_cache() throws Exception {
+        // [-18:00, +18:00]
+        int quarter = 15 * 60;
+        int start = -18 * 3600,
+            end   =  18 * 3600;
+        for (int totalSeconds = start; totalSeconds <= end; totalSeconds += quarter) {
+            var offset0 = ZoneOffset.ofTotalSeconds(totalSeconds);
+            var offset1 = ZoneOffset.ofTotalSeconds(totalSeconds);
+            var offset2 = ZoneOffset.ofTotalSeconds(totalSeconds);
+            assertSame(offset0, offset1);
+            assertSame(offset1, offset2);
+        }
     }
 
 }

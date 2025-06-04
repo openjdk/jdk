@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,20 +78,12 @@ public abstract class SSLServerSocket extends ServerSocket {
      * reject new connection requests.
      * <P>
      * A port number of <code>0</code> creates a socket on any free port.
-     * <P>
-     * If there is a security manager, its <code>checkListen</code>
-     * method is called with the <code>port</code> argument as its
-     * argument to ensure the operation is allowed. This could result
-     * in a SecurityException.
      *
      * @param port the port on which to listen
      * @throws IOException if an I/O error occurs when creating the socket
-     * @throws SecurityException if a security manager exists and its
-     *         <code>checkListen</code> method doesn't allow the operation.
      * @throws IllegalArgumentException if the port parameter is outside the
      *         specified range of valid port values, which is between 0 and
      *         65535, inclusive.
-     * @see    SecurityManager#checkListen
      */
     protected SSLServerSocket(int port)
     throws IOException
@@ -109,25 +101,17 @@ public abstract class SSLServerSocket extends ServerSocket {
      * The <code>backlog</code> argument is the requested maximum number of
      * pending connections on the socket. Its exact semantics are implementation
      * specific. In particular, an implementation may impose a maximum length
-     * or may choose to ignore the parameter altogther. The value provided
+     * or may choose to ignore the parameter altogether. The value provided
      * should be greater than <code>0</code>. If it is less than or equal to
      * <code>0</code>, then an implementation specific default will be used.
-     * <P>
-     * If there is a security manager, its <code>checkListen</code>
-     * method is called with the <code>port</code> argument as its
-     * argument to ensure the operation is allowed. This could result
-     * in a SecurityException.
      *
      * @param port the port on which to listen
      * @param backlog  requested maximum length of the queue of incoming
      *                  connections.
      * @throws IOException if an I/O error occurs when creating the socket
-     * @throws SecurityException if a security manager exists and its
-     *         <code>checkListen</code> method doesn't allow the operation.
      * @throws IllegalArgumentException if the port parameter is outside the
      *         specified range of valid port values, which is between 0 and
      *         65535, inclusive.
-     * @see    SecurityManager#checkListen
      */
     protected SSLServerSocket(int port, int backlog)
     throws IOException
@@ -144,17 +128,12 @@ public abstract class SSLServerSocket extends ServerSocket {
      * for firewalls or as routers, to control through which interface
      * a network service is provided.
      * <P>
-     * If there is a security manager, its <code>checkListen</code>
-     * method is called with the <code>port</code> argument as its
-     * argument to ensure the operation is allowed. This could result
-     * in a SecurityException.
-     * <P>
      * A port number of <code>0</code> creates a socket on any free port.
      * <P>
      * The <code>backlog</code> argument is the requested maximum number of
      * pending connections on the socket. Its exact semantics are implementation
      * specific. In particular, an implementation may impose a maximum length
-     * or may choose to ignore the parameter altogther. The value provided
+     * or may choose to ignore the parameter altogether. The value provided
      * should be greater than <code>0</code>. If it is less than or equal to
      * <code>0</code>, then an implementation specific default will be used.
      * <P>
@@ -167,12 +146,9 @@ public abstract class SSLServerSocket extends ServerSocket {
      * @param address the address of the network interface through
      *          which connections will be accepted
      * @throws IOException if an I/O error occurs when creating the socket
-     * @throws SecurityException if a security manager exists and its
-     *         <code>checkListen</code> method doesn't allow the operation.
      * @throws IllegalArgumentException if the port parameter is outside the
      *         specified range of valid port values, which is between 0 and
      *         65535, inclusive.
-     * @see    SecurityManager#checkListen
      */
     protected SSLServerSocket(int port, int backlog, InetAddress address)
     throws IOException
@@ -201,6 +177,7 @@ public abstract class SSLServerSocket extends ServerSocket {
      * Algorithm Names Specification, and may also include other cipher
      * suites that the provider supports.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return an array of cipher suites enabled
      * @see #getSupportedCipherSuites()
      * @see #setEnabledCipherSuites(String[])
@@ -235,10 +212,11 @@ public abstract class SSLServerSocket extends ServerSocket {
      * @exception IllegalArgumentException when one or more of ciphers
      *          named by the parameter is not supported, or when
      *          the parameter is null.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @see #getSupportedCipherSuites()
      * @see #getEnabledCipherSuites()
      */
-    public abstract void setEnabledCipherSuites(String suites []);
+    public abstract void setEnabledCipherSuites(String[] suites);
 
 
     /**
@@ -257,6 +235,7 @@ public abstract class SSLServerSocket extends ServerSocket {
      * Algorithm Names Specification, and may also include other cipher
      * suites that the provider supports.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return an array of cipher suite names
      * @see #getEnabledCipherSuites()
      * @see #setEnabledCipherSuites(String[])
@@ -309,7 +288,7 @@ public abstract class SSLServerSocket extends ServerSocket {
      * @see #getEnabledProtocols()
      * @see #getSupportedProtocols()
      */
-    public abstract void setEnabledProtocols(String protocols[]);
+    public abstract void setEnabledProtocols(String[] protocols);
 
 
     /**
@@ -545,10 +524,8 @@ public abstract class SSLServerSocket extends ServerSocket {
 
         if (params.getNeedClientAuth()) {
             setNeedClientAuth(true);
-        } else if (params.getWantClientAuth()) {
-            setWantClientAuth(true);
         } else {
-            setWantClientAuth(false);
+            setWantClientAuth(params.getWantClientAuth());
         }
     }
 

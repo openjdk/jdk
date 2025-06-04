@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "unittest.hpp"
 
@@ -46,7 +45,7 @@ static void verify_unset(CHeapBitMap& map, BitMap::idx_t l, BitMap::idx_t r) {
 }
 
 TEST(BitMap, clear_large_range) {
-  CHeapBitMap map(BITMAP_SIZE);
+  CHeapBitMap map(BITMAP_SIZE, mtTest);
 
   map.set_range(0, BITMAP_SIZE);
   verify_set(map, 0, BITMAP_SIZE);
@@ -70,7 +69,7 @@ TEST(BitMap, clear_large_range) {
 }
 
 TEST(BitMap, set_large_range) {
-  CHeapBitMap map(BITMAP_SIZE);
+  CHeapBitMap map(BITMAP_SIZE, mtTest);
 
   map.clear();
   verify_unset(map, 0, BITMAP_SIZE);
@@ -94,7 +93,7 @@ TEST(BitMap, set_large_range) {
 }
 
 TEST(BitMap, par_at_put_large_range) {
-  CHeapBitMap map(BITMAP_SIZE);
+  CHeapBitMap map(BITMAP_SIZE, mtTest);
 
   map.clear();
   verify_unset(map, 0, BITMAP_SIZE);

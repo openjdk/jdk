@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,9 @@
  *      --expand-properties --classpath ${test.classes}
  *      --java test.java.lang.invoke.MethodHandleConstants --check-output
  * @run main/othervm
- *      -Djava.security.manager=allow
  *      indify.Indify
  *      --expand-properties --classpath ${test.classes}
- *      --java test.java.lang.invoke.MethodHandleConstants --security-manager
+ *      --java test.java.lang.invoke.MethodHandleConstants
  */
 
 package test.java.lang.invoke;
@@ -51,7 +50,6 @@ import static java.lang.invoke.MethodType.*;
 public class MethodHandleConstants {
     public static void main(String... av) throws Throwable {
         if (av.length > 0 && av[0].equals("--check-output"))  openBuf();
-        if (av.length > 0 && av[0].equals("--security-manager"))  setSM();
         System.out.println("Obtaining method handle constants:");
         testCase(MH_String_replace_C2(), String.class, "replace", String.class, String.class, char.class, char.class);
         testCase(MH_MethodHandle_invokeExact_SC2(), MethodHandle.class, "invokeExact", String.class, MethodHandle.class, String.class, char.class, char.class);
@@ -72,11 +70,6 @@ public class MethodHandleConstants {
     private static void assertEquals(Object exp, Object act) {
         if (exp == act || (exp != null && exp.equals(act)))  return;
         throw new AssertionError("not equal: "+exp+", "+act);
-    }
-
-    private static void setSM() {
-        Policy.setPolicy(new TestPolicy());
-        System.setSecurityManager(new SecurityManager());
     }
 
     private static PrintStream oldOut;
@@ -167,25 +160,5 @@ public class MethodHandleConstants {
         // if this gets called, the transformation has not taken place
         if (System.getProperty("MethodHandleConstants.allow-untransformed") != null)  return;
         throw new AssertionError("this code should be statically transformed away by Indify");
-    }
-
-    static class TestPolicy extends Policy {
-        static final Policy DEFAULT_POLICY = Policy.getPolicy();
-
-        final PermissionCollection permissions = new Permissions();
-        TestPolicy() {
-            permissions.add(new java.io.FilePermission("<<ALL FILES>>", "read"));
-        }
-        public PermissionCollection getPermissions(ProtectionDomain domain) {
-            return permissions;
-        }
-
-        public PermissionCollection getPermissions(CodeSource codesource) {
-            return permissions;
-        }
-
-        public boolean implies(ProtectionDomain domain, Permission perm) {
-            return permissions.implies(perm) || DEFAULT_POLICY.implies(domain, perm);
-        }
     }
 }

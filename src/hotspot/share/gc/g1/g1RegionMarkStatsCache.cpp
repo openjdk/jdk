@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "memory/allocation.inline.hpp"
@@ -44,7 +43,7 @@ G1RegionMarkStatsCache::~G1RegionMarkStatsCache() {
 }
 
 void G1RegionMarkStatsCache::add_live_words(oop obj) {
-  uint region_index = G1CollectedHeap::heap()->addr_to_region(cast_from_oop<HeapWord*>(obj));
+  uint region_index = G1CollectedHeap::heap()->addr_to_region(obj);
   add_live_words(region_index, obj->size());
 }
 

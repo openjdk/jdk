@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,8 +112,8 @@ final class GssKrb5Client extends GssKrb5Base implements SaslClient {
             GSSCredential credentials = null;
             if (props != null) {
                 Object prop = props.get(Sasl.CREDENTIALS);
-                if (prop != null && prop instanceof GSSCredential) {
-                    credentials = (GSSCredential) prop;
+                if (prop instanceof GSSCredential c) {
+                    credentials = c;
                     logger.log(Level.FINE,
                         "KRB5CLNT01:Using the credentials supplied in " +
                         "javax.security.sasl.credentials");

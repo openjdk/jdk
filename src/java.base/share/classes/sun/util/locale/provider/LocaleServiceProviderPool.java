@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.spi.LocaleServiceProvider;
+import java.util.stream.Stream;
 
 /**
  * An instance of this class holds a set of the third party implementations of a particular
@@ -49,7 +50,7 @@ import java.util.spi.LocaleServiceProvider;
 public final class LocaleServiceProviderPool {
 
     /**
-     * A Map that holds singleton instances of this class.  Each instance holds a
+     * A Map that holds singleton instances of this class. Each instance holds a
      * set of provider implementations of a particular locale sensitive service.
      */
     private static final ConcurrentMap<Class<? extends LocaleServiceProvider>, LocaleServiceProviderPool> poolOfPools =
@@ -62,7 +63,7 @@ public final class LocaleServiceProviderPool {
         new ConcurrentHashMap<>();
 
     /**
-     * Available locales for this locale sensitive service.  This also contains
+     * Available locales for this locale sensitive service. This also contains
      * JRE's available locales
      */
     private Set<Locale> availableLocales = null;
@@ -138,7 +139,6 @@ public final class LocaleServiceProviderPool {
                     LocaleServiceProviderPool.getPool(c);
                 all.addAll(pool.getAvailableLocaleSet());
             }
-
             allAvailableLocales = all.toArray(new Locale[0]);
         }
 
@@ -148,22 +148,31 @@ public final class LocaleServiceProviderPool {
     }
 
     /**
-     * Returns an array of available locales for all the provider classes.
+     * {@return a stream of the available locales for all the provider classes}
+     *
+     * This stream is constructed from all the locales that are provided by each
+     * provider, including the JRE.
+     */
+    public static Stream<Locale> streamAllAvailableLocales() {
+        return Arrays.stream(AllAvailableLocales.allAvailableLocales);
+    }
+
+    /**
+     * {@return an array of the available locales for all the provider classes}
+     *
      * This array is a merged array of all the locales that are provided by each
      * provider, including the JRE.
-     *
-     * @return an array of the available locales for all provider classes
      */
     public static Locale[] getAllAvailableLocales() {
         return AllAvailableLocales.allAvailableLocales.clone();
     }
 
     /**
-     * Returns an array of available locales.  This array is a
+     * {@return an array of the available locales}
+     *
+     * This array is a
      * merged array of all the locales that are provided by each
      * provider, including the JRE.
-     *
-     * @return an array of the available locales
      */
     public Locale[] getAvailableLocales() {
         Set<Locale> locList = new HashSet<>();
@@ -243,7 +252,7 @@ public final class LocaleServiceProviderPool {
      * @param getter an object on which getObject() method
      *     is called to obtain the provider's instance.
      * @param locale the given locale that is used as the starting one
-     * @param isObjectProvider flag designating object provder or not
+     * @param isObjectProvider flag designating object provider or not
      * @param key the key string for name providers
      * @param params provider specific parameters
      * @return provider's instance, or null.
@@ -369,7 +378,7 @@ public final class LocaleServiceProviderPool {
                         "A locale(" + locale + ") has non-empty extensions, but has illformed fields.");
 
                 // Fallback - script field will be lost.
-                lookupLocale = new Locale(locale.getLanguage(), locale.getCountry(), locale.getVariant());
+                lookupLocale = Locale.of(locale.getLanguage(), locale.getCountry(), locale.getVariant());
             }
         }
         return lookupLocale;

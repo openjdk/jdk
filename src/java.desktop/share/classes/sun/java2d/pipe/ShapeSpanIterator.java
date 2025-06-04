@@ -37,7 +37,7 @@ import sun.awt.geom.PathConsumer2D;
  *
  * Note that this class holds pointers to native data which must be
  * disposed.  It is not marked as finalizable since it is intended
- * to be very lightweight and finalization is a comparitively expensive
+ * to be very lightweight and finalization is a comparatively expensive
  * procedure.  The caller must specifically use try{} finally{} to
  * manually ensure that the object is disposed after use, otherwise
  * native data structures might be leaked.

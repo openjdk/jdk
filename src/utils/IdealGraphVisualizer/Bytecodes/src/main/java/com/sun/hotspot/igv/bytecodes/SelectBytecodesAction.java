@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,11 @@ public final class SelectBytecodesAction extends CookieAction {
     @Override
     protected void performAction(Node[] activatedNodes) {
         SelectBytecodesCookie c = activatedNodes[0].getCookie(SelectBytecodesCookie.class);
-        InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);//Utilities.actionsGlobalContext().lookup(InputGraphProvider.class);
+        InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);
         if (p != null) {
-            p.setSelectedNodes(c.getNodes());
+            p.clearSelectedElements();
+            p.addSelectedNodes(c.getNodes(), true);
+            p.centerSelectedNodes();
         }
     }
 

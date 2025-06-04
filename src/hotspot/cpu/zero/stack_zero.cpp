@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,18 +23,16 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/zero/bytecodeInterpreter.hpp"
-#include "runtime/thread.inline.hpp"
-#include "stack_zero.hpp"
-#include "stack_zero.inline.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
+#include "stack_zero.inline.hpp"
 #include "utilities/align.hpp"
 
 // Inlined causes circular inclusion with thread.hpp
 ZeroStack::ZeroStack()
-    : _base(NULL), _top(NULL), _sp(NULL) {
+    : _base(nullptr), _top(nullptr), _sp(nullptr) {
     _shadow_pages_size = StackOverflow::stack_shadow_zone_size();
   }
 
@@ -65,7 +63,7 @@ void ZeroStack::handle_overflow(TRAPS) {
       frame = frame->next();
     }
 
-    if (frame == NULL)
+    if (frame == nullptr)
       fatal("unrecoverable stack overflow");
 
     thread->set_last_Java_frame(frame, sp);

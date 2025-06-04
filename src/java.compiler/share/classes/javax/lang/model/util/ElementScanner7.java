@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,14 +35,16 @@ import static javax.lang.model.SourceVersion.*;
  * A scanning visitor of program elements with default behavior
  * appropriate for the {@link SourceVersion#RELEASE_7 RELEASE_7}
  * source version.  The <code>visit<i>Xyz</i></code> methods in this
- * class scan their component elements by calling {@code scan} on
- * their {@linkplain Element#getEnclosedElements enclosed elements},
- * {@linkplain ExecutableElement#getParameters parameters}, etc., as
- * indicated in the individual method specifications.  A subclass can
- * control the order elements are visited by overriding the
- * <code>visit<i>Xyz</i></code> methods.  Note that clients of a scanner
- * may get the desired behavior be invoking {@code v.scan(e, p)} rather
- * than {@code v.visit(e, p)} on the root objects of interest.
+ * class scan their component elements by calling {@link
+ * ElementScanner6#scan(Element, Object) scan} on their {@linkplain
+ * Element#getEnclosedElements enclosed elements}, {@linkplain
+ * ExecutableElement#getParameters parameters}, etc., as indicated in
+ * the individual method specifications.  A subclass can control the
+ * order elements are visited by overriding the
+ * <code>visit<i>Xyz</i></code> methods.  Note that clients of a
+ * scanner may get the desired behavior by invoking {@code v.scan(e,
+ * p)} rather than {@code v.visit(e, p)} on the root objects of
+ * interest.
  *
  * <p>When a subclass overrides a <code>visit<i>Xyz</i></code> method, the
  * new method can cause the enclosed elements to be scanned in the
@@ -66,7 +68,7 @@ import static javax.lang.model.SourceVersion.*;
  *            methods.  Use {@code Void} for visitors that do not need an
  *            additional parameter.
  *
- * @see <a href="ElementScanner6.html#note_for_subclasses"><strong>Compatibility note for subclasses</strong></a>
+ * @see ElementScanner6##note_for_subclasses <strong>Compatibility note for subclasses</strong>
  * @see ElementScanner6
  * @see ElementScanner8
  * @see ElementScanner9
@@ -102,13 +104,13 @@ public class ElementScanner7<R, P> extends ElementScanner6<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec This implementation scans the enclosed elements.
      *
-     * @param e  {@inheritDoc}
-     * @param p  {@inheritDoc}
-     * @return the result of scanning
+     * @param e  {@inheritDoc ElementVisitor}
+     * @param p  {@inheritDoc ElementVisitor}
+     * @return {@inheritDoc ElementScanner6}
      */
     @Override
     public R visitVariable(VariableElement e, P p) {

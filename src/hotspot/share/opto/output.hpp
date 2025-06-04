@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "code/exceptionHandlerTable.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "opto/ad.hpp"
+#include "opto/c2_CodeStubs.hpp"
 #include "opto/constantTable.hpp"
 #include "opto/phase.hpp"
 #include "runtime/vm_version.hpp"
@@ -40,6 +41,7 @@ class Arena;
 class Bundle;
 class Block;
 class Block_Array;
+class C2_MacroAssembler;
 class ciMethod;
 class Compile;
 class MachNode;
@@ -51,11 +53,6 @@ class PhaseCFG;
 #else
 #define DEBUG_ARG(x)
 #endif
-
-// Define the initial sizes for allocation of the resizable code buffer
-enum {
-  initial_const_capacity =   4 * 1024
-};
 
 class BufferSizingData {
 public:
@@ -72,56 +69,14 @@ public:
   { };
 };
 
-class C2SafepointPollStubTable {
-private:
-  struct C2SafepointPollStub: public ResourceObj {
-    uintptr_t _safepoint_offset;
-    Label     _stub_label;
-    Label     _trampoline_label;
-    C2SafepointPollStub(uintptr_t safepoint_offset) :
-      _safepoint_offset(safepoint_offset),
-      _stub_label(),
-      _trampoline_label() {}
-  };
-
-  GrowableArray<C2SafepointPollStub*> _safepoints;
-
-  static volatile int _stub_size;
-
-  void emit_stub_impl(MacroAssembler& masm, C2SafepointPollStub* entry) const;
-
-  // The selection logic below relieves the need to add dummy files to unsupported platforms.
-  template <bool enabled>
-  typename EnableIf<enabled>::type
-  select_emit_stub(MacroAssembler& masm, C2SafepointPollStub* entry) const {
-    emit_stub_impl(masm, entry);
-  }
-
-  template <bool enabled>
-  typename EnableIf<!enabled>::type
-  select_emit_stub(MacroAssembler& masm, C2SafepointPollStub* entry) const {}
-
-  void emit_stub(MacroAssembler& masm, C2SafepointPollStub* entry) const {
-    select_emit_stub<VM_Version::supports_stack_watermark_barrier()>(masm, entry);
-  }
-
-  int stub_size_lazy() const;
-
-public:
-  Label& add_safepoint(uintptr_t safepoint_offset);
-  int estimate_stub_size() const;
-  void emit(CodeBuffer& cb);
-};
-
 class PhaseOutput : public Phase {
 private:
   // Instruction bits passed off to the VM
-  int                    _method_size;           // Size of nmethod code segment in bytes
   CodeBuffer             _code_buffer;           // Where the code is assembled
   int                    _first_block_size;      // Size of unvalidated entry point code / OSR poison code
   ExceptionHandlerTable  _handler_table;         // Table of native-code exception handlers
   ImplicitExceptionTable _inc_table;             // Table of implicit null checks in native code
-  C2SafepointPollStubTable _safepoint_poll_table;// Table for safepoint polls
+  C2CodeStubList          _stub_list;            // List of code stubs
   OopMapSet*             _oop_map_set;           // Table of oop maps (one for each safepoint location)
   BufferBlob*            _scratch_buffer_blob;   // For temporary code buffers.
   relocInfo*             _scratch_locs_memory;   // For temporary code buffers.
@@ -161,16 +116,15 @@ public:
                     int               entry_bci,
                     AbstractCompiler* compiler,
                     bool              has_unsafe_access,
-                    bool              has_wide_vectors,
-                    RTMState          rtm_state);
+                    bool              has_wide_vectors);
 
   void install_stub(const char* stub_name);
 
   // Constant table
   ConstantTable& constant_table() { return _constant_table; }
 
-  // Safepoint poll table
-  C2SafepointPollStubTable* safepoint_poll_table() { return &_safepoint_poll_table; }
+  // Code stubs list
+  void add_stub(C2CodeStub* stub) { _stub_list.add_stub(stub); }
 
   // Code emission iterator
   Block* block()   { return _block; }
@@ -179,7 +133,7 @@ public:
   // The architecture description provides short branch variants for some long
   // branch instructions. Replace eligible long branches with short branches.
   void shorten_branches(uint* blk_starts);
-  // If "objs" contains an ObjectValue whose id is "id", returns it, else NULL.
+  // If "objs" contains an ObjectValue whose id is "id", returns it, else null.
   static ObjectValue* sv_for_node_id(GrowableArray<ScopeValue*> *objs, int id);
   static void set_sv_for_object_node(GrowableArray<ScopeValue*> *objs, ObjectValue* sv);
   void FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
@@ -193,7 +147,7 @@ public:
   CodeBuffer* init_buffer();
 
   // Write out basic block data to code buffer
-  void fill_buffer(CodeBuffer* cb, uint* blk_starts);
+  void fill_buffer(C2_MacroAssembler* masm, uint* blk_starts);
 
   // Compute the information for the exception tables
   void FillExceptionTables(uint cnt, uint *call_returns, uint *inct_starts, Label *blk_labels);
@@ -205,7 +159,6 @@ public:
   void install();
 
   // Instruction bits passed off to the VM
-  int               code_size()                 { return _method_size; }
   CodeBuffer*       code_buffer()               { return &_code_buffer; }
   int               first_block_size()          { return _first_block_size; }
   void              set_frame_complete(int off) { if (!in_scratch_emit_size()) { _code_offsets.set_value(CodeOffsets::Frame_Complete, off); } }
@@ -227,6 +180,8 @@ public:
   void       set_in_scratch_emit_size(bool x)   {        _in_scratch_emit_size = x; }
   bool           in_scratch_emit_size() const   { return _in_scratch_emit_size;     }
 
+  BufferSizingData* buffer_sizing_data()        { return &_buf_sizes; }
+
   enum ScratchBufferBlob {
     MAX_inst_size       = 2048,
     MAX_locs_size       = 128, // number of relocInfo elements
@@ -240,8 +195,6 @@ public:
 
   int               bang_size_in_bytes() const;
 
-  uint              node_bundling_limit();
-  Bundle*           node_bundling_base();
   void          set_node_bundling_limit(uint n) { _node_bundling_limit = n; }
   void          set_node_bundling_base(Bundle* b) { _node_bundling_base = b; }
 
@@ -249,20 +202,24 @@ public:
   bool valid_bundle_info(const Node *n);
 
   bool starts_bundle(const Node *n) const;
+  bool contains_as_owner(GrowableArray<MonitorValue*> *monarray, ObjectValue *ov) const;
+  bool contains_as_scalarized_obj(JVMState* jvms, MachSafePointNode* sfn,
+                                  GrowableArray<ScopeValue*>* objs,
+                                  ObjectValue* ov) const;
 
   // Dump formatted assembly
 #if defined(SUPPORT_OPTO_ASSEMBLY)
   void dump_asm_on(outputStream* ost, int* pcs, uint pc_limit);
-  void dump_asm(int* pcs = NULL, uint pc_limit = 0) { dump_asm_on(tty, pcs, pc_limit); }
 #else
   void dump_asm_on(outputStream* ost, int* pcs, uint pc_limit) { return; }
-  void dump_asm(int* pcs = NULL, uint pc_limit = 0) { return; }
 #endif
 
   // Build OopMaps for each GC point
   void BuildOopMaps();
 
 #ifndef PRODUCT
+  void print_scheduling(outputStream* output_stream);
+  void print_scheduling(); // to tty for debugging
   static void print_statistics();
 #endif
 };

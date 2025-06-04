@@ -175,15 +175,6 @@ class Bytes: AllStatic {
   static inline void put_native_u8(address p, u8 x) { put_Java_u8(p, x); }
 
 #endif // VM_LITTLE_ENDIAN
-
-  // Efficient swapping of byte ordering
-  static inline u2 swap_u2(u2 x);
-  static inline u4 swap_u4(u4 x);
-  static inline u8 swap_u8(u8 x);
 };
-
-
-// The following header contains the implementations of swap_u2, swap_u4, and swap_u8
-#include OS_CPU_HEADER(bytes)
 
 #endif // CPU_ARM_BYTES_ARM_HPP

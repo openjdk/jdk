@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,10 @@ import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.EventListener;
 
-import sun.reflect.misc.ReflectUtil;
-
 /**
  * A class that holds a list of EventListeners.  A single instance
  * can be used to hold all listeners (of all types) for the instance
- * using the list.  It is the responsiblity of the class using the
+ * using the list.  It is the responsibility of the class using the
  * EventListenerList to provide type-safe API (preferably conforming
  * to the JavaBeans spec) and methods which dispatch event notification
  * methods to appropriate Event Listeners on the list.
@@ -144,7 +142,7 @@ public class EventListenerList implements Serializable {
      * @param <T> the type of {@code EventListener} to search for
      * @param t the type of {@code EventListener} classes to be returned
      * @return all of the listeners of the specified type.
-     * @exception  ClassCastException if the supplied class
+     * @throws  ClassCastException if the supplied class
      *          is not assignable to EventListener
      *
      * @since 1.3
@@ -303,7 +301,6 @@ public class EventListenerList implements Serializable {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
             EventListener l = (EventListener)s.readObject();
             String name = (String) listenerTypeOrNull;
-            ReflectUtil.checkPackageAccess(name);
             @SuppressWarnings("unchecked")
             Class<EventListener> tmp = (Class<EventListener>)Class.forName(name, true, cl);
             add(tmp, l);

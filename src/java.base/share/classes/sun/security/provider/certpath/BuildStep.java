@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,10 @@ import java.security.cert.X509Certificate;
  */
 public class BuildStep {
 
-    private Vertex          vertex;
+    private final Vertex    vertex;
     private X509Certificate cert;
     private Throwable       throwable;
-    private int             result;
+    private final int       result;
 
     /**
      * result code associated with a certificate that may continue a path from
@@ -187,29 +187,15 @@ public class BuildStep {
      * @return String string representing meaning of the result code
      */
     public String resultToString(int res) {
-        String resultString = "";
-        switch (res) {
-            case POSSIBLE:
-                resultString = "Certificate to be tried.\n";
-                break;
-            case BACK:
-                resultString = "Certificate backed out since path does not "
+        return switch (res) {
+            case POSSIBLE -> "Certificate to be tried.\n";
+            case BACK -> "Certificate backed out since path does not "
                     + "satisfy build requirements.\n";
-                break;
-            case FOLLOW:
-                resultString = "Certificate satisfies conditions.\n";
-                break;
-            case FAIL:
-                resultString = "Certificate backed out since path does not "
+            case FOLLOW, SUCCEED -> "Certificate satisfies conditions.\n";
+            case FAIL -> "Certificate backed out since path does not "
                     + "satisfy conditions.\n";
-                break;
-            case SUCCEED:
-                resultString = "Certificate satisfies conditions.\n";
-                break;
-            default:
-                resultString = "Internal error: Invalid step result value.\n";
-        }
-        return resultString;
+            default -> "Internal error: Invalid step result value.\n";
+        };
     }
 
     /**
@@ -220,7 +206,7 @@ public class BuildStep {
      */
     @Override
     public String toString() {
-        String out = "Internal Error\n";
+        String out;
         switch (result) {
         case BACK:
         case FAIL:
@@ -255,8 +241,6 @@ public class BuildStep {
         case FOLLOW:
         case SUCCEED:
             out = out + vertex.moreToString();
-            break;
-        case POSSIBLE:
             break;
         default:
             break;

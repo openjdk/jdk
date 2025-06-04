@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,76 +21,129 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "compiler/compileTask.hpp"
+#include "compiler/abstractCompiler.hpp"
 #include "compiler/compilerThread.hpp"
+#include "compiler/compileTask.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jvmci/jvmci.hpp"
-#include "jvmci/jvmciJavaClasses.hpp"
 #include "jvmci/jvmciEnv.hpp"
+#include "jvmci/jvmciJavaClasses.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/metadataHandles.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.inline.hpp"
+#include "runtime/os.hpp"
 #include "utilities/events.hpp"
 
-JVMCIRuntime* JVMCI::_compiler_runtime = NULL;
-JVMCIRuntime* JVMCI::_java_runtime = NULL;
+JVMCIRuntime* JVMCI::_compiler_runtimes = nullptr;
+JVMCIRuntime* JVMCI::_java_runtime = nullptr;
+JVMCIRuntime* JVMCI::_shutdown_compiler_runtime = nullptr;
 volatile bool JVMCI::_is_initialized = false;
 bool JVMCI::_box_caches_initialized = false;
-void* JVMCI::_shared_library_handle = NULL;
-char* JVMCI::_shared_library_path = NULL;
+void* JVMCI::_shared_library_handle = nullptr;
+char* JVMCI::_shared_library_path = nullptr;
 volatile bool JVMCI::_in_shutdown = false;
-StringEventLog* JVMCI::_events = NULL;
-StringEventLog* JVMCI::_verbose_events = NULL;
-volatile intx JVMCI::_fatal_log_init_thread = -1;
+StringEventLog* JVMCI::_events = nullptr;
+StringEventLog* JVMCI::_verbose_events = nullptr;
+volatile intx JVMCI::_first_error_tid = -1;
 volatile int JVMCI::_fatal_log_fd = -1;
-const char* JVMCI::_fatal_log_filename = NULL;
+const char* JVMCI::_fatal_log_filename = nullptr;
+
+CompilerThread* CompilerThreadCanCallJava::update(JavaThread* current, bool new_state) {
+  if (current->is_Compiler_thread()) {
+    CompilerThread* ct = CompilerThread::cast(current);
+    if (ct->_can_call_java != new_state &&
+        ct->_compiler != nullptr &&
+        ct->_compiler->is_jvmci())
+    {
+      // Only update the state if the ability of the
+      // current thread to call Java actually changes
+      ct->_can_call_java = new_state;
+      return ct;
+    }
+  }
+  return nullptr;
+}
+
+CompilerThreadCanCallJava::CompilerThreadCanCallJava(JavaThread* current, bool new_state) {
+  _current = CompilerThreadCanCallJava::update(current, new_state);
+}
+
+CompilerThreadCanCallJava::~CompilerThreadCanCallJava() {
+  if (_current != nullptr) {
+    _current->_can_call_java = !_current->_can_call_java;
+  }
+}
 
 void jvmci_vmStructs_init() NOT_DEBUG_RETURN;
 
 bool JVMCI::can_initialize_JVMCI() {
+  if (UseJVMCINativeLibrary) {
+    // Initializing libjvmci does not execute Java code so
+    // can be done any time.
+    return true;
+  }
   // Initializing JVMCI requires the module system to be initialized past phase 3.
   // The JVMCI API itself isn't available until phase 2 and ServiceLoader (which
   // JVMCI initialization requires) isn't usable until after phase 3. Testing
   // whether the system loader is initialized satisfies all these invariants.
-  if (SystemDictionary::java_system_loader() == NULL) {
+  if (SystemDictionary::java_system_loader() == nullptr) {
     return false;
   }
   assert(Universe::is_module_initialized(), "must be");
   return true;
 }
 
+bool JVMCI::get_shared_library_path(char* pathbuf, size_t pathlen, bool fail_is_fatal) {
+  if (JVMCILibPath != nullptr) {
+    if (!os::dll_locate_lib(pathbuf, pathlen, JVMCILibPath, JVMCI_SHARED_LIBRARY_NAME)) {
+      if (!fail_is_fatal) {
+        return false;
+      }
+      fatal("Unable to create path to JVMCI shared library based on value of JVMCILibPath (%s)", JVMCILibPath);
+    }
+  } else {
+    if (!os::dll_locate_lib(pathbuf, pathlen, Arguments::get_dll_dir(), JVMCI_SHARED_LIBRARY_NAME)) {
+      if (!fail_is_fatal) {
+        return false;
+      }
+      fatal("Unable to create path to JVMCI shared library");
+    }
+  }
+  return true;
+}
+
+bool JVMCI::shared_library_exists() {
+  if (_shared_library_handle != nullptr) {
+    return true;
+  }
+  char path[JVM_MAXPATHLEN];
+  return get_shared_library_path(path, sizeof(path), false);
+}
+
 void* JVMCI::get_shared_library(char*& path, bool load) {
   void* sl_handle = _shared_library_handle;
-  if (sl_handle != NULL || !load) {
+  if (sl_handle != nullptr || !load) {
     path = _shared_library_path;
     return sl_handle;
   }
-  assert(JVMCI_lock->owner() == Thread::current(), "must be");
-  path = NULL;
-  if (_shared_library_handle == NULL) {
+  MutexLocker locker(JVMCI_lock);
+  path = nullptr;
+  if (_shared_library_handle == nullptr) {
     char path[JVM_MAXPATHLEN];
     char ebuf[1024];
-    if (JVMCILibPath != NULL) {
-      if (!os::dll_locate_lib(path, sizeof(path), JVMCILibPath, JVMCI_SHARED_LIBRARY_NAME)) {
-        fatal("Unable to create path to JVMCI shared library based on value of JVMCILibPath (%s)", JVMCILibPath);
-      }
-    } else {
-      if (!os::dll_locate_lib(path, sizeof(path), Arguments::get_dll_dir(), JVMCI_SHARED_LIBRARY_NAME)) {
-        fatal("Unable to create path to JVMCI shared library");
-      }
-    }
+    get_shared_library_path(path, sizeof(path), true);
 
     void* handle = os::dll_load(path, ebuf, sizeof ebuf);
-    if (handle == NULL) {
+    if (handle == nullptr) {
       fatal("Unable to load JVMCI shared library from %s: %s", path, ebuf);
     }
     _shared_library_handle = handle;
-    _shared_library_path = strdup(path);
+    _shared_library_path = os::strdup(path);
 
     JVMCI_event_1("loaded JVMCI shared library from %s", path);
   }
@@ -98,13 +151,23 @@ void* JVMCI::get_shared_library(char*& path, bool load) {
   return _shared_library_handle;
 }
 
-void JVMCI::initialize_compiler(TRAPS) {
+void JVMCI::initialize_compiler_in_create_vm(TRAPS) {
   if (JVMCILibDumpJNIConfig) {
-    JNIJVMCI::initialize_ids(NULL);
+    JNIJVMCI::initialize_ids(nullptr);
     ShouldNotReachHere();
   }
+  JVMCIRuntime* runtime;
+  if (UseJVMCINativeLibrary) {
+      runtime = JVMCI::compiler_runtime(THREAD);
+  } else {
+      runtime = JVMCI::java_runtime();
+  }
 
-  JVMCI::compiler_runtime()->call_getCompiler(CHECK);
+  JVMCIENV_FROM_THREAD(THREAD);
+  JVMCIENV->check_init(CHECK);
+  JVMCIObject jvmciRuntime = runtime->get_HotSpotJVMCIRuntime(JVMCI_CHECK);
+  runtime->initialize(JVMCI_CHECK);
+  JVMCIENV->call_HotSpotJVMCIRuntime_getCompiler(jvmciRuntime, JVMCI_CHECK);
 }
 
 void JVMCI::initialize_globals() {
@@ -122,13 +185,9 @@ void JVMCI::initialize_globals() {
       }
     }
   }
-  if (UseJVMCINativeLibrary) {
-    // There are two runtimes.
-    _compiler_runtime = new JVMCIRuntime(0);
-    _java_runtime = new JVMCIRuntime(-1);
-  } else {
-    // There is only a single runtime
-    _java_runtime = _compiler_runtime = new JVMCIRuntime(0);
+  _java_runtime = new JVMCIRuntime(nullptr, -1, false);
+  if (using_singleton_shared_library_runtime()) {
+    JVMCI::_compiler_runtimes = new JVMCIRuntime(nullptr, 0, true);
   }
 }
 
@@ -148,6 +207,10 @@ void JVMCI::ensure_box_caches_initialized(TRAPS) {
     java_lang_Long_LongCache::symbol()
   };
 
+  // Class resolution and initialization below
+  // requires calling into Java
+  CompilerThreadCanCallJava ccj(THREAD, true);
+
   for (unsigned i = 0; i < sizeof(box_classes) / sizeof(Symbol*); i++) {
     Klass* k = SystemDictionary::resolve_or_fail(box_classes[i], true, CHECK);
     InstanceKlass* ik = InstanceKlass::cast(k);
@@ -158,12 +221,22 @@ void JVMCI::ensure_box_caches_initialized(TRAPS) {
   _box_caches_initialized = true;
 }
 
+JVMCIRuntime* JVMCI::compiler_runtime(JavaThread* thread, bool create) {
+  assert(thread->is_Java_thread(), "must be") ;
+  assert(UseJVMCINativeLibrary, "must be");
+  JVMCIRuntime* runtime = thread->libjvmci_runtime();
+  if (runtime == nullptr && create) {
+    runtime = JVMCIRuntime::for_thread(thread);
+  }
+  return runtime;
+}
+
 JavaThread* JVMCI::compilation_tick(JavaThread* thread) {
   if (thread->is_Compiler_thread()) {
     CompileTask *task = CompilerThread::cast(thread)->task();
-    if (task != NULL) {
+    if (task != nullptr) {
       JVMCICompileState *state = task->blocking_jvmci_compile_state();
-      if (state != NULL) {
+      if (state != nullptr) {
         state->inc_compilation_ticks();
       }
     }
@@ -172,21 +245,27 @@ JavaThread* JVMCI::compilation_tick(JavaThread* thread) {
 }
 
 void JVMCI::metadata_do(void f(Metadata*)) {
-  if (_java_runtime != NULL) {
+  if (_java_runtime != nullptr) {
     _java_runtime->_metadata_handles->metadata_do(f);
   }
-  if (_compiler_runtime != NULL && _compiler_runtime != _java_runtime) {
-    _compiler_runtime->_metadata_handles->metadata_do(f);
+  for (JVMCIRuntime* runtime = _compiler_runtimes; runtime != nullptr; runtime = runtime->_next) {
+    runtime->_metadata_handles->metadata_do(f);
+  }
+  if (_shutdown_compiler_runtime != nullptr) {
+    _shutdown_compiler_runtime->_metadata_handles->metadata_do(f);
   }
 }
 
 void JVMCI::do_unloading(bool unloading_occurred) {
   if (unloading_occurred) {
-    if (_java_runtime != NULL) {
+    if (_java_runtime != nullptr) {
       _java_runtime->_metadata_handles->do_unloading();
     }
-    if (_compiler_runtime != NULL && _compiler_runtime != _java_runtime) {
-      _compiler_runtime->_metadata_handles->do_unloading();
+    for (JVMCIRuntime* runtime = _compiler_runtimes; runtime != nullptr; runtime = runtime->_next) {
+      runtime->_metadata_handles->do_unloading();
+    }
+    if (_shutdown_compiler_runtime != nullptr) {
+      _shutdown_compiler_runtime->_metadata_handles->do_unloading();
     }
   }
 }
@@ -195,7 +274,52 @@ bool JVMCI::is_compiler_initialized() {
   return _is_initialized;
 }
 
-void JVMCI::shutdown() {
+void JVMCI::vlog(int level, const char* format, va_list ap) {
+  if (LogEvents && JVMCIEventLogLevel >= level) {
+    StringEventLog* events = level == 1 ? _events : _verbose_events;
+    guarantee(events != nullptr, "JVMCI event log not yet initialized");
+    Thread* thread = Thread::current_or_null_safe();
+    if (thread != nullptr) {
+      events->logv(thread, format, ap);
+    }
+  }
+}
+
+void JVMCI::vtrace(int level, const char* format, va_list ap) {
+  if (JVMCITraceLevel >= level) {
+    Thread* thread = Thread::current_or_null_safe();
+    if (thread != nullptr && thread->is_Java_thread()) {
+      ResourceMark rm(thread);
+      JavaThreadState state = JavaThread::cast(thread)->thread_state();
+      if (state == _thread_in_vm || state == _thread_in_Java || state == _thread_new) {
+        tty->print("JVMCITrace-%d[" PTR_FORMAT " \"%s\"]:%*c", level, p2i(thread), thread->name(), level, ' ');
+      } else {
+        // According to check_access_thread_state, it's unsafe to
+        // resolve the j.l.Thread object unless the thread is in
+        // one of the states above.
+        tty->print("JVMCITrace-%d[" PTR_FORMAT " <%s>]:%*c", level, p2i(thread), thread->type_name(), level, ' ');
+      }
+    } else {
+      tty->print("JVMCITrace-%d[?]:%*c", level, level, ' ');
+    }
+    tty->vprint_cr(format, ap);
+  }
+}
+
+#define LOG_TRACE(level) { va_list ap; \
+  va_start(ap, format); vlog(level, format, ap); va_end(ap); \
+  va_start(ap, format); vtrace(level, format, ap); va_end(ap); \
+}
+
+void JVMCI::event(int level, const char* format, ...) LOG_TRACE(level)
+void JVMCI::event1(const char* format, ...) LOG_TRACE(1)
+void JVMCI::event2(const char* format, ...) LOG_TRACE(2)
+void JVMCI::event3(const char* format, ...) LOG_TRACE(3)
+void JVMCI::event4(const char* format, ...) LOG_TRACE(4)
+
+#undef LOG_TRACE
+
+void JVMCI::shutdown(JavaThread* thread) {
   ResourceMark rm;
   {
     MutexLocker locker(JVMCI_lock);
@@ -203,11 +327,29 @@ void JVMCI::shutdown() {
     JVMCI_event_1("shutting down JVMCI");
   }
   JVMCIRuntime* java_runtime = _java_runtime;
-  if (java_runtime != compiler_runtime()) {
+  if (java_runtime != nullptr) {
     java_runtime->shutdown();
   }
-  if (compiler_runtime() != NULL) {
-    compiler_runtime()->shutdown();
+  JVMCIRuntime* runtime = thread->libjvmci_runtime();
+  if (runtime != nullptr) {
+    runtime->detach_thread(thread, "JVMCI shutdown");
+  }
+  {
+    // Attach to JVMCI initialized runtimes that are not already shutting down
+    // and shut them down. This ensures HotSpotJVMCIRuntime.shutdown() is called
+    // for each JVMCI runtime.
+    MutexLocker locker(JVMCI_lock);
+    for (JVMCIRuntime* rt = JVMCI::_compiler_runtimes; rt != nullptr; rt = rt->_next) {
+      if (rt->is_HotSpotJVMCIRuntime_initialized() && rt->_num_attached_threads != JVMCIRuntime::cannot_be_attached) {
+        rt->_num_attached_threads++;
+        {
+          MutexUnlocker unlocker(JVMCI_lock);
+          rt->attach_thread(thread);
+          rt->shutdown();
+          rt->detach_thread(thread, "JVMCI shutdown");
+        }
+      }
+    }
   }
 }
 
@@ -219,7 +361,7 @@ void JVMCI::fatal_log(const char* buf, size_t count) {
   intx current_thread_id = os::current_thread_id();
   intx invalid_id = -1;
   int log_fd;
-  if (_fatal_log_init_thread == invalid_id && Atomic::cmpxchg(&_fatal_log_init_thread, invalid_id, current_thread_id) == invalid_id) {
+  if (_first_error_tid == invalid_id && Atomic::cmpxchg(&_first_error_tid, invalid_id, current_thread_id) == invalid_id) {
     if (ErrorFileToStdout) {
       log_fd = 1;
     } else if (ErrorFileToStderr) {
@@ -240,53 +382,15 @@ void JVMCI::fatal_log(const char* buf, size_t count) {
       }
     }
     _fatal_log_fd = log_fd;
-  } else {
-    // Another thread won the race to initialize the stream. Give it time
-    // to complete initialization. VM locks cannot be used as the current
-    // thread might not be attached to the VM (e.g. a native thread started
-    // within libjvmci).
-    while (_fatal_log_fd == -1) {
-      os::naked_short_sleep(50);
-    }
+  } else if (_first_error_tid != current_thread_id) {
+    // This is not the first thread reporting a libjvmci error
+    tty->print_cr("[thread %zd also had an error in the JVMCI native library]",
+                    current_thread_id);
+
+    // Fatal error reporting is single threaded so just block this thread.
+    os::infinite_sleep();
   }
   fdStream log(_fatal_log_fd);
   log.write(buf, count);
   log.flush();
 }
-
-void JVMCI::vlog(int level, const char* format, va_list ap) {
-  if (LogEvents && JVMCIEventLogLevel >= level) {
-    StringEventLog* events = level == 1 ? _events : _verbose_events;
-    guarantee(events != NULL, "JVMCI event log not yet initialized");
-    Thread* thread = Thread::current_or_null_safe();
-    if (thread != NULL) {
-      events->logv(thread, format, ap);
-    }
-  }
-}
-
-void JVMCI::vtrace(int level, const char* format, va_list ap) {
-  if (JVMCITraceLevel >= level) {
-    Thread* thread = Thread::current_or_null_safe();
-    if (thread != NULL) {
-      ResourceMark rm;
-      tty->print("JVMCITrace-%d[%s]:%*c", level, thread->name(), level, ' ');
-    } else {
-      tty->print("JVMCITrace-%d[?]:%*c", level, level, ' ');
-    }
-    tty->vprint_cr(format, ap);
-  }
-}
-
-#define LOG_TRACE(level) { va_list ap; \
-  va_start(ap, format); vlog(level, format, ap); va_end(ap); \
-  va_start(ap, format); vtrace(level, format, ap); va_end(ap); \
-}
-
-void JVMCI::event(int level, const char* format, ...) LOG_TRACE(level)
-void JVMCI::event1(const char* format, ...) LOG_TRACE(1)
-void JVMCI::event2(const char* format, ...) LOG_TRACE(2)
-void JVMCI::event3(const char* format, ...) LOG_TRACE(3)
-void JVMCI::event4(const char* format, ...) LOG_TRACE(4)
-
-#undef LOG_TRACE

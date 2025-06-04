@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation. Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -66,7 +64,7 @@ import org.netbeans.jemmy.util.EmptyVisualizer;
  * <BR><BR>Timeouts used: <BR>
  * JTreeOperator.WaitNodeExpandedTimeout - time to wait node expanded <BR>
  * JTreeOperator.WaitNodeCollapsedTimeout - time to wait node collapsed <BR>
- * JTreeOperator.WaitAfterNodeExpandedTimeout - time to to sleep after node
+ * JTreeOperator.WaitAfterNodeExpandedTimeout - time to sleep after node
  * expanded <BR>
  * JTreeOperator.WaitNextNodeTimeout - time to wait next node displayed <BR>
  * JTreeOperator.WaitNodeVisibleTimeout - time to wait node visible <BR>

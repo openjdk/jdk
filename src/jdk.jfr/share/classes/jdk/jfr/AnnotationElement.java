@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.util.StringJoiner;
 
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.TypeLibrary;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * Describes event metadata, such as labels, descriptions and units.
@@ -112,9 +112,8 @@ public final class AnnotationElement {
      *         signatures in the {@code annotationType}
      */
     public AnnotationElement(Class<? extends Annotation> annotationType, Map<String, Object> values) {
-        Objects.requireNonNull(annotationType);
-        Objects.requireNonNull(values);
-        Utils.checkRegisterPermission();
+        Objects.requireNonNull(annotationType, "annotationType");
+        Objects.requireNonNull(values, "values");
         // copy values to avoid modification after validation
         HashMap<String, Object> map = new HashMap<>(values);
         for (Map.Entry<String, Object> entry : map.entrySet()) {
@@ -292,7 +291,7 @@ public final class AnnotationElement {
      *         not exist in the annotation
      */
     public Object getValue(String name) {
-        Objects.requireNonNull(name);
+        Objects.requireNonNull(name, "name");
         int index = type.indexOf(name);
         if (index != -1) {
             return annotationValues.get(index);
@@ -314,7 +313,7 @@ public final class AnnotationElement {
      * @return {@code true} if method exists, {@code false} otherwise
      */
     public boolean hasValue(String name) {
-        Objects.requireNonNull(name);
+        Objects.requireNonNull(name, "name");
         return type.indexOf(name) != -1;
     }
 
@@ -329,7 +328,7 @@ public final class AnnotationElement {
      *         it exists, else {@code null}
      */
     public final <A> A getAnnotation(Class<? extends Annotation> annotationType) {
-        Objects.requireNonNull(annotationType);
+        Objects.requireNonNull(annotationType, "annotationType");
         return type.getAnnotation(annotationType);
     }
 
@@ -385,5 +384,4 @@ public final class AnnotationElement {
     boolean isInBoot() {
         return inBootClassLoader;
     }
-
 }

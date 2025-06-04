@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,13 +34,13 @@ public class Bug6190861 {
     public static void main(String[] args) {
         Locale reservedLocale = Locale.getDefault();
         try {
-            Locale.setDefault(new Locale("en", "US"));
+            Locale.setDefault(Locale.US);
 
             List localeList = new ArrayList();
             localeList.add(Locale.ENGLISH);
             localeList.add(Locale.KOREA);
             localeList.add(Locale.UK);
-            localeList.add(new Locale("en", "CA"));
+            localeList.add(Locale.of("en", "CA"));
             localeList.add(Locale.ENGLISH);
 
             Iterator iter = localeList.iterator();

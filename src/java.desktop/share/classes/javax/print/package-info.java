@@ -59,7 +59,7 @@
  * {@code javax.print.attribute.standard} package enumerates all of the standard
  * attributes supported by the API, most of which are implementations of
  * attributes specified in the IETF Specification,
- * <a href="http://www.ietf.org/rfc/rfc2911.txt">RFC 2911 Internet Printing
+ * <a href="https://www.rfc-editor.org/info/rfc2911">RFC 2911 Internet Printing
  * Protocol, 1.1: Model and Semantics</a>, dated September 2000. The attributes
  * specified in {@code javax.print.attribute.standard} include common
  * capabilities, such as: resolution, copies, media sizes, job priority, and
@@ -127,6 +127,8 @@
  * later time. {@code IllegalArgumentException} and {@code NullPointerException}
  * are examples of typical and acceptable run time exceptions for such cases.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2911
+ *      RFC 2911: Internet Printing Protocol/1.1: Model and Semantics
  * @since 1.4
  */
 package javax.print;

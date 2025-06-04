@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ public class JavaThreadState {
   public static final JavaThreadState UNINITIALIZED     = new JavaThreadState("UNINITIALIZED");
   /** Just starting up, i.e., in process of being initialized */
   public static final JavaThreadState NEW               = new JavaThreadState("NEW");
-  /** Corresponding transition state (not used, included for completness) */
+  /** Corresponding transition state (not used, included for completeness) */
   public static final JavaThreadState NEW_TRANS         = new JavaThreadState("NEW_TRANS");
   /** Running in native code */
   public static final JavaThreadState IN_NATIVE         = new JavaThreadState("IN_NATIVE");
@@ -47,7 +47,7 @@ public class JavaThreadState {
   public static final JavaThreadState IN_VM_TRANS       = new JavaThreadState("IN_VM_TRANS");
   /** Running in Java or in stub code */
   public static final JavaThreadState IN_JAVA           = new JavaThreadState("IN_JAVA");
-  /** Corresponding transition state (not used, included for completness) */
+  /** Corresponding transition state (not used, included for completeness) */
   public static final JavaThreadState IN_JAVA_TRANS     = new JavaThreadState("IN_JAVA_TRANS");
   /** Blocked in vm */
   public static final JavaThreadState BLOCKED           = new JavaThreadState("BLOCKED");

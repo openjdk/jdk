@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,11 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 
 /**
- * A thread-local variable that is notified when a thread terminates and
- * it has been initialized in the terminating thread (even if it was
- * initialized with a null value).
+ * A platform thread-local variable that is notified when a platform thread terminates,
+ * and it has been initialized in the terminating thread (or a mounted virtual thread in
+ * the case of a carrier thread), and even if it was initialized with a null value.
  */
-public class TerminatingThreadLocal<T> extends ThreadLocal<T> {
+public class TerminatingThreadLocal<T> extends CarrierThreadLocal<T> {
 
     @Override
     public void set(T value) {
@@ -43,8 +43,8 @@ public class TerminatingThreadLocal<T> extends ThreadLocal<T> {
 
     @Override
     public void remove() {
-        super.remove();
         unregister(this);
+        super.remove();
     }
 
     /**
@@ -79,7 +79,9 @@ public class TerminatingThreadLocal<T> extends ThreadLocal<T> {
      * @param tl the ThreadLocal to register
      */
     public static void register(TerminatingThreadLocal<?> tl) {
-        REGISTRY.get().add(tl);
+        if (tl != REGISTRY) {
+            REGISTRY.get().add(tl);
+        }
     }
 
     /**
@@ -92,11 +94,11 @@ public class TerminatingThreadLocal<T> extends ThreadLocal<T> {
     }
 
     /**
-     * a per-thread registry of TerminatingThreadLocal(s) that have been registered
-     * but later not unregistered in a particular thread.
+     * A per-platform-thread registry of TerminatingThreadLocal(s). The registry is
+     * itself a TerminatingThreadLocal to keep it reachable until the thread terminates.
      */
-    public static final ThreadLocal<Collection<TerminatingThreadLocal<?>>> REGISTRY =
-        new ThreadLocal<>() {
+    public static final TerminatingThreadLocal<Collection<TerminatingThreadLocal<?>>> REGISTRY =
+        new TerminatingThreadLocal<>() {
             @Override
             protected Collection<TerminatingThreadLocal<?>> initialValue() {
                 return Collections.newSetFromMap(new IdentityHashMap<>(4));

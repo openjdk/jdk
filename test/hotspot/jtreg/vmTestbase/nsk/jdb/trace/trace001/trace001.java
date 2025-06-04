@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdb.trace.trace001.trace001a
- * @run main/othervm
+ * @run driver
  *      nsk.jdb.trace.trace001.trace001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
@@ -56,6 +56,7 @@
  *      -jdb=${test.jdk}/bin/jdb
  *      -java.options="${test.vm.opts} ${test.java.opts}"
  *      -workdir=.
+ *      -jdb.option="-trackallthreads"
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 
@@ -70,14 +71,10 @@ import java.util.*;
 public class trace001 extends JdbTest {
 
     public static void main (String argv[]) {
-        System.exit(run(argv, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String argv[], PrintStream out) {
         debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
-        return new trace001().runTest(argv, out);
+        new trace001().runTest(argv);
     }
 
     static final String PACKAGE_NAME    = "nsk.jdb.trace.trace001";
@@ -101,10 +98,10 @@ public class trace001 extends JdbTest {
         jdb.setBreakpointInMethod(LAST_BREAK);
         reply = jdb.receiveReplyFor(JdbCommand.cont);
 
-        threads = jdb.getThreadIds(DEBUGGEE_THREAD);
+        threads = jdb.getThreadIdsByName(MYTHREAD);
 
         if (threads.length != 2) {
-            log.complain("jdb should report 2 instance of " + DEBUGGEE_THREAD);
+            log.complain("jdb should report 2 instance named " + MYTHREAD + "-<n>");
             log.complain("Found: " + threads.length);
             success = false;
         }

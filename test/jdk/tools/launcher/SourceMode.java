@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,21 @@
 
 /**
  * @test
- * @bug 8192920 8204588 8210275
+ * @bug 8192920 8204588 8210275 8286571
  * @summary Test source mode
  * @modules jdk.compiler jdk.jlink
- * @run main SourceMode
+ * @comment Test is being run in othervm to support JEP 493 enabled
+ *          JDKs which don't allow patched modules. Note that jtreg patches
+ *          module java.base to add java.lang.JTRegModuleHelper. If then a
+ *          jlink run is attempted in-process - using the ToolProvider API -
+ *          on a JEP 493 enabled JDK, the test fails.
+ * @run main/othervm SourceMode
  */
 
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -102,6 +108,33 @@ public class SourceMode extends TestHelper {
         if (!tr.isOK())
             error(tr, "Bad exit code: " + tr.exitValue);
         if (!tr.contains("[1, 2, 3]"))
+            error(tr, "Expected output not found");
+        show(tr);
+    }
+
+    // java --source N --enable-preview Simple.java hello
+    // on minimal jdk image containing jdk.compiler
+    @Test
+    void test8286571() throws IOException {
+        starting("test8286571");
+        var pw = new PrintWriter(System.out);
+        int rc = ToolProvider.findFirst("jlink").orElseThrow().run(
+                pw, pw,
+                "--add-modules",
+                "jdk.compiler",
+                "--output",
+                "comp_only");
+        if (rc != 0)
+            throw new AssertionError("Jlink failed: rc = " + rc);
+        Path file = getSimpleFile("Simple.java", false);
+        TestResult tr = doExec(
+                Path.of("comp_only", "bin", isWindows ? "java.exe" : "java").toString(),
+                "--source", thisVersion,
+                "--enable-preview",
+                file.toString(), "hello");
+        if (!tr.isOK())
+            error(tr, "Bad exit code: " + tr.exitValue);
+        if (!tr.contains("[hello]"))
             error(tr, "Expected output not found");
         show(tr);
     }

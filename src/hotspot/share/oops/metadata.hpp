@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,18 +44,17 @@ class Metadata : public MetaspaceObj {
   virtual bool is_method()             const { return false; }
   virtual bool is_methodData()         const { return false; }
   virtual bool is_constantPool()       const { return false; }
-  virtual bool is_methodCounters()     const { return false; }
   virtual int  size()                  const = 0;
   virtual MetaspaceObj::Type type()    const = 0;
   virtual const char* internal_name()  const = 0;
-  virtual void metaspace_pointers_do(MetaspaceClosure* iter) {}
+  virtual void metaspace_pointers_do(MetaspaceClosure* iter) = 0;
 
   void print()       const;
   void print_value() const;
 
   static void print_value_on_maybe_null(outputStream* st, const Metadata* m) {
-    if (NULL == m)
-      st->print("NULL");
+    if (nullptr == m)
+      st->print("null");
     else
       m->print_value_on(st);
   }
@@ -75,5 +74,14 @@ class Metadata : public MetaspaceObj {
   // and constant pools need to be set, but someday instanceKlasses might also.
   static void mark_on_stack(Metadata* m) { m->set_on_stack(true); }
 };
+
+template <typename M>
+static void print_on_maybe_null(outputStream* st, const char* str, const M* m) {
+  if (nullptr != m) {
+    st->print_raw(str);
+    m->print_value_on(st);
+    st->cr();
+  }
+}
 
 #endif // SHARE_OOPS_METADATA_HPP

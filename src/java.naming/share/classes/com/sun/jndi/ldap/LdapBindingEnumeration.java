@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,17 @@
 
 package com.sun.jndi.ldap;
 
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Vector;
 import javax.naming.*;
 import javax.naming.directory.*;
 import javax.naming.ldap.Control;
-import javax.naming.spi.*;
 
 import com.sun.jndi.toolkit.ctx.Continuation;
+import com.sun.naming.internal.NamingManagerHelper;
+import com.sun.naming.internal.ObjectFactoriesFilter;
 
 final class LdapBindingEnumeration
         extends AbstractLdapNamingEnumeration<Binding> {
-
-    @SuppressWarnings("removal")
-    private final AccessControlContext acc = AccessController.getContext();
 
     LdapBindingEnumeration(LdapCtx homeCtx, LdapResult answer, Name remain,
         Continuation cont) throws NamingException
@@ -49,7 +43,6 @@ final class LdapBindingEnumeration
         super(homeCtx, answer, remain, cont);
     }
 
-    @SuppressWarnings("removal")
     @Override
     protected Binding
       createItem(String dn, Attributes attrs, Vector<Control> respCtls)
@@ -60,12 +53,7 @@ final class LdapBindingEnumeration
 
         if (attrs.get(Obj.JAVA_ATTRIBUTES[Obj.CLASSNAME]) != null) {
             // serialized object or object reference
-            try {
-                PrivilegedExceptionAction<Object> pa = () -> Obj.decodeObject(attrs);
-                obj = AccessController.doPrivileged(pa, acc);
-            } catch (PrivilegedActionException e) {
-                throw (NamingException)e.getException();
-            }
+            obj = Obj.decodeObject(attrs);
         }
         if (obj == null) {
             // DirContext object
@@ -76,8 +64,8 @@ final class LdapBindingEnumeration
         cn.add(atom);
 
         try {
-            obj = DirectoryManager.getObjectInstance(obj, cn, homeCtx,
-                homeCtx.envprops, attrs);
+            obj = NamingManagerHelper.getDirObjectInstance(obj, cn, homeCtx,
+                    homeCtx.envprops, attrs, ObjectFactoriesFilter::checkLdapFilter);
 
         } catch (NamingException e) {
             throw e;

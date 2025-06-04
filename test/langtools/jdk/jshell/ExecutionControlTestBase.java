@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,47 +25,41 @@ import javax.tools.Diagnostic;
 
 import org.testng.annotations.Test;
 import jdk.jshell.VarSnippet;
-import java.net.InetAddress;
 
 import static jdk.jshell.Snippet.Status.VALID;
 import static jdk.jshell.Snippet.SubKind.*;
 
 public class ExecutionControlTestBase extends KullaTesting {
 
-    String standardListenSpec() {
-        String loopback = InetAddress.getLoopbackAddress().getHostAddress();
-        return "jdi:hostname(" + loopback + ")";
-    }
-
-    String standardLaunchSpec() {
-        return "jdi:launch(true)";
-    }
-
-    String standardJdiSpec() {
-        return "jdi";
-    }
-
-    String standardSpecs() {
-        return "5(" + standardListenSpec() + "), 6(" + standardLaunchSpec() + "), 7(" + standardJdiSpec() + ")";
+    String alwaysPassingSpec() {
+        return "5(local)";
     }
 
     @Test
+    public void test() {
+        variables();
+        testImportOnDemand();
+        classesDeclaration();
+        interfaceTest();
+        methodOverload();
+        testExprSanity();
+    }
+
     public void classesDeclaration() {
-        assertEval("interface A { }");
-        assertEval("class B implements A { }");
-        assertEval("interface C extends A { }");
+        assertEval("interface AA { }");
+        assertEval("class BB implements AA { }");
+        assertEval("interface C extends AA { }");
         assertEval("enum D implements C { }");
         assertEval("@interface E { }");
         assertClasses(
-                clazz(KullaTesting.ClassType.INTERFACE, "A"),
-                clazz(KullaTesting.ClassType.CLASS, "B"),
+                clazz(KullaTesting.ClassType.INTERFACE, "AA"),
+                clazz(KullaTesting.ClassType.CLASS, "BB"),
                 clazz(KullaTesting.ClassType.INTERFACE, "C"),
                 clazz(KullaTesting.ClassType.ENUM, "D"),
                 clazz(KullaTesting.ClassType.ANNOTATION, "E"));
         assertActiveKeys();
     }
 
-    @Test
     public void interfaceTest() {
         String interfaceSource
                 = "interface A {\n"
@@ -93,7 +87,6 @@ public class ExecutionControlTestBase extends KullaTesting {
         assertEval("new B.Inner2();");
     }
 
-    @Test
     public void variables() {
         VarSnippet snx = varKey(assertEval("int x = 10;"));
         VarSnippet sny = varKey(assertEval("String y = \"hi\";"));
@@ -105,7 +98,6 @@ public class ExecutionControlTestBase extends KullaTesting {
         assertActiveKeys();
     }
 
-    @Test
     public void methodOverload() {
         assertEval("int m() { return 1; }");
         assertEval("int m(int x) { return 2; }");
@@ -130,15 +122,13 @@ public class ExecutionControlTestBase extends KullaTesting {
         assertActiveKeys();
     }
 
-    @Test
     public void testExprSanity() {
-        assertEval("int x = 3;", "3");
-        assertEval("int y = 4;", "4");
-        assertEval("x + y;", "7");
+        assertEval("int i = 3;", "3");
+        assertEval("int j = 4;", "4");
+        assertEval("i + j;", "7");
         assertActiveKeys();
     }
 
-    @Test
     public void testImportOnDemand() {
         assertImportKeyMatch("import java.util.*;", "java.util.*", TYPE_IMPORT_ON_DEMAND_SUBKIND, added(VALID));
         assertEval("List<Integer> list = new ArrayList<>();");

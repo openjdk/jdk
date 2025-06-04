@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,42 @@
 
 package javax.swing.plaf.basic;
 
-import sun.swing.SwingUtilities2;
-import sun.awt.AppContext;
-
-import java.awt.*;
-import java.awt.event.*;
-import java.io.Serializable;
-import javax.swing.*;
-import javax.swing.border.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.AWTKeyStroke;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.KeyboardFocusManager;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseMotionListener;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
+
+import javax.swing.AbstractAction;
+import javax.swing.AbstractButton;
+import javax.swing.ButtonGroup;
+import javax.swing.ButtonModel;
+import javax.swing.DefaultButtonModel;
+import javax.swing.Icon;
+import javax.swing.JComponent;
+import javax.swing.JRadioButton;
+import javax.swing.JToggleButton;
+import javax.swing.KeyStroke;
+import javax.swing.LookAndFeel;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.plaf.ButtonUI;
-import javax.swing.plaf.UIResource;
 import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.UIResource;
 import javax.swing.text.View;
+
+import sun.awt.AppContext;
+import sun.swing.SwingUtilities2;
 
 /**
  * BasicButton implementation
@@ -412,7 +431,7 @@ public class BasicButtonUI extends ButtonUI{
     /**
      * Method which renders the text of the current button.
      *
-     * As of Java 2 platform v 1.4 this method should not be used or overriden.
+     * As of Java 2 platform v 1.4 this method should not be used or overridden.
      * Use the paintText method which takes the AbstractButton argument.
      *
      * @param g an instance of {@code Graphics}
@@ -458,7 +477,7 @@ public class BasicButtonUI extends ButtonUI{
         paintText(g, (JComponent)b, textRect, text);
     }
 
-    // Method signature defined here overriden in subclasses.
+    // Method signature defined here overridden in subclasses.
     // Perhaps this class should be abstract?
     /**
      * Paints a focused button.

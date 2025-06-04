@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,10 +57,14 @@ public final class LauncherIconVerifier {
             label = String.format("[%s]", launcherName);
         }
 
-        Path iconPath = cmd.appLayout().destktopIntegrationDirectory().resolve(
+        Path iconPath = cmd.appLayout().desktopIntegrationDirectory().resolve(
                 curLauncherName + TKit.ICON_SUFFIX);
 
-        if (expectedDefault) {
+        if (TKit.isWindows()) {
+            TKit.assertPathExists(iconPath, false);
+            WinExecutableIconVerifier.verifyLauncherIcon(cmd, launcherName,
+                    expectedIcon, expectedDefault);
+        } else if (expectedDefault) {
             TKit.assertPathExists(iconPath, true);
         } else if (expectedIcon == null) {
             TKit.assertPathExists(iconPath, false);

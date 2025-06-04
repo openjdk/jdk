@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,7 +142,7 @@ public interface EventRequest extends Mirror {
      * reported. In either case subsequent events are never reported for
      * this request.
      *
-     * @param count the number of ocurrences before generating an event.
+     * @param count the number of occurrences before generating an event.
      * @throws InvalidRequestStateException if this request is currently
      * enabled or has been deleted.
      * Filters may be added only to disabled requests.

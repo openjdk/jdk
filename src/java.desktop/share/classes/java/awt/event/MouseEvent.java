@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,7 +189,7 @@ import sun.awt.SunToolkit;
  *
  * @since 1.1
  */
-public class MouseEvent extends InputEvent {
+public non-sealed class MouseEvent extends InputEvent {
 
     /**
      * The first number in the range of ids used for mouse events.
@@ -334,7 +334,7 @@ public class MouseEvent extends InputEvent {
     int clickCount;
 
     /**
-     * Indicates whether the event is a result of a touch event.
+     * @serial Indicates whether the event is a result of a touch event.
      */
     private boolean causedByTouchEvent;
 
@@ -1194,7 +1194,6 @@ public class MouseEvent extends InputEvent {
      * @throws ClassNotFoundException if the class of a serialized object could
      *         not be found
      * @throws IOException if an I/O error occurs
-     * @serial
      */
     @Serial
     @SuppressWarnings("deprecation")

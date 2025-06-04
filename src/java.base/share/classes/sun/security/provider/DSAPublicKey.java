@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,21 @@
 
 package sun.security.provider;
 
-import java.util.*;
-import java.io.*;
+import java.io.IOException;
+import java.io.Serializable;
 import java.math.BigInteger;
-import java.security.InvalidKeyException;
-import java.security.ProviderException;
 import java.security.AlgorithmParameters;
+import java.security.InvalidKeyException;
+import java.security.interfaces.DSAParams;
 import java.security.spec.DSAParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
-import java.security.interfaces.DSAParams;
 
-import sun.security.x509.X509Key;
-import sun.security.x509.AlgIdDSA;
 import sun.security.util.BitArray;
 import sun.security.util.Debug;
-import sun.security.util.DerValue;
 import sun.security.util.DerInputStream;
-import sun.security.util.DerOutputStream;
+import sun.security.util.DerValue;
+import sun.security.x509.AlgIdDSA;
+import sun.security.x509.X509Key;
 
 /**
  * An X.509 public key for the Digital Signature Algorithm.
@@ -83,26 +81,22 @@ implements java.security.interfaces.DSAPublicKey, Serializable {
      * @param q DSA parameter q, may be null if all of p, q, and g are null.
      * @param g DSA parameter g, may be null if all of p, q, and g are null.
      */
+    @SuppressWarnings("this-escape")
     public DSAPublicKey(BigInteger y, BigInteger p, BigInteger q,
-                        BigInteger g)
-    throws InvalidKeyException {
+                        BigInteger g) {
         this.y = y;
         algid = new AlgIdDSA(p, q, g);
 
-        try {
-            byte[] keyArray = new DerValue(DerValue.tag_Integer,
-                               y.toByteArray()).toByteArray();
-            setKey(new BitArray(keyArray.length*8, keyArray));
-            encode();
-        } catch (IOException e) {
-            throw new InvalidKeyException("could not DER encode y: " +
-                                          e.getMessage());
-        }
+        byte[] keyArray = new DerValue(DerValue.tag_Integer,
+                           y.toByteArray()).toByteArray();
+        setKey(new BitArray(keyArray.length*8, keyArray));
+        encode();
     }
 
     /**
      * Make a DSA public key from its DER encoding (X.509).
      */
+    @SuppressWarnings("this-escape")
     public DSAPublicKey(byte[] encoded) throws InvalidKeyException {
         decode(encoded);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,12 +37,12 @@ import sun.security.util.MessageDigestSpi2;
 import javax.crypto.SecretKey;
 
 /**
- * This MessageDigest class provides applications the functionality of a
+ * This {@code MessageDigest} class provides applications the functionality of a
  * message digest algorithm, such as SHA-1 or SHA-256.
  * Message digests are secure one-way hash functions that take arbitrary-sized
  * data and output a fixed-length hash value.
  *
- * <p>A MessageDigest object starts out initialized. The data is
+ * <p>A {@code MessageDigest} object starts out initialized. The data is
  * processed through it using the {@link #update(byte) update}
  * methods. At any point {@link #reset() reset} can be called
  * to reset the digest. Once all the data to be updated has been
@@ -50,12 +50,12 @@ import javax.crypto.SecretKey;
  * be called to complete the hash computation.
  *
  * <p>The {@code digest} method can be called once for a given number
- * of updates. After {@code digest} has been called, the MessageDigest
+ * of updates. After {@code digest} has been called, the {@code MessageDigest}
  * object is reset to its initialized state.
  *
  * <p>Implementations are free to implement the Cloneable interface.
  * Client applications can test cloneability by attempting cloning
- * and catching the CloneNotSupportedException:
+ * and catching the {@code CloneNotSupportedException}:
  *
  * <pre>{@code
  * MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -87,6 +87,7 @@ import javax.crypto.SecretKey;
  * <ul>
  * <li>{@code SHA-1}</li>
  * <li>{@code SHA-256}</li>
+ * <li>{@code SHA-384}</li>
  * </ul>
  * These algorithms are described in the <a href=
  * "{@docRoot}/../specs/security/standard-names.html#messagedigest-algorithms">
@@ -95,6 +96,7 @@ import javax.crypto.SecretKey;
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @author Benjamin Renaud
  * @since 1.1
  *
@@ -109,7 +111,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
     private static final boolean skipDebug =
         Debug.isOn("engine=") && !Debug.isOn("messagedigest");
 
-    private String algorithm;
+    private final String algorithm;
 
     // The state of this digest
     private static final int INITIAL = 0;
@@ -127,6 +129,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * "{@docRoot}/../specs/security/standard-names.html#messagedigest-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     protected MessageDigest(String algorithm) {
         this.algorithm = algorithm;
@@ -139,14 +142,14 @@ public abstract class MessageDigest extends MessageDigestSpi {
     }
 
     /**
-     * Returns a MessageDigest object that implements the specified digest
-     * algorithm.
+     * Returns a {@code MessageDigest} object that implements the specified
+     * digest algorithm.
      *
      * <p> This method traverses the list of registered security Providers,
      * starting with the most preferred Provider.
-     * A new MessageDigest object encapsulating the
-     * MessageDigestSpi implementation from the first
-     * Provider that supports the specified algorithm is returned.
+     * A new {@code MessageDigest} object encapsulating the
+     * {@code MessageDigestSpi} implementation from the first
+     * provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -156,7 +159,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
      * the preferred provider order for the specified algorithm. This
-     * may be different than the order of providers returned by
+     * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param algorithm the name of the algorithm requested.
@@ -165,6 +168,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code MessageDigest} object that implements the
      *         specified algorithm
      *
@@ -201,11 +205,11 @@ public abstract class MessageDigest extends MessageDigestSpi {
     }
 
     /**
-     * Returns a MessageDigest object that implements the specified digest
-     * algorithm.
+     * Returns a {@code MessageDigest} object that implements the specified
+     * digest algorithm.
      *
-     * <p> A new MessageDigest object encapsulating the
-     * MessageDigestSpi implementation from the specified provider
+     * <p> A new {@code MessageDigest} object encapsulating the
+     * {@code MessageDigestSpi} implementation from the specified provider
      * is returned.  The specified provider must be registered
      * in the security provider list.
      *
@@ -220,6 +224,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code MessageDigest} object that implements the
      *         specified algorithm
      *
@@ -258,13 +263,13 @@ public abstract class MessageDigest extends MessageDigestSpi {
     }
 
     /**
-     * Returns a MessageDigest object that implements the specified digest
-     * algorithm.
+     * Returns a {@code MessageDigest} object that implements the specified
+     * digest algorithm.
      *
-     * <p> A new MessageDigest object encapsulating the
-     * MessageDigestSpi implementation from the specified Provider
-     * object is returned.  Note that the specified Provider object
-     * does not have to be registered in the provider list.
+     * <p> A new {@code MessageDigest} object encapsulating the
+     * {@code MessageDigestSpi} implementation from the specified provider
+     * is returned.  Note that the specified provider does not
+     * have to be registered in the provider list.
      *
      * @param algorithm the name of the algorithm requested.
      * See the MessageDigest section in the <a href=
@@ -274,6 +279,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @param provider the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code MessageDigest} object that implements the
      *         specified algorithm
      *
@@ -302,10 +308,8 @@ public abstract class MessageDigest extends MessageDigestSpi {
             md.provider = (Provider)objs[1];
             return md;
         } else {
-            MessageDigest delegate =
-                    Delegate.of((MessageDigestSpi)objs[0], algorithm,
-                    (Provider)objs[1]);
-            return delegate;
+            return Delegate.of((MessageDigestSpi)objs[0], algorithm,
+                (Provider)objs[1]);
         }
     }
 
@@ -459,16 +463,18 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * the same length and all bytes at corresponding positions are equal.
      *
      * @implNote
-     * All bytes in {@code digesta} are examined to determine equality.
-     * The calculation time depends only on the length of {@code digesta}.
-     * It does not depend on the length of {@code digestb} or the contents
-     * of {@code digesta} and {@code digestb}.
+     * All bytes in {@code digesta} are examined to determine equality, unless
+     * {@code digestb} is {@code null} or has a length of zero bytes. If
+     * {@code digestb} is not {@code null} and does not have a length of zero
+     * bytes, then the calculation time depends only on the length of
+     * {@code digesta}. It does not depend on the length of {@code digestb} or
+     * the contents of {@code digesta} and {@code digestb}.
      *
      * @param digesta one of the digests to compare.
      *
      * @param digestb the other digest to compare.
      *
-     * @return true if the digests are equal, false otherwise.
+     * @return {@code true} if the digests are equal, {@code false} otherwise.
      */
     public static boolean isEqual(byte[] digesta, byte[] digestb) {
         if (digesta == digestb) return true;
@@ -512,6 +518,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the name of the algorithm
      */
     public final String getAlgorithm() {
@@ -559,17 +566,18 @@ public abstract class MessageDigest extends MessageDigestSpi {
 
 
     /*
-     * The following class allows providers to extend from MessageDigestSpi
-     * rather than from MessageDigest. It represents a MessageDigest with an
+     * The following class allows providers to extend from
+     * {@code MessageDigestSpi} rather than from {@code MessageDigest}.
+     * It represents a message digest with an
      * encapsulated, provider-supplied SPI object (of type MessageDigestSpi).
-     * If the provider implementation is an instance of MessageDigestSpi,
-     * the getInstance() methods above return an instance of this class, with
-     * the SPI object encapsulated.
+     * If the provider implementation is an instance of
+     * {@code MessageDigestSpi}, the {@code getInstance()} methods
+     * above return an instance of this class, with the SPI object encapsulated.
      *
-     * Note: All SPI methods from the original MessageDigest class have been
-     * moved up the hierarchy into a new class (MessageDigestSpi), which has
-     * been interposed in the hierarchy between the API (MessageDigest)
-     * and its original parent (Object).
+     * Note: All SPI methods from the original {@code MessageDigest} class
+     * have been moved up the hierarchy into a new class
+     * ({@code MessageDigestSpi}), which has been interposed in the hierarchy
+     * between the API ({@code MessageDigest}) and its original parent (Object).
      */
 
     private static class Delegate extends MessageDigest

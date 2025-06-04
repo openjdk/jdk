@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "utilities/ostream.hpp"
 #include "windbghelp.hpp"
 
@@ -35,6 +34,7 @@ typedef BOOL  (WINAPI *pfn_SymGetSymFromAddr64)(HANDLE, DWORD64, PDWORD64, PIMAG
 typedef DWORD (WINAPI *pfn_UnDecorateSymbolName)(const char*, char*, DWORD, DWORD);
 typedef BOOL  (WINAPI *pfn_SymSetSearchPath)(HANDLE, PCTSTR);
 typedef BOOL  (WINAPI *pfn_SymGetSearchPath)(HANDLE, PTSTR, int);
+typedef BOOL  (WINAPI *pfn_SymRefreshModuleList)(HANDLE);
 typedef BOOL  (WINAPI *pfn_StackWalk64)(DWORD MachineType,
                                         HANDLE hProcess,
                                         HANDLE hThread,
@@ -68,7 +68,8 @@ typedef LPAPI_VERSION (WINAPI *pfn_ImagehlpApiVersion)(void);
  DO(SymFunctionTableAccess64) \
  DO(SymGetModuleBase64) \
  DO(MiniDumpWriteDump) \
- DO(SymGetLineFromAddr64)
+ DO(SymGetLineFromAddr64) \
+ DO(SymRefreshModuleList)
 
 
 #define DECLARE_FUNCTION_POINTER(functionname) \
@@ -77,7 +78,7 @@ static pfn_##functionname g_pfn_##functionname;
 FOR_ALL_FUNCTIONS(DECLARE_FUNCTION_POINTER)
 
 
-static HMODULE g_dll_handle = NULL;
+static HMODULE g_dll_handle = nullptr;
 static DWORD g_dll_load_error = 0;
 static API_VERSION g_version = { 0, 0, 0, 0 };
 
@@ -93,7 +94,7 @@ static void initialize() {
   g_state = state_error;
 
   g_dll_handle = ::LoadLibrary("DBGHELP.DLL");
-  if (g_dll_handle == NULL) {
+  if (g_dll_handle == nullptr) {
     g_dll_load_error = ::GetLastError();
   } else {
     // Note: We loaded the DLL successfully. From here on we count
@@ -139,14 +140,14 @@ namespace { // Do not export.
   };
 }
 
-// Called at DLL_PROCESS_ATTACH.
+// Called at DLL_PROCESS_ATTACH for dynamic builds, and from os::init() for static builds.
 void WindowsDbgHelp::pre_initialize() {
   ::InitializeCriticalSection(&g_cs);
 }
 
 DWORD WindowsDbgHelp::symSetOptions(DWORD arg) {
   WindowsDbgHelpEntry entry_guard;
-  if (g_pfn_SymSetOptions != NULL) {
+  if (g_pfn_SymSetOptions != nullptr) {
     return g_pfn_SymSetOptions(arg);
   }
   return 0;
@@ -154,7 +155,7 @@ DWORD WindowsDbgHelp::symSetOptions(DWORD arg) {
 
 DWORD WindowsDbgHelp::symGetOptions(void) {
   WindowsDbgHelpEntry entry_guard;
-  if (g_pfn_SymGetOptions != NULL) {
+  if (g_pfn_SymGetOptions != nullptr) {
     return g_pfn_SymGetOptions();
   }
   return 0;
@@ -162,7 +163,7 @@ DWORD WindowsDbgHelp::symGetOptions(void) {
 
 BOOL WindowsDbgHelp::symInitialize(HANDLE hProcess, PCTSTR UserSearchPath, BOOL fInvadeProcess) {
   WindowsDbgHelpEntry entry_guard;
-  if (g_pfn_SymInitialize != NULL) {
+  if (g_pfn_SymInitialize != nullptr) {
     return g_pfn_SymInitialize(hProcess, UserSearchPath, fInvadeProcess);
   }
   return FALSE;
@@ -171,7 +172,7 @@ BOOL WindowsDbgHelp::symInitialize(HANDLE hProcess, PCTSTR UserSearchPath, BOOL 
 BOOL WindowsDbgHelp::symGetSymFromAddr64(HANDLE hProcess, DWORD64 the_address,
                                          PDWORD64 Displacement, PIMAGEHLP_SYMBOL64 Symbol) {
   WindowsDbgHelpEntry entry_guard;
-  if (g_pfn_SymGetSymFromAddr64 != NULL) {
+  if (g_pfn_SymGetSymFromAddr64 != nullptr) {
     return g_pfn_SymGetSymFromAddr64(hProcess, the_address, Displacement, Symbol);
   }
   return FALSE;
@@ -180,10 +181,10 @@ BOOL WindowsDbgHelp::symGetSymFromAddr64(HANDLE hProcess, DWORD64 the_address,
 DWORD WindowsDbgHelp::unDecorateSymbolName(const char* DecoratedName, char* UnDecoratedName,
                                            DWORD UndecoratedLength, DWORD Flags) {
   WindowsDbgHelpEntry entry_guard;
-  if (g_pfn_UnDecorateSymbolName != NULL) {
+  if (g_pfn_UnDecorateSymbolName != nullptr) {
     return g_pfn_UnDecorateSymbolName(DecoratedName, UnDecoratedName, UndecoratedLength, Flags);
   }
-  if (UnDecoratedName != NULL && UndecoratedLength > 0) {
+  if (UnDecoratedName != nullptr && UndecoratedLength > 0) {
     UnDecoratedName[0] = '\0';
   }
   return 0;
@@ -191,7 +192,7 @@ DWORD WindowsDbgHelp::unDecorateSymbolName(const char* DecoratedName, char* UnDe
 
 BOOL WindowsDbgHelp::symSetSearchPath(HANDLE hProcess, PCTSTR SearchPath) {
   WindowsDbgHelpEntry entry_guard;
-  if (g_pfn_SymSetSearchPath != NULL) {
+  if (g_pfn_SymSetSearchPath != nullptr) {
     return g_pfn_SymSetSearchPath(hProcess, SearchPath);
   }
   return FALSE;
@@ -199,8 +200,16 @@ BOOL WindowsDbgHelp::symSetSearchPath(HANDLE hProcess, PCTSTR SearchPath) {
 
 BOOL WindowsDbgHelp::symGetSearchPath(HANDLE hProcess, PTSTR SearchPath, int SearchPathLength) {
   WindowsDbgHelpEntry entry_guard;
-  if (g_pfn_SymGetSearchPath != NULL) {
+  if (g_pfn_SymGetSearchPath != nullptr) {
     return g_pfn_SymGetSearchPath(hProcess, SearchPath, SearchPathLength);
+  }
+  return FALSE;
+}
+
+BOOL WindowsDbgHelp::symRefreshModuleList(HANDLE hProcess) {
+  WindowsDbgHelpEntry entry_guard;
+  if (g_pfn_SymRefreshModuleList != nullptr) {
+    return g_pfn_SymRefreshModuleList(hProcess);
   }
   return FALSE;
 }
@@ -211,13 +220,13 @@ BOOL WindowsDbgHelp::stackWalk64(DWORD MachineType,
                                  LPSTACKFRAME64 StackFrame,
                                  PVOID ContextRecord) {
   WindowsDbgHelpEntry entry_guard;
-  if (g_pfn_StackWalk64 != NULL) {
+  if (g_pfn_StackWalk64 != nullptr) {
     return g_pfn_StackWalk64(MachineType, hProcess, hThread, StackFrame,
                              ContextRecord,
-                             NULL, // ReadMemoryRoutine
+                             nullptr, // ReadMemoryRoutine
                              g_pfn_SymFunctionTableAccess64, // FunctionTableAccessRoutine,
                              g_pfn_SymGetModuleBase64, // GetModuleBaseRoutine
-                             NULL // TranslateAddressRoutine
+                             nullptr // TranslateAddressRoutine
                              );
   }
   return FALSE;
@@ -225,15 +234,15 @@ BOOL WindowsDbgHelp::stackWalk64(DWORD MachineType,
 
 PVOID WindowsDbgHelp::symFunctionTableAccess64(HANDLE hProcess, DWORD64 AddrBase) {
   WindowsDbgHelpEntry entry_guard;
-  if (g_pfn_SymFunctionTableAccess64 != NULL) {
+  if (g_pfn_SymFunctionTableAccess64 != nullptr) {
     return g_pfn_SymFunctionTableAccess64(hProcess, AddrBase);
   }
-  return NULL;
+  return nullptr;
 }
 
 DWORD64 WindowsDbgHelp::symGetModuleBase64(HANDLE hProcess, DWORD64 dwAddr) {
   WindowsDbgHelpEntry entry_guard;
-  if (g_pfn_SymGetModuleBase64 != NULL) {
+  if (g_pfn_SymGetModuleBase64 != nullptr) {
     return g_pfn_SymGetModuleBase64(hProcess, dwAddr);
   }
   return 0;
@@ -244,7 +253,7 @@ BOOL WindowsDbgHelp::miniDumpWriteDump(HANDLE hProcess, DWORD ProcessId, HANDLE 
                                        PMINIDUMP_USER_STREAM_INFORMATION UserStreamParam,
                                        PMINIDUMP_CALLBACK_INFORMATION CallbackParam) {
   WindowsDbgHelpEntry entry_guard;
-  if (g_pfn_MiniDumpWriteDump != NULL) {
+  if (g_pfn_MiniDumpWriteDump != nullptr) {
     return g_pfn_MiniDumpWriteDump(hProcess, ProcessId, hFile, DumpType,
                                    ExceptionParam, UserStreamParam, CallbackParam);
   }
@@ -254,7 +263,7 @@ BOOL WindowsDbgHelp::miniDumpWriteDump(HANDLE hProcess, DWORD ProcessId, HANDLE 
 BOOL WindowsDbgHelp::symGetLineFromAddr64(HANDLE hProcess, DWORD64 dwAddr,
                           PDWORD pdwDisplacement, PIMAGEHLP_LINE64 Line) {
   WindowsDbgHelpEntry entry_guard;
-  if (g_pfn_SymGetLineFromAddr64 != NULL) {
+  if (g_pfn_SymGetLineFromAddr64 != nullptr) {
     return g_pfn_SymGetLineFromAddr64(hProcess, dwAddr, pdwDisplacement, Line);
   }
   return FALSE;
@@ -288,7 +297,7 @@ void WindowsDbgHelp::print_state_on(outputStream* st) {
     st->print(" - missing functions: ");
 
     #define CHECK_AND_PRINT_IF_NULL(functionname) \
-    if (g_pfn_##functionname == NULL) { \
+    if (g_pfn_##functionname == nullptr) { \
       st->print("%s" #functionname, ((num_missing > 0) ? ", " : "")); \
       num_missing ++; \
     }
@@ -301,4 +310,3 @@ void WindowsDbgHelp::print_state_on(outputStream* st) {
   }
   st->cr();
 }
-

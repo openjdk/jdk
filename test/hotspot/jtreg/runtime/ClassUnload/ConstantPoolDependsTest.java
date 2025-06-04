@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,18 @@
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  * @compile p2/c2.java MyDiffClassLoader.java
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UnlockDiagnosticVMOptions -Xlog:class+unload -XX:+WhiteBoxAPI ConstantPoolDependsTest
  */
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.classloader.ClassUnloadCommon;
 
+import java.lang.ref.Reference;
+import java.util.List;
+import java.util.Set;
 public class ConstantPoolDependsTest {
     public static WhiteBox wb = WhiteBox.getWhiteBox();
     public static final String MY_TEST = "ConstantPoolDependsTest$c1c";
@@ -71,16 +74,13 @@ public class ConstantPoolDependsTest {
         ClassUnloadCommon.triggerUnloading();  // should not unload anything
         ClassUnloadCommon.failIf(!wb.isClassAlive(MY_TEST), "should not be unloaded");
         ClassUnloadCommon.failIf(!wb.isClassAlive("p2.c2"), "should not be unloaded");
-        // Unless MyTest_class is referenced here, the compiler can unload it.
-        System.out.println("Should not unload anything before here because " + MyTest_class + " is still alive.");
+        // Should not unload anything before here because MyTest_class is kept alive by the following fence.
+        Reference.reachabilityFence(MyTest_class);
     }
 
     public static void main(String args[]) throws Throwable {
         test();
-        ClassUnloadCommon.triggerUnloading();  // should unload
-        System.gc();
-        System.out.println("Should unload p2.c2 just now");
-        ClassUnloadCommon.failIf(wb.isClassAlive(MY_TEST), "should be unloaded");
-        ClassUnloadCommon.failIf(wb.isClassAlive("p2.c2"), "should be unloaded");
+        Set<String> aliveClasses = ClassUnloadCommon.triggerUnloading(List.of(MY_TEST, "p2.c2"));
+        ClassUnloadCommon.failIf(!aliveClasses.isEmpty(), "should be unloaded: " + aliveClasses);
     }
 }

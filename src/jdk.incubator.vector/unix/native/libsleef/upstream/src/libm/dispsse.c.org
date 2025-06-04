@@ -1,0 +1,65 @@
+//   Copyright Naoki Shibata and contributors 2010 - 2021.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+
+#include <stdint.h>
+#include <assert.h>
+#include <signal.h>
+#include <setjmp.h>
+
+#include "misc.h"
+
+#define SLEEF_IMPORT_IS_EXPORT
+#include "sleef.h"
+
+static int cpuSupportsSSE4_1() {
+  static int ret = -1;
+  if (ret == -1) {
+    int32_t reg[4];
+    Sleef_x86CpuID(reg, 1, 0);
+    ret = (reg[2] & (1 << 19)) != 0;
+  }
+  return ret;
+}
+
+static int cpuSupportsAVX2() {
+  static int ret = -1;
+  if (ret == -1) {
+    int32_t reg[4];
+    Sleef_x86CpuID(reg, 7, 0);
+    ret = (reg[1] & (1 << 5)) != 0;
+  }
+  return ret;
+}
+
+static int cpuSupportsFMA() {
+  static int ret = -1;
+  if (ret == -1) {
+    int32_t reg[4];
+    Sleef_x86CpuID(reg, 1, 0);
+    ret = (reg[2] & (1 << 12)) != 0;
+  }
+  return ret;
+}
+
+#define SUBST_IF_EXT1(funcsse4) if (cpuSupportsSSE4_1()) p = funcsse4;
+
+#ifdef ENABLE_AVX2
+#define SUBST_IF_EXT2(funcavx2) if (cpuSupportsAVX2() && cpuSupportsFMA()) p = funcavx2;
+#else
+#define SUBST_IF_EXT2(funcavx2)
+#endif
+
+#ifdef ENABLE_ALIAS
+#define VECALIAS_vf_vf(fptype, funcNameS, funcName, veclen)             \
+  EXPORT CONST VECTOR_CC fptype _ZGVbN ## veclen ## v_ ## funcNameS(fptype) __attribute__((alias(stringify(funcName))));
+#define VECALIAS_vf_vf_vf(fptype, funcNameS, funcName, veclen)          \
+  EXPORT CONST VECTOR_CC fptype _ZGVbN ## veclen ## vv_ ## funcNameS(fptype, fptype) __attribute__((alias(stringify(funcName))));
+#define VECALIAS_vf_vf_vf_vf(fptype, funcNameS, funcName, veclen)       \
+  EXPORT CONST VECTOR_CC fptype _ZGVbN ## veclen ## vvv_ ## funcNameS(fptype, fptype, fptype) __attribute__((alias(stringify(funcName))));
+#endif
+
+#include "dispatcher.h"
+
+//

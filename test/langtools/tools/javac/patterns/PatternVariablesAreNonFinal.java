@@ -5,7 +5,7 @@
  * @compile/fail/ref=PatternVariablesAreNonFinal.out -XDrawDiagnostics PatternVariablesAreNonFinal.java
  */
 public class PatternVariablesAreNonFinal {
-    public static void main(String[] args) {
+    public static void meth() {
         Object o = 32;
         if (o instanceof String s) {
             s = "hello again";

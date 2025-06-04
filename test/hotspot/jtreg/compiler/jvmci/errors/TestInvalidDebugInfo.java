@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @library /
  * @requires vm.jvmci
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.code
@@ -30,13 +31,13 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
- * @compile CodeInstallerTest.java
  * @run junit/othervm -da:jdk.vm.ci... -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *              -XX:-UseJVMCICompiler compiler.jvmci.errors.TestInvalidDebugInfo
  */
 
 package compiler.jvmci.errors;
 
+import compiler.jvmci.common.CodeInstallerTest;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.DebugInfo;
@@ -97,7 +98,7 @@ public class TestInvalidDebugInfo extends CodeInstallerTest {
         BytecodeFrame frame = new BytecodeFrame(null, dummyMethod, 0, false, false, values, slotKinds, locals, stack, locks);
         DebugInfo info = new DebugInfo(frame, vobj);
         info.setReferenceMap(new HotSpotReferenceMap(new Location[0], new Location[0], new int[0], 8));
-        installEmptyCode(new Site[]{new Infopoint(0, info, InfopointReason.SAFEPOINT)}, new Assumption[0], new Comment[0], 16, new DataPatch[0], deoptRescueSlot);
+        installEmptyCode(new Site[]{new Infopoint(0, info, InfopointReason.SAFEPOINT)}, new Assumption[0], new Comment[0], 8, new DataPatch[0], deoptRescueSlot);
     }
 
     @Test(expected = NullPointerException.class)
@@ -153,20 +154,20 @@ public class TestInvalidDebugInfo extends CodeInstallerTest {
     @Test(expected = JVMCIError.class)
     public void testUnexpectedTypeInCPURegister() {
         Register reg = getRegister(arch.getPlatformKind(JavaKind.Int), 0);
-        test(new JavaValue[]{reg.asValue()}, new JavaKind[]{JavaKind.Illegal}, 1, 0, 0);
+        test(new JavaValue[]{reg.asValue()}, new JavaKind[]{JavaKind.Void}, 1, 0, 0);
     }
 
     @Test(expected = JVMCIError.class)
     public void testUnexpectedTypeInFloatRegister() {
         Register reg = getRegister(arch.getPlatformKind(JavaKind.Float), 0);
-        test(new JavaValue[]{reg.asValue()}, new JavaKind[]{JavaKind.Illegal}, 1, 0, 0);
+        test(new JavaValue[]{reg.asValue()}, new JavaKind[]{JavaKind.Void}, 1, 0, 0);
     }
 
     @Test(expected = JVMCIError.class)
     public void testUnexpectedTypeOnStack() {
         ValueKind<?> kind = new TestValueKind(codeCache.getTarget().arch, JavaKind.Int);
         StackSlot value = StackSlot.get(kind, 8, false);
-        test(new JavaValue[]{value}, new JavaKind[]{JavaKind.Illegal}, 1, 0, 0);
+        test(new JavaValue[]{value}, new JavaKind[]{JavaKind.Void}, 1, 0, 0);
     }
 
     @Test(expected = JVMCIError.class)

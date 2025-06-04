@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @key cgroups
  * @summary Test JDK Metrics class when running inside docker container
- * @requires docker.support
+ * @requires container.support
  * @library /test/lib
  * @modules java.base/jdk.internal.platform
  * @run main TestSystemMetrics
@@ -55,6 +55,7 @@ public class TestSystemMetrics {
             opts.addDockerOpts("--memory=256m");
             opts.addJavaOpts("-cp", "/test-classes/");
             opts.addJavaOpts("--add-exports", "java.base/jdk.internal.platform=ALL-UNNAMED");
+            opts.addClassOptions("-incontainer");
             DockerTestUtils.dockerRunJava(opts).shouldHaveExitValue(0).shouldContain("TEST PASSED!!!");
         } finally {
             DockerTestUtils.removeDockerImage(imageName);

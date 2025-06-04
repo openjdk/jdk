@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,10 +42,9 @@
  *     Main thread makes a snapshot of stack trace for all threads and checks it:
  *         1. If a thread is alive, ThreadMonitor.getThreadInfo(long, -1) must
  *            return not null ThreadInfo.
- *         2. The length of a trace must not be greater than (depth + 3). Number
- *            of recursionJava() or recursionNative() methods must not be greater
- *            than depth, also one Object.wait() or Thread.yield() method, one
- *            run(), and one waitForSign().
+ *         2. Number of recursionJava() or recursionNative() methods must not be
+ *            greater than depth + X, where X is implementation dependent.
+ *            See strace001.java for more info.
  *         3. The latest method of the stack trace must be RunningThread.run().
  *         4. getClassName() and getMethodName() methods must return expected
  *            values for each element of the stack trace.

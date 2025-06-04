@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
+#include "gc/shared/bufferNode.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 
@@ -56,10 +57,12 @@ class G1BarrierSet: public CardTableBarrierSet {
   }
 
   // Add "pre_val" to a set of objects that may have been disconnected from the
-  // pre-marking object graph.
-  static void enqueue(oop pre_val);
+  // pre-marking object graph. Prefer the version that takes location, as it
+  // can avoid touching the heap unnecessarily.
+  template <class T> static void enqueue(T* dst);
+  static void enqueue_preloaded(oop pre_val);
 
-  static void enqueue_if_weak(DecoratorSet decorators, oop value);
+  static void enqueue_preloaded_if_weak(DecoratorSet decorators, oop value);
 
   template <class T> void write_ref_array_pre_work(T* dst, size_t count);
   virtual void write_ref_array_pre(oop* dst, size_t count, bool dest_uninitialized);
@@ -68,15 +71,11 @@ class G1BarrierSet: public CardTableBarrierSet {
   template <DecoratorSet decorators, typename T>
   void write_ref_field_pre(T* field);
 
-  // NB: if you do a whole-heap invalidation, the "usual invariant" defined
-  // above no longer applies.
-  void invalidate(MemRegion mr);
-
-  void write_region(MemRegion mr)         { invalidate(mr); }
-  void write_ref_array_work(MemRegion mr) { invalidate(mr); }
+  inline void write_region(MemRegion mr);
+  void write_region(JavaThread* thread, MemRegion mr);
 
   template <DecoratorSet decorators, typename T>
-  void write_ref_field_post(T* field, oop new_val);
+  void write_ref_field_post(T* field);
   void write_ref_field_post_slow(volatile CardValue* byte);
 
   virtual void on_thread_create(Thread* thread);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,13 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-import sun.security.util.Debug;
-
 /**
- * This class extends ClassLoader with additional support for defining
- * classes with an associated code source and permissions which are
- * retrieved by the system policy by default.
+ * This class extends {@code ClassLoader} with additional support for defining
+ * classes with an associated code source and permissions.
+ *
+ * @apiNote
+ * Permissions cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
  *
  * @author  Li Gong
  * @author  Roland Schemers
@@ -45,7 +46,7 @@ public class SecureClassLoader extends ClassLoader {
 
     /*
      * Map that maps the CodeSource to a ProtectionDomain. The key is a
-     * CodeSourceKey class that uses a String instead of a URL to avoid
+     * CodeSourceKey class that uses a {@code String} instead of a URL to avoid
      * potential expensive name service lookups. This does mean that URLs that
      * are equivalent after nameservice lookup will be placed in separate
      * ProtectionDomains; however during policy enforcement these URLs will be
@@ -60,35 +61,25 @@ public class SecureClassLoader extends ClassLoader {
     }
 
     /**
-     * Creates a new SecureClassLoader using the specified parent
+     * Creates a new {@code SecureClassLoader} using the specified parent
      * class loader for delegation.
      *
-     * <p>If there is a security manager, this method first
-     * calls the security manager's {@code checkCreateClassLoader}
-     * method  to ensure creation of a class loader is allowed.
+     * @apiNote If {@code parent} is specified as {@code null} (for the
+     * bootstrap class loader) then there is no guarantee that all platform
+     * classes are visible.
+     * See {@linkplain ClassLoader##builtinLoaders Run-time Built-in Class Loaders}
+     * for information on the bootstrap class loader and other built-in class loaders.
      *
-     * @param parent the parent ClassLoader
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkCreateClassLoader} method doesn't allow
-     *             creation of a class loader.
-     * @see SecurityManager#checkCreateClassLoader
+     * @param parent the parent ClassLoader, can be {@code null} for the bootstrap
+     *               class loader
      */
     protected SecureClassLoader(ClassLoader parent) {
         super(parent);
     }
 
     /**
-     * Creates a new SecureClassLoader using the default parent class
-     * loader for delegation.
-     *
-     * <p>If there is a security manager, this method first
-     * calls the security manager's {@code checkCreateClassLoader}
-     * method  to ensure creation of a class loader is allowed.
-     *
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkCreateClassLoader} method doesn't allow
-     *             creation of a class loader.
-     * @see SecurityManager#checkCreateClassLoader
+     * Creates a new {@code SecureClassLoader} using the
+     * {@linkplain ClassLoader#getSystemClassLoader() system class loader as the parent}.
      */
     protected SecureClassLoader() {
         super();
@@ -98,14 +89,17 @@ public class SecureClassLoader extends ClassLoader {
      * Creates a new {@code SecureClassLoader} of the specified name and
      * using the specified parent class loader for delegation.
      *
+     * @apiNote If {@code parent} is specified as {@code null} (for the
+     * bootstrap class loader) then there is no guarantee that all platform
+     * classes are visible.
+     * See {@linkplain ClassLoader##builtinLoaders Run-time Built-in Class Loaders}
+     * for information on the bootstrap class loader and other built-in class loaders.
+     *
      * @param name class loader name; or {@code null} if not named
-     * @param parent the parent class loader
+     * @param parent the parent class loader, can be {@code null} for the bootstrap
+     *               class loader
      *
      * @throws IllegalArgumentException if the given name is empty.
-     *
-     * @throws SecurityException  if a security manager exists and its
-     *         {@link SecurityManager#checkCreateClassLoader()} method
-     *         doesn't allow creation of a class loader.
      *
      * @since 9
      */
@@ -114,7 +108,7 @@ public class SecureClassLoader extends ClassLoader {
     }
 
     /**
-     * Converts an array of bytes into an instance of class Class,
+     * Converts an array of bytes into an instance of class {@code Class},
      * with an optional CodeSource. Before the
      * class can be used it must be resolved.
      * <p>
@@ -191,19 +185,12 @@ public class SecureClassLoader extends ClassLoader {
      *
      * @param codesource the codesource.
      *
-     * @return the permissions granted to the codesource.
+     * @return the permissions for the codesource.
      *
      */
     protected PermissionCollection getPermissions(CodeSource codesource)
     {
         return new Permissions(); // ProtectionDomain defers the binding
-    }
-
-    /*
-     * holder class for the static field "debug" to delay its initialization
-     */
-    private static class DebugHolder {
-        private static final Debug debug = Debug.getInstance("scl");
     }
 
     /*
@@ -220,32 +207,23 @@ public class SecureClassLoader extends ClassLoader {
         // only), and the fragment is not considered.
         CodeSourceKey key = new CodeSourceKey(cs);
         return pdcache.computeIfAbsent(key, new Function<>() {
+            // Do not turn this into a lambda since it is executed during bootstrap
             @Override
-            public ProtectionDomain apply(CodeSourceKey key /* not used */) {
+            public ProtectionDomain apply(CodeSourceKey key) {
                 PermissionCollection perms
-                        = SecureClassLoader.this.getPermissions(cs);
+                        = SecureClassLoader.this.getPermissions(key.cs);
                 ProtectionDomain pd = new ProtectionDomain(
-                        cs, perms, SecureClassLoader.this, null);
-                if (DebugHolder.debug != null) {
-                    DebugHolder.debug.println(" getPermissions " + pd);
-                    DebugHolder.debug.println("");
-                }
+                        key.cs, perms, SecureClassLoader.this, null);
                 return pd;
             }
         });
     }
 
-    private static class CodeSourceKey {
-        private final CodeSource cs;
-
-        CodeSourceKey(CodeSource cs) {
-            this.cs = cs;
-        }
+    private record CodeSourceKey(CodeSource cs) {
 
         @Override
         public int hashCode() {
-            String locationNoFrag = cs.getLocationNoFragString();
-            return locationNoFrag != null ? locationNoFrag.hashCode() : 0;
+            return Objects.hashCode(cs.getLocationNoFragString());
         }
 
         @Override

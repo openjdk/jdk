@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,7 +212,7 @@ public final class Optional<T> {
      */
     public Optional<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate);
-        if (!isPresent()) {
+        if (isEmpty()) {
             return this;
         } else {
             return predicate.test(value) ? this : empty();
@@ -254,7 +254,7 @@ public final class Optional<T> {
      */
     public <U> Optional<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper);
-        if (!isPresent()) {
+        if (isEmpty()) {
             return empty();
         } else {
             return Optional.ofNullable(mapper.apply(value));
@@ -282,7 +282,7 @@ public final class Optional<T> {
      */
     public <U> Optional<U> flatMap(Function<? super T, ? extends Optional<? extends U>> mapper) {
         Objects.requireNonNull(mapper);
-        if (!isPresent()) {
+        if (isEmpty()) {
             return empty();
         } else {
             @SuppressWarnings("unchecked")
@@ -331,7 +331,7 @@ public final class Optional<T> {
      * @since 9
      */
     public Stream<T> stream() {
-        if (!isPresent()) {
+        if (isEmpty()) {
             return Stream.empty();
         } else {
             return Stream.of(value);
@@ -394,7 +394,7 @@ public final class Optional<T> {
      * @return the value, if present
      * @throws X if no value is present
      * @throws NullPointerException if no value is present and the exception
-     *          supplying function is {@code null}
+     *         supplying function is {@code null} or produces a {@code null} result
      */
     public <X extends Throwable> T orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
         if (value != null) {

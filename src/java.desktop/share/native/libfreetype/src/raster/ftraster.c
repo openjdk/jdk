@@ -4,7 +4,7 @@
  *
  *   The FreeType glyph rasterizer (body).
  *
- * Copyright (C) 1996-2020 by
+ * Copyright (C) 1996-2024 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -63,8 +63,7 @@
 #else /* !STANDALONE_ */
 
 #include "ftraster.h"
-#include <freetype/internal/ftcalc.h> /* for FT_MulDiv and FT_MulDiv_No_Round */
-#include <freetype/ftoutln.h>         /* for FT_Outline_Get_CBox              */
+#include <freetype/internal/ftcalc.h> /* for FT_MulDiv_No_Round */
 
 #endif /* !STANDALONE_ */
 
@@ -115,12 +114,12 @@
    *   a change of direction is detected in the outline, a new profile is
    *   generated until the end of the outline.
    *
-   *   Note that when all profiles have been generated, the function
-   *   Finalize_Profile_Table() is used to record, for each profile, its
-   *   bottom-most scanline as well as the scanline above its upmost
-   *   boundary.  These positions are called `y-turns' because they (sort
-   *   of) correspond to local extrema.  They are stored in a sorted list
-   *   built from the top of the render pool as a downwards stack:
+   *   Note that, for all generated profiles, the function End_Profile()
+   *   is used to record all their bottom-most scanlines as well as the
+   *   scanline above their upmost boundary.  These positions are called
+   *   `y-turns' because they (sort of) correspond to local extrema.
+   *   They are stored in a sorted list built from the top of the render
+   *   pool as a downwards stack:
    *
    *     _ _ _______________________________________
    *                           |                    |
@@ -136,7 +135,7 @@
    *   optimize performance (see technical note on the sweep below).
    *
    *   Of course, the raster detects whether the two stacks collide and
-   *   handles the situation properly.
+   *   handles the situation by bisecting the job and restarting.
    *
    */
 
@@ -148,9 +147,6 @@
   /**                                                                     **/
   /*************************************************************************/
   /*************************************************************************/
-
-  /* define DEBUG_RASTER if you want to compile a debugging version */
-/* #define DEBUG_RASTER */
 
 
   /*************************************************************************/
@@ -200,12 +196,13 @@
 #define FT_THROW( e )  FT_ERR_CAT( Raster_Err_, e )
 #endif
 
-#define Raster_Err_None          0
-#define Raster_Err_Not_Ini      -1
-#define Raster_Err_Overflow     -2
-#define Raster_Err_Neg_Height   -3
-#define Raster_Err_Invalid      -4
-#define Raster_Err_Unsupported  -5
+#define Raster_Err_Ok                       0
+#define Raster_Err_Invalid_Outline         -1
+#define Raster_Err_Cannot_Render_Glyph     -2
+#define Raster_Err_Invalid_Argument        -3
+#define Raster_Err_Raster_Overflow         -4
+#define Raster_Err_Raster_Uninitialized    -5
+#define Raster_Err_Raster_Negative_Height  -6
 
 #define ft_memset  memset
 
@@ -229,13 +226,6 @@
 #include <freetype/internal/ftdebug.h> /* for FT_TRACE, FT_ERROR, and FT_THROW */
 
 #include "rasterrs.h"
-
-#define Raster_Err_None         FT_Err_Ok
-#define Raster_Err_Not_Ini      Raster_Err_Raster_Uninitialized
-#define Raster_Err_Overflow     Raster_Err_Raster_Overflow
-#define Raster_Err_Neg_Height   Raster_Err_Raster_Negative_Height
-#define Raster_Err_Invalid      Raster_Err_Invalid_Outline
-#define Raster_Err_Unsupported  Raster_Err_Cannot_Render_Glyph
 
 
 #endif /* !STANDALONE_ */
@@ -261,7 +251,6 @@
   /* On the other hand, SMulDiv means `Slow MulDiv', and is used typically */
   /* for clipping computations.  It simply uses the FT_MulDiv() function   */
   /* defined in `ftcalc.h'.                                                */
-#define SMulDiv           FT_MulDiv
 #define SMulDiv_No_Round  FT_MulDiv_No_Round
 
   /* The rasterizer is a very general purpose component; please leave */
@@ -314,16 +303,6 @@
   typedef unsigned char   Byte, *PByte;
   typedef char            Bool;
 
-
-  typedef union  Alignment_
-  {
-    Long    l;
-    void*   p;
-    void  (*f)(void);
-
-  } Alignment, *PAlignment;
-
-
   typedef struct  TPoint_
   {
     Long  x;
@@ -336,6 +315,7 @@
 #define Flow_Up           0x08U
 #define Overshoot_Top     0x10U
 #define Overshoot_Bottom  0x20U
+#define Dropout           0x40U
 
 
   /* States of each line, arc, and profile */
@@ -354,39 +334,26 @@
 
   struct  TProfile_
   {
-    FT_F26Dot6  X;           /* current coordinate during sweep          */
     PProfile    link;        /* link to next profile (various purposes)  */
-    PLong       offset;      /* start of profile's data in render pool   */
+    PProfile    next;        /* next profile in same contour, used       */
+                             /* during drop-out control                  */
+    Int         offset;      /* bottom or currently scanned array index  */
+    Int         height;      /* profile's height in scanlines            */
+    Int         start;       /* profile's starting scanline, also use    */
+                             /* as activation counter                    */
     UShort      flags;       /* Bit 0-2: drop-out mode                   */
                              /* Bit 3: profile orientation (up/down)     */
                              /* Bit 4: is top profile?                   */
                              /* Bit 5: is bottom profile?                */
-    Long        height;      /* profile's height in scanlines            */
-    Long        start;       /* profile's starting scanline              */
+                             /* Bit 6: dropout detected                  */
 
-    Int         countL;      /* number of lines to step before this      */
-                             /* profile becomes drawable                 */
-
-    PProfile    next;        /* next profile in same contour, used       */
-                             /* during drop-out control                  */
+    FT_F26Dot6  X;           /* current coordinate during sweep          */
+    Long        x[1];        /* actually variable array of scanline      */
+                             /* intersections with `height` elements     */
   };
 
   typedef PProfile   TProfileList;
   typedef PProfile*  PProfileList;
-
-
-  /* Simple record used to implement a stack of bands, required */
-  /* by the sub-banding mechanism                               */
-  typedef struct  black_TBand_
-  {
-    Short  y_min;   /* band's minimum */
-    Short  y_max;   /* band's maximum */
-
-  } black_TBand;
-
-
-#define AlignProfileSize \
-  ( ( sizeof ( TProfile ) + sizeof ( Alignment ) - 1 ) / sizeof ( Long ) )
 
 
 #undef RAS_ARG
@@ -426,15 +393,13 @@
 
   /* prototypes used for sweep function dispatch */
   typedef void
-  Function_Sweep_Init( RAS_ARGS Short*  min,
-                                Short*  max );
+  Function_Sweep_Init( RAS_ARGS Int  min,
+                                Int  max );
 
   typedef void
-  Function_Sweep_Span( RAS_ARGS Short       y,
+  Function_Sweep_Span( RAS_ARGS Int         y,
                                 FT_F26Dot6  x1,
-                                FT_F26Dot6  x2,
-                                PProfile    left,
-                                PProfile    right );
+                                FT_F26Dot6  x2 );
 
   typedef void
   Function_Sweep_Step( RAS_ARG );
@@ -460,8 +425,7 @@
           (Bool)( x - FLOOR( x ) >= ras.precision_half )
 
   /* Smart dropout rounding to find which pixel is closer to span ends. */
-  /* To mimick Windows, symmetric cases break down indepenently of the  */
-  /* precision.                                                         */
+  /* To mimic Windows, symmetric cases do not depend on the precision.  */
 #define SMART( p, q )  FLOOR( ( (p) + (q) + ras.precision * 63 / 64 ) >> 1 )
 
 #if FT_RENDER_POOL_SIZE > 2048
@@ -481,7 +445,6 @@
     Int         precision_half;
     Int         precision_scale;
     Int         precision_step;
-    Int         precision_jitter;
 
     PLong       buff;               /* The profiles buffer                 */
     PLong       sizeBuff;           /* Render pool size                    */
@@ -490,23 +453,14 @@
 
     FT_Error    error;
 
-    Int         numTurns;           /* number of Y-turns in outline        */
-
-    TPoint*     arc;                /* current Bezier arc pointer          */
-
-    UShort      bWidth;             /* target bitmap width                 */
-    PByte       bOrigin;            /* target bitmap bottom-left origin    */
+    Byte        dropOutControl;     /* current drop_out control method     */
 
     Long        lastX, lastY;
     Long        minY, maxY;
 
     UShort      num_Profs;          /* current number of profiles          */
+    Int         numTurns;           /* number of Y-turns in outline        */
 
-    Bool        fresh;              /* signals a fresh new profile which   */
-                                    /* `start' field must be completed     */
-    Bool        joint;              /* signals that the last arc ended     */
-                                    /* exactly on a scanline.  Allows      */
-                                    /* removal of doublets                 */
     PProfile    cProfile;           /* current profile                     */
     PProfile    fProfile;           /* head of linked list of profiles     */
     PProfile    gProfile;           /* contour's first profile in case     */
@@ -514,11 +468,13 @@
 
     TStates     state;              /* rendering state                     */
 
-    FT_Bitmap   target;             /* description of target bit/pixmap    */
     FT_Outline  outline;
 
-    Long        traceOfs;           /* current offset in target bitmap     */
-    Short       traceIncr;          /* sweep's increment in target bitmap  */
+    Int         bTop;               /* target bitmap max line  index       */
+    Int         bRight;             /* target bitmap rightmost index       */
+    Int         bPitch;             /* target bitmap pitch                 */
+    PByte       bOrigin;            /* target bitmap bottom-left origin    */
+    PByte       bLine;              /* target bitmap current line          */
 
     /* dispatch variables */
 
@@ -526,18 +482,6 @@
     Function_Sweep_Span*  Proc_Sweep_Span;
     Function_Sweep_Span*  Proc_Sweep_Drop;
     Function_Sweep_Step*  Proc_Sweep_Step;
-
-    Byte        dropOutControl;     /* current drop_out control method     */
-
-    Bool        second_pass;        /* indicates whether a horizontal pass */
-                                    /* should be performed to control      */
-                                    /* drop-out accurately when calling    */
-                                    /* Render_Glyph.                       */
-
-    TPoint      arcs[3 * MaxBezier + 1]; /* The Bezier stack               */
-
-    black_TBand  band_stack[16];    /* band stack used for sub-banding     */
-    Int          band_top;          /* band stack top                      */
 
   };
 
@@ -596,184 +540,22 @@
      *
      *   256 / (1 << 12) = 0.0625 pixels.
      *
-     * `precision_jitter' is an epsilon threshold used in
-     * `Vertical_Sweep_Span' to deal with small imperfections in the Bezier
-     * decomposition (after all, we are working with approximations only);
-     * it avoids switching on additional pixels which would cause artifacts
-     * otherwise.
-     *
-     * The value of `precision_jitter' has been determined heuristically.
-     *
      */
 
     if ( High )
     {
       ras.precision_bits   = 12;
       ras.precision_step   = 256;
-      ras.precision_jitter = 30;
     }
     else
     {
       ras.precision_bits   = 6;
       ras.precision_step   = 32;
-      ras.precision_jitter = 2;
     }
-
-    FT_TRACE6(( "Set_High_Precision(%s)\n", High ? "true" : "false" ));
 
     ras.precision       = 1 << ras.precision_bits;
     ras.precision_half  = ras.precision >> 1;
     ras.precision_scale = ras.precision >> Pixel_Bits;
-  }
-
-
-  /**************************************************************************
-   *
-   * @Function:
-   *   New_Profile
-   *
-   * @Description:
-   *   Create a new profile in the render pool.
-   *
-   * @Input:
-   *   aState ::
-   *     The state/orientation of the new profile.
-   *
-   *   overshoot ::
-   *     Whether the profile's unrounded start position
-   *     differs by at least a half pixel.
-   *
-   * @Return:
-   *  SUCCESS on success.  FAILURE in case of overflow or of incoherent
-   *  profile.
-   */
-  static Bool
-  New_Profile( RAS_ARGS TStates  aState,
-                        Bool     overshoot )
-  {
-    if ( !ras.fProfile )
-    {
-      ras.cProfile  = (PProfile)ras.top;
-      ras.fProfile  = ras.cProfile;
-      ras.top      += AlignProfileSize;
-    }
-
-    if ( ras.top >= ras.maxBuff )
-    {
-      ras.error = FT_THROW( Overflow );
-      return FAILURE;
-    }
-
-    ras.cProfile->start  = 0;
-    ras.cProfile->height = 0;
-    ras.cProfile->offset = ras.top;
-    ras.cProfile->link   = (PProfile)0;
-    ras.cProfile->next   = (PProfile)0;
-    ras.cProfile->flags  = ras.dropOutControl;
-
-    switch ( aState )
-    {
-    case Ascending_State:
-      ras.cProfile->flags |= Flow_Up;
-      if ( overshoot )
-        ras.cProfile->flags |= Overshoot_Bottom;
-
-      FT_TRACE6(( "  new ascending profile = %p\n", (void *)ras.cProfile ));
-      break;
-
-    case Descending_State:
-      if ( overshoot )
-        ras.cProfile->flags |= Overshoot_Top;
-      FT_TRACE6(( "  new descending profile = %p\n", (void *)ras.cProfile ));
-      break;
-
-    default:
-      FT_ERROR(( "New_Profile: invalid profile direction\n" ));
-      ras.error = FT_THROW( Invalid );
-      return FAILURE;
-    }
-
-    if ( !ras.gProfile )
-      ras.gProfile = ras.cProfile;
-
-    ras.state = aState;
-    ras.fresh = TRUE;
-    ras.joint = FALSE;
-
-    return SUCCESS;
-  }
-
-
-  /**************************************************************************
-   *
-   * @Function:
-   *   End_Profile
-   *
-   * @Description:
-   *   Finalize the current profile.
-   *
-   * @Input:
-   *   overshoot ::
-   *     Whether the profile's unrounded end position differs
-   *     by at least a half pixel.
-   *
-   * @Return:
-   *   SUCCESS on success.  FAILURE in case of overflow or incoherency.
-   */
-  static Bool
-  End_Profile( RAS_ARGS Bool  overshoot )
-  {
-    Long  h;
-
-
-    h = (Long)( ras.top - ras.cProfile->offset );
-
-    if ( h < 0 )
-    {
-      FT_ERROR(( "End_Profile: negative height encountered\n" ));
-      ras.error = FT_THROW( Neg_Height );
-      return FAILURE;
-    }
-
-    if ( h > 0 )
-    {
-      PProfile  oldProfile;
-
-
-      FT_TRACE6(( "  ending profile %p, start = %ld, height = %ld\n",
-                  (void *)ras.cProfile, ras.cProfile->start, h ));
-
-      ras.cProfile->height = h;
-      if ( overshoot )
-      {
-        if ( ras.cProfile->flags & Flow_Up )
-          ras.cProfile->flags |= Overshoot_Top;
-        else
-          ras.cProfile->flags |= Overshoot_Bottom;
-      }
-
-      oldProfile   = ras.cProfile;
-      ras.cProfile = (PProfile)ras.top;
-
-      ras.top += AlignProfileSize;
-
-      ras.cProfile->height = 0;
-      ras.cProfile->offset = ras.top;
-
-      oldProfile->next = ras.cProfile;
-      ras.num_Profs++;
-    }
-
-    if ( ras.top >= ras.maxBuff )
-    {
-      FT_TRACE1(( "overflow in End_Profile\n" ));
-      ras.error = FT_THROW( Overflow );
-      return FAILURE;
-    }
-
-    ras.joint = FALSE;
-
-    return SUCCESS;
   }
 
 
@@ -793,21 +575,31 @@
    *   SUCCESS on success.  FAILURE in case of overflow.
    */
   static Bool
-  Insert_Y_Turn( RAS_ARGS Int  y )
+  Insert_Y_Turns( RAS_ARGS Int  y,
+                           Int  top )
   {
-    PLong  y_turns;
-    Int    n;
+    Int    n       = ras.numTurns;
+    PLong  y_turns = ras.maxBuff;
 
 
-    n       = ras.numTurns - 1;
-    y_turns = ras.sizeBuff - ras.numTurns;
+    /* update top value */
+    if ( n == 0 || top > y_turns[n] )
+      y_turns[n] = top;
 
     /* look for first y value that is <= */
-    while ( n >= 0 && y < y_turns[n] )
-      n--;
+    while ( n-- && y < y_turns[n] )
+      ;
 
     /* if it is <, simply insert it, ignore if == */
-    if ( n >= 0 && y > y_turns[n] )
+    if ( n < 0 || y > y_turns[n] )
+    {
+      ras.maxBuff--;
+      if ( ras.maxBuff <= ras.top )
+      {
+        ras.error = FT_THROW( Raster_Overflow );
+        return FAILURE;
+      }
+
       do
       {
         Int  y2 = (Int)y_turns[n];
@@ -815,18 +607,162 @@
 
         y_turns[n] = y;
         y = y2;
-      } while ( --n >= 0 );
+      } while ( n-- >= 0 );
 
-    if ( n < 0 )
+      ras.numTurns++;
+    }
+
+    return SUCCESS;
+  }
+
+
+  /**************************************************************************
+   *
+   * @Function:
+   *   New_Profile
+   *
+   * @Description:
+   *   Create a new profile in the render pool.
+   *
+   * @Input:
+   *   aState ::
+   *     The state/orientation of the new profile.
+   *
+   * @Return:
+   *  SUCCESS on success.  FAILURE in case of overflow or of incoherent
+   *  profile.
+   */
+  static Bool
+  New_Profile( RAS_ARGS TStates  aState )
+  {
+    Long  e;
+
+
+    if ( !ras.cProfile || ras.cProfile->height )
     {
-      ras.maxBuff--;
-      if ( ras.maxBuff <= ras.top )
+      ras.cProfile  = (PProfile)ras.top;
+      ras.top       = ras.cProfile->x;
+
+      if ( ras.top >= ras.maxBuff )
       {
-        ras.error = FT_THROW( Overflow );
+        FT_TRACE1(( "overflow in New_Profile\n" ));
+        ras.error = FT_THROW( Raster_Overflow );
         return FAILURE;
       }
-      ras.numTurns++;
-      ras.sizeBuff[-ras.numTurns] = y;
+
+      ras.cProfile->height = 0;
+    }
+
+    ras.cProfile->flags  = ras.dropOutControl;
+
+    switch ( aState )
+    {
+    case Ascending_State:
+      ras.cProfile->flags |= Flow_Up;
+      if ( IS_BOTTOM_OVERSHOOT( ras.lastY ) )
+        ras.cProfile->flags |= Overshoot_Bottom;
+
+      e = CEILING( ras.lastY );
+      break;
+
+    case Descending_State:
+      if ( IS_TOP_OVERSHOOT( ras.lastY ) )
+        ras.cProfile->flags |= Overshoot_Top;
+
+      e = FLOOR( ras.lastY );
+      break;
+
+    default:
+      FT_ERROR(( "New_Profile: invalid profile direction\n" ));
+      ras.error = FT_THROW( Invalid_Outline );
+      return FAILURE;
+    }
+
+    if ( e > ras.maxY )
+      e = ras.maxY;
+    if ( e < ras.minY )
+      e = ras.minY;
+    ras.cProfile->start = (Int)TRUNC( e );
+
+    FT_TRACE7(( "  new %s profile = %p, start = %d\n",
+                aState == Ascending_State ? "ascending" : "descending",
+                (void *)ras.cProfile, ras.cProfile->start ));
+
+    if ( ras.lastY == e )
+      *ras.top++ = ras.lastX;
+
+    ras.state = aState;
+
+    return SUCCESS;
+  }
+
+
+  /**************************************************************************
+   *
+   * @Function:
+   *   End_Profile
+   *
+   * @Description:
+   *   Finalize the current profile and record y-turns.
+   *
+   * @Return:
+   *   SUCCESS on success.  FAILURE in case of overflow or incoherency.
+   */
+  static Bool
+  End_Profile( RAS_ARG )
+  {
+    PProfile  p = ras.cProfile;
+    Int       h = (Int)( ras.top - p->x );
+    Int       bottom, top;
+
+
+    if ( h < 0 )
+    {
+      FT_ERROR(( "End_Profile: negative height encountered\n" ));
+      ras.error = FT_THROW( Raster_Negative_Height );
+      return FAILURE;
+    }
+
+    if ( h > 0 )
+    {
+      FT_TRACE7(( "  ending profile %p, start = %2d, height = %+3d\n",
+                  (void *)p, p->start, p->flags & Flow_Up ? h : -h ));
+
+      p->height = h;
+
+      if ( p->flags & Flow_Up )
+      {
+        if ( IS_TOP_OVERSHOOT( ras.lastY ) )
+          p->flags |= Overshoot_Top;
+
+        bottom    = p->start;
+        top       = bottom + h;
+        p->offset = 0;
+        p->X      = p->x[0];
+      }
+      else
+      {
+        if ( IS_BOTTOM_OVERSHOOT( ras.lastY ) )
+          p->flags |= Overshoot_Bottom;
+
+        top       = p->start + 1;
+        bottom    = top - h;
+        p->start  = bottom;
+        p->offset = h - 1;
+        p->X      = p->x[h - 1];
+      }
+
+      if ( Insert_Y_Turns( RAS_VARS bottom, top ) )
+        return FAILURE;
+
+      if ( !ras.gProfile )
+        ras.gProfile = p;
+
+      /* preliminary values to be finalized */
+      p->next = ras.gProfile;
+      p->link = (PProfile)ras.top;
+
+      ras.num_Profs++;
     }
 
     return SUCCESS;
@@ -840,56 +776,29 @@
    *
    * @Description:
    *   Adjust all links in the profiles list.
-   *
-   * @Return:
-   *   SUCCESS on success.  FAILURE in case of overflow.
    */
-  static Bool
+  static void
   Finalize_Profile_Table( RAS_ARG )
   {
-    UShort    n;
-    PProfile  p;
+    UShort    n = ras.num_Profs;
+    PProfile  p = ras.fProfile;
+    PProfile  q;
 
 
-    n = ras.num_Profs;
-    p = ras.fProfile;
-
-    if ( n > 1 && p )
+    /* there should be at least two profiles, up and down */
+    while ( --n )
     {
-      do
-      {
-        Int  bottom, top;
+      q = p->link;
 
+      /* fix the contour loop */
+      if ( q->next == p->next )
+        p->next = q;
 
-        if ( n > 1 )
-          p->link = (PProfile)( p->offset + p->height );
-        else
-          p->link = NULL;
-
-        if ( p->flags & Flow_Up )
-        {
-          bottom = (Int)p->start;
-          top    = (Int)( p->start + p->height - 1 );
-        }
-        else
-        {
-          bottom     = (Int)( p->start - p->height + 1 );
-          top        = (Int)p->start;
-          p->start   = bottom;
-          p->offset += p->height - 1;
-        }
-
-        if ( Insert_Y_Turn( RAS_VARS bottom )  ||
-             Insert_Y_Turn( RAS_VARS top + 1 ) )
-          return FAILURE;
-
-        p = p->link;
-      } while ( --n );
+      p = q;
     }
-    else
-      ras.fProfile = NULL;
 
-    return SUCCESS;
+    /* null-terminate */
+    p->link = NULL;
   }
 
 
@@ -1019,107 +928,78 @@
                     Long  miny,
                     Long  maxy )
   {
-    Long   Dx, Dy;
-    Int    e1, e2, f1, f2, size;     /* XXX: is `Short' sufficient? */
-    Long   Ix, Rx, Ax;
+    Long  e, e2, Dx, Dy;
+    Long  Ix, Rx, Ax;
+    Int   size;
 
     PLong  top;
 
 
-    Dx = x2 - x1;
-    Dy = y2 - y1;
-
-    if ( Dy <= 0 || y2 < miny || y1 > maxy )
+    if ( y2 < miny || y1 > maxy )
       return SUCCESS;
 
-    if ( y1 < miny )
-    {
-      /* Take care: miny-y1 can be a very large value; we use     */
-      /*            a slow MulDiv function to avoid clipping bugs */
-      x1 += SMulDiv( Dx, miny - y1, Dy );
-      e1  = (Int)TRUNC( miny );
-      f1  = 0;
-    }
-    else
-    {
-      e1 = (Int)TRUNC( y1 );
-      f1 = (Int)FRAC( y1 );
-    }
+    e2 = y2 > maxy ? maxy : FLOOR( y2 );
+    e  = y1 < miny ? miny : CEILING( y1 );
 
-    if ( y2 > maxy )
-    {
-      /* x2 += FMulDiv( Dx, maxy - y2, Dy );  UNNECESSARY */
-      e2  = (Int)TRUNC( maxy );
-      f2  = 0;
-    }
-    else
-    {
-      e2 = (Int)TRUNC( y2 );
-      f2 = (Int)FRAC( y2 );
-    }
+    if ( y1 == e )
+      e += ras.precision;
 
-    if ( f1 > 0 )
-    {
-      if ( e1 == e2 )
-        return SUCCESS;
-      else
-      {
-        x1 += SMulDiv( Dx, ras.precision - f1, Dy );
-        e1 += 1;
-      }
-    }
-    else
-      if ( ras.joint )
-      {
-        ras.top--;
-        ras.joint = FALSE;
-      }
+    if ( e2 < e )  /* nothing to do */
+      return SUCCESS;
 
-    ras.joint = (char)( f2 == 0 );
+    size = (Int)TRUNC( e2 - e ) + 1;
+    top  = ras.top;
 
-    if ( ras.fresh )
+    if ( top + size >= ras.maxBuff )
     {
-      ras.cProfile->start = e1;
-      ras.fresh           = FALSE;
-    }
-
-    size = e2 - e1 + 1;
-    if ( ras.top + size >= ras.maxBuff )
-    {
-      ras.error = FT_THROW( Overflow );
+      ras.error = FT_THROW( Raster_Overflow );
       return FAILURE;
     }
 
-    if ( Dx > 0 )
+    Dx = x2 - x1;
+    Dy = y2 - y1;
+
+    if ( Dx == 0 )  /* very easy */
     {
-      Ix = SMulDiv_No_Round( ras.precision, Dx, Dy );
-      Rx = ( ras.precision * Dx ) % Dy;
+      do
+        *top++ = x1;
+      while ( --size );
+      goto Fin;
+    }
+
+    Ix     = SMulDiv_No_Round( e - y1, Dx, Dy );
+    x1    += Ix;
+    *top++ = x1;
+
+    if ( --size )
+    {
+      Ax = Dx * ( e - y1 )    - Dy * Ix;  /* remainder */
+      Ix = FMulDiv( ras.precision, Dx, Dy );
+      Rx = Dx * ras.precision - Dy * Ix;  /* remainder */
       Dx = 1;
-    }
-    else
-    {
-      Ix = -SMulDiv_No_Round( ras.precision, -Dx, Dy );
-      Rx = ( ras.precision * -Dx ) % Dy;
-      Dx = -1;
-    }
 
-    Ax  = -Dy;
-    top = ras.top;
-
-    while ( size > 0 )
-    {
-      *top++ = x1;
-
-      x1 += Ix;
-      Ax += Rx;
-      if ( Ax >= 0 )
+      if ( x2 < x1 )
       {
-        Ax -= Dy;
-        x1 += Dx;
+        Ax = -Ax;
+        Rx = -Rx;
+        Dx = -Dx;
       }
-      size--;
+
+      do
+      {
+        x1 += Ix;
+        Ax += Rx;
+        if ( Ax >= Dy )
+        {
+          Ax -= Dy;
+          x1 += Dx;
+        }
+        *top++ = x1;
+      }
+      while ( --size );
     }
 
+  Fin:
     ras.top = top;
     return SUCCESS;
   }
@@ -1164,17 +1044,7 @@
                       Long  miny,
                       Long  maxy )
   {
-    Bool  result, fresh;
-
-
-    fresh  = ras.fresh;
-
-    result = Line_Up( RAS_VARS x1, -y1, x2, -y2, -maxy, -miny );
-
-    if ( fresh && !ras.fresh )
-      ras.cProfile->start = -ras.cProfile->start;
-
-    return result;
+    return Line_Up( RAS_VARS x1, -y1, x2, -y2, -maxy, -miny );
   }
 
 
@@ -1209,112 +1079,78 @@
    */
   static Bool
   Bezier_Up( RAS_ARGS Int        degree,
+                      TPoint*    arc,
                       TSplitter  splitter,
                       Long       miny,
                       Long       maxy )
   {
-    Long   y1, y2, e, e2, e0;
-    Short  f1;
+    Long  y1, y2, e, e2, dy;
+    Long  dx, x2;
 
-    TPoint*  arc;
-    TPoint*  start_arc;
-
-    PLong top;
+    PLong  top;
 
 
-    arc = ras.arc;
     y1  = arc[degree].y;
     y2  = arc[0].y;
-    top = ras.top;
 
     if ( y2 < miny || y1 > maxy )
-      goto Fin;
+      return SUCCESS;
 
-    e2 = FLOOR( y2 );
+    e2 = y2 > maxy ? maxy : FLOOR( y2 );
+    e  = y1 < miny ? miny : CEILING( y1 );
 
-    if ( e2 > maxy )
-      e2 = maxy;
+    if ( y1 == e )
+      e += ras.precision;
 
-    e0 = miny;
+    if ( e2 < e )  /* nothing to do */
+      return SUCCESS;
 
-    if ( y1 < miny )
-      e = miny;
-    else
-    {
-      e  = CEILING( y1 );
-      f1 = (Short)( FRAC( y1 ) );
-      e0 = e;
-
-      if ( f1 == 0 )
-      {
-        if ( ras.joint )
-        {
-          top--;
-          ras.joint = FALSE;
-        }
-
-        *top++ = arc[degree].x;
-
-        e += ras.precision;
-      }
-    }
-
-    if ( ras.fresh )
-    {
-      ras.cProfile->start = TRUNC( e0 );
-      ras.fresh = FALSE;
-    }
-
-    if ( e2 < e )
-      goto Fin;
+    top = ras.top;
 
     if ( ( top + TRUNC( e2 - e ) + 1 ) >= ras.maxBuff )
     {
-      ras.top   = top;
-      ras.error = FT_THROW( Overflow );
+      ras.error = FT_THROW( Raster_Overflow );
       return FAILURE;
     }
 
-    start_arc = arc;
-
     do
     {
-      ras.joint = FALSE;
-
       y2 = arc[0].y;
+      x2 = arc[0].x;
 
       if ( y2 > e )
       {
-        y1 = arc[degree].y;
-        if ( y2 - y1 >= ras.precision_step )
+        dy = y2 - arc[degree].y;
+        dx = x2 - arc[degree].x;
+
+        /* split condition should be invariant of direction */
+        if (  dy > ras.precision_step ||
+              dx > ras.precision_step ||
+             -dx > ras.precision_step )
         {
           splitter( arc );
           arc += degree;
         }
         else
         {
-          *top++ = arc[degree].x + FMulDiv( arc[0].x - arc[degree].x,
-                                            e - y1, y2 - y1 );
+          *top++ = x2 - FMulDiv( y2 - e, dx, dy );
+          e     += ras.precision;
           arc -= degree;
-          e   += ras.precision;
         }
       }
       else
       {
         if ( y2 == e )
         {
-          ras.joint  = TRUE;
-          *top++     = arc[0].x;
-
-          e += ras.precision;
+          *top++ = x2;
+          e     += ras.precision;
         }
-        arc -= degree;
+        arc   -= degree;
       }
-    } while ( arc >= start_arc && e <= e2 );
+    }
+    while ( e <= e2 );
 
-  Fin:
-    ras.top  = top;
-    ras.arc -= degree;
+    ras.top = top;
     return SUCCESS;
   }
 
@@ -1346,12 +1182,12 @@
    */
   static Bool
   Bezier_Down( RAS_ARGS Int        degree,
+                        TPoint*    arc,
                         TSplitter  splitter,
                         Long       miny,
                         Long       maxy )
   {
-    TPoint*  arc = ras.arc;
-    Bool     result, fresh;
+    Bool  result;
 
 
     arc[0].y = -arc[0].y;
@@ -1360,12 +1196,7 @@
     if ( degree > 2 )
       arc[3].y = -arc[3].y;
 
-    fresh = ras.fresh;
-
-    result = Bezier_Up( RAS_VARS degree, splitter, -maxy, -miny );
-
-    if ( fresh && !ras.fresh )
-      ras.cProfile->start = -ras.cProfile->start;
+    result = Bezier_Up( RAS_VARS degree, arc, splitter, -maxy, -miny );
 
     arc[0].y = -arc[0].y;
     return result;
@@ -1397,74 +1228,50 @@
   Line_To( RAS_ARGS Long  x,
                     Long  y )
   {
+    TStates  state;
+
+
+    if ( y == ras.lastY )
+      goto Fin;
+
     /* First, detect a change of direction */
 
-    switch ( ras.state )
+    state = ras.lastY < y ? Ascending_State : Descending_State;
+
+    if ( ras.state != state )
     {
-    case Unknown_State:
-      if ( y > ras.lastY )
-      {
-        if ( New_Profile( RAS_VARS Ascending_State,
-                                   IS_BOTTOM_OVERSHOOT( ras.lastY ) ) )
-          return FAILURE;
-      }
-      else
-      {
-        if ( y < ras.lastY )
-          if ( New_Profile( RAS_VARS Descending_State,
-                                     IS_TOP_OVERSHOOT( ras.lastY ) ) )
-            return FAILURE;
-      }
-      break;
+      /* finalize current profile if any */
+      if ( ras.state != Unknown_State &&
+           End_Profile( RAS_VAR )     )
+        goto Fail;
 
-    case Ascending_State:
-      if ( y < ras.lastY )
-      {
-        if ( End_Profile( RAS_VARS IS_TOP_OVERSHOOT( ras.lastY ) ) ||
-             New_Profile( RAS_VARS Descending_State,
-                                   IS_TOP_OVERSHOOT( ras.lastY ) ) )
-          return FAILURE;
-      }
-      break;
-
-    case Descending_State:
-      if ( y > ras.lastY )
-      {
-        if ( End_Profile( RAS_VARS IS_BOTTOM_OVERSHOOT( ras.lastY ) ) ||
-             New_Profile( RAS_VARS Ascending_State,
-                                   IS_BOTTOM_OVERSHOOT( ras.lastY ) ) )
-          return FAILURE;
-      }
-      break;
-
-    default:
-      ;
+      /* create a new profile */
+      if ( New_Profile( RAS_VARS state ) )
+        goto Fail;
     }
 
     /* Then compute the lines */
 
-    switch ( ras.state )
+    if ( state == Ascending_State )
     {
-    case Ascending_State:
       if ( Line_Up( RAS_VARS ras.lastX, ras.lastY,
                              x, y, ras.minY, ras.maxY ) )
-        return FAILURE;
-      break;
-
-    case Descending_State:
+        goto Fail;
+    }
+    else
+    {
       if ( Line_Down( RAS_VARS ras.lastX, ras.lastY,
                                x, y, ras.minY, ras.maxY ) )
-        return FAILURE;
-      break;
-
-    default:
-      ;
+        goto Fail;
     }
 
+  Fin:
     ras.lastX = x;
     ras.lastY = y;
-
     return SUCCESS;
+
+  Fail:
+    return FAILURE;
   }
 
 
@@ -1503,22 +1310,24 @@
   {
     Long     y1, y2, y3, x3, ymin, ymax;
     TStates  state_bez;
+    TPoint   arcs[2 * MaxBezier + 1]; /* The Bezier stack           */
+    TPoint*  arc;                     /* current Bezier arc pointer */
 
 
-    ras.arc      = ras.arcs;
-    ras.arc[2].x = ras.lastX;
-    ras.arc[2].y = ras.lastY;
-    ras.arc[1].x = cx;
-    ras.arc[1].y = cy;
-    ras.arc[0].x = x;
-    ras.arc[0].y = y;
+    arc      = arcs;
+    arc[2].x = ras.lastX;
+    arc[2].y = ras.lastY;
+    arc[1].x = cx;
+    arc[1].y = cy;
+    arc[0].x = x;
+    arc[0].y = y;
 
     do
     {
-      y1 = ras.arc[2].y;
-      y2 = ras.arc[1].y;
-      y3 = ras.arc[0].y;
-      x3 = ras.arc[0].x;
+      y1 = arc[2].y;
+      y2 = arc[1].y;
+      y3 = arc[0].y;
+      x3 = arc[0].x;
 
       /* first, categorize the Bezier arc */
 
@@ -1533,16 +1342,20 @@
         ymax = y1;
       }
 
-      if ( y2 < ymin || y2 > ymax )
+      if ( y2 < FLOOR( ymin ) || y2 > CEILING( ymax ) )
       {
         /* this arc has no given direction, split it! */
-        Split_Conic( ras.arc );
-        ras.arc += 2;
+        Split_Conic( arc );
+        arc += 2;
       }
       else if ( y1 == y3 )
       {
-        /* this arc is flat, ignore it and pop it from the Bezier stack */
-        ras.arc -= 2;
+        /* this arc is flat, advance position */
+        /* and pop it from the Bezier stack   */
+        arc -= 2;
+
+        ras.lastX = x3;
+        ras.lastY = y3;
       }
       else
       {
@@ -1551,36 +1364,34 @@
         state_bez = y1 < y3 ? Ascending_State : Descending_State;
         if ( ras.state != state_bez )
         {
-          Bool  o = ( state_bez == Ascending_State )
-                      ? IS_BOTTOM_OVERSHOOT( y1 )
-                      : IS_TOP_OVERSHOOT( y1 );
-
-
           /* finalize current profile if any */
           if ( ras.state != Unknown_State &&
-               End_Profile( RAS_VARS o )  )
+               End_Profile( RAS_VAR )     )
             goto Fail;
 
           /* create a new profile */
-          if ( New_Profile( RAS_VARS state_bez, o ) )
+          if ( New_Profile( RAS_VARS state_bez ) )
             goto Fail;
         }
 
         /* now call the appropriate routine */
         if ( state_bez == Ascending_State )
         {
-          if ( Bezier_Up( RAS_VARS 2, Split_Conic, ras.minY, ras.maxY ) )
+          if ( Bezier_Up( RAS_VARS 2, arc, Split_Conic,
+                                   ras.minY, ras.maxY ) )
             goto Fail;
         }
         else
-          if ( Bezier_Down( RAS_VARS 2, Split_Conic, ras.minY, ras.maxY ) )
+          if ( Bezier_Down( RAS_VARS 2, arc, Split_Conic,
+                                     ras.minY, ras.maxY ) )
             goto Fail;
+        arc -= 2;
+
+        ras.lastX = x3;
+        ras.lastY = y3;
       }
 
-    } while ( ras.arc >= ras.arcs );
-
-    ras.lastX = x3;
-    ras.lastY = y3;
+    } while ( arc >= arcs );
 
     return SUCCESS;
 
@@ -1632,25 +1443,27 @@
   {
     Long     y1, y2, y3, y4, x4, ymin1, ymax1, ymin2, ymax2;
     TStates  state_bez;
+    TPoint   arcs[3 * MaxBezier + 1]; /* The Bezier stack           */
+    TPoint*  arc;                     /* current Bezier arc pointer */
 
 
-    ras.arc      = ras.arcs;
-    ras.arc[3].x = ras.lastX;
-    ras.arc[3].y = ras.lastY;
-    ras.arc[2].x = cx1;
-    ras.arc[2].y = cy1;
-    ras.arc[1].x = cx2;
-    ras.arc[1].y = cy2;
-    ras.arc[0].x = x;
-    ras.arc[0].y = y;
+    arc      = arcs;
+    arc[3].x = ras.lastX;
+    arc[3].y = ras.lastY;
+    arc[2].x = cx1;
+    arc[2].y = cy1;
+    arc[1].x = cx2;
+    arc[1].y = cy2;
+    arc[0].x = x;
+    arc[0].y = y;
 
     do
     {
-      y1 = ras.arc[3].y;
-      y2 = ras.arc[2].y;
-      y3 = ras.arc[1].y;
-      y4 = ras.arc[0].y;
-      x4 = ras.arc[0].x;
+      y1 = arc[3].y;
+      y2 = arc[2].y;
+      y3 = arc[1].y;
+      y4 = arc[0].y;
+      x4 = arc[0].x;
 
       /* first, categorize the Bezier arc */
 
@@ -1676,53 +1489,55 @@
         ymax2 = y2;
       }
 
-      if ( ymin2 < ymin1 || ymax2 > ymax1 )
+      if ( ymin2 < FLOOR( ymin1 ) || ymax2 > CEILING( ymax1 ) )
       {
         /* this arc has no given direction, split it! */
-        Split_Cubic( ras.arc );
-        ras.arc += 3;
+        Split_Cubic( arc );
+        arc += 3;
       }
       else if ( y1 == y4 )
       {
-        /* this arc is flat, ignore it and pop it from the Bezier stack */
-        ras.arc -= 3;
+        /* this arc is flat, advance position */
+        /* and pop it from the Bezier stack   */
+        arc -= 3;
+
+        ras.lastX = x4;
+        ras.lastY = y4;
       }
       else
       {
-        state_bez = ( y1 <= y4 ) ? Ascending_State : Descending_State;
+        state_bez = y1 < y4 ? Ascending_State : Descending_State;
 
         /* detect a change of direction */
         if ( ras.state != state_bez )
         {
-          Bool  o = ( state_bez == Ascending_State )
-                      ? IS_BOTTOM_OVERSHOOT( y1 )
-                      : IS_TOP_OVERSHOOT( y1 );
-
-
           /* finalize current profile if any */
           if ( ras.state != Unknown_State &&
-               End_Profile( RAS_VARS o )  )
+               End_Profile( RAS_VAR )     )
             goto Fail;
 
-          if ( New_Profile( RAS_VARS state_bez, o ) )
+          if ( New_Profile( RAS_VARS state_bez ) )
             goto Fail;
         }
 
         /* compute intersections */
         if ( state_bez == Ascending_State )
         {
-          if ( Bezier_Up( RAS_VARS 3, Split_Cubic, ras.minY, ras.maxY ) )
+          if ( Bezier_Up( RAS_VARS 3, arc, Split_Cubic,
+                                   ras.minY, ras.maxY ) )
             goto Fail;
         }
         else
-          if ( Bezier_Down( RAS_VARS 3, Split_Cubic, ras.minY, ras.maxY ) )
+          if ( Bezier_Down( RAS_VARS 3, arc, Split_Cubic,
+                                     ras.minY, ras.maxY ) )
             goto Fail;
+        arc -= 3;
+
+        ras.lastX = x4;
+        ras.lastY = y4;
       }
 
-    } while ( ras.arc >= ras.arcs );
-
-    ras.lastX = x4;
-    ras.lastY = y4;
+    } while ( arc >= arcs );
 
     return SUCCESS;
 
@@ -1765,11 +1580,16 @@
    *
    * @Return:
    *   SUCCESS on success, FAILURE on error.
+   *
+   * @Note:
+   *   Unlike FT_Outline_Decompose(), this function handles the scanmode
+   *   dropout tags in the individual contours.  Therefore, it cannot be
+   *   replaced.
    */
   static Bool
-  Decompose_Curve( RAS_ARGS UShort  first,
-                            UShort  last,
-                            Int     flipped )
+  Decompose_Curve( RAS_ARGS Int  first,
+                            Int  last,
+                            Int  flipped )
   {
     FT_Vector   v_last;
     FT_Vector   v_control;
@@ -1778,7 +1598,7 @@
     FT_Vector*  points;
     FT_Vector*  point;
     FT_Vector*  limit;
-    char*       tags;
+    FT_Byte*    tags;
 
     UInt        tag;       /* current point's state           */
 
@@ -1967,7 +1787,7 @@
     return SUCCESS;
 
   Invalid_Outline:
-    ras.error = FT_THROW( Invalid );
+    ras.error = FT_THROW( Invalid_Outline );
 
   Fail:
     return FAILURE;
@@ -1994,69 +1814,55 @@
   static Bool
   Convert_Glyph( RAS_ARGS Int  flipped )
   {
-    Int   i;
-    UInt  start;
+    Int  i;
+    Int  first, last;
 
 
     ras.fProfile = NULL;
-    ras.joint    = FALSE;
-    ras.fresh    = FALSE;
+    ras.cProfile = NULL;
 
-    ras.maxBuff  = ras.sizeBuff - AlignProfileSize;
+    ras.top      = ras.buff;
+    ras.maxBuff  = ras.sizeBuff - 1;  /* top reserve */
 
-    ras.numTurns = 0;
+    ras.numTurns  = 0;
+    ras.num_Profs = 0;
 
-    ras.cProfile         = (PProfile)ras.top;
-    ras.cProfile->offset = ras.top;
-    ras.num_Profs        = 0;
-
-    start = 0;
-
+    last = -1;
     for ( i = 0; i < ras.outline.n_contours; i++ )
     {
-      PProfile  lastProfile;
-      Bool      o;
-
-
       ras.state    = Unknown_State;
       ras.gProfile = NULL;
 
-      if ( Decompose_Curve( RAS_VARS (UShort)start,
-                                     (UShort)ras.outline.contours[i],
-                                     flipped ) )
+      first = last + 1;
+      last  = ras.outline.contours[i];
+
+      if ( Decompose_Curve( RAS_VARS first, last, flipped ) )
         return FAILURE;
 
-      start = (UShort)ras.outline.contours[i] + 1;
+      /* Note that ras.gProfile can stay nil if the contour was */
+      /* too small to be drawn or degenerate.                   */
+      if ( !ras.gProfile )
+        continue;
 
       /* we must now check whether the extreme arcs join or not */
       if ( FRAC( ras.lastY ) == 0 &&
            ras.lastY >= ras.minY  &&
            ras.lastY <= ras.maxY  )
-        if ( ras.gProfile                        &&
-             ( ras.gProfile->flags & Flow_Up ) ==
+        if ( ( ras.gProfile->flags & Flow_Up ) ==
                ( ras.cProfile->flags & Flow_Up ) )
           ras.top--;
-        /* Note that ras.gProfile can be nil if the contour was too small */
-        /* to be drawn.                                                   */
 
-      lastProfile = ras.cProfile;
-      if ( ras.top != ras.cProfile->offset &&
-           ( ras.cProfile->flags & Flow_Up ) )
-        o = IS_TOP_OVERSHOOT( ras.lastY );
-      else
-        o = IS_BOTTOM_OVERSHOOT( ras.lastY );
-      if ( End_Profile( RAS_VARS o ) )
+      if ( End_Profile( RAS_VAR ) )
         return FAILURE;
 
-      /* close the `next profile in contour' linked list */
-      if ( ras.gProfile )
-        lastProfile->next = ras.gProfile;
+      if ( !ras.fProfile )
+        ras.fProfile = ras.gProfile;
     }
 
-    if ( Finalize_Profile_Table( RAS_VAR ) )
-      return FAILURE;
+    if ( ras.fProfile )
+      Finalize_Profile_Table( RAS_VAR );
 
-    return (Bool)( ras.top < ras.maxBuff ? SUCCESS : FAILURE );
+    return SUCCESS;
   }
 
 
@@ -2071,22 +1877,9 @@
 
   /**************************************************************************
    *
-   * Init_Linked
-   *
-   *   Initializes an empty linked list.
-   */
-  static void
-  Init_Linked( TProfileList*  l )
-  {
-    *l = NULL;
-  }
-
-
-  /**************************************************************************
-   *
    * InsNew
    *
-   *   Inserts a new profile in a linked list.
+   *   Inserts a new profile in a linked list, sorted by coordinate.
    */
   static void
   InsNew( PProfileList  list,
@@ -2100,10 +1893,8 @@
     current = *old;
     x       = profile->X;
 
-    while ( current )
+    while ( current && current->X < x )
     {
-      if ( x < current->X )
-        break;
       old     = &current->link;
       current = *old;
     }
@@ -2115,79 +1906,51 @@
 
   /**************************************************************************
    *
-   * DelOld
+   * Increment
    *
-   *   Removes an old profile from a linked list.
+   *   Advances all profile in the list to the next scanline.  It also
+   *   sorts the trace list in the unlikely case of profile crossing.
+   *   The profiles are inserted in sorted order.  We might need a single
+   *   swap to fix it when profiles (contours) cross.
+   *   Bubble sort with immediate restart is good enough and simple.
    */
   static void
-  DelOld( PProfileList  list,
-          PProfile      profile )
-  {
-    PProfile  *old, current;
-
-
-    old     = list;
-    current = *old;
-
-    while ( current )
-    {
-      if ( current == profile )
-      {
-        *old = current->link;
-        return;
-      }
-
-      old     = &current->link;
-      current = *old;
-    }
-
-    /* we should never get there, unless the profile was not part of */
-    /* the list.                                                     */
-  }
-
-
-  /**************************************************************************
-   *
-   * Sort
-   *
-   *   Sorts a trace list.  In 95%, the list is already sorted.  We need
-   *   an algorithm which is fast in this case.  Bubble sort is enough
-   *   and simple.
-   */
-  static void
-  Sort( PProfileList  list )
+  Increment( PProfileList  list,
+             Int           flow )
   {
     PProfile  *old, current, next;
 
 
-    /* First, set the new X coordinate of each profile */
-    current = *list;
-    while ( current )
+    /* First, set the new X coordinates and remove exhausted profiles */
+    old = list;
+    while ( *old )
     {
-      current->X       = *current->offset;
-      current->offset += ( current->flags & Flow_Up ) ? 1 : -1;
-      current->height--;
-      current = current->link;
+      current = *old;
+      if ( --current->height )
+      {
+        current->offset += flow;
+        current->X       = current->x[current->offset];
+        old = &current->link;
+      }
+      else
+        *old = current->link;  /* remove */
     }
 
-    /* Then sort them */
+    /* Then make sure the list remains sorted */
     old     = list;
     current = *old;
 
     if ( !current )
       return;
 
-    next = current->link;
-
-    while ( next )
+    while ( current->link )
     {
+      next = current->link;
+
       if ( current->X <= next->X )
       {
         old     = &current->link;
-        current = *old;
-
-        if ( !current )
-          return;
+        current = next;
       }
       else
       {
@@ -2195,11 +1958,10 @@
         current->link = next->link;
         next->link    = current;
 
+        /* this is likely the only necessary swap -- restart */
         old     = list;
         current = *old;
       }
-
-      next = current->link;
     }
   }
 
@@ -2214,78 +1976,53 @@
    */
 
   static void
-  Vertical_Sweep_Init( RAS_ARGS Short*  min,
-                                Short*  max )
+  Vertical_Sweep_Init( RAS_ARGS Int  min,
+                                Int  max )
   {
-    Long  pitch = ras.target.pitch;
-
     FT_UNUSED( max );
 
 
-    ras.traceIncr = (Short)-pitch;
-    ras.traceOfs  = -*min * pitch;
+    ras.bLine = ras.bOrigin - min * ras.bPitch;
   }
 
 
   static void
-  Vertical_Sweep_Span( RAS_ARGS Short       y,
+  Vertical_Sweep_Span( RAS_ARGS Int         y,
                                 FT_F26Dot6  x1,
-                                FT_F26Dot6  x2,
-                                PProfile    left,
-                                PProfile    right )
+                                FT_F26Dot6  x2 )
   {
-    Long   e1, e2;
-    Byte*  target;
-
-    Int  dropOutControl = left->flags & 7;
+    Int  e1 = (Int)TRUNC( CEILING( x1 ) );
+    Int  e2 = (Int)TRUNC(   FLOOR( x2 ) );
 
     FT_UNUSED( y );
-    FT_UNUSED( left );
-    FT_UNUSED( right );
 
 
-    /* in high-precision mode, we need 12 digits after the comma to */
-    /* represent multiples of 1/(1<<12) = 1/4096                    */
-    FT_TRACE7(( "  y=%d x=[% .12f;% .12f]",
+    FT_TRACE7(( "  y=%d x=[% .*f;% .*f]",
                 y,
-                x1 / (double)ras.precision,
-                x2 / (double)ras.precision ));
+                ras.precision_bits, (double)x1 / (double)ras.precision,
+                ras.precision_bits, (double)x2 / (double)ras.precision ));
 
-    /* Drop-out control */
-
-    e1 = CEILING( x1 );
-    e2 = FLOOR( x2 );
-
-    /* take care of the special case where both the left */
-    /* and right contour lie exactly on pixel centers    */
-    if ( dropOutControl != 2                             &&
-         x2 - x1 - ras.precision <= ras.precision_jitter &&
-         e1 != x1 && e2 != x2                            )
-      e2 = e1;
-
-    e1 = TRUNC( e1 );
-    e2 = TRUNC( e2 );
-
-    if ( e2 >= 0 && e1 < ras.bWidth )
+    if ( e2 >= 0 && e1 <= ras.bRight )
     {
-      Int   c1, c2;
-      Byte  f1, f2;
+      PByte  target;
+
+      Int   c1, f1, c2, f2;
 
 
       if ( e1 < 0 )
         e1 = 0;
-      if ( e2 >= ras.bWidth )
-        e2 = ras.bWidth - 1;
+      if ( e2 > ras.bRight )
+        e2 = ras.bRight;
 
-      FT_TRACE7(( " -> x=[%ld;%ld]", e1, e2 ));
+      FT_TRACE7(( " -> x=[%d;%d]", e1, e2 ));
 
-      c1 = (Short)( e1 >> 3 );
-      c2 = (Short)( e2 >> 3 );
+      c1 = e1 >> 3;
+      c2 = e2 >> 3;
 
-      f1 = (Byte)  ( 0xFF >> ( e1 & 7 ) );
-      f2 = (Byte) ~( 0x7F >> ( e2 & 7 ) );
+      f1 =  0xFF >> ( e1 & 7 );
+      f2 = ~0x7F >> ( e2 & 7 );
 
-      target = ras.bOrigin + ras.traceOfs + c1;
+      target = ras.bLine + c1;
       c2 -= c1;
 
       if ( c2 > 0 )
@@ -2296,7 +2033,7 @@
         /* This is due to the fact that, in the vast majority of cases,  */
         /* the span length in bytes is relatively small.                 */
         while ( --c2 > 0 )
-          *(++target) = 0xFF;
+          *( ++target ) = 0xFF;
 
         target[1] |= f2;
       }
@@ -2309,163 +2046,50 @@
 
 
   static void
-  Vertical_Sweep_Drop( RAS_ARGS Short       y,
+  Vertical_Sweep_Drop( RAS_ARGS Int         y,
                                 FT_F26Dot6  x1,
-                                FT_F26Dot6  x2,
-                                PProfile    left,
-                                PProfile    right )
+                                FT_F26Dot6  x2 )
   {
-    Long   e1, e2, pxl;
-    Short  c1, f1;
+    Int  e1 = (Int)TRUNC( x1 );
+    Int  e2 = (Int)TRUNC( x2 );
+    Int  c1, f1;
+
+    FT_UNUSED( y );
 
 
-    FT_TRACE7(( "  y=%d x=[% .12f;% .12f]",
-                y,
-                x1 / (double)ras.precision,
-                x2 / (double)ras.precision ));
+    /* undocumented but confirmed: If the drop-out would result in a  */
+    /* pixel outside of the bounding box, use the pixel inside of the */
+    /* bounding box instead                                           */
+    if ( e1 < 0 || e1 > ras.bRight )
+      e1 = e2;
 
-    /* Drop-out control */
-
-    /*   e2            x2                    x1           e1   */
-    /*                                                         */
-    /*                 ^                     |                 */
-    /*                 |                     |                 */
-    /*   +-------------+---------------------+------------+    */
-    /*                 |                     |                 */
-    /*                 |                     v                 */
-    /*                                                         */
-    /* pixel         contour              contour       pixel  */
-    /* center                                           center */
-
-    /* drop-out mode    scan conversion rules (as defined in OpenType) */
-    /* --------------------------------------------------------------- */
-    /*  0                1, 2, 3                                       */
-    /*  1                1, 2, 4                                       */
-    /*  2                1, 2                                          */
-    /*  3                same as mode 2                                */
-    /*  4                1, 2, 5                                       */
-    /*  5                1, 2, 6                                       */
-    /*  6, 7             same as mode 2                                */
-
-    e1  = CEILING( x1 );
-    e2  = FLOOR  ( x2 );
-    pxl = e1;
-
-    if ( e1 > e2 )
+    /* otherwise check that the other pixel isn't set */
+    else if ( e2 >=0 && e2 <= ras.bRight )
     {
-      Int  dropOutControl = left->flags & 7;
+      c1 = e2 >> 3;
+      f1 = 0x80 >> ( e2 & 7 );
 
-
-      if ( e1 == e2 + ras.precision )
-      {
-        switch ( dropOutControl )
-        {
-        case 0: /* simple drop-outs including stubs */
-          pxl = e2;
-          break;
-
-        case 4: /* smart drop-outs including stubs */
-          pxl = SMART( x1, x2 );
-          break;
-
-        case 1: /* simple drop-outs excluding stubs */
-        case 5: /* smart drop-outs excluding stubs  */
-
-          /* Drop-out Control Rules #4 and #6 */
-
-          /* The specification neither provides an exact definition */
-          /* of a `stub' nor gives exact rules to exclude them.     */
-          /*                                                        */
-          /* Here the constraints we use to recognize a stub.       */
-          /*                                                        */
-          /*  upper stub:                                           */
-          /*                                                        */
-          /*   - P_Left and P_Right are in the same contour         */
-          /*   - P_Right is the successor of P_Left in that contour */
-          /*   - y is the top of P_Left and P_Right                 */
-          /*                                                        */
-          /*  lower stub:                                           */
-          /*                                                        */
-          /*   - P_Left and P_Right are in the same contour         */
-          /*   - P_Left is the successor of P_Right in that contour */
-          /*   - y is the bottom of P_Left                          */
-          /*                                                        */
-          /* We draw a stub if the following constraints are met.   */
-          /*                                                        */
-          /*   - for an upper or lower stub, there is top or bottom */
-          /*     overshoot, respectively                            */
-          /*   - the covered interval is greater or equal to a half */
-          /*     pixel                                              */
-
-          /* upper stub test */
-          if ( left->next == right                &&
-               left->height <= 0                  &&
-               !( left->flags & Overshoot_Top   &&
-                  x2 - x1 >= ras.precision_half ) )
-            goto Exit;
-
-          /* lower stub test */
-          if ( right->next == left                 &&
-               left->start == y                    &&
-               !( left->flags & Overshoot_Bottom &&
-                  x2 - x1 >= ras.precision_half  ) )
-            goto Exit;
-
-          if ( dropOutControl == 1 )
-            pxl = e2;
-          else
-            pxl = SMART( x1, x2 );
-          break;
-
-        default: /* modes 2, 3, 6, 7 */
-          goto Exit;  /* no drop-out control */
-        }
-
-        /* undocumented but confirmed: If the drop-out would result in a  */
-        /* pixel outside of the bounding box, use the pixel inside of the */
-        /* bounding box instead                                           */
-        if ( pxl < 0 )
-          pxl = e1;
-        else if ( TRUNC( pxl ) >= ras.bWidth )
-          pxl = e2;
-
-        /* check that the other pixel isn't set */
-        e1 = ( pxl == e1 ) ? e2 : e1;
-
-        e1 = TRUNC( e1 );
-
-        c1 = (Short)( e1 >> 3 );
-        f1 = (Short)( e1 &  7 );
-
-        if ( e1 >= 0 && e1 < ras.bWidth                      &&
-             ras.bOrigin[ras.traceOfs + c1] & ( 0x80 >> f1 ) )
-          goto Exit;
-      }
-      else
-        goto Exit;
+      if ( ras.bLine[c1] & f1 )
+        return;
     }
 
-    e1 = TRUNC( pxl );
-
-    if ( e1 >= 0 && e1 < ras.bWidth )
+    if ( e1 >= 0 && e1 <= ras.bRight )
     {
-      FT_TRACE7(( " -> x=%ld", e1 ));
+      c1 = e1 >> 3;
+      f1 = 0x80 >> ( e1 & 7 );
 
-      c1 = (Short)( e1 >> 3 );
-      f1 = (Short)( e1 & 7 );
+      FT_TRACE7(( "  y=%d x=%d%s\n", y, e1,
+                  ras.bLine[c1] & f1 ? " redundant" : "" ));
 
-      ras.bOrigin[ras.traceOfs + c1] |= (char)( 0x80 >> f1 );
+      ras.bLine[c1] |= f1;
     }
-
-  Exit:
-    FT_TRACE7(( " dropout=%d\n", left->flags & 7 ));
   }
 
 
   static void
   Vertical_Sweep_Step( RAS_ARG )
   {
-    ras.traceOfs += ras.traceIncr;
+    ras.bLine -= ras.bPitch;
   }
 
 
@@ -2479,8 +2103,8 @@
    */
 
   static void
-  Horizontal_Sweep_Init( RAS_ARGS Short*  min,
-                                  Short*  max )
+  Horizontal_Sweep_Init( RAS_ARGS Int  min,
+                                  Int  max )
   {
     /* nothing, really */
     FT_UNUSED_RASTER;
@@ -2490,22 +2114,18 @@
 
 
   static void
-  Horizontal_Sweep_Span( RAS_ARGS Short       y,
+  Horizontal_Sweep_Span( RAS_ARGS Int         y,
                                   FT_F26Dot6  x1,
-                                  FT_F26Dot6  x2,
-                                  PProfile    left,
-                                  PProfile    right )
+                                  FT_F26Dot6  x2 )
   {
-    Long  e1, e2;
-
-    FT_UNUSED( left );
-    FT_UNUSED( right );
+    Long  e1 = CEILING( x1 );
+    Long  e2 =   FLOOR( x2 );
 
 
-    FT_TRACE7(( "  x=%d y=[% .12f;% .12f]",
+    FT_TRACE7(( "  x=%d y=[% .*f;% .*f]",
                 y,
-                x1 / (double)ras.precision,
-                x2 / (double)ras.precision ));
+                ras.precision_bits, (double)x1 / (double)ras.precision,
+                ras.precision_bits, (double)x2 / (double)ras.precision ));
 
     /* We should not need this procedure but the vertical sweep   */
     /* mishandles horizontal lines through pixel centers.  So we  */
@@ -2513,20 +2133,18 @@
     /*                                                            */
     /* XXX: Can we handle horizontal lines better and drop this?  */
 
-    e1 = CEILING( x1 );
-
     if ( x1 == e1 )
     {
       e1 = TRUNC( e1 );
 
-      if ( e1 >= 0 && (ULong)e1 < ras.target.rows )
+      if ( e1 >= 0 && e1 <= ras.bTop )
       {
-        Byte   f1;
+        Int    f1;
         PByte  bits;
 
 
-        bits = ras.bOrigin + ( y >> 3 ) - e1 * ras.target.pitch;
-        f1   = (Byte)( 0x80 >> ( y & 7 ) );
+        bits = ras.bOrigin + ( y >> 3 ) - e1 * ras.bPitch;
+        f1   = 0x80 >> ( y & 7 );
 
         FT_TRACE7(( bits[0] & f1 ? " redundant"
                                  : " -> y=%ld edge", e1 ));
@@ -2535,20 +2153,18 @@
       }
     }
 
-    e2 = FLOOR  ( x2 );
-
     if ( x2 == e2 )
     {
       e2 = TRUNC( e2 );
 
-      if ( e2 >= 0 && (ULong)e2 < ras.target.rows )
+      if ( e2 >= 0 && e2 <= ras.bTop )
       {
-        Byte   f1;
+        Int    f1;
         PByte  bits;
 
 
-        bits = ras.bOrigin + ( y >> 3 ) - e2 * ras.target.pitch;
-        f1   = (Byte)( 0x80 >> ( y & 7 ) );
+        bits = ras.bOrigin + ( y >> 3 ) - e2 * ras.bPitch;
+        f1   = 0x80 >> ( y & 7 );
 
         FT_TRACE7(( bits[0] & f1 ? " redundant"
                                  : " -> y=%ld edge", e2 ));
@@ -2562,122 +2178,42 @@
 
 
   static void
-  Horizontal_Sweep_Drop( RAS_ARGS Short       y,
+  Horizontal_Sweep_Drop( RAS_ARGS Int         y,
                                   FT_F26Dot6  x1,
-                                  FT_F26Dot6  x2,
-                                  PProfile    left,
-                                  PProfile    right )
+                                  FT_F26Dot6  x2 )
   {
-    Long   e1, e2, pxl;
+    Int    e1 = (Int)TRUNC( x1 );
+    Int    e2 = (Int)TRUNC( x2 );
     PByte  bits;
-    Byte   f1;
+    Int    f1;
 
 
-    FT_TRACE7(( "  x=%d y=[% .12f;% .12f]",
-                y,
-                x1 / (double)ras.precision,
-                x2 / (double)ras.precision ));
+    /* undocumented but confirmed: If the drop-out would result in a  */
+    /* pixel outside of the bounding box, use the pixel inside of the */
+    /* bounding box instead                                           */
+    if ( e1 < 0 || e1 > ras.bTop )
+      e1 = e2;
 
-    /* During the horizontal sweep, we only take care of drop-outs */
-
-    /* e1     +       <-- pixel center */
-    /*        |                        */
-    /* x1  ---+-->    <-- contour      */
-    /*        |                        */
-    /*        |                        */
-    /* x2  <--+---    <-- contour      */
-    /*        |                        */
-    /*        |                        */
-    /* e2     +       <-- pixel center */
-
-    e1  = CEILING( x1 );
-    e2  = FLOOR  ( x2 );
-    pxl = e1;
-
-    if ( e1 > e2 )
+    /* otherwise check that the other pixel isn't set */
+    else if ( e2 >=0 && e2 <= ras.bTop )
     {
-      Int  dropOutControl = left->flags & 7;
+      bits = ras.bOrigin + ( y >> 3 ) - e2 * ras.bPitch;
+      f1   = 0x80 >> ( y & 7 );
 
-
-      if ( e1 == e2 + ras.precision )
-      {
-        switch ( dropOutControl )
-        {
-        case 0: /* simple drop-outs including stubs */
-          pxl = e2;
-          break;
-
-        case 4: /* smart drop-outs including stubs */
-          pxl = SMART( x1, x2 );
-          break;
-
-        case 1: /* simple drop-outs excluding stubs */
-        case 5: /* smart drop-outs excluding stubs  */
-          /* see Vertical_Sweep_Drop for details */
-
-          /* rightmost stub test */
-          if ( left->next == right                &&
-               left->height <= 0                  &&
-               !( left->flags & Overshoot_Top   &&
-                  x2 - x1 >= ras.precision_half ) )
-            goto Exit;
-
-          /* leftmost stub test */
-          if ( right->next == left                 &&
-               left->start == y                    &&
-               !( left->flags & Overshoot_Bottom &&
-                  x2 - x1 >= ras.precision_half  ) )
-            goto Exit;
-
-          if ( dropOutControl == 1 )
-            pxl = e2;
-          else
-            pxl = SMART( x1, x2 );
-          break;
-
-        default: /* modes 2, 3, 6, 7 */
-          goto Exit;  /* no drop-out control */
-        }
-
-        /* undocumented but confirmed: If the drop-out would result in a  */
-        /* pixel outside of the bounding box, use the pixel inside of the */
-        /* bounding box instead                                           */
-        if ( pxl < 0 )
-          pxl = e1;
-        else if ( (ULong)( TRUNC( pxl ) ) >= ras.target.rows )
-          pxl = e2;
-
-        /* check that the other pixel isn't set */
-        e1 = ( pxl == e1 ) ? e2 : e1;
-
-        e1 = TRUNC( e1 );
-
-        bits = ras.bOrigin + ( y >> 3 ) - e1 * ras.target.pitch;
-        f1   = (Byte)( 0x80 >> ( y & 7 ) );
-
-        if ( e1 >= 0                     &&
-             (ULong)e1 < ras.target.rows &&
-             *bits & f1                  )
-          goto Exit;
-      }
-      else
-        goto Exit;
+      if ( *bits & f1 )
+        return;
     }
 
-    e1 = TRUNC( pxl );
-
-    if ( e1 >= 0 && (ULong)e1 < ras.target.rows )
+    if ( e1 >= 0 && e1 <= ras.bTop )
     {
-      FT_TRACE7(( " -> y=%ld", e1 ));
+      bits  = ras.bOrigin + ( y >> 3 ) - e1 * ras.bPitch;
+      f1    = 0x80 >> ( y & 7 );
 
-      bits  = ras.bOrigin + ( y >> 3 ) - e1 * ras.target.pitch;
-      f1    = (Byte)( 0x80 >> ( y & 7 ) );
+      FT_TRACE7(( "  x=%d y=%d%s\n", y, e1,
+                  *bits & f1 ? " redundant" : "" ));
 
-      bits[0] |= f1;
+      *bits |= f1;
     }
-
-  Exit:
-    FT_TRACE7(( " dropout=%d\n", left->flags & 7 ));
   }
 
 
@@ -2693,116 +2229,61 @@
    *
    * Generic Sweep Drawing routine
    *
+   * Note that this routine is executed with the pool containing at least
+   * two valid profiles (up and down) and two y-turns (top and bottom).
+   *
    */
 
-  static Bool
+  static void
   Draw_Sweep( RAS_ARG )
   {
-    Short         y, y_change, y_height;
+    Int           min_Y, max_Y, dropouts;
+    Int           y, y_turn;
 
-    PProfile      P, Q, P_Left, P_Right;
+    PProfile      *Q, P, P_Left, P_Right;
 
-    Short         min_Y, max_Y, top, bottom, dropouts;
-
-    Long          x1, x2, xs, e1, e2;
-
-    TProfileList  waiting;
-    TProfileList  draw_left, draw_right;
+    TProfileList  waiting    = ras.fProfile;
+    TProfileList  draw_left  = NULL;
+    TProfileList  draw_right = NULL;
 
 
-    /* initialize empty linked lists */
+    /* use y_turns to set the drawing range */
 
-    Init_Linked( &waiting );
-
-    Init_Linked( &draw_left  );
-    Init_Linked( &draw_right );
-
-    /* first, compute min and max Y */
-
-    P     = ras.fProfile;
-    max_Y = (Short)TRUNC( ras.minY );
-    min_Y = (Short)TRUNC( ras.maxY );
-
-    while ( P )
-    {
-      Q = P->link;
-
-      bottom = (Short)P->start;
-      top    = (Short)( P->start + P->height - 1 );
-
-      if ( min_Y > bottom )
-        min_Y = bottom;
-      if ( max_Y < top )
-        max_Y = top;
-
-      P->X = 0;
-      InsNew( &waiting, P );
-
-      P = Q;
-    }
-
-    /* check the Y-turns */
-    if ( ras.numTurns == 0 )
-    {
-      ras.error = FT_THROW( Invalid );
-      return FAILURE;
-    }
+    min_Y = (Int)ras.maxBuff[0];
+    max_Y = (Int)ras.maxBuff[ras.numTurns] - 1;
 
     /* now initialize the sweep */
 
-    ras.Proc_Sweep_Init( RAS_VARS &min_Y, &max_Y );
-
-    /* then compute the distance of each profile from min_Y */
-
-    P = waiting;
-
-    while ( P )
-    {
-      P->countL = P->start - min_Y;
-      P = P->link;
-    }
+    ras.Proc_Sweep_Init( RAS_VARS min_Y, max_Y );
 
     /* let's go */
 
-    y        = min_Y;
-    y_height = 0;
-
-    if ( ras.numTurns > 0                     &&
-         ras.sizeBuff[-ras.numTurns] == min_Y )
-      ras.numTurns--;
-
-    while ( ras.numTurns > 0 )
+    for ( y = min_Y; y <= max_Y; )
     {
-      /* check waiting list for new activations */
+      /* check waiting list for new profile activations */
 
-      P = waiting;
-
-      while ( P )
+      Q = &waiting;
+      while ( *Q )
       {
-        Q = P->link;
-        P->countL -= y_height;
-        if ( P->countL == 0 )
+        P = *Q;
+        if ( P->start == y )
         {
-          DelOld( &waiting, P );
+          *Q = P->link;  /* remove */
 
+          /* each active list contains profiles with the same flow */
+          /* left and right are arbitrary, correspond to TrueType  */
           if ( P->flags & Flow_Up )
             InsNew( &draw_left,  P );
           else
             InsNew( &draw_right, P );
         }
-
-        P = Q;
+        else
+          Q = &P->link;
       }
 
-      /* sort the drawing lists */
+      y_turn = (Int)*++ras.maxBuff;
 
-      Sort( &draw_left );
-      Sort( &draw_right );
-
-      y_change = (Short)ras.sizeBuff[-ras.numTurns--];
-      y_height = (Short)( y_change - y );
-
-      while ( y < y_change )
+      do
       {
         /* let's trace */
 
@@ -2813,9 +2294,13 @@
 
         while ( P_Left && P_Right )
         {
-          x1 = P_Left ->X;
-          x2 = P_Right->X;
+          Long  x1 = P_Left ->X;
+          Long  x2 = P_Right->X;
+          Long  xs;
 
+
+          /* TrueType should have x2 > x1, but can be opposite */
+          /* by mistake or in CFF/Type1, fix it then           */
           if ( x1 > x2 )
           {
             xs = x1;
@@ -2823,204 +2308,129 @@
             x2 = xs;
           }
 
-          e1 = FLOOR( x1 );
-          e2 = CEILING( x2 );
+          if ( CEILING( x1 ) <= FLOOR( x2 ) )
+            ras.Proc_Sweep_Span( RAS_VARS y, x1, x2 );
 
-          if ( x2 - x1 <= ras.precision &&
-               e1 != x1 && e2 != x2     )
+          /* otherwise, bottom ceiling > top floor, it is a drop-out */
+          else
           {
-            if ( e1 > e2 || e2 == e1 + ras.precision )
+            Int  dropOutControl = P_Left->flags & 7;
+
+
+            /* Drop-out control */
+
+            /*   e2            x2                    x1           e1   */
+            /*                                                         */
+            /*                 ^                     |                 */
+            /*                 |                     |                 */
+            /*   +-------------+---------------------+------------+    */
+            /*                 |                     |                 */
+            /*                 |                     v                 */
+            /*                                                         */
+            /* pixel         contour              contour       pixel  */
+            /* center                                           center */
+
+            /* drop-out mode   scan conversion rules (OpenType specs)  */
+            /* ------------------------------------------------------- */
+            /*  bit 0          exclude stubs if set                    */
+            /*  bit 1          ignore drop-outs if set                 */
+            /*  bit 2          smart rounding if set                   */
+
+            if ( dropOutControl & 2 )
+              goto Next_Pair;
+
+            /* The specification neither provides an exact definition */
+            /* of a `stub' nor gives exact rules to exclude them.     */
+            /*                                                        */
+            /* Here the constraints we use to recognize a stub.       */
+            /*                                                        */
+            /*  upper stub:                                           */
+            /*                                                        */
+            /*   - P_Left and P_Right are in the same contour         */
+            /*   - P_Right is the successor of P_Left in that contour */
+            /*   - y is the top of P_Left and P_Right                 */
+            /*                                                        */
+            /*  lower stub:                                           */
+            /*                                                        */
+            /*   - P_Left and P_Right are in the same contour         */
+            /*   - P_Left is the successor of P_Right in that contour */
+            /*   - y is the bottom of P_Left                          */
+            /*                                                        */
+            /* We draw a stub if the following constraints are met.   */
+            /*                                                        */
+            /*   - for an upper or lower stub, there is top or bottom */
+            /*     overshoot, respectively                            */
+            /*   - the covered interval is greater or equal to a half */
+            /*     pixel                                              */
+
+            if ( dropOutControl & 1 )
             {
-              Int  dropOutControl = P_Left->flags & 7;
+              /* upper stub test */
+              if ( P_Left->height == 1                &&
+                   P_Left->next == P_Right            &&
+                   !( P_Left->flags & Overshoot_Top   &&
+                      x2 - x1 >= ras.precision_half   ) )
+                goto Next_Pair;
 
-
-              if ( dropOutControl != 2 )
-              {
-                /* a drop-out was detected */
-
-                P_Left ->X = x1;
-                P_Right->X = x2;
-
-                /* mark profile for drop-out processing */
-                P_Left->countL = 1;
-                dropouts++;
-              }
-
-              goto Skip_To_Next;
+              /* lower stub test */
+              if ( P_Left->offset == 0                 &&
+                   P_Right->next == P_Left             &&
+                   !( P_Left->flags & Overshoot_Bottom &&
+                      x2 - x1 >= ras.precision_half    ) )
+                goto Next_Pair;
             }
+
+            /* select the pixel to set and the other pixel */
+            if ( dropOutControl & 4 )
+            {
+              x2 = SMART( x1, x2 );
+              x1 = x1 > x2 ? x2 + ras.precision : x2 - ras.precision;
+            }
+            else
+            {
+              x2 = FLOOR  ( x2 );
+              x1 = CEILING( x1 );
+            }
+
+            P_Left ->X = x2;
+            P_Right->X = x1;
+
+            /* mark profile for drop-out processing */
+            P_Left->flags |= Dropout;
+            dropouts++;
           }
 
-          ras.Proc_Sweep_Span( RAS_VARS y, x1, x2, P_Left, P_Right );
+        Next_Pair:
+          P_Left  = P_Left->link;
+          P_Right = P_Right->link;
+        }
 
-        Skip_To_Next:
+        /* handle drop-outs _after_ the span drawing */
+        P_Left  = draw_left;
+        P_Right = draw_right;
+
+        while ( dropouts )
+        {
+          if ( P_Left->flags & Dropout )
+          {
+            ras.Proc_Sweep_Drop( RAS_VARS y, P_Left->X, P_Right->X );
+
+            P_Left->flags &= ~Dropout;
+            dropouts--;
+          }
 
           P_Left  = P_Left->link;
           P_Right = P_Right->link;
         }
 
-        /* handle drop-outs _after_ the span drawing --       */
-        /* drop-out processing has been moved out of the loop */
-        /* for performance tuning                             */
-        if ( dropouts > 0 )
-          goto Scan_DropOuts;
-
-      Next_Line:
-
         ras.Proc_Sweep_Step( RAS_VAR );
 
-        y++;
-
-        if ( y < y_change )
-        {
-          Sort( &draw_left  );
-          Sort( &draw_right );
-        }
+        Increment( &draw_left,   1 );
+        Increment( &draw_right, -1 );
       }
-
-      /* now finalize the profiles that need it */
-
-      P = draw_left;
-      while ( P )
-      {
-        Q = P->link;
-        if ( P->height == 0 )
-          DelOld( &draw_left, P );
-        P = Q;
-      }
-
-      P = draw_right;
-      while ( P )
-      {
-        Q = P->link;
-        if ( P->height == 0 )
-          DelOld( &draw_right, P );
-        P = Q;
-      }
-    }
-
-    /* for gray-scaling, flush the bitmap scanline cache */
-    while ( y <= max_Y )
-    {
-      ras.Proc_Sweep_Step( RAS_VAR );
-      y++;
-    }
-
-    return SUCCESS;
-
-  Scan_DropOuts:
-
-    P_Left  = draw_left;
-    P_Right = draw_right;
-
-    while ( P_Left && P_Right )
-    {
-      if ( P_Left->countL )
-      {
-        P_Left->countL = 0;
-#if 0
-        dropouts--;  /* -- this is useful when debugging only */
-#endif
-        ras.Proc_Sweep_Drop( RAS_VARS y,
-                                      P_Left->X,
-                                      P_Right->X,
-                                      P_Left,
-                                      P_Right );
-      }
-
-      P_Left  = P_Left->link;
-      P_Right = P_Right->link;
-    }
-
-    goto Next_Line;
-  }
-
-
-#ifdef STANDALONE_
-
-  /**************************************************************************
-   *
-   * The following functions should only compile in stand-alone mode,
-   * i.e., when building this component without the rest of FreeType.
-   *
-   */
-
-  /**************************************************************************
-   *
-   * @Function:
-   *   FT_Outline_Get_CBox
-   *
-   * @Description:
-   *   Return an outline's `control box'.  The control box encloses all
-   *   the outline's points, including Bézier control points.  Though it
-   *   coincides with the exact bounding box for most glyphs, it can be
-   *   slightly larger in some situations (like when rotating an outline
-   *   that contains Bézier outside arcs).
-   *
-   *   Computing the control box is very fast, while getting the bounding
-   *   box can take much more time as it needs to walk over all segments
-   *   and arcs in the outline.  To get the latter, you can use the
-   *   `ftbbox' component, which is dedicated to this single task.
-   *
-   * @Input:
-   *   outline ::
-   *     A pointer to the source outline descriptor.
-   *
-   * @Output:
-   *   acbox ::
-   *     The outline's control box.
-   *
-   * @Note:
-   *   See @FT_Glyph_Get_CBox for a discussion of tricky fonts.
-   */
-
-  static void
-  FT_Outline_Get_CBox( const FT_Outline*  outline,
-                       FT_BBox           *acbox )
-  {
-    Long  xMin, yMin, xMax, yMax;
-
-
-    if ( outline && acbox )
-    {
-      if ( outline->n_points == 0 )
-      {
-        xMin = 0;
-        yMin = 0;
-        xMax = 0;
-        yMax = 0;
-      }
-      else
-      {
-        FT_Vector*  vec   = outline->points;
-        FT_Vector*  limit = vec + outline->n_points;
-
-
-        xMin = xMax = vec->x;
-        yMin = yMax = vec->y;
-        vec++;
-
-        for ( ; vec < limit; vec++ )
-        {
-          Long  x, y;
-
-
-          x = vec->x;
-          if ( x < xMin ) xMin = x;
-          if ( x > xMax ) xMax = x;
-
-          y = vec->y;
-          if ( y < yMin ) yMin = y;
-          if ( y > yMax ) yMax = y;
-        }
-      }
-      acbox->xMin = xMin;
-      acbox->xMax = xMax;
-      acbox->yMin = yMin;
-      acbox->yMax = yMax;
+      while ( ++y < y_turn );
     }
   }
-
-#endif /* STANDALONE_ */
 
 
   /**************************************************************************
@@ -3039,63 +2449,62 @@
    *   Renderer error code.
    */
   static int
-  Render_Single_Pass( RAS_ARGS Bool  flipped )
+  Render_Single_Pass( RAS_ARGS Bool  flipped,
+                               Int   y_min,
+                               Int   y_max )
   {
-    Short  i, j, k;
+    Int  y_mid;
+    Int  band_top = 0;
+    Int  band_stack[32];  /* enough to bisect 32-bit int bands */
 
 
-    while ( ras.band_top >= 0 )
+    FT_TRACE6(( "%s pass [%d..%d]\n",
+                flipped ? "Horizontal" : "Vertical",
+                y_min, y_max ));
+
+    while ( 1 )
     {
-      ras.maxY = (Long)ras.band_stack[ras.band_top].y_max * ras.precision;
-      ras.minY = (Long)ras.band_stack[ras.band_top].y_min * ras.precision;
+      ras.minY = (Long)y_min * ras.precision;
+      ras.maxY = (Long)y_max * ras.precision;
 
-      ras.top = ras.buff;
-
-      ras.error = Raster_Err_None;
+      ras.error = Raster_Err_Ok;
 
       if ( Convert_Glyph( RAS_VARS flipped ) )
       {
-        if ( ras.error != Raster_Err_Overflow )
-          return FAILURE;
-
-        ras.error = Raster_Err_None;
+        if ( ras.error != Raster_Err_Raster_Overflow )
+          return ras.error;
 
         /* sub-banding */
 
-#ifdef DEBUG_RASTER
-        ClearBand( RAS_VARS TRUNC( ras.minY ), TRUNC( ras.maxY ) );
-#endif
+        if ( y_min == y_max )
+          return ras.error;  /* still Raster_Overflow */
 
-        i = ras.band_stack[ras.band_top].y_min;
-        j = ras.band_stack[ras.band_top].y_max;
+        FT_TRACE6(( "band [%d..%d]: to be bisected\n",
+                    y_min, y_max ));
 
-        k = (Short)( ( i + j ) / 2 );
+        y_mid = ( y_min + y_max ) >> 1;
 
-        if ( ras.band_top >= 7 || k < i )
-        {
-          ras.band_top = 0;
-          ras.error    = FT_THROW( Invalid );
-
-          return ras.error;
-        }
-
-        ras.band_stack[ras.band_top + 1].y_min = k;
-        ras.band_stack[ras.band_top + 1].y_max = j;
-
-        ras.band_stack[ras.band_top].y_max = (Short)( k - 1 );
-
-        ras.band_top++;
+        band_stack[band_top++] = y_min;
+        y_min                  = y_mid + 1;
       }
       else
       {
+        FT_TRACE6(( "band [%d..%d]: %hd profiles; %td bytes remaining\n",
+                    y_min, y_max, ras.num_Profs,
+                    (char*)ras.maxBuff - (char*)ras.top ));
+
         if ( ras.fProfile )
-          if ( Draw_Sweep( RAS_VAR ) )
-             return ras.error;
-        ras.band_top--;
+          Draw_Sweep( RAS_VAR );
+
+        if ( --band_top < 0 )
+          break;
+
+        y_max = y_min - 1;
+        y_min = band_stack[band_top];
       }
     }
 
-    return SUCCESS;
+    return Raster_Err_Ok;
   }
 
 
@@ -3114,74 +2523,53 @@
   Render_Glyph( RAS_ARG )
   {
     FT_Error  error;
+    Long      buffer[FT_MAX_BLACK_POOL];
 
+
+    ras.buff     = buffer;
+    ras.sizeBuff = (&buffer)[1]; /* Points to right after buffer. */
 
     Set_High_Precision( RAS_VARS ras.outline.flags &
                                  FT_OUTLINE_HIGH_PRECISION );
 
+    ras.dropOutControl = 0;
+
     if ( ras.outline.flags & FT_OUTLINE_IGNORE_DROPOUTS )
-      ras.dropOutControl = 2;
-    else
-    {
-      if ( ras.outline.flags & FT_OUTLINE_SMART_DROPOUTS )
-        ras.dropOutControl = 4;
-      else
-        ras.dropOutControl = 0;
+      ras.dropOutControl |= 2;
 
-      if ( !( ras.outline.flags & FT_OUTLINE_INCLUDE_STUBS ) )
-        ras.dropOutControl += 1;
-    }
+    if ( ras.outline.flags & FT_OUTLINE_SMART_DROPOUTS )
+      ras.dropOutControl |= 4;
 
-    ras.second_pass = (Bool)( !( ras.outline.flags      &
-                                 FT_OUTLINE_SINGLE_PASS ) );
+    if ( !( ras.outline.flags & FT_OUTLINE_INCLUDE_STUBS ) )
+      ras.dropOutControl |= 1;
+
+    FT_TRACE6(( "BW Raster: precision 1/%d, dropout mode %d\n",
+                ras.precision, ras.dropOutControl ));
 
     /* Vertical Sweep */
-    FT_TRACE7(( "Vertical pass (ftraster)\n" ));
-
     ras.Proc_Sweep_Init = Vertical_Sweep_Init;
     ras.Proc_Sweep_Span = Vertical_Sweep_Span;
     ras.Proc_Sweep_Drop = Vertical_Sweep_Drop;
     ras.Proc_Sweep_Step = Vertical_Sweep_Step;
 
-    ras.band_top            = 0;
-    ras.band_stack[0].y_min = 0;
-    ras.band_stack[0].y_max = (Short)( ras.target.rows - 1 );
-
-    ras.bWidth  = (UShort)ras.target.width;
-    ras.bOrigin = (Byte*)ras.target.buffer;
-
-    if ( ras.target.pitch > 0 )
-      ras.bOrigin += (Long)( ras.target.rows - 1 ) * ras.target.pitch;
-
-    if ( ( error = Render_Single_Pass( RAS_VARS 0 ) ) != 0 )
+    error = Render_Single_Pass( RAS_VARS 0, 0, ras.bTop );
+    if ( error )
       return error;
 
     /* Horizontal Sweep */
-    if ( ras.second_pass && ras.dropOutControl != 2 )
+    if ( !( ras.outline.flags & FT_OUTLINE_SINGLE_PASS ) )
     {
-      FT_TRACE7(( "Horizontal pass (ftraster)\n" ));
-
       ras.Proc_Sweep_Init = Horizontal_Sweep_Init;
       ras.Proc_Sweep_Span = Horizontal_Sweep_Span;
       ras.Proc_Sweep_Drop = Horizontal_Sweep_Drop;
       ras.Proc_Sweep_Step = Horizontal_Sweep_Step;
 
-      ras.band_top            = 0;
-      ras.band_stack[0].y_min = 0;
-      ras.band_stack[0].y_max = (Short)( ras.target.width - 1 );
-
-      if ( ( error = Render_Single_Pass( RAS_VARS 1 ) ) != 0 )
+      error = Render_Single_Pass( RAS_VARS 1, 0, ras.bRight );
+      if ( error )
         return error;
     }
 
-    return Raster_Err_None;
-  }
-
-
-  static void
-  ft_black_init( black_PRaster  raster )
-  {
-    FT_UNUSED( raster );
+    return Raster_Err_Ok;
   }
 
 
@@ -3202,7 +2590,6 @@
 
      *araster = (FT_Raster)&the_raster;
      FT_ZERO( &the_raster );
-     ft_black_init( &the_raster );
 
      return 0;
   }
@@ -3220,30 +2607,30 @@
 
 
   static int
-  ft_black_new( FT_Memory       memory,
-                black_PRaster  *araster )
+  ft_black_new( void*       memory_,    /* FT_Memory     */
+                FT_Raster  *araster_ )  /* black_PRaster */
   {
+    FT_Memory       memory = (FT_Memory)memory_;
+    black_PRaster  *araster = (black_PRaster*)araster_;
+
     FT_Error       error;
     black_PRaster  raster = NULL;
 
 
-    *araster = 0;
     if ( !FT_NEW( raster ) )
-    {
       raster->memory = memory;
-      ft_black_init( raster );
 
-      *araster = raster;
-    }
+    *araster = raster;
 
     return error;
   }
 
 
   static void
-  ft_black_done( black_PRaster  raster )
+  ft_black_done( FT_Raster  raster_ )   /* black_PRaster */
   {
-    FT_Memory  memory = (FT_Memory)raster->memory;
+    black_PRaster  raster = (black_PRaster)raster_;
+    FT_Memory      memory = (FT_Memory)raster->memory;
 
 
     FT_FREE( raster );
@@ -3288,48 +2675,48 @@
     black_TWorker  worker[1];
 #endif
 
-    Long  buffer[FT_MAX_BLACK_POOL];
-
 
     if ( !raster )
-      return FT_THROW( Not_Ini );
+      return FT_THROW( Raster_Uninitialized );
 
     if ( !outline )
-      return FT_THROW( Invalid );
+      return FT_THROW( Invalid_Outline );
 
     /* return immediately if the outline is empty */
-    if ( outline->n_points == 0 || outline->n_contours <= 0 )
-      return Raster_Err_None;
+    if ( outline->n_points == 0 || outline->n_contours == 0 )
+      return Raster_Err_Ok;
 
     if ( !outline->contours || !outline->points )
-      return FT_THROW( Invalid );
+      return FT_THROW( Invalid_Outline );
 
     if ( outline->n_points !=
            outline->contours[outline->n_contours - 1] + 1 )
-      return FT_THROW( Invalid );
+      return FT_THROW( Invalid_Outline );
 
     /* this version of the raster does not support direct rendering, sorry */
-    if ( params->flags & FT_RASTER_FLAG_DIRECT )
-      return FT_THROW( Unsupported );
-
-    if ( params->flags & FT_RASTER_FLAG_AA )
-      return FT_THROW( Unsupported );
+    if ( params->flags & FT_RASTER_FLAG_DIRECT ||
+         params->flags & FT_RASTER_FLAG_AA     )
+      return FT_THROW( Cannot_Render_Glyph );
 
     if ( !target_map )
-      return FT_THROW( Invalid );
+      return FT_THROW( Invalid_Argument );
 
     /* nothing to do */
     if ( !target_map->width || !target_map->rows )
-      return Raster_Err_None;
+      return Raster_Err_Ok;
 
     if ( !target_map->buffer )
-      return FT_THROW( Invalid );
+      return FT_THROW( Invalid_Argument );
 
     ras.outline = *outline;
-    ras.target  = *target_map;
 
-    ras.buff     = buffer;
-    ras.sizeBuff = (&buffer)[1]; /* Points to right after buffer. */
+    ras.bTop    =   (Int)target_map->rows - 1;
+    ras.bRight  =   (Int)target_map->width - 1;
+    ras.bPitch  =   (Int)target_map->pitch;
+    ras.bOrigin = (PByte)target_map->buffer;
+
+    if ( ras.bPitch > 0 )
+      ras.bOrigin += ras.bTop * ras.bPitch;
 
     return Render_Glyph( RAS_VAR );
   }
@@ -3340,11 +2727,11 @@
 
     FT_GLYPH_FORMAT_OUTLINE,
 
-    (FT_Raster_New_Func)     ft_black_new,       /* raster_new      */
-    (FT_Raster_Reset_Func)   ft_black_reset,     /* raster_reset    */
-    (FT_Raster_Set_Mode_Func)ft_black_set_mode,  /* raster_set_mode */
-    (FT_Raster_Render_Func)  ft_black_render,    /* raster_render   */
-    (FT_Raster_Done_Func)    ft_black_done       /* raster_done     */
+    ft_black_new,       /* FT_Raster_New_Func      raster_new      */
+    ft_black_reset,     /* FT_Raster_Reset_Func    raster_reset    */
+    ft_black_set_mode,  /* FT_Raster_Set_Mode_Func raster_set_mode */
+    ft_black_render,    /* FT_Raster_Render_Func   raster_render   */
+    ft_black_done       /* FT_Raster_Done_Func     raster_done     */
   )
 
 

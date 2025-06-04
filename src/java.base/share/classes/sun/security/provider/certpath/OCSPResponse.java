@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ import java.util.Set;
 import javax.security.auth.x500.X500Principal;
 
 import sun.security.util.HexDumpEncoder;
-import sun.security.action.GetIntegerAction;
 import sun.security.x509.*;
 import sun.security.util.*;
 
@@ -129,7 +128,8 @@ public final class OCSPResponse {
         UNUSED,                // is not used
         SIG_REQUIRED,          // Must sign the request
         UNAUTHORIZED           // Request unauthorized
-    };
+    }
+
     private static final ResponseStatus[] rsvalues = ResponseStatus.values();
 
     private static final Debug debug = Debug.getInstance("certpath");
@@ -160,9 +160,7 @@ public final class OCSPResponse {
      * value is negative, set the skew to the default.
      */
     private static int initializeClockSkew() {
-        @SuppressWarnings("removal")
-        Integer tmp = java.security.AccessController.doPrivileged(
-                new GetIntegerAction("com.sun.security.ocsp.clockSkew"));
+        Integer tmp = Integer.getInteger("com.sun.security.ocsp.clockSkew");
         if (tmp == null || tmp < 0) {
             return DEFAULT_MAX_CLOCK_SKEW;
         }
@@ -171,7 +169,7 @@ public final class OCSPResponse {
         return tmp * 1000;
     }
 
-    // an array of all of the CRLReasons (used in SingleResponse)
+    // an array of all the CRLReasons (used in SingleResponse)
     private static final CRLReason[] values = CRLReason.values();
 
     private final ResponseStatus responseStatus;
@@ -180,7 +178,7 @@ public final class OCSPResponse {
     private final byte[] signature;
     private final byte[] tbsResponseData;
     private final byte[] responseNonce;
-    private List<X509CertImpl> certs;
+    private final List<X509CertImpl> certs;
     private X509CertImpl signerCert = null;
     private final ResponderId respId;
     private Date producedAtDate = null;
@@ -218,7 +216,7 @@ public final class OCSPResponse {
         if (responseStatus != ResponseStatus.SUCCESSFUL) {
             // no need to continue, responseBytes are not set.
             singleResponseMap = Collections.emptyMap();
-            certs = new ArrayList<X509CertImpl>();
+            certs = new ArrayList<>();
             sigAlgId = null;
             signature = null;
             tbsResponseData = null;
@@ -243,7 +241,7 @@ public final class OCSPResponse {
         // responseType
         derIn = tmp.data;
         ObjectIdentifier responseType = derIn.getOID();
-        if (responseType.equals((Object)OCSP_BASIC_RESPONSE_OID)) {
+        if (responseType.equals(OCSP_BASIC_RESPONSE_OID)) {
             if (debug != null) {
                 debug.println("OCSP response type: basic");
             }
@@ -307,7 +305,7 @@ public final class OCSPResponse {
 
         // responses
         DerValue[] singleResponseDer = seqDerIn.getSequence(1);
-        singleResponseMap = new HashMap<>(singleResponseDer.length);
+        singleResponseMap = HashMap.newHashMap(singleResponseDer.length);
         if (debug != null) {
             debug.println("OCSP number of SingleResponses: "
                           + singleResponseDer.length);
@@ -351,11 +349,11 @@ public final class OCSPResponse {
                     "OCSP response: expected ASN.1 context specific tag 0.");
             }
             DerValue[] derCerts = seqCert.getData().getSequence(3);
-            certs = new ArrayList<X509CertImpl>(derCerts.length);
+            certs = new ArrayList<>(derCerts.length);
             try {
                 for (int i = 0; i < derCerts.length; i++) {
                     X509CertImpl cert =
-                        new X509CertImpl(derCerts[i].toByteArray());
+                        X509CertImpl.newX509CertImpl(derCerts[i].toByteArray());
                     certs.add(cert);
 
                     if (debug != null) {
@@ -367,7 +365,7 @@ public final class OCSPResponse {
                 throw new IOException("Bad encoding in X509 Certificate", ce);
             }
         } else {
-            certs = new ArrayList<X509CertImpl>();
+            certs = new ArrayList<>();
         }
     }
 
@@ -390,7 +388,7 @@ public final class OCSPResponse {
                                                      responseStatus);
         }
 
-        // Check that the response includes a response for all of the
+        // Check that the response includes a response for all the
         // certs that were supplied in the request
         for (CertId certId : certIds) {
             SingleResponse sr = getSingleResponse(certId);
@@ -404,7 +402,8 @@ public final class OCSPResponse {
             }
             if (debug != null) {
                 debug.println("Status of certificate (with serial number " +
-                    certId.getSerialNumber() + ") is: " + sr.getCertStatus());
+                    Debug.toString(certId.getSerialNumber()) +
+                    ") is: " + sr.getCertStatus());
             }
         }
 
@@ -439,7 +438,7 @@ public final class OCSPResponse {
                     // This will match if the SKID is encoded using the 160-bit
                     // SHA-1 hash method as defined in RFC 5280.
                     KeyIdentifier certKeyId = cert.getSubjectKeyId();
-                    if (certKeyId != null && ridKeyId.equals(certKeyId)) {
+                    if (ridKeyId.equals(certKeyId)) {
                         signerCert = cert;
                         break;
                     } else {
@@ -511,7 +510,7 @@ public final class OCSPResponse {
                         new AlgorithmChecker(issuerInfo.getAnchor(), date,
                                 variant);
                 algChecker.init(false);
-                algChecker.check(signerCert, Collections.<String>emptySet());
+                algChecker.check(signerCert, Collections.emptySet());
 
                 // check the validity
                 try {
@@ -699,7 +698,7 @@ public final class OCSPResponse {
      * Get the {@code ResponderId} from this {@code OCSPResponse}
      *
      * @return the {@code ResponderId} from this response or {@code null}
-     *      if no responder ID is in the body of the response (e.g. a
+     *      if no responder ID is in the body of the response, e.g. a
      *      response with a status other than SUCCESS.
      */
     public ResponderId getResponderId() {
@@ -751,7 +750,7 @@ public final class OCSPResponse {
         parseExtensions(DerValue derVal) throws IOException {
         DerValue[] extDer = derVal.data.getSequence(3);
         Map<String, java.security.cert.Extension> extMap =
-                new HashMap<>(extDer.length);
+                HashMap.newHashMap(extDer.length);
 
         for (DerValue extDerVal : extDer) {
             Extension ext = new Extension(extDerVal);
@@ -1071,11 +1070,9 @@ public final class OCSPResponse {
          */
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append("Issuer Info:\n");
-            sb.append("Name: ").append(name.toString()).append("\n");
-            sb.append("Public Key:\n").append(pubKey.toString()).append("\n");
-            return sb.toString();
+            return "Issuer Info:\n" +
+                    "Name: " + name.toString() + "\n" +
+                    "Public Key:\n" + pubKey.toString() + "\n";
         }
     }
 }

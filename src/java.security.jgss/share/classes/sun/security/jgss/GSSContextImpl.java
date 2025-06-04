@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ public class GSSContextImpl implements GSSContext {
     public GSSContextImpl(GSSManagerImpl gssManager, GSSName peer, Oid mech,
                           GSSCredential myCred, int lifetime)
         throws GSSException {
-        if ((peer == null) || !(peer instanceof GSSNameImpl)) {
+        if (!(peer instanceof GSSNameImpl)) {
             throw new GSSException(GSSException.BAD_NAME);
         }
         if (mech == null) mech = ProviderList.DEFAULT_MECH_OID;
@@ -182,7 +182,7 @@ public class GSSContextImpl implements GSSContext {
         this.mechOid = mechCtxt.getMech();
     }
 
-    public byte[] initSecContext(byte inputBuf[], int offset, int len)
+    public byte[] initSecContext(byte[] inputBuf, int offset, int len)
         throws GSSException {
         /*
          * Size of ByteArrayOutputStream will double each time that extra
@@ -206,7 +206,7 @@ public class GSSContextImpl implements GSSContext {
                                    "Illegal call to initSecContext");
         }
 
-        GSSHeader gssHeader = null;
+        GSSHeader gssHeader;
         int inTokenLen = -1;
         GSSCredentialSpi credElement = null;
         boolean firstToken = false;
@@ -292,7 +292,7 @@ public class GSSContextImpl implements GSSContext {
         }
     }
 
-    public byte[] acceptSecContext(byte inTok[], int offset, int len)
+    public byte[] acceptSecContext(byte[] inTok, int offset, int len)
         throws GSSException {
 
         /*
@@ -315,7 +315,7 @@ public class GSSContextImpl implements GSSContext {
                                        "Illegal call to acceptSecContext");
         }
 
-        GSSHeader gssHeader = null;
+        GSSHeader gssHeader;
         int inTokenLen = -1;
         GSSCredentialSpi credElement = null;
 
@@ -361,14 +361,13 @@ public class GSSContextImpl implements GSSContext {
             byte[] obuf = mechCtxt.acceptSecContext(inStream, inTokenLen);
 
             if (obuf != null) {
-                int retVal = obuf.length;
                 if (mechCtxt.getProvider().getName().equals("SunNativeGSS") ||
                     (GSSUtil.isSpNegoMech(mechOid))) {
                     // do not add GSS header for native provider and SPNEGO
                 } else {
                     // add GSS header
                     gssHeader = new GSSHeader(objId, obuf.length);
-                    retVal += gssHeader.encode(outStream);
+                    gssHeader.encode(outStream);
                 }
                 outStream.write(obuf);
             }
@@ -398,7 +397,7 @@ public class GSSContextImpl implements GSSContext {
                                   "No mechanism context yet!");
     }
 
-    public byte[] wrap(byte inBuf[], int offset, int len,
+    public byte[] wrap(byte[] inBuf, int offset, int len,
                        MessageProp msgProp) throws GSSException {
         if (mechCtxt != null)
             return mechCtxt.wrap(inBuf, offset, len, msgProp);

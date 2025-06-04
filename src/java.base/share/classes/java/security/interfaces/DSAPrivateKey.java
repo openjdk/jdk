@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,14 +52,26 @@ public interface DSAPrivateKey extends DSAKey, java.security.PrivateKey {
     * ineffectual. Do not use; no replacement.
     */
     @Deprecated
-    @SuppressWarnings("serial")
     @java.io.Serial
-    static final long serialVersionUID = 7776497482533790279L;
+   long serialVersionUID = 7776497482533790279L;
 
     /**
      * Returns the value of the private key, {@code x}.
      *
      * @return the value of the private key, {@code x}.
      */
-    public BigInteger getX();
+    BigInteger getX();
+
+    /**
+     * {@inheritDoc java.security.AsymmetricKey}
+     *
+     * @implSpec
+     * The default implementation returns {@code null}.
+     *
+     * @return {@inheritDoc java.security.AsymmetricKey}
+     */
+    @Override
+    default DSAParams getParams() {
+        return null;
+    }
 }

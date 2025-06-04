@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.spec.AlgorithmParameterSpec;
+import javax.crypto.KDF;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.net.ssl.SSLHandshakeException;
 import sun.security.ssl.CipherSuite.HashAlg;
 
@@ -41,7 +43,7 @@ final class SSLSecretDerivation implements SSLKeyDerivation {
      *     Derive-Secret(Secret, Label, Messages) =
      *          HKDF-Expand-Label(..., Transcript-Hash(""), ...);
      *
-     * Hardcode tha Transcript-Hash("") result and skip a digest operation.
+     * Hardcode the Transcript-Hash("") result and skip a digest operation.
      */
     private static final byte[] sha256EmptyDigest = new byte[] {
         (byte)0xE3, (byte)0xB0, (byte)0xC4, (byte)0x42,
@@ -87,9 +89,8 @@ final class SSLSecretDerivation implements SSLKeyDerivation {
     }
 
     @Override
-    public SecretKey deriveKey(String algorithm,
-            AlgorithmParameterSpec params) throws IOException {
-        SecretSchedule ks = SecretSchedule.valueOf(algorithm);
+    public SecretKey deriveKey(String type) throws IOException {
+        SecretSchedule ks = SecretSchedule.valueOf(type);
         try {
             byte[] expandContext;
             if (ks == SecretSchedule.TlsSaltSecret) {
@@ -102,19 +103,18 @@ final class SSLSecretDerivation implements SSLKeyDerivation {
                     // get supported in the future.
                     throw new SSLHandshakeException(
                             "Unexpected unsupported hash algorithm: " +
-                            algorithm);
+                            hashAlg);
                 }
             } else {
                 expandContext = transcriptHash;
             }
+            KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
             byte[] hkdfInfo = createHkdfInfo(ks.label,
                     expandContext, hashAlg.hashLength);
-
-            HKDF hkdf = new HKDF(hashAlg.name);
-            return hkdf.expand(secret, hkdfInfo, hashAlg.hashLength, algorithm);
+            return hkdf.deriveKey(type, HKDFParameterSpec.expandOnly(
+                    secret, hkdfInfo, hashAlg.hashLength));
         } catch (GeneralSecurityException gse) {
-            throw (SSLHandshakeException) new SSLHandshakeException(
-                "Could not generate secret").initCause(gse);
+            throw new SSLHandshakeException("Could not generate secret", gse);
         }
     }
 

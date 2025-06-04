@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
 // internally work with a number of regions instead. So, some rounding
 // will occur.
 //
-// If nothing related to the the young gen size is set on the command
+// If nothing related to the young gen size is set on the command
 // line we should allow the young gen to be between G1NewSizePercent
 // and G1MaxNewSizePercent of the heap size. This means that every time
 // the heap size changes, the limits for the young gen size will be

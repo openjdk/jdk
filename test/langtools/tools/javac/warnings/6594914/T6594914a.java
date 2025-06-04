@@ -1,7 +1,7 @@
 /**
  * @test /nodynamiccopyright/
  * @bug 6594914
- * @summary \\@SuppressWarnings("deprecation") does not not work for the type of a variable
+ * @summary \\@SuppressWarnings("deprecation") does not work for the type of a variable
  * @compile/ref=T6594914a.out -XDrawDiagnostics -Xlint:deprecation T6594914a.java
  */
 

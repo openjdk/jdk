@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import jdk.test.lib.jfr.TestClassLoader;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @modules java.base/jdk.internal.misc
@@ -116,7 +116,7 @@ public class TestClassLoadingStatisticsEvent {
         recording.stop();
         List<RecordedEvent> events = Events.fromRecording(recording);
         Asserts.assertFalse(events.isEmpty(), "No events in recording");
-        RecordedEvent event = events.get(0);
+        RecordedEvent event = events.getFirst();
         return event;
     }
 

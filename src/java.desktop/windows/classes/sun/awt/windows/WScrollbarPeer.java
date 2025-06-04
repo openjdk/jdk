@@ -30,11 +30,12 @@ import java.awt.event.AdjustmentEvent;
 
 final class WScrollbarPeer extends WComponentPeer implements ScrollbarPeer {
 
-    // Returns width for vertial scrollbar as SM_CXHSCROLL,
+    // Returns width for vertical scrollbar as SM_CXHSCROLL,
     // height for horizontal scrollbar as SM_CYVSCROLL
     static native int getScrollbarSize(int orientation);
 
     // ComponentPeer overrides
+    @Override
     public Dimension getMinimumSize() {
         if (((Scrollbar)target).getOrientation() == Scrollbar.VERTICAL) {
             return new Dimension(getScrollbarSize(Scrollbar.VERTICAL), 50);
@@ -46,9 +47,12 @@ final class WScrollbarPeer extends WComponentPeer implements ScrollbarPeer {
 
     // ScrollbarPeer implementation
 
+    @Override
     public native void setValues(int value, int visible,
                                  int minimum, int maximum);
+    @Override
     public native void setLineIncrement(int l);
+    @Override
     public native void setPageIncrement(int l);
 
 
@@ -58,8 +62,10 @@ final class WScrollbarPeer extends WComponentPeer implements ScrollbarPeer {
         super(target);
     }
 
+    @Override
     native void create(WComponentPeer parent);
 
+    @Override
     void initialize() {
         Scrollbar sb = (Scrollbar)target;
         setValues(sb.getValue(), sb.getVisibleAmount(),
@@ -136,6 +142,7 @@ final class WScrollbarPeer extends WComponentPeer implements ScrollbarPeer {
         });
     }
 
+    @Override
     public boolean shouldClearRectBeforePaint() {
         return false;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package com.apple.laf;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.KeyboardFocusManager;
-import java.security.PrivilegedAction;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -55,6 +54,8 @@ import javax.swing.plaf.basic.BasicLookAndFeel;
 
 import apple.laf.JRSUIControl;
 import apple.laf.JRSUIUtils;
+import sun.swing.AltProcessor;
+import sun.swing.MnemonicHandler;
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
 
@@ -152,29 +153,19 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      * @see #uninitialize
      * @see UIManager#setLookAndFeel
      */
-    @SuppressWarnings("removal")
+    @SuppressWarnings("restricted")
     public void initialize() {
-        java.security.AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("osxui");
-                    return null;
-                }
-            });
-
-        java.security.AccessController.doPrivileged(new PrivilegedAction<Void>(){
-            @Override
-            public Void run() {
-                JRSUIControl.initJRSUI();
-                return null;
-            }
-        });
+        System.loadLibrary("osxui");
+        JRSUIControl.initJRSUI();
 
         super.initialize();
         final ScreenPopupFactory spf = new ScreenPopupFactory();
         spf.setActive(true);
         PopupFactory.setSharedInstance(spf);
 
-        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(AquaMnemonicHandler.getInstance());
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .addKeyEventPostProcessor(AltProcessor.getInstance());
+        MnemonicHandler.setMnemonicHidden(true);
     }
 
     /**
@@ -185,7 +176,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      * @see #initialize
      */
     public void uninitialize() {
-        KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventPostProcessor(AquaMnemonicHandler.getInstance());
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .removeKeyEventPostProcessor(AltProcessor.getInstance());
 
         final PopupFactory popupFactory = PopupFactory.getSharedInstance();
         if (popupFactory instanceof ScreenPopupFactory spf) {
@@ -387,6 +379,9 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
         final Color focusRingColor = AquaImageFactory.getFocusRingColorUIResource();
         final Border focusCellHighlightBorder = new BorderUIResource.LineBorderUIResource(focusRingColor);
+
+        // for table cell highlighter
+        final Color cellFocusRingColor = AquaImageFactory.getCellHighlightColorUIResource();
 
         final Color windowBackgroundColor = AquaImageFactory.getWindowBackgroundColorUIResource();
         final Color panelBackgroundColor = windowBackgroundColor;
@@ -694,7 +689,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "MenuItem.selectedBackgroundPainter",(LazyValue) t -> AquaMenuPainter.getSelectedMenuItemPainter(),
 
             // *** OptionPane
-            // You can additionaly define OptionPane.messageFont which will
+            // You can additionally define OptionPane.messageFont which will
             // dictate the fonts used for the message, and
             // OptionPane.buttonFont, which defines the font for the buttons.
             "OptionPane.font", alertHeaderFont,
@@ -889,7 +884,9 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Table.gridColor", white, // grid line color
             "Table.focusCellBackground", textHighlightText,
             "Table.focusCellForeground", textHighlight,
-            "Table.focusCellHighlightBorder", focusCellHighlightBorder,
+            "Table.cellFocusRing", cellFocusRingColor,
+            "Table.focusCellHighlightBorder", new BorderUIResource.LineBorderUIResource(
+                    deriveProminentFocusRing(cellFocusRingColor), 2),
             "Table.scrollPaneBorder", scollListBorder,
 
             "Table.ancestorInputMap", aquaKeyBindings.getTableInputMap(),
@@ -1121,5 +1118,62 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "ViewportUI", basicPackageName + "BasicViewportUI",
         };
         table.putDefaults(uiDefaults);
+    }
+
+    /**
+     * Returns a new cell focus ring color by changing saturation
+     * and setting the brightness to 100% for incoming cellFocusRing.
+     *
+     * If the incoming cellFocusRingColor is equal to white/black/grayish,
+     * the returned cellFocusRingColor is Light Gray. For all other colors,
+     * new cellFocusRingColor (in the latter case), is obtained by adjusting
+     * the saturation levels and setting the brightness to 100% of the
+     * incoming cellFocusRingColor.
+     *
+     * @param cellFocusRingColor - the {@code Color} object
+     * @return the {@code Color} object corresponding to new HSB values
+     */
+    static Color deriveProminentFocusRing(Color cellFocusRingColor) {
+
+        // define constants
+        float satLowerValue = 0.30f;
+        float satUpperValue = 1.0f;
+
+        // saturation threshold for grayish colors
+        float satGrayScale = 0.10f;
+
+        // used to compare with saturation value of original focus ring and
+        // set it to either lower or upper saturation value
+        float saturationThreshold = 0.5f;
+
+        // brightness always set to 100%
+        float brightnessValue = 1.0f;
+
+        float[] hsbValues = new float[3];
+
+        int redValue = cellFocusRingColor.getRed();
+        int greenValue = cellFocusRingColor.getGreen();
+        int blueValue = cellFocusRingColor.getBlue();
+
+        Color.RGBtoHSB(redValue, greenValue, blueValue, hsbValues);
+
+        // if cellFocusRing is White/Black/Grayish
+        if ((hsbValues[0] == 0 && hsbValues[1] == 0)
+                || hsbValues[1] <= satGrayScale) {
+            return Color.LIGHT_GRAY;
+        }
+
+        // if cellFocusRing color NOT White/Black/Grayish
+        // saturation adjustment - saturation set to either lower or
+        // upper saturation value based on current saturation level
+        hsbValues[1] = hsbValues[1] >= saturationThreshold ?
+                    satLowerValue : satUpperValue;
+
+        // brightness adjustment - brightness set to 100%, always return the
+        // brightest color for the new color
+        hsbValues[2] = brightnessValue;
+
+        //create and return color corresponding to new hsbValues
+        return Color.getHSBColor(hsbValues[0], hsbValues[1], hsbValues[2]);
     }
 }

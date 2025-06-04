@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,8 +76,6 @@ public class COFFFileParser {
       // a bug if there is one. (FIXME)
       //   buf.order(ByteOrder.nativeOrder());
       return parse(new MappedByteBufferDataSource(buf));
-    } catch (FileNotFoundException e) {
-      throw new COFFException(e);
     } catch (IOException e) {
       throw new COFFException(e);
     }

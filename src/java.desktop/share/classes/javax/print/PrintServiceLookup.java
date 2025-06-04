@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,19 +49,6 @@ import sun.awt.AppContext;
  * methods are implemented by a service provider in a subclass and the
  * unification of the results from all installed lookup classes are reported by
  * the static methods of this class when called by the application.
- * <p>
- * A {@code PrintServiceLookup} implementor is recommended to check for the
- * {@code SecurityManager.checkPrintJobAccess()} to deny access to untrusted
- * code. Following this recommended policy means that untrusted code may not be
- * able to locate any print services. Downloaded applets are the most common
- * example of untrusted code.
- * <p>
- * This check is made on a per lookup service basis to allow flexibility in the
- * policy to reflect the needs of different lookup services.
- * <p>
- * Services which are registered by {@link #registerService(PrintService)} will
- * not be included in lookup results if a security manager is installed and its
- * {@code checkPrintJobAccess()} method denies access.
  */
 public abstract class PrintServiceLookup {
 
@@ -348,7 +335,6 @@ public abstract class PrintServiceLookup {
      *
      * @return all lookup services for this environment
      */
-    @SuppressWarnings("removal")
     private static ArrayList<PrintServiceLookup> getAllLookupServices() {
         synchronized (PrintServiceLookup.class) {
             ArrayList<PrintServiceLookup> listOfLookupServices = getListOfLookupServices();
@@ -357,32 +343,11 @@ public abstract class PrintServiceLookup {
             } else {
                 listOfLookupServices = initListOfLookupServices();
             }
-            try {
-                java.security.AccessController.doPrivileged(
-                     new java.security.PrivilegedExceptionAction<Object>() {
-                        public Object run() {
-                            Iterator<PrintServiceLookup> iterator =
-                                ServiceLoader.load(PrintServiceLookup.class).
-                                iterator();
-                            ArrayList<PrintServiceLookup> los = getListOfLookupServices();
-                            while (iterator.hasNext()) {
-                                try {
-                                    los.add(iterator.next());
-                                }  catch (ServiceConfigurationError err) {
-                                    /* In the applet case, we continue */
-                                    if (System.getSecurityManager() != null) {
-                                        err.printStackTrace();
-                                    } else {
-                                        throw err;
-                                    }
-                                }
-                            }
-                            return null;
-                        }
-                });
-            } catch (java.security.PrivilegedActionException e) {
+            Iterator<PrintServiceLookup> iterator = ServiceLoader.load(PrintServiceLookup.class).iterator();
+            ArrayList<PrintServiceLookup> los = getListOfLookupServices();
+            while (iterator.hasNext()) {
+                los.add(iterator.next());
             }
-
             return listOfLookupServices;
         }
     }
@@ -428,16 +393,7 @@ public abstract class PrintServiceLookup {
         /*
          * add any directly registered services
          */
-        ArrayList<PrintService> registeredServices = null;
-        try {
-          @SuppressWarnings("removal")
-          SecurityManager security = System.getSecurityManager();
-          if (security != null) {
-            security.checkPrintJobAccess();
-          }
-          registeredServices = getRegisteredServices();
-        } catch (SecurityException se) {
-        }
+        ArrayList<PrintService> registeredServices = getRegisteredServices();
         if (registeredServices != null) {
             PrintService[] services = registeredServices.toArray(
                            new PrintService[registeredServices.size()]);
@@ -493,16 +449,7 @@ public abstract class PrintServiceLookup {
         /*
          * add any directly registered services
          */
-        ArrayList<PrintService> registeredServices = null;
-        try {
-          @SuppressWarnings("removal")
-          SecurityManager security = System.getSecurityManager();
-          if (security != null) {
-            security.checkPrintJobAccess();
-          }
-          registeredServices = getRegisteredServices();
-        } catch (Exception e) {
-        }
+        ArrayList<PrintService> registeredServices = getRegisteredServices();
         if (registeredServices != null) {
             PrintService[] services =
                 registeredServices.toArray(new PrintService[registeredServices.size()]);

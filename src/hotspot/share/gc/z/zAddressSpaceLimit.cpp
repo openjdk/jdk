@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,14 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zAddressSpaceLimit.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
+#include "utilities/ostream.hpp"
 
 static size_t address_space_limit() {
   size_t limit = 0;
@@ -40,14 +41,18 @@ static size_t address_space_limit() {
   return SIZE_MAX;
 }
 
-size_t ZAddressSpaceLimit::mark_stack() {
-  // Allow mark stacks to occupy 10% of the address space
-  const size_t limit = address_space_limit() / 10;
-  return align_up(limit, ZMarkStackSpaceExpandSize);
+size_t ZAddressSpaceLimit::heap() {
+  // Allow the heap to occupy 50% of the address space
+  const size_t limit = address_space_limit() / MaxVirtMemFraction;
+  return align_up(limit, ZGranuleSize);
 }
 
-size_t ZAddressSpaceLimit::heap_view() {
-  // Allow all heap views to occupy 50% of the address space
-  const size_t limit = address_space_limit() / MaxVirtMemFraction / ZHeapViews;
-  return align_up(limit, ZGranuleSize);
+void ZAddressSpaceLimit::print_limits() {
+  const size_t limit = address_space_limit();
+
+  if (limit == SIZE_MAX) {
+    log_info_p(gc, init)("Address Space Size: unlimited");
+  } else {
+    log_info_p(gc, init)("Address Space Size: limited (" EXACTFMT ")", EXACTFMTARGS(limit));
+  }
 }

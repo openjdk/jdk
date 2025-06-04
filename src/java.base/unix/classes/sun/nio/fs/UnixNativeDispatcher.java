@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package sun.nio.fs;
+
+import java.util.function.Function;
 
 /**
  * Unix system and library calls.
@@ -63,11 +65,8 @@ class UnixNativeDispatcher {
      * int open(const char* path, int oflag, mode_t mode)
      */
     static int open(UnixPath path, int flags, int mode) throws UnixException {
-        NativeBuffer buffer = copyToNativeBuffer(path);
-        try {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             return open0(buffer.address(), flags, mode);
-        } finally {
-            buffer.release();
         }
     }
     private static native int open0(long pathAddress, int flags, int mode)
@@ -77,11 +76,8 @@ class UnixNativeDispatcher {
      * int openat(int dfd, const char* path, int oflag, mode_t mode)
      */
     static int openat(int dfd, byte[] path, int flags, int mode) throws UnixException {
-        NativeBuffer buffer = NativeBuffers.asNativeBuffer(path);
-        try {
+        try (NativeBuffer buffer = NativeBuffers.asNativeBuffer(path)) {
             return openat0(dfd, buffer.address(), flags, mode);
-        } finally {
-            buffer.release();
         }
     }
     private static native int openat0(int dfd, long pathAddress, int flags, int mode)
@@ -90,12 +86,30 @@ class UnixNativeDispatcher {
     /**
      * close(int filedes). If fd is -1 this is a no-op.
      */
-    static void close(int fd) {
+    static void close(int fd) throws UnixException {
         if (fd != -1) {
             close0(fd);
         }
     }
-    private static native void close0(int fd);
+    private static native void close0(int fd) throws UnixException;
+
+    /**
+     * close(fd). If close fails then the given exception supplier function is
+     * invoked to produce an exception to throw. If the function returns null
+     * then no exception is thrown. If close fails and the exception supplier
+     * function is null, then no exception is thrown.
+     */
+    static <X extends Throwable>
+    void close(int fd, Function<UnixException, X> mapper) throws X {
+        try {
+            close(fd);
+        } catch (UnixException e) {
+            if (mapper != null) {
+                X ex = mapper.apply(e);
+                if (ex != null) throw ex;
+            }
+        }
+    }
 
     /**
      * void rewind(FILE* stream);
@@ -111,13 +125,9 @@ class UnixNativeDispatcher {
      * link(const char* existing, const char* new)
      */
     static void link(UnixPath existing, UnixPath newfile) throws UnixException {
-        NativeBuffer existingBuffer = copyToNativeBuffer(existing);
-        NativeBuffer newBuffer = copyToNativeBuffer(newfile);
-        try {
+        try (NativeBuffer existingBuffer = copyToNativeBuffer(existing);
+             NativeBuffer newBuffer = copyToNativeBuffer(newfile)) {
             link0(existingBuffer.address(), newBuffer.address());
-        } finally {
-            newBuffer.release();
-            existingBuffer.release();
         }
     }
     private static native void link0(long existingAddress, long newAddress)
@@ -127,11 +137,8 @@ class UnixNativeDispatcher {
      * unlink(const char* path)
      */
     static void unlink(UnixPath path) throws UnixException {
-        NativeBuffer buffer = copyToNativeBuffer(path);
-        try {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             unlink0(buffer.address());
-        } finally {
-            buffer.release();
         }
     }
     private static native void unlink0(long pathAddress) throws UnixException;
@@ -140,11 +147,8 @@ class UnixNativeDispatcher {
      * unlinkat(int dfd, const char* path, int flag)
      */
     static void unlinkat(int dfd, byte[] path, int flag) throws UnixException {
-        NativeBuffer buffer = NativeBuffers.asNativeBuffer(path);
-        try {
+        try (NativeBuffer buffer = NativeBuffers.asNativeBuffer(path)) {
             unlinkat0(dfd, buffer.address(), flag);
-        } finally {
-            buffer.release();
         }
     }
     private static native void unlinkat0(int dfd, long pathAddress, int flag)
@@ -154,11 +158,8 @@ class UnixNativeDispatcher {
      * mknod(const char* path, mode_t mode, dev_t dev)
      */
     static void mknod(UnixPath path, int mode, long dev) throws UnixException {
-        NativeBuffer buffer = copyToNativeBuffer(path);
-        try {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             mknod0(buffer.address(), mode, dev);
-        } finally {
-            buffer.release();
         }
     }
     private static native void mknod0(long pathAddress, int mode, long dev)
@@ -168,13 +169,9 @@ class UnixNativeDispatcher {
      *  rename(const char* old, const char* new)
      */
     static void rename(UnixPath from, UnixPath to) throws UnixException {
-        NativeBuffer fromBuffer = copyToNativeBuffer(from);
-        NativeBuffer toBuffer = copyToNativeBuffer(to);
-        try {
+        try (NativeBuffer fromBuffer = copyToNativeBuffer(from);
+             NativeBuffer toBuffer = copyToNativeBuffer(to)) {
             rename0(fromBuffer.address(), toBuffer.address());
-        } finally {
-            toBuffer.release();
-            fromBuffer.release();
         }
     }
     private static native void rename0(long fromAddress, long toAddress)
@@ -184,13 +181,9 @@ class UnixNativeDispatcher {
      *  renameat(int fromfd, const char* old, int tofd, const char* new)
      */
     static void renameat(int fromfd, byte[] from, int tofd, byte[] to) throws UnixException {
-        NativeBuffer fromBuffer = NativeBuffers.asNativeBuffer(from);
-        NativeBuffer toBuffer = NativeBuffers.asNativeBuffer(to);
-        try {
+        try (NativeBuffer fromBuffer = NativeBuffers.asNativeBuffer(from);
+             NativeBuffer toBuffer = NativeBuffers.asNativeBuffer(to)) {
             renameat0(fromfd, fromBuffer.address(), tofd, toBuffer.address());
-        } finally {
-            toBuffer.release();
-            fromBuffer.release();
         }
     }
     private static native void renameat0(int fromfd, long fromAddress, int tofd, long toAddress)
@@ -200,11 +193,8 @@ class UnixNativeDispatcher {
      * mkdir(const char* path, mode_t mode)
      */
     static void mkdir(UnixPath path, int mode) throws UnixException {
-        NativeBuffer buffer = copyToNativeBuffer(path);
-        try {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             mkdir0(buffer.address(), mode);
-        } finally {
-            buffer.release();
         }
     }
     private static native void mkdir0(long pathAddress, int mode) throws UnixException;
@@ -213,11 +203,8 @@ class UnixNativeDispatcher {
      * rmdir(const char* path)
      */
     static void rmdir(UnixPath path) throws UnixException {
-        NativeBuffer buffer = copyToNativeBuffer(path);
-        try {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             rmdir0(buffer.address());
-        } finally {
-            buffer.release();
         }
     }
     private static native void rmdir0(long pathAddress) throws UnixException;
@@ -228,11 +215,8 @@ class UnixNativeDispatcher {
      * @return  link target
      */
     static byte[] readlink(UnixPath path) throws UnixException {
-        NativeBuffer buffer = copyToNativeBuffer(path);
-        try {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             return readlink0(buffer.address());
-        } finally {
-            buffer.release();
         }
     }
     private static native byte[] readlink0(long pathAddress) throws UnixException;
@@ -243,11 +227,8 @@ class UnixNativeDispatcher {
      * @return  resolved path
      */
     static byte[] realpath(UnixPath path) throws UnixException {
-        NativeBuffer buffer = copyToNativeBuffer(path);
-        try {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             return realpath0(buffer.address());
-        } finally {
-            buffer.release();
         }
     }
     private static native byte[] realpath0(long pathAddress) throws UnixException;
@@ -256,13 +237,9 @@ class UnixNativeDispatcher {
      * symlink(const char* name1, const char* name2)
      */
     static void symlink(byte[] name1, UnixPath name2) throws UnixException {
-        NativeBuffer targetBuffer = NativeBuffers.asNativeBuffer(name1);
-        NativeBuffer linkBuffer = copyToNativeBuffer(name2);
-        try {
+        try (NativeBuffer targetBuffer = NativeBuffers.asNativeBuffer(name1);
+             NativeBuffer linkBuffer = copyToNativeBuffer(name2)) {
             symlink0(targetBuffer.address(), linkBuffer.address());
-        } finally {
-            linkBuffer.release();
-            targetBuffer.release();
         }
     }
     private static native void symlink0(long name1, long name2)
@@ -272,42 +249,28 @@ class UnixNativeDispatcher {
      * stat(const char* path, struct stat* buf)
      */
     static void stat(UnixPath path, UnixFileAttributes attrs) throws UnixException {
-        NativeBuffer buffer = copyToNativeBuffer(path);
-        try {
-            stat0(buffer.address(), attrs);
-        } finally {
-            buffer.release();
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
+            int errno = stat0(buffer.address(), attrs);
+            if (errno != 0) {
+                throw new UnixException(errno);
+            }
         }
     }
-    private static native void stat0(long pathAddress, UnixFileAttributes attrs)
-        throws UnixException;
 
-
-    /**
-     * stat(const char* path, struct stat* buf)
-     *
-     * @return st_mode (file type and mode) or 0 if an error occurs.
-     */
-    static int stat(UnixPath path) {
-        NativeBuffer buffer = copyToNativeBuffer(path);
-        try {
-            return stat1(buffer.address());
-        } finally {
-            buffer.release();
+    static int stat2(UnixPath path, UnixFileAttributes attrs) {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
+            return stat0(buffer.address(), attrs);
         }
     }
-    private static native int stat1(long pathAddress);
 
+    private static native int stat0(long pathAddress, UnixFileAttributes attrs);
 
     /**
      * lstat(const char* path, struct stat* buf)
      */
     static void lstat(UnixPath path, UnixFileAttributes attrs) throws UnixException {
-        NativeBuffer buffer = copyToNativeBuffer(path);
-        try {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             lstat0(buffer.address(), attrs);
-        } finally {
-            buffer.release();
         }
     }
     private static native void lstat0(long pathAddress, UnixFileAttributes attrs)
@@ -316,7 +279,11 @@ class UnixNativeDispatcher {
     /**
      * fstat(int filedes, struct stat* buf)
      */
-    static native void fstat(int fd, UnixFileAttributes attrs) throws UnixException;
+    static void fstat(int fd, UnixFileAttributes attrs) throws UnixException {
+        fstat0(fd, attrs);
+    }
+    private static native void fstat0(int fd, UnixFileAttributes attrs)
+        throws UnixException;
 
     /**
      * fstatat(int filedes,const char* path,  struct stat* buf, int flag)
@@ -324,11 +291,8 @@ class UnixNativeDispatcher {
     static void fstatat(int dfd, byte[] path, int flag, UnixFileAttributes attrs)
         throws UnixException
     {
-        NativeBuffer buffer = NativeBuffers.asNativeBuffer(path);
-        try {
+        try (NativeBuffer buffer = NativeBuffers.asNativeBuffer(path)) {
             fstatat0(dfd, buffer.address(), flag, attrs);
-        } finally {
-            buffer.release();
         }
     }
     private static native void fstatat0(int dfd, long pathAddress, int flag,
@@ -338,11 +302,8 @@ class UnixNativeDispatcher {
      * chown(const char* path, uid_t owner, gid_t group)
      */
     static void chown(UnixPath path, int uid, int gid) throws UnixException {
-        NativeBuffer buffer = copyToNativeBuffer(path);
-        try {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             chown0(buffer.address(), uid, gid);
-        } finally {
-            buffer.release();
         }
     }
     private static native void chown0(long pathAddress, int uid, int gid)
@@ -352,11 +313,8 @@ class UnixNativeDispatcher {
      * lchown(const char* path, uid_t owner, gid_t group)
      */
     static void lchown(UnixPath path, int uid, int gid) throws UnixException {
-        NativeBuffer buffer = copyToNativeBuffer(path);
-        try {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             lchown0(buffer.address(), uid, gid);
-        } finally {
-            buffer.release();
         }
     }
     private static native void lchown0(long pathAddress, int uid, int gid)
@@ -365,17 +323,17 @@ class UnixNativeDispatcher {
     /**
      * fchown(int filedes, uid_t owner, gid_t group)
      */
-    static native void fchown(int fd, int uid, int gid) throws UnixException;
+    static void fchown(int fd, int uid, int gid) throws UnixException {
+        fchown0(fd, uid, gid);
+    }
+    static native void fchown0(int fd, int uid, int gid) throws UnixException;
 
     /**
      * chmod(const char* path, mode_t mode)
      */
     static void chmod(UnixPath path, int mode) throws UnixException {
-        NativeBuffer buffer = copyToNativeBuffer(path);
-        try {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             chmod0(buffer.address(), mode);
-        } finally {
-            buffer.release();
         }
     }
     private static native void chmod0(long pathAddress, int mode)
@@ -384,59 +342,40 @@ class UnixNativeDispatcher {
     /**
      * fchmod(int fildes, mode_t mode)
      */
-    static native void fchmod(int fd, int mode) throws UnixException;
-
-    /**
-     * utimes(const char* path, const struct timeval times[2])
-     */
-    static void utimes(UnixPath path, long times0, long times1)
-        throws UnixException
-    {
-        NativeBuffer buffer = copyToNativeBuffer(path);
-        try {
-            utimes0(buffer.address(), times0, times1);
-        } finally {
-            buffer.release();
-        }
+    static void fchmod(int fd, int mode) throws UnixException {
+        fchmod0(fd, mode);
     }
-    private static native void utimes0(long pathAddress, long times0, long times1)
-        throws UnixException;
-
-    /**
-     * futimes(int fildes, const struct timeval times[2])
-     */
-    static native void futimes(int fd, long times0, long times1) throws UnixException;
+    private static native void fchmod0(int fd, int mode) throws UnixException;
 
     /**
      * futimens(int fildes, const struct timespec times[2])
      */
-    static native void futimens(int fd, long times0, long times1) throws UnixException;
+    static void futimens(int fd, long times0, long times1) throws UnixException {
+        futimens0(fd, times0, times1);
+    }
+    private static native void futimens0(int fd, long times0, long times1)
+        throws UnixException;
 
     /**
-     * lutimes(const char* path, const struct timeval times[2])
+     * utimensat(int fd, const char* path,
+     *           const struct timeval times[2], int flags)
      */
-    static void lutimes(UnixPath path, long times0, long times1)
+    static void utimensat(int fd, UnixPath path, long times0, long times1, int flags)
         throws UnixException
     {
-        NativeBuffer buffer = copyToNativeBuffer(path);
-        try {
-            lutimes0(buffer.address(), times0, times1);
-        } finally {
-            buffer.release();
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
+            utimensat0(fd, buffer.address(), times0, times1, flags);
         }
     }
-    private static native void lutimes0(long pathAddress, long times0, long times1)
+    private static native void utimensat0(int fd, long pathAddress, long times0, long times1, int flags)
         throws UnixException;
 
     /**
      * DIR *opendir(const char* dirname)
      */
     static long opendir(UnixPath path) throws UnixException {
-        NativeBuffer buffer = copyToNativeBuffer(path);
-        try {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             return opendir0(buffer.address());
-        } finally {
-            buffer.release();
         }
     }
     private static native long opendir0(long pathAddress) throws UnixException;
@@ -457,46 +396,36 @@ class UnixNativeDispatcher {
      *
      * @return  dirent->d_name
      */
-    static native byte[] readdir(long dir) throws UnixException;
+    static byte[] readdir(long dir) throws UnixException {
+        return readdir0(dir);
+    }
+    static native byte[] readdir0(long dir) throws UnixException;
 
     /**
      * size_t read(int fildes, void* buf, size_t nbyte)
      */
-    static native int read(int fildes, long buf, int nbyte) throws UnixException;
+    static int read(int fildes, long buf, int nbyte) throws UnixException {
+        return read0(fildes, buf, nbyte);
+    }
+    private static native int read0(int fildes, long buf, int nbyte) throws UnixException;
 
     /**
      * size_t writeint fildes, void* buf, size_t nbyte)
      */
-    static native int write(int fildes, long buf, int nbyte) throws UnixException;
+    static int write(int fildes, long buf, int nbyte) throws UnixException {
+        return write0(fildes, buf, nbyte);
+    }
+    private static native int write0(int fildes, long buf, int nbyte) throws UnixException;
 
     /**
      * access(const char* path, int amode);
      */
-    static void access(UnixPath path, int amode) throws UnixException {
-        NativeBuffer buffer = copyToNativeBuffer(path);
-        try {
-            access0(buffer.address(), amode);
-        } finally {
-            buffer.release();
+    static int access(UnixPath path, int amode) {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
+            return access0(buffer.address(), amode);
         }
     }
-    private static native void access0(long pathAddress, int amode) throws UnixException;
-
-    /**
-     * access(constant char* path, F_OK)
-     *
-     * @return true if the file exists, false otherwise
-     */
-    static boolean exists(UnixPath path) {
-        NativeBuffer buffer = copyToNativeBuffer(path);
-        try {
-            return exists0(buffer.address());
-        } finally {
-            buffer.release();
-        }
-    }
-    private static native boolean exists0(long pathAddress);
-
+    private static native int access0(long pathAddress, int amode);
 
     /**
      * struct passwd *getpwuid(uid_t uid);
@@ -518,11 +447,8 @@ class UnixNativeDispatcher {
      * @return  passwd->pw_uid
      */
     static int getpwnam(String name) throws UnixException {
-        NativeBuffer buffer = NativeBuffers.asNativeBuffer(Util.toBytes(name));
-        try {
+        try (NativeBuffer buffer = NativeBuffers.asNativeBuffer(Util.toBytes(name))) {
             return getpwnam0(buffer.address());
-        } finally {
-            buffer.release();
         }
     }
     private static native int getpwnam0(long nameAddress) throws UnixException;
@@ -533,11 +459,8 @@ class UnixNativeDispatcher {
      * @return  group->gr_name
      */
     static int getgrnam(String name) throws UnixException {
-        NativeBuffer buffer = NativeBuffers.asNativeBuffer(Util.toBytes(name));
-        try {
+        try (NativeBuffer buffer = NativeBuffers.asNativeBuffer(Util.toBytes(name))) {
             return getgrnam0(buffer.address());
-        } finally {
-            buffer.release();
         }
     }
     private static native int getgrnam0(long nameAddress) throws UnixException;
@@ -548,11 +471,8 @@ class UnixNativeDispatcher {
     static void statvfs(UnixPath path, UnixFileStoreAttributes attrs)
         throws UnixException
     {
-        NativeBuffer buffer = copyToNativeBuffer(path);
-        try {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             statvfs0(buffer.address(), attrs);
-        } finally {
-            buffer.release();
         }
     }
     private static native void statvfs0(long pathAddress, UnixFileStoreAttributes attrs)
@@ -566,8 +486,8 @@ class UnixNativeDispatcher {
     /**
      * ssize_t fgetxattr(int filedes, const char *name, void *value, size_t size);
      */
-    static int fgetxattr(int filedes, byte[] name, long valueAddress,
-                         int valueLen) throws UnixException
+    static int fgetxattr(int filedes, byte[] name, long valueAddress, int valueLen)
+        throws UnixException
     {
         try (NativeBuffer buffer = NativeBuffers.asNativeBuffer(name)) {
             return fgetxattr0(filedes, buffer.address(), valueAddress, valueLen);
@@ -580,8 +500,8 @@ class UnixNativeDispatcher {
     /**
      *  fsetxattr(int filedes, const char *name, const void *value, size_t size, int flags);
      */
-    static void fsetxattr(int filedes, byte[] name, long valueAddress,
-                          int valueLen) throws UnixException
+    static void fsetxattr(int filedes, byte[] name, long valueAddress, int valueLen)
+        throws UnixException
     {
         try (NativeBuffer buffer = NativeBuffers.asNativeBuffer(name)) {
             fsetxattr0(filedes, buffer.address(), valueAddress, valueLen);
@@ -613,10 +533,7 @@ class UnixNativeDispatcher {
      * Capabilities
      */
     private static final int SUPPORTS_OPENAT        = 1 << 1;  // syscalls
-    private static final int SUPPORTS_FUTIMES       = 1 << 2;
-    private static final int SUPPORTS_FUTIMENS      = 1 << 3;
-    private static final int SUPPORTS_LUTIMES       = 1 << 4;
-    private static final int SUPPORTS_XATTR         = 1 << 5;
+    private static final int SUPPORTS_XATTR         = 1 << 3;
     private static final int SUPPORTS_BIRTHTIME     = 1 << 16; // other features
     private static final int capabilities;
 
@@ -625,27 +542,6 @@ class UnixNativeDispatcher {
      */
     static boolean openatSupported() {
         return (capabilities & SUPPORTS_OPENAT) != 0;
-    }
-
-    /**
-     * Supports futimes or futimesat
-     */
-    static boolean futimesSupported() {
-        return (capabilities & SUPPORTS_FUTIMES) != 0;
-    }
-
-    /**
-     * Supports futimens
-     */
-    static boolean futimensSupported() {
-        return (capabilities & SUPPORTS_FUTIMENS) != 0;
-    }
-
-    /**
-     * Supports lutimes
-     */
-    static boolean lutimesSupported() {
-        return (capabilities & SUPPORTS_LUTIMES) != 0;
     }
 
     /**

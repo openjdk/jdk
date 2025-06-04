@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,77 +24,104 @@
 /**
  * @test
  * @summary Stress test that reaches the process limit for thread count, or time limit.
+ * @requires os.family != "aix"
  * @key stress
- * @run main ThreadCountLimit
+ * @library /test/lib
+ * @run main/othervm -Xmx1g ThreadCountLimit
+ */
+
+/**
+ * @test
+ * @summary Stress test that reaches the process limit for thread count, or time limit.
+ * @requires os.family == "aix"
+ * @key stress
+ * @library /test/lib
+ * @run main/othervm -Xmx1g -XX:MaxExpectedDataSegmentSize=16g ThreadCountLimit
  */
 
 import java.util.concurrent.CountDownLatch;
 import java.util.ArrayList;
+
+import jdk.test.lib.Platform;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class ThreadCountLimit {
 
   static final int TIME_LIMIT_MS = 5000; // Create as many threads as possible in 5 sec
 
   static class Worker extends Thread {
-    private final int index;
     private final CountDownLatch startSignal;
 
-    Worker(int index, CountDownLatch startSignal) {
-      this.index = index;
+    Worker(CountDownLatch startSignal) {
       this.startSignal = startSignal;
     }
 
     @Override
     public void run() {
-      if ((index % 250) == 0) {
-        System.out.println("INFO: thread " + index + " waiting to start");
-      }
-
       try {
         startSignal.await();
       } catch (InterruptedException e) {
-        throw new Error("Unexpected: " + e);
-      }
-
-      setName(String.valueOf(index));
-
-      Thread.yield();
-
-      if (index != Integer.parseInt(getName())) {
-        throw new Error("setName/getName failed!");
-      }
-
-      if ((index % 250) == 0) {
-        System.out.println("INFO: thread " + getName() + " working");
+        throw new Error("Unexpected", e);
       }
     }
   }
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception {
+    if (args.length == 0) {
+      // Called from the driver process so exec a new JVM on Linux.
+      if (Platform.isLinux()) {
+        // On Linux this test sometimes hits the limit for the maximum number of memory mappings,
+        // which leads to various other failure modes. Run this test with a limit on how many
+        // threads the process is allowed to create, so we hit that limit first.
+
+        final String ULIMIT_CMD = "ulimit -u 4096";
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(ThreadCountLimit.class.getName());
+        String javaCmd = ProcessTools.getCommandLine(pb);
+        // Relaunch the test with args.length > 0, and the ulimit set
+        ProcessTools.executeCommand("bash", "-c", ULIMIT_CMD + " && " + javaCmd + " dummy")
+                    .shouldHaveExitValue(0);
+      } else {
+        // Not Linux so run directly.
+        test();
+      }
+    } else {
+      // This is the exec'd process so run directly.
+      test();
+    }
+  }
+
+  static void test() {
     CountDownLatch startSignal = new CountDownLatch(1);
     ArrayList<Worker> workers = new ArrayList<Worker>();
 
-    int count = 1;
+    boolean reachedNativeOOM = false;
+
+    // This is dangerous loop: it depletes system resources,
+    // so doing additional things there that may end up allocating
+    // Java/native memory risks failing the VM prematurely.
+    // Avoid doing unnecessary calls, printouts, etc.
+
+    int count = 0;
     long start = System.currentTimeMillis();
     try {
       while (true) {
-        Worker w = new Worker(count, startSignal);
+        Worker w = new Worker(startSignal);
         w.start();
         workers.add(w);
         count++;
 
         long end = System.currentTimeMillis();
         if ((end - start) > TIME_LIMIT_MS) {
-          // Windows path or a system with very large ulimit
-          System.out.println("INFO: reached the time limit " + TIME_LIMIT_MS + " ms, with " + count + " threads created");
+          // Windows always gets here, but we also get here if
+          // ulimit is set high enough.
           break;
         }
       }
     } catch (OutOfMemoryError e) {
       if (e.getMessage().contains("unable to create native thread")) {
-        // Linux, macOS path
-        long end = System.currentTimeMillis();
-        System.out.println("INFO: reached this process thread count limit at " + count + " [" + (end - start) + " ms]");
+        // Linux, macOS path if we hit ulimit
+        reachedNativeOOM = true;
       } else {
         throw e;
       }
@@ -107,7 +134,17 @@ public class ThreadCountLimit {
         w.join();
       }
     } catch (InterruptedException e) {
-      throw new Error("Unexpected: " + e);
+      throw new Error("Unexpected", e);
+    }
+
+    // Now that all threads have joined, we are away from dangerous
+    // VM state and have enough memory to perform any other things.
+    if (reachedNativeOOM) {
+      System.out.println("INFO: reached this process thread count limit with " +
+                         count + " threads created");
+    } else {
+      System.out.println("INFO: reached the time limit " + TIME_LIMIT_MS +
+                         " ms, with " + count + " threads created");
     }
   }
 }

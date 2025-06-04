@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -432,7 +432,7 @@ public class ProgressMonitor implements Accessible
     /**
      * Returns the amount of time it will take for the popup to appear.
      *
-     * @return the amont of time in milliseconds it will take for the
+     * @return the amount of time in milliseconds it will take for the
      *         popup to appear
      * @see #setMillisToPopup
      */
@@ -527,7 +527,7 @@ public class ProgressMonitor implements Accessible
          *           JLabel
          *           JProgressBar
          *
-         * The AccessibleProgessMonitor accessibility hierarchy is:
+         * The AccessibleProgressMonitor accessibility hierarchy is:
          *   AccessibleJDialog
          *     AccessibleProgressMonitor
          *       AccessibleJLabel
@@ -794,7 +794,7 @@ public class ProgressMonitor implements Accessible
          * @return this component's locale.  If this component does not have
          * a locale, the locale of its parent is returned.
          *
-         * @exception IllegalComponentStateException
+         * @throws IllegalComponentStateException
          * If the Component does not have its own locale and has not yet been
          * added to a containment hierarchy such that the locale can be
          * determined from the containing parent.
@@ -927,7 +927,7 @@ public class ProgressMonitor implements Accessible
         }
 
         /**
-         * Returns the number of characters (valid indicies)
+         * Returns the number of characters (valid indices)
          *
          * @return the number of characters
          */

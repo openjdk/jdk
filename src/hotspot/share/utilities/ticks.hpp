@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -215,9 +215,6 @@ class TimeInstant : public Rep<TimeSource> {
     Rep<TimeSource>::operator-=(rhs);
     return *this;
   }
-  TimeInterval<Rep, TimeSource> operator+(const TimeInstant<Rep, TimeSource>& end) const {
-    return TimeInterval<Rep, TimeSource>(end, *this);
-  }
   TimeInterval<Rep, TimeSource> operator-(const TimeInstant<Rep, TimeSource>& start) const {
     return TimeInterval<Rep, TimeSource>(*this, start);
   }
@@ -234,6 +231,7 @@ class TimeInstant : public Rep<TimeSource> {
   friend class GranularTimer;
   friend class ObjectSample;
   friend class EventEmitter;
+  friend class JfrPeriodicEventSet;
   // GC unit tests
   friend class TimePartitionsTest;
   friend class GCTimerTest;

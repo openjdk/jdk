@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,11 @@ package java.security;
 import java.io.*;
 
 /**
- * <p> SignedObject is a class for the purpose of creating authentic
+ * <p> {@code SignedObject} is a class for the purpose of creating authentic
  * runtime objects whose integrity cannot be compromised without being
  * detected.
  *
- * <p> More specifically, a SignedObject contains another Serializable
+ * <p> More specifically, a {@code SignedObject} contains another Serializable
  * object, the (to-be-)signed object and its signature.
  *
  * <p> The signed object is a "deep copy" (in serialized form) of an
@@ -67,7 +67,7 @@ import java.io.*;
  * re-initialized inside the constructor and the {@code verify}
  * method. Secondly, for verification to succeed, the specified
  * public key must be the public key corresponding to the private key
- * used to generate the SignedObject.
+ * used to generate the {@code SignedObject}.
  *
  * <p> More importantly, for flexibility reasons, the
  * constructor and {@code verify} method allow for
@@ -95,7 +95,7 @@ import java.io.*;
  * specified, the default provider is used.  Each installation can
  * be configured to use a particular provider as default.
  *
- * <p> Potential applications of SignedObject include:
+ * <p> Potential applications of {@code SignedObject} include:
  * <ul>
  * <li> It can be used
  * internally to any Java runtime as an unforgeable authorization
@@ -122,23 +122,23 @@ public final class SignedObject implements Serializable {
     private static final long serialVersionUID = 720502720485447167L;
 
     /**
-     * The original content is "deep copied" in its serialized format
+     * @serial The original content is "deep copied" in its serialized format
      * and stored in a byte array.
      */
     private byte[] content;
 
     /**
-     * The signature field is stored as a byte array.
+     * @serial The signature field is stored as a byte array.
      */
     private byte[] signature;
 
     /**
-     * The algorithm used to sign the object.
+     * @serial The algorithm used to sign the object.
      */
     private String thealgorithm;
 
     /**
-     * Constructs a SignedObject from any Serializable object.
+     * Constructs a {@code SignedObject} from any Serializable object.
      * The given object is signed with the given signing key, using the
      * designated signature engine.
      *
@@ -152,20 +152,20 @@ public final class SignedObject implements Serializable {
      */
     public SignedObject(Serializable object, PrivateKey signingKey,
                         Signature signingEngine)
-        throws IOException, InvalidKeyException, SignatureException {
-            // creating a stream pipe-line, from a to b
-            ByteArrayOutputStream b = new ByteArrayOutputStream();
-            ObjectOutput a = new ObjectOutputStream(b);
+            throws IOException, InvalidKeyException, SignatureException {
+        // creating a stream pipe-line, from a to b
+        ByteArrayOutputStream b = new ByteArrayOutputStream();
+        ObjectOutput a = new ObjectOutputStream(b);
 
-            // write and flush the object content to byte array
-            a.writeObject(object);
-            a.flush();
-            a.close();
-            this.content = b.toByteArray();
-            b.close();
+        // write and flush the object content to byte array
+        a.writeObject(object);
+        a.flush();
+        a.close();
+        this.content = b.toByteArray();
+        b.close();
 
-            // now sign the encapsulated object
-            this.sign(signingKey, signingEngine);
+        // now sign the encapsulated object
+        this.sign(signingKey, signingEngine);
     }
 
     /**
@@ -211,7 +211,7 @@ public final class SignedObject implements Serializable {
     }
 
     /**
-     * Verifies that the signature in this SignedObject is the valid
+     * Verifies that the signature in this {@code SignedObject} is the valid
      * signature for the object stored inside, with the given
      * verification key, using the designated verification engine.
      *
@@ -245,17 +245,17 @@ public final class SignedObject implements Serializable {
      * @throws    SignatureException if signing fails.
      */
     private void sign(PrivateKey signingKey, Signature signingEngine)
-        throws InvalidKeyException, SignatureException {
-            // initialize the signing engine
-            signingEngine.initSign(signingKey);
-            signingEngine.update(this.content.clone());
-            this.signature = signingEngine.sign().clone();
-            this.thealgorithm = signingEngine.getAlgorithm();
+            throws InvalidKeyException, SignatureException {
+        // initialize the signing engine
+        signingEngine.initSign(signingKey);
+        signingEngine.update(this.content.clone());
+        this.signature = signingEngine.sign();
+        this.thealgorithm = signingEngine.getAlgorithm();
     }
 
     /**
-     * readObject is called to restore the state of the SignedObject from
-     * a stream.
+     * readObject is called to restore the state of the {@code SignedObject}
+     * from a stream.
      *
      * @param  s the {@code ObjectInputStream} from which data is read
      * @throws IOException if an I/O error occurs
@@ -263,10 +263,16 @@ public final class SignedObject implements Serializable {
      */
     @Serial
     private void readObject(ObjectInputStream s)
-        throws IOException, ClassNotFoundException {
-            ObjectInputStream.GetField fields = s.readFields();
-            content = ((byte[])fields.get("content", null)).clone();
-            signature = ((byte[])fields.get("signature", null)).clone();
-            thealgorithm = (String)fields.get("thealgorithm", null);
+            throws IOException, ClassNotFoundException {
+       ObjectInputStream.GetField fields = s.readFields();
+       byte[] c = (byte[]) fields.get("content", null);
+       byte[] sig = (byte[]) fields.get("signature", null);
+       String a = (String) fields.get("thealgorithm", null);
+       if (c == null || sig == null || a == null) {
+           throw new InvalidObjectException("One or more null fields");
+       }
+       content = c.clone();
+       signature = sig.clone();
+       thealgorithm = a;
     }
 }

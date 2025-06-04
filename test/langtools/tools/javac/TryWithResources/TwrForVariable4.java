@@ -5,7 +5,7 @@
  * @compile/fail/ref=TwrForVariable4.out -XDrawDiagnostics -Xlint:-options TwrForVariable4.java
  */
 public class TwrForVariable4 implements AutoCloseable {
-    public static void main(String... args) {
+    public static void meth() {
         TwrForVariable4 uninitialized;
 
         try (uninitialized) {

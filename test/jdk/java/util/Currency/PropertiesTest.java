@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class PropertiesTest {
             for (char c2 = 'A'; c2 <= 'Z'; c2++) {
                 String ctry = new StringBuilder().append(c1).append(c2).toString();
                 try {
-                    Currency c = Currency.getInstance(new Locale("", ctry));
+                    Currency c = Currency.getInstance(Locale.of("", ctry));
                     if (c != null) {
                         pw.printf(Locale.ROOT, "%s=%s,%03d,%1d\n",
                             ctry,
@@ -195,7 +195,7 @@ public class PropertiesTest {
 
     private static void bug7102969() {
         // check the correct overriding of special case entries
-        Currency cur = Currency.getInstance(new Locale("", "JP"));
+        Currency cur = Currency.getInstance(Locale.of("", "JP"));
         if (!cur.getCurrencyCode().equals("ABC")) {
             throw new RuntimeException("[Expected: ABC as currency code of JP, found: "
                     + cur.getCurrencyCode() + "]");

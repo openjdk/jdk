@@ -26,7 +26,7 @@
 
 /*
  * FUNCTION
- *      mlib_ImageConvVersion - Get Conv* funtions version
+ *      mlib_ImageConvVersion - Get Conv* functions version
  *      0  - "C" version
  *      1  - "VIS" version
  *      2  - "i386" version

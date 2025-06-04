@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ package java.security;
  * <p>
  * Otherwise, if the {@code SecureRandomSpi(SecureRandomParameters)}
  * constructor is not overridden in an implementation, the
- * {@link #SecureRandomSpi()} constructor must be overridden and it will be
+ * {@link #SecureRandomSpi()} constructor must be overridden, and it will be
  * called if an object is instantiated with one of {@code SecureRandom}'s
  * {@code getInstance} methods <em>without</em> a
  * {@code SecureRandomParameters} argument. Calling one of
@@ -79,6 +79,7 @@ package java.security;
  * {@code SecureRandom} will call the applicable engine methods
  * without any synchronization.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @since 1.2
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,14 +53,58 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
      * returns buf->f_mntonname (directory on which mounted)
      */
     static byte[] getmntonname(UnixPath path) throws UnixException {
-        NativeBuffer pathBuffer = copyToNativeBuffer(path);
-        try {
+        try (NativeBuffer pathBuffer = copyToNativeBuffer(path)) {
             return getmntonname0(pathBuffer.address());
-        } finally {
-            pathBuffer.release();
         }
     }
     static native byte[] getmntonname0(long pathAddress) throws UnixException;
+
+    /**
+     * int clonefile(const char * src, const char * dst, int flags);
+     */
+    static int clonefile(UnixPath src, UnixPath dst, int flags)
+        throws UnixException
+    {
+        try (NativeBuffer srcBuffer = copyToNativeBuffer(src);
+            NativeBuffer dstBuffer = copyToNativeBuffer(dst)) {
+            return clonefile0(srcBuffer.address(), dstBuffer.address(), flags);
+        }
+    }
+    private static native int clonefile0(long srcAddress, long dstAddress,
+                                         int flags);
+
+    /**
+     * setattrlist(const char* path, struct attrlist* attrList, void* attrBuf,
+     *             size_t attrBufSize, unsigned long options)
+     */
+    static void setattrlist(UnixPath path, int commonattr, long modTime,
+                            long accTime, long createTime, long options)
+        throws UnixException
+    {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
+            setattrlist0(buffer.address(), commonattr, modTime, accTime,
+                         createTime, options);
+        }
+    }
+    private static native void setattrlist0(long pathAddress, int commonattr,
+                                            long modTime, long accTime,
+                                            long createTime, long options)
+        throws UnixException;
+
+    /**
+     * fsetattrlist(int fd, struct attrlist* attrList, void* attrBuf,
+     *              size_t attrBufSize, unsigned long options)
+     */
+    static void fsetattrlist(int fd, int commonattr, long modTime,
+                             long accTime, long createTime, long options)
+        throws UnixException
+    {
+        fsetattrlist0(fd, commonattr, modTime, accTime, createTime, options);
+    }
+    private static native void fsetattrlist0(int fd, int commonattr,
+                                             long modTime, long accTime,
+                                             long createTime, long options)
+        throws UnixException;
 
     // initialize field IDs
     private static native void initIDs();

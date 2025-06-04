@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,24 +56,23 @@ class Immediate {
     }
 
     // Test if x is within signed immediate range for nbits.
-    static bool is_uimm(int64_t x, unsigned int nbits) {
+    static bool is_uimm(uint64_t x, unsigned int nbits) {
       // nbits == 0  --> false
       // nbits >= 64 --> true
       assert(1 <= nbits && nbits < 64, "don't call, use statically known result");
-      const uint64_t xu       = (unsigned long)x;
       const uint64_t maxplus1 = 1UL << nbits;
-      return xu < maxplus1; // Unsigned comparison. Negative inputs appear to be very large.
+      return x < maxplus1; // Unsigned comparison. Negative inputs appear to be very large.
     }
-    static bool is_uimm32(int64_t x) {
+    static bool is_uimm32(uint64_t x) {
       return is_uimm(x, 32);
     }
-    static bool is_uimm16(int64_t x) {
+    static bool is_uimm16(uint64_t x) {
       return is_uimm(x, 16);
     }
-    static bool is_uimm12(int64_t x) {
+    static bool is_uimm12(uint64_t x) {
       return is_uimm(x, 12);
     }
-    static bool is_uimm8(int64_t x) {
+    static bool is_uimm8(uint64_t x) {
       return is_uimm(x,  8);
     }
 };
@@ -107,7 +106,7 @@ class RelAddr {
 
   static bool is_in_range_of_RelAddr(address target, address pc, bool shortForm) {
     // Guard against illegal branch targets, e.g. -1. Occurrences in
-    // CompiledStaticCall and ad-file. Do not assert (it's a test
+    // CompiledDirectCall and ad-file. Do not assert (it's a test
     // function!). Just return false in case of illegal operands.
     if ((((uint64_t)target) & 0x0001L) != 0) return false;
     if ((((uint64_t)pc)     & 0x0001L) != 0) return false;
@@ -123,24 +122,25 @@ class RelAddr {
     return is_in_range_of_RelAddr(target, pc, true);
   }
   static bool is_in_range_of_RelAddr16(ptrdiff_t distance) {
-    return is_in_range_of_RelAddr((address)distance, 0, true);
+    return is_in_range_of_RelAddr((address)distance, nullptr, true);
   }
 
   static bool is_in_range_of_RelAddr32(address target, address pc) {
     return is_in_range_of_RelAddr(target, pc, false);
   }
   static bool is_in_range_of_RelAddr32(ptrdiff_t distance) {
-    return is_in_range_of_RelAddr((address)distance, 0, false);
+    return is_in_range_of_RelAddr((address)distance, nullptr, false);
   }
 
   static int pcrel_off(address target, address pc, bool shortForm) {
     assert(((uint64_t)target & 0x0001L) == 0, "target of a relative address must be aligned");
     assert(((uint64_t)pc     & 0x0001L) == 0, "origin of a relative address must be aligned");
 
-    if ((target == NULL) || (target == pc)) {
+    if ((target == nullptr) || (target == pc)) {
       return 0;  // Yet unknown branch destination.
     } else {
-      guarantee(is_in_range_of_RelAddr(target, pc, shortForm), "target not within reach");
+      guarantee(is_in_range_of_RelAddr(target, pc, shortForm),
+                "target not within reach at " INTPTR_FORMAT ", distance = %zd", p2i(pc), (target - pc) );
       return (int)((target - pc)>>1);
     }
   }
@@ -149,14 +149,14 @@ class RelAddr {
     return pcrel_off(target, pc, true);
   }
   static int pcrel_off16(ptrdiff_t distance) {
-    return pcrel_off((address)distance, 0, true);
+    return pcrel_off((address)distance, nullptr, true);
   }
 
   static int pcrel_off32(address target, address pc) {
     return pcrel_off(target, pc, false);
   }
   static int pcrel_off32(ptrdiff_t distance) {
-    return pcrel_off((address)distance, 0, false);
+    return pcrel_off((address)distance, nullptr, false);
   }
 
   static ptrdiff_t inv_pcrel_off16(int offset) {
@@ -188,11 +188,6 @@ class Address {
     _base(noreg),
     _index(noreg),
     _disp(0) {}
-
-  Address(Register base, Register index, intptr_t disp = 0) :
-    _base(base),
-    _index(index),
-    _disp(disp) {}
 
   Address(Register base, intptr_t disp = 0) :
     _base(base),
@@ -295,7 +290,7 @@ class AddressLiteral {
 
  protected:
   // creation
-  AddressLiteral() : _address(NULL), _rspec(NULL) {}
+  AddressLiteral() : _address(nullptr), _rspec() {}
 
  public:
   AddressLiteral(address addr, RelocationHolder const& rspec)
@@ -354,12 +349,8 @@ class AddressLiteral {
 
   intptr_t value() const { return (intptr_t) _address; }
 
-  const relocInfo::relocType rtype() const { return _rspec.type(); }
+  relocInfo::relocType rtype()       const { return _rspec.type(); }
   const RelocationHolder&    rspec() const { return _rspec; }
-
-  RelocationHolder rspec(int offset) const {
-    return offset == 0 ? _rspec : _rspec.plus(offset);
-  }
 };
 
 // Convenience classes
@@ -392,7 +383,10 @@ class Argument {
     // Only 5 registers may contain integer parameters.
     n_register_parameters = 5,
     // Can have up to 4 floating registers.
-    n_float_register_parameters = 4
+    n_float_register_parameters = 4,
+
+    n_int_register_parameters_j = n_register_parameters,
+    n_float_register_parameters_j = n_float_register_parameters
   };
 
   // creation
@@ -643,6 +637,11 @@ class Assembler : public AbstractAssembler {
 #define LCDBR_ZOPC  (unsigned  int)(179 << 24 | 19 << 16)
 #define LCXBR_ZOPC  (unsigned  int)(179 << 24 | 67 << 16)
 
+ // Load Halfword Immediate on Condition
+ #define LOCHI_ZOPC   (unsigned long)(0xECL << 40 | 0x42L)
+ #define LOCHHI_ZOPC  (unsigned long)(0xECL << 40 | 0x4EL)
+ #define LOCGHI_ZOPC  (unsigned long)(0xECL << 40 | 0x46L)
+
 // Add
 // RR, signed
 #define AR_ZOPC     (unsigned  int)(26 << 8)
@@ -690,6 +689,8 @@ class Assembler : public AbstractAssembler {
 #define ALY_ZOPC    (unsigned long)(227L << 40 | 94L)
 #define ALGF_ZOPC   (unsigned long)(227L << 40 | 26L)
 #define ALG_ZOPC    (unsigned long)(227L << 40 | 10L)
+#define ALC_ZOPC    (unsigned long)(227L << 40 | 152L)
+#define ALCG_ZOPC   (unsigned long)(227L << 40 | 136L)
 // In-memory arithmetic (add signed, add logical with signed immediate).
 // MI, Logical
 #define ALSI_ZOPC   (unsigned long)(0xebL << 40 | 0x6eL)
@@ -729,6 +730,7 @@ class Assembler : public AbstractAssembler {
 #define SLRK_ZOPC   (unsigned  int)(0xb9 << 24 | 0x00fb << 16)
 #define SLGRK_ZOPC  (unsigned  int)(0xb9 << 24 | 0x00eb << 16)
 // RM, Logical
+#define SL_ZOPC     (unsigned  int)(0x5f << 24)
 #define SLY_ZOPC    (unsigned long)(227L << 40 | 95L)
 #define SLGF_ZOPC   (unsigned long)(227L << 40 | 27L)
 #define SLG_ZOPC    (unsigned long)(227L << 40 | 11L)
@@ -797,8 +799,8 @@ class Assembler : public AbstractAssembler {
 #define DSGF_ZOPC   (unsigned long)(227L << 40 | 29L)
 #define DSG_ZOPC    (unsigned long)(227L << 40 | 13L)
 // RR, unsigned
-#define DLR_ZOPC    (unsigned  int)(185 << 24 | 151 << 16)
-#define DLGR_ZOPC   (unsigned  int)(185 << 24 | 135 << 16)
+#define DLR_ZOPC    (unsigned  int)(0xb997 << 16)
+#define DLGR_ZOPC   (unsigned  int)(0xb987 << 16)
 // RM, unsigned
 #define DL_ZOPC     (unsigned long)(227L << 40 | 151L)
 #define DLG_ZOPC    (unsigned long)(227L << 40 | 135L)
@@ -837,6 +839,10 @@ class Assembler : public AbstractAssembler {
 #define CY_ZOPC     (unsigned long)(227L << 40 | 89L)
 #define CGF_ZOPC    (unsigned long)(227L << 40 | 48L)
 #define CG_ZOPC     (unsigned long)(227L << 40 | 32L)
+// MI, signed
+#define CHHSI_ZOPC  (unsigned long)(0xe5L << 40 | 0x54L << 32)
+#define CHSI_ZOPC   (unsigned long)(0xe5L << 40 | 0x5cL << 32)
+#define CGHSI_ZOPC  (unsigned long)(0xe5L << 40 | 0x58L << 32)
 // RR, unsigned
 #define CLR_ZOPC    (unsigned  int)(21 << 8)
 #define CLGFR_ZOPC  (unsigned  int)(185 << 24 | 49 << 16)
@@ -849,6 +855,10 @@ class Assembler : public AbstractAssembler {
 #define CLY_ZOPC    (unsigned long)(227L << 40 | 85L)
 #define CLGF_ZOPC   (unsigned long)(227L << 40 | 49L)
 #define CLG_ZOPC    (unsigned long)(227L << 40 | 33L)
+// MI, unsigned
+#define CLHHSI_ZOPC (unsigned long)(0xe5L << 40 | 0x55L << 32)
+#define CLFHSI_ZOPC (unsigned long)(0xe5L << 40 | 0x5dL << 32)
+#define CLGHSI_ZOPC (unsigned long)(0xe5L << 40 | 0x59L << 32)
 // RI, unsigned
 #define TMHH_ZOPC   (unsigned  int)(167 << 24 | 2 << 16)
 #define TMHL_ZOPC   (unsigned  int)(167 << 24 | 3 << 16)
@@ -980,7 +990,10 @@ class Assembler : public AbstractAssembler {
 #define BCR_ZOPC    (unsigned  int)(7 << 8)
 #define BALR_ZOPC   (unsigned  int)(5 << 8)
 #define BASR_ZOPC   (unsigned  int)(13 << 8)
-#define BCTGR_ZOPC  (unsigned long)(0xb946 << 16)
+#define BCT_ZOPC    (unsigned  int)(70 << 24)
+#define BCTR_ZOPC   (unsigned  int)(6 << 8)
+#define BCTG_ZOPC   (unsigned long)(227L << 40 | 70)
+#define BCTGR_ZOPC  (unsigned  int)(0xb946 << 16)
 // Absolute
 #define BC_ZOPC     (unsigned  int)(71 << 24)
 #define BAL_ZOPC    (unsigned  int)(69 << 24)
@@ -1054,6 +1067,7 @@ class Assembler : public AbstractAssembler {
 #define MVI_ZOPC    (unsigned  int)(0x92  << 24)
 #define MVIY_ZOPC   (unsigned long)(0xebL << 40 | 0x52L)
 #define MVC_ZOPC    (unsigned long)(0xd2L << 40)
+#define MVCIN_ZOPC  (unsigned long)(0xe8L << 40)
 #define MVCL_ZOPC   (unsigned  int)(0x0e  <<  8)
 #define MVCLE_ZOPC  (unsigned  int)(0xa8  << 24)
 
@@ -1227,6 +1241,9 @@ class Assembler : public AbstractAssembler {
 // NOR
 #define VNO_ZOPC    (unsigned long)(0xe7L << 40 | 0x6bL << 0)   // V1 := !(V2 | V3),  element size = 2**m
 
+ //NOT-XOR
+#define VNX_ZOPC    (unsigned long)(0xe7L << 40 | 0x6cL << 0)   // V1 := !(V2 | V3),  element size = 2**m
+
 // OR
 #define VO_ZOPC     (unsigned long)(0xe7L << 40 | 0x6aL << 0)   // V1 := V2 | V3,  element size = 2**m
 
@@ -1277,6 +1294,13 @@ class Assembler : public AbstractAssembler {
 #define VFENE_ZOPC  (unsigned long)(0xe7L << 40 | 0x81L << 0)   // Find element not equal
 #define VSTRC_ZOPC  (unsigned long)(0xe7L << 40 | 0x8aL << 0)   // String range compare
 #define VISTR_ZOPC  (unsigned long)(0xe7L << 40 | 0x5cL << 0)   // Isolate String
+
+#define VFA_ZOPC   (unsigned long)(0xe7L << 40 | 0xE3L << 0)    // V1 := V2 + V3, element size = 2**m
+#define VFS_ZOPC   (unsigned long)(0xe7L << 40 | 0xE2L << 0)    // V1 := V2 - V3, element size = 2**m
+#define VFM_ZOPC   (unsigned long)(0xe7L << 40 | 0xE7L << 0)    // V1 := V2 * V3, element size = 2**m
+#define VFD_ZOPC   (unsigned long)(0xe7L << 40 | 0xE5L << 0)    // V1 := V2 / V3, element size = 2**m
+#define VFSQ_ZOPC  (unsigned long)(0xe7L << 40 | 0xCEL << 0)    // V1 := sqrt of V2, element size = 2**m
+#define VFLR_ZOPC  (unsigned long)(0xe7L << 40 | 0xC5L << 0)    // vector fp load rounded, element size = 2**m
 
 
 //--------------------------------
@@ -1448,7 +1472,8 @@ class Assembler : public AbstractAssembler {
     bcondLogNotZero_Borrow   =  4,
     bcondLogNotZero_NoBorrow =  1,
     bcondLogNotZero          =  bcondLogNotZero_Carry | bcondLogNotZero_NoCarry,
-    bcondLogCarry            =  bcondLogZero_Carry | bcondLogNotZero_Carry,
+    bcondLogCarry            =  bcondLogZero_Carry    | bcondLogNotZero_Carry,
+    bcondLogNoCarry          =  bcondLogZero_NoCarry  | bcondLogNotZero_NoCarry,
     bcondLogBorrow           =  /* bcondLogZero_Borrow | */ bcondLogNotZero_Borrow,
     // Vector compare instructions
     bcondVAlltrue    =  8,  // All  vector elements evaluate true
@@ -1519,7 +1544,9 @@ class Assembler : public AbstractAssembler {
   //-----------------------------------------------
 
   // Calculate length of instruction.
+  static unsigned int instr_len(unsigned char  len_bits);
   static unsigned int instr_len(unsigned char *instr);
+  static unsigned int instr_len(unsigned long  instr);
 
   // Longest instructions are 6 bytes on z/Architecture.
   static unsigned int instr_maxlen() { return 6; }
@@ -1597,6 +1624,11 @@ class Assembler : public AbstractAssembler {
   static int inv_simm32(long x)    { return (inv_s_field(x, 31,  0)); }                         // 6-byte instructions only
   static int inv_uimm12(long x)    { return (inv_u_field(x, 11,  0)); }                         // 4-byte instructions only
 
+  // NOTE: PLEASE DON'T USE IT NAKED UNTIL WE DROP SUPPORT FOR MACHINES OLDER THAN Z15!!!!
+  inline void z_popcnt(Register r1, Register r2, int64_t m3);   // population count
+
+ private:
+
   // Encode u_field from long value.
   static long u_field(long x, int hi_bit, int lo_bit) {
     long r = x << lo_bit;
@@ -1616,10 +1648,21 @@ class Assembler : public AbstractAssembler {
                                          else                     { guarantee(false, "bad address format");  return 0;   }
                                        }
 
-  static int64_t rsmask_48( int64_t d2, Register b2)              { return uimm12(d2, 20, 48)                   | regz(b2, 16, 48); }
-  static int64_t rxmask_48( int64_t d2, Register x2, Register b2) { return uimm12(d2, 20, 48) | reg(x2, 12, 48) | regz(b2, 16, 48); }
-  static int64_t rsymask_48(int64_t d2, Register b2)              { return simm20(d2)                           | regz(b2, 16, 48); }
-  static int64_t rxymask_48(int64_t d2, Register x2, Register b2) { return simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48); }
+  static int64_t rsmask_32( int64_t d2, Register b2)              { return uimm12(d2, 20, 32)                    | regz(b2, 16, 32); }
+  static int64_t rsmask_48( int64_t d2, Register b2)              { return uimm12(d2, 20, 48)                    | regz(b2, 16, 48); }
+  static int64_t rsmask_SS( int64_t d2, Register b2)              { return uimm12(d2, 36, 48)                    | regz(b2, 32, 48); } // storage-storage instructions
+  static int64_t rsymask_48(int64_t d2, Register b2)              { return simm20(d2)                            | regz(b2, 16, 48); }
+  static int64_t rxmask_32( int64_t d2, Register x2, Register b2) { return uimm12(d2, 20, 32) | regt(x2, 12, 32) | regz(b2, 16, 32); }
+  static int64_t rxmask_48( int64_t d2, Register x2, Register b2) { return uimm12(d2, 20, 48) | regt(x2, 12, 48) | regz(b2, 16, 48); }
+  static int64_t rxymask_48(int64_t d2, Register x2, Register b2) { return simm20(d2)         | regt(x2, 12, 48) | regz(b2, 16, 48); }
+
+  // For instructions which use address calculation to derive an input value to the instruction.
+  // Shift instructions are an example of such use.
+  static int64_t rsmaskt_32( int64_t d2, Register b2)             { return uimm12(d2, 20, 32)                    | regt(b2, 16, 32); }
+  static int64_t rsmaskt_48( int64_t d2, Register b2)             { return uimm12(d2, 20, 48)                    | regt(b2, 16, 48); }
+  static int64_t rsymaskt_48(int64_t d2, Register b2)             { return simm20(d2)                            | regt(b2, 16, 48); }
+  static int64_t rxmaskt_32( int64_t d2, Register x2, Register b2){ return uimm12(d2, 20, 32) | regt(x2, 12, 32) | regt(b2, 16, 32); }
+  static int64_t rxymaskt_48(int64_t d2, Register x2, Register b2){ return simm20(d2)         | regt(x2, 12, 48) | regt(b2, 16, 48); }
 
   // Address calculated from d12(vx,b) - vx is vector index register.
   static int64_t rvmask_48( int64_t d2, VectorRegister x2, Register b2) { return uimm12(d2, 20, 48) | vreg(x2, 12) | regz(b2, 16, 48); }
@@ -1686,21 +1729,21 @@ class Assembler : public AbstractAssembler {
 
   // unsigned immediate, in low bits, nbits long
   static long uimm(long x, int nbits) {
-    assert(Immediate::is_uimm(x, nbits), "unsigned constant out of range");
+    assert(Immediate::is_uimm(x, nbits), "unsigned immediate " INTPTR_FORMAT " out of range (%d bits)", x, nbits);
     return x & fmask(nbits - 1, 0);
   }
 
   // Cast '1' to long to avoid sign extension if nbits = 32.
   // signed immediate, in low bits, nbits long
   static long simm(long x, int nbits) {
-    assert(Immediate::is_simm(x, nbits), "value out of range");
+    assert(Immediate::is_simm(x, nbits), "signed immediate " INTPTR_FORMAT " out of range (%d bits)", x, nbits);
     return x & fmask(nbits - 1, 0);
   }
 
   static long imm(int64_t x, int nbits) {
     // Assert that x can be represented with nbits bits ignoring the sign bits,
     // i.e. the more higher bits should all be 0 or 1.
-    assert((x >> nbits) == 0 || (x >> nbits) == -1, "value out of range");
+    assert((x >> nbits) == 0 || (x >> nbits) == -1, "signed immediate " INTPTR_FORMAT " out of range (%d bits)", x, nbits);
     return x & fmask(nbits-1, 0);
   }
 
@@ -1712,13 +1755,13 @@ class Assembler : public AbstractAssembler {
   // contents of the DH field to the left of the contents of
   // the DL field.
   static long simm20(int64_t ui20) {
-    assert(Immediate::is_simm(ui20, 20), "value out of range");
+    assert(Immediate::is_simm(ui20, 20), "signed displacement (disp20) " INTPTR_FORMAT " out of range", ui20);
     return ( ((ui20        & 0xfffL) << (48-32)) |  // DL
             (((ui20 >> 12) &  0xffL) << (48-40)));  // DH
   }
 
-  static long reg(Register r, int s, int len)  { return u_field(r->encoding(), (len-s)-1, (len-s)-4); }
-  static long reg(int r, int s, int len)       { return u_field(r,             (len-s)-1, (len-s)-4); }
+  static long reg(int r, int s, int len)       { return u_field(r, (len-s)-1, (len-s)-4); }
+  static long reg( Register r, int s, int len) { return reg(r->encoding(), s, len); }
   static long regt(Register r, int s, int len) { return reg(r, s, len); }
   static long regz(Register r, int s, int len) { assert(r != Z_R0, "cannot use register R0 in memory access"); return reg(r, s, len); }
 
@@ -1792,9 +1835,11 @@ class Assembler : public AbstractAssembler {
   static unsigned int align(unsigned int x, unsigned int a) { return ((x + (a - 1)) & ~(a - 1)); }
   static bool    is_aligned(unsigned int x, unsigned int a) { return (0 == x % a); }
 
+  inline unsigned int emit_instruction(unsigned long x, unsigned int len);
   inline void emit_16(int x);
   inline void emit_32(int x);
   inline void emit_48(long x);
+  inline void emit_data(int x);
 
   // Compare and control flow instructions
   // =====================================
@@ -1823,6 +1868,10 @@ class Assembler : public AbstractAssembler {
    //inline void z_cgf(Register r1,int64_t d2, Register x2, Register b2);// compare (r1, *(d2_uimm12+x2+b2)) ; int64 <--> int32
   inline void z_cg(  Register r1, const Address &a);                     // compare (r1, *(a))               ; int64
   inline void z_cg(  Register r1, int64_t d2, Register x2, Register b2); // compare (r1, *(d2_imm20+x2+b2))  ; int64
+   // compare memory - immediate
+  inline void z_chhsi(int64_t d1, Register b1, int64_t i2);              // compare (*d1(b1), i2_imm16)      ; int16
+  inline void z_chsi( int64_t d1, Register b1, int64_t i2);              // compare (*d1(b1), i2_imm16)      ; int32
+  inline void z_cghsi(int64_t d1, Register b1, int64_t i2);              // compare (*d1(b1), i2_imm16)      ; int64
 
    // compare logical instructions
    // compare register
@@ -1838,6 +1887,10 @@ class Assembler : public AbstractAssembler {
   inline void z_cly(  Register r1, const Address& a);                    // compare (r1, *(a))               ; uint32
   inline void z_clg(  Register r1, const Address &a);                    // compare (r1, *(a)                ; uint64
   inline void z_clg(  Register r1, int64_t d2, Register x2, Register b2);// compare (r1, *(d2_imm20+x2+b2)   ; uint64
+   // compare memory - immediate
+  inline void z_clhhsi(int64_t d1, Register b1, int64_t i2);             // compare (*d1(b1), i2_imm16)      ; uint16
+  inline void z_clfhsi(int64_t d1, Register b1, int64_t i2);             // compare (*d1(b1), i2_imm16)      ; uint32
+  inline void z_clghsi(int64_t d1, Register b1, int64_t i2);             // compare (*d1(b1), i2_imm16)      ; uint64
 
   // test under mask
   inline void z_tmll(Register r1, int64_t i2);           // test under mask, see docu
@@ -1854,7 +1907,14 @@ class Assembler : public AbstractAssembler {
   //inline void z_brcl(branch_condition i1, int64_t i2);                        // branch  i1 ? pc = pc + i2_imm32
   inline void z_brcl(branch_condition i1, address a);                           // branch  i1 ? pc = a
   inline void z_brcl(branch_condition i1, Label& L);                            // branch  i1 ? pc = Label
-  inline void z_bctgr(Register r1, Register r2);         // branch on count r1 -= 1; (r1!=0) ? pc = r2  ; r1 is int64
+
+  // branch on count Instructions
+  inline void z_bct(  Register r1, int64_t d2, Register x2, Register b2); // branch on count r1 -= 1; (r1!=0) ? pc = (d2_uimm12+x2+b2) ; r1 is int32
+  inline void z_bct(  Register r1, const Address &a);                     // branch on count r1 -= 1; (r1!=0) ? pc = *(a); r1 is int32
+  inline void z_bctr( Register r1, Register r2);                          // branch on count r1 -= 1; (r1!=0) ? pc = r2  ; r1 is int32
+  inline void z_bctgr(Register r1, Register r2);                          // branch on count r1 -= 1; (r1!=0) ? pc = r2  ; r1 is int64
+  inline void z_bctg( Register r1, const Address &a);                     // branch on count r1 -= 1; (r1!=0) ? pc = *(a); r1 is int64
+  inline void z_bctg( Register r1, int64_t d2, Register x2, Register b2); // branch on count r1 -= 1; (r1!=0) ? pc = (d2_imm20+x2+b2)  ; r1 is int64
 
   // branch unconditional / always
   inline void z_br(Register r2);                         // branch to r2, nop if r2 == Z_R0
@@ -2020,6 +2080,11 @@ class Assembler : public AbstractAssembler {
   inline void z_llilh(Register r1, int64_t i2);                 // r1 = i2_imm16    ; uint64 <- (uint16<<16)
   inline void z_llill(Register r1, int64_t i2);                 // r1 = i2_imm16    ; uint64 <- uint16
 
+  // load halfword immediate on condition
+  inline void z_lochi( Register r1, int64_t i2, branch_condition m3);  // load immediate r1[32-63] = i2_simm16   ; int32 <- int16
+  inline void z_lochhi(Register r1, int64_t i2, branch_condition m3);  // load immediate r1[ 0-31] = i2_simm16   ; int32 <- int16
+  inline void z_locghi(Register r1, int64_t i2, branch_condition m3);  // load immediate r1[ 0-63] = i2_simm16   ; int64 <- int16
+
   // insert immediate
   inline void z_ic(  Register r1, int64_t d2, Register x2, Register b2); // insert character
   inline void z_icy( Register r1, int64_t d2, Register x2, Register b2); // insert character
@@ -2108,6 +2173,8 @@ class Assembler : public AbstractAssembler {
   inline void z_aly( Register r1, int64_t d2, Register x2, Register b2);// add r1 = r1 + *(d2_imm20+x2+b2)  ; int32
   inline void z_alg( Register r1, int64_t d2, Register x2, Register b2);// add r1 = r1 + *(d2_imm20+x2+b2)  ; int64
   inline void z_algf(Register r1, int64_t d2, Register x2, Register b2);// add r1 = r1 + *(d2_imm20+x2+b2)  ; int64 <- int32
+  inline void z_alc( Register r1, int64_t d2, Register x2, Register b2);// add r1 = r1 + *(d2_imm20+x2+b2) + c ; int32
+  inline void z_alcg(Register r1, int64_t d2, Register x2, Register b2);// add r1 = r1 + *(d2_imm20+x2+b2) + c ; int64
   inline void z_a(   Register r1, const Address& a);                  // add r1 = r1 + *(a)               ; int32
   inline void z_ay(  Register r1, const Address& a);                  // add r1 = r1 + *(a)               ; int32
   inline void z_al(  Register r1, const Address& a);                  // add r1 = r1 + *(a)               ; int32
@@ -2116,6 +2183,8 @@ class Assembler : public AbstractAssembler {
   inline void z_agf( Register r1, const Address& a);                  // add r1 = r1 + *(a)               ; int64 <- int32
   inline void z_alg( Register r1, const Address& a);                  // add r1 = r1 + *(a)               ; int64
   inline void z_algf(Register r1, const Address& a);                  // add r1 = r1 + *(a)               ; int64 <- int32
+  inline void z_alc( Register r1, const Address& a);                  // add r1 = r1 + *(a) + c          ; int32
+  inline void z_alcg(Register r1, const Address& a);                  // add r1 = r1 + *(a) + c          ; int64
 
 
   inline void z_alhsik( Register r1, Register r3, int64_t i2);    // add logical r1 = r3 + i2_imm16   ; int32
@@ -2159,13 +2228,17 @@ class Assembler : public AbstractAssembler {
 
   // sub memory
   inline void z_s(   Register r1, int64_t d2, Register x2, Register b2);  // sub         r1 = r1 - *(d2_imm12+x2+b2) ; int32
-  inline void z_sy(  Register r1, int64_t d2, Register x2, Register b2);  // sub         r1 = r1 + *(d2_imm20+s2+b2) ; int32
+  inline void z_sy(  Register r1, int64_t d2, Register x2, Register b2);  // sub         r1 = r1 - *(d2_imm20+s2+b2) ; int32
+  inline void z_sl(  Register r1, int64_t d2, Register x2, Register b2);  // sub         r1 = r1 - *(d2_uimm12+x2+b2); int32
+  inline void z_sly( Register r1, int64_t d2, Register x2, Register b2);  // sub         r1 = r1 - *(d2_imm20+x2+b2) ; int32
   inline void z_sg(  Register r1, int64_t d2, Register x2, Register b2);  // sub         r1 = r1 - *(d2_imm12+x2+b2) ; int64
   inline void z_sgf( Register r1, int64_t d2, Register x2, Register b2);  // sub         r1 = r1 - *(d2_imm12+x2+b2) ; int64 - int32
   inline void z_slg( Register r1, int64_t d2, Register x2, Register b2);  // sub logical r1 = r1 - *(d2_imm20+x2+b2) ; uint64
   inline void z_slgf(Register r1, int64_t d2, Register x2, Register b2);  // sub logical r1 = r1 - *(d2_imm20+x2+b2) ; uint64 - uint32
   inline void z_s(   Register r1, const Address& a);                      // sub         r1 = r1 - *(a)              ; int32
   inline void z_sy(  Register r1, const Address& a);                      // sub         r1 = r1 - *(a)              ; int32
+  inline void z_sl(  Register r1, const Address& a);                      // sub         r1 = r1 - *(a)              ; int32
+  inline void z_sly( Register r1, const Address& a);                      // sub         r1 = r1 - *(a)              ; int32
   inline void z_sg(  Register r1, const Address& a);                      // sub         r1 = r1 - *(a)              ; int64
   inline void z_sgf( Register r1, const Address& a);                      // sub         r1 = r1 - *(a)              ; int64 - int32
   inline void z_slg( Register r1, const Address& a);                      // sub         r1 = r1 - *(a)              ; uint64
@@ -2203,6 +2276,8 @@ class Assembler : public AbstractAssembler {
   inline void z_mghi( Register r1, int64_t i2);   // mult r1 = r1 * i2_imm16;   int64
 
   // Division instructions
+  inline void z_dlr(  Register r1, Register r2);      // div  r1 = r1 / r2               ; int64/int32 needs reg pair!
+  inline void z_dlgr( Register r1, Register r2);      // div  r1 = r1 / r2               ; int128/int64 needs reg pair!
   inline void z_dsgr( Register r1, Register r2);      // div  r1 = r1 / r2               ; int64/int32 needs reg pair!
   inline void z_dsgfr(Register r1, Register r2);      // div  r1 = r1 / r2               ; int64/int32 needs reg pair!
 
@@ -2267,22 +2342,22 @@ class Assembler : public AbstractAssembler {
   inline void z_xilf(Register r1, int64_t i2);                // xor r1 = r1 ^ i2_imm32   ; or only for bits 32-63
 
   // shift
-  inline void z_sla( Register r1,              int64_t d2, Register b2=Z_R0); // shift left  r1 = r1 << ((d2+b2)&0x3f) ; int32, only 31 bits shifted, sign preserved!
-  inline void z_slak(Register r1, Register r3, int64_t d2, Register b2=Z_R0); // shift left  r1 = r3 << ((d2+b2)&0x3f) ; int32, only 31 bits shifted, sign preserved!
-  inline void z_slag(Register r1, Register r3, int64_t d2, Register b2=Z_R0); // shift left  r1 = r3 << ((d2+b2)&0x3f) ; int64, only 63 bits shifted, sign preserved!
-  inline void z_sra( Register r1,              int64_t d2, Register b2=Z_R0); // shift right r1 = r1 >> ((d2+b2)&0x3f) ; int32, sign extended
-  inline void z_srak(Register r1, Register r3, int64_t d2, Register b2=Z_R0); // shift right r1 = r3 >> ((d2+b2)&0x3f) ; int32, sign extended
-  inline void z_srag(Register r1, Register r3, int64_t d2, Register b2=Z_R0); // shift right r1 = r3 >> ((d2+b2)&0x3f) ; int64, sign extended
-  inline void z_sll( Register r1,              int64_t d2, Register b2=Z_R0); // shift left  r1 = r1 << ((d2+b2)&0x3f) ; int32, zeros added
-  inline void z_sllk(Register r1, Register r3, int64_t d2, Register b2=Z_R0); // shift left  r1 = r3 << ((d2+b2)&0x3f) ; int32, zeros added
-  inline void z_sllg(Register r1, Register r3, int64_t d2, Register b2=Z_R0); // shift left  r1 = r3 << ((d2+b2)&0x3f) ; int64, zeros added
-  inline void z_srl( Register r1,              int64_t d2, Register b2=Z_R0); // shift right r1 = r1 >> ((d2+b2)&0x3f) ; int32, zero extended
-  inline void z_srlk(Register r1, Register r3, int64_t d2, Register b2=Z_R0); // shift right r1 = r3 >> ((d2+b2)&0x3f) ; int32, zero extended
-  inline void z_srlg(Register r1, Register r3, int64_t d2, Register b2=Z_R0); // shift right r1 = r3 >> ((d2+b2)&0x3f) ; int64, zero extended
+  inline void z_sla( Register r1,              int64_t d2, Register b2 = Z_R0); // shift left  r1 = r1 << ((d2+b2)&0x3f) ; int32, only 31 bits shifted, sign preserved!
+  inline void z_slak(Register r1, Register r3, int64_t d2, Register b2 = Z_R0); // shift left  r1 = r3 << ((d2+b2)&0x3f) ; int32, only 31 bits shifted, sign preserved!
+  inline void z_slag(Register r1, Register r3, int64_t d2, Register b2 = Z_R0); // shift left  r1 = r3 << ((d2+b2)&0x3f) ; int64, only 63 bits shifted, sign preserved!
+  inline void z_sra( Register r1,              int64_t d2, Register b2 = Z_R0); // shift right r1 = r1 >> ((d2+b2)&0x3f) ; int32, sign extended
+  inline void z_srak(Register r1, Register r3, int64_t d2, Register b2 = Z_R0); // shift right r1 = r3 >> ((d2+b2)&0x3f) ; int32, sign extended
+  inline void z_srag(Register r1, Register r3, int64_t d2, Register b2 = Z_R0); // shift right r1 = r3 >> ((d2+b2)&0x3f) ; int64, sign extended
+  inline void z_sll( Register r1,              int64_t d2, Register b2 = Z_R0); // shift left  r1 = r1 << ((d2+b2)&0x3f) ; int32, zeros added
+  inline void z_sllk(Register r1, Register r3, int64_t d2, Register b2 = Z_R0); // shift left  r1 = r3 << ((d2+b2)&0x3f) ; int32, zeros added
+  inline void z_sllg(Register r1, Register r3, int64_t d2, Register b2 = Z_R0); // shift left  r1 = r3 << ((d2+b2)&0x3f) ; int64, zeros added
+  inline void z_srl( Register r1,              int64_t d2, Register b2 = Z_R0); // shift right r1 = r1 >> ((d2+b2)&0x3f) ; int32, zero extended
+  inline void z_srlk(Register r1, Register r3, int64_t d2, Register b2 = Z_R0); // shift right r1 = r3 >> ((d2+b2)&0x3f) ; int32, zero extended
+  inline void z_srlg(Register r1, Register r3, int64_t d2, Register b2 = Z_R0); // shift right r1 = r3 >> ((d2+b2)&0x3f) ; int64, zero extended
 
   // rotate
-  inline void z_rll( Register r1, Register r3, int64_t d2, Register b2=Z_R0); // rot r1 = r3 << (d2+b2 & 0x3f) ; int32  -- z10
-  inline void z_rllg(Register r1, Register r3, int64_t d2, Register b2=Z_R0); // rot r1 = r3 << (d2+b2 & 0x3f) ; int64  -- z10
+  inline void z_rll( Register r1, Register r3, int64_t d2, Register b2 = Z_R0); // rot r1 = r3 << (d2+b2 & 0x3f) ; int32  -- z10
+  inline void z_rllg(Register r1, Register r3, int64_t d2, Register b2 = Z_R0); // rot r1 = r3 << (d2+b2 & 0x3f) ; int64  -- z10
 
   // rotate the AND/XOR/OR/insert
   inline void z_rnsbg( Register r1, Register r2, int64_t spos3, int64_t epos4, int64_t nrot5, bool test_only = false); // rotate then AND selected bits  -- z196
@@ -2403,7 +2478,8 @@ class Assembler : public AbstractAssembler {
 
   inline void z_mvc(const Address& d, const Address& s, int64_t l);               // move l bytes
   inline void z_mvc(int64_t d1, int64_t l, Register b1, int64_t d2, Register b2); // move l+1 bytes
-  inline void z_mvcle(Register r1, Register r3, int64_t d2, Register b2=Z_R0);    // move region of memory
+  inline void z_mvcin(int64_t d1, int64_t l, Register b1, int64_t d2, Register b2); // move l+1 bytes
+  inline void z_mvcle(Register r1, Register r3, int64_t d2, Register b2 = Z_R0);    // move region of memory
 
   inline void z_stfle(int64_t d2, Register b2);                            // store facility list extended
 
@@ -2435,6 +2511,7 @@ class Assembler : public AbstractAssembler {
   // Load (transfer from memory)
   inline void z_vlm(   VectorRegister v1, VectorRegister v3, int64_t d2, Register b2);
   inline void z_vl(    VectorRegister v1, int64_t d2, Register x2, Register b2);
+  inline void z_vl(    VectorRegister v1, const Address& a);
   inline void z_vleb(  VectorRegister v1, int64_t d2, Register x2, Register b2, int64_t m3);
   inline void z_vleh(  VectorRegister v1, int64_t d2, Register x2, Register b2, int64_t m3);
   inline void z_vlef(  VectorRegister v1, int64_t d2, Register x2, Register b2, int64_t m3);
@@ -2473,10 +2550,10 @@ class Assembler : public AbstractAssembler {
   inline void z_vlgvg( Register r1, VectorRegister v3, int64_t d2, Register b2);
 
   inline void z_vlvg(  VectorRegister v1, Register r3, int64_t d2, Register b2, int64_t m4);
-  inline void z_vlvgb( VectorRegister v1, Register r3, int64_t d2, Register b2);
-  inline void z_vlvgh( VectorRegister v1, Register r3, int64_t d2, Register b2);
-  inline void z_vlvgf( VectorRegister v1, Register r3, int64_t d2, Register b2);
-  inline void z_vlvgg( VectorRegister v1, Register r3, int64_t d2, Register b2);
+  inline void z_vlvgb( VectorRegister v1, Register r3, int64_t d2, Register b2 = Z_R0);
+  inline void z_vlvgh( VectorRegister v1, Register r3, int64_t d2, Register b2 = Z_R0);
+  inline void z_vlvgf( VectorRegister v1, Register r3, int64_t d2, Register b2 = Z_R0);
+  inline void z_vlvgg( VectorRegister v1, Register r3, int64_t d2, Register b2 = Z_R0);
 
   inline void z_vlvgp( VectorRegister v1, Register r2, Register r3);
 
@@ -2563,6 +2640,7 @@ class Assembler : public AbstractAssembler {
   // Store
   inline void z_vstm(  VectorRegister v1, VectorRegister v3, int64_t d2, Register b2);
   inline void z_vst(   VectorRegister v1, int64_t d2, Register x2, Register b2);
+  inline void z_vst(   VectorRegister v1, const Address& a);
   inline void z_vsteb( VectorRegister v1, int64_t d2, Register x2, Register b2, int64_t m3);
   inline void z_vsteh( VectorRegister v1, int64_t d2, Register x2, Register b2, int64_t m3);
   inline void z_vstef( VectorRegister v1, int64_t d2, Register x2, Register b2, int64_t m3);
@@ -2623,13 +2701,16 @@ class Assembler : public AbstractAssembler {
   inline void z_vscbiq( VectorRegister v1, VectorRegister v2, VectorRegister v3);
 
   // MULTIPLY
-  inline void z_vml(    VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
-  inline void z_vmh(    VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
-  inline void z_vmlh(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
-  inline void z_vme(    VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
-  inline void z_vmle(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
-  inline void z_vmo(    VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
-  inline void z_vmlo(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vml(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vmlb( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmlhw(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmlf( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmh(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vmlh( VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vme(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vmle( VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vmo(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vmlo( VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
 
   // MULTIPLY & ADD
   inline void z_vmal(   VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m5);
@@ -2687,6 +2768,9 @@ class Assembler : public AbstractAssembler {
 
   // NOR
   inline void z_vno(    VectorRegister v1, VectorRegister v2, VectorRegister v3);
+
+  //NOT-XOR
+  inline void z_vnx(    VectorRegister v1, VectorRegister v2, VectorRegister v3);
 
   // OR
   inline void z_vo(     VectorRegister v1, VectorRegister v2, VectorRegister v3);
@@ -2754,6 +2838,10 @@ class Assembler : public AbstractAssembler {
   inline void z_vctzf(  VectorRegister v1, VectorRegister v2);
   inline void z_vctzg(  VectorRegister v1, VectorRegister v2);
   inline void z_vpopct( VectorRegister v1, VectorRegister v2, int64_t m3);
+  inline void z_vpopctb(VectorRegister v1, VectorRegister v2);
+  inline void z_vpopcth(VectorRegister v1, VectorRegister v2);
+  inline void z_vpopctf(VectorRegister v1, VectorRegister v2);
+  inline void z_vpopctg(VectorRegister v1, VectorRegister v2);
 
   // Rotate/Shift
   inline void z_verllv( VectorRegister v1, VectorRegister v2, VectorRegister v3,               int64_t m4);
@@ -2842,9 +2930,39 @@ class Assembler : public AbstractAssembler {
   inline void z_vistrfs(VectorRegister v1, VectorRegister v2);
 
 
+  // Vector Floatingpoint instructions
+  // ==========================
+  // Add
+  inline void z_vfa(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vfasb(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vfadb(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+
+  //SUB
+  inline void z_vfs(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vfssb(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vfsdb(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+
+  //MUL
+  inline void z_vfm(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vfmsb(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vfmdb(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+
+  //DIV
+  inline void z_vfd(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vfdsb(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vfddb(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+
+  //square root
+  inline void z_vfsq(  VectorRegister v1, VectorRegister v2, int64_t m3);
+  inline void z_vfsqsb(VectorRegister v1, VectorRegister v2);
+  inline void z_vfsqdb(VectorRegister v1, VectorRegister v2);
+
+  //vector fp load rounded
+  inline void z_vflr(  VectorRegister v1, VectorRegister v2, int64_t m3, int64_t m5);
+  inline void z_vflrd( VectorRegister v1, VectorRegister v2, int64_t m5);
+
   // Floatingpoint instructions
   // ==========================
-
   // compare instructions
   inline void z_cebr(FloatRegister r1, FloatRegister r2);                     // compare (r1, r2)                ; float
   inline void z_ceb(FloatRegister r1, int64_t d2, Register x2, Register b2);  // compare (r1, *(d2_imm12+x2+b2)) ; float
@@ -3019,6 +3137,10 @@ class Assembler : public AbstractAssembler {
   inline void z_braz(Label& L);
   inline void z_brnp(Label& L);
 
+  // Branch on count;
+  inline void z_bct( Register r1, int64_t d2, Register b2);
+  inline void z_bctg(Register r1, int64_t d2, Register b2);
+
   inline void z_btrue( Label& L);
   inline void z_bfalse(Label& L);
 
@@ -3050,7 +3172,6 @@ class Assembler : public AbstractAssembler {
 
   // Ppopulation count intrinsics.
   inline void z_flogr(Register r1, Register r2);    // find leftmost one
-  inline void z_popcnt(Register r1, Register r2);   // population count
   inline void z_ahhhr(Register r1, Register r2, Register r3);   // ADD halfword high high
   inline void z_ahhlr(Register r1, Register r2, Register r3);   // ADD halfword high low
 
@@ -3088,6 +3209,9 @@ class Assembler : public AbstractAssembler {
   }
   static bool is_z_algr(long x) {
     return (ALGR_ZOPC == (x & RRE_MASK));
+  }
+  static bool is_z_cfi(long x) {
+    return (CFI_ZOPC == (x & RIL_MASK));
   }
   static bool is_z_lb(long x) {
     return (LB_ZOPC == (x & LB_MASK));

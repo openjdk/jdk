@@ -24,6 +24,8 @@
  */
 package com.sun.nio.sctp;
 
+import java.io.Serial;
+
 /**
  * Unchecked exception thrown when an attempt is made to send a
  * message to an invalid stream.
@@ -31,6 +33,7 @@ package com.sun.nio.sctp;
  * @since 1.7
  */
 public class InvalidStreamException extends IllegalArgumentException {
+    @Serial
     private static final long serialVersionUID = -9172703378046665558L;
 
     /**

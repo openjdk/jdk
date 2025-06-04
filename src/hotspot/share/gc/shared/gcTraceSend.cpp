@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcTimer.hpp"
@@ -36,6 +35,10 @@
 
 typedef uintptr_t TraceAddress;
 
+bool GCTracer::should_send_cpu_time_event() const {
+  return EventGCCPUTime::is_enabled();
+}
+
 void GCTracer::send_garbage_collection_event() const {
   EventGarbageCollection event(UNTIMED);
   if (event.should_commit()) {
@@ -47,6 +50,17 @@ void GCTracer::send_garbage_collection_event() const {
     event.set_starttime(_shared_gc_info.start_timestamp());
     event.set_endtime(_shared_gc_info.end_timestamp());
     event.commit();
+  }
+}
+
+void GCTracer::send_cpu_time_event(double user_time, double system_time, double real_time) const {
+  EventGCCPUTime e;
+  if (e.should_commit()) {
+      e.set_gcId(GCId::current());
+      e.set_userTime((size_t)(user_time * NANOUNITS));
+      e.set_systemTime((size_t)(system_time * NANOUNITS));
+      e.set_realTime((size_t)(real_time * NANOUNITS));
+      e.commit();
   }
 }
 
@@ -157,9 +171,9 @@ void OldGCTracer::send_old_gc_event() const {
 static JfrStructCopyFailed to_struct(const CopyFailedInfo& cf_info) {
   JfrStructCopyFailed failed_info;
   failed_info.set_objectCount(cf_info.failed_count());
-  failed_info.set_firstSize(cf_info.first_size());
-  failed_info.set_smallestSize(cf_info.smallest_size());
-  failed_info.set_totalSize(cf_info.total_size());
+  failed_info.set_firstSize(cf_info.first_size() * HeapWordSize);
+  failed_info.set_smallestSize(cf_info.smallest_size() * HeapWordSize);
+  failed_info.set_totalSize(cf_info.total_size() * HeapWordSize);
   return failed_info;
 }
 
@@ -229,6 +243,7 @@ class GCHeapSummaryEventSender : public GCHeapSummaryVisitor {
       e.set_edenUsedSize(g1_heap_summary->edenUsed());
       e.set_edenTotalSize(g1_heap_summary->edenCapacity());
       e.set_survivorUsedSize(g1_heap_summary->survivorUsed());
+      e.set_oldGenUsedSize(g1_heap_summary->oldGenUsed());
       e.set_numberOfRegions(g1_heap_summary->numberOfRegions());
       e.commit();
     }
@@ -301,11 +316,12 @@ class PhaseSender : public PhaseVisitor {
   }
 
   void visit_concurrent(GCPhase* phase) {
-    assert(phase->level() < 2, "There is only two levels for ConcurrentPhase");
+    assert(phase->level() < 3, "There are only three levels for ConcurrentPhase");
 
     switch (phase->level()) {
       case 0: send_phase<EventGCPhaseConcurrent>(phase); break;
       case 1: send_phase<EventGCPhaseConcurrentLevel1>(phase); break;
+      case 2: send_phase<EventGCPhaseConcurrentLevel2>(phase); break;
       default: /* Ignore sending this phase */ break;
     }
   }
@@ -342,48 +358,3 @@ void GCTracer::send_phase_events(TimePartitions* time_partitions) const {
     phase->accept(&phase_reporter);
   }
 }
-
-#if INCLUDE_JFR
-Ticks GCLockerTracer::_needs_gc_start_timestamp;
-volatile jint GCLockerTracer::_jni_lock_count = 0;
-volatile jint GCLockerTracer::_stall_count = 0;
-
-bool GCLockerTracer::is_started() {
-  return _needs_gc_start_timestamp != Ticks();
-}
-
-void GCLockerTracer::start_gc_locker(const jint jni_lock_count) {
-  assert(SafepointSynchronize::is_at_safepoint(), "sanity");
-  assert(!is_started(), "sanity");
-  assert(_jni_lock_count == 0, "sanity");
-  assert(_stall_count == 0, "sanity");
-  if (EventGCLocker::is_enabled()) {
-    _needs_gc_start_timestamp.stamp();
-    _jni_lock_count = jni_lock_count;
-  }
-}
-
-void GCLockerTracer::inc_stall_count() {
-  if (is_started()) {
-    _stall_count++;
-  }
-}
-
-void GCLockerTracer::report_gc_locker() {
-  if (is_started()) {
-    EventGCLocker event(UNTIMED);
-    if (event.should_commit()) {
-      event.set_starttime(_needs_gc_start_timestamp);
-      event.set_lockCount(_jni_lock_count);
-      event.set_stallCount(_stall_count);
-      event.commit();
-    }
-    // reset
-    _needs_gc_start_timestamp = Ticks();
-    _jni_lock_count = 0;
-    _stall_count = 0;
-
-    assert(!is_started(), "sanity");
-  }
-}
-#endif

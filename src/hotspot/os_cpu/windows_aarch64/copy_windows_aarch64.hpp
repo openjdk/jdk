@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +26,26 @@
 #ifndef OS_CPU_WINDOWS_AARCH64_COPY_WINDOWS_AARCH64_HPP
 #define OS_CPU_WINDOWS_AARCH64_COPY_WINDOWS_AARCH64_HPP
 
+#include "runtime/atomic.hpp"
+
 #include <string.h>
+
+template <typename T>
+static void pd_conjoint_atomic_helper(const T* from, T* to, size_t count) {
+  if (from > to) {
+    while (count-- > 0) {
+      // Copy forwards
+      Atomic::store(to++, Atomic::load(from++));
+    }
+  } else {
+    from += count - 1;
+    to   += count - 1;
+    while (count-- > 0) {
+      // Copy backwards
+      Atomic::store(to--, Atomic::load(from--));
+    }
+  }
+}
 
 static void pd_conjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
   (void)memmove(to, from, count * HeapWordSize);
@@ -49,21 +69,7 @@ static void pd_disjoint_words(const HeapWord* from, HeapWord* to, size_t count) 
 }
 
 static void pd_disjoint_words_atomic(const HeapWord* from, HeapWord* to, size_t count) {
-  switch (count) {
-  case 8:  to[7] = from[7];
-  case 7:  to[6] = from[6];
-  case 6:  to[5] = from[5];
-  case 5:  to[4] = from[4];
-  case 4:  to[3] = from[3];
-  case 3:  to[2] = from[2];
-  case 2:  to[1] = from[1];
-  case 1:  to[0] = from[0];
-  case 0:  break;
-  default: while (count-- > 0) {
-             *to++ = *from++;
-           }
-           break;
-  }
+  shared_disjoint_words_atomic(from, to, count);
 }
 
 static void pd_aligned_conjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
@@ -84,55 +90,19 @@ static void pd_conjoint_bytes_atomic(const void* from, void* to, size_t count) {
 }
 
 static void pd_conjoint_jshorts_atomic(const jshort* from, jshort* to, size_t count) {
-  if (from > to) {
-    while (count-- > 0) {
-      // Copy forwards
-      *to++ = *from++;
-    }
-  } else {
-    from += count - 1;
-    to   += count - 1;
-    while (count-- > 0) {
-      // Copy backwards
-      *to-- = *from--;
-    }
-  }
+  pd_conjoint_atomic_helper(from, to, count);
 }
 
 static void pd_conjoint_jints_atomic(const jint* from, jint* to, size_t count) {
-  if (from > to) {
-    while (count-- > 0) {
-      // Copy forwards
-      *to++ = *from++;
-    }
-  } else {
-    from += count - 1;
-    to   += count - 1;
-    while (count-- > 0) {
-      // Copy backwards
-      *to-- = *from--;
-    }
-  }
+  pd_conjoint_atomic_helper(from, to, count);
 }
 
 static void pd_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count) {
-  pd_conjoint_oops_atomic((const oop*)from, (oop*)to, count);
+  pd_conjoint_atomic_helper(from, to, count);
 }
 
 static void pd_conjoint_oops_atomic(const oop* from, oop* to, size_t count) {
- if (from > to) {
-    while (count-- > 0) {
-      // Copy forwards
-      *to++ = *from++;
-    }
-  } else {
-    from += count - 1;
-    to   += count - 1;
-    while (count-- > 0) {
-      // Copy backwards
-      *to-- = *from--;
-    }
-  }
+ pd_conjoint_atomic_helper(from, to, count);
 }
 
 static void pd_arrayof_conjoint_bytes(const HeapWord* from, HeapWord* to, size_t count) {

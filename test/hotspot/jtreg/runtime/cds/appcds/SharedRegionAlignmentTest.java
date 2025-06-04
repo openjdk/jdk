@@ -31,9 +31,9 @@
  *          disable it if ZGC is used.
  * @bug 8236847
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  * @build Hello
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar Hello
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. SharedRegionAlignmentTest
  */
@@ -41,7 +41,7 @@
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class SharedRegionAlignmentTest {
     static String appJar = ClassFileInstaller.getJarPath("hello.jar");

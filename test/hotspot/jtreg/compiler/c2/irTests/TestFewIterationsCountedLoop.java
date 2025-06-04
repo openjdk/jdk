@@ -30,6 +30,7 @@ import compiler.lib.ir_framework.*;
  * @bug 8262721
  * @summary Add Tests to verify single iteration loops are properly optimized
  * @library /test/lib /
+ * @requires vm.compiler2.enabled
  * @run driver compiler.c2.irTests.TestFewIterationsCountedLoop
  */
 
@@ -44,7 +45,7 @@ public class TestFewIterationsCountedLoop {
     static final Object object = new Object();
 
     @Test
-    @IR(failOn = { IRNode.COUNTEDLOOP, IRNode.LOOP })
+    @IR(failOn = {IRNode.COUNTED_LOOP, IRNode.LOOP })
     public static void singleIterationFor() {
         for (int i = 0; i < 1; i++) {
             barrier = 0x42; // something that can't be optimized out
@@ -52,7 +53,7 @@ public class TestFewIterationsCountedLoop {
     }
 
     @Test
-    @IR(failOn = { IRNode.COUNTEDLOOP, IRNode.LOOP })
+    @IR(failOn = {IRNode.COUNTED_LOOP, IRNode.LOOP })
     public static void singleIterationWhile() {
         int i = 0;
         while (i < 1) {
@@ -62,7 +63,7 @@ public class TestFewIterationsCountedLoop {
     }
 
     @Test
-    @IR(failOn = { IRNode.COUNTEDLOOP, IRNode.LOOP })
+    @IR(failOn = {IRNode.COUNTED_LOOP, IRNode.LOOP })
     @Warmup(1) // So C2 can't rely on profile data
     public static void singleIterationDoWhile() {
         int i = 0;
@@ -74,8 +75,8 @@ public class TestFewIterationsCountedLoop {
     }
 
     @Test
-    @IR(applyIf = { "LoopUnrollLimit", "0" }, counts = { IRNode.COUNTEDLOOP, "1" })
-    @IR(applyIf = { "LoopUnrollLimit", "> 0" }, failOn = { IRNode.COUNTEDLOOP, IRNode.LOOP })
+    @IR(applyIf = { "LoopUnrollLimit", "0" }, counts = {IRNode.COUNTED_LOOP, "1" })
+    @IR(applyIf = { "LoopUnrollLimit", "> 0" }, failOn = {IRNode.COUNTED_LOOP, IRNode.LOOP })
     public static void twoIterationsFor() {
         for (int i = 0; i < 2; i++) {
             barrier = 0x42; // something that can't be optimized out
@@ -83,8 +84,8 @@ public class TestFewIterationsCountedLoop {
     }
 
     @Test
-    @IR(applyIf = { "LoopUnrollLimit", "0" }, counts = { IRNode.COUNTEDLOOP, "1" })
-    @IR(applyIf = { "LoopUnrollLimit", "> 0" }, failOn = { IRNode.COUNTEDLOOP, IRNode.LOOP })
+    @IR(applyIf = { "LoopUnrollLimit", "0" }, counts = {IRNode.COUNTED_LOOP, "1" })
+    @IR(applyIf = { "LoopUnrollLimit", "> 0" }, failOn = {IRNode.COUNTED_LOOP, IRNode.LOOP })
     public static void twoIterationsWhile() {
         int i = 0;
         while (i < 2) {
@@ -94,8 +95,8 @@ public class TestFewIterationsCountedLoop {
     }
 
     @Test
-    @IR(applyIf = { "LoopUnrollLimit", "0" }, counts = { IRNode.COUNTEDLOOP, "1" })
-    @IR(applyIf = { "LoopUnrollLimit", "> 0" }, failOn = { IRNode.COUNTEDLOOP, IRNode.LOOP })
+    @IR(applyIf = { "LoopUnrollLimit", "0" }, counts = {IRNode.COUNTED_LOOP, "1" })
+    @IR(applyIf = { "LoopUnrollLimit", "> 0" }, failOn = {IRNode.COUNTED_LOOP, IRNode.LOOP })
     public static void twoIterationsDoWhile() {
         int i = 0;
         do {
@@ -106,8 +107,8 @@ public class TestFewIterationsCountedLoop {
     }
 
     @Test
-    @IR(applyIf = { "LoopUnrollLimit", "0" }, counts = { IRNode.COUNTEDLOOP, "1" })
-    @IR(applyIf = { "LoopUnrollLimit", "> 0" }, failOn = { IRNode.COUNTEDLOOP, IRNode.LOOP })
+    @IR(applyIf = { "LoopUnrollLimit", "0" }, counts = {IRNode.COUNTED_LOOP, "1" })
+    @IR(applyIf = { "LoopUnrollLimit", "> 0" }, failOn = {IRNode.COUNTED_LOOP, IRNode.LOOP })
     public static void threadIterationsFor() {
         for (int i = 0; i < 2; i++) {
             barrier = 0x42; // something that can't be optimized out
@@ -115,8 +116,8 @@ public class TestFewIterationsCountedLoop {
     }
 
     @Test
-    @IR(applyIf = { "LoopUnrollLimit", "0" }, counts = { IRNode.COUNTEDLOOP, "1" })
-    @IR(applyIf = { "LoopUnrollLimit", "> 0" }, failOn = { IRNode.COUNTEDLOOP, IRNode.LOOP })
+    @IR(applyIf = { "LoopUnrollLimit", "0" }, counts = {IRNode.COUNTED_LOOP, "1" })
+    @IR(applyIf = { "LoopUnrollLimit", "> 0" }, failOn = {IRNode.COUNTED_LOOP, IRNode.LOOP })
     public static void threeIterationsWhile() {
         int i = 0;
         while (i < 2) {
@@ -126,8 +127,8 @@ public class TestFewIterationsCountedLoop {
     }
 
     @Test
-    @IR(applyIf = { "LoopUnrollLimit", "0" }, counts = { IRNode.COUNTEDLOOP, "1" })
-    @IR(applyIf = { "LoopUnrollLimit", "> 0" }, failOn = { IRNode.COUNTEDLOOP, IRNode.LOOP })
+    @IR(applyIf = { "LoopUnrollLimit", "0" }, counts = {IRNode.COUNTED_LOOP, "1" })
+    @IR(applyIf = { "LoopUnrollLimit", "> 0" }, failOn = {IRNode.COUNTED_LOOP, IRNode.LOOP })
     public static void threeIterationsDoWhile() {
         int i = 0;
         do {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,14 +95,14 @@ static CGAffineTransform sInverseTX = { 1, 0, 0, -1, 0, 0 };
         _fontThrowJavaException = YES;                                  \
         goto cleanup;                                                   \
     }                                                                   \
-    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {                      \
+    if ((*env)->ExceptionCheck(env)) {                                  \
         goto cleanup;                                                   \
     }
 
 #define AWT_FONT_CLEANUP_FINISH                                         \
     if (_fontThrowJavaException == YES) {                               \
         char s[512];                                                    \
-        sprintf(s, "%s-%s:%d", __FILE__, __FUNCTION__, __LINE__);       \
+        snprintf(s, sizeof(s), "%s-%s:%d", __FILE__, __FUNCTION__, __LINE__);       \
         JNU_ThrowByName(env, "java/lang/RuntimeException", s);          \
     }
 

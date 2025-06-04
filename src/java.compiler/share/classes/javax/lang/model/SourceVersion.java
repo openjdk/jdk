@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,6 @@
 
 package javax.lang.model;
 
-import java.util.Collections;
-import java.util.Set;
-import java.util.HashSet;
-
 /**
  * Source versions of the Java programming language.
  *
@@ -39,10 +35,8 @@ import java.util.HashSet;
  * <p>Note that additional source version constants will be added to
  * model future releases of the language.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @since 1.6
+ * @see java.lang.reflect.ClassFileFormatVersion
  */
 public enum SourceVersion {
     /*
@@ -66,8 +60,29 @@ public enum SourceVersion {
      *  15: text blocks (sealed classes in preview; records and pattern
      *      matching in second preview)
      *  16: records and pattern matching (sealed classes in second preview)
-     *  17: sealed classes, floating-point always strict
-     *  18: TBD
+     *  17: sealed classes, floating-point always strict (pattern
+     *      matching for switch in preview)
+     *  18: no changes (pattern matching for switch in second preview)
+     *  19: no changes (pattern matching for switch in third preview,
+     *      record patterns in preview)
+     *  20: no changes (pattern matching for switch in fourth preview,
+     *      record patterns in second preview)
+     *  21: pattern matching for switch and record patterns (string
+     *      templates in preview, unnamed patterns and variables in
+     *      preview, unnamed classes and instance main methods in preview)
+     *  22: unnamed variables & patterns (statements before super(...)
+     *      in preview, string templates in second preview, implicitly
+     *      declared classes and instance main methods in second preview)
+     *  23: no changes (primitive Types in Patterns, instanceof, and
+     *      switch in preview, module Import Declarations in preview,
+     *      implicitly declared classes and instance main in third
+     *      preview, flexible constructor bodies in second preview)
+     *  24: no changes (primitive Types in Patterns, instanceof, and
+     *      switch in second preview, module Import Declarations in second
+     *      preview, simple source files and instance main in fourth
+     *      preview, flexible constructor bodies in third preview)
+     *  25: module import declarations, compact source files and
+     *      instance main methods, and flexible constructor bodies
      */
 
     /**
@@ -79,15 +94,16 @@ public enum SourceVersion {
     RELEASE_0,
 
     /**
-     * The version recognized by the Java Platform 1.1.
+     * The version introduced by the Java Platform 1.1.
      *
-     * The language is {@code RELEASE_0} augmented with nested classes as described in the 1.1 update to
-     * <cite>The Java Language Specification, First Edition</cite>.
+     * The language is {@code RELEASE_0} augmented with nested classes
+     * as described in the 1.1 update to <cite>The Java Language
+     * Specification, First Edition</cite>.
      */
     RELEASE_1,
 
     /**
-     * The version recognized by the Java 2 Platform, Standard Edition,
+     * The version introduced by the Java 2 Platform, Standard Edition,
      * v 1.2.
      *
      * The language described in
@@ -98,7 +114,7 @@ public enum SourceVersion {
     RELEASE_2,
 
     /**
-     * The version recognized by the Java 2 Platform, Standard Edition,
+     * The version introduced by the Java 2 Platform, Standard Edition,
      * v 1.3.
      *
      * No major changes from {@code RELEASE_2}.
@@ -106,15 +122,18 @@ public enum SourceVersion {
     RELEASE_3,
 
     /**
-     * The version recognized by the Java 2 Platform, Standard Edition,
+     * The version introduced by the Java 2 Platform, Standard Edition,
      * v 1.4.
      *
      * Added a simple assertion facility.
+     *
+     * @see <a href="https://jcp.org/en/jsr/detail?id=41">
+     * JSR 41: A Simple Assertion Facility</a>
      */
     RELEASE_4,
 
     /**
-     * The version recognized by the Java 2 Platform, Standard
+     * The version introduced by the Java 2 Platform, Standard
      * Edition 5.0.
      *
      * The language described in
@@ -122,145 +141,334 @@ public enum SourceVersion {
      * Third Edition</cite>.  First release to support
      * generics, annotations, autoboxing, var-args, enhanced {@code
      * for} loop, and hexadecimal floating-point literals.
+     *
+     * @see <a href="https://jcp.org/en/jsr/detail?id=14">
+     * JSR 14: Add Generic Types To The Java&trade; Programming Language</a>
+     * @see <a href="https://jcp.org/en/jsr/detail?id=175">
+     * JSR 175: A Metadata Facility for the Java&trade; Programming Language</a>
+     * @see <a href="https://jcp.org/en/jsr/detail?id=201">
+     * JSR 201: Extending the Java&trade; Programming Language with Enumerations,
+     * Autoboxing, Enhanced for loops and Static Import</a>
      */
     RELEASE_5,
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 6.
      *
      * No major changes from {@code RELEASE_5}.
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se6/html/j3TOC.html">
+     * <cite>The Java Language Specification, Third Edition</cite></a>
      */
     RELEASE_6,
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 7.
      *
-     * Additions in this release include, diamond syntax for
+     * Additions in this release include diamond syntax for
      * constructors, {@code try}-with-resources, strings in switch,
      * binary literals, and multi-catch.
      * @since 1.7
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se7/html/index.html">
+     * <cite>The Java Language Specification, Java SE 7 Edition</cite></a>
+     * @see <a href="https://jcp.org/en/jsr/detail?id=334">
+     * JSR 334: Small Enhancements to the Java&trade; Programming Language</a>
      */
     RELEASE_7,
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 8.
      *
      * Additions in this release include lambda expressions and default methods.
      * @since 1.8
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se8/html/index.html">
+     * <cite>The Java Language Specification, Java SE 8 Edition</cite></a>
+     * @see <a href="https://jcp.org/en/jsr/detail?id=335">
+     * JSR 335: Lambda Expressions for the Java&trade; Programming Language</a>
      */
     RELEASE_8,
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 9.
      *
      * Additions in this release include modules and removal of a
      * single underscore from the set of legal identifier names.
      *
      * @since 9
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se9/html/index.html">
+     * <cite>The Java Language Specification, Java SE 9 Edition</cite></a>
+     * @see <a href="https://jcp.org/en/jsr/detail?id=376">
+     * JSR 376: Java&trade; Platform Module System</a>
+     * @see <a href="https://openjdk.org/jeps/213">
+     * JEP 213: Milling Project Coin</a>
      */
-     RELEASE_9,
+    RELEASE_9,
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 10.
      *
      * Additions in this release include local-variable type inference
      * ({@code var}).
      *
      * @since 10
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se10/html/index.html">
+     * <cite>The Java Language Specification, Java SE 10 Edition</cite></a>
+     * @see <a href="https://openjdk.org/jeps/286">
+     * JEP 286: Local-Variable Type Inference</a>
      */
     RELEASE_10,
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 11.
      *
      * Additions in this release include local-variable syntax for
      * lambda parameters.
      *
      * @since 11
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se11/html/index.html">
+     * <cite>The Java Language Specification, Java SE 11 Edition</cite></a>
+     * @see <a href="https://openjdk.org/jeps/323">
+     * JEP 323: Local-Variable Syntax for Lambda Parameters</a>
      */
     RELEASE_11,
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 12.
      * No major changes from the prior release.
      *
      * @since 12
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se12/html/index.html">
+     * <cite>The Java Language Specification, Java SE 12 Edition</cite></a>
      */
     RELEASE_12,
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 13.
      * No major changes from the prior release.
      *
      * @since 13
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se13/html/index.html">
+     * <cite>The Java Language Specification, Java SE 13 Edition</cite></a>
      */
     RELEASE_13,
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 14.
      *
      * Additions in this release include switch expressions.
      *
      * @since 14
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se14/html/index.html">
+     * <cite>The Java Language Specification, Java SE 14 Edition</cite></a>
+     * @see <a href="https://openjdk.org/jeps/361">
+     * JEP 361: Switch Expressions</a>
      */
     RELEASE_14,
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 15.
      *
      * Additions in this release include text blocks.
      *
      * @since 15
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se15/html/index.html">
+     * <cite>The Java Language Specification, Java SE 15 Edition</cite></a>
+     * @see <a href="https://openjdk.org/jeps/378">
+     * JEP 378: Text Blocks</a>
      */
     RELEASE_15,
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 16.
      *
      * Additions in this release include records and pattern matching
      * for {@code instanceof}.
      *
      * @since 16
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se16/html/index.html">
+     * <cite>The Java Language Specification, Java SE 16 Edition</cite></a>
+     * @see <a href="https://openjdk.org/jeps/394">
+     * JEP 394: Pattern Matching for instanceof</a>
+     * @see <a href="https://openjdk.org/jeps/395">
+     * JEP 395: Records</a>
      */
     RELEASE_16,
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 17.
      *
      * Additions in this release include sealed classes and
      * restoration of always-strict floating-point semantics.
      *
      * @since 17
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se17/html/index.html">
+     * <cite>The Java Language Specification, Java SE 17 Edition</cite></a>
+     * @see <a href="https://openjdk.org/jeps/306">
+     * JEP 306: Restore Always-Strict Floating-Point Semantics</a>
+     * @see <a href="https://openjdk.org/jeps/409">
+     * JEP 409: Sealed Classes</a>
      */
     RELEASE_17,
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 18.
      *
+     * No major changes from the prior release.
+     *
      * @since 18
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se18/html/index.html">
+     * <cite>The Java Language Specification, Java SE 18 Edition</cite></a>
      */
     RELEASE_18,
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 19.
      *
+     * No major changes from the prior release.
+     *
      * @since 19
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se19/html/index.html">
+     * <cite>The Java Language Specification, Java SE 19 Edition</cite></a>
      */
-    RELEASE_19;
+    RELEASE_19,
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 20.
+     *
+     * No major changes from the prior release.
+     *
+     * @since 20
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se20/html/index.html">
+     * <cite>The Java Language Specification, Java SE 20 Edition</cite></a>
+     */
+    RELEASE_20,
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 21.
+     *
+     * Additions in this release include record patterns and pattern
+     * matching for {@code switch}.
+     *
+     * @since 21
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se21/html/index.html">
+     * <cite>The Java Language Specification, Java SE 21 Edition</cite></a>
+     * @see <a href="https://openjdk.org/jeps/440">
+     * JEP 440: Record Patterns</a>
+     * @see <a href="https://openjdk.org/jeps/441">
+     * JEP 441: Pattern Matching for switch</a>
+     */
+    RELEASE_21,
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 22.
+     *
+     * Additions in this release include unnamed variables and unnamed
+     * patterns.
+     *
+     * @since 22
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se22/html/index.html">
+     * <cite>The Java Language Specification, Java SE 22 Edition</cite></a>
+     * @see <a href="https://openjdk.org/jeps/456">
+     * JEP 456: Unnamed Variables &amp; Patterns</a>
+     */
+    RELEASE_22,
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 23.
+     *
+     * @since 23
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se23/html/index.html">
+     * <cite>The Java Language Specification, Java SE 23 Edition</cite></a>
+     */
+    RELEASE_23,
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 24.
+     *
+     * @since 24
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se24/html/index.html">
+     * <cite>The Java Language Specification, Java SE 24 Edition</cite></a>
+     */
+    RELEASE_24,
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 25.
+     *
+     * Additions in this release include module import declarations,
+     * compact source files and instance main methods, and flexible
+     * constructor bodies.
+     *
+     * @since 25
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se25/html/index.html">
+     * <cite>The Java Language Specification, Java SE 25 Edition</cite></a>
+     * @see <a href="https://openjdk.org/jeps/511">
+     * JEP 511: Module Import Declarations</a>
+     * @see <a href="https://openjdk.org/jeps/512">
+     * JEP 512: Compact Source Files and Instance Main Methods</a>
+     * @see <a href="https://openjdk.org/jeps/513">
+     * JEP 513: Flexible Constructor Bodies</a>
+     */
+    RELEASE_25,
+    ; // Reduce code churn when appending new constants
 
     // Note that when adding constants for newer releases, the
     // behavior of latest() and latestSupported() must be updated too.
@@ -269,7 +477,7 @@ public enum SourceVersion {
      * {@return the latest source version that can be modeled}
      */
     public static SourceVersion latest() {
-        return RELEASE_19;
+        return RELEASE_25;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -284,7 +492,7 @@ public enum SourceVersion {
     private static SourceVersion getLatestSupported() {
         int intVersion = Runtime.version().feature();
         return (intVersion >= 11) ?
-            valueOf("RELEASE_" + Math.min(19, intVersion)):
+            valueOf("RELEASE_" + Math.min(25, intVersion)):
             RELEASE_10;
     }
 
@@ -295,7 +503,7 @@ public enum SourceVersion {
      *
      * @apiNote This method is included alongside {@link latest} to
      * allow identification of situations where the language model API
-     * is running on a platform version different than the latest
+     * is running on a platform version different from the latest
      * version modeled by the API. One way that sort of situation can
      * occur is if an IDE or similar tool is using the API to model
      * source version <i>N</i> while running on platform version
@@ -321,8 +529,7 @@ public enum SourceVersion {
      * followed only by characters for which {@link
      * Character#isJavaIdentifierPart(int)} returns {@code true}.
      * This pattern matches regular identifiers, keywords, contextual
-     * keywords, and the literals {@code "true"},
-     * {@code "false"}, {@code "null"}.
+     * keywords, boolean literals, and the null literal.
      *
      * The method returns {@code false} for all other strings.
      *
@@ -415,14 +622,14 @@ public enum SourceVersion {
     }
 
     /**
-     * Returns whether or not {@code s} is a keyword, boolean literal,
-     * or null literal in the latest source version.
+     * Returns whether or not {@code s} is a keyword, a boolean literal,
+     * or the null literal in the latest source version.
      * This method returns {@code false} for <i>contextual
      * keywords</i>.
      *
      * @param s the string to check
-     * @return {@code true} if {@code s} is a keyword, or boolean
-     * literal, or null literal, {@code false} otherwise.
+     * @return {@code true} if {@code s} is a keyword, a boolean
+     * literal, or the null literal, {@code false} otherwise.
      * @jls 3.9 Keywords
      * @jls 3.10.3 Boolean Literals
      * @jls 3.10.8 The Null Literal
@@ -432,15 +639,15 @@ public enum SourceVersion {
     }
 
     /**
-     * Returns whether or not {@code s} is a keyword, boolean literal,
-     * or null literal in the given source version.
+     * Returns whether or not {@code s} is a keyword, a boolean literal,
+     * or the null literal in the given source version.
      * This method returns {@code false} for <i>contextual
      * keywords</i>.
      *
      * @param s the string to check
      * @param version the version to use
-     * @return {@code true} if {@code s} is a keyword, or boolean
-     * literal, or null literal, {@code false} otherwise.
+     * @return {@code true} if {@code s} is a keyword, a boolean
+     * literal, or the null literal, {@code false} otherwise.
      * @jls 3.9 Keywords
      * @jls 3.10.3 Boolean Literals
      * @jls 3.10.8 The Null Literal
@@ -528,7 +735,8 @@ public enum SourceVersion {
      * {@code "17"}, to the corresponding source version, {@code
      * RELEASE_17}, is:
      *
-     * <pre>{@code SourceVersion.valueOf(Runtime.Version.parse("17"))}</pre>
+     * {@snippet lang="java" :
+     * SourceVersion.valueOf(Runtime.Version.parse("17"))}
      *
      * @param rv runtime version to map to a source version
      * @throws IllegalArgumentException if the feature of version

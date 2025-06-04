@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,23 +26,86 @@
 #define SHARE_RUNTIME_OS_HPP
 
 #include "jvm_md.h"
-#include "metaprogramming/integralConstant.hpp"
+#include "runtime/osInfo.hpp"
+#include "utilities/align.hpp"
 #include "utilities/exceptions.hpp"
-#include "utilities/ostream.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#ifndef _WINDOWS
-# include <setjmp.h>
-#endif
+#include "utilities/ostream.hpp"
 #ifdef __APPLE__
 # include <mach/mach_time.h>
 #endif
 
-class AgentLibrary;
 class frame;
+class JvmtiAgent;
 
-// os defines the interface to operating system; this includes traditional
-// OS services (time, I/O) as well as other functionality with system-
-// dependent code.
+// Rules for using and implementing methods declared in the "os" class
+// ===================================================================
+//
+// The "os" class defines a number of the interfaces for porting HotSpot
+// to different operating systems. For example, I/O, memory, timing, etc.
+// Note that additional classes such as Semaphore, Mutex, etc., are used for
+// porting specific groups of features.
+//
+// Structure of os*.{cpp, hpp} files
+//
+// - os.hpp
+//
+//   (This file) declares the entire API of the "os" class.
+//
+// - os.inline.hpp
+//
+//   To use any of the inline methods declared in the "os" class, this
+//   header file must be included.
+//
+// - src/hotspot/os/<os>/os_<os>.hpp
+// - src/hotspot/os/posix/os_posix.hpp
+//
+//   These headers declare APIs that should be used only within the
+//   platform-specific source files for that particular OS.
+//
+//   For example, os_linux.hpp declares the os::Linux class, which provides
+//   many methods that can be used by files under os/linux/ and os_cpu/linux_*/
+//
+//   os_posix.hpp can be used by platform-specific files for POSIX-like
+//   OSes such as aix, bsd and linux.
+//
+//   Platform-independent source files should not include these header files
+//   (although sadly there are some rare exceptions ...)
+//
+// - os.cpp
+//
+//   Platform-independent methods of the "os" class are defined
+//   in os.cpp. These are not part of the porting interface, but rather
+//   can be considered as convenience functions for accessing
+//   the porting interface. E.g., os::print_function_and_library_name().
+//
+// The methods declared in os.hpp but not implemented in os.cpp are
+// a part the HotSpot Porting APIs. They must be implemented in one of
+// the following four files:
+//
+// - src/hotspot/os/<os>/os_<os>.inline.hpp
+// - src/hotspot/os_cpu/<os>_<cpu>/os_<os>_<cpu>.inline.hpp
+// - src/hotspot/os/<os>/os_<os>.cpp
+// - src/hotspot/os_cpu/<os>_<cpu>/os_<os>_<cpu>.cpp
+//
+//   The Porting APIs declared as "inline" in os.hpp MUST be
+//   implemented in one of the two .inline.hpp files, depending on
+//   whether the feature is specific to a particular CPU architecture
+//   for this OS. These two files are automatically included by
+//   os.inline.hpp. Platform-independent source files must not include
+//   these two files directly.
+//
+//   If the full definition of an inline method is too complex to fit in a
+//   header file, the actual implementation can be deferred to another
+//   method defined in the .cpp files.
+//
+//   The Porting APIs that are *not* declared as "inline" in os.hpp MUST
+//   be implemented in one of the two .cpp files above. These files
+//   also implement OS-specific APIs such as os::Linux, os::Posix, etc.
+//
+// (Note: on the POSIX-like platforms, some of the Porting APIs are implemented
+// in os_posix.cpp instead).
 
 class Thread;
 class JavaThread;
@@ -91,6 +154,19 @@ typedef void (*java_call_t)(JavaValue* value, const methodHandle& method, JavaCa
 
 class MallocTracker;
 
+// Preserve errno across a range of calls
+
+class ErrnoPreserver {
+  int _e;
+
+public:
+  ErrnoPreserver() { _e = errno; }
+
+  ~ErrnoPreserver() { errno = _e; }
+
+  int saved_errno() { return _e; }
+};
+
 class os: AllStatic {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -127,8 +203,12 @@ class os: AllStatic {
 
  private:
   static OSThread*          _starting_thread;
-  static address            _polling_page;
   static PageSizes          _page_sizes;
+
+  // The default value for os::vm_min_address() unless the platform knows better. This value
+  // is chosen to give us reasonable protection against null pointer dereferences while being
+  // low enough to leave most of the valuable low-4gb address space open.
+  static constexpr size_t _vm_min_address_default = 16 * M;
 
   static char*  pd_reserve_memory(size_t bytes, bool executable);
 
@@ -152,12 +232,13 @@ class os: AllStatic {
   static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only = false,
                            bool allow_exec = false);
-  static char*  pd_remap_memory(int fd, const char* file_name, size_t file_offset,
-                             char *addr, size_t bytes, bool read_only,
-                             bool allow_exec);
   static bool   pd_unmap_memory(char *addr, size_t bytes);
-  static void   pd_free_memory(char *addr, size_t bytes, size_t alignment_hint);
+  static void   pd_disclaim_memory(char *addr, size_t bytes);
   static void   pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint);
+
+  // Returns 0 if pretouch is done via platform dependent method, or otherwise
+  // returns page_size that should be used for the common method.
+  static size_t pd_pretouch_memory(void* first, void* last, size_t page_size);
 
   static char*  pd_reserve_memory_special(size_t size, size_t alignment, size_t page_size,
 
@@ -169,6 +250,8 @@ class os: AllStatic {
   // Get summary strings for system information in buffer provided
   static void  get_summary_cpu_info(char* buf, size_t buflen);
   static void  get_summary_os_info(char* buf, size_t buflen);
+  // Returns number of bytes written on success, OS_ERR on failure.
+  static ssize_t pd_write(int fd, const void *buf, size_t nBytes);
 
   static void initialize_initial_active_processor_count();
 
@@ -195,7 +278,7 @@ class os: AllStatic {
   static jlong  javaTimeNanos();
   static void   javaTimeNanos_info(jvmtiTimerInfo *info_ptr);
   static void   javaTimeSystemUTC(jlong &seconds, jlong &nanos);
-  static void   run_periodic_checks();
+  static void   run_periodic_checks(outputStream* st);
 
   // Returns the elapsed time in seconds since the vm started.
   static double elapsedTime();
@@ -229,13 +312,13 @@ class os: AllStatic {
 
   // Fill in buffer with an ISO-8601 string corresponding to the given javaTimeMillis value
   // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
-  // Returns buffer, or NULL if it failed.
+  // Returns buffer, or null if it failed.
   static char* iso8601_time(jlong milliseconds_since_19700101, char* buffer,
                             size_t buffer_length, bool utc = false);
 
   // Fill in buffer with current local time as an ISO-8601 string.
   // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
-  // Returns buffer, or NULL if it failed.
+  // Returns buffer, or null if it failed.
   static char* iso8601_time(char* buffer, size_t buffer_length, bool utc = false);
 
   // Interface for detecting multiprocessor system
@@ -246,14 +329,25 @@ class os: AllStatic {
     // which being declared MP when in fact not, is a problem - then
     // the bootstrap routine for the stub generator needs to check
     // the processor count directly and leave the bootstrap routine
-    // in place until called after initialization has ocurred.
+    // in place until called after initialization has occurred.
     return (_processor_count != 1);
   }
 
+  // On some platforms there is a distinction between "available" memory and "free" memory.
+  // For example, on Linux, "available" memory (`MemAvailable` in `/proc/meminfo`) is greater
+  // than "free" memory (`MemFree` in `/proc/meminfo`) because Linux can free memory
+  // aggressively (e.g. clear caches) so that it becomes available.
   static julong available_memory();
+  static julong used_memory();
+  static julong free_memory();
+
+  static jlong total_swap_space();
+  static jlong free_swap_space();
+
   static julong physical_memory();
   static bool has_allocatable_memory_limit(size_t* limit);
   static bool is_server_class_machine();
+  static size_t rss();
 
   // Returns the id of the processor on which the calling thread is currently executing.
   // The returned value is guaranteed to be between 0 and (os::processor_count() - 1).
@@ -282,11 +376,27 @@ class os: AllStatic {
   // Interface for stack banging (predetect possible stack overflow for
   // exception processing)  There are guard pages, and above that shadow
   // pages for stack overflow checking.
-  static bool uses_stack_guard_pages();
-  static bool must_commit_stack_guard_pages();
-  static void map_stack_shadow_pages(address sp);
+  inline static bool uses_stack_guard_pages();
+  inline static bool must_commit_stack_guard_pages();
+  inline static void map_stack_shadow_pages(address sp);
   static bool stack_shadow_pages_available(Thread *thread, const methodHandle& method, address sp);
 
+ private:
+  // Minimum stack size a thread can be created with (allowing
+  // the VM to completely create the thread and enter user code).
+  // The initial values exclude any guard pages (by HotSpot or libc).
+  // set_minimum_stack_sizes() will add the size required for
+  // HotSpot guard pages depending on page size and flag settings.
+  // Libc guard pages are never considered by these values.
+  static size_t _compiler_thread_min_stack_allowed;
+  static size_t _java_thread_min_stack_allowed;
+  static size_t _vm_internal_thread_min_stack_allowed;
+  static size_t _os_min_stack_allowed;
+
+  // Check and sets minimum stack sizes
+  static jint set_minimum_stack_sizes();
+
+ public:
   // Find committed memory region within specified range (start, start + size),
   // return true if found any
   static bool committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size);
@@ -294,7 +404,10 @@ class os: AllStatic {
   // OS interface to Virtual Memory
 
   // Return the default page size.
-  static int    vm_page_size();
+  static size_t vm_page_size() { return OSInfo::vm_page_size(); }
+
+  static size_t align_up_vm_page_size(size_t size)   { return align_up  (size, os::vm_page_size()); }
+  static size_t align_down_vm_page_size(size_t size) { return align_down(size, os::vm_page_size()); }
 
   // The set of page sizes which the VM is allowed to use (may be a subset of
   //  the page sizes actually available on the platform).
@@ -321,31 +434,41 @@ class os: AllStatic {
   // passed to page_size_for_region() and page_size should be the result of that
   // call.  The (optional) base and size parameters should come from the
   // ReservedSpace base() and size() methods.
-  static void trace_page_sizes(const char* str, const size_t* page_sizes, int count);
   static void trace_page_sizes(const char* str,
                                const size_t region_min_size,
                                const size_t region_max_size,
-                               const size_t page_size,
                                const char* base,
-                               const size_t size);
+                               const size_t size,
+                               const size_t page_size);
   static void trace_page_sizes_for_requested_size(const char* str,
                                                   const size_t requested_size,
-                                                  const size_t page_size,
-                                                  const size_t alignment,
+                                                  const size_t requested_page_size,
                                                   const char* base,
-                                                  const size_t size);
+                                                  const size_t size,
+                                                  const size_t page_size);
 
-  static int    vm_allocation_granularity();
+  static size_t vm_allocation_granularity() { return OSInfo::vm_allocation_granularity(); }
+
+  static size_t align_up_vm_allocation_granularity(size_t size) { return align_up(size, os::vm_allocation_granularity()); }
+
+  // Returns the lowest address the process is allowed to map against.
+  static size_t vm_min_address();
+
+  inline static size_t cds_core_region_alignment();
 
   // Reserves virtual memory.
-  static char*  reserve_memory(size_t bytes, bool executable = false, MEMFLAGS flags = mtOther);
+  static char*  reserve_memory(size_t bytes, MemTag mem_tag, bool executable = false);
 
   // Reserves virtual memory that starts at an address that is aligned to 'alignment'.
-  static char*  reserve_memory_aligned(size_t size, size_t alignment, bool executable = false);
+  static char*  reserve_memory_aligned(size_t size, size_t alignment, MemTag mem_tag, bool executable = false);
 
   // Attempts to reserve the virtual memory at [addr, addr + bytes).
   // Does not overwrite existing mappings.
-  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false);
+  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, MemTag mem_tag, bool executable = false);
+
+  // Given an address range [min, max), attempts to reserve memory within this area, with the given alignment.
+  // If randomize is true, the location will be randomized.
+  static char* attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize);
 
   static bool   commit_memory(char* addr, size_t bytes, bool executable);
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,
@@ -359,6 +482,15 @@ class os: AllStatic {
                                       bool executable, const char* mesg);
   static bool   uncommit_memory(char* addr, size_t bytes, bool executable = false);
   static bool   release_memory(char* addr, size_t bytes);
+
+  // Does the platform support trimming the native heap?
+  static bool can_trim_native_heap();
+
+  // Trim the C-heap. Optionally returns working set size change (RSS+Swap) in *rss_change.
+  // Note: If trimming succeeded but no size change information could be obtained,
+  // rss_change.after will contain SIZE_MAX upon return.
+  struct size_change_t { size_t before; size_t after; };
+  static bool trim_native_heap(size_change_t* rss_change = nullptr);
 
   // A diagnostic function to print memory mappings in the given range.
   static void print_memory_mappings(char* addr, size_t bytes, outputStream* st);
@@ -384,42 +516,36 @@ class os: AllStatic {
   static int create_file_for_heap(const char* dir);
   // Map memory to the file referred by fd. This function is slightly different from map_memory()
   // and is added to be used for implementation of -XX:AllocateHeapAt
-  static char* map_memory_to_file(size_t size, int fd);
-  static char* map_memory_to_file_aligned(size_t size, size_t alignment, int fd);
+  static char* map_memory_to_file(size_t size, int fd, MemTag mem_tag);
+  static char* map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MemTag mem_tag);
   static char* map_memory_to_file(char* base, size_t size, int fd);
-  static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd);
+  static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd, MemTag mem_tag);
   // Replace existing reserved memory with file mapping
   static char* replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd);
 
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
-                           char *addr, size_t bytes, bool read_only = false,
-                           bool allow_exec = false, MEMFLAGS flags = mtNone);
-  static char*  remap_memory(int fd, const char* file_name, size_t file_offset,
-                             char *addr, size_t bytes, bool read_only,
-                             bool allow_exec);
+                           char *addr, size_t bytes, MemTag mem_tag, bool read_only = false,
+                           bool allow_exec = false);
   static bool   unmap_memory(char *addr, size_t bytes);
-  static void   free_memory(char *addr, size_t bytes, size_t alignment_hint);
+  static void   disclaim_memory(char *addr, size_t bytes);
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
   // NUMA-specific interface
-  static bool   numa_has_static_binding();
   static bool   numa_has_group_homing();
   static void   numa_make_local(char *addr, size_t bytes, int lgrp_hint);
   static void   numa_make_global(char *addr, size_t bytes);
   static size_t numa_get_groups_num();
-  static size_t numa_get_leaf_groups(int *ids, size_t size);
+  static size_t numa_get_leaf_groups(uint *ids, size_t size);
   static bool   numa_topology_changed();
   static int    numa_get_group_id();
   static int    numa_get_group_id_for_address(const void* address);
+  static bool   numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count);
 
   // Page manipulation
   struct page_info {
     size_t size;
     int lgrp_id;
   };
-  static bool   get_page_info(char *start, page_info* info);
-  static char*  scan_pages(char *start, char* end, page_info* page_expected, page_info* page_found);
-
   static char*  non_memory_address_word();
   // reserve, commit and pin the entire memory region
   static char*  reserve_memory_special(size_t size, size_t alignment, size_t page_size,
@@ -428,7 +554,6 @@ class os: AllStatic {
   static void   large_page_init();
   static size_t large_page_size();
   static bool   can_commit_large_page_memory();
-  static bool   can_execute_large_page_memory();
 
   // Check if pointer points to readable memory (by 4-byte read access)
   static bool    is_readable_pointer(const void* p);
@@ -439,7 +564,7 @@ class os: AllStatic {
   enum ThreadType {
     vm_thread,
     gc_thread,         // GC thread
-    java_thread,       // Java, CodeCacheSweeper, JVMTIAgent and Service threads.
+    java_thread,       // Java, JVMTIAgent and Service threads.
     compiler_thread,
     watcher_thread,
     asynclog_thread,   // dedicated to flushing logs
@@ -490,23 +615,25 @@ class os: AllStatic {
   // multiple calls to naked_short_sleep. Only for use by non-JavaThreads.
   static void naked_sleep(jlong millis);
   // Never returns, use with CAUTION
-  static void infinite_sleep();
+  [[noreturn]] static void infinite_sleep();
   static void naked_yield () ;
   static OSReturn set_priority(Thread* thread, ThreadPriority priority);
   static OSReturn get_priority(const Thread* const thread, ThreadPriority& priority);
 
-  static int pd_self_suspend_thread(Thread* thread);
-
   static address    fetch_frame_from_context(const void* ucVoid, intptr_t** sp, intptr_t** fp);
   static frame      fetch_frame_from_context(const void* ucVoid);
   static frame      fetch_compiled_frame_from_context(const void* ucVoid);
+  static intptr_t*  fetch_bcp_from_context(const void* ucVoid);
+
+  // For saving an os specific context generated by an assert or guarantee.
+  static void       save_assert_context(const void* ucVoid);
+  static const void* get_saved_assert_context(const void** sigInfo);
 
   static void breakpoint();
   static bool start_debugging(char *buf, int buflen);
 
   static address current_stack_pointer();
-  static address current_stack_base();
-  static size_t current_stack_size();
+  static void current_stack_base_and_size(address* base, size_t* size);
 
   static void verify_stack_alignment() PRODUCT_RETURN;
 
@@ -517,26 +644,26 @@ class os: AllStatic {
   static int fork_and_exec(const char *cmd);
 
   // Call ::exit() on all platforms
-  static void exit(int num);
+  [[noreturn]] static void exit(int num);
 
   // Call ::_exit() on all platforms. Similar semantics to die() except we never
   // want a core dump.
-  static void _exit(int num);
+  [[noreturn]] static void _exit(int num);
 
   // Terminate the VM, but don't exit the process
   static void shutdown();
 
   // Terminate with an error.  Default is to generate a core file on platforms
   // that support such things.  This calls shutdown() and then aborts.
-  static void abort(bool dump_core, void *siginfo, const void *context);
-  static void abort(bool dump_core = true);
+  [[noreturn]] static void abort(bool dump_core, const void *siginfo, const void *context);
+  [[noreturn]] static void abort(bool dump_core = true);
 
   // Die immediately, no exit hook, no abort hook, no cleanup.
   // Dump a core file, if possible, for debugging. os::abort() is the
   // preferred means to abort the VM on error. os::die() should only
   // be called if something has gone badly wrong. CreateCoredumpOnCrash
   // is intentionally not honored by this function.
-  static void die();
+  [[noreturn]] static void die();
 
   // File i/o operations
   static int open(const char *path, int oflag, int mode);
@@ -544,16 +671,26 @@ class os: AllStatic {
   static FILE* fopen(const char* path, const char* mode);
   static jlong lseek(int fd, jlong offset, int whence);
   static bool file_exists(const char* file);
+
+  // read/store and print the release file of the image
+  static void read_image_release_file();
+  static void print_image_release_file(outputStream* st);
+
   // This function, on Windows, canonicalizes a given path (see os_windows.cpp for details).
   // On Posix, this function is a noop: it does not change anything and just returns
   // the input pointer.
   static char* native_path(char *path);
   static int ftruncate(int fd, jlong length);
-  static int fsync(int fd);
-  static int available(int fd, jlong *bytes);
   static int get_fileno(FILE* fp);
   static void flockfile(FILE* fp);
   static void funlockfile(FILE* fp);
+
+  // A safe implementation of realpath which will not cause a buffer overflow if the resolved path
+  // is longer than PATH_MAX.
+  // On success, returns 'outbuf', which now contains the path.
+  // On error, it will return null and set errno. The content of 'outbuf' is undefined.
+  // On truncation error ('outbuf' too small), it will return null and set errno to ENAMETOOLONG.
+  static char* realpath(const char* filename, char* outbuf, size_t outbuflen);
 
   static int compare_file_modified_times(const char* file1, const char* file2);
 
@@ -562,18 +699,18 @@ class os: AllStatic {
   //File i/o operations
 
   static ssize_t read_at(int fd, void *buf, unsigned int nBytes, jlong offset);
-  static ssize_t write(int fd, const void *buf, unsigned int nBytes);
+  // Writes the bytes completely. Returns true on success, false otherwise.
+  static bool write(int fd, const void *buf, size_t nBytes);
 
   // Reading directories.
   static DIR*           opendir(const char* dirname);
   static struct dirent* readdir(DIR* dirp);
   static int            closedir(DIR* dirp);
 
-  // Dynamic library extension
-  static const char*    dll_file_extension();
-
   static const char*    get_temp_directory();
   static const char*    get_current_directory(char *buf, size_t buflen);
+
+  static void           prepare_native_symbols();
 
   // Builds the platform-specific name of a library.
   // Returns false if the buffer is too small.
@@ -591,7 +728,7 @@ class os: AllStatic {
   // dladdr() for all platforms. Name of the nearest function is copied
   // to buf. Distance from its base address is optionally returned as offset.
   // If function name is not found, buf[0] is set to '\0' and offset is
-  // set to -1 (if offset is non-NULL).
+  // set to -1 (if offset is non-null).
   static bool dll_address_to_function_name(address addr, char* buf,
                                            int buflen, int* offset,
                                            bool demangle = true);
@@ -599,7 +736,7 @@ class os: AllStatic {
   // Locate DLL/DSO. On success, full path of the library is copied to
   // buf, and offset is optionally set to be the distance between addr
   // and the library's base address. On failure, buf[0] is set to '\0'
-  // and offset is set to -1 (if offset is non-NULL).
+  // and offset is set to -1 (if offset is non-null).
   static bool dll_address_to_library_name(address addr, char* buf,
                                           int buflen, int* offset);
 
@@ -616,10 +753,13 @@ class os: AllStatic {
   // "<address> in <library>+<offset>"
   static bool print_function_and_library_name(outputStream* st,
                                               address addr,
-                                              char* buf = NULL, int buflen = 0,
+                                              char* buf = nullptr, int buflen = 0,
                                               bool shorten_paths = true,
                                               bool demangle = true,
                                               bool strip_arguments = false);
+
+  // Used only on PPC.
+  inline static void* resolve_function_descriptor(void* p);
 
   // Find out whether the pc is in the static code for jvm.dll/libjvm.so.
   static bool address_is_in_vm(address addr);
@@ -627,7 +767,7 @@ class os: AllStatic {
   // Loads .dll/.so and
   // in case of error it checks if .dll/.so was built for the
   // same architecture as HotSpot is running on
-  // in case of an error NULL is returned and an error message is stored in ebuf
+  // in case of an error null is returned and an error message is stored in ebuf
   static void* dll_load(const char *name, char *ebuf, int ebuflen);
 
   // lookup symbol in a shared library
@@ -635,6 +775,9 @@ class os: AllStatic {
 
   // Unload library
   static void  dll_unload(void *lib);
+
+  // Lookup the named function. This is used by the static JDK.
+  static void* lookup_function(const char* name);
 
   // Callback for loaded module information
   // Input parameters:
@@ -650,17 +793,19 @@ class os: AllStatic {
   static void* get_default_process_handle();
 
   // Check for static linked agent library
-  static bool find_builtin_agent(AgentLibrary *agent_lib, const char *syms[],
-                                 size_t syms_len);
+  static bool find_builtin_agent(JvmtiAgent* agent_lib, const char* sym);
 
   // Find agent entry point
-  static void *find_agent_function(AgentLibrary *agent_lib, bool check_lib,
-                                   const char *syms[], size_t syms_len);
+  static void* find_agent_function(JvmtiAgent* agent_lib, bool check_lib, const char* sym);
 
-  // Provide C99 compliant versions of these functions, since some versions
-  // of some platforms don't.
+  // Provide wrapper versions of these functions to guarantee NUL-termination
+  // in all cases.
   static int vsnprintf(char* buf, size_t len, const char* fmt, va_list args) ATTRIBUTE_PRINTF(3, 0);
   static int snprintf(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
+
+  // Performs snprintf and asserts the result is non-negative (so there was not
+  // an encoding error) and that the output was not truncated.
+  static int snprintf_checked(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
 
   // Get host name in buffer provided
   static bool get_host_name(char* buf, size_t buflen);
@@ -674,14 +819,22 @@ class os: AllStatic {
   static void print_summary_info(outputStream* st, char* buf, size_t buflen);
   static void print_memory_info(outputStream* st);
   static void print_dll_info(outputStream* st);
+  static void print_jvmti_agent_info(outputStream* st);
   static void print_environment_variables(outputStream* st, const char** env_list);
   static void print_context(outputStream* st, const void* context);
+  static void print_tos_pc(outputStream* st, const void* context);
+  static void print_tos(outputStream* st, address sp);
+  static void print_instructions(outputStream* st, address pc, int unitsize = 1);
+  static void print_register_info(outputStream* st, const void* context, int& continuation);
   static void print_register_info(outputStream* st, const void* context);
   static bool signal_sent_by_kill(const void* siginfo);
   static void print_siginfo(outputStream* st, const void* siginfo);
   static void print_signal_handlers(outputStream* st, char* buf, size_t buflen);
   static void print_date_and_time(outputStream* st, char* buf, size_t buflen);
-  static void print_instructions(outputStream* st, address pc, int unitsize);
+  static void print_elapsed_time(outputStream* st, double time);
+
+  static void print_user_info(outputStream* st);
+  static void print_active_locale(outputStream* st);
 
   // helper for output of seconds in days , hours and months
   static void print_dhm(outputStream* st, const char* startStr, long sec);
@@ -689,6 +842,9 @@ class os: AllStatic {
   static void print_location(outputStream* st, intptr_t x, bool verbose = false);
   static size_t lasterror(char *buf, size_t len);
   static int get_last_error();
+
+  // Send JFR memory info event
+  static void jfr_report_memory_info() NOT_JFR_RETURN();
 
   // Replacement for strerror().
   // Will return the english description of the error (e.g. "File not found", as
@@ -718,22 +874,21 @@ class os: AllStatic {
   // We don't attempt to become a debugger, so we only follow frames if that
   // does not require a lookup in the unwind table, which is part of the binary
   // file but may be unsafe to read after a fatal error. So on x86, we can
-  // only walk stack if %ebp is used as frame pointer; on ia64, it's not
-  // possible to walk C stack without having the unwind table.
+  // only walk stack if %ebp is used as frame pointer.
   static bool is_first_C_frame(frame *fr);
   static frame get_sender_for_C_frame(frame *fr);
 
-  // return current frame. pc() and sp() are set to NULL on failure.
+  // return current frame. pc() and sp() are set to null on failure.
   static frame      current_frame();
 
-  static void print_hex_dump(outputStream* st, address start, address end, int unitsize,
-                             int bytes_per_line, address logical_start);
-  static void print_hex_dump(outputStream* st, address start, address end, int unitsize) {
-    print_hex_dump(st, start, end, unitsize, /*bytes_per_line=*/16, /*logical_start=*/start);
+  static void print_hex_dump(outputStream* st, const_address start, const_address end, int unitsize, bool print_ascii,
+                             int bytes_per_line, const_address logical_start, const_address highlight_address = nullptr);
+  static void print_hex_dump(outputStream* st, const_address start, const_address end, int unitsize, bool print_ascii = true, const_address highlight_address = nullptr) {
+    print_hex_dump(st, start, end, unitsize, print_ascii, /*bytes_per_line=*/16, /*logical_start=*/start, highlight_address);
   }
 
   // returns a string to describe the exception/signal;
-  // returns NULL if exception_code is not an OS exception/signal.
+  // returns null if exception_code is not an OS exception/signal.
   static const char* exception_name(int exception_code, char* buf, size_t buflen);
 
   // Returns the signal number (e.g. 11) for a given signal name (SIGSEGV).
@@ -744,10 +899,6 @@ class os: AllStatic {
 
   // Fills in path to jvm.dll/libjvm.so (used by the Disassembler)
   static void     jvm_path(char *buf, jint buflen);
-
-  // JNI names
-  static void     print_jni_name_prefix_on(outputStream* st, int args_size);
-  static void     print_jni_name_suffix_on(outputStream* st, int args_size);
 
   // Init os specific system properties values
   static void init_system_properties_values();
@@ -770,32 +921,28 @@ class os: AllStatic {
   static int get_native_stack(address* stack, int size, int toSkip = 0);
 
   // General allocation (must be MT-safe)
-  static void* malloc  (size_t size, MEMFLAGS flags, const NativeCallStack& stack);
-  static void* malloc  (size_t size, MEMFLAGS flags);
-  static void* realloc (void *memblock, size_t size, MEMFLAGS flag, const NativeCallStack& stack);
-  static void* realloc (void *memblock, size_t size, MEMFLAGS flag);
+  static void* malloc  (size_t size, MemTag mem_tag, const NativeCallStack& stack);
+  static void* malloc  (size_t size, MemTag mem_tag);
+  static void* realloc (void *memblock, size_t size, MemTag mem_tag, const NativeCallStack& stack);
+  static void* realloc (void *memblock, size_t size, MemTag mem_tag);
 
-  // handles NULL pointers
+  // handles null pointers
   static void  free    (void *memblock);
-  static char* strdup(const char *, MEMFLAGS flags = mtInternal);  // Like strdup
-  // Like strdup, but exit VM when strdup() returns NULL
-  static char* strdup_check_oom(const char*, MEMFLAGS flags = mtInternal);
+  static char* strdup(const char *, MemTag mem_tag = mtInternal);  // Like strdup
+  // Like strdup, but exit VM when strdup() returns null
+  static char* strdup_check_oom(const char*, MemTag mem_tag = mtInternal);
 
   // SocketInterface (ex HPI SocketInterface )
   static int socket_close(int fd);
-  static int recv(int fd, char* buf, size_t nBytes, uint flags);
-  static int send(int fd, char* buf, size_t nBytes, uint flags);
-  static int raw_send(int fd, char* buf, size_t nBytes, uint flags);
-  static int connect(int fd, struct sockaddr* him, socklen_t len);
-  static struct hostent* get_host_by_name(char* name);
+  static ssize_t recv(int fd, char* buf, size_t nBytes, uint flags);
+  static ssize_t send(int fd, char* buf, size_t nBytes, uint flags);
+  static ssize_t raw_send(int fd, char* buf, size_t nBytes, uint flags);
+  static ssize_t connect(int fd, struct sockaddr* him, socklen_t len);
 
-  // Support for signals (see JVM_RaiseSignal, JVM_RegisterSignal)
+  // Support for signals
   static void  initialize_jdk_signal_support(TRAPS);
   static void  signal_notify(int signal_number);
-  static void* signal(int signal_number, void* handler);
-  static void  signal_raise(int signal_number);
   static int   signal_wait();
-  static void* user_handler();
   static void  terminate_signal_thread();
   static int   sigexitnum_pd();
 
@@ -813,7 +960,7 @@ class os: AllStatic {
   // provided buffer as a scratch buffer. The status message which will be written
   // into the error log either is file location or a short error message, depending
   // on the checking result.
-  static void check_dump_limit(char* buffer, size_t bufferSize);
+  static void check_core_dump_prerequisites(char* buffer, size_t bufferSize, bool check_only = false);
 
   // Get the default path to the core file
   // Returns the length of the string
@@ -857,36 +1004,53 @@ class os: AllStatic {
   static bool supports_map_sync();
 
  public:
-  class CrashProtectionCallback : public StackObj {
-  public:
-    virtual void call() = 0;
-  };
 
-  // Platform dependent stuff
-#ifndef _WINDOWS
-# include "os_posix.hpp"
+  // File conventions
+  static const char* file_separator();
+  static const char* line_separator();
+  static const char* path_separator();
+
+  // Information about the protection of the page at address '0' on this os.
+  inline static bool zero_page_read_protected();
+
+  static void setup_fpu();
+  static juint cpu_microcode_revision();
+
+  static inline jlong rdtsc();
+
+  // Used to register dynamic code cache area with the OS
+  // Note: Currently only used in 64 bit Windows implementations
+  inline static bool register_code_area(char *low, char *high);
+
+  // Platform-specific code for interacting with individual OSes.
+  // TODO: This is for compatibility only with current usage of os::Linux, etc.
+  // We can get rid of the following block if we rename such a class to something
+  // like ::LinuxUtils
+#if defined(AIX)
+  class Aix;
+#elif defined(BSD)
+  class Bsd;
+#elif defined(LINUX)
+  class Linux;
+#elif defined(_WINDOWS)
+  class win32;
 #endif
-#include OS_CPU_HEADER(os)
-#include OS_HEADER(os)
+
+  // Ditto - Posix-specific API. Ideally should be moved to something like ::PosixUtils.
+#ifndef _WINDOWS
+  class Posix;
+#endif
 
 #ifndef OS_NATIVE_THREAD_CREATION_FAILED_MSG
 #define OS_NATIVE_THREAD_CREATION_FAILED_MSG "unable to create native thread: possibly out of memory or process/resource limits reached"
 #endif
 
  public:
-#ifndef PLATFORM_PRINT_NATIVE_STACK
-  // No platform-specific code for printing the native stack.
-  static bool platform_print_native_stack(outputStream* st, const void* context,
-                                          char *buf, int buf_size) {
-    return false;
-  }
-#endif
+  inline static bool platform_print_native_stack(outputStream* st, const void* context,
+                                                 char *buf, int buf_size, address& lastpc);
 
   // debugging support (mostly used by debug.cpp but also fatal error handler)
   static bool find(address pc, outputStream* st = tty); // OS specific function to make sense out of an address
-
-  static bool dont_yield();                     // when true, JVM_Yield() is nop
-  static void print_statistics();
 
   // Thread priority helpers (implemented in OS-specific part)
   static OSReturn set_native_priority(Thread* thread, int native_prio);
@@ -909,103 +1073,10 @@ class os: AllStatic {
   static char*  build_agent_function_name(const char *sym, const char *cname,
                                           bool is_absolute_path);
 
-  class SuspendedThreadTaskContext {
-  public:
-    SuspendedThreadTaskContext(Thread* thread, void *ucontext) : _thread(thread), _ucontext(ucontext) {}
-    Thread* thread() const { return _thread; }
-    void* ucontext() const { return _ucontext; }
-  private:
-    Thread* _thread;
-    void* _ucontext;
-  };
-
-  class SuspendedThreadTask {
-  public:
-    SuspendedThreadTask(Thread* thread) : _thread(thread), _done(false) {}
-    void run();
-    bool is_done() { return _done; }
-    virtual void do_task(const SuspendedThreadTaskContext& context) = 0;
-  protected:
-    ~SuspendedThreadTask() {}
-  private:
-    void internal_do_task();
-    Thread* _thread;
-    bool _done;
-  };
-
 #if defined(__APPLE__) && defined(AARCH64)
   // Enables write or execute access to writeable and executable pages.
   static void current_thread_enable_wx(WXMode mode);
 #endif // __APPLE__ && AARCH64
-
-#ifndef _WINDOWS
-  // Suspend/resume support
-  // Protocol:
-  //
-  // a thread starts in SR_RUNNING
-  //
-  // SR_RUNNING can go to
-  //   * SR_SUSPEND_REQUEST when the WatcherThread wants to suspend it
-  // SR_SUSPEND_REQUEST can go to
-  //   * SR_RUNNING if WatcherThread decides it waited for SR_SUSPENDED too long (timeout)
-  //   * SR_SUSPENDED if the stopped thread receives the signal and switches state
-  // SR_SUSPENDED can go to
-  //   * SR_WAKEUP_REQUEST when the WatcherThread has done the work and wants to resume
-  // SR_WAKEUP_REQUEST can go to
-  //   * SR_RUNNING when the stopped thread receives the signal
-  //   * SR_WAKEUP_REQUEST on timeout (resend the signal and try again)
-  class SuspendResume {
-   public:
-    enum State {
-      SR_RUNNING,
-      SR_SUSPEND_REQUEST,
-      SR_SUSPENDED,
-      SR_WAKEUP_REQUEST
-    };
-
-  private:
-    volatile State _state;
-
-  private:
-    /* try to switch state from state "from" to state "to"
-     * returns the state set after the method is complete
-     */
-    State switch_state(State from, State to);
-
-  public:
-    SuspendResume() : _state(SR_RUNNING) { }
-
-    State state() const { return _state; }
-
-    State request_suspend() {
-      return switch_state(SR_RUNNING, SR_SUSPEND_REQUEST);
-    }
-
-    State cancel_suspend() {
-      return switch_state(SR_SUSPEND_REQUEST, SR_RUNNING);
-    }
-
-    State suspended() {
-      return switch_state(SR_SUSPEND_REQUEST, SR_SUSPENDED);
-    }
-
-    State request_wakeup() {
-      return switch_state(SR_SUSPENDED, SR_WAKEUP_REQUEST);
-    }
-
-    State running() {
-      return switch_state(SR_WAKEUP_REQUEST, SR_RUNNING);
-    }
-
-    bool is_running() const {
-      return _state == SR_RUNNING;
-    }
-
-    bool is_suspended() const {
-      return _state == SR_SUSPENDED;
-    }
-  };
-#endif // !WINDOWS
 
  protected:
   static volatile unsigned int _rand_seed;    // seed for random number generator
@@ -1019,6 +1090,7 @@ class os: AllStatic {
                                 char pathSep);
   static bool set_boot_path(char fileSep, char pathSep);
 
+  static bool pd_dll_unload(void* libhandle, char* ebuf, int ebuflen);
 };
 
 // Note that "PAUSE" is almost always used with synchronization

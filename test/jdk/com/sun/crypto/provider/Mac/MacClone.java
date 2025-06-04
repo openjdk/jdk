@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,11 @@
 
 /*
  * @test
- * @bug 7087021 8013069
+ * @bug 7087021 8013069 8288050
  * @summary Clone tests for all MAC algorithms.
  * @author Jan Luehe
+ * @run main MacClone DES
+ * @run main MacClone AES
  */
 import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.*;
@@ -36,8 +38,11 @@ public class MacClone {
     public static void main(String[] args) throws Exception {
 
         String[] algos = { "HmacMD5", "HmacSHA1", "HmacSHA224", "HmacSHA256",
-                           "HmacSHA384", "HmacSHA512" };
-        KeyGenerator kgen = KeyGenerator.getInstance("DES");
+                           "HmacSHA384", "HmacSHA512", "HmacSHA512/224",
+                           "HmacSHA512/256",
+        };
+        String keyAlgo = args[0];
+        KeyGenerator kgen = KeyGenerator.getInstance(keyAlgo);
         SecretKey skey = kgen.generateKey();
         for (String algo : algos) {
             doTest(algo, skey, null);
@@ -45,7 +50,9 @@ public class MacClone {
 
         String[] algos2 = { "HmacPBESHA1", "PBEWithHmacSHA1",
                             "PBEWithHmacSHA224", "PBEWithHmacSHA256",
-                            "PBEWithHmacSHA384", "PBEWithHmacSHA512" };
+                            "PBEWithHmacSHA384", "PBEWithHmacSHA512",
+                            "PBEWithHmacSHA512/224", "PBEWithHmacSHA512/256",
+        };
         skey = new SecretKeySpec("whatever".getBytes(), "PBE");
         PBEParameterSpec params =
             new PBEParameterSpec("1234567890".getBytes(), 500);
@@ -60,7 +67,8 @@ public class MacClone {
         //
         // Clone an uninitialized Mac object
         //
-        Mac mac = Mac.getInstance(algo, "SunJCE");
+        Mac mac = Mac.getInstance(algo,
+                    System.getProperty("test.provider.name", "SunJCE"));
         Mac macClone = (Mac)mac.clone();
         System.out.println(macClone.getProvider().toString());
         System.out.println(macClone.getAlgorithm());
@@ -77,7 +85,8 @@ public class MacClone {
         //
         // Clone an initialized Mac object
         //
-        mac = Mac.getInstance(algo, "SunJCE");
+        mac = Mac.getInstance(algo,
+                    System.getProperty("test.provider.name", "SunJCE"));
         mac.init(skey, params);
         macClone = (Mac)mac.clone();
         System.out.println(macClone.getProvider().toString());

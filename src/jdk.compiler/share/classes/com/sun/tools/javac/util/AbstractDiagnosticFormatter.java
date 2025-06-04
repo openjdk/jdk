@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,7 +182,11 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
             String s = null;
             depth++;
             try {
-                s = formatMessage(diagnostic, l);
+                JCDiagnostic rewrittenDiagnostic = null;
+                if (diagnostic.hasRewriter()) {
+                    rewrittenDiagnostic = diagnostic.rewrite();
+                }
+                s = formatMessage(rewrittenDiagnostic != null ? rewrittenDiagnostic : diagnostic, l);
             }
             finally {
                 depth--;
@@ -196,7 +200,10 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
             return formatIterable(d, iterable, l);
         }
         else if (arg instanceof Type type) {
-            return printer.visit(type, l);
+            return printer.visit(type.stripMetadata(), l);
+        }
+        else if (arg instanceof JCDiagnostic.AnnotatedType type) {
+            return printer.visit(type.type(), l);
         }
         else if (arg instanceof Symbol symbol) {
             return printer.visit(symbol, l);
@@ -407,6 +414,7 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
         protected EnumSet<DiagnosticPart> visibleParts;
         protected boolean caretEnabled;
 
+        @SuppressWarnings("this-escape")
         public SimpleConfiguration(Set<DiagnosticPart> parts) {
             multilineLimits = new HashMap<>();
             setVisible(parts);
@@ -415,7 +423,7 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
             setCaretEnabled(true);
         }
 
-        @SuppressWarnings("fallthrough")
+        @SuppressWarnings({ "fallthrough", "this-escape" })
         public SimpleConfiguration(Options options, Set<DiagnosticPart> parts) {
             this(parts);
             String showSource = null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "c1/c1_IR.hpp"
 #include "c1/c1_InstructionPrinter.hpp"
+#include "c1/c1_IR.hpp"
 #include "c1/c1_ValueStack.hpp"
 
 
@@ -35,9 +34,10 @@ ValueStack::ValueStack(IRScope* scope, ValueStack* caller_state)
 , _caller_state(caller_state)
 , _bci(-99)
 , _kind(Parsing)
-, _locals(scope->method()->max_locals(), scope->method()->max_locals(), NULL)
+, _locals(scope->method()->max_locals(), scope->method()->max_locals(), nullptr)
 , _stack(scope->method()->max_stack())
-, _locks(NULL)
+, _locks(nullptr)
+, _force_reexecute(false)
 {
   verify();
 }
@@ -49,14 +49,35 @@ ValueStack::ValueStack(ValueStack* copy_from, Kind kind, int bci)
   , _kind(kind)
   , _locals(copy_from->locals_size_for_copy(kind))
   , _stack(copy_from->stack_size_for_copy(kind))
-  , _locks(copy_from->locks_size() == 0 ? NULL : new Values(copy_from->locks_size()))
+  , _locks(copy_from->locks_size() == 0 ? nullptr : new Values(copy_from->locks_size()))
+  , _force_reexecute(false)
 {
-  assert(kind != EmptyExceptionState || !Compilation::current()->env()->should_retain_local_variables(), "need locals");
-  if (kind != EmptyExceptionState) {
+  switch (kind) {
+  case EmptyExceptionState:
+  case CallerEmptyExceptionState:
+    assert(!Compilation::current()->env()->should_retain_local_variables(), "need locals");
+    // set to all nulls, like clear_locals()
+    for (int i = 0; i < copy_from->locals_size(); ++i) {
+      _locals.append(nullptr);
+    }
+    break;
+  default:
     _locals.appendAll(&copy_from->_locals);
   }
 
-  if (kind != ExceptionState && kind != EmptyExceptionState) {
+  switch (kind) {
+  case ExceptionState:
+  case EmptyExceptionState:
+    assert(stack_size() == 0, "fix stack_size_for_copy");
+    break;
+  case CallerExceptionState:
+  case CallerEmptyExceptionState:
+    // set to all nulls
+    for (int i = 0; i < copy_from->stack_size(); ++i) {
+      _stack.append(nullptr);
+    }
+    break;
+  default:
     _stack.appendAll(&copy_from->_stack);
   }
 
@@ -68,10 +89,7 @@ ValueStack::ValueStack(ValueStack* copy_from, Kind kind, int bci)
 }
 
 int ValueStack::locals_size_for_copy(Kind kind) const {
-  if (kind != EmptyExceptionState) {
-    return locals_size();
-  }
-  return 0;
+  return locals_size();
 }
 
 int ValueStack::stack_size_for_copy(Kind kind) const {
@@ -103,7 +121,7 @@ bool ValueStack::is_same(ValueStack* s) {
   }
   for (int i = 0; i < locks_size(); i++) {
     value = lock_at(i);
-    if (value != NULL && value != s->lock_at(i)) {
+    if (value != nullptr && value != s->lock_at(i)) {
       return false;
     }
   }
@@ -112,14 +130,14 @@ bool ValueStack::is_same(ValueStack* s) {
 
 void ValueStack::clear_locals() {
   for (int i = _locals.length() - 1; i >= 0; i--) {
-    _locals.at_put(i, NULL);
+    _locals.at_put(i, nullptr);
   }
 }
 
 
 void ValueStack::pin_stack_for_linear_scan() {
   for_each_state_value(this, v,
-    if (v->as_Constant() == NULL && v->as_Local() == NULL) {
+    if (v->as_Constant() == nullptr && v->as_Local() == nullptr) {
       v->pin(Instruction::PinStackForStateSplit);
     }
   );
@@ -131,12 +149,12 @@ void ValueStack::apply(const Values& list, ValueVisitor* f) {
   for (int i = 0; i < list.length(); i++) {
     Value* va = list.adr_at(i);
     Value v0 = *va;
-    if (v0 != NULL && !v0->type()->is_illegal()) {
+    if (v0 != nullptr && !v0->type()->is_illegal()) {
       f->visit(va);
 #ifdef ASSERT
       Value v1 = *va;
       assert(v1->type()->is_illegal() || v0->type()->tag() == v1->type()->tag(), "types must match");
-      assert(!v1->type()->is_double_word() || list.at(i + 1) == NULL, "hi-word of doubleword value must be NULL");
+      assert(!v1->type()->is_double_word() || list.at(i + 1) == nullptr, "hi-word of doubleword value must be null");
 #endif
       if (v0->type()->is_double_word()) i++;
     }
@@ -149,7 +167,7 @@ void ValueStack::values_do(ValueVisitor* f) {
   for_each_state(state) {
     apply(state->_locals, f);
     apply(state->_stack, f);
-    if (state->_locks != NULL) {
+    if (state->_locks != nullptr) {
       apply(*state->_locks, f);
     }
   }
@@ -176,7 +194,7 @@ int ValueStack::total_locks_size() const {
 }
 
 int ValueStack::lock(Value obj) {
-  if (_locks == NULL) {
+  if (_locks == nullptr) {
     _locks = new Values();
   }
   _locks->push(obj);
@@ -194,17 +212,17 @@ int ValueStack::unlock() {
 
 
 void ValueStack::setup_phi_for_stack(BlockBegin* b, int index) {
-  assert(stack_at(index)->as_Phi() == NULL || stack_at(index)->as_Phi()->block() != b, "phi function already created");
+  assert(stack_at(index)->as_Phi() == nullptr || stack_at(index)->as_Phi()->block() != b, "phi function already created");
 
   ValueType* t = stack_at(index)->type();
   Value phi = new Phi(t, b, -index - 1);
   _stack.at_put(index, phi);
 
-  assert(!t->is_double_word() || _stack.at(index + 1) == NULL, "hi-word of doubleword value must be NULL");
+  assert(!t->is_double_word() || _stack.at(index + 1) == nullptr, "hi-word of doubleword value must be null");
 }
 
 void ValueStack::setup_phi_for_local(BlockBegin* b, int index) {
-  assert(local_at(index)->as_Phi() == NULL || local_at(index)->as_Phi()->block() != b, "phi function already created");
+  assert(local_at(index)->as_Phi() == nullptr || local_at(index)->as_Phi()->block() != b, "phi function already created");
 
   ValueType* t = local_at(index)->type();
   Value phi = new Phi(t, b, index);
@@ -221,10 +239,15 @@ void ValueStack::print() {
   } else {
     InstructionPrinter ip;
     for (int i = 0; i < stack_size();) {
+      tty->print("stack %d ", i);
       Value t = stack_at_inc(i);
-      tty->print("%2d  ", i);
-      tty->print("%c%d ", t->type()->tchar(), t->id());
-      ip.print_instr(t);
+      if (t == nullptr) {
+        tty->print("null");
+      } else {
+        tty->print("%2d  ", i);
+        tty->print("%c%d ", t->type()->tchar(), t->id());
+        ip.print_instr(t);
+      }
       tty->cr();
     }
   }
@@ -233,7 +256,7 @@ void ValueStack::print() {
     for (int i = 0; i < locks_size(); i++) {
       Value t = lock_at(i);
       tty->print("lock %2d  ", i);
-      if (t == NULL) {
+      if (t == nullptr) {
         tty->print("this");
       } else {
         tty->print("%c%d ", t->type()->tchar(), t->id());
@@ -247,7 +270,7 @@ void ValueStack::print() {
     for (int i = 0; i < locals_size();) {
       Value l = _locals.at(i);
       tty->print("local %d ", i);
-      if (l == NULL) {
+      if (l == nullptr) {
         tty->print("null");
         i ++;
       } else {
@@ -259,15 +282,15 @@ void ValueStack::print() {
     }
   }
 
-  if (caller_state() != NULL) {
+  if (caller_state() != nullptr) {
     caller_state()->print();
   }
 }
 
 
 void ValueStack::verify() {
-  assert(scope() != NULL, "scope must exist");
-  if (caller_state() != NULL) {
+  assert(scope() != nullptr, "scope must exist");
+  if (caller_state() != nullptr) {
     assert(caller_state()->scope() == scope()->caller(), "invalid caller scope");
     caller_state()->verify();
   }
@@ -284,22 +307,26 @@ void ValueStack::verify() {
   int i;
   for (i = 0; i < stack_size(); i++) {
     Value v = _stack.at(i);
-    if (v == NULL) {
-      assert(_stack.at(i - 1)->type()->is_double_word(), "only hi-words are NULL on stack");
+    if (kind() == empty_exception_kind(true /* caller */)) {
+      assert(v == nullptr, "should be empty");
+    } else if (v == nullptr) {
+      assert(_stack.at(i - 1)->type()->is_double_word(), "only hi-words are null on stack");
     } else if (v->type()->is_double_word()) {
-      assert(_stack.at(i + 1) == NULL, "hi-word must be NULL");
+      assert(_stack.at(i + 1) == nullptr, "hi-word must be null");
     }
   }
 
   for (i = 0; i < locals_size(); i++) {
     Value v = _locals.at(i);
-    if (v != NULL && v->type()->is_double_word()) {
-      assert(_locals.at(i + 1) == NULL, "hi-word must be NULL");
+    if (kind() == EmptyExceptionState) {
+      assert(v == nullptr, "should be empty");
+    } else if (v != nullptr && v->type()->is_double_word()) {
+      assert(_locals.at(i + 1) == nullptr, "hi-word must be null");
     }
   }
 
   for_each_state_value(this, v,
-    assert(v != NULL, "just test if state-iteration succeeds");
+    assert(v != nullptr, "just test if state-iteration succeeds");
   );
 }
 #endif // PRODUCT

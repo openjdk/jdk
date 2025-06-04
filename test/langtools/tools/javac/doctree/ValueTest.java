@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8273244
+ * @bug 7021614 8273244 8284908 8352249
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -39,10 +39,11 @@ class ValueTest {
      */
     int no_ref() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 2
-    Text[TEXT, pos:1, abc_]
-    Value[VALUE, pos:5
+    Text[TEXT, pos:0, abc_]
+    Value[VALUE, pos:4
+      format: null
       reference: null
     ]
   body: empty
@@ -55,12 +56,13 @@ DocComment[DOC_COMMENT, pos:1
      */
     int typical() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 2
-    Text[TEXT, pos:1, abc_]
-    Value[VALUE, pos:5
+    Text[TEXT, pos:0, abc_]
+    Value[VALUE, pos:4
+      format: null
       reference:
-        Reference[REFERENCE, pos:13, java.awt.Color#RED]
+        Reference[REFERENCE, pos:12, java.awt.Color#RED]
     ]
   body: empty
   block tags: empty
@@ -72,12 +74,13 @@ DocComment[DOC_COMMENT, pos:1
      */
     int trailing_ws() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 2
-    Text[TEXT, pos:1, abc_]
-    Value[VALUE, pos:5
+    Text[TEXT, pos:0, abc_]
+    Value[VALUE, pos:4
+      format: null
       reference:
-        Reference[REFERENCE, pos:13, java.awt.Color#RED]
+        Reference[REFERENCE, pos:12, java.awt.Color#RED]
     ]
   body: empty
   block tags: empty
@@ -89,19 +92,128 @@ DocComment[DOC_COMMENT, pos:1
      */
     int trailing_junk() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Erroneous[ERRONEOUS, pos:5
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4, prefPos:31
       code: compiler.err.dc.unexpected.content
       body: {@value_java.awt.Color#RED_j
     ]
-    Text[TEXT, pos:33, unk}]
+    Text[TEXT, pos:32, unk}]
   body: empty
   block tags: empty
 ]
 */
 
+    /**
+     * abc {@value %d java.awt.Color#RED}
+     */
+    int format_plain() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 2
+    Text[TEXT, pos:0, abc_]
+    Value[VALUE, pos:4
+      format:
+        Text[TEXT, pos:12, %d]
+      reference:
+        Reference[REFERENCE, pos:15, java.awt.Color#RED]
+    ]
+  body: empty
+  block tags: empty
+]
+*/
+
+    /**
+     * abc {@value "%d" java.awt.Color#RED}
+     */
+    int format_quoted() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 2
+    Text[TEXT, pos:0, abc_]
+    Value[VALUE, pos:4
+      format:
+        Text[TEXT, pos:12, "%d"]
+      reference:
+        Reference[REFERENCE, pos:17, java.awt.Color#RED]
+    ]
+  body: empty
+  block tags: empty
+]
+*/
+
+    /**
+     * abc {@value 0x%x4 java.awt.Color#RED}
+     */
+    int format_invalid() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 3
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4, prefPos:12
+      code: compiler.err.dc.ref.unexpected.input
+      body: {@value_0x%x4
+    ]
+    Text[TEXT, pos:17, _java.awt.Color#RED}]
+  body: empty
+  block tags: empty
+]
+*/
+
+    /**
+     * abc {@value "%d" java.awt.Color#RED junk}
+     */
+    int format_trailing_junk() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 3
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4, prefPos:36
+      code: compiler.err.dc.unexpected.content
+      body: {@value_"%d"_java.awt.Color#RED_j
+    ]
+    Text[TEXT, pos:37, unk}]
+  body: empty
+  block tags: empty
+]
+*/
+
+    /**
+     * abc {@value java.awt.Color}
+     */
+    int type_reference() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 3
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4, prefPos:16
+      code: compiler.err.dc.ref.unexpected.input
+      body: {@value_java.awt.Color
+    ]
+    Text[TEXT, pos:26, }]
+  body: empty
+  block tags: empty
+]
+*/
+
+    /**
+     * abc {@value java.awt.Color##fragment}
+     */
+    int anchor_reference() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 3
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4, prefPos:27
+      code: compiler.err.dc.ref.unexpected.input
+      body: {@value_java.awt.Color##fragment
+    ]
+    Text[TEXT, pos:36, }]
+  body: empty
+  block tags: empty
+]
+*/
 }
 
 

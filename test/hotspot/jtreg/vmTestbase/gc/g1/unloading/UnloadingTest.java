@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,6 +129,7 @@ public class UnloadingTest extends GCTestBase {
 
         System.out.println("ClassAssertion.getCounterOfCheckedAlive() = " + ClassAssertion.getCounterOfCheckedAlive());
         System.out.println("ClassAssertion.getCounterOfCheckedUnloaded() = " + ClassAssertion.getCounterOfCheckedUnloaded());
+        // Passing -XX:-MethodFlushing prevents Full GCs in Loom that subvert the tests.
         checkGCCounters();
         if (System.getProperty("FailTestIfNothingChecked") != null) {
             if (ClassAssertion.getCounterOfCheckedAlive() == 0 || ClassAssertion.getCounterOfCheckedUnloaded() == 0) {
@@ -149,8 +150,6 @@ public class UnloadingTest extends GCTestBase {
     }
 
     private static void checkGCCounters() {
-//        System.out.println("WhiteBox.getWhiteBox().g1GetTotalCollections() = \t" + WhiteBox.getWhiteBox().g1GetTotalCollections());
-//        System.out.println("WhiteBox.getWhiteBox().g1GetTotalFullCollections() = \t" + WhiteBox.getWhiteBox().g1GetTotalFullCollections());
         GarbageCollectorMXBean oldGenBean = null;
         for (GarbageCollectorMXBean bean : ManagementFactory.getGarbageCollectorMXBeans()) {
             System.out.println("bean.getName() = \t\"" + bean.getName() + "\", bean.getCollectionCount() = \t" + bean.getCollectionCount());
@@ -158,9 +157,9 @@ public class UnloadingTest extends GCTestBase {
                 oldGenBean = bean;
             }
         }
-//        if (WhiteBox.getWhiteBox().g1GetTotalFullCollections() != 0 || (oldGenBean != null && oldGenBean.getCollectionCount() != 0)) {
+
         if (oldGenBean != null && oldGenBean.getCollectionCount() != 0) {
-            throw new RuntimeException("Full gc happened. Test was useless.");
+            throw new SkippedException("Full gc happened, skip the test.");
         }
     }
 

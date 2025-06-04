@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,8 @@ import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.util.Objects;
+
+import jdk.internal.util.DateTimeHelper;
 
 /**
  * A time without a time-zone in the ISO-8601 calendar system,
@@ -226,19 +228,19 @@ public final class LocalTime
     private static final long serialVersionUID = 6414437269572265201L;
 
     /**
-     * The hour.
+     * @serial The hour.
      */
     private final byte hour;
     /**
-     * The minute.
+     * @serial The minute.
      */
     private final byte minute;
     /**
-     * The second.
+     * @serial The second.
      */
     private final byte second;
     /**
-     * The nanosecond.
+     * @serial The nanosecond.
      */
     private final int nano;
 
@@ -1531,7 +1533,10 @@ public final class LocalTime
      * It is "consistent with equals", as defined by {@link Comparable}.
      *
      * @param other  the other time to compare to, not null
-     * @return the comparator value, negative if less, positive if greater
+     * @return the comparator value, that is less than zero if this is before {@code other},
+     *          zero if they are equal, or greater than zero if this is after {@code other}
+     * @see #isBefore
+     * @see #isAfter
      */
     @Override
     public int compareTo(LocalTime other) {
@@ -1626,26 +1631,8 @@ public final class LocalTime
      */
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder(18);
-        int hourValue = hour;
-        int minuteValue = minute;
-        int secondValue = second;
-        int nanoValue = nano;
-        buf.append(hourValue < 10 ? "0" : "").append(hourValue)
-            .append(minuteValue < 10 ? ":0" : ":").append(minuteValue);
-        if (secondValue > 0 || nanoValue > 0) {
-            buf.append(secondValue < 10 ? ":0" : ":").append(secondValue);
-            if (nanoValue > 0) {
-                buf.append('.');
-                if (nanoValue % 1000_000 == 0) {
-                    buf.append(Integer.toString((nanoValue / 1000_000) + 1000).substring(1));
-                } else if (nanoValue % 1000 == 0) {
-                    buf.append(Integer.toString((nanoValue / 1000) + 1000_000).substring(1));
-                } else {
-                    buf.append(Integer.toString((nanoValue) + 1000_000_000).substring(1));
-                }
-            }
-        }
+        var buf = new StringBuilder(18);
+        DateTimeHelper.formatTo(buf, this);
         return buf.toString();
     }
 

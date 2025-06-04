@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,7 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "jvm_io.h"
-#include "utilities/ostream.hpp"
 #include "logging/log.hpp"
 #include "logging/logSelection.hpp"
 #include "logging/logTagSet.hpp"
@@ -34,17 +32,17 @@
 
 const LogSelection LogSelection::Invalid;
 
-LogSelection::LogSelection() : _ntags(0), _wildcard(false), _level(LogLevel::Invalid), _tag_sets_selected(0) {
+LogSelection::LogSelection() : _ntags(0), _tags(), _wildcard(false), _level(LogLevel::Invalid), _tag_sets_selected(0) {
 }
 
 LogSelection::LogSelection(const LogTagType tags[LogTag::MaxTags], bool wildcard, LogLevelType level)
-    : _ntags(0), _wildcard(wildcard), _level(level), _tag_sets_selected(0) {
+  : _ntags(0), _tags(), _wildcard(wildcard), _level(level), _tag_sets_selected(0) {
   while (_ntags < LogTag::MaxTags && tags[_ntags] != LogTag::__NO_TAG) {
     _tags[_ntags] = tags[_ntags];
     _ntags++;
   }
 
-  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+  for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
     if (selects(*ts)) {
       _tag_sets_selected++;
     }
@@ -70,15 +68,32 @@ bool LogSelection::operator!=(const LogSelection& ref) const {
   return !operator==(ref);
 }
 
+bool LogSelection::superset_of(const LogSelection& other) const {
+  bool match;
+  for (size_t i = 0; i < other.ntags(); ++i) {
+    match = false;
+    for (size_t j = 0; j < _ntags; ++j) {
+      if (other._tags[i] == _tags[j]) {
+        match = true;
+        break;
+      }
+    }
+
+    if (!match) return false;
+  }
+
+  return true;
+}
+
 static LogSelection parse_internal(char *str, outputStream* errstream) {
   // Parse the level, if specified
   LogLevelType level = LogLevel::Unspecified;
   char* equals = strchr(str, '=');
-  if (equals != NULL) {
+  if (equals != nullptr) {
     const char* levelstr = equals + 1;
     level = LogLevel::from_string(levelstr);
     if (level == LogLevel::Invalid) {
-      if (errstream != NULL) {
+      if (errstream != nullptr) {
         errstream->print("Invalid level '%s' in log selection.", levelstr);
         LogLevelType match = LogLevel::fuzzy_match(levelstr);
         if (match != LogLevel::Invalid) {
@@ -102,7 +117,7 @@ static LogSelection parse_internal(char *str, outputStream* errstream) {
   // Check for '*' suffix
   bool wildcard = false;
   char* asterisk_pos = strchr(str, '*');
-  if (asterisk_pos != NULL && asterisk_pos[1] == '\0') {
+  if (asterisk_pos != nullptr && asterisk_pos[1] == '\0') {
     wildcard = true;
     *asterisk_pos = '\0';
   }
@@ -112,12 +127,12 @@ static LogSelection parse_internal(char *str, outputStream* errstream) {
   char* cur_tag = str;
   do {
     plus_pos = strchr(cur_tag, '+');
-    if (plus_pos != NULL) {
+    if (plus_pos != nullptr) {
       *plus_pos = '\0';
     }
     LogTagType tag = LogTag::from_string(cur_tag);
     if (tag == LogTag::__NO_TAG) {
-      if (errstream != NULL) {
+      if (errstream != nullptr) {
         errstream->print("Invalid tag '%s' in log selection.", cur_tag);
         LogTagType match =  LogTag::fuzzy_match(cur_tag);
         if (match != LogTag::__NO_TAG) {
@@ -128,20 +143,22 @@ static LogSelection parse_internal(char *str, outputStream* errstream) {
       return LogSelection::Invalid;
     }
     if (ntags == LogTag::MaxTags) {
-      if (errstream != NULL) {
-        errstream->print_cr("Too many tags in log selection '%s' (can only have up to " SIZE_FORMAT " tags).",
+      if (errstream != nullptr) {
+        errstream->print_cr("Too many tags in log selection '%s' (can only have up to %zu tags).",
                                str, LogTag::MaxTags);
       }
       return LogSelection::Invalid;
     }
     tags[ntags++] = tag;
-    cur_tag = plus_pos + 1;
-  } while (plus_pos != NULL);
+    if (plus_pos != nullptr) {
+      cur_tag = plus_pos + 1;
+    }
+  } while (plus_pos != nullptr);
 
   for (size_t i = 0; i < ntags; i++) {
     for (size_t j = 0; j < ntags; j++) {
       if (i != j && tags[i] == tags[j]) {
-        if (errstream != NULL) {
+        if (errstream != nullptr) {
           errstream->print_cr("Log selection contains duplicates of tag %s.", LogTag::name(tags[i]));
         }
         return LogSelection::Invalid;
@@ -202,36 +219,18 @@ size_t LogSelection::tag_sets_selected() const {
   return _tag_sets_selected;
 }
 
-int LogSelection::describe_tags(char* buf, size_t bufsize) const {
-  int tot_written = 0;
+void LogSelection::describe_tags_on(outputStream* out) const {
   for (size_t i = 0; i < _ntags; i++) {
-    int written = jio_snprintf(buf + tot_written, bufsize - tot_written,
-                               "%s%s", (i == 0 ? "" : "+"), LogTag::name(_tags[i]));
-    if (written == -1) {
-      return written;
-    }
-    tot_written += written;
+    out->print("%s%s", (i == 0 ? "" : "+"), LogTag::name(_tags[i]));
   }
-
   if (_wildcard) {
-    int written = jio_snprintf(buf + tot_written, bufsize - tot_written, "*");
-    if (written == -1) {
-      return written;
-    }
-    tot_written += written;
+    out->print("*");
   }
-  return tot_written;
 }
 
-int LogSelection::describe(char* buf, size_t bufsize) const {
-  int tot_written = describe_tags(buf, bufsize);
-
-  int written = jio_snprintf(buf + tot_written, bufsize - tot_written, "=%s", LogLevel::name(_level));
-  if (written == -1) {
-    return -1;
-  }
-  tot_written += written;
-  return tot_written;
+void LogSelection::describe_on(outputStream* out) const {
+  describe_tags_on(out);
+  out->print("=%s", LogLevel::name(_level));
 }
 
 double LogSelection::similarity(const LogSelection& other) const {
@@ -245,7 +244,7 @@ double LogSelection::similarity(const LogSelection& other) const {
       }
     }
   }
-  return 2.0 * intersecting / (_ntags + other._ntags);
+  return 2.0 * (double)intersecting / (double)(_ntags + other._ntags);
 }
 
 // Comparator used for sorting LogSelections based on their similarity to a specific LogSelection.
@@ -294,7 +293,7 @@ void LogSelection::suggest_similar_matching(outputStream* out) const {
   }
 
   // Check for matching tag sets with a single tag mismatching (a tag too many or short a tag)
-  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+  for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
     LogTagType tags[LogTag::MaxTags] = { LogTag::__NO_TAG };
     for (size_t i = 0; i < ts->ntags(); i++) {
       tags[i] = ts->tag(i);
@@ -341,12 +340,11 @@ void LogSelection::suggest_similar_matching(outputStream* out) const {
 
   // Sort found suggestions to suggest the best one first
   SimilarityComparator sc(*this);
-  QuickSort::sort(suggestions, nsuggestions, sc, false);
+  QuickSort::sort(suggestions, nsuggestions, sc);
 
   out->print("Did you mean any of the following?");
   for (size_t i = 0; i < nsuggestions; i++) {
-    char buf[128];
-    suggestions[i].describe_tags(buf, sizeof(buf));
-    out->print(" %s", buf);
+    out->print(" ");
+    suggestions[i].describe_tags_on(out);
   }
 }

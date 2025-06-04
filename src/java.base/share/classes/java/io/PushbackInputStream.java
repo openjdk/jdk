@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.io;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -313,7 +314,7 @@ public class PushbackInputStream extends FilterInputStream {
             if (n < pskip) {
                 pskip = n;
             }
-            pos += pskip;
+            pos += (int) pskip;
             n -= pskip;
         }
         if (n > 0) {
@@ -345,7 +346,7 @@ public class PushbackInputStream extends FilterInputStream {
      *                      the mark position becomes invalid.
      * @see     java.io.InputStream#reset()
      */
-    public synchronized void mark(int readlimit) {
+    public void mark(int readlimit) {
     }
 
     /**
@@ -360,7 +361,7 @@ public class PushbackInputStream extends FilterInputStream {
      * @see     java.io.InputStream#mark(int)
      * @see     java.io.IOException
      */
-    public synchronized void reset() throws IOException {
+    public void reset() throws IOException {
         throw new IOException("mark/reset not supported");
     }
 
@@ -380,4 +381,27 @@ public class PushbackInputStream extends FilterInputStream {
         in = null;
         buf = null;
     }
+
+    @Override
+    public long transferTo(OutputStream out) throws IOException {
+        Objects.requireNonNull(out, "out");
+        ensureOpen();
+        if (getClass() == PushbackInputStream.class) {
+            int avail = buf.length - pos;
+            if (avail > 0) {
+                // Prevent poisoning and leaking of buf
+                byte[] buffer = Arrays.copyOfRange(buf, pos, buf.length);
+                out.write(buffer);
+                pos = buffer.length;
+            }
+            try {
+                return Math.addExact(avail, in.transferTo(out));
+            } catch (ArithmeticException ignore) {
+                return Long.MAX_VALUE;
+            }
+        } else {
+            return super.transferTo(out);
+        }
+    }
+
 }

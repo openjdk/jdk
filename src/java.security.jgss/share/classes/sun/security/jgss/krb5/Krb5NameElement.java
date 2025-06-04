@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,8 @@ package sun.security.jgss.krb5;
 import org.ietf.jgss.*;
 import sun.security.jgss.spi.*;
 import sun.security.krb5.PrincipalName;
-import sun.security.krb5.Realm;
 import sun.security.krb5.KrbException;
 
-import javax.security.auth.kerberos.ServicePermission;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.Provider;
@@ -47,10 +45,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class Krb5NameElement
     implements GSSNameSpi {
 
-    private PrincipalName krb5PrincipalName;
+    private final PrincipalName krb5PrincipalName;
 
-    private String gssNameStr = null;
-    private Oid gssNameType = null;
+    private final String gssNameStr;
+    private final Oid gssNameType;
 
     private Krb5NameElement(PrincipalName principalName,
                             String gssNameStr,
@@ -63,7 +61,7 @@ public class Krb5NameElement
     /**
      * Instantiates a new Krb5NameElement object. Internally it stores the
      * information provided by the input parameters so that they may later
-     * be used for output when a printable representaion of this name is
+     * be used for output when a printable representation of this name is
      * needed in GSS-API format rather than in Kerberos format.
      *
      */
@@ -127,19 +125,6 @@ public class Krb5NameElement
             throw new GSSException(GSSException.BAD_NAME, -1, e.getMessage());
         }
 
-        if (principalName.isRealmDeduced() && !Realm.AUTODEDUCEREALM) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                try {
-                    sm.checkPermission(new ServicePermission(
-                            "@" + principalName.getRealmAsString(), "-"));
-                } catch (SecurityException se) {
-                    // Do not chain the actual exception to hide info
-                    throw new GSSException(GSSException.FAILURE);
-                }
-            }
-        }
         return new Krb5NameElement(principalName, gssNameStr, gssNameType);
     }
 
@@ -158,7 +143,7 @@ public class Krb5NameElement
 
         // Look for @ as in service@host
         // Assumes host name will not have an escaped '@'
-        int separatorPos = gssNameStr.lastIndexOf('@', gssNameStr.length());
+        int separatorPos = gssNameStr.lastIndexOf('@');
 
         // Not really a separator if it is escaped. Then this is just part
         // of the principal name or service name
@@ -185,7 +170,7 @@ public class Krb5NameElement
     private static String getHostBasedInstance(String serviceName,
                                                String hostName)
         throws GSSException {
-            StringBuffer temp = new StringBuffer(serviceName);
+            StringBuilder temp = new StringBuilder(serviceName);
 
             try {
                 // A lack of "@" defaults to the service being on the local
@@ -199,7 +184,7 @@ public class Krb5NameElement
             }
             hostName = hostName.toLowerCase(Locale.ENGLISH);
 
-            temp = temp.append('/').append(hostName);
+            temp.append('/').append(hostName);
             return temp.toString();
     }
 
@@ -222,9 +207,8 @@ public class Krb5NameElement
         if (other == this)
             return true;
 
-        if (other instanceof Krb5NameElement) {
-                Krb5NameElement that = (Krb5NameElement) other;
-                return (this.krb5PrincipalName.getName().equals(
+        if (other instanceof Krb5NameElement that) {
+            return (this.krb5PrincipalName.getName().equals(
                             that.krb5PrincipalName.getName()));
         }
         return false;
@@ -241,6 +225,7 @@ public class Krb5NameElement
      * @return true if they both refer to the same entity, else false
      * @see #equals(GSSNameSpi)
      */
+    @Override
     public boolean equals(Object another) {
         if (this == another) {
             return true;
@@ -256,12 +241,11 @@ public class Krb5NameElement
     }
 
     /**
-     * Returns a hashcode value for this GSSNameSpi.
-     *
-     * @return a hashCode value
+     * {@return a hashcode value for this GSSNameSpi}
      */
+    @Override
     public int hashCode() {
-        return 37 * 17 + krb5PrincipalName.getName().hashCode();
+        return krb5PrincipalName.getName().hashCode();
     }
 
 
@@ -322,7 +306,7 @@ public class Krb5NameElement
      * @return the Oid for the format of the printed name
      */
     public Oid getStringNameType() {
-        // XXX For NT_EXPORT_NAME return a different name type. Infact,
+        // XXX For NT_EXPORT_NAME return a different name type. In fact,
         // don't even store NT_EXPORT_NAME in the cons.
         return (gssNameType);
     }

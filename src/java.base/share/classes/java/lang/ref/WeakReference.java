@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,12 +40,13 @@ package java.lang.ref;
  * weakly-reachable objects to be finalizable.  At the same time or at some
  * later time it will enqueue those newly-cleared weak references that are
  * registered with reference queues.
+ * @param <T> the type of the referent
  *
  * @author   Mark Reinhold
  * @since    1.2
  */
 
-public class WeakReference<T> extends Reference<T> {
+public non-sealed class WeakReference<@jdk.internal.RequiresIdentity T> extends Reference<T> {
 
     /**
      * Creates a new weak reference that refers to the given object.  The new
@@ -53,7 +54,7 @@ public class WeakReference<T> extends Reference<T> {
      *
      * @param referent object the new weak reference will refer to
      */
-    public WeakReference(T referent) {
+    public WeakReference(@jdk.internal.RequiresIdentity T referent) {
         super(referent);
     }
 
@@ -65,7 +66,7 @@ public class WeakReference<T> extends Reference<T> {
      * @param q the queue with which the reference is to be registered,
      *          or {@code null} if registration is not required
      */
-    public WeakReference(T referent, ReferenceQueue<? super T> q) {
+    public WeakReference(@jdk.internal.RequiresIdentity T referent, ReferenceQueue<? super T> q) {
         super(referent, q);
     }
 

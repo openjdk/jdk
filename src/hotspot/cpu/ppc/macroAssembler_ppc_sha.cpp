@@ -23,6 +23,7 @@
 // (http://www.iwar.org.uk/comsec/resources/cipher/sha256-384-512.pdf).
 
 #include "asm/macroAssembler.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/stubRoutines.hpp"
 
 /**********************************************************************
@@ -92,7 +93,7 @@ void MacroAssembler::sha256_load_h_vec(const VectorRegister a,
   lvx    (a,    hptr);
   addi   (tmp,  hptr, 16);
   lvx    (e,    tmp);
-  beq    (CCR0, sha256_aligned);
+  beq    (CR0, sha256_aligned);
 
   // handle unaligned accesses
   load_perm(vRb, hptr);
@@ -120,7 +121,7 @@ void MacroAssembler::sha256_load_w_plus_k_vec(const Register buf_in,
   VectorRegister vRb = VR6;
 
   andi_ (tmp, buf_in, 0xF);
-  beq   (CCR0, w_aligned); // address ends with 0x0, not 0x8
+  beq   (CR0, w_aligned); // address ends with 0x0, not 0x8
 
   // deal with unaligned addresses
   lvx    (ws[0], buf_in);
@@ -317,7 +318,7 @@ void MacroAssembler::sha256_update_sha_state(const VectorRegister a,
   li      (of16, 16);
   lvx     (vt0, hptr);
   lvx     (vt5, of16, hptr);
-  beq     (CCR0, state_load_aligned);
+  beq     (CR0, state_load_aligned);
 
   // handle unaligned accesses
   li      (of32, 32);
@@ -402,7 +403,7 @@ void MacroAssembler::sha256(bool multi_block) {
 #ifdef AIX
   // malloc provides 16 byte alignment
   if (((uintptr_t)sha256_round_consts & 0xF) != 0) {
-    uint32_t *new_round_consts = (uint32_t*)malloc(sizeof(sha256_round_table));
+    uint32_t *new_round_consts = (uint32_t*)os::malloc(sizeof(sha256_round_table), mtCompiler);
     guarantee(new_round_consts, "oom");
     memcpy(new_round_consts, sha256_round_consts, sizeof(sha256_round_table));
     sha256_round_consts = (const uint32_t*)new_round_consts;
@@ -468,7 +469,7 @@ void MacroAssembler::sha256(bool multi_block) {
 #endif
 
   // Load 16 elements from w out of the loop.
-  // Order of the int values is Endianess specific.
+  // Order of the int values is Endianness specific.
   VectorRegister w0 = VR17;
   VectorRegister w1 = VR18;
   VectorRegister w2 = VR19;
@@ -537,8 +538,8 @@ void MacroAssembler::sha256(bool multi_block) {
   if (multi_block) {
     addi(buf_in, buf_in, buf_size);
     addi(ofs, ofs, buf_size);
-    cmplw(CCR0, ofs, limit);
-    ble(CCR0, sha_loop);
+    cmplw(CR0, ofs, limit);
+    ble(CR0, sha_loop);
 
     // return ofs
     mr(R3_RET, ofs);
@@ -566,7 +567,7 @@ void MacroAssembler::sha512_load_w_vec(const Register buf_in,
   Label is_aligned, after_alignment;
 
   andi_  (tmp, buf_in, 0xF);
-  beq    (CCR0, is_aligned); // address ends with 0x0, not 0x8
+  beq    (CR0, is_aligned); // address ends with 0x0, not 0x8
 
   // deal with unaligned addresses
   lvx    (ws[0], buf_in);
@@ -622,7 +623,7 @@ void MacroAssembler::sha512_update_sha_state(const Register state,
   VectorRegister aux = VR9;
 
   andi_(tmp, state, 0xf);
-  beq(CCR0, state_save_aligned);
+  beq(CR0, state_save_aligned);
   // deal with unaligned addresses
 
   {
@@ -859,7 +860,7 @@ void MacroAssembler::sha512_load_h_vec(const Register state,
   Label state_aligned, after_state_aligned;
 
   andi_(tmp, state, 0xf);
-  beq(CCR0, state_aligned);
+  beq(CR0, state_aligned);
 
   // deal with unaligned addresses
   VectorRegister aux = VR9;
@@ -957,7 +958,7 @@ void MacroAssembler::sha512(bool multi_block) {
 #ifdef AIX
   // malloc provides 16 byte alignment
   if (((uintptr_t)sha512_round_consts & 0xF) != 0) {
-    uint64_t *new_round_consts = (uint64_t*)malloc(sizeof(sha512_round_table));
+    uint64_t *new_round_consts = (uint64_t*)os::malloc(sizeof(sha512_round_table), mtCompiler);
     guarantee(new_round_consts, "oom");
     memcpy(new_round_consts, sha512_round_consts, sizeof(sha512_round_table));
     sha512_round_consts = (const uint64_t*)new_round_consts;
@@ -1021,7 +1022,7 @@ void MacroAssembler::sha512(bool multi_block) {
   }
 
   // Load 16 elements from w out of the loop.
-  // Order of the long values is Endianess specific.
+  // Order of the long values is Endianness specific.
   VectorRegister w0 = VR10;
   VectorRegister w1 = VR11;
   VectorRegister w2 = VR12;
@@ -1120,8 +1121,8 @@ void MacroAssembler::sha512(bool multi_block) {
   if (multi_block) {
     addi(buf_in, buf_in, buf_size);
     addi(ofs, ofs, buf_size);
-    cmplw(CCR0, ofs, limit);
-    ble(CCR0, sha_loop);
+    cmplw(CR0, ofs, limit);
+    ble(CR0, sha_loop);
 
     // return ofs
     mr(R3_RET, ofs);

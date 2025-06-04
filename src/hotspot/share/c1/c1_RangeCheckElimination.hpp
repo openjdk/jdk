@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ private:
     void operator delete(void* p) { ShouldNotReachHere(); }
     void operator delete[](void* p) { ShouldNotReachHere(); }
 
-    bool can_reach(BlockBegin *start, BlockBegin *end, BlockBegin *dont_use = NULL);
+    bool can_reach(BlockBegin *start, BlockBegin *end, BlockBegin *dont_use = nullptr);
     bool dominates(BlockBegin *dominator, BlockBegin *block);
     bool is_backbranch_from_xhandler(BlockBegin* block);
 
@@ -97,12 +97,9 @@ public:
     void and_op(Bound *b);
     bool has_upper();
     bool has_lower();
-    void set_upper(int upper, Value upper_instr);
-    void set_lower(int lower, Value lower_instr);
     bool is_smaller(Bound *b);
     void remove_upper();
     void remove_lower();
-    void add_constant(int value);
     Bound *copy();
   };
 
@@ -115,7 +112,7 @@ public:
   public:
     void set_range_check_eliminator(RangeCheckEliminator *rce) { _rce = rce; }
     Bound *bound() const { return _bound; }
-    void clear_bound() { _bound = NULL; }
+    void clear_bound() { _bound = nullptr; }
 
   protected:
     // visitor functions
@@ -157,7 +154,6 @@ public:
     void do_Base           (Base*            x) { /* nothing to do */ };
     void do_OsrEntry       (OsrEntry*        x) { /* nothing to do */ };
     void do_ExceptionObject(ExceptionObject* x) { /* nothing to do */ };
-    void do_RoundFP        (RoundFP*         x) { /* nothing to do */ };
     void do_UnsafePut      (UnsafePut*       x) { /* nothing to do */ };
     void do_UnsafeGet      (UnsafeGet*       x) { /* nothing to do */ };
     void do_UnsafeGetAndSet(UnsafeGetAndSet* x) { /* nothing to do */ };

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include <stdio.h>
 
 /* testbase_nsk threads: */
-#include <native_thread.h>
+#include <native_thread.hpp>
 
 /***************************************************************/
 
@@ -73,12 +73,12 @@ typedef
 /***************************************************************/
 
 /**
- * Return a new thread mirror, or NULL if failed.
+ * Return a new thread mirror, or nullptr if failed.
  */
 void* THREAD_new(PROCEDURE procedure, void* context) {
     THREAD* thread = (THREAD*)malloc(sizeof(THREAD));
-    if (thread == NULL)
-        return NULL;
+    if (thread == nullptr)
+        return nullptr;
     thread->procedure = procedure;
     thread->context   = context;
     thread->started   = 0; /* No */
@@ -90,7 +90,7 @@ void* THREAD_new(PROCEDURE procedure, void* context) {
 /***************************************************************/
 
 #ifdef windows
-unsigned __stdcall procedure(void* t) {
+unsigned procedure(void* t) {
 #else // !windows
 void* procedure(void* t) {
 #endif
@@ -98,41 +98,50 @@ void* procedure(void* t) {
     thread->started  = 1;
     thread->status   = thread->procedure(thread->context);
     thread->finished = 1;
+#ifdef windows
     return 0;
+#else // !windows
+    return nullptr;
+#endif
 }
 
 /**
- * Return the thread if started OK, or NULL if failed.
+ * Return the thread if started OK, or nullptr if failed.
  */
 void* THREAD_start(void* t) {
     THREAD* thread = (THREAD*)t;
-    if (thread == NULL)
-        return NULL;
+    if (thread == nullptr)
+        return nullptr;
     if (thread->started != 0)
-        return NULL;
+        return nullptr;
 /*  thread->started  = 0;      -- not yet */
     thread->finished = 0;
     thread->status   = 0;
     {
 
 #ifdef windows
-    uintptr_t result = _beginthreadex(NULL,0,procedure,thread,0,&(thread->id));
+    uintptr_t result = _beginthreadex(nullptr,0,procedure,thread,0,&(thread->id));
     if (result == 0) {
         perror("failed to create a native thread");
-        return NULL;
+        return nullptr;
     }
 #elif sun
-    int result = thr_create(NULL,0,procedure,thread,0,&(thread->id));
+    int result = thr_create(nullptr,0,procedure,thread,0,&(thread->id));
     if (result != 0) {
         perror("failed to create a native thread");
-        return NULL;
+        return nullptr;
     }
 #else // !windows & !sun
-    int result = pthread_create(&(thread->id),NULL,procedure,thread);
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    size_t stack_size = 0x100000;
+    pthread_attr_setstacksize(&attr, stack_size);
+    int result = pthread_create(&(thread->id), &attr, procedure, thread);
     if (result != 0) {
         perror("failed to create a native thread");
-        return NULL;
+        return nullptr;
     }
+    pthread_attr_destroy(&attr);
 #endif // !windows & !sun
     };
     return thread;
@@ -142,11 +151,11 @@ void* THREAD_start(void* t) {
 
 /**
  * Return 1 if the thread has been started, or 0 if not,
- * or -1 if thread == NULL.
+ * or -1 if thread == nullptr.
  */
 int THREAD_isStarted(void* t) {
     THREAD* thread = (THREAD*)t;
-    if (thread == NULL)
+    if (thread == nullptr)
         return -1;
     return (thread->started == 1);
 }
@@ -154,11 +163,11 @@ int THREAD_isStarted(void* t) {
 /**
  * Return 1 if the thread has been started and already has finished,
  * or 0 if the thread hasn't finish (or even hasn't been started),
- * or -1 if thread == NULL.
+ * or -1 if thread == nullptr.
  */
 int THREAD_hasFinished(void* t) {
     THREAD* thread = (THREAD*)t;
-    if (thread == NULL)
+    if (thread == nullptr)
         return -1;
     return (thread->finished == 1);
 }
@@ -166,11 +175,11 @@ int THREAD_hasFinished(void* t) {
 /**
  * Return thread->status if thread has finished,
  * or return 0 if thread hasn't finished,
- * or retuen -1 if thread == NULL.
+ * or retuen -1 if thread == nullptr.
  */
 int THREAD_status(void* t) {
     THREAD* thread = (THREAD*)t;
-    if (thread == NULL)
+    if (thread == nullptr)
         return -1;
     return thread->status;
 }
@@ -179,11 +188,11 @@ int THREAD_status(void* t) {
 
 /**
  * Cycle with 1 second sleeps until the thread has finished;
- * or return immediately, if thread == NULL.
+ * or return immediately, if thread == nullptr.
  */
 void THREAD_waitFor(void* t) {
     THREAD* thread = (THREAD*)t;
-    if (thread == NULL)
+    if (thread == nullptr)
         return;
     while (thread->finished == 0)
         THREAD_sleep(1); /* yield for a second */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.spi.FileSystemProvider;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -192,6 +189,15 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     }
 
     @Override
+    public boolean exists(Path path, LinkOption... options) {
+        if (options.length == 0) {
+            return toZipPath(path).exists();
+        } else {
+            return super.exists(path, options);
+        }
+    }
+
+    @Override
     public <V extends FileAttributeView> V
         getFileAttributeView(Path path, Class<V> type, LinkOption... options)
     {
@@ -285,6 +291,16 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     }
 
     @Override
+    @SuppressWarnings("unchecked") // Cast to A
+    public <A extends BasicFileAttributes> A readAttributesIfExists(Path path,
+                                                                    Class<A> type,
+                                                                    LinkOption... options)
+        throws IOException
+    {
+        return (A) toZipPath(path).readAttributesIfExists();
+    }
+
+    @Override
     public Path readSymbolicLink(Path link) {
         throw new UnsupportedOperationException("Not supported.");
     }
@@ -298,18 +314,9 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     }
 
     //////////////////////////////////////////////////////////////
-    @SuppressWarnings("removal")
     void removeFileSystem(Path zfpath, ZipFileSystem zfs) throws IOException {
         synchronized (filesystems) {
-            Path tempPath = zfpath;
-            PrivilegedExceptionAction<Path> action = tempPath::toRealPath;
-            try {
-                zfpath = AccessController.doPrivileged(action);
-            } catch (PrivilegedActionException e) {
-                throw (IOException) e.getException();
-            }
-            if (filesystems.get(zfpath) == zfs)
-                filesystems.remove(zfpath);
+            filesystems.remove(zfpath.toRealPath(), zfs);
         }
     }
 }

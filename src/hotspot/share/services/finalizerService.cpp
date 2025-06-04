@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_MANAGEMENT
 #include "classfile/classLoaderDataGraph.inline.hpp"
@@ -34,9 +33,9 @@
 #include "runtime/atomic.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
 #include "services/finalizerService.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "utilities/debug.hpp"
@@ -45,7 +44,7 @@ static const char* allocate(oop string) {
   char* str = nullptr;
   const typeArrayOop value = java_lang_String::value(string);
   if (value != nullptr) {
-    const int length = java_lang_String::utf8_length(string, value);
+    const size_t length = java_lang_String::utf8_length(string, value);
     str = NEW_C_HEAP_ARRAY(char, length + 1, mtServiceability);
     java_lang_String::as_utf8_string(string, value, str, length + 1);
   }
@@ -137,10 +136,13 @@ class FinalizerEntryLookup : StackObj {
  public:
   FinalizerEntryLookup(const InstanceKlass* ik) : _ik(ik) {}
   uintx get_hash() const { return hash_function(_ik); }
-  bool equals(FinalizerEntry** value, bool* is_dead) {
+  bool equals(FinalizerEntry** value) {
     assert(value != nullptr, "invariant");
     assert(*value != nullptr, "invariant");
     return (*value)->klass() == _ik;
+  }
+  bool is_dead(FinalizerEntry** value) {
+    return false;
   }
 };
 
@@ -165,12 +167,6 @@ static const size_t DEFAULT_TABLE_SIZE = 2048;
 // 2^24 is max size, like StringTable.
 static const size_t MAX_SIZE = 24;
 static volatile bool _has_work = false;
-
-static size_t ceil_log2(size_t value) {
-  size_t ret;
-  for (ret = 1; ((size_t)1 << ret) < value; ++ret);
-  return ret;
-}
 
 class FinalizerEntryLookupResult {
  private:
@@ -269,8 +265,8 @@ void FinalizerService::do_concurrent_work(JavaThread* service_thread) {
 
 void FinalizerService::init() {
   assert(_table == nullptr, "invariant");
-  const size_t start_size_log_2 = ceil_log2(DEFAULT_TABLE_SIZE);
-  _table = new FinalizerHashtable(start_size_log_2, MAX_SIZE);
+  const size_t start_size_log_2 = log2i_ceil(DEFAULT_TABLE_SIZE);
+  _table = new FinalizerHashtable(start_size_log_2, MAX_SIZE, FinalizerHashtable::DEFAULT_GROW_HINT);
 }
 
 static FinalizerEntry* lookup_entry(const InstanceKlass* ik, Thread* thread) {

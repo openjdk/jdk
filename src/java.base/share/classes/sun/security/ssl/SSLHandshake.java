@@ -31,331 +31,353 @@ import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map;
 import javax.net.ssl.SSLException;
 
+/**
+ * An enum of the defined TLS handshake message types.
+ * <p>
+ * These are defined in the IANA TLS Parameters.
+ * https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#tls-parameters-7
+ * <p>
+ * Most of these come from the SLS/TLS specs in RFCs 6601/2246/4346/8446 and
+ * friends.  Others are called out where defined.
+ */
 enum SSLHandshake implements SSLConsumer, HandshakeProducer {
     @SuppressWarnings({"unchecked", "rawtypes"})
     HELLO_REQUEST ((byte)0x00, "hello_request",
-        (Map.Entry<SSLConsumer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                HelloRequest.handshakeConsumer,
-                ProtocolVersion.PROTOCOLS_TO_12
-            )
-        }),
-        (Map.Entry<HandshakeProducer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                HelloRequest.handshakeProducer,
-                ProtocolVersion.PROTOCOLS_TO_12
-            )
-        })),
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            HelloRequest.handshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_TO_12
+                    )
+            },
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            HelloRequest.handshakeProducer,
+                            ProtocolVersion.PROTOCOLS_TO_12
+                    )
+            }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     CLIENT_HELLO ((byte)0x01, "client_hello",
-        (Map.Entry<SSLConsumer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                ClientHello.handshakeConsumer,
-                ProtocolVersion.PROTOCOLS_TO_13
-            )
-        }),
-        (Map.Entry<HandshakeProducer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                ClientHello.handshakeProducer,
-                ProtocolVersion.PROTOCOLS_TO_13
-            )
-        })),
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            ClientHello.handshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_TO_13
+                    )
+            },
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            ClientHello.handshakeProducer,
+                            ProtocolVersion.PROTOCOLS_TO_13
+                    )
+            }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     SERVER_HELLO ((byte)0x02, "server_hello",
-        (Map.Entry<SSLConsumer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                ServerHello.handshakeConsumer,
-                ProtocolVersion.PROTOCOLS_TO_13
-            )
-        }),
-        (Map.Entry<HandshakeProducer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                ServerHello.t12HandshakeProducer,
-                ProtocolVersion.PROTOCOLS_TO_12
-            ),
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                ServerHello.t13HandshakeProducer,
-                ProtocolVersion.PROTOCOLS_OF_13
-            )
-        })),
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            ServerHello.handshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_TO_13
+                    )
+            },
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            ServerHello.t12HandshakeProducer,
+                            ProtocolVersion.PROTOCOLS_TO_12
+                    ),
+                    new SimpleImmutableEntry<>(
+                            ServerHello.t13HandshakeProducer,
+                            ProtocolVersion.PROTOCOLS_OF_13
+                    )
+            }),
 
+    // Even though there is a TLS HandshakeType entry for
+    // hello_retry_request_RESERVED (0x06), the TLSv1.3 (RFC 8446)
+    // HelloRetryRequest is actually a ServerHello with a specific Random value
+    // (Section 4.1.3).
     @SuppressWarnings({"unchecked", "rawtypes"})
     HELLO_RETRY_REQUEST ((byte)0x02, "hello_retry_request",
-        (Map.Entry<SSLConsumer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                ServerHello.handshakeConsumer,      // Use ServerHello consumer
-                ProtocolVersion.PROTOCOLS_TO_13
-            )
-        }),
-        (Map.Entry<HandshakeProducer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                ServerHello.hrrHandshakeProducer,
-                ProtocolVersion.PROTOCOLS_OF_13
-            )
-        })),
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            // Use ServerHello consumer
+                            ServerHello.handshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_TO_13
+                    )
+            },
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            ServerHello.hrrHandshakeProducer,
+                            ProtocolVersion.PROTOCOLS_OF_13
+                    )
+            }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     HELLO_VERIFY_REQUEST        ((byte)0x03, "hello_verify_request",
-        (Map.Entry<SSLConsumer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                HelloVerifyRequest.handshakeConsumer,
-                ProtocolVersion.PROTOCOLS_TO_12
-            )
-        }),
-        (Map.Entry<HandshakeProducer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                HelloVerifyRequest.handshakeProducer,
-                ProtocolVersion.PROTOCOLS_TO_12
-            )
-        })),
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            HelloVerifyRequest.handshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_TO_12
+                    )
+            },
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            HelloVerifyRequest.handshakeProducer,
+                            ProtocolVersion.PROTOCOLS_TO_12
+                    )
+            }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     NEW_SESSION_TICKET          ((byte)0x04, "new_session_ticket",
-        (Map.Entry<SSLConsumer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                 NewSessionTicket.handshake12Consumer,
-                 ProtocolVersion.PROTOCOLS_TO_12
-            ),
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                 NewSessionTicket.handshakeConsumer,
-                 ProtocolVersion.PROTOCOLS_OF_13
-            )
-        }),
-        (Map.Entry<HandshakeProducer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                 NewSessionTicket.handshake12Producer,
-                 ProtocolVersion.PROTOCOLS_TO_12
-            )
-        })),
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            NewSessionTicket.handshake12Consumer,
+                            ProtocolVersion.PROTOCOLS_TO_12
+                    ),
+                    new SimpleImmutableEntry<>(
+                            NewSessionTicket.handshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_OF_13
+                    )
+            },
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            NewSessionTicket.handshake12Producer,
+                            ProtocolVersion.PROTOCOLS_TO_12
+                    )
+            }),
+
     END_OF_EARLY_DATA           ((byte)0x05, "end_of_early_data"),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     ENCRYPTED_EXTENSIONS        ((byte)0x08, "encrypted_extensions",
-        (Map.Entry<SSLConsumer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                EncryptedExtensions.handshakeConsumer,
-                ProtocolVersion.PROTOCOLS_OF_13
-            )
-        }),
-        (Map.Entry<HandshakeProducer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                EncryptedExtensions.handshakeProducer,
-                ProtocolVersion.PROTOCOLS_OF_13
-            )
-        })),
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            EncryptedExtensions.handshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_OF_13
+                    )
+            },
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            EncryptedExtensions.handshakeProducer,
+                            ProtocolVersion.PROTOCOLS_OF_13
+                    )
+            }),
+
+    // RFC 9147 - DTLS 1.3
+    REQUEST_CONNECTION_ID       ((byte)0x09, "request_connection_id"),
+    NEW_CONNECTION_ID           ((byte)0x0a, "new_connection_id"),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     CERTIFICATE                 ((byte)0x0B, "certificate",
-        (Map.Entry<SSLConsumer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                CertificateMessage.t12HandshakeConsumer,
-                ProtocolVersion.PROTOCOLS_TO_12
-            ),
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                CertificateMessage.t13HandshakeConsumer,
-                ProtocolVersion.PROTOCOLS_OF_13
-            )
-        }),
-        (Map.Entry<HandshakeProducer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                CertificateMessage.t12HandshakeProducer,
-                ProtocolVersion.PROTOCOLS_TO_12
-            ),
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                CertificateMessage.t13HandshakeProducer,
-                ProtocolVersion.PROTOCOLS_OF_13
-            )
-        })),
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            CertificateMessage.t12HandshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_TO_12
+                    ),
+                    new SimpleImmutableEntry<>(
+                            CertificateMessage.t13HandshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_OF_13
+                    )
+            },
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            CertificateMessage.t12HandshakeProducer,
+                            ProtocolVersion.PROTOCOLS_TO_12
+                    ),
+                    new SimpleImmutableEntry<>(
+                            CertificateMessage.t13HandshakeProducer,
+                            ProtocolVersion.PROTOCOLS_OF_13
+                    )
+            }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     SERVER_KEY_EXCHANGE         ((byte)0x0C, "server_key_exchange",
-        (Map.Entry<SSLConsumer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                ServerKeyExchange.handshakeConsumer,
-                ProtocolVersion.PROTOCOLS_TO_12
-            )
-        }),
-        (Map.Entry<HandshakeProducer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                ServerKeyExchange.handshakeProducer,
-                ProtocolVersion.PROTOCOLS_TO_12
-            )
-        })),
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            ServerKeyExchange.handshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_TO_12
+                    )
+            },
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            ServerKeyExchange.handshakeProducer,
+                            ProtocolVersion.PROTOCOLS_TO_12
+                    )
+            }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     CERTIFICATE_REQUEST         ((byte)0x0D, "certificate_request",
-        (Map.Entry<SSLConsumer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                CertificateRequest.t10HandshakeConsumer,
-                ProtocolVersion.PROTOCOLS_TO_11
-            ),
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                CertificateRequest.t12HandshakeConsumer,
-                ProtocolVersion.PROTOCOLS_OF_12
-            ),
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                CertificateRequest.t13HandshakeConsumer,
-                ProtocolVersion.PROTOCOLS_OF_13
-            )
-        }),
-        (Map.Entry<HandshakeProducer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                CertificateRequest.t10HandshakeProducer,
-                ProtocolVersion.PROTOCOLS_TO_11
-            ),
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                CertificateRequest.t12HandshakeProducer,
-                ProtocolVersion.PROTOCOLS_OF_12
-            ),
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                CertificateRequest.t13HandshakeProducer,
-                ProtocolVersion.PROTOCOLS_OF_13
-            )
-        })),
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            CertificateRequest.t10HandshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_TO_11
+                    ),
+                    new SimpleImmutableEntry<>(
+                            CertificateRequest.t12HandshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_OF_12
+                    ),
+                    new SimpleImmutableEntry<>(
+                            CertificateRequest.t13HandshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_OF_13
+                    )
+            },
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            CertificateRequest.t10HandshakeProducer,
+                            ProtocolVersion.PROTOCOLS_TO_11
+                    ),
+                    new SimpleImmutableEntry<>(
+                            CertificateRequest.t12HandshakeProducer,
+                            ProtocolVersion.PROTOCOLS_OF_12
+                    ),
+                    new SimpleImmutableEntry<>(
+                            CertificateRequest.t13HandshakeProducer,
+                            ProtocolVersion.PROTOCOLS_OF_13
+                    )
+            }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     SERVER_HELLO_DONE           ((byte)0x0E, "server_hello_done",
-        (Map.Entry<SSLConsumer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                ServerHelloDone.handshakeConsumer,
-                ProtocolVersion.PROTOCOLS_TO_12
-            )
-        }),
-        (Map.Entry<HandshakeProducer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                ServerHelloDone.handshakeProducer,
-                ProtocolVersion.PROTOCOLS_TO_12
-            )
-        })),
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            ServerHelloDone.handshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_TO_12
+                    )
+            },
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            ServerHelloDone.handshakeProducer,
+                            ProtocolVersion.PROTOCOLS_TO_12
+                    )
+            }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     CERTIFICATE_VERIFY          ((byte)0x0F, "certificate_verify",
-        (Map.Entry<SSLConsumer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                CertificateVerify.s30HandshakeConsumer,
-                ProtocolVersion.PROTOCOLS_OF_30
-            ),
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                CertificateVerify.t10HandshakeConsumer,
-                ProtocolVersion.PROTOCOLS_10_11
-            ),
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                CertificateVerify.t12HandshakeConsumer,
-                ProtocolVersion.PROTOCOLS_OF_12
-            ),
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                CertificateVerify.t13HandshakeConsumer,
-                ProtocolVersion.PROTOCOLS_OF_13
-            )
-        }),
-        (Map.Entry<HandshakeProducer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                CertificateVerify.s30HandshakeProducer,
-                ProtocolVersion.PROTOCOLS_OF_30
-            ),
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                CertificateVerify.t10HandshakeProducer,
-                ProtocolVersion.PROTOCOLS_10_11
-            ),
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                CertificateVerify.t12HandshakeProducer,
-                ProtocolVersion.PROTOCOLS_OF_12
-            ),
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                CertificateVerify.t13HandshakeProducer,
-                ProtocolVersion.PROTOCOLS_OF_13
-            )
-        })),
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            CertificateVerify.s30HandshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_OF_30
+                    ),
+                    new SimpleImmutableEntry<>(
+                            CertificateVerify.t10HandshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_10_11
+                    ),
+                    new SimpleImmutableEntry<>(
+                            CertificateVerify.t12HandshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_OF_12
+                    ),
+                    new SimpleImmutableEntry<>(
+                            CertificateVerify.t13HandshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_OF_13
+                    )
+            },
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            CertificateVerify.s30HandshakeProducer,
+                            ProtocolVersion.PROTOCOLS_OF_30
+                    ),
+                    new SimpleImmutableEntry<>(
+                            CertificateVerify.t10HandshakeProducer,
+                            ProtocolVersion.PROTOCOLS_10_11
+                    ),
+                    new SimpleImmutableEntry<>(
+                            CertificateVerify.t12HandshakeProducer,
+                            ProtocolVersion.PROTOCOLS_OF_12
+                    ),
+                    new SimpleImmutableEntry<>(
+                            CertificateVerify.t13HandshakeProducer,
+                            ProtocolVersion.PROTOCOLS_OF_13
+                    )
+            }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     CLIENT_KEY_EXCHANGE         ((byte)0x10, "client_key_exchange",
-        (Map.Entry<SSLConsumer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                ClientKeyExchange.handshakeConsumer,
-                ProtocolVersion.PROTOCOLS_TO_12
-            )
-        }),
-        (Map.Entry<HandshakeProducer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                ClientKeyExchange.handshakeProducer,
-                ProtocolVersion.PROTOCOLS_TO_12
-            )
-        })),
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            ClientKeyExchange.handshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_TO_12
+                    )
+            },
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            ClientKeyExchange.handshakeProducer,
+                            ProtocolVersion.PROTOCOLS_TO_12
+                    )
+            }),
+
+    // RFC 9261 - Exported Authenticators
+    CLIENT_CERTIFICATE_REQUEST  ((byte)0x11, "client_certificate_request"),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     FINISHED                    ((byte)0x14, "finished",
-        (Map.Entry<SSLConsumer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                Finished.t12HandshakeConsumer,
-                ProtocolVersion.PROTOCOLS_TO_12
-            ),
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                Finished.t13HandshakeConsumer,
-                ProtocolVersion.PROTOCOLS_OF_13
-            )
-        }),
-        (Map.Entry<HandshakeProducer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                Finished.t12HandshakeProducer,
-                ProtocolVersion.PROTOCOLS_TO_12
-            ),
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                Finished.t13HandshakeProducer,
-                ProtocolVersion.PROTOCOLS_OF_13
-            )
-        })),
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            Finished.t12HandshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_TO_12
+                    ),
+                    new SimpleImmutableEntry<>(
+                            Finished.t13HandshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_OF_13
+                    )
+            },
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            Finished.t12HandshakeProducer,
+                            ProtocolVersion.PROTOCOLS_TO_12
+                    ),
+                    new SimpleImmutableEntry<>(
+                            Finished.t13HandshakeProducer,
+                            ProtocolVersion.PROTOCOLS_OF_13
+                    )
+            }),
 
     CERTIFICATE_URL             ((byte)0x15, "certificate_url"),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     CERTIFICATE_STATUS          ((byte)0x16, "certificate_status",
-        (Map.Entry<SSLConsumer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                CertificateStatus.handshakeConsumer,
-                ProtocolVersion.PROTOCOLS_TO_12
-            )
-        }),
-        (Map.Entry<HandshakeProducer, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                CertificateStatus.handshakeProducer,
-                ProtocolVersion.PROTOCOLS_TO_12
-            )
-        }),
-        (Map.Entry<HandshakeAbsence, ProtocolVersion[]>[])(new Map.Entry[] {
-            new SimpleImmutableEntry<HandshakeAbsence, ProtocolVersion[]>(
-                CertificateStatus.handshakeAbsence,
-                ProtocolVersion.PROTOCOLS_TO_12
-            )
-        })),
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            CertificateStatus.handshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_TO_12
+                    )
+            },
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            CertificateStatus.handshakeProducer,
+                            ProtocolVersion.PROTOCOLS_TO_12
+                    )
+            },
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            CertificateStatus.handshakeAbsence,
+                            ProtocolVersion.PROTOCOLS_TO_12
+                    )
+            }),
 
     SUPPLEMENTAL_DATA           ((byte)0x17, "supplemental_data"),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     KEY_UPDATE                  ((byte)0x18, "key_update",
-            (Map.Entry<SSLConsumer, ProtocolVersion[]>[])(new Map.Entry[] {
-                    new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
                             KeyUpdate.handshakeConsumer,
                             ProtocolVersion.PROTOCOLS_OF_13
                     )
-            }),
-            (Map.Entry<HandshakeProducer, ProtocolVersion[]>[])(new Map.Entry[] {
-                    new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
+            },
+            new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
                             KeyUpdate.handshakeProducer,
                             ProtocolVersion.PROTOCOLS_OF_13
                     )
-            })),
+            }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     COMPRESSED_CERTIFICATE      ((byte)0x19, "compressed_certificate",
-            (Map.Entry<SSLConsumer, ProtocolVersion[]>[])(new Map.Entry[] {
+            (new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             CompressedCertificate.handshakeConsumer,
                             ProtocolVersion.PROTOCOLS_OF_13
                     )
             }),
-            (Map.Entry<HandshakeProducer, ProtocolVersion[]>[])(new Map.Entry[] {
+            (new Map.Entry[] {
                     // Note that the producing of this message is delegated to
                     // CertificateMessage producer.
                     new SimpleImmutableEntry<>(
@@ -376,12 +398,9 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
     @SuppressWarnings({"unchecked", "rawtypes"})
     SSLHandshake(byte id, String name) {
         this(id, name,
-                (Map.Entry<SSLConsumer, ProtocolVersion[]>[])(
-                        new Map.Entry[0]),
-                (Map.Entry<HandshakeProducer, ProtocolVersion[]>[])(
-                        new Map.Entry[0]),
-                (Map.Entry<HandshakeAbsence, ProtocolVersion[]>[])(
-                        new Map.Entry[0]));
+                new Map.Entry[0],
+                new Map.Entry[0],
+                new Map.Entry[0]);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -390,8 +409,7 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
         Map.Entry<HandshakeProducer, ProtocolVersion[]>[] handshakeProducers) {
 
         this(id, name, handshakeConsumers, handshakeProducers,
-                (Map.Entry<HandshakeAbsence, ProtocolVersion[]>[])(
-                        new Map.Entry[0]));
+                new Map.Entry[0]);
     }
 
     SSLHandshake(byte id, String name,
@@ -464,7 +482,7 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
 
     private HandshakeProducer getHandshakeProducer(
             ConnectionContext context) {
-        if (handshakeConsumers.length == 0) {
+        if (handshakeProducers.length == 0) {
             return null;
         }
 
@@ -547,8 +565,8 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
                 ClientHello.kickstartProducer.produce(context);
             }
         } else {
-            // The server side can delivering kickstart message after the
-            // connection has established.
+            // The server side can deliver kickstart message after the
+            // connection has been established.
             //
             // (D)TLS 1.2 and older protocols use HelloRequest to begin a
             // negotiation process anew.

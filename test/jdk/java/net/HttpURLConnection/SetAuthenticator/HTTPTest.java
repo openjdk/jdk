@@ -63,15 +63,16 @@ import static java.net.Proxy.NO_PROXY;
  *                    server that perform Digest authentication;
  *            PROXY305: The server attempts to redirect
  *                    the client to a proxy using 305 code;
- * @run main/othervm HTTPTest SERVER
- * @run main/othervm HTTPTest PROXY
- * @run main/othervm HTTPTest SERVER307
- * @run main/othervm HTTPTest PROXY305
+ * @run main/othervm -Dtest.debug=true -Dtest.digest.algorithm=SHA-512 HTTPTest SERVER
+ * @run main/othervm -Dtest.debug=true -Dtest.digest.algorithm=SHA-256 HTTPTest SERVER
+ * @run main/othervm -Dtest.debug=true -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPTest SERVER
+ * @run main/othervm -Dtest.debug=true -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPTest PROXY
+ * @run main/othervm -Dtest.debug=true -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPTest SERVER307
+ * @run main/othervm -Dtest.debug=true -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPTest PROXY305
  *
  * @author danielfuchs
  */
 public class HTTPTest {
-
     public static final boolean DEBUG =
          Boolean.parseBoolean(System.getProperty("test.debug", "false"));
     public static enum HttpAuthType { SERVER, PROXY, SERVER307, PROXY305 };
@@ -194,6 +195,10 @@ public class HTTPTest {
             // silently skip unsupported test combination
             return;
         }
+        String digestalg = System.getProperty("test.digest.algorithm");
+        if (digestalg == null || "".equals(digestalg))
+            digestalg = "MD5";
+
         System.out.println("\n**** Testing " + protocol + " "
                            + mode + " mode ****\n");
         int authCount = AUTHENTICATOR.count.get();
@@ -205,7 +210,9 @@ public class HTTPTest {
                     HTTPTestServer.create(protocol,
                                           mode,
                                           AUTHENTICATOR,
-                                          getHttpSchemeType());
+                                          getHttpSchemeType(),
+                                          null,
+                                          digestalg);
             try {
                 expectedIncrement += run(server, protocol, mode);
             } finally {

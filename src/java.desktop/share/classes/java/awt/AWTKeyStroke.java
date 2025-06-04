@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,26 +82,26 @@ public class AWTKeyStroke implements Serializable {
 
     //A key for the collection of AWTKeyStrokes within AppContext.
     private static Object APP_CONTEXT_CACHE_KEY = new Object();
-    //A key withing the cache
+    //A key within the cache
     private static AWTKeyStroke APP_CONTEXT_KEYSTROKE_KEY = new AWTKeyStroke();
 
     /**
-     * The character value for a keyboard key.
+     * @serial The character value for a keyboard key.
      */
     private char keyChar = KeyEvent.CHAR_UNDEFINED;
 
     /**
-     * The key code for this {@code AWTKeyStroke}.
+     * @serial The key code for this {@code AWTKeyStroke}.
      */
     private int keyCode = KeyEvent.VK_UNDEFINED;
 
     /**
-     * The bitwise-ored combination of any modifiers.
+     * @serial The bitwise-ored combination of any modifiers.
      */
     private int modifiers;
 
     /**
-     * {@code true} if this {@code AWTKeyStroke} corresponds to a key release;
+     * @serial {@code true} if this {@code AWTKeyStroke} corresponds to a key release;
      * {@code false} otherwise.
      */
     private boolean onKeyRelease;
@@ -545,9 +545,7 @@ public class AWTKeyStroke implements Serializable {
 
             try {
                 keyCode = KeyEvent.class.getField(key).getInt(KeyEvent.class);
-            } catch (NoSuchFieldException nsfe) {
-                throw new IllegalArgumentException(errmsg);
-            } catch (IllegalAccessException iae) {
+            } catch (NoSuchFieldException | IllegalAccessException e) {
                 throw new IllegalArgumentException(errmsg);
             }
             value = Integer.valueOf(keyCode);

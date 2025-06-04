@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.net.www.protocol.jar;
 
+import sun.net.www.protocol.file.FileURLConnection;
 import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -76,6 +77,9 @@ public class JarURLConnection extends java.net.JarURLConnection {
         return jarEntry;
     }
 
+    @Override
+    @Deprecated(since = "25", forRemoval = true)
+    @SuppressWarnings("removal")
     public Permission getPermission() throws IOException {
         return jarFileURLConnection.getPermission();
     }
@@ -88,8 +92,14 @@ public class JarURLConnection extends java.net.JarURLConnection {
             try {
                 super.close();
             } finally {
-                if (!getUseCaches()) {
-                    jarFile.close();
+                try {
+                    if (!getUseCaches()) {
+                        jarFile.close();
+                    }
+                } finally {
+                    if (jarFileURLConnection instanceof FileURLConnection fileURLConnection) {
+                        fileURLConnection.closeInputStream();
+                    }
                 }
             }
         }
@@ -180,10 +190,10 @@ public class JarURLConnection extends java.net.JarURLConnection {
         try {
             connect();
             if (jarEntry == null) {
-                /* if the URL referes to an archive */
+                /* if the URL refers to an archive */
                 result = jarFileURLConnection.getContentLengthLong();
             } else {
-                /* if the URL referes to an archive entry */
+                /* if the URL refers to an archive entry */
                 result = getJarEntry().getSize();
             }
         } catch (IOException e) {
@@ -365,7 +375,7 @@ public class JarURLConnection extends java.net.JarURLConnection {
      * Returns the default value of a <code>URLConnection</code>'s
      * <code>useCaches</code> flag.
      * <p>
-     * Ths default is "sticky", being a part of the static state of all
+     * The default is "sticky", being a part of the static state of all
      * URLConnections.  This flag applies to the next, and all following
      * URLConnections that are created.
      *

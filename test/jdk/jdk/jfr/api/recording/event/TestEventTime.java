@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import jdk.test.lib.jfr.Events;
 /**
  * @test
  * @summary Test getStartTime() and getEndTime(). Verify startTime <= endTime
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.event.TestEventTime
@@ -101,7 +101,7 @@ public class TestEventTime {
         MyEvent event = new MyEvent(id);
         event.begin();
         if (!CommonHelper.hasFastTimeEnabled()) {
-            CommonHelper.waitForSystemCurrentMillisToChange();;
+            CommonHelper.waitForSystemCurrentMillisToChange();
         }
         actualOrder.add(new TimeEvent(id, true));
         return event;
@@ -110,7 +110,7 @@ public class TestEventTime {
     private static void endEvent(MyEvent event) throws Exception {
         event.end();
         if (!CommonHelper.hasFastTimeEnabled()) {
-            CommonHelper.waitForSystemCurrentMillisToChange();;
+            CommonHelper.waitForSystemCurrentMillisToChange();
         }
         event.commit();
         actualOrder.add(new TimeEvent(event.id, false));

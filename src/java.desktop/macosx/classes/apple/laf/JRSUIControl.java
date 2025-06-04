@@ -126,7 +126,7 @@ public final class JRSUIControl {
         NO_CHANGE,
         ALL_CHANGES_IN_BUFFER,
         SOME_CHANGES_IN_BUFFER,
-        CHANGE_WONT_FIT_IN_BUFFER;
+        CHANGE_WONT_FIT_IN_BUFFER
     }
 
     private BufferState loadBufferWithChanges(final ThreadLocalByteBuffer localByteBuffer) {
@@ -324,7 +324,7 @@ public final class JRSUIControl {
 
     @Override
     public int hashCode() {
-        int bits = (int)(currentEncodedProperties ^ (currentEncodedProperties >>> 32));
+        int bits = Long.hashCode(currentEncodedProperties);
         bits ^= nativeMap.hashCode();
         bits ^= changes.hashCode();
         return bits;

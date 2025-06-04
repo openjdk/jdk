@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -37,6 +36,7 @@
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/basicLock.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -44,18 +44,19 @@
 #include "runtime/timer.hpp"
 #include "runtime/timerTrace.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 #include "entry_zero.hpp"
 #include "stack_zero.inline.hpp"
 
 void ZeroInterpreter::initialize_stub() {
-  if (_code != NULL) return;
+  if (_code != nullptr) return;
 
   // generate interpreter
   int code_size = InterpreterCodeSize;
   NOT_PRODUCT(code_size *= 4;)  // debug uses extra interpreter code space
-  _code = new StubQueue(new InterpreterCodeletInterface, code_size, NULL,
+  _code = new StubQueue(new InterpreterCodeletInterface, code_size, nullptr,
                          "Interpreter");
 }
 
@@ -65,7 +66,7 @@ void ZeroInterpreter::initialize_code() {
   // generate interpreter
   { ResourceMark rm;
     TraceTime timer("Interpreter generation", TRACETIME_LOG(Info, startuptime));
-    ZeroInterpreterGenerator g(_code);
+    ZeroInterpreterGenerator g;
     if (PrintInterpreter) print();
   }
 }
@@ -120,8 +121,8 @@ int ZeroInterpreter::Reference_get_entry(Method* method, intptr_t UNUSED, TRAPS)
 
   oop ref = STACK_OBJECT(0);
 
-  // Shortcut if reference is known NULL
-  if (ref == NULL) {
+  // Shortcut if reference is known null
+  if (ref == nullptr) {
     return normal_entry(method, 0, THREAD);
   }
 
@@ -174,7 +175,7 @@ void ZeroInterpreter::main_loop(int recurse, TRAPS) {
   interpreterState istate = frame->interpreter_state();
   Method* method = istate->method();
 
-  intptr_t *result = NULL;
+  intptr_t *result = nullptr;
   int result_slots = 0;
 
   while (true) {
@@ -254,7 +255,7 @@ void ZeroInterpreter::main_loop(int recurse, TRAPS) {
       istate->set_stack_base(istate->stack_base() - monitor_words);
 
       // Zero the new monitor so the interpreter can find it.
-      ((BasicObjectLock *) istate->stack_base())->set_obj(NULL);
+      ((BasicObjectLock *) istate->stack_base())->set_obj(nullptr);
 
       // Resume the interpreter
       istate->set_msg(BytecodeInterpreter::got_monitors);
@@ -327,39 +328,45 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
 
   // Lock if necessary
   BasicObjectLock *monitor;
-  monitor = NULL;
+  monitor = nullptr;
   if (method->is_synchronized()) {
     monitor = (BasicObjectLock*) istate->stack_base();
     oop lockee = monitor->obj();
-    markWord disp = lockee->mark().set_unlocked();
-    monitor->lock()->set_displaced_header(disp);
-    bool call_vm = UseHeavyMonitors;
-    if (call_vm || lockee->cas_set_mark(markWord::from_pointer(monitor), disp) != disp) {
-      // Is it simple recursive case?
-      if (!call_vm && thread->is_lock_owned((address) disp.clear_lock_bits().to_pointer())) {
-        monitor->lock()->set_displaced_header(markWord::from_pointer(NULL));
-      } else {
-        CALL_VM_NOCHECK(InterpreterRuntime::monitorenter(thread, monitor));
-        if (HAS_PENDING_EXCEPTION)
-          goto unwind_and_return;
+    bool success = false;
+    if (LockingMode == LM_LEGACY) {
+      markWord disp = lockee->mark().set_unlocked();
+      monitor->lock()->set_displaced_header(disp);
+      success = true;
+      if (lockee->cas_set_mark(markWord::from_pointer(monitor), disp) != disp) {
+        // Is it simple recursive case?
+        if (thread->is_lock_owned((address) disp.clear_lock_bits().to_pointer())) {
+          monitor->lock()->set_displaced_header(markWord::from_pointer(nullptr));
+        } else {
+          success = false;
+        }
       }
+    }
+    if (!success) {
+      CALL_VM_NOCHECK(InterpreterRuntime::monitorenter(thread, monitor));
+          if (HAS_PENDING_EXCEPTION)
+            goto unwind_and_return;
     }
   }
 
   // Get the signature handler
   InterpreterRuntime::SignatureHandler *handler; {
     address handlerAddr = method->signature_handler();
-    if (handlerAddr == NULL) {
+    if (handlerAddr == nullptr) {
       CALL_VM_NOCHECK(InterpreterRuntime::prepare_native_call(thread, method));
       if (HAS_PENDING_EXCEPTION)
         goto unlock_unwind_and_return;
 
       handlerAddr = method->signature_handler();
-      assert(handlerAddr != NULL, "eh?");
+      assert(handlerAddr != nullptr, "eh?");
     }
     if (handlerAddr == (address) InterpreterRuntime::slow_signature_handler) {
       CALL_VM_NOCHECK(handlerAddr =
-        InterpreterRuntime::slow_signature_handler(thread, method, NULL,NULL));
+        InterpreterRuntime::slow_signature_handler(thread, method, nullptr,nullptr));
       if (HAS_PENDING_EXCEPTION)
         goto unlock_unwind_and_return;
     }
@@ -370,7 +377,7 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // Get the native function entry point
   address function;
   function = method->native_function();
-  assert(function != NULL, "should be set if signature handler is");
+  assert(function != nullptr, "should be set if signature handler is");
 
   // Build the argument list
   stack->overflow_check(handler->argument_count() * 2, THREAD);
@@ -460,7 +467,7 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // we release the handle it might be protected by.
   if (handler->result_type() == &ffi_type_pointer) {
     if (result[0] == 0) {
-      istate->set_oop_temp(NULL);
+      istate->set_oop_temp(nullptr);
     } else {
       jobject handle = reinterpret_cast<jobject>(result[0]);
       istate->set_oop_temp(JNIHandles::resolve(handle));
@@ -474,21 +481,27 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
 
   // Unlock if necessary
   if (monitor) {
-    BasicLock *lock = monitor->lock();
-    markWord header = lock->displaced_header();
-    oop rcvr = monitor->obj();
-    monitor->set_obj(NULL);
-
-    if (header.to_pointer() != NULL) {
-      markWord old_header = markWord::encode(lock);
-      if (rcvr->cas_set_mark(header, old_header) != old_header) {
-        monitor->set_obj(rcvr);
-        InterpreterRuntime::monitorexit(monitor);
+    bool success = false;
+    if (LockingMode == LM_LEGACY) {
+      BasicLock* lock = monitor->lock();
+      oop rcvr = monitor->obj();
+      monitor->set_obj(nullptr);
+      success = true;
+      markWord header = lock->displaced_header();
+      if (header.to_pointer() != nullptr) { // Check for recursive lock
+        markWord old_header = markWord::encode(lock);
+        if (rcvr->cas_set_mark(header, old_header) != old_header) {
+          monitor->set_obj(rcvr);
+          success = false;
+        }
       }
+    }
+    if (!success) {
+      InterpreterRuntime::monitorexit(monitor);
     }
   }
 
- unwind_and_return:
+  unwind_and_return:
 
   // Unwind the current activation
   thread->pop_zero_frame();
@@ -595,7 +608,7 @@ int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // Get the entry from the constant pool cache, and drop into
   // the slow path if it has not been resolved
   ConstantPoolCache* cache = method->constants()->cache();
-  ConstantPoolCacheEntry* entry = cache->entry_at(index);
+  ResolvedFieldEntry* entry = cache->resolved_field_entry_at(index);
   if (!entry->is_resolved(Bytecodes::_getfield)) {
     return normal_entry(method, 0, THREAD);
   }
@@ -606,28 +619,30 @@ int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // Load the object pointer and drop into the slow path
   // if we have a NullPointerException
   oop object = STACK_OBJECT(0);
-  if (object == NULL) {
+  if (object == nullptr) {
     return normal_entry(method, 0, THREAD);
   }
 
   // If needed, allocate additional slot on stack: we already have one
   // for receiver, and double/long need another one.
-  switch (entry->flag_state()) {
+  switch (entry->tos_state()) {
     case ltos:
     case dtos:
       stack->overflow_check(1, CHECK_0);
       stack->alloc(wordSize);
       topOfStack = stack->sp();
       break;
+    default:
+      ;
   }
 
   // Read the field to stack(0)
-  int offset = entry->f2_as_index();
+  int offset = entry->field_offset();
   if (entry->is_volatile()) {
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
       OrderAccess::fence();
     }
-    switch (entry->flag_state()) {
+    switch (entry->tos_state()) {
       case btos:
       case ztos: SET_STACK_INT(object->byte_field_acquire(offset),      0); break;
       case ctos: SET_STACK_INT(object->char_field_acquire(offset),      0); break;
@@ -641,7 +656,7 @@ int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
         ShouldNotReachHere();
     }
   } else {
-    switch (entry->flag_state()) {
+    switch (entry->tos_state()) {
       case btos:
       case ztos: SET_STACK_INT(object->byte_field(offset),      0); break;
       case ctos: SET_STACK_INT(object->char_field(offset),      0); break;
@@ -684,7 +699,7 @@ int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // Get the entry from the constant pool cache, and drop into
   // the slow path if it has not been resolved
   ConstantPoolCache* cache = method->constants()->cache();
-  ConstantPoolCacheEntry* entry = cache->entry_at(index);
+  ResolvedFieldEntry* entry = cache->resolved_field_entry_at(index);
   if (!entry->is_resolved(Bytecodes::_putfield)) {
     return normal_entry(method, 0, THREAD);
   }
@@ -694,8 +709,8 @@ int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
 
   // Figure out where the receiver is. If there is a long/double
   // operand on stack top, then receiver is two slots down.
-  oop object = NULL;
-  switch (entry->flag_state()) {
+  oop object = nullptr;
+  switch (entry->tos_state()) {
     case ltos:
     case dtos:
       object = STACK_OBJECT(-2);
@@ -707,14 +722,14 @@ int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
 
   // Load the receiver pointer and drop into the slow path
   // if we have a NullPointerException
-  if (object == NULL) {
+  if (object == nullptr) {
     return normal_entry(method, 0, THREAD);
   }
 
   // Store the stack(0) to field
-  int offset = entry->f2_as_index();
+  int offset = entry->field_offset();
   if (entry->is_volatile()) {
-    switch (entry->flag_state()) {
+    switch (entry->tos_state()) {
       case btos: object->release_byte_field_put(offset,   STACK_INT(0));     break;
       case ztos: object->release_byte_field_put(offset,   STACK_INT(0) & 1); break; // only store LSB
       case ctos: object->release_char_field_put(offset,   STACK_INT(0));     break;
@@ -729,7 +744,7 @@ int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
     }
     OrderAccess::storeload();
   } else {
-    switch (entry->flag_state()) {
+    switch (entry->tos_state()) {
       case btos: object->byte_field_put(offset,   STACK_INT(0));     break;
       case ztos: object->byte_field_put(offset,   STACK_INT(0) & 1); break; // only store LSB
       case ctos: object->char_field_put(offset,   STACK_INT(0));     break;
@@ -787,7 +802,7 @@ InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
   stack->overflow_check(
     extra_locals + header_words + monitor_words + stack_words, CHECK_NULL);
 
-  // Adjust the caller's stack frame to accomodate any additional
+  // Adjust the caller's stack frame to accommodate any additional
   // local variables we have contiguously with our parameters.
   for (int i = 0; i < extra_locals; i++)
     stack->push(0);
@@ -813,13 +828,13 @@ InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
   istate->set_method(method);
   istate->set_mirror(method->method_holder()->java_mirror());
   istate->set_self_link(istate);
-  istate->set_prev_link(NULL);
+  istate->set_prev_link(nullptr);
   istate->set_thread(thread);
-  istate->set_bcp(method->is_native() ? NULL : method->code_base());
+  istate->set_bcp(method->is_native() ? nullptr : method->code_base());
   istate->set_constants(method->constants()->cache());
   istate->set_msg(BytecodeInterpreter::method_entry);
-  istate->set_oop_temp(NULL);
-  istate->set_callee(NULL);
+  istate->set_oop_temp(nullptr);
+  istate->set_callee(nullptr);
 
   istate->set_monitor_base((BasicObjectLock *) stack->sp());
   if (method->is_synchronized()) {
@@ -860,7 +875,7 @@ InterpreterFrame *InterpreterFrame::build(int size, TRAPS) {
   interpreterState istate =
     (interpreterState) stack->alloc(sizeof(BytecodeInterpreter));
   assert(fp - stack->sp() == istate_off, "should be");
-  istate->set_self_link(NULL); // mark invalid
+  istate->set_self_link(nullptr); // mark invalid
 
   stack->alloc((size_in_words - header_words) * wordSize);
 
@@ -869,11 +884,11 @@ InterpreterFrame *InterpreterFrame::build(int size, TRAPS) {
 
 address ZeroInterpreter::return_entry(TosState state, int length, Bytecodes::Code code) {
   ShouldNotCallThis();
-  return NULL;
+  return nullptr;
 }
 
 address ZeroInterpreter::deopt_entry(TosState state, int length) {
-  return NULL;
+  return nullptr;
 }
 
 address ZeroInterpreter::remove_activation_preserving_args_entry() {
@@ -883,7 +898,7 @@ address ZeroInterpreter::remove_activation_preserving_args_entry() {
 }
 
 address ZeroInterpreter::remove_activation_early_entry(TosState state) {
-  return NULL;
+  return nullptr;
 }
 
 // Helper for figuring out if frames are interpreter frames

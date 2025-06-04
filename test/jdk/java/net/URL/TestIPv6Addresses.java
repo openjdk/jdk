@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,10 @@
  */
 
 /* @test
- * @bug 4451522 4460484
- * @run main/othervm -Djava.security.manager=allow TestIPv6Addresses
+ * @bug 4451522
+ * @run main/othervm TestIPv6Addresses
  * @summary URI and URL getHost() methods don't comform to RFC 2732
  */
-
-// Run in othervm -Djava.security.manager=allow because the tests sets a SecurityManager
 
 import java.net.*;
 
@@ -75,22 +73,10 @@ public class TestIPv6Addresses {
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
-        // bug 4460484
 
-        SecurityManager sm = new SecurityManager();
         String strAddr = "::FFFF:127.0.0.1.2";
-
         try {
             InetAddress addr = InetAddress.getByName(strAddr);
-        } catch (UnknownHostException e) {
-            // expected
-        }
-        System.setSecurityManager(sm);
-
-        try {
-            InetAddress addr = InetAddress.getByName(strAddr);
-        } catch (java.security.AccessControlException e) {
-            // expected
         } catch (UnknownHostException e) {
             // expected
         }

@@ -71,6 +71,7 @@ public abstract class Dependencies {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected Dependencies(Context context) {
         context.put(dependenciesKey, this);
     }
@@ -181,7 +182,7 @@ public abstract class Dependencies {
         public abstract static class Node extends GraphUtils.AbstractNode<ClassSymbol, Node>
                 implements GraphUtils.DottableNode<ClassSymbol, Node> {
             /**
-             * dependant nodes grouped by kind
+             * dependent nodes grouped by kind
              */
             EnumMap<CompletionCause, List<Node>> depsByKind;
 

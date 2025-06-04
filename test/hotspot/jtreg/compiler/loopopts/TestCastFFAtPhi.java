@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,10 +24,13 @@
 
 /**
  * @test
- * @bug 8268017
+ * @bug 8268017 8293833
  * @summary C2: assert(phi_type->isa_int() || phi_type->isa_ptr() || phi_type->isa_long()) failed: bad phi type
- *
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestCastFFAtPhi TestCastFFAtPhi
+ *          Error mixing types with -XX:+UseCMoveUnconditionally -XX:+UseVectorCmov
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestCastFFAtPhi::* TestCastFFAtPhi
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestCastFFAtPhi::* -XX:+UseCMoveUnconditionally
+ *                   -XX:+UseVectorCmov -XX:MaxVectorSize=32 TestCastFFAtPhi
  *
  */
 

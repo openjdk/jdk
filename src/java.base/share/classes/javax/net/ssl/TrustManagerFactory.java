@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package javax.net.ssl;
 
-import java.security.Security;
 import java.security.*;
 import java.util.Objects;
 
@@ -49,18 +48,19 @@ import sun.security.jca.GetInstance;
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @since 1.4
  * @see TrustManager
  */
 public class TrustManagerFactory {
     // The provider
-    private Provider provider;
+    private final Provider provider;
 
     // The provider implementation (delegate)
-    private TrustManagerFactorySpi factorySpi;
+    private final TrustManagerFactorySpi factorySpi;
 
     // The name of the trust management algorithm.
-    private String algorithm;
+    private final String algorithm;
 
     /**
      * Obtains the default TrustManagerFactory algorithm name.
@@ -74,16 +74,8 @@ public class TrustManagerFactory {
      * {@code ssl.TrustManagerFactory.algorithm} security property, or an
      * implementation-specific default if no such property exists.
      */
-    @SuppressWarnings("removal")
     public static final String getDefaultAlgorithm() {
-        String type;
-        type = AccessController.doPrivileged(new PrivilegedAction<>() {
-            @Override
-            public String run() {
-                return Security.getProperty(
-                    "ssl.TrustManagerFactory.algorithm");
-            }
-        });
+        String type = Security.getProperty("ssl.TrustManagerFactory.algorithm");
         if (type == null) {
             type = "SunX509";
         }
@@ -137,7 +129,7 @@ public class TrustManagerFactory {
      * {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
      * the preferred provider order for the specified algorithm. This
-     * may be different than the order of providers returned by
+     * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param algorithm the standard name of the requested trust management
@@ -147,6 +139,7 @@ public class TrustManagerFactory {
      *          Algorithm Names Specification for information about standard
      *          algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code TrustManagerFactory} object
      *
      * @throws NoSuchAlgorithmException if no {@code Provider} supports a
@@ -186,6 +179,7 @@ public class TrustManagerFactory {
      *          Algorithm Names Specification for information about standard
      *          algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @param provider the name of the provider.
      *
      * @return the new {@code TrustManagerFactory} object
@@ -233,6 +227,7 @@ public class TrustManagerFactory {
      *
      * @param provider an instance of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code TrustManagerFactory} object
      *
      * @throws IllegalArgumentException if the provider is {@code null}

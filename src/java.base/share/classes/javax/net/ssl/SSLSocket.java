@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,17 +174,19 @@ import java.util.function.BiFunction;
  * @apiNote
  * When the connection is no longer needed, the client and server
  * applications should each close both sides of their respective connection.
- * For {@code SSLSocket} objects, for example, an application can call
- * {@link Socket#shutdownOutput()} or {@link java.io.OutputStream#close()}
- * for output stream close and call {@link Socket#shutdownInput()} or
- * {@link java.io.InputStream#close()} for input stream close.  Note that
- * in some cases, closing the input stream may depend on the peer's output
- * stream being closed first.  If the connection is not closed in an orderly
- * manner (for example {@link Socket#shutdownInput()} is called before the
- * peer's write closure notification has been received), exceptions may
- * be raised to indicate that an error has occurred.  Once an
- * {@code SSLSocket} is closed, it is not reusable: a new {@code SSLSocket}
- * must be created.
+ * This can be done either in one shot by calling {@link Socket#close()},
+ * or by closing each side individually using
+ * {@link Socket#shutdownOutput()} / {@link Socket#shutdownInput()} which is
+ * useful for protocol versions that can support half-closed connections.
+ *
+ * <P> Note that in some cases, closing the input stream may depend on the
+ * peer's output stream being closed first.  If the connection is not closed
+ * in an orderly manner (for example {@link Socket#shutdownInput()} is called
+ * before the peer's write closure notification has been received), exceptions
+ * may be raised to indicate that an error has occurred.
+ *
+ * <P> Once an {@code SSLSocket} is closed, it is not reusable: a new
+ * {@code SSLSocket} must be created.
  *
  * @see java.net.Socket
  * @see SSLServerSocket
@@ -207,22 +209,15 @@ public abstract class SSLSocket extends Socket
      * Used only by subclasses.
      * Constructs a TCP connection to a named host at a specified port.
      * This acts as the SSL client.
-     * <p>
-     * If there is a security manager, its <code>checkConnect</code>
-     * method is called with the host address and <code>port</code>
-     * as its arguments. This could result in a SecurityException.
      *
      * @param host name of the host with which to connect, or
      *        <code>null</code> for the loopback address.
      * @param port number of the server's port
      * @throws IOException if an I/O error occurs when creating the socket
-     * @throws SecurityException if a security manager exists and its
-     *         <code>checkConnect</code> method doesn't allow the operation.
      * @throws UnknownHostException if the host is not known
      * @throws IllegalArgumentException if the port parameter is outside the
      *         specified range of valid port values, which is between 0 and
      *         65535, inclusive.
-     * @see SecurityManager#checkConnect
      */
     protected SSLSocket(String host, int port)
     throws IOException, UnknownHostException
@@ -233,21 +228,14 @@ public abstract class SSLSocket extends Socket
      * Used only by subclasses.
      * Constructs a TCP connection to a server at a specified address
      * and port.  This acts as the SSL client.
-     * <p>
-     * If there is a security manager, its <code>checkConnect</code>
-     * method is called with the host address and <code>port</code>
-     * as its arguments. This could result in a SecurityException.
      *
      * @param address the server's host
      * @param port its port
      * @throws IOException if an I/O error occurs when creating the socket
-     * @throws SecurityException if a security manager exists and its
-     *         <code>checkConnect</code> method doesn't allow the operation.
      * @throws IllegalArgumentException if the port parameter is outside the
      *         specified range of valid port values, which is between 0 and
      *         65535, inclusive.
      * @throws NullPointerException if <code>address</code> is null.
-     * @see SecurityManager#checkConnect
      */
     protected SSLSocket(InetAddress address, int port)
     throws IOException
@@ -259,10 +247,6 @@ public abstract class SSLSocket extends Socket
      * Constructs an SSL connection to a named host at a specified port,
      * binding the client side of the connection a given address and port.
      * This acts as the SSL client.
-     * <p>
-     * If there is a security manager, its <code>checkConnect</code>
-     * method is called with the host address and <code>port</code>
-     * as its arguments. This could result in a SecurityException.
      *
      * @param host name of the host with which to connect, or
      *        <code>null</code> for the loopback address.
@@ -272,13 +256,10 @@ public abstract class SSLSocket extends Socket
      * @param clientPort the client's port the socket is bound to, or
      *        <code>zero</code> for a system selected free port.
      * @throws IOException if an I/O error occurs when creating the socket
-     * @throws SecurityException if a security manager exists and its
-     *         <code>checkConnect</code> method doesn't allow the operation.
      * @throws UnknownHostException if the host is not known
      * @throws IllegalArgumentException if the port parameter or clientPort
      *         parameter is outside the specified range of valid port values,
      *         which is between 0 and 65535, inclusive.
-     * @see SecurityManager#checkConnect
      */
     protected SSLSocket(String host, int port,
         InetAddress clientAddress, int clientPort)
@@ -291,10 +272,6 @@ public abstract class SSLSocket extends Socket
      * Constructs an SSL connection to a server at a specified address
      * and TCP port, binding the client side of the connection a given
      * address and port.  This acts as the SSL client.
-     * <p>
-     * If there is a security manager, its <code>checkConnect</code>
-     * method is called with the host address and <code>port</code>
-     * as its arguments. This could result in a SecurityException.
      *
      * @param address the server's host
      * @param port its port
@@ -303,13 +280,10 @@ public abstract class SSLSocket extends Socket
      * @param clientPort the client's port the socket is bound to, or
      *        <code>zero</code> for a system selected free port.
      * @throws IOException if an I/O error occurs when creating the socket
-     * @throws SecurityException if a security manager exists and its
-     *         <code>checkConnect</code> method doesn't allow the operation.
      * @throws IllegalArgumentException if the port parameter or clientPort
      *         parameter is outside the specified range of valid port values,
      *         which is between 0 and 65535, inclusive.
      * @throws NullPointerException if <code>address</code> is null.
-     * @see SecurityManager#checkConnect
      */
     protected SSLSocket(InetAddress address, int port,
         InetAddress clientAddress, int clientPort)
@@ -331,6 +305,7 @@ public abstract class SSLSocket extends Socket
      * Algorithm Names Specification, and may also include other cipher
      * suites that the provider supports.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return an array of cipher suite names
      * @see #getEnabledCipherSuites()
      * @see #setEnabledCipherSuites(String [])
@@ -357,6 +332,7 @@ public abstract class SSLSocket extends Socket
      * Algorithm Names Specification, and may also include other cipher
      * suites that the provider supports.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return an array of cipher suite names
      * @see #getSupportedCipherSuites()
      * @see #setEnabledCipherSuites(String [])
@@ -384,13 +360,14 @@ public abstract class SSLSocket extends Socket
      * on why a specific ciphersuite may never be used on a connection.
      *
      * @param suites Names of all the cipher suites to enable
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @throws IllegalArgumentException when one or more of the ciphers
      *          named by the parameter is not supported, or when the
      *          parameter is null.
      * @see #getSupportedCipherSuites()
      * @see #getEnabledCipherSuites()
      */
-    public abstract void setEnabledCipherSuites(String suites []);
+    public abstract void setEnabledCipherSuites(String[] suites);
 
 
     /**
@@ -431,12 +408,12 @@ public abstract class SSLSocket extends Socket
      *            when the protocols parameter is null.
      * @see #getEnabledProtocols()
      */
-    public abstract void setEnabledProtocols(String protocols[]);
+    public abstract void setEnabledProtocols(String[] protocols);
 
 
     /**
      * Returns the SSL Session in use by this connection.  These can
-     * be long lived, and frequently correspond to an entire login session
+     * be long-lived, and frequently correspond to an entire login session
      * for some user.  The session specifies a particular cipher suite
      * which is being actively used by all connections in that session,
      * as well as the identities of the session's client and server.
@@ -742,10 +719,8 @@ public abstract class SSLSocket extends Socket
         }
         if (params.getNeedClientAuth()) {
             setNeedClientAuth(true);
-        } else if (params.getWantClientAuth()) {
-            setWantClientAuth(true);
         } else {
-            setWantClientAuth(false);
+            setWantClientAuth(params.getWantClientAuth());
         }
     }
 
@@ -770,6 +745,9 @@ public abstract class SSLSocket extends Socket
      *         if a value was successfully negotiated.
      * @throws UnsupportedOperationException if the underlying provider
      *         does not implement the operation.
+     *
+     * @spec https://www.rfc-editor.org/info/rfc7301
+     *      RFC 7301: Transport Layer Security (TLS) Application-Layer Protocol Negotiation Extension
      * @since 9
      */
     public String getApplicationProtocol() {

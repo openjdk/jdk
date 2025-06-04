@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 4810032 8008577
+ * @bug 4810032 8008577 8174269
  * @modules jdk.localedata
  * @summary verify the ja full time pattern parsing
- * @run main/othervm -Djava.locale.providers=JRE,SPI Bug4810032
+ * @run main Bug4810032
 */
 
 import java.text.DateFormat;
@@ -37,7 +37,7 @@ public class Bug4810032
 {
         public static void main(String[] arg)
         {
-                String s = "2003\u5e749\u670826\u65e5"; // "2003y9m26d"
+                String s = "2003\u5e749\u670826\u65e5\u91d1\u66dc\u65e5"; // "2003y9m26dEEEE"
                 DateFormat df =
                    DateFormat.getDateInstance(DateFormat.FULL,Locale.JAPANESE);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 
 package sun.util.calendar;
 
-import java.util.HashMap;
-import java.util.Map;
+public final class CalendarUtils {
 
-public class CalendarUtils {
+    // Utility class should not be instantiated
+    private CalendarUtils() {}
 
     /**
      * Returns whether the specified year is a leap year in the Gregorian
@@ -39,9 +39,13 @@ public class CalendarUtils {
      * calendar system.
      * @see CalendarDate#isLeapYear
      */
-    public static final boolean isGregorianLeapYear(int gregorianYear) {
-        return (((gregorianYear % 4) == 0)
-                && (((gregorianYear % 100) != 0) || ((gregorianYear % 400) == 0)));
+    public static boolean isGregorianLeapYear(int gregorianYear) {
+        // A year that is a multiple of 100, 200 and 300 is not divisible by 16, but 400 is.
+        // So for a year that's divisible by 4, checking that it's also divisible by 16
+        // is sufficient to determine it must be a leap year.
+        return (gregorianYear & 15) == 0
+                ? (gregorianYear & 3) == 0
+                : (gregorianYear & 3) == 0 && gregorianYear % 100 != 0;
     }
 
     /**
@@ -54,7 +58,7 @@ public class CalendarUtils {
      * calendar system.
      * @see CalendarDate#isLeapYear
      */
-    public static final boolean isJulianLeapYear(int normalizedJulianYear) {
+    public static boolean isJulianLeapYear(int normalizedJulianYear) {
         return (normalizedJulianYear % 4) == 0;
     }
 
@@ -67,7 +71,7 @@ public class CalendarUtils {
      * @param d a divisor that must be greater than 0
      * @return the floor of the quotient
      */
-    public static final long floorDivide(long n, long d) {
+    public static long floorDivide(long n, long d) {
         return ((n >= 0) ?
                 (n / d) : (((n + 1L) / d) - 1L));
     }
@@ -81,7 +85,7 @@ public class CalendarUtils {
      * @param d a divisor that must be greater than 0
      * @return the floor of the quotient
      */
-    public static final int floorDivide(int n, int d) {
+    public static int floorDivide(int n, int d) {
         return ((n >= 0) ?
                 (n / d) : (((n + 1) / d) - 1));
     }
@@ -99,7 +103,7 @@ public class CalendarUtils {
      * <code>mod(n, d)</code> is returned.
      * @return the floor of the quotient.
      */
-    public static final int floorDivide(int n, int d, int[] r) {
+    public static int floorDivide(int n, int d, int[] r) {
         if (n >= 0) {
             r[0] = n % d;
             return n / d;
@@ -109,43 +113,20 @@ public class CalendarUtils {
         return q;
     }
 
-    /**
-     * Divides two integers and returns the floor of the quotient and
-     * the modulus remainder.  For example,
-     * <code>floorDivide(-1,4)</code> returns <code>-1</code> with
-     * <code>3</code> as its remainder, while <code>-1/4</code> is
-     * <code>0</code> and <code>-1%4</code> is <code>-1</code>.
-     *
-     * @param n the numerator
-     * @param d a divisor which must be {@literal > 0}
-     * @param r an array of at least one element in which the value
-     * <code>mod(n, d)</code> is returned.
-     * @return the floor of the quotient.
-     */
-    public static final int floorDivide(long n, int d, int[] r) {
-        if (n >= 0) {
-            r[0] = (int)(n % d);
-            return (int)(n / d);
-        }
-        int q = (int)(((n + 1) / d) - 1);
-        r[0] = (int)(n - (q * d));
-        return q;
-    }
-
-    public static final long mod(long x, long y) {
+    public static long mod(long x, long y) {
         return (x - y * floorDivide(x, y));
     }
 
-    public static final int mod(int x, int y) {
+    public static int mod(int x, int y) {
         return (x - y * floorDivide(x, y));
     }
 
-    public static final int amod(int x, int y) {
+    public static int amod(int x, int y) {
         int z = mod(x, y);
         return (z == 0) ? y : z;
     }
 
-    public static final long amod(long x, long y) {
+    public static long amod(long x, long y) {
         long z = mod(x, y);
         return (z == 0) ? y : z;
     }
@@ -153,7 +134,7 @@ public class CalendarUtils {
     /**
      * Mimics sprintf(buf, "%0*d", decaimal, width).
      */
-    public static final StringBuilder sprintf0d(StringBuilder sb, int value, int width) {
+    public static StringBuilder sprintf0d(StringBuilder sb, int value, int width) {
         long d = value;
         if (d < 0) {
             sb.append('-');
@@ -172,7 +153,7 @@ public class CalendarUtils {
         return sb;
     }
 
-    public static final StringBuffer sprintf0d(StringBuffer sb, int value, int width) {
+    public static StringBuffer sprintf0d(StringBuffer sb, int value, int width) {
         long d = value;
         if (d < 0) {
             sb.append('-');

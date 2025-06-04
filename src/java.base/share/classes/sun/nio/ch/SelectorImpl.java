@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.nio.ch;
 
 import java.io.IOException;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.IllegalSelectorException;
 import java.nio.channels.SelectableChannel;
@@ -187,15 +188,15 @@ public abstract class SelectorImpl
                 // Deregister channels
                 Iterator<SelectionKey> i = keys.iterator();
                 while (i.hasNext()) {
-                    SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
+                    SelectionKeyImpl ski = (SelectionKeyImpl) i.next();
                     deregister(ski);
                     SelectableChannel selch = ski.channel();
                     if (!selch.isOpen() && !selch.isRegistered())
-                        ((SelChImpl)selch).kill();
+                        ((SelChImpl) selch).kill();
                     selectedKeys.remove(ski);
                     i.remove();
                 }
-                assert selectedKeys.isEmpty() && keys.isEmpty();
+                assert selectedKeys.isEmpty();
             }
         }
     }
@@ -220,11 +221,14 @@ public abstract class SelectorImpl
         keys.add(k);
         try {
             k.interestOps(ops);
-        } catch (ClosedSelectorException e) {
+        } catch (CancelledKeyException e) {
+            // key observed and cancelled. Okay to return a cancelled key.
+        }
+        if (!isOpen()) {
             assert ch.keyFor(this) == null;
             keys.remove(k);
             k.cancel();
-            throw e;
+            throw new ClosedSelectorException();
         }
         return k;
     }
@@ -274,7 +278,7 @@ public abstract class SelectorImpl
 
                 SelectableChannel ch = ski.channel();
                 if (!ch.isOpen() && !ch.isRegistered())
-                    ((SelChImpl)ch).kill();
+                    ((SelChImpl) ch).kill();
             }
         }
     }

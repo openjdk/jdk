@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.reflect.generics.factory;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Method;
@@ -59,12 +58,12 @@ public class CoreReflectionFactory implements GenericsFactory {
 
 
     private ClassLoader getDeclsLoader() {
-        if (decl instanceof Class) {return ((Class) decl).getClassLoader();}
-        if (decl instanceof Method) {
-            return ((Method) decl).getDeclaringClass().getClassLoader();
+        if (decl instanceof Class<?> c) {return c.getClassLoader();}
+        if (decl instanceof Method m) {
+            return m.getDeclaringClass().getClassLoader();
         }
         assert decl instanceof Constructor : "Constructor expected";
-        return ((Constructor) decl).getDeclaringClass().getClassLoader();
+        return ((Constructor<?>) decl).getDeclaringClass().getClassLoader();
 
     }
 
@@ -107,7 +106,11 @@ public class CoreReflectionFactory implements GenericsFactory {
     }
 
     public TypeVariable<?> findTypeVariable(String name){
-        return getScope().lookup(name);
+        TypeVariable<?> variable = getScope().lookup(name);
+        if (variable == null) {
+            throw new TypeNotPresentException(name, null);
+        }
+        return variable;
     }
 
     public Type makeNamedType(String name){
@@ -119,8 +122,8 @@ public class CoreReflectionFactory implements GenericsFactory {
     }
 
     public Type makeArrayType(Type componentType){
-        if (componentType instanceof Class<?>)
-            return Array.newInstance((Class<?>) componentType, 0).getClass();
+        if (componentType instanceof Class<?> ct)
+            return ct.arrayType();
         else
             return GenericArrayTypeImpl.make(componentType);
     }

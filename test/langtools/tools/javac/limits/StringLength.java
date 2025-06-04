@@ -20,7 +20,4 @@ class StringLength {
 
     public static final String l65530 = l6e4 + l5e3 + l5e2 + l3e1;
     public static String X = l65530 + "abcdef"; // length 65536
-    public static void main(String[] args) {
-        System.out.println(X.length());
-    }
 }

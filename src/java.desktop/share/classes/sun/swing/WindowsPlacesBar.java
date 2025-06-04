@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 import java.io.File;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import javax.swing.JToolBar;
 import javax.swing.JFileChooser;
@@ -145,6 +143,7 @@ public class WindowsPlacesBar extends JToolBar
             buttons[i].setPreferredSize(buttonSize);
             buttons[i].setMaximumSize(buttonSize);
             buttons[i].addActionListener(this);
+            buttons[i].setToolTipText(folderName);
             add(buttons[i]);
             if (i < files.length-1 && isXPStyle) {
                 add(Box.createRigidArea(new Dimension(1, 1)));

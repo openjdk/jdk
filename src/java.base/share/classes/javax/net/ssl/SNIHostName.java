@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,11 @@ import java.util.regex.PatternSyntaxException;
  * <P>
  * Note that {@code SNIHostName} objects are immutable.
  *
+ * @spec https://www.rfc-editor.org/info/rfc5890
+ *      RFC 5890: Internationalized Domain Names for Applications (IDNA):
+ *              Definitions and Document Framework
+ * @spec https://www.rfc-editor.org/info/rfc6066
+ *      RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
  * @see SNIServerName
  * @see StandardConstants#SNI_HOST_NAME
  *
@@ -92,6 +97,15 @@ public final class SNIHostName extends SNIServerName {
      *
      * @throws NullPointerException if {@code hostname} is {@code null}
      * @throws IllegalArgumentException if {@code hostname} is illegal
+     *
+     * @spec https://www.rfc-editor.org/info/rfc1122
+     *      RFC 1122: Requirements for Internet Hosts - Communication Layers
+     * @spec https://www.rfc-editor.org/info/rfc1123
+     *      RFC 1123: Requirements for Internet Hosts - Application and Support
+     * @spec https://www.rfc-editor.org/info/rfc3490
+     *      RFC 3490: Internationalizing Domain Names in Applications (IDNA)
+     * @spec https://www.rfc-editor.org/info/rfc6066
+     *      RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
      */
     public SNIHostName(String hostname) {
         // IllegalArgumentException will be thrown if {@code hostname} is
@@ -159,6 +173,17 @@ public final class SNIHostName extends SNIServerName {
      *
      * @throws NullPointerException if {@code encoded} is {@code null}
      * @throws IllegalArgumentException if {@code encoded} is illegal
+     *
+     * @spec https://www.rfc-editor.org/info/rfc1122
+     *      RFC 1122: Requirements for Internet Hosts - Communication Layers
+     * @spec https://www.rfc-editor.org/info/rfc1123
+     *      RFC 1123: Requirements for Internet Hosts - Application and Support
+     * @spec https://www.rfc-editor.org/info/rfc3490
+     *      RFC 3490: Internationalizing Domain Names in Applications (IDNA)
+     * @spec https://www.rfc-editor.org/info/rfc4366
+     *      RFC 4366: Transport Layer Security (TLS) Extensions
+     * @spec https://www.rfc-editor.org/info/rfc6066
+     *      RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
      */
     public SNIHostName(byte[] encoded) {
         // NullPointerException will be thrown if {@code encoded} is null
@@ -198,6 +223,11 @@ public final class SNIHostName extends SNIServerName {
      *
      * @return the {@link StandardCharsets#US_ASCII}-compliant hostname
      *         of this {@code SNIHostName} object
+     *
+     * @spec https://www.rfc-editor.org/info/rfc5890
+     *      RFC 5890: Internationalized Domain Names for Applications (IDNA): Definitions and Document Framework
+     * @spec https://www.rfc-editor.org/info/rfc6066
+     *      RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
      */
     public String getAsciiName() {
         return hostname;
@@ -215,6 +245,9 @@ public final class SNIHostName extends SNIServerName {
      *         the other server name object to compare with.
      * @return true if, and only if, the {@code other} is considered
      *         equal to this instance
+     *
+     * @spec https://www.rfc-editor.org/info/rfc6066
+     *      RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
      */
     @Override
     public boolean equals(Object other) {
@@ -255,7 +288,7 @@ public final class SNIHostName extends SNIServerName {
      *     "type=host_name (0), value={@literal <hostname>}"
      * </pre>
      * The "{@literal <hostname>}" is an ASCII representation of the hostname,
-     * which may contains A-labels.  For example, a returned value of an pseudo
+     * which may contain A-labels.  For example, a returned value of a pseudo
      * hostname may look like:
      * <pre>
      *     "type=host_name (0), value=www.example.com"
@@ -291,9 +324,7 @@ public final class SNIHostName extends SNIServerName {
      * </pre>
      * will accept hostnames "www.example.com" and "www.example.org".
      *
-     * @param  regex
-     *         the <a href="{@docRoot}/java.base/java/util/regex/Pattern.html#sum">
-     *         regular expression pattern</a>
+     * @param  regex the {@linkplain Pattern##sum regular expression pattern}
      *         representing the hostname(s) to match
      * @return a {@code SNIMatcher} object for {@code SNIHostName}s
      * @throws NullPointerException if {@code regex} is
@@ -331,9 +362,7 @@ public final class SNIHostName extends SNIServerName {
         /**
          * Creates an SNIHostNameMatcher object.
          *
-         * @param  regex
-         *         the <a href="{@docRoot}/java.base/java/util/regex/Pattern.html#sum">
-         *         regular expression pattern</a>
+         * @param  regex the {@linkplain Pattern##sum regular expression pattern}
          *         representing the hostname(s) to match
          * @throws NullPointerException if {@code regex} is
          *         {@code null}

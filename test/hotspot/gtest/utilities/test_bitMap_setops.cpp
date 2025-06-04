@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,15 @@
  * questions.
  */
 
-#include "precompiled.hpp"
+#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include <stdlib.h>
 #include "unittest.hpp"
+
+#include <stdlib.h>
 
 typedef BitMap::idx_t idx_t;
 typedef BitMap::bm_word_t bm_word_t;
@@ -45,11 +46,11 @@ private:
 public:
   BitMapMemory(idx_t bits) :
     _words(BitMap::calc_size_in_words(bits)),
-    _memory(static_cast<bm_word_t*>(malloc(_words * sizeof(bm_word_t))))
+    _memory(static_cast<bm_word_t*>(os::malloc(_words * sizeof(bm_word_t), mtTest)))
   { }
 
   ~BitMapMemory() {
-    free(_memory);
+    os::free(_memory);
   }
 
   BitMapView make_view(idx_t bits, bm_word_t value) {

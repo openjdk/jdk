@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,7 @@ class AccessibleHTML implements Accessible {
 
     /**
      * If possible acquires a lock on the Document.  If a lock has been
-     * obtained a key will be retured that should be passed to
+     * obtained a key will be returned that should be passed to
      * <code>unlock</code>.
      */
     private Object lock() {
@@ -184,6 +184,9 @@ class AccessibleHTML implements Accessible {
 
             rootElementInfo = new ElementInfo(root);
             rootElementInfo.validate();
+            if (rootHTMLAccessibleContext != null) {
+                rootHTMLAccessibleContext.setElementInfo(rootElementInfo);
+            }
         } finally {
             unlock(lock);
         }
@@ -308,6 +311,10 @@ class AccessibleHTML implements Accessible {
             return this;
         }
 
+        protected void setElementInfo(ElementInfo elementInfo) {
+            this.elementInfo = elementInfo;
+        }
+
         /**
          * Gets the state set of this object.
          *
@@ -384,7 +391,7 @@ class AccessibleHTML implements Accessible {
          * @return this component's locale.  If this component does not have
          * a locale, the locale of its parent is returned.
          *
-         * @exception IllegalComponentStateException
+         * @throws IllegalComponentStateException
          * If the Component does not have its own locale and has not yet been
          * added to a containment hierarchy such that the locale can be
          * determined from the containing parent.
@@ -942,7 +949,7 @@ class AccessibleHTML implements Accessible {
             }
 
             /**
-             * Return the number of characters (valid indicies)
+             * Return the number of characters (valid indices)
              *
              * @return the number of characters
              */
@@ -1426,7 +1433,7 @@ class AccessibleHTML implements Accessible {
         }
 
         /**
-         * Overriden to update the grid when validating.
+         * Overridden to update the grid when validating.
          */
         protected void validate() {
             super.validate();
@@ -1434,7 +1441,7 @@ class AccessibleHTML implements Accessible {
         }
 
         /**
-         * Overriden to only alloc instances of TableRowElementInfos.
+         * Overridden to only alloc instances of TableRowElementInfos.
          */
         protected void loadChildren(Element e) {
 
@@ -1647,7 +1654,7 @@ class AccessibleHTML implements Accessible {
              *
              * @see #getAccessibleParent
              * @see #getAccessibleChildrenCount
-             * @gsee #getAccessibleChild
+             * @see #getAccessibleChild
              */
             public int getAccessibleIndexInParent() {
                 return elementInfo.getIndexInParent();
@@ -2471,7 +2478,7 @@ class AccessibleHTML implements Accessible {
             }
 
             /**
-             * Overriden to invalidate the table as well as
+             * Overridden to invalidate the table as well as
              * TableRowElementInfo.
              */
             protected void invalidate(boolean first) {
@@ -2613,7 +2620,7 @@ class AccessibleHTML implements Accessible {
             }
 
             /**
-             * Overriden to invalidate the TableRowElementInfo as well as
+             * Overridden to invalidate the TableRowElementInfo as well as
              * the TableCellElementInfo.
              */
             protected void invalidate(boolean first) {
@@ -2679,7 +2686,7 @@ class AccessibleHTML implements Accessible {
 
         /**
          * Validates the receiver. This recreates the children as well. This
-         * will be invoked within a <code>readLock</code>. If this is overriden
+         * will be invoked within a <code>readLock</code>. If this is overridden
          * it MUST invoke supers implementation first!
          */
         protected void validate() {
@@ -2987,7 +2994,7 @@ class AccessibleHTML implements Accessible {
                     pos >= elem.getEndOffset()) {
                     // Event beyond our offsets. We may have represented this,
                     // that is the remove may have removed one of our child
-                    // Elements that represented this, so, we should foward
+                    // Elements that represented this, so, we should forward
                     // to last element.
                     index0 = getChildCount() - 1;
                 }

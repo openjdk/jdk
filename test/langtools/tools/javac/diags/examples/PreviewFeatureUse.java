@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,14 @@
  */
 
 //key: compiler.warn.preview.feature.use
-//key: compiler.warn.preview.feature.use.plural
-//key: compiler.misc.feature.diamond
-//key: compiler.misc.feature.lambda
+//key: compiler.misc.feature.flexible.constructors
 //options: -Xlint:preview -XDforcePreview -source ${jdk.version} --enable-preview
 
-import java.util.ArrayList;
+import java.util.function.Function;
 
 class PreviewFeatureUse {
-    void test() {
-        new ArrayList<>();
-        Runnable r = () -> {};
+    PreviewFeatureUse() {
+        System.out.println("early init!");
+        super();
     }
 }

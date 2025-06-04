@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,9 @@
 
 #include "utilities/decoder.hpp"
 
-// Just a placehold for now, a real implementation should derive
-// from AbstractDecoder
 class MachODecoder : public AbstractDecoder {
  public:
-  MachODecoder() { }
+  MachODecoder() : AbstractDecoder(no_error) { }
   virtual ~MachODecoder() { }
   virtual bool demangle(const char* symbol, char* buf, int buflen);
   virtual bool decode(address pc, char* buf, int buflen, int* offset,

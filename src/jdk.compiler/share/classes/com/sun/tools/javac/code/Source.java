@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,10 +47,10 @@ import static com.sun.tools.javac.main.Option.*;
  *  deletion without notice.</b>
  */
 public enum Source {
-    /** 1.0 had no inner classes, and so could not pass the JCK. */
+    /* 1.0 had no inner classes, and so could not pass the JCK. */
     // public static final Source JDK1_0 =              new Source("1.0");
 
-    /** 1.1 did not have strictfp, and so could not pass the JCK. */
+    /* 1.1 did not have strictfp, and so could not pass the JCK. */
     // public static final Source JDK1_1 =              new Source("1.1");
 
     /** 1.2 introduced strictfp. */
@@ -105,24 +105,55 @@ public enum Source {
     JDK15("15"),
 
     /**
-      * 16, tbd
+      * 16, records and pattern matching for instanceof
       */
     JDK16("16"),
 
     /**
-      * 17, tbd
+      * 17, sealed classes, restoration of always-strict floating-point
       */
     JDK17("17"),
 
     /**
-      * 18, tbd
+      * 18, no major changes
       */
     JDK18("18"),
 
     /**
-      * 19, tbd
+      * 19, no major changes
       */
-    JDK19("19");
+    JDK19("19"),
+
+    /**
+      * 20, no major changes
+      */
+    JDK20("20"),
+
+    /**
+      * 21, tbd
+      */
+    JDK21("21"),
+
+    /**
+      * 22, tbd
+      */
+    JDK22("22"),
+
+    /**
+      * 23, tbd
+      */
+    JDK23("23"),
+
+    /**
+      * 24, tbd
+      */
+    JDK24("24"),
+
+    /**
+      * 25, tbd
+      */
+    JDK25("25"),
+    ; // Reduce code churn when appending new constants
 
     private static final Context.Key<Source> sourceKey = new Context.Key<>();
 
@@ -158,7 +189,7 @@ public enum Source {
         this.name = name;
     }
 
-    public static final Source MIN = Source.JDK7;
+    public static final Source MIN = Source.JDK8;
 
     private static final Source MAX = values()[values().length - 1];
 
@@ -174,6 +205,12 @@ public enum Source {
 
     public Target requiredTarget() {
         return switch(this) {
+        case JDK25  -> Target.JDK1_25;
+        case JDK24  -> Target.JDK1_24;
+        case JDK23  -> Target.JDK1_23;
+        case JDK22  -> Target.JDK1_22;
+        case JDK21  -> Target.JDK1_21;
+        case JDK20  -> Target.JDK1_20;
         case JDK19  -> Target.JDK1_19;
         case JDK18  -> Target.JDK1_18;
         case JDK17  -> Target.JDK1_17;
@@ -201,26 +238,9 @@ public enum Source {
      */
     public enum Feature {
 
-        DIAMOND(JDK7, Fragments.FeatureDiamond, DiagKind.NORMAL),
         MODULES(JDK9, Fragments.FeatureModules, DiagKind.PLURAL),
         EFFECTIVELY_FINAL_VARIABLES_IN_TRY_WITH_RESOURCES(JDK9, Fragments.FeatureVarInTryWithResources, DiagKind.PLURAL),
         DEPRECATION_ON_IMPORT(MIN, JDK8),
-        POLY(JDK8),
-        LAMBDA(JDK8, Fragments.FeatureLambda, DiagKind.PLURAL),
-        METHOD_REFERENCES(JDK8, Fragments.FeatureMethodReferences, DiagKind.PLURAL),
-        DEFAULT_METHODS(JDK8, Fragments.FeatureDefaultMethods, DiagKind.PLURAL),
-        STATIC_INTERFACE_METHODS(JDK8, Fragments.FeatureStaticIntfMethods, DiagKind.PLURAL),
-        STATIC_INTERFACE_METHODS_INVOKE(JDK8, Fragments.FeatureStaticIntfMethodInvoke, DiagKind.PLURAL),
-        STRICT_METHOD_CLASH_CHECK(JDK8),
-        EFFECTIVELY_FINAL_IN_INNER_CLASSES(JDK8),
-        TYPE_ANNOTATIONS(JDK8, Fragments.FeatureTypeAnnotations, DiagKind.PLURAL),
-        ANNOTATIONS_AFTER_TYPE_PARAMS(JDK8, Fragments.FeatureAnnotationsAfterTypeParams, DiagKind.PLURAL),
-        REPEATED_ANNOTATIONS(JDK8, Fragments.FeatureRepeatableAnnotations, DiagKind.PLURAL),
-        INTERSECTION_TYPES_IN_CAST(JDK8, Fragments.FeatureIntersectionTypesInCast, DiagKind.PLURAL),
-        GRAPH_INFERENCE(JDK8),
-        FUNCTIONAL_INTERFACE_MOST_SPECIFIC(JDK8),
-        POST_APPLICABILITY_VARARGS_ACCESS_CHECK(JDK8),
-        MAP_CAPTURES_TO_BOUNDS(MIN, JDK7),
         PRIVATE_SAFE_VARARGS(JDK9),
         DIAMOND_WITH_ANONYMOUS_CLASS_CREATION(JDK9, Fragments.FeatureDiamondAndAnonClass, DiagKind.NORMAL),
         UNDERSCORE_IDENTIFIER(MIN, JDK8),
@@ -231,14 +251,26 @@ public enum Source {
         SWITCH_MULTIPLE_CASE_LABELS(JDK14, Fragments.FeatureMultipleCaseLabels, DiagKind.PLURAL),
         SWITCH_RULE(JDK14, Fragments.FeatureSwitchRules, DiagKind.PLURAL),
         SWITCH_EXPRESSION(JDK14, Fragments.FeatureSwitchExpressions, DiagKind.PLURAL),
+        NO_TARGET_ANNOTATION_APPLICABILITY(JDK14),
         TEXT_BLOCKS(JDK15, Fragments.FeatureTextBlocks, DiagKind.PLURAL),
         PATTERN_MATCHING_IN_INSTANCEOF(JDK16, Fragments.FeaturePatternMatchingInstanceof, DiagKind.NORMAL),
         REIFIABLE_TYPES_INSTANCEOF(JDK16, Fragments.FeatureReifiableTypesInstanceof, DiagKind.PLURAL),
         RECORDS(JDK16, Fragments.FeatureRecords, DiagKind.PLURAL),
         SEALED_CLASSES(JDK17, Fragments.FeatureSealedClasses, DiagKind.PLURAL),
-        CASE_NULL(JDK17, Fragments.FeatureCaseNull, DiagKind.NORMAL),
-        PATTERN_SWITCH(JDK17, Fragments.FeaturePatternSwitch, DiagKind.PLURAL),
+        CASE_NULL(JDK21, Fragments.FeatureCaseNull, DiagKind.NORMAL),
+        PATTERN_SWITCH(JDK21, Fragments.FeaturePatternSwitch, DiagKind.PLURAL),
         REDUNDANT_STRICTFP(JDK17),
+        UNCONDITIONAL_PATTERN_IN_INSTANCEOF(JDK21, Fragments.FeatureUnconditionalPatternsInInstanceof, DiagKind.PLURAL),
+        RECORD_PATTERNS(JDK21, Fragments.FeatureDeconstructionPatterns, DiagKind.PLURAL),
+        IMPLICIT_CLASSES(JDK25, Fragments.FeatureImplicitClasses, DiagKind.PLURAL),
+        WARN_ON_ILLEGAL_UTF8(MIN, JDK21),
+        UNNAMED_VARIABLES(JDK22, Fragments.FeatureUnnamedVariables, DiagKind.PLURAL),
+        PRIMITIVE_PATTERNS(JDK23, Fragments.FeaturePrimitivePatterns, DiagKind.PLURAL),
+        FLEXIBLE_CONSTRUCTORS(JDK25, Fragments.FeatureFlexibleConstructors, DiagKind.NORMAL),
+        MODULE_IMPORTS(JDK25, Fragments.FeatureModuleImports, DiagKind.PLURAL),
+        JAVA_BASE_TRANSITIVE(JDK25, Fragments.FeatureJavaBaseTransitive, DiagKind.PLURAL),
+        PRIVATE_MEMBERS_IN_PERMITS_CLAUSE(JDK19),
+        ERASE_POLY_SIG_RETURN_TYPE(JDK24),
         ;
 
         enum DiagKind {
@@ -320,6 +352,12 @@ public enum Source {
         case JDK17  -> RELEASE_17;
         case JDK18  -> RELEASE_18;
         case JDK19  -> RELEASE_19;
+        case JDK20  -> RELEASE_20;
+        case JDK21  -> RELEASE_21;
+        case JDK22  -> RELEASE_22;
+        case JDK23  -> RELEASE_23;
+        case JDK24  -> RELEASE_24;
+        case JDK25  -> RELEASE_25;
         default     -> null;
         };
     }

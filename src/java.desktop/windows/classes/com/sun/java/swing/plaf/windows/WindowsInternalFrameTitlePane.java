@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,46 @@
 
 package com.sun.java.swing.plaf.windows;
 
-import sun.swing.SwingUtilities2;
-
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.UIManager;
-import javax.swing.plaf.*;
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.LayoutManager;
+import java.awt.Paint;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyVetoException;
 
-import static com.sun.java.swing.plaf.windows.TMSchema.*;
+import javax.swing.BorderFactory;
+import javax.swing.Icon;
+import javax.swing.JComponent;
+import javax.swing.JInternalFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.JSeparator;
+import javax.swing.LookAndFeel;
+import javax.swing.UIDefaults;
+import javax.swing.UIManager;
+import javax.swing.border.Border;
+import javax.swing.plaf.UIResource;
+import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
+
+import sun.swing.SwingUtilities2;
+
+import static com.sun.java.swing.plaf.windows.TMSchema.Part;
+import static com.sun.java.swing.plaf.windows.TMSchema.Prop;
+import static com.sun.java.swing.plaf.windows.TMSchema.State;
 import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
@@ -57,6 +83,7 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
         super(f);
     }
 
+    @Override
     protected void addSubComponents() {
         add(systemLabel);
         add(iconButton);
@@ -64,11 +91,11 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
         add(closeButton);
     }
 
+    @Override
     protected void installDefaults() {
         super.installDefaults();
 
         titlePaneHeight = UIManager.getInt("InternalFrame.titlePaneHeight");
-        buttonWidth     = UIManager.getInt("InternalFrame.titleButtonWidth")  - 4;
         buttonHeight    = UIManager.getInt("InternalFrame.titleButtonHeight") - 4;
 
         Object obj      = UIManager.get("InternalFrame.titleButtonToolTipsOn");
@@ -77,15 +104,10 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
 
         if (XPStyle.getXP() != null) {
             // Fix for XP bug where sometimes these sizes aren't updated properly
-            // Assume for now that height is correct and derive width using the
-            // ratio from the uxtheme part
-            buttonWidth = buttonHeight;
-            Dimension d = XPStyle.getPartSize(Part.WP_CLOSEBUTTON, State.NORMAL);
-            if (d != null && d.width != 0 && d.height != 0) {
-                buttonWidth = (int) ((float) buttonWidth * d.width / d.height);
-            }
+            // Assume for now that height is correct and derive width from height
+            buttonWidth = buttonHeight + 14;
         } else {
-            buttonWidth += 2;
+            buttonWidth = buttonHeight + 2;
             Color activeBorderColor =
                     UIManager.getColor("InternalFrame.activeBorderColor");
             setBorder(BorderFactory.createLineBorder(activeBorderColor, 1));
@@ -97,11 +119,13 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
                 UIManager.getColor("InternalFrame.inactiveTitleGradient");
     }
 
+    @Override
     protected void uninstallListeners() {
         // Get around protected method in superclass
         super.uninstallListeners();
     }
 
+    @Override
     protected void createButtons() {
         super.createButtons();
         if (XPStyle.getXP() != null) {
@@ -111,6 +135,7 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
         }
     }
 
+    @Override
     protected void setButtonIcons() {
         super.setButtonIcons();
 
@@ -122,6 +147,7 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
     }
 
 
+    @Override
     public void paintComponent(Graphics g)  {
         XPStyle xp = XPStyle.getXP();
 
@@ -204,10 +230,12 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
         }
     }
 
+    @Override
     public Dimension getPreferredSize() {
         return getMinimumSize();
     }
 
+    @Override
     public Dimension getMinimumSize() {
         Dimension d = new Dimension(super.getMinimumSize());
         d.height = titlePaneHeight + 2;
@@ -225,6 +253,7 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
         return d;
     }
 
+    @Override
     protected void paintTitleBackground(Graphics g) {
         XPStyle xp = XPStyle.getXP();
         if (xp != null) {
@@ -265,11 +294,11 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
         }
     }
 
+    @Override
     protected void assembleSystemMenu() {
         systemPopupMenu = new JPopupMenu();
         addSystemMenuItems(systemPopupMenu);
         enableActions();
-        @SuppressWarnings("serial") // anonymous class
         JLabel tmp = new JLabel(frame.getFrameIcon()) {
             protected void paintComponent(Graphics g) {
                 int x = 0;
@@ -353,6 +382,7 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
         }
     }
 
+    @Override
     protected void showSystemMenu(){
         showSystemPopupMenu(systemLabel);
     }
@@ -378,15 +408,17 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
         }
     }
 
+    @Override
     protected PropertyChangeListener createPropertyChangeListener() {
         return new WindowsPropertyChangeHandler();
     }
 
+    @Override
     protected LayoutManager createLayout() {
         return new WindowsTitlePaneLayout();
     }
 
-    public class WindowsTitlePaneLayout extends BasicInternalFrameTitlePane.TitlePaneLayout {
+    public final class WindowsTitlePaneLayout extends BasicInternalFrameTitlePane.TitlePaneLayout {
         private Insets captionMargin = null;
         private Insets contentMargin = null;
         private XPStyle xp = XPStyle.getXP();
@@ -420,6 +452,7 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
             return x;
         }
 
+        @Override
         public void layoutContainer(Container c) {
             boolean leftToRight = WindowsGraphicsUtils.isLeftToRight(frame);
             int x, y;
@@ -473,7 +506,8 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
         }
     } // end WindowsTitlePaneLayout
 
-    public class WindowsPropertyChangeHandler extends PropertyChangeHandler {
+    public final class WindowsPropertyChangeHandler extends PropertyChangeHandler {
+        @Override
         public void propertyChange(PropertyChangeEvent evt) {
             String prop = evt.getPropertyName();
 
@@ -496,7 +530,7 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
      * <p>
      * Note: We assume here that icons are square.
      */
-    public static class ScalableIconUIResource implements Icon, UIResource {
+    public static final class ScalableIconUIResource implements Icon, UIResource {
         // We can use an arbitrary size here because we scale to it in paintIcon()
         private static final int SIZE = 16;
 
@@ -543,6 +577,7 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
             }
         }
 
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             Graphics2D g2d = (Graphics2D)g.create();
             // Calculate how big our drawing area is in pixels
@@ -561,10 +596,12 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
             g2d.dispose();
         }
 
+        @Override
         public int getIconWidth() {
             return SIZE;
         }
 
+        @Override
         public int getIconHeight() {
             return SIZE;
         }

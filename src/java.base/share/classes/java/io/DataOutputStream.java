@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +26,20 @@
 
 package java.io;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.ByteArray;
+
+import static jdk.internal.util.ModifiedUtf.putChar;
+import static jdk.internal.util.ModifiedUtf.utfLen;
+
 /**
  * A data output stream lets an application write primitive Java data
  * types to an output stream in a portable way. An application can
- * then use a data input stream to read the data back in.
+ * then use a data input stream to read the data back in. A data output
+ * stream wraps another output stream and delegates writing bytes to the
+ * write methods of that output stream. Writing data consisting of more than
+ * a single byte may cause several writes to the underlying output stream.
  * <p>
  * A DataOutputStream is not safe for use by multiple concurrent
  * threads. If a DataOutputStream is to be used by more than one
@@ -39,6 +50,8 @@ package java.io;
  * @since   1.0
  */
 public class DataOutputStream extends FilterOutputStream implements DataOutput {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
     /**
      * The number of bytes written to the data output stream so far.
      * If this counter overflows, it will be wrapped to Integer.MAX_VALUE.
@@ -104,6 +117,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @param      off   the start offset in the data.
      * @param      len   the number of bytes to write.
      * @throws     IOException  if an I/O error occurs.
+     * @throws     IndexOutOfBoundsException {@inheritDoc}
      * @see        java.io.FilterOutputStream#out
      */
     public synchronized void write(byte[] b, int off, int len)
@@ -169,8 +183,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @see        java.io.FilterOutputStream#out
      */
     public final void writeShort(int v) throws IOException {
-        writeBuffer[0] = (byte)(v >>> 8);
-        writeBuffer[1] = (byte)(v >>> 0);
+        ByteArray.setUnsignedShort(writeBuffer, 0, v);
         out.write(writeBuffer, 0, 2);
         incCount(2);
     }
@@ -185,8 +198,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @see        java.io.FilterOutputStream#out
      */
     public final void writeChar(int v) throws IOException {
-        writeBuffer[0] = (byte)(v >>> 8);
-        writeBuffer[1] = (byte)(v >>> 0);
+        ByteArray.setUnsignedShort(writeBuffer, 0, v);
         out.write(writeBuffer, 0, 2);
         incCount(2);
     }
@@ -201,10 +213,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @see        java.io.FilterOutputStream#out
      */
     public final void writeInt(int v) throws IOException {
-        writeBuffer[0] = (byte)(v >>> 24);
-        writeBuffer[1] = (byte)(v >>> 16);
-        writeBuffer[2] = (byte)(v >>>  8);
-        writeBuffer[3] = (byte)(v >>>  0);
+        ByteArray.setInt(writeBuffer, 0, v);
         out.write(writeBuffer, 0, 4);
         incCount(4);
     }
@@ -219,14 +228,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @see        java.io.FilterOutputStream#out
      */
     public final void writeLong(long v) throws IOException {
-        writeBuffer[0] = (byte)(v >>> 56);
-        writeBuffer[1] = (byte)(v >>> 48);
-        writeBuffer[2] = (byte)(v >>> 40);
-        writeBuffer[3] = (byte)(v >>> 32);
-        writeBuffer[4] = (byte)(v >>> 24);
-        writeBuffer[5] = (byte)(v >>> 16);
-        writeBuffer[6] = (byte)(v >>>  8);
-        writeBuffer[7] = (byte)(v >>>  0);
+        ByteArray.setLong(writeBuffer, 0, v);
         out.write(writeBuffer, 0, 8);
         incCount(8);
     }
@@ -245,7 +247,9 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @see        java.lang.Float#floatToIntBits(float)
      */
     public final void writeFloat(float v) throws IOException {
-        writeInt(Float.floatToIntBits(v));
+        ByteArray.setFloat(writeBuffer, 0, v);
+        out.write(writeBuffer, 0, 4);
+        incCount(4);
     }
 
     /**
@@ -262,7 +266,9 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @see        java.lang.Double#doubleToLongBits(double)
      */
     public final void writeDouble(double v) throws IOException {
-        writeLong(Double.doubleToLongBits(v));
+        ByteArray.setDouble(writeBuffer, 0, v);
+        out.write(writeBuffer, 0, 8);
+        incCount(8);
     }
 
     /**
@@ -300,8 +306,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
         int len = s.length();
         for (int i = 0 ; i < len ; i++) {
             int v = s.charAt(i);
-            writeBuffer[0] = (byte)(v >>> 8);
-            writeBuffer[1] = (byte)(v >>> 0);
+            ByteArray.setUnsignedShort(writeBuffer, 0, v);
             out.write(writeBuffer, 0, 2);
         }
         incCount(len * 2);
@@ -355,15 +360,11 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      *             {@code str} would exceed 65535 bytes in length
      * @throws     IOException  if some other I/O error occurs.
      */
+    @SuppressWarnings("deprecation")
     static int writeUTF(String str, DataOutput out) throws IOException {
         final int strlen = str.length();
-        int utflen = strlen; // optimized for ASCII
-
-        for (int i = 0; i < strlen; i++) {
-            int c = str.charAt(i);
-            if (c >= 0x80 || c == 0)
-                utflen += (c >= 0x800) ? 2 : 1;
-        }
+        int countNonZeroAscii = JLA.countNonZeroAscii(str);
+        int utflen = utfLen(str, countNonZeroAscii);
 
         if (utflen > 65535 || /* overflow */ utflen < strlen)
             throw new UTFDataFormatException(tooLongMsg(str, utflen));
@@ -378,28 +379,13 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
         }
 
         int count = 0;
-        bytearr[count++] = (byte) ((utflen >>> 8) & 0xFF);
-        bytearr[count++] = (byte) ((utflen >>> 0) & 0xFF);
+        ByteArray.setUnsignedShort(bytearr, count, utflen);
+        count += 2;
+        str.getBytes(0, countNonZeroAscii, bytearr, count);
+        count += countNonZeroAscii;
 
-        int i = 0;
-        for (i = 0; i < strlen; i++) { // optimized for initial run of ASCII
-            int c = str.charAt(i);
-            if (c >= 0x80 || c == 0) break;
-            bytearr[count++] = (byte) c;
-        }
-
-        for (; i < strlen; i++) {
-            int c = str.charAt(i);
-            if (c < 0x80 && c != 0) {
-                bytearr[count++] = (byte) c;
-            } else if (c >= 0x800) {
-                bytearr[count++] = (byte) (0xE0 | ((c >> 12) & 0x0F));
-                bytearr[count++] = (byte) (0x80 | ((c >>  6) & 0x3F));
-                bytearr[count++] = (byte) (0x80 | ((c >>  0) & 0x3F));
-            } else {
-                bytearr[count++] = (byte) (0xC0 | ((c >>  6) & 0x1F));
-                bytearr[count++] = (byte) (0x80 | ((c >>  0) & 0x3F));
-            }
+        for (int i = countNonZeroAscii; i < strlen;) {
+            count = putChar(bytearr, count, str.charAt(i++));
         }
         out.write(bytearr, 0, utflen + 2);
         return utflen + 2;

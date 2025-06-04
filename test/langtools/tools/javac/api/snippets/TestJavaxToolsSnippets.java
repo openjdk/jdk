@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,13 +58,17 @@ import toolbox.ToolBox;
  */
 public class TestJavaxToolsSnippets extends TestRunner {
     public static void main(String... args) throws Exception {
-        new TestJavaxToolsSnippets().runTests(m -> new Object[] { Path.of(m.getName()) });
+        try {
+            new TestJavaxToolsSnippets().runTests(m -> new Object[] { Path.of(m.getName()) });
+        } catch (SnippetUtils.ConfigurationException e) {
+            System.err.println("NOTE: " + e.getMessage() + "; test skipped");
+        }
     }
 
     SnippetUtils snippets = new SnippetUtils("java.compiler");
     ToolBox tb = new ToolBox();
 
-    TestJavaxToolsSnippets() {
+    TestJavaxToolsSnippets() throws SnippetUtils.ConfigurationException {
         super(System.err);
     }
 

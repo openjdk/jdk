@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package com.sun.tools.javac.comp;
 
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -83,6 +82,14 @@ public class InferenceContext {
 
     Types types;
     Infer infer;
+
+    /* when an inference context (IC) is minimized, the minimized inference context (MIC) contains a
+     * proper subset of IC's inference vars (IC_IV). In other words there will be at least one inference variable T
+     * that belongs to IC_IV which doesn't belong to MIC_IV. We need the field below to, among other things,
+     * check for set membership for cases where the minimized context or any other context derived from it
+     * needs to deal with an inference variable that has been eliminated from IC_IV while minimizing it
+     */
+    InferenceContext parentIC;
 
     public InferenceContext(Infer infer, List<Type> inferencevars) {
         this(infer, inferencevars, inferencevars.map(infer.fromTypeVarFun));
@@ -215,6 +222,20 @@ public class InferenceContext {
         return buf.toList();
     }
 
+    /**
+     * Replace all undet vars in a given type with corresponding free variables
+     */
+    public final Type asTypeVar(Type t) {
+        return asTypeVarFun.apply(t);
+    }
+
+    Types.TypeMapping<Void> asTypeVarFun = new Type.StructuralTypeMapping<>() {
+        @Override
+        public Type visitUndetVar(UndetVar uv, Void aVoid) {
+            return uv.qtype;
+        }
+    };
+
     List<Type> instTypes() {
         ListBuffer<Type> buf = new ListBuffer<>();
         for (Type t : undetvars) {
@@ -230,7 +251,17 @@ public class InferenceContext {
      * fully instantiated, it will still be available in the resulting type.
      */
     Type asInstType(Type t) {
-        return types.subst(t, inferencevars, instTypes());
+        ListBuffer<Type> from = new ListBuffer<>();
+        ListBuffer<Type> to = new ListBuffer<>();
+        from.addAll(inferencevars);
+        to.addAll(instTypes());
+        InferenceContext next = parentIC;
+        while (next != null) {
+            from.addAll(next.inferencevars);
+            to.addAll(next.instTypes());
+            next = next.parentIC;
+        }
+        return types.subst(t, from.toList(), to.toList());
     }
 
     List<Type> asInstTypes(List<Type> ts) {
@@ -336,6 +367,17 @@ public class InferenceContext {
     InferenceContext min(List<Type> roots, boolean shouldSolve, Warner warn) {
         if (roots.length() == inferencevars.length()) {
             return this;
+        }
+        /* if any of the inference vars is a captured variable bail out, this is because
+         * we could end up generating more than necessary captured variables in an outer
+         * inference context and then when we need to propagate back to an inner inference
+         * context that has been minimized it could be that some bounds constraints doesn't
+         * hold like subtyping constraints between bonds etc.
+         */
+        for (Type iv : inferencevars) {
+            if (iv.hasTag(TypeTag.TYPEVAR) && ((TypeVar)iv).isCaptured()) {
+                return this;
+            }
         }
         ReachabilityVisitor rv = new ReachabilityVisitor();
         rv.scan(roots);
@@ -510,13 +552,6 @@ public class InferenceContext {
         }, warn);
     }
 
-    /**
-     * Apply a set of inference steps
-     */
-    private List<Type> solveBasic(EnumSet<InferenceStep> steps) {
-        return solveBasic(inferencevars, steps);
-    }
-
     List<Type> solveBasic(List<Type> varsToSolve, EnumSet<InferenceStep> steps) {
         ListBuffer<Type> solvedVars = new ListBuffer<>();
         for (Type t : varsToSolve.intersect(restvars())) {
@@ -532,40 +567,14 @@ public class InferenceContext {
         return solvedVars.toList();
     }
 
-    /**
-     * Instantiate inference variables in legacy mode (JLS 15.12.2.7, 15.12.2.8).
-     * During overload resolution, instantiation is done by doing a partial
-     * inference process using eq/lower bound instantiation. During check,
-     * we also instantiate any remaining vars by repeatedly using eq/upper
-     * instantiation, until all variables are solved.
-     */
-    public void solveLegacy(boolean partial, Warner warn, EnumSet<InferenceStep> steps) {
-        while (true) {
-            List<Type> solvedVars = solveBasic(steps);
-            if (restvars().isEmpty() || partial) {
-                //all variables have been instantiated - exit
-                break;
-            } else if (solvedVars.isEmpty()) {
-                //some variables could not be instantiated because of cycles in
-                //upper bounds - provide a (possibly recursive) default instantiation
-                infer.instantiateAsUninferredVars(restvars(), this);
-                break;
-            } else {
-                //some variables have been instantiated - replace newly instantiated
-                //variables in remaining upper bounds and continue
-                for (Type t : undetvars) {
-                    UndetVar uv = (UndetVar)t;
-                    uv.substBounds(solvedVars, asInstTypes(solvedVars), types);
-                }
-            }
-        }
-        infer.doIncorporation(this, warn);
-    }
-
     @Override
     public String toString() {
-        return "Inference vars: " + inferencevars + '\n' +
-               "Undet vars: " + undetvars;
+        String result = "Inference vars: " + inferencevars + '\n' +
+               "Undet vars: " + undetvars + '\n';
+        if (parentIC != null) {
+            result += "\nParent : " + parentIC.toString();
+        }
+        return result;
     }
 
     /* Method Types.capture() generates a new type every time it's applied
@@ -577,7 +586,7 @@ public class InferenceContext {
      * This is why the tree is used as the key of the map below. This map
      * stores a Type per AST.
      */
-    Map<JCTree, Type> captureTypeCache = new HashMap<>();
+    Map<JCTree, Type> captureTypeCache = new LinkedHashMap<>();
 
     Type cachedCapture(JCTree tree, Type t, boolean readOnly) {
         Type captured = captureTypeCache.get(tree);

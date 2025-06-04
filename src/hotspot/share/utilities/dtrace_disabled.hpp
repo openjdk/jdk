@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 /* This file contains dummy provider probes needed when compiling a hotspot
  * that does not support dtrace probes. This could be because we're building
- * on a system that doesn't support dtrace or because we're bulding a variant
+ * on a system that doesn't support dtrace or because we're building a variant
  * of hotspot (like core) where we do not support dtrace
  */
 #if !defined(DTRACE_ENABLED)
@@ -783,6 +783,10 @@
 #define HOTSPOT_JNI_GETSTRINGUTFLENGTH_ENTRY_ENABLED()  0
 #define HOTSPOT_JNI_GETSTRINGUTFLENGTH_RETURN(arg0)
 #define HOTSPOT_JNI_GETSTRINGUTFLENGTH_RETURN_ENABLED()  0
+#define HOTSPOT_JNI_GETSTRINGUTFLENGTHASLONG_ENTRY(arg0, arg1)
+#define HOTSPOT_JNI_GETSTRINGUTFLENGTHASLONG_ENTRY_ENABLED()  0
+#define HOTSPOT_JNI_GETSTRINGUTFLENGTHASLONG_RETURN(arg0)
+#define HOTSPOT_JNI_GETSTRINGUTFLENGTHASLONG_RETURN_ENABLED()  0
 #define HOTSPOT_JNI_GETSTRINGUTFREGION_ENTRY(arg0, arg1, arg2, arg3, arg4)
 #define HOTSPOT_JNI_GETSTRINGUTFREGION_ENTRY_ENABLED()  0
 #define HOTSPOT_JNI_GETSTRINGUTFREGION_RETURN()

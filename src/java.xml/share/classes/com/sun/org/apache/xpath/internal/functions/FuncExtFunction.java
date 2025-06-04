@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -34,13 +34,14 @@ import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
 import com.sun.org.apache.xpath.internal.res.XPATHMessages;
 import java.util.ArrayList;
 import java.util.List;
+import javax.xml.transform.TransformerException;
 
 /**
  * An object of this class represents an extension call expression.  When
  * the expression executes, it calls ExtensionsTable#extFunction, and then
  * converts the result to the appropriate XObject.
  * @xsl.usage advanced
- * @LastModified: Oct 2017
+ * @LastModified: Apr 2025
  */
 public class FuncExtFunction extends Function
 {
@@ -183,15 +184,8 @@ public class FuncExtFunction extends Function
    *
    * @throws javax.xml.transform.TransformerException
    */
-  public XObject execute(XPathContext xctxt)
-          throws javax.xml.transform.TransformerException
+  public XObject execute(XPathContext xctxt) throws TransformerException
   {
-    if (xctxt.isSecureProcessing())
-      throw new javax.xml.transform.TransformerException(
-        XPATHMessages.createXPATHMessage(
-          XPATHErrorResources.ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED,
-          new Object[] {toString()}));
-
     XObject result;
     List<XObject> argVec = new ArrayList<>();
     int nArgs = m_argVec.size();
@@ -209,6 +203,12 @@ public class FuncExtFunction extends Function
     }
     //dml
     ExtensionsProvider extProvider = (ExtensionsProvider)xctxt.getOwnerObject();
+    if (extProvider == null) {
+        String fmsg = XSLMessages.createXPATHMessage(
+            XPATHErrorResources.ER_NO_XPATH_FUNCTION_PROVIDER,
+            new Object[] {argVec} );
+        throw new TransformerException ( fmsg );
+    }
     Object val = extProvider.extFunction(this, argVec);
 
     if (null != val)

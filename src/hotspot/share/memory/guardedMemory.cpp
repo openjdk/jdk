@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,26 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
-#include "memory/allocation.hpp"
-#include "memory/allocation.inline.hpp"
 #include "memory/guardedMemory.hpp"
+#include "nmt/memTag.hpp"
 #include "runtime/os.hpp"
 
 void* GuardedMemory::wrap_copy(const void* ptr, const size_t len, const void* tag) {
   size_t total_sz = GuardedMemory::get_total_size(len);
   void* outerp = os::malloc(total_sz, mtInternal);
-  if (outerp != NULL) {
+  if (outerp != nullptr) {
     GuardedMemory guarded(outerp, len, tag);
     void* innerp = guarded.get_user_ptr();
-    memcpy(innerp, ptr, len);
+    if (ptr != nullptr) {
+      memcpy(innerp, ptr, len);
+    }
     return innerp;
   }
-  return NULL; // OOM
+  return nullptr; // OOM
 }
 
 bool GuardedMemory::free_copy(void* p) {
-  if (p == NULL) {
+  if (p == nullptr) {
     return true;
   }
   GuardedMemory guarded((u_char*)p);
@@ -53,12 +53,12 @@ bool GuardedMemory::free_copy(void* p) {
 }
 
 void GuardedMemory::print_on(outputStream* st) const {
-  if (_base_addr == NULL) {
+  if (_base_addr == nullptr) {
     st->print_cr("GuardedMemory(" PTR_FORMAT ") not associated to any memory", p2i(this));
     return;
   }
   st->print_cr("GuardedMemory(" PTR_FORMAT ") base_addr=" PTR_FORMAT
-      " tag=" PTR_FORMAT " user_size=" SIZE_FORMAT " user_data=" PTR_FORMAT,
+      " tag=" PTR_FORMAT " user_size=%zu user_data=" PTR_FORMAT,
       p2i(this), p2i(_base_addr), p2i(get_tag()), get_user_size(), p2i(get_user_ptr()));
 
   Guard* guard = get_head_guard();

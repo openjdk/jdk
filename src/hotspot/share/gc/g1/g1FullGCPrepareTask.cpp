@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
@@ -30,8 +29,7 @@
 #include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
 #include "gc/g1/g1FullGCPrepareTask.inline.hpp"
-#include "gc/g1/g1HotCardCache.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "logging/log.hpp"
@@ -44,13 +42,11 @@ G1DetermineCompactionQueueClosure::G1DetermineCompactionQueueClosure(G1FullColle
   _collector(collector),
   _cur_worker(0) { }
 
-bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion* hr) {
+bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(G1HeapRegion* hr) {
   uint region_idx = hr->hrm_index();
   assert(_collector->is_compaction_target(region_idx), "must be");
 
-  assert(!hr->is_pinned(), "must be");
-  assert(!hr->is_closed_archive(), "must be");
-  assert(!hr->is_open_archive(), "must be");
+  assert(!hr->is_humongous(), "must be");
 
   prepare_for_compaction(hr);
 
@@ -81,7 +77,7 @@ void G1FullGCPrepareTask::work(uint worker_id) {
     G1FullGCCompactionPoint* compaction_point = collector()->compaction_point(worker_id);
     G1CalculatePointersClosure closure(collector(), compaction_point);
 
-    for (GrowableArrayIterator<HeapRegion*> it = compaction_point->regions()->begin();
+    for (GrowableArrayIterator<G1HeapRegion*> it = compaction_point->regions()->begin();
          it != compaction_point->regions()->end();
          ++it) {
       closure.do_heap_region(*it);
@@ -96,12 +92,6 @@ void G1FullGCPrepareTask::work(uint worker_id) {
       set_has_free_compaction_targets();
     }
   }
-
-  // Clear region metadata that is invalid after GC for all regions.
-  {
-    G1ResetMetadataClosure closure(collector());
-    G1CollectedHeap::heap()->heap_region_par_iterate_from_start(&closure, &_hrclaimer);
-  }
   log_task("Prepare compaction task", worker_id, start);
 }
 
@@ -112,39 +102,6 @@ G1FullGCPrepareTask::G1CalculatePointersClosure::G1CalculatePointersClosure(G1Fu
   _bitmap(collector->mark_bitmap()),
   _cp(cp) { }
 
-G1FullGCPrepareTask::G1ResetMetadataClosure::G1ResetMetadataClosure(G1FullCollector* collector) :
-  _g1h(G1CollectedHeap::heap()),
-  _collector(collector) { }
-
-void G1FullGCPrepareTask::G1ResetMetadataClosure::reset_region_metadata(HeapRegion* hr) {
-  hr->rem_set()->clear();
-  hr->clear_cardtable();
-
-  G1HotCardCache* hcc = _g1h->hot_card_cache();
-  if (hcc->use_cache()) {
-    hcc->reset_card_counts(hr);
-  }
-}
-
-bool G1FullGCPrepareTask::G1ResetMetadataClosure::do_heap_region(HeapRegion* hr) {
-  uint const region_idx = hr->hrm_index();
-  if (!_collector->is_compaction_target(region_idx)) {
-    assert(!hr->is_free(), "all free regions should be compaction targets");
-    assert(_collector->is_skip_compacting(region_idx) || hr->is_closed_archive(), "must be");
-    if (hr->is_young()) {
-      // G1 updates the BOT for old region contents incrementally, but young regions
-      // lack BOT information for performance reasons.
-      // Recreate BOT information of high live ratio young regions here to keep expected
-      // performance during scanning their card tables in the collection pauses later.
-      hr->update_bot();
-    }
-  }
-
-  // Reset data structures not valid after Full GC.
-  reset_region_metadata(hr);
-
-  return false;
-}
 
 G1FullGCPrepareTask::G1PrepareCompactLiveClosure::G1PrepareCompactLiveClosure(G1FullGCCompactionPoint* cp) :
     _cp(cp) { }
@@ -155,7 +112,7 @@ size_t G1FullGCPrepareTask::G1PrepareCompactLiveClosure::apply(oop object) {
   return size;
 }
 
-void G1FullGCPrepareTask::G1CalculatePointersClosure::prepare_for_compaction(HeapRegion* hr) {
+void G1FullGCPrepareTask::G1CalculatePointersClosure::prepare_for_compaction(G1HeapRegion* hr) {
   if (!_collector->is_free(hr->hrm_index())) {
     G1PrepareCompactLiveClosure prepare_compact(_cp);
     hr->apply_to_marked_objects(_bitmap, &prepare_compact);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,6 @@ public class Checksum {
 
     // draft-brezak-win2k-krb-rc4-hmac-04.txt
     public static final int CKSUMTYPE_HMAC_MD5_ARCFOUR = -138;
-
-    private static boolean DEBUG = Krb5.DEBUG;
 
     /**
      * Constructs a new Checksum using the raw data and type.
@@ -187,7 +185,7 @@ public class Checksum {
      * specification available at
      * <a href="http://www.ietf.org/rfc/rfc4120.txt">
      * http://www.ietf.org/rfc/rfc4120.txt</a>.
-     * @return byte array of enocded Checksum.
+     * @return byte array of encoded Checksum.
      * @exception Asn1Exception if an error occurs while decoding an
      * ASN1 encoded data.
      * @exception IOException if an I/O error occurs while reading

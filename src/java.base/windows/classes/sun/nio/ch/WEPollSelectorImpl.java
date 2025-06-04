@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.nio.ch;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.Pipe;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -38,6 +37,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
+import jdk.internal.misc.Blocker;
 
 import static sun.nio.ch.WEPoll.*;
 
@@ -88,11 +88,6 @@ class WEPollSelectorImpl extends SelectorImpl {
         WEPoll.ctl(eph, EPOLL_CTL_ADD, fd0Val, WEPoll.EPOLLIN);
     }
 
-    private void ensureOpen() {
-        if (!isOpen())
-            throw new ClosedSelectorException();
-    }
-
     @Override
     protected int doSelect(Consumer<SelectionKey> action, long timeout)
         throws IOException
@@ -108,7 +103,12 @@ class WEPollSelectorImpl extends SelectorImpl {
         processDeregisterQueue();
         try {
             begin(blocking);
-            numEntries = WEPoll.wait(eph, pollArrayAddress, NUM_EPOLLEVENTS, to);
+            boolean attempted = Blocker.begin(blocking);
+            try {
+                numEntries = WEPoll.wait(eph, pollArrayAddress, NUM_EPOLLEVENTS, to);
+            } finally {
+                Blocker.end(attempted);
+            }
         } finally {
             end(blocking);
         }
@@ -222,7 +222,6 @@ class WEPollSelectorImpl extends SelectorImpl {
 
     @Override
     public void setEventOps(SelectionKeyImpl ski) {
-        ensureOpen();
         synchronized (updateLock) {
             updateKeys.addLast(ski);
         }

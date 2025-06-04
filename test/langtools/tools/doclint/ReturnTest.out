@@ -1,0 +1,19 @@
+ReturnTest.java:14: warning: {@return} not at beginning of description
+    /** <p> {@return illegal} **/
+            ^
+ReturnTest.java:17: warning: {@return} not at beginning of description
+    /** text {@return illegal} **/
+             ^
+ReturnTest.java:20: warning: {@return} not at beginning of description
+    /** &amp;{@return illegal} **/
+             ^
+ReturnTest.java:23: warning: {@return} not at beginning of description
+    /** @@{@return illegal} **/
+          ^
+ReturnTest.java:26: warning: @return has already been specified
+    /** {@return legal} text {@return illegal} **/
+                             ^
+ReturnTest.java:26: warning: {@return} not at beginning of description
+    /** {@return legal} text {@return illegal} **/
+                             ^
+6 warnings

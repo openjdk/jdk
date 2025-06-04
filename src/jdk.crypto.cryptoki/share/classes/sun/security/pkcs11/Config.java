@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import java.security.*;
-
 import sun.security.util.PropertyExpander;
 
 import sun.security.pkcs11.wrapper.*;
@@ -58,43 +56,22 @@ final class Config {
     // will accept single threaded modules regardless of the setting in their
     // config files.
     private static final boolean staticAllowSingleThreadedModules;
-    private static final String osName;
-    private static final String osArch;
 
     static {
-        @SuppressWarnings("removal")
-        List<String> props = AccessController.doPrivileged(
-            new PrivilegedAction<>() {
-                @Override
-                public List<String> run() {
-                    return List.of(
-                        System.getProperty(
-                            "sun.security.pkcs11.allowSingleThreadedModules",
-                            "true"),
-                        System.getProperty("os.name"),
-                        System.getProperty("os.arch"));
-                }
-            }
-        );
-        if ("false".equalsIgnoreCase(props.get(0))) {
+        String allowSingleThreadedModules =
+            System.getProperty(
+                "sun.security.pkcs11.allowSingleThreadedModules", "true");
+        if ("false".equalsIgnoreCase(allowSingleThreadedModules)) {
             staticAllowSingleThreadedModules = false;
         } else {
             staticAllowSingleThreadedModules = true;
         }
-        osName = props.get(1);
-        osArch = props.get(2);
     }
 
     private static final boolean DEBUG = false;
 
-    private static void debug(Object o) {
-        if (DEBUG) {
-            System.out.println(o);
-        }
-    }
-
     // file name containing this configuration
-    private String filename;
+    private final String filename;
 
     // Reader and StringTokenizer used during parsing
     private Reader reader;
@@ -126,6 +103,9 @@ final class Config {
 
     // whether to print debug info during startup
     private boolean showInfo = false;
+
+    // whether to allow legacy mechanisms
+    private boolean allowLegacy = false;
 
     // template manager, initialized from parsed attributes
     private TemplateManager templateManager;
@@ -166,6 +146,11 @@ final class Config {
     // This option primarily exists for the deprecated
     // Secmod.Module.getProvider() method.
     private String functionList = null;
+
+    // CTS mode variant used by the token, as described in Addendum to NIST
+    // Special Publication 800-38A, "Recommendation for Block Cipher Modes
+    // of Operation: Three Variants of Ciphertext Stealing for CBC Mode".
+    private Token.CTSVariant ctsVariant = null;
 
     // whether to use NSS secmod mode. Implicitly set if nssLibraryDirectory,
     // nssSecmodDirectory, or nssModule is specified.
@@ -257,6 +242,10 @@ final class Config {
         return (SunPKCS11.debug != null) || showInfo;
     }
 
+    boolean getAllowLegacy() {
+        return allowLegacy;
+    }
+
     TemplateManager getTemplateManager() {
         if (templateManager == null) {
             templateManager = new TemplateManager();
@@ -320,6 +309,10 @@ final class Config {
         return functionList;
     }
 
+    Token.CTSVariant getCTSVariant() {
+        return ctsVariant;
+    }
+
     boolean getNssUseSecmod() {
         return nssUseSecmod;
     }
@@ -364,7 +357,7 @@ final class Config {
         try {
             return PropertyExpander.expand(s);
         } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
@@ -400,6 +393,10 @@ final class Config {
 
     private ConfigurationException excLine(String msg) {
         return new ConfigurationException(msg + ", line " + st.lineno());
+    }
+
+    private ConfigurationException excLine(String msg, Throwable e) {
+        return new ConfigurationException(msg + ", line " + st.lineno(), e);
     }
 
     private void parse() throws IOException {
@@ -455,6 +452,8 @@ final class Config {
                 destroyTokenAfterLogout = parseBooleanEntry(st.sval);
             case "showInfo"->
                 showInfo = parseBooleanEntry(st.sval);
+            case "allowLegacy"->
+                allowLegacy = parseBooleanEntry(st.sval);
             case "keyStoreCompatibilityMode"->
                 keyStoreCompatibilityMode = parseBooleanEntry(st.sval);
             case "explicitCancel"->
@@ -465,6 +464,8 @@ final class Config {
                 allowSingleThreadedModules = parseBooleanEntry(st.sval);
             case "functionList"->
                 functionList = parseStringEntry(st.sval);
+            case "cipherTextStealingVariant"->
+                ctsVariant = parseEnumEntry(Token.CTSVariant.class, st.sval);
             case "nssUseSecmod"->
                 nssUseSecmod = parseBooleanEntry(st.sval);
             case "nssLibraryDirectory"-> {
@@ -481,15 +482,12 @@ final class Config {
             }
             case "nssDbMode"-> {
                 String mode = parseStringEntry(st.sval);
-                if (mode.equals("readWrite")) {
-                    nssDbMode = Secmod.DbMode.READ_WRITE;
-                } else if (mode.equals("readOnly")) {
-                    nssDbMode = Secmod.DbMode.READ_ONLY;
-                } else if (mode.equals("noDb")) {
-                    nssDbMode = Secmod.DbMode.NO_DB;
-                } else {
-                    throw excToken("nssDbMode must be one of readWrite, readOnly, and noDb:");
-                }
+                nssDbMode = switch (mode) {
+                    case "readWrite" -> Secmod.DbMode.READ_WRITE;
+                    case "readOnly" -> Secmod.DbMode.READ_ONLY;
+                    case "noDb" -> Secmod.DbMode.NO_DB;
+                    default -> throw excToken("nssDbMode must be one of readWrite, readOnly, and noDb:");
+                };
                 nssUseSecmod = true;
             }
             case "nssNetscapeDbWorkaround"-> {
@@ -518,7 +516,7 @@ final class Config {
         if (name == null) {
             throw new ConfigurationException("name must be specified");
         }
-        if (nssUseSecmod == false) {
+        if (!nssUseSecmod) {
             if (library == null) {
                 throw new ConfigurationException("library must be specified");
             }
@@ -535,7 +533,7 @@ final class Config {
                 throw new ConfigurationException
                     ("nssArgs must not be specified in NSS mode");
             }
-            if (nssUseSecmodTrust != false) {
+            if (nssUseSecmodTrust) {
                 throw new ConfigurationException("nssUseSecmodTrust is an "
                     + "internal option and must not be specified in NSS mode");
             }
@@ -548,7 +546,9 @@ final class Config {
 
     private int nextToken() throws IOException {
         int token = st.nextToken();
-        debug(st);
+        if (DEBUG)  {
+            System.out.println(st);
+        }
         return token;
     }
 
@@ -595,7 +595,9 @@ final class Config {
         }
         String value = st.sval;
 
-        debug(keyword + ": " + value);
+        if (DEBUG) {
+            System.out.println(keyword + ": " + value);
+        }
         return value;
     }
 
@@ -603,7 +605,9 @@ final class Config {
         checkDup(keyword);
         parseEquals();
         boolean value = parseBoolean();
-        debug(keyword + ": " + value);
+        if (DEBUG) {
+            System.out.println(keyword + ": " + value);
+        }
         return value;
     }
 
@@ -611,20 +615,30 @@ final class Config {
         checkDup(keyword);
         parseEquals();
         int value = decodeNumber(parseWord());
-        debug(keyword + ": " + value);
+        if (DEBUG) {
+            System.out.println(keyword + ": " + value);
+        }
         return value;
+    }
+
+    private <E extends Enum<E>> E parseEnumEntry(Class<E> enumClass,
+            String keyword) throws IOException {
+        String value = parseStringEntry(keyword);
+        try {
+            return Enum.valueOf(enumClass, value);
+        } catch (IllegalArgumentException ignored) {
+            throw excToken(keyword + " must be one of " +
+                    Arrays.toString(enumClass.getEnumConstants()) + ", read:");
+        }
     }
 
     private boolean parseBoolean() throws IOException {
         String val = parseWord();
-        switch (val) {
-            case "true":
-                return true;
-            case "false":
-                return false;
-            default:
-                throw excToken("Expected boolean value, read:");
-        }
+        return switch (val) {
+            case "true" -> true;
+            case "false" -> false;
+            default -> throw excToken("Expected boolean value, read:");
+        };
     }
 
     private String parseLine() throws IOException {
@@ -682,7 +696,7 @@ final class Config {
     }
 
     private byte[] decodeByteArray(String str) throws IOException {
-        if (str.startsWith("0h") == false) {
+        if (!str.startsWith("0h")) {
             throw excToken("Expected byte array value, read");
         }
         str = str.substring(2);
@@ -716,7 +730,9 @@ final class Config {
             String suffix = lib.substring(i + 5);
             lib = prefix + suffix;
         }
-        debug(keyword + ": " + lib);
+        if (DEBUG) {
+            System.out.println(keyword + ": " + lib);
+        }
 
         // Check to see if full path is specified to prevent the DLL
         // preloading attack
@@ -731,7 +747,9 @@ final class Config {
         checkDup(keyword);
         parseEquals();
         description = parseLine();
-        debug("description: " + description);
+        if (DEBUG) {
+            System.out.println("description: " + description);
+        }
     }
 
     private void parseSlotID(String keyword) throws IOException {
@@ -745,7 +763,9 @@ final class Config {
         parseEquals();
         String slotString = parseWord();
         slotID = decodeNumber(slotString);
-        debug("slot: " + slotID);
+        if (DEBUG) {
+            System.out.println("slot: " + slotID);
+        }
     }
 
     private void parseSlotListIndex(String keyword) throws IOException {
@@ -759,7 +779,9 @@ final class Config {
         parseEquals();
         String slotString = parseWord();
         slotListIndex = decodeNumber(slotString);
-        debug("slotListIndex: " + slotListIndex);
+        if (DEBUG) {
+            System.out.println("slotListIndex: " + slotListIndex);
+        }
     }
 
     private void parseEnabledMechanisms(String keyword) throws IOException {
@@ -807,7 +829,7 @@ final class Config {
             try {
                 return Functions.getMechanismId(mech);
             } catch (IllegalArgumentException e) {
-                throw excLine("Unknown mechanism: " + mech);
+                throw excLine("Unknown mechanism: " + mech, e);
             }
         }
     }
@@ -819,7 +841,7 @@ final class Config {
         int token = nextToken();
         if (token == '=') {
             String s = parseWord();
-            if (s.equals("compatibility") == false) {
+            if (!s.equals("compatibility")) {
                 throw excLine("Expected 'compatibility', read " + s);
             }
             setCompatibilityAttributes();
@@ -950,16 +972,12 @@ final class Config {
 
     private String parseOperation() throws IOException {
         String op = parseWord();
-        switch (op) {
-            case "*":
-                return TemplateManager.O_ANY;
-            case "generate":
-                return TemplateManager.O_GENERATE;
-            case "import":
-                return TemplateManager.O_IMPORT;
-            default:
-                throw excLine("Unknown operation " + op);
-        }
+        return switch (op) {
+            case "*" -> TemplateManager.O_ANY;
+            case "generate" -> TemplateManager.O_GENERATE;
+            case "import" -> TemplateManager.O_IMPORT;
+            default -> throw excLine("Unknown operation " + op);
+        };
     }
 
     private long parseObjectClass() throws IOException {
@@ -967,7 +985,7 @@ final class Config {
         try {
             return Functions.getObjectClassId(name);
         } catch (IllegalArgumentException e) {
-            throw excLine("Unknown object class " + name);
+            throw excLine("Unknown object class " + name, e);
         }
     }
 
@@ -979,7 +997,7 @@ final class Config {
             try {
                 return Functions.getKeyId(name);
             } catch (IllegalArgumentException e) {
-                throw excLine("Unknown key algorithm " + name);
+                throw excLine("Unknown key algorithm " + name, e);
             }
         }
     }
@@ -991,7 +1009,7 @@ final class Config {
             try {
                 return Functions.getAttributeId(name);
             } catch (IllegalArgumentException e) {
-                throw excLine("Unknown attribute name " + name);
+                throw excLine("Unknown attribute name " + name, e);
             }
         }
     }
@@ -1021,30 +1039,36 @@ final class Config {
             throw excToken("Expected quoted string");
         }
         nssArgs = expand(st.sval);
-        debug("nssArgs: " + nssArgs);
+        if (DEBUG) {
+            System.out.println("nssArgs: " + nssArgs);
+        }
     }
 
     private void parseHandleStartupErrors(String keyword) throws IOException {
         checkDup(keyword);
         parseEquals();
         String val = parseWord();
-        if (val.equals("ignoreAll")) {
-            handleStartupErrors = ERR_IGNORE_ALL;
-        } else if (val.equals("ignoreMissingLibrary")) {
-            handleStartupErrors = ERR_IGNORE_LIB;
-        } else if (val.equals("halt")) {
-            handleStartupErrors = ERR_HALT;
-        } else {
-            throw excToken("Invalid value for handleStartupErrors:");
+        handleStartupErrors = switch (val) {
+            case "ignoreAll" -> ERR_IGNORE_ALL;
+            case "ignoreMissingLibrary" -> ERR_IGNORE_LIB;
+            case "halt" -> ERR_HALT;
+            default -> throw excToken("Invalid value for handleStartupErrors:");
+        };
+        if (DEBUG) {
+            System.out.println("handleStartupErrors: " + handleStartupErrors);
         }
-        debug("handleStartupErrors: " + handleStartupErrors);
     }
 
 }
 
 class ConfigurationException extends IOException {
+    @Serial
     private static final long serialVersionUID = 254492758807673194L;
     ConfigurationException(String msg) {
         super(msg);
+    }
+
+    ConfigurationException(String msg, Throwable e) {
+        super(msg, e);
     }
 }

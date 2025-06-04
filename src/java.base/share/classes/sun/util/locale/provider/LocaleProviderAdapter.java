@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ import java.util.spi.CurrencyNameProvider;
 import java.util.spi.LocaleNameProvider;
 import java.util.spi.LocaleServiceProvider;
 import java.util.spi.TimeZoneNameProvider;
-import sun.security.action.GetPropertyAction;
 import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.spi.CalendarProvider;
 
@@ -109,29 +108,24 @@ public abstract class LocaleProviderAdapter {
     private static final Map<Type, LocaleProviderAdapter> adapterInstances = new ConcurrentHashMap<>();
 
     /**
-     * Default fallback adapter type, which should return something meaningful in any case.
-     * This is either CLDR or FALLBACK.
-     */
-    static volatile LocaleProviderAdapter.Type defaultLocaleProviderAdapter;
-
-    /**
      * Adapter lookup cache.
      */
     private static final ConcurrentMap<Class<? extends LocaleServiceProvider>, ConcurrentMap<Locale, LocaleProviderAdapter>>
         adapterCache = new ConcurrentHashMap<>();
 
     static {
-        String order = GetPropertyAction.privilegedGetProperty("java.locale.providers");
+        String order = System.getProperty("java.locale.providers");
         ArrayList<Type> typeList = new ArrayList<>();
         String invalidTypeMessage = null;
+        String compatWarningMessage = null;
 
         // Check user specified adapter preference
         if (order != null && !order.isEmpty()) {
             String[] types = order.split(",");
             for (String type : types) {
                 type = type.trim().toUpperCase(Locale.ROOT);
-                if (type.equals("COMPAT")) {
-                    type = "JRE";
+                if (type.equals("COMPAT") || type.equals("JRE")) {
+                    compatWarningMessage = "COMPAT locale provider has been removed";
                 }
                 try {
                     Type aType = Type.valueOf(type.trim().toUpperCase(Locale.ROOT));
@@ -145,19 +139,14 @@ public abstract class LocaleProviderAdapter {
             }
         }
 
-        defaultLocaleProviderAdapter = Type.CLDR;
-        if (!typeList.isEmpty()) {
-            // bona fide preference exists
-            if (!(typeList.contains(Type.CLDR) || typeList.contains(Type.JRE))) {
-                // Append FALLBACK as the last resort when no ResourceBundleBasedAdapter is available.
-                typeList.add(Type.FALLBACK);
-                defaultLocaleProviderAdapter = Type.FALLBACK;
-            }
-        } else {
+        if (typeList.isEmpty()) {
             // Default preference list.
             typeList.add(Type.CLDR);
-            typeList.add(Type.JRE);
         }
+
+        // always append FALLBACK
+        typeList.add(Type.FALLBACK);
+
         adapterPreference = Collections.unmodifiableList(typeList);
 
         // Emit logs, if any, after 'adapterPreference' is initialized which is needed
@@ -167,6 +156,10 @@ public abstract class LocaleProviderAdapter {
             // provider name or format in the system property
             getLogger(LocaleProviderAdapter.class.getCanonicalName())
                 .log(Logger.Level.INFO, invalidTypeMessage);
+        }
+        if (compatWarningMessage != null) {
+            getLogger(LocaleProviderAdapter.class.getCanonicalName())
+                .log(Logger.Level.WARNING, compatWarningMessage);
         }
     }
 
@@ -308,23 +301,15 @@ public abstract class LocaleProviderAdapter {
     }
 
     public static Locale[] toLocaleArray(Set<String> tags) {
-        Locale[] locs = new Locale[tags.size() + 1];
-        int index = 0;
-        locs[index++] = Locale.ROOT;
-        for (String tag : tags) {
-            switch (tag) {
-            case "ja-JP-JP":
-                locs[index++] = JRELocaleConstants.JA_JP_JP;
-                break;
-            case "th-TH-TH":
-                locs[index++] = JRELocaleConstants.TH_TH_TH;
-                break;
-            default:
-                locs[index++] = Locale.forLanguageTag(tag);
-                break;
-            }
-        }
-        return locs;
+        return tags.stream()
+            .map(t -> switch (t) {
+                case "ja-JP-JP" -> JRELocaleConstants.JA_JP_JP;
+                case "no-NO-NY" -> JRELocaleConstants.NO_NO_NY;
+                case "th-TH-TH" -> JRELocaleConstants.TH_TH_TH;
+                default -> Locale.forLanguageTag(t);
+            })
+            .distinct()
+            .toArray(Locale[]::new);
     }
 
     /**
@@ -346,10 +331,10 @@ public abstract class LocaleProviderAdapter {
     public abstract BreakIteratorProvider getBreakIteratorProvider();
 
     /**
-     * Returns a ollatorProvider for this LocaleProviderAdapter, or null if no
-     * ollatorProvider is available.
+     * Returns a CollatorProvider for this LocaleProviderAdapter, or null if no
+     * CollatorProvider is available.
      *
-     * @return a ollatorProvider
+     * @return a collatorProvider
      */
     public abstract CollatorProvider getCollatorProvider();
 

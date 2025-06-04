@@ -31,6 +31,7 @@ import javax.sound.midi.Transmitter;
 
 /**
  * @test
+ * @key sound
  * @bug 4931387
  * @summary Add methods to MidiDevice to get list of Transmitters and Receivers
  */

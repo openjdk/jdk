@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,10 @@
  * @summary Test relative paths specified in the -cp.
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  * @compile ../test-classes/Hello.java
  * @compile ../test-classes/HelloMore.java
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. RelativePath
  */
 
@@ -39,7 +39,7 @@ import java.io.File;
 public class RelativePath extends DynamicArchiveTestBase {
 
     public static void main(String[] args) throws Exception {
-        runTest(AppendClasspath::testDefaultBase);
+        runTest(RelativePath::testDefaultBase);
     }
 
     static void testDefaultBase() throws Exception {
@@ -54,6 +54,16 @@ public class RelativePath extends DynamicArchiveTestBase {
         int idx = appJar.lastIndexOf(File.separator);
         String jarName = appJar.substring(idx + 1);
         String jarDir = appJar.substring(0, idx);
+
+        // Create CDS Archive
+        dump(topArchiveName, "-Xlog:cds",
+            "-Xlog:cds+dynamic=debug",
+            "-cp", appJar + File.pathSeparator + appJar2,
+            "HelloMore")
+            .assertNormalExit(output-> {
+                    output.shouldContain("Written dynamic archive 0x");
+            });
+
         // relative path starting with "."
         runWithRelativePath(null, topArchiveName, jarDir,
             "-Xlog:class+load",

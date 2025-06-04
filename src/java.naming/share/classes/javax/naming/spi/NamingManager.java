@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,11 @@
 
 package javax.naming.spi;
 
-import java.net.MalformedURLException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.*;
 
 import javax.naming.*;
 
+import com.sun.naming.internal.NamingManagerHelper;
 import com.sun.naming.internal.ObjectFactoriesFilter;
 import com.sun.naming.internal.VersionHelper;
 import com.sun.naming.internal.ResourceManager;
@@ -78,11 +76,6 @@ public class NamingManager {
 
 // --------- object factory stuff
 
-    /**
-     * Package-private; used by DirectoryManager and NamingManager.
-     */
-    private static ObjectFactoryBuilder object_factory_builder = null;
-
     private static final ClassLoaderValue<InitialContextFactory> FACTORIES_CACHE =
             new ClassLoaderValue<>();
 
@@ -94,127 +87,26 @@ public class NamingManager {
      * setObjectFactoryBuilder() overrides this default policy by installing
      * an ObjectFactoryBuilder. Subsequent object factories will
      * be loaded and created using the installed builder.
-     *<p>
-     * The builder can only be installed if the executing thread is allowed
-     * (by the security manager's checkSetFactory() method) to do so.
-     * Once installed, the builder cannot be replaced.
      *
      * @param builder The factory builder to install. If null, no builder
      *                  is installed.
-     * @throws SecurityException builder cannot be installed
-     *         for security reasons.
      * @throws NamingException builder cannot be installed for
      *         a non-security-related reason.
      * @throws IllegalStateException If a factory has already been installed.
      * @see #getObjectInstance
      * @see ObjectFactory
      * @see ObjectFactoryBuilder
-     * @see java.lang.SecurityManager#checkSetFactory
      */
-    public static synchronized void setObjectFactoryBuilder(
+    public static void setObjectFactoryBuilder(
             ObjectFactoryBuilder builder) throws NamingException {
-        if (object_factory_builder != null)
-            throw new IllegalStateException("ObjectFactoryBuilder already set");
-
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkSetFactory();
-        }
-        object_factory_builder = builder;
+        NamingManagerHelper.setObjectFactoryBuilder(builder);
     }
 
     /**
      * Used for accessing object factory builder.
      */
-    static synchronized ObjectFactoryBuilder getObjectFactoryBuilder() {
-        return object_factory_builder;
-    }
-
-
-    /**
-     * Retrieves the ObjectFactory for the object identified by a reference,
-     * using the reference's factory class name and factory codebase
-     * to load in the factory's class.
-     * @param ref The non-null reference to use.
-     * @param factoryName The non-null class name of the factory.
-     * @return The object factory for the object identified by ref; null
-     * if unable to load the factory.
-     */
-    static ObjectFactory getObjectFactoryFromReference(
-        Reference ref, String factoryName)
-        throws IllegalAccessException,
-        InstantiationException,
-        MalformedURLException {
-        Class<?> clas = null;
-
-        // Try to use current class loader
-        try {
-            clas = helper.loadClassWithoutInit(factoryName);
-            // Validate factory's class with the objects factory serial filter
-            if (!ObjectFactoriesFilter.canInstantiateObjectsFactory(clas)) {
-                return null;
-            }
-        } catch (ClassNotFoundException e) {
-            // ignore and continue
-            // e.printStackTrace();
-        }
-        // All other exceptions are passed up.
-
-        // Not in class path; try to use codebase
-        String codebase;
-        if (clas == null &&
-                (codebase = ref.getFactoryClassLocation()) != null) {
-            try {
-                clas = helper.loadClass(factoryName, codebase);
-                // Validate factory's class with the objects factory serial filter
-                if (clas == null ||
-                    !ObjectFactoriesFilter.canInstantiateObjectsFactory(clas)) {
-                    return null;
-                }
-            } catch (ClassNotFoundException e) {
-            }
-        }
-
-        @SuppressWarnings("deprecation") // Class.newInstance
-        ObjectFactory result = (clas != null) ? (ObjectFactory) clas.newInstance() : null;
-        return result;
-    }
-
-
-    /**
-     * Creates an object using the factories specified in the
-     * {@code Context.OBJECT_FACTORIES} property of the environment
-     * or of the provider resource file associated with {@code nameCtx}.
-     *
-     * @return factory created; null if cannot create
-     */
-    private static Object createObjectFromFactories(Object obj, Name name,
-            Context nameCtx, Hashtable<?,?> environment) throws Exception {
-
-        FactoryEnumeration factories = ResourceManager.getFactories(
-            Context.OBJECT_FACTORIES, environment, nameCtx);
-
-        if (factories == null)
-            return null;
-
-        // Try each factory until one succeeds
-        ObjectFactory factory;
-        Object answer = null;
-        while (answer == null && factories.hasMore()) {
-            factory = (ObjectFactory)factories.next();
-            answer = factory.getObjectInstance(obj, name, nameCtx, environment);
-        }
-        return answer;
-    }
-
-    private static String getURLScheme(String str) {
-        int colon_posn = str.indexOf(':');
-        int slash_posn = str.indexOf('/');
-
-        if (colon_posn > 0 && (slash_posn == -1 || colon_posn < slash_posn))
-            return str.substring(0, colon_posn);
-        return null;
+    static ObjectFactoryBuilder getObjectFactoryBuilder() {
+        return NamingManagerHelper.getObjectFactoryBuilder();
     }
 
     /**
@@ -229,9 +121,12 @@ public class NamingManager {
      *    or {@code Referenceable} containing a factory class name,
      *    use the named factory to create the object.
      *    Return {@code refInfo} if the factory cannot be created.
-     *    Under JDK 1.1, if the factory class must be loaded from a location
-     *    specified in the reference, a {@code SecurityManager} must have
-     *    been installed or the factory creation will fail.
+     *    Downloading a factory class from a location specified in the reference
+     *    can be supported by a custom implementation of {@link ObjectFactoryBuilder}.
+     *    The {@linkplain Reference#getFactoryClassLocation() factory class
+     *    location}, if present, is ignored. A custom {@link ObjectFactoryBuilder}
+     *    {@linkplain #setObjectFactoryBuilder(ObjectFactoryBuilder) may be used}
+     *    if a different policy is desired.
      *    If an exception is encountered while creating the factory,
      *    it is passed up to the caller.
      * <li>If {@code refInfo} is a {@code Reference} or
@@ -308,123 +203,10 @@ public class NamingManager {
     public static Object
         getObjectInstance(Object refInfo, Name name, Context nameCtx,
                           Hashtable<?,?> environment)
-        throws Exception
-    {
-
-        ObjectFactory factory;
-
-        // Use builder if installed
-        ObjectFactoryBuilder builder = getObjectFactoryBuilder();
-        if (builder != null) {
-            // builder must return non-null factory
-            factory = builder.createObjectFactory(refInfo, environment);
-            return factory.getObjectInstance(refInfo, name, nameCtx,
-                environment);
-        }
-
-        // Use reference if possible
-        Reference ref = null;
-        if (refInfo instanceof Reference) {
-            ref = (Reference) refInfo;
-        } else if (refInfo instanceof Referenceable) {
-            ref = ((Referenceable)(refInfo)).getReference();
-        }
-
-        Object answer;
-
-        if (ref != null) {
-            String f = ref.getFactoryClassName();
-            if (f != null) {
-                // if reference identifies a factory, use exclusively
-
-                factory = getObjectFactoryFromReference(ref, f);
-                if (factory != null) {
-                    return factory.getObjectInstance(ref, name, nameCtx,
-                                                     environment);
-                }
-                // No factory found, so return original refInfo.
-                // Will reach this point if factory class is not in
-                // class path and reference does not contain a URL for it
-                return refInfo;
-
-            } else {
-                // if reference has no factory, check for addresses
-                // containing URLs
-
-                answer = processURLAddrs(ref, name, nameCtx, environment);
-                if (answer != null) {
-                    return answer;
-                }
-            }
-        }
-
-        // try using any specified factories
-        answer =
-            createObjectFromFactories(refInfo, name, nameCtx, environment);
-        return (answer != null) ? answer : refInfo;
+        throws Exception {
+        return NamingManagerHelper.getObjectInstance(refInfo, name, nameCtx,
+                environment, ObjectFactoriesFilter::checkGlobalFilter);
     }
-
-    /*
-     * Ref has no factory.  For each address of type "URL", try its URL
-     * context factory.  Returns null if unsuccessful in creating and
-     * invoking a factory.
-     */
-    static Object processURLAddrs(Reference ref, Name name, Context nameCtx,
-                                  Hashtable<?,?> environment)
-            throws NamingException {
-
-        for (int i = 0; i < ref.size(); i++) {
-            RefAddr addr = ref.get(i);
-            if (addr instanceof StringRefAddr &&
-                addr.getType().equalsIgnoreCase("URL")) {
-
-                String url = (String)addr.getContent();
-                Object answer = processURL(url, name, nameCtx, environment);
-                if (answer != null) {
-                    return answer;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static Object processURL(Object refInfo, Name name,
-                                     Context nameCtx, Hashtable<?,?> environment)
-            throws NamingException {
-        Object answer;
-
-        // If refInfo is a URL string, try to use its URL context factory
-        // If no context found, continue to try object factories.
-        if (refInfo instanceof String) {
-            String url = (String)refInfo;
-            String scheme = getURLScheme(url);
-            if (scheme != null) {
-                answer = getURLObject(scheme, refInfo, name, nameCtx,
-                                      environment);
-                if (answer != null) {
-                    return answer;
-                }
-            }
-        }
-
-        // If refInfo is an array of URL strings,
-        // try to find a context factory for any one of its URLs.
-        // If no context found, continue to try object factories.
-        if (refInfo instanceof String[]) {
-            String[] urls = (String[])refInfo;
-            for (int i = 0; i <urls.length; i++) {
-                String scheme = getURLScheme(urls[i]);
-                if (scheme != null) {
-                    answer = getURLObject(scheme, refInfo, name, nameCtx,
-                                          environment);
-                    if (answer != null)
-                        return answer;
-                }
-            }
-        }
-        return null;
-    }
-
 
     /**
      * Retrieves a context identified by {@code obj}, using the specified
@@ -687,7 +469,6 @@ public class NamingManager {
      * @see javax.naming.InitialContext
      * @see javax.naming.directory.InitialDirContext
      */
-    @SuppressWarnings("removal")
     public static Context getInitialContext(Hashtable<?,?> env)
         throws NamingException {
         ClassLoader loader;
@@ -708,16 +489,8 @@ public class NamingManager {
                 throw ne;
             }
 
-            if (System.getSecurityManager() == null) {
-                loader = Thread.currentThread().getContextClassLoader();
-                if (loader == null) loader = ClassLoader.getSystemClassLoader();
-            } else {
-                PrivilegedAction<ClassLoader> pa = () -> {
-                    ClassLoader cl = Thread.currentThread().getContextClassLoader();
-                    return (cl == null) ? ClassLoader.getSystemClassLoader() : cl;
-                };
-                loader = AccessController.doPrivileged(pa);
-            }
+            loader = Thread.currentThread().getContextClassLoader();
+            if (loader == null) loader = ClassLoader.getSystemClassLoader();
 
             var key = FACTORIES_CACHE.sub(className);
             try {
@@ -773,19 +546,12 @@ public class NamingManager {
     /**
      * Sets the InitialContextFactory builder to be builder.
      *
-     *<p>
-     * The builder can only be installed if the executing thread is allowed by
-     * the security manager to do so. Once installed, the builder cannot
-     * be replaced.
      * @param builder The initial context factory builder to install. If null,
      *                no builder is set.
-     * @throws SecurityException builder cannot be installed for security
-     *         reasons.
      * @throws NamingException builder cannot be installed for
      *         a non-security-related reason.
      * @throws IllegalStateException If a builder was previous installed.
      * @see #hasInitialContextFactoryBuilder
-     * @see java.lang.SecurityManager#checkSetFactory
      */
     public static synchronized void setInitialContextFactoryBuilder(
         InitialContextFactoryBuilder builder)
@@ -793,12 +559,6 @@ public class NamingManager {
             if (initctx_factory_builder != null)
                 throw new IllegalStateException(
                     "InitialContextFactoryBuilder already set");
-
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
-            if (security != null) {
-                security.checkSetFactory();
-            }
             initctx_factory_builder = builder;
     }
 

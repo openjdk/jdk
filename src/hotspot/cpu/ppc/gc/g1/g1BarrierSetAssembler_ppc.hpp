@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,10 +30,16 @@
 #include "gc/shared/modRefBarrierSetAssembler.hpp"
 #include "utilities/macros.hpp"
 
+#ifdef COMPILER2
+#include "gc/g1/c2/g1BarrierSetC2.hpp"
+#endif
+
 class LIR_Assembler;
 class StubAssembler;
 class G1PreBarrierStub;
 class G1PostBarrierStub;
+class G1PreBarrierStubC2;
+class G1PostBarrierStubC2;
 
 class G1BarrierSetAssembler: public ModRefBarrierSetAssembler {
 protected:
@@ -59,6 +65,25 @@ protected:
                             MacroAssembler::PreservationLevel preservation_level);
 
 public:
+#ifdef COMPILER2
+  void g1_write_barrier_pre_c2(MacroAssembler* masm,
+                               Register obj,
+                               Register pre_val,
+                               Register tmp1,
+                               Register tmp2,
+                               G1PreBarrierStubC2* c2_stub);
+  void generate_c2_pre_barrier_stub(MacroAssembler* masm,
+                                    G1PreBarrierStubC2* stub) const;
+  void g1_write_barrier_post_c2(MacroAssembler* masm,
+                                Register store_addr,
+                                Register new_val,
+                                Register tmp1,
+                                Register tmp2,
+                                G1PostBarrierStubC2* c2_stub,
+                                bool decode_new_val);
+  void generate_c2_post_barrier_stub(MacroAssembler* masm,
+                                     G1PostBarrierStubC2* stub) const;
+#endif
 #ifdef COMPILER1
   void gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStub* stub);
   void gen_post_barrier_stub(LIR_Assembler* ce, G1PostBarrierStub* stub);
@@ -71,7 +96,7 @@ public:
                        Register base, RegisterOrConstant ind_or_offs, Register dst,
                        Register tmp1, Register tmp2,
                        MacroAssembler::PreservationLevel preservation_level,
-                       Label *L_handle_null = NULL);
+                       Label *L_handle_null = nullptr);
 
   virtual void resolve_jobject(MacroAssembler* masm, Register value,
                                Register tmp1, Register tmp2,

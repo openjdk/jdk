@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import com.sun.hotspot.igv.layout.Port;
 import com.sun.hotspot.igv.layout.Vertex;
 import java.awt.Dimension;
 import java.awt.Point;
+import java.util.Objects;
 
 /**
  *
@@ -35,15 +36,13 @@ import java.awt.Point;
  */
 public class ClusterOutputSlotNode implements Vertex {
 
-    private final int SIZE = 0;
     private Point position;
-    private Port inputSlot;
-    private Port outputSlot;
-    private ClusterNode blockNode;
-    private boolean root;
+    private final Port inputSlot;
+    private final Port outputSlot;
+    private final ClusterNode blockNode;
     private Cluster cluster;
     private ClusterOutgoingConnection conn;
-    private String id;
+    private final String id;
 
     public void setOutgoingConnection(ClusterOutgoingConnection c) {
         this.conn = c;
@@ -61,11 +60,11 @@ public class ClusterOutputSlotNode implements Vertex {
     public ClusterOutputSlotNode(ClusterNode n, String id) {
         this.blockNode = n;
         this.id = id;
+        this.position = new Point(0, 0);
 
         n.addSubNode(this);
 
         final Vertex thisNode = this;
-        final ClusterNode thisBlockNode = blockNode;
 
         inputSlot = new Port() {
 
@@ -79,7 +78,7 @@ public class ClusterOutputSlotNode implements Vertex {
 
             @Override
             public String toString() {
-                return "InPort of " + thisNode.toString();
+                return "InPort of " + thisNode;
             }
         };
 
@@ -87,24 +86,24 @@ public class ClusterOutputSlotNode implements Vertex {
 
             public Point getRelativePosition() {
                 Point p = new Point(thisNode.getPosition());
-                p.x += ClusterNode.BORDER;
-                p.y = 0;//thisBlockNode.getSize().height;
+                p.x += ClusterNode.PADDING;
+                p.y = 0;
                 return p;
             }
 
             public Vertex getVertex() {
-                return thisBlockNode;
+                return blockNode;
             }
 
             @Override
             public String toString() {
-                return "OutPort of " + thisNode.toString();
+                return "OutPort of " + thisNode;
             }
         };
     }
 
     public Dimension getSize() {
-        return new Dimension(SIZE, SIZE);
+        return new Dimension(0, 0);
     }
 
     public void setPosition(Point p) {
@@ -127,19 +126,27 @@ public class ClusterOutputSlotNode implements Vertex {
         cluster = c;
     }
 
-    public void setRoot(boolean b) {
-        root = b;
-    }
-
     public Cluster getCluster() {
         return cluster;
     }
 
     public boolean isRoot() {
-        return root;
+        return false;
     }
 
     public int compareTo(Vertex o) {
         return toString().compareTo(o.toString());
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof ClusterOutputSlotNode other)) return false;
+        return Objects.equals(this.id, other.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

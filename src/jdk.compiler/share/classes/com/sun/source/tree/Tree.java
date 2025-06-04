@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 
 package com.sun.source.tree;
-
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Common interface for all nodes in an abstract syntax tree.
@@ -224,33 +222,44 @@ public interface Tree {
         /**
          * Used for instances of {@link BindingPatternTree}.
          *
+         * @since 22
+         */
+        ANY_PATTERN(AnyPatternTree.class),
+
+        /**
+         * Used for instances of {@link BindingPatternTree}.
+         *
          * @since 16
          */
         BINDING_PATTERN(BindingPatternTree.class),
 
         /**
-         * Used for instances of {@link GuardedPatternTree}.
-         *
-         * @since 17
-         */
-        @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
-        GUARDED_PATTERN(GuardedPatternTree.class),
-
-        /**
-         * Used for instances of {@link ParenthesizedPatternTree}.
-         *
-         * @since 17
-         */
-        @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
-        PARENTHESIZED_PATTERN(ParenthesizedPatternTree.class),
-
-        /**
          * Used for instances of {@link DefaultCaseLabelTree}.
          *
-         * @since 17
+         * @since 21
          */
-        @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
         DEFAULT_CASE_LABEL(DefaultCaseLabelTree.class),
+
+        /**
+         * Used for instances of {@link ConstantCaseLabelTree}.
+         *
+         * @since 21
+         */
+        CONSTANT_CASE_LABEL(ConstantCaseLabelTree.class),
+
+        /**
+         * Used for instances of {@link PatternCaseLabelTree}.
+         *
+         * @since 21
+         */
+        PATTERN_CASE_LABEL(PatternCaseLabelTree.class),
+
+        /**
+         * Used for instances of {@link DeconstructionPatternTree}.
+         *
+         * @since 21
+         */
+        DECONSTRUCTION_PATTERN(DeconstructionPatternTree.class),
 
         /**
          * Used for instances of {@link PrimitiveTypeTree}.
@@ -275,7 +284,7 @@ public interface Tree {
         /**
          * Used for instances of {@link SwitchExpressionTree}.
          *
-         * @since 12
+         * @since 14
          */
         SWITCH_EXPRESSION(SwitchExpressionTree.class),
 
@@ -613,13 +622,13 @@ public interface Tree {
 
         /**
          * Used for instances of {@link WildcardTree} representing
-         * an extends bounded wildcard type argument.
+         * an upper-bounded wildcard type argument.
          */
         EXTENDS_WILDCARD(WildcardTree.class),
 
         /**
          * Used for instances of {@link WildcardTree} representing
-         * a super bounded wildcard type argument.
+         * a lower-bounded wildcard type argument.
          */
         SUPER_WILDCARD(WildcardTree.class),
 
@@ -693,7 +702,7 @@ public interface Tree {
         /**
          * Used for instances of {@link YieldTree}.
          *
-         * @since 13
+         * @since 14
          */
         YIELD(YieldTree.class);
 

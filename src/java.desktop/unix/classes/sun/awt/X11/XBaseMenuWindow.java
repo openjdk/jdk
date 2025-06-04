@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,6 +153,7 @@ public abstract class XBaseMenuWindow extends XWindow {
             this.items = new XMenuItemPeer[0];
         }
 
+        @Override
         public Object clone() {
             try {
                 return super.clone();
@@ -227,6 +228,7 @@ public abstract class XBaseMenuWindow extends XWindow {
     /**
      * Overrides XBaseWindow.instantPreInit
      */
+    @Override
     void instantPreInit(XCreateWindowParams params) {
         super.instantPreInit(params);
         items = new ArrayList<>();
@@ -481,8 +483,8 @@ public abstract class XBaseMenuWindow extends XWindow {
     }
 
     /**
-     * returns item thats mapped coordinates contain
-     * specified point, null of none.
+     * returns item which mapped coordinates contain
+     * the specified point, null if none.
      * @param pt the point in this window's coordinate system
      */
     XMenuItemPeer getItemFromPoint(Point pt) {
@@ -887,13 +889,14 @@ public abstract class XBaseMenuWindow extends XWindow {
 
     /************************************************
      *
-     * Overriden utility functions of XWindow
+     * Overridden utility functions of XWindow
      *
      ************************************************/
 
     /**
      * Filters X events
      */
+     @Override
      protected boolean isEventDisabled(XEvent e) {
         switch (e.get_type()) {
           case XConstants.Expose :
@@ -913,6 +916,7 @@ public abstract class XBaseMenuWindow extends XWindow {
     /**
      * Invokes disposal procedure on eventHandlerThread
      */
+    @Override
     public void dispose() {
         setDisposed(true);
 
@@ -939,10 +943,11 @@ public abstract class XBaseMenuWindow extends XWindow {
 
     /**
      * Invokes event processing on eventHandlerThread
-     * This function needs to be overriden since
+     * This function needs to be overridden since
      * XBaseMenuWindow has no corresponding component
-     * so events can not be processed using standart means
+     * so events cannot be processed using standard means
      */
+    @Override
     void postEvent(final AWTEvent event) {
         InvocationEvent ev = new InvocationEvent(event.getSource(), new Runnable() {
             public void run() {
@@ -969,6 +974,7 @@ public abstract class XBaseMenuWindow extends XWindow {
      * Save location of pointer for further use
      * then invoke superclass
      */
+    @Override
     public boolean grabInput() {
         int rootX;
         int rootY;
@@ -1177,7 +1183,7 @@ public abstract class XBaseMenuWindow extends XWindow {
                   selectItem(getPrevSelectableItem(), true);
               } else {
                   //hide leaf moving focus to its parent
-                  //(equvivalent of pressing ESC)
+                  //(equivalent of pressing ESC)
                   XBaseMenuWindow pwnd = cwnd.getParentMenuWindow();
                   //Fix for 6272952: PIT: Pressing LEFT ARROW on a popup menu throws NullPointerException, XToolkit
                   if (pwnd != null) {

@@ -120,5 +120,3 @@ ne before each assertion will be ready to perform checks.
 	-inMemoryCompilation. (test flag) This option defines the way of classes creation. If this is true t
 hen classes are compiled with javac API. If false - classes are produced by rewriting classname in "g
 olden" bytecode.
-
-

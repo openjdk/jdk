@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,7 @@
  *     This test checks that the JDI method
  *     com.sun.jdi.ObjectReference.setValue() properly throws
  *     IllegalArgumentException when a debugger part of the test
- *     attempts to set value of debuggee's static field which
- *     is declared as final.
+ *     attempts to set value of debuggee's final field.
  * COMMENTS
  *
  * @library /vmTestbase
@@ -45,7 +44,7 @@
  * @clean nsk.jdi.ObjectReference.setValue.setvalue004t
  * @compile -g:lines,source,vars ../setvalue004t.java
  *
- * @run main/othervm
+ * @run driver
  *      nsk.jdi.ObjectReference.setValue.setvalue004
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

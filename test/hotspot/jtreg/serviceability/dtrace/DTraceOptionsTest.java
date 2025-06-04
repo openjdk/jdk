@@ -56,14 +56,13 @@ public class DTraceOptionsTest {
         }
 
         String[] options = {
-            "ExtendedDTraceProbes",
             "DTraceMethodProbes",
             "DTraceAllocProbes",
             "DTraceMonitorProbes",
         };
 
         for (String opt : options) {
-            var pb = ProcessTools.createJavaProcessBuilder("-XX:+" + opt, "-version");
+            var pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+" + opt, "-version");
             var oa = new OutputAnalyzer(pb.start());
             if (dtraceEnabled) {
                 oa.shouldHaveExitValue(0);

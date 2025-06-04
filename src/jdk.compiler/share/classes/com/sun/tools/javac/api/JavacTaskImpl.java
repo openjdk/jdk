@@ -401,12 +401,12 @@ public class JavacTaskImpl extends BasicJavacTask {
         final ListBuffer<Element> results = new ListBuffer<>();
         try {
             if (classes == null) {
-                handleFlowResults(compiler.flow(compiler.attribute(compiler.todo)), results);
+                handleFlowResults(compiler.warn(compiler.flow(compiler.attribute(compiler.todo))), results);
             } else {
                 Filter f = new Filter() {
                     @Override
                     public void process(Env<AttrContext> env) {
-                        handleFlowResults(compiler.flow(compiler.attribute(env)), results);
+                        handleFlowResults(compiler.warn(compiler.flow(compiler.attribute(env))), results);
                     }
                 };
                 f.run(compiler.todo, classes);
@@ -487,10 +487,6 @@ public class JavacTaskImpl extends BasicJavacTask {
                 compiler.log.flush();
         }
         return results;
-    }
-
-    public Iterable<? extends Tree> pathFor(CompilationUnitTree unit, Tree node) {
-        return TreeInfo.pathFor((JCTree) node, (JCTree.JCCompilationUnit) unit).reverse();
     }
 
     public void ensureEntered() {

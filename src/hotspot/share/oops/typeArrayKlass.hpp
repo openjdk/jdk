@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ class TypeArrayKlass : public ArrayKlass {
   friend class VMStructs;
 
  public:
-  static const KlassID ID = TypeArrayKlassID;
+  static const KlassKind Kind = TypeArrayKlassKind;
 
  private:
   jint _max_length;            // maximum number of elements allowed in an array
@@ -50,6 +50,8 @@ class TypeArrayKlass : public ArrayKlass {
   // instance variables
   jint max_length()                     { return _max_length; }
   void set_max_length(jint m)           { _max_length = m;    }
+
+  u2 compute_modifier_flags() const;
 
   // testers
   DEBUG_ONLY(bool is_typeArray_klass_slow() const  { return true; })
@@ -68,7 +70,7 @@ class TypeArrayKlass : public ArrayKlass {
   typeArrayOop allocate(int length, TRAPS) { return allocate_common(length, true, THREAD); }
   oop multi_allocate(int rank, jint* sizes, TRAPS);
 
-  oop protection_domain() const { return NULL; }
+  oop protection_domain() const { return nullptr; }
 
   // Copying
   void  copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS);
@@ -94,14 +96,6 @@ class TypeArrayKlass : public ArrayKlass {
   inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
 
  public:
-  // Find n'th dimensional array
-  virtual Klass* array_klass(int n, TRAPS);
-  virtual Klass* array_klass_or_null(int n);
-
-  // Returns the array class with this class as element type
-  virtual Klass* array_klass(TRAPS);
-  virtual Klass* array_klass_or_null();
-
   static TypeArrayKlass* cast(Klass* k) {
     return const_cast<TypeArrayKlass*>(cast(const_cast<const Klass*>(k)));
   }
@@ -123,10 +117,8 @@ class TypeArrayKlass : public ArrayKlass {
 
  public:
   // Printing
-#ifndef PRODUCT
   void oop_print_on(oop obj, outputStream* st);
-#endif
-
+  void oop_print_elements_on(typeArrayOop ta, outputStream* st);
   void print_on(outputStream* st) const;
   void print_value_on(outputStream* st) const;
 

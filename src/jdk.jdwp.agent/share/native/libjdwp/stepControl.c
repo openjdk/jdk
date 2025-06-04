@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -317,7 +317,7 @@ handleFramePopEvent(JNIEnv *env, EventInfo *evinfo,
              *    native frame is popped (you can't get frame pop
              *    notifications on native frames). If the native caller
              *    calls another Java method before returning,
-             *    stepping will be diabled again and another frame pop
+             *    stepping will be disabled again and another frame pop
              *    will be awaited.
              *
              *    If it turns out that this is not case (2) with native
@@ -463,14 +463,18 @@ handleMethodEnterEvent(JNIEnv *env, EventInfo *evinfo,
          */
         JDI_ASSERT(step->depth == JDWP_STEP_DEPTH(INTO));
 
-        if (    (!eventFilter_predictFiltering(step->stepHandlerNode,
-                                               clazz, classname))
-             && (   step->granularity != JDWP_STEP_SIZE(LINE)
-                 || hasLineNumbers(method) ) ) {
+        /*
+         * We need to figure out if we are entering a method that we want to resume
+         * single stepping in. If the class of this method is being filtered out, then
+         * we don't resume. Otherwise, if we are not line stepping then we resume, and
+         * if we are line stepping we don't resume unless the method has LineNumbers.
+         */
+        jboolean filteredOut = eventFilter_predictFiltering(step->stepHandlerNode, clazz, classname);
+        jboolean isStepLine = step->granularity == JDWP_STEP_SIZE(LINE);
+        if (!filteredOut && (!isStepLine || hasLineNumbers(method))) {
             /*
-             * We've found a suitable method in which to stop. Step
-             * until we reach the next safe location to complete the step->,
-             * and we can get rid of the method entry handler.
+             * We've found a suitable method in which to resume stepping.
+             * We can also get rid of the method entry handler now.
              */
             enableStepping(thread);
             if ( step->methodEnterHandlerNode != NULL ) {
@@ -801,7 +805,8 @@ stepControl_beginStep(JNIEnv *env, jthread thread, jint size, jint depth,
     LOG_STEP(("stepControl_beginStep: thread=%p,size=%d,depth=%d",
               thread, size, depth));
 
-    eventHandler_lock(); /* for proper lock order */
+    callback_lock();     /* for proper lock order in threadControl getLocks() */
+    eventHandler_lock(); /* for proper lock order in threadControl getLocks() */
     stepControl_lock();
 
     step = threadControl_getStepRequest(thread);
@@ -848,10 +853,22 @@ stepControl_beginStep(JNIEnv *env, jthread thread, jint size, jint depth,
 
     stepControl_unlock();
     eventHandler_unlock();
+    callback_unlock();
 
     return error;
 }
 
+static jint
+getThreadState(jthread thread)
+{
+    jint state = 0;
+    jvmtiError error = JVMTI_FUNC_PTR(gdata->jvmti,GetThreadState)
+        (gdata->jvmti, thread, &state);
+    if (error != JVMTI_ERROR_NONE) {
+        EXIT_ERROR(error, "getting thread state");
+    }
+    return state;
+}
 
 static void
 clearStep(jthread thread, StepRequest *step)
@@ -871,15 +888,60 @@ clearStep(jthread thread, StepRequest *step)
             (void)eventHandler_free(step->methodEnterHandlerNode);
             step->methodEnterHandlerNode = NULL;
         }
-        step->pending = JNI_FALSE;
-
         /*
          * Warning: Do not clear step->method, step->lineEntryCount,
          *          or step->lineEntries here, they will likely
          *          be needed on the next step.
          */
 
+        jvmtiError error;
+        jboolean needsSuspending; // true if we needed to suspend this thread
+
+        // The thread needs suspending if it is not the current thread and is
+        // not already suspended.
+        if (isSameObject(getEnv(), threadControl_currentThread(), thread)) {
+            needsSuspending = JNI_FALSE;
+        } else {
+            jint state = getThreadState(thread);
+            needsSuspending = ((state & JVMTI_THREAD_STATE_SUSPENDED) == 0);
+        }
+
+        if (needsSuspending) {
+            // Don't use threadControl_suspendThread() here. It does a lot of
+            // locking, increasing the risk of deadlock issues. None of that
+            // locking is needed here.
+            error = JVMTI_FUNC_PTR(gdata->jvmti,SuspendThread)
+                (gdata->jvmti, thread);
+            if (error != JVMTI_ERROR_NONE) {
+                EXIT_ERROR(error, "suspending thread");
+            }
+        }
+
+        error = JVMTI_FUNC_PTR(gdata->jvmti,ClearAllFramePops)
+            (gdata->jvmti, thread);
+        if (error != JVMTI_ERROR_NONE) {
+#ifdef DEBUG
+            jint currentDepth = getFrameCount(thread);
+            jint state = getThreadState(thread);
+            tty_message("JVMTI ERROR(%d): ClearAllFramePops (state=0x%x fromDepth=%d currentDepth=%d)",
+                        error, state, step->fromStackDepth, currentDepth);
+            printThreadInfo(thread);
+            printStackTrace(thread);
+            threadControl_dumpThread(thread);
+#endif
+            EXIT_ERROR(error, "clearing all frame pops");
+        }
+
+        if (needsSuspending) {
+            error = JVMTI_FUNC_PTR(gdata->jvmti,ResumeThread)
+                (gdata->jvmti, thread);
+            if (error != JVMTI_ERROR_NONE) {
+                EXIT_ERROR(error, "resuming thread");
+            }
+        }
     }
+
+    step->pending = JNI_FALSE;
 }
 
 jvmtiError

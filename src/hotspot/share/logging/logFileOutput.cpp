@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logAsyncWriter.hpp"
@@ -30,22 +29,23 @@
 #include "memory/allocation.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 const char* const LogFileOutput::Prefix = "file=";
 const char* const LogFileOutput::FileOpenMode = "a";
 const char* const LogFileOutput::PidFilenamePlaceholder = "%p";
 const char* const LogFileOutput::TimestampFilenamePlaceholder = "%t";
 const char* const LogFileOutput::TimestampFormat = "%Y-%m-%d_%H-%M-%S";
+const char* const LogFileOutput::HostnameFilenamePlaceholder = "%hn";
 const char* const LogFileOutput::FileSizeOptionKey = "filesize";
 const char* const LogFileOutput::FileCountOptionKey = "filecount";
 char        LogFileOutput::_pid_str[PidBufferSize];
 char        LogFileOutput::_vm_start_time_str[StartTimeBufferSize];
 
 LogFileOutput::LogFileOutput(const char* name)
-    : LogFileStreamOutput(NULL), _name(os::strdup_check_oom(name, mtLogging)),
-      _file_name(NULL), _archive_name(NULL), _current_file(0),
+    : LogFileStreamOutput(nullptr), _name(os::strdup_check_oom(name, mtLogging)),
+      _file_name(nullptr), _archive_name(nullptr), _current_file(0),
       _file_count(DefaultFileCount), _is_default_file_count(true), _archive_name_len(0),
       _rotate_size(DefaultFileSize), _current_size(0), _rotation_semaphore(1) {
   assert(strstr(name, Prefix) == name, "invalid output name '%s': missing prefix: %s", name, Prefix);
@@ -72,7 +72,7 @@ void LogFileOutput::set_file_name_parameters(jlong vm_start_time) {
 }
 
 LogFileOutput::~LogFileOutput() {
-  if (_stream != NULL) {
+  if (_stream != nullptr) {
     if (fclose(_stream) != 0) {
       jio_fprintf(defaultStream::error_stream(), "Could not close log file '%s' (%s).\n",
                   _file_name, os::strerror(errno));
@@ -184,7 +184,7 @@ bool LogFileOutput::set_option(const char* key, const char* value, outputStream*
       success = Arguments::atojulong(value, &longval);
       if (!success || (longval > SIZE_MAX)) {
         errstream->print_cr("Invalid option: %s must be in range [0, "
-                            SIZE_FORMAT "]", FileSizeOptionKey, (size_t)SIZE_MAX);
+                            "%zu]", FileSizeOptionKey, (size_t)SIZE_MAX);
         success = false;
       } else {
         _rotate_size = static_cast<size_t>(longval);
@@ -214,7 +214,7 @@ bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
   }
 
   log_trace(logging)("Initializing logging to file '%s' (filecount: %u"
-                     ", filesize: " SIZE_FORMAT " KiB).",
+                     ", filesize: %zu KiB).",
                      _file_name, _file_count, _rotate_size / K);
 
   if (_file_count > 0 && file_exist) {
@@ -238,7 +238,7 @@ bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
   }
 
   _stream = os::fopen(_file_name, FileOpenMode);
-  if (_stream == NULL) {
+  if (_stream == nullptr) {
     errstream->print_cr("Error opening log file '%s': %s",
                         _file_name, os::strerror(errno));
     return false;
@@ -267,7 +267,7 @@ class RotationLocker : public StackObj {
 
 int LogFileOutput::write_blocking(const LogDecorations& decorations, const char* msg) {
   RotationLocker lock(_rotation_semaphore);
-  if (_stream == NULL) {
+  if (_stream == nullptr) {
     // An error has occurred with this output, avoid writing to it.
     return 0;
   }
@@ -287,14 +287,12 @@ int LogFileOutput::write_blocking(const LogDecorations& decorations, const char*
 }
 
 int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
-  if (_stream == NULL) {
+  if (_stream == nullptr) {
     // An error has occurred with this output, avoid writing to it.
     return 0;
   }
 
-  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
-  if (aio_writer != nullptr) {
-    aio_writer->enqueue(*this, decorations, msg);
+  if (AsyncLogWriter::enqueue(*this, decorations, msg)) {
     return 0;
   }
 
@@ -302,14 +300,11 @@ int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
 }
 
 int LogFileOutput::write(LogMessageBuffer::Iterator msg_iterator) {
-  if (_stream == NULL) {
+  if (_stream == nullptr) {
     // An error has occurred with this output, avoid writing to it.
     return 0;
   }
-
-  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
-  if (aio_writer != nullptr) {
-    aio_writer->enqueue(*this, msg_iterator);
+  if (AsyncLogWriter::enqueue(*this, msg_iterator)) {
     return 0;
   }
 
@@ -327,7 +322,7 @@ int LogFileOutput::write(LogMessageBuffer::Iterator msg_iterator) {
 }
 
 void LogFileOutput::archive() {
-  assert(_archive_name != NULL && _archive_name_len > 0, "Rotation must be configured before using this function.");
+  assert(_archive_name != nullptr && _archive_name_len > 0, "Rotation must be configured before using this function.");
   int ret = jio_snprintf(_archive_name, _archive_name_len, "%s.%0*u",
                          _file_name, _file_count_max_digits, _current_file);
   assert(ret >= 0, "Buffer should always be large enough");
@@ -364,7 +359,7 @@ void LogFileOutput::rotate() {
 
   // Open the active log file using the same stream as before
   _stream = os::fopen(_file_name, FileOpenMode);
-  if (_stream == NULL) {
+  if (_stream == nullptr) {
     jio_fprintf(defaultStream::error_stream(), "Could not reopen file '%s' during log rotation (%s).\n",
                 _file_name, os::strerror(errno));
     return;
@@ -378,81 +373,81 @@ void LogFileOutput::rotate() {
 char* LogFileOutput::make_file_name(const char* file_name,
                                     const char* pid_string,
                                     const char* timestamp_string) {
-  char* result = NULL;
+  char hostname_string[HostnameBufferSize];
+  char* result = nullptr;
 
-  // Lets start finding out if we have any %d and/or %t in the name.
+  // Lets start finding out if we have any %p, %t and/or %hn in the name.
   // We will only replace the first occurrence of any placeholder
   const char* pid = strstr(file_name, PidFilenamePlaceholder);
   const char* timestamp = strstr(file_name, TimestampFilenamePlaceholder);
+  const char* hostname = strstr(file_name, HostnameFilenamePlaceholder);
 
-  if (pid == NULL && timestamp == NULL) {
+  if (pid == nullptr && timestamp == nullptr && hostname == nullptr) {
     // We found no place-holders, return the simple filename
     return os::strdup_check_oom(file_name, mtLogging);
   }
 
   // At least one of the place-holders were found in the file_name
-  const char* first = "";
-  size_t first_pos = SIZE_MAX;
-  size_t first_replace_len = 0;
-
-  const char* second = "";
-  size_t second_pos = SIZE_MAX;
-  size_t second_replace_len = 0;
-
-  // If we found a %p, then setup our variables accordingly
-  if (pid != NULL) {
-    if (timestamp == NULL || pid < timestamp) {
-      first = pid_string;
-      first_pos = pid - file_name;
-      first_replace_len = strlen(PidFilenamePlaceholder);
-    } else {
-      second = pid_string;
-      second_pos = pid - file_name;
-      second_replace_len = strlen(PidFilenamePlaceholder);
-    }
+  size_t result_len =  strlen(file_name);
+  if (pid != nullptr) {
+    result_len -= strlen(PidFilenamePlaceholder);
+    result_len += strlen(pid_string);
   }
-
-  if (timestamp != NULL) {
-    if (pid == NULL || timestamp < pid) {
-      first = timestamp_string;
-      first_pos = timestamp - file_name;
-      first_replace_len = strlen(TimestampFilenamePlaceholder);
-    } else {
-      second = timestamp_string;
-      second_pos = timestamp - file_name;
-      second_replace_len = strlen(TimestampFilenamePlaceholder);
-    }
+  if (timestamp != nullptr) {
+    result_len -= strlen(TimestampFilenamePlaceholder);
+    result_len += strlen(timestamp_string);
   }
-
-  size_t first_len = strlen(first);
-  size_t second_len = strlen(second);
-
+  if (hostname != nullptr) {
+    if (!os::get_host_name(hostname_string, sizeof(hostname_string))) {
+      int res = jio_snprintf(hostname_string, sizeof(hostname_string), "unknown-host");
+      assert(res > 0, "Hostname buffer too small");
+    }
+    result_len -= strlen(HostnameFilenamePlaceholder);
+    result_len += strlen(hostname_string);
+  }
   // Allocate the new buffer, size it to hold all we want to put in there +1.
-  size_t result_len =  strlen(file_name) + first_len - first_replace_len + second_len - second_replace_len;
   result = NEW_C_HEAP_ARRAY(char, result_len + 1, mtLogging);
 
   // Assemble the strings
   size_t file_name_pos = 0;
   size_t i = 0;
   while (i < result_len) {
-    if (file_name_pos == first_pos) {
-      // We are in the range of the first placeholder
-      strcpy(result + i, first);
-      // Bump output buffer position with length of replacing string
-      i += first_len;
-      // Bump source buffer position to skip placeholder
-      file_name_pos += first_replace_len;
-    } else if (file_name_pos == second_pos) {
-      // We are in the range of the second placeholder
-      strcpy(result + i, second);
-      i += second_len;
-      file_name_pos += second_replace_len;
-    } else {
-      // Else, copy char by char of the original file
-      result[i] = file_name[file_name_pos++];
-      i++;
+    if (file_name[file_name_pos] == '%') {
+      // Replace the first occurrence of any placeholder
+      if (pid != nullptr && strncmp(&file_name[file_name_pos],
+                                    PidFilenamePlaceholder,
+                                    strlen(PidFilenamePlaceholder)) == 0) {
+        strcpy(result + i, pid_string);
+        i += strlen(pid_string);
+        file_name_pos += strlen(PidFilenamePlaceholder);
+        pid = nullptr;
+        continue;
+      }
+      if (timestamp != nullptr && strncmp(&file_name[file_name_pos],
+                                          TimestampFilenamePlaceholder,
+                                          strlen(TimestampFilenamePlaceholder)) == 0) {
+        strcpy(result + i, timestamp_string);
+        i += strlen(timestamp_string);
+        file_name_pos += strlen(TimestampFilenamePlaceholder);
+        timestamp = nullptr;
+        continue;
+      }
+      if (hostname != nullptr && strncmp(&file_name[file_name_pos],
+                                         HostnameFilenamePlaceholder,
+                                         strlen(HostnameFilenamePlaceholder)) == 0) {
+        strcpy(result + i, hostname_string);
+        i += strlen(hostname_string);
+        file_name_pos += strlen(HostnameFilenamePlaceholder);
+        hostname = nullptr;
+        continue;
+      }
     }
+    // Else, copy char by char of the original file
+    result[i++] = file_name[file_name_pos++];
   }
+  assert(i == result_len, "should be");
+  assert(file_name[file_name_pos] == '\0', "should be");
+
   // Add terminating char
   result[result_len] = '\0';
   return result;
@@ -460,7 +455,7 @@ char* LogFileOutput::make_file_name(const char* file_name,
 
 void LogFileOutput::describe(outputStream *out) {
   LogFileStreamOutput::describe(out);
-  out->print(",filecount=%u,filesize=" SIZE_FORMAT "%s,async=%s", _file_count,
+  out->print(",filecount=%u,filesize=%zu%s,async=%s", _file_count,
              byte_size_in_proper_unit(_rotate_size),
              proper_unit_for_byte_size(_rotate_size),
              LogConfiguration::is_async_mode() ? "true" : "false");

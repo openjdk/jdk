@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,12 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import jdk.javadoc.doclet.DocletEnvironment;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
-import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -45,13 +41,15 @@ import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementKindVisitor14;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
+
+import jdk.javadoc.doclet.DocletEnvironment;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 import static javax.lang.model.element.Modifier.ABSTRACT;
 import static javax.lang.model.element.Modifier.FINAL;
@@ -65,34 +63,34 @@ import static javax.lang.model.element.Modifier.SYNCHRONIZED;
 
 public class Signatures {
 
-    public static Content getModuleSignature(ModuleElement mdle, ModuleWriterImpl moduleWriter) {
-        Content signature = HtmlTree.DIV(HtmlStyle.moduleSignature);
+    public static Content getModuleSignature(ModuleElement mdle, ModuleWriter moduleWriter) {
+        var signature = HtmlTree.DIV(HtmlStyles.moduleSignature);
         Content annotations = moduleWriter.getAnnotationInfo(mdle, true);
         if (!annotations.isEmpty()) {
-            signature.add(HtmlTree.SPAN(HtmlStyle.annotations, annotations));
+            signature.add(HtmlTree.SPAN(HtmlStyles.annotations, annotations));
         }
         DocletEnvironment docEnv = moduleWriter.configuration.docEnv;
         String label = mdle.isOpen() && (docEnv.getModuleMode() == DocletEnvironment.ModuleMode.ALL)
                 ? "open module" : "module";
         signature.add(label);
         signature.add(" ");
-        HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
+        var nameSpan = HtmlTree.SPAN(HtmlStyles.elementName);
         nameSpan.add(mdle.getQualifiedName().toString());
         signature.add(nameSpan);
         return signature;
     }
 
-    public static Content getPackageSignature(PackageElement pkg, PackageWriterImpl pkgWriter) {
+    public static Content getPackageSignature(PackageElement pkg, PackageWriter pkgWriter) {
         if (pkg.isUnnamed()) {
             return Text.EMPTY;
         }
-        Content signature = HtmlTree.DIV(HtmlStyle.packageSignature);
+        var signature = HtmlTree.DIV(HtmlStyles.packageSignature);
         Content annotations = pkgWriter.getAnnotationInfo(pkg, true);
         if (!annotations.isEmpty()) {
-            signature.add(HtmlTree.SPAN(HtmlStyle.annotations, annotations));
+            signature.add(HtmlTree.SPAN(HtmlStyles.annotations, annotations));
         }
         signature.add("package ");
-        HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
+        var nameSpan = HtmlTree.SPAN(HtmlStyles.elementName);
         nameSpan.add(pkg.getQualifiedName().toString());
         signature.add(nameSpan);
         return signature;
@@ -106,7 +104,7 @@ public class Signatures {
         private final HtmlConfiguration configuration;
         private Content modifiers;
 
-        private static final Set<String> previewModifiers = Collections.emptySet();
+        private static final Set<String> previewModifiers = Set.of();
 
          TypeSignature(TypeElement typeElement, HtmlDocletWriter writer) {
              this.typeElement = typeElement;
@@ -125,37 +123,36 @@ public class Signatures {
             Content content = new ContentBuilder();
             Content annotationInfo = writer.getAnnotationInfo(typeElement, true);
             if (!annotationInfo.isEmpty()) {
-                content.add(HtmlTree.SPAN(HtmlStyle.annotations, annotationInfo));
+                content.add(HtmlTree.SPAN(HtmlStyles.annotations, annotationInfo));
             }
-            content.add(HtmlTree.SPAN(HtmlStyle.modifiers, modifiers));
+            content.add(HtmlTree.SPAN(HtmlStyles.modifiers, modifiers));
 
-            HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
+            var nameSpan = HtmlTree.SPAN(HtmlStyles.elementName);
             Content className = Text.of(utils.getSimpleName(typeElement));
             if (configuration.getOptions().linkSource()) {
                 writer.addSrcLink(typeElement, className, nameSpan);
             } else {
-                nameSpan.addStyle(HtmlStyle.typeNameLabel).add(className);
+                nameSpan.addStyle(HtmlStyles.typeNameLabel).add(className);
             }
             HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration,
-                    HtmlLinkInfo.Kind.CLASS_SIGNATURE, typeElement);
-            //Let's not link to ourselves in the signature.
-            linkInfo.linkToSelf = false;
+                    HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS, typeElement)
+                    .linkToSelf(false)  // Let's not link to ourselves in the signature
+                    .showTypeParameterAnnotations(true);
             nameSpan.add(writer.getTypeParameterLinks(linkInfo));
             content.add(nameSpan);
 
             if (utils.isRecord(typeElement)) {
                 content.add(getRecordComponents());
             }
-            if (!utils.isAnnotationType(typeElement)) {
-                Content extendsImplements = new HtmlTree(TagName.SPAN)
-                        .setStyle(HtmlStyle.extendsImplements);
-                if (!utils.isInterface(typeElement)) {
+            if (!utils.isAnnotationInterface(typeElement)) {
+                var extendsImplements = HtmlTree.SPAN(HtmlStyles.extendsImplements);
+                if (!utils.isPlainInterface(typeElement)) {
                     TypeMirror superclass = utils.getFirstVisibleSuperClass(typeElement);
                     if (superclass != null) {
-                        content.add(DocletConstants.NL);
+                        content.add(Text.NL);
                         extendsImplements.add("extends ");
                         Content link = writer.getLink(new HtmlLinkInfo(configuration,
-                                HtmlLinkInfo.Kind.CLASS_SIGNATURE_PARENT_NAME,
+                                HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS,
                                 superclass));
                         extendsImplements.add(link);
                     }
@@ -165,18 +162,18 @@ public class Signatures {
                     boolean isFirst = true;
                     for (TypeMirror type : interfaces) {
                         TypeElement tDoc = utils.asTypeElement(type);
-                        if (!(utils.isPublic(tDoc) || utils.isLinkable(tDoc))) {
+                        if (!utils.isVisible(tDoc)) {
                             continue;
                         }
                         if (isFirst) {
-                            extendsImplements.add(DocletConstants.NL);
-                            extendsImplements.add(utils.isInterface(typeElement) ? "extends " : "implements ");
+                            extendsImplements.add(Text.NL);
+                            extendsImplements.add(utils.isPlainInterface(typeElement) ? "extends " : "implements ");
                             isFirst = false;
                         } else {
                             extendsImplements.add(", ");
                         }
                         Content link = writer.getLink(new HtmlLinkInfo(configuration,
-                                HtmlLinkInfo.Kind.CLASS_SIGNATURE_PARENT_NAME,
+                                HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS,
                                 type));
                         extendsImplements.add(link);
                     }
@@ -190,11 +187,11 @@ public class Signatures {
                     .filter(t -> utils.isLinkable(utils.asTypeElement(t)))
                     .toList();
             if (!linkablePermits.isEmpty()) {
-                Content permitsSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.permits);
+                var permitsSpan = HtmlTree.SPAN(HtmlStyles.permits);
                 boolean isFirst = true;
                 for (TypeMirror type : linkablePermits) {
                     if (isFirst) {
-                        content.add(DocletConstants.NL);
+                        content.add(Text.NL);
                         permitsSpan.add("permits");
                         permitsSpan.add(" ");
                         isFirst = false;
@@ -202,18 +199,18 @@ public class Signatures {
                         permitsSpan.add(", ");
                     }
                     Content link = writer.getLink(new HtmlLinkInfo(configuration,
-                            HtmlLinkInfo.Kind.PERMITTED_SUBCLASSES,
+                            HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS,
                             type));
                     permitsSpan.add(link);
                 }
                 if (linkablePermits.size() < permits.size()) {
                     Content c = Text.of(configuration.getDocResources().getText("doclet.not.exhaustive"));
                     permitsSpan.add(" ");
-                    permitsSpan.add(HtmlTree.SPAN(HtmlStyle.permitsNote, c));
+                    permitsSpan.add(HtmlTree.SPAN(HtmlStyles.permitsNote, c));
                 }
                 content.add(permitsSpan);
             }
-            return HtmlTree.DIV(HtmlStyle.typeSignature, content);
+            return HtmlTree.DIV(HtmlStyles.typeSignature, content);
         }
 
         private Content getRecordComponents() {
@@ -223,8 +220,8 @@ public class Signatures {
             for (RecordComponentElement e : typeElement.getRecordComponents()) {
                 content.add(sep);
                 writer.getAnnotations(e.getAnnotationMirrors(), false)
-                        .forEach(a -> { content.add(a).add(" "); });
-                Content link = writer.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.RECORD_COMPONENT,
+                        .forEach(a -> content.add(a).add(" "));
+                Content link = writer.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS,
                         e.asType()));
                 content.add(link);
                 content.add(Entity.NO_BREAK_SPACE);
@@ -244,9 +241,10 @@ public class Signatures {
                  }
                  content.add(modifier);
                  if (previewModifiers.contains(modifier)) {
-                     content.add(HtmlTree.SUP(writer.links.createLink(
-                             configuration.htmlIds.forPreviewSection(typeElement),
-                             configuration.contents.previewMark)));
+                     content.add(HtmlTree.SUP(HtmlStyles.previewMark,
+                             writer.links.createLink(
+                                     configuration.htmlIds.forPreviewSection(typeElement),
+                                     configuration.contents.previewMark)));
                  }
                  sep = " ";
              }
@@ -357,9 +355,6 @@ public class Signatures {
         private Content parameters;
         private Content exceptions;
 
-        // Threshold for length of type parameters before switching from inline to block representation.
-        private static final int TYPE_PARAMS_MAX_INLINE_LENGTH = 50;
-
         // Threshold for combined length of modifiers, type params and return type before breaking
         // it up with a line break before the return type.
         private static final int RETURN_TYPE_MAX_LINE_LENGTH = 50;
@@ -379,7 +374,7 @@ public class Signatures {
         /**
          * Set the type parameters for an executable member.
          *
-         * @param typeParameters the content tree containing the type parameters to add.
+         * @param typeParameters the type parameters to add.
          * @return this instance
          */
         MemberSignature setTypeParameters(Content typeParameters) {
@@ -390,7 +385,7 @@ public class Signatures {
         /**
          * Set the return type for an executable member.
          *
-         * @param returnType the content tree containing the return type to add.
+         * @param returnType the return type to add.
          * @return this instance
          */
         MemberSignature setReturnType(Content returnType) {
@@ -405,40 +400,40 @@ public class Signatures {
          * @return this instance
          */
         MemberSignature setType(TypeMirror type) {
-            this.returnType = memberWriter.writer.getLink(new HtmlLinkInfo(memberWriter.configuration, HtmlLinkInfo.Kind.MEMBER, type));
+            this.returnType = memberWriter.writer.getLink(new HtmlLinkInfo(memberWriter.configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, type));
             return this;
         }
 
         /**
          * Set the parameter information of an executable member.
          *
-         * @param paramTree the content tree containing the parameter information.
+         * @param content the parameter information.
          * @return this instance
          */
-        MemberSignature setParameters(Content paramTree) {
-            this.parameters = paramTree;
+        MemberSignature setParameters(Content content) {
+            this.parameters = content;
             return this;
         }
 
         /**
          * Set the exception information of an executable member.
          *
-         * @param exceptionTree the content tree containing the exception information
+         * @param content the exception information
          * @return this instance
          */
-        MemberSignature setExceptions(Content exceptionTree) {
-            this.exceptions = exceptionTree;
+        MemberSignature setExceptions(Content content) {
+            this.exceptions = content;
             return this;
         }
 
         /**
          * Set the annotation information of a member.
          *
-         * @param annotationTree the content tree containing the exception information
+         * @param content the exception information
          * @return this instance
          */
-        MemberSignature setAnnotations(Content annotationTree) {
-            this.annotations = annotationTree;
+        MemberSignature setAnnotations(Content content) {
+            this.annotations = content;
             return this;
         }
 
@@ -454,7 +449,7 @@ public class Signatures {
 
             // Annotations
             if (annotations != null && !annotations.isEmpty()) {
-                content.add(HtmlTree.SPAN(HtmlStyle.annotations, annotations));
+                content.add(HtmlTree.SPAN(HtmlStyles.annotations, annotations));
                 lastLineSeparator = content.charCount();
             }
 
@@ -468,12 +463,12 @@ public class Signatures {
 
             // Return type
             if (returnType != null) {
-                content.add(HtmlTree.SPAN(HtmlStyle.returnType, returnType));
+                content.add(HtmlTree.SPAN(HtmlStyles.returnType, returnType));
                 content.add(Entity.NO_BREAK_SPACE);
             }
 
             // Name
-            HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
+            var nameSpan = HtmlTree.SPAN(HtmlStyles.elementName);
             if (memberWriter.options.linkSource()) {
                 Content name = Text.of(memberWriter.name(element));
                 memberWriter.writer.addSrcLink(element, name, nameSpan);
@@ -487,16 +482,16 @@ public class Signatures {
                 appendParametersAndExceptions(content, lastLineSeparator);
             }
 
-            return HtmlTree.DIV(HtmlStyle.memberSignature, content);
+            return HtmlTree.DIV(HtmlStyles.memberSignature, content);
         }
 
         /**
-         * Adds the modifier for the member. The modifiers are ordered as specified
+         * Adds the modifiers for the member. The modifiers are ordered as specified
          * by <em>The Java Language Specification</em>.
          *
-         * @param htmlTree the content tree to which the modifier information will be added
+         * @param target the content to which the modifier information will be added
          */
-        private void appendModifiers(Content htmlTree) {
+        private void appendModifiers(Content target) {
             Set<Modifier> set = new TreeSet<>(element.getModifiers());
 
             // remove the ones we really don't need
@@ -508,7 +503,7 @@ public class Signatures {
             // interface methods and fields.
             if ((utils.isField(element) || utils.isMethod(element))) {
                 Element te = element.getEnclosingElement();
-                if (utils.isInterface(te) || utils.isAnnotationType(te)) {
+                if (utils.isInterface(te)) {
                     // Remove the implicit abstract and public modifiers
                     if (utils.isMethod(element)) {
                         set.remove(ABSTRACT);
@@ -518,7 +513,7 @@ public class Signatures {
             }
             if (!set.isEmpty()) {
                 String mods = set.stream().map(Modifier::toString).collect(Collectors.joining(" "));
-                htmlTree.add(HtmlTree.SPAN(HtmlStyle.modifiers, Text.of(mods)))
+                target.add(HtmlTree.SPAN(HtmlStyles.modifiers, Text.of(mods)))
                         .add(Entity.NO_BREAK_SPACE);
             }
         }
@@ -526,30 +521,26 @@ public class Signatures {
         /**
          * Appends the type parameter information to the HTML tree.
          *
-         * @param htmlTree          the HTML tree
+         * @param target            the HTML tree
          * @param lastLineSeparator index of last line separator in the HTML tree
          * @return the new index of the last line separator
          */
-        private int appendTypeParameters(Content htmlTree, int lastLineSeparator) {
+        private int appendTypeParameters(Content target, int lastLineSeparator) {
             // Apply different wrapping strategies for type parameters
-            // depending of combined length of type parameters and return type.
-            int typeParamLength = typeParameters.charCount();
+            // depending on the combined length of type parameters and return type.
+            // Note return type will be null if this is a constructor.
+            target.add(HtmlTree.SPAN(HtmlStyles.typeParameters, typeParameters));
 
-            if (typeParamLength >= TYPE_PARAMS_MAX_INLINE_LENGTH) {
-                htmlTree.add(HtmlTree.SPAN(HtmlStyle.typeParametersLong, typeParameters));
-            } else {
-                htmlTree.add(HtmlTree.SPAN(HtmlStyle.typeParameters, typeParameters));
-            }
-
-            int lineLength = htmlTree.charCount() - lastLineSeparator;
+            int lineLength = target.charCount() - lastLineSeparator;
             int newLastLineSeparator = lastLineSeparator;
+            int returnTypeLength = returnType != null ? returnType.charCount() : 0;
 
             // sum below includes length of modifiers plus type params added above
-            if (lineLength + returnType.charCount() > RETURN_TYPE_MAX_LINE_LENGTH) {
-                htmlTree.add(DocletConstants.NL);
-                newLastLineSeparator = htmlTree.charCount();
+            if (lineLength + returnTypeLength > RETURN_TYPE_MAX_LINE_LENGTH) {
+                target.add(Text.NL);
+                newLastLineSeparator = target.charCount();
             } else {
-                htmlTree.add(Entity.NO_BREAK_SPACE);
+                target.add(Entity.NO_BREAK_SPACE);
             }
 
             return newLastLineSeparator;
@@ -558,28 +549,28 @@ public class Signatures {
         /**
          * Appends the parameters and exceptions information to the HTML tree.
          *
-         * @param htmlTree          the HTML tree
+         * @param target            the HTML tree
          * @param lastLineSeparator the index of the last line separator in the HTML tree
          */
-        private void appendParametersAndExceptions(Content htmlTree, int lastLineSeparator) {
+        private void appendParametersAndExceptions(Content target, int lastLineSeparator) {
             // Record current position for indentation of exceptions
-            int indentSize = htmlTree.charCount() - lastLineSeparator;
+            int indentSize = target.charCount() - lastLineSeparator;
 
             if (parameters.charCount() == 2) {
                 // empty parameters are added without packing
-                htmlTree.add(parameters);
+                target.add(parameters);
             } else {
-                htmlTree.add(new HtmlTree(TagName.WBR))
-                        .add(HtmlTree.SPAN(HtmlStyle.parameters, parameters));
+                target.add(HtmlTree.WBR())
+                        .add(HtmlTree.SPAN(HtmlStyles.parameters, parameters));
             }
 
             // Exceptions
             if (exceptions != null && !exceptions.isEmpty()) {
                 CharSequence indent = " ".repeat(Math.max(0, indentSize + 1 - 7));
-                htmlTree.add(DocletConstants.NL)
+                target.add(Text.NL)
                         .add(indent)
                         .add("throws ")
-                        .add(HtmlTree.SPAN(HtmlStyle.exceptions, exceptions));
+                        .add(HtmlTree.SPAN(HtmlStyles.exceptions, exceptions));
             }
         }
     }

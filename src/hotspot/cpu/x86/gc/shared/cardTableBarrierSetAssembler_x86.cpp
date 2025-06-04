@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
@@ -48,6 +47,7 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
   intptr_t disp = (intptr_t) ct->byte_map_base();
+  SHENANDOAHGC_ONLY(assert(!UseShenandoahGC, "Shenandoah byte_map_base is not constant.");)
 
   Label L_loop, L_done;
   const Register end = count;
@@ -57,7 +57,6 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   __ jcc(Assembler::zero, L_done); // zero count - nothing to do
 
 
-#ifdef _LP64
   __ leaq(end, Address(addr, count, TIMES_OOP, 0));  // end == addr+count*oop_size
   __ subptr(end, BytesPerHeapOop); // end - 1 to make inclusive
   __ shrptr(addr, CardTable::card_shift());
@@ -70,17 +69,6 @@ __ BIND(L_loop);
   __ movb(Address(addr, count, Address::times_1), 0);
   __ decrement(count);
   __ jcc(Assembler::greaterEqual, L_loop);
-#else
-  __ lea(end,  Address(addr, count, Address::times_ptr, -wordSize));
-  __ shrptr(addr, CardTable::card_shift());
-  __ shrptr(end,   CardTable::card_shift());
-  __ subptr(end, addr); // end --> count
-__ BIND(L_loop);
-  Address cardtable(addr, count, Address::times_1, disp);
-  __ movb(cardtable, 0);
-  __ decrement(count);
-  __ jcc(Assembler::greaterEqual, L_loop);
-#endif
 
 __ BIND(L_done);
 }
@@ -112,14 +100,14 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
     // entry and that entry is not properly handled by the relocation code.
     AddressLiteral cardtable((address)byte_map_base, relocInfo::none);
     Address index(noreg, obj, Address::times_1);
-    card_addr = __ as_Address(ArrayAddress(cardtable, index));
+    card_addr = __ as_Address(ArrayAddress(cardtable, index), rscratch1);
   }
 
   int dirty = CardTable::dirty_card_val();
   if (UseCondCardMark) {
     Label L_already_dirty;
     __ cmpb(card_addr, dirty);
-    __ jcc(Assembler::equal, L_already_dirty);
+    __ jccb(Assembler::equal, L_already_dirty);
     __ movb(card_addr, dirty);
     __ bind(L_already_dirty);
   } else {
@@ -128,7 +116,7 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
 }
 
 void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                                Address dst, Register val, Register tmp1, Register tmp2) {
+                                                Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
   bool in_heap = (decorators & IN_HEAP) != 0;
 
   bool is_array = (decorators & IS_ARRAY) != 0;
@@ -137,7 +125,7 @@ void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorS
 
   bool needs_post_barrier = val != noreg && in_heap;
 
-  BarrierSetAssembler::store_at(masm, decorators, type, dst, val, noreg, noreg);
+  BarrierSetAssembler::store_at(masm, decorators, type, dst, val, noreg, noreg, noreg);
   if (needs_post_barrier) {
     // flatten object address if needed
     if (!precise || (dst.index() == noreg && dst.disp() == 0)) {

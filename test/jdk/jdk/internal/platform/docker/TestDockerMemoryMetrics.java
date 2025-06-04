@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test
  * @key cgroups
  * @summary Test JDK Metrics class when running inside docker container
- * @requires docker.support
+ * @requires container.support
  * @library /test/lib
  * @modules java.base/jdk.internal.platform
  * @build MetricsMemoryTester
@@ -56,6 +56,8 @@ public class TestDockerMemoryMetrics {
         try {
             testMemoryLimit("200m");
             testMemoryLimit("1g");
+            // Memory limit test with additional cgroup fs mounted
+            testMemoryLimit("500m", true /* cgroup fs mount */);
 
             testMemoryAndSwapLimit("200m", "1g");
             testMemoryAndSwapLimit("100m", "200m");
@@ -73,7 +75,7 @@ public class TestDockerMemoryMetrics {
             }
             testOomKillFlag("100m", true);
 
-            testMemoryFailCount("64m");
+            testMemoryFailCount("128m");
 
             testMemorySoftLimit("500m","200m");
 
@@ -85,6 +87,10 @@ public class TestDockerMemoryMetrics {
     }
 
     private static void testMemoryLimit(String value) throws Exception {
+        testMemoryLimit(value, false);
+    }
+
+    private static void testMemoryLimit(String value, boolean addCgroupMount) throws Exception {
         Common.logNewTestCase("testMemoryLimit, value = " + value);
         DockerRunOptions opts =
                 new DockerRunOptions(imageName, "/jdk/bin/java", "MetricsMemoryTester");
@@ -93,6 +99,10 @@ public class TestDockerMemoryMetrics {
                 .addJavaOpts("-cp", "/test-classes/")
                 .addJavaOpts("--add-exports", "java.base/jdk.internal.platform=ALL-UNNAMED")
                 .addClassOptions("memory", value);
+        if (addCgroupMount) {
+            // Extra cgroup mount should be ignored by product code
+            opts.addDockerOpts("--volume", "/sys/fs/cgroup:/cgroup-in:ro");
+        }
         DockerTestUtils.dockerRunJava(opts).shouldHaveExitValue(0).shouldContain("TEST PASSED!!!");
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,25 @@
  */
 package javax.swing.plaf.synth;
 
-import sun.swing.SwingUtilities2;
-import sun.swing.MenuItemLayoutHelper;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.Rectangle;
 
-import java.awt.*;
-import javax.swing.*;
+import javax.swing.ButtonModel;
+import javax.swing.Icon;
+import javax.swing.JComponent;
+import javax.swing.JMenuItem;
+import javax.swing.SwingUtilities;
 import javax.swing.plaf.basic.BasicHTML;
-import javax.swing.text.*;
+import javax.swing.text.View;
+
+import sun.swing.MenuItemLayoutHelper;
+import sun.swing.SwingUtilities2;
 
 /**
  * Wrapper for primitive graphics calls.
@@ -410,7 +422,6 @@ public class SynthGraphicsUtils {
 
         if (text != null) {
             View v = (View) c.getClientProperty(BasicHTML.propertyKey);
-
             if (v != null) {
                 v.paint(g, paintTextR);
             } else {
@@ -526,8 +537,8 @@ public class SynthGraphicsUtils {
              result.height += insets.top + insets.bottom;
          }
 
-         // if the width is even, bump it up one. This is critical
-         // for the focus dash lhne to draw properly
+         // if the width is even, bump it up by one. This is critical
+         // for the focus dash line to draw properly
          if (result.width % 2 == 0) {
              result.width++;
          }

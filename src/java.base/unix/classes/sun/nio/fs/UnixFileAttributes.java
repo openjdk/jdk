@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,15 @@
 
 package sun.nio.fs;
 
-import java.nio.file.attribute.*;
-import java.util.concurrent.TimeUnit;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.GroupPrincipal;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.UserPrincipal;
+import java.util.EnumSet;
 import java.util.Set;
-import java.util.HashSet;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Unix implementation of PosixFileAttributes.
@@ -52,6 +57,8 @@ class UnixFileAttributes
     private long    st_ctime_sec;
     private long    st_ctime_nsec;
     private long    st_birthtime_sec;
+    private long    st_birthtime_nsec;
+    private boolean birthtime_available;
 
     // created lazily
     private volatile UserPrincipal owner;
@@ -72,6 +79,19 @@ class UnixFileAttributes
             UnixNativeDispatcher.lstat(path, attrs);
         }
         return attrs;
+    }
+
+    // get the UnixFileAttributes for a given file. Returns null if the file does not exist.
+    static UnixFileAttributes getIfExists(UnixPath path) throws UnixException {
+        UnixFileAttributes attrs = new UnixFileAttributes();
+        int errno = UnixNativeDispatcher.stat2(path, attrs);
+        if (errno == 0) {
+            return attrs;
+        } else if (errno == UnixConstants.ENOENT) {
+            return null;
+        } else {
+            throw new UnixException(errno);
+        }
     }
 
     // get the UnixFileAttributes for an open file
@@ -144,10 +164,10 @@ class UnixFileAttributes
 
     @Override
     public FileTime creationTime() {
-        if (UnixNativeDispatcher.birthtimeSupported()) {
-            return FileTime.from(st_birthtime_sec, TimeUnit.SECONDS);
+        if (UnixNativeDispatcher.birthtimeSupported() && birthtime_available) {
+            return toFileTime(st_birthtime_sec, st_birthtime_nsec);
         } else {
-            // return last modified when birth time not supported
+            // return last modified when birth time unsupported or unavailable
             return lastModifiedTime();
         }
     }
@@ -219,7 +239,7 @@ class UnixFileAttributes
     @Override
     public Set<PosixFilePermission> permissions() {
         int bits = (st_mode & UnixConstants.S_IAMB);
-        HashSet<PosixFilePermission> perms = new HashSet<>();
+        EnumSet<PosixFilePermission> perms = EnumSet.noneOf(PosixFilePermission.class);
 
         if ((bits & UnixConstants.S_IRUSR) > 0)
             perms.add(PosixFilePermission.OWNER_READ);
@@ -251,16 +271,6 @@ class UnixFileAttributes
         return UnixAsBasicFileAttributes.wrap(this);
     }
 
-    // unwrap BasicFileAttributes to get the underlying UnixFileAttributes
-    // object. Returns null is not wrapped.
-    static UnixFileAttributes toUnixFileAttributes(BasicFileAttributes attrs) {
-        if (attrs instanceof UnixFileAttributes)
-            return (UnixFileAttributes)attrs;
-        if (attrs instanceof UnixAsBasicFileAttributes) {
-            return ((UnixAsBasicFileAttributes)attrs).unwrap();
-        }
-        return null;
-    }
 
     // wrap a UnixFileAttributes object as a BasicFileAttributes
     private static class UnixAsBasicFileAttributes implements BasicFileAttributes {
@@ -274,9 +284,6 @@ class UnixFileAttributes
             return new UnixAsBasicFileAttributes(attrs);
         }
 
-        UnixFileAttributes unwrap() {
-            return attrs;
-        }
 
         @Override
         public FileTime lastModifiedTime() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,31 +89,39 @@ import java.io.Serial;
  * the {@code CENTER} component may stretch both horizontally
  * and vertically to fill any space left over.
  * <p>
- * Here is an example of five buttons in an applet laid out using
+ * Here is an example of five buttons in a window laid out using
  * the {@code BorderLayout} layout manager:
  * <p>
- * <img src="doc-files/BorderLayout-1.gif" alt="Diagram of an applet
+ * <img src="doc-files/BorderLayout-1.png" alt="Diagram of a window
  * demonstrating BorderLayout. Each section of the BorderLayout contains a
  * Button corresponding to its position in the layout, one of: North, West,
- * Center, East, or South." style="margin: 7px 10px;">
+ * Center, East, or South.">
  * <p>
- * The code for this applet is as follows:
+ * The code for this program is as follows:
  *
- * <hr><blockquote><pre>
- * import java.awt.*;
- * import java.applet.Applet;
+ * {@snippet lang='java':
+ * import java.awt.BorderLayout;
+ * import java.awt.Button;
+ * import java.awt.EventQueue;
+ * import java.awt.Frame;
  *
- * public class buttonDir extends Applet {
- *   public void init() {
- *     setLayout(new BorderLayout());
- *     add(new Button("North"), BorderLayout.NORTH);
- *     add(new Button("South"), BorderLayout.SOUTH);
- *     add(new Button("East"), BorderLayout.EAST);
- *     add(new Button("West"), BorderLayout.WEST);
- *     add(new Button("Center"), BorderLayout.CENTER);
- *   }
+ * public class BorderLayoutExample {
+ *
+ *     public static void main(String[] args) throws Exception {
+ *         EventQueue.invokeAndWait(() -> {
+ *             Frame frame = new Frame("BorderLayout");
+ *             frame.setLayout(new BorderLayout());
+ *             frame.add(new Button("North"), BorderLayout.NORTH);
+ *             frame.add(new Button("South"), BorderLayout.SOUTH);
+ *             frame.add(new Button("East"), BorderLayout.EAST);
+ *             frame.add(new Button("West"), BorderLayout.WEST);
+ *             frame.add(new Button("Center"), BorderLayout.CENTER);
+ *             frame.setSize(300, 300);
+ *             frame.setVisible(true);
+ *         });
+ *     }
  * }
- * </pre></blockquote><hr>
+ * }
  *
  * @author      Arthur van Hoff
  * @see         java.awt.Container#add(String, Component)
@@ -419,7 +427,7 @@ public class BorderLayout implements LayoutManager2,
      * @param   constraints  an object that specifies how and where
      *                       the component is added to the layout.
      * @see     java.awt.Container#add(java.awt.Component, java.lang.Object)
-     * @exception   IllegalArgumentException  if the constraint object is not
+     * @throws   IllegalArgumentException  if the constraint object is not
      *              a string, or if it not one of the five specified constants.
      * @since   1.1
      */
@@ -514,7 +522,7 @@ public class BorderLayout implements LayoutManager2,
      *                       {@code LINE_START}, {@code LINE_END}
      * @return  the component at the given location, or {@code null} if
      *          the location is empty
-     * @exception   IllegalArgumentException  if the constraint object is
+     * @throws   IllegalArgumentException  if the constraint object is
      *              not one of the nine specified constants
      * @see     #addLayoutComponent(java.awt.Component, java.lang.Object)
      * @since 1.5
@@ -554,17 +562,17 @@ public class BorderLayout implements LayoutManager2,
      * The {@code Container}'s component orientation is used to determine the location of components
      * added with {@code LINE_START} and {@code LINE_END}.
      *
-     * @param   constraints     the desired absolute position, one of {@code CENTER},
-     *                          {@code NORTH}, {@code SOUTH},
-     *                          {@code EAST}, {@code WEST}
      * @param   target     the {@code Container} used to obtain
      *                     the constraint location based on the target
      *                     {@code Container}'s component orientation.
+     * @param   constraints     the desired absolute position, one of {@code CENTER},
+     *                          {@code NORTH}, {@code SOUTH},
+     *                          {@code EAST}, {@code WEST}
      * @return  the component at the given location, or {@code null} if
      *          the location is empty
-     * @exception   IllegalArgumentException  if the constraint object is
+     * @throws   IllegalArgumentException  if the constraint object is
      *              not one of the five specified constants
-     * @exception   NullPointerException  if the target parameter is null
+     * @throws   NullPointerException  if the target parameter is null
      * @see     #addLayoutComponent(java.awt.Component, java.lang.Object)
      * @since 1.5
      */

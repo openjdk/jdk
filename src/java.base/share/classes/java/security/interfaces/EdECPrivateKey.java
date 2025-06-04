@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package java.security.interfaces;
 
 import java.security.PrivateKey;
+import java.security.spec.NamedParameterSpec;
 import java.util.Optional;
 
 /**
@@ -39,6 +40,8 @@ import java.util.Optional;
  * string lengths that are a multiple of 8, and the key is represented using
  * a byte array.
  *
+ * @spec https://www.rfc-editor.org/info/rfc8032
+ *      RFC 8032: Edwards-Curve Digital Signature Algorithm (EdDSA)
  * @since 15
  */
 public interface EdECPrivateKey extends EdECKey, PrivateKey {
@@ -52,4 +55,17 @@ public interface EdECPrivateKey extends EdECKey, PrivateKey {
      * If the key is not available, then an empty {@code Optional}.
      */
     Optional<byte[]> getBytes();
+
+    /**
+     * {@inheritDoc java.security.AsymmetricKey}
+     *
+     * @implSpec
+     * The default implementation returns {@code null}.
+     *
+     * @return {@inheritDoc java.security.AsymmetricKey}
+     */
+    @Override
+    default NamedParameterSpec getParams() {
+        return null;
+    }
 }

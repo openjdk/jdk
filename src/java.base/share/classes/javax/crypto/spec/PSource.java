@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,13 +42,16 @@ package javax.crypto.spec;
  * }
  * EncodingParameters ::= OCTET STRING(SIZE(0..MAX))
  * </pre>
+ *
+ * @spec https://www.rfc-editor.org/info/rfc8017
+ *      RFC 8017: PKCS #1: RSA Cryptography Specifications Version 2.2
  * @author Valerie Peng
  *
  * @since 1.5
  */
 public class PSource {
 
-    private String pSrcName;
+    private final String pSrcName;
 
     /**
      * Constructs a source of the encoding input P for OAEP
@@ -82,7 +85,7 @@ public class PSource {
      */
     public static final class PSpecified extends PSource {
 
-        private byte[] p = new byte[0];
+        private final byte[] p;
 
         /**
          * The encoding input P whose value equals byte[0].

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,7 @@
 //
 // May need to deal with hysteresis effect.
 //
-// Memory detection code runs in the Notification thread or
-// ServiceThread depending on UseNotificationThread flag.
+// Memory detection code runs in the Notification thread.
 
 class OopClosure;
 class MemoryPool;
@@ -229,7 +228,7 @@ public:
     // low memory detection is enabled for collected memory pools
     // iff one of the collected memory pool has a sensor and the
     // threshold set non-zero
-    if (pool->usage_sensor() == NULL) {
+    if (pool->usage_sensor() == nullptr) {
       return false;
     } else {
       ThresholdSupport* threshold_support = pool->usage_threshold();

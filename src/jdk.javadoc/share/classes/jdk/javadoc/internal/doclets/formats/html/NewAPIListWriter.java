@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,33 +25,26 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.List;
+
 import javax.lang.model.element.Element;
 
-import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.SinceTree;
+
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.NewAPIBuilder;
-
-import java.util.List;
-import java.util.ListIterator;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.HtmlStyle;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 import static com.sun.source.doctree.DocTree.Kind.SINCE;
 
 /**
  * Generates a file containing a list of new API elements with the appropriate links.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- *
  */
 public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
 
@@ -60,53 +53,61 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
      *
      * @param configuration the configuration for this doclet
      */
-    public NewAPIListWriter(NewAPIBuilder builder, HtmlConfiguration configuration, DocPath filename) {
-        super(configuration, filename, PageMode.NEW, "new elements",
-                Text.of(getHeading(builder, configuration)),
-                "doclet.Window_New_List");
+    public NewAPIListWriter(HtmlConfiguration configuration) {
+        super(configuration, DocPaths.NEW_LIST, configuration.newAPIPageBuilder);
     }
 
-    /**
-     * If the "New API" page is configured this method instantiates a NewAPIListWriter
-     * and generates the file.
-     *
-     * @param configuration the current configuration of the doclet.
-     * @throws DocFileIOException if there is a problem writing the new API list
-     */
-    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.NEW)) {
-            NewAPIBuilder builder = configuration.newAPIPageBuilder;
-            NewAPIListWriter writer = new NewAPIListWriter(builder, configuration, DocPaths.NEW_LIST);
-            writer.generateSummaryListFile(builder);
+    @Override
+    protected PageMode getPageMode() {
+        return PageMode.NEW;
+    }
+
+    @Override
+    protected String getDescription() {
+        return "new elements";
+    }
+
+    @Override
+    protected Content getHeadContent() {
+        return Text.of(getHeading(configuration));
+    }
+
+    @Override
+    protected String getTitleKey() {
+        return "doclet.Window_New_List";
+    }
+
+    @Override
+    protected void addContentSelectors(Content content) {
+        List<String> releases = builder.releases;
+        if (releases.size() > 1) {
+            Content tabs = HtmlTree.DIV(HtmlStyles.checkboxes,
+                    contents.getContent("doclet.New_API_Checkbox_Label"));
+            // Table column ids are 1-based
+            int index = 1;
+            for (String release : releases) {
+                tabs.add(Text.of(" ")).add(getCheckbox(Text.of(release), String.valueOf(index++), "release-"));
+            }
+            Content label = contents.getContent("doclet.New_API_Checkbox_All_Releases");
+            tabs.add(Text.of(" ")).add(getCheckbox(label, ID_ALL, "release-"));
+            content.add(tabs);
         }
     }
 
     @Override
-    protected void addExtraSection(NewAPIBuilder list, Content content) {
-        if (list.releases.size() > 1) {
-            content.add(HtmlTree.SPAN(contents.getContent("doclet.New_Tabs_Intro"))
-                    .addStyle(HtmlStyle.helpNote));
-        }
-    }
-
-    @Override
-    protected void addTableTabs(Table table, String headingKey) {
-        List<String> releases = configuration.newAPIPageBuilder.releases;
-        if (!releases.isEmpty()) {
-            table.setDefaultTab(getTableCaption(headingKey)).setAlwaysShowDefaultTab(true);
-            ListIterator<String> it = releases.listIterator(releases.size());
-            while (it.hasPrevious()) {
-                String release = it.previous();
+    protected void addTableTabs(Table<Element> table, String headingKey) {
+        table.setGridStyle(HtmlStyles.threeColumnReleaseSummary);
+        List<String> releases = builder.releases;
+        if (releases.size() > 1) {
+            table.setDefaultTab(getTableCaption(headingKey))
+                    .setRenderTabs(false);
+            for (String release : releases) {
                 table.addTab(
                         releases.size() == 1
                                 ? getTableCaption(headingKey)
-                                : contents.getContent(
-                                        "doclet.New_Elements_Added_In_Release", release),
+                                : Text.of(release),
                         element -> {
-                            if (!utils.hasDocCommentTree(element)) {
-                                return false;
-                            }
-                            List<? extends DocTree> since = utils.getBlockTags(element, SINCE);
+                            List<? extends SinceTree> since = utils.getBlockTags(element, SINCE, SinceTree.class);
                             if (since.isEmpty()) {
                                 return false;
                             }
@@ -114,7 +115,6 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
                             return since.stream().anyMatch(tree -> release.equals(ch.getBody(tree).toString()));
                         });
             }
-            getMainBodyScript().append(table.getScript());
         }
     }
 
@@ -128,7 +128,31 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
         return contents.getContent("doclet.New_Elements", super.getTableCaption(headingKey));
     }
 
-    private static String getHeading(NewAPIBuilder builder, HtmlConfiguration configuration) {
+    @Override
+    protected Content getExtraContent(Element element) {
+        var sinceTrees = utils.getBlockTags(element, SINCE, SinceTree.class);
+        if (!sinceTrees.isEmpty()) {
+            // assumes a simple string value with no formatting
+            return Text.of(sinceTrees.getFirst().getBody().getFirst().toString());
+        }
+        return Text.EMPTY;
+    }
+
+    @Override
+    protected TableHeader getTableHeader(String headerKey) {
+        return new TableHeader(
+                contents.getContent(headerKey),
+                contents.getContent("doclet.New_Elements_Release_Column_Header"),
+                contents.descriptionLabel)
+                .sortable(true, true, false); // Allow sorting by element name and release
+    }
+
+    @Override
+    protected HtmlStyle[] getColumnStyles() {
+        return new HtmlStyle[]{ HtmlStyles.colSummaryItemName, HtmlStyles.colSecond, HtmlStyles.colLast };
+    }
+
+    private static String getHeading(HtmlConfiguration configuration) {
         String label = configuration.getOptions().sinceLabel();
         return label == null ? configuration.docResources.getText("doclet.New_API") : label;
     }

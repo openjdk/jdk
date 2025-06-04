@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #define VM_CLASS_ID(kname)      vmClassID::_VM_CLASS_ENUM(kname)
 
 // VM_CLASSES_DO iterates the classes that are directly referenced
-// by the VM, suhch as java.lang.Object and java.lang.String. These
+// by the VM, such as java.lang.Object and java.lang.String. These
 // classes are resolved at VM bootstrap, before any Java code is executed,
 // so no class loader is able to provide a different definition.
 //
@@ -58,13 +58,9 @@
   do_klass(System_klass,                                java_lang_System                                      ) \
   do_klass(Throwable_klass,                             java_lang_Throwable                                   ) \
   do_klass(Error_klass,                                 java_lang_Error                                       ) \
-  do_klass(ThreadDeath_klass,                           java_lang_ThreadDeath                                 ) \
   do_klass(Exception_klass,                             java_lang_Exception                                   ) \
   do_klass(RuntimeException_klass,                      java_lang_RuntimeException                            ) \
-  do_klass(SecurityManager_klass,                       java_lang_SecurityManager                             ) \
   do_klass(ProtectionDomain_klass,                      java_security_ProtectionDomain                        ) \
-  do_klass(AccessControlContext_klass,                  java_security_AccessControlContext                    ) \
-  do_klass(AccessController_klass,                      java_security_AccessController                        ) \
   do_klass(SecureClassLoader_klass,                     java_security_SecureClassLoader                       ) \
   do_klass(ClassNotFoundException_klass,                java_lang_ClassNotFoundException                      ) \
   do_klass(Record_klass,                                java_lang_Record                                      ) \
@@ -78,6 +74,7 @@
   do_klass(StackOverflowError_klass,                    java_lang_StackOverflowError                          ) \
   do_klass(IllegalMonitorStateException_klass,          java_lang_IllegalMonitorStateException                ) \
   do_klass(Reference_klass,                             java_lang_ref_Reference                               ) \
+  do_klass(IllegalCallerException_klass,                java_lang_IllegalCallerException                      ) \
                                                                                                                 \
   /* ref klasses and set reference types */                                                                     \
   do_klass(SoftReference_klass,                         java_lang_ref_SoftReference                           ) \
@@ -87,7 +84,12 @@
   do_klass(Finalizer_klass,                             java_lang_ref_Finalizer                               ) \
                                                                                                                 \
   do_klass(Thread_klass,                                java_lang_Thread                                      ) \
+  do_klass(Thread_FieldHolder_klass,                    java_lang_Thread_FieldHolder                          ) \
+  do_klass(Thread_Constants_klass,                      java_lang_Thread_Constants                            ) \
   do_klass(ThreadGroup_klass,                           java_lang_ThreadGroup                                 ) \
+  do_klass(BaseVirtualThread_klass,                     java_lang_BaseVirtualThread                           ) \
+  do_klass(VirtualThread_klass,                         java_lang_VirtualThread                               ) \
+  do_klass(BoundVirtualThread_klass,                    java_lang_BoundVirtualThread                          ) \
   do_klass(Properties_klass,                            java_util_Properties                                  ) \
   do_klass(Module_klass,                                java_lang_Module                                      ) \
   do_klass(reflect_AccessibleObject_klass,              java_lang_reflect_AccessibleObject                    ) \
@@ -96,34 +98,35 @@
   do_klass(reflect_Method_klass,                        java_lang_reflect_Method                              ) \
   do_klass(reflect_Constructor_klass,                   java_lang_reflect_Constructor                         ) \
                                                                                                                 \
-  /* NOTE: needed too early in bootstrapping process to have checks based on JDK version */                     \
-  /* It's okay if this turns out to be NULL in non-1.4 JDKs. */                                                 \
-  do_klass(reflect_MagicAccessorImpl_klass,             reflect_MagicAccessorImpl                             ) \
-  do_klass(reflect_MethodAccessorImpl_klass,            reflect_MethodAccessorImpl                            ) \
-  do_klass(reflect_ConstructorAccessorImpl_klass,       reflect_ConstructorAccessorImpl                       ) \
-  do_klass(reflect_DelegatingClassLoader_klass,         reflect_DelegatingClassLoader                         ) \
-  do_klass(reflect_ConstantPool_klass,                  reflect_ConstantPool                                  ) \
-  do_klass(reflect_UnsafeStaticFieldAccessorImpl_klass, reflect_UnsafeStaticFieldAccessorImpl                 ) \
-  do_klass(reflect_CallerSensitive_klass,               reflect_CallerSensitive                               ) \
-  do_klass(reflect_NativeConstructorAccessorImpl_klass, reflect_NativeConstructorAccessorImpl                 ) \
+  do_klass(Runnable_klass,                              java_lang_Runnable                                    ) \
+  do_klass(ContinuationScope_klass,                     jdk_internal_vm_ContinuationScope                     ) \
+  do_klass(Continuation_klass,                          jdk_internal_vm_Continuation                          ) \
+  do_klass(StackChunk_klass,                            jdk_internal_vm_StackChunk                            ) \
                                                                                                                 \
-  /* support for dynamic typing; it's OK if these are NULL in earlier JDKs */                                   \
+  do_klass(reflect_MethodAccessorImpl_klass,            reflect_MethodAccessorImpl                            ) \
+  do_klass(reflect_ConstantPool_klass,                  reflect_ConstantPool                                  ) \
+  do_klass(reflect_CallerSensitive_klass,               reflect_CallerSensitive                               ) \
+  do_klass(reflect_DirectConstructorHandleAccessor_NativeAccessor_klass, reflect_DirectConstructorHandleAccessor_NativeAccessor) \
+                                                                                                                \
+  /* support for dynamic typing */                                                                              \
   do_klass(DirectMethodHandle_klass,                    java_lang_invoke_DirectMethodHandle                   ) \
   do_klass(MethodHandle_klass,                          java_lang_invoke_MethodHandle                         ) \
   do_klass(VarHandle_klass,                             java_lang_invoke_VarHandle                            ) \
   do_klass(MemberName_klass,                            java_lang_invoke_MemberName                           ) \
   do_klass(ResolvedMethodName_klass,                    java_lang_invoke_ResolvedMethodName                   ) \
+  do_klass(MethodHandleImpl_klass,                      java_lang_invoke_MethodHandleImpl                     ) \
   do_klass(MethodHandleNatives_klass,                   java_lang_invoke_MethodHandleNatives                  ) \
   do_klass(LambdaForm_klass,                            java_lang_invoke_LambdaForm                           ) \
   do_klass(MethodType_klass,                            java_lang_invoke_MethodType                           ) \
   do_klass(BootstrapMethodError_klass,                  java_lang_BootstrapMethodError                        ) \
   do_klass(CallSite_klass,                              java_lang_invoke_CallSite                             ) \
-  do_klass(NativeEntryPoint_klass,                      jdk_internal_invoke_NativeEntryPoint                  ) \
-  do_klass(Context_klass,                               java_lang_invoke_MethodHandleNatives_CallSiteContext  ) \
+  do_klass(NativeEntryPoint_klass,                      jdk_internal_foreign_abi_NativeEntryPoint             ) \
+  do_klass(ABIDescriptor_klass,                         jdk_internal_foreign_abi_ABIDescriptor                ) \
+  do_klass(VMStorage_klass,                             jdk_internal_foreign_abi_VMStorage                    ) \
+  do_klass(CallConv_klass,                              jdk_internal_foreign_abi_CallConv                     ) \
   do_klass(ConstantCallSite_klass,                      java_lang_invoke_ConstantCallSite                     ) \
   do_klass(MutableCallSite_klass,                       java_lang_invoke_MutableCallSite                      ) \
   do_klass(VolatileCallSite_klass,                      java_lang_invoke_VolatileCallSite                     ) \
-  /* Note: MethodHandle must be first, and VolatileCallSite last in group */                                    \
                                                                                                                 \
   do_klass(AssertionStatusDirectives_klass,             java_lang_AssertionStatusDirectives                   ) \
   do_klass(StringBuffer_klass,                          java_lang_StringBuffer                                ) \
@@ -135,7 +138,7 @@
   /* support for CDS */                                                                                         \
   do_klass(ByteArrayInputStream_klass,                  java_io_ByteArrayInputStream                          ) \
   do_klass(URL_klass,                                   java_net_URL                                          ) \
-  do_klass(URLClassLoader_klass,                        java_net_URLClassLoader                               ) \
+  do_klass(Enum_klass,                                  java_lang_Enum                                        ) \
   do_klass(Jar_Manifest_klass,                          java_util_jar_Manifest                                ) \
   do_klass(jdk_internal_loader_BuiltinClassLoader_klass,jdk_internal_loader_BuiltinClassLoader                ) \
   do_klass(jdk_internal_loader_ClassLoaders_klass,      jdk_internal_loader_ClassLoaders                      ) \
@@ -147,12 +150,12 @@
                                                                                                                 \
   do_klass(StackTraceElement_klass,                     java_lang_StackTraceElement                           ) \
                                                                                                                 \
-  /* It's okay if this turns out to be NULL in non-1.4 JDKs. */                                                 \
   do_klass(nio_Buffer_klass,                            java_nio_Buffer                                       ) \
                                                                                                                 \
   /* Stack Walking */                                                                                           \
   do_klass(StackWalker_klass,                           java_lang_StackWalker                                 ) \
   do_klass(AbstractStackWalker_klass,                   java_lang_StackStreamFactory_AbstractStackWalker      ) \
+  do_klass(ClassFrameInfo_klass,                        java_lang_ClassFrameInfo                              ) \
   do_klass(StackFrameInfo_klass,                        java_lang_StackFrameInfo                              ) \
   do_klass(LiveStackFrameInfo_klass,                    java_lang_LiveStackFrameInfo                          ) \
                                                                                                                 \
@@ -168,6 +171,7 @@
   do_klass(Short_klass,                                 java_lang_Short                                       ) \
   do_klass(Integer_klass,                               java_lang_Integer                                     ) \
   do_klass(Long_klass,                                  java_lang_Long                                        ) \
+  do_klass(Void_klass,                                  java_lang_Void                                        ) \
                                                                                                                 \
   /* force inline of iterators */                                                                               \
   do_klass(Iterator_klass,                              java_util_Iterator                                    ) \
@@ -182,7 +186,9 @@
   do_klass(vector_VectorMask_klass,                     jdk_internal_vm_vector_VectorMask                     ) \
   do_klass(vector_VectorShuffle_klass,                  jdk_internal_vm_vector_VectorShuffle                  ) \
                                                                                                                 \
+  /* GC support */                                                                                              \
+  do_klass(FillerObject_klass,                          jdk_internal_vm_FillerObject                          ) \
+                                                                                                                \
   /*end*/
 
 #endif // SHARE_CLASSFILE_VMCLASSMACROS_HPP
-

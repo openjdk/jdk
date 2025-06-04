@@ -1,62 +1,57 @@
 /*
- *  Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- *  This code is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License version 2 only, as
- *  published by the Free Software Foundation.
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
  *
- *  This code is distributed in the hope that it will be useful, but WITHOUT
- *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- *  version 2 for more details (a copy is included in the LICENSE file that
- *  accompanied this code).
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
  *
- *  You should have received a copy of the GNU General Public License version
- *  2 along with this work; if not, write to the Free Software Foundation,
- *  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- *  Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- *  or visit www.oracle.com if you need additional information or have any
- *  questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 /*
  * @test
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
- * @run testng/othervm
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
+ * @run testng/othervm/native
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
  *   --enable-native-access=ALL-UNNAMED
  *   -Xbatch
  *   TestIntrinsics
  */
 
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.FunctionDescriptor;
 
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
 
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.NativeSymbol;
-import jdk.incubator.foreign.SymbolLookup;
+import java.lang.foreign.MemoryLayout;
 import org.testng.annotations.*;
 
+import static java.lang.foreign.Linker.Option.firstVariadicArg;
 import static java.lang.invoke.MethodType.methodType;
-import static jdk.incubator.foreign.ValueLayout.JAVA_CHAR;
+import static java.lang.foreign.ValueLayout.JAVA_CHAR;
 import static org.testng.Assert.assertEquals;
 
 public class TestIntrinsics extends NativeTestHelper {
 
-    static final CLinker abi = CLinker.systemCLinker();
+    static final Linker abi = Linker.nativeLinker();
     static {
         System.loadLibrary("Intrinsics");
     }
-
-    static final SymbolLookup LOOKUP = SymbolLookup.loaderLookup();
 
     private interface RunnableX {
         void run() throws Throwable;
@@ -87,8 +82,7 @@ public class TestIntrinsics extends NativeTestHelper {
         }
 
         AddIdentity addIdentity = (name, carrier, layout, arg) -> {
-            NativeSymbol ma = LOOKUP.lookup(name).get();
-            MethodType mt = methodType(carrier, carrier);
+            MemorySegment ma = findNativeOrThrow(name);
             FunctionDescriptor fd = FunctionDescriptor.of(layout, layout);
 
             tests.add(abi.downcallHandle(ma, fd), arg, arg);
@@ -96,8 +90,7 @@ public class TestIntrinsics extends NativeTestHelper {
         };
 
         { // empty
-            NativeSymbol ma = LOOKUP.lookup("empty").get();
-            MethodType mt = methodType(void.class);
+            MemorySegment ma = findNativeOrThrow("empty");
             FunctionDescriptor fd = FunctionDescriptor.ofVoid();
             tests.add(abi.downcallHandle(ma, fd), null);
         }
@@ -111,21 +104,18 @@ public class TestIntrinsics extends NativeTestHelper {
         addIdentity.add("identity_double", double.class,  C_DOUBLE,        10D);
 
         { // identity_va
-            NativeSymbol ma = LOOKUP.lookup("identity_va").get();
-            MethodType mt = methodType(int.class, int.class, double.class, int.class, float.class, long.class);
-            FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_INT).asVariadic(C_DOUBLE, C_INT, C_FLOAT, C_LONG_LONG);
-            tests.add(abi.downcallHandle(ma, fd), 1, 1, 10D, 2, 3F, 4L);
+            MemorySegment ma = findNativeOrThrow("identity_va");
+            FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_INT,
+                                                                 C_DOUBLE, C_INT, C_DOUBLE, C_LONG_LONG);
+            tests.add(abi.downcallHandle(ma, fd, firstVariadicArg(1)), 1, 1, 10D, 2, 3D, 4L);
         }
 
         { // high_arity
-            MethodType baseMT = methodType(void.class, int.class, double.class, long.class, float.class, byte.class,
-                    short.class, char.class);
             FunctionDescriptor baseFD = FunctionDescriptor.ofVoid(C_INT, C_DOUBLE, C_LONG_LONG, C_FLOAT, C_CHAR,
                     C_SHORT, JAVA_CHAR);
             Object[] args = {1, 10D, 2L, 3F, (byte) 0, (short) 13, 'a'};
             for (int i = 0; i < args.length; i++) {
-                NativeSymbol ma = LOOKUP.lookup("invoke_high_arity" + i).get();
-                MethodType mt = baseMT.changeReturnType(baseMT.parameterType(i));
+                MemorySegment ma = findNativeOrThrow("invoke_high_arity" + i);
                 FunctionDescriptor fd = baseFD.changeReturnLayout(baseFD.argumentLayouts().get(i));
                 Object expected = args[i];
                 tests.add(abi.downcallHandle(ma, fd), expected, args);

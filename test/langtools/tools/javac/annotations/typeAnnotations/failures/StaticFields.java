@@ -18,7 +18,7 @@ class C {
   // static method
   static int f() { return @A C.f; }
   // main
-  public static void main(String... args) {
+  public static void meth() {
     int a = @A C.f;
   }
 }

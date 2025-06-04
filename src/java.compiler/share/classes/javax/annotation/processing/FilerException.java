@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package javax.annotation.processing;
 
 import java.io.IOException;
+import java.io.Serial;
 
 /**
  * Indicates a {@link Filer} detected an attempt to open a file that
@@ -35,13 +36,13 @@ import java.io.IOException;
  * interface or package, and not creating files for classes or
  * interfaces with invalid names.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public class FilerException extends IOException {
-    static final long serialVersionUID = 8426423106453163293L;
+
+    @Serial
+    private static final long serialVersionUID = 8426423106453163293L;
+
     /**
      * Constructs an exception with the specified detail message.
      * @param s the detail message, which should include the name of

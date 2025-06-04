@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ implements Characters {
     private boolean fIsCData;
     /* true if fData is ignorableWhitespace*/
     private boolean fIsIgnorableWhitespace;
-    /* true if fData contet is whitespace*/
+    /* true if fData content is whitespace*/
     private boolean fIsSpace = false;
     /*used to prevent scanning of  data multiple times */
     private boolean fCheckIfSpaceNeeded = true;
@@ -166,7 +166,7 @@ implements Characters {
 
     /**
      * Returns true if this set of Characters
-     * is all whitespace.  Whitspace inside a document
+     * is all whitespace.  Whitespace inside a document
      * is reported as CHARACTERS.  This method allows
      * checking of CHARACTERS events to see if they
      * are composed of only whitespace characters
@@ -182,7 +182,7 @@ implements Characters {
     }
 
     private void checkWhiteSpace(){
-        //for now - remove dependancy of XMLChar
+        //for now - remove dependency of XMLChar
         if(fData != null && fData.length() >0 ){
             fIsSpace = true;
             for(int i=0;i<fData.length();i++){

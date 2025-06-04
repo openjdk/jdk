@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,19 +33,18 @@ import sun.security.jgss.spi.*;
 import sun.security.jgss.TokenTracker;
 import sun.security.krb5.*;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.InvalidObjectException;
 import java.io.IOException;
-import java.security.Provider;
-import java.security.AccessController;
-import java.security.Key;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
+import java.io.ObjectInputStream;
+import java.io.OutputStream;
+import java.security.*;
 import javax.security.auth.Subject;
-import javax.security.auth.kerberos.ServicePermission;
 import javax.security.auth.kerberos.KerberosCredMessage;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
 import sun.security.krb5.internal.AuthorizationData;
+
+import static sun.security.krb5.internal.Krb5.DEBUG;
 
 /**
  * Implements the mechanism specific context class for the Kerberos v5
@@ -88,7 +87,6 @@ class Krb5Context implements GSSContextSpi {
     private boolean isConstrainedDelegationTried = false;
 
     private int mySeqNumber;
-    private int peerSeqNumber;
     private int keySrc;
     private TokenTracker peerTokenTracker;
 
@@ -103,14 +101,14 @@ class Krb5Context implements GSSContextSpi {
      * checking of per-message tokens is enabled.
      */
 
-    private Object mySeqNumberLock = new Object();
-    private Object peerSeqNumberLock = new Object();
+    private final Object mySeqNumberLock = new Object();
+    private final Object peerSeqNumberLock = new Object();
 
     private EncryptionKey key;
     private Krb5NameElement myName;
     private Krb5NameElement peerName;
     private int lifetime;
-    private boolean initiator;
+    private final boolean initiator;
     private ChannelBinding channelBinding;
 
     private Krb5CredElement myCred;
@@ -126,7 +124,6 @@ class Krb5Context implements GSSContextSpi {
     private Credentials serviceCreds;
     private KrbApReq apReq;
     private final GSSCaller caller;
-    private static final boolean DEBUG = Krb5Util.DEBUG;
 
     /**
      * Constructor for Krb5Context to be called on the context initiator's
@@ -366,7 +363,7 @@ class Krb5Context implements GSSContextSpi {
      * MessageToken.init()
      */
     final CipherHelper getCipherHelper(EncryptionKey ckey) throws GSSException {
-         EncryptionKey cipherKey = null;
+         EncryptionKey cipherKey;
          if (cipherHelper == null) {
             cipherKey = (getKey() == null) ? ckey: getKey();
             cipherHelper = new CipherHelper(cipherKey);
@@ -384,8 +381,8 @@ class Krb5Context implements GSSContextSpi {
     }
 
     final void resetMySequenceNumber(int seqNumber) {
-        if (DEBUG) {
-            System.out.println("Krb5Context setting mySeqNumber to: "
+        if (DEBUG != null) {
+            DEBUG.println("Krb5Context setting mySeqNumber to: "
                                + seqNumber);
         }
         synchronized (mySeqNumberLock) {
@@ -394,13 +391,12 @@ class Krb5Context implements GSSContextSpi {
     }
 
     final void resetPeerSequenceNumber(int seqNumber) {
-        if (DEBUG) {
-            System.out.println("Krb5Context setting peerSeqNumber to: "
+        if (DEBUG != null) {
+            DEBUG.println("Krb5Context setting peerSeqNumber to: "
                                + seqNumber);
         }
         synchronized (peerSeqNumberLock) {
-            peerSeqNumber = seqNumber;
-            peerTokenTracker = new TokenTracker(peerSeqNumber);
+            peerTokenTracker = new TokenTracker(seqNumber);
         }
     }
 
@@ -415,7 +411,7 @@ class Krb5Context implements GSSContextSpi {
         return keySrc;
     }
 
-    private final EncryptionKey getKey() {
+    private EncryptionKey getKey() {
         return key;
     }
 
@@ -540,8 +536,8 @@ class Krb5Context implements GSSContextSpi {
         // We will only try constrained delegation once (if necessary).
         if (!isConstrainedDelegationTried) {
             if (delegatedCred == null) {
-                if (DEBUG) {
-                    System.out.println(">>> Constrained deleg from " + caller);
+                if (DEBUG != null) {
+                    DEBUG.println(">>> Constrained deleg from " + caller);
                 }
                 // The constrained delegation part. The acceptor needs to have
                 // isInitiator=true in order to get a TGT, either earlier at
@@ -599,8 +595,8 @@ class Krb5Context implements GSSContextSpi {
             byte[] retVal = null;
             InitialToken token = null;
             int errorCode = GSSException.FAILURE;
-            if (DEBUG) {
-                System.out.println("Entered Krb5Context.initSecContext with " +
+            if (DEBUG != null) {
+                DEBUG.println("Entered Krb5Context.initSecContext with " +
                                    "state=" + printState(state));
             }
             if (!isInitiator()) {
@@ -634,8 +630,6 @@ class Krb5Context implements GSSContextSpi {
                         tgt = proxyCreds.self.getKrb5Credentials();
                     }
 
-                    checkPermission(peerName.getKrb5PrincipalName().getName(),
-                                    "initiate");
                     /*
                      * If useSubjectCredsonly is true then
                      * we check whether we already have the ticket
@@ -644,36 +638,24 @@ class Krb5Context implements GSSContextSpi {
 
                     if (GSSUtil.useSubjectCredsOnly(caller)) {
                         KerberosTicket kerbTicket = null;
-                        try {
-                           // get service ticket from caller's subject
-                           @SuppressWarnings("removal")
-                           var tmp = AccessController.doPrivilegedWithCombiner(
-                                new PrivilegedExceptionAction<KerberosTicket>() {
-                                public KerberosTicket run() throws Exception {
-                                    // XXX to be cleaned
-                                    // highly consider just calling:
-                                    // Subject.getSubject
-                                    // SubjectComber.find
-                                    // instead of Krb5Util.getServiceTicket
-                                    return Krb5Util.getServiceTicket(
-                                        GSSCaller.CALLER_UNKNOWN,
-                                        // since it's useSubjectCredsOnly here,
-                                        // don't worry about the null
-                                        proxyCreds == null ?
-                                            myName.getKrb5PrincipalName().getName():
-                                            proxyCreds.getName().getKrb5PrincipalName().getName(),
-                                        peerName.getKrb5PrincipalName().getName());
-                                }});
-                            kerbTicket = tmp;
-                        } catch (PrivilegedActionException e) {
-                            if (DEBUG) {
-                                System.out.println("Attempt to obtain service"
-                                        + " ticket from the subject failed!");
-                            }
-                        }
+                        // get service ticket from caller's subject
+                        // XXX to be cleaned
+                        // highly consider just calling:
+                        // Subject.getSubject
+                        // SubjectComber.find
+                        // instead of Krb5Util.getServiceTicket
+                        kerbTicket = Krb5Util.getServiceTicket(
+                            GSSCaller.CALLER_UNKNOWN,
+                            // since it's useSubjectCredsOnly here,
+                            // don't worry about the null
+                            proxyCreds == null ?
+                                myName.getKrb5PrincipalName().getName():
+                                proxyCreds.getName().getKrb5PrincipalName().getName(),
+                            peerName.getKrb5PrincipalName().getName());
+
                         if (kerbTicket != null) {
-                            if (DEBUG) {
-                                System.out.println("Found service ticket in " +
+                            if (DEBUG != null) {
+                                DEBUG.println("Found service ticket in " +
                                                    "the subject" +
                                                    kerbTicket);
                             }
@@ -687,8 +669,8 @@ class Krb5Context implements GSSContextSpi {
                     if (serviceCreds == null) {
                         // either we did not find the serviceCreds in the
                         // Subject or useSubjectCreds is false
-                        if (DEBUG) {
-                            System.out.println("Service ticket not found in " +
+                        if (DEBUG != null) {
+                            DEBUG.println("Service ticket not found in " +
                                                "the subject");
                         }
                         // Get Service ticket using the Kerberos protocols
@@ -704,14 +686,7 @@ class Krb5Context implements GSSContextSpi {
                                     tgt);
                         }
                         if (GSSUtil.useSubjectCredsOnly(caller)) {
-                            @SuppressWarnings("removal")
-                            final Subject subject =
-                                AccessController.doPrivilegedWithCombiner(
-                                new java.security.PrivilegedAction<Subject>() {
-                                    public Subject run() {
-                                        return (Subject.current());
-                                    }
-                                });
+                            Subject subject = Subject.current();
                             if (subject != null &&
                                 !subject.isReadOnly()) {
                                 /*
@@ -721,20 +696,13 @@ class Krb5Context implements GSSContextSpi {
                                  * successfully established; however it is easier
                                  * to do it here and there is no harm.
                                  */
-                                final KerberosTicket kt =
+                                KerberosTicket kt =
                                         Krb5Util.credsToTicket(serviceCreds);
-                                @SuppressWarnings("removal")
-                                var dummy = AccessController.doPrivileged (
-                                    new java.security.PrivilegedAction<Void>() {
-                                      public Void run() {
-                                        subject.getPrivateCredentials().add(kt);
-                                        return null;
-                                      }
-                                    });
+                                subject.getPrivateCredentials().add(kt);
                             } else {
                                 // log it for debugging purpose
-                                if (DEBUG) {
-                                    System.out.println("Subject is " +
+                                if (DEBUG != null) {
+                                    DEBUG.println("Subject is " +
                                         "readOnly;Kerberos Service "+
                                         "ticket not stored");
                                 }
@@ -750,8 +718,8 @@ class Krb5Context implements GSSContextSpi {
                     if (!getMutualAuthState()) {
                         state = STATE_DONE;
                     }
-                    if (DEBUG) {
-                        System.out.println("Created InitSecContextToken:\n"+
+                    if (DEBUG != null) {
+                        DEBUG.println("Created InitSecContextToken:\n"+
                             new HexDumpEncoder().encodeBuffer(retVal));
                     }
                 } else if (state == STATE_IN_PROCESS) {
@@ -762,12 +730,12 @@ class Krb5Context implements GSSContextSpi {
                     state = STATE_DONE;
                 } else {
                     // XXX Use logging API?
-                    if (DEBUG) {
-                        System.out.println(state);
+                    if (DEBUG != null) {
+                        DEBUG.println("state is " + state);
                     }
                 }
             } catch (KrbException e) {
-                if (DEBUG) {
+                if (DEBUG != null) {
                     e.printStackTrace();
                 }
                 GSSException gssException =
@@ -804,8 +772,8 @@ class Krb5Context implements GSSContextSpi {
 
         byte[] retVal = null;
 
-        if (DEBUG) {
-            System.out.println("Entered Krb5Context.acceptSecContext with " +
+        if (DEBUG != null) {
+            DEBUG.println("Entered Krb5Context.acceptSecContext with " +
                                "state=" +  printState(state));
         }
 
@@ -825,11 +793,6 @@ class Krb5Context implements GSSContextSpi {
                 }
                 myName = (Krb5NameElement) myCred.getName();
 
-                // If there is already a bound name, check now
-                if (myName != null) {
-                    Krb5MechFactory.checkAcceptCredPermission(myName, myName);
-                }
-
                 InitSecContextToken token = new InitSecContextToken(this,
                                                     (Krb5AcceptCredential) myCred, is);
                 PrincipalName clientName = token.getKrbApReq().getClient();
@@ -839,7 +802,6 @@ class Krb5Context implements GSSContextSpi {
                 if (myName == null) {
                     myName = Krb5NameElement.getInstance(
                         token.getKrbApReq().getCreds().getServer());
-                    Krb5MechFactory.checkAcceptCredPermission(myName, myName);
                 }
 
                 if (getMutualAuthState()) {
@@ -851,8 +813,8 @@ class Krb5Context implements GSSContextSpi {
                 state = STATE_DONE;
             } else  {
                 // XXX Use logging API?
-                if (DEBUG) {
-                    System.out.println(state);
+                if (DEBUG != null) {
+                    DEBUG.println("state is " + state);
                 }
             }
         } catch (KrbException e) {
@@ -861,8 +823,8 @@ class Krb5Context implements GSSContextSpi {
             gssException.initCause(e);
             throw gssException;
         } catch (IOException e) {
-            if (DEBUG) {
-                e.printStackTrace();
+            if (DEBUG != null) {
+                e.printStackTrace(DEBUG.getPrintStream());
             }
             GSSException gssException =
                 new GSSException(GSSException.FAILURE, -1, e.getMessage());
@@ -904,21 +866,17 @@ class Krb5Context implements GSSContextSpi {
     /*
      * Per-message calls depend on the sequence number. The sequence number
      * synchronization is at a finer granularity because wrap and getMIC
-     * care about the local sequence number (mySeqNumber) where are unwrap
+     * care about the local sequence number (mySeqNumber) whereas unwrap
      * and verifyMIC care about the remote sequence number (peerSeqNumber).
      */
 
     public final byte[] wrap(byte[] inBuf, int offset, int len,
                              MessageProp msgProp) throws GSSException {
-        if (DEBUG) {
-            System.out.println("Krb5Context.wrap: data=["
-                               + getHexBytes(inBuf, offset, len)
-                               + "]");
-        }
 
-        if (state != STATE_DONE)
-        throw new GSSException(GSSException.NO_CONTEXT, -1,
-                               "Wrap called in invalid state!");
+        if (state != STATE_DONE) {
+            throw new GSSException(GSSException.NO_CONTEXT, -1,
+                    "Wrap called in invalid state!");
+        }
 
         byte[] encToken = null;
         try {
@@ -931,14 +889,13 @@ class Krb5Context implements GSSContextSpi {
                         new WrapToken_v2(this, msgProp, inBuf, offset, len);
                 encToken = token.encode();
             }
-            if (DEBUG) {
-                System.out.println("Krb5Context.wrap: token=["
+            if (DEBUG != null) {
+                DEBUG.println("Krb5Context.wrap: token=["
                                    + getHexBytes(encToken, 0, encToken.length)
                                    + "]");
             }
             return encToken;
         } catch (IOException e) {
-            encToken = null;
             GSSException gssException =
                 new GSSException(GSSException.FAILURE, -1, e.getMessage());
             gssException.initCause(e);
@@ -965,14 +922,13 @@ class Krb5Context implements GSSContextSpi {
                         new WrapToken_v2(this, msgProp, inBuf, inOffset, len);
                 retVal = token.encode(outBuf, outOffset);
             }
-            if (DEBUG) {
-                System.out.println("Krb5Context.wrap: token=["
+            if (DEBUG != null) {
+                DEBUG.println("Krb5Context.wrap: token=["
                                    + getHexBytes(outBuf, outOffset, retVal)
                                    + "]");
             }
             return retVal;
         } catch (IOException e) {
-            retVal = 0;
             GSSException gssException =
                 new GSSException(GSSException.FAILURE, -1, e.getMessage());
             gssException.initCause(e);
@@ -994,14 +950,14 @@ class Krb5Context implements GSSContextSpi {
                 WrapToken token =
                         new WrapToken(this, msgProp, inBuf, offset, len);
                 token.encode(os);
-                if (DEBUG) {
+                if (DEBUG != null) {
                     encToken = token.encode();
                 }
             } else if (cipherHelper.getProto() == 1) {
                 WrapToken_v2 token =
                         new WrapToken_v2(this, msgProp, inBuf, offset, len);
                 token.encode(os);
-                if (DEBUG) {
+                if (DEBUG != null) {
                     encToken = token.encode();
                 }
             }
@@ -1012,8 +968,8 @@ class Krb5Context implements GSSContextSpi {
             throw gssException;
         }
 
-        if (DEBUG) {
-            System.out.println("Krb5Context.wrap: token=["
+        if (DEBUG != null) {
+            DEBUG.println("Krb5Context.wrap: token=["
                         + getHexBytes(encToken, 0, encToken.length)
                         + "]");
         }
@@ -1039,8 +995,8 @@ class Krb5Context implements GSSContextSpi {
                                MessageProp msgProp)
         throws GSSException {
 
-            if (DEBUG) {
-                System.out.println("Krb5Context.unwrap: token=["
+            if (DEBUG != null) {
+                DEBUG.println("Krb5Context.unwrap: token=["
                                    + getHexBytes(inBuf, offset, len)
                                    + "]");
             }
@@ -1061,12 +1017,6 @@ class Krb5Context implements GSSContextSpi {
                         new WrapToken_v2(this, inBuf, offset, len, msgProp);
                 data = token.getData();
                 setSequencingAndReplayProps(token, msgProp);
-            }
-
-            if (DEBUG) {
-                System.out.println("Krb5Context.unwrap: data=["
-                                   + getHexBytes(data, 0, data.length)
-                                   + "]");
             }
 
             return data;
@@ -1187,7 +1137,6 @@ class Krb5Context implements GSSContextSpi {
             }
             return retVal;
         } catch (IOException e) {
-            retVal = 0;
             GSSException gssException =
                 new GSSException(GSSException.FAILURE, -1, e.getMessage());
             gssException.initCause(e);
@@ -1196,7 +1145,7 @@ class Krb5Context implements GSSContextSpi {
     }
 
     /*
-     * Checksum calculation requires a byte[]. Hence might as well pass
+     * Checksum calculation requires a byte[]. Hence, might as well pass
      * a byte[] into the MicToken constructor. However, writing the
      * token can be optimized for cases where the application passed in
      * an OutputStream.
@@ -1344,16 +1293,6 @@ class Krb5Context implements GSSContextSpi {
         }
     }
 
-    private void checkPermission(String principal, String action) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            ServicePermission perm =
-                new ServicePermission(principal, action);
-            sm.checkPermission(perm);
-        }
-    }
-
     private static String getHexBytes(byte[] bytes, int pos, int len) {
 
         StringBuilder sb = new StringBuilder();
@@ -1385,7 +1324,7 @@ class Krb5Context implements GSSContextSpi {
     }
 
     GSSCaller getCaller() {
-        // Currently used by InitialToken only
+        // Currently, used by InitialToken only
         return caller;
     }
 
@@ -1419,8 +1358,22 @@ class Krb5Context implements GSSContextSpi {
 
         @Override
         public String toString() {
-            return "Kerberos session key: etype: " + key.getEType() + "\n" +
-                    new HexDumpEncoder().encodeBuffer(key.getBytes());
+            return "Kerberos session key: etype=" + key.getEType()
+                    + ", " + Krb5Util.keyInfo(key.getBytes());
+        }
+
+        /**
+         * Restores the state of this object from the stream.
+         *
+         * @param  stream the {@code ObjectInputStream} from which data is read
+         * @throws IOException if an I/O error occurs
+         * @throws ClassNotFoundException if a serialized class cannot be loaded
+         */
+        @java.io.Serial
+        private void readObject(ObjectInputStream stream)
+                throws IOException, ClassNotFoundException {
+            throw new InvalidObjectException
+                    ("KerberosSessionKey not directly deserializable");
         }
     }
 
@@ -1491,5 +1444,4 @@ class Krb5Context implements GSSContextSpi {
     public void setAuthzData(AuthorizationData authzData) {
         this.authzData = authzData;
     }
-
 }

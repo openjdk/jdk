@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public class TypeArrayKlass extends ArrayKlass {
   public static final int T_LONG    = 11;
 
   public String getTypeName() {
-    switch ((int) getElementType()) {
+    switch (getElementType()) {
       case T_BOOLEAN: return "[Z";
       case T_CHAR:    return "[C";
       case T_FLOAT:   return "[F";
@@ -81,7 +81,7 @@ public class TypeArrayKlass extends ArrayKlass {
   }
 
   public String getElementTypeName() {
-    switch ((int) getElementType()) {
+    switch (getElementType()) {
       case T_BOOLEAN: return "boolean";
       case T_CHAR:    return "char";
       case T_FLOAT:   return "float";
@@ -110,7 +110,7 @@ public class TypeArrayKlass extends ArrayKlass {
     }
     if (dimension == n)
       return this;
-    ObjArrayKlass ak = (ObjArrayKlass) getHigherDimension();
+    ObjArrayKlass ak = getHigherDimension();
     if (ak == null) {
       if (orNull) return null;
       // FIXME: would need to change in reflective system to actually

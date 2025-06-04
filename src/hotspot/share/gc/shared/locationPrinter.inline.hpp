@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/shared/locationPrinter.hpp"
 
+#include "memory/resourceArea.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 
@@ -37,34 +38,37 @@ oop BlockLocationPrinter<CollectedHeapT>::base_oop_or_null(void* addr) {
     return cast_to_oop(addr);
   }
 
-  // Try to find addr using block_start.
+  // Try to find addr using block_start (not implemented for all GCs/generations).
   HeapWord* p = CollectedHeapT::heap()->block_start(addr);
-  if (p != NULL && CollectedHeapT::heap()->block_is_obj(p)) {
+  if (p != nullptr && CollectedHeapT::heap()->block_is_obj(p)) {
     if (!is_valid_obj(p)) {
-      return NULL;
+      return nullptr;
     }
     return cast_to_oop(p);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 template <typename CollectedHeapT>
 bool BlockLocationPrinter<CollectedHeapT>::print_location(outputStream* st, void* addr) {
+  ResourceMark rm;
   // Check if addr points into Java heap.
-  if (CollectedHeapT::heap()->is_in(addr)) {
+  bool in_heap = CollectedHeapT::heap()->is_in(addr);
+  if (in_heap) {
+    // base_oop_or_null() might be unimplemented and return null for some GCs/generations
     oop o = base_oop_or_null(addr);
-    if (o != NULL) {
+    if (o != nullptr) {
       if ((void*)o == addr) {
-        st->print(INTPTR_FORMAT " is an oop: ", p2i(addr));
+        st->print(PTR_FORMAT " is an oop: ", p2i(addr));
       } else {
-        st->print(INTPTR_FORMAT " is pointing into object: " , p2i(addr));
+        st->print(PTR_FORMAT " is pointing into object: " , p2i(addr));
       }
       o->print_on(st);
       return true;
     }
   } else if (CollectedHeapT::heap()->is_in_reserved(addr)) {
-    st->print_cr(INTPTR_FORMAT " is an unallocated location in the heap", p2i(addr));
+    st->print_cr(PTR_FORMAT " is an unallocated location in the heap", p2i(addr));
     return true;
   }
 
@@ -83,6 +87,10 @@ bool BlockLocationPrinter<CollectedHeapT>::print_location(outputStream* st, void
   }
 #endif
 
+  if (in_heap) {
+    st->print_cr(PTR_FORMAT " is an unknown heap location", p2i(addr));
+    return true;
+  }
   return false;
 }
 

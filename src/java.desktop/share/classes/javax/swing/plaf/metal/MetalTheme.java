@@ -65,7 +65,7 @@ import javax.swing.*;
  */
 public abstract class MetalTheme {
 
-    // Contants identifying the various Fonts that are Theme can support
+    // Constants identifying the various Fonts that a Theme can support
     static final int CONTROL_TEXT_FONT = 0;
     static final int SYSTEM_TEXT_FONT = 1;
     static final int USER_TEXT_FONT = 2;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,11 @@
 #ifndef CPU_X86_VMREG_X86_HPP
 #define CPU_X86_VMREG_X86_HPP
 
-
+#include "register_x86.hpp"
 
 inline bool is_Register() {
-  return (unsigned int) value() < (unsigned int) ConcreteRegisterImpl::max_gpr;
+  int uarch_max_gpr = Register::max_slots_per_register * Register::available_gp_registers();
+  return (unsigned int) value() < (unsigned int) uarch_max_gpr;
 }
 
 inline bool is_FloatRegister() {
@@ -36,14 +37,8 @@ inline bool is_FloatRegister() {
 }
 
 inline bool is_XMMRegister() {
-  int uarch_max_xmm = ConcreteRegisterImpl::max_xmm;
-
-#ifdef _LP64
-  if (UseAVX < 3) {
-    int half_xmm = (XMMRegisterImpl::max_slots_per_register * XMMRegisterImpl::number_of_registers) / 2;
-    uarch_max_xmm -= half_xmm;
-  }
-#endif
+  int uarch_max_xmm = ConcreteRegisterImpl::max_fpr +
+    (XMMRegister::max_slots_per_register * XMMRegister::available_xmm_registers());
 
   return (value() >= ConcreteRegisterImpl::max_fpr && value() < uarch_max_xmm);
 }
@@ -93,7 +88,7 @@ inline   bool is_concrete() {
   // Do not use is_XMMRegister() here as it depends on the UseAVX setting.
   if (value() >= ConcreteRegisterImpl::max_fpr && value() < ConcreteRegisterImpl::max_xmm) {
     int base = value() - ConcreteRegisterImpl::max_fpr;
-    return base % XMMRegisterImpl::max_slots_per_register == 0;
+    return (base % XMMRegister::max_slots_per_register) == 0;
   } else {
     return is_even(value());   // General, float, and K registers are all two slots wide
   }

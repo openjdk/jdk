@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+#include <stdlib.h>
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
 #include "sysSocket.h"
-#include "socketTransport.h"
 
 typedef jboolean bool_t;
 
@@ -89,30 +89,21 @@ static struct {
     { WSA_OPERATION_ABORTED,    "Overlapped operation aborted" },
 };
 
+static void dbgsysAtExitCallback(void)
+{
+    WSACleanup();
+}
 
-/*
- * Initialize Windows Sockets API support
- */
-BOOL WINAPI
-DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved)
+/* Perform platform specific initialization.
+ * Returns 0 on success, non-0 on failure */
+int
+dbgsysPlatformInit()
 {
     WSADATA wsadata;
 
-    switch (reason) {
-        case DLL_PROCESS_ATTACH:
-            if (WSAStartup(MAKEWORD(2,2), &wsadata) != 0) {
-                return FALSE;
-            }
-            break;
+    atexit(dbgsysAtExitCallback);
 
-        case DLL_PROCESS_DETACH:
-            WSACleanup();
-            break;
-
-        default:
-            break;
-    }
-    return TRUE;
+    return WSAStartup(MAKEWORD(2,2), &wsadata);
 }
 
 /*
@@ -269,11 +260,9 @@ int
 dbgsysSetSocketOption(int fd, jint cmd, jboolean on, jvalue value)
 {
     if (cmd == TCP_NODELAY) {
-        struct protoent *proto = getprotobyname("TCP");
-        int tcp_level = (proto == 0 ? IPPROTO_TCP: proto->p_proto);
         long onl = (long)on;
 
-        if (setsockopt(fd, tcp_level, TCP_NODELAY,
+        if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
                        (char *)&onl, sizeof(long)) < 0) {
                 return SYS_ERR;
         }
@@ -395,7 +384,7 @@ dbgsysGetLastIOError(char *buf, jint size) {
     if (i < table_size) {
         strcpy(buf, winsock_errors[i].errString);
     } else {
-        sprintf(buf, "winsock error %d", error);
+        snprintf(buf, size, "winsock error %d", error);
     }
     return 0;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,15 +40,17 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdb.threads.threads002.threads002a
- * @run main/othervm
+ * @run driver
  *      nsk.jdb.threads.threads002.threads002
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
+ *      -verbose
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
  *      -jdb=${test.jdk}/bin/jdb
  *      -java.options="${test.vm.opts} ${test.java.opts}"
  *      -workdir=.
+ *      -jdb.option="-trackallthreads"
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 
@@ -63,14 +65,10 @@ import java.util.*;
 public class threads002 extends JdbTest {
 
     public static void main (String argv[]) {
-        System.exit(run(argv, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String argv[], PrintStream out) {
         debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
-        return new threads002().runTest(argv, out);
+        new threads002().runTest(argv);
     }
 
     static final String PACKAGE_NAME     = "nsk.jdb.threads.threads002";

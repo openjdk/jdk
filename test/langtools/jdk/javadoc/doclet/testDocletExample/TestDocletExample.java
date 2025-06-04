@@ -25,6 +25,7 @@
  * @test
  * @bug 8272944
  * @summary Use snippets in jdk.javadoc documentation
+ * @key needs-src needs-src-jdk_javadoc
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -49,15 +50,20 @@ import javax.tools.JavaFileObject;
 
 public class TestDocletExample extends TestRunner {
     public static void main(String... args) throws Exception {
-        var t = new TestDocletExample();
-        t.runTests(m -> new Object[] { Path.of(m.getName()) });
+        try {
+            var t = new TestDocletExample();
+            t.runTests(m -> new Object[] { Path.of(m.getName()) });
+        } catch (SnippetUtils.ConfigurationException e) {
+            System.err.println("NOTE: " + e.getMessage() + "; test skipped");
+        }
     }
 
-    SnippetUtils snippets = new SnippetUtils("jdk.javadoc");
+    SnippetUtils snippets;
     ToolBox tb = new ToolBox();
 
-    TestDocletExample() {
+    TestDocletExample() throws SnippetUtils.ConfigurationException {
         super(System.out);
+        snippets = new SnippetUtils("jdk.javadoc");
     }
 
     @Test

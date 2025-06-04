@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,20 +29,19 @@ import java.io.*;
 import java.net.*;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.OptionalInt;
 import java.util.Properties;
 import java.util.concurrent.locks.ReentrantLock;
 
 import sun.net.NetworkClient;
-import sun.net.ProgressSource;
 import sun.net.www.MessageHeader;
 import sun.net.www.HeaderParser;
 import sun.net.www.MeteredStream;
 import sun.net.www.ParseUtil;
-import sun.net.www.protocol.http.AuthenticatorKeys;
+import sun.net.www.protocol.http.AuthCacheImpl;
 import sun.net.www.protocol.http.HttpURLConnection;
 import sun.util.logging.PlatformLogger;
 import static sun.net.www.protocol.http.HttpURLConnection.TunnelState.*;
-import sun.security.action.GetPropertyAction;
 
 /**
  * @author Herb Jellinek
@@ -70,10 +69,10 @@ public class HttpClient extends NetworkClient {
 
     /** Response code for CONTINUE */
     private boolean ignoreContinue = true;
-    private static final int    HTTP_CONTINUE = 100;
+    private static final int HTTP_CONTINUE = 100;
 
     /** Default port number for http daemons. REMIND: make these private */
-    static final int    httpPortNumber = 80;
+    static final int httpPortNumber = 80;
 
     /** return default port number (subclasses may override) */
     protected int getDefaultPort () { return httpPortNumber; }
@@ -98,13 +97,13 @@ public class HttpClient extends NetworkClient {
     protected int port;
 
     /* where we cache currently open, persistent connections */
-    protected static KeepAliveCache kac = new KeepAliveCache();
+    protected static final KeepAliveCache kac = new KeepAliveCache();
 
-    private static boolean keepAliveProp = true;
+    private static final boolean keepAliveProp;
 
     // retryPostProp is true by default so as to preserve behavior
     // from previous releases.
-    private static boolean retryPostProp = true;
+    private static final boolean retryPostProp;
 
     /* Value of the system property jdk.ntlm.cache;
        if false, then NTLM connections will not be cached.
@@ -115,6 +114,8 @@ public class HttpClient extends NetworkClient {
        scheme will not be cached.
        The default value is 'true'. */
     private static final boolean cacheSPNEGOProp;
+
+    protected volatile AuthCacheImpl authcache;
 
     volatile boolean keepingAlive;    /* this is a keep-alive connection */
     volatile boolean disableKeepAlive;/* keep-alive has been disabled for this
@@ -127,6 +128,7 @@ public class HttpClient extends NetworkClient {
      *  0: the server specified no keep alive headers
      * -1: the server provided "Connection: keep-alive" but did not specify a
      *     a particular time in a "Keep-Alive:" headers
+     * -2: the server provided "Connection: keep-alive" and timeout=0
      * Positive values are the number of seconds specified by the server
      * in a "Keep-Alive" header
      */
@@ -166,8 +168,6 @@ public class HttpClient extends NetworkClient {
         }
     }
 
-    protected volatile String authenticatorKey;
-
     /**
      * A NOP method kept for backwards binary compatibility
      * @deprecated -- system properties are no longer cached.
@@ -193,7 +193,7 @@ public class HttpClient extends NetworkClient {
     }
 
     static {
-        Properties props = GetPropertyAction.privilegedGetProperties();
+        Properties props = System.getProperties();
         String keepAlive = props.getProperty("http.keepAlive");
         String retryPost = props.getProperty("sun.net.http.retryPost");
         String cacheNTLM = props.getProperty("jdk.ntlm.cache");
@@ -240,11 +240,6 @@ public class HttpClient extends NetworkClient {
     }
 
     protected HttpClient() {
-    }
-
-    private HttpClient(URL url)
-    throws IOException {
-        this(url, (String)null, -1, false);
     }
 
     protected HttpClient(URL url,
@@ -348,10 +343,11 @@ public class HttpClient extends NetworkClient {
                 }
             }
             if (ret != null) {
-                String ak = httpuc == null ? AuthenticatorKeys.DEFAULT
-                     : httpuc.getAuthenticatorKey();
+                AuthCacheImpl ak = httpuc == null
+                    ? AuthCacheImpl.getDefault()
+                    : httpuc.getAuthCache();
                 boolean compatible = Objects.equals(ret.proxy, p)
-                     && Objects.equals(ret.getAuthenticatorKey(), ak);
+                     && Objects.equals(ret.getAuthCache(), ak);
                 if (compatible) {
                     ret.lock();
                     try {
@@ -383,18 +379,9 @@ public class HttpClient extends NetworkClient {
         if (ret == null) {
             ret = new HttpClient(url, p, to);
             if (httpuc != null) {
-                ret.authenticatorKey = httpuc.getAuthenticatorKey();
+                ret.authcache = httpuc.getAuthCache();
             }
         } else {
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
-            if (security != null) {
-                if (ret.proxy == Proxy.NO_PROXY || ret.proxy == null) {
-                    security.checkConnect(InetAddress.getByName(url.getHost()).getHostAddress(), url.getPort());
-                } else {
-                    security.checkConnect(url.getHost(), url.getPort());
-                }
-            }
             ret.url = url;
         }
         return ret;
@@ -421,10 +408,8 @@ public class HttpClient extends NetworkClient {
             to, useCache, httpuc);
     }
 
-    public final String getAuthenticatorKey() {
-        String k = authenticatorKey;
-        if (k == null) return AuthenticatorKeys.DEFAULT;
-        return k;
+    public final AuthCacheImpl getAuthCache() {
+        return authcache == null ? AuthCacheImpl.getDefault() : authcache;
     }
 
     /* return it to the cache as still usable, if:
@@ -523,7 +508,7 @@ public class HttpClient extends NetworkClient {
 
     /* We're very particular here about what our InputStream to the server
      * looks like for reasons that are apparent if you can decipher the
-     * method parseHTTP().  That's why this method is overidden from the
+     * method parseHTTP().  That's why this method is overridden from the
      * superclass.
      */
     @Override
@@ -571,29 +556,18 @@ public class HttpClient extends NetworkClient {
      * be done; for proxy tunneling, the socket needs to be converted
      * into an SSL socket before ssl handshake can take place.
      */
-    public void afterConnect() throws IOException, UnknownHostException {
+    public void afterConnect() throws IOException {
         // NO-OP. Needs to be overwritten by HttpsClient
     }
 
     /*
-     * call openServer in a privileged block
+     * call openServer
      */
-    @SuppressWarnings("removal")
-    private void privilegedOpenServer(final InetSocketAddress server)
+    private void openServer(final InetSocketAddress server)
          throws IOException
     {
         assert clientLock.isHeldByCurrentThread();
-        try {
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedExceptionAction<>() {
-                    public Void run() throws IOException {
-                    openServer(server.getHostString(), server.getPort());
-                    return null;
-                }
-            });
-        } catch (java.security.PrivilegedActionException pae) {
-            throw (IOException) pae.getException();
-        }
+        openServer(server.getHostString(), server.getPort());
     }
 
     /*
@@ -601,7 +575,7 @@ public class HttpClient extends NetworkClient {
      */
     private void superOpenServer(final String proxyHost,
                                  final int proxyPort)
-        throws IOException, UnknownHostException
+        throws IOException
     {
         super.openServer(proxyHost, proxyPort);
     }
@@ -610,14 +584,8 @@ public class HttpClient extends NetworkClient {
      */
     protected void openServer() throws IOException {
 
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-
         lock();
         try {
-            if (security != null) {
-                security.checkConnect(host, port);
-            }
 
             if (keepingAlive) { // already opened
                 return;
@@ -628,7 +596,7 @@ public class HttpClient extends NetworkClient {
 
                 if ((proxy != null) && (proxy.type() == Proxy.Type.HTTP)) {
                     sun.net.www.URLConnection.setProxiedHost(host);
-                    privilegedOpenServer((InetSocketAddress) proxy.address());
+                    openServer((InetSocketAddress) proxy.address());
                     usingProxy = true;
                     return;
                 } else {
@@ -644,7 +612,7 @@ public class HttpClient extends NetworkClient {
                  */
                 if ((proxy != null) && (proxy.type() == Proxy.Type.HTTP)) {
                     sun.net.www.URLConnection.setProxiedHost(host);
-                    privilegedOpenServer((InetSocketAddress) proxy.address());
+                    openServer((InetSocketAddress) proxy.address());
                     usingProxy = true;
                     return;
                 } else {
@@ -663,7 +631,7 @@ public class HttpClient extends NetworkClient {
 
         String fileName;
 
-        /**
+        /*
          * proxyDisabled is set by subclass HttpsClient!
          */
         if (usingProxy && !proxyDisabled) {
@@ -739,7 +707,7 @@ public class HttpClient extends NetworkClient {
     /** Parse the first line of the HTTP request.  It usually looks
         something like: {@literal "HTTP/1.0 <number> comment\r\n"}. */
 
-    public boolean parseHTTP(MessageHeader responses, ProgressSource pi, HttpURLConnection httpuc)
+    public boolean parseHTTP(MessageHeader responses, HttpURLConnection httpuc)
     throws IOException {
         /* If "HTTP/*" is found in the beginning, return true.  Let
          * HttpURLConnection parse the mime header itself.
@@ -756,7 +724,7 @@ public class HttpClient extends NetworkClient {
                 serverInput = new HttpCaptureInputStream(serverInput, capture);
             }
             serverInput = new BufferedInputStream(serverInput);
-            return (parseHTTPHeader(responses, pi, httpuc));
+            return (parseHTTPHeader(responses, httpuc));
         } catch (SocketTimeoutException stex) {
             // We don't want to retry the request when the app. sets a timeout
             // but don't close the server if timeout while waiting for 100-continue
@@ -768,9 +736,12 @@ public class HttpClient extends NetworkClient {
             closeServer();
             cachedHttpClient = false;
             if (!failedOnce && requests != null) {
+                Thread thread = Thread.currentThread();
+                boolean doNotRetry = thread.isVirtual() && thread.isInterrupted();
                 failedOnce = true;
                 if (getRequestMethod().equals("CONNECT")
                     || streaming
+                    || doNotRetry
                     || (httpuc.getRequestMethod().equals("POST")
                         && !retryPostProp)) {
                     // do not retry the request
@@ -780,7 +751,7 @@ public class HttpClient extends NetworkClient {
                     checkTunneling(httpuc);
                     afterConnect();
                     writeRequests(requests, poster);
-                    return parseHTTP(responses, pi, httpuc);
+                    return parseHTTP(responses, httpuc);
                 }
             }
             throw e;
@@ -800,7 +771,7 @@ public class HttpClient extends NetworkClient {
         }
     }
 
-    private boolean parseHTTPHeader(MessageHeader responses, ProgressSource pi, HttpURLConnection httpuc)
+    private boolean parseHTTPHeader(MessageHeader responses, HttpURLConnection httpuc)
     throws IOException {
         /* If "HTTP/*" is found in the beginning, return true.  Let
          * HttpURLConnection parse the mime header itself.
@@ -814,7 +785,7 @@ public class HttpClient extends NetworkClient {
         keepAliveConnections = -1;
         keepAliveTimeout = 0;
 
-        boolean ret = false;
+        boolean ret;
         byte[] b = new byte[8];
 
         try {
@@ -897,7 +868,23 @@ public class HttpClient extends NetworkClient {
                             responses.findValue("Keep-Alive"));
                         /* default should be larger in case of proxy */
                         keepAliveConnections = p.findInt("max", usingProxy?50:5);
-                        keepAliveTimeout = p.findInt("timeout", -1);
+                        if (keepAliveConnections < 0) {
+                            keepAliveConnections = usingProxy?50:5;
+                        }
+                        OptionalInt timeout = p.findInt("timeout");
+                        if (timeout.isEmpty()) {
+                            keepAliveTimeout = -1;
+                        } else {
+                            keepAliveTimeout = timeout.getAsInt();
+                            if (keepAliveTimeout < 0) {
+                                // if the server specified a negative (invalid) value
+                                // then we set to -1, which is equivalent to no value
+                                keepAliveTimeout = -1;
+                            } else if (keepAliveTimeout == 0) {
+                                // handled specially to mean close connection immediately
+                                keepAliveTimeout = -2;
+                            }
+                        }
                     }
                 } else if (b[7] != '0') {
                     /*
@@ -930,7 +917,7 @@ public class HttpClient extends NetworkClient {
                         checkTunneling(httpuc);
                         afterConnect();
                         writeRequests(requests, poster);
-                        return parseHTTP(responses, pi, httpuc);
+                        return parseHTTP(responses, httpuc);
                     }
                 }
                 throw new SocketException("Unexpected end of file from server");
@@ -957,9 +944,23 @@ public class HttpClient extends NetworkClient {
             code = Integer.parseInt(resp, ind, ind + 3, 10);
         } catch (Exception e) {}
 
-        if (code == HTTP_CONTINUE && ignoreContinue) {
+        if (code == 101) {
+            // We don't support protocol upgrade through the "Upgrade:" request header, so if a
+            // server still unexpectedly sends a 101 response, we consider that a protocol violation
+            // and close the connection.
+            closeServer();
+            logFinest("Closed connection due to unexpected 101 response");
+            // clear off the response headers so that they don't get propagated
+            // to the application
             responses.reset();
-            return parseHTTPHeader(responses, pi, httpuc);
+            throw new ProtocolException("Unexpected 101 response from server");
+        }
+        // ignore interim informational responses and continue to wait for final response.
+        if ((code == HTTP_CONTINUE && ignoreContinue)
+                || (code >= 102 && code <= 199)) {
+            logFinest("Ignoring interim informational 1xx response: " + code);
+            responses.reset();
+            return parseHTTPHeader(responses, httpuc);
         }
 
         long cl = -1;
@@ -1032,11 +1033,6 @@ public class HttpClient extends NetworkClient {
             // In this case, content length is well known, so it is okay
             // to wrap the input stream with KeepAliveStream/MeteredStream.
 
-            if (pi != null) {
-                // Progress monitor is enabled
-                pi.setContentType(responses.findValue("content-type"));
-            }
-
             // If disableKeepAlive == true, the client will not be returned
             // to the cache. But we still need to use a keepalive stream to
             // allow the multi-message authentication exchange on the connection
@@ -1044,39 +1040,13 @@ public class HttpClient extends NetworkClient {
             if (useKeepAliveStream)   {
                 // Wrap KeepAliveStream if keep alive is enabled.
                 logFinest("KeepAlive stream used: " + url);
-                serverInput = new KeepAliveStream(serverInput, pi, cl, this);
+                serverInput = new KeepAliveStream(serverInput, cl, this);
                 failedOnce = false;
             }
             else        {
-                serverInput = new MeteredStream(serverInput, pi, cl);
+                serverInput = new MeteredStream(serverInput, cl);
             }
         }
-        else if (cl == -1)  {
-            // In this case, content length is unknown - the input
-            // stream would simply be a regular InputStream or
-            // ChunkedInputStream.
-
-            if (pi != null) {
-                // Progress monitoring is enabled.
-
-                pi.setContentType(responses.findValue("content-type"));
-
-                // Wrap MeteredStream for tracking indeterministic
-                // progress, even if the input stream is ChunkedInputStream.
-                serverInput = new MeteredStream(serverInput, pi, cl);
-            }
-            else    {
-                // Progress monitoring is disabled, and there is no
-                // need to wrap an unknown length input stream.
-
-                // ** This is an no-op **
-            }
-        }
-        else    {
-            if (pi != null)
-                pi.finishTracking();
-        }
-
         return ret;
     }
 

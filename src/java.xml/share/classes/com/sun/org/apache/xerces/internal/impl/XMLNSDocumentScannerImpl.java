@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -34,9 +34,8 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 import com.sun.org.apache.xerces.internal.xni.XMLDocumentHandler;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentSource;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
-
 import javax.xml.stream.events.XMLEvent;
+import jdk.xml.internal.XMLSecurityManager;
 
 /**
  * This class adds the functionality of namespace processing.
@@ -54,6 +53,8 @@ import javax.xml.stream.events.XMLEvent;
  * @author Neeraj Bajaj, Sun Microsystems
  * @author Venugopal Rao K, Sun Microsystems
  * @author Elena Litani, IBM
+ *
+ * @LastModified: Nov 2024
  */
 public class XMLNSDocumentScannerImpl
         extends XMLDocumentScannerImpl {
@@ -252,7 +253,8 @@ public class XMLNSDocumentScannerImpl
                         fAttributes.getLength() > fElementAttributeLimit){
                     fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
                                                  "ElementAttributeLimit",
-                                                 new Object[]{rawname, fElementAttributeLimit },
+                                                 new Object[]{rawname, fElementAttributeLimit,
+                                                     XMLSecurityManager.Limit.ELEMENT_ATTRIBUTE_LIMIT.systemProperty() },
                                                  XMLErrorReporter.SEVERITY_FATAL_ERROR );
                 }
 
@@ -453,8 +455,8 @@ public class XMLNSDocumentScannerImpl
         // record namespace declarations if any.
         if (fBindNamespaces) {
             if (isNSDecl) {
-                //check the length of URI
-                if (tmpStr.length > fXMLNameLimit) {
+                //check the length of URI if a limit is set
+                if (fXMLNameLimit > 0 && tmpStr.length > fXMLNameLimit) {
                     fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
                             "MaxXMLNameLimit",
                             new Object[]{new String(tmpStr.ch,tmpStr.offset,tmpStr.length),

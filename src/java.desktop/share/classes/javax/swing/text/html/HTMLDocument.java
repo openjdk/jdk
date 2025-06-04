@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,43 @@
 package javax.swing.text.html;
 
 import java.awt.font.TextAttribute;
-import java.util.*;
-import java.net.URL;
+import java.io.IOException;
+import java.io.StringReader;
 import java.net.MalformedURLException;
-import java.io.*;
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.text.*;
-import javax.swing.undo.*;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Stack;
+import java.util.Vector;
+
+import javax.swing.ButtonGroup;
+import javax.swing.DefaultButtonModel;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListModel;
+import javax.swing.JToggleButton;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.EventListenerList;
+import javax.swing.event.UndoableEditEvent;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultEditorKit;
+import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.Document;
+import javax.swing.text.Element;
+import javax.swing.text.ElementIterator;
+import javax.swing.text.GapContent;
+import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.PlainDocument;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.undo.UndoableEdit;
+
 import sun.swing.SwingUtilities2;
+
 import static sun.swing.SwingUtilities2.IMPLIED_CR;
 
 /**
@@ -427,7 +455,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      *
      * @param offset the starting offset
      * @param data the element data
-     * @exception BadLocationException  if the given position does not
+     * @throws BadLocationException  if the given position does not
      *   represent a valid location in the associated document.
      */
     protected void insert(int offset, ElementSpec[] data) throws BadLocationException {
@@ -797,9 +825,7 @@ public class HTMLDocument extends DefaultStyledDocument {
             html += ">";
             installParserIfNecessary();
             setOuterHTML(element, html);
-        } catch (BadLocationException e1) {
-            // Should handle this better
-        } catch (IOException ioe) {
+        } catch (BadLocationException | IOException e) {
             // Should handle this better
         }
     }
@@ -1402,7 +1428,7 @@ public class HTMLDocument extends DefaultStyledDocument {
 
             if (parent != null) {
                 // If we are going to insert the string into the body
-                // section, it is necessary to set the corrsponding flag.
+                // section, it is necessary to set the corresponding flag.
                 if (HTML.Tag.BODY.name.equals(parent.getName())) {
                     insertInBody = true;
                 }
@@ -1643,7 +1669,7 @@ public class HTMLDocument extends DefaultStyledDocument {
             // e.getElement(index - 1) should represent the newline.
             index--;
             if (endE.getParentElement() != e) {
-                // The hiearchies don't match, we'll have to manually
+                // The hierarchies don't match, we'll have to manually
                 // recreate the leaf at e.getElement(index - 1)
                 replace(dde, e, index, ++count, start, end, true, true);
             }
@@ -2392,7 +2418,7 @@ public class HTMLDocument extends DefaultStyledDocument {
 
         /**
          * Generates a RuntimeException (will eventually generate
-         * a BadLocationException when API changes are alloced) if inserting
+         * a BadLocationException when API changes are allocated) if inserting
          * into non empty document, <code>insertTag</code> is
          * non-<code>null</code>, and <code>offset</code> is not in the body.
          */
@@ -2473,9 +2499,9 @@ public class HTMLDocument extends DefaultStyledDocument {
             tagMap.put(HTML.Tag.SCRIPT, ha);
             tagMap.put(HTML.Tag.SELECT, fa);
             tagMap.put(HTML.Tag.SMALL, ca);
-            tagMap.put(HTML.Tag.SPAN, ca);
+            tagMap.put(HTML.Tag.SPAN, new ConvertSpanAction());
             tagMap.put(HTML.Tag.STRIKE, conv);
-            tagMap.put(HTML.Tag.S, ca);
+            tagMap.put(HTML.Tag.S, conv);
             tagMap.put(HTML.Tag.STRONG, ca);
             tagMap.put(HTML.Tag.STYLE, new StyleAction());
             tagMap.put(HTML.Tag.SUB, conv);
@@ -2803,7 +2829,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                 if (t == HTML.Tag.BODY) {
                     inBody = true;
                     // Increment inBlock since we know we are in the body,
-                    // this is needed incase an implied-p is needed. If
+                    // this is needed in case an implied-p is needed. If
                     // inBlock isn't incremented, and an implied-p is
                     // encountered, addContent won't be called!
                     inBlock++;
@@ -3397,10 +3423,42 @@ public class HTMLDocument extends DefaultStyledDocument {
                 if (styleAttributes != null) {
                     charAttr.addAttributes(styleAttributes);
                 }
+
+                convertAttributes(t, attr);
             }
 
             public void end(HTML.Tag t) {
                 popCharacterStyle();
+            }
+
+            /**
+             * Converts HTML tags to CSS attributes.
+             * @param t the current HTML tag
+             * @param attr the attributes of the HTML tag
+             */
+            void convertAttributes(HTML.Tag t, MutableAttributeSet attr) {
+            }
+        }
+
+        final class ConvertSpanAction extends CharacterAction {
+            @Override
+            void convertAttributes(HTML.Tag t, MutableAttributeSet attr) {
+                Object newDecoration = attr.getAttribute(CSS.Attribute.TEXT_DECORATION);
+                Object previousDecoration =
+                        charAttrStack.peek()
+                                     .getAttribute(CSS.Attribute.TEXT_DECORATION);
+
+                if (newDecoration != null
+                    && !"none".equals(newDecoration.toString())
+                    && previousDecoration != null
+                    && !"none".equals(previousDecoration.toString())) {
+                    StyleSheet sheet = getStyleSheet();
+                    sheet.addCSSAttribute(charAttr,
+                                          CSS.Attribute.TEXT_DECORATION,
+                                          CSS.mergeTextDecoration(newDecoration + ","
+                                                                  + previousDecoration)
+                                             .toString());
+                }
             }
         }
 
@@ -3409,35 +3467,9 @@ public class HTMLDocument extends DefaultStyledDocument {
          * mappings that have a corresponding StyleConstants
          * and CSS mapping.  The conversion is to CSS attributes.
          */
-        class ConvertAction extends TagAction {
-
-            public void start(HTML.Tag t, MutableAttributeSet attr) {
-                pushCharacterStyle();
-                if (!foundInsertTag) {
-                    // Note that the third argument should really be based off
-                    // inParagraph and impliedP. If we're wrong (that is
-                    // insertTagDepthDelta shouldn't be changed), we'll end up
-                    // removing an extra EndSpec, which won't matter anyway.
-                    boolean insert = canInsertTag(t, attr, false);
-                    if (foundInsertTag) {
-                        if (!inParagraph) {
-                            inParagraph = impliedP = true;
-                        }
-                    }
-                    if (!insert) {
-                        return;
-                    }
-                }
-                if (attr.isDefined(IMPLIED)) {
-                    attr.removeAttribute(IMPLIED);
-                }
-                if (styleAttributes != null) {
-                    charAttr.addAttributes(styleAttributes);
-                }
-                // We also need to add attr, otherwise we lose custom
-                // attributes, including class/id for style lookups, and
-                // further confuse style lookup (doesn't have tag).
-                charAttr.addAttribute(t, attr.copyAttributes());
+        final class ConvertAction extends CharacterAction {
+            @Override
+            void convertAttributes(HTML.Tag t, MutableAttributeSet attr) {
                 StyleSheet sheet = getStyleSheet();
                 if (t == HTML.Tag.B) {
                     sheet.addCSSAttribute(charAttr, CSS.Attribute.FONT_WEIGHT, "bold");
@@ -3448,7 +3480,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                     String value = "underline";
                     value = (v != null) ? value + "," + v.toString() : value;
                     sheet.addCSSAttribute(charAttr, CSS.Attribute.TEXT_DECORATION, value);
-                } else if (t == HTML.Tag.STRIKE) {
+                } else if (t == HTML.Tag.STRIKE || t == HTML.Tag.S) {
                     Object v = charAttr.getAttribute(CSS.Attribute.TEXT_DECORATION);
                     String value = "line-through";
                     value = (v != null) ? value + "," + v.toString() : value;
@@ -3478,11 +3510,6 @@ public class HTMLDocument extends DefaultStyledDocument {
                     }
                 }
             }
-
-            public void end(HTML.Tag t) {
-                popCharacterStyle();
-            }
-
         }
 
         class AnchorAction extends CharacterAction {
@@ -3530,6 +3557,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                 String href = (String) attr.getAttribute(HTML.Attribute.HREF);
                 if (href != null) {
                     try {
+                        @SuppressWarnings("deprecation")
                         URL newBase = new URL(base, href);
                         setBase(newBase);
                         hasBaseTag = true;
@@ -4040,7 +4068,7 @@ public class HTMLDocument extends DefaultStyledDocument {
             if (insertTagDepthDelta < 0) {
                 // When inserting via an insertTag, the depths (of the tree
                 // being read in, and existing hierarchy) may not match up.
-                // This attemps to clean it up.
+                // This attempts to clean it up.
                 int removeCounter = insertTagDepthDelta;
                 while (removeCounter < 0 && size >= 0 &&
                         parseBuffer.elementAt(size - 1).
@@ -4124,10 +4152,12 @@ public class HTMLDocument extends DefaultStyledDocument {
         void linkCSSStyleSheet(String href) {
             URL url;
             try {
-                url = new URL(base, href);
+                @SuppressWarnings("deprecation")
+                var _unused = url = new URL(base, href);
             } catch (MalformedURLException mfe) {
                 try {
-                    url = new URL(href);
+                    @SuppressWarnings("deprecation")
+                    var _unused = url = new URL(href);
                 } catch (MalformedURLException mfe2) {
                     url = null;
                 }
@@ -4339,7 +4369,7 @@ public class HTMLDocument extends DefaultStyledDocument {
         /** True if inside the head tag. */
         boolean inHead = false;
         /** Set to true if the style language is text/css. Since this is
-         * used alot, it is cached. */
+         * used a lot, it is cached. */
         boolean isStyleCSS;
         /** True if inserting into an empty document. */
         boolean emptyDocument;

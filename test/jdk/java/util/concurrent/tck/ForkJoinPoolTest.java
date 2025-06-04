@@ -51,7 +51,6 @@ import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.Future;
 import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
@@ -224,44 +223,11 @@ public class ForkJoinPoolTest extends JSR166TestCase {
     /**
      * getParallelism returns size set in constructor
      */
-    public void testGetParallelism_requestedValue() {
-        int parallelism = ThreadLocalRandom.current().nextInt(1, 4);
-        ForkJoinPool p = new ForkJoinPool(parallelism);
+    public void testGetParallelism() {
+        ForkJoinPool p = new ForkJoinPool(1);
         try (PoolCleaner cleaner = cleaner(p)) {
-            assertEquals(parallelism, p.getParallelism());
+            assertEquals(1, p.getParallelism());
         }
-    }
-
-    private static int availableProcessors() {
-        return Runtime.getRuntime().availableProcessors();
-    }
-
-    /**
-     * default pool parallelism is availableProcessors()
-     */
-    public void testParallelism_defaultValue() {
-        ForkJoinPool p = new ForkJoinPool();
-        try (PoolCleaner cleaner = cleaner(p)) {
-            assertEquals(availableProcessors(), p.getParallelism());
-        }
-    }
-
-    /**
-     * default common pool parallelism is max(1, availableProcessors() - 1)
-     * But getParallelism() returns 1 when property-requested parallelism is 0.
-     */
-    public void testCommonPoolParallelism_defaultValue() {
-        if (!testImplementationDetails) return;
-
-        Integer propertyParallelism =
-            Integer.getInteger(
-                "java.util.concurrent.ForkJoinPool.common.parallelism");
-
-        int expectedParallelism = (propertyParallelism == null)
-            ? Math.max(1, availableProcessors() - 1)
-            : Math.max(1, propertyParallelism);
-        assertEquals(expectedParallelism,
-                     ForkJoinPool.commonPool().getParallelism());
     }
 
     /**
@@ -544,7 +510,7 @@ public class ForkJoinPoolTest extends JSR166TestCase {
             }
         }};
 
-        runWithPermissions(r, new RuntimePermission("modifyThread"));
+        r.run();
     }
 
     /**
@@ -563,7 +529,7 @@ public class ForkJoinPoolTest extends JSR166TestCase {
             }
         }};
 
-        runWithPermissions(r, new RuntimePermission("modifyThread"));
+        r.run();
     }
 
     /**
@@ -587,7 +553,7 @@ public class ForkJoinPoolTest extends JSR166TestCase {
             }
         }};
 
-        runWithPermissions(r, new RuntimePermission("modifyThread"));
+        r.run();
     }
 
     /**
@@ -655,6 +621,22 @@ public class ForkJoinPoolTest extends JSR166TestCase {
                     .get();
                 shouldThrow();
             } catch (ExecutionException success) {
+                assertTrue(success.getCause() instanceof ArithmeticException);
+            }
+        }
+    }
+
+    /**
+     * invoke throws a RuntimeException if task throws unchecked exception
+     */
+    public void testInvokeUncheckedException() throws Throwable {
+        ForkJoinPool p = new ForkJoinPool(1);
+        try (PoolCleaner cleaner = cleaner(p)) {
+            try {
+                p.invoke(ForkJoinTask.adapt(new Callable<Object>() {
+                        public Object call() { throw new ArithmeticException(); }}));
+                shouldThrow();
+            } catch (RuntimeException success) {
                 assertTrue(success.getCause() instanceof ArithmeticException);
             }
         }

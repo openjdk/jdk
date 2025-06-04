@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 package com.sun.hotspot.igv.filter;
 
 import com.sun.hotspot.igv.data.Properties;
-import com.sun.hotspot.igv.graph.Connection.ConnectionStyle;
 import com.sun.hotspot.igv.graph.*;
+import com.sun.hotspot.igv.graph.Connection.ConnectionStyle;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
@@ -78,7 +78,7 @@ public class ColorFilter extends AbstractFilter {
         ConnectionStyle style = rule.getLineStyle();
 
         for (OutputSlot s : f.getOutputSlots()) {
-            for (Connection c : s.getConnections()) {
+            for (FigureConnection c : s.getConnections()) {
                 if (color != null) {
                     c.setColor(color);
                 }

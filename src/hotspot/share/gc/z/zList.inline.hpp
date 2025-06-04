@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,12 @@
 #include "gc/z/zList.hpp"
 
 #include "utilities/debug.hpp"
+#include "utilities/vmError.hpp"
 
 template <typename T>
-inline ZListNode<T>::ZListNode() :
-    _next(this),
+inline ZListNode<T>::ZListNode()
+  : _next(this),
     _prev(this) {}
-
-template <typename T>
-inline ZListNode<T>::~ZListNode() {
-  verify_links_unlinked();
-}
 
 template <typename T>
 inline void ZListNode<T>::verify_links() const {
@@ -60,6 +56,16 @@ inline void ZListNode<T>::verify_links_unlinked() const {
 template <typename T>
 inline void ZList<T>::verify_head() const {
   _head.verify_links();
+}
+
+template <typename T>
+inline void ZList<T>::verify_head_error_reporter_safe() const {
+  if (VMError::is_error_reported() && VMError::is_error_reported_in_current_thread()) {
+    // Do not verify if this thread is in the process of reporting an error.
+    return;
+  }
+
+  verify_head();
 }
 
 template <typename T>
@@ -91,10 +97,21 @@ inline T* ZList<T>::cast_to_outer(ZListNode<T>* node) const {
 }
 
 template <typename T>
-inline ZList<T>::ZList() :
-    _head(),
+inline ZList<T>::ZList()
+  : _head(),
     _size(0) {
   verify_head();
+}
+
+template <typename T>
+inline size_t ZList<T>::size_error_reporter_safe() const {
+  verify_head_error_reporter_safe();
+  return _size;
+}
+
+template <typename T>
+inline bool ZList<T>::is_empty_error_reporter_safe() const {
+  return size_error_reporter_safe() == 0;
 }
 
 template <typename T>
@@ -110,12 +127,12 @@ inline bool ZList<T>::is_empty() const {
 
 template <typename T>
 inline T* ZList<T>::first() const {
-  return is_empty() ? NULL : cast_to_outer(_head._next);
+  return is_empty() ? nullptr : cast_to_outer(_head._next);
 }
 
 template <typename T>
 inline T* ZList<T>::last() const {
-  return is_empty() ? NULL : cast_to_outer(_head._prev);
+  return is_empty() ? nullptr : cast_to_outer(_head._prev);
 }
 
 template <typename T>
@@ -128,7 +145,7 @@ inline T* ZList<T>::next(T* elem) const {
   ZListNode<T>* const next = node->_next;
   next->verify_links_linked();
 
-  return (next == &_head) ? NULL : cast_to_outer(next);
+  return (next == &_head) ? nullptr : cast_to_outer(next);
 }
 
 template <typename T>
@@ -141,7 +158,7 @@ inline T* ZList<T>::prev(T* elem) const {
   ZListNode<T>* const prev = node->_prev;
   prev->verify_links_linked();
 
-  return (prev == &_head) ? NULL : cast_to_outer(prev);
+  return (prev == &_head) ? nullptr : cast_to_outer(prev);
 }
 
 template <typename T>
@@ -191,7 +208,7 @@ inline void ZList<T>::remove(T* elem) {
 template <typename T>
 inline T* ZList<T>::remove_first() {
   T* elem = first();
-  if (elem != NULL) {
+  if (elem != nullptr) {
     remove(elem);
   }
 
@@ -201,7 +218,7 @@ inline T* ZList<T>::remove_first() {
 template <typename T>
 inline T* ZList<T>::remove_last() {
   T* elem = last();
-  if (elem != NULL) {
+  if (elem != nullptr) {
     remove(elem);
   }
 
@@ -209,13 +226,13 @@ inline T* ZList<T>::remove_last() {
 }
 
 template <typename T, bool Forward>
-inline ZListIteratorImpl<T, Forward>::ZListIteratorImpl(const ZList<T>* list) :
-    _list(list),
+inline ZListIteratorImpl<T, Forward>::ZListIteratorImpl(const ZList<T>* list)
+  : _list(list),
     _next(Forward ? list->first() : list->last()) {}
 
 template <typename T, bool Forward>
 inline bool ZListIteratorImpl<T, Forward>::next(T** elem) {
-  if (_next != NULL) {
+  if (_next != nullptr) {
     *elem = _next;
     _next = Forward ? _list->next(_next) : _list->prev(_next);
     return true;
@@ -226,13 +243,13 @@ inline bool ZListIteratorImpl<T, Forward>::next(T** elem) {
 }
 
 template <typename T, bool Forward>
-inline ZListRemoveIteratorImpl<T, Forward>::ZListRemoveIteratorImpl(ZList<T>* list) :
-    _list(list) {}
+inline ZListRemoveIteratorImpl<T, Forward>::ZListRemoveIteratorImpl(ZList<T>* list)
+  : _list(list) {}
 
 template <typename T, bool Forward>
 inline bool ZListRemoveIteratorImpl<T, Forward>::next(T** elem) {
   *elem = Forward ? _list->remove_first() : _list->remove_last();
-  return *elem != NULL;
+  return *elem != nullptr;
 }
 
 #endif // SHARE_GC_Z_ZLIST_INLINE_HPP

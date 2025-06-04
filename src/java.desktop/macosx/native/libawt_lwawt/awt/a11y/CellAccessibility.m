@@ -34,7 +34,7 @@
 
 - (NSAccessibilityRole)accessibilityRole
 {
-    return NSAccessibilityCellRole;;
+    return NSAccessibilityCellRole;
 }
 
 - (NSInteger)accessibilityIndex

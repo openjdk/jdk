@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
 
 package java.nio;
 
-import jdk.internal.misc.Unsafe;
-
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+
+import jdk.internal.access.foreign.MappedMemoryUtilsProxy;
+import jdk.internal.misc.Blocker;
+import jdk.internal.misc.Unsafe;
 
 /* package */ class MappedMemoryUtils {
 
@@ -96,10 +98,15 @@ import java.io.UncheckedIOException;
         } else {
             // force writeback via file descriptor
             long offset = mappingOffset(address, index);
+            long mappingAddress = mappingAddress(address, offset, index);
+            long mappingLength = mappingLength(offset, length);
+            boolean attempted = Blocker.begin();
             try {
-                force0(fd, mappingAddress(address, offset, index), mappingLength(offset, length));
+                force0(fd, mappingAddress, mappingLength);
             } catch (IOException cause) {
                 throw new UncheckedIOException(cause);
+            } finally {
+                Blocker.end(attempted);
             }
         }
     }
@@ -110,6 +117,17 @@ import java.io.UncheckedIOException;
     private static native void load0(long address, long length);
     private static native void unload0(long address, long length);
     private static native void force0(FileDescriptor fd, long address, long length) throws IOException;
+
+    /* Register the natives via the static initializer.
+     *
+     * This is required, as these native methods are "scoped methods" (see ScopedMemoryAccess).
+     * As such, it's better not to end up doing a full JNI lookup while in a scoped method context,
+     * as that will make the stack trace too deep.
+     */
+    private static native void registerNatives();
+    static {
+        registerNatives();
+    }
 
     // utility methods
 
@@ -138,7 +156,7 @@ import java.io.UncheckedIOException;
         return mappingAddress(address, mappingOffset, 0);
     }
 
-    // Given an offset previously otained from calling
+    // Given an offset previously obtained from calling
     // mappingOffset(index) returns the largest page aligned address
     // of the mapping less than or equal to the address of the buffer
     // element identified by index.
@@ -147,7 +165,7 @@ import java.io.UncheckedIOException;
         return indexAddress - mappingOffset;
     }
 
-    // given a mappingOffset previously otained from calling
+    // given a mappingOffset previously obtained from calling
     // mappingOffset(index) return that offset added to the supplied
     // length.
     private static long mappingLength(long mappingOffset, long length) {
@@ -159,4 +177,26 @@ import java.io.UncheckedIOException;
         // pageSize must be a power of 2
         return address & ~(pageSize - 1);
     }
+
+    static final MappedMemoryUtilsProxy PROXY = new MappedMemoryUtilsProxy() {
+        @Override
+        public boolean isLoaded(long address, boolean isSync, long size) {
+            return MappedMemoryUtils.isLoaded(address, isSync, size);
+        }
+
+        @Override
+        public void load(long address, boolean isSync, long size) {
+            MappedMemoryUtils.load(address, isSync, size);
+        }
+
+        @Override
+        public void unload(long address, boolean isSync, long size) {
+            MappedMemoryUtils.unload(address, isSync, size);
+        }
+
+        @Override
+        public void force(FileDescriptor fd, long address, boolean isSync, long index, long length) {
+            MappedMemoryUtils.force(fd, address, isSync, index, length);
+        }
+    };
 }

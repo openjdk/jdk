@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,8 +115,6 @@ class LinuxDosFileAttributeView
 
     @Override
     public DosFileAttributes readAttributes() throws IOException {
-        file.checkRead();
-
         int fd = -1;
         try {
              fd = file.openForAttributeAccess(followLinks);
@@ -182,7 +180,7 @@ class LinuxDosFileAttributeView
             x.rethrowAsIOException(file);
             return null;    // keep compiler happy
         } finally {
-            close(fd);
+            close(fd, e -> null);
         }
     }
 
@@ -212,8 +210,7 @@ class LinuxDosFileAttributeView
     private int getDosAttribute(int fd) throws UnixException {
         final int size = 24;
 
-        NativeBuffer buffer = NativeBuffers.getNativeBuffer(size);
-        try {
+        try (NativeBuffer buffer = NativeBuffers.getNativeBuffer(size)) {
             int len = LinuxNativeDispatcher
                 .fgetxattr(fd, DOS_XATTR_NAME_AS_BYTES, buffer.address(), size);
 
@@ -243,8 +240,6 @@ class LinuxDosFileAttributeView
             if (x.errno() == ENODATA)
                 return 0;
             throw x;
-        } finally {
-            buffer.release();
         }
     }
 
@@ -252,8 +247,6 @@ class LinuxDosFileAttributeView
      * Updates the value of the user.DOSATTRIB extended attribute
      */
     private void updateDosAttribute(int flag, boolean enable) throws IOException {
-        file.checkWrite();
-
         int fd = -1;
         try {
             fd = file.openForAttributeAccess(followLinks);
@@ -266,18 +259,15 @@ class LinuxDosFileAttributeView
             }
             if (newValue != oldValue) {
                 byte[] value = Util.toBytes("0x" + Integer.toHexString(newValue));
-                NativeBuffer buffer = NativeBuffers.asNativeBuffer(value);
-                try {
+                try (NativeBuffer buffer = NativeBuffers.asNativeBuffer(value)) {
                     LinuxNativeDispatcher.fsetxattr(fd, DOS_XATTR_NAME_AS_BYTES,
                         buffer.address(), value.length+1);
-                } finally {
-                    buffer.release();
                 }
             }
         } catch (UnixException x) {
             x.rethrowAsIOException(file);
         } finally {
-            close(fd);
+            close(fd, e -> null);
         }
     }
 }

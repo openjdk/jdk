@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -35,9 +34,9 @@
 #include "services/management.hpp"
 
 CmdLine::CmdLine(const char* line, size_t len, bool no_command_name)
-  : _cmd(line), _cmd_len(0), _args(NULL), _args_len(0)
+  : _cmd(line), _cmd_len(0), _args(nullptr), _args_len(0)
 {
-  assert(line != NULL, "Command line string should not be NULL");
+  assert(line != nullptr, "Command line string should not be null");
   const char* line_end;
   const char* cmd_end;
 
@@ -45,17 +44,17 @@ CmdLine::CmdLine(const char* line, size_t len, bool no_command_name)
   line_end = &line[len];
 
   // Skip whitespace in the beginning of the line.
-  while (_cmd < line_end && isspace((int) _cmd[0])) {
+  while (_cmd < line_end && isspace((unsigned char) _cmd[0])) {
     _cmd++;
   }
   cmd_end = _cmd;
 
   if (no_command_name) {
-    _cmd = NULL;
+    _cmd = nullptr;
     _cmd_len = 0;
   } else {
     // Look for end of the command name
-    while (cmd_end < line_end && !isspace((int) cmd_end[0])) {
+    while (cmd_end < line_end && !isspace((unsigned char) cmd_end[0])) {
       cmd_end++;
     }
     _cmd_len = cmd_end - _cmd;
@@ -138,29 +137,28 @@ bool DCmdArgIter::next(TRAPS) {
       _cursor++;
     }
   } else {
-    _value_addr = NULL;
+    _value_addr = nullptr;
     _value_len = 0;
   }
   return _key_len != 0;
 }
 
-bool DCmdInfo::by_name(void* cmd_name, DCmdInfo* info) {
-  if (info == NULL) return false;
-  return strcmp((const char*)cmd_name, info->name()) == 0;
+bool DCmdInfo::name_equals(const char* name) const {
+  return strcmp(name, this->name()) == 0;
 }
 
 void DCmdParser::add_dcmd_option(GenDCmdArgument* arg) {
-  assert(arg != NULL, "Sanity");
-  if (_options == NULL) {
+  assert(arg != nullptr, "Sanity");
+  if (_options == nullptr) {
     _options = arg;
   } else {
     GenDCmdArgument* o = _options;
-    while (o->next() != NULL) {
+    while (o->next() != nullptr) {
       o = o->next();
     }
     o->set_next(arg);
   }
-  arg->set_next(NULL);
+  arg->set_next(nullptr);
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
   arg->init_value(THREAD);
   if (HAS_PENDING_EXCEPTION) {
@@ -169,17 +167,17 @@ void DCmdParser::add_dcmd_option(GenDCmdArgument* arg) {
 }
 
 void DCmdParser::add_dcmd_argument(GenDCmdArgument* arg) {
-  assert(arg != NULL, "Sanity");
-  if (_arguments_list == NULL) {
+  assert(arg != nullptr, "Sanity");
+  if (_arguments_list == nullptr) {
     _arguments_list = arg;
   } else {
     GenDCmdArgument* a = _arguments_list;
-    while (a->next() != NULL) {
+    while (a->next() != nullptr) {
       a = a->next();
     }
     a->set_next(arg);
   }
-  arg->set_next(NULL);
+  arg->set_next(nullptr);
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
   arg->init_value(THREAD);
   if (HAS_PENDING_EXCEPTION) {
@@ -194,10 +192,10 @@ void DCmdParser::parse(CmdLine* line, char delim, TRAPS) {
   while (cont) {
     GenDCmdArgument* arg = lookup_dcmd_option(iter.key_addr(),
             iter.key_length());
-    if (arg != NULL) {
+    if (arg != nullptr) {
       arg->read_value(iter.value_addr(), iter.value_length(), CHECK);
     } else {
-      if (next_argument != NULL) {
+      if (next_argument != nullptr) {
         arg = next_argument;
         arg->read_value(iter.key_addr(), iter.key_length(), CHECK);
         next_argument = next_argument->next();
@@ -222,21 +220,21 @@ void DCmdParser::parse(CmdLine* line, char delim, TRAPS) {
 
 GenDCmdArgument* DCmdParser::lookup_dcmd_option(const char* name, size_t len) {
   GenDCmdArgument* arg = _options;
-  while (arg != NULL) {
+  while (arg != nullptr) {
     if (strlen(arg->name()) == len &&
       strncmp(name, arg->name(), len) == 0) {
       return arg;
     }
     arg = arg->next();
   }
-  return NULL;
+  return nullptr;
 }
 
 void DCmdParser::check(TRAPS) {
   const size_t buflen = 256;
   char buf[buflen];
   GenDCmdArgument* arg = _arguments_list;
-  while (arg != NULL) {
+  while (arg != nullptr) {
     if (arg->is_mandatory() && !arg->has_value()) {
       jio_snprintf(buf, buflen - 1, "The argument '%s' is mandatory.", arg->name());
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), buf);
@@ -244,7 +242,7 @@ void DCmdParser::check(TRAPS) {
     arg = arg->next();
   }
   arg = _options;
-  while (arg != NULL) {
+  while (arg != nullptr) {
     if (arg->is_mandatory() && !arg->has_value()) {
       jio_snprintf(buf, buflen - 1, "The option '%s' is mandatory.", arg->name());
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), buf);
@@ -254,9 +252,9 @@ void DCmdParser::check(TRAPS) {
 }
 
 void DCmdParser::print_help(outputStream* out, const char* cmd_name) const {
-  out->print("Syntax : %s %s", cmd_name, _options == NULL ? "" : "[options]");
+  out->print("Syntax : %s %s", cmd_name, _options == nullptr ? "" : "[options]");
   GenDCmdArgument* arg = _arguments_list;
-  while (arg != NULL) {
+  while (arg != nullptr) {
     if (arg->is_mandatory()) {
       out->print(" <%s>", arg->name());
     } else {
@@ -265,10 +263,10 @@ void DCmdParser::print_help(outputStream* out, const char* cmd_name) const {
     arg = arg->next();
   }
   out->cr();
-  if (_arguments_list != NULL) {
+  if (_arguments_list != nullptr) {
     out->print_cr("\nArguments:");
     arg = _arguments_list;
-    while (arg != NULL) {
+    while (arg != nullptr) {
       out->print("\t%s : %s %s (%s, ", arg->name(),
                  arg->is_mandatory() ? "" : "[optional]",
                  arg->description(), arg->type());
@@ -281,10 +279,10 @@ void DCmdParser::print_help(outputStream* out, const char* cmd_name) const {
       arg = arg->next();
     }
   }
-  if (_options != NULL) {
+  if (_options != nullptr) {
     out->print_cr("\nOptions: (options must be specified using the <key> or <key>=<value> syntax)");
     arg = _options;
-    while (arg != NULL) {
+    while (arg != nullptr) {
       out->print("\t%s : %s %s (%s, ", arg->name(),
                  arg->is_mandatory() ? "" : "[optional]",
                  arg->description(), arg->type());
@@ -301,12 +299,12 @@ void DCmdParser::print_help(outputStream* out, const char* cmd_name) const {
 
 void DCmdParser::reset(TRAPS) {
   GenDCmdArgument* arg = _arguments_list;
-  while (arg != NULL) {
+  while (arg != nullptr) {
     arg->reset(CHECK);
     arg = arg->next();
   }
   arg = _options;
-  while (arg != NULL) {
+  while (arg != nullptr) {
     arg->reset(CHECK);
     arg = arg->next();
   }
@@ -314,12 +312,12 @@ void DCmdParser::reset(TRAPS) {
 
 void DCmdParser::cleanup() {
   GenDCmdArgument* arg = _arguments_list;
-  while (arg != NULL) {
+  while (arg != nullptr) {
     arg->cleanup();
     arg = arg->next();
   }
   arg = _options;
-  while (arg != NULL) {
+  while (arg != nullptr) {
     arg->cleanup();
     arg = arg->next();
   }
@@ -328,12 +326,12 @@ void DCmdParser::cleanup() {
 int DCmdParser::num_arguments() const {
   GenDCmdArgument* arg = _arguments_list;
   int count = 0;
-  while (arg != NULL) {
+  while (arg != nullptr) {
     count++;
     arg = arg->next();
   }
   arg = _options;
-  while (arg != NULL) {
+  while (arg != nullptr) {
     count++;
     arg = arg->next();
   }
@@ -344,12 +342,12 @@ GrowableArray<const char *>* DCmdParser::argument_name_array() const {
   int count = num_arguments();
   GrowableArray<const char *>* array = new GrowableArray<const char *>(count);
   GenDCmdArgument* arg = _arguments_list;
-  while (arg != NULL) {
+  while (arg != nullptr) {
     array->append(arg->name());
     arg = arg->next();
   }
   arg = _options;
-  while (arg != NULL) {
+  while (arg != nullptr) {
     array->append(arg->name());
     arg = arg->next();
   }
@@ -361,7 +359,7 @@ GrowableArray<DCmdArgumentInfo*>* DCmdParser::argument_info_array() const {
   GrowableArray<DCmdArgumentInfo*>* array = new GrowableArray<DCmdArgumentInfo *>(count);
   int idx = 0;
   GenDCmdArgument* arg = _arguments_list;
-  while (arg != NULL) {
+  while (arg != nullptr) {
     array->append(new DCmdArgumentInfo(arg->name(), arg->description(),
                   arg->type(), arg->default_string(), arg->is_mandatory(),
                   false, arg->allow_multiple(), idx));
@@ -369,7 +367,7 @@ GrowableArray<DCmdArgumentInfo*>* DCmdParser::argument_info_array() const {
     arg = arg->next();
   }
   arg = _options;
-  while (arg != NULL) {
+  while (arg != nullptr) {
     array->append(new DCmdArgumentInfo(arg->name(), arg->description(),
                   arg->type(), arg->default_string(), arg->is_mandatory(),
                   true, arg->allow_multiple()));
@@ -378,18 +376,17 @@ GrowableArray<DCmdArgumentInfo*>* DCmdParser::argument_info_array() const {
   return array;
 }
 
-DCmdFactory* DCmdFactory::_DCmdFactoryList = NULL;
+DCmdFactory* DCmdFactory::_DCmdFactoryList = nullptr;
 bool DCmdFactory::_has_pending_jmx_notification = false;
 
-void DCmd::parse_and_execute(DCmdSource source, outputStream* out,
-                             const char* cmdline, char delim, TRAPS) {
+void DCmd::Executor::parse_and_execute(const char* cmdline, char delim, TRAPS) {
 
-  if (cmdline == NULL) return; // Nothing to do!
+  if (cmdline == nullptr) return; // Nothing to do!
   DCmdIter iter(cmdline, '\n');
 
   int count = 0;
   while (iter.has_next()) {
-    if(source == DCmd_Source_MBean && count > 0) {
+    if (_source == DCmd_Source_MBean && count > 0) {
       // When diagnostic commands are invoked via JMX, each command line
       // must contains one and only one command because of the Permission
       // checks performed by the DiagnosticCommandMBean
@@ -401,15 +398,51 @@ void DCmd::parse_and_execute(DCmdSource source, outputStream* out,
       break;
     }
     if (line.is_executable()) {
+      // Allow for "<cmd> -h|-help|--help" to enable the help diagnostic command.
+      // Ignores any additional arguments.
       ResourceMark rm;
-      DCmd* command = DCmdFactory::create_local_DCmd(source, line, out, CHECK);
-      assert(command != NULL, "command error must be handled before this line");
+      stringStream updated_line;
+      if (reorder_help_cmd(line, updated_line)) {
+        CmdLine updated_cmd(updated_line.base(), updated_line.size(), false);
+        line = updated_cmd;
+      }
+
+      DCmd* command = DCmdFactory::create_local_DCmd(_source, line, _out, CHECK);
+      assert(command != nullptr, "command error must be handled before this line");
       DCmdMark mark(command);
       command->parse(&line, delim, CHECK);
-      command->execute(source, CHECK);
+      execute(command, CHECK);
     }
     count++;
   }
+}
+
+void DCmd::Executor::execute(DCmd* command, TRAPS) {
+  command->execute(_source, CHECK);
+}
+
+void DCmd::parse_and_execute(DCmdSource source, outputStream* out,
+                             const char* cmdline, char delim, TRAPS) {
+  Executor(source, out).parse_and_execute(cmdline, delim, CHECK);
+}
+
+bool DCmd::reorder_help_cmd(CmdLine line, stringStream &updated_line) {
+  stringStream args;
+  args.print("%s", line.args_addr());
+  char* rest = args.as_string();
+  char* token = strtok_r(rest, " ", &rest);
+  while (token != nullptr) {
+    if (strcmp(token, "-h") == 0 || strcmp(token, "--help") == 0 ||
+        strcmp(token, "-help") == 0) {
+      updated_line.print("%s", "help ");
+      updated_line.write(line.cmd_addr(), line.cmd_len());
+      updated_line.write("\0", 1);
+      return true;
+    }
+    token = strtok_r(rest, " ", &rest);
+  }
+
+  return false;
 }
 
 void DCmdWithParser::parse(CmdLine* line, char delim, TRAPS) {
@@ -462,6 +495,11 @@ void DCmdFactory::send_notification_internal(TRAPS) {
   if (notif) {
 
     Klass* k = Management::com_sun_management_internal_DiagnosticCommandImpl_klass(CHECK);
+    if (k == nullptr) {
+      fatal("Should have the DiagnosticCommandImpl class");
+      return; // silence the compiler
+    }
+
     InstanceKlass* dcmd_mbean_klass = InstanceKlass::cast(k);
 
     JavaValue result(T_OBJECT);
@@ -496,18 +534,18 @@ bool DCmdFactory::_send_jmx_notification = false;
 DCmdFactory* DCmdFactory::factory(DCmdSource source, const char* name, size_t len) {
   MutexLocker ml(DCmdFactory_lock, Mutex::_no_safepoint_check_flag);
   DCmdFactory* factory = _DCmdFactoryList;
-  while (factory != NULL) {
+  while (factory != nullptr) {
     if (strlen(factory->name()) == len &&
         strncmp(name, factory->name(), len) == 0) {
       if(factory->export_flags() & source) {
         return factory;
       } else {
-        return NULL;
+        return nullptr;
       }
     }
     factory = factory->_next;
   }
-  return NULL;
+  return nullptr;
 }
 
 int DCmdFactory::register_DCmdFactory(DCmdFactory* factory) {
@@ -524,7 +562,7 @@ int DCmdFactory::register_DCmdFactory(DCmdFactory* factory) {
 DCmd* DCmdFactory::create_local_DCmd(DCmdSource source, CmdLine &line,
                                      outputStream* out, TRAPS) {
   DCmdFactory* f = factory(source, line.cmd_addr(), line.cmd_len());
-  if (f != NULL) {
+  if (f != nullptr) {
     if (!f->is_enabled()) {
       THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
                      f->disabled_message());
@@ -539,7 +577,7 @@ GrowableArray<const char*>* DCmdFactory::DCmd_list(DCmdSource source) {
   MutexLocker ml(DCmdFactory_lock, Mutex::_no_safepoint_check_flag);
   GrowableArray<const char*>* array = new GrowableArray<const char*>();
   DCmdFactory* factory = _DCmdFactoryList;
-  while (factory != NULL) {
+  while (factory != nullptr) {
     if (!factory->is_hidden() && (factory->export_flags() & source)) {
       array->append(factory->name());
     }
@@ -552,11 +590,11 @@ GrowableArray<DCmdInfo*>* DCmdFactory::DCmdInfo_list(DCmdSource source ) {
   MutexLocker ml(DCmdFactory_lock, Mutex::_no_safepoint_check_flag);
   GrowableArray<DCmdInfo*>* array = new GrowableArray<DCmdInfo*>();
   DCmdFactory* factory = _DCmdFactoryList;
-  while (factory != NULL) {
+  while (factory != nullptr) {
     if (!factory->is_hidden() && (factory->export_flags() & source)) {
       array->append(new DCmdInfo(factory->name(),
                     factory->description(), factory->impact(),
-                    factory->permission(), factory->num_arguments(),
+                    factory->num_arguments(),
                     factory->is_enabled()));
     }
     factory = factory->next();

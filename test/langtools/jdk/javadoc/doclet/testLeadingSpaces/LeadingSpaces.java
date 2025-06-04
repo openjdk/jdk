@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4232882 8014636
+ * @bug 4232882 8014636 8352249
  * @summary Javadoc strips all of the leading spaces when the comment
  *    does not begin with a star.  This RFE allows users to
  *    begin their comment without a leading star without leading
@@ -43,7 +43,7 @@ public class LeadingSpaces extends JavadocTester {
      * @throws Exception if the test fails
      */
     public static void main(String... args) throws Exception {
-        LeadingSpaces tester = new LeadingSpaces();
+        var tester = new LeadingSpaces();
         tester.runTests();
     }
 
@@ -54,13 +54,14 @@ public class LeadingSpaces extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("LeadingSpaces.html", true,
                   """
-                      \s       1
-                                2
-                                  3
-                                    4
-                                      5
-                                        6
-                                          7""");
+                      <pre>
+                       1
+                         2
+                           3
+                             4
+                               5
+                                 6
+                                   7""");
     }
 
     /**

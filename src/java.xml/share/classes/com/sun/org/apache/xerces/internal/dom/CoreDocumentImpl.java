@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -83,7 +83,7 @@ import org.w3c.dom.ls.LSSerializer;
  * @author Andy Clark, IBM
  * @author Ralf Pfeiffer, IBM
  * @since  PR-DOM-Level-1-19980818.
- * @LastModified: Sept 2019
+ * @LastModified: Nov 2024
  */
 public class CoreDocumentImpl
         extends ParentNode implements Document {
@@ -306,7 +306,7 @@ public class CoreDocumentImpl
         super(null);
         ownerDocument = this;
         allowGrammarAccess = grammarAccess;
-        String systemProp = SecuritySupport.getSystemProperty(Constants.SUN_DOM_PROPERTY_PREFIX+Constants.SUN_DOM_ANCESTOR_CHECCK);
+        String systemProp = System.getProperty(Constants.SUN_DOM_PROPERTY_PREFIX+Constants.SUN_DOM_ANCESTOR_CHECCK);
         if (systemProp != null) {
             if (systemProp.equalsIgnoreCase("false")) {
                 ancestorChecking = false;
@@ -393,7 +393,7 @@ public class CoreDocumentImpl
 
             if (identifiers != null) {
                 // Build a reverse mapping from element to identifier.
-                reversedIdentifiers = new HashMap<>(identifiers.size());
+                reversedIdentifiers = HashMap.newHashMap(identifiers.size());
                 for (String elementId : identifiers.keySet()) {
                     reversedIdentifiers.put(identifiers.get(elementId), elementId);
                 }

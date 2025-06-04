@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,10 @@ public class Main {
      * @param args command line argument array
      */
     public static void main(String[] args) {
+        // print deprecation warning
+        getError().println(getMessage("deprecated.warning",
+                new Object[] { PROGRAM_NAME }));
+
         // parse command line options
         String[] scriptArgs = processOptions(args);
 
@@ -540,7 +544,9 @@ public class Main {
             name = name + "/";
         }
         try {
-            return new URL("file", "", name);
+            @SuppressWarnings("deprecation")
+            var result = new URL("file", "", name);
+            return result;
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException("file");
         }

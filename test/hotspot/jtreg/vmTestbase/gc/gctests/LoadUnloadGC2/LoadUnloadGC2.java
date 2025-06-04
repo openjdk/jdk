@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,14 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm -XX:-UseGCOverheadLimit gc.gctests.LoadUnloadGC2.LoadUnloadGC2
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.gctests.LoadUnloadGC2.LoadUnloadGC2
  */
 
 package gc.gctests.LoadUnloadGC2;
 
+import jdk.test.whitebox.WhiteBox;
 import nsk.share.*;
 import nsk.share.test.*;
 import nsk.share.gc.*;
@@ -44,15 +47,24 @@ import nsk.share.gc.gp.classload.*;
 import java.lang.reflect.Array;
 
 public class LoadUnloadGC2 extends GCTestBase {
+        private static int CYCLE = 1000;
         public void run() {
                 Stresser stresser = new Stresser(runParams.getStressOptions());
                 stresser.start(500000);
+                int iteration = 0;
                 try {
+                        GarbageProducer garbageProducer = new GeneratedClassProducer();
                         while (stresser.iteration()) {
-                                GarbageProducer garbageProducer = new GeneratedClassProducer();
-                                log.info("Iteration: " + stresser.getIteration());
-                                GarbageUtils.eatMemory(stresser, garbageProducer, 0);
-                                garbageProducer = null;
+                                garbageProducer.create(512L);
+                                if(iteration++ > CYCLE) {
+                                    // Unload once every cycle.
+                                    iteration = 0;
+                                    garbageProducer = null;
+                                    // Perform GC so that
+                                    // class gets unloaded
+                                    WhiteBox.getWhiteBox().fullGC();
+                                    garbageProducer = new GeneratedClassProducer();
+                               }
                         }
                 } finally {
                         stresser.finish();

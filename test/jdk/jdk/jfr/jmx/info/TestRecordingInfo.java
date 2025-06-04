@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,11 @@ import jdk.jfr.RecordingState;
 import jdk.management.jfr.FlightRecorderMXBean;
 import jdk.management.jfr.RecordingInfo;
 import jdk.test.lib.jfr.CommonHelper;
+import jdk.test.lib.Asserts;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @summary Test for RecordingInfo
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
@@ -62,6 +63,16 @@ public class TestRecordingInfo {
         FlightRecorderMXBean bean = JmxHelper.getFlighteRecorderMXBean();
         RecordingInfo info = JmxHelper.verifyExists(recording.getId(), bean.getRecordings());
 
+        String text = info.toString();
+        assertContains(text, "name");
+        assertContains(text, String.valueOf(info.getName()));
+        assertContains(text, "id");
+        assertContains(text, String.valueOf(info.getId()));
+        assertContains(text, "maxAge");
+        assertContains(text, String.valueOf(info.getMaxAge()));
+        assertContains(text, "maxSize");
+        assertContains(text, String.valueOf(info.getMaxSize()));
+
         System.out.println(JmxHelper.asString(recording));
         System.out.println(JmxHelper.asString(info));
         JmxHelper.verifyEquals(info, recording);
@@ -70,4 +81,9 @@ public class TestRecordingInfo {
         recording.close();
     }
 
+    private static void assertContains(String text, String match) {
+        if (!text.contains(match)) {
+            Asserts.fail("Expected '" + text + "' to contain '" + match + '"');
+        }
+    }
 }

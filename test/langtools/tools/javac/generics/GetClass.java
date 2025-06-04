@@ -8,7 +8,7 @@
  */
 
 public class GetClass {
-    public static void main(String[] args) {
+    public static void meth() {
         Class<? extends Class<GetClass>> x = GetClass.class.getClass();
     }
 }

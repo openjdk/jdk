@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,9 @@ package jdk.jfr.internal.consumer;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.security.AccessControlContext;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Objects;
 import jdk.jfr.consumer.RecordedEvent;
 
 /**
@@ -46,10 +44,10 @@ public final class EventFileStream extends AbstractEventStream {
     private ChunkParser currentParser;
     private RecordedEvent[] cacheSorted;
 
-    public EventFileStream(@SuppressWarnings("removal") AccessControlContext acc, Path path) throws IOException {
-        super(acc, null, Collections.emptyList());
-        Objects.requireNonNull(path);
-        this.input = new RecordingInput(path.toFile(), FileAccess.UNPRIVILEGED);
+    public EventFileStream(Path file) throws IOException {
+        super(Collections.emptyList());
+        this.input = new RecordingInput(file.toFile());
+        this.input.setStreamed();
     }
 
     @Override
@@ -74,6 +72,11 @@ public final class EventFileStream extends AbstractEventStream {
     }
 
     @Override
+    protected boolean isRecordingStream() {
+        return false;
+    }
+
+    @Override
     protected void process() throws IOException {
         Dispatcher disp = dispatcher();
         long start = 0;
@@ -85,7 +88,7 @@ public final class EventFileStream extends AbstractEventStream {
             end = disp.endNanos;
         }
 
-        currentParser = new ChunkParser(input, disp.parserConfiguration, parserState);
+        currentParser = new ChunkParser(input, disp.parserConfiguration, parserState());
         while (!isClosed()) {
             onMetadata(currentParser);
             if (currentParser.getStartNanos() > end) {
@@ -93,10 +96,9 @@ public final class EventFileStream extends AbstractEventStream {
                 return;
             }
             disp = dispatcher();
-            disp.parserConfiguration.filterStart = start;
-            disp.parserConfiguration.filterEnd = end;
-            currentParser.updateConfiguration(disp.parserConfiguration, true);
-            if (disp.parserConfiguration.isOrdered()) {
+            var ranged  = disp.parserConfiguration.withRange(start, end);
+            currentParser.updateConfiguration(ranged, true);
+            if (disp.parserConfiguration.ordered()) {
                 processOrdered(disp);
             } else {
                 processUnordered(disp);

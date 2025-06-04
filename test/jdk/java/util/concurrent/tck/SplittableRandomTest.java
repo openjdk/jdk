@@ -37,6 +37,7 @@ import java.util.SplittableRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
@@ -572,6 +573,7 @@ public class SplittableRandomTest extends JSR166TestCase {
         };
         List<Method> forgotten =
             Arrays.stream(java.util.Random.class.getMethods())
+            .filter(method -> (method.getModifiers() & Modifier.STATIC) == 0)
             .filter(wasForgotten)
             .collect(Collectors.toList());
         if (!forgotten.isEmpty())

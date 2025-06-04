@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, SAP and/or its affiliates.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -23,7 +23,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -102,7 +101,7 @@ static void set_or_clear_random_range(BitMap& bm, SimpleFakeBitmap& fbm, int beg
 }
 
 static void test_bitmap_popcnt(int bitsize) {
-  CHeapBitMap bm(bitsize);
+  CHeapBitMap bm(bitsize, mtTest);
   SimpleFakeBitmap fbm(bitsize);
 
   ASSERT_POPCNT_ALL(bm, 0);
@@ -148,7 +147,7 @@ TEST_VM(BitMap, popcnt_300) { test_bitmap_popcnt(300); }
 
 TEST_VM(BitMap, popcnt_large) {
 
-  CHeapBitMap bm(64 * K);
+  CHeapBitMap bm(64 * K, mtTest);
 
   ASSERT_POPCNT_ALL(bm, 0);
   ASSERT_POPCNT_RANGE(bm, 0, 64 * K, 0);
@@ -169,4 +168,3 @@ TEST_VM(BitMap, popcnt_large) {
   ASSERT_POPCNT_RANGE(bm, 199, 299, 100);
 
 }
-

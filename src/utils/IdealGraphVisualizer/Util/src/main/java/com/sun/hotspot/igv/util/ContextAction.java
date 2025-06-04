@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package com.sun.hotspot.igv.util;
 
+import com.sun.hotspot.igv.data.ChangedListener;
 import java.awt.EventQueue;
 import org.openide.util.*;
 import org.openide.util.actions.CallableSystemAction;
@@ -32,9 +33,10 @@ import org.openide.util.actions.CallableSystemAction;
  *
  * @author Thomas Wuerthinger
  */
-public abstract class ContextAction<T> extends CallableSystemAction implements LookupListener, ContextAwareAction {
+public abstract class ContextAction<T> extends CallableSystemAction implements LookupListener, ContextAwareAction, ChangedListener<T> {
 
-    private Lookup context = null;
+    private T t;
+
     private Lookup.Result<T> result = null;
 
     public ContextAction() {
@@ -46,7 +48,6 @@ public abstract class ContextAction<T> extends CallableSystemAction implements L
     }
 
     private void init(Lookup context) {
-        this.context = context;
         result = context.lookupResult(contextClass());
         result.addLookupListener(this);
         resultChanged(null);
@@ -66,13 +67,7 @@ public abstract class ContextAction<T> extends CallableSystemAction implements L
         final T t = result.allInstances().iterator().next();
 
         // Ensure it's AWT event thread
-        EventQueue.invokeLater(new Runnable() {
-
-            @Override
-            public void run() {
-                performAction(t);
-            }
-        });
+        EventQueue.invokeLater(() -> performAction(t));
     }
 
     public void update(T t) {
@@ -81,13 +76,39 @@ public abstract class ContextAction<T> extends CallableSystemAction implements L
         } else {
             setEnabled(isEnabled(t));
         }
+        if (this.t != t) {
+            if (this.t != null) {
+                removeContextListener(this.t);
+            }
+            this.t = t;
+            if (this.t != null) {
+                addContextListener(this.t);
+            }
+        }
     }
 
-    public boolean isEnabled(T context) {
-        return true;
+    @Override
+    public void changed(T t) {
+        update(t);
     }
+
+    @Override
+    public HelpCtx getHelpCtx() {
+        return HelpCtx.DEFAULT_HELP;
+    }
+
+    @Override
+    protected boolean asynchronous() {
+        return false;
+    }
+
+    public abstract boolean isEnabled(T context);
 
     public abstract Class<T> contextClass();
 
-    public abstract void performAction(T context);
+    public abstract void performAction(T t);
+
+    public abstract void addContextListener(T t);
+
+    public abstract void removeContextListener(T t);
 }

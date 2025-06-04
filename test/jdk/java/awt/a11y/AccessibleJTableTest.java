@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,22 +26,22 @@
  * @test
  * @bug 8267388
  * @summary Test implementation of NSAccessibilityTable protocol peer
- * @author Artem.Semenov@jetbrains.com
  * @run main/manual AccessibleJTableTest
  * @requires (os.family == "windows" | os.family == "mac")
  */
 
-import javax.swing.*;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableModel;
-
-import java.awt.*;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import javax.swing.JButton;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.SwingUtilities;
+import javax.swing.table.AbstractTableModel;
 
 public class AccessibleJTableTest extends AccessibleComponentTest {
     private static final String[] columnNames = {"One", "Two", "Three"};
@@ -67,6 +67,29 @@ public class AccessibleJTableTest extends AccessibleComponentTest {
                 + "If you can hear table cells ctrl+tab further and press PASS, otherwise press FAIL.\n";
 
         JTable table = new JTable(data, columnNames);
+        table.setPreferredScrollableViewportSize(table.getPreferredSize());
+        JPanel panel = new JPanel();
+        panel.setLayout(new FlowLayout());
+        JScrollPane scrollPane = new JScrollPane(table);
+        panel.add(scrollPane);
+        panel.setFocusable(false);
+        exceptionString = "AccessibleJTable test failed!";
+        super.createUI(panel, "AccessibleJTableTest");
+    }
+
+    public void  createUIDraggable() {
+        INSTRUCTIONS = "INSTRUCTIONS:\n"
+                + "Check that table is properly updated when column order is changed.\n\n"
+                + "Turn screen reader on, and Tab to the table.\n"
+                + "Using arrow keys navigate to the last cell in the first row in the table."
+                + "Screen reader should announce it as \"Column 3 row 1\"\n\n"
+                + "Using mouse drag the header of the last column so the last column becomes the first one."
+                + "Wait for the screen reader to finish announcing new position in table.\n\n"
+                + "If new position in table corresponds to the new table layout ctrl+tab further "
+                + "and press PASS, otherwise press FAIL.\n";
+
+        JTable table = new JTable(data, columnNames);
+        table.setPreferredScrollableViewportSize(table.getPreferredSize());
         JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout());
         JScrollPane scrollPane = new JScrollPane(table);
@@ -84,7 +107,9 @@ public class AccessibleJTableTest extends AccessibleComponentTest {
                 + "If you can hear second table name: \"second table\" - ctrl+tab further and press PASS, otherwise press FAIL.\n";
 
         JTable table = new JTable(data, columnNames);
+        table.setPreferredScrollableViewportSize(table.getPreferredSize());
         JTable secondTable = new JTable(data, columnNames);
+        secondTable.setPreferredScrollableViewportSize(secondTable.getPreferredSize());
         secondTable.getAccessibleContext().setAccessibleName("Second table");
         JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout());
@@ -105,8 +130,8 @@ public class AccessibleJTableTest extends AccessibleComponentTest {
                 + "If you hear changes in the table - ctrl+tab further and press PASS, otherwise press FAIL.\n";
 
         JTable table = new JTable(new TestTableModel(3, 3));
-
-                JPanel panel = new JPanel();
+        table.setPreferredScrollableViewportSize(table.getPreferredSize());
+        JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout());
         JScrollPane scrollPane = new JScrollPane(table);
         panel.add(scrollPane);
@@ -161,6 +186,13 @@ public class AccessibleJTableTest extends AccessibleComponentTest {
 
         countDownLatch = test.createCountDownLatch();
         SwingUtilities.invokeAndWait(test::createUI);
+        countDownLatch.await(15, TimeUnit.MINUTES);
+        if (!testResult) {
+            throw new RuntimeException(exceptionString);
+        }
+
+        countDownLatch = test.createCountDownLatch();
+        SwingUtilities.invokeAndWait(test::createUIDraggable);
         countDownLatch.await(15, TimeUnit.MINUTES);
         if (!testResult) {
             throw new RuntimeException(exceptionString);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,15 +67,16 @@ public class ProgressMonitorInputStream extends FilterInputStream
     private ProgressMonitor monitor;
     private int             nread = 0;
     private int             size = 0;
-
+    Component parentComponent;
+    Object message;
 
     /**
      * Constructs an object to monitor the progress of an input stream.
      *
-     * @param message Descriptive text to be placed in the dialog box
-     *                if one is popped up.
      * @param parentComponent The component triggering the operation
      *                        being monitored.
+     * @param message Descriptive text to be placed in the dialog box
+     *                if one is popped up.
      * @param in The input stream to be monitored.
      */
     public ProgressMonitorInputStream(Component parentComponent,
@@ -88,6 +89,8 @@ public class ProgressMonitorInputStream extends FilterInputStream
         catch(IOException ioe) {
             size = 0;
         }
+        this.parentComponent = parentComponent;
+        this.message = message;
         monitor = new ProgressMonitor(parentComponent, message, null, 0, size);
     }
 
@@ -119,6 +122,25 @@ public class ProgressMonitorInputStream extends FilterInputStream
         return c;
     }
 
+    private void setProgress(int nr) throws IOException {
+        if (nr > 0) {
+            if (nread + nr > nread) {
+                monitor.setProgress(nread += nr);
+            } else {
+                size = in.available();
+                nread = 0;
+                monitor.close();
+                monitor = new ProgressMonitor(this.parentComponent,
+                                              this.message, null, 0, size);
+            }
+        }
+        if (monitor.isCanceled()) {
+            InterruptedIOException exc =
+                    new InterruptedIOException("progress");
+            exc.bytesTransferred = nread;
+            throw exc;
+        }
+    }
 
     /**
      * Overrides <code>FilterInputStream.read</code>
@@ -126,13 +148,7 @@ public class ProgressMonitorInputStream extends FilterInputStream
      */
     public int read(byte[] b) throws IOException {
         int nr = in.read(b);
-        if (nr > 0) monitor.setProgress(nread += nr);
-        if (monitor.isCanceled()) {
-            InterruptedIOException exc =
-                                    new InterruptedIOException("progress");
-            exc.bytesTransferred = nread;
-            throw exc;
-        }
+        setProgress(nr);
         return nr;
     }
 
@@ -145,13 +161,7 @@ public class ProgressMonitorInputStream extends FilterInputStream
                     int off,
                     int len) throws IOException {
         int nr = in.read(b, off, len);
-        if (nr > 0) monitor.setProgress(nread += nr);
-        if (monitor.isCanceled()) {
-            InterruptedIOException exc =
-                                    new InterruptedIOException("progress");
-            exc.bytesTransferred = nread;
-            throw exc;
-        }
+        setProgress(nr);
         return nr;
     }
 
@@ -162,7 +172,13 @@ public class ProgressMonitorInputStream extends FilterInputStream
      */
     public long skip(long n) throws IOException {
         long nr = in.skip(n);
-        if (nr > 0) monitor.setProgress(nread += nr);
+        if (nr > 0) {
+            if ((int)(nread + nr) > nread) {
+                monitor.setProgress(nread += nr);
+            } else {
+                monitor.setProgress(monitor.getMaximum());
+            }
+        }
         return nr;
     }
 

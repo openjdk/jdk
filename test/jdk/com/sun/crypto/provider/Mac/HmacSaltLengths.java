@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4925866
+ * @bug 4925866 8288050
  * @summary ensures various salt lengths can be used for
  * HmacPBESHA1.
  * @author Valerie Peng
@@ -41,11 +41,17 @@ public class HmacSaltLengths {
 
     private static final String[] ALGOS = {
         "HmacPBESHA1",
+        "HmacPBESHA224",
+        "HmacPBESHA256",
+        "HmacPBESHA384",
+        "HmacPBESHA512",
         "PBEWithHmacSHA1",
         "PBEWithHmacSHA224",
         "PBEWithHmacSHA256",
         "PBEWithHmacSHA384",
-        "PBEWithHmacSHA512"
+        "PBEWithHmacSHA512",
+        "PBEWithHmacSHA512/224",
+        "PBEWithHmacSHA512/256",
     };
 
     private static void runTest(String alg, byte[] plaintext,
@@ -89,7 +95,8 @@ public class HmacSaltLengths {
         new SecureRandom().nextBytes(input);
         char[] PASSWD = { 'p','a','s','s','w','o','r','d' };
         long start = System.currentTimeMillis();
-        Provider p = Security.getProvider("SunJCE");
+        Provider p = Security.getProvider(
+                        System.getProperty("test.provider.name", "SunJCE"));
         System.out.println("Testing provider " + p.getName() + "...");
         for (String algo : ALGOS) {
             runTest(algo, input, PASSWD, p);

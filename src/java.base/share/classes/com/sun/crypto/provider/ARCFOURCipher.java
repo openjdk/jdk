@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,8 @@ import javax.crypto.*;
  * @since   1.5
  * @author  Andreas Sterbenz
  */
-public final class ARCFOURCipher extends CipherSpi {
+public sealed class ARCFOURCipher extends CipherSpi
+        permits PKCS12PBECipherCore.PBEWithSHA1AndRC4 {
 
     // state array S, 256 entries. The entries are 8-bit, but we use an int[]
     // because int arithmetic is much faster than in Java than bytes.
@@ -113,7 +114,7 @@ public final class ARCFOURCipher extends CipherSpi {
     // Modes do not make sense with stream ciphers, but allow ECB
     // see JCE spec.
     protected void engineSetMode(String mode) throws NoSuchAlgorithmException {
-        if (mode.equalsIgnoreCase("ECB") == false) {
+        if (!mode.equalsIgnoreCase("ECB")) {
             throw new NoSuchAlgorithmException("Unsupported mode " + mode);
         }
     }
@@ -122,7 +123,7 @@ public final class ARCFOURCipher extends CipherSpi {
     // see JCE spec.
     protected void engineSetPadding(String padding)
             throws NoSuchPaddingException {
-        if (padding.equalsIgnoreCase("NoPadding") == false) {
+        if (!padding.equalsIgnoreCase("NoPadding")) {
             throw new NoSuchPaddingException("Padding must be NoPadding");
         }
     }
@@ -200,7 +201,7 @@ public final class ARCFOURCipher extends CipherSpi {
         if (!keyAlg.equals("RC4") && !keyAlg.equals("ARCFOUR")) {
             throw new InvalidKeyException("Not an ARCFOUR key: " + keyAlg);
         }
-        if ("RAW".equals(key.getFormat()) == false) {
+        if (!"RAW".equals(key.getFormat())) {
             throw new InvalidKeyException("Key encoding format must be RAW");
         }
         byte[] encodedKey = key.getEncoded();

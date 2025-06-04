@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,14 +41,12 @@ import com.sun.nio.sctp.SctpChannel;
 import com.sun.nio.sctp.SctpServerChannel;
 import com.sun.nio.sctp.SctpSocketOption;
 import com.sun.nio.sctp.SctpStandardSocketOptions;
-import sun.nio.ch.DirectBuffer;
 import sun.nio.ch.NativeThread;
 import sun.nio.ch.IOStatus;
 import sun.nio.ch.IOUtil;
 import sun.nio.ch.Net;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
-import sun.nio.ch.Util;
 
 /**
  * An implementation of SctpServerChannel
@@ -61,7 +59,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
     private final int fdVal;
 
     /* IDs of native thread doing accept, for signalling */
-    private volatile long thread = 0;
+    private volatile long thread;
 
     /* Lock held by thread currently blocked in this channel */
     private final Object lock = new Object();
@@ -81,7 +79,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
 
     /* Binding: Once bound the port will remain constant. */
     int port = -1;
-    private HashSet<InetSocketAddress> localAddresses = new HashSet<InetSocketAddress>();
+    private final HashSet<InetSocketAddress> localAddresses = new HashSet<>();
     /* Has the channel been bound to the wildcard address */
     private boolean wildcard; /* false */
 
@@ -111,10 +109,6 @@ public class SctpServerChannelImpl extends SctpServerChannel
 
                 InetSocketAddress isa = (local == null) ?
                     new InetSocketAddress(0) : Net.checkAddress(local);
-                @SuppressWarnings("removal")
-                SecurityManager sm = System.getSecurityManager();
-                if (sm != null)
-                    sm.checkListen(isa.getPort());
                 Net.bind(fd, isa.getAddress(), isa.getPort());
 
                 InetSocketAddress boundIsa = Net.localAddress(fd);
@@ -200,7 +194,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
 
     private boolean isBound() {
         synchronized (stateLock) {
-            return port == -1 ? false : true;
+            return port != -1;
         }
     }
 
@@ -219,7 +213,6 @@ public class SctpServerChannelImpl extends SctpServerChannel
                 throw new ClosedChannelException();
             if (!isBound())
                 throw new NotYetBoundException();
-            SctpChannel sc = null;
 
             int n = 0;
             FileDescriptor newfd = new FileDescriptor();
@@ -246,16 +239,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
                 return null;
 
             IOUtil.configureBlocking(newfd, true);
-            InetSocketAddress isa = isaa[0];
-            sc = new SctpChannelImpl(provider(), newfd);
-
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null)
-                sm.checkAccept(isa.getAddress().getHostAddress(),
-                               isa.getPort());
-
-            return sc;
+            return new SctpChannelImpl(provider(), newfd);
         }
     }
 
@@ -389,19 +373,13 @@ public class SctpServerChannelImpl extends SctpServerChannel
         }
     }
 
-    private static class DefaultOptionsHolder {
-        static final Set<SctpSocketOption<?>> defaultOptions = defaultOptions();
-
-        private static Set<SctpSocketOption<?>> defaultOptions() {
-            HashSet<SctpSocketOption<?>> set = new HashSet<SctpSocketOption<?>>(1);
-            set.add(SctpStandardSocketOptions.SCTP_INIT_MAXSTREAMS);
-            return Collections.unmodifiableSet(set);
-        }
-    }
-
     @Override
     public final Set<SctpSocketOption<?>> supportedOptions() {
-        return DefaultOptionsHolder.defaultOptions;
+        final class Holder {
+            static final Set<SctpSocketOption<?>> DEFAULT_OPTIONS =
+                    Set.of(SctpStandardSocketOptions.SCTP_INIT_MAXSTREAMS);
+        }
+        return Holder.DEFAULT_OPTIONS;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import java.util.Arrays;
  * (wrap/unwrap) pass before any application data is consumed or
  * produced.
  */
-public class AlpnGreaseTest implements SSLContextTemplate {
+public class AlpnGreaseTest extends SSLContextTemplate {
 
     private final SSLEngine clientEngine;     // client Engine
     private final ByteBuffer clientOut;       // write side of clientEngine
@@ -83,7 +83,7 @@ public class AlpnGreaseTest implements SSLContextTemplate {
             new String(greaseBytes, StandardCharsets.ISO_8859_1);
 
     private static void findGreaseInClientHello(byte[] bytes) throws Exception {
-        for (int i = 0; i < bytes.length - greaseBytes.length; i++) {
+        for (int i = 0; i < bytes.length - greaseBytes.length + 1; i++) {
             if (Arrays.equals(bytes, i, i + greaseBytes.length,
                     greaseBytes, 0, greaseBytes.length)) {
                 System.out.println("Found greaseBytes in ClientHello at: " + i);

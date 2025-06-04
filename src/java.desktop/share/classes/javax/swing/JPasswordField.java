@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,10 @@ import javax.accessibility.AccessibleContext;
 import javax.accessibility.AccessibleRole;
 import javax.accessibility.AccessibleText;
 import javax.accessibility.AccessibleTextSequence;
+import javax.swing.text.AbstractDocument;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
+import javax.swing.text.DocumentFilter;
 import javax.swing.text.Segment;
 
 /**
@@ -288,7 +290,7 @@ public class JPasswordField extends JTextField {
      * @param offs the offset &gt;= 0
      * @param len the length &gt;= 0
      * @return the text
-     * @exception BadLocationException if the offset or length are invalid
+     * @throws BadLocationException if the offset or length are invalid
      */
     @Deprecated
     public String getText(int offs, int len) throws BadLocationException {
@@ -300,21 +302,27 @@ public class JPasswordField extends JTextField {
     public void setText(String t) {
         // overwrite the old data first
         Document doc = getDocument();
-        int nleft = doc.getLength();
-        Segment text = new Segment();
-        // we would like to get direct data array access, not a copy of it
-        text.setPartialReturn(true);
-        int offs = 0;
-        try {
-            while (nleft > 0) {
-                doc.getText(offs, nleft, text);
-                Arrays.fill(text.array, text.offset,
-                            text.count + text.offset, '\u0000');
-                nleft -= text.count;
-                offs += text.count;
+        DocumentFilter filter = null;
+        if (doc instanceof AbstractDocument adoc) {
+            filter = adoc.getDocumentFilter();
+        }
+        if (filter == null) {
+            int nleft = doc.getLength();
+            Segment text = new Segment();
+            // we would like to get direct data array access, not a copy of it
+            text.setPartialReturn(true);
+            int offs = 0;
+            try {
+                while (nleft > 0) {
+                    doc.getText(offs, nleft, text);
+                    Arrays.fill(text.array, text.offset,
+                                text.count + text.offset, '\u0000');
+                    nleft -= text.count;
+                    offs += text.count;
+                }
+            } catch (BadLocationException ignored) {
+                // we tried
             }
-        } catch (BadLocationException ignored) {
-            // we tried
         }
         super.setText(t);
     }

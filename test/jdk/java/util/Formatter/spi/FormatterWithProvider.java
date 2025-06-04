@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,15 @@
  */
 /*
  * @test
- * @bug 8199672
+ * @bug 8199672 8174269
  * @summary test the Formatter.format() method with java.locale.providers=SPI,
- *          COMPAT. It should not throw ClassCastException if an SPI is
+ *          CLDR. It should not throw ClassCastException if an SPI is
  *          used and NumberFormat.getInstance() does not return a
  *          DecimalFormat object.
  * @modules jdk.localedata
  * @library provider
  * @build provider/module-info provider/test.NumberFormatProviderImpl
- * @run main/othervm -Djava.locale.providers=SPI,COMPAT FormatterWithProvider
+ * @run main/othervm -Djava.locale.providers=SPI,CLDR FormatterWithProvider
  */
 
 import java.util.Formatter;
@@ -46,12 +46,12 @@ public class FormatterWithProvider {
         try {
             testFormatter(Locale.JAPANESE, formatString, number);
             testFormatter(Locale.FRENCH, formatString, number);
-            testFormatter(new Locale("hi", "IN"), formatString, number);
+            testFormatter(Locale.of("hi", "IN"), formatString, number);
 
         } catch (ClassCastException ex) {
             throw new RuntimeException("[FAILED: A ClassCastException is" +
                     " thrown while using Formatter.format() with VM" +
-                    " argument java.locale.providers=SPI,COMPAT]", ex);
+                    " argument java.locale.providers=SPI,CLDR]", ex);
         }
     }
 

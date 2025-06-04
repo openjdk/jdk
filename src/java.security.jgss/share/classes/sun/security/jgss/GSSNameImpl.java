@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * mechanisms are required to be handed out. (Generally, other GSS
  * classes like GSSContext and GSSCredential request specific
  * elements depending on the mechanisms that they are dealing with.)
- * Assume that getting a mechanism to parse the applciation specified
+ * Assume that getting a mechanism to parse the application specified
  * bytes is an expensive call.
  *
  * When a GSSName is canonicalized wrt some mechanism, it is supposed
@@ -80,7 +80,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @since 1.4
  */
 
-public class GSSNameImpl implements GSSName {
+public final class GSSNameImpl implements GSSName {
 
     /**
      * The old Oid used in RFC 2853. Now supported as
@@ -225,7 +225,7 @@ public class GSSNameImpl implements GSSName {
         throws GSSException {
 
         int pos = 0;
-        byte[] bytes = null;
+        byte[] bytes;
 
         if (appName instanceof String) {
             bytes = ((String) appName).getBytes(UTF_8);
@@ -240,7 +240,7 @@ public class GSSNameImpl implements GSSName {
 
         int oidLen  = (((0xFF & bytes[pos++]) << 8) |
                        (0xFF & bytes[pos++]));
-        ObjectIdentifier temp = null;
+        ObjectIdentifier temp;
         try {
             DerInputStream din = new DerInputStream(bytes, pos,
                                                     oidLen);
@@ -285,7 +285,7 @@ public class GSSNameImpl implements GSSName {
         if (other == this)
             return true;
 
-        if (! (other instanceof GSSNameImpl))
+        if (! (other instanceof GSSNameImpl that))
             return equals(gssManager.createName(other.toString(),
                                                 other.getStringNameType()));
 
@@ -293,8 +293,6 @@ public class GSSNameImpl implements GSSName {
          * XXX Do a comparison of the appNameStr/appNameBytes if
          * available. If that fails, then proceed with this test.
          */
-
-        GSSNameImpl that = (GSSNameImpl) other;
 
         GSSNameSpi myElement = this.mechElement;
         GSSNameSpi element = that.mechElement;
@@ -334,10 +332,9 @@ public class GSSNameImpl implements GSSName {
     }
 
     /**
-     * Returns a hashcode value for this GSSName.
-     *
-     * @return a hashCode value
+     * {@return a hashcode value for this GSSName}
      */
+    @Override
     public int hashCode() {
         /*
          * XXX
@@ -352,6 +349,7 @@ public class GSSNameImpl implements GSSName {
         return 1;
     }
 
+    @Override
     public boolean equals(Object another) {
 
         try {
@@ -399,8 +397,8 @@ public class GSSNameImpl implements GSSName {
         }
 
         byte[] mechPortion = mechElement.export();
-        byte[] oidBytes = null;
-        ObjectIdentifier oid = null;
+        byte[] oidBytes;
+        ObjectIdentifier oid;
 
         try {
             oid = ObjectIdentifier.of
@@ -410,13 +408,7 @@ public class GSSNameImpl implements GSSName {
                                        "Invalid OID String ");
         }
         DerOutputStream dout = new DerOutputStream();
-        try {
-            dout.putOID(oid);
-        } catch (IOException e) {
-            throw new GSSExceptionImpl(GSSException.FAILURE,
-                                   "Could not ASN.1 Encode "
-                                   + oid.toString());
-        }
+        dout.putOID(oid);
         oidBytes = dout.toByteArray();
 
         byte[] retVal = new byte[2

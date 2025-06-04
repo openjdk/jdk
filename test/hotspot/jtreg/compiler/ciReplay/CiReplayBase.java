@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,9 @@ import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.CoreUtils;
+import jdk.test.whitebox.WhiteBox;
+
+import jtreg.SkippedException;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -68,6 +71,7 @@ public abstract class CiReplayBase {
         "-XX:-BackgroundCompilation", "-XX:CompileCommand=inline,java.io.PrintStream::*",
         "-XX:+IgnoreUnrecognizedVMOptions", "-XX:TypeProfileLevel=222", // extra profile data as a stress test
         "-XX:+CICountNative", "-XX:CICrashAt=1", "-XX:+DumpReplayDataOnError",
+        "-XX:-SegmentedCodeCache",
         REPLAY_FILE_OPTION};
     private static final String[] REPLAY_OPTIONS = new String[]{DISABLE_COREDUMP_ON_CRASH,
         "-XX:+IgnoreUnrecognizedVMOptions", "-XX:TypeProfileLevel=222",
@@ -105,9 +109,9 @@ public abstract class CiReplayBase {
 
     static {
         try {
-            CLIENT_VM_AVAILABLE = ProcessTools.executeTestJvm(CLIENT_VM_OPTION, VERSION_OPTION)
+            CLIENT_VM_AVAILABLE = ProcessTools.executeTestJava(CLIENT_VM_OPTION, VERSION_OPTION)
                     .getOutput().contains("Client");
-            SERVER_VM_AVAILABLE = ProcessTools.executeTestJvm(SERVER_VM_OPTION, VERSION_OPTION)
+            SERVER_VM_AVAILABLE = ProcessTools.executeTestJava(SERVER_VM_OPTION, VERSION_OPTION)
                     .getOutput().contains("Server");
         } catch(Throwable t) {
             throw new Error("Initialization failed: " + t, t);
@@ -126,6 +130,11 @@ public abstract class CiReplayBase {
     }
 
     public void runTest(boolean needCoreDump, String... args) {
+        // The CiReplay tests don't work properly when CDS is disabled
+        boolean cdsEnabled = WhiteBox.getWhiteBox().isSharingEnabled();
+        if (!cdsEnabled) {
+            throw new SkippedException("CDS is not available for this JDK.");
+        }
         cleanup();
         if (generateReplay(needCoreDump, args)) {
             testAction();
@@ -177,11 +186,11 @@ public abstract class CiReplayBase {
                 options.add("'" + getTestClass() + "'");
                 crashOut = ProcessTools.executeProcess(
                         CoreUtils.addCoreUlimitCommand(
-                                ProcessTools.createTestJvm(options.toArray(new String[0]))));
+                                ProcessTools.createTestJavaProcessBuilder(options.toArray(new String[0]))));
             } else {
                 options.add("-XX:CompileOnly=" + getTestClass() + "::" + getTestMethod());
                 options.add(getTestClass());
-                crashOut = ProcessTools.executeProcess(ProcessTools.createTestJvm(options));
+                crashOut = ProcessTools.executeProcess(ProcessTools.createTestJavaProcessBuilder(options));
             }
             crashOutputString = crashOut.getOutput();
             Asserts.assertNotEquals(crashOut.getExitValue(), 0, "Crash JVM exits gracefully");
@@ -288,7 +297,7 @@ public abstract class CiReplayBase {
 
     private String[] getTestJvmCommandlineWithPrefix(String prefix, String... args) {
         try {
-            String cmd = ProcessTools.getCommandLine(ProcessTools.createTestJvm(args));
+            String cmd = ProcessTools.getCommandLine(ProcessTools.createTestJavaProcessBuilder(args));
             return new String[]{"sh", "-c", prefix
                 + (Platform.isWindows() ? cmd.replace('\\', '/').replace(";", "\\;").replace("|", "\\|") : cmd)};
         } catch(Throwable t) {

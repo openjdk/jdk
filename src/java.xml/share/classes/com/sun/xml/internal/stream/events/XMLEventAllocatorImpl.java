@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,7 +204,7 @@ public class XMLEventAllocatorImpl implements XMLEventAllocator {
         for (int i = 0; i < len; i++) {
             qname = xmlr.getAttributeName(i);
             //this method doesn't include namespace declarations
-            //so we can be sure that there wont be any namespace declaration as part of this function call
+            //so we can be sure that there won't be any namespace declaration as part of this function call
             //we can avoid this check - nb.
             /**
              * prefix = qname.getPrefix(); localpart = qname.getLocalPart(); if

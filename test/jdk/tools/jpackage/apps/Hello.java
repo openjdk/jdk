@@ -70,6 +70,8 @@ public class Hello implements OpenFilesHandler {
                 lock.wait();
             }
         }
+
+        System.exit(Integer.getInteger("jpackage.test.exitCode", 0));
     }
 
     private static List<String> printArgs(String[] args) {

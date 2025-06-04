@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,12 @@
 
 package java.lang;
 
+import jdk.internal.event.ThrowableTracer;
+
 /**
  * An {@code Error} is a subclass of {@code Throwable}
  * that indicates serious problems that a reasonable application
  * should not try to catch. Most such errors are abnormal conditions.
- * The {@code ThreadDeath} error, though a "normal" condition,
- * is also a subclass of {@code Error} because most applications
- * should not try to catch it.
  * <p>
  * A method is not required to declare in its {@code throws}
  * clause any subclasses of {@code Error} that might be thrown
@@ -42,7 +41,6 @@ package java.lang;
  * exceptions for the purposes of compile-time checking of exceptions.
  *
  * @author  Frank Yellin
- * @see     java.lang.ThreadDeath
  * @jls 11.2 Compile-Time Checking of Exceptions
  * @since   1.0
  */
@@ -57,6 +55,9 @@ public class Error extends Throwable {
      */
     public Error() {
         super();
+        if (Throwable.jfrTracing) {
+            ThrowableTracer.traceError(getClass(), null);
+        }
     }
 
     /**
@@ -69,6 +70,9 @@ public class Error extends Throwable {
      */
     public Error(String message) {
         super(message);
+        if (Throwable.jfrTracing) {
+            ThrowableTracer.traceError(getClass(), message);
+        }
     }
 
     /**
@@ -87,6 +91,9 @@ public class Error extends Throwable {
      */
     public Error(String message, Throwable cause) {
         super(message, cause);
+        if (Throwable.jfrTracing) {
+            ThrowableTracer.traceError(getClass(), message);
+        }
     }
 
     /**
@@ -104,6 +111,9 @@ public class Error extends Throwable {
      */
     public Error(Throwable cause) {
         super(cause);
+        if (Throwable.jfrTracing) {
+            ThrowableTracer.traceError(getClass(), null);
+        }
     }
 
     /**
@@ -125,5 +135,8 @@ public class Error extends Throwable {
                     boolean enableSuppression,
                     boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
+        if (Throwable.jfrTracing) {
+            ThrowableTracer.traceError(getClass(), message);
+        }
     }
 }

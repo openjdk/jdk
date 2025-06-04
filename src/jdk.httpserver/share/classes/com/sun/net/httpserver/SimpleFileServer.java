@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,7 @@ import sun.net.httpserver.simpleserver.OutputFilter;
  * A simple HTTP file server and its components (intended for testing,
  * development and debugging purposes only).
  *
- * <p> A <a href="#server-impl">simple file server</a> is composed of three
- * components:
+ * <p> A simple file server is composed of three components:
  * <ul>
  *   <li> an {@link HttpServer HttpServer} that is bound to a given address, </li>
  *   <li> an {@link HttpHandler HttpHandler} that serves files from a given
@@ -189,9 +188,6 @@ public final class SimpleFileServer {
      *         is not a directory, or is not readable
      * @throws UncheckedIOException if an I/O error occurs
      * @throws NullPointerException if any argument is null
-     * @throws SecurityException if a security manager is installed and a
-     *         recursive {@link java.io.FilePermission} "{@code read}" of the
-     *         rootDirectory is denied
      */
     public static HttpServer createFileServer(InetSocketAddress addr,
                                               Path rootDirectory,
@@ -234,9 +230,6 @@ public final class SimpleFileServer {
      * @throws IllegalArgumentException if rootDirectory does not exist,
      *         is not absolute, is not a directory, or is not readable
      * @throws NullPointerException if the argument is null
-     * @throws SecurityException if a security manager is installed and a
-     *         recursive {@link java.io.FilePermission} "{@code read}" of the
-     *         rootDirectory is denied
      */
     public static HttpHandler createFileHandler(Path rootDirectory) {
         Objects.requireNonNull(rootDirectory);

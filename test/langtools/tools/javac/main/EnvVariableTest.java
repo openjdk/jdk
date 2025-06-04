@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Check JDK_JAVA_OPTIONS parsing behavior
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.main
+ * @modules jdk.internal.opt/jdk.internal.opt
  * @build toolbox.ToolBox toolbox.TestRunner
  * @run main EnvVariableTest
  */
@@ -41,7 +42,7 @@ import java.util.List;
 
 import toolbox.*;
 
-import com.sun.tools.javac.main.CommandLine;
+import jdk.internal.opt.CommandLine;
 
 public class EnvVariableTest extends TestRunner {
     final String testClasses;
@@ -118,7 +119,9 @@ public class EnvVariableTest extends TestRunner {
 
     void test(String full, String... expectedArgs) throws Exception {
         task.envVar("JDK_JAVAC_OPTIONS", full);
-        task.args("--add-exports", "jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
+        task.args(
+                "--add-exports", "jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
+                "--add-exports", "jdk.internal.opt/jdk.internal.opt=ALL-UNNAMED",
                 "-cp", testClasses, "EnvVariableTest$Tester");
         Task.Result tr = task.run(Task.Expect.SUCCESS);
         String expected = Tester.arrayToString(expectedArgs);

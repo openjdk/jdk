@@ -61,7 +61,7 @@ class CommitMask : public CHeapBitMap {
   }
 
   // Marks a single commit granule as committed (value == true)
-  // or uncomitted (value == false) and returns
+  // or uncommitted (value == false) and returns
   // its prior state.
   bool mark_granule(idx_t bitno, bool value) {
     bool b = at(bitno);

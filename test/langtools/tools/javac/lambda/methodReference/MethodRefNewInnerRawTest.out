@@ -1,0 +1,5 @@
+MethodRefNewInnerRawTest.java:16:55: compiler.warn.prob.found.req: (compiler.misc.unchecked.assign), MethodRefNewInnerRawTest.Inner1, MethodRefNewInnerRawTest<T>.Inner1
+MethodRefNewInnerRawTest.java:17:63: compiler.warn.prob.found.req: (compiler.misc.unchecked.assign), MethodRefNewInnerRawTest.Inner2, MethodRefNewInnerRawTest<T>.Inner2<java.lang.String>
+- compiler.err.warnings.and.werror
+1 error
+2 warnings

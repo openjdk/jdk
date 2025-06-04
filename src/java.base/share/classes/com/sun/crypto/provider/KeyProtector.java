@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ final class KeyProtector {
 
     // the password used for protecting/recovering keys passed through this
     // key protector
-    private char[] password;
+    private final char[] password;
 
     /**
      * {@systemProperty jdk.jceks.iterationCount} property indicating the
@@ -89,7 +89,7 @@ final class KeyProtector {
      */
     static {
         int iterationCount = DEFAULT_ITERATION_COUNT;
-        String ic = SecurityProperties.privilegedGetOverridable(
+        String ic = SecurityProperties.getOverridableProperty(
                 "jdk.jceks.iterationCount");
         if (ic != null && !ic.isEmpty()) {
             try {
@@ -98,7 +98,7 @@ final class KeyProtector {
                         iterationCount > MAX_ITERATION_COUNT) {
                     iterationCount = DEFAULT_ITERATION_COUNT;
                 }
-            } catch (NumberFormatException e) {}
+            } catch (NumberFormatException ignored) {}
         }
         ITERATION_COUNT = iterationCount;
     }
@@ -129,7 +129,7 @@ final class KeyProtector {
         SecretKey sKey = null;
         PBEWithMD5AndTripleDESCipher cipher;
         try {
-            sKey = new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES", false);
+            sKey = new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES");
             // encrypt private key
             cipher = new PBEWithMD5AndTripleDESCipher();
             cipher.engineInit(Cipher.ENCRYPT_MODE, sKey, pbeSpec, null);
@@ -193,7 +193,7 @@ final class KeyProtector {
 
                 // create PBE key from password
                 PBEKeySpec pbeKeySpec = new PBEKeySpec(this.password);
-                sKey = new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES", false);
+                sKey = new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES");
                 pbeKeySpec.clearPassword();
 
                 // decrypt private key
@@ -221,10 +221,8 @@ final class KeyProtector {
             // Note: this catch needed to be here because of the
             // later catch of GeneralSecurityException
             throw ex;
-        } catch (IOException ioe) {
-            throw new UnrecoverableKeyException(ioe.getMessage());
-        } catch (GeneralSecurityException gse) {
-            throw new UnrecoverableKeyException(gse.getMessage());
+        } catch (IOException | GeneralSecurityException e) {
+            throw new UnrecoverableKeyException(e.getMessage());
         } finally {
             if (plain != null) Arrays.fill(plain, (byte) 0x00);
             if (sKey != null) {
@@ -341,7 +339,7 @@ final class KeyProtector {
         SecretKey sKey = null;
         Cipher cipher;
         try {
-            sKey = new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES", false);
+            sKey = new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES");
             pbeKeySpec.clearPassword();
 
             // seal key
@@ -368,11 +366,10 @@ final class KeyProtector {
         try {
             // create PBE key from password
             PBEKeySpec pbeKeySpec = new PBEKeySpec(this.password);
-            sKey = new PBEKey(pbeKeySpec,
-                    "PBEWithMD5AndTripleDES", false);
+            sKey = new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES");
             pbeKeySpec.clearPassword();
 
-            SealedObjectForKeyProtector soForKeyProtector = null;
+            SealedObjectForKeyProtector soForKeyProtector;
             if (!(so instanceof SealedObjectForKeyProtector)) {
                 soForKeyProtector = new SealedObjectForKeyProtector(so);
             } else {
@@ -403,12 +400,8 @@ final class KeyProtector {
             // Note: this catch needed to be here because of the
             // later catch of GeneralSecurityException
             throw ex;
-        } catch (IOException ioe) {
-            throw new UnrecoverableKeyException(ioe.getMessage());
-        } catch (ClassNotFoundException cnfe) {
-            throw new UnrecoverableKeyException(cnfe.getMessage());
-        } catch (GeneralSecurityException gse) {
-            throw new UnrecoverableKeyException(gse.getMessage());
+        } catch (IOException | GeneralSecurityException | ClassNotFoundException e) {
+            throw new UnrecoverableKeyException(e.getMessage());
         } finally {
             if (sKey != null) {
                 try {

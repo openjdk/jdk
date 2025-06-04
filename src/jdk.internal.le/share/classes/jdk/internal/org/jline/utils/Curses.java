@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2018, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -12,7 +12,7 @@ import java.io.Flushable;
 import java.io.IOError;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.Stack;
+import java.util.ArrayDeque;
 
 /**
  * Curses helper methods.
@@ -21,16 +21,15 @@ import java.util.Stack;
  */
 public final class Curses {
 
-    private static Object[] sv = new Object[26];
-    private static Object[] dv = new Object[26];
+    private static final Object[] sv = new Object[26];
+    private static final Object[] dv = new Object[26];
 
     private static final int IFTE_NONE = 0;
     private static final int IFTE_IF = 1;
     private static final int IFTE_THEN = 2;
     private static final int IFTE_ELSE = 3;
 
-    private Curses() {
-    }
+    private Curses() {}
 
     /**
      * Print the given terminal capabilities
@@ -68,7 +67,7 @@ public final class Curses {
         int length = str.length();
         int ifte = IFTE_NONE;
         boolean exec = true;
-        Stack<Object> stack = new Stack<>();
+        ArrayDeque<Object> stack = new ArrayDeque<>();
         while (index < length) {
             char ch = str.charAt(index++);
             switch (ch) {
@@ -95,9 +94,9 @@ public final class Curses {
                             case 'n':
                                 out.append('\n');
                                 break;
-//                        case 'l':
-//                            rawPrint('\l');
-//                            break;
+                                //                        case 'l':
+                                //                            rawPrint('\l');
+                                //                            break;
                             case 'r':
                                 if (exec) {
                                     out.append('\r');
@@ -138,7 +137,7 @@ public final class Curses {
                 case '^':
                     ch = str.charAt(index++);
                     if (exec) {
-                        out.append((char)(ch - '@'));
+                        out.append((char) (ch - '@'));
                     }
                     break;
                 case '%':
@@ -195,9 +194,10 @@ public final class Curses {
                             break;
                         case '{':
                             int start = index;
-                            while (str.charAt(index++) != '}') ;
+                            while (str.charAt(index++) != '}')
+                                ;
                             if (exec) {
-                                int v = Integer.valueOf(str.substring(start, index - 1));
+                                int v = Integer.parseInt(str.substring(start, index - 1));
                                 stack.push(v);
                             }
                             break;
@@ -364,10 +364,18 @@ public final class Curses {
                             int cnv;
                             while ("-+# ".indexOf(ch) >= 0) {
                                 switch (ch) {
-                                    case '-': left = true; break;
-                                    case '+': plus = true; break;
-                                    case '#': alternate = true; break;
-                                    case ' ': space = true; break;
+                                    case '-':
+                                        left = true;
+                                        break;
+                                    case '+':
+                                        plus = true;
+                                        break;
+                                    case '#':
+                                        alternate = true;
+                                        break;
+                                    case ' ':
+                                        space = true;
+                                        break;
                                 }
                                 ch = str.charAt(index++);
                             }
@@ -470,8 +478,7 @@ public final class Curses {
         } else if (pop instanceof Boolean) {
             return (Boolean) pop ? 1 : 0;
         } else {
-            return Integer.valueOf(pop.toString());
+            return Integer.parseInt(pop.toString());
         }
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,12 @@
 
 package javax.swing.plaf.basic;
 
-import javax.swing.*;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.Insets;
-import java.awt.Rectangle;
+import javax.swing.JComponent;
+import javax.swing.JSeparator;
+import javax.swing.LookAndFeel;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.SeparatorUI;
 
@@ -152,5 +152,13 @@ public class BasicSeparatorUI extends SeparatorUI
     }
 
     public Dimension getMinimumSize( JComponent c ) { return null; }
-    public Dimension getMaximumSize( JComponent c ) { return null; }
+
+    public Dimension getMaximumSize( JComponent c ) {
+        Dimension d = getPreferredSize(c);
+        if (((JSeparator)c).getOrientation() == JSeparator.VERTICAL) {
+            return new Dimension(d.width, Short.MAX_VALUE);
+        } else {
+            return new Dimension(Short.MAX_VALUE, d.height);
+        }
+    }
 }

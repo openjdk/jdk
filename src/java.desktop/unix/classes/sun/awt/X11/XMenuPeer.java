@@ -31,7 +31,7 @@ import java.util.Vector;
 import sun.util.logging.PlatformLogger;
 import sun.awt.AWTAccessor;
 
-public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
+public final class XMenuPeer extends XMenuItemPeer implements MenuPeer {
 
     /************************************************
      *
@@ -68,7 +68,7 @@ public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
 
     /************************************************
      *
-     * Implementaion of interface methods
+     * Implementation of interface methods
      *
      ************************************************/
 
@@ -143,7 +143,7 @@ public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
 
     /************************************************
      *
-     * Overriden behaviour
+     * Overridden behaviour
      *
      ************************************************/
     @Override

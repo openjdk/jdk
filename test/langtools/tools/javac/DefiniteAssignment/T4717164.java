@@ -8,7 +8,7 @@
  */
 
 class T4717164 {
-    public static void main(String[] args) {
+    public static void meth() {
         try {
             try {
                 throw new ClassNotFoundException();

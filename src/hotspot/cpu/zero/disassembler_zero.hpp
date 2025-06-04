@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,20 +34,12 @@
     return "";
   }
 
-  // Returns address of n-th instruction preceding addr,
-  // NULL if no preceding instruction can be found.
-  // On ZERO, we assume a constant instruction length of 1 byte.
-  // It might be beneficial to check "is_readable" as we do on ppc and s390.
-  static address find_prev_instr(address addr, int n_instr) {
-    return addr - 1*n_instr;
-  }
-
   // special-case instruction decoding.
   // There may be cases where the binutils disassembler doesn't do
   // the perfect job. In those cases, decode_instruction0 may kick in
   // and do it right.
   // If nothing had to be done, just return "here", otherwise return "here + instr_len(here)"
-  static address decode_instruction0(address here, outputStream* st, address virtual_begin = NULL) {
+  static address decode_instruction0(address here, outputStream* st, address virtual_begin = nullptr) {
     return here;
   }
 

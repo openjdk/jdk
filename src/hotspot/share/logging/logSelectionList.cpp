@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/logSelectionList.hpp"
 #include "logging/logTagSet.hpp"
 #include "runtime/os.hpp"
@@ -35,16 +34,16 @@ bool LogSelectionList::verify_selections(outputStream* out) const {
   for (size_t i = 0; i < _nselections; i++) {
     if (_selections[i].tag_sets_selected() == 0) {
       // Return immediately unless all invalid selections should be listed
-      if (out == NULL) {
+      if (out == nullptr) {
         return false;
       }
 
       out->print("No tag set matches selection:");
       valid = false;
 
-      char buf[256];
-      _selections[i].describe_tags(buf, sizeof(buf));
-      out->print(" %s. ", buf);
+      out->print(" ");
+      _selections[i].describe_tags_on(out);
+      out->print(". ");
 
       _selections[i].suggest_similar_matching(out);
       out->cr();
@@ -53,18 +52,26 @@ bool LogSelectionList::verify_selections(outputStream* out) const {
   return valid;
 }
 
+LogDecorators LogSelectionList::get_default_decorators() const {
+  for (size_t i = 0; i < _nselections; ++i) {
+    if (!LogDecorators::has_disabled_default_decorators(_selections[i])) {
+      return LogDecorators();
+    }
+  }
+  return LogDecorators::None;
+}
 
 bool LogSelectionList::parse(const char* str, outputStream* errstream) {
   bool success = true;
-  if (str == NULL || strcmp(str, "") == 0) {
+  if (str == nullptr || strcmp(str, "") == 0) {
     str = DefaultExpressionString;
   }
   char* copy = os::strdup_check_oom(str, mtLogging);
   // Split string on commas
-  for (char *comma_pos = copy, *cur = copy; success && comma_pos != NULL; cur = comma_pos + 1) {
+  for (char *comma_pos = copy, *cur = copy; success; cur = comma_pos + 1) {
     if (_nselections == MaxSelections) {
-      if (errstream != NULL) {
-        errstream->print_cr("Can not have more than " SIZE_FORMAT " log selections in a single configuration.",
+      if (errstream != nullptr) {
+        errstream->print_cr("Can not have more than %zu log selections in a single configuration.",
                             MaxSelections);
       }
       success = false;
@@ -72,7 +79,7 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
     }
 
     comma_pos = strchr(cur, ',');
-    if (comma_pos != NULL) {
+    if (comma_pos != nullptr) {
       *comma_pos = '\0';
     }
 
@@ -82,6 +89,10 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
       break;
     }
     _selections[_nselections++] = selection;
+
+    if (comma_pos == nullptr) {
+      break;
+    }
   }
 
   os::free(copy);
@@ -91,7 +102,7 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
 LogLevelType LogSelectionList::level_for(const LogTagSet& ts) const {
   // Return NotMentioned if the given tagset isn't covered by this expression.
   LogLevelType level = LogLevel::NotMentioned;
-  for (size_t i= 0; i < _nselections; i++) {
+  for (size_t i = 0; i < _nselections; i++) {
     if (_selections[i].selects(ts)) {
       level = _selections[i].level();
     }

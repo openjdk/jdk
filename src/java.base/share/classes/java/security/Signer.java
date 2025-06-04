@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public abstract class Signer extends Identity {
     private PrivateKey privateKey;
 
     /**
-     * Creates a signer. This constructor should only be used for
+     * Creates a {@code Signer}. This constructor should only be used for
      * serialization.
      */
     protected Signer() {
@@ -69,7 +69,7 @@ public abstract class Signer extends Identity {
 
 
     /**
-     * Creates a signer with the specified identity name.
+     * Creates a {@code Signer} with the specified identity name.
      *
      * @param name the identity name.
      */
@@ -78,7 +78,7 @@ public abstract class Signer extends Identity {
     }
 
     /**
-     * Creates a signer with the specified identity name and scope.
+     * Creates a {@code Signer} with the specified identity name and scope.
      *
      * @param name the identity name.
      *
@@ -95,30 +95,15 @@ public abstract class Signer extends Identity {
     /**
      * Returns this signer's private key.
      *
-     * <p>First, if there is a security manager, its {@code checkSecurityAccess}
-     * method is called with {@code "getSignerPrivateKey"}
-     * as its argument to see if it's ok to return the private key.
-     *
-     * @return this signer's private key, or null if the private key has
+     * @return this signer's private key, or {@code null} if the private key has
      * not yet been set.
-     *
-     * @throws     SecurityException  if a security manager exists and its
-     * {@code checkSecurityAccess} method doesn't allow
-     * returning the private key.
-     *
-     * @see SecurityManager#checkSecurityAccess
      */
     public PrivateKey getPrivateKey() {
-        check("getSignerPrivateKey");
         return privateKey;
     }
 
     /**
-     * Sets the key pair (public key and private key) for this signer.
-     *
-     * <p>First, if there is a security manager, its {@code checkSecurityAccess}
-     * method is called with {@code "setSignerKeyPair"}
-     * as its argument to see if it's ok to set the key pair.
+     * Sets the key pair (public key and private key) for this {@code Signer}.
      *
      * @param pair an initialized key pair.
      *
@@ -126,32 +111,16 @@ public abstract class Signer extends Identity {
      * properly initialized.
      * @throws    KeyException if the key pair cannot be set for any
      * other reason.
-     * @throws     SecurityException  if a security manager exists and its
-     * {@code checkSecurityAccess} method doesn't allow
-     * setting the key pair.
-     *
-     * @see SecurityManager#checkSecurityAccess
      */
     public final void setKeyPair(KeyPair pair)
     throws InvalidParameterException, KeyException {
-        check("setSignerKeyPair");
-        final PublicKey pub = pair.getPublic();
+        PublicKey pub = pair.getPublic();
         PrivateKey priv = pair.getPrivate();
 
         if (pub == null || priv == null) {
             throw new InvalidParameterException();
         }
-        try {
-            AccessController.doPrivileged(
-                new PrivilegedExceptionAction<>() {
-                public Void run() throws KeyManagementException {
-                    setPublicKey(pub);
-                    return null;
-                }
-            });
-        } catch (PrivilegedActionException pae) {
-            throw (KeyManagementException) pae.getException();
-        }
+        setPublicKey(pub);
         privateKey = priv;
     }
 
@@ -168,19 +137,11 @@ public abstract class Signer extends Identity {
     }
 
     /**
-     * Returns a string of information about the signer.
+     * Returns a string of information about the {@code Signer}.
      *
-     * @return a string of information about the signer.
+     * @return a string of information about the {@code Signer}.
      */
     public String toString() {
         return "[Signer]" + super.toString();
     }
-
-    private static void check(String directive) {
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkSecurityAccess(directive);
-        }
-    }
-
 }

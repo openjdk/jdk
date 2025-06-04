@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,10 +59,10 @@ public class SynthSliderUI extends BasicSliderUI
      * is a ComponentListener installed, it is not being notified. As such,
      * at times when being asked to paint the layout should first be redone.
      * At the end of the layout method we set this lastSize variable, which
-     * represents the size of the slider the last time it was layed out.
+     * represents the size of the slider the last time it was laid out.
      *
      * In the paint method we then check to see that this is accurate, that
-     * the slider has not changed sizes since being last layed out. If necessary
+     * the slider has not changed sizes since being last laid out. If necessary
      * we recompute the layout.
      */
     private Dimension lastSize;
@@ -157,7 +157,7 @@ public class SynthSliderUI extends BasicSliderUI
             thumbHeight =
                 style.getInt(context, "Slider.thumbHeight", 14);
 
-            // handle scaling for sizeVarients for special case components. The
+            // handle scaling for sizeVariants for special case components. The
             // key "JComponent.sizeVariant" scales for large/small/mini
             // components are based on Apples LAF
             String scaleKey = (String)slider.getClientProperty(

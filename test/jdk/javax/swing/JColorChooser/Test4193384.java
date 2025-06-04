@@ -51,7 +51,7 @@ public class Test4193384 {
         float[] hsb = new float[3];
         for (int i = 0; i < colors.length; i++) {
             Color color = colors[i];
-            // Make sure sure that there wasn't a regression
+            // Make sure that there wasn't a regression
             // in java.awt.Color and the conversion methods
             Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), hsb);
             if (!color.equals(Color.getHSBColor(hsb[0], hsb[1], hsb[2]))) {

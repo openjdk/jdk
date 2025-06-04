@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import java.util.Objects;
  * using the Chinese Remainder Theorem (CRT) information values
  * for efficiency.
  *
+ * @spec https://www.rfc-editor.org/info/rfc8017
+ *      RFC 8017: PKCS #1: RSA Cryptography Specifications Version 2.2
  * @author Valerie Peng
  *
  *
@@ -78,7 +80,7 @@ public class RSAMultiPrimePrivateCrtKeySpec extends RSAPrivateKeySpec {
     *                        specified if there are only two prime factors
     *                        (p and q)
     * @throws NullPointerException     if any of the specified parameters
-    *         with the exception of {@code otherPrimeInfo} is null
+    *         except {@code otherPrimeInfo} is null
     * @throws IllegalArgumentException if an empty, i.e. 0-length,
     *         {@code otherPrimeInfo} is specified
     */
@@ -118,7 +120,7 @@ public class RSAMultiPrimePrivateCrtKeySpec extends RSAPrivateKeySpec {
     *                         (p and q)
     * @param keyParams        the parameters associated with key
     * @throws NullPointerException     if any of the specified parameters
-    *         with the exception of {@code otherPrimeInfo} and {@code keyParams}
+    *         except {@code otherPrimeInfo} and {@code keyParams}
     *         is null
     * @throws IllegalArgumentException if an empty, i.e. 0-length,
     *         {@code otherPrimeInfo} is specified

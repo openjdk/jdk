@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,7 @@
 
 package javax.imageio.spi;
 
-import java.security.PrivilegedAction;
-import java.security.AccessController;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.Vector;
 import com.sun.imageio.spi.FileImageInputStreamSpi;
 import com.sun.imageio.spi.FileImageOutputStreamSpi;
 import com.sun.imageio.spi.InputStreamImageInputStreamSpi;
@@ -52,6 +45,7 @@ import com.sun.imageio.plugins.wbmp.WBMPImageWriterSpi;
 import com.sun.imageio.plugins.tiff.TIFFImageReaderSpi;
 import com.sun.imageio.plugins.tiff.TIFFImageWriterSpi;
 import sun.awt.AppContext;
+import java.util.List;
 import java.util.ServiceLoader;
 import java.util.ServiceConfigurationError;
 
@@ -87,18 +81,16 @@ import java.util.ServiceConfigurationError;
 public final class IIORegistry extends ServiceRegistry {
 
     /**
-     * A {@code Vector} containing the valid IIO registry
+     * A {@code List} containing the valid IIO registry
      * categories (superinterfaces) to be used in the constructor.
      */
-    private static final Vector<Class<?>> initialCategories = new Vector<>(5);
-
-    static {
-        initialCategories.add(ImageReaderSpi.class);
-        initialCategories.add(ImageWriterSpi.class);
-        initialCategories.add(ImageTranscoderSpi.class);
-        initialCategories.add(ImageInputStreamSpi.class);
-        initialCategories.add(ImageOutputStreamSpi.class);
-    }
+    private static final List<Class<?>> initialCategories = List.of(
+            ImageReaderSpi.class,
+            ImageWriterSpi.class,
+            ImageTranscoderSpi.class,
+            ImageInputStreamSpi.class,
+            ImageOutputStreamSpi.class
+    );
 
     /**
      * Set up the valid service provider categories and automatically
@@ -170,7 +162,6 @@ public final class IIORegistry extends ServiceRegistry {
      * @see javax.imageio.ImageIO#scanForPlugins
      * @see ClassLoader#getResources
      */
-    @SuppressWarnings("removal")
     public void registerApplicationClasspathSpis() {
         // FIX: load only from application classpath
 
@@ -183,50 +174,20 @@ public final class IIORegistry extends ServiceRegistry {
             Iterator<IIOServiceProvider> riter =
                     ServiceLoader.load(c, loader).iterator();
             while (riter.hasNext()) {
-                try {
-                    // Note that the next() call is required to be inside
-                    // the try/catch block; see 6342404.
-                    IIOServiceProvider r = riter.next();
-                    registerServiceProvider(r);
-                } catch (ServiceConfigurationError err) {
-                    if (System.getSecurityManager() != null) {
-                        // In the applet case, we will catch the  error so
-                        // registration of other plugins can  proceed
-                        err.printStackTrace();
-                    } else {
-                        // In the application case, we will  throw the
-                        // error to indicate app/system  misconfiguration
-                        throw err;
-                    }
-                }
+                IIOServiceProvider r = riter.next();
+                registerServiceProvider(r);
             }
         }
     }
 
-    @SuppressWarnings("removal")
     private void registerInstalledProviders() {
-        /*
-          We need to load installed providers
-          in the privileged mode in order to
-          be able read corresponding jar files even if
-          file read capability is restricted (like the
-          applet context case).
-         */
-        PrivilegedAction<Object> doRegistration =
-            new PrivilegedAction<Object>() {
-                public Object run() {
-                    Iterator<Class<?>> categories = getCategories();
-                    while (categories.hasNext()) {
-                        @SuppressWarnings("unchecked")
-                        Class<IIOServiceProvider> c = (Class<IIOServiceProvider>)categories.next();
-                        for (IIOServiceProvider p : ServiceLoader.loadInstalled(c)) {
-                            registerServiceProvider(p);
-                        }
-                    }
-                    return this;
-                }
-            };
-
-        AccessController.doPrivileged(doRegistration);
+        Iterator<Class<?>> categories = getCategories();
+        while (categories.hasNext()) {
+            @SuppressWarnings("unchecked")
+            Class<IIOServiceProvider> c = (Class<IIOServiceProvider>)categories.next();
+            for (IIOServiceProvider p : ServiceLoader.loadInstalled(c)) {
+                registerServiceProvider(p);
+            }
+        }
     }
 }

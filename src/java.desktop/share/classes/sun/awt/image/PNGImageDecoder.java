@@ -32,7 +32,7 @@ import java.awt.image.*;
 import java.awt.Color;
 
 /** PNG - Portable Network Graphics - image file reader.
-    See <a href=http://www.ietf.org/rfc/rfc2083.txt>RFC2083</a> for details. */
+    See <a href="https://www.rfc-editor.org/info/rfc2083">RFC2083</a> for details. */
 public class PNGImageDecoder extends ImageDecoder
 {
     private static final int GRAY=0;

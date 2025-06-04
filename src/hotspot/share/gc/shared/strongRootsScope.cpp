@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/stringTable.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/strongRootsScope.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/threads.hpp"
 
 MarkScope::MarkScope() {
   nmethod::oops_do_marking_prologue();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmClasses.hpp"
 #include "memory/universe.hpp"
@@ -39,7 +38,7 @@ void NotificationThread::initialize() {
   EXCEPTION_MARK;
 
   const char* name = "Notification Thread";
-  Handle thread_oop = JavaThread::create_system_thread_object(name, true /* visible */, CHECK);
+  Handle thread_oop = JavaThread::create_system_thread_object(name, CHECK);
 
    NotificationThread* thread = new NotificationThread(&notification_thread_entry);
    JavaThread::vm_exit_on_osthread_failure(thread);

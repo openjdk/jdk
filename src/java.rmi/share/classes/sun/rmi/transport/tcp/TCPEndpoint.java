@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,6 @@ import java.rmi.RemoteException;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.RMISocketFactory;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -47,7 +45,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import sun.rmi.runtime.Log;
-import sun.rmi.runtime.NewThreadAction;
+import sun.rmi.runtime.RuntimeUtil;
 import sun.rmi.transport.Channel;
 import sun.rmi.transport.Endpoint;
 import sun.rmi.transport.Target;
@@ -79,33 +77,25 @@ public class TCPEndpoint implements Endpoint {
     /** true if real local host name is known yet */
     private static boolean localHostKnown;
 
-    // this should be a *private* method since it is privileged
-    @SuppressWarnings("removal")
     private static int getInt(String name, int def) {
-        return AccessController.doPrivileged(
-                (PrivilegedAction<Integer>) () -> Integer.getInteger(name, def));
+        return Integer.getInteger(name, def);
     }
 
-    // this should be a *private* method since it is privileged
-    @SuppressWarnings("removal")
     private static boolean getBoolean(String name) {
-        return AccessController.doPrivileged(
-                (PrivilegedAction<Boolean>) () -> Boolean.getBoolean(name));
+        return Boolean.getBoolean(name);
     }
 
     /**
      * Returns the value of the java.rmi.server.hostname property.
      */
-    @SuppressWarnings("removal")
     private static String getHostnameProperty() {
-        return AccessController.doPrivileged(
-            (PrivilegedAction<String>) () -> System.getProperty("java.rmi.server.hostname"));
+        return System.getProperty("java.rmi.server.hostname");
     }
 
     /**
      * Find host name of local machine.  Property "java.rmi.server.hostname"
      * is used if set, so server administrator can compensate for the possible
-     * inablility to get fully qualified host name from VM.
+     * inability to get fully qualified host name from VM.
      */
     static {
         localHostKnown = true;
@@ -130,7 +120,7 @@ public class TCPEndpoint implements Endpoint {
                     localHost = FQDN.attemptFQDN(localAddr);
                 } else {
                     /* default to using ip addresses, names will
-                     * work across seperate domains.
+                     * work across separate domains.
                      */
                     localHost = localAddr.getHostAddress();
                 }
@@ -384,7 +374,7 @@ public class TCPEndpoint implements Endpoint {
         Set<TCPTransport> s;
         synchronized (localEndpoints) {
             // presize s to number of localEndpoints
-            s = new HashSet<TCPTransport>(localEndpoints.size());
+            s = HashSet.newHashSet(localEndpoints.size());
             for (LinkedList<TCPEndpoint> epList : localEndpoints.values()) {
                 /*
                  * Each local endpoint has its transport added to s.
@@ -489,8 +479,7 @@ public class TCPEndpoint implements Endpoint {
     }
 
     public boolean equals(Object obj) {
-        if ((obj != null) && (obj instanceof TCPEndpoint)) {
-            TCPEndpoint ep = (TCPEndpoint) obj;
+        if (obj instanceof TCPEndpoint ep) {
             if (port != ep.port || !host.equals(ep.host))
                 return false;
             if (((csf == null) ^ (ep.csf == null)) ||
@@ -763,9 +752,7 @@ public class TCPEndpoint implements Endpoint {
         private void getFQDN() {
 
             /* FQDN finder will run in RMI threadgroup. */
-            @SuppressWarnings("removal")
-            Thread t = AccessController.doPrivileged(
-                new NewThreadAction(FQDN.this, "FQDN Finder", true));
+            Thread t = RuntimeUtil.newSystemThread(FQDN.this, "FQDN Finder", true);
             t.start();
         }
 

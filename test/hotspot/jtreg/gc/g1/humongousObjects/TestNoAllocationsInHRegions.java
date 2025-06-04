@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 package gc.g1.humongousObjects;
 
 import jdk.test.lib.Utils;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import static gc.testlibrary.Allocation.blackHole;
 
@@ -40,8 +40,8 @@ import java.util.stream.Collectors;
  * @requires vm.gc.G1
  * @library /test/lib /
  * @modules java.management java.base/jdk.internal.misc
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -XX:G1HeapRegionSize=1M -Xms200m -Xmx200m -XX:MaxTenuringThreshold=0
@@ -178,11 +178,11 @@ public class TestNoAllocationsInHRegions {
         }
 
         // test duration
-        long duration = Integer.parseInt(args[0]) * 1000L;
+        long durationNanos = Integer.parseInt(args[0]) * 1_000_000_000L;
         // part of heap preallocated with humongous objects (in percents)
         int percentOfAllocatedHeap = Integer.parseInt(args[1]);
 
-        long startTime = System.currentTimeMillis();
+        long startTimeNanos = System.nanoTime();
 
         long initialFreeRegionsCount = WB.g1NumFreeRegions();
         int regionsToAllocate = (int) ((double) initialFreeRegionsCount / 100.0 * percentOfAllocatedHeap);
@@ -219,7 +219,7 @@ public class TestNoAllocationsInHRegions {
 
         threads.stream().forEach(Thread::start);
 
-        while ((System.currentTimeMillis() - startTime < duration) && error == null) {
+        while ((System.nanoTime() - startTimeNanos < durationNanos) && error == null) {
             Thread.yield();
         }
 

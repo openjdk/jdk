@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package javax.swing;
 
 import java.awt.Component;
+import java.awt.ComponentOrientation;
 import java.awt.Graphics;
 import java.beans.BeanProperty;
 import java.beans.ConstructorProperties;
@@ -41,6 +42,7 @@ import javax.accessibility.AccessibleState;
 import javax.accessibility.AccessibleStateSet;
 import javax.accessibility.AccessibleValue;
 import javax.swing.plaf.SplitPaneUI;
+import javax.swing.plaf.basic.BasicSplitPaneUI;
 
 /**
  * <code>JSplitPane</code> is used to divide two (and only two)
@@ -262,7 +264,7 @@ public class JSplitPane extends JComponent implements Accessible
      *
      * @param newOrientation  <code>JSplitPane.HORIZONTAL_SPLIT</code> or
      *                        <code>JSplitPane.VERTICAL_SPLIT</code>
-     * @exception IllegalArgumentException if <code>orientation</code>
+     * @throws IllegalArgumentException if <code>orientation</code>
      *          is not one of HORIZONTAL_SPLIT or VERTICAL_SPLIT.
      */
     @ConstructorProperties({"orientation"})
@@ -281,7 +283,7 @@ public class JSplitPane extends JComponent implements Accessible
      * @param newContinuousLayout  a boolean, true for the components to
      *        redraw continuously as the divider changes position, false
      *        to wait until the divider position stops changing to redraw
-     * @exception IllegalArgumentException if <code>orientation</code>
+     * @throws IllegalArgumentException if <code>orientation</code>
      *          is not one of HORIZONTAL_SPLIT or VERTICAL_SPLIT
      */
     public JSplitPane(int newOrientation,
@@ -304,7 +306,7 @@ public class JSplitPane extends JComponent implements Accessible
      *          appear on the right
      *          of a horizontally-split pane, or at the bottom of a
      *          vertically-split pane
-     * @exception IllegalArgumentException if <code>orientation</code>
+     * @throws IllegalArgumentException if <code>orientation</code>
      *          is not one of: HORIZONTAL_SPLIT or VERTICAL_SPLIT
      */
     public JSplitPane(int newOrientation,
@@ -334,7 +336,7 @@ public class JSplitPane extends JComponent implements Accessible
      *          appear on the right
      *          of a horizontally-split pane, or at the bottom of a
      *          vertically-split pane
-     * @exception IllegalArgumentException if <code>orientation</code>
+     * @throws IllegalArgumentException if <code>orientation</code>
      *          is not one of HORIZONTAL_SPLIT or VERTICAL_SPLIT
      */
     public JSplitPane(int newOrientation,
@@ -361,6 +363,46 @@ public class JSplitPane extends JComponent implements Accessible
 
     }
 
+    /**
+     * {@inheritDoc}
+     * @param orientation {@inheritDoc}
+     */
+    @Override
+    public void setComponentOrientation(ComponentOrientation orientation) {
+        ComponentOrientation curOrn = this.getComponentOrientation();
+        super.setComponentOrientation(orientation);
+        if (!orientation.equals(curOrn)) {
+            Component leftComponent = this.getLeftComponent();
+            Component rightComponent = this.getRightComponent();
+            if (!this.getComponentOrientation().isLeftToRight()) {
+                if (rightComponent != null) {
+                    setLeftComponent(rightComponent);
+                }
+                if (leftComponent != null) {
+                    setRightComponent(leftComponent);
+                }
+            } else {
+                if (leftComponent != null) {
+                    setLeftComponent(leftComponent);
+                }
+                if (rightComponent != null) {
+                    setRightComponent(rightComponent);
+                }
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * @param enabled {@inheritDoc}
+     */
+    @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+        if (this.getUI() instanceof BasicSplitPaneUI) {
+            ((BasicSplitPaneUI)(this.getUI())).getDivider().setEnabled(enabled);
+        }
+    }
 
     /**
      * Sets the L&amp;F object that renders this component.
@@ -418,12 +460,16 @@ public class JSplitPane extends JComponent implements Accessible
 
     /**
      * Sets the size of the divider.
+     * Divider sizes {@code newSize < 0} are ignored.
      *
      * @param newSize an integer giving the size of the divider in pixels
      */
     @BeanProperty(description
             = "The size of the divider.")
     public void setDividerSize(int newSize) {
+        if (newSize < 0) {
+            return;
+        }
         int           oldSize = dividerSize;
 
         dividerSizeSet = true;
@@ -622,7 +668,7 @@ public class JSplitPane extends JComponent implements Accessible
      * </ul>
      *
      * @param orientation an integer specifying the orientation
-     * @exception IllegalArgumentException if orientation is not one of:
+     * @throws IllegalArgumentException if orientation is not one of:
      *        HORIZONTAL_SPLIT or VERTICAL_SPLIT.
      */
     @BeanProperty(enumerationValues = {
@@ -701,7 +747,7 @@ public class JSplitPane extends JComponent implements Accessible
      * extra space.
      *
      * @param value as described above
-     * @exception IllegalArgumentException if <code>value</code> is &lt; 0 or &gt; 1
+     * @throws IllegalArgumentException if <code>value</code> is &lt; 0 or &gt; 1
      * @since 1.3
      */
     @BeanProperty(description
@@ -754,7 +800,7 @@ public class JSplitPane extends JComponent implements Accessible
      * @param proportionalLocation  a double-precision floating point value
      *        that specifies a percentage, from zero (top/left) to 1.0
      *        (bottom/right)
-     * @exception IllegalArgumentException if the specified location is &lt; 0
+     * @throws IllegalArgumentException if the specified location is &lt; 0
      *            or &gt; 1.0
      */
     @BeanProperty(description
@@ -908,7 +954,7 @@ public class JSplitPane extends JComponent implements Accessible
 
     /**
      * Removes all the child components from the split pane. Resets the
-     * <code>leftComonent</code> and <code>rightComponent</code>
+     * <code>leftComponent</code> and <code>rightComponent</code>
      * instance variables.
      */
     public void removeAll() {
@@ -964,7 +1010,7 @@ public class JSplitPane extends JComponent implements Accessible
      *                    (position) for this component
      * @param index       an integer specifying the index in the container's
      *                    list.
-     * @exception IllegalArgumentException  if the <code>constraints</code>
+     * @throws IllegalArgumentException  if the <code>constraints</code>
      *          object does not match an existing component
      * @see java.awt.Container#addImpl(Component, Object, int)
      */

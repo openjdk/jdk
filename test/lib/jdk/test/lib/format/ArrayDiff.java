@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ import java.util.Optional;
  *         ["first", "second", "incorrect", "u\nprintable"]
  *                            ^^^^^^^^^^^^
  * </pre>
- * <p> two char arrays arrays: </p>
+ * <p> two char arrays: </p>
  * <pre>
  * Arrays differ starting from [index: 7]:
  *         ... &#92;u0001, &#92;u0002, &#92;u0007, a, b, \n, ...
@@ -107,7 +107,7 @@ public class ArrayDiff<E> implements Diff {
      * @throws NullPointerException if at least one of the arrays is null
      * @return an ArrayDiff instance for the two arrays and formatting parameters provided
      */
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public static ArrayDiff<?> of(Object first, Object second, int width, int contextBefore) {
         Objects.requireNonNull(first);
         Objects.requireNonNull(second);

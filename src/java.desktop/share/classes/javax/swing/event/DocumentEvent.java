@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
  */
 package javax.swing.event;
 
-import javax.swing.undo.*;
-import javax.swing.text.*;
+import javax.swing.text.Document;
+import javax.swing.text.Element;
 
 /**
  * Interface for document change notifications.  This provides
@@ -82,14 +82,14 @@ public interface DocumentEvent {
      * the mutation) need to have ElementChange records.
      * The changes made available need not be recursive.
      * <p>
-     * For example, if the an element is removed from it's
+     * For example, if an element is removed from its
      * parent, this method should report that the parent
      * changed and provide an ElementChange implementation
      * that describes the change to the parent.  If the
      * child element removed had children, these elements
      * do not need to be reported as removed.
      * <p>
-     * If an child element is insert into a parent element,
+     * If a child element is inserted into a parent element,
      * the parent element should report a change.  If the
      * child element also had elements inserted into it
      * (grandchildren to the parent) these elements need

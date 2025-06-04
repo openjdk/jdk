@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,7 @@
  * @test
  * @bug 8046321 8153829
  * @summary OCSP Stapling for TLS
- * @library ../../../../java/security/testlibrary
- * @build CertificateBuilder SimpleOCSPServer
+ * @library /test/lib
  * @run main/othervm SSLEngineWithStapling
  */
 
@@ -87,8 +86,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import sun.security.testlibrary.SimpleOCSPServer;
-import sun.security.testlibrary.CertificateBuilder;
+import jdk.test.lib.security.SimpleOCSPServer;
+import jdk.test.lib.security.CertificateBuilder;
 
 public class SSLEngineWithStapling {
 
@@ -503,11 +502,9 @@ public class SSLEngineWithStapling {
         rootOcsp.start();
 
         // Wait 5 seconds for server ready
-        for (int i = 0; (i < 100 && !rootOcsp.isServerReady()); i++) {
-            Thread.sleep(50);
-        }
-        if (!rootOcsp.isServerReady()) {
-            throw new RuntimeException("Server not ready yet");
+        boolean readyStatus = rootOcsp.awaitServerReady(5, TimeUnit.SECONDS);
+        if (!readyStatus) {
+            throw new RuntimeException("Server not ready");
         }
 
         rootOcspPort = rootOcsp.getPort();
@@ -556,11 +553,9 @@ public class SSLEngineWithStapling {
         intOcsp.start();
 
         // Wait 5 seconds for server ready
-        for (int i = 0; (i < 100 && !intOcsp.isServerReady()); i++) {
-            Thread.sleep(50);
-        }
-        if (!intOcsp.isServerReady()) {
-            throw new RuntimeException("Server not ready yet");
+        readyStatus = intOcsp.awaitServerReady(5, TimeUnit.SECONDS);
+        if (!readyStatus) {
+            throw new RuntimeException("Server not ready");
         }
 
         intOcspPort = intOcsp.getPort();

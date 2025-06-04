@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@
  *          /test/lib
  * @build nsk.jdi.VirtualMachine.instanceCounts.instancecounts004.instancecounts004
  *        nsk.jdi.VirtualMachine.instanceCounts.instancecounts004.instancecounts004a
- * @run main/othervm
+ * @run driver
  *      nsk.jdi.VirtualMachine.instanceCounts.instancecounts004.instancecounts004
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -70,7 +70,10 @@ public class instancecounts004 extends HeapwalkingDebugger {
     private int methodCallCount = 10;
 
     public static void main(String argv[]) {
-        System.exit(run(argv, System.out) + Consts.JCK_STATUS_BASE);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run(String argv[], PrintStream out) {

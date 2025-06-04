@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ import jdk.dynalink.linker.GuardedInvocation;
  * If the guard of that single invocation fails, or it has an invalidated
  * switch point, or its invalidating exception triggered, then the call site
  * will throw it away and ask its associated {@link DynamicLinker} to relink it.
+ * @since 9
  */
 public class SimpleRelinkableCallSite extends AbstractRelinkableCallSite {
     /**

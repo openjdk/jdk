@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class ArrayClassTest {
             urls[i] = Paths.get(cpaths[i]).toUri().toURL();
         }
 
-        // Create an MLet that can load the same class names but
+        // Create a SpyLoader MBean that can load the same class names but
         // will produce different results.
         ClassLoader loader = new SpyLoader(urls);
         ObjectName loaderName = new ObjectName("test:type=SpyLoader");
@@ -105,10 +105,6 @@ public class ArrayClassTest {
 
     public static interface SpyLoaderMBean {}
 
-    /* We originally had this extend MLet but for some reason that
-       stopped the bug from happening.  Some side-effect of registering
-       the MLet in the MBean server caused it not to fail when asked
-       to load Z[].  */
     public static class SpyLoader extends URLClassLoader
             implements SpyLoaderMBean, PrivateClassLoader {
         public SpyLoader(URL[] urls) {
@@ -116,19 +112,6 @@ public class ArrayClassTest {
             // otherwise we can pick up classes from the classpath
             super(urls, null);
         }
-
-        /*
-        public Class loadClass(String name) throws ClassNotFoundException {
-            System.out.println("loadClass: " + name);
-            return super.loadClass(name);
-        }
-
-        public Class loadClass(String name, boolean resolve)
-                throws ClassNotFoundException {
-            System.out.println("loadClass: " + name + ", " + resolve);
-            return super.loadClass(name, resolve);
-        }
-        */
 
         public Class findClass(String name) throws ClassNotFoundException {
             System.out.println("findClass: " + name);

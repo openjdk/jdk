@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import jdk.test.lib.security.JDKSecurityProperties;
  * @test
  * @bug 8148188
  * @summary Enhance the security libraries to record events of interest
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.event.security.TestSecurityPropertyModificationEvent
@@ -58,7 +58,7 @@ public class TestSecurityPropertyModificationEvent {
         }
 
         try (Recording recording = new Recording()) {
-            recording.enable(EventNames.SecurityProperty);
+            recording.enable(EventNames.SecurityProperty).withStackTrace();
             recording.start();
             for (String key: keys) {
                 Security.setProperty(key, keyValue);
@@ -78,6 +78,7 @@ public class TestSecurityPropertyModificationEvent {
             if (keys.contains(e.getString("key"))) {
                 Events.assertField(e, "value").equal(keyValue);
                 i++;
+                Events.assertTopFrame(e, TestSecurityPropertyModificationEvent.class, "main");
             } else {
                 System.out.println(events);
                 throw new Exception("Unexpected event at index:" + i);

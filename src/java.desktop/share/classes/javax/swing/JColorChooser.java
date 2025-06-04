@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,7 @@ public class JColorChooser extends JComponent implements Accessible {
      * @param title        the String containing the dialog's title
      * @param initialColor the initial Color set when the color-chooser is shown
      * @return the selected color or <code>null</code> if the user opted out
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -173,9 +173,11 @@ public class JColorChooser extends JComponent implements Accessible {
      * @param colorTransparencySelectionEnabled true if the transparency of
      *            a color can be selected
      * @return the selected color or <code>null</code> if the user opted out
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
+     *
      * @see java.awt.GraphicsEnvironment#isHeadless
+     * @since 9
      */
     @SuppressWarnings("deprecation")
     public static Color showDialog(Component component, String title,
@@ -217,7 +219,7 @@ public class JColorChooser extends JComponent implements Accessible {
      * @param okListener     the ActionListener invoked when "OK" is pressed
      * @param cancelListener the ActionListener invoked when "Cancel" is pressed
      * @return a new dialog containing the color-chooser pane
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -343,7 +345,7 @@ public class JColorChooser extends JComponent implements Accessible {
      * @param r   an int specifying the amount of Red
      * @param g   an int specifying the amount of Green
      * @param b   an int specifying the amount of Blue
-     * @exception IllegalArgumentException if r,g,b values are out of range
+     * @throws IllegalArgumentException if r,g,b values are out of range
      * @see java.awt.Color
      */
     public void setColor(int r, int g, int b) {
@@ -386,7 +388,7 @@ public class JColorChooser extends JComponent implements Accessible {
      * <code>TransferHandler</code>.
      *
      * @param b the value to set the <code>dragEnabled</code> property to
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      *            <code>b</code> is <code>true</code> and
      *            <code>GraphicsEnvironment.isHeadless()</code>
      *            returns <code>true</code>
@@ -464,7 +466,7 @@ public class JColorChooser extends JComponent implements Accessible {
      *
      * @param panel   a string that specifies the panel to be removed
      * @return the color panel
-     * @exception IllegalArgumentException if panel is not in list of
+     * @throws IllegalArgumentException if panel is not in list of
      *                  known chooser panels
      */
     public AbstractColorChooserPanel removeChooserPanel( AbstractColorChooserPanel panel ) {
@@ -712,7 +714,6 @@ class ColorChooserDialog extends JDialog {
         cancelButton.getAccessibleContext().setAccessibleDescription(cancelString);
 
         // The following few lines are used to register esc to close the dialog
-        @SuppressWarnings("serial") // anonymous class
         Action cancelKeyAction = new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 ((AbstractButton)e.getSource()).fireActionPerformed(e);

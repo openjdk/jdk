@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "interpreter/zero/bytecodeInterpreter.hpp"
 #include "interpreter/zero/zeroInterpreter.hpp"
 #include "runtime/frame.inline.hpp"
@@ -103,13 +102,13 @@ void AbstractInterpreter::layout_activation(Method* method,
 
   BytecodeInterpreter::layout_interpreterState(istate,
                                                caller,
-                                               NULL,
+                                               nullptr,
                                                method,
                                                locals,
                                                stack,
                                                stack_base,
                                                monitor_base,
-                                               NULL,
+                                               nullptr,
                                                is_top_frame);
 }
 

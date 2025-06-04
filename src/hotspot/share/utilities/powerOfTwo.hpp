@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,13 @@ inline int log2i_exact(T value) {
   return count_trailing_zeros(value);
 }
 
+// Ceiling of log2 of a positive, integral value, i.e., smallest i such that value <= 2^i.
+template <typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline int log2i_ceil(T value) {
+  assert(value > 0, "Invalid value");
+  return log2i_graceful(value - 1) + 1;
+}
+
 // Preconditions: value != 0, and the unsigned representation of value is a power of two
 inline int exact_log2(intptr_t value) {
   return log2i_exact((uintptr_t)value);
@@ -103,7 +110,8 @@ inline T round_down_power_of_2(T value) {
 template<typename T, ENABLE_IF(std::is_integral<T>::value)>
 inline T round_up_power_of_2(T value) {
   assert(value > 0, "Invalid value");
-  assert(value <= max_power_of_2<T>(), "Overflow");
+  assert(value <= max_power_of_2<T>(), "Overflowing maximum allowed power of two with " UINT64_FORMAT_X,
+         static_cast<uint64_t>(value));
   if (is_power_of_2(value)) {
     return value;
   }
@@ -116,7 +124,17 @@ inline T round_up_power_of_2(T value) {
 template <typename T, ENABLE_IF(std::is_integral<T>::value)>
 inline T next_power_of_2(T value)  {
   assert(value < std::numeric_limits<T>::max(), "Overflow");
-  return round_up_power_of_2(value + 1);
+  return T(round_up_power_of_2(value + 1));
+}
+
+// Return the largest power of two that is a submultiple of the given value.
+// This is the same as the numeric value of the least-significant set bit.
+// For unsigned values, it replaces the old trick of (value & -value).
+// precondition: value > 0.
+template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline T submultiple_power_of_2(T value) {
+  assert(value > 0, "Invalid value");
+  return value & -value;
 }
 
 #endif // SHARE_UTILITIES_POWEROFTWO_HPP

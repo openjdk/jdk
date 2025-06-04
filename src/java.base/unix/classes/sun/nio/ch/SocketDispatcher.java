@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.io.IOException;
  * for read and write operations.
  */
 
-class SocketDispatcher extends NativeDispatcher {
+class SocketDispatcher extends UnixDispatcher {
     SocketDispatcher() { }
 
     /**
@@ -43,6 +43,7 @@ class SocketDispatcher extends NativeDispatcher {
      * @throws sun.net.ConnectionResetException if connection reset is detected
      * @throws IOException if another I/O error occurs
      */
+    @Override
     int read(FileDescriptor fd, long address, int len) throws IOException {
         return read0(fd, address, len);
     }
@@ -54,24 +55,19 @@ class SocketDispatcher extends NativeDispatcher {
      * @throws sun.net.ConnectionResetException if connection reset is detected
      * @throws IOException if another I/O error occurs
      */
+    @Override
     long readv(FileDescriptor fd, long address, int len) throws IOException {
         return readv0(fd, address, len);
     }
 
+    @Override
     int write(FileDescriptor fd, long address, int len) throws IOException {
-        return FileDispatcherImpl.write0(fd, address, len);
+        return write0(fd, address, len);
     }
 
+    @Override
     long writev(FileDescriptor fd, long address, int len) throws IOException {
-        return FileDispatcherImpl.writev0(fd, address, len);
-    }
-
-    void close(FileDescriptor fd) throws IOException {
-        FileDispatcherImpl.close0(fd);
-    }
-
-    void preClose(FileDescriptor fd) throws IOException {
-        FileDispatcherImpl.preClose0(fd);
+        return writev0(fd, address, len);
     }
 
     // -- Native methods --
@@ -80,6 +76,12 @@ class SocketDispatcher extends NativeDispatcher {
         throws IOException;
 
     private static native long readv0(FileDescriptor fd, long address, int len)
+        throws IOException;
+
+    private static native int write0(FileDescriptor fd, long address, int len)
+        throws IOException;
+
+    private static native long writev0(FileDescriptor fd, long address, int len)
         throws IOException;
 
     static {

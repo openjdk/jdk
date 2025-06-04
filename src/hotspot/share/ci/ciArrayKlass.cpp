@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
-#include "ci/ciUtilities.hpp"
+#include "ci/ciUtilities.inline.hpp"
+#include "memory/universe.hpp"
 
 // ciArrayKlass
 //
@@ -93,9 +93,9 @@ bool ciArrayKlass::is_leaf_type() {
 
 
 // ------------------------------------------------------------------
-// ciArrayKlass::base_element_type
+// ciArrayKlass::make
 //
-// What type is obtained when this array is indexed as many times as possible?
+// Make an array klass of the specified element type.
 ciArrayKlass* ciArrayKlass::make(ciType* element_type) {
   if (element_type->is_primitive_type()) {
     return ciTypeArrayKlass::make(element_type->basic_type());
@@ -103,3 +103,4 @@ ciArrayKlass* ciArrayKlass::make(ciType* element_type) {
     return ciObjArrayKlass::make(element_type->as_klass());
   }
 }
+

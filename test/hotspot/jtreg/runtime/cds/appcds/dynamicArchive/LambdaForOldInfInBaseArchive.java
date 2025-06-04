@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,9 @@
  *          The lambda proxy class of the app class should be in the dynamic archive.
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
- * @build LambdaContainsOldInfApp sun.hotspot.WhiteBox OldProvider
+ * @build LambdaContainsOldInfApp jdk.test.whitebox.WhiteBox OldProvider
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar old-inf-base-archive.jar LambdaContainsOldInfApp OldProvider
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. LambdaForOldInfInBaseArchive
  */
 
@@ -78,7 +78,7 @@ public class LambdaForOldInfInBaseArchive extends DynamicArchiveTestBase {
               appClass)
             .assertNormalExit(out -> {
                     out.shouldContain("OldProvider source: shared objects file")
-                       .shouldMatch("Archiving hidden LambdaContainsOldInfApp[$][$]Lambda[$][\\d+]*");
+                       .shouldMatch("Archiving hidden LambdaContainsOldInfApp[$][$]Lambda*");
                 });
 
         // Run with both base and dynamic archives. The OldProvider class
@@ -91,7 +91,7 @@ public class LambdaForOldInfInBaseArchive extends DynamicArchiveTestBase {
             .assertNormalExit(out -> {
                     out.shouldContain("OldProvider source: shared objects file")
                        .shouldContain("LambdaContainsOldInfApp source: shared objects file (top)")
-                       .shouldMatch(".class.load. LambdaContainsOldInfApp[$][$]Lambda[$].*/0x.*source:.*shared.*objects.*file.*(top)");
+                       .shouldMatch(".class.load. LambdaContainsOldInfApp[$][$]Lambda.*/0x.*source:.*shared.*objects.*file.*(top)");
                 });
     }
 }

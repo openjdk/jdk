@@ -34,9 +34,9 @@ public class Shutdown extends ShutdownNotification
     implements SctpNotification
 {
     private Association association;
-    /* assocId is used to lookup the association before the notification is
+    /* assocId is used to look up the association before the notification is
      * returned to user code */
-    private int assocId;
+    private final int assocId;
 
     /* Invoked from native */
     private Shutdown(int assocId) {
@@ -61,9 +61,7 @@ public class Shutdown extends ShutdownNotification
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(super.toString()).append(" [");
-        sb.append("Association:").append(association).append("]");
-        return sb.toString();
+        return super.toString() + " [" +
+                "Association:" + association + "]";
     }
 }

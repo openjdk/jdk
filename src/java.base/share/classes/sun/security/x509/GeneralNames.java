@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ public class GeneralNames {
      * @param derVal the DerValue to construct the GeneralNames from.
      * @exception IOException on error.
      */
+    @SuppressWarnings("this-escape")
     public GeneralNames(DerValue derVal) throws IOException {
         this();
         if (derVal.tag != DerValue.tag_Sequence) {
@@ -74,7 +75,7 @@ public class GeneralNames {
      * The default constructor for this class.
      */
     public GeneralNames() {
-        names = new ArrayList<GeneralName>();
+        names = new ArrayList<>();
     }
 
     public GeneralNames add(GeneralName name) {
@@ -109,9 +110,8 @@ public class GeneralNames {
      * Write the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on error.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (isEmpty()) {
             return;
         }
@@ -132,10 +132,9 @@ public class GeneralNames {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof GeneralNames == false) {
+        if (!(obj instanceof GeneralNames other)) {
             return false;
         }
-        GeneralNames other = (GeneralNames)obj;
         return this.names.equals(other.names);
     }
 

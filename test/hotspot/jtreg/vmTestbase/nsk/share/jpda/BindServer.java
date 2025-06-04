@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import java.net.*;
 import java.util.*;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 
 /**
  * <code>BindServer</code> is an utility to perform JPDA tests
@@ -58,7 +57,7 @@ import nsk.share.jpda.*;
  * @see DebugeeBinder
  * @see DebugeeArgumentHandler
  */
-public class BindServer implements Finalizable {
+public final class BindServer {
 
     /** Version of <code>BindServer</code> implementation. */
     public static final long VERSION = 2;
@@ -88,7 +87,6 @@ public class BindServer implements Finalizable {
 
     private static String pathConvertions[][] = null;
 
-    private ListeningThread listeningThread = null;
 
     private int totalRequests = 0;
     private int acceptedRequests = 0;
@@ -119,7 +117,6 @@ public class BindServer implements Finalizable {
     public static int run(String argv[], PrintStream out) {
         return new BindServer().runIt(argv, out);
     }
-
     /**
      * Perform execution of <code>BindServer</code>.
      * This method handles command line arguments, starts seperate
@@ -148,12 +145,7 @@ public class BindServer implements Finalizable {
         }
 
         log = new Log(out, argHandler);
-        log.enableErrorsSummary(false);
-        log.enableVerboseOnError(false);
         logger = new Log.Logger(log, "");
-
-        Finalizer bindFinalizer = new Finalizer(this);
-        bindFinalizer.activate();
 
         logger.trace(TRACE_LEVEL_THREADS, "BindServer: starting main thread");
 
@@ -182,45 +174,39 @@ public class BindServer implements Finalizable {
 
         BufferedReader stdIn = new BufferedReader(
             new InputStreamReader(System.in));
+        try (ListeningThread listeningThread = new ListeningThread(this)) {
+            listeningThread.bind();
+            listeningThread.start();
 
-        listeningThread = new ListeningThread(this);
-        listeningThread.bind();
-        listeningThread.start();
+            System.out.println("\n"
+                              + "BindServer started" + "\n"
+                              + "Type \"exit\" to shut down BindServer"
+                              + "\n");
 
-        System.out.println("\n"
-                          + "BindServer started" + "\n"
-                          + "Type \"exit\" to shut down BindServer"
-                          + "\n");
-
-        for (;;) {
-            try {
-                String userInput = stdIn.readLine();
-                if (userInput == null || userInput.equals("exit")
-                        || userInput.equals("quit")) {
-                    logger.display("Shutting down BindServer");
-                    stdIn.close();
-                    stdIn = null;
-                    break;
-                } else if (userInput.trim().equals("")) {
-                    continue;
-                } else {
-                    System.out.println("ERROR: Unknown command: " + userInput);
+            for (; ; ) {
+                try {
+                    String userInput = stdIn.readLine();
+                    if (userInput == null || userInput.equals("exit")
+                            || userInput.equals("quit")) {
+                        logger.display("Shutting down BindServer");
+                        stdIn.close();
+                        stdIn = null;
+                        break;
+                    } else if (userInput.trim().equals("")) {
+                        continue;
+                    } else {
+                        System.out.println("ERROR: Unknown command: " + userInput);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace(log.getOutStream());
+                    throw new Failure("Caught exception while reading console command:\n\t"
+                            + e);
                 }
-            } catch(IOException e) {
-                e.printStackTrace(log.getOutStream());
-                throw new Failure("Caught exception while reading console command:\n\t"
-                                    + e);
             }
-        }
 
-        printSummary(System.out);
+            printSummary(System.out);
 
-        logger.trace(TRACE_LEVEL_THREADS, "BindServer: exiting main thread");
-        try {
-            finalize();
-        } catch (Throwable e) {
-            e.printStackTrace(log.getOutStream());
-            logger.complain("Caught exception while finalization of BindServer:\n\t" + e);
+            logger.trace(TRACE_LEVEL_THREADS, "BindServer: exiting main thread");
         }
 
         return PASSED;
@@ -391,39 +377,6 @@ public class BindServer implements Finalizable {
         waitInterruptThread(thr, THREAD_TIMEOUT);
     }
 
-    /**
-     * Close <code>BindServer</code> by finishing all threads and closing
-     * all conections.
-     */
-    public synchronized void close() {
-        if (listeningThread != null) {
-            listeningThread.close();
-            listeningThread = null;
-        }
-    }
-
-    /**
-     * Make finalization of <code>BindServer</code> object by invoking
-     * method <code>close()</code>.
-     *
-     * @see #close()
-     */
-    protected void finalize() throws Throwable {
-        close();
-        super.finalize();
-    }
-
-    /**
-     * Make finalization of <code>BindServer</code> object at program exit
-     * by invoking method <code>finalize()</code>.
-     *
-     * @see #finalize()
-     */
-    public void finalizeAtExit() throws Throwable {
-        finalize();
-        logger.trace(TRACE_LEVEL_THREADS, "BindServer: finalization at exit completed");
-    }
-
 ///////// Thread listening a TCP/IP socket //////////
 
     /**
@@ -432,7 +385,7 @@ public class BindServer implements Finalizable {
      *
      * @see ServingThread
      */
-    private static class ListeningThread extends Thread {
+    private static class ListeningThread extends Thread implements AutoCloseable {
         private volatile boolean shouldStop = false;
         private volatile boolean closed = false;
 
@@ -678,23 +631,29 @@ public class BindServer implements Finalizable {
 
         /**
          * Close thread by closing all connections and waiting
-         * foor thread finished.
+         * for thread to finish.
          *
          * @see #closeConnection()
          */
+        @Override
         public synchronized void close() {
             if (closed) {
                 return;
             }
-            closeHostConnection();
-            if (servingThread != null) {
-                servingThread.close();
-                servingThread = null;
+            try {
+                closeHostConnection();
+                if (servingThread != null) {
+                    servingThread.close();
+                    servingThread = null;
+                }
+                waitForThread(THREAD_TIMEOUT);
+                closeConnection();
+                closed = true;
+                logger.trace(TRACE_LEVEL_THREADS, "ListeningThread closed");
+            } catch (Throwable e) {
+                e.printStackTrace(log.getOutStream());
+                logger.complain("Caught exception while closing ListeningThread:\n\t" + e);
             }
-            waitForThread(THREAD_TIMEOUT);
-            closeConnection();
-            closed = true;
-            logger.trace(TRACE_LEVEL_THREADS, "ListeningThread closed");
         }
 
     } // ListeningThread

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,6 @@ currentDirLength(const WCHAR* ps, int pathlen) {
         static int curDirLenCached = -1;
         //relative to both drive and directory
         if (curDirLenCached == -1) {
-            int dirlen = -1;
             dir = _wgetcwd(NULL, MAX_PATH);
             if (dir != NULL) {
                 curDirLenCached = (int)wcslen(dir);
@@ -174,13 +173,12 @@ pathToNTPath(JNIEnv *env, jstring path, jboolean throwFNFE) {
                    obviously a burden to all relative paths (The current dir/len
                    for "drive & directory" relative path is cached, so we only
                    calculate it once but for "drive-relative path we call
-                   _wgetdcwd() and wcslen() everytime), but a hit we have
+                   _wgetdcwd() and wcslen() every time), but a hit we have
                    to take if we want to support relative path beyond max_path.
                    There is no way to predict how long the absolute path will be
-                   (therefor allocate the sufficient memory block) before calling
+                   (therefore allocate the sufficient memory block) before calling
                    _wfullpath(), we have to get the length of "current" dir first.
                 */
-                WCHAR *abpath = NULL;
                 int dirlen = currentDirLength(ps, pathlen);
                 if (dirlen + pathlen + 1 > max_path - 1) {
                     pathbuf = prefixAbpath(ps, pathlen, dirlen + pathlen);
@@ -344,16 +342,8 @@ handleNonSeekAvailable(FD fd, long *pbytes) {
         return FALSE;
     }
 
-    if (! PeekNamedPipe(han, NULL, 0, NULL, pbytes, NULL)) {
-        /* PeekNamedPipe fails when at EOF.  In that case we
-         * simply make *pbytes = 0 which is consistent with the
-         * behavior we get on Solaris when an fd is at EOF.
-         * The only alternative is to raise and Exception,
-         * which isn't really warranted.
-         */
-        if (GetLastError() != ERROR_BROKEN_PIPE) {
-            return FALSE;
-        }
+    if (!PeekNamedPipe(han, NULL, 0, NULL, pbytes, NULL)) {
+        // If PeekNamedPipe fails, set the number of available bytes to zero.
         *pbytes = 0;
     }
     return TRUE;
@@ -539,7 +529,7 @@ fileDescriptorClose(JNIEnv *env, jobject this)
 {
     FD fd = (*env)->GetLongField(env, this, IO_handle_fdID);
     HANDLE h = (HANDLE)fd;
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
         return;
     }
 
@@ -550,11 +540,11 @@ fileDescriptorClose(JNIEnv *env, jobject this)
     /* Set the fd to -1 before closing it so that the timing window
      * of other threads using the wrong fd (closed but recycled fd,
      * that gets re-opened with some other filename) is reduced.
-     * Practically the chance of its occurance is low, however, we are
+     * Practically the chance of its occurrence is low, however, we are
      * taking extra precaution over here.
      */
     (*env)->SetLongField(env, this, IO_handle_fdID, -1);
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
         return;
     }
 
@@ -596,4 +586,10 @@ handleGetLength(FD fd) {
     } else {
         return -1;
     }
+}
+
+jboolean
+handleIsRegularFile(JNIEnv* env, FD fd)
+{
+    return JNI_TRUE;
 }

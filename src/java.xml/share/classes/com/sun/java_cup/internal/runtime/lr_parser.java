@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 
 package com.sun.java_cup.internal.runtime;
 
+import com.sun.org.apache.xalan.internal.xsltc.compiler.sym;
+import java.util.Arrays;
 import java.util.Stack;
 
 /** This class implements a skeleton table driven LR parser.  In general,
@@ -134,9 +136,24 @@ import java.util.Stack;
  * @see     com.sun.java_cup.internal.runtime.Symbol
  * @see     com.sun.java_cup.internal.runtime.virtual_parse_stack
  * @author  Frank Flannery
+ *
+ * @LastModified: July 2022
  */
 
 public abstract class lr_parser {
+    public static final int ID_GROUP = 1;
+    public static final int ID_OPERATOR = 2;
+    public static final int ID_TOTAL_OPERATOR = 3;
+
+    private boolean isLiteral = false;
+    private int grpCount = 0;
+    private int opCount = 0;
+    private int totalOpCount = 0;
+    private int lastSym;
+    private boolean overLimit = false;
+    public int grpLimit = 0;
+    public int opLimit = 0;
+    public int totalOpLimit = 0;
 
   /*-----------------------------------------------------------*/
   /*--- Constructor(s) ----------------------------------------*/
@@ -351,12 +368,49 @@ public abstract class lr_parser {
    *  Once end of file has been reached, all subsequent calls to scan
    *  should return an EOF Symbol (which is Symbol number 0).  By default
    *  this method returns getScanner().next_token(); this implementation
-   *  can be overriden by the generated parser using the code declared in
+   *  can be overridden by the generated parser using the code declared in
    *  the "scan with" clause.  Do not recycle objects; every call to
    *  scan() should return a fresh object.
    */
-  public Symbol scan() throws java.lang.Exception {
-    return getScanner().next_token();
+  public Symbol scan() throws Exception {
+      Symbol s = getScanner().next_token();
+
+      if (s.sym == sym.LPAREN) {
+          if (!isLiteral) {
+            grpCount++;
+          }
+          opCount++; // function
+          totalOpCount++;
+          isLiteral = false;
+      } else if (contains(sym.OPERATORS, s.sym)) {
+          // axis nodetest is counted as one step, so not counted if last=DCOLON
+          if (lastSym != sym.DCOLON) {
+              opCount++;
+              totalOpCount++;
+          }
+          isLiteral = false;
+      }
+
+      if (s.sym == sym.Literal || s.sym == sym.QNAME) {
+          isLiteral = true;
+      }
+      lastSym = s.sym;
+
+      /*
+       * Sets the overLimit status as soon as the count of operators is over the
+       * limit, which in turn triggers the XPathParser to report an error.
+      */
+      if (grpLimit > 0 && grpCount > grpLimit
+              || opLimit > 0 && opCount > opLimit
+              || totalOpLimit > 0 && totalOpCount > totalOpLimit) {
+          overLimit = true;
+      }
+
+    return s;
+  }
+
+  private boolean contains(final int[] arr, final int key) {
+    return Arrays.stream(arr).anyMatch(i -> i == key);
   }
 
   /*. . . . . . . . . . . . . . . . . . . . . . . . . . . . . .*/
@@ -552,9 +606,15 @@ public abstract class lr_parser {
 
       /* do user initialization */
       user_init();
+      isLiteral = false;
+      overLimit = false;
+      grpCount = 0;
+      opCount = 0;
+      lastSym = -1;
 
       /* get the first token */
       cur_token = scan();
+      if (overLimit) return null;
 
       /* push dummy Symbol with start state to get us underway */
       stack.removeAllElements();
@@ -629,8 +689,32 @@ public abstract class lr_parser {
                   lhs_sym = stack.peek();
                 }
             }
+            if (overLimit) return null;
         }
+
       return lhs_sym;
+    }
+
+    public boolean isOverLimit() {
+        return overLimit;
+    }
+
+    /**
+     * Returns the count of operators in XPath expressions.
+     *
+     * @param id the ID of the count
+     * @return the count associated with the ID
+     */
+    public int getCount(int id) {
+        switch (id) {
+            case ID_GROUP:
+                return grpCount;
+            case ID_OPERATOR:
+                return opCount;
+            case ID_TOTAL_OPERATOR:
+                return totalOpCount;
+        }
+        return 0;
     }
 
   /*. . . . . . . . . . . . . . . . . . . . . . . . . . . . . .*/
@@ -854,7 +938,7 @@ public abstract class lr_parser {
    *  the stored Symbols without error, then the recovery is considered a
    *  success.  Once a successful recovery point is determined, we do an
    *  actual parse over the stored input -- modifying the real parse
-   *  configuration and executing all actions.  Finally, we return the the
+   *  configuration and executing all actions.  Finally, we return the
    *  normal parser to continue with the overall parse.
    *
    * @param debug should we produce debugging messages as we parse.

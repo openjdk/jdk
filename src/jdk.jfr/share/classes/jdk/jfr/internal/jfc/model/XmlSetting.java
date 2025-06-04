@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ final class XmlSetting extends XmlElement {
     @Override
     final void setContent(String value) {
         super.setContent(value);
-        if (getParent() instanceof XmlEvent event) {
+        if (getParent() instanceof XmlEvent) {
             SettingsLog.log(this, value);
         }
     }

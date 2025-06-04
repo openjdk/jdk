@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,11 @@
 #include <string.h>
 
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 
-#include "JVMTITools.h"
-#include "jvmti_tools.h"
-#include "nsk_tools.h"
+#include "JVMTITools.hpp"
+#include "jvmti_tools.hpp"
+#include "nsk_tools.hpp"
 
 extern "C" {
 
@@ -40,24 +40,44 @@ extern "C" {
 static const char *classSig =
     "Lnsk/jvmti/scenarios/jni_interception/JI01/ji01t001;";
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jrawMonitorID eventLock;
 static jvmtiEventCallbacks callbacks;
 static jint result = NSK_STATUS_PASSED;
 
+// test thread
+static jthread testThread = nullptr;
+
 /* the original JNI function table */
-static jniNativeInterface *orig_jni_functions = NULL;
+static jniNativeInterface *orig_jni_functions = nullptr;
 
 /* the redirected JNI function table */
-static jniNativeInterface *redir_jni_functions = NULL;
+static jniNativeInterface *redir_jni_functions = nullptr;
 
 /* number of the redirected JNI function calls */
 static volatile int fnd_calls = 0;
 
+void setTestThread(JNIEnv *env) {
+    jthread curThread = nullptr;
+    NSK_JVMTI_VERIFY(jvmti->GetCurrentThread(&curThread));
+    testThread = env->NewGlobalRef(curThread);
+}
+
+void resetTestThread(JNIEnv *env) {
+     env->DeleteGlobalRef(testThread);
+     testThread = nullptr;
+}
+
+bool isOnTestThread(JNIEnv *env) {
+    jthread curThread = nullptr;
+    NSK_JVMTI_VERIFY(jvmti->GetCurrentThread(&curThread));
+    return env->IsSameObject(testThread, curThread);
+}
+
 /* ====================================================================== */
 /** redirected JNI functions **/
 jclass JNICALL MyFindClass(JNIEnv *env, const char *name) {
-    if (isThreadExpected(jvmti, NULL)) {
+    if (isOnTestThread(env) && strcmp(name, classSig) == 0) {
         fnd_calls++;
 
         NSK_DISPLAY1("MyFindClass: the function was called successfully: number of calls so far =  %d\n", fnd_calls);
@@ -192,6 +212,9 @@ static void checkCall(JNIEnv *env
 {
     jclass cls;
 
+    setTestThread(env);
+    fnd_calls = 0;
+
     NSK_TRACE(
         (cls = env->FindClass(classSig))
         );
@@ -200,9 +223,11 @@ static void checkCall(JNIEnv *env
         env->ExceptionClear()
         );
 
-    // The check should pass if the actual number of invocations is not less that the expected number (fnd_calls >= exFndCalls).
+    resetTestThread(env);
+
+    // The check should pass if the actual number of invocations is the same as the expected number (fnd_calls == exFndCalls).
     // If the invocation is not expected (exFndCalls == 0), fnd_calls should be also == 0.
-    if ((exFndCalls > 0 && fnd_calls >= exFndCalls) || (fnd_calls == exFndCalls)) {
+    if (fnd_calls == exFndCalls) {
             NSK_DISPLAY5("CHECK PASSED: %s: the %s JNI function FindClass() has been %s during %s phase\n\t%d intercepted call(s) as expected\n"
                         , callBackFunc
                         , (step == 1) ? "tested" : "original"
@@ -210,13 +235,6 @@ static void checkCall(JNIEnv *env
                         , msg
                         , fnd_calls
                         );
-
-            if (fnd_calls != exFndCalls) {
-                NSK_COMPLAIN2("WARNING: the number of occured calls (%d) exceeds the expected number of calls (%d).\n"
-                             , fnd_calls
-                             , exFndCalls
-                             );
-            }
     } else {
         result = NSK_STATUS_FAILED;
 
@@ -244,12 +262,10 @@ VMInit(jvmtiEnv *jvmti, JNIEnv *env, jthread thread) {
                 );
 
     // check JNI function table interception
-    fnd_calls = 0;
     NSK_TRACE(doRedirect(jvmti, phase));
     NSK_TRACE(checkCall(env, 1, "VMInit", TranslatePhase(phase), 1));
 
     // check restored JNI function table
-    fnd_calls = 0;
     NSK_TRACE(doRestore(jvmti));
     NSK_TRACE(checkCall(env, 2, "VMInit", TranslatePhase(phase), 0));
 
@@ -268,12 +284,10 @@ VMDeath(jvmtiEnv *jvmti, JNIEnv *env) {
                 );
 
     // check JNI function table interception
-    fnd_calls = 0;
     NSK_TRACE(doRedirect(jvmti, phase));
     NSK_TRACE(checkCall(env, 1, "VMDeath", TranslatePhase(phase), 1));
 
     // check restored JNI function table
-    fnd_calls = 0;
     NSK_TRACE(doRestore(jvmti));
     NSK_TRACE(checkCall(env, 2, "VMDeath", TranslatePhase(phase), 0));
 
@@ -315,7 +329,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
 
 
-    if (!NSK_VERIFY(jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1) == JNI_OK && jvmti != NULL))
+    if (!NSK_VERIFY(jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1) == JNI_OK && jvmti != nullptr))
         return JNI_ERR;
 
 
@@ -340,11 +354,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     NSK_DISPLAY0("Event callbacks are set\nEnabling events...\n");
 
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, nullptr)))
         return JNI_ERR;
 
 
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, nullptr)))
         return JNI_ERR;
 
     NSK_DISPLAY0("Events are enabled\n");

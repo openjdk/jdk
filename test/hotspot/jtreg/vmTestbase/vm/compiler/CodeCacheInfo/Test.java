@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,8 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
  *      -Xmixed
  *      -Xbootclasspath/a:.
@@ -45,7 +45,7 @@
 
 package vm.compiler.CodeCacheInfo;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -56,20 +56,21 @@ public class Test {
     static {
         String p1 = " size=\\d+Kb used=\\d+Kb max_used=\\d+Kb free=\\d+Kb\\n";
         String p2 = " bounds \\[0x[0-9a-f]+, 0x[0-9a-f]+, 0x[0-9a-f]+\\]\\n";
-        String p3 = " total_blobs=\\d+ nmethods=\\d+ adapters=\\d+\\n";
-        String p4 = " compilation: enabled\\n";
+        String p3 = "CodeCache:.*\\n";
+        String p4 = " total_blobs=\\d+, nmethods=\\d+, adapters=\\d+, full_count=\\d+\\n";
+        String p5 = "Compilation: enabled.*\\n";
 
         String segPrefix = "^(CodeHeap '[^']+':" + p1 + p2 + ")+";
         String nosegPrefix = "^CodeCache:" + p1 + p2;
 
-        SEG_REGEXP = segPrefix + p3 + p4;
-        NOSEG_REGEXP = nosegPrefix + p3 + p4;
+        SEG_REGEXP = segPrefix + p3 + p4 + p5;
+        NOSEG_REGEXP = nosegPrefix + p4 + p5;
     }
 
     public static void main(String[] args) throws Exception {
         {
             System.out.println("SegmentedCodeCache is enabled");
-            var pb = ProcessTools.createTestJvm(
+            var pb = ProcessTools.createTestJavaProcessBuilder(
                     "-XX:+SegmentedCodeCache",
                     "-XX:+PrintCodeCache",
                     "-version");
@@ -79,7 +80,7 @@ public class Test {
         }
         {
             System.out.println("SegmentedCodeCache is disabled");
-            var pb = ProcessTools.createTestJvm(
+            var pb = ProcessTools.createTestJavaProcessBuilder(
                     "-XX:-SegmentedCodeCache",
                     "-XX:+PrintCodeCache",
                     "-version");

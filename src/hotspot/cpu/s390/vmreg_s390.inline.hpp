@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,22 @@
 #ifndef CPU_S390_VMREG_S390_INLINE_HPP
 #define CPU_S390_VMREG_S390_INLINE_HPP
 
-inline VMReg RegisterImpl::as_VMReg() {
-  if (this == noreg) {
-    return VMRegImpl::Bad();
-  }
-  return VMRegImpl::as_VMReg(encoding() << 1);
+inline VMReg Register::as_VMReg() const {
+  return VMRegImpl::as_VMReg(encoding() * Register::max_slots_per_register);
 }
 
-inline VMReg FloatRegisterImpl::as_VMReg() {
-  return VMRegImpl::as_VMReg((encoding() << 1) + ConcreteRegisterImpl::max_gpr);
+inline VMReg FloatRegister::as_VMReg() const {
+  return VMRegImpl::as_VMReg((encoding() * FloatRegister::max_slots_per_register) +
+                              ConcreteRegisterImpl::max_gpr);
 }
 
-inline VMReg ConditionRegisterImpl::as_VMReg() {
-  return VMRegImpl::as_VMReg((encoding() << 1) + ConcreteRegisterImpl::max_fpr);
+inline VMReg VectorRegister::as_VMReg() const {
+  return VMRegImpl::as_VMReg((encoding() * VectorRegister::max_slots_per_register) +
+                              ConcreteRegisterImpl::max_fpr);
+}
+
+inline VMReg ConditionRegister::as_VMReg() const {
+  return VMRegImpl::as_VMReg(encoding() + ConcreteRegisterImpl::max_vr);
 }
 
 #endif // CPU_S390_VMREG_S390_INLINE_HPP

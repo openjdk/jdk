@@ -1,0 +1,2 @@
+InstanceofTotalPattern.java:19:19: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.unconditional.patterns.in.instanceof), 16, 21
+1 error

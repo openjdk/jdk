@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
@@ -86,7 +85,7 @@ int AbstractInterpreter::size_activation(int max_stack,
   // fixed size of an interpreter frame:
   int overhead = frame::sender_sp_offset - frame::interpreter_frame_initial_sp_offset;
 
-  // Our locals were accounted for by the caller (or last_frame_adjust on the transistion)
+  // Our locals were accounted for by the caller (or last_frame_adjust on the transition)
   // Since the callee parameters already account for the callee's params we only need to account for
   // the extra locals.
 
@@ -131,6 +130,15 @@ void AbstractInterpreter::layout_activation(Method* method,
   // and sender_sp is (fp + sender_sp_offset*wordSize)
 
   intptr_t* locals = interpreter_frame->sender_sp() + max_locals - 1;
+
+#ifdef ASSERT
+  if (caller->is_interpreted_frame()) {
+    // Test exact placement on top of caller args
+    intptr_t* l2 = caller->interpreter_frame_last_sp() + caller_actual_parameters - 1;
+    assert(l2 <= caller->interpreter_frame_expression_stack(), "bad placement");
+    assert(l2 >= locals, "bad placement");
+  }
+#endif
 
   interpreter_frame->interpreter_frame_set_locals(locals);
   BasicObjectLock* montop = interpreter_frame->interpreter_frame_monitor_begin();

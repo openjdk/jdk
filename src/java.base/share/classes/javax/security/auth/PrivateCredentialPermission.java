@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,62 +47,13 @@ import sun.security.util.ResourcesMgr;
  *      CredentialClass {PrincipalClass "PrincipalName"}*
  * </pre>
  *
- * For example, the following permission grants access to the
- * com.sun.PrivateCredential owned by Subjects which have
- * a com.sun.Principal with the name, "duke".  Note that although
- * this example, as well as all the examples below, do not contain
- * Codebase, SignedBy, or Principal information in the grant statement
- * (for simplicity reasons), actual policy configurations should
- * specify that information when appropriate.
- *
- * <pre>
- *
- *    grant {
- *      permission javax.security.auth.PrivateCredentialPermission
- *              "com.sun.PrivateCredential com.sun.Principal \"duke\"",
- *              "read";
- *    };
- * </pre>
- *
- * If CredentialClass is "*", then access is granted to
- * all private Credentials belonging to the specified
- * {@code Subject}.
- * If "PrincipalName" is "*", then access is granted to the
- * specified Credential owned by any {@code Subject} that has the
- * specified {@code Principal} (the actual PrincipalName doesn't matter).
- * For example, the following grants access to the
- * a.b.Credential owned by any {@code Subject} that has
- * an a.b.Principal.
- *
- * <pre>
- *    grant {
- *      permission javax.security.auth.PrivateCredentialPermission
- *              "a.b.Credential a.b.Principal "*"",
- *              "read";
- *    };
- * </pre>
- *
- * If both the PrincipalClass and "PrincipalName" are "*",
- * then access is granted to the specified Credential owned by
- * any {@code Subject}.
- *
- * <p> In addition, the PrincipalClass/PrincipalName pairing may be repeated:
- *
- * <pre>
- *    grant {
- *      permission javax.security.auth.PrivateCredentialPermission
- *              "a.b.Credential a.b.Principal "duke" c.d.Principal "dukette"",
- *              "read";
- *    };
- * </pre>
- *
- * The above grants access to the private Credential, "a.b.Credential",
- * belonging to a {@code Subject} with at least two associated Principals:
- * "a.b.Principal" with the name, "duke", and "c.d.Principal", with the name,
- * "dukette".
+ * @deprecated
+ * This permission cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
  *
  * @since 1.4
  */
+@Deprecated(since="25", forRemoval=true)
 public final class PrivateCredentialPermission extends Permission {
 
     @java.io.Serial
@@ -123,11 +74,6 @@ public final class PrivateCredentialPermission extends Permission {
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private Set<Principal> principals;  // ignored - kept around for compatibility
     private transient CredOwner[] credOwners;
-
-    /**
-     * @serial
-     */
-    private boolean testing = false;
 
     /**
      * Create a new {@code PrivateCredentialPermission}
@@ -241,11 +187,8 @@ public final class PrivateCredentialPermission extends Permission {
      * the specified {@code Permission}, false if not.
      */
     public boolean implies(Permission p) {
-
-        if (p == null || !(p instanceof PrivateCredentialPermission))
+        if (!(p instanceof PrivateCredentialPermission that))
             return false;
-
-        PrivateCredentialPermission that = (PrivateCredentialPermission)p;
 
         if (!impliesCredentialClass(credentialClass, that.credentialClass))
             return false;
@@ -268,23 +211,21 @@ public final class PrivateCredentialPermission extends Permission {
      *          has the same credential class as this object,
      *          and has the same Principals as this object.
      */
+    @Override
     public boolean equals(Object obj) {
         if (obj == this)
             return true;
 
-        if (! (obj instanceof PrivateCredentialPermission))
+        if (! (obj instanceof PrivateCredentialPermission that))
             return false;
-
-        PrivateCredentialPermission that = (PrivateCredentialPermission)obj;
 
         return (this.implies(that) && that.implies(this));
     }
 
     /**
-     * Returns the hash code value for this object.
-     *
-     * @return a hash code value for this object.
+     * {@return the hash code value for this object}
      */
+    @Override
     public int hashCode() {
         return this.credentialClass.hashCode();
     }
@@ -319,18 +260,13 @@ public final class PrivateCredentialPermission extends Permission {
 
         ArrayList<CredOwner> pList = new ArrayList<>();
         StringTokenizer tokenizer = new StringTokenizer(name, " ", true);
-        String principalClass = null;
-        String principalName = null;
-
-        if (testing)
-            System.out.println("whole name = " + name);
+        String principalClass;
+        String principalName;
 
         // get the Credential Class
         credentialClass = tokenizer.nextToken();
-        if (testing)
-            System.out.println("Credential Class = " + credentialClass);
 
-        if (tokenizer.hasMoreTokens() == false) {
+        if (!tokenizer.hasMoreTokens()) {
             MessageFormat form = new MessageFormat(ResourcesMgr.getString
                 ("permission.name.name.syntax.invalid."));
             Object[] source = {name};
@@ -346,10 +282,8 @@ public final class PrivateCredentialPermission extends Permission {
 
             // get the Principal Class
             principalClass = tokenizer.nextToken();
-            if (testing)
-                System.out.println("    Principal Class = " + principalClass);
 
-            if (tokenizer.hasMoreTokens() == false) {
+            if (!tokenizer.hasMoreTokens()) {
                 MessageFormat form = new MessageFormat(ResourcesMgr.getString
                         ("permission.name.name.syntax.invalid."));
                 Object[] source = {name};
@@ -396,9 +330,6 @@ public final class PrivateCredentialPermission extends Permission {
                 }
             }
 
-            if (testing)
-                System.out.println("\tprincipalName = '" + principalName + "'");
-
             principalName = principalName.substring
                                         (1, principalName.length() - 1);
 
@@ -407,9 +338,6 @@ public final class PrivateCredentialPermission extends Permission {
                     throw new IllegalArgumentException(ResourcesMgr.getString
                         ("PrivateCredentialPermission.Principal.Class.can.not.be.a.wildcard.value.if.Principal.Name.is.not.a.wildcard.value"));
             }
-
-            if (testing)
-                System.out.println("\tprincipalName = '" + principalName + "'");
 
             pList.add(new CredOwner(principalClass, principalName));
         }
@@ -424,14 +352,10 @@ public final class PrivateCredentialPermission extends Permission {
         if (thisC == null || thatC == null)
             return false;
 
-        if (testing)
-            System.out.println("credential class comparison: " +
-                                thisC + "/" + thatC);
-
         if (thisC.equals("*"))
             return true;
 
-        /**
+        /*
          * XXX let's not enable this for now --
          *      if people want it, we'll enable it later
          */
@@ -524,10 +448,8 @@ public final class PrivateCredentialPermission extends Permission {
         }
 
         public boolean implies(Object obj) {
-            if (obj == null || !(obj instanceof CredOwner))
+            if (!(obj instanceof CredOwner that))
                 return false;
-
-            CredOwner that = (CredOwner)obj;
 
             if (principalClass.equals("*") ||
                 principalClass.equals(that.principalClass)) {
@@ -538,7 +460,7 @@ public final class PrivateCredentialPermission extends Permission {
                 }
             }
 
-            /**
+            /*
              * XXX no code yet to support a.b.*
              */
 

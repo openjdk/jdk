@@ -94,9 +94,9 @@ public class CK_X9_42_DH1_DERIVE_PARAMS {
     public byte[] pPublicData;
 
     /**
-     * Returns the string representation of CK_PKCS5_PBKD2_PARAMS.
+     * Returns the string representation of CK_X9_42_DH1_DERIVE_PARAMS.
      *
-     * @return the string representation of CK_PKCS5_PBKD2_PARAMS
+     * @return the string representation of CK_X9_42_DH1_DERIVE_PARAMS
      */
     public String toString() {
         StringBuilder sb = new StringBuilder();

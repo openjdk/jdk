@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ import sun.security.x509.*;
  * number. Other unique combinations include the issuer, subject,
  * subjectKeyIdentifier and/or the subjectPublicKey criteria.
  * <p>
- * Please refer to <a href="http://tools.ietf.org/html/rfc5280">RFC 5280:
+ * Please refer to <a href="https://tools.ietf.org/html/rfc5280">RFC 5280:
  * Internet X.509 Public Key Infrastructure Certificate and CRL Profile</a> for
  * definitions of the X.509 certificate extensions mentioned below.
  * <p>
@@ -74,6 +74,9 @@ import sun.security.x509.*;
  * provide the necessary locking. Multiple threads each manipulating
  * separate objects need not synchronize.
  *
+ * @spec https://www.rfc-editor.org/info/rfc5280
+ *      RFC 5280: Internet X.509 Public Key Infrastructure Certificate
+ *              and Certificate Revocation List (CRL) Profile
  * @see CertSelector
  * @see X509Certificate
  *
@@ -86,10 +89,6 @@ public class X509CertSelector implements CertSelector {
 
     private static final ObjectIdentifier ANY_EXTENDED_KEY_USAGE =
         ObjectIdentifier.of(KnownOIDs.anyExtendedKeyUsage);
-
-    static {
-        CertPathHelperImpl.initialize();
-    }
 
     private BigInteger serialNumber;
     private X500Principal issuer;
@@ -198,6 +197,9 @@ public class X509CertSelector implements CertSelector {
      *                 (or {@code null})
      * @throws IOException if a parsing error occurs (incorrect form for DN)
      *
+     * @spec https://www.rfc-editor.org/info/rfc2253
+     *      RFC 2253: Lightweight Directory Access Protocol (v3):
+     *              UTF-8 String Representation of Distinguished Names
      * @deprecated Use {@link #setIssuer(X500Principal)} or
      * {@link #setIssuer(byte[])} instead. This method should not be relied on
      * as it can fail to match some certificates because of a loss of encoding
@@ -290,6 +292,9 @@ public class X509CertSelector implements CertSelector {
      *                  (or {@code null})
      * @throws IOException if a parsing error occurs (incorrect form for DN)
      *
+     * @spec https://www.rfc-editor.org/info/rfc2253
+     *      RFC 2253: Lightweight Directory Access Protocol (v3):
+     *              UTF-8 String Representation of Distinguished Names
      * @deprecated Use {@link #setSubject(X500Principal)} or
      * {@link #setSubject(byte[])} instead. This method should not be relied
      * on as it can fail to match some certificates because of a loss of
@@ -732,6 +737,12 @@ public class X509CertSelector implements CertSelector {
      *             RFC 5280, section 4.2.1.6)
      * @param name the name in string form (not {@code null})
      * @throws IOException if a parsing error occurs
+     *
+     * @spec https://www.rfc-editor.org/info/rfc2253
+     *      RFC 2253: Lightweight Directory Access Protocol (v3):
+     *              UTF-8 String Representation of Distinguished Names
+     * @spec https://www.rfc-editor.org/info/rfc822
+     *      RFC 822: STANDARD FOR THE FORMAT OF ARPA INTERNET TEXT MESSAGES
      */
     public void addSubjectAlternativeName(int type, String name)
             throws IOException {
@@ -1127,14 +1138,6 @@ public class X509CertSelector implements CertSelector {
         }
     }
 
-    // called from CertPathHelper
-    void setPathToNamesInternal(Set<GeneralNameInterface> names) {
-        // set names to non-null dummy value
-        // this breaks getPathToNames()
-        pathToNames = Collections.<List<?>>emptySet();
-        pathToGeneralNames = names;
-    }
-
     /**
      * Adds a name to the pathToNames criterion. The {@code X509Certificate}
      * must not include name constraints that would prohibit building a
@@ -1281,6 +1284,9 @@ public class X509CertSelector implements CertSelector {
      * @return the required issuer distinguished name in RFC 2253 format
      *         (or {@code null})
      *
+     * @spec https://www.rfc-editor.org/info/rfc2253
+     *      RFC 2253: Lightweight Directory Access Protocol (v3):
+     *              UTF-8 String Representation of Distinguished Names
      * @deprecated Use {@link #getIssuer()} or {@link #getIssuerAsBytes()}
      * instead. This method should not be relied on as it can fail to match
      * some certificates because of a loss of encoding information in the
@@ -1288,7 +1294,7 @@ public class X509CertSelector implements CertSelector {
      */
     @Deprecated(since="16")
     public String getIssuerAsString() {
-        return (issuer == null ? null : issuer.getName());
+        return issuer == null ? null : issuer.getName();
     }
 
     /**
@@ -1310,7 +1316,7 @@ public class X509CertSelector implements CertSelector {
      * @throws IOException if an encoding error occurs
      */
     public byte[] getIssuerAsBytes() throws IOException {
-        return (issuer == null ? null: issuer.getEncoded());
+        return issuer == null ? null : issuer.getEncoded();
     }
 
     /**
@@ -1340,6 +1346,9 @@ public class X509CertSelector implements CertSelector {
      * @return the required subject distinguished name in RFC 2253 format
      *         (or {@code null})
      *
+     * @spec https://www.rfc-editor.org/info/rfc2253
+     *      RFC 2253: Lightweight Directory Access Protocol (v3):
+     *              UTF-8 String Representation of Distinguished Names
      * @deprecated Use {@link #getSubject()} or {@link #getSubjectAsBytes()}
      * instead. This method should not be relied on as it can fail to match
      * some certificates because of a loss of encoding information in the
@@ -1347,7 +1356,7 @@ public class X509CertSelector implements CertSelector {
      */
     @Deprecated(since="16")
     public String getSubjectAsString() {
-        return (subject == null ? null : subject.getName());
+        return subject == null ? null : subject.getName();
     }
 
     /**
@@ -1369,7 +1378,7 @@ public class X509CertSelector implements CertSelector {
      * @throws IOException if an encoding error occurs
      */
     public byte[] getSubjectAsBytes() throws IOException {
-        return (subject == null ? null : subject.getEncoded());
+        return subject == null ? null : subject.getEncoded();
     }
 
     /**
@@ -1868,7 +1877,7 @@ public class X509CertSelector implements CertSelector {
 
         s += "]\n";
 
-        return (s);
+        return s;
     }
 
     /**
@@ -1941,10 +1950,10 @@ public class X509CertSelector implements CertSelector {
         }
 
         if (debug != null) {
-            debug.println("X509CertSelector.match(SN: "
-                + (xcert.getSerialNumber()).toString(16) + "\n  Issuer: "
-                + xcert.getIssuerX500Principal() + "\n  Subject: " + xcert.getSubjectX500Principal()
-                + ")");
+            debug.println("X509CertSelector.match(Serial number: "
+                + Debug.toString(xcert.getSerialNumber())
+                + "\n  Issuer: " + xcert.getIssuerX500Principal() + "\n  Subject: "
+                + xcert.getSubjectX500Principal() + ")");
         }
 
         /* match on X509Certificate */
@@ -2120,12 +2129,8 @@ public class X509CertSelector implements CertSelector {
         } catch (CertificateExpiredException e1) {
             if (debug != null) {
                 String time = "n/a";
-                try {
-                    Date notAfter = ext.get(PrivateKeyUsageExtension.NOT_AFTER);
-                    time = notAfter.toString();
-                } catch (CertificateException ex) {
-                    // not able to retrieve notAfter value
-                }
+                Date notAfter = ext.getNotAfter();
+                time = notAfter.toString();
                 debug.println("X509CertSelector.match: private key usage not "
                     + "within validity date; ext.NOT_After: "
                     + time + "; X509CertSelector: "
@@ -2136,12 +2141,8 @@ public class X509CertSelector implements CertSelector {
         } catch (CertificateNotYetValidException e2) {
             if (debug != null) {
                 String time = "n/a";
-                try {
-                    Date notBefore = ext.get(PrivateKeyUsageExtension.NOT_BEFORE);
-                    time = notBefore.toString();
-                } catch (CertificateException ex) {
-                    // not able to retrieve notBefore value
-                }
+                Date notBefore = ext.getNotBefore();
+                time = notBefore.toString();
                 debug.println("X509CertSelector.match: private key usage not "
                     + "within validity date; ext.NOT_BEFORE: "
                     + time + "; X509CertSelector: "
@@ -2227,8 +2228,7 @@ public class X509CertSelector implements CertSelector {
                 (ExtendedKeyUsageExtension)getExtensionObject(xcert,
                                                 KnownOIDs.extendedKeyUsage);
             if (ext != null) {
-                Vector<ObjectIdentifier> certKeyPurposeVector =
-                    ext.get(ExtendedKeyUsageExtension.USAGES);
+                Vector<ObjectIdentifier> certKeyPurposeVector = ext.getUsages();
                 if (!certKeyPurposeVector.contains(ANY_EXTENDED_KEY_USAGE)
                         && !certKeyPurposeVector.containsAll(keyPurposeOIDSet)) {
                     if (debug != null) {
@@ -2264,8 +2264,7 @@ public class X509CertSelector implements CertSelector {
                 }
                 return false;
             }
-            GeneralNames certNames =
-                    sanExt.get(SubjectAlternativeNameExtension.SUBJECT_NAME);
+            GeneralNames certNames = sanExt.getNames();
             Iterator<GeneralNameInterface> i =
                                 subjectAlternativeGeneralNames.iterator();
             while (i.hasNext()) {
@@ -2333,7 +2332,7 @@ public class X509CertSelector implements CertSelector {
                 }
                 return false;
             }
-            List<PolicyInformation> policies = ext.get(CertificatePoliciesExtension.POLICIES);
+            List<PolicyInformation> policies = ext.getCertPolicies();
             /*
              * Convert the Vector of PolicyInformation to a Vector
              * of CertificatePolicyIds for easier comparison.
@@ -2401,17 +2400,15 @@ public class X509CertSelector implements CertSelector {
                 }
             }
 
-            GeneralSubtrees permitted =
-                    ext.get(NameConstraintsExtension.PERMITTED_SUBTREES);
-            GeneralSubtrees excluded =
-                    ext.get(NameConstraintsExtension.EXCLUDED_SUBTREES);
+            GeneralSubtrees permitted = ext.getPermittedSubtrees();
+            GeneralSubtrees excluded = ext.getExcludedSubtrees();
             if (excluded != null) {
-                if (matchExcluded(excluded) == false) {
+                if (!matchExcluded(excluded)) {
                     return false;
                 }
             }
             if (permitted != null) {
-                if (matchPermitted(permitted) == false) {
+                if (!matchPermitted(permitted)) {
                     return false;
                 }
             }

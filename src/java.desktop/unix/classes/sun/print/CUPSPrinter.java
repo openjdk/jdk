@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,13 @@ import java.util.HashMap;
 import sun.print.IPPPrintService;
 import sun.print.CustomMediaSizeName;
 import sun.print.CustomMediaTray;
+import sun.print.CustomOutputBin;
 import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaTray;
 import javax.print.attribute.standard.MediaPrintableArea;
+import javax.print.attribute.standard.OutputBin;
 import javax.print.attribute.standard.PrinterResolution;
 import javax.print.attribute.Size2DSyntax;
 import javax.print.attribute.Attribute;
@@ -53,12 +55,14 @@ public class CUPSPrinter  {
     private static native String getCupsServer();
     private static native int getCupsPort();
     private static native String getCupsDefaultPrinter();
+    private static native String[] getCupsDefaultPrinters();
     private static native boolean canConnect(String server, int port);
     private static native boolean initIDs();
     // These functions need to be synchronized as
     // CUPS does not support multi-threading.
     private static synchronized native String[] getMedia(String printer);
     private static synchronized native float[] getPageSizes(String printer);
+    private static synchronized native String[] getOutputBins(String printer);
     private static synchronized native void
         getResolutions(String printer, ArrayList<Integer> resolutionList);
     //public static boolean useIPPMedia = false; will be used later
@@ -67,35 +71,39 @@ public class CUPSPrinter  {
     private MediaSizeName[] cupsMediaSNames;
     private CustomMediaSizeName[] cupsCustomMediaSNames;
     private MediaTray[] cupsMediaTrays;
+    private OutputBin[] cupsOutputBins;
 
     public  int nPageSizes = 0;
     public  int nTrays = 0;
     private  String[] media;
+    private  String[] outputBins;
     private  float[] pageSizes;
     int[]   resolutionsArray;
     private String printer;
 
     private static boolean libFound;
     private static String cupsServer = null;
+    private static String domainSocketPathname = null;
     private static int cupsPort = 0;
 
     static {
         initStatic();
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings("restricted")
     private static void initStatic() {
         // load awt library to access native code
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("awt");
-                    return null;
-                }
-            });
+        System.loadLibrary("awt");
         libFound = initIDs();
         if (libFound) {
            cupsServer = getCupsServer();
+           // Is this a local domain socket pathname?
+           if (cupsServer != null && cupsServer.startsWith("/")) {
+               if (isSandboxedApp()) {
+                   domainSocketPathname = cupsServer;
+               }
+               cupsServer = "localhost";
+           }
            cupsPort = getCupsPort();
         }
     }
@@ -135,6 +143,8 @@ public class CUPSPrinter  {
             for (int i=0; i < resolutionList.size(); i++) {
                 resolutionsArray[i] = resolutionList.get(i);
             }
+
+            outputBins = getOutputBins(printer);
         }
     }
 
@@ -177,6 +187,14 @@ public class CUPSPrinter  {
     }
 
     /**
+     * Returns array of OutputBins derived from PPD.
+     */
+    OutputBin[] getOutputBins() {
+        initMedia();
+        return cupsOutputBins;
+    }
+
+    /**
      * return the raw packed array of supported printer resolutions.
      */
     int[] getRawResolutions() {
@@ -216,26 +234,13 @@ public class CUPSPrinter  {
             w = (float)(pageSizes[i*6+4]/PRINTER_DPI);
             y = (float)(pageSizes[i*6+5]/PRINTER_DPI);
 
-            msn = new CustomMediaSizeName(media[i*2], media[i*2+1],
-                                          width, length);
+            msn = CustomMediaSizeName.create(media[i*2], media[i*2+1],
+                                             width, length);
 
             // add to list of standard MediaSizeNames
             if ((cupsMediaSNames[i] = msn.getStandardMedia()) == null) {
                 // add custom if no matching standard media
                 cupsMediaSNames[i] = msn;
-
-                // add this new custom msn to MediaSize array
-                if ((width > 0.0) && (length > 0.0)) {
-                    try {
-                    new MediaSize(width, length,
-                                  Size2DSyntax.INCH, msn);
-                    } catch (IllegalArgumentException e) {
-                        /* PDF printer in Linux for Ledger paper causes
-                        "IllegalArgumentException: X dimension > Y dimension".
-                        We rotate based on IPP spec. */
-                        new MediaSize(length, width, Size2DSyntax.INCH, msn);
-                    }
-                }
             }
 
             // add to list of custom MediaSizeName
@@ -260,11 +265,20 @@ public class CUPSPrinter  {
 
         MediaTray mt;
         for (int i=0; i<nTrays; i++) {
-            mt = new CustomMediaTray(media[(nPageSizes+i)*2],
-                                     media[(nPageSizes+i)*2+1]);
+            mt = CustomMediaTray.create(media[(nPageSizes+i)*2],
+                                        media[(nPageSizes+i)*2+1]);
             cupsMediaTrays[i] = mt;
         }
 
+        if (outputBins == null) {
+            cupsOutputBins = new OutputBin[0];
+        } else {
+            int nBins = outputBins.length / 2;
+            cupsOutputBins = new OutputBin[nBins];
+            for (int i = 0; i < nBins; i++) {
+                cupsOutputBins[i] = CustomOutputBin.createOutputBin(outputBins[i*2], outputBins[i*2+1]);
+            }
+        }
     }
 
     /**
@@ -282,23 +296,18 @@ public class CUPSPrinter  {
             return printerInfo.clone();
         }
         try {
+            @SuppressWarnings("deprecation")
             URL url = new URL("http", getServer(), getPort(), "");
             final HttpURLConnection urlConnection =
                 IPPPrintService.getIPPConnection(url);
 
             if (urlConnection != null) {
-                @SuppressWarnings("removal")
-                OutputStream os = java.security.AccessController.
-                    doPrivileged(new java.security.PrivilegedAction<OutputStream>() {
-                        public OutputStream run() {
-                            try {
-                                return urlConnection.getOutputStream();
-                            } catch (Exception e) {
-                               IPPPrintService.debug_println(debugPrefix+e);
-                            }
-                            return null;
-                        }
-                    });
+                OutputStream os = null;
+                try {
+                    os = urlConnection.getOutputStream();
+                } catch (Exception e) {
+                   IPPPrintService.debug_println(debugPrefix+e);
+                }
 
                 if (os == null) {
                     return null;
@@ -381,24 +390,33 @@ public class CUPSPrinter  {
      * Get list of all CUPS printers using IPP.
      */
     static String[] getAllPrinters() {
+
+        if (getDomainSocketPathname() != null) {
+            String[] printerNames = getCupsDefaultPrinters();
+            if (printerNames != null && printerNames.length > 0) {
+                String[] printerURIs = new String[printerNames.length];
+                for (int i=0; i< printerNames.length; i++) {
+                    printerURIs[i] = String.format("ipp://%s:%d/printers/%s",
+                            getServer(), getPort(), printerNames[i]);
+                }
+                return printerURIs;
+            }
+            return null;
+        }
+
         try {
+            @SuppressWarnings("deprecation")
             URL url = new URL("http", getServer(), getPort(), "");
 
             final HttpURLConnection urlConnection =
                 IPPPrintService.getIPPConnection(url);
 
             if (urlConnection != null) {
-                @SuppressWarnings("removal")
-                OutputStream os = java.security.AccessController.
-                    doPrivileged(new java.security.PrivilegedAction<OutputStream>() {
-                        public OutputStream run() {
-                            try {
-                                return urlConnection.getOutputStream();
-                            } catch (Exception e) {
-                            }
-                            return null;
-                        }
-                    });
+                OutputStream os = null;
+                try {
+                    os = urlConnection.getOutputStream();
+                } catch (Exception e) {
+                }
 
                 if (os == null) {
                     return null;
@@ -465,14 +483,35 @@ public class CUPSPrinter  {
     }
 
     /**
+     * Returns CUPS domain socket pathname.
+     */
+    private static String getDomainSocketPathname() {
+        return domainSocketPathname;
+    }
+
+    private static boolean isSandboxedApp() {
+        if (PrintServiceLookupProvider.isMac()) {
+            return (System.getenv("APP_SANDBOX_CONTAINER_ID") != null);
+        }
+        return false;
+    }
+
+
+    /**
      * Detects if CUPS is running.
      */
     public static boolean isCupsRunning() {
         IPPPrintService.debug_println(debugPrefix+"libFound "+libFound);
         if (libFound) {
-            IPPPrintService.debug_println(debugPrefix+"CUPS server "+getServer()+
-                                          " port "+getPort());
-            return canConnect(getServer(), getPort());
+            String server = getDomainSocketPathname() != null
+                    ? getDomainSocketPathname()
+                    : getServer();
+            IPPPrintService.debug_println(debugPrefix+"CUPS server "+server+
+                                          " port "+getPort()+
+                                          (getDomainSocketPathname() != null
+                                                  ? " use domain socket pathname"
+                                                  : ""));
+            return canConnect(server, getPort());
         } else {
             return false;
         }

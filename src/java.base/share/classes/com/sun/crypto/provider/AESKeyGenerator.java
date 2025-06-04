@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,19 @@
 
 package com.sun.crypto.provider;
 
-import java.security.SecureRandom;
-import java.security.InvalidParameterException;
 import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
+import java.security.InvalidParameterException;
+import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Arrays;
 import javax.crypto.KeyGeneratorSpi;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
+import sun.security.util.SecurityProviderConstants;
 
 /**
- * This class generates a AES key.
+ * This class generates an AES key.
  *
  * @author Valerie Peng
  *
@@ -46,7 +46,8 @@ import javax.crypto.spec.SecretKeySpec;
 public final class AESKeyGenerator extends KeyGeneratorSpi {
 
     private SecureRandom random = null;
-    private int keySize = 16; // default keysize (in number of bytes)
+    // default keysize (in number of bytes)
+    private int keySize = SecurityProviderConstants.getDefAESKeySize() >> 3;
 
     /**
      * Empty constructor.
@@ -104,7 +105,7 @@ public final class AESKeyGenerator extends KeyGeneratorSpi {
      * @return the new AES key
      */
     protected SecretKey engineGenerateKey() {
-        SecretKeySpec aesKey = null;
+        SecretKeySpec aesKey;
 
         if (this.random == null) {
             this.random = SunJCE.getRandom();

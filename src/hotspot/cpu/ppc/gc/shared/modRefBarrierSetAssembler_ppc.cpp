@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/modRefBarrierSetAssembler.hpp"
 #include "runtime/jniHandles.hpp"
+#include "utilities/macros.hpp"
 
 #define __ masm->
 
@@ -80,10 +80,10 @@ void ModRefBarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register v
                                                 Register tmp1, Register tmp2,
                                                 MacroAssembler::PreservationLevel preservation_level) {
   Label done;
-  __ cmpdi(CCR0, value, 0);
-  __ beq(CCR0, done);         // Use NULL as-is.
+  __ cmpdi(CR0, value, 0);
+  __ beq(CR0, done);         // Use null as-is.
 
-  __ clrrdi(tmp1, value, JNIHandles::weak_tag_size);
+  __ clrrdi(tmp1, value, JNIHandles::tag_size);
   __ ld(value, 0, tmp1);      // Resolve (untagged) jobject.
 
   __ verify_oop(value, FILE_AND_LINE);

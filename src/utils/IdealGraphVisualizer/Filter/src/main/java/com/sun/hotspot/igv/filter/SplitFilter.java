@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,12 @@ public class SplitFilter extends AbstractFilter {
 
     private String name;
     private Selector selector;
-    private String propertyName;
+    private String[] propertyNames;
 
-    public SplitFilter(String name, Selector selector, String propertyName) {
+    public SplitFilter(String name, Selector selector, String[] propertyNames) {
         this.name = name;
         this.selector = selector;
-        this.propertyName = propertyName;
+        this.propertyNames = propertyNames;
     }
 
     @Override
@@ -52,34 +52,14 @@ public class SplitFilter extends AbstractFilter {
         List<Figure> list = selector.selected(d);
 
         for (Figure f : list) {
-
-            for (InputSlot is : f.getInputSlots()) {
-                for (Connection c : is.getConnections()) {
-                    OutputSlot os = c.getOutputSlot();
-                    if (f.getSource().getSourceNodes().size() > 0) {
-                        os.getSource().addSourceNodes(f.getSource());
-                        os.setAssociatedNode(f.getSource().getSourceNodes().get(0));
-                        os.setColor(f.getColor());
-                    }
-
-
-                    String s = f.getProperties().resolveString(propertyName);
-                    if (s != null) {
-                        os.setShortName(s);
-                    }
-
-                }
-            }
+            String s = AbstractFilter.getFirstMatchingProperty(f, propertyNames);
             for (OutputSlot os : f.getOutputSlots()) {
-                for (Connection c : os.getConnections()) {
+                for (FigureConnection c : os.getConnections()) {
                     InputSlot is = c.getInputSlot();
-                    if (f.getSource().getSourceNodes().size() > 0) {
-                        is.getSource().addSourceNodes(f.getSource());
-                        is.setAssociatedNode(f.getSource().getSourceNodes().get(0));
+                    if (f.getInputNode() != null) {
+                        is.getSource().addSourceNode(f.getInputNode());
                         is.setColor(f.getColor());
                     }
-
-                    String s = f.getProperties().resolveString(propertyName);
                     if (s != null) {
                         is.setShortName(s);
                     }

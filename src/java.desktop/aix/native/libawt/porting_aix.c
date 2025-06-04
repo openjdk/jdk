@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ static int dladdr_dont_reload(void* addr, Dl_info* info) {
   memset((void *)info, 0, sizeof(Dl_info));
   for (;;) {
     if (addr >= p->ldinfo_textorg &&
-        addr < p->ldinfo_textorg + p->ldinfo_textsize) {
+        (char*)addr < (char*)(p->ldinfo_textorg) + p->ldinfo_textsize) {
       info->dli_fname = p->ldinfo_filename;
       info->dli_fbase = p->ldinfo_textorg;
       return 1; /* [sic] */

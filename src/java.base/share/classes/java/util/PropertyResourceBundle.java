@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import java.io.IOException;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
 import sun.nio.cs.ISO_8859_1;
-import sun.security.action.GetPropertyAction;
 import sun.util.PropertyResourceBundleCharset;
 import sun.util.ResourceBundleEnumeration;
 
@@ -73,37 +72,29 @@ import sun.util.ResourceBundleEnumeration;
  * the German member of the bundle family.
  * This member is based on {@code PropertyResourceBundle}, and the text
  * therefore is the content of the file "MyResources_de.properties"
- * (a related <a href="ListResourceBundle.html#sample">example</a> shows
+ * (a related {@linkplain ListResourceBundle##sample example} shows
  * how you can add bundles to this family that are implemented as subclasses
  * of {@code ListResourceBundle}).
  * The keys in this example are of the form "s1" etc. The actual
  * keys are entirely up to your choice, so long as they are the same as
  * the keys you use in your program to retrieve the objects from the bundle.
  * Keys are case-sensitive.
- * <blockquote>
- * <pre>
- * # MessageFormat pattern
- * s1=Die Platte \"{1}\" enth&auml;lt {0}.
- *
- * # location of {0} in pattern
- * s2=1
- *
- * # sample disk name
- * s3=Meine Platte
- *
- * # first ChoiceFormat choice
- * s4=keine Dateien
- *
- * # second ChoiceFormat choice
- * s5=eine Datei
- *
- * # third ChoiceFormat choice
- * s6={0,number} Dateien
- *
- * # sample date
- * s7=3. M&auml;rz 1996
- * </pre>
- * </blockquote>
+ * {@snippet lang=properties :
+ *     # MessageFormat pattern
+ *     s1=Die Platte \"{1}\" enth\u00E4lt {0}.
+ *     # location of {0} in pattern
+ *     s2=1
+ *     # sample disk name
+ *     s3=Meine Platte
+ *     # first ChoiceFormat choice
+ *     s4=keine Dateien
+ *     # second ChoiceFormat choice
+ *     s5=eine Datei
+ *     # third ChoiceFormat choice
+ *     s6={0,number} Dateien
+ *     # sample date
+ *     s7=3. M\u00E4rz 1996
+ * }
  *
  * @apiNote
  * {@code PropertyResourceBundle} can be constructed either
@@ -140,9 +131,9 @@ public class PropertyResourceBundle extends ResourceBundle {
 
     // Check whether the strict encoding is specified.
     // The possible encoding is either "ISO-8859-1" or "UTF-8".
-    private static final String encoding = GetPropertyAction
-        .privilegedGetProperty("java.util.PropertyResourceBundle.encoding", "")
-        .toUpperCase(Locale.ROOT);
+    private static final String encoding =
+            System.getProperty("java.util.PropertyResourceBundle.encoding", "")
+                    .toUpperCase(Locale.ROOT);
 
     /**
      * Creates a property resource bundle from an {@link java.io.InputStream
@@ -172,7 +163,6 @@ public class PropertyResourceBundle extends ResourceBundle {
      *     {@code java.util.PropertyResourceBundle.encoding} is set to "UTF-8"
      *     and {@code stream} contains an unmappable UTF-8 byte sequence.
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     public PropertyResourceBundle (InputStream stream) throws IOException {
         this(new InputStreamReader(stream,
             "ISO-8859-1".equals(encoding) ?

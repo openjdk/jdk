@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,14 @@
  * @bug 8013789
  * @summary Compiler should emit bridges in interfaces
  * @library /tools/javac/lib
- * @modules jdk.jdeps/com.sun.tools.classfile
- *          jdk.compiler/com.sun.tools.javac.code
+ * @modules jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.util
  * @build JavacTestingAbstractProcessor BridgeHarness
  * @run main BridgeHarness
  */
 
 import com.sun.source.util.JavacTask;
-import com.sun.tools.classfile.AccessFlags;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Method;
+import java.lang.classfile.*;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.util.List;
 
@@ -111,8 +106,8 @@ public class BridgeHarness {
     /**
      * return a string representation of a bytecode method
      */
-    static String descriptor(Method m, ConstantPool cp) throws ConstantPoolException {
-        return m.getName(cp) + m.descriptor.getValue(cp);
+    static String descriptor(MethodModel m) {
+        return m.methodName() + m.methodTypeSymbol().descriptorString();
     }
 
     /* test harness */
@@ -146,27 +141,27 @@ public class BridgeHarness {
      */
     protected void checkBridges(JavaFileObject jfo) {
         try (InputStream is = jfo.openInputStream()) {
-            ClassFile cf = ClassFile.read(is);
-            System.err.println("checking: " + cf.getName());
+            ClassModel cf = ClassFile.of().parse(is.readAllBytes());
+            System.err.println("checking: " + cf.thisClass().asInternalName());
 
-            List<Bridge> bridgeList = bridgesMap.get(cf.getName());
+            List<Bridge> bridgeList = bridgesMap.get(cf.thisClass().asInternalName());
             if (bridgeList == null) {
                 //no bridges - nothing to check;
                 bridgeList = List.nil();
             }
 
-            for (Method m : cf.methods) {
-                if (m.access_flags.is(AccessFlags.ACC_SYNTHETIC | AccessFlags.ACC_BRIDGE)) {
+            for (MethodModel m : cf.methods()) {
+                if ((m.flags().flagsMask() & (ClassFile.ACC_SYNTHETIC | ClassFile.ACC_BRIDGE)) != 0) {
                     //this is a bridge - see if there's a match in the bridge list
                     Bridge match = null;
                     for (Bridge b : bridgeList) {
-                        if (b.value().equals(descriptor(m, cf.constant_pool))) {
+                        if (b.value().equals(descriptor(m))) {
                             match = b;
                             break;
                         }
                     }
                     if (match == null) {
-                        error("No annotation for bridge method: " + descriptor(m, cf.constant_pool));
+                        error("No annotation for bridge method: " + descriptor(m));
                     } else {
                         bridgeList = drop(bridgeList, match);
                     }

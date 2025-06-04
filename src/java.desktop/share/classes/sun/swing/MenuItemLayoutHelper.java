@@ -333,7 +333,7 @@ public class MenuItemLayoutHelper {
             calcMaxWidth(labelSize, MAX_LABEL_WIDTH);
             // If maxLabelWidth is wider
             // than the widest icon + the widest text + gap,
-            // we should update the maximal text witdh
+            // we should update the maximal text width
             int candidateTextWidth = labelSize.maxWidth - iconSize.maxWidth;
             if (iconSize.maxWidth > 0) {
                 candidateTextWidth -= gap;
@@ -831,7 +831,7 @@ public class MenuItemLayoutHelper {
     /**
      * Finds and returns maximal integer value in the given array.
      * @param values array where the search will be performed.
-     * @return maximal vaule.
+     * @return maximal value.
      */
     public static int max(int... values) {
         int maxValue = Integer.MIN_VALUE;

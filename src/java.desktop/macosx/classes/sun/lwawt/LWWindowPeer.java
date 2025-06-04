@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ import java.awt.peer.KeyboardFocusManagerPeer;
 import java.awt.peer.WindowPeer;
 import java.util.List;
 
+import java.util.Objects;
 import javax.swing.JComponent;
 
 import sun.awt.AWTAccessor;
@@ -145,8 +146,6 @@ public class LWWindowPeer
 
     private final PeerType peerType;
 
-    private final SecurityWarningWindow warningWindow;
-
     private volatile boolean targetFocusable;
 
     /**
@@ -196,18 +195,6 @@ public class LWWindowPeer
         }
 
         platformWindow.initialize(target, this, ownerDelegate);
-        // Init warning window(for applets)
-        SecurityWarningWindow warn = null;
-        if (target.getWarningString() != null) {
-            // accessSystemTray permission allows to display TrayIcon, TrayIcon tooltip
-            // and TrayIcon balloon windows without a warning window.
-            if (!AWTAccessor.getWindowAccessor().isTrayIconWindow(target)) {
-                LWToolkit toolkit = (LWToolkit)Toolkit.getDefaultToolkit();
-                warn = toolkit.createSecurityWarning(target, this);
-            }
-        }
-
-        warningWindow = warn;
     }
 
     @Override
@@ -273,19 +260,23 @@ public class LWWindowPeer
         if (isGrabbing()) {
             ungrab();
         }
-        if (warningWindow != null) {
-            warningWindow.dispose();
-        }
 
         platformWindow.dispose();
         super.disposeImpl();
     }
 
     @Override
-    protected void setVisibleImpl(final boolean visible) {
-        if (!visible && warningWindow != null) {
-            warningWindow.setVisible(false, false);
+    public void setBackground(final Color c) {
+        Color oldBg = getBackground();
+        if (Objects.equals(oldBg, c)) {
+            return;
         }
+        super.setBackground(c);
+        updateOpaque();
+    }
+
+    @Override
+    protected void setVisibleImpl(final boolean visible) {
         updateFocusableWindowState();
         super.setVisibleImpl(visible);
         // TODO: update graphicsConfig, see 4868278
@@ -406,7 +397,7 @@ public class LWWindowPeer
     /**
      * Overridden from LWContainerPeer to return the correct insets.
      * Insets are queried from the delegate and are kept up to date by
-     * requiering when needed (i.e. when the window geometry is changed).
+     * requerying when needed (i.e. when the window geometry is changed).
      */
     @Override
     public Insets getInsets() {
@@ -542,19 +533,6 @@ public class LWWindowPeer
     final void applyShapeImpl(final Region shape) {
         super.applyShapeImpl(shape);
         updateOpaque();
-    }
-
-    @Override
-    public void repositionSecurityWarning() {
-        if (warningWindow != null) {
-            ComponentAccessor compAccessor = AWTAccessor.getComponentAccessor();
-            Window target = getTarget();
-            int x = compAccessor.getX(target);
-            int y = compAccessor.getY(target);
-            int width = compAccessor.getWidth(target);
-            int height = compAccessor.getHeight(target);
-            warningWindow.reposition(x, y, width, height);
-        }
     }
 
     // ---- FRAME PEER METHODS ---- //
@@ -742,7 +720,6 @@ public class LWWindowPeer
             repaintPeer();
         }
 
-        repositionSecurityWarning();
     }
 
     private void clearBackground(final int w, final int h) {
@@ -980,8 +957,6 @@ public class LWWindowPeer
                                        Point loc, int xAbs, int yAbs,
                                        int clickCount, boolean popupTrigger, int button) {
 
-        updateSecurityWarningVisibility();
-
         postEvent(new MouseEvent(target,
                 MouseEvent.MOUSE_ENTERED,
                 when, modifiers,
@@ -992,8 +967,6 @@ public class LWWindowPeer
     private void postMouseExitedEvent(Component target, long when, int modifiers,
                                       Point loc, int xAbs, int yAbs,
                                       int clickCount, boolean popupTrigger, int button) {
-
-        updateSecurityWarningVisibility();
 
         postEvent(new MouseEvent(target,
                 MouseEvent.MOUSE_EXITED,
@@ -1033,7 +1006,7 @@ public class LWWindowPeer
      */
     @Override
     public void notifyKeyEvent(int id, long when, int modifiers,
-                               int keyCode, char keyChar, int keyLocation)
+                               int keyCode, char keyChar, int keyLocation, int extendedKeyCode)
     {
         LWKeyboardFocusManagerPeer kfmPeer = LWKeyboardFocusManagerPeer.getInstance();
         Component focusOwner = kfmPeer.getCurrentFocusOwner();
@@ -1047,9 +1020,13 @@ public class LWWindowPeer
 
         KeyEvent keyEvent = new KeyEvent(focusOwner, id, when, modifiers,
             keyCode, keyChar, keyLocation);
-        AWTAccessor.getKeyEventAccessor().setExtendedKeyCode(keyEvent,
-                (keyChar == KeyEvent.CHAR_UNDEFINED) ? keyCode
-                : ExtendedKeyCodes.getExtendedKeyCodeForChar(keyChar));
+        if (extendedKeyCode >= 0) {
+            AWTAccessor.getKeyEventAccessor().setExtendedKeyCode(keyEvent, extendedKeyCode);
+        } else {
+            AWTAccessor.getKeyEventAccessor().setExtendedKeyCode(keyEvent,
+                    (keyChar == KeyEvent.CHAR_UNDEFINED) ? keyCode
+                            : ExtendedKeyCodes.getExtendedKeyCodeForChar(keyChar));
+        }
         postEvent(keyEvent);
     }
 
@@ -1079,7 +1056,6 @@ public class LWWindowPeer
         postEvent(stateChangedEvent);
         windowState = newWindowState;
 
-        updateSecurityWarningVisibility();
     }
 
     private static int getGraphicsConfigScreen(GraphicsConfiguration gc) {
@@ -1338,7 +1314,6 @@ public class LWWindowPeer
         changeFocusedWindow(activate, null);
     }
 
-    @SuppressWarnings("deprecation")
     private boolean isOneOfOwnersOf(LWWindowPeer peer) {
         Window owner = (peer != null ? peer.getTarget().getOwner() : null);
         while (owner != null) {
@@ -1356,7 +1331,7 @@ public class LWWindowPeer
      */
     protected void changeFocusedWindow(boolean becomesFocused, Window opposite) {
         if (focusLog.isLoggable(PlatformLogger.Level.FINE)) {
-            focusLog.fine((becomesFocused?"gaining":"loosing") + " focus window: " + this);
+            focusLog.fine((becomesFocused?"gaining":"losing") + " focus window: " + this);
         }
         if (skipNextFocusChange) {
             focusLog.fine("skipping focus change");
@@ -1394,7 +1369,7 @@ public class LWWindowPeer
         KeyboardFocusManagerPeer kfmPeer = LWKeyboardFocusManagerPeer.getInstance();
 
         if (!becomesFocused && kfmPeer.getCurrentFocusedWindow() != getTarget()) {
-            // late window focus lost event - ingoring
+            // late window focus lost event - ignoring
             return;
         }
 
@@ -1440,13 +1415,11 @@ public class LWWindowPeer
     @Override
     public void enterFullScreenMode() {
         platformWindow.enterFullScreenMode();
-        updateSecurityWarningVisibility();
     }
 
     @Override
     public void exitFullScreenMode() {
         platformWindow.exitFullScreenMode();
-        updateSecurityWarningVisibility();
     }
 
     public long getLayerPtr() {
@@ -1479,33 +1452,6 @@ public class LWWindowPeer
 
     public PeerType getPeerType() {
         return peerType;
-    }
-
-    public void updateSecurityWarningVisibility() {
-        if (warningWindow == null) {
-            return;
-        }
-
-        if (!isVisible()) {
-            return; // The warning window should already be hidden.
-        }
-
-        boolean show = false;
-
-        if (!platformWindow.isFullScreenMode()) {
-            if (isVisible()) {
-                if (LWKeyboardFocusManagerPeer.getInstance().getCurrentFocusedWindow() ==
-                        getTarget()) {
-                    show = true;
-                }
-
-                if (platformWindow.isUnderMouse() || warningWindow.isUnderMouse()) {
-                    show = true;
-                }
-            }
-        }
-
-        warningWindow.setVisible(show, true);
     }
 
     @Override

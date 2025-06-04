@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,26 @@
  */
 package com.sun.hotspot.igv.view.widgets;
 
+import com.sun.hotspot.igv.graph.Block;
 import com.sun.hotspot.igv.graph.Connection;
 import com.sun.hotspot.igv.graph.Figure;
-import com.sun.hotspot.igv.graph.InputSlot;
 import com.sun.hotspot.igv.graph.OutputSlot;
+import com.sun.hotspot.igv.layout.Vertex;
 import com.sun.hotspot.igv.util.StringUtils;
 import com.sun.hotspot.igv.view.DiagramScene;
 import java.awt.*;
+import java.awt.geom.CubicCurve2D;
 import java.awt.geom.Line2D;
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 import javax.swing.JPopupMenu;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
+
+import com.sun.hotspot.igv.view.actions.CustomSelectAction;
 import org.netbeans.api.visual.action.ActionFactory;
 import org.netbeans.api.visual.action.PopupMenuProvider;
 import org.netbeans.api.visual.action.SelectProvider;
-import org.netbeans.api.visual.animator.SceneAnimator;
 import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.api.visual.widget.Widget;
 
@@ -57,26 +58,28 @@ public class LineWidget extends Widget implements PopupMenuProvider {
     public final int HOVER_ARROW_SIZE = 8;
     public final int BOLD_STROKE_WIDTH = 2;
     public final int HOVER_STROKE_WIDTH = 3;
-    private static double ZOOM_FACTOR = 0.1;
-    private OutputSlot outputSlot;
-    private DiagramScene scene;
-    private List<Connection> connections;
+    private static final double ZOOM_FACTOR = 0.1;
+    private final OutputSlot outputSlot;
+    private final DiagramScene scene;
+    private final List<? extends Connection> connections;
     private Point from;
     private Point to;
     private Rectangle clientArea;
-    private Color color = Color.BLACK;
-    private LineWidget predecessor;
-    private List<LineWidget> successors;
+    private final LineWidget predecessor;
+    private final List<LineWidget> successors;
     private boolean highlighted;
     private boolean popupVisible;
-    private boolean isBold;
-    private boolean isDashed;
+    private final boolean isBold;
+    private final boolean isDashed;
+    private boolean needToInitToolTipText = true;
+    private int fromControlYOffset;
+    private int toControlYOffset;
 
-    public LineWidget(DiagramScene scene, OutputSlot s, List<Connection> connections, Point from, Point to, LineWidget predecessor, SceneAnimator animator, boolean isBold, boolean isDashed) {
+    public LineWidget(DiagramScene scene, OutputSlot s, List<? extends Connection> connections, Point from, Point to, LineWidget predecessor, boolean isBold, boolean isDashed) {
         super(scene);
         this.scene = scene;
         this.outputSlot = s;
-        this.connections = connections;
+        this.connections = Collections.unmodifiableList(connections);
         this.from = from;
         this.to = to;
         this.predecessor = predecessor;
@@ -88,10 +91,55 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         this.isBold = isBold;
         this.isDashed = isDashed;
 
+        computeClientArea();
+
+        Color color = Color.BLACK;
+        if (!connections.isEmpty()) {
+            color = connections.get(0).getColor();
+        }
+
+        setCheckClipping(false);
+
+        getActions().addAction(ActionFactory.createPopupMenuAction(this));
+        setBackground(color);
+
+        getActions().addAction(new CustomSelectAction(new SelectProvider() {
+
+            @Override
+            public boolean isAimingAllowed(Widget widget, Point localLocation, boolean invertSelection) {
+                return true;
+            }
+
+            @Override
+            public boolean isSelectionAllowed(Widget widget, Point localLocation, boolean invertSelection) {
+                return true;
+            }
+
+            @Override
+            public void select(Widget widget, Point localLocation, boolean invertSelection) {
+                Set<Vertex> vertexSet = new HashSet<>();
+                for (Connection connection : connections) {
+                    if (connection.hasSlots()) {
+                        vertexSet.add(connection.getTo().getVertex());
+                        vertexSet.add(connection.getFrom().getVertex());
+                    }
+                }
+                scene.userSelectionSuggested(vertexSet, invertSelection);
+            }
+        }));
+    }
+
+    public Point getClientAreaLocation() {
+        return clientArea.getLocation();
+    }
+
+    private void computeClientArea() {
         int minX = from.x;
         int minY = from.y;
         int maxX = to.x;
         int maxY = to.y;
+
+        // Ensure min and max values are correct
         if (minX > maxX) {
             int tmp = minX;
             minX = maxX;
@@ -104,49 +152,12 @@ public class LineWidget extends Widget implements PopupMenuProvider {
             maxY = tmp;
         }
 
+        // Set client area to include the curve and add a BORDER for extra space
         clientArea = new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
         clientArea.grow(BORDER, BORDER);
-
-        if (connections.size() > 0) {
-            color = connections.get(0).getColor();
-        }
-        this.setToolTipText("<HTML>" + generateToolTipText(this.connections) + "</HTML>");
-
-        this.setCheckClipping(true);
-
-        this.getActions().addAction(ActionFactory.createPopupMenuAction(this));
-        if (animator == null) {
-            this.setBackground(color);
-        } else {
-            this.setBackground(Color.WHITE);
-            animator.animateBackgroundColor(this, color);
-        }
-
-        this.getActions().addAction(ActionFactory.createSelectAction(new SelectProvider() {
-
-            @Override
-            public boolean isAimingAllowed(Widget arg0, Point arg1, boolean arg2) {
-                return true;
-            }
-
-            @Override
-            public boolean isSelectionAllowed(Widget arg0, Point arg1, boolean arg2) {
-                return true;
-            }
-
-            @Override
-            public void select(Widget arg0, Point arg1, boolean arg2) {
-                Set<Figure> set = new HashSet<>();
-                for (Connection c : LineWidget.this.connections) {
-                    set.add(c.getInputSlot().getFigure());
-                    set.add(c.getOutputSlot().getFigure());
-                }
-                LineWidget.this.scene.setSelectedObjects(set);
-            }
-        }));
     }
 
-    private String generateToolTipText(List<Connection> conn) {
+    private String generateToolTipText(List<? extends Connection> conn) {
         StringBuilder sb = new StringBuilder();
         for (Connection c : conn) {
             sb.append(StringUtils.escapeHTML(c.getToolTipText()));
@@ -155,12 +166,40 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         return sb.toString();
     }
 
+    public void setFrom(Point from) {
+        this.from = from;
+        computeClientArea();
+    }
+
+    public void setTo(Point to) {
+        this.to= to;
+        computeClientArea();
+    }
+
+    public void setFromControlYOffset(int fromControlYOffset) {
+        this.fromControlYOffset = fromControlYOffset;
+        computeClientArea();
+    }
+
+    public void setToControlYOffset(int toControlYOffset) {
+        this.toControlYOffset = toControlYOffset;
+        computeClientArea();
+    }
+
     public Point getFrom() {
         return from;
     }
 
     public Point getTo() {
         return to;
+    }
+
+    public LineWidget getPredecessor() {
+        return predecessor;
+    }
+
+    public List<LineWidget> getSuccessors() {
+        return Collections.unmodifiableList(successors);
     }
 
     private void addSuccessor(LineWidget widget) {
@@ -178,7 +217,7 @@ public class LineWidget extends Widget implements PopupMenuProvider {
             return;
         }
 
-        Graphics2D g = getScene().getGraphics();
+        Graphics2D g = this.getGraphics();
         g.setPaint(this.getBackground());
         float width = 1.0f;
 
@@ -197,16 +236,51 @@ public class LineWidget extends Widget implements PopupMenuProvider {
                     BasicStroke.JOIN_MITER, 10,
                     dashPattern, 0));
         } else {
-            g.setStroke(new BasicStroke(width));
+            g.setStroke(new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_MITER));
         }
 
-        g.drawLine(from.x, from.y, to.x, to.y);
+        // Define S-shaped curve with control points
+        if (fromControlYOffset != 0 && toControlYOffset != 0) {
+            if (from.y < to.y) { // non-reversed edges
+                if (Math.abs(from.x - to.x) > 10) {
+                    CubicCurve2D.Float sShape = new CubicCurve2D.Float();
+                    sShape.setCurve(from.x, from.y,
+                            from.x, from.y + fromControlYOffset,
+                            to.x, to.y + toControlYOffset,
+                            to.x, to.y);
+                    g.draw(sShape);
+                } else {
+                    g.drawLine(from.x, from.y, to.x, to.y);
+                }
+            } else {  // reverse edges
+                if (from.x - to.x > 0) {
+                    CubicCurve2D.Float sShape = new CubicCurve2D.Float();
+                    sShape.setCurve(from.x, from.y,
+                            from.x - 150, from.y + fromControlYOffset,
+                            to.x + 150, to.y + toControlYOffset,
+                            to.x, to.y);
+                    g.draw(sShape);
+                } else {
+                    // add x offset
+                    CubicCurve2D.Float sShape = new CubicCurve2D.Float();
+                    sShape.setCurve(from.x, from.y,
+                            from.x + 150, from.y + fromControlYOffset,
+                            to.x - 150, to.y + toControlYOffset,
+                            to.x, to.y);
+                    g.draw(sShape);
+                }
+            }
+        } else {
+            // Fallback to straight line if control points are not set
+            g.drawLine(from.x, from.y, to.x, to.y);
+        }
 
         boolean sameFrom = false;
         boolean sameTo = successors.isEmpty();
         for (LineWidget w : successors) {
             if (w.getFrom().equals(getTo())) {
                 sameTo = true;
+                break;
             }
         }
 
@@ -235,25 +309,7 @@ public class LineWidget extends Widget implements PopupMenuProvider {
                     3);
         }
         g.setStroke(oldStroke);
-    }
-
-    private void setHighlighted(boolean b) {
-        this.highlighted = b;
-        Set<Object> highlightedObjects = new HashSet<>(scene.getHighlightedObjects());
-        Set<Object> highlightedObjectsChange = new HashSet<>();
-        for (Connection c : connections) {
-            highlightedObjectsChange.add(c.getInputSlot().getFigure());
-            highlightedObjectsChange.add(c.getInputSlot());
-            highlightedObjectsChange.add(c.getOutputSlot().getFigure());
-            highlightedObjectsChange.add(c.getOutputSlot());
-        }
-        if(b) {
-            highlightedObjects.addAll(highlightedObjectsChange);
-        } else {
-            highlightedObjects.removeAll(highlightedObjectsChange);
-        }
-        scene.setHighlightedObjects(highlightedObjects);
-        this.revalidate(true);
+        super.paintWidget();
     }
 
     private void setPopupVisible(boolean b) {
@@ -269,26 +325,55 @@ public class LineWidget extends Widget implements PopupMenuProvider {
     @Override
     protected void notifyStateChanged(ObjectState previousState, ObjectState state) {
         if (previousState.isHovered() != state.isHovered()) {
-            setRecursiveHighlighted(state.isHovered());
+            boolean enableHighlighting = state.isHovered();
+            highlightPredecessors(enableHighlighting);
+            setHighlighted(enableHighlighting);
+            recursiveHighlightSuccessors(enableHighlighting);
+            highlightVertices(enableHighlighting);
+            if (enableHighlighting && needToInitToolTipText) {
+                setToolTipText("<HTML>" + generateToolTipText(this.connections) + "</HTML>");
+                needToInitToolTipText = false; // Ensure it's only set once
+            }
         }
     }
 
-    private void setRecursiveHighlighted(boolean b) {
-        LineWidget cur = predecessor;
-        while (cur != null) {
-            cur.setHighlighted(b);
-            cur = cur.predecessor;
+    private void highlightPredecessors(boolean enable) {
+        LineWidget predecessorLineWidget = predecessor;
+        while (predecessorLineWidget != null) {
+            predecessorLineWidget.setHighlighted(enable);
+            predecessorLineWidget = predecessorLineWidget.predecessor;
         }
-
-        highlightSuccessors(b);
-        this.setHighlighted(b);
     }
 
-    private void highlightSuccessors(boolean b) {
-        for (LineWidget s : successors) {
-            s.setHighlighted(b);
-            s.highlightSuccessors(b);
+    private void recursiveHighlightSuccessors(boolean enable) {
+        for (LineWidget successorLineWidget : successors) {
+            successorLineWidget.setHighlighted(enable);
+            successorLineWidget.recursiveHighlightSuccessors(enable);
         }
+    }
+
+    private void highlightVertices(boolean enable) {
+        Set<Object> highlightedObjects = new HashSet<>(scene.getHighlightedObjects());
+        Set<Object> highlightedObjectsChange = new HashSet<>();
+        for (Connection c : connections) {
+            if (c.hasSlots()) {
+                highlightedObjectsChange.add(c.getTo());
+                highlightedObjectsChange.add(c.getTo().getVertex());
+                highlightedObjectsChange.add(c.getFrom());
+                highlightedObjectsChange.add(c.getFrom().getVertex());
+            }
+        }
+        if (enable) {
+            highlightedObjects.addAll(highlightedObjectsChange);
+        } else {
+            highlightedObjects.removeAll(highlightedObjectsChange);
+        }
+        scene.setHighlightedObjects(highlightedObjects);
+    }
+
+    private void setHighlighted(boolean enable) {
+        highlighted = enable;
+        revalidate(true);
     }
 
     private void setRecursivePopupVisible(boolean b) {
@@ -312,14 +397,19 @@ public class LineWidget extends Widget implements PopupMenuProvider {
     @Override
     public JPopupMenu getPopupMenu(Widget widget, Point localLocation) {
         JPopupMenu menu = new JPopupMenu();
-        menu.add(scene.createGotoAction(outputSlot.getFigure()));
-        menu.addSeparator();
-
-        for (Connection c : connections) {
-            InputSlot s = c.getInputSlot();
-            menu.add(scene.createGotoAction(s.getFigure()));
+        if (outputSlot == null) { // One-to-one block line.
+            assert (connections.size() == 1);
+            Connection c = connections.get(0);
+            menu.add(scene.createGotoAction((Block)c.getFromCluster()));
+            menu.addSeparator();
+            menu.add(scene.createGotoAction((Block)c.getToCluster()));
+        } else { // One-to-many figure line.
+            menu.add(scene.createGotoAction(outputSlot.getFigure()));
+            menu.addSeparator();
+            for (Connection c : connections) {
+                menu.add(scene.createGotoAction((Figure)c.getTo().getVertex()));
+            }
         }
-
         final LineWidget w = this;
         menu.addPopupMenuListener(new PopupMenuListener() {
 
@@ -340,4 +430,5 @@ public class LineWidget extends Widget implements PopupMenuProvider {
 
         return menu;
     }
+
 }

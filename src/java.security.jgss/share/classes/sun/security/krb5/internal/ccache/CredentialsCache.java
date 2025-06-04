@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,15 +38,12 @@ import java.util.List;
 import java.io.IOException;
 
 /**
- * CredentialsCache stores credentials(tickets, session keys, etc) in a semi-permanent store
+ * CredentialsCache stores credentials(tickets, session keys, etc.) in a semi-permanent store
  * for later use by different program.
  *
  * @author Yanni Zhang
  */
 public abstract class CredentialsCache {
-    static CredentialsCache singleton = null;
-    static String cacheName;
-
     public static CredentialsCache getInstance(PrincipalName principal) {
         return FileCredentialsCache.acquireInstance(principal, null);
     }
@@ -105,9 +103,7 @@ public abstract class CredentialsCache {
         return (FileCredentialsCache.New(principal));
     }
 
-    public static String cacheName() {
-        return cacheName;
-    }
+    public abstract String cacheName();
 
     public abstract PrincipalName getPrimaryPrincipal();
     public abstract void update(Credentials c);

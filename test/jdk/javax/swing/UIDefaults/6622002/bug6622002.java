@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,42 +21,22 @@
  * questions.
  */
 
-/**
+import javax.swing.UIDefaults;
+
+/*
  * @test
  * @bug 6622002
- * @author Alexander Potochkin
  * @summary UIDefault.ProxyLazyValue has unsafe reflection usage
- * @run main/othervm -Djava.security.manager=allow bug6622002
+ * @run main bug6622002
  */
-
-import javax.swing.*;
 
 public class bug6622002 {
      public static void main(String[] args) {
-
-         if (createPrivateValue() == null) {
-             throw new RuntimeException("The private value unexpectedly wasn't created");
-         }
-
-         if (createPublicValue() == null) {
-             throw new RuntimeException("The public value unexpectedly wasn't created");
-         }
-
-         System.setSecurityManager(new SecurityManager());
-
-         if (createPrivateValue() != null) {
-             throw new RuntimeException("The private value was unexpectedly created");
-         }
 
          if (createPublicValue() == null) {
              throw new RuntimeException("The public value unexpectedly wasn't created");
          }
      }
-
-    private static Object createPrivateValue() {
-        return new UIDefaults.ProxyLazyValue(
-            "javax.swing.MultiUIDefaults").createValue(null);
-    }
 
     private static Object createPublicValue() {
         return new UIDefaults.ProxyLazyValue(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,9 @@ import jdk.internal.access.SharedSecrets;
  * <p>This class is a member of the
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
+ *
+ * @param <K> the enum type of keys maintained by this map
+ * @param <V> the type of mapped values
  *
  * @author Josh Bloch
  * @see EnumSet
@@ -162,6 +165,7 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
      *     {@code EnumMap} instance and contains no mappings
      * @throws NullPointerException if {@code m} is null
      */
+    @SuppressWarnings("this-escape")
     public EnumMap(Map<K, ? extends V> m) {
         if (m instanceof EnumMap) {
             EnumMap<K, ? extends V> em = (EnumMap<K, ? extends V>) m;
@@ -605,10 +609,10 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
                     return false;
 
                 V ourValue = unmaskNull(vals[index]);
-                Object hisValue = e.getValue();
+                Object otherValue = e.getValue();
                 return (e.getKey() == keyUniverse[index] &&
-                        (ourValue == hisValue ||
-                         (ourValue != null && ourValue.equals(hisValue))));
+                        (ourValue == otherValue ||
+                         (ourValue != null && ourValue.equals(otherValue))));
             }
 
             public int hashCode() {
@@ -682,9 +686,9 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
         // Key types match, compare each value
         for (int i = 0; i < keyUniverse.length; i++) {
             Object ourValue =    vals[i];
-            Object hisValue = em.vals[i];
-            if (hisValue != ourValue &&
-                (hisValue == null || !hisValue.equals(ourValue)))
+            Object otherValue = em.vals[i];
+            if (otherValue != ourValue &&
+                (otherValue == null || !otherValue.equals(ourValue)))
                 return false;
         }
         return true;

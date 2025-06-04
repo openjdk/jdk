@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1479,7 +1479,10 @@ public class GroupLayout implements LayoutManager2 {
      * @see #createParallelGroup
      * @since 1.6
      */
-    public abstract class Group extends Spring {
+    public abstract sealed class Group extends Spring
+        permits ParallelGroup,
+                SequentialGroup {
+
         // private int origin;
         // private int size;
         List<Spring> springs;
@@ -1648,7 +1651,7 @@ public class GroupLayout implements LayoutManager2 {
 
         /**
          * Used to compute how the two values representing two springs
-         * will be combined.  For example, a group that layed things out
+         * will be combined.  For example, a group that laid things out
          * one after the next would return {@code a + b}.
          */
         abstract int operator(int a, int b);
@@ -1758,7 +1761,7 @@ public class GroupLayout implements LayoutManager2 {
      * @see #createSequentialGroup
      * @since 1.6
      */
-    public class SequentialGroup extends Group {
+    public final class SequentialGroup extends Group {
         private Spring baselineSpring;
 
         SequentialGroup() {
@@ -1774,9 +1777,9 @@ public class GroupLayout implements LayoutManager2 {
         /**
          * Adds a {@code Group} to this {@code Group}.
          *
-         * @param group the {@code Group} to add
          * @param useAsBaseline whether the specified {@code Group} should
          *        be used to calculate the baseline for this {@code Group}
+         * @param group the {@code Group} to add
          * @return this {@code Group}
          */
         public SequentialGroup addGroup(boolean useAsBaseline, Group group) {
@@ -2454,8 +2457,10 @@ public class GroupLayout implements LayoutManager2 {
      * @see #createBaselineGroup(boolean,boolean)
      * @since 1.6
      */
-    public class ParallelGroup extends Group {
-        // How children are layed out.
+    public sealed class ParallelGroup extends Group
+         permits BaselineGroup {
+
+        // How children are laid out.
         private final Alignment childAlignment;
         // Whether or not we're resizable.
         private final boolean resizable;
@@ -2523,8 +2528,8 @@ public class GroupLayout implements LayoutManager2 {
          * Adds a {@code Component} to this {@code ParallelGroup} with
          * the specified alignment.
          *
-         * @param alignment the alignment
          * @param component the {@code Component} to add
+         * @param alignment the alignment
          * @return this {@code Group}
          * @throws IllegalArgumentException if {@code alignment} is
          *         {@code null}
@@ -2539,8 +2544,8 @@ public class GroupLayout implements LayoutManager2 {
          * Adds a {@code Component} to this {@code ParallelGroup} with the
          * specified alignment and size.
          *
-         * @param alignment the alignment
          * @param component the {@code Component} to add
+         * @param alignment the alignment
          * @param min the minimum size
          * @param pref the preferred size
          * @param max the maximum size
@@ -2654,7 +2659,7 @@ public class GroupLayout implements LayoutManager2 {
      * An extension of {@code ParallelGroup} that aligns its
      * constituent {@code Spring}s along the baseline.
      */
-    private class BaselineGroup extends ParallelGroup {
+    private final class BaselineGroup extends ParallelGroup {
         // Whether or not all child springs have a baseline
         private boolean allSpringsHaveBaseline;
 
@@ -3516,7 +3521,7 @@ public class GroupLayout implements LayoutManager2 {
     }
 
 
-    // LinkInfo contains the set of ComponentInfosthat are linked along a
+    // LinkInfo contains the set of ComponentInfos that are linked along a
     // particular axis.
     private static class LinkInfo {
         private final int axis;
@@ -3586,7 +3591,7 @@ public class GroupLayout implements LayoutManager2 {
      * linked.
      */
     private class ComponentInfo {
-        // Component being layed out
+        // Component being laid out
         private Component component;
 
         ComponentSpring horizontalSpring;

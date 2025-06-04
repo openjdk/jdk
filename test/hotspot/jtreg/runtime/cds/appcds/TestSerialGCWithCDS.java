@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,33 @@
  * @requires vm.gc.G1
  *
  * @comment don't run this test if any -XX::+Use???GC options are specified, since they will
- *          interfere with the the test.
+ *          interfere with the test.
  * @requires vm.gc == null
  *
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile test-classes/Hello.java
  * @run driver TestSerialGCWithCDS
+ */
+
+// Below is exactly the same as above, except:
+// - requires vm.bits == "64"
+// - extra argument "false"
+
+/*
+ * @test Loading CDS archived heap objects into SerialGC
+ * @bug 8234679
+ * @requires vm.cds
+ * @requires vm.gc.Serial
+ * @requires vm.gc.G1
+ * @requires vm.bits == "64"
+ *
+ * @comment don't run this test if any -XX::+Use???GC options are specified, since they will
+ *          interfere with the test.
+ * @requires vm.gc == null
+ *
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
+ * @compile test-classes/Hello.java
+ * @run driver TestSerialGCWithCDS false
  */
 
 import jdk.test.lib.Platform;
@@ -43,9 +64,14 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestSerialGCWithCDS {
     public final static String HELLO = "Hello World";
     static String helloJar;
+    static boolean useCompressedOops = true;
 
     public static void main(String... args) throws Exception {
         helloJar = JarBuilder.build("hello", "Hello");
+
+        if (args.length > 0 && args[0].equals("false")) {
+            useCompressedOops = false;
+        }
 
         // Check if we can use SerialGC during dump time, or run time, or both.
         test(false, true);
@@ -54,7 +80,9 @@ public class TestSerialGCWithCDS {
 
         // We usually have 2 heap regions. To increase test coverage, we can have 3 heap regions
         // by using "-Xmx256m -XX:ObjectAlignmentInBytes=64"
-        if (Platform.is64bit()) test(false, true, true);
+        if (Platform.is64bit()) {
+            test(false, true, /*useSmallRegions=*/true);
+        }
     }
 
     final static String G1 = "-XX:+UseG1GC";
@@ -65,10 +93,18 @@ public class TestSerialGCWithCDS {
     }
 
     static void test(boolean dumpWithSerial, boolean execWithSerial, boolean useSmallRegions) throws Exception {
+        String DUMMY = "-showversion"; // A harmless option that doesn't doesn't do anything except for printing out the version
         String dumpGC = dumpWithSerial ? Serial : G1;
         String execGC = execWithSerial ? Serial : G1;
-        String small1 = useSmallRegions ? "-Xmx256m" : "-showversion";
-        String small2 = useSmallRegions ? "-XX:ObjectAlignmentInBytes=64" : "-showversion";
+        String small1 = useSmallRegions ? "-Xmx256m" : DUMMY;
+        String small2 = useSmallRegions ? "-XX:ObjectAlignmentInBytes=64" : DUMMY;
+        String errMsg = "Cannot use CDS heap data. Selected GC not compatible -XX:-UseCompressedOops";
+        String coops;
+        if (Platform.is64bit()) {
+            coops = useCompressedOops ? "-XX:+UseCompressedOops" : "-XX:-UseCompressedOops";
+        } else {
+            coops = DUMMY;
+        }
         OutputAnalyzer out;
 
         System.out.println("0. Dump with " + dumpGC);
@@ -77,6 +113,7 @@ public class TestSerialGCWithCDS {
                               dumpGC,
                               small1,
                               small2,
+                              coops,
                               "-Xlog:cds");
         out.shouldContain("Dumping shared data to file:");
         out.shouldHaveExitValue(0);
@@ -86,10 +123,21 @@ public class TestSerialGCWithCDS {
                               execGC,
                               small1,
                               small2,
+                              coops,
                               "-Xlog:cds",
                               "Hello");
-        out.shouldContain(HELLO);
-        out.shouldHaveExitValue(0);
+        out.shouldNotContain(errMsg);
+
+        System.out.println("2. Exec with " + execGC + " and test ArchiveRelocationMode=0");
+        out = TestCommon.exec(helloJar,
+                              execGC,
+                              small1,
+                              small2,
+                              coops,
+                              "-Xlog:cds,cds+heap",
+                              "-XX:ArchiveRelocationMode=0", // may relocate shared metadata
+                              "Hello");
+        out.shouldNotContain(errMsg);
 
         int n = 2;
         if (dumpWithSerial == false && execWithSerial == true) {
@@ -109,17 +157,13 @@ public class TestSerialGCWithCDS {
                                       small1,
                                       small2,
                                       xmx,
+                                      coops,
                                       "-Xlog:cds",
                                       "Hello");
                 if (out.getExitValue() == 0) {
-                    out.shouldContain(HELLO);
+                    out.shouldNotContain(errMsg);
                 } else {
-                    String output = out.getStdout() + out.getStderr();
-                    String exp1 = "Too small maximum heap";
-                    String exp2 = "GC triggered before VM initialization completed";
-                    if (!output.contains(exp1) && !output.contains(exp2)) {
-                        throw new RuntimeException("Either '" + exp1 + "' or '" + exp2 + "' must be in stdout/stderr \n");
-                    }
+                    out.shouldNotHaveFatalError();
                 }
                 n++;
             }

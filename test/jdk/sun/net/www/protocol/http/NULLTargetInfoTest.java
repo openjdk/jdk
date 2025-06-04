@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8151788
+ * @bug 8151788 8286526
  * @summary NullPointerException from ntlm.Client.type3
  * @modules java.base/com.sun.security.ntlm
  * @run main NULLTargetInfoTest
@@ -42,7 +42,7 @@ public class NULLTargetInfoTest {
                 "4E 54 4C 4D 53 53 50 00 02 00 00 00 00 00 00 00"
                 + "00 00 00 00 05 82 89 00 0B 87 81 B6 2D 6E 8B C1"
                 + "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00");
-        byte[] nonce = new byte[10];
+        byte[] nonce = new byte[8];
         c.type3(type2, nonce);
     }
 

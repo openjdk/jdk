@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,14 +69,17 @@ public class crstepreq004 {
     //------------------------------------------------------ immutable common methods
 
     public static void main (String argv[]) {
-        System.exit(run(argv, System.out) + PASS_BASE);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     //------------------------------------------------------ test specific fields
 
-    static final int lineForBreakInThread = 146;
-    static final int[] checkedLines = { 160, 160, 193 };
-    static final int[] checkedLinesAlt = { 161, 161, 193 };
+    static final int lineForBreakInThread = 149;
+    static final int[] checkedLines = { 163, 163, 196 };
+    static final int[] checkedLinesAlt = { 164, 164, 196 };
 
     //------------------------------------------------------ mutable common methods
 
@@ -155,9 +158,7 @@ public class crstepreq004 {
     //--------------------------------------------------------- mutable common methods
 
     private void execTest() {
-        ThreadReference mainThread = debuggee.threadByNameOrThrow("main");
-
-        BreakpointRequest bpRequest = setBreakpoint( mainThread,
+        BreakpointRequest bpRequest = setBreakpoint( null,
                                                      debuggeeClass,
                                                      "methodForCommunication",
                                                      lineForBreakInThread,
@@ -247,7 +248,7 @@ public class crstepreq004 {
             exitCode = FAILED;
         }
 
-        ThreadReference thread = debuggee.threadByNameOrThrow(threadName);
+        ThreadReference thread = debuggee.threadByFieldNameOrThrow(debuggeeClass, threadName);
         StepRequest stepRequest = setStepRequest( thread,
                                                   StepRequest.STEP_LINE,
                                                   stepDepth,

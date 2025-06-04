@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,7 @@
  * @test
  * @bug 8046321 8153829
  * @summary OCSP Stapling for TLS
- * @library ../../../../java/security/testlibrary
- * @build CertificateBuilder SimpleOCSPServer
+ * @library /test/lib
  * @run main/othervm SSLSocketWithStapling
  */
 
@@ -63,8 +62,8 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
-import sun.security.testlibrary.SimpleOCSPServer;
-import sun.security.testlibrary.CertificateBuilder;
+import jdk.test.lib.security.SimpleOCSPServer;
+import jdk.test.lib.security.CertificateBuilder;
 
 public class SSLSocketWithStapling {
 
@@ -432,11 +431,9 @@ public class SSLSocketWithStapling {
         rootOcsp.acceptConnections();
 
         // Wait 5 seconds for server ready
-        for (int i = 0; (i < 100 && !rootOcsp.isServerReady()); i++) {
-            Thread.sleep(50);
-        }
-        if (!rootOcsp.isServerReady()) {
-            throw new RuntimeException("Root OCSP responder not ready yet");
+        boolean rootOcspReady = rootOcsp.awaitServerReady(5, TimeUnit.SECONDS);
+        if (!rootOcspReady) {
+            throw new RuntimeException("Server not ready");
         }
     }
 
@@ -493,13 +490,11 @@ public class SSLSocketWithStapling {
         intOcsp.acceptConnections();
         rootOcsp.acceptConnections();
 
-        // Wait 5 seconds for server ready
-        for (int i = 0; (i < 100 && (!intOcsp.isServerReady() ||
-                !rootOcsp.isServerReady())); i++) {
-            Thread.sleep(50);
-        }
-        if (!intOcsp.isServerReady() || !rootOcsp.isServerReady()) {
-            throw new RuntimeException("Server not ready yet");
+        // Wait up to 5 seconds for each server
+        boolean rootOcspReady = rootOcsp.awaitServerReady(5, TimeUnit.SECONDS);
+        boolean intOcspReady = intOcsp.awaitServerReady(5, TimeUnit.SECONDS);
+        if (!rootOcspReady || !intOcspReady) {
+            throw new RuntimeException("Server not ready");
         }
     }
 
@@ -563,12 +558,10 @@ public class SSLSocketWithStapling {
         rootOcsp.acceptConnections();
 
         // Wait 5 seconds for server ready
-        for (int i = 0; (i < 100 && (!intOcsp.isServerReady() ||
-                        !rootOcsp.isServerReady())); i++) {
-            Thread.sleep(50);
-        }
-        if (!intOcsp.isServerReady() || !rootOcsp.isServerReady()) {
-            throw new RuntimeException("Server not ready yet");
+        boolean rootOcspReady = rootOcsp.awaitServerReady(5, TimeUnit.SECONDS);
+        boolean intOcspReady = intOcsp.awaitServerReady(5, TimeUnit.SECONDS);
+        if (!rootOcspReady || !intOcspReady) {
+            throw new RuntimeException("Server not ready");
         }
     }
 
@@ -602,12 +595,10 @@ public class SSLSocketWithStapling {
         Thread.sleep(1000);
 
         // Wait 5 seconds for server ready
-        for (int i = 0; (i < 100 && (!intOcsp.isServerReady() ||
-                        !rootOcsp.isServerReady())); i++) {
-            Thread.sleep(50);
-        }
-        if (!intOcsp.isServerReady() || !rootOcsp.isServerReady()) {
-            throw new RuntimeException("Server not ready yet");
+        boolean rootOcspReady = rootOcsp.awaitServerReady(5, TimeUnit.SECONDS);
+        boolean intOcspReady = intOcsp.awaitServerReady(5, TimeUnit.SECONDS);
+        if (!rootOcspReady || !intOcspReady) {
+            throw new RuntimeException("Server not ready");
         }
 
         System.out.println("========================================");
@@ -654,12 +645,10 @@ public class SSLSocketWithStapling {
         Thread.sleep(1000);
 
         // Wait 5 seconds for server ready
-        for (int i = 0; (i < 100 && (!intOcsp.isServerReady() ||
-                !rootOcsp.isServerReady())); i++) {
-            Thread.sleep(50);
-        }
-        if (!intOcsp.isServerReady() || !rootOcsp.isServerReady()) {
-            throw new RuntimeException("Server not ready yet");
+        rootOcspReady = rootOcsp.awaitServerReady(5, TimeUnit.SECONDS);
+        intOcspReady = intOcsp.awaitServerReady(5, TimeUnit.SECONDS);
+        if (!rootOcspReady || !intOcspReady) {
+            throw new RuntimeException("Server not ready");
         }
     }
 
@@ -959,11 +948,9 @@ public class SSLSocketWithStapling {
         rootOcsp.start();
 
         // Wait 5 seconds for server ready
-        for (int i = 0; (i < 100 && !rootOcsp.isServerReady()); i++) {
-            Thread.sleep(50);
-        }
-        if (!rootOcsp.isServerReady()) {
-            throw new RuntimeException("Server not ready yet");
+        boolean readyStatus = rootOcsp.awaitServerReady(5, TimeUnit.SECONDS);
+        if (!readyStatus) {
+            throw new RuntimeException("Server not ready");
         }
 
         rootOcspPort = rootOcsp.getPort();
@@ -1012,11 +999,9 @@ public class SSLSocketWithStapling {
         intOcsp.start();
 
         // Wait 5 seconds for server ready
-        for (int i = 0; (i < 100 && !intOcsp.isServerReady()); i++) {
-            Thread.sleep(50);
-        }
-        if (!intOcsp.isServerReady()) {
-            throw new RuntimeException("Server not ready yet");
+        readyStatus = intOcsp.awaitServerReady(5, TimeUnit.SECONDS);
+        if (!readyStatus) {
+            throw new RuntimeException("Server not ready");
         }
 
         intOcspPort = intOcsp.getPort();

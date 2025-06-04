@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,29 +26,26 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.List;
+import java.util.Set;
 
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlStyle;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Generate File to list all the preview elements with the
  * appropriate links.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- *
- * @see java.util.List
  */
 public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> {
 
@@ -56,26 +53,63 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
      * Constructor.
      *
      * @param configuration the configuration for this doclet
-     * @param filename the file to be generated
      */
-
-    public PreviewListWriter(HtmlConfiguration configuration, DocPath filename) {
-        super(configuration, filename, PageMode.PREVIEW, "preview elements",
-              configuration.contents.previewAPI, "doclet.Window_Preview_List");
+    public PreviewListWriter(HtmlConfiguration configuration) {
+        super(configuration, DocPaths.PREVIEW_LIST, configuration.previewAPIListBuilder);
     }
 
-    /**
-     * Get list of all the preview elements.
-     * Then instantiate PreviewListWriter and generate File.
-     *
-     * @param configuration the current configuration of the doclet.
-     * @throws DocFileIOException if there is a problem writing the preview list
-     */
-    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.PREVIEW)) {
-            DocPath filename = DocPaths.PREVIEW_LIST;
-            PreviewListWriter depr = new PreviewListWriter(configuration, filename);
-            depr.generateSummaryListFile(configuration.previewAPIListBuilder);
+    @Override
+    protected PageMode getPageMode() {
+        return PageMode.PREVIEW;
+    }
+
+    @Override
+    protected String getDescription() {
+        return "preview elements";
+    }
+
+    @Override
+    protected Content getHeadContent() {
+        return configuration.contents.previewAPI;
+    }
+
+    @Override
+    protected String getTitleKey() {
+        return "doclet.Window_Preview_List";
+    }
+
+    @Override
+    protected void addContentSelectors(Content target) {
+        Set<PreviewAPIListBuilder.JEP> jeps = builder.getJEPs();
+        if (!jeps.isEmpty()) {
+            int index = 1;
+            target.add(HtmlTree.P(contents.getContent("doclet.Preview_API_Checkbox_Label")));
+            Content list = HtmlTree.UL(HtmlStyles.previewFeatureList).addStyle(HtmlStyles.checkboxes);
+            for (var jep : jeps) {
+                String jepUrl = resources.getText("doclet.Preview_JEP_URL", String.valueOf(jep.number()));
+                Content label = new ContentBuilder(Text.of(jep.number() + ": "))
+                        .add(HtmlTree.A(jepUrl, Text.of(jep.title() + " (" + jep.status() + ")")));
+                list.add(HtmlTree.LI(getCheckbox(label, String.valueOf(index++), "feature-")));
+            }
+            Content label = contents.getContent("doclet.Preview_API_Checkbox_Toggle_All");
+            list.add(HtmlTree.LI(getCheckbox(label, ID_ALL, "feature-")));
+            target.add(list);
+        }
+    }
+
+    @Override
+    protected void addExtraSection(Content content) {
+        var notes = builder.getElementNotes();
+        if (!notes.isEmpty()) {
+            addSummaryAPI(notes, HtmlId.of("preview-api-notes"),
+                    "doclet.Preview_Notes_Elements", "doclet.Element", content);
+        }
+    }
+
+    @Override
+    protected void addExtraIndexLink(Content target) {
+        if (!builder.getElementNotes().isEmpty()) {
+            addIndexLink(HtmlId.of("preview-api-notes"), "doclet.Preview_Notes", target);
         }
     }
 
@@ -85,8 +119,37 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
         if (!tags.isEmpty()) {
             addPreviewComment(e, tags, desc);
         } else {
-            desc.add(HtmlTree.EMPTY);
+            desc.add(Text.EMPTY);
         }
     }
 
+    @Override
+    protected void addTableTabs(Table<Element> table, String headingKey) {
+        table.setGridStyle(HtmlStyles.threeColumnSummary)
+                .setDefaultTab(getTableCaption(headingKey))
+                .setRenderTabs(false);
+        for (PreviewAPIListBuilder.JEP jep : builder.getJEPs()) {
+            table.addTab(Text.EMPTY, element -> jep == builder.getJEP(element));
+        }
+    }
+
+    @Override
+    protected Content getExtraContent(Element element) {
+        PreviewAPIListBuilder.JEP jep = builder.getJEP(element);
+        return jep == null ? Text.EMPTY : Text.of(jep.title());
+    }
+
+    @Override
+    protected TableHeader getTableHeader(String headerKey) {
+        return new TableHeader(
+                contents.getContent(headerKey),
+                Text.of("Preview Feature"),
+                contents.descriptionLabel)
+                .sortable(true, true, false); // Allow sorting by element name and feature
+    }
+
+    @Override
+    protected HtmlStyle[] getColumnStyles() {
+        return new HtmlStyle[]{ HtmlStyles.colSummaryItemName, HtmlStyles.colSecond, HtmlStyles.colLast };
+    }
 }

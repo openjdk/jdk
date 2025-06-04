@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,9 @@
  * questions.
  */
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.logging.*;
 import java.io.*;
 import java.net.*;
-import java.security.*;
-import javax.net.ssl.*;
+
 import com.sun.net.httpserver.*;
 
 /**

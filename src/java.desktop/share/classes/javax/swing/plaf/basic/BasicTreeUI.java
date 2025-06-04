@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,85 @@
 
 package javax.swing.plaf.basic;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.datatransfer.*;
-import java.beans.*;
-import java.util.Enumeration;
-import java.util.Hashtable;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Stroke;
+import java.awt.datatransfer.Transferable;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Comparator;
-import javax.swing.plaf.ComponentUI;
-import javax.swing.plaf.UIResource;
-import javax.swing.plaf.TreeUI;
-import javax.swing.tree.*;
-import javax.swing.text.Position;
-import javax.swing.plaf.basic.DragRecognitionSupport.BeforeDrag;
-import sun.awt.AWTAccessor;
-import sun.swing.SwingUtilities2;
+import java.util.Enumeration;
+import java.util.Hashtable;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.CellRendererPane;
+import javax.swing.Icon;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
+import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.JTree;
+import javax.swing.JViewport;
+import javax.swing.KeyStroke;
+import javax.swing.LookAndFeel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+import javax.swing.TransferHandler;
+import javax.swing.UIDefaults;
+import javax.swing.UIManager;
+import javax.swing.event.CellEditorListener;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.MouseInputListener;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeExpansionListener;
+import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.TreeUI;
+import javax.swing.plaf.UIResource;
+import javax.swing.plaf.basic.DragRecognitionSupport.BeforeDrag;
+import javax.swing.text.Position;
+import javax.swing.tree.AbstractLayoutCache;
+import javax.swing.tree.DefaultTreeCellEditor;
+import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.FixedHeightLayoutCache;
+import javax.swing.tree.TreeCellEditor;
+import javax.swing.tree.TreeCellRenderer;
+import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
+import javax.swing.tree.VariableHeightLayoutCache;
+
+import sun.awt.AWTAccessor;
 import sun.swing.DefaultLookup;
+import sun.swing.SwingUtilities2;
 import sun.swing.UIAction;
 
 /**
@@ -138,7 +197,7 @@ public class BasicTreeUI extends TreeUI
      * return a FixedHeightLayoutCache instance. */
     protected boolean           largeModel;
 
-    /** Reponsible for telling the TreeState the size needed for a node. */
+    /** Responsible for telling the TreeState the size needed for a node. */
     protected AbstractLayoutCache.NodeDimensions     nodeDimensions;
 
     /** Used to determine what to display. */
@@ -168,7 +227,7 @@ public class BasicTreeUI extends TreeUI
     /** Set to true if the editor has a different size than the renderer. */
     protected boolean           editorHasDifferentSize;
 
-    /** Row correspondin to lead path. */
+    /** Row corresponding to lead path. */
     private int                 leadRow;
     /** If true, the property change event for LEAD_SELECTION_PATH_PROPERTY,
      * or ANCHOR_SELECTION_PATH_PROPERTY will not generate a repaint. */
@@ -202,7 +261,7 @@ public class BasicTreeUI extends TreeUI
     private boolean lineTypeDashed;
 
     /**
-     * The time factor to treate the series of typed alphanumeric key
+     * The time factor to treat the series of typed alphanumeric key
      * as prefix for first letter navigation.
      */
     private long timeFactor = 1000L;
@@ -857,9 +916,9 @@ public class BasicTreeUI extends TreeUI
         // JTree's original row height is 16.  To correctly display the
         // contents on Linux we should have set it to 18, Windows 19 and
         // Solaris 20.  As these values vary so much it's too hard to
-        // be backward compatable and try to update the row height, we're
-        // therefor NOT going to adjust the row height based on font.  If the
-        // developer changes the font, it's there responsibility to update
+        // be backward compatible and try to update the row height, we're
+        // therefore NOT going to adjust the row height based on font.  If the
+        // developer changes the font, it's their responsibility to update
         // the row height.
 
         setExpandedIcon( (Icon)UIManager.get( "Tree.expandedIcon" ) );
@@ -984,7 +1043,7 @@ public class BasicTreeUI extends TreeUI
     }
 
     /**
-     * Intalls the subcomponents of the tree, which is the renderer pane.
+     * Installs the subcomponents of the tree, which is the renderer pane.
      */
     protected void installComponents() {
         if ((rendererPane = createCellRendererPane()) != null) {
@@ -1176,7 +1235,7 @@ public class BasicTreeUI extends TreeUI
     }
 
     /**
-     * Invoked before unstallation of UI.
+     * Invoked before uninstallation of UI.
      */
     protected void prepareForUIUninstall() {
     }
@@ -3221,7 +3280,10 @@ public class BasicTreeUI extends TreeUI
                      expanded, treeModel.isLeaf(value), row,
                      false);
                 if(tree != null) {
-                    // Only ever removed when UI changes, this is OK!
+                    // Remove previously added components to prevent leak
+                    // and add the current component returned by cellrenderer for
+                    // painting and other measurements
+                    rendererPane.removeAll();
                     rendererPane.add(aComponent);
                     aComponent.validate();
                 }
@@ -3678,10 +3740,10 @@ public class BasicTreeUI extends TreeUI
         /**
          * Create a Transferable to use as the source for a data transfer.
          *
-         * @param c  The component holding the data to be transfered.  This
+         * @param c  The component holding the data to be transferred.  This
          *  argument is provided to enable sharing of TransferHandlers by
          *  multiple components.
-         * @return  The representation of the data to be transfered.
+         * @return  The representation of the data to be transferred.
          *
          */
         protected Transferable createTransferable(JComponent c) {
@@ -4082,7 +4144,7 @@ public class BasicTreeUI extends TreeUI
                 }
 
                 // Preferably checkForClickInExpandControl could take
-                // the Event to do this it self!
+                // the Event to do this itself!
                 if(SwingUtilities.isLeftMouseButton(e)) {
                     checkForClickInExpandControl(pressedPath, e.getX(), e.getY());
                 }
@@ -4835,7 +4897,7 @@ public class BasicTreeUI extends TreeUI
                         newIndex = rowCount - 1;
                 }
                 else
-                    /* Aparently people don't like wrapping;( */
+                    /* Apparently people don't like wrapping;( */
                     newIndex = Math.min(rowCount - 1, Math.max
                                         (0, (selIndex + direction)));
                 if(addToSelection && ui.treeSelectionModel.

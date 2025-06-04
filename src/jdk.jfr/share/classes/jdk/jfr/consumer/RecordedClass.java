@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public final class RecordedClass extends RecordedObject {
      * @see java.lang.reflect.Modifier
      */
     public int getModifiers() {
-        return getTyped("modifiers", Integer.class, -1);
+        return getTyped("modifiers", Integer.class, INTEGER_MINUS_ONE);
     }
 
     /**

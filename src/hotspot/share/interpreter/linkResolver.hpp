@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,14 +92,13 @@ class CallInfo : public StackObj {
   CallInfo(Method* resolved_method, Klass* resolved_klass, TRAPS);
 
   Klass*  resolved_klass() const                 { return _resolved_klass; }
-  Method* resolved_method() const                { return _resolved_method(); }
-  Method* selected_method() const                { return _selected_method(); }
+  Method* resolved_method() const;
+  Method* selected_method() const;
   Handle       resolved_appendix() const         { return _resolved_appendix; }
   Handle       resolved_method_name() const      { return _resolved_method_name; }
   // Materialize a java.lang.invoke.ResolvedMethodName for this resolved_method
   void     set_resolved_method_name(TRAPS);
 
-  BasicType    result_type() const               { return selected_method()->result_type(); }
   CallKind     call_kind() const                 { return _call_kind; }
   int          vtable_index() const {
     // Even for interface calls the vtable index could be non-negative.
@@ -146,34 +145,37 @@ class LinkInfo : public StackObj {
   enum class AccessCheck { required, skip };
   enum class LoaderConstraintCheck { required, skip };
 
-  LinkInfo(const constantPoolHandle& pool, int index, const methodHandle& current_method, TRAPS);
-  LinkInfo(const constantPoolHandle& pool, int index, TRAPS);
+  LinkInfo(const constantPoolHandle& pool, int index, const methodHandle& current_method, Bytecodes::Code code, TRAPS);
+  LinkInfo(const constantPoolHandle& pool, int index, Bytecodes::Code code, TRAPS);
 
   // Condensed information from other call sites within the vm.
   LinkInfo(Klass* resolved_klass, Symbol* name, Symbol* signature, Klass* current_klass,
            AccessCheck check_access = AccessCheck::required,
            LoaderConstraintCheck check_loader_constraints = LoaderConstraintCheck::required,
            constantTag tag = JVM_CONSTANT_Invalid) :
-    _name(name),
-    _signature(signature), _resolved_klass(resolved_klass), _current_klass(current_klass), _current_method(methodHandle()),
-    _check_access(check_access == AccessCheck::required),
-    _check_loader_constraints(check_loader_constraints == LoaderConstraintCheck::required), _tag(tag) {}
+      _name(name),
+      _signature(signature),
+      _resolved_klass(resolved_klass),
+      _current_klass(current_klass),
+      _current_method(methodHandle()),
+      _check_access(check_access == AccessCheck::required),
+      _check_loader_constraints(check_loader_constraints == LoaderConstraintCheck::required),
+      _tag(tag) {
+    assert(_resolved_klass != nullptr, "must always have a resolved_klass");
+  }
 
   LinkInfo(Klass* resolved_klass, Symbol* name, Symbol* signature, const methodHandle& current_method,
            AccessCheck check_access = AccessCheck::required,
            LoaderConstraintCheck check_loader_constraints = LoaderConstraintCheck::required,
            constantTag tag = JVM_CONSTANT_Invalid) :
-    _name(name),
-    _signature(signature), _resolved_klass(resolved_klass), _current_klass(current_method->method_holder()), _current_method(current_method),
-    _check_access(check_access == AccessCheck::required),
-    _check_loader_constraints(check_loader_constraints == LoaderConstraintCheck::required), _tag(tag) {}
+    LinkInfo(resolved_klass, name, signature, current_method->method_holder(), check_access, check_loader_constraints, tag) {
+    _current_method = current_method;
+  }
 
-
-  // Case where we just find the method and don't check access against the current class
+  // Case where we just find the method and don't check access against the current class, used by JavaCalls
   LinkInfo(Klass* resolved_klass, Symbol*name, Symbol* signature) :
-    _name(name),
-    _signature(signature), _resolved_klass(resolved_klass), _current_klass(NULL), _current_method(methodHandle()),
-    _check_access(false), _check_loader_constraints(false), _tag(JVM_CONSTANT_Invalid) {}
+    LinkInfo(resolved_klass, name, signature, nullptr, AccessCheck::skip, LoaderConstraintCheck::skip,
+             JVM_CONSTANT_Invalid) {}
 
   // accessors
   Symbol* name() const                  { return _name; }
@@ -239,13 +241,15 @@ class LinkResolver: AllStatic {
                                                  Klass* resolved_klass,
                                                  Handle recv,
                                                  Klass* recv_klass,
-                                                 bool check_null_and_abstract, TRAPS);
+                                                 bool check_null_and_abstract,
+                                                 bool is_abstract_interpretation, TRAPS);
   static void runtime_resolve_interface_method  (CallInfo& result,
                                                  const methodHandle& resolved_method,
                                                  Klass* resolved_klass,
                                                  Handle recv,
                                                  Klass* recv_klass,
-                                                 bool check_null_and_abstract, TRAPS);
+                                                 bool check_null_and_abstract,
+                                                 bool is_abstract_interpretation, TRAPS);
 
   static bool resolve_previously_linked_invokehandle(CallInfo& result,
                                                      const LinkInfo& link_info,
@@ -284,11 +288,22 @@ class LinkResolver: AllStatic {
                                            const constantPoolHandle& pool,
                                            int index, TRAPS);
 
+  static void resolve_continuation_enter(CallInfo& callinfo, TRAPS);
+
   static void resolve_field_access(fieldDescriptor& result,
                                    const constantPoolHandle& pool,
                                    int index,
                                    const methodHandle& method,
-                                   Bytecodes::Code byte, TRAPS);
+                                   Bytecodes::Code byte,
+                                   bool initialize_class, TRAPS);
+  static void resolve_field_access(fieldDescriptor& result,
+                                   const constantPoolHandle& pool,
+                                   int index,
+                                   const methodHandle& method,
+                                   Bytecodes::Code byte, TRAPS) {
+    resolve_field_access(result, pool, index, method, byte,
+                         /* initialize_class*/true, THREAD);
+  }
   static void resolve_field(fieldDescriptor& result, const LinkInfo& link_info,
                             Bytecodes::Code access_kind,
                             bool initialize_class, TRAPS);
@@ -310,6 +325,10 @@ class LinkResolver: AllStatic {
                                      const LinkInfo& link_info, TRAPS);
   static void resolve_dynamic_call  (CallInfo& result,
                                      BootstrapInfo& bootstrap_specifier, TRAPS);
+
+  static void cds_resolve_virtual_call  (CallInfo& result, const LinkInfo& link_info, TRAPS);
+  static void cds_resolve_interface_call(CallInfo& result, const LinkInfo& link_info, TRAPS);
+  static void cds_resolve_special_call  (CallInfo& result, const LinkInfo& link_info, TRAPS);
 
   // same as above for compile-time resolution; but returns null handle instead of throwing
   // an exception on error also, does not initialize klass (i.e., no side effects)
@@ -342,7 +361,7 @@ class LinkResolver: AllStatic {
 
   // Only resolved method known.
   static void throw_abstract_method_error(const methodHandle& resolved_method, TRAPS) {
-    throw_abstract_method_error(resolved_method, methodHandle(), NULL, CHECK);
+    throw_abstract_method_error(resolved_method, methodHandle(), nullptr, CHECK);
   }
   // Resolved method and receiver klass know.
   static void throw_abstract_method_error(const methodHandle& resolved_method, Klass *recv_klass, TRAPS) {

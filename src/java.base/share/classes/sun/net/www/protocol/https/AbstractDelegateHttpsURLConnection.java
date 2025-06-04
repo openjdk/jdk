@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+/*
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public abstract class AbstractDelegateHttpsURLConnection extends
 
     protected abstract javax.net.ssl.HostnameVerifier getHostnameVerifier();
 
-    /**
+    /*
      * No user application is able to call these routines, as no one
      * should ever get access to an instance of
      * DelegateHttpsURLConnection (sun.* or com.*)
@@ -332,10 +332,11 @@ public abstract class AbstractDelegateHttpsURLConnection extends
         if (prop.startsWith("domain:")) {
             String[] domains = prop.substring(7).split(",");
             for (String domain : domains) {
-                if (target.equals(domain)) {
+                if (target.equalsIgnoreCase(domain)) {
                     return true;
                 }
-                if (domain.startsWith("*.") && target.endsWith(domain.substring(1))) {
+                if (domain.startsWith("*.") && target.regionMatches(
+                        true, target.length() - domain.length() + 1, domain, 1, domain.length() - 1)) {
                     return true;
                 }
             }

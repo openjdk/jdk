@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,14 +40,24 @@
 // Apply pre-processor token pasting to the expansions of x and y.
 // The token pasting operator (##) prevents its arguments from being
 // expanded.  This macro allows expansion of its arguments before the
-// concatenation is performed.  Note: One auxilliary level ought to be
+// concatenation is performed.  Note: One auxiliary level ought to be
 // sufficient, but two are used because of bugs in some preprocesors.
 #define PASTE_TOKENS(x, y) PASTE_TOKENS_AUX(x, y)
 #define PASTE_TOKENS_AUX(x, y) PASTE_TOKENS_AUX2(x, y)
 #define PASTE_TOKENS_AUX2(x, y) x ## y
 
+// Convenience macro that produces a string literal with the filename
+// and linenumber of the location where the macro was used.
+#ifndef FILE_AND_LINE
+#define FILE_AND_LINE __FILE__ ":" XSTR(__LINE__)
+#endif
+
 // -DINCLUDE_<something>=0 | 1 can be specified on the command line to include
 // or exclude functionality.
+
+#ifndef FILE_AND_LINE
+#define FILE_AND_LINE __FILE__ ":" XSTR(__LINE__)
+#endif
 
 #ifndef INCLUDE_JVMTI
 #define INCLUDE_JVMTI 1
@@ -328,6 +338,7 @@
 #define NOT_PRODUCT_ARG(arg)
 #define PRODUCT_RETURN  {}
 #define PRODUCT_RETURN0 { return 0; }
+#define PRODUCT_RETURN_NULL { return nullptr; }
 #define PRODUCT_RETURN_(code) { code }
 #else // PRODUCT
 #define PRODUCT_ONLY(code)
@@ -335,6 +346,7 @@
 #define NOT_PRODUCT_ARG(arg) arg,
 #define PRODUCT_RETURN  /*next token must be ;*/
 #define PRODUCT_RETURN0 /*next token must be ;*/
+#define PRODUCT_RETURN_NULL /* next token must be ;*/
 #define PRODUCT_RETURN_(code)  /*next token must be ;*/
 #endif // PRODUCT
 
@@ -346,17 +358,29 @@
 #define NOT_CHECK_UNHANDLED_OOPS(code)  code
 #endif // CHECK_UNHANDLED_OOPS
 
+// Enable collection of TaskQueue statistics.
+// Enabled by default in debug builds.  Otherwise, disabled by default.
+#ifndef TASKQUEUE_STATS
+#ifdef ASSERT
+#define TASKQUEUE_STATS 1
+#else
+#define TASKQUEUE_STATS 0
+#endif // ASSERT
+#endif // TASKQUEUE_STATS
+#if TASKQUEUE_STATS
+#define TASKQUEUE_STATS_ONLY(code) code
+#else
+#define TASKQUEUE_STATS_ONLY(code)
+#endif // TASKQUEUE_STATS
+
 #ifdef ASSERT
 #define DEBUG_ONLY(code) code
 #define NOT_DEBUG(code)
 #define NOT_DEBUG_RETURN  /*next token must be ;*/
-// Historical.
-#define debug_only(code) code
 #else // ASSERT
 #define DEBUG_ONLY(code)
 #define NOT_DEBUG(code) code
 #define NOT_DEBUG_RETURN {}
-#define debug_only(code)
 #endif // ASSERT
 
 #ifdef  _LP64
@@ -446,18 +470,6 @@
 #define NOT_IA32(code) code
 #endif
 
-// This is a REALLY BIG HACK, but on AIX <sys/systemcfg.h> unconditionally defines IA64.
-// At least on AIX 7.1 this is a real problem because 'systemcfg.h' is indirectly included
-// by 'pthread.h' and other common system headers.
-
-#if defined(IA64) && !defined(AIX)
-#define IA64_ONLY(code) code
-#define NOT_IA64(code)
-#else
-#define IA64_ONLY(code)
-#define NOT_IA64(code) code
-#endif
-
 #ifdef AMD64
 #define AMD64_ONLY(code) code
 #define NOT_AMD64(code)
@@ -512,7 +524,7 @@
 
 // Note: There are two ARM ports. They set the following in the makefiles:
 // 1. 32-bit port:   -DARM -DARM32 -DTARGET_ARCH_arm
-// 2. 64-bit port:   -DAARCH64 -D_LP64 -DTARGET_ARCH_aaarch64
+// 2. 64-bit port:   -DAARCH64 -D_LP64 -DTARGET_ARCH_aarch64
 #ifdef ARM
 #define ARM_ONLY(code) code
 #define NOT_ARM(code)
@@ -537,7 +549,39 @@
 #define NOT_AARCH64(code) code
 #endif
 
+#ifdef TARGET_ARCH_aarch64
+#define AARCH64_PORT_ONLY(code) code
+#else
+#define AARCH64_PORT_ONLY(code)
+#endif
+
 #define MACOS_AARCH64_ONLY(x) MACOS_ONLY(AARCH64_ONLY(x))
+
+#if defined(RISCV32) || defined(RISCV64)
+#define RISCV
+#define RISCV_ONLY(code) code
+#define NOT_RISCV(code)
+#else
+#undef RISCV
+#define RISCV_ONLY(code)
+#define NOT_RISCV(code) code
+#endif
+
+#ifdef RISCV32
+#define RISCV32_ONLY(code) code
+#define NOT_RISCV32(code)
+#else
+#define RISCV32_ONLY(code)
+#define NOT_RISCV32(code) code
+#endif
+
+#ifdef RISCV64
+#define RISCV64_ONLY(code) code
+#define NOT_RISCV64(code)
+#else
+#define RISCV64_ONLY(code)
+#define NOT_RISCV64(code) code
+#endif
 
 #ifdef VM_LITTLE_ENDIAN
 #define LITTLE_ENDIAN_ONLY(code) code
@@ -579,7 +623,7 @@
 #define COMPILER_HEADER(basename)        XSTR(COMPILER_HEADER_STEM(basename).hpp)
 #define COMPILER_HEADER_INLINE(basename) XSTR(COMPILER_HEADER_STEM(basename).inline.hpp)
 
-#if INCLUDE_CDS && INCLUDE_G1GC && defined(_LP64) && !defined(_WINDOWS)
+#if INCLUDE_CDS && INCLUDE_G1GC && defined(_LP64)
 #define INCLUDE_CDS_JAVA_HEAP 1
 #define CDS_JAVA_HEAP_ONLY(x) x
 #define NOT_CDS_JAVA_HEAP(x)
@@ -591,6 +635,12 @@
 #define NOT_CDS_JAVA_HEAP(x) x
 #define NOT_CDS_JAVA_HEAP_RETURN        {}
 #define NOT_CDS_JAVA_HEAP_RETURN_(code) { return code; }
+#endif
+
+#ifdef ADDRESS_SANITIZER
+#define INCLUDE_ASAN 1
+#else
+#define INCLUDE_ASAN 0
 #endif
 
 #endif // SHARE_UTILITIES_MACROS_HPP

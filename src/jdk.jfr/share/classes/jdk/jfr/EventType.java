@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,17 +36,24 @@ import jdk.jfr.internal.JVMSupport;
 import jdk.jfr.internal.MetadataRepository;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * Describes an event, its fields, settings and annotations.
+ * <p>
+ * The following example shows how the {@code EventType} class can
+ * be used to print metadata about an event.
+ *
+ * {@snippet class="Snippets" region="EventTypeOverview"}
  *
  * @since 9
  */
 public final class EventType {
-    private static final List<String> UNCATEGORIZED = List.of("Uncategorized");
+    private static final String UNKNOWN = new String();
+    private static final String[] UNCATEGORIZED = { "Uncategorized" };
     private final PlatformEventType platformEventType;
     private Map<String, ValueDescriptor> cache; // create lazy to avoid memory overhead
+    private String label = UNKNOWN;
     // helper constructor
     EventType(PlatformEventType platformEventType) {
         this.platformEventType = platformEventType;
@@ -75,10 +82,10 @@ public final class EventType {
      *         the field with the specified name doesn't exist
      */
     public ValueDescriptor getField(String name) {
-        Objects.requireNonNull(name);
+        Objects.requireNonNull(name, "name");
         if (cache == null) {
             List<ValueDescriptor> fields = getFields();
-            Map<String, ValueDescriptor> newCache = new LinkedHashMap<>(fields.size());
+            Map<String, ValueDescriptor> newCache = LinkedHashMap.newLinkedHashMap(fields.size());
             for (ValueDescriptor v :fields) {
                 newCache.put(v.getName(), v);
             }
@@ -117,7 +124,10 @@ public final class EventType {
      * @see Label
      */
     public String getLabel() {
-        return platformEventType.getLabel();
+        if (label == UNKNOWN) {
+            label = platformEventType.getLabel();;
+        }
+        return label;
     }
 
     /**
@@ -181,7 +191,7 @@ public final class EventType {
      *         directly present, else {@code null}
      */
     public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
-        Objects.requireNonNull(annotationClass);
+        Objects.requireNonNull(annotationClass, "annotationClass");
         return platformEventType.getAnnotation(annotationClass);
     }
 
@@ -198,7 +208,7 @@ public final class EventType {
      *         {@code Registered(false)}, but not manually registered
      */
     public static EventType getEventType(Class<? extends Event> eventClass) {
-        Objects.requireNonNull(eventClass);
+        Objects.requireNonNull(eventClass, "eventClass");
         Utils.ensureValidEventSubclass(eventClass);
         JVMSupport.ensureWithInternalError();
         return MetadataRepository.getInstance().getEventType(eventClass);
@@ -225,11 +235,8 @@ public final class EventType {
      * @see Category
      */
     public List<String> getCategoryNames() {
-        Category c = platformEventType.getAnnotation(Category.class);
-        if (c == null) {
-            return UNCATEGORIZED;
-        }
-        return List.of(c.value());
+        String[] categories = platformEventType.getAnnotationValue(Category.class, UNCATEGORIZED);
+        return List.of(categories);
     }
 
     // package private

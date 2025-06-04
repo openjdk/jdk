@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 #ifndef SHARE_JFR_WRITERS_JFRWRITERHOST_HPP
 #define SHARE_JFR_WRITERS_JFRWRITERHOST_HPP
 
+#include "jfr/utilities/jfrTime.hpp"
 #include "jni.h"
 #include "utilities/globalDefinitions.hpp"
-#include "jfr/utilities/jfrTime.hpp"
 
 class ClassLoaderData;
 class Klass;
@@ -90,6 +90,7 @@ class WriterHost : public WriterPolicyImpl {
   void write(const JfrTickspan& time);
   void write_bytes(const void* buf, intptr_t len);
   void write_utf8_u2_len(const char* value);
+  void write_empty_string();
   template <typename T>
   void write_padded_at_offset(T value, int64_t offset);
   template <typename T>
@@ -97,6 +98,8 @@ class WriterHost : public WriterPolicyImpl {
   template <typename T>
   void write_be_at_offset(T value, int64_t offset);
   int64_t reserve(size_t size);
+  template <typename T>
+  size_t size_in_bytes(T value);
 };
 
 #endif // SHARE_JFR_WRITERS_JFRWRITERHOST_HPP

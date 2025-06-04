@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
 
 ################################################################################
 # Install the launcher name, release version string, full version
@@ -50,8 +55,34 @@ $(eval $(call SetupTextFileProcessing, BUILD_VERSION_JAVA, \
         @@VENDOR_URL_VM_BUG@@ => $(VENDOR_URL_VM_BUG), \
 ))
 
-TARGETS += $(BUILD_VERSION_JAVA)
 
+# Normalize OPENJDK_TARGET_CPU name to match jdk.internal.util.Architecture enum
+ifneq ($(filter $(OPENJDK_TARGET_CPU), s390x), )
+  OPENJDK_TARGET_ARCH_CANONICAL = s390
+else ifneq ($(filter $(OPENJDK_TARGET_CPU), x86_64 amd64), )
+  OPENJDK_TARGET_ARCH_CANONICAL = x64
+else
+  OPENJDK_TARGET_ARCH_CANONICAL := $(OPENJDK_TARGET_CPU)
+endif
+
+# Normalize OPENJDK_TARGET_OS operating system name to match jdk.internal.util.OperatingSystem enum
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  OPENJDK_TARGET_OS_CANONICAL = macos
+else
+  OPENJDK_TARGET_OS_CANONICAL := $(OPENJDK_TARGET_OS)
+endif
+
+$(eval $(call SetupTextFileProcessing, BUILD_PLATFORMPROPERTIES_JAVA, \
+    SOURCE_FILES := $(TOPDIR)/src/java.base/share/classes/jdk/internal/util/PlatformProps.java.template, \
+    OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/util/PlatformProps.java, \
+    REPLACEMENTS := \
+        @@OPENJDK_TARGET_OS@@ => $(OPENJDK_TARGET_OS_CANONICAL) ; \
+        @@OPENJDK_TARGET_CPU@@ => $(OPENJDK_TARGET_ARCH_CANONICAL) ; \
+        @@OPENJDK_TARGET_CPU_ENDIAN@@ => $(OPENJDK_TARGET_CPU_ENDIAN) ; \
+        @@OPENJDK_TARGET_CPU_BITS@@ => $(OPENJDK_TARGET_CPU_BITS), \
+))
+
+TARGETS += $(BUILD_VERSION_JAVA) $(BUILD_PLATFORMPROPERTIES_JAVA)
 ################################################################################
 
 ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )
@@ -61,7 +92,7 @@ ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )
 else ifeq ($(TOOLCHAIN_TYPE), microsoft)
   CPP_FLAGS += -nologo
 
-  ifeq ($(OPENJDK_TARGET_CPU),aarch64)
+  ifeq ($(OPENJDK_TARGET_CPU), aarch64)
     # cl.exe does only recognize few file extensions as valid (ex: .c, .h, .cpp), so
     # make sure *.java.template files are recognized as valid input files
     CPP_FILEPREFIX = -Tc
@@ -128,3 +159,8 @@ ifneq ($(wildcard $(TOPDIR)/src/java.base/share/classes/javax/crypto/JceSecurity
 
   TARGETS += $(BUILD_JCESECURITY_JAVA)
 endif
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

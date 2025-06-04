@@ -58,9 +58,9 @@ public class ToolTipDemo extends JPanel {
 
     public static final String DEMO_TITLE = ToolTipDemo.class.getAnnotation(DemoProperties.class).value();
     private final static ResourceManager resourceManager = new ResourceManager(ToolTipDemo.class);
-    public static final String PLAIN_TOOLTIP_COMP_TITLE = resourceManager.getString("ToolTipDemo.plain");;
+    public static final String PLAIN_TOOLTIP_COMP_TITLE = resourceManager.getString("ToolTipDemo.plain");
     public static final String PLAIN_TOOLTIP_TEXT = "A simple one line tip.";
-    public static final String HTML_TOOLTIP_COMP_TITLE = resourceManager.getString("ToolTipDemo.html");;
+    public static final String HTML_TOOLTIP_COMP_TITLE = resourceManager.getString("ToolTipDemo.html");
     public static final String HTML_TOOLTIP_TEXT = "<html><body bgcolor=\"#AABBFF\">In case you thought that tooltips had to be<p>" +
             "boring, one line descriptions, the <font color=blue size=+2>Swing!</font> team<p>" +
             "is happy to shatter your illusions.<p>" +

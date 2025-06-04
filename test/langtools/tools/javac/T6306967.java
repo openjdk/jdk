@@ -7,7 +7,7 @@
  */
 
 public class T6306967 {
-    public static void main(String[] args) {
+    public static void meth() {
         final int x;
         while(true) {
             if (true) {

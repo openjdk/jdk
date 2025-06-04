@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,11 +52,11 @@ public class LSRDataTest {
     private static final Map<String, List<String>> multiLangEquivsMap = new HashMap<>();
     private static final Map<String, String> regionVariantEquivMap = new HashMap<>();
 
-    // path to the lsr file from the make folder, this test relies on the
-    // relative path to the file in the make folder, considering
-    // test and make will always exist in the same jdk layout
+    // path to the lsr file from the data folder, this test relies on the
+    // relative path to the file in the data folder, considering
+    // test and src/.../data will always exist in the same jdk layout
     private static final String LSR_FILE_PATH = System.getProperty("test.src", ".")
-                + "/../../../../../make/data/lsrdata/language-subtag-registry.txt";
+                + "/../../../../../src/java.base/share/data/lsrdata/language-subtag-registry.txt";
 
     public static void main(String[] args) throws IOException {
 

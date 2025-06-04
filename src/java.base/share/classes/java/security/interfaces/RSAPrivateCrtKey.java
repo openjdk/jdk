@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.math.BigInteger;
  * <a href="https://tools.ietf.org/rfc/rfc8017.txt">PKCS#1 v2.2</a> standard,
  * using the <i>Chinese Remainder Theorem</i> (CRT) information values.
  *
+ * @spec https://www.rfc-editor.org/info/rfc8017
+ *      RFC 8017: PKCS #1: RSA Cryptography Specifications Version 2.2
  * @author Jan Luehe
  * @since 1.2
  *
@@ -50,49 +52,48 @@ public interface RSAPrivateCrtKey extends RSAPrivateKey {
      * ineffectual. Do not use; no replacement.
      */
     @Deprecated
-    @SuppressWarnings("serial")
     @java.io.Serial
-    static final long serialVersionUID = -5682214253527700368L;
+    long serialVersionUID = -5682214253527700368L;
 
     /**
      * Returns the public exponent.
      *
      * @return the public exponent
      */
-    public BigInteger getPublicExponent();
+    BigInteger getPublicExponent();
 
     /**
      * Returns the primeP.
      *
      * @return the primeP
      */
-    public BigInteger getPrimeP();
+    BigInteger getPrimeP();
 
     /**
      * Returns the primeQ.
      *
      * @return the primeQ
      */
-    public BigInteger getPrimeQ();
+    BigInteger getPrimeQ();
 
     /**
      * Returns the primeExponentP.
      *
      * @return the primeExponentP
      */
-    public BigInteger getPrimeExponentP();
+    BigInteger getPrimeExponentP();
 
     /**
      * Returns the primeExponentQ.
      *
      * @return the primeExponentQ
      */
-    public BigInteger getPrimeExponentQ();
+    BigInteger getPrimeExponentQ();
 
     /**
      * Returns the crtCoefficient.
      *
      * @return the crtCoefficient
      */
-    public BigInteger getCrtCoefficient();
+    BigInteger getCrtCoefficient();
 }

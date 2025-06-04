@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package javax.lang.model.element;
 
+import java.io.Serial;
+
 import javax.lang.model.UnknownEntityException;
 
 /**
@@ -34,14 +36,12 @@ import javax.lang.model.UnknownEntityException;
  * {@linkplain ModuleElement.DirectiveVisitor directive visitor} to
  * indicate that the visitor was created for a prior version of the language.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see ModuleElement.DirectiveVisitor#visitUnknown
  * @since 9
  */
 public class UnknownDirectiveException extends UnknownEntityException {
 
+    @Serial
     private static final long serialVersionUID = 269L;
 
     private final transient ModuleElement.Directive directive;

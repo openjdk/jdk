@@ -33,6 +33,7 @@ import javax.sound.midi.Track;
 
 /**
  * @test
+ * @key sound
  * @bug 4427890
  * @run main/othervm TickLength
  * @summary Sequencer.getTickLength() and Sequence.getTickLength() report the

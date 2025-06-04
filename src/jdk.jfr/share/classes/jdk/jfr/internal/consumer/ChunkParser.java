@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,9 @@ import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.LongMap;
 import jdk.jfr.internal.MetadataDescriptor;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
+import jdk.jfr.internal.consumer.filter.CheckpointEvent;
+import jdk.jfr.internal.consumer.filter.ChunkWriter;
 
 /**
  * Parses a chunk.
@@ -48,32 +50,21 @@ import jdk.jfr.internal.Utils;
  */
 public final class ChunkParser {
 
-    static final class ParserConfiguration {
-        private final boolean reuse;
-        private final boolean ordered;
-        private final ParserFilter eventFilter;
-
-        long filterStart;
-        long filterEnd;
-
-        ParserConfiguration(long filterStart, long filterEnd, boolean reuse, boolean ordered, ParserFilter filter) {
-            this.filterStart = filterStart;
-            this.filterEnd = filterEnd;
-            this.reuse = reuse;
-            this.ordered = ordered;
-            this.eventFilter = filter;
-        }
+    public record ParserConfiguration(long filterStart, long filterEnd, boolean reuse,  boolean ordered, ParserFilter filter, ChunkWriter chunkWriter) {
 
         public ParserConfiguration() {
-            this(0, Long.MAX_VALUE, false, false, ParserFilter.ACCEPT_ALL);
+            this(0, Long.MAX_VALUE, false, false, ParserFilter.ACCEPT_ALL, null);
         }
 
-        public boolean isOrdered() {
-            return ordered;
+        ParserConfiguration withRange(long filterStart, long filterEnd) {
+            if (filterStart == this.filterStart && filterEnd == this.filterEnd) {
+                return this;
+            }
+            return new ParserConfiguration(filterStart, filterEnd, reuse, ordered, filter, chunkWriter);
         }
     }
 
-    private enum CheckPointType {
+    private enum CheckpointType {
         // Checkpoint that finishes a flush segment
         FLUSH(1),
         // Checkpoint contains chunk header information in the first pool
@@ -83,7 +74,7 @@ public final class ChunkParser {
         // Checkpoint contains thread related information
         THREAD(8);
         private final int mask;
-        private CheckPointType(int mask) {
+        private CheckpointType(int mask) {
             this.mask = mask;
         }
 
@@ -107,19 +98,20 @@ public final class ChunkParser {
     private ParserConfiguration configuration;
     private MetadataDescriptor previousMetadata;
     private MetadataDescriptor metadata;
+    private long lastFlush;
     private boolean staleMetadata = true;
 
     public ChunkParser(RecordingInput input, ParserState ps) throws IOException {
         this(input, new ParserConfiguration(), ps);
     }
 
-    ChunkParser(RecordingInput input, ParserConfiguration pc, ParserState ps) throws IOException {
+    public ChunkParser(RecordingInput input, ParserConfiguration pc, ParserState ps) throws IOException {
        this(new ChunkHeader(input), null, pc, ps);
     }
 
     private ChunkParser(ChunkParser previous, ParserState ps) throws IOException {
         this(new ChunkHeader(previous.input), previous, new ParserConfiguration(), ps);
-     }
+    }
 
     private ChunkParser(ChunkHeader header, ChunkParser previous, ParserConfiguration pc, ParserState ps) throws IOException {
         this.parserState = ps;
@@ -135,7 +127,11 @@ public final class ChunkParser {
             this.configuration = previous.configuration;
         }
         this.metadata = header.readMetadata(previousMetadata);
-        this.timeConverter = new TimeConverter(chunkHeader, metadata.getGMTOffset());
+        if (previous == null) {
+            this.timeConverter = new TimeConverter(chunkHeader, metadata.getGMTOffset() + metadata.getDST());
+        } else {
+            this.timeConverter = previous.timeConverter;
+        }
         if (metadata != previousMetadata) {
             ParserFactory factory = new ParserFactory(metadata, constantLookups, timeConverter);
             parsers = factory.getParsers();
@@ -174,7 +170,7 @@ public final class ChunkParser {
                 ep.setReuse(configuration.reuse);
                 ep.setFilterStart(configuration.filterStart);
                 ep.setFilterEnd(configuration.filterEnd);
-                long threshold = configuration.eventFilter.getThreshold(name);
+                long threshold = configuration.filter().getThreshold(name);
                 if (threshold >= 0) {
                     ep.setEnabled(true);
                     ep.setThresholdNanos(threshold);
@@ -199,7 +195,7 @@ public final class ChunkParser {
             return event;
         }
         long lastValid = absoluteChunkEnd;
-        long metadataPosition = chunkHeader.getMetataPosition();
+        long metadataPosition = chunkHeader.getMetadataPosition();
         long constantPosition = chunkHeader.getConstantPoolPosition();
         chunkFinished = awaitUpdatedHeader(absoluteChunkEnd, configuration.filterEnd);
         if (chunkFinished) {
@@ -208,7 +204,7 @@ public final class ChunkParser {
         }
         absoluteChunkEnd = chunkHeader.getEnd();
         // Read metadata and constant pools for the next segment
-        if (chunkHeader.getMetataPosition() != metadataPosition) {
+        if (chunkHeader.getMetadataPosition() != metadataPosition) {
             Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Found new metadata in chunk. Rebuilding types and parsers");
             this.previousMetadata = this.metadata;
             this.metadata = chunkHeader.readMetadata(previousMetadata);
@@ -237,7 +233,7 @@ public final class ChunkParser {
         long absoluteChunkEnd = chunkHeader.getEnd();
         while (input.position() < absoluteChunkEnd) {
             long pos = input.position();
-            int size = input.readInt();
+            long size = input.readLong();
             if (size == 0) {
                 throw new IOException("Event can't have zero size");
             }
@@ -247,13 +243,23 @@ public final class ChunkParser {
                 // Fast path
                 RecordedEvent event = ep.parse(input);
                 if (event != null) {
+                    ChunkWriter chunkWriter = configuration.chunkWriter;
+                    if (chunkWriter != null) {
+                        if (chunkWriter.accept(event)) {
+                            chunkWriter.writeEvent(pos, input.position());
+                            input.position(pos);
+                            input.readLong(); // size
+                            input.readLong(); // type
+                            chunkWriter.touch(ep.parseReferences(input));
+                        }
+                    }
                     input.position(pos + size);
                     return event;
                 }
                 // Not accepted by filter
             } else {
                 if (typeId == 1) { // checkpoint event
-                    if (CheckPointType.FLUSH.is(parseCheckpointType())) {
+                    if ((parseFlushCheckpoint())) {
                         input.position(pos + size);
                         return FLUSH_MARKER;
                     }
@@ -268,11 +274,15 @@ public final class ChunkParser {
         return null;
     }
 
-    private byte parseCheckpointType() throws IOException {
-        input.readLong(); // timestamp
+    private boolean parseFlushCheckpoint() throws IOException {
+        long timestamp = input.readLong();
         input.readLong(); // duration
         input.readLong(); // delta
-        return input.readByte();
+        if (CheckpointType.FLUSH.is(input.readByte())) {
+            lastFlush = timeConverter.convertTimestamp(timestamp);
+            return true;
+        }
+        return false;
     }
 
     private boolean awaitUpdatedHeader(long absoluteChunkEnd, long filterEnd) throws IOException {
@@ -282,9 +292,6 @@ public final class ChunkParser {
         while (true) {
             if (parserState.isClosed()) {
                 return true;
-            }
-            if (chunkHeader.getLastNanos() > filterEnd)  {
-              return true;
             }
             chunkHeader.refresh();
             if (absoluteChunkEnd != chunkHeader.getEnd()) {
@@ -303,9 +310,13 @@ public final class ChunkParser {
         long delta = -1;
         boolean logTrace = Logger.shouldLog(LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE);
         while (thisCP != abortCP && delta != 0) {
+            CheckpointEvent cp = null;
+            if (configuration.chunkWriter != null) {
+                cp = configuration.chunkWriter.newCheckpointEvent(thisCP);
+            }
             input.position(thisCP);
             lastCP = thisCP;
-            int size = input.readInt(); // size
+            long size = input.readLong(); // size
             long typeId = input.readLong();
             if (typeId != CONSTANT_POOL_TYPE_ID) {
                 throw new IOException("Expected check point event (id = 1) at position " + lastCP + ", but found type id = " + typeId);
@@ -333,7 +344,7 @@ public final class ChunkParser {
                         throw new IOException(
                                 "Error parsing constant pool type " + getName(id) + " at position " + input.position() + " at check point between [" + lastCP + ", " + (lastCP + size) + "]");
                     }
-                    ConstantMap pool = new ConstantMap(ObjectFactory.create(type, timeConverter), type.getName());
+                    ConstantMap pool = new ConstantMap(ObjectFactory.create(type, timeConverter), type);
                     lookup = new ConstantLookup(pool, type);
                     constantLookups.put(type.getId(), lookup);
                 }
@@ -350,6 +361,7 @@ public final class ChunkParser {
                         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE, "Constant Pool " + i + ": " + type.getName());
                     }
                     for (int j = 0; j < count; j++) {
+                        long position = input.position();
                         long key = input.readLong();
                         Object resolved = lookup.getPreviousResolved(key);
                         if (resolved == null) {
@@ -360,6 +372,12 @@ public final class ChunkParser {
                             parser.skip(input);
                             logConstant(key, resolved, true);
                             lookup.getLatestPool().putResolved(key, resolved);
+                        }
+                        if (cp != null) {
+                            input.position(position);
+                            input.readLong();
+                            Object refs = parser.parseReferences(input);
+                            cp.addEntry(type, key, position, input.position(), refs);
                         }
                     }
                 } catch (Exception e) {
@@ -436,7 +454,7 @@ public final class ChunkParser {
         return chunkHeader.isLastChunk();
     }
 
-    ChunkParser newChunkParser() throws IOException {
+    public ChunkParser newChunkParser() throws IOException {
         return new ChunkParser(this, parserState);
     }
 
@@ -470,6 +488,10 @@ public final class ChunkParser {
         return getStartNanos() + getChunkDuration();
     }
 
+    public long getLastFlush() {
+        return lastFlush;
+    }
+
     public void setStaleMetadata(boolean stale) {
         this.staleMetadata = stale;
     }
@@ -487,5 +509,9 @@ public final class ChunkParser {
                 }
             });
         }
+    }
+
+    public ChunkHeader getHeader() {
+        return chunkHeader;
     }
 }

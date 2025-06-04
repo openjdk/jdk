@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,12 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.AccessController;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyStoreSpi;
 import java.security.KeyStoreException;
-import java.security.PrivilegedAction;
 import java.security.UnrecoverableKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecurityPermission;
 import java.security.cert.X509Certificate;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -54,15 +51,30 @@ import sun.security.util.Debug;
  */
 abstract class CKeyStore extends KeyStoreSpi {
 
+    private static final int LOCATION_CURRENTUSER = 0;
+    private static final int LOCATION_LOCALMACHINE = 1;
+
     public static final class MY extends CKeyStore {
         public MY() {
-            super("MY");
+            super("MY", LOCATION_CURRENTUSER);
         }
     }
 
     public static final class ROOT extends CKeyStore {
         public ROOT() {
-            super("ROOT");
+            super("ROOT", LOCATION_CURRENTUSER);
+        }
+    }
+
+    public static final class MYLocalMachine extends CKeyStore {
+        public MYLocalMachine() {
+            super("MY", LOCATION_LOCALMACHINE);
+        }
+    }
+
+    public static final class ROOTLocalMachine extends CKeyStore {
+        public ROOTLocalMachine() {
+            super("ROOT", LOCATION_LOCALMACHINE);
         }
     }
 
@@ -220,11 +232,14 @@ abstract class CKeyStore extends KeyStoreSpi {
      */
     private final String storeName;
 
-    CKeyStore(String storeName) {
+    /*
+     * The keystore location.
+     */
+    private final int storeLocation;
+
+    CKeyStore(String storeName, int storeLocation) {
         // Get the compatibility mode
-        @SuppressWarnings("removal")
-        String prop = AccessController.doPrivileged(
-            (PrivilegedAction<String>) () -> System.getProperty(KEYSTORE_COMPATIBILITY_MODE_PROP));
+        String prop = System.getProperty(KEYSTORE_COMPATIBILITY_MODE_PROP);
 
         if ("false".equalsIgnoreCase(prop)) {
             keyStoreCompatibilityMode = false;
@@ -233,6 +248,7 @@ abstract class CKeyStore extends KeyStoreSpi {
         }
 
         this.storeName = storeName;
+        this.storeLocation = storeLocation;
     }
 
     /**
@@ -259,7 +275,7 @@ abstract class CKeyStore extends KeyStoreSpi {
      * @exception UnrecoverableKeyException if the key cannot be recovered.
      */
     public java.security.Key engineGetKey(String alias, char[] password)
-        throws NoSuchAlgorithmException, UnrecoverableKeyException {
+            throws NoSuchAlgorithmException, UnrecoverableKeyException {
         if (alias == null) {
             return null;
         }
@@ -615,7 +631,7 @@ abstract class CKeyStore extends KeyStoreSpi {
             if (entry.certChain != null &&
                 entry.certChain.length > 0 &&
                 entry.certChain[0].equals(cert)) {
-                return entry.getAlias();
+                return mapEntry.getKey();
             }
         }
 
@@ -674,10 +690,6 @@ abstract class CKeyStore extends KeyStoreSpi {
      * the integrity of the keystore cannot be found
      * @exception CertificateException if any of the certificates in the
      * keystore could not be loaded
-     * @exception SecurityException if the security check for
-     *  <code>SecurityPermission("authProvider.<i>name</i>")</code> does not
-     *  pass, where <i>name</i> is the value returned by
-     *  this provider's <code>getName</code> method.
      */
     public void engineLoad(InputStream stream, char[] password)
             throws IOException, NoSuchAlgorithmException, CertificateException {
@@ -689,23 +701,13 @@ abstract class CKeyStore extends KeyStoreSpi {
             throw new IOException("Keystore password must be null");
         }
 
-        /*
-         * Use the same security check as AuthProvider.login
-         */
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new SecurityPermission(
-                "authProvider.SunMSCAPI"));
-        }
-
         // Clear all key entries
         entries.clear();
 
         try {
 
             // Load keys and/or certificate chains
-            loadKeysOrCertificateChains(getName());
+            loadKeysOrCertificateChains(getName(), getLocation());
 
         } catch (KeyStoreException e) {
             throw new IOException(e);
@@ -801,7 +803,7 @@ abstract class CKeyStore extends KeyStoreSpi {
      * @param certCollection Collection of certificates.
      */
     private void generateCertificate(byte[] data,
-        Collection<Certificate> certCollection) {
+            Collection<Certificate> certCollection) {
         try {
             ByteArrayInputStream bis = new ByteArrayInputStream(data);
 
@@ -814,13 +816,7 @@ abstract class CKeyStore extends KeyStoreSpi {
             Collection<? extends Certificate> c =
                     certificateFactory.generateCertificates(bis);
             certCollection.addAll(c);
-        } catch (CertificateException e) {
-            // Ignore the exception and skip this certificate
-            // If e is thrown, remember to deal with it in
-            // native code.
-        }
-        catch (Throwable te)
-        {
+        } catch (Throwable te) {
             // Ignore the exception and skip this certificate
             // If e is thrown, remember to deal with it in
             // native code.
@@ -835,12 +831,20 @@ abstract class CKeyStore extends KeyStoreSpi {
     }
 
     /**
-     * Load keys and/or certificates from keystore into Collection.
+     * Returns the location of the keystore.
+     */
+    private int getLocation() {
+        return storeLocation;
+    }
+
+    /**
+     * Loads keys and/or certificates from keystore into Collection.
      *
      * @param name Name of keystore.
+     * @param location Location of keystore.
      */
-    private native void loadKeysOrCertificateChains(String name)
-            throws KeyStoreException;
+    private native void loadKeysOrCertificateChains(String name,
+            int location) throws KeyStoreException;
 
     /**
      * Stores a DER-encoded certificate into the certificate store
@@ -850,8 +854,8 @@ abstract class CKeyStore extends KeyStoreSpi {
      * @param encoding DER-encoded certificate.
      */
     private native void storeCertificate(String name, String alias,
-        byte[] encoding, int encodingLength, long hCryptProvider,
-        long hCryptKey) throws CertificateException, KeyStoreException;
+            byte[] encoding, int encodingLength, long hCryptProvider,
+            long hCryptKey) throws CertificateException, KeyStoreException;
 
     /**
      * Removes the certificate from the certificate store
@@ -861,7 +865,7 @@ abstract class CKeyStore extends KeyStoreSpi {
      * @param encoding DER-encoded certificate.
      */
     private native void removeCertificate(String name, String alias,
-        byte[] encoding, int encodingLength)
+            byte[] encoding, int encodingLength)
             throws CertificateException, KeyStoreException;
 
     /**
@@ -870,7 +874,7 @@ abstract class CKeyStore extends KeyStoreSpi {
      * @param keyContainerName The name of the key container.
      */
     private native void destroyKeyContainer(String keyContainerName)
-        throws KeyStoreException;
+            throws KeyStoreException;
 
     /**
      * Removes a CNG key.
@@ -883,16 +887,16 @@ abstract class CKeyStore extends KeyStoreSpi {
      * Generates a private-key BLOB from a key's components.
      */
     private native byte[] generateRSAPrivateKeyBlob(
-        int keyBitLength,
-        byte[] modulus,
-        byte[] publicExponent,
-        byte[] privateExponent,
-        byte[] primeP,
-        byte[] primeQ,
-        byte[] exponentP,
-        byte[] exponentQ,
-        byte[] crtCoefficient) throws InvalidKeyException;
+            int keyBitLength,
+            byte[] modulus,
+            byte[] publicExponent,
+            byte[] privateExponent,
+            byte[] primeP,
+            byte[] primeQ,
+            byte[] exponentP,
+            byte[] exponentQ,
+            byte[] crtCoefficient) throws InvalidKeyException;
 
     private native CPrivateKey storePrivateKey(String alg, byte[] keyBlob,
-        String keyContainerName, int keySize) throws KeyStoreException;
+            String keyContainerName, int keySize) throws KeyStoreException;
 }

@@ -36,7 +36,7 @@ import java.util.LinkedList;
  * Test XEmbed server implementation. See file:///home/dom/bugs/4931668/test_plan.html for
  * specification and references.
  */
-public class XEmbedServerTester implements XEventDispatcher {
+public final class XEmbedServerTester implements XEventDispatcher {
     private static final PlatformLogger xembedLog = PlatformLogger.getLogger("sun.awt.X11.xembed.XEmbedServerTester");
     private final Object EVENT_LOCK = new Object();
     static final int SYSTEM_EVENT_MASK = 0x8000;
@@ -564,10 +564,10 @@ public class XEmbedServerTester implements XEventDispatcher {
             eventWaited = -1;
             if (checkEventList(position, event) == -1) {
                 dumpReceivedEvents();
-                throw new RuntimeException("Didn't receive event " + XEmbedHelper.msgidToString(event) + " but recevied " + XEmbedHelper.msgidToString(eventReceived));
+                throw new RuntimeException("Didn't receive event " + XEmbedHelper.msgidToString(event) + " but received " + XEmbedHelper.msgidToString(eventReceived));
             } else {
                 if (xembedLog.isLoggable(PlatformLogger.Level.FINER)) {
-                    xembedLog.finer("Successfully recevied " + XEmbedHelper.msgidToString(event));
+                    xembedLog.finer("Successfully received " + XEmbedHelper.msgidToString(event));
                 }
             }
         }
@@ -647,6 +647,7 @@ public class XEmbedServerTester implements XEventDispatcher {
         xembed.sendMessage(parent, message, detail, data1, data2);
     }
 
+    @Override
     public void dispatchEvent(XEvent ev) {
         if (ev.get_type() == ClientMessage) {
             XClientMessageEvent msg = ev.get_xclient();

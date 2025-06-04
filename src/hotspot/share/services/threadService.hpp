@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,20 +30,21 @@
 #include "classfile/javaThreadStatus.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/init.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
 #include "services/management.hpp"
 
+class DeadlockCycle;
+class ObjectMonitorsView;
 class OopClosure;
-class ThreadDumpResult;
-class ThreadStackTrace;
-class ThreadSnapshot;
 class StackFrameInfo;
 class ThreadConcurrentLocks;
-class DeadlockCycle;
+class ThreadDumpResult;
+class ThreadSnapshot;
+class ThreadStackTrace;
 
 // VM monitoring and management support for the thread and
 // synchronization subsystem
@@ -59,6 +60,10 @@ private:
   static PerfVariable* _live_threads_count;
   static PerfVariable* _peak_threads_count;
   static PerfVariable* _daemon_threads_count;
+
+  // As could this...
+  // Number of heap bytes allocated by terminated threads.
+  static volatile jlong _exited_allocated_bytes;
 
   // These 2 counters are like the above thread counts, but are
   // atomically decremented in ThreadService::current_thread_exiting instead of
@@ -78,6 +83,9 @@ private:
 
   static void decrement_thread_counts(JavaThread* jt, bool daemon);
 
+  // test if the JavaThread is a virtual thread or has a mounted virtual thread
+  static bool is_virtual_or_carrier_thread(JavaThread* jt);
+
 public:
   static void init();
   static void add_thread(JavaThread* thread, bool daemon);
@@ -95,8 +103,16 @@ public:
 
   static jlong get_total_thread_count()       { return _total_threads_count->get_value(); }
   static jlong get_peak_thread_count()        { return _peak_threads_count->get_value(); }
-  static jlong get_live_thread_count()        { return _atomic_threads_count; }
-  static jlong get_daemon_thread_count()      { return _atomic_daemon_threads_count; }
+  static int get_live_thread_count()          { return _atomic_threads_count; }
+  static int get_daemon_thread_count()        { return _atomic_daemon_threads_count; }
+
+  static jlong exited_allocated_bytes()       { return Atomic::load(&_exited_allocated_bytes); }
+  static void incr_exited_allocated_bytes(jlong size) {
+    // No need for an atomic add because called under the Threads_lock,
+    // but because _exited_allocated_bytes is read concurrently, need
+    // atomic store to avoid readers seeing a partial update.
+    Atomic::store(&_exited_allocated_bytes, _exited_allocated_bytes + size);
+  }
 
   // Support for thread dump
   static void   add_thread_dump(ThreadDumpResult* dump);
@@ -216,8 +232,8 @@ private:
   // ThreadSnapshot instances should only be created via
   // ThreadDumpResult::add_thread_snapshot.
   friend class ThreadDumpResult;
-  ThreadSnapshot() : _thread(NULL),
-                     _stack_trace(NULL), _concurrent_locks(NULL), _next(NULL) {};
+  ThreadSnapshot() : _thread(nullptr),
+                     _stack_trace(nullptr), _concurrent_locks(nullptr), _next(nullptr) {};
   void        initialize(ThreadsList * t_list, JavaThread* thread);
 
 public:
@@ -248,7 +264,7 @@ public:
   ThreadConcurrentLocks* get_concurrent_locks()     { return _concurrent_locks; }
 
   void        dump_stack_at_safepoint(int max_depth, bool with_locked_monitors,
-                                      ObjectMonitorsHashtable* table);
+                                      ObjectMonitorsView* monitors, bool full);
   void        set_concurrent_locks(ThreadConcurrentLocks* l) { _concurrent_locks = l; }
   void        metadata_do(void f(Metadata*));
 };
@@ -271,11 +287,11 @@ class ThreadStackTrace : public CHeapObj<mtInternal> {
   int             get_stack_depth()     { return _depth; }
 
   void            add_stack_frame(javaVFrame* jvf);
-  void            dump_stack_at_safepoint(int max_depth, ObjectMonitorsHashtable* table);
+  void            dump_stack_at_safepoint(int max_depth, ObjectMonitorsView* monitors, bool full);
   Handle          allocate_fill_stack_trace_element_array(TRAPS);
   void            metadata_do(void f(Metadata*));
   GrowableArray<OopHandle>* jni_locked_monitors() { return _jni_locked_monitors; }
-  int             num_jni_locked_monitors() { return (_jni_locked_monitors != NULL ? _jni_locked_monitors->length() : 0); }
+  int             num_jni_locked_monitors() { return (_jni_locked_monitors != nullptr ? _jni_locked_monitors->length() : 0); }
 
   bool            is_owned_monitor_on_stack(oop object);
   void            add_jni_locked_monitor(oop object);
@@ -301,7 +317,7 @@ class StackFrameInfo : public CHeapObj<mtInternal> {
   int       bci()    const       { return _bci; }
   void      metadata_do(void f(Metadata*));
 
-  int       num_locked_monitors()       { return (_locked_monitors != NULL ? _locked_monitors->length() : 0); }
+  int       num_locked_monitors()       { return (_locked_monitors != nullptr ? _locked_monitors->length() : 0); }
   GrowableArray<OopHandle>* locked_monitors() { return _locked_monitors; }
 
   void      print_on(outputStream* st) const;
@@ -339,10 +355,10 @@ class ConcurrentLocksDump : public StackObj {
   void add_lock(JavaThread* thread, instanceOop o);
 
  public:
-  ConcurrentLocksDump(bool retain_map_on_free) : _map(NULL), _last(NULL), _retain_map_on_free(retain_map_on_free) {
+  ConcurrentLocksDump(bool retain_map_on_free) : _map(nullptr), _last(nullptr), _retain_map_on_free(retain_map_on_free) {
     assert(SafepointSynchronize::is_at_safepoint(), "Must be constructed at a safepoint.");
   };
-  ConcurrentLocksDump() : _map(NULL), _last(NULL), _retain_map_on_free(false) {
+  ConcurrentLocksDump() : _map(nullptr), _last(nullptr), _retain_map_on_free(false) {
     assert(SafepointSynchronize::is_at_safepoint(), "Must be constructed at a safepoint.");
   };
   ~ConcurrentLocksDump();
@@ -407,7 +423,8 @@ private:
 public:
   ThreadsListEnumerator(Thread* cur_thread,
                         bool include_jvmti_agent_threads = false,
-                        bool include_jni_attaching_threads = true);
+                        bool include_jni_attaching_threads = true,
+                        bool include_bound_virtual_threads = false);
   int            num_threads()            { return _threads_array->length(); }
   instanceHandle get_threadObj(int index) { return _threads_array->at(index); }
 };
@@ -455,7 +472,7 @@ class JavaThreadStatusChanger : public StackObj {
   }
 
   static bool is_alive(JavaThread* java_thread) {
-    return java_thread != NULL && java_thread->threadObj() != NULL;
+    return java_thread != nullptr && java_thread->threadObj() != nullptr;
   }
 
   bool is_alive() {
@@ -470,10 +487,19 @@ class JavaThreadInObjectWaitState : public JavaThreadStatusChanger {
   bool _active;
 
  public:
-  JavaThreadInObjectWaitState(JavaThread *java_thread, bool timed) :
+  // Sets the java.lang.Thread state of the given JavaThread to reflect it is doing a regular,
+  // or timed, Object.wait call.
+  //
+  // The interruptible parameter, if false, indicates an internal uninterruptible wait,
+  // in which case we do not update the java.lang.Thread state. We do that by passing
+  // the current state to the JavaThreadStatusChanger so no actual change is observable,
+  // and skip the statistics updates. This avoids having to duplicate code paths for
+  // the interruptible and non-interruptible cases in the caller.
+  JavaThreadInObjectWaitState(JavaThread *java_thread, bool timed, bool interruptible) :
     JavaThreadStatusChanger(java_thread,
-                            timed ? JavaThreadStatus::IN_OBJECT_WAIT_TIMED : JavaThreadStatus::IN_OBJECT_WAIT) {
-    if (is_alive()) {
+                            interruptible ? (timed ? JavaThreadStatus::IN_OBJECT_WAIT_TIMED : JavaThreadStatus::IN_OBJECT_WAIT)
+                                          : java_lang_Thread::get_thread_status(java_thread->threadObj())) {
+    if (is_alive() && interruptible) { // in non-interruptible case we set _active = false below
       _stat = java_thread->get_thread_stat();
       _active = ThreadService::is_thread_monitoring_contention();
       _stat->monitor_wait();
@@ -542,7 +568,7 @@ class JavaThreadBlockedOnMonitorEnterState : public JavaThreadStatusChanger {
   // java_thread is waiting thread being blocked on monitor reenter.
   // Current thread is the notifying thread which holds the monitor.
   static bool wait_reenter_begin(JavaThread *java_thread, ObjectMonitor *obj_m) {
-    assert((java_thread != NULL), "Java thread should not be null here");
+    assert((java_thread != nullptr), "Java thread should not be null here");
     bool active = false;
     if (is_alive(java_thread)) {
       active = contended_enter_begin(java_thread);
@@ -558,8 +584,8 @@ class JavaThreadBlockedOnMonitorEnterState : public JavaThreadStatusChanger {
   }
 
   JavaThreadBlockedOnMonitorEnterState(JavaThread *java_thread, ObjectMonitor *obj_m) :
-    JavaThreadStatusChanger(java_thread), _stat(NULL), _active(false) {
-    assert((java_thread != NULL), "Java thread should not be null here");
+    JavaThreadStatusChanger(java_thread), _stat(nullptr), _active(false) {
+    assert((java_thread != nullptr), "Java thread should not be null here");
     // Change thread status and collect contended enter stats for monitor contended
     // enter done for external java world objects and it is contended. All other cases
     // like for vm internal objects and for external objects which are not contended

@@ -36,9 +36,10 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test
  * @bug 8196969
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @requires vm.opt.DeoptimizeALot != true
  * @library /test/lib
- * @run driver ClhsdbJstackXcompStress
+ * @run driver/timeout=300 ClhsdbJstackXcompStress
  */
 public class ClhsdbJstackXcompStress {
 

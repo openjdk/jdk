@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -291,8 +291,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
         this.solidloops = graphicsConfig.getSolidLoops(sType);
         this.depth = depth;
         initOps(peer, graphicsConfig, depth);
-
-        setBlitProxyKey(gc.getProxyKey());
+        setBlitProxyCache(gc.getSurfaceDataProxyCache());
     }
 
     protected XRSurfaceData(XRBackend renderQueue) {
@@ -344,7 +343,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
     public abstract boolean canSourceSendExposures(int x, int y, int w, int h);
 
     /**
-     * CopyArea is implemented using the "old" X11 GC, therefor clip and
+     * CopyArea is implemented using the "old" X11 GC, therefore clip and
      * needExposures have to be validated against that GC. Pictures and GCs
      * don't share state.
      */
@@ -393,7 +392,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
     }
 
     /**
-     * Returns the XRender SurfaceType which is able to fullfill the specified
+     * Returns the XRender SurfaceType which is able to fulfill the specified
      * transparency requirement.
      */
     public static SurfaceType getPixmapSurfaceType(int transparency) {

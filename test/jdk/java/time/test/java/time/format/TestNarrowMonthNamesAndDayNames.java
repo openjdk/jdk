@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class TestNarrowMonthNamesAndDayNames {
     private static final List<Locale> LOCARR = Arrays.asList(Locale.US,
             Locale.GERMANY,
             Locale.FRANCE,
-            new Locale("no", "NO"));
+            Locale.of("no", "NO"));
 
     /**
      * Locale en_US, de_DE, fr_FR, no_NO will have same Narrow and
@@ -106,7 +106,7 @@ public class TestNarrowMonthNamesAndDayNames {
             {Locale.US, new String[]{"M", "T", "W", "T", "F", "S", "S"}},
             {Locale.GERMANY, new String[]{"M", "D", "M", "D", "F", "S", "S"}},
             {Locale.FRANCE, new String[]{"L", "M", "M", "J", "V", "S", "D"}},
-            {new Locale("no", "NO"), new String[]{"M", "T", "O", "T", "F", "L", "S"}},};
+            {Locale.of("no", "NO"), new String[]{"M", "T", "O", "T", "F", "L", "S"}},};
     }
 
     //-----------------------------------------------------------------------

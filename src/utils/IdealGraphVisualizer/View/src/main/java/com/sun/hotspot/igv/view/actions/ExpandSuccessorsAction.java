@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,18 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import com.sun.hotspot.igv.view.EditorTopComponent;
-import org.openide.util.HelpCtx;
-import org.openide.util.actions.CallableSystemAction;
+import com.sun.hotspot.igv.graph.Figure;
+import com.sun.hotspot.igv.view.DiagramViewModel;
 
 /**
  *
  * @author Thomas Wuerthinger
  */
-public final class ExpandSuccessorsAction extends CallableSystemAction {
+public final class ExpandSuccessorsAction extends ExpandAdjacentAction {
 
     @Override
-    public void performAction() {
-        EditorTopComponent editor = EditorTopComponent.getActive();
-        if (editor != null) {
-            editor.expandSuccessors();
-        }
+    public void performAction(DiagramViewModel model) {
+        expandFigures(Figure::getSuccessors);
     }
 
     @Override
@@ -47,17 +43,7 @@ public final class ExpandSuccessorsAction extends CallableSystemAction {
     }
 
     @Override
-    protected void initialize() {
-        super.initialize();
-    }
-
-    @Override
-    public HelpCtx getHelpCtx() {
-        return HelpCtx.DEFAULT_HELP;
-    }
-
-    @Override
-    protected boolean asynchronous() {
-        return false;
+    public String getDescription() {
+        return "Expand successors of current set of selected nodes";
     }
 }

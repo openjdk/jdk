@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,11 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * @author jrose
  */
 /*non-public*/
-abstract class DelegatingMethodHandle extends MethodHandle {
+abstract sealed class DelegatingMethodHandle extends MethodHandle
+    permits MethodHandleImpl.AsVarargsCollector,
+            MethodHandleImpl.WrappedMember,
+            MethodHandleImpl.IntrinsicMethodHandle,
+            MethodHandleImpl.CountingWrapper {
     protected DelegatingMethodHandle(MethodHandle target) {
         this(target.type(), target);
     }
@@ -139,7 +143,7 @@ abstract class DelegatingMethodHandle extends MethodHandle {
         final int PRE_ACTION   = hasPreAction ? nameCursor++ : -1;
         final int NEXT_MH     = customized ? -1 : nameCursor++;
         final int REINVOKE    = nameCursor++;
-        LambdaForm.Name[] names = LambdaForm.arguments(nameCursor - ARG_LIMIT, mtype.invokerType());
+        LambdaForm.Name[] names = LambdaForm.invokeArguments(nameCursor - ARG_LIMIT, mtype);
         assert(names.length == nameCursor);
         names[THIS_DMH] = names[THIS_DMH].withConstraint(constraint);
         Object[] targetArgs;
@@ -155,7 +159,7 @@ abstract class DelegatingMethodHandle extends MethodHandle {
             targetArgs[0] = names[NEXT_MH];  // overwrite this MH with next MH
             names[REINVOKE] = new LambdaForm.Name(mtype, targetArgs);
         }
-        form = new LambdaForm(ARG_LIMIT, names, forceInline, kind);
+        form = LambdaForm.create(ARG_LIMIT, names, forceInline, kind);
         if (!customized) {
             form = mtype.form().setCachedLambdaForm(whichCache, form);
         }

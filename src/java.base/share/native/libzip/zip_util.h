@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,7 +210,7 @@ typedef struct jzfile {   /* Zip file */
     jlong len;            /* length (in bytes) of zip file */
 #ifdef USE_MMAP
     unsigned char *maddr; /* beginning address of the CEN & ENDHDR */
-    jlong mlen;           /* length (in bytes) mmaped */
+    jlong mlen;           /* length (in bytes) mmapped */
     jlong offset;         /* offset of the mmapped region from the
                              start of the file. */
     jboolean usemmap;     /* if mmap is used. */
@@ -276,7 +276,7 @@ void
 ZIP_Unlock(jzfile *zip);
 jint
 ZIP_Read(jzfile *zip, jzentry *entry, jlong pos, void *buf, jint len);
-void
+JNIEXPORT void
 ZIP_FreeEntry(jzfile *zip, jzentry *ze);
 jlong ZIP_GetEntryDataOffset(jzfile *zip, jzentry *entry);
 jzentry * ZIP_GetEntry2(jzfile *zip, char *name, jint ulen, jboolean addSlash);

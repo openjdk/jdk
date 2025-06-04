@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,13 @@
  * questions.
  */
 
+#include <cmath>
+#include <cfloat>
 #include "awt_Component.h"
 #include "awt_PrintControl.h"
 #include "awt.h"
 #include "awt_PrintDialog.h"
 #include <winspool.h>
-#include <float.h>
-#include <math.h>
 
 #define ROUNDTOINT(x) ((int)((x)+0.5))
 static const int DEFAULT_RES = 72;
@@ -72,7 +72,6 @@ jmethodID AwtPrintControl::getMinPageID;
 jmethodID AwtPrintControl::getCollateID;
 jmethodID AwtPrintControl::getOrientID;
 jmethodID AwtPrintControl::getQualityID;
-jmethodID AwtPrintControl::getPrintToFileEnabledID;
 jmethodID AwtPrintControl::getPrinterID;
 jmethodID AwtPrintControl::setPrinterID;
 jmethodID AwtPrintControl::getResID;
@@ -368,11 +367,6 @@ void AwtPrintControl::initIDs(JNIEnv *env, jclass cls)
       env->GetMethodID(cls, "getSelectAttrib", "()I");
     DASSERT(AwtPrintControl::getSelectID != NULL);
     CHECK_NULL(AwtPrintControl::getSelectID);
-
-    AwtPrintControl::getPrintToFileEnabledID =
-      env->GetMethodID(cls, "getPrintToFileEnabled", "()Z");
-    DASSERT(AwtPrintControl::getPrintToFileEnabledID != NULL);
-    CHECK_NULL(AwtPrintControl::getPrintToFileEnabledID);
 
     AwtPrintControl::setNativeAttID =
       env->GetMethodID(cls, "setNativeAttributes", "(III)V");
@@ -807,11 +801,6 @@ BOOL AwtPrintControl::InitPrintDialog(JNIEnv *env,
     // SunPageSelection (AWT)
     if (selectType != 0) {
       pd.Flags |= selectType;
-    }
-
-    if (!env->CallBooleanMethod(printCtrl,
-                                AwtPrintControl::getPrintToFileEnabledID)) {
-      pd.Flags |= PD_DISABLEPRINTTOFILE;
     }
 
     if (pd.hDevMode != NULL) {

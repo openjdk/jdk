@@ -277,15 +277,15 @@ int AwtInputTextInfor::GetClauseInfor(int*& lpBndClauseW, jstring*& lpReadingCla
     int cCommittedStrW = GetCommittedTextLength();
 
     /* The conditions to merge the clause information are described below:
-       Senario 1:
+       Scenario 1:
        m_flags & GCS_RESULTSTR is true only, this case m_pResultTextInfor must be NULL.
        No need to merge.
 
-       Senario 2:
+       Scenario 2:
        m_flags & GCS_COMPSTR is true only, this case m_pResultTextInfor is also NULL.
        No need to merge either.
 
-       Senario 3:
+       Scenario 3:
        m_flags & GCS_COMPSTR and m_flags & GCS_RESULTSTR both yield to true, in this case
        m_pResultTextInfor won't be NULL and if there is nothing to commit though, we don't
        have to merge. Or if the current composing string size is 0, we don't have to merge either.

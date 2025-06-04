@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,9 @@
 #ifndef SHARE_C1_C1_LINEARSCAN_HPP
 #define SHARE_C1_C1_LINEARSCAN_HPP
 
-#include "c1/c1_FpuStackSim.hpp"
 #include "c1/c1_FrameMap.hpp"
-#include "c1/c1_IR.hpp"
 #include "c1/c1_Instruction.hpp"
+#include "c1/c1_IR.hpp"
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_LIRGenerator.hpp"
 #include "compiler/oopMap.hpp"
@@ -176,15 +175,6 @@ class LinearScan : public CompilationResourceObj {
   bool          has_fpu_registers() const        { return _has_fpu_registers; }
   int           num_loops() const                { return ir()->num_loops(); }
   bool          is_interval_in_loop(int interval, int loop) const { return _interval_in_loop.at(interval, loop); }
-
-  // handling of fpu stack allocation (platform dependent, needed for debug information generation)
-#ifdef IA32
-  FpuStackAllocator* _fpu_stack_allocator;
-  bool use_fpu_stack_allocation() const          { return UseSSE < 2 && has_fpu_registers(); }
-#else
-  bool use_fpu_stack_allocation() const          { return false; }
-#endif
-
 
   // access to interval list
   int           interval_count() const           { return _intervals.length(); }
@@ -357,12 +347,6 @@ class LinearScan : public CompilationResourceObj {
   void assign_reg_num(LIR_OpList* instructions, IntervalWalker* iw);
   void assign_reg_num();
 
-
-  // Phase 8: fpu stack allocation
-  // (Used only on x86 when fpu operands are present)
-  void allocate_fpu_stack();
-
-
   // helper functions for printing state
 #ifndef PRODUCT
   static void print_bitmap(BitMap& bitmap);
@@ -474,7 +458,7 @@ class Range : public CompilationResourceObj {
  public:
   Range(int from, int to, Range* next);
 
-  static void      initialize(Arena* arena);
+  static void      initialize();
   static Range*    end()                         { return _end; }
 
   int              from() const                  { return _from; }
@@ -541,7 +525,7 @@ class Interval : public CompilationResourceObj {
  public:
   Interval(int reg_num);
 
-  static void      initialize(Arena* arena);
+  static void      initialize();
   static Interval* end()                         { return _end; }
 
   // accessors
@@ -690,7 +674,7 @@ class IntervalWalker : public CompilationResourceObj {
   void walk_to(IntervalState state, int from);
 
   // activate_current() is called when an unhandled interval becomes active (in current(), current_kind()).
-  // Return false if current() should not be moved the the active interval list.
+  // Return false if current() should not be moved the active interval list.
   // It is safe to append current to any interval list but the unhandled list.
   virtual bool activate_current() { return true; }
 
@@ -953,7 +937,6 @@ class LinearScanTimers : public StackObj {
     timer_sort_intervals_after,
     timer_eliminate_spill_moves,
     timer_assign_reg_num,
-    timer_allocate_fpu_stack,
     timer_optimize_lir,
 
     number_of_timers

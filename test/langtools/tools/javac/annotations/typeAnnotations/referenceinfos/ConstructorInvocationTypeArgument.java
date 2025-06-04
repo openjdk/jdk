@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
  * @test
  * @bug 8042451
  * @summary Test population of reference info for constructor invocation type argument
- * @modules jdk.jdeps/com.sun.tools.classfile
  * @compile -g Driver.java ReferenceInfoUtil.java ConstructorInvocationTypeArgument.java
  * @run main Driver ConstructorInvocationTypeArgument
  */
 
-import static com.sun.tools.classfile.TypeAnnotation.TargetType.CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT;
+import static java.lang.classfile.TypeAnnotation.TargetType.CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT;
 
 public class ConstructorInvocationTypeArgument {
 

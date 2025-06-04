@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,11 @@
 
 /*
  * @test
- * @bug 8271820
+ * @bug 8271820 8300924
  * @modules java.base/jdk.internal.reflect
  * @summary Test compliance of ConstructorAccessor, FieldAccessor, MethodAccessor implementations
- * @run testng/othervm --add-exports java.base/jdk.internal.reflect=ALL-UNNAMED -Djdk.reflect.useDirectMethodHandle=true -XX:-ShowCodeDetailsInExceptionMessages MethodHandleAccessorsTest
+ * @run testng/othervm --add-exports java.base/jdk.internal.reflect=ALL-UNNAMED -XX:-ShowCodeDetailsInExceptionMessages MethodHandleAccessorsTest
  */
-
-/*
- * @test
- * @modules java.base/jdk.internal.reflect
- * @run testng/othervm --add-exports java.base/jdk.internal.reflect=ALL-UNNAMED -Djdk.reflect.useDirectMethodHandle=false -XX:-ShowCodeDetailsInExceptionMessages MethodHandleAccessorsTest
- */
-
 
 import jdk.internal.reflect.ConstructorAccessor;
 import jdk.internal.reflect.FieldAccessor;
@@ -55,7 +48,6 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 public class MethodHandleAccessorsTest {
-
     public static void public_static_V() {}
 
     public static int public_static_I() { return 42; }
@@ -67,6 +59,12 @@ public class MethodHandleAccessorsTest {
     public static void public_static_I_V(int i) {}
 
     public static int public_static_I_I(int i) { return i; }
+
+    public static void public_static_V_L3(Object o1, Object o2, Object o3) { }
+
+    public static void public_static_V_L4(Object o1, Object o2, Object o3, Object o4) { }
+
+    public static void public_V_L5(Object o1, Object o2, Object o3, Object o4, Object o5) { }
 
     public void public_I_V(int i) {}
 
@@ -144,6 +142,14 @@ public class MethodHandleAccessorsTest {
 
         public Public(String first, String... rest) {
             this(varargs_object(first, rest));
+        }
+
+        public Public(Object o1, Object o2, Object o3) {
+            this("3-arg constructor");
+        }
+
+        public Public(Object o1, Object o2, Object o3, Object o4) {
+            this("4-arg constructor");
         }
 
         public Public(RuntimeException exc) {
@@ -391,7 +397,7 @@ public class MethodHandleAccessorsTest {
     };
     private static final Throwable[] mismatched_target_type = new Throwable[] {
             new IllegalArgumentException("argument type mismatch"),
-            new IllegalArgumentException("object is not an instance of declaring class"),
+            new IllegalArgumentException("object of type java.lang.Object is not an instance of MethodHandleAccessorsTest"),
     };
     private static final Throwable[] cannot_get_field = new Throwable[] {
             new IllegalArgumentException("Can not get")
@@ -404,6 +410,10 @@ public class MethodHandleAccessorsTest {
     };
     private static final Throwable[] wrong_argument_count_no_details = new Throwable[] {
             new IllegalArgumentException("wrong number of arguments")
+    };
+
+    private static final Throwable[] wrong_argument_count_zero_args = new Throwable[] {
+            new IllegalArgumentException("wrong number of arguments: 0 expected:")
     };
     private static final Throwable[] wrong_argument_count = new Throwable[] {
             new IllegalArgumentException("wrong number of arguments"),
@@ -462,7 +472,6 @@ public class MethodHandleAccessorsTest {
     private Object[][] testOneArgMethods() {
         MethodHandleAccessorsTest inst = new MethodHandleAccessorsTest();
         Object wrongInst = new Object();
-        boolean newImpl = Boolean.getBoolean("jdk.reflect.useDirectMethodHandle");
         return new Object[][]{
             new Object[] {"public_static_I_V",  int.class, null, new Object[]{12}, null, noException},
             new Object[] {"public_static_I_I",  int.class, null, new Object[]{12}, 12, noException},
@@ -475,21 +484,34 @@ public class MethodHandleAccessorsTest {
 
             new Object[] {"public_static_I_I", int.class, null, new Object[]{"a"}, null, mismatched_argument_type},
             new Object[] {"public_I_I",        int.class, inst, new Object[]{"a"}, null, mismatched_argument_type},
-            new Object[] {"public_static_I_I", int.class, null, new Object[]{12, 13}, null,
-                          newImpl ? wrong_argument_count_no_details : wrong_argument_count},
-            new Object[] {"public_I_I",        int.class, inst, new Object[]{12, 13}, null,
-                          newImpl ? wrong_argument_count_no_details : wrong_argument_count},
+            new Object[] {"public_static_I_I", int.class, null, new Object[]{12, 13}, null, wrong_argument_count_no_details},
+            new Object[] {"public_I_I",        int.class, inst, new Object[]{12, 13}, null, wrong_argument_count_no_details},
             new Object[] {"public_I_I",        int.class, wrongInst, new Object[]{12}, 12, mismatched_target_type},
             new Object[] {"public_I_I",        int.class, null, new Object[]{12}, 12, null_target},
 
-            new Object[] {"public_static_I_V", int.class, null, null, null,
-                          newImpl ? wrong_argument_count_no_details : null_argument},
-            new Object[] {"public_static_I_V", int.class, null, new Object[]{null}, null,
-                          newImpl ? null_argument_value_npe : null_argument_value},
+            new Object[] {"public_static_I_V", int.class, null, null, null, wrong_argument_count_no_details},
+            new Object[] {"public_static_I_V", int.class, null, new Object[]{null}, null, null_argument_value_npe},
             new Object[] {"public_I_I",        int.class, inst, null, null, null_argument},
 
-            new Object[] {"public_I_I", int.class, inst, new Object[]{null}, null,
-                          newImpl ? null_argument_value_npe : null_argument_value},
+            new Object[] {"public_I_I", int.class, inst, new Object[]{null}, null, null_argument_value_npe},
+        };
+    }
+
+    @DataProvider(name = "testMultiArgMethods")
+    private Object[][] testMultiArgMethods() {
+        MethodHandleAccessorsTest inst = new MethodHandleAccessorsTest();
+        Class<?>[] params_L3 = new Class<?>[] { Object.class, Object.class, Object.class};
+        Class<?>[] params_L4 = new Class<?>[] { Object.class, Object.class, Object.class, Object.class};
+        Class<?>[] params_L5 = new Class<?>[] { Object.class, Object.class, Object.class, Object.class, Object.class};
+
+        return new Object[][]{
+                new Object[]{"public_static_V_L3", params_L3, null, new Object[3], null, noException},
+                new Object[]{"public_static_V_L4", params_L4, null, new Object[4], null, noException},
+                new Object[]{"public_V_L5", params_L5, inst, new Object[5], null, noException},
+                // wrong arguments
+                new Object[]{"public_static_V_L3", params_L3, null, null, null, wrong_argument_count_zero_args},
+                new Object[]{"public_static_V_L4", params_L4, null, new Object[0], null, wrong_argument_count_zero_args},
+                new Object[]{"public_V_L5", params_L5, inst, null, null, wrong_argument_count_zero_args},
         };
     }
 
@@ -521,6 +543,12 @@ public class MethodHandleAccessorsTest {
     public void testOneArgMethod(String methodname, Class<?> paramType, Object target, Object[] args,
                                  Object expectedReturn, Throwable[] expectedExpections) throws Exception {
         doTest(MethodHandleAccessorsTest.class.getDeclaredMethod(methodname, paramType), target, args, expectedReturn, expectedExpections);
+    }
+
+    @Test(dataProvider = "testMultiArgMethods")
+    public void testMultiArgMethod(String methodname, Class<?>[] paramTypes, Object target, Object[] args,
+                                 Object expectedReturn, Throwable[] expectedExpections) throws Exception {
+        doTest(MethodHandleAccessorsTest.class.getDeclaredMethod(methodname, paramTypes), target, args, expectedReturn, expectedExpections);
     }
 
     @Test(dataProvider = "testMethodsWithVarargs")
@@ -558,6 +586,24 @@ public class MethodHandleAccessorsTest {
 
     @Test(dataProvider = "testConstructors")
     public void testPublicConstructors(Class<?>[] paramTypes, Object[] args, Object expectedReturn, Throwable[] expectedExpections) throws Exception {
+        doTest(Public.class.getDeclaredConstructor(paramTypes), args, expectedReturn, expectedExpections);
+    }
+
+    @DataProvider(name = "testMultiArgConstructors")
+    private Object[][] testMultiArgConstructors() {
+        Class<?>[] params_L3 = new Class<?>[] { Object.class, Object.class, Object.class};
+        Class<?>[] params_L4 = new Class<?>[] { Object.class, Object.class, Object.class, Object.class};
+        Object o = "arg";
+        return new Object[][]{
+                new Object[]{params_L3, new Object[3], new Public(o, o, o), noException},
+                new Object[]{params_L4, new Object[4], new Public(o, o, o, o), noException},
+                new Object[]{params_L3, new Object[]{}, null, wrong_argument_count_zero_args},
+                new Object[]{params_L4, null, null, wrong_argument_count_zero_args},
+        };
+    }
+
+    @Test(dataProvider = "testMultiArgConstructors")
+    public void testMultiArgConstructors(Class<?>[] paramTypes, Object[] args, Object expectedReturn, Throwable[] expectedExpections) throws Exception {
         doTest(Public.class.getDeclaredConstructor(paramTypes), args, expectedReturn, expectedExpections);
     }
 
@@ -602,16 +648,13 @@ public class MethodHandleAccessorsTest {
 
     @DataProvider(name = "readAccess")
     private Object[][] readAccess() {
-        boolean newImpl = Boolean.getBoolean("jdk.reflect.useDirectMethodHandle");
         String wrongInst = new String();
         return new Object[][]{
                 new Object[]{"i", new Public(100), 100, noException},
                 new Object[]{"s", new Public("test"), "test", noException},
                 new Object[]{"s", null, "test", null_target},
-                new Object[]{"s", wrongInst, "test",
-                        newImpl ? cannot_get_field : cannot_set_field},
-                new Object[]{"b", wrongInst, 0,
-                        newImpl ? cannot_get_field : cannot_set_field},
+                new Object[]{"s", wrongInst, "test", cannot_get_field},
+                new Object[]{"b", wrongInst, 0, cannot_get_field},
         };
     }
     @DataProvider(name = "writeAccess")

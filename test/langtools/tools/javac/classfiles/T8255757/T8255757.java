@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,14 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main T8255757
  */
 
 import java.nio.file.Path;
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.ConstantPool.*;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.*;
 
 import toolbox.JavacTask;
 import toolbox.ToolBox;
@@ -75,22 +73,16 @@ public class T8255757 extends TestRunner {
                 .outdir(curPath)
                 .run();
 
-        ClassFile cf = ClassFile.read(curPath.resolve("Test.class"));
-        ConstantPool cp = cf.constant_pool;
+        ClassModel cf = ClassFile.of().parse(curPath.resolve("Test.class"));
         int num = 0;
-        for (CPInfo cpInfo : cp.entries()) {
-            if (cpInfo instanceof CONSTANT_Methodref_info) {
-                int class_index = ((CONSTANT_Methodref_info) cpInfo).class_index;
-                int name_and_type_index = ((CONSTANT_Methodref_info) cpInfo).name_and_type_index;
-                int class_name_index = ((CONSTANT_Class_info)
-                        cp.getClassInfo(class_index)).name_index;
-                int method_name_index = ((CONSTANT_NameAndType_info)
-                        cp.getNameAndTypeInfo(name_and_type_index)).name_index;
-                int method_type_name_index = ((CONSTANT_NameAndType_info)
-                        cp.getNameAndTypeInfo(name_and_type_index)).type_index;
-                if ("[Ljava/lang/Object;".equals(cp.getUTF8Value(class_name_index)) &&
-                        "clone".equals(cp.getUTF8Value(method_name_index)) &&
-                        "()Ljava/lang/Object;".equals(cp.getUTF8Value(method_type_name_index))) {
+        for (PoolEntry pe : cf.constantPool()) {
+            if (pe instanceof MethodRefEntry methodRefEntry) {
+                String class_name = methodRefEntry.owner().asInternalName();
+                String method_name = methodRefEntry.name().stringValue();
+                String method_type = methodRefEntry.type().stringValue();
+                if ("[Ljava/lang/Object;".equals(class_name) &&
+                        "clone".equals(method_name) &&
+                        "()Ljava/lang/Object;".equals(method_type)) {
                     ++num;
                 }
             }

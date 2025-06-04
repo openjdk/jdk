@@ -25,14 +25,12 @@
 
 package sun.security.util;
 
+import java.io.IOException;
 import java.security.*;
-import java.io.*;
 import java.util.*;
 import java.util.jar.*;
 
 import sun.security.jca.Providers;
-import sun.security.util.DisabledAlgorithmConstraints;
-import sun.security.util.JarConstraintsParameters;
 
 /**
  * This class is used to verify each entry in a jar file with its

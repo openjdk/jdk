@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,17 @@
 
 /*
  * @test
- * @bug 7079560 8008577
+ * @bug 7079560 8008577 8174269
  * @summary Unit test for context-sensitive month names
  * @modules jdk.localedata
- * @run main/othervm -Djava.locale.providers=JRE,SPI ContextMonthNamesTest
+ * @run main ContextMonthNamesTest
  */
 
 import java.text.*;
 import java.util.*;
 
 public class ContextMonthNamesTest {
-    static Locale CZECH = new Locale("cs");
+    static Locale CZECH = Locale.of("cs");
     static Date JAN30 = new GregorianCalendar(2012, Calendar.JANUARY, 30).getTime();
 
     static String[] PATTERNS = {
@@ -47,11 +47,11 @@ public class ContextMonthNamesTest {
     // NOTE: expected results are locale data dependent.
     static String[] EXPECTED = {
         "30. ledna 2012",
-        "30. Led 2012",
+        "30. led 2012",
         "leden",
-        "I",
+        "led",
         "30. leden 2012",
-        "30. I 2012",
+        "30. led 2012",
     };
 
     public static void main(String[] args) {

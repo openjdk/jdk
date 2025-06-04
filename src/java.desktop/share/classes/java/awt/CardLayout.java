@@ -206,7 +206,7 @@ public class CardLayout implements LayoutManager2,
      * @param     constraints   a tag that identifies a particular
      *                                        card in the layout.
      * @see       java.awt.CardLayout#show(java.awt.Container, java.lang.String)
-     * @exception  IllegalArgumentException  if the constraint is not a string.
+     * @throws  IllegalArgumentException  if the constraint is not a string.
      */
     public void addLayoutComponent(Component comp, Object constraints) {
       synchronized (comp.getTreeLock()) {

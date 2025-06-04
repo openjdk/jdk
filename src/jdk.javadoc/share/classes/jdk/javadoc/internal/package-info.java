@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,16 @@
  */
 
 /**
- *  The implementation of the <em>javadoc</em> tool and associated doclets.
+ * The implementation of the <em>javadoc</em> tool and associated doclets.
  *
- *  <p>Internally, <em>javadoc</em> is composed of two primary parts:
- *  the {@link jdk.javadoc.internal.tool tool}, and a series of
- *  {@link jdk.javadoc.internal.doclets doclets}.
+ * <p>Internally, <em>javadoc</em> is composed of two primary parts:
+ * the {@link jdk.javadoc.internal.tool tool}, and a series of
+ * {@link jdk.javadoc.internal.doclets doclets}.
  *
- *  <p>The tool provides a common infrastructure for command-line processing,
- *  and for reading the declarations and documentation comments in Java source files,
- *  while doclets provide a user-selectable backend for determining
- *  how to process the declarations and their documentation comments.
+ * <p>The tool provides a common infrastructure for command-line processing,
+ * and for reading the declarations and documentation comments in Java source files,
+ * while doclets provide a user-selectable backend for determining
+ * how to process the declarations and their documentation comments.
  *
  * <p>The following provides a top-down description of the overall <em>javadoc</em>
  * software stack.
@@ -68,25 +68,13 @@
  *          library in the
  *          {@link jdk.javadoc.internal.doclets.formats.html.markup formats.html.markup} package,
  *          to create trees (or acyclic graphs) of
- *          {@linkplain jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree HTML tree nodes}.
+ *          {@linkplain jdk.javadoc.internal.html.HtmlTree HTML tree nodes}.
  *          Apart from using a common format-neutral supertype,
- *          {@link jdk.javadoc.internal.doclets.toolkit.Content}, the {@code markup} library
+ *          {@link jdk.javadoc.internal.html.Content}, the {@code markup} library
  *          is mostly independent of the rest of the javadoc software stack.
  *
  *        <dt id="toolkit">Toolkit
  *        <dd><p>
- *          The {@link jdk.javadoc.internal.doclets.toolkit toolkit} package provides
- *          support for a format-neutral
- *          {@linkplain jdk.javadoc.internal.doclets.toolkit.AbstractDoclet abstract doclet},
- *          which uses
- *          {@linkplain jdk.javadoc.internal.doclets.toolkit.builders.AbstractBuilder builders}
- *          to generate pages of abstract
- *          {@linkplain jdk.javadoc.internal.doclets.toolkit.Content content}.
- *
- *          <p>The format-specific content for each page is provided by implementations
- *          of various <em>writer</em> interfaces, created by a format-specific
- *          {@linkplain jdk.javadoc.internal.doclets.toolkit.WriterFactory writer factory}.
- *
  *          <p>The {@link jdk.javadoc.internal.doclets.toolkit.BaseConfiguration} provides
  *          configuration information that is relevant to all the generated pages.
  *          Some of the information is provided by abstract methods which are implemented
@@ -162,8 +150,8 @@
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  *
- * @see <a href="https://openjdk.java.net/groups/compiler/javadoc-architecture.html">JavaDoc Architecture</a>
- * @see <a href="https://openjdk.java.net/groups/compiler/using-new-doclet.html">Using the new Doclet API</a>
- * @see <a href="https://openjdk.java.net/groups/compiler/processing-code.html">Processing Code</a>
+ * @see <a href="https://openjdk.org/groups/compiler/javadoc-architecture.html">JavaDoc Architecture</a>
+ * @see <a href="https://openjdk.org/groups/compiler/using-new-doclet.html">Using the new Doclet API</a>
+ * @see <a href="https://openjdk.org/groups/compiler/processing-code.html">Processing Code</a>
  */
 package jdk.javadoc.internal;

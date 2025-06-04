@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
+import java.util.Arrays;
 
 public class StreamDecoder extends Reader {
 
@@ -70,14 +71,10 @@ public class StreamDecoder extends Reader {
                                                      String charsetName)
         throws UnsupportedEncodingException
     {
-        String csn = charsetName;
-        if (csn == null) {
-            csn = Charset.defaultCharset().name();
-        }
         try {
-            return new StreamDecoder(in, lock, Charset.forName(csn));
+            return new StreamDecoder(in, lock, Charset.forName(charsetName));
         } catch (IllegalCharsetNameException | UnsupportedCharsetException x) {
-            throw new UnsupportedEncodingException (csn);
+            throw new UnsupportedEncodingException (charsetName);
         }
     }
 
@@ -125,7 +122,6 @@ public class StreamDecoder extends Reader {
     @SuppressWarnings("fallthrough")
     private int read0() throws IOException {
         synchronized (lock) {
-
             // Return the leftover char, if there is one
             if (haveLeftoverChar) {
                 haveLeftoverChar = false;
@@ -152,9 +148,10 @@ public class StreamDecoder extends Reader {
     }
 
     public int read(char[] cbuf, int offset, int length) throws IOException {
-        int off = offset;
-        int len = length;
         synchronized (lock) {
+            int off = offset;
+            int len = length;
+
             ensureOpen();
             if ((off < 0) || (off > cbuf.length) || (len < 0) ||
                 ((off + len) > cbuf.length) || ((off + len) < 0)) {
@@ -185,7 +182,13 @@ public class StreamDecoder extends Reader {
                 return n + 1;
             }
 
-            return n + implRead(cbuf, off, off + len);
+            // Read remaining characters
+            int nr = implRead(cbuf, off, off + len);
+
+            // At this point, n is either 1 if a leftover character was read,
+            // or 0 if no leftover character was read. If n is 1 and nr is -1,
+            // indicating EOF, then we don't return their sum as this loses data.
+            return (nr < 0) ? (n == 1 ? 1 : nr) : (n + nr);
         }
     }
 
@@ -212,6 +215,12 @@ public class StreamDecoder extends Reader {
         return !closed;
     }
 
+    public void fillZeroToPosition() throws IOException {
+        synchronized (lock) {
+            Arrays.fill(bb.array(), bb.arrayOffset(),
+                        bb.arrayOffset() + bb.position(), (byte)0);
+        }
+    }
 
     // -- Charset-based stream decoder impl --
 
@@ -236,7 +245,7 @@ public class StreamDecoder extends Reader {
         this.decoder = dec;
         this.in = in;
         this.ch = null;
-        bb = ByteBuffer.allocate(DEFAULT_BYTE_BUFFER_SIZE);
+        this.bb = ByteBuffer.allocate(DEFAULT_BYTE_BUFFER_SIZE);
         bb.flip();                      // So that bb is initially empty
     }
 
@@ -315,7 +324,6 @@ public class StreamDecoder extends Reader {
                     eof = true;
                     if ((cb.position() == 0) && (!bb.hasRemaining()))
                         break;
-                    decoder.reset();
                 }
                 continue;
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ import java.util.jar.Manifest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
@@ -662,13 +663,13 @@ public class ModulePath implements ModuleFinder {
     // -- exploded directories --
 
     private Set<String> explodedPackages(Path dir) {
-        try {
-            return Files.find(dir, Integer.MAX_VALUE,
-                    ((path, attrs) -> attrs.isRegularFile() && !isHidden(path)))
-                    .map(path -> dir.relativize(path))
-                    .map(this::toPackageName)
-                    .flatMap(Optional::stream)
-                    .collect(Collectors.toSet());
+        String separator = dir.getFileSystem().getSeparator();
+        try (Stream<Path> stream = Files.find(dir, Integer.MAX_VALUE,
+                (path, attrs) -> attrs.isRegularFile() && !isHidden(path))) {
+            return stream.map(dir::relativize)
+                .map(path -> toPackageName(path, separator))
+                .flatMap(Optional::stream)
+                .collect(Collectors.toSet());
         } catch (IOException x) {
             throw new UncheckedIOException(x);
         }
@@ -737,7 +738,7 @@ public class ModulePath implements ModuleFinder {
      * @throws InvalidModuleDescriptorException if the name is a class file in
      *         the top-level directory (and it's not module-info.class)
      */
-    private Optional<String> toPackageName(Path file) {
+    private Optional<String> toPackageName(Path file, String separator) {
         assert file.getRoot() == null;
 
         Path parent = file.getParent();
@@ -751,7 +752,7 @@ public class ModulePath implements ModuleFinder {
             return Optional.empty();
         }
 
-        String pn = parent.toString().replace(File.separatorChar, '.');
+        String pn = parent.toString().replace(separator, ".");
         if (Checks.isPackageName(pn)) {
             return Optional.of(pn);
         } else {

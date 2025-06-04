@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,40 +22,40 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "jvm.h"
+#include "ci/ciKlass.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciReplay.hpp"
 #include "ci/ciSymbol.hpp"
-#include "ci/ciKlass.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/constantPool.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/jniHandles.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/jniHandles.inline.hpp"
+#include "runtime/threads.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
-
-#ifndef PRODUCT
 
 // ciReplay
 
@@ -113,8 +113,6 @@ class CompileReplay : public StackObj {
  private:
   FILE*   _stream;
   Thread* _thread;
-  Handle  _protection_domain;
-  bool    _protection_domain_initialized;
   Handle  _loader;
   int     _version;
 
@@ -131,6 +129,7 @@ class CompileReplay : public StackObj {
   char* _bufptr;
   char* _buffer;
   int   _buffer_length;
+  ReallocMark _nesting; // Safety checks for arena reallocation
 
   // "compile" data
   ciKlass* _iklass;
@@ -142,23 +141,21 @@ class CompileReplay : public StackObj {
   CompileReplay(const char* filename, TRAPS) {
     _thread = THREAD;
     _loader = Handle(_thread, SystemDictionary::java_system_loader());
-    _protection_domain = Handle();
-    _protection_domain_initialized = false;
 
     _stream = os::fopen(filename, "rt");
-    if (_stream == NULL) {
+    if (_stream == nullptr) {
       fprintf(stderr, "ERROR: Can't open replay file %s\n", filename);
     }
 
-    _ci_inline_records = NULL;
-    _error_message = NULL;
+    _ci_inline_records = nullptr;
+    _error_message = nullptr;
 
     _buffer_length = 32;
     _buffer = NEW_RESOURCE_ARRAY(char, _buffer_length);
     _bufptr = _buffer;
 
-    _imethod = NULL;
-    _iklass  = NULL;
+    _imethod = nullptr;
+    _iklass  = nullptr;
     _entry_bci  = 0;
     _comp_level = 0;
     _version = 0;
@@ -167,7 +164,7 @@ class CompileReplay : public StackObj {
   }
 
   ~CompileReplay() {
-    if (_stream != NULL) fclose(_stream);
+    if (_stream != nullptr) fclose(_stream);
   }
 
   void test() {
@@ -183,11 +180,11 @@ class CompileReplay : public StackObj {
   }
 
   bool had_error() {
-    return _error_message != NULL || _thread->has_pending_exception();
+    return _error_message != nullptr || _thread->has_pending_exception();
   }
 
   bool can_replay() {
-    return !(_stream == NULL || had_error());
+    return !(_stream == nullptr || had_error());
   }
 
   void report_error(const char* msg) {
@@ -246,20 +243,20 @@ class CompileReplay : public StackObj {
     }
     if (_bufptr == str) {
       // nothing here
-      return NULL;
+      return nullptr;
     }
     return str;
   }
 
   char* parse_string() {
-    if (had_error()) return NULL;
+    if (had_error()) return nullptr;
 
     skip_ws();
     return scan_and_terminate(' ');
   }
 
   char* parse_quoted_string() {
-    if (had_error()) return NULL;
+    if (had_error()) return nullptr;
 
     skip_ws();
 
@@ -273,7 +270,7 @@ class CompileReplay : public StackObj {
 
   char* parse_escaped_string() {
     char* result = parse_quoted_string();
-    if (result != NULL) {
+    if (result != nullptr) {
       unescape_string(result);
     }
     return result;
@@ -282,7 +279,7 @@ class CompileReplay : public StackObj {
   // Look for the tag 'tag' followed by an
   bool parse_tag_and_count(const char* tag, int& length) {
     const char* t = parse_string();
-    if (t == NULL) {
+    if (t == nullptr) {
       return false;
     }
 
@@ -299,7 +296,7 @@ class CompileReplay : public StackObj {
   char* parse_data(const char* tag, int& length) {
     int read_size = 0;
     if (!parse_tag_and_count(tag, read_size)) {
-      return NULL;
+      return nullptr;
     }
 
     int actual_size = sizeof(MethodData::CompilerCounters);
@@ -341,7 +338,7 @@ class CompileReplay : public StackObj {
   // Where each # is an intptr_t item
   intptr_t* parse_intptr_data(const char* tag, int& length) {
     if (!parse_tag_and_count(tag, length)) {
-      return NULL;
+      return nullptr;
     }
 
     intptr_t* result = NEW_RESOURCE_ARRAY(intptr_t, length);
@@ -356,16 +353,16 @@ class CompileReplay : public StackObj {
   // Parse a possibly quoted version of a symbol into a symbolOop
   Symbol* parse_symbol() {
     const char* str = parse_escaped_string();
-    if (str != NULL) {
+    if (str != nullptr) {
       Symbol* sym = SymbolTable::new_symbol(str);
       return sym;
     }
-    return NULL;
+    return nullptr;
   }
 
   bool parse_terminator() {
     char* terminator = parse_string();
-    if (terminator != NULL && strcmp(terminator, ";") == 0) {
+    if (terminator != nullptr && strcmp(terminator, ";") == 0) {
       return true;
     }
     return false;
@@ -376,12 +373,12 @@ class CompileReplay : public StackObj {
   // syntax: @cpi <klass> <cpi> <location>* ;
   Klass* parse_cp_ref(TRAPS) {
     JavaThread* thread = THREAD;
-    oop obj = NULL;
+    oop obj = nullptr;
     char* ref = parse_string();
     if (strcmp(ref, "bci") == 0) {
       Method* m = parse_method(CHECK_NULL);
-      if (m == NULL) {
-        return NULL;
+      if (m == nullptr) {
+        return nullptr;
       }
 
       InstanceKlass* ik = m->method_holder();
@@ -393,65 +390,78 @@ class CompileReplay : public StackObj {
       int bci = parse_int("bci");
       if (m->validate_bci(bci) != bci) {
         report_error("bad bci");
-        return NULL;
+        return nullptr;
       }
 
       ik->link_class(CHECK_NULL);
 
-      Bytecode_invoke bytecode(caller, bci);
+      Bytecode_invoke bytecode = Bytecode_invoke_check(caller, bci);
+      if (!Bytecodes::is_defined(bytecode.code()) || !bytecode.is_valid()) {
+        report_error("no invoke found at bci");
+        return nullptr;
+      }
+      bytecode.verify();
       int index = bytecode.index();
 
-      ConstantPoolCacheEntry* cp_cache_entry = NULL;
       CallInfo callInfo;
       Bytecodes::Code bc = bytecode.invoke_code();
       LinkResolver::resolve_invoke(callInfo, Handle(), cp, index, bc, CHECK_NULL);
+
+      oop appendix = nullptr;
+      Method* adapter_method = nullptr;
+      int pool_index = 0;
+
       if (bytecode.is_invokedynamic()) {
-        cp_cache_entry = cp->invokedynamic_cp_cache_entry_at(index);
-        cp_cache_entry->set_dynamic_call(cp, callInfo);
+        cp->cache()->set_dynamic_call(callInfo, index);
+
+        appendix = cp->resolved_reference_from_indy(index);
+        adapter_method = cp->resolved_indy_entry_at(index)->method();
+        pool_index = cp->resolved_indy_entry_at(index)->constant_pool_index();
       } else if (bytecode.is_invokehandle()) {
 #ifdef ASSERT
-        Klass* holder = cp->klass_ref_at(index, CHECK_NULL);
-        Symbol* name = cp->name_ref_at(index);
+        Klass* holder = cp->klass_ref_at(index, bytecode.code(), CHECK_NULL);
+        Symbol* name = cp->name_ref_at(index, bytecode.code());
         assert(MethodHandles::is_signature_polymorphic_name(holder, name), "");
 #endif
-        cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
-        cp_cache_entry->set_method_handle(cp, callInfo);
+        ResolvedMethodEntry* method_entry = cp->cache()->set_method_handle(index, callInfo);
+        appendix = cp->cache()->appendix_if_resolved(method_entry);
+        adapter_method = method_entry->method();
+        pool_index = method_entry->constant_pool_index();
       } else {
         report_error("no dynamic invoke found");
-        return NULL;
+        return nullptr;
       }
       char* dyno_ref = parse_string();
       if (strcmp(dyno_ref, "<appendix>") == 0) {
-        obj = cp_cache_entry->appendix_if_resolved(cp);
+        obj = appendix;
       } else if (strcmp(dyno_ref, "<adapter>") == 0) {
         if (!parse_terminator()) {
           report_error("no dynamic invoke found");
-          return NULL;
+          return nullptr;
         }
-        Method* adapter = cp_cache_entry->f1_as_method();
-        if (adapter == NULL) {
+        Method* adapter = adapter_method;
+        if (adapter == nullptr) {
           report_error("no adapter found");
-          return NULL;
+          return nullptr;
         }
         return adapter->method_holder();
       } else if (strcmp(dyno_ref, "<bsm>") == 0) {
-        int pool_index = cp_cache_entry->constant_pool_index();
         BootstrapInfo bootstrap_specifier(cp, pool_index, index);
         obj = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), CHECK_NULL);
       } else {
         report_error("unrecognized token");
-        return NULL;
+        return nullptr;
       }
     } else {
       // constant pool ref (MethodHandle)
       if (strcmp(ref, "cpi") != 0) {
         report_error("unexpected token");
-        return NULL;
+        return nullptr;
       }
 
       Klass* k = parse_klass(CHECK_NULL);
-      if (k == NULL) {
-        return NULL;
+      if (k == nullptr) {
+        return nullptr;
       }
       InstanceKlass* ik = InstanceKlass::cast(k);
       const constantPoolHandle cp(Thread::current(), ik->constants());
@@ -460,28 +470,28 @@ class CompileReplay : public StackObj {
 
       if (cpi >= cp->length()) {
         report_error("bad cpi");
-        return NULL;
+        return nullptr;
       }
       if (!cp->tag_at(cpi).is_method_handle()) {
         report_error("no method handle found at cpi");
-        return NULL;
+        return nullptr;
       }
       ik->link_class(CHECK_NULL);
       obj = cp->resolve_possibly_cached_constant_at(cpi, CHECK_NULL);
     }
-    if (obj == NULL) {
+    if (obj == nullptr) {
       report_error("null cp object found");
-      return NULL;
+      return nullptr;
     }
-    Klass* k = NULL;
+    Klass* k = nullptr;
     skip_ws();
     // loop: read fields
-    char* field = NULL;
+    char* field = nullptr;
     do {
       field = parse_string();
-      if (field == NULL) {
+      if (field == nullptr) {
         report_error("no field found");
-        return NULL;
+        return nullptr;
       }
       if (strcmp(field, ";") == 0) {
         break;
@@ -489,32 +499,32 @@ class CompileReplay : public StackObj {
       // raw Method*
       if (strcmp(field, "<vmtarget>") == 0) {
         Method* vmtarget = java_lang_invoke_MemberName::vmtarget(obj);
-        k = (vmtarget == NULL) ? NULL : vmtarget->method_holder();
-        if (k == NULL) {
+        k = (vmtarget == nullptr) ? nullptr : vmtarget->method_holder();
+        if (k == nullptr) {
           report_error("null vmtarget found");
-          return NULL;
+          return nullptr;
         }
         if (!parse_terminator()) {
           report_error("missing terminator");
-          return NULL;
+          return nullptr;
         }
         return k;
       }
       obj = ciReplay::obj_field(obj, field);
       // array
-      if (obj != NULL && obj->is_objArray()) {
+      if (obj != nullptr && obj->is_objArray()) {
         objArrayOop arr = (objArrayOop)obj;
         int index = parse_int("index");
         if (index >= arr->length()) {
           report_error("bad array index");
-          return NULL;
+          return nullptr;
         }
         obj = arr->obj_at(index);
       }
-    } while (obj != NULL);
-    if (obj == NULL) {
+    } while (obj != nullptr);
+    if (obj == nullptr) {
       report_error("null field found");
-      return NULL;
+      return nullptr;
     }
     k = obj->klass();
     return k;
@@ -530,20 +540,20 @@ class CompileReplay : public StackObj {
     if (cp_ref) {
       ++_bufptr;
       Klass* k = parse_cp_ref(CHECK_NULL);
-      if (k != NULL && !k->is_hidden()) {
+      if (k != nullptr && !k->is_hidden()) {
         report_error("expected hidden class");
-        return NULL;
+        return nullptr;
       }
       return k;
     }
     char* str = parse_escaped_string();
     Symbol* klass_name = SymbolTable::new_symbol(str);
-    if (klass_name != NULL) {
-      Klass* k = NULL;
-      if (_iklass != NULL) {
+    if (klass_name != nullptr) {
+      Klass* k = nullptr;
+      if (_iklass != nullptr) {
         k = (Klass*)_iklass->find_klass(ciSymbol::make(klass_name->as_C_string()))->constant_encoding();
       } else {
-        k = SystemDictionary::resolve_or_fail(klass_name, _loader, _protection_domain, true, THREAD);
+        k = SystemDictionary::resolve_or_fail(klass_name, _loader, true, THREAD);
       }
       if (HAS_PENDING_EXCEPTION) {
         oop throwable = PENDING_EXCEPTION;
@@ -552,32 +562,32 @@ class CompileReplay : public StackObj {
         report_error(str);
         if (ReplayIgnoreInitErrors) {
           CLEAR_PENDING_EXCEPTION;
-          _error_message = NULL;
+          _error_message = nullptr;
         }
-        return NULL;
+        return nullptr;
       }
       return k;
     }
-    return NULL;
+    return nullptr;
   }
 
   // Lookup a klass
   Klass* resolve_klass(const char* klass, TRAPS) {
     Symbol* klass_name = SymbolTable::new_symbol(klass);
-    return SystemDictionary::resolve_or_fail(klass_name, _loader, _protection_domain, true, THREAD);
+    return SystemDictionary::resolve_or_fail(klass_name, _loader, true, THREAD);
   }
 
   // Parse the standard tuple of <klass> <name> <signature>
   Method* parse_method(TRAPS) {
     InstanceKlass* k = (InstanceKlass*)parse_klass(CHECK_NULL);
-    if (k == NULL) {
+    if (k == nullptr) {
       report_error("Can't find holder klass");
-      return NULL;
+      return nullptr;
     }
     Symbol* method_name = parse_symbol();
     Symbol* method_signature = parse_symbol();
     Method* m = k->find_method(method_name, method_signature);
-    if (m == NULL) {
+    if (m == nullptr) {
       report_error("Can't find method");
     }
     return m;
@@ -587,6 +597,7 @@ class CompileReplay : public StackObj {
     int buffer_pos = 0;
     while(c != EOF) {
       if (buffer_pos + 1 >= _buffer_length) {
+        _nesting.check(); // Check if a reallocation in the resource arena is safe
         int new_length = _buffer_length * 2;
         // Next call will throw error in case of OOM.
         _buffer = REALLOC_RESOURCE_ARRAY(char, _buffer, _buffer_length, new_length);
@@ -615,24 +626,25 @@ class CompileReplay : public StackObj {
     int c = getc(_stream);
     while(c != EOF) {
       c = get_line(c);
-      process_command(THREAD);
+      process_command(false, THREAD);
       if (had_error()) {
         int pos = _bufptr - _buffer + 1;
         tty->print_cr("Error while parsing line %d at position %d: %s\n", line_no, pos, _error_message);
         if (ReplayIgnoreInitErrors) {
           CLEAR_PENDING_EXCEPTION;
-          _error_message = NULL;
+          _error_message = nullptr;
         } else {
           return;
         }
       }
       line_no++;
     }
+    reset();
   }
 
-  void process_command(TRAPS) {
+  void process_command(bool is_replay_inline, TRAPS) {
     char* cmd = parse_string();
-    if (cmd == NULL) {
+    if (cmd == nullptr) {
       return;
     }
     if (strcmp("#", cmd) == 0) {
@@ -648,20 +660,24 @@ class CompileReplay : public StackObj {
       }
     } else if (strcmp("compile", cmd) == 0) {
       process_compile(CHECK);
-    } else if (strcmp("ciMethod", cmd) == 0) {
-      process_ciMethod(CHECK);
-    } else if (strcmp("ciMethodData", cmd) == 0) {
-      process_ciMethodData(CHECK);
-    } else if (strcmp("staticfield", cmd) == 0) {
-      process_staticfield(CHECK);
-    } else if (strcmp("ciInstanceKlass", cmd) == 0) {
-      process_ciInstanceKlass(CHECK);
-    } else if (strcmp("instanceKlass", cmd) == 0) {
-      process_instanceKlass(CHECK);
+    } else if (!is_replay_inline) {
+      if (strcmp("ciMethod", cmd) == 0) {
+        process_ciMethod(CHECK);
+      } else if (strcmp("ciMethodData", cmd) == 0) {
+        process_ciMethodData(CHECK);
+      } else if (strcmp("staticfield", cmd) == 0) {
+        process_staticfield(CHECK);
+      } else if (strcmp("ciInstanceKlass", cmd) == 0) {
+        process_ciInstanceKlass(CHECK);
+      } else if (strcmp("instanceKlass", cmd) == 0) {
+        process_instanceKlass(CHECK);
 #if INCLUDE_JVMTI
-    } else if (strcmp("JvmtiExport", cmd) == 0) {
-      process_JvmtiExport(CHECK);
+      } else if (strcmp("JvmtiExport", cmd) == 0) {
+        process_JvmtiExport(CHECK);
 #endif // INCLUDE_JVMTI
+      } else {
+        report_error("unknown command");
+      }
     } else {
       report_error("unknown command");
     }
@@ -673,7 +689,7 @@ class CompileReplay : public StackObj {
   // validation of comp_level
   bool is_valid_comp_level(int comp_level) {
     const int msg_len = 256;
-    char* msg = NULL;
+    char* msg = nullptr;
     if (!is_compile(comp_level)) {
       msg = NEW_RESOURCE_ARRAY(char, msg_len);
       jio_snprintf(msg, msg_len, "%d isn't compilation level", comp_level);
@@ -684,7 +700,7 @@ class CompileReplay : public StackObj {
       msg = NEW_RESOURCE_ARRAY(char, msg_len);
       jio_snprintf(msg, msg_len, "compilation level %d requires C2", comp_level);
     }
-    if (msg != NULL) {
+    if (msg != nullptr) {
       report_error(msg);
       return false;
     }
@@ -701,24 +717,19 @@ class CompileReplay : public StackObj {
     int c = getc(_stream);
     while(c != EOF) {
       c = get_line(c);
-      // Expecting only lines with "compile" command in inline replay file.
-      char* cmd = parse_string();
-      if (cmd == NULL || strcmp("compile", cmd) != 0) {
-        return NULL;
-      }
-      process_compile(CHECK_NULL);
+      process_command(true, CHECK_NULL);
       if (had_error()) {
         tty->print_cr("Error while parsing line %d: %s\n", line_no, _error_message);
         tty->print_cr("%s", _buffer);
-        return NULL;
+        return nullptr;
       }
-      if (_ci_inline_records != NULL && _ci_inline_records->length() > 0) {
+      if (_ci_inline_records != nullptr && _ci_inline_records->length() > 0) {
         // Found inlining record for the requested method.
         return _ci_inline_records;
       }
       line_no++;
     }
-    return NULL;
+    return nullptr;
   }
 
   // compile <klass> <name> <signature> <entry_bci> <comp_level> inline <count> (<depth> <bci> <inline_late> <klass> <name> <signature>)*
@@ -726,17 +737,11 @@ class CompileReplay : public StackObj {
     Method* method = parse_method(CHECK);
     if (had_error()) return;
     int entry_bci = parse_int("entry_bci");
-    const char* comp_level_label = "comp_level";
-    int comp_level = parse_int(comp_level_label);
-    // old version w/o comp_level
-    if (had_error() && (error_message() == comp_level_label)) {
-      // use highest available tier
-      comp_level = CompilationPolicy::highest_compile_level();
-    }
+    int comp_level = parse_int("comp_level");
     if (!is_valid_comp_level(comp_level)) {
       return;
     }
-    if (_imethod != NULL) {
+    if (_imethod != nullptr) {
       // Replay Inlining
       if (entry_bci != _entry_bci || comp_level != _comp_level) {
         return;
@@ -778,7 +783,7 @@ class CompileReplay : public StackObj {
         new_ciInlineRecord(inl_method, bci, depth, inline_late);
       }
     }
-    if (_imethod != NULL) {
+    if (_imethod != nullptr) {
       return; // Replay Inlining
     }
     InstanceKlass* ik = method->method_holder();
@@ -795,15 +800,14 @@ class CompileReplay : public StackObj {
       }
     }
     // Make sure the existence of a prior compile doesn't stop this one
-    CompiledMethod* nm = (entry_bci != InvocationEntryBci) ? method->lookup_osr_nmethod_for(entry_bci, comp_level, true) : method->code();
-    if (nm != NULL) {
-      nm->make_not_entrant();
+    nmethod* nm = (entry_bci != InvocationEntryBci) ? method->lookup_osr_nmethod_for(entry_bci, comp_level, true) : method->code();
+    if (nm != nullptr) {
+      nm->make_not_entrant("CI replay");
     }
     replay_state = this;
     CompileBroker::compile_method(methodHandle(THREAD, method), entry_bci, comp_level,
-                                  methodHandle(), 0, CompileTask::Reason_Replay, THREAD);
-    replay_state = NULL;
-    reset();
+                                  0, CompileTask::Reason_Replay, THREAD);
+    replay_state = nullptr;
   }
 
   // ciMethod <klass> <name> <signature> <invocation_counter> <backedge_counter> <interpreter_invocation_count> <interpreter_throwout_count> <instructions_size>
@@ -825,20 +829,10 @@ class CompileReplay : public StackObj {
     /* just copied from Method, to build interpret data*/
 
     // To be properly initialized, some profiling in the MDO needs the
-    // method to be rewritten (number of arguments at a call for
-    // instance)
+    // method to be rewritten (number of arguments at a call for instance)
     method->method_holder()->link_class(CHECK);
-    // Method::build_interpreter_method_data(method, CHECK);
-    {
-      // Grab a lock here to prevent multiple
-      // MethodData*s from being created.
-      MutexLocker ml(THREAD, MethodData_lock);
-      if (method->method_data() == NULL) {
-        ClassLoaderData* loader_data = method->method_holder()->class_loader_data();
-        MethodData* method_data = MethodData::allocate(loader_data, methodHandle(THREAD, method), CHECK);
-        method->set_method_data(method_data);
-      }
-    }
+    assert(method->method_data() == nullptr, "Should only be initialized once");
+    method->build_profiling_method_data(methodHandle(THREAD, method), CHECK);
 
     // collect and record all the needed information for later
     ciMethodDataRecord* rec = new_ciMethodData(method);
@@ -850,11 +844,11 @@ class CompileReplay : public StackObj {
     }
 
     rec->_orig_data = parse_data("orig", rec->_orig_data_length);
-    if (rec->_orig_data == NULL) {
+    if (rec->_orig_data == nullptr) {
       return;
     }
     rec->_data = parse_intptr_data("data", rec->_data_length);
-    if (rec->_data == NULL) {
+    if (rec->_data == nullptr) {
       return;
     }
     if (!parse_tag_and_count("oops", rec->_classes_length)) {
@@ -897,23 +891,11 @@ class CompileReplay : public StackObj {
     // just load the referenced class
     Klass* k = parse_klass(CHECK);
 
-    if (_version >= 1) {
-      if (!_protection_domain_initialized && k != NULL) {
-        assert(_protection_domain() == NULL, "must be uninitialized");
-        // The first entry is the holder class of the method for which a replay compilation is requested.
-        // Use the same protection domain to load all subsequent classes in order to resolve all classes
-        // in signatures of inlinees. This ensures that inlining can be done as stated in the replay file.
-        _protection_domain = Handle(_thread, k->protection_domain());
-      }
-
-      _protection_domain_initialized = true;
-    }
-
-    if (k == NULL) {
+    if (k == nullptr) {
       return;
     }
     const char* comment = parse_string();
-    bool is_comment = comment != NULL && strcmp(comment, "#") == 0;
+    bool is_comment = comment != nullptr && strcmp(comment, "#") == 0;
     if (k->is_hidden() != is_comment) {
       report_error("hidden class with comment expected");
       return;
@@ -935,7 +917,7 @@ class CompileReplay : public StackObj {
   // constant pool tags are in the same state.
   void process_ciInstanceKlass(TRAPS) {
     InstanceKlass* k = (InstanceKlass*)parse_klass(CHECK);
-    if (k == NULL) {
+    if (k == nullptr) {
       skip_remaining();
       return;
     }
@@ -1034,8 +1016,8 @@ class CompileReplay : public StackObj {
   void process_staticfield(TRAPS) {
     InstanceKlass* k = (InstanceKlass *)parse_klass(CHECK);
 
-    if (k == NULL || ReplaySuppressInitializers == 0 ||
-        (ReplaySuppressInitializers == 2 && k->class_loader() == NULL)) {
+    if (k == nullptr || ReplaySuppressInitializers == 0 ||
+        (ReplaySuppressInitializers == 2 && k->class_loader() == nullptr)) {
       skip_remaining();
       return;
     }
@@ -1057,47 +1039,50 @@ class CompileReplay : public StackObj {
     oop java_mirror = k->java_mirror();
     if (field_signature[0] == JVM_SIGNATURE_ARRAY) {
       int length = parse_int("array length");
-      oop value = NULL;
+      oop value = nullptr;
 
-      if (field_signature[1] == JVM_SIGNATURE_ARRAY) {
-        // multi dimensional array
-        ArrayKlass* kelem = (ArrayKlass *)parse_klass(CHECK);
-        if (kelem == NULL) {
-          return;
-        }
-        int rank = 0;
-        while (field_signature[rank] == JVM_SIGNATURE_ARRAY) {
-          rank++;
-        }
-        jint* dims = NEW_RESOURCE_ARRAY(jint, rank);
-        dims[0] = length;
-        for (int i = 1; i < rank; i++) {
-          dims[i] = 1; // These aren't relevant to the compiler
-        }
-        value = kelem->multi_allocate(rank, dims, CHECK);
-      } else {
-        if (strcmp(field_signature, "[B") == 0) {
-          value = oopFactory::new_byteArray(length, CHECK);
-        } else if (strcmp(field_signature, "[Z") == 0) {
-          value = oopFactory::new_boolArray(length, CHECK);
-        } else if (strcmp(field_signature, "[C") == 0) {
-          value = oopFactory::new_charArray(length, CHECK);
-        } else if (strcmp(field_signature, "[S") == 0) {
-          value = oopFactory::new_shortArray(length, CHECK);
-        } else if (strcmp(field_signature, "[F") == 0) {
-          value = oopFactory::new_floatArray(length, CHECK);
-        } else if (strcmp(field_signature, "[D") == 0) {
-          value = oopFactory::new_doubleArray(length, CHECK);
-        } else if (strcmp(field_signature, "[I") == 0) {
-          value = oopFactory::new_intArray(length, CHECK);
-        } else if (strcmp(field_signature, "[J") == 0) {
-          value = oopFactory::new_longArray(length, CHECK);
-        } else if (field_signature[0] == JVM_SIGNATURE_ARRAY &&
-                   field_signature[1] == JVM_SIGNATURE_CLASS) {
-          Klass* kelem = resolve_klass(field_signature + 1, CHECK);
-          value = oopFactory::new_objArray(kelem, length, CHECK);
+      if (length != -1) {
+        if (field_signature[1] == JVM_SIGNATURE_ARRAY) {
+          // multi dimensional array
+          ArrayKlass* kelem = (ArrayKlass *)parse_klass(CHECK);
+          if (kelem == nullptr) {
+            return;
+          }
+          int rank = 0;
+          while (field_signature[rank] == JVM_SIGNATURE_ARRAY) {
+            rank++;
+          }
+          jint* dims = NEW_RESOURCE_ARRAY(jint, rank);
+          dims[0] = length;
+          for (int i = 1; i < rank; i++) {
+            dims[i] = 1; // These aren't relevant to the compiler
+          }
+          value = kelem->multi_allocate(rank, dims, CHECK);
         } else {
-          report_error("unhandled array staticfield");
+          if (strcmp(field_signature, "[B") == 0) {
+            value = oopFactory::new_byteArray(length, CHECK);
+          } else if (strcmp(field_signature, "[Z") == 0) {
+            value = oopFactory::new_boolArray(length, CHECK);
+          } else if (strcmp(field_signature, "[C") == 0) {
+            value = oopFactory::new_charArray(length, CHECK);
+          } else if (strcmp(field_signature, "[S") == 0) {
+            value = oopFactory::new_shortArray(length, CHECK);
+          } else if (strcmp(field_signature, "[F") == 0) {
+            value = oopFactory::new_floatArray(length, CHECK);
+          } else if (strcmp(field_signature, "[D") == 0) {
+            value = oopFactory::new_doubleArray(length, CHECK);
+          } else if (strcmp(field_signature, "[I") == 0) {
+            value = oopFactory::new_intArray(length, CHECK);
+          } else if (strcmp(field_signature, "[J") == 0) {
+            value = oopFactory::new_longArray(length, CHECK);
+          } else if (field_signature[0] == JVM_SIGNATURE_ARRAY &&
+                     field_signature[1] == JVM_SIGNATURE_CLASS) {
+            Klass* actual_array_klass = parse_klass(CHECK);
+            Klass* kelem = ObjArrayKlass::cast(actual_array_klass)->element_klass();
+            value = oopFactory::new_objArray(kelem, length, CHECK);
+          } else {
+            report_error("unhandled array staticfield");
+          }
         }
       }
       java_mirror->obj_field_put(fd.offset(), value);
@@ -1135,8 +1120,11 @@ class CompileReplay : public StackObj {
         Handle value = java_lang_String::create_from_str(string_value, CHECK);
         java_mirror->obj_field_put(fd.offset(), value());
       } else if (field_signature[0] == JVM_SIGNATURE_CLASS) {
-        Klass* k = resolve_klass(string_value, CHECK);
-        oop value = InstanceKlass::cast(k)->allocate_instance(CHECK);
+        oop value = nullptr;
+        if (string_value != nullptr) {
+          Klass* k = resolve_klass(string_value, CHECK);
+          value = InstanceKlass::cast(k)->allocate_instance(CHECK);
+        }
         java_mirror->obj_field_put(fd.offset(), value);
       } else {
         report_error("unhandled staticfield");
@@ -1184,7 +1172,7 @@ class CompileReplay : public StackObj {
         return rec;
       }
     }
-    return NULL;
+    return nullptr;
   }
 
   // Create and initialize a record for a ciInstanceKlass which was present at replay dump time.
@@ -1206,7 +1194,7 @@ class CompileReplay : public StackObj {
         return rec;
       }
     }
-    return NULL;
+    return nullptr;
   }
 
   // Create and initialize a record for a ciMethodData
@@ -1232,7 +1220,7 @@ class CompileReplay : public StackObj {
         return rec;
       }
     }
-    return NULL;
+    return nullptr;
   }
 
   // Create and initialize a record for a ciInlineRecord
@@ -1250,15 +1238,15 @@ class CompileReplay : public StackObj {
 
   // Lookup inlining data for a ciMethod
   ciInlineRecord* find_ciInlineRecord(Method* method, int bci, int depth) {
-    if (_ci_inline_records != NULL) {
+    if (_ci_inline_records != nullptr) {
       return find_ciInlineRecord(_ci_inline_records, method, bci, depth);
     }
-    return NULL;
+    return nullptr;
   }
 
   static ciInlineRecord* find_ciInlineRecord(GrowableArray<ciInlineRecord*>*  records,
                                       Method* method, int bci, int depth) {
-    if (records != NULL) {
+    if (records != nullptr) {
       const char* klass_name  = method->method_holder()->name()->as_utf8();
       const char* method_name = method->name()->as_utf8();
       const char* signature   = method->signature()->as_utf8();
@@ -1273,7 +1261,7 @@ class CompileReplay : public StackObj {
         }
       }
     }
-    return NULL;
+    return nullptr;
   }
 
   const char* error_message() {
@@ -1281,7 +1269,7 @@ class CompileReplay : public StackObj {
   }
 
   void reset() {
-    _error_message = NULL;
+    _error_message = nullptr;
     _ci_method_records.clear();
     _ci_method_data_records.clear();
   }
@@ -1344,13 +1332,13 @@ void ciReplay::replay(TRAPS) {
 }
 
 bool ciReplay::no_replay_state() {
-  return replay_state == NULL;
+  return replay_state == nullptr;
 }
 
 void* ciReplay::load_inline_data(ciMethod* method, int entry_bci, int comp_level) {
   if (FLAG_IS_DEFAULT(InlineDataFile)) {
     tty->print_cr("ERROR: no inline replay data file specified (use -XX:InlineDataFile=inline_pid12345.txt).");
-    return NULL;
+    return nullptr;
   }
 
   VM_ENTRY_MARK;
@@ -1358,7 +1346,7 @@ void* ciReplay::load_inline_data(ciMethod* method, int entry_bci, int comp_level
   CompileReplay rp(InlineDataFile, THREAD);
   if (!rp.can_replay()) {
     tty->print_cr("ciReplay: !rp.can_replay()");
-    return NULL;
+    return nullptr;
   }
   void* data = rp.process_inline(method, method->get_Method(), entry_bci, comp_level, THREAD);
   if (HAS_PENDING_EXCEPTION) {
@@ -1366,12 +1354,12 @@ void* ciReplay::load_inline_data(ciMethod* method, int entry_bci, int comp_level
     CLEAR_PENDING_EXCEPTION;
     java_lang_Throwable::print_stack_trace(throwable, tty);
     tty->cr();
-    return NULL;
+    return nullptr;
   }
 
   if (rp.had_error()) {
     tty->print_cr("ciReplay: Failed on %s", rp.error_message());
-    return NULL;
+    return nullptr;
   }
   return data;
 }
@@ -1383,7 +1371,7 @@ int ciReplay::replay_impl(TRAPS) {
   if (ReplaySuppressInitializers > 2) {
     // ReplaySuppressInitializers > 2 means that we want to allow
     // normal VM bootstrap but once we get into the replay itself
-    // don't allow any intializers to be run.
+    // don't allow any initializers to be run.
     ReplaySuppressInitializers = 1;
   }
 
@@ -1427,7 +1415,7 @@ void ciReplay::initialize(ciMethodData* m) {
 
   Method* method = m->get_MethodData()->method();
   ciMethodDataRecord* rec = replay_state->find_ciMethodDataRecord(method);
-  if (rec == NULL) {
+  if (rec == nullptr) {
     // This indicates some mismatch with the original environment and
     // the replay environment though it's not always enough to
     // interfere with reproducing a bug
@@ -1447,7 +1435,7 @@ void ciReplay::initialize(ciMethodData* m) {
         Klass *k = rec->_classes[i];
         // In case this class pointer is is tagged, preserve the tag bits
         intptr_t status = 0;
-        if (k != NULL) {
+        if (k != nullptr) {
           status = ciTypeEntries::with_status(env->get_metadata(k)->as_klass(), rec->_data[rec->_classes_offsets[i]]);
         }
         rec->_data[rec->_classes_offsets[i]] = status;
@@ -1477,25 +1465,25 @@ bool ciReplay::should_not_inline(ciMethod* method) {
   }
   VM_ENTRY_MARK;
   // ciMethod without a record shouldn't be inlined.
-  return replay_state->find_ciMethodRecord(method->get_Method()) == NULL;
+  return replay_state->find_ciMethodRecord(method->get_Method()) == nullptr;
 }
 
 bool ciReplay::should_inline(void* data, ciMethod* method, int bci, int inline_depth, bool& should_delay) {
-  if (data != NULL) {
+  if (data != nullptr) {
     GrowableArray<ciInlineRecord*>* records = (GrowableArray<ciInlineRecord*>*)data;
     VM_ENTRY_MARK;
     // Inline record are ordered by bci and depth.
     ciInlineRecord* record = CompileReplay::find_ciInlineRecord(records, method->get_Method(), bci, inline_depth);
-    if (record == NULL) {
+    if (record == nullptr) {
       return false;
     }
     should_delay = record->_inline_late;
     return true;
-  } else if (replay_state != NULL) {
+  } else if (replay_state != nullptr) {
     VM_ENTRY_MARK;
     // Inline record are ordered by bci and depth.
     ciInlineRecord* record = replay_state->find_ciInlineRecord(method->get_Method(), bci, inline_depth);
-    if (record == NULL) {
+    if (record == nullptr) {
       return false;
     }
     should_delay = record->_inline_late;
@@ -1505,15 +1493,15 @@ bool ciReplay::should_inline(void* data, ciMethod* method, int bci, int inline_d
 }
 
 bool ciReplay::should_not_inline(void* data, ciMethod* method, int bci, int inline_depth) {
-  if (data != NULL) {
+  if (data != nullptr) {
     GrowableArray<ciInlineRecord*>* records = (GrowableArray<ciInlineRecord*>*)data;
     VM_ENTRY_MARK;
     // Inline record are ordered by bci and depth.
-    return CompileReplay::find_ciInlineRecord(records, method->get_Method(), bci, inline_depth) == NULL;
-  } else if (replay_state != NULL) {
+    return CompileReplay::find_ciInlineRecord(records, method->get_Method(), bci, inline_depth) == nullptr;
+  } else if (replay_state != nullptr) {
     VM_ENTRY_MARK;
     // Inline record are ordered by bci and depth.
-    return replay_state->find_ciInlineRecord(method->get_Method(), bci, inline_depth) == NULL;
+    return replay_state->find_ciInlineRecord(method->get_Method(), bci, inline_depth) == nullptr;
   }
   return false;
 }
@@ -1528,7 +1516,7 @@ void ciReplay::initialize(ciMethod* m) {
 
   Method* method = m->get_Method();
   ciMethodRecord* rec = replay_state->find_ciMethodRecord(method);
-  if (rec == NULL) {
+  if (rec == nullptr) {
     // This indicates some mismatch with the original environment and
     // the replay environment though it's not always enough to
     // interfere with reproducing a bug
@@ -1538,11 +1526,11 @@ void ciReplay::initialize(ciMethod* m) {
   } else {
     EXCEPTION_CONTEXT;
     // m->_instructions_size = rec->_instructions_size;
-    m->_instructions_size = -1;
+    m->_inline_instructions_size = -1;
     m->_interpreter_invocation_count = rec->_interpreter_invocation_count;
     m->_interpreter_throwout_count = rec->_interpreter_throwout_count;
     MethodCounters* mcs = method->get_method_counters(CHECK_AND_CLEAR);
-    guarantee(mcs != NULL, "method counters allocation failed");
+    guarantee(mcs != nullptr, "method counters allocation failed");
     mcs->invocation_counter()->_counter = rec->_invocation_counter;
     mcs->backedge_counter()->_counter = rec->_backedge_counter;
   }
@@ -1553,7 +1541,7 @@ void ciReplay::initialize(ciInstanceKlass* ci_ik, InstanceKlass* ik) {
 
   ASSERT_IN_VM;
   ciInstanceKlassRecord* rec = replay_state->find_ciInstanceKlass(ik);
-  assert(rec != NULL, "ciInstanceKlass must be whitelisted");
+  assert(rec != nullptr, "ciInstanceKlass must be whitelisted");
   ci_ik->_java_mirror = CURRENT_ENV->get_instance(JNIHandles::resolve(rec->_java_mirror));
 }
 
@@ -1566,7 +1554,7 @@ bool ciReplay::is_loaded(Method* method) {
   ResourceMark rm;
 
   ciMethodRecord* rec = replay_state->find_ciMethodRecord(method);
-  return rec != NULL;
+  return rec != nullptr;
 }
 
 bool ciReplay::is_klass_unresolved(const InstanceKlass* klass) {
@@ -1576,9 +1564,8 @@ bool ciReplay::is_klass_unresolved(const InstanceKlass* klass) {
 
   // Check if klass is found on whitelist.
   ciInstanceKlassRecord* rec = replay_state->find_ciInstanceKlass(klass);
-  return rec == NULL;
+  return rec == nullptr;
 }
-#endif // PRODUCT
 
 oop ciReplay::obj_field(oop obj, Symbol* name) {
   InstanceKlass* ik = InstanceKlass::cast(obj->klass());
@@ -1605,14 +1592,14 @@ oop ciReplay::obj_field(oop obj, Symbol* name) {
     }
 
     ik = ik->java_super();
-  } while (ik != NULL);
-  return NULL;
+  } while (ik != nullptr);
+  return nullptr;
 }
 
 oop ciReplay::obj_field(oop obj, const char *name) {
   Symbol* fname = SymbolTable::probe(name, (int)strlen(name));
-  if (fname == NULL) {
-    return NULL;
+  if (fname == nullptr) {
+    return nullptr;
   }
   return obj_field(obj, fname);
 }

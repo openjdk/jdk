@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,12 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.Text;
 
 
 /**
@@ -95,6 +95,7 @@ public class Contents {
     public final Content exceptionClass;
     public final Content exceptionClasses;
     public final Content exportedTo;
+    public final Content externalSpecifications;
     public final Content fieldLabel;
     public final Content fieldDetailsLabel;
     public final Content fieldSummaryLabel;
@@ -104,6 +105,7 @@ public class Contents {
     public final Content functionalInterfaceMessage;
     public final Content helpLabel;
     public final Content helpSubNavLabel;
+    public final Content hideSidebar;
     public final Content hierarchyForAllPackages;
     public final Content implementation;
     public final Content implementingClassesLabel;
@@ -157,6 +159,9 @@ public class Contents {
     public final Content previewLabel;
     public final Content previewMark;
     public final Content previewPhrase;
+    public final Content restrictedMark;
+    public final Content restrictedMethods;
+    public final Content restrictedPhrase;
     public final Content properties;
     public final Content propertyLabel;
     public final Content propertyDetailsLabel;
@@ -166,15 +171,20 @@ public class Contents {
     public final Content referencedIn;
     public final Content relatedPackages;
     public final Content returns;
+    public final Content searchLabel;
+    public final Content searchTagsLabel;
     public final Content seeAlso;
     public final Content serializedForm;
     public final Content servicesLabel;
+    public final Content showSidebar;
+    public final Content specificationLabel;
     public final Content specifiedByLabel;
     public final Content subclassesLabel;
     public final Content subinterfacesLabel;
     public final Content summaryLabel;
     public final Content systemPropertiesLabel;
     public final Content systemPropertiesSummaryLabel;
+    public final Content tableOfContentsLabel;
     public final Content throws_;
     public final Content treeLabel;
     public final Content typeLabel;
@@ -239,6 +249,7 @@ public class Contents {
         exceptionClass = getContent("doclet.ExceptionClass");
         exceptionClasses = getContent("doclet.ExceptionClasses");
         exportedTo = getContent("doclet.ExportedTo");
+        externalSpecifications = getContent("doclet.External_Specifications");
         fieldDetailsLabel = getContent("doclet.Field_Detail");
         fieldSummaryLabel = getContent("doclet.Field_Summary");
         fieldLabel = getContent("doclet.Field");
@@ -248,6 +259,7 @@ public class Contents {
         functionalInterfaceMessage = getContent("doclet.Functional_Interface_Message");
         helpLabel = getContent("doclet.Help");
         helpSubNavLabel = getContent("doclet.Help_Sub_Nav");
+        hideSidebar = getContent("doclet.hide_sidebar");
         hierarchyForAllPackages = getContent("doclet.Hierarchy_For_All_Packages");
         implementation = getContent("doclet.Implementation");
         implementingClassesLabel = getContent("doclet.Implementing_Classes");
@@ -301,6 +313,9 @@ public class Contents {
         previewLabel = getContent("doclet.Preview_Label");
         previewMark = getContent("doclet.Preview_Mark");
         previewPhrase = getContent("doclet.Preview");
+        restrictedMark = getContent("doclet.Restricted_Mark");
+        restrictedMethods = getContent("doclet.Restricted_Methods");
+        restrictedPhrase = getContent("doclet.Restricted");
         properties = getContent("doclet.Properties");
         propertyLabel = getContent("doclet.Property");
         propertyDetailsLabel = getContent("doclet.Property_Detail");
@@ -310,15 +325,20 @@ public class Contents {
         referencedIn = getContent("doclet.ReferencedIn");
         relatedPackages = getContent("doclet.Related_Packages");
         returns = getContent("doclet.Returns");
+        searchLabel = getContent("doclet.search");
+        searchTagsLabel = getContent("doclet.searchTags");
         seeAlso = getContent("doclet.See_Also");
         serializedForm = getContent("doclet.Serialized_Form");
         servicesLabel = getContent("doclet.Services");
+        showSidebar = getContent("doclet.show_sidebar");
+        specificationLabel = getContent("doclet.Specification");
         specifiedByLabel = getContent("doclet.Specified_By");
         subclassesLabel = getContent("doclet.Subclasses");
         subinterfacesLabel = getContent("doclet.Subinterfaces");
         summaryLabel = getContent("doclet.Summary");
         systemPropertiesLabel = getContent("doclet.systemProperties");
         systemPropertiesSummaryLabel = getContent("doclet.systemPropertiesSummary");
+        tableOfContentsLabel = getContent("doclet.table_of_contents");
         throws_ = getContent("doclet.Throws");
         treeLabel = getContent("doclet.Tree");
         typeLabel = getContent("doclet.Type");
@@ -343,7 +363,7 @@ public class Contents {
      * a given key in the doclet's resources.
      *
      * @param key the key for the desired string
-     * @return a content tree for the string
+     * @return the string
      */
     public Content getContent(String key) {
         return Text.of(resources.getText(key));
@@ -356,7 +376,7 @@ public class Contents {
      *
      * @param key the key for the desired string
      * @param o0  string or content argument to be formatted into the result
-     * @return a content tree for the text
+     * @return the string
      */
     public Content getContent(String key, Object o0) {
         return getContent(key, o0, null, null);
@@ -370,7 +390,7 @@ public class Contents {
      * @param key the key for the desired string
      * @param o0  string or content argument to be formatted into the result
      * @param o1  string or content argument to be formatted into the result
-     * @return a content tree for the text
+     * @return the string
      */
     public Content getContent(String key, Object o0, Object o1) {
         return getContent(key, o0, o1, null);
@@ -385,11 +405,11 @@ public class Contents {
      * @param o0  string or content argument to be formatted into the result
      * @param o1  string or content argument to be formatted into the result
      * @param o2  string or content argument to be formatted into the result
-     * @return a content tree for the text
+     * @return the string
      */
     public Content getContent(String key, Object o0, Object o1, Object o2) {
         Content c = new ContentBuilder();
-        Pattern p = Pattern.compile("\\{([012])\\}");
+        Pattern p = Pattern.compile("\\{([012])}");
         String text = resources.getText(key); // TODO: cache
         Matcher m = p.matcher(text);
         int start = 0;
@@ -423,9 +443,9 @@ public class Contents {
      *
      * @param separator the separator
      * @param items     the items
-     * @return the content
+     * @return the composition
      */
-    public Content join(Content separator, Collection<Content> items) {
+    public Content join(Content separator, Collection<? extends Content> items) {
         Content result = new ContentBuilder();
         boolean first = true;
         for (Content c : items) {
@@ -446,7 +466,7 @@ public class Contents {
      * the named resource string.
      *
      * @param key the key for the desired string
-     * @return a content tree for the string
+     * @return the string
      */
     private Content getNonBreakResource(String key) {
         return getNonBreakString(resources.getText(key));
@@ -458,7 +478,7 @@ public class Contents {
      * the named resource string.
      *
      * @param text the string
-     * @return a content tree for the string
+     * @return the string content
      */
     public Content getNonBreakString(String text) {
         Content c = new ContentBuilder();
@@ -474,9 +494,9 @@ public class Contents {
     }
 
     /**
-     * Returns a content for a visible member kind.
+     * {@return a label that describes the VisibleMemberTable kind}
+     *
      * @param kind the visible member table kind.
-     * @return the string content
      */
     public Content getNavLinkLabelContent(VisibleMemberTable.Kind kind) {
         return Objects.requireNonNull(navLinkLabels.get(kind));

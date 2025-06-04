@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,13 @@
 
 package java.security;
 
-import java.io.*;
-import java.util.Locale;
-
+import javax.crypto.spec.SecretKeySpec;
+import java.io.NotSerializableException;
+import java.io.ObjectStreamException;
+import java.io.Serializable;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.security.spec.InvalidKeySpecException;
-
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.SecretKeySpec;
+import java.util.Locale;
 
 /**
  * Standardized representation for serialized Key objects.
@@ -46,6 +44,7 @@ import javax.crypto.spec.SecretKeySpec;
  * Security Appendix</a>
  * of the <cite>Java Object Serialization Specification</cite> for more information.
  *
+ * @spec serialization/index.html Java Object Serialization Specification
  * @see Key
  * @see KeyFactory
  * @see javax.crypto.spec.SecretKeySpec
@@ -65,7 +64,7 @@ public class KeyRep implements Serializable {
      *
      * @since 1.5
      */
-    public static enum Type {
+    public enum Type {
 
         /** Type for secret keys. */
         SECRET,
@@ -87,28 +86,28 @@ public class KeyRep implements Serializable {
      *
      * @serial
      */
-    private Type type;
+    private final Type type;
 
     /**
      * The Key algorithm
      *
      * @serial
      */
-    private String algorithm;
+    private final String algorithm;
 
     /**
      * The Key encoding format
      *
      * @serial
      */
-    private String format;
+    private final String format;
 
     /**
      * The encoded Key bytes
      *
      * @serial
      */
-    private byte[] encoded;
+    private final byte[] encoded;
 
     /**
      * Construct the alternate Key class.

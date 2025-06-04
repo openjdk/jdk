@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,13 @@
  * @bug 8279822
  * @requires vm.flagless
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /testlibrary/asm
  *
  * @run main compiler.runtime.TestConstantsInError
  */
 package compiler.runtime;
 
-import jdk.internal.org.objectweb.asm.*;
+import org.objectweb.asm.*;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -46,8 +46,8 @@ import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
 
-import static jdk.internal.org.objectweb.asm.ClassWriter.*;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.ClassWriter.*;
+import static org.objectweb.asm.Opcodes.*;
 
 interface OutputProcessor {
     default void process(OutputAnalyzer output, boolean isC1) {}
@@ -130,7 +130,7 @@ public abstract class TestConstantsInError implements OutputProcessor {
             results.shouldMatch("Test_C1/.*::test \\(3 bytes\\)$")
                    .shouldMatch("Test_C2/.*::test \\(3 bytes\\)$");
 
-            if (isC1 && Platform.isAArch64()) { // no code patching
+            if (isC1 && (Platform.isAArch64() || Platform.isRISCV64())) { // no code patching
                 results.shouldMatch("Test_C1/.*::test \\(3 bytes\\)   made not entrant")
                        .shouldMatch("Test_C2/.*::test \\(3 bytes\\)   made not entrant");
             } else {
@@ -168,7 +168,7 @@ public abstract class TestConstantsInError implements OutputProcessor {
                    .shouldMatch("Test_MH3/.*::test \\(3 bytes\\)$")
                    .shouldMatch("Test_MH4/.*::test \\(3 bytes\\)$");
 
-            if (isC1 && Platform.isAArch64()) { // no code patching
+            if (isC1 && (Platform.isAArch64() || Platform.isRISCV64())) { // no code patching
                 results.shouldMatch("Test_MH1/.*::test \\(3 bytes\\)   made not entrant")
                        .shouldMatch("Test_MH2/.*::test \\(3 bytes\\)   made not entrant")
                        .shouldMatch("Test_MH3/.*::test \\(3 bytes\\)   made not entrant")
@@ -191,7 +191,7 @@ public abstract class TestConstantsInError implements OutputProcessor {
             results.shouldMatch("Test_MT1/.*::test \\(3 bytes\\)$")
                    .shouldMatch("Test_MT2/.*::test \\(3 bytes\\)$");
 
-            if (isC1 && Platform.isAArch64()) { // no code patching
+            if (isC1 && (Platform.isAArch64() || Platform.isRISCV64())) { // no code patching
                 results.shouldMatch("Test_MT1/.*::test \\(3 bytes\\)   made not entrant")
                        .shouldMatch("Test_MT2/.*::test \\(3 bytes\\)   made not entrant");
             } else {
@@ -235,7 +235,7 @@ public abstract class TestConstantsInError implements OutputProcessor {
                    .shouldMatch("Test_CD3.*::test \\(3 bytes\\)$")
                    .shouldMatch("Test_CD4.*::test \\(3 bytes\\)$");
 
-            if (isC1 && Platform.isAArch64()) { // no code patching
+            if (isC1 && (Platform.isAArch64() || Platform.isRISCV64())) { // no code patching
                 results.shouldMatch("Test_CD1.*::test \\(3 bytes\\)   made not entrant")
                        .shouldMatch("Test_CD2.*::test \\(3 bytes\\)   made not entrant")
                        .shouldMatch("Test_CD3.*::test \\(3 bytes\\)   made not entrant")
@@ -248,7 +248,6 @@ public abstract class TestConstantsInError implements OutputProcessor {
 
     static void run(TestConstantsInError test) throws Exception {
         List<String> commonArgs = List.of(
-                "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
                 "-Xbatch", "-XX:CompileThreshold=100",
                 "-XX:CompileCommand=quiet", "-XX:CompileCommand=compileonly,*::test",
                 "-XX:+PrintCompilation",
@@ -261,7 +260,7 @@ public abstract class TestConstantsInError implements OutputProcessor {
         c1Args.addAll(List.of("-XX:+TieredCompilation", "-XX:TieredStopAtLevel=1", "-XX:+TracePatching"));
         c1Args.addAll(commonArgs);
 
-        OutputAnalyzer outputC1 = ProcessTools.executeTestJvm(c1Args)
+        OutputAnalyzer outputC1 = ProcessTools.executeTestJava(c1Args)
                 .shouldHaveExitValue(0);
 
         test.process(outputC1, true);
@@ -270,7 +269,7 @@ public abstract class TestConstantsInError implements OutputProcessor {
         c2Args.add("-XX:-TieredCompilation");
         c2Args.addAll(commonArgs);
 
-        OutputAnalyzer outputC2 = ProcessTools.executeTestJvm(c2Args)
+        OutputAnalyzer outputC2 = ProcessTools.executeTestJava(c2Args)
                 .shouldHaveExitValue(0);
 
         test.process(outputC2, false);

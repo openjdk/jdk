@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
 import com.sun.jmx.mbeanserver.MXBeanMappingFactory;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * Base class for MBeans.  There is one instance of this class for
@@ -94,7 +93,7 @@ import sun.reflect.misc.ReflectUtil;
  * MBean Server will always have the same interface here.)
  *
  * The MBeanInfo in this second cache will be the MBeanInfo from the
- * PerInterface cache for the given itnerface, but with the
+ * PerInterface cache for the given interface, but with the
  * getClassName() having the concrete class's name, and the public
  * constructors based on the concrete class's constructors.  This
  * MBeanInfo can be shared between all instances of the concrete class
@@ -132,7 +131,6 @@ public abstract class MBeanSupport<M>
                 " is not an instance of " + mbeanInterfaceType.getName();
             throw new NotCompliantMBeanException(msg);
         }
-        ReflectUtil.checkPackageAccess(mbeanInterfaceType);
         this.resource = resource;
         MBeanIntrospector<M> introspector = getMBeanIntrospector();
         this.perInterface = introspector.getPerInterface(mbeanInterfaceType);

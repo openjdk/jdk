@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,9 @@ public class stepreq001t {
             for (int i=1; i<stepreq001.THRDS_NUM; i++) {
                 thrs[i] = JDIThreadFactory.newThread(new stepreq001a(readyObj, lockObj,
                     stepreq001.DEBUGGEE_THRDS[i]));
-                thrs[i].setDaemon(stepreq001.DAEMON_THRDS[i]);
+                if (!thrs[i].isVirtual()) {
+                    thrs[i].setDaemon(stepreq001.DAEMON_THRDS[i]);
+                }
                 if (argHandler.verbose())
                     System.out.println("Debuggee: starting thread #"
                         + i + " \"" + thrs[i].getName() + "\"");

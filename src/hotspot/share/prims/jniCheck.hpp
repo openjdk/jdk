@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_PRIMS_JNICHECK_HPP
 #define SHARE_PRIMS_JNICHECK_HPP
 
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 extern "C" {
   // Report a JNI failure caught by -Xcheck:jni.  Perform a core dump.
@@ -35,7 +35,7 @@ extern "C" {
   // When in VM state:
   static inline void ReportJNIFatalError(JavaThread* thr, const char *msg) {
     tty->print_cr("FATAL ERROR in native method: %s", msg);
-    thr->print_stack();
+    thr->print_jni_stack();
     os::abort(true);
   }
 }
@@ -51,7 +51,7 @@ class jniCheck : public AllStatic {
   static Klass* validate_class(JavaThread* thr, jclass clazz, bool allow_primitive = false);
   static void validate_class_descriptor(JavaThread* thr, const char* name);
   static void validate_throwable_klass(JavaThread* thr, Klass* klass);
-  static void validate_call(JavaThread* thr, jclass clazz, jmethodID method_id, jobject obj = NULL);
+  static void validate_call(JavaThread* thr, jclass clazz, jmethodID method_id, jobject obj = nullptr);
   static Method* validate_jmethod_id(JavaThread* thr, jmethodID method_id);
 };
 

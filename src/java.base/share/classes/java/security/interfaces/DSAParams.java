@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.security.interfaces;
 
 import java.math.BigInteger;
+import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * Interface to a DSA-specific set of key parameters, which defines a
@@ -40,26 +41,26 @@ import java.math.BigInteger;
  * @author Josh Bloch
  * @since 1.1
  */
-public interface DSAParams {
+public interface DSAParams extends AlgorithmParameterSpec {
 
     /**
      * Returns the prime, {@code p}.
      *
      * @return the prime, {@code p}.
      */
-    public BigInteger getP();
+    BigInteger getP();
 
     /**
      * Returns the subprime, {@code q}.
      *
      * @return the subprime, {@code q}.
      */
-    public BigInteger getQ();
+    BigInteger getQ();
 
     /**
      * Returns the base, {@code g}.
      *
      * @return the base, {@code g}.
      */
-    public BigInteger getG();
+    BigInteger getG();
 }

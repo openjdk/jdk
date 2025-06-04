@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,13 +60,13 @@ public class AppletResourceTest {
     public void init() {
         DummyImageReaderImpl reader;
         MyReadWarningListener listener = new MyReadWarningListener();
-        Locale[] locales = {new Locale("ru"),
-                            new Locale("fr"),
-                            new Locale("uk")};
+        Locale[] locales = {Locale.of("ru"),
+                            Locale.FRENCH,
+                            Locale.of("uk")};
 
         reader = new DummyImageReaderImpl(new DummyImageReaderSpiImpl());
         reader.setAvailableLocales(locales);
-        reader.setLocale(new Locale("fr"));
+        reader.setLocale(Locale.FRENCH);
         reader.addIIOReadWarningListener(listener);
 
         String baseName = "AppletResourceTest$BugStats";

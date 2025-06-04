@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,22 +32,19 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleElementVisitor14;
 import javax.lang.model.util.SimpleTypeVisitor9;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
 /**
- *  A collection of {@code Comparator} factory methods.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * A collection of {@code Comparator} factory methods.
  */
 public class Comparators {
 
@@ -60,10 +57,11 @@ public class Comparators {
     private Comparator<Element> moduleComparator = null;
 
     /**
-     * Comparator for ModuleElements, simply compares the fully qualified names
-     * @return a Comparator
+     * Returns a comparator for module elements, that simply compares the fully qualified names
+     *
+     * @return the comparator
      */
-    public Comparator<Element> makeModuleComparator() {
+    public Comparator<Element> moduleComparator() {
         if (moduleComparator == null) {
             moduleComparator = new ElementComparator() {
                 @Override
@@ -78,13 +76,13 @@ public class Comparators {
     private Comparator<Element> allClassesComparator = null;
 
     /**
-     * Returns a Comparator for all classes, compares the simple names of
-     * TypeElement, if equal then the fully qualified names, and if equal again
+     * Returns a comparator for all classes, that compares the simple names of
+     * the type element, if equal then the fully qualified names, and if equal again
      * the names of the enclosing modules.
      *
-     * @return Comparator
+     * @return the comparator
      */
-    public Comparator<Element> makeAllClassesComparator() {
+    public Comparator<Element> allClassesComparator() {
         if (allClassesComparator == null) {
             allClassesComparator = new ElementComparator() {
                 @Override
@@ -104,12 +102,12 @@ public class Comparators {
     private Comparator<Element> packageComparator = null;
 
     /**
-     * Returns a Comparator for packages, by comparing the fully qualified names,
+     * Returns a comparator for packages, by comparing the fully qualified names,
      * and if those are equal the names of the enclosing modules.
      *
-     * @return a Comparator
+     * @return the comparator
      */
-    public Comparator<Element> makePackageComparator() {
+    public Comparator<Element> packageComparator() {
         if (packageComparator == null) {
             packageComparator = new ElementComparator() {
                 @Override
@@ -127,13 +125,13 @@ public class Comparators {
     private Comparator<Element> summaryComparator = null;
 
     /**
-     * Returns a Comparator for items listed on summary list pages
+     * Returns a comparator for items listed on summary list pages
      * (like deprecated or preview summary pages), by comparing the
      * fully qualified names, and if those are equal the names of the enclosing modules.
      *
-     * @return a Comparator
+     * @return the comparator
      */
-    public Comparator<Element> makeSummaryComparator() {
+    public Comparator<Element> summaryComparator() {
         if (summaryComparator == null) {
             summaryComparator = new ElementComparator() {
                 @Override
@@ -147,7 +145,11 @@ public class Comparators {
                     if (result != 0) {
                         return result;
                     }
-                    return compareModuleNames(e1, e2);
+                    result = compareModuleNames(e1, e2);
+                    if (result != 0) {
+                        return result;
+                    }
+                    return compareTypeParameters(e1, e2);
                 }
             };
         }
@@ -157,10 +159,11 @@ public class Comparators {
     private Comparator<SerialFieldTree> serialFieldTreeComparator = null;
 
     /**
-     * Returns a Comparator for SerialFieldTree.
-     * @return a Comparator
+     * Returns a comparator for {@link SerialFieldTree}s.
+     *
+     * @return the comparator
      */
-    public Comparator<SerialFieldTree> makeSerialFieldTreeComparator() {
+    public Comparator<SerialFieldTree> serialFieldTreeComparator() {
         if (serialFieldTreeComparator == null) {
             serialFieldTreeComparator = (SerialFieldTree o1, SerialFieldTree o2) -> {
                 String s1 = o1.getName().toString();
@@ -173,22 +176,25 @@ public class Comparators {
 
     /**
      * Returns a general purpose comparator.
-     * @return a Comparator
+     *
+     * @return the comparator
      */
-    public Comparator<Element> makeGeneralPurposeComparator() {
-        return makeClassUseComparator();
+    public Comparator<Element> generalPurposeComparator() {
+        return classUseComparator();
     }
 
     private Comparator<Element> overrideUseComparator = null;
 
     /**
-     * Returns a Comparator for overrides and implements,
+     * Returns a comparator for overrides and implements,
      * used primarily on methods, compares the name first,
      * then compares the simple names of the enclosing
-     * TypeElement and the fully qualified name of the enclosing TypeElement.
-     * @return a Comparator
+     * type element and the fully qualified name of the enclosing
+     * type element.
+     *
+     * @return the comparator
      */
-    public Comparator<Element> makeOverrideUseComparator() {
+    public Comparator<Element> overrideUseComparator() {
         if (overrideUseComparator == null) {
             overrideUseComparator = new ElementComparator() {
                 @Override
@@ -217,20 +223,21 @@ public class Comparators {
     private Comparator<Element> indexUseComparator = null;
 
     /**
-     *  Returns an {@code Element} Comparator for index file presentations, and are sorted as follows.
-     *  If comparing modules and/or packages then simply compare the qualified names,
-     *  if comparing a module or a package with a type/member then compare the
-     *  FullyQualifiedName of the module or a package with the SimpleName of the entity,
-     *  otherwise:
-     *  1. compare the ElementKind ex: Module, Package, Interface etc.
-     *  2a. if equal and if the type is of ExecutableElement(Constructor, Methods),
-     *      a case insensitive comparison of parameter the type signatures
-     *  2b. if equal, case sensitive comparison of the type signatures
-     *  3. if equal, compare the FQNs of the entities
-     *  4. finally, if equal, compare the names of the enclosing modules
+     * Returns an {@code Element} Comparator for index file presentations, and are sorted as follows.
+     * If comparing modules and/or packages then simply compare the qualified names,
+     * if comparing a module or a package with a type/member then compare the
+     * FullyQualifiedName of the module or a package with the SimpleName of the entity,
+     * otherwise:
+     * 1. compare the ElementKind ex: Module, Package, Interface etc.
+     * 2a. if equal and if the type is of ExecutableElement(Constructor, Methods),
+     *     a case-insensitive comparison of parameter the type signatures
+     * 2b. if equal, case-sensitive comparison of the type signatures
+     * 3. if equal, compare the FQNs of the entities
+     * 4. finally, if equal, compare the names of the enclosing modules
+     *
      * @return an element comparator for index file use
      */
-    public Comparator<Element> makeIndexElementComparator() {
+    public Comparator<Element> indexElementComparator() {
         if (indexUseComparator == null) {
             indexUseComparator = new ElementComparator() {
                 /**
@@ -243,17 +250,8 @@ public class Comparators {
                  */
                 @Override
                 public int compare(Element e1, Element e2) {
-                    int result;
                     // first, compare names as appropriate
-                    if ((utils.isModule(e1) || utils.isPackage(e1)) && (utils.isModule(e2) || utils.isPackage(e2))) {
-                        result = compareFullyQualifiedNames(e1, e2);
-                    } else if (utils.isModule(e1) || utils.isPackage(e1)) {
-                        result = utils.compareStrings(utils.getFullyQualifiedName(e1), utils.getSimpleName(e2));
-                    } else if (utils.isModule(e2) || utils.isPackage(e2)) {
-                        result = utils.compareStrings(utils.getSimpleName(e1), utils.getFullyQualifiedName(e2));
-                    } else {
-                        result = compareNames(e1, e2);
-                    }
+                    int result = utils.compareStrings(indexElementKey(e1), indexElementKey(e2));
                     if (result != 0) {
                         return result;
                     }
@@ -272,11 +270,28 @@ public class Comparators {
                     result = compareFullyQualifiedNames(e1, e2);
                     if (result != 0)
                         return result;
-                    return compareModuleNames(e1, e2);
+                    result = compareModuleNames(e1, e2);
+                    if (result != 0)
+                        return result;
+                    return compareTypeParameters(e1, e2);
                 }
             };
         }
         return indexUseComparator;
+    }
+
+    /**
+     * {@return the element's primary key for use in the index comparator}
+     * This method can be used by other comparators which need to produce results
+     * that are consistent with the index comparator.
+     *
+     * @param element an element
+     */
+    public String indexElementKey(Element element) {
+        return switch (element.getKind()) {
+            case MODULE, PACKAGE -> utils.getFullyQualifiedName(element);
+            default -> utils.getSimpleName(element);
+        };
     }
 
     private Comparator<TypeMirror> typeMirrorClassUseComparator = null;
@@ -286,7 +301,7 @@ public class Comparators {
      *
      * @return the comparator
      */
-    public Comparator<TypeMirror> makeTypeMirrorClassUseComparator() {
+    public Comparator<TypeMirror> typeMirrorClassUseComparator() {
         if (typeMirrorClassUseComparator == null) {
             typeMirrorClassUseComparator = (TypeMirror type1, TypeMirror type2) -> {
                 String s1 = utils.getQualifiedTypeName(type1);
@@ -305,7 +320,7 @@ public class Comparators {
      *
      * @return the comparator
      */
-    public Comparator<TypeMirror> makeTypeMirrorIndexUseComparator() {
+    public Comparator<TypeMirror> typeMirrorIndexUseComparator() {
         if (typeMirrorIndexUseComparator == null) {
             typeMirrorIndexUseComparator = (TypeMirror t1, TypeMirror t2) -> {
                 int result = utils.compareStrings(utils.getTypeName(t1, false), utils.getTypeName(t2, false));
@@ -326,9 +341,10 @@ public class Comparators {
      * 3. then parameter types if applicable
      * 4. the element kinds ie. package, class, interface etc.
      * 5. finally the name of the enclosing modules
+     *
      * @return a comparator to sort classes and members for class use
      */
-    public Comparator<Element> makeClassUseComparator() {
+    public Comparator<Element> classUseComparator() {
         if (classUseComparator == null) {
             classUseComparator = new ElementComparator() {
                 /**
@@ -357,7 +373,14 @@ public class Comparators {
                     if (result != 0) {
                         return result;
                     }
-                    return compareModuleNames(e1, e2);
+                    result = compareModuleNames(e1, e2);
+                    if (result != 0) {
+                        return result;
+                    }
+                    // this might not be needed: if e1 != e2 and both are
+                    // executables they must differ in FQN and thus we
+                    // shouldn't reach here
+                    return compareTypeParameters(e1, e2);
                 }
             };
         }
@@ -366,7 +389,7 @@ public class Comparators {
 
     /**
      * A general purpose comparator to sort Element entities, basically provides the building blocks
-     * for creating specific comparators for an use-case.
+     * for creating specific comparators for each use-case.
      */
     private abstract class ElementComparator implements Comparator<Element> {
         public ElementComparator() { }
@@ -414,6 +437,21 @@ public class Comparators {
                 }
 
             }.visit(t);
+        }
+
+        protected final int compareTypeParameters(Element e1, Element e2) {
+            if (!e1.getKind().isExecutable() || !e2.getKind().isExecutable())
+                return 0;
+            var typeParameters1 = ((ExecutableElement) e1).getTypeParameters();
+            var typeParameters2 = ((ExecutableElement) e2).getTypeParameters();
+            var parameters1 = typeParameters1.toArray(new TypeParameterElement[0]);
+            var parameters2 = typeParameters2.toArray(new TypeParameterElement[0]);
+            return Arrays.compare(parameters1, parameters2, (p1, p2) -> {
+                var bounds1 = p1.getBounds().toArray(new TypeMirror[0]);
+                var bounds2 = p2.getBounds().toArray(new TypeMirror[0]);
+                return Arrays.compare(bounds1, bounds2, (b1, b2) ->
+                        utils.compareStrings(true, b1.toString(), b2.toString()));
+            });
         }
 
         /**

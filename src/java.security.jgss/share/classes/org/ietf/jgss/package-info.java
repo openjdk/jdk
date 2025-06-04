@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,14 +65,14 @@
  * mechanism will search for the required INITIATE and ACCEPT credentials
  * ({@link javax.security.auth.kerberos.KerberosTicket KerberosTicket} and
  * {@link javax.security.auth.kerberos.KerberosKey KerberosKey}) in
- * the private credential set where as some other mechanism might look
+ * the private credential set whereas some other mechanism might look
  * in the public set or in both.  If the desired credential is not
  * present in the appropriate sets of the current Subject, the GSS-API
  * call must fail.<p>
  *
  * This model has the advantage that credential management
  * is simple and predictable from the applications point of view.  An
- * application, given the right permissions, can purge the credentials in
+ * application can purge the credentials in
  * the Subject or renew them using standard Java API's.  If it purged
  * the credentials, it would be sure that the JGSS mechanism would fail,
  * or if it renewed a time based credential it would be sure that a JGSS

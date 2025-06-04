@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8268859
  * @summary Verify error recovery/disambiguation of case labels that mix expressions and patterns
- * @compile/fail/ref=PatternCaseErrorRecovery.out --enable-preview -source ${jdk.version} -XDrawDiagnostics PatternCaseErrorRecovery.java
+ * @compile/fail/ref=PatternCaseErrorRecovery.out -XDrawDiagnostics PatternCaseErrorRecovery.java
  */
 
 public class PatternCaseErrorRecovery {

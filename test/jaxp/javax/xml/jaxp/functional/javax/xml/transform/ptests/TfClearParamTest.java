@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
 
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -50,10 +49,8 @@ import org.xml.sax.InputSource;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow javax.xml.transform.ptests.TfClearParamTest
  * @run testng/othervm javax.xml.transform.ptests.TfClearParamTest
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class TfClearParamTest {
     /**
      * Test style-sheet file name.
@@ -89,7 +86,7 @@ public class TfClearParamTest {
     }
 
     /**
-     * Obtains transformer's parameter with the a name that wasn't set before.
+     * Obtains transformer's parameter with a name that wasn't set before.
      * Null is expected.
      * @throws TransformerConfigurationException If for some reason the
      *         TransformerHandler can not be created.
@@ -134,7 +131,7 @@ public class TfClearParamTest {
 
     /**
      * Obtains transformer's parameter whose initiated with a stream source with
-     * the a name that set before. Value should be same as set one.
+     * the name that set before. Value should be same as set one.
      * @throws TransformerConfigurationException If for some reason the
      *         TransformerHandler can not be created.
      */
@@ -149,7 +146,7 @@ public class TfClearParamTest {
 
     /**
      * Obtains transformer's parameter whose initiated with a stream source with
-     * the a name that wasn't set before. Null is expected.
+     * a name that wasn't set before. Null is expected.
      * @throws TransformerConfigurationException If for some reason the
      *         TransformerHandler can not be created.
      */
@@ -164,7 +161,7 @@ public class TfClearParamTest {
 
     /**
      * Obtains transformer's parameter whose initiated with a sax source with
-     * the a name that set before. Value should be same as set one.
+     * the name that set before. Value should be same as set one.
      * @throws Exception If any errors occur.
      */
     @Test
@@ -181,7 +178,7 @@ public class TfClearParamTest {
 
     /**
      * Obtains transformer's parameter whose initiated with a sax source with
-     * the a name that wasn't set before. Null is expected.
+     * a name that wasn't set before. Null is expected.
      * @throws Exception If any errors occur.
      */
     @Test
@@ -199,7 +196,7 @@ public class TfClearParamTest {
 
     /**
      * Obtains transformer's parameter whose initiated with a dom source with
-     * the a name that set before. Value should be same as set one.
+     * the name that set before. Value should be same as set one.
      * @throws Exception If any errors occur.
      */
     @Test
@@ -220,7 +217,7 @@ public class TfClearParamTest {
 
     /**
      * Obtains transformer's parameter whose initiated with a dom source with
-     * the a name that wasn't set before. Null is expected.
+     * a name that wasn't set before. Null is expected.
      * @throws Exception If any errors occur.
      */
     @Test

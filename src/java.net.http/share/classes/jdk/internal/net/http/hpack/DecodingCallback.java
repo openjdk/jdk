@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package jdk.internal.net.http.hpack;
 
+import java.net.ProtocolException;
 import java.nio.ByteBuffer;
 
 /**
@@ -292,4 +293,17 @@ public interface DecodingCallback {
      *         new capacity of the header table
      */
     default void onSizeUpdate(int capacity) { }
+
+    default void onMaxHeaderListSizeReached(long size, int maxHeaderListSize)
+        throws ProtocolException {
+        throw new ProtocolException(String
+                .format("Size exceeds MAX_HEADERS_LIST_SIZE: %s > %s",
+                        size, maxHeaderListSize));
+    }
+
+    default void onMaxLiteralWithIndexingReached(long indexed, int maxIndexed)
+            throws ProtocolException {
+        throw new ProtocolException(String.format("Too many literal with indexing: %s > %s",
+                indexed, maxIndexed));
+    }
 }

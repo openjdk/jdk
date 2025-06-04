@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package sun.security.jca;
 
 import java.util.*;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.Provider.Service;
 import java.security.Security;
@@ -87,15 +85,8 @@ public final class ProviderList {
 
     // construct a ProviderList from the security properties
     // (static provider configuration in the java.security file)
-    @SuppressWarnings("removal")
     static ProviderList fromSecurityProperties() {
-        // doPrivileged() because of Security.getProperty()
-        return AccessController.doPrivileged(
-                        new PrivilegedAction<ProviderList>() {
-            public ProviderList run() {
-                return new ProviderList();
-            }
-        });
+        return new ProviderList();
     }
 
     public static ProviderList add(ProviderList providerList, Provider p) {
@@ -126,7 +117,7 @@ public final class ProviderList {
         ProviderConfig[] configs = new ProviderConfig[providerList.size() - 1];
         int j = 0;
         for (ProviderConfig config : providerList.configs) {
-            if (config.getProvider().getName().equals(name) == false) {
+            if (!config.getProvider().getName().equals(name)) {
                 configs[j++] = config;
             }
         }
@@ -150,10 +141,11 @@ public final class ProviderList {
     private volatile boolean allLoaded;
 
     // List returned by providers()
-    private final List<Provider> userList = new AbstractList<Provider>() {
+    private final List<Provider> userList = new AbstractList<>() {
         public int size() {
             return configs.length;
         }
+
         public Provider get(int index) {
             return getProvider(index);
         }
@@ -195,7 +187,7 @@ public final class ProviderList {
             }
 
             // Get rid of duplicate providers.
-            if (configList.contains(config) == false) {
+            if (!configList.contains(config)) {
                 configList.add(config);
             }
             i++;
@@ -364,21 +356,23 @@ public final class ProviderList {
      * algorithm.
      */
     public Service getService(String type, String name) {
-        ArrayList<PreferredEntry> pList = null;
+        ArrayList<PreferredEntry> pList;
         int i;
 
         // Preferred provider list
-        if (preferredPropList != null &&
-                (pList = preferredPropList.getAll(type, name)) != null) {
+        if (preferredPropList != null) {
+            pList = preferredPropList.getAll(type, name);
             for (i = 0; i < pList.size(); i++) {
                 Provider p = getProvider(pList.get(i).provider);
+                if (p == null) {
+                    continue;
+                }
                 Service s = p.getService(type, name);
                 if (s != null) {
                     return s;
                 }
             }
         }
-
         for (i = 0; i < configs.length; i++) {
             Provider p = getProvider(i);
             Service s = p.getService(type, name);
@@ -390,42 +384,28 @@ public final class ProviderList {
     }
 
     /**
-     * Return a List containing all the Services describing implementations
+     * Return an iterator over all the Services describing implementations
      * of the specified algorithms in precedence order. If no implementation
-     * exists, this method returns an empty List.
+     * exists, this method returns an empty iterator.
      *
-     * The elements of this list are determined lazily on demand.
+     * The elements of this iterator are determined lazily on demand.
      *
-     * The List returned is NOT thread safe.
+     * The iterator returned is NOT thread safe.
      */
-    public List<Service> getServices(String type, String algorithm) {
-        return new ServiceList(type, algorithm);
+    public Iterator<Service> getServices(String type, String algorithm) {
+        return new ServiceIterator(type, algorithm);
+    }
+
+    public Iterator<Service> getServices(List<ServiceId> ids) {
+        return new ServiceIterator(ids);
     }
 
     /**
-     * This method exists for compatibility with JCE only. It will be removed
-     * once JCE has been changed to use the replacement method.
-     * @deprecated use {@code getServices(List<ServiceId>)} instead
-     */
-    @Deprecated
-    public List<Service> getServices(String type, List<String> algorithms) {
-        List<ServiceId> ids = new ArrayList<>();
-        for (String alg : algorithms) {
-            ids.add(new ServiceId(type, alg));
-        }
-        return getServices(ids);
-    }
-
-    public List<Service> getServices(List<ServiceId> ids) {
-        return new ServiceList(ids);
-    }
-
-    /**
-     * Inner class for a List of Services. Custom List implementation in
+     * Inner class for an iterator over Services. Customized implementation in
      * order to delay Provider initialization and lookup.
      * Not thread safe.
      */
-    private final class ServiceList extends AbstractList<Service> {
+    private final class ServiceIterator implements Iterator<Service> {
 
         // type and algorithm for simple lookup
         // avoid allocating/traversing the ServiceId list for these lookups
@@ -448,17 +428,17 @@ public final class ProviderList {
         // index into config[] of the next provider we need to query
         private int providerIndex = 0;
 
-        // Matching preferred provider list for this ServiceList
+        // Matching preferred provider list for this ServiceIterator
         ArrayList<PreferredEntry> preferredList = null;
         private int preferredIndex = 0;
 
-        ServiceList(String type, String algorithm) {
+        ServiceIterator(String type, String algorithm) {
             this.type = type;
             this.algorithm = algorithm;
             this.ids = null;
         }
 
-        ServiceList(List<ServiceId> ids) {
+        ServiceIterator(List<ServiceId> ids) {
             this.type = null;
             this.algorithm = null;
             this.ids = ids;
@@ -469,7 +449,7 @@ public final class ProviderList {
                 firstService = s;
             } else {
                 if (services == null) {
-                    services = new ArrayList<Service>(4);
+                    services = new ArrayList<>(4);
                     services.add(firstService);
                 }
                 services.add(s);
@@ -533,73 +513,44 @@ public final class ProviderList {
             }
         }
 
-        public Service get(int index) {
+        int index;
+
+        @Override
+        public boolean hasNext() {
+            return tryGet(index) != null;
+        }
+
+        @Override
+        public Service next() {
             Service s = tryGet(index);
             if (s == null) {
-                throw new IndexOutOfBoundsException();
+                throw new NoSuchElementException();
             }
+            index++;
             return s;
         }
 
-        public int size() {
-            int n;
-            if (services != null) {
-                n = services.size();
-            } else {
-                n = (firstService != null) ? 1 : 0;
-            }
-            while (tryGet(n) != null) {
-                n++;
-            }
-            return n;
-        }
-
-        // override isEmpty() and iterator() to not call size()
-        // this avoids loading + checking all Providers
-
-        public boolean isEmpty() {
-            return (tryGet(0) == null);
-        }
-
-        public Iterator<Service> iterator() {
-            return new Iterator<Service>() {
-                int index;
-
-                public boolean hasNext() {
-                    return tryGet(index) != null;
-                }
-
-                public Service next() {
-                    Service s = tryGet(index);
-                    if (s == null) {
-                        throw new NoSuchElementException();
-                    }
-                    index++;
-                    return s;
-                }
-
-                public void remove() {
-                    throw new UnsupportedOperationException();
-                }
-            };
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
         }
     }
 
     // Provider list defined by jdk.security.provider.preferred entry
     static final class PreferredList {
-        ArrayList<PreferredEntry> list = new ArrayList<PreferredEntry>();
+        ArrayList<PreferredEntry> list = new ArrayList<>();
 
         /*
          * Return a list of all preferred entries that match the passed
-         * ServiceList.
+         * ServiceIterator.
          */
-        ArrayList<PreferredEntry> getAll(ServiceList s) {
+        ArrayList<PreferredEntry> getAll(ServiceIterator s) {
             if (s.ids == null) {
                 return getAll(s.type, s.algorithm);
 
             }
 
-            ArrayList<PreferredEntry> l = new ArrayList<PreferredEntry>();
+            ArrayList<PreferredEntry> l = new ArrayList<>();
             for (ServiceId id : s.ids) {
                 implGetAll(l, id.type, id.algorithm);
             }
@@ -612,7 +563,7 @@ public final class ProviderList {
          * type and algorithm.
          */
         ArrayList<PreferredEntry> getAll(String type, String algorithm) {
-            ArrayList<PreferredEntry> l = new ArrayList<PreferredEntry>();
+            ArrayList<PreferredEntry> l = new ArrayList<>();
             implGetAll(l, type, algorithm);
             return l;
         }
@@ -655,27 +606,27 @@ public final class ProviderList {
     }
 
     /* Defined Groups for jdk.security.provider.preferred */
-    private static final String SHA2Group[] = { "SHA-224", "SHA-256",
+    private static final String[] SHA2_GROUP = { "SHA-224", "SHA-256",
             "SHA-384", "SHA-512", "SHA-512/224", "SHA-512/256" };
-    private static final String HmacSHA2Group[] = { "HmacSHA224",
+    private static final String[] HMACSHA2_GROUP = { "HmacSHA224",
             "HmacSHA256", "HmacSHA384", "HmacSHA512"};
-    private static final String SHA2RSAGroup[] = { "SHA224withRSA",
+    private static final String[] SHA2RSA_GROUP = { "SHA224withRSA",
             "SHA256withRSA", "SHA384withRSA", "SHA512withRSA"};
-    private static final String SHA2DSAGroup[] = { "SHA224withDSA",
+    private static final String[] SHA2DSA_GROUP = { "SHA224withDSA",
             "SHA256withDSA", "SHA384withDSA", "SHA512withDSA"};
-    private static final String SHA2ECDSAGroup[] = { "SHA224withECDSA",
+    private static final String[] SHA2ECDSA_GROUP = { "SHA224withECDSA",
             "SHA256withECDSA", "SHA384withECDSA", "SHA512withECDSA"};
-    private static final String SHA3Group[] = { "SHA3-224", "SHA3-256",
+    private static final String[] SHA3_GROUP = { "SHA3-224", "SHA3-256",
             "SHA3-384", "SHA3-512" };
-    private static final String HmacSHA3Group[] = { "HmacSHA3-224",
+    private static final String[] HMACSHA3_GROUP = { "HmacSHA3-224",
             "HmacSHA3-256", "HmacSHA3-384", "HmacSHA3-512"};
 
     // Individual preferred property entry from jdk.security.provider.preferred
     private static class PreferredEntry {
-        private String type = null;
-        private String algorithm;
-        private String provider;
-        private String alternateNames[] = null;
+        private final String type;
+        private final String algorithm;
+        private final String provider;
+        private final String[] alternateNames;
         private boolean group = false;
 
         PreferredEntry(String t, String p) {
@@ -684,6 +635,7 @@ public final class ProviderList {
                 type = t.substring(0, i);
                 algorithm = t.substring(i + 1);
             } else {
+                type = null;
                 algorithm = t;
             }
 
@@ -692,19 +644,21 @@ public final class ProviderList {
             if (type != null && type.compareToIgnoreCase("Group") == 0) {
                 // Currently intrinsic algorithm groups
                 if (algorithm.compareToIgnoreCase("SHA2") == 0) {
-                    alternateNames = SHA2Group;
+                    alternateNames = SHA2_GROUP;
                 } else if (algorithm.compareToIgnoreCase("HmacSHA2") == 0) {
-                    alternateNames = HmacSHA2Group;
+                    alternateNames = HMACSHA2_GROUP;
                 } else if (algorithm.compareToIgnoreCase("SHA2RSA") == 0) {
-                    alternateNames = SHA2RSAGroup;
+                    alternateNames = SHA2RSA_GROUP;
                 } else if (algorithm.compareToIgnoreCase("SHA2DSA") == 0) {
-                    alternateNames = SHA2DSAGroup;
+                    alternateNames = SHA2DSA_GROUP;
                 } else if (algorithm.compareToIgnoreCase("SHA2ECDSA") == 0) {
-                    alternateNames = SHA2ECDSAGroup;
+                    alternateNames = SHA2ECDSA_GROUP;
                 } else if (algorithm.compareToIgnoreCase("SHA3") == 0) {
-                    alternateNames = SHA3Group;
+                    alternateNames = SHA3_GROUP;
                 } else if (algorithm.compareToIgnoreCase("HmacSHA3") == 0) {
-                    alternateNames = HmacSHA3Group;
+                    alternateNames = HMACSHA3_GROUP;
+                } else {
+                    alternateNames = null;
                 }
                 if (alternateNames != null) {
                     group = true;
@@ -715,6 +669,8 @@ public final class ProviderList {
                 alternateNames = new String[] { "SHA-1" };
             } else if (algorithm.compareToIgnoreCase("SHA-1") == 0) {
                 alternateNames = new String[] { "SHA1" };
+            } else {
+                alternateNames = null;
             }
         }
 

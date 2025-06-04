@@ -24,6 +24,8 @@ package org.openjdk.bench.java.net;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
@@ -31,6 +33,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
+import org.openjdk.jmh.annotations.Warmup;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,7 +54,16 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Thread)
+@Warmup(iterations = 10, time = 1)
+@Measurement(iterations = 5, time = 2)
+@Fork(value = 3)
 public class SocketReadWrite {
+
+    @Param({"1", "8192", "128000"})
+    public int size;
+
+    @Param({"false", "true"})
+    public boolean timeout;
 
     static final InetAddress address = InetAddress.getLoopbackAddress();
     public static final int TIMEOUT = 10000;
@@ -172,12 +184,6 @@ public class SocketReadWrite {
     }
 
     EchoServer server;
-
-    @Param({"1", "1024", "8192", "64000", "128000"})
-    public int size;
-
-    @Param({"false", "true"})
-    public boolean timeout;
 
     Socket s;
     InputStream in;

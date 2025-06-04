@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8177552 8222756
+ * @bug 8177552 8222756 8327640
  * @summary Checks the equals and hashCode method of CompactNumberFormat
  * @modules jdk.localedata
  * @run testng/othervm TestEquality
@@ -131,6 +131,18 @@ public class TestEquality {
         cnf1.setParseBigDecimal(true);
         checkEquals(cnf1, cnf2, false, "8th", "different parse big decimal");
 
+        // Changing the parseBigDecimal of second object; objects must be equal
+        cnf2.setParseBigDecimal(true);
+        checkEquals(cnf1, cnf2, true, "9th", "");
+
+        // Changing the strict parsing value of first object; objects must not be equal
+        cnf1.setStrict(true);
+        checkEquals(cnf1, cnf2, false, "10th", "different strict parsing");
+
+        // Changing the strict parsing value of second object; objects must be equal
+        cnf2.setStrict(true);
+        checkEquals(cnf1, cnf2, true, "11th", "");
+
     }
 
     private void checkEquals(CompactNumberFormat cnf1, CompactNumberFormat cnf2,
@@ -165,10 +177,10 @@ public class TestEquality {
     @Test
     public void testEqualsAndHashCode() {
         NumberFormat cnf1 = NumberFormat
-                .getCompactNumberInstance(new Locale("hi", "IN"), NumberFormat.Style.SHORT);
+                .getCompactNumberInstance(Locale.of("hi", "IN"), NumberFormat.Style.SHORT);
         cnf1.setMinimumIntegerDigits(5);
         NumberFormat cnf2 = NumberFormat
-                .getCompactNumberInstance(new Locale("hi", "IN"), NumberFormat.Style.SHORT);
+                .getCompactNumberInstance(Locale.of("hi", "IN"), NumberFormat.Style.SHORT);
         cnf2.setMinimumIntegerDigits(5);
         if (cnf1.equals(cnf2)) {
             if (cnf1.hashCode() != cnf2.hashCode()) {

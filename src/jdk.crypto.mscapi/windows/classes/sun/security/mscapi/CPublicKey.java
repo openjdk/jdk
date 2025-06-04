@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package sun.security.mscapi;
 
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.math.BigInteger;
 import java.security.AlgorithmParameters;
 import java.security.KeyException;
@@ -50,6 +53,7 @@ import sun.security.util.ECKeySizeParameterSpec;
  */
 public abstract class CPublicKey extends CKey implements PublicKey {
 
+    @java.io.Serial
     private static final long serialVersionUID = -2289561342425825391L;
 
     protected byte[] encoding = null;
@@ -58,6 +62,8 @@ public abstract class CPublicKey extends CKey implements PublicKey {
         @SuppressWarnings("serial") // Type of field is not Serializable;
                                     // see writeReplace
         private ECPoint w = null;
+
+        @java.io.Serial
         private static final long serialVersionUID = 12L;
 
         CECPublicKey(NativeHandles handles, int keyLength) {
@@ -87,13 +93,13 @@ public abstract class CPublicKey extends CKey implements PublicKey {
             if (encoding == null) {
                 try {
                     encoding = KeyFactory.getInstance("EC").generatePublic(
-                                new ECPublicKeySpec(getW(), getParams()))
-                            .getEncoded();
+                            new ECPublicKeySpec(getW(), getParams()))
+                        .getEncoded();
                 } catch (Exception e) {
                     // ignore
                 }
             }
-            return encoding;
+            return (encoding == null) ? null : encoding.clone();
         }
 
         @Override
@@ -108,9 +114,8 @@ public abstract class CPublicKey extends CKey implements PublicKey {
         }
 
         public String toString() {
-            StringBuffer sb = new StringBuffer();
-            sb.append(algorithm + "PublicKey [size=").append(keyLength)
-                    .append("]\n  ECPoint: ").append(getW())
+            StringBuffer sb = new StringBuffer(super.toString());
+            sb.append("\n ECPoint: ").append(getW())
                     .append("\n  params: ").append(getParams());
             return sb.toString();
         }
@@ -120,6 +125,8 @@ public abstract class CPublicKey extends CKey implements PublicKey {
 
         private BigInteger modulus = null;
         private BigInteger exponent = null;
+
+        @java.io.Serial
         private static final long serialVersionUID = 12L;
 
         CRSAPublicKey(NativeHandles handles, int keyLength) {
@@ -127,16 +134,8 @@ public abstract class CPublicKey extends CKey implements PublicKey {
         }
 
         public String toString() {
-            StringBuffer sb = new StringBuffer();
-            sb.append(algorithm + "PublicKey [size=").append(keyLength)
-                    .append(" bits, type=");
-            if (handles.hCryptKey != 0) {
-                sb.append(getKeyType(handles.hCryptKey))
-                        .append(", container=").append(getContainerName(handles.hCryptProv));
-            } else {
-                sb.append("CNG");
-            }
-            sb.append("]\n  modulus: ").append(getModulus())
+            StringBuffer sb = new StringBuffer(super.toString());
+            sb.append("\n  modulus: ").append(getModulus())
                     .append("\n  public exponent: ").append(getPublicExponent());
             return sb.toString();
         }
@@ -179,7 +178,7 @@ public abstract class CPublicKey extends CKey implements PublicKey {
                     // ignore
                 }
             }
-            return encoding;
+            return (encoding == null) ? null : encoding.clone();
         }
 
         private native byte[] getExponent(byte[] keyBlob) throws KeyException;
@@ -207,7 +206,7 @@ public abstract class CPublicKey extends CKey implements PublicKey {
 
     protected CPublicKey(
             String alg, NativeHandles handles, int keyLength) {
-        super(alg, handles, keyLength);
+        super(alg, handles, keyLength, true);
     }
 
     @Override
@@ -215,11 +214,28 @@ public abstract class CPublicKey extends CKey implements PublicKey {
         return "X.509";
     }
 
+    @java.io.Serial
     protected Object writeReplace() throws java.io.ObjectStreamException {
         return new KeyRep(KeyRep.Type.PUBLIC,
                         getAlgorithm(),
                         getFormat(),
                         getEncoded());
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     * <p>
+     * Deserialization of this object is not supported.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        throw new InvalidObjectException(
+                "CPublicKeys are not deserializable");
     }
 
     // Returns the CAPI or CNG representation of the key.

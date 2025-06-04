@@ -485,7 +485,7 @@ implements IncrementalSAXSource, ContentHandler, DTDHandler, LexicalHandler, Err
    * routine for the convenience of subclasses: every [frequency]
    * invocations, issue a co_yield.</p>
    *
-   * @param moreExepected Should always be true unless this is being called
+   * @param moreExpected Should always be true unless this is being called
    * at the end of endDocument() handling.
    * */
   protected void count_and_yield(boolean moreExpected) throws SAXException

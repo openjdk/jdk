@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,8 +107,6 @@ class LogTargetImpl;
 template <LogTagType T0, LogTagType T1 = LogTag::__NO_TAG, LogTagType T2 = LogTag::__NO_TAG, LogTagType T3 = LogTag::__NO_TAG,
           LogTagType T4 = LogTag::__NO_TAG, LogTagType GuardTag = LogTag::__NO_TAG>
 class LogImpl {
- private:
-  static const size_t LogBufferSize = 512;
  public:
   // Make sure no more than the maximum number of tags have been given.
   // The GuardTag allows this to be detected if/when it happens. If the GuardTag
@@ -166,7 +164,7 @@ class LogImpl {
     return is_level(LogLevel::level); \
   } \
   static LogTargetImpl<LogLevel::level, T0, T1, T2, T3, T4, GuardTag>* name() { \
-    return (LogTargetImpl<LogLevel::level, T0, T1, T2, T3, T4, GuardTag>*)NULL; \
+    return (LogTargetImpl<LogLevel::level, T0, T1, T2, T3, T4, GuardTag>*)nullptr; \
   }
   LOG_LEVEL_LIST
 #undef LOG_LEVEL
@@ -183,7 +181,7 @@ public:
   }
 
   static bool is_enabled() {
-    return LogImpl<T0, T1, T2, T3, T4, GuardTag>::is_level(level);
+    return LogTagSetMapping<T0, T1, T2, T3, T4, GuardTag>::tagset().is_level(level);
   }
 
   static bool develop_is_enabled() {
@@ -194,7 +192,7 @@ public:
   static void print(const char* fmt, ...) ATTRIBUTE_PRINTF(1, 2) {
     va_list args;
     va_start(args, fmt);
-    LogImpl<T0, T1, T2, T3, T4, GuardTag>::vwrite(level, fmt, args);
+    LogTagSetMapping<T0, T1, T2, T3, T4, GuardTag>::tagset().vwrite(level, fmt, args);
     va_end(args);
   }
 

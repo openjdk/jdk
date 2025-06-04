@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class Popup {
      * A null <code>owner</code> implies there is no valid parent.
      * <code>x</code> and
      * <code>y</code> specify the preferred initial location to place
-     * the <code>Popup</code> at. Based on screen size, or other paramaters,
+     * the <code>Popup</code> at. Based on screen size, or other parameters,
      * the <code>Popup</code> may not display at <code>x</code> and
      * <code>y</code>.
      *
@@ -82,7 +82,7 @@ public class Popup {
      * @param contents Contents of the Popup
      * @param x        Initial x screen coordinate
      * @param y        Initial y screen coordinate
-     * @exception IllegalArgumentException if contents is null
+     * @throws IllegalArgumentException if contents is null
      */
     protected Popup(Component owner, Component contents, int x, int y) {
         this();
@@ -242,15 +242,7 @@ public class Popup {
             // Popups are typically transient and most likely won't benefit
             // from true double buffering.  Turn it off here.
             getRootPane().setUseTrueDoubleBuffering(false);
-            // Try to set "always-on-top" for the popup window.
-            // Applets usually don't have sufficient permissions to do it.
-            // In this case simply ignore the exception.
-            try {
-                setAlwaysOnTop(true);
-            } catch (SecurityException se) {
-                // setAlwaysOnTop is restricted,
-                // the exception is ignored
-            }
+            setAlwaysOnTop(true);
         }
 
         public void update(Graphics g) {

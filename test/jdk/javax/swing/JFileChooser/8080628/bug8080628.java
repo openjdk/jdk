@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,17 @@ import sun.swing.SwingUtilities2;
  * @test
  * @bug 8080628
  * @summary No mnemonics on Open and Save buttons in JFileChooser.
- * @author Alexey Ivanov
+ * @requires os.family != "linux"
+ * @modules java.desktop/sun.swing
+ * @run main bug8080628
+ */
+
+/*
+ * @test
+ * @bug 8080628
+ * @key headful
+ * @summary No mnemonics on Open and Save buttons in JFileChooser.
+ * @requires os.family == "linux"
  * @modules java.desktop/sun.swing
  * @run main bug8080628
  */
@@ -46,17 +56,17 @@ public class bug8080628 {
     };
 
     public static final Locale[] LOCALES = new Locale[] {
-            new Locale("en"),
-            new Locale("de"),
-            new Locale("es"),
-            new Locale("fr"),
-            new Locale("it"),
-            new Locale("ja"),
-            new Locale("ko"),
-            new Locale("pt", "BR"),
-            new Locale("sv"),
-            new Locale("zh", "CN"),
-            new Locale("zh", "TW")
+            Locale.of("en"),
+            Locale.of("de"),
+            Locale.of("es"),
+            Locale.of("fr"),
+            Locale.of("it"),
+            Locale.of("ja"),
+            Locale.of("ko"),
+            Locale.of("pt", "BR"),
+            Locale.of("sv"),
+            Locale.of("zh", "CN"),
+            Locale.of("zh", "TW")
     };
 
     private static volatile Exception exception;
@@ -81,8 +91,10 @@ public class bug8080628 {
                 try {
                     UIManager.setLookAndFeel(info.getClassName());
                 } catch (final UnsupportedLookAndFeelException ignored) {
+                    System.out.println("Unsupported L&F: " + info.getClassName());
                     continue;
                 }
+                System.out.println("Testing L&F: " + info.getClassName());
 
                 for (Locale locale : LOCALES) {
                     for (String key : MNEMONIC_KEYS) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,43 +25,39 @@
  * @test
  * @bug 8034091
  * @summary Add LineNumberTable attributes for conditional operator (?:) split across several lines.
- * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Method;
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.LineNumberTable_attribute;
-import com.sun.tools.classfile.LineNumberTable_attribute.Entry;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 public class ConditionalLineNumberTest {
     public static void main(String[] args) throws Exception {
         // check that we have 5 consecutive entries for method()
-        Entry[] lines = findEntries();
-        if (lines == null || lines.length != 5)
+        List<LineNumberInfo> lines = findEntries();
+        if (lines == null || lines.size() != 5)
             throw new Exception("conditional line number table incorrect");
 
-        int current = lines[0].line_number;
-        for (Entry e : lines) {
-            if (e.line_number != current)
+        int current = lines.get(0).lineNumber();
+        for (LineNumberInfo e : lines) {
+            if (e.lineNumber() != current)
                 throw new Exception("conditional line number table incorrect");
             current++;
         }
-   }
+    }
 
-    static Entry[] findEntries() throws IOException, ConstantPoolException {
-        ClassFile self = ClassFile.read(ConditionalLineNumberTest.class.getResourceAsStream("ConditionalLineNumberTest.class"));
-        for (Method m : self.methods) {
-            if ("method".equals(m.getName(self.constant_pool))) {
-                Code_attribute code_attribute = (Code_attribute)m.attributes.get(Attribute.Code);
-                for (Attribute at : code_attribute.attributes) {
-                    if (Attribute.LineNumberTable.equals(at.getName(self.constant_pool))) {
-                        return ((LineNumberTable_attribute)at).line_number_table;
+    static List<LineNumberInfo> findEntries() throws IOException {
+        ClassModel self = ClassFile.of().parse(ConditionalLineNumberTest.class.getResourceAsStream("ConditionalLineNumberTest.class").readAllBytes());
+        for (MethodModel m : self.methods()) {
+            if (m.methodName().equalsString("method")) {
+                CodeAttribute code_attribute = m.findAttribute(Attributes.code()).orElse(null);
+                assert code_attribute != null;
+                for (Attribute<?> at : code_attribute.attributes()) {
+                    if (at instanceof LineNumberTableAttribute) {
+                        return ((LineNumberTableAttribute)at).lineNumbers();
                     }
                 }
             }

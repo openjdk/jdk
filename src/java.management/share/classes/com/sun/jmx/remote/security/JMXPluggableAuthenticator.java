@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,8 @@
 package com.sun.jmx.remote.security;
 
 import java.io.IOException;
-import java.security.AccessController;
 import java.security.Principal;
 import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -105,39 +102,14 @@ public final class JMXPluggableAuthenticator implements JMXAuthenticator {
 
             } else {
                 // use the default JAAS login configuration (file-based)
-                @SuppressWarnings("removal")
-                SecurityManager sm = System.getSecurityManager();
-                if (sm != null) {
-                    sm.checkPermission(
-                            new AuthPermission("createLoginContext." +
-                                               LOGIN_CONFIG_NAME));
-                }
-
-                final String pf = passwordFile;
-                final String hashPass = hashPasswords;
-                try {
-                    @SuppressWarnings("removal")
-                    var tmp = AccessController.doPrivileged(
-                        new PrivilegedExceptionAction<LoginContext>() {
-                            public LoginContext run() throws LoginException {
-                                return new LoginContext(
-                                                LOGIN_CONFIG_NAME,
+                loginContext = new LoginContext(LOGIN_CONFIG_NAME,
                                                 null,
                                                 new JMXCallbackHandler(),
-                                                new FileLoginConfig(pf, hashPass));
-                            }
-                        });
-                    loginContext = tmp;
-                } catch (PrivilegedActionException pae) {
-                    throw (LoginException) pae.getException();
-                }
+                                                new FileLoginConfig(passwordFile, hashPasswords));
             }
 
-        } catch (LoginException le) {
-            authenticationFailure("authenticate", le);
-
-        } catch (SecurityException se) {
-            authenticationFailure("authenticate", se);
+        } catch (LoginException | SecurityException e) {
+            authenticationFailure("authenticate", e);
         }
     }
 
@@ -193,14 +165,7 @@ public final class JMXPluggableAuthenticator implements JMXAuthenticator {
         try {
             loginContext.login();
             final Subject subject = loginContext.getSubject();
-            @SuppressWarnings("removal")
-            var dummy = AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                    public Void run() {
-                        subject.setReadOnly();
-                        return null;
-                    }
-                });
-
+            subject.setReadOnly();
             return subject;
 
         } catch (LoginException le) {
@@ -320,7 +285,7 @@ private static class FileLoginConfig extends Configuration {
 
         Map<String, String> options;
         if (passwordFile != null) {
-            options = new HashMap<String, String>(1);
+            options = new HashMap<>(1);
             options.put(PASSWORD_FILE_OPTION, passwordFile);
             options.put(HASH_PASSWORDS, hashPasswords);
         } else {

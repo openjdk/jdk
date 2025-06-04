@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,8 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
      */
     private SynthStyle dividerStyle;
 
+    private Color dividerDraggingColor;
+
     /**
      *
      * Constructs a {@code SynthSplitPaneUI}.
@@ -88,6 +90,8 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
     @SuppressWarnings("deprecation")
     protected void installDefaults() {
         updateStyle(splitPane);
+
+        dividerDraggingColor = UIManager.getColor("SplitPaneDivider.draggingColor");
 
         setOrientation(splitPane.getOrientation());
         setContinuousLayout(splitPane.isContinuousLayout());
@@ -256,15 +260,28 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
         return divider;
     }
 
+    private void setDividerDraggingColor(Graphics g, int loc) {
+        if (!isContinuousLayout() && getLastDragLocation() != -1 &&
+               dividerDraggingColor != null) {
+
+            g.setColor(dividerDraggingColor);
+            if (getOrientation() == JSplitPane.HORIZONTAL_SPLIT) {
+                g.fillRect(loc, 0, dividerSize - 1, splitPane.getHeight() - 1);
+            } else {
+                g.fillRect(0, loc, splitPane.getWidth() - 1, dividerSize - 1);
+            }
+        }
+    }
+
     /**
      * {@inheritDoc}
      */
     @Override
-    @SuppressWarnings("serial") // anonymous class
     protected Component createDefaultNonContinuousLayoutDivider() {
         return new Canvas() {
             public void paint(Graphics g) {
                 paintDragDivider(g, 0, 0, getWidth(), getHeight());
+                setDividerDraggingColor(g, 0);
             }
         };
     }
@@ -345,8 +362,10 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
      */
     @Override
     public void finishedPaintingChildren(JSplitPane jc, Graphics g) {
+
         if(jc == splitPane && getLastDragLocation() != -1 &&
                               !isContinuousLayout() && !draggingHW) {
+
             if(jc.getOrientation() == JSplitPane.HORIZONTAL_SPLIT) {
                 paintDragDivider(g, getLastDragLocation(), 0, dividerSize - 1,
                                  splitPane.getHeight() - 1);
@@ -354,6 +373,7 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
                 paintDragDivider(g, 0, getLastDragLocation(),
                                  splitPane.getWidth() - 1, dividerSize - 1);
             }
+            setDividerDraggingColor(g, getLastDragLocation());
         }
     }
 }

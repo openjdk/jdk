@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,19 +41,14 @@ import com.sun.tools.javac.util.Assert;
 import java.util.HashSet;
 import java.util.Set;
 import javax.lang.model.util.ElementFilter;
-import javax.tools.JavaFileObject;
 
 
 public class ElementFilterRecordComponentTest {
     public static void main(String... args) throws IOException {
         JavaCompiler c = ToolProvider.getSystemJavaCompiler();
         JavacTask t = (JavacTask) c.getTask(null, null, null, null, null,
-                List.of(new SimpleJavaFileObject(URI.create("TestClass.java"), JavaFileObject.Kind.SOURCE) {
-            @Override
-            public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
-                return "record R(int val1, int val2) {}";
-            }
-        }));
+                List.of(SimpleJavaFileObject.forSource(URI.create("TestClass.java"),
+                                                       "record R(int val1, int val2) {}")));
         TypeElement record = (TypeElement) t.analyze().iterator().next();
         Set<RecordComponentElement> recordSet = ElementFilter.recordComponentsIn(new HashSet<>(record.getEnclosedElements()));
         Assert.check(recordSet.size() == 2);

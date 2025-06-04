@@ -37,12 +37,12 @@ import java.util.stream.Collectors;
  *
  * Typical GC log with PLAB statistics (options - -Xlog:gc=debug,gc+plab=debug) looks like:
  *
- * [0.330s][debug][gc,plab  ] GC(0) Young PLAB allocation: allocated: 1825632B, wasted: 29424B, unused: 2320B, used: 1793888B, undo waste: 0B,
- * [0.330s][debug][gc,plab  ] GC(0) Young other allocation: region end waste: 0B, regions filled: 2, direct allocated: 271520B, failure used: 0B, failure wasted: 0B
- * [0.330s][debug][gc,plab  ] GC(0) Young sizing: calculated: 358776B, actual: 358776B
- * [0.330s][debug][gc,plab  ] GC(0) Old PLAB allocation: allocated: 427248B, wasted: 592B, unused: 368584B, used: 58072B, undo waste: 0B,
- * [0.330s][debug][gc,plab  ] GC(0) Old other allocation: region end waste: 0B, regions filled: 1, direct allocated: 41704B, failure used: 0B, failure wasted: 0B
- * [0.330s][debug][gc,plab  ] GC(0) Old sizing: calculated: 11608B, actual: 11608B
+ * [0.192s][debug][gc,plab     ] GC(0) Young PLAB allocation: allocated: 2867184B, wasted: 656B, unused: 252896B, used: 2613632B, undo waste: 0B,
+ * [0.192s][debug][gc,plab     ] GC(0) Young other allocation: region end waste: 0B, regions filled: 3, num plab filled: 30, direct allocated: 16400B, num direct allocated: 1, failure used: 0B, failure wasted: 0B
+ * [0.192s][debug][gc,plab     ] GC(0) Young sizing: calculated: 522720B, actual: 522720B
+ * [0.192s][debug][gc,plab     ] GC(0) Old PLAB allocation: allocated: 0B, wasted: 0B, unused: 0B, used: 0B, undo waste: 0B,
+ * [0.192s][debug][gc,plab     ] GC(0) Old other allocation: region end waste: 0B, regions filled: 0, num plab filled: 0, direct allocated: 0B, num direct allocated: 0, failure used: 0B, failure wasted: 0B
+ * [0.192s][debug][gc,plab     ] GC(0) Old sizing: calculated: 0B, actual: 2064B
  */
 final public class LogParser {
 
@@ -62,7 +62,8 @@ final public class LogParser {
     // GC ID
     private static final Pattern GC_ID_PATTERN = Pattern.compile("\\[gc,plab\\s*\\] GC\\((\\d+)\\)");
     // Pattern for extraction pair <name>: <numeric value>
-    private static final Pattern PAIRS_PATTERN = Pattern.compile("\\w* \\w+:\\s+\\d+");
+    // This is a non-zero set of words separated by spaces followed by ":" and a value.
+    private static final Pattern PAIRS_PATTERN = Pattern.compile("(?:\\w+ )*\\w+:\\s+\\d+");
 
     /**
      * Construct LogParser object, parse log file with PLAB statistics and store it into report.
@@ -119,7 +120,7 @@ final public class LogParser {
                         do {
                             String pair = matcher.group();
                             String[] nameValue = pair.replaceAll(": ", ":").split(":");
-                            plabInfo.put(nameValue[0].trim(), Long.parseLong(nameValue[1]));
+                            plabInfo.put(nameValue[0], Long.parseLong(nameValue[1]));
                         } while (matcher.find());
                     }
                 }
@@ -194,7 +195,7 @@ final public class LogParser {
                         getEntries().entryStream()
                         .filter(gcLogItem -> extractId == gcIds.contains(gcLogItem.getKey()))
                         .collect(Collectors.toMap(gcLogItem -> gcLogItem.getKey(),
-                                        gcLogItem -> gcLogItem.getValue().get(type).filter(fieldNames)
+                                                  gcLogItem -> gcLogItem.getValue().get(type).filter(fieldNames)
                                 )
                         )
                  );

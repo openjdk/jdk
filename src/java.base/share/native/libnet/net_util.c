@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 
 int IPv4_supported();
 int IPv6_supported();
-int reuseport_supported();
+int reuseport_supported(int ipv6_available);
 
 static int IPv4_available;
 static int IPv6_available;
@@ -63,6 +63,10 @@ DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
         return JNI_EVERSION; /* JNI version not supported */
     }
 
+    if (NET_PlatformInit() != 0) {
+      return JNI_ERR;
+    }
+
     iCls = (*env)->FindClass(env, "java/lang/Boolean");
     CHECK_NULL_RETURN(iCls, JNI_VERSION_1_2);
     mid = (*env)->GetStaticMethodID(env, iCls, "getBoolean", "(Ljava/lang/String;)Z");
@@ -80,8 +84,7 @@ DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
     IPv6_available = IPv6_supported() & (!preferIPv4Stack);
 
     /* check if SO_REUSEPORT is supported on this platform */
-    REUSEPORT_available = reuseport_supported();
-    platformInit();
+    REUSEPORT_available = reuseport_supported(IPv6_available);
 
     return JNI_VERSION_1_2;
 }

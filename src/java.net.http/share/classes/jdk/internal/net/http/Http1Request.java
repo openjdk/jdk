@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,15 @@ import java.util.concurrent.Flow;
 import java.util.function.BiPredicate;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
-import jdk.internal.net.http.Http1Exchange.Http1BodySubscriber;
+import jdk.internal.net.http.Http1Exchange.Http1RequestBodySubscriber;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Utils;
 
 import static java.lang.String.format;
+import static java.net.Authenticator.RequestorType.PROXY;
+import static java.net.Authenticator.RequestorType.SERVER;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
@@ -79,18 +81,22 @@ class Http1Request {
 
     private void logHeaders(String completeHeaders) {
         if (Log.headers()) {
-            //StringBuilder sb = new StringBuilder(256);
-            //sb.append("REQUEST HEADERS:\n");
-            //Log.dumpHeaders(sb, "    ", systemHeaders);
-            //Log.dumpHeaders(sb, "    ", userHeaders);
-            //Log.logHeaders(sb.toString());
-
-            String s = completeHeaders.replaceAll("\r\n", "\n");
-            if (s.endsWith("\n\n")) s = s.substring(0, s.length() - 2);
-            Log.logHeaders("REQUEST HEADERS:\n{0}\n", s);
+            StringBuilder sb = new StringBuilder(completeHeaders.length());
+            sb.append("REQUEST HEADERS:\n");
+            boolean[] firstLine = {true};
+            completeHeaders.lines().forEach(line -> {
+                // First line contains `GET /foo HTTP/1.1`.
+                // Convert it to look like other `Log.logHeaders()` outputs.
+                if (firstLine[0]) {
+                    sb.append("  ").append(line).append('\n');
+                    firstLine[0] = false;
+                } else if (!line.isBlank()) {
+                    sb.append("    ").append(line).append('\n');
+                }
+            });
+            Log.logHeaders(sb.toString());
         }
     }
-
 
     public void collectHeaders0(StringBuilder sb) {
         BiPredicate<String,String> filter =
@@ -104,7 +110,9 @@ class Http1Request {
 
         // Filter overridable headers from userHeaders
         userHeaders = HttpHeaders.of(userHeaders.map(),
-                      connection.contextRestricted(request, client));
+                      connection.contextRestricted(request));
+
+        Utils.setUserAuthFlags(request, userHeaders);
 
         final HttpHeaders uh = userHeaders;
 
@@ -291,21 +299,19 @@ class Http1Request {
         if (uri != null) {
             systemHeadersBuilder.setHeader("Host", hostString());
         }
-        if (requestPublisher == null) {
-            // Not a user request, or maybe a method, e.g. GET, with no body.
-            contentLength = 0;
-        } else {
-            contentLength = requestPublisher.contentLength();
-        }
 
-        if (contentLength == 0) {
-            systemHeadersBuilder.setHeader("Content-Length", "0");
-        } else if (contentLength > 0) {
-            systemHeadersBuilder.setHeader("Content-Length", Long.toString(contentLength));
-            streaming = false;
-        } else {
-            streaming = true;
-            systemHeadersBuilder.setHeader("Transfer-encoding", "chunked");
+        // GET, HEAD and DELETE with no request body should not set the Content-Length header
+        if (requestPublisher != null) {
+            contentLength = requestPublisher.contentLength();
+            if (contentLength == 0) {
+                systemHeadersBuilder.setHeader("Content-Length", "0");
+            } else if (contentLength > 0) {
+                systemHeadersBuilder.setHeader("Content-Length", Long.toString(contentLength));
+                streaming = false;
+            } else {
+                streaming = true;
+                systemHeadersBuilder.setHeader("Transfer-encoding", "chunked");
+            }
         }
         collectHeaders0(sb);
         String hs = sb.toString();
@@ -314,8 +320,8 @@ class Http1Request {
         return List.of(b);
     }
 
-    Http1BodySubscriber continueRequest()  {
-        Http1BodySubscriber subscriber;
+    Http1RequestBodySubscriber continueRequest()  {
+        Http1RequestBodySubscriber subscriber;
         if (streaming) {
             subscriber = new StreamSubscriber();
             requestPublisher.subscribe(subscriber);
@@ -329,7 +335,7 @@ class Http1Request {
         return subscriber;
     }
 
-    final class StreamSubscriber extends Http1BodySubscriber {
+    final class StreamSubscriber extends Http1RequestBodySubscriber {
 
         StreamSubscriber() { super(debug); }
 
@@ -338,6 +344,7 @@ class Http1Request {
             if (isSubscribed()) {
                 Throwable t = new IllegalStateException("already subscribed");
                 http1Exchange.appendToOutgoing(t);
+                subscription.cancel();
             } else {
                 setSubscription(subscription);
             }
@@ -351,11 +358,18 @@ class Http1Request {
                 http1Exchange.appendToOutgoing(t);
             } else {
                 int chunklen = item.remaining();
-                ArrayList<ByteBuffer> l = new ArrayList<>(3);
-                l.add(getHeader(chunklen));
-                l.add(item);
-                l.add(ByteBuffer.wrap(CRLF));
-                http1Exchange.appendToOutgoing(l);
+                if (chunklen > 0) {
+                    ArrayList<ByteBuffer> l = new ArrayList<>(3);
+                    l.add(getHeader(chunklen));
+                    l.add(item);
+                    l.add(ByteBuffer.wrap(CRLF));
+                    http1Exchange.appendToOutgoing(l);
+                } else {
+                    if (debug.on()) {
+                        debug.log("dropping empty buffer, request one more");
+                    }
+                    request(1);
+                }
             }
         }
 
@@ -392,7 +406,7 @@ class Http1Request {
         }
     }
 
-    final class FixedContentSubscriber extends Http1BodySubscriber {
+    final class FixedContentSubscriber extends Http1RequestBodySubscriber {
 
         private volatile long contentWritten;
         FixedContentSubscriber() { super(debug); }
@@ -402,6 +416,7 @@ class Http1Request {
             if (isSubscribed()) {
                 Throwable t = new IllegalStateException("already subscribed");
                 http1Exchange.appendToOutgoing(t);
+                subscription.cancel();
             } else {
                 setSubscription(subscription);
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestInvalidJVMCIOption {
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+EagerJVMCI",
             "-XX:+UseJVMCICompiler",
@@ -48,9 +48,13 @@ public class TestInvalidJVMCIOption {
             "Error parsing JVMCI options: Could not find option jvmci.XXXXXXXXX%n" +
             "Error: A fatal exception has occurred. Program will exit.%n");
 
-        Asserts.assertEQ(expectStdout, output.getStdout());
-        output.stderrShouldBeEmpty();
+        // Test for containment instead of equality as -XX:+EagerJVMCI means
+        // the main thread and one or more libjvmci compiler threads
+        // may initialize libjvmci at the same time and thus the error
+        // message can appear multiple times.
+        output.stdoutShouldContain(expectStdout);
 
+        output.stderrShouldBeEmpty();
         output.shouldHaveExitValue(1);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,9 @@ import java.util.function.Supplier;
  *
  * @implSpec
  * This interface is implemented by loggers returned by
- * {@link Utils#getDebugLogger(Supplier, boolean)},
- * {@link Utils#getWebSocketLogger(Supplier, boolean)}and
- * {@link Utils#getHpackLogger(Supplier, boolean)}.
+ * {@link Utils#getDebugLogger(Supplier)},
+ * {@link Utils#getWebSocketLogger(Supplier)} and
+ * {@link Utils#getHpackLogger(Supplier)}.
  * It is not designed to be implemented by any other
  * loggers. Do not use outside of this module.
  */

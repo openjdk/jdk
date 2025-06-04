@@ -23,8 +23,8 @@
  * questions.
  */
 
+#include <cmath>
 #include <malloc.h>
-#include <math.h>
 #include <jlong.h>
 
 #include "sun_java2d_d3d_D3DTextRenderer.h"
@@ -214,7 +214,7 @@ D3DTR_EnableLCDGlyphModeState(D3DContext *d3dc, D3DSDOps *dstOps,
     // update the current contrast settings (note: these change very rarely,
     // but it seems that D3D pixel shader registers aren't maintained as
     // part of the pixel shader instance, so we need to update these
-    // everytime around in case another shader blew away the contents
+    // every time around in case another shader blew away the contents
     // of those registers)
     D3DTR_UpdateLCDTextContrast(d3dc, contrast);
 

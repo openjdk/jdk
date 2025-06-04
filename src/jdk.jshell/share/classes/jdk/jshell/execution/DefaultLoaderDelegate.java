@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,10 @@ class DefaultLoaderDelegate implements LoaderDelegate {
 
         RemoteClassLoader() {
             super(new URL[0]);
+        }
+
+        RemoteClassLoader(ClassLoader parent) {
+            super(new URL[0], parent);
         }
 
         private class ResourceURLStreamHandler extends URLStreamHandler {
@@ -185,9 +189,8 @@ class DefaultLoaderDelegate implements LoaderDelegate {
         private URL doFindResource(String name) {
             if (classFiles.containsKey(name)) {
                 try {
-                    return new URL(null,
-                                   new URI("jshell", null, "/" + name, null).toString(),
-                                   new ResourceURLStreamHandler(name));
+                    return URL.of(new URI("jshell", null, "/" + name, null),
+                                  new ResourceURLStreamHandler(name));
                 } catch (MalformedURLException | URISyntaxException ex) {
                     throw new InternalError(ex);
                 }
@@ -217,8 +220,28 @@ class DefaultLoaderDelegate implements LoaderDelegate {
         }
     }
 
+    /**
+     * Default constructor.
+     *
+     * <p>
+     * The internal class loader will use the
+     * {@linkplain ClassLoader#getSystemClassLoader system class loader} as its parent loader.
+     */
     public DefaultLoaderDelegate() {
         this.loader = new RemoteClassLoader();
+        Thread.currentThread().setContextClassLoader(loader);
+    }
+
+    /**
+     * Creates an instance with the given parent class loader.
+     *
+     * <p>
+     * The internal class loader will use the given parent class loader.
+     *
+     * @param parent parent class loader
+     */
+    public DefaultLoaderDelegate(ClassLoader parent) {
+        this.loader = new RemoteClassLoader(parent);
         Thread.currentThread().setContextClassLoader(loader);
     }
 

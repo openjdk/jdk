@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,6 @@ import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Enumeration;
 
 import javax.accessibility.Accessible;
@@ -93,6 +91,7 @@ import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
 import javax.swing.text.html.parser.ParserDelegator;
 
+import sun.swing.SwingAccessor;
 import sun.awt.AppContext;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
@@ -179,7 +178,7 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
  * loaded asynchronously if loaded using <code>JEditorPane.setPage</code>.
  * This is controlled by a property on the document.  The method
  * {@link #createDefaultDocument createDefaultDocument} can
- * be overriden to change this.  The batching of work is done
+ * be overridden to change this.  The batching of work is done
  * by the <code>HTMLDocument.HTMLReader</code> class.  The actual
  * work is done by the <code>DefaultStyledDocument</code> and
  * <code>AbstractDocument</code> classes in the text package.
@@ -298,10 +297,10 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * @param doc the destination for the insertion
      * @param pos the location in the document to place the
      *   content
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos represents an invalid
      *   location within the document
-     * @exception RuntimeException (will eventually be a BadLocationException)
+     * @throws RuntimeException (will eventually be a BadLocationException)
      *            if pos is invalid
      */
     public void read(Reader in, Document doc, int pos) throws IOException, BadLocationException {
@@ -327,9 +326,9 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      *
      * @param doc the document to insert into
      * @param offset the offset to insert HTML at
+     * @param html the HTML string
      * @param popDepth the number of ElementSpec.EndTagTypes to generate
      *                  before inserting
-     * @param html the HTML string
      * @param pushDepth the number of ElementSpec.StartTagTypes with a direction
      *                  of ElementSpec.JoinNextDirection that should be generated
      *                  before inserting, but after the end tags have been generated
@@ -337,7 +336,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      *
      * @throws BadLocationException if {@code offset} is invalid
      * @throws IOException on I/O error
-     * @exception RuntimeException (will eventually be a BadLocationException)
+     * @throws RuntimeException (will eventually be a BadLocationException)
      *            if pos is invalid
      */
     public void insertHTML(HTMLDocument doc, int offset, String html,
@@ -367,8 +366,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * @param pos the location in the document to fetch the
      *   content
      * @param len the amount to write out
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if {@code pos} represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if {@code pos} represents an invalid
      *   location within the document
      */
     public void write(Writer out, Document doc, int pos, int len)
@@ -470,22 +469,13 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
 
     /**
      * Fetch a resource relative to the HTMLEditorKit classfile.
-     * If this is called on 1.2 the loading will occur under the
-     * protection of a doPrivileged call to allow the HTMLEditorKit
-     * to function when used in an applet.
      *
      * @param name the name of the resource, relative to the
      *             HTMLEditorKit class
      * @return a stream representing the resource
      */
-    @SuppressWarnings("removal")
     static InputStream getResourceAsStream(final String name) {
-        return AccessController.doPrivileged(
-                new PrivilegedAction<InputStream>() {
-                    public InputStream run() {
-                        return HTMLEditorKit.class.getResourceAsStream(name);
-                    }
-                });
+        return HTMLEditorKit.class.getResourceAsStream(name);
     }
 
     /**
@@ -969,7 +959,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
             URL u;
             try {
                 URL base = hdoc.getBase();
-                u = new URL(base, href);
+                @SuppressWarnings("deprecation")
+                var _unused = u = new URL(base, href);
                 // Following is a workaround for 1.2, in which
                 // new URL("file://...", "#...") causes the filename to
                 // be lost.
@@ -979,7 +970,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                     String newFile = u.getFile();
                     if (baseFile != null && newFile != null &&
                         !newFile.startsWith(baseFile)) {
-                        u = new URL(base, baseFile + href);
+                        @SuppressWarnings("deprecation")
+                        var _unused2 = u = new URL(base, baseFile + href);
                     }
                 }
             } catch (MalformedURLException m) {
@@ -1013,7 +1005,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 // fire an exited event on the old link
                 URL u;
                 try {
-                    u = new URL(doc.getBase(), this.href);
+                    @SuppressWarnings("deprecation")
+                    var _unused = u = new URL(doc.getBase(), this.href);
                 } catch (MalformedURLException m) {
                     u = null;
                 }
@@ -1026,7 +1019,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 // fire an entered event on the new link
                 URL u;
                 try {
-                    u = new URL(doc.getBase(), href);
+                    @SuppressWarnings("deprecation")
+                    var _unused = u = new URL(doc.getBase(), href);
                 } catch (MalformedURLException m) {
                     u = null;
                 }
@@ -1299,6 +1293,29 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      *     <td>FrameView
      * </tbody>
      * </table>
+     *
+     * @implNote
+     * Parsed tags that are unrecognized or are recognized but unsupported are
+     * handled differently by the editor.
+     *
+     * <ul>
+     * <li>When the container is editable:
+     *     <ul>
+     *         <li>The tags will be displayed as editable text fields with the
+     *         tag name.</li>
+     *         <li>The content within the tags will be handled by the editor as
+     *         regular text.</li>
+     *     </ul>
+     * </li>
+     * <li>When the container is not editable:
+     *     <ul>
+     *         <li>If the tag is recognized but not supported, such as script tags,
+     *         the tag and its contents will be hidden.</li>
+     *         <li>If the tag is unknown, the tag will be hidden but its contents
+     *         will display as regular text.</li>
+     *     </ul>
+     * </li>
+     * </ul>
      */
     public static class HTMLFactory implements ViewFactory {
         /**
@@ -1375,7 +1392,11 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                            (kind == HTML.Tag.TEXTAREA)) {
                     return new FormView(elem);
                 } else if (kind == HTML.Tag.OBJECT) {
-                    return new ObjectView(elem);
+                   if (SwingAccessor.getAllowHTMLObject()) {
+                        return new ObjectView(elem);
+                    } else {
+                        return new ObjectView(elem, false);
+                    }
                 } else if (kind == HTML.Tag.FRAMESET) {
                      if (elem.getAttributes().isDefined(HTML.Attribute.ROWS)) {
                          return new FrameSetView(elem, View.Y_AXIS);
@@ -1393,7 +1414,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 } else if (kind == HTML.Tag.HEAD) {
                     // Make the head never visible, and never load its
                     // children. For Cursor positioning,
-                    // getNextVisualPositionFrom is overriden to always return
+                    // getNextVisualPositionFrom is overridden to always return
                     // the end offset of the element.
                     return new BlockView(elem, View.X_AXIS) {
                         public float getPreferredSpan(int axis) {
@@ -1881,10 +1902,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 getHTMLEditorKit(editor).insertHTML(doc, offset, html,
                                                     popDepth, pushDepth,
                                                     addTag);
-            } catch (IOException ioe) {
-                throw new RuntimeException("Unable to insert: " + ioe);
-            } catch (BadLocationException ble) {
-                throw new RuntimeException("Unable to insert: " + ble);
+            } catch (IOException | BadLocationException e) {
+                throw new RuntimeException("Unable to insert: " + e);
             }
         }
 
@@ -2371,6 +2390,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
             try {
                 URL page =
                     (URL)doc.getProperty(Document.StreamDescriptionProperty);
+                @SuppressWarnings("deprecation")
                 URL url = new URL(page, href);
                 HyperlinkEvent linkEvent = new HyperlinkEvent
                     (editor, HyperlinkEvent.EventType.
@@ -2438,7 +2458,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
 
         /*
          * If possible acquires a lock on the Document.  If a lock has been
-         * obtained a key will be retured that should be passed to
+         * obtained a key will be returned that should be passed to
          * <code>unlock</code>.
          */
         private Object lock(JEditorPane editor) {

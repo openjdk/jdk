@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,7 +28,6 @@
 
 #include "memory/allocation.hpp"
 #include "oops/method.hpp"
-
 
 // Static routines and parsing loops for processing field and method
 // descriptors.  In the HotSpot sources we call them "signatures".
@@ -96,14 +95,6 @@ class Signature : AllStatic {
 
   // Returns T_ILLEGAL for an illegal signature char.
   static BasicType basic_type(int ch);
-
-  // Assuming it is either a class name or signature,
-  // determine if it in fact cannot be a class name.
-  // This means it either starts with '[' or ends with ';'
-  static bool not_class_name(const Symbol* signature) {
-    return (signature->starts_with(JVM_SIGNATURE_ARRAY) ||
-            signature->ends_with(JVM_SIGNATURE_ENDCLASS));
-  }
 
   // Assuming it is either a class name or signature,
   // determine if it in fact is an array descriptor.
@@ -230,10 +221,6 @@ class SignatureIterator: public ResourceObj {
   template<typename T> inline void do_parameters_on(T* callback); // iterates over parameters only
   BasicType return_type();  // computes the value on the fly if necessary
 
-  static bool fp_is_static(fingerprint_t fingerprint) {
-    assert(fp_is_valid(fingerprint), "invalid fingerprint");
-    return fingerprint & fp_is_static_bit;
-  }
   static BasicType fp_return_type(fingerprint_t fingerprint) {
     assert(fp_is_valid(fingerprint), "invalid fingerprint");
     return (BasicType) ((fingerprint >> fp_static_feature_size) & fp_result_feature_mask);
@@ -329,28 +316,42 @@ class Fingerprinter: public SignatureIterator {
  private:
   fingerprint_t _accumulator;
   int _param_size;
+  int _stack_arg_slots;
   int _shift_count;
   const Method* _method;
+
+  uint _int_args;
+  uint _fp_args;
 
   void initialize_accumulator() {
     _accumulator = 0;
     _shift_count = fp_result_feature_size + fp_static_feature_size;
     _param_size = 0;
+    _stack_arg_slots = 0;
   }
 
   // Out-of-line method does it all in constructor:
   void compute_fingerprint_and_return_type(bool static_flag = false);
 
+  void initialize_calling_convention(bool static_flag);
+  void do_type_calling_convention(BasicType type);
+
   friend class SignatureIterator;  // so do_parameters_on can call do_type
+
   void do_type(BasicType type) {
     assert(fp_is_valid_type(type), "bad parameter type");
-    _accumulator |= ((fingerprint_t)type << _shift_count);
-    _shift_count += fp_parameter_feature_size;
+    if (_param_size <= fp_max_size_of_parameters) {
+      _accumulator |= ((fingerprint_t)type << _shift_count);
+      _shift_count += fp_parameter_feature_size;
+    }
     _param_size += (is_double_word_type(type) ? 2 : 1);
+    do_type_calling_convention(type);
   }
 
  public:
   int size_of_parameters() const { return _param_size; }
+  int num_stack_arg_slots() const { return _stack_arg_slots; }
+
   // fingerprint() and return_type() are in super class
 
   Fingerprinter(const methodHandle& method)
@@ -360,7 +361,7 @@ class Fingerprinter: public SignatureIterator {
   }
   Fingerprinter(Symbol* signature, bool is_static)
     : SignatureIterator(signature),
-      _method(NULL) {
+      _method(nullptr) {
     compute_fingerprint_and_return_type(is_static);
   }
 };
@@ -498,7 +499,6 @@ class SignatureStream : public StackObj {
 
   bool is_reference() const { return is_reference_type(_type); }
   bool is_array() const     { return _type == T_ARRAY; }
-  bool is_primitive() const { return is_java_primitive(_type); }
   BasicType type() const    { return _type; }
 
   const u1* raw_bytes() const  { return _signature->bytes() + _begin; }
@@ -562,8 +562,8 @@ class SignatureStream : public StackObj {
 
   // free-standing lookups (bring your own CL/PD pair)
   enum FailureMode { ReturnNull, NCDFError, CachedOrNull };
-  Klass* as_klass(Handle class_loader, Handle protection_domain, FailureMode failure_mode, TRAPS);
-  oop as_java_mirror(Handle class_loader, Handle protection_domain, FailureMode failure_mode, TRAPS);
+  Klass* as_klass(Handle class_loader, FailureMode failure_mode, TRAPS);
+  oop as_java_mirror(Handle class_loader, FailureMode failure_mode, TRAPS);
 };
 
 // Specialized SignatureStream: used for invoking SystemDictionary to either find
@@ -573,11 +573,10 @@ class ResolvingSignatureStream : public SignatureStream {
   Klass*       _load_origin;
   bool         _handles_cached;
   Handle       _class_loader;       // cached when needed
-  Handle       _protection_domain;  // cached when needed
 
   void initialize_load_origin(Klass* load_origin) {
     _load_origin = load_origin;
-    _handles_cached = (load_origin == NULL);
+    _handles_cached = (load_origin == nullptr);
   }
   void need_handles() {
     if (!_handles_cached) {
@@ -589,26 +588,18 @@ class ResolvingSignatureStream : public SignatureStream {
 
  public:
   ResolvingSignatureStream(Symbol* signature, Klass* load_origin, bool is_method = true);
-  ResolvingSignatureStream(Symbol* signature, Handle class_loader, Handle protection_domain, bool is_method = true);
+  ResolvingSignatureStream(Symbol* signature, Handle class_loader, bool is_method = true);
   ResolvingSignatureStream(const Method* method);
-  ResolvingSignatureStream(fieldDescriptor& field);
 
-  Klass* load_origin()       { return _load_origin; }
-  Handle class_loader()      { need_handles(); return _class_loader; }
-  Handle protection_domain() { need_handles(); return _protection_domain; }
-
-  Klass* as_klass_if_loaded(TRAPS);
   Klass* as_klass(FailureMode failure_mode, TRAPS) {
     need_handles();
-    return SignatureStream::as_klass(_class_loader, _protection_domain,
-                                     failure_mode, THREAD);
+    return SignatureStream::as_klass(_class_loader, failure_mode, THREAD);
   }
   oop as_java_mirror(FailureMode failure_mode, TRAPS) {
     if (is_reference()) {
       need_handles();
     }
-    return SignatureStream::as_java_mirror(_class_loader, _protection_domain,
-                                           failure_mode, THREAD);
+    return SignatureStream::as_java_mirror(_class_loader, failure_mode, THREAD);
   }
 };
 

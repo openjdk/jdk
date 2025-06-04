@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -52,12 +52,10 @@ import javax.management.NotCompliantMBeanException;
 import com.sun.jmx.remote.util.EnvHelp;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
-import java.security.AccessController;
 import javax.management.AttributeNotFoundException;
 import javax.management.openmbean.CompositeData;
 
 import sun.reflect.misc.MethodUtil;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * This class contains the methods for performing all the tests needed to verify
@@ -66,12 +64,6 @@ import sun.reflect.misc.ReflectUtil;
  * @since 1.5
  */
 public class Introspector {
-    public static final boolean ALLOW_NONPUBLIC_MBEAN;
-    static {
-        @SuppressWarnings("removal")
-        String val = AccessController.doPrivileged(new GetPropertyAction("jdk.jmx.mbeans.allowNonPublic"));
-        ALLOW_NONPUBLIC_MBEAN = Boolean.parseBoolean(val);
-    }
 
      /*
      * ------------------------------------------
@@ -276,7 +268,6 @@ public class Introspector {
             throws NotCompliantMBeanException {
         if (mbeanInterface == null)
             mbeanInterface = getStandardMBeanInterface(baseClass);
-        ReflectUtil.checkPackageAccess(mbeanInterface);
         MBeanIntrospector<?> introspector = StandardMBeanIntrospector.getInstance();
         return getClassMBeanInfo(introspector, baseClass, mbeanInterface);
     }
@@ -397,22 +388,16 @@ public class Introspector {
     public static Descriptor descriptorForAnnotations(Annotation[] annots) {
         if (annots.length == 0)
             return ImmutableDescriptor.EMPTY_DESCRIPTOR;
-        Map<String, Object> descriptorMap = new HashMap<String, Object>();
+        Map<String, Object> descriptorMap = new HashMap<>();
         for (Annotation a : annots) {
             Class<? extends Annotation> c = a.annotationType();
             Method[] elements = c.getMethods();
-            boolean packageAccess = false;
             for (Method element : elements) {
                 DescriptorKey key = element.getAnnotation(DescriptorKey.class);
                 if (key != null) {
                     String name = key.value();
                     Object value;
                     try {
-                        // Avoid checking access more than once per annotation
-                        if (!packageAccess) {
-                            ReflectUtil.checkPackageAccess(c);
-                            packageAccess = true;
-                        }
                         value = MethodUtil.invoke(element, a, null);
                     } catch (RuntimeException e) {
                         // we don't expect this - except for possibly
@@ -446,7 +431,7 @@ public class Introspector {
     /**
      * Throws a NotCompliantMBeanException or a SecurityException.
      * @param notCompliant the class which was under examination
-     * @param cause the raeson why NotCompliantMBeanException should
+     * @param cause the reason why NotCompliantMBeanException should
      *        be thrown.
      * @return nothing - this method always throw an exception.
      *         The return type makes it possible to write
@@ -531,8 +516,7 @@ public class Introspector {
         Class<?>[] interfaces = c.getInterfaces();
         for (int i = 0;i < interfaces.length; i++) {
             if (interfaces[i].getName().equals(clMBeanName) &&
-                (Modifier.isPublic(interfaces[i].getModifiers()) ||
-                 ALLOW_NONPUBLIC_MBEAN)) {
+                Modifier.isPublic(interfaces[i].getModifiers())) {
                 return Util.cast(interfaces[i]);
             }
         }
@@ -560,7 +544,6 @@ public class Introspector {
                     readMethod = SimpleIntrospector.getReadMethod(clazz, element);
                 }
                 if (readMethod != null) {
-                    ReflectUtil.checkPackageAccess(readMethod.getDeclaringClass());
                     return MethodUtil.invoke(readMethod, complex, new Class<?>[0]);
                 }
 
@@ -592,8 +575,7 @@ public class Introspector {
 
         // cache to avoid repeated lookups
         private static final Map<Class<?>,SoftReference<List<Method>>> cache =
-            Collections.synchronizedMap(
-                new WeakHashMap<Class<?>,SoftReference<List<Method>>> ());
+            Collections.synchronizedMap(new WeakHashMap<>());
 
         /**
          * Returns the list of methods cached for the given class, or {@code null}
@@ -603,9 +585,7 @@ public class Introspector {
             // return cached methods if possible
             SoftReference<List<Method>> ref = cache.get(clazz);
             if (ref != null) {
-                List<Method> cached = ref.get();
-                if (cached != null)
-                    return cached;
+                return ref.get();
             }
             return null;
         }
@@ -654,7 +634,7 @@ public class Introspector {
             methods = MBeanAnalyzer.eliminateCovariantMethods(methods);
 
             // filter out the non-getter methods
-            List<Method> result = new LinkedList<Method>();
+            List<Method> result = new ArrayList<>();
             for (Method m: methods) {
                 if (isReadMethod(m)) {
                     // favor isXXX over getXXX
@@ -667,7 +647,7 @@ public class Introspector {
             }
 
             // add result to cache
-            cache.put(clazz, new SoftReference<List<Method>>(result));
+            cache.put(clazz, new SoftReference<>(result));
 
             return result;
         }

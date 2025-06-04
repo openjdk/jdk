@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import java.io.*;
  * @see Transport
  * @see DebugeeProcess
  */
-abstract public class Debugee extends DebugeeProcess {
+public class Debugee extends DebugeeProcess {
 
     /** Binder that creates this debugee. */
     protected Binder binder = null;
@@ -61,6 +61,12 @@ abstract public class Debugee extends DebugeeProcess {
         this.argumentHandler = binder.getArgumentHandler();
         this.binder = binder;
         prefix = "Debugee> ";
+    }
+
+    public void launch(String[] args) throws IOException {
+        String cmdLine = ArgumentHandler.joinArguments(args, "\"");
+        display("Starting java process:\n" + cmdLine);
+        process = binder.launchProcess(args);
     }
 
     /** Return <code>Binder</code> of the debugee object. */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,14 @@ import java.util.List;
  */
 public class GraphDocument extends Properties.Entity implements ChangedEventProvider<GraphDocument>, Folder {
 
-    private List<FolderElement> elements;
-    private ChangedEvent<GraphDocument> changedEvent;
+    private final List<FolderElement> elements;
+    private final ChangedEvent<GraphDocument> changedEvent;
+    private String name;
 
     public GraphDocument() {
         elements = new ArrayList<>();
         changedEvent = new ChangedEvent<>(this);
+        setName("GraphDocument");
     }
 
     public void clear() {
@@ -52,7 +54,7 @@ public class GraphDocument extends Properties.Entity implements ChangedEventProv
 
     public void addGraphDocument(GraphDocument document) {
         if (document != this) {
-            for (FolderElement e : document.elements) {
+            for (FolderElement e : document.getElements()) {
                 e.setParent(this);
                 this.addElement(e);
             }
@@ -62,9 +64,22 @@ public class GraphDocument extends Properties.Entity implements ChangedEventProv
     }
 
     @Override
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public String getDisplayName() {
+        return getName();
+    }
+
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-
         sb.append("GraphDocument: ").append(getProperties().toString()).append(" \n\n");
         for (FolderElement g : getElements()) {
             sb.append(g.toString());
@@ -83,6 +98,9 @@ public class GraphDocument extends Properties.Entity implements ChangedEventProv
     public void removeElement(FolderElement element) {
         if (elements.remove(element)) {
             getChangedEvent().fire();
+        }
+        for (FolderElement folderElement : elements) {
+            folderElement.getDisplayNameChangedEvent().fire();
         }
     }
 

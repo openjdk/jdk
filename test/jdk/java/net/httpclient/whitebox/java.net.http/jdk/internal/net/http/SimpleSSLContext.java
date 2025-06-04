@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,13 +42,6 @@ import javax.net.ssl.TrustManagerFactory;
 /**
  * Creates a simple usable SSLContext for SSLSocketFactory
  * or a HttpsServer using a default keystore in the test tree.
- * <p>
- * Using this class with a security manager requires the following
- * permissions to be granted:
- * <p>
- * permission "java.util.PropertyPermission" "test.src.path", "read";
- * permission java.io.FilePermission "/path/to/test/lib/jdk/test/lib/testkeys", "read";
- * The exact path above depends on the location of the test.
  */
 public class SimpleSSLContext {
 
@@ -60,26 +53,16 @@ public class SimpleSSLContext {
     public SimpleSSLContext() throws IOException {
         String paths = System.getProperty("test.src.path");
         StringTokenizer st = new StringTokenizer(paths, File.pathSeparator);
-        boolean securityExceptions = false;
         SSLContext sslContext = null;
         while (st.hasMoreTokens()) {
             String path = st.nextToken();
-            try {
-                File f = new File(path, "../../../../../lib/jdk/test/lib/net/testkeys");
-                if (f.exists()) {
-                    try (FileInputStream fis = new FileInputStream(f)) {
-                        sslContext = init(fis);
-                        break;
-                    }
+            File f = new File(path, "../../../../../lib/jdk/test/lib/net/testkeys");
+            if (f.exists()) {
+                try (FileInputStream fis = new FileInputStream(f)) {
+                    sslContext = init(fis);
+                    break;
                 }
-            } catch (SecurityException e) {
-                // catch and ignore because permission only required
-                // for one entry on path (at most)
-                securityExceptions = true;
             }
-        }
-        if (securityExceptions) {
-            System.out.println("SecurityExceptions thrown on loading testkeys");
         }
         ssl = sslContext;
     }

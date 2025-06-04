@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,6 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
@@ -48,7 +45,7 @@ import javax.net.ssl.SSLProtocolException;
 import javax.net.ssl.SSLSession;
 
 /**
- * Implementation of an non-blocking SSLEngine.
+ * Implementation of a non-blocking SSLEngine.
  *
  * @author Brad Wetmore
  */
@@ -270,7 +267,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
             if (ciphertext == null && !conContext.isNegotiated &&
                     conContext.isInboundClosed() &&
                     hsStatus == HandshakeStatus.NEED_WRAP) {
-                // Even the outboud is open, no futher data could be wrapped as:
+                // Even the outbound is open, no further data could be wrapped as:
                 //     1. the outbound is empty
                 //     2. no negotiated connection
                 //     3. the inbound has closed, cannot complete the handshake
@@ -332,7 +329,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
             // after the last flight.  If the last flight get lost, the
             // application data may be discarded accordingly.  As could
             // be an issue for some applications.  This impact can be
-            // mitigated by sending the last fligth twice.
+            // mitigated by sending the last flight twice.
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,verbose")) {
                 SSLLogger.finest("retransmit the last flight messages");
             }
@@ -394,11 +391,11 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
      */
     private HandshakeStatus tryKeyUpdate(
             HandshakeStatus currentHandshakeStatus) throws IOException {
-        // Don't bother to kickstart if handshaking is in progress, or if the
-        // connection is not duplex-open.
+        // Don't bother to kickstart if handshaking is in progress, or if
+        // the write side of the connection is not open.  We allow a half-
+        // duplex write-only connection for key updates.
         if ((conContext.handshakeContext == null) &&
                 !conContext.isOutboundClosed() &&
-                !conContext.isInboundClosed() &&
                 !conContext.isBroken) {
             if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                 SSLLogger.finest("trigger key update");
@@ -416,11 +413,12 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
             HandshakeStatus currentHandshakeStatus) throws IOException {
         // Don't bother to kickstart if handshaking is in progress, or if the
         // connection is not duplex-open.
-        if ((conContext.handshakeContext == null) &&
-                conContext.protocolVersion.useTLS13PlusSpec() &&
-                !conContext.isOutboundClosed() &&
-                !conContext.isInboundClosed() &&
-                !conContext.isBroken) {
+        if (SSLConfiguration.serverNewSessionTicketCount > 0 &&
+            conContext.handshakeContext == null &&
+            conContext.protocolVersion.useTLS13PlusSpec() &&
+            !conContext.isOutboundClosed() &&
+            !conContext.isInboundClosed() &&
+            !conContext.isBroken) {
             if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                 SSLLogger.finest("trigger NST");
             }
@@ -461,7 +459,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
             }
 
             /*
-             * Make sure the destination bufffers are writable.
+             * Make sure the destination buffers are writable.
              */
             if (dsts[i].isReadOnly()) {
                 throw new ReadOnlyBufferException();
@@ -789,17 +787,17 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
             // Is it ready to close inbound?
             //
             // No exception if the initial handshake is not started.
-            if (!conContext.isInputCloseNotified &&
-                (conContext.isNegotiated ||
-                    conContext.handshakeContext != null)) {
-
-                throw conContext.fatal(Alert.INTERNAL_ERROR,
+            if (!conContext.isInputCloseNotified && (conContext.isNegotiated
+                    || conContext.handshakeContext != null)) {
+                throw new SSLException(
                         "closing inbound before receiving peer's close_notify");
             }
-
-            conContext.closeInbound();
         } finally {
-            engineLock.unlock();
+            try {
+                conContext.closeInbound();
+            } finally {
+                engineLock.unlock();
+            }
         }
     }
 
@@ -1130,7 +1128,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
                     if (conContext.delegatedThrown == exc) {
                         // clear if/only if both are the same
                         conContext.delegatedThrown = null;
-                    } // otherwise report the hc delegatedThrown
+                    } // otherwise, report the hc delegatedThrown
                 } else {
                     // Nothing waiting in HandshakeContext, but one is in the
                     // TransportContext.
@@ -1167,17 +1165,13 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
         if (taskThrown instanceof RuntimeException) {
             throw new RuntimeException(msg, taskThrown);
         } else if (taskThrown instanceof SSLHandshakeException) {
-            return (SSLHandshakeException)
-                new SSLHandshakeException(msg).initCause(taskThrown);
+            return new SSLHandshakeException(msg, taskThrown);
         } else if (taskThrown instanceof SSLKeyException) {
-            return (SSLKeyException)
-                new SSLKeyException(msg).initCause(taskThrown);
+            return new SSLKeyException(msg, taskThrown);
         } else if (taskThrown instanceof SSLPeerUnverifiedException) {
-            return (SSLPeerUnverifiedException)
-                new SSLPeerUnverifiedException(msg).initCause(taskThrown);
+            return new SSLPeerUnverifiedException(msg, taskThrown);
         } else if (taskThrown instanceof SSLProtocolException) {
-            return (SSLProtocolException)
-                new SSLProtocolException(msg).initCause(taskThrown);
+            return new SSLProtocolException(msg, taskThrown);
         } else if (taskThrown instanceof SSLException) {
             return (SSLException)taskThrown;
         } else {
@@ -1205,17 +1199,25 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
                 }
 
                 try {
-                    @SuppressWarnings("removal")
-                    var dummy = AccessController.doPrivileged(
-                            new DelegatedAction(hc), engine.conContext.acc);
-                } catch (PrivilegedActionException pae) {
+                    while (!hc.delegatedActions.isEmpty()) {
+                        Map.Entry<Byte, ByteBuffer> me =
+                            hc.delegatedActions.poll();
+                        if (me != null) {
+                            try {
+                                hc.dispatch(me.getKey(), me.getValue());
+                            } catch (Exception e) {
+                                throw hc.conContext.fatal(Alert.INTERNAL_ERROR,
+                                        "Unhandled exception", e);
+                            }
+                        }
+                    }
+                } catch (SSLException se) {
                     // Get the handshake context again in case the
                     // handshaking has completed.
-                    Exception reportedException = pae.getException();
 
                     // Report to both the TransportContext...
                     if (engine.conContext.delegatedThrown == null) {
-                        engine.conContext.delegatedThrown = reportedException;
+                        engine.conContext.delegatedThrown = se;
                     }
 
                     // ...and the HandshakeContext in case condition
@@ -1223,11 +1225,10 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
                     // around.
                     hc = engine.conContext.handshakeContext;
                     if (hc != null) {
-                        hc.delegatedThrown = reportedException;
+                        hc.delegatedThrown = se;
                     } else if (engine.conContext.closeReason != null) {
                         // Update the reason in case there was a previous.
-                        engine.conContext.closeReason =
-                                getTaskThrown(reportedException);
+                        engine.conContext.closeReason = getTaskThrown(se);
                     }
                 } catch (RuntimeException rte) {
                     // Get the handshake context again in case the
@@ -1258,26 +1259,6 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
                 }
             } finally {
                 engine.engineLock.unlock();
-            }
-        }
-
-        private static class DelegatedAction
-                implements PrivilegedExceptionAction<Void> {
-            final HandshakeContext context;
-            DelegatedAction(HandshakeContext context) {
-                this.context = context;
-            }
-
-            @Override
-            public Void run() throws Exception {
-                while (!context.delegatedActions.isEmpty()) {
-                    Map.Entry<Byte, ByteBuffer> me =
-                            context.delegatedActions.poll();
-                    if (me != null) {
-                        context.dispatch(me.getKey(), me.getValue());
-                    }
-                }
-                return null;
             }
         }
     }

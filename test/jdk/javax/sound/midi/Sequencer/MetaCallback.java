@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,16 @@ import javax.sound.midi.Sequence;
 import javax.sound.midi.Sequencer;
 import javax.sound.midi.ShortMessage;
 import javax.sound.midi.Track;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @test
  * @bug 4347135
  * @summary MIDI MetaMessage callback inconsistent
- * @key intermittent
- * @run main/othervm MetaCallback
+ * @key intermittent sound
+ * @run main/othervm/timeout=120 MetaCallback
  */
 public class MetaCallback implements MetaEventListener {
 
@@ -59,11 +62,15 @@ public class MetaCallback implements MetaEventListener {
 
     public static int TOTAL_COUNT = 100;
 
-    int metaCount = 0;
-    boolean finished = false;
+    volatile int metaCount = 0;
+    volatile boolean finished = false;
+    // On M1 Mac sometimes system notifies listener about the same message twice
+    static List<MetaMessage> received = Collections.synchronizedList(new ArrayList<>());
+    long startTimeMs;
 
     MetaCallback() throws Exception {
 
+        startTimeMs = System.currentTimeMillis();
         sequencer=MidiSystem.getSequencer();
         sequence=new Sequence(Sequence.PPQ,240);
         track=sequence.createTrack();
@@ -101,13 +108,28 @@ public class MetaCallback implements MetaEventListener {
         }
     }
     void start() {sequencer.start();}
-    void stop() {sequencer.stop();}
+    void stop() {
+        sequencer.stop();
+        sequencer.close();
+    }
 
     public void meta(MetaMessage msg) {
         System.out.println(""+metaCount+": got "+msg);
         if (msg.getType() == 0x2F) {
             finished = true;
         } else if (msg.getData().length > 0 && msg.getType() == 1) {
+            if (!received.contains(msg)) {
+                received.add(msg);
+            } else {
+                // Add some additional debug output for the case of duplicate meta message
+                // The test will fail anyway at the end
+                System.out.println("Duplicate message received after getting "
+                        + received.size() + " messages.");
+                System.out.println("Sequencer in use: " + sequencer);
+                System.out.println("Time from test start: " +
+                        (System.currentTimeMillis() - startTimeMs) + "ms");
+                Thread.dumpStack();
+            }
             metaCount++;
         }
     }

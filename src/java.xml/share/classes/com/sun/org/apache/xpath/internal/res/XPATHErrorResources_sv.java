@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -32,6 +31,7 @@ import java.util.ListResourceBundle;
   * Also you need to  update the count of messages(MAX_CODE)or
  * the count of warnings(MAX_WARNING) [ Information purpose only]
  * @xsl.usage advanced
+ * @LastModified: Nov 2024
  */
 public class XPATHErrorResources_sv extends ListResourceBundle
 {
@@ -326,7 +326,6 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
          "WG_PROPERTY_NOT_SUPPORTED";
   public static final String WG_DONT_DO_ANYTHING_WITH_NS =
          "WG_DONT_DO_ANYTHING_WITH_NS";
-  public static final String WG_SECURITY_EXCEPTION = "WG_SECURITY_EXCEPTION";
   public static final String WG_QUO_NO_LONGER_DEFINED =
          "WG_QUO_NO_LONGER_DEFINED";
   public static final String WG_NEED_DERIVED_OBJECT_TO_IMPLEMENT_NODETEST =
@@ -578,7 +577,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   { ER_RTF_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
        "rtf() st\u00F6ds inte av XRTreeFragSelectWrapper"},
 
-  { ER_RTF_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
+  { ER_ASNODEITERATOR_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
        "asNodeIterator() st\u00F6ds inte av XRTreeFragSelectWrapper"},
 
         /**  detach() not supported by XRTreeFragSelectWrapper   */
@@ -838,9 +837,6 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { WG_DONT_DO_ANYTHING_WITH_NS,
       "G\u00F6r f\u00F6r n\u00E4rvarande inte n\u00E5gonting med namnrymden {0} i egenskap: {1}"},
-
-  { WG_SECURITY_EXCEPTION,
-      "SecurityException vid f\u00F6rs\u00F6k att f\u00E5 \u00E5tkomst till XSL-systemegenskap: {0}"},
 
   { WG_QUO_NO_LONGER_DEFINED,
       "Gammal syntax: quo(...) definieras inte l\u00E4ngre i XPath."},

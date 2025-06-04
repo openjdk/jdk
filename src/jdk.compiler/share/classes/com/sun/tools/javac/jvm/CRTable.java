@@ -323,6 +323,7 @@ implements CRTFlags {
         public void visitCase(JCCase tree) {
             SourceRange sr = new SourceRange(startPos(tree), endPos(tree));
             sr.mergeWith(csp(tree.labels));
+            sr.mergeWith(csp(tree.guard));
             sr.mergeWith(csp(tree.stats));
             result = sr;
         }
@@ -330,6 +331,20 @@ implements CRTFlags {
         @Override
         public void visitDefaultCaseLabel(JCTree.JCDefaultCaseLabel that) {
             result = null;
+        }
+
+        @Override
+        public void visitConstantCaseLabel(JCConstantCaseLabel tree) {
+            SourceRange sr = new SourceRange(startPos(tree), endPos(tree));
+            sr.mergeWith(csp(tree.expr));
+            result = sr;
+        }
+
+        @Override
+        public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
+            SourceRange sr = new SourceRange(startPos(tree), endPos(tree));
+            sr.mergeWith(csp(tree.pat));
+            result = sr;
         }
 
         public void visitSynchronized(JCSynchronized tree) {

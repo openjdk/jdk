@@ -135,7 +135,7 @@ public class XRUtils {
 
 
     /**
-     * Returns the XRender picture Format which is required to fullfill the
+     * Returns the XRender picture Format which is required to fulfill the
      * Java2D transparency requirement.
      */
     public static int getPictureFormatForTransparency(int transparency) {

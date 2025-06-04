@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.tree.FieldTypeSignature;
-import sun.reflect.generics.visitor.Reifier;
 import java.util.Arrays;
 import java.util.StringJoiner;
 
@@ -101,8 +100,8 @@ public class WildcardTypeImpl extends LazyReflectiveObjectGenerator
      */
     public Type[] getUpperBounds() {
         Object[] value = upperBounds;
-        if (value instanceof FieldTypeSignature[]) {
-            value = reifyBounds((FieldTypeSignature[])value);
+        if (value instanceof FieldTypeSignature[] sigs) {
+            value = reifyBounds(sigs);
             upperBounds = value;
         }
         return (Type[])value.clone();
@@ -132,8 +131,8 @@ public class WildcardTypeImpl extends LazyReflectiveObjectGenerator
      */
     public Type[] getLowerBounds() {
         Object[] value = lowerBounds;
-        if (value instanceof FieldTypeSignature[]) {
-            value = reifyBounds((FieldTypeSignature[])value);
+        if (value instanceof FieldTypeSignature[] sigs) {
+            value = reifyBounds(sigs);
             lowerBounds = value;
         }
         return (Type[])value.clone();
@@ -168,15 +167,9 @@ public class WildcardTypeImpl extends LazyReflectiveObjectGenerator
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof WildcardType) {
-            WildcardType that = (WildcardType) o;
-            return
-                Arrays.equals(this.getLowerBounds(),
-                              that.getLowerBounds()) &&
-                Arrays.equals(this.getUpperBounds(),
-                              that.getUpperBounds());
-        } else
-            return false;
+        return o instanceof WildcardType that
+                && Arrays.equals(this.getLowerBounds(), that.getLowerBounds())
+                && Arrays.equals(this.getUpperBounds(), that.getUpperBounds());
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -34,11 +34,20 @@ extern "C" {
 #define STATUS_FAILED 2
 #define INV_SLOT (-1)
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
+
+static void check_error(jvmtiError err, bool is_virtual, char* var_name) {
+    if (err != JVMTI_ERROR_INVALID_SLOT && !(is_virtual && err == JVMTI_ERROR_OPAQUE_FRAME)) {
+        printf("(%s) ", var_name);
+        printf("Error expected: JVMTI_ERROR_INVALID_SLOT or JVMTI_ERROR_OPAQUE_FRAME,\n");
+        printf("\t    actual: %s (%d)\n", TranslateError(err), err);
+        result = STATUS_FAILED;
+    }
+}
 
 void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
         jthread thr, jmethodID method, jlocation location) {
@@ -47,6 +56,7 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
     jlocation loc;
     jint entryCount;
     jvmtiLocalVariableEntry *table;
+    bool is_virtual = env->IsVirtualThread(thr);
     int i;
 
     err = jvmti_env->GetFrameLocation(thr, 1, &mid, &loc);
@@ -71,51 +81,28 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
         printf(">>> checking on invalid slot ...\n");
     }
     for (i = 0; i < entryCount; i++) {
+        char* var_name = table[i].name;
+
         if (strcmp(table[i].name, "o") == 0) {
             err = jvmti_env->SetLocalObject(thr, 1,
                 INV_SLOT, (jobject)thr);
-            if (err != JVMTI_ERROR_INVALID_SLOT) {
-                printf("(%s) ", table[i].name);
-                printf("Error expected: JVMTI_ERROR_INVALID_SLOT,\n");
-                printf("\t    actual: %s (%d)\n", TranslateError(err), err);
-                result = STATUS_FAILED;
-            }
+            check_error(err, is_virtual, var_name);
         } else if (strcmp(table[i].name, "i") == 0) {
             err = jvmti_env->SetLocalInt(thr, 1,
                 INV_SLOT, (jint)0);
-            if (err != JVMTI_ERROR_INVALID_SLOT) {
-                printf("(%s) ", table[i].name);
-                printf("Error expected: JVMTI_ERROR_INVALID_SLOT,\n");
-                printf("\t    actual: %s (%d)\n", TranslateError(err), err);
-                result = STATUS_FAILED;
-            }
+            check_error(err, is_virtual, var_name);
         } else if (strcmp(table[i].name, "l") == 0) {
             err = jvmti_env->SetLocalLong(thr, 1,
                 INV_SLOT, (jlong)0);
-            if (err != JVMTI_ERROR_INVALID_SLOT) {
-                printf("(%s) ", table[i].name);
-                printf("Error expected: JVMTI_ERROR_INVALID_SLOT,\n");
-                printf("\t    actual: %s (%d)\n", TranslateError(err), err);
-                result = STATUS_FAILED;
-            }
+            check_error(err, is_virtual, var_name);
         } else if (strcmp(table[i].name, "f") == 0) {
             err = jvmti_env->SetLocalFloat(thr, 1,
                 INV_SLOT, (jfloat)0);
-            if (err != JVMTI_ERROR_INVALID_SLOT) {
-                printf("(%s) ", table[i].name);
-                printf("Error expected: JVMTI_ERROR_INVALID_SLOT,\n");
-                printf("\t    actual: %s (%d)\n", TranslateError(err), err);
-                result = STATUS_FAILED;
-            }
+            check_error(err, is_virtual, var_name);
         } else if (strcmp(table[i].name, "d") == 0) {
             err = jvmti_env->SetLocalDouble(thr, 1,
                 INV_SLOT, (jdouble)0);
-            if (err != JVMTI_ERROR_INVALID_SLOT) {
-                printf("(%s) ", table[i].name);
-                printf("Error expected: JVMTI_ERROR_INVALID_SLOT,\n");
-                printf("\t    actual: %s (%d)\n", TranslateError(err), err);
-                result = STATUS_FAILED;
-            }
+            check_error(err, is_virtual, var_name);
         }
     }
 
@@ -139,12 +126,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError err;
     jint res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -192,7 +179,7 @@ Java_nsk_jvmti_SetLocalVariable_setlocal003_getReady(JNIEnv *env, jclass cls) {
     jvmtiError err;
     jmethodID mid;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         result = STATUS_FAILED;
         return;
@@ -202,7 +189,7 @@ Java_nsk_jvmti_SetLocalVariable_setlocal003_getReady(JNIEnv *env, jclass cls) {
         !caps.can_generate_breakpoint_events) return;
 
     mid = env->GetStaticMethodID(cls, "checkPoint", "()V");
-    if (mid == NULL) {
+    if (mid == nullptr) {
         printf("Cannot find Method ID for method checkPoint\n");
         result = STATUS_FAILED;
         return;
@@ -216,7 +203,7 @@ Java_nsk_jvmti_SetLocalVariable_setlocal003_getReady(JNIEnv *env, jclass cls) {
     }
 
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-        JVMTI_EVENT_BREAKPOINT, NULL);
+        JVMTI_EVENT_BREAKPOINT, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable BREAKPOINT event: %s (%d)\n",
                TranslateError(err), err);

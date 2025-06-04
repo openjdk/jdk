@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.awt;
 
-import java.awt.AWTPermission;
 import java.awt.DisplayMode;
 import java.awt.EventQueue;
 import java.awt.Frame;
@@ -41,10 +40,13 @@ import java.awt.image.ColorModel;
 import java.awt.peer.WindowPeer;
 import java.util.ArrayList;
 
+import sun.awt.image.SurfaceManager;
 import sun.awt.windows.WWindowPeer;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.opengl.WGLGraphicsConfig;
 import sun.java2d.windows.WindowsFlags;
+
+import static java.awt.peer.ComponentPeer.SET_BOUNDS;
 
 import static sun.awt.Win32GraphicsEnvironment.debugScaleX;
 import static sun.awt.Win32GraphicsEnvironment.debugScaleY;
@@ -78,7 +80,6 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     // pipelines which are mutually exclusive with opengl, for which
     // pixel formats were added in the first place
     protected static boolean pfDisabled;
-    private static AWTPermission fullScreenExclusivePermission;
     // the original display mode we had before entering the fullscreen
     // mode
     private DisplayMode defaultDisplayMode;
@@ -88,6 +89,9 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     private float scaleX;
     private float scaleY;
 
+    final SurfaceManager.ProxyCache surfaceDataProxyCache =
+            new SurfaceManager.ProxyCache();
+
     static {
 
         // 4455041 - Even when ddraw is disabled, ddraw.dll is loaded when
@@ -95,9 +99,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
         // is run as an NT service.  To prevent the loading of ddraw.dll
         // completely, sun.awt.nopixfmt should be set as well.  Apps which use
         // OpenGL w/ Java probably don't want to set this.
-        @SuppressWarnings("removal")
-        String nopixfmt = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("sun.awt.nopixfmt"));
+        String nopixfmt = System.getProperty("sun.awt.nopixfmt");
         pfDisabled = (nopixfmt != null);
         initIDs();
     }
@@ -168,7 +170,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     }
 
     /**
-     * Returns whether this is a valid devicie. Device can become
+     * Returns whether this is a valid device. Device can become
      * invalid as a result of device removal event.
      */
     public boolean isValid() {
@@ -346,29 +348,12 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
                     getLocalGraphicsEnvironment().getDefaultScreenDevice());
     }
 
-    private static boolean isFSExclusiveModeAllowed() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            if (fullScreenExclusivePermission == null) {
-                fullScreenExclusivePermission =
-                    new AWTPermission("fullScreenExclusive");
-            }
-            try {
-                security.checkPermission(fullScreenExclusivePermission);
-            } catch (SecurityException e) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     /**
      * returns true unless we're not allowed to use fullscreen mode.
      */
     @Override
     public boolean isFullScreenSupported() {
-        return isFSExclusiveModeAllowed();
+        return true;
     }
 
     @Override
@@ -441,6 +426,21 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     protected native void enterFullScreenExclusive(int screen, WindowPeer w);
     protected native void exitFullScreenExclusive(int screen, WindowPeer w);
 
+    /**
+     * Reapplies the size of this graphics device to
+     * the given full-screen window.
+     * @param w a Window that needs resizing
+     * @param b new full-screen window bounds
+     */
+    private static void resizeFSWindow(final Window w, final Rectangle b) {
+        if (w != null) {
+            WindowPeer peer = AWTAccessor.getComponentAccessor().getPeer(w);
+            if (peer != null) {
+                peer.setBounds(b.x, b.y, b.width, b.height, SET_BOUNDS);
+            }
+        }
+    }
+
     @Override
     public boolean isDisplayChangeSupported() {
         return (isFullScreenSupported() && getFullScreenWindow() != null);
@@ -463,13 +463,9 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
             WWindowPeer peer = AWTAccessor.getComponentAccessor().getPeer(w);
             configDisplayMode(screen, peer, dm.getWidth(), dm.getHeight(),
                 dm.getBitDepth(), dm.getRefreshRate());
-            // resize the fullscreen window to the dimensions of the new
-            // display mode
-            Rectangle screenBounds = getDefaultConfiguration().getBounds();
-            w.setBounds(screenBounds.x, screenBounds.y,
-                        screenBounds.width, screenBounds.height);
-            // Note: no call to replaceSurfaceData is required here since
-            // replacement will be caused by an upcoming display change event
+            // Note: the full-screen window will get resized to the dimensions of the new
+            // display mode in the upcoming display change event, when the DPI scales
+            // would already be correctly set etc.
         } else {
             throw new IllegalStateException("Must be in fullscreen mode " +
                                             "in order to set display mode");
@@ -529,6 +525,10 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
         defaultConfig = null;
         configs = null;
         initScaleFactors();
+
+        Rectangle screenBounds = getDefaultConfiguration().getBounds();
+        resizeFSWindow(getFullScreenWindow(), screenBounds);
+
         // pass on to all top-level windows on this display
         topLevels.notifyListeners();
     }
@@ -591,7 +591,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
      * The listener restores the default display mode when window is iconified
      * and sets it back to the one set by the user on de-iconification.
      */
-    private static class Win32FSWindowAdapter extends WindowAdapter {
+    private static final class Win32FSWindowAdapter extends WindowAdapter {
         private Win32GraphicsDevice device;
         private DisplayMode dm;
 

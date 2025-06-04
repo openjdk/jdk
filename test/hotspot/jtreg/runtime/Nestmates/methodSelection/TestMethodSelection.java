@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
  *          PC_B_PA.jcod \
  *          PC_PB_A.jcod
  * @run main/othervm TestMethodSelection
- * @run main/othervm -Dsun.reflect.noInflation=true TestMethodSelection
  */
 
 // The first run will use NativeMethodAccessor and due to the limited number

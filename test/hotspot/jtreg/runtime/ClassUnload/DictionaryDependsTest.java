@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,16 @@
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  * @compile p2/c2.java MyDiffClassLoader.java
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UnlockDiagnosticVMOptions -Xlog:class+unload -XX:+WhiteBoxAPI DictionaryDependsTest
  */
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import java.lang.reflect.Method;
 import jdk.test.lib.classloader.ClassUnloadCommon;
+import java.util.List;
+import java.util.Set;
 
 public class DictionaryDependsTest {
     public static WhiteBox wb = WhiteBox.getWhiteBox();
@@ -82,9 +84,9 @@ public class DictionaryDependsTest {
     public static void main(String args[]) throws Throwable {
         DictionaryDependsTest d = new DictionaryDependsTest();
         d.test();
-        ClassUnloadCommon.triggerUnloading();  // should not unload anything
-        System.out.println("Should unload MyTest and p2.c2 just now");
-        ClassUnloadCommon.failIf(wb.isClassAlive(MY_TEST), "should be unloaded");
-        ClassUnloadCommon.failIf(wb.isClassAlive("p2.c2"), "should be unloaded");
+
+        // Now unload MY_TEST and p2.c2
+        Set<String> aliveClasses = ClassUnloadCommon.triggerUnloading(List.of(MY_TEST, "p2.c2"));
+        ClassUnloadCommon.failIf(!aliveClasses.isEmpty(), "should be unloaded: " + aliveClasses);
     }
 }

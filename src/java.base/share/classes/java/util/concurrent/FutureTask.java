@@ -35,6 +35,8 @@
 
 package java.util.concurrent;
 
+import jdk.internal.invoke.MhUtil;
+
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.concurrent.locks.LockSupport;
@@ -203,6 +205,68 @@ public class FutureTask<V> implements RunnableFuture<V> {
             (s = awaitDone(true, unit.toNanos(timeout))) <= COMPLETING)
             throw new TimeoutException();
         return report(s);
+    }
+
+    /**
+     * @since 19
+     */
+    @Override
+    public V resultNow() {
+        switch (state()) {    // Future.State
+            case SUCCESS:
+                @SuppressWarnings("unchecked")
+                V result = (V) outcome;
+                return result;
+            case FAILED:
+                throw new IllegalStateException("Task completed with exception");
+            case CANCELLED:
+                throw new IllegalStateException("Task was cancelled");
+            default:
+                throw new IllegalStateException("Task has not completed");
+        }
+    }
+
+    /**
+     * @since 19
+     */
+    @Override
+    public Throwable exceptionNow() {
+        switch (state()) {    // Future.State
+            case SUCCESS:
+                throw new IllegalStateException("Task completed with a result");
+            case FAILED:
+                Object x = outcome;
+                return (Throwable) x;
+            case CANCELLED:
+                throw new IllegalStateException("Task was cancelled");
+            default:
+                throw new IllegalStateException("Task has not completed");
+        }
+    }
+
+    /**
+     * @since 19
+     */
+    @Override
+    public State state() {
+        int s = state;
+        while (s == COMPLETING) {
+            // waiting for transition to NORMAL or EXCEPTIONAL
+            Thread.yield();
+            s = state;
+        }
+        switch (s) {
+            case NORMAL:
+                return State.SUCCESS;
+            case EXCEPTIONAL:
+                return State.FAILED;
+            case CANCELLED:
+            case INTERRUPTING:
+            case INTERRUPTED:
+                return State.CANCELLED;
+            default:
+                return State.RUNNING;
+        }
     }
 
     /**
@@ -520,17 +584,13 @@ public class FutureTask<V> implements RunnableFuture<V> {
     private static final VarHandle RUNNER;
     private static final VarHandle WAITERS;
     static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            STATE = l.findVarHandle(FutureTask.class, "state", int.class);
-            RUNNER = l.findVarHandle(FutureTask.class, "runner", Thread.class);
-            WAITERS = l.findVarHandle(FutureTask.class, "waiters", WaitNode.class);
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
+        MethodHandles.Lookup l = MethodHandles.lookup();
+        STATE = MhUtil.findVarHandle(l, "state", int.class);
+        RUNNER = MhUtil.findVarHandle(l, "runner", Thread.class);
+        WAITERS = MhUtil.findVarHandle(l, "waiters", WaitNode.class);
 
         // Reduce the risk of rare disastrous classloading in first call to
-        // LockSupport.park: https://bugs.openjdk.java.net/browse/JDK-8074773
+        // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773
         Class<?> ensureLoaded = LockSupport.class;
     }
 

@@ -171,7 +171,7 @@ Java_sun_java2d_d3d_D3DGraphicsDevice_enterFullScreenExclusiveNative
     pCtx->Get3DObject()->GetAdapterDisplayMode(adapter, &dm);
     pCurParams = pCtx->GetPresentationParams();
 
-    // let the mananger know that we're entering the fs mode, it will
+    // let the manager know that we're entering the fs mode, it will
     // set the proper current focus window for us, which ConfigureContext will
     // use when creating the device
     pMgr->SetFSFocusWindow(adapter, hWnd);

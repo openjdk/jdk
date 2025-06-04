@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -59,11 +57,14 @@ public class Utils {
 
     public static OutputAnalyzer executeKeytoolCommand(String[] command,
             int exitCode) {
-        String[] keytoolCmd = new String[command.length + 1];
+        String[] keytoolCmd = new String[command.length + 3];
         OutputAnalyzer output = null;
         try {
             keytoolCmd[0] = JDKToolFinder.getJDKTool(KEYTOOL);
-            System.arraycopy(command, 0, keytoolCmd, 1, command.length);
+            // Ensure the keytool process is always ran under English locale
+            keytoolCmd[1] = "-J-Duser.language=en";
+            keytoolCmd[2] = "-J-Duser.country=US";
+            System.arraycopy(command, 0, keytoolCmd, 3, command.length);
             output = ProcessTools.executeCommand(keytoolCmd);
             output.shouldHaveExitValue(exitCode);
             out.println("Executed keytool command sucessfully:"

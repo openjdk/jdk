@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @library /test/lib ..
  * @run testng/othervm SecretKeysBasic
  */
+import jtreg.SkippedException;
+import org.testng.SkipException;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -62,7 +64,11 @@ public class SecretKeysBasic extends PKCS11Test {
 
     @Test
     public void testBasic() throws Exception {
-        main(new SecretKeysBasic());
+        try {
+            main(new SecretKeysBasic());
+        } catch (SkippedException se) {
+            throw new SkipException("One or more tests are skipped");
+        }
     }
 
     public void main(Provider p) throws Exception {

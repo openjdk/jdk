@@ -42,11 +42,11 @@ import jdk.internal.misc.Unsafe;
 
 import sun.util.logging.PlatformLogger;
 
-public class XKeysym {
+public final class XKeysym {
 
     private XKeysym() {}
 
-    static class Keysym2JavaKeycode  {
+    static final class Keysym2JavaKeycode  {
         int jkeycode;
         int keyLocation;
         int getJavaKeycode() {
@@ -59,7 +59,7 @@ public class XKeysym {
             jkeycode = jk;
             keyLocation = loc;
         }
-    };
+    }
     private static Unsafe unsafe = XlibWrapper.unsafe;
     static Hashtable<Long, Keysym2JavaKeycode>  keysym2JavaKeycodeHash = new Hashtable<Long, Keysym2JavaKeycode>();
     static Hashtable<Long, Character> keysym2UCSHash = new Hashtable<Long, Character>();
@@ -1724,6 +1724,6 @@ public class XKeysym {
         javaKeycode2KeysymHash.put( java.awt.event.KeyEvent.VK_NUM_LOCK, XKeySymConstants.XK_Num_Lock);
         javaKeycode2KeysymHash.put( java.awt.event.KeyEvent.VK_SCROLL_LOCK, XKeySymConstants.XK_Scroll_Lock);
         javaKeycode2KeysymHash.put( java.awt.event.KeyEvent.VK_KANA_LOCK, XKeySymConstants.XK_Kana_Lock);
-    };
+    }
 
 }

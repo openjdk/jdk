@@ -71,7 +71,7 @@ public abstract class TIFFCompressor {
      * Creates a compressor object for use in compressing TIFF data.
      *
      * <p>The parameters {@code compressionTagValue} and
-     * {@code isCompressionLossless} are provided to accomodate
+     * {@code isCompressionLossless} are provided to accommodate
      * compression types which are unknown. A compression type is
      * "known" if it is either among those already supported by the
      * TIFF writer (see {@link TIFFImageWriteParam}), or is listed in

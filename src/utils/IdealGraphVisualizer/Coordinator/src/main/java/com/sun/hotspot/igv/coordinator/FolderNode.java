@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,14 @@ package com.sun.hotspot.igv.coordinator;
 import com.sun.hotspot.igv.coordinator.actions.RemoveCookie;
 import com.sun.hotspot.igv.data.*;
 import com.sun.hotspot.igv.util.PropertiesSheet;
+import com.sun.hotspot.igv.util.StringUtils;
 import java.awt.Image;
-import java.util.List;
-import org.openide.nodes.AbstractNode;
-import org.openide.nodes.Children;
-import org.openide.nodes.Node;
-import org.openide.nodes.Sheet;
+import java.util.HashMap;
+import java.util.Map;
+import javax.swing.Action;
+import org.openide.actions.PropertiesAction;
+import org.openide.actions.RenameAction;
+import org.openide.nodes.*;
 import org.openide.util.ImageUtilities;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
@@ -42,8 +44,12 @@ import org.openide.util.lookup.InstanceContent;
  */
 public class FolderNode extends AbstractNode {
 
-    private InstanceContent content;
-    private FolderChildren children;
+    private final InstanceContent content;
+    private final FolderChildren children;
+    // NetBeans node corresponding to each opened graph. Used to highlight the
+    // focused graph in the Outline window.
+    private static final Map<InputGraph, GraphNode> graphNodeMap = new HashMap<>();
+    private boolean selected = false;
 
     private static class FolderChildren extends Children.Keys<FolderElement> implements ChangedListener {
 
@@ -54,26 +60,45 @@ public class FolderNode extends AbstractNode {
             folder.getChangedEvent().addListener(this);
         }
 
+        public Folder getFolder() {
+            return folder;
+        }
+
         @Override
-        protected Node[] createNodes(FolderElement e) {
-             if (e instanceof InputGraph) {
-                return new Node[]{new GraphNode((InputGraph) e)};
-            } else if (e instanceof Folder) {
-                 return new Node[]{new FolderNode((Folder) e)};
-             } else {
+        protected Node[] createNodes(FolderElement folderElement) {
+            if (folderElement instanceof InputGraph) {
+                InputGraph inputGraph = (InputGraph) folderElement;
+                GraphNode graphNode = new GraphNode(inputGraph);
+                graphNodeMap.put(inputGraph, graphNode);
+                return new Node[]{graphNode};
+            } else if (folderElement instanceof Group) {
+                return new Node[]{new FolderNode((Group) folderElement)};
+            } else {
                 return null;
             }
         }
 
         @Override
+        protected void destroyNodes(Node[] nodes) {
+            for (Node n : nodes) {
+                // Each node is only present once in the graphNode map.
+                graphNodeMap.values().remove(n);
+            }
+            for (Node node : getNodes()) {
+                node.setDisplayName(node.getDisplayName());
+            }
+        }
+
+        @Override
         public void addNotify() {
-            this.setKeys(folder.getElements());
+            super.addNotify();
+            setKeys(folder.getElements());
         }
 
         @Override
         public void changed(Object source) {
             addNotify();
-         }
+        }
     }
 
     @Override
@@ -88,7 +113,11 @@ public class FolderNode extends AbstractNode {
 
     @Override
     public Image getIcon(int i) {
-        return ImageUtilities.loadImage("com/sun/hotspot/igv/coordinator/images/folder.png");
+        if (selected) {
+            return ImageUtilities.loadImage("com/sun/hotspot/igv/coordinator/images/folder_selected.png");
+        } else {
+            return ImageUtilities.loadImage("com/sun/hotspot/igv/coordinator/images/folder.png");
+        }
     }
 
     protected FolderNode(Folder folder) {
@@ -102,26 +131,76 @@ public class FolderNode extends AbstractNode {
         if (folder instanceof FolderElement) {
             final FolderElement folderElement = (FolderElement) folder;
             this.setDisplayName(folderElement.getName());
-            content.add(new RemoveCookie() {
-                @Override
-                public void remove() {
-                    folderElement.getParent().removeElement(folderElement);
-                }
+            this.content.add((RemoveCookie) () -> {
+                children.destroyNodes(children.getNodes());
+                folderElement.getParent().removeElement(folderElement);
             });
         }
     }
 
-    public void init(String name, List<Group> groups) {
-        this.setDisplayName(name);
-        children.addNotify();
+    public void setSelected(boolean selected) {
+        this.selected = selected;
+        fireDisplayNameChange(null, null);
+        fireIconChange();
+    }
 
-        for (Group g : groups) {
-            content.add(g);
+    @Override
+    public boolean canRename() {
+        return true;
+    }
+
+    @Override
+    public void setName(String name) {
+        children.getFolder().setName(name);
+        fireDisplayNameChange(null, null);
+    }
+
+    @Override
+    public String getName() {
+        return children.getFolder().getName();
+    }
+
+    @Override
+    public String getDisplayName() {
+        return children.getFolder().getDisplayName();
+    }
+
+    @Override
+    public String getHtmlDisplayName() {
+        String htmlDisplayName = StringUtils.escapeHTML(getDisplayName());
+        if (selected) {
+            htmlDisplayName = "<b>" + htmlDisplayName + "</b>";
         }
+        return htmlDisplayName;
+    }
+
+    public boolean isRootNode() {
+        Folder folder = getFolder();
+        return (folder instanceof GraphDocument);
     }
 
     @Override
     public Image getOpenedIcon(int i) {
         return getIcon(i);
+    }
+
+    @Override
+    public Action[] getActions(boolean b) {
+        return new Action[]{
+                RenameAction.findObject(RenameAction.class, true),
+                PropertiesAction.findObject(PropertiesAction.class, true),
+        };
+    }
+
+    public static void clearGraphNodeMap() {
+        graphNodeMap.clear();
+    }
+
+    public static GraphNode getGraphNode(InputGraph graph) {
+        return graphNodeMap.get(graph);
+    }
+
+    public Folder getFolder() {
+        return children.getFolder();
     }
 }

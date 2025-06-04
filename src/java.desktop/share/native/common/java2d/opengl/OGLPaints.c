@@ -578,15 +578,15 @@ OGLPaints_CreateMultiGradProgram(jint flags,
     }
 
     if (cycleMethod == CYCLE_NONE) {
-        sprintf(cycleCode, noCycleCode, texCoordCalcCode);
+        snprintf(cycleCode, sizeof(cycleCode), noCycleCode, texCoordCalcCode);
     } else if (cycleMethod == CYCLE_REFLECT) {
-        sprintf(cycleCode, reflectCode, texCoordCalcCode);
+        snprintf(cycleCode, sizeof(cycleCode), reflectCode, texCoordCalcCode);
     } else { // (cycleMethod == CYCLE_REPEAT)
-        sprintf(cycleCode, repeatCode, texCoordCalcCode);
+        snprintf(cycleCode, sizeof(cycleCode), repeatCode, texCoordCalcCode);
     }
 
     // compose the final source code string from the various pieces
-    sprintf(finalSource, multiGradientShaderSource,
+    snprintf(finalSource, sizeof(finalSource), multiGradientShaderSource,
             MAX_COLORS, maxFractions,
             maskVars, paintVars, distCode,
             cycleCode, colorSpaceCode, maskCode);

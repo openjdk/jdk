@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,13 +292,13 @@ public abstract class TableView extends BoxView {
      *
      * @param targetSpan the given span for total of all the table
      *  columns
+     * @param offsets the return value of the offset from the
+     *  origin for each column
+     * @param spans the return value of how much to allocated to
+     *  each column
      * @param reqs the requirements desired for each column.  This
      *  is the column maximum of the cells minimum, preferred, and
      *  maximum requested span
-     * @param spans the return value of how much to allocated to
-     *  each column
-     * @param offsets the return value of the offset from the
-     *  origin for each column
      */
     protected void layoutColumns(int targetSpan, int[] offsets, int[] spans,
                                  SizeRequirements[] reqs) {
@@ -322,7 +322,7 @@ public abstract class TableView extends BoxView {
      *
      * @param targetSpan the total span given to the view, which
      *  would be used to layout the children.
-     * @param axis the axis being layed out.
+     * @param axis the axis being laid out.
      * @param offsets the offsets from the origin of the view for
      *  each of the child views.  This is a return value and is
      *  filled in by the implementation of this method.
@@ -405,7 +405,7 @@ public abstract class TableView extends BoxView {
      * give axis.  Table cells that span multiple columns are excluded
      * from the first pass.  A second pass is made to determine if
      * the cells that span multiple columns are satisfied.  If the
-     * column requirements are not satisified, the needs of the
+     * column requirements are not satisfied, the needs of the
      * multi-column cell is mixed into the existing column requirements.
      * The calculation of the multi-column distribution is based upon
      * the proportions of the existing column requirements and taking
@@ -721,7 +721,7 @@ public abstract class TableView extends BoxView {
          *
          * @param targetSpan the total span given to the view, which
          *  would be used to layout the children.
-         * @param axis the axis being layed out.
+         * @param axis the axis being laid out.
          * @param offsets the offsets from the origin of the view for
          *  each of the child views.  This is a return value and is
          *  filled in by the implementation of this method.
@@ -765,7 +765,7 @@ public abstract class TableView extends BoxView {
          *
          * @param targetSpan the total span given to the view, which
          *  would be used to layout the children.
-         * @param axis the axis being layed out.
+         * @param axis the axis being laid out.
          * @param offsets the offsets from the origin of the view for
          *  each of the child views.  This is a return value and is
          *  filled in by the implementation of this method.
@@ -805,7 +805,7 @@ public abstract class TableView extends BoxView {
          *
          * @param axis may be either View.X_AXIS or View.Y_AXIS
          * @return the resize weight
-         * @exception IllegalArgumentException for an invalid axis
+         * @throws IllegalArgumentException for an invalid axis
          */
         public int getResizeWeight(int axis) {
             return 1;

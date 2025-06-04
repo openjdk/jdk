@@ -765,7 +765,7 @@ MTLBlitLoops_SurfaceToSwBlit(JNIEnv *env, MTLContext *mtlc,
             } else {
                 // mtlbuf.contents have smaller dimensions than pDst
                 // copy each row from mtlbuf.contents at appropriate position in pDst
-                // Note : pDst is already addjusted for offsets using PtrAddBytes above
+                // Note : pDst is already adjusted for offsets using PtrAddBytes above
 
                 NSUInteger rowSize = w * dstInfo.pixelStride;
                 for (int y = 0; y < height; y++) {
@@ -833,7 +833,7 @@ MTLBlitLoops_CopyArea(JNIEnv *env,
 
             /*
              * We need to consider common states like clipping while
-             * performing copyArea, thats why we use drawTex2Tex and
+             * performing copyArea, that's why we use drawTex2Tex and
              * get encoder with appropriate state from EncoderManager
              * and not directly use MTLBlitCommandEncoder for texture copy.
              */

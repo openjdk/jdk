@@ -38,15 +38,13 @@ public class AssociationImpl extends Association {
 
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer(super.toString());
-        return sb.append("[associationID:")
-                 .append(associationID())
-                 .append(", maxIn:")
-                 .append(maxInboundStreams())
-                 .append(", maxOut:")
-                 .append(maxOutboundStreams())
-                 .append("]")
-                 .toString();
+        return super.toString() + "[associationID:" +
+                associationID() +
+                ", maxIn:" +
+                maxInboundStreams() +
+                ", maxOut:" +
+                maxOutboundStreams() +
+                "]";
     }
 }
 

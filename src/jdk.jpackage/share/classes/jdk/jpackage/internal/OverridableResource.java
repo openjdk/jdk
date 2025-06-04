@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,17 +35,16 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
-import jdk.jpackage.internal.resources.ResourceLocator;
 
 
 /**
@@ -71,9 +70,39 @@ import jdk.jpackage.internal.resources.ResourceLocator;
  */
 final class OverridableResource {
 
-    OverridableResource(String defaultName) {
-        this.defaultName = defaultName;
+    OverridableResource() {
+        defaultName = "";
+        defaultResourceSupplier = null;
+        setSourceOrder(Source.External, Source.ResourceDir);
+    }
+
+    OverridableResource(String defaultName,
+            Supplier<InputStream> defaultResourceSupplier) {
+        this.defaultName = Objects.requireNonNull(defaultName);
+        this.defaultResourceSupplier = Objects.requireNonNull(defaultResourceSupplier);
         setSourceOrder(Source.values());
+    }
+
+    OverridableResource(String defaultName, Class<?> resourceLocator) {
+        this(defaultName, () -> {
+            return resourceLocator.getResourceAsStream(defaultName);
+        });
+    }
+
+    Path getResourceDir() {
+        return resourceDir;
+    }
+
+    String getDefaultName() {
+        return defaultName;
+    }
+
+    Path getPublicName() {
+        return publicName;
+    }
+
+    Path getExternalPath() {
+        return externalPath;
     }
 
     OverridableResource setSubstitutionData(Map<String, String> v) {
@@ -83,6 +112,13 @@ final class OverridableResource {
         } else {
             substitutionData = null;
         }
+        return this;
+    }
+
+    OverridableResource addSubstitutionDataEntry(String key, String value) {
+        var entry = Map.of(key, value);
+        Optional.ofNullable(substitutionData).ifPresentOrElse(v -> v.putAll(
+                entry), () -> setSubstitutionData(entry));
         return this;
     }
 
@@ -163,6 +199,10 @@ final class OverridableResource {
         });
     }
 
+    Source saveInFolder(Path folderPath) throws IOException {
+        return saveToFile(folderPath.resolve(getPublicName()));
+    }
+
     Source saveToFile(Path dest) throws IOException {
         if (dest == null) {
             return sendToConsumer(null);
@@ -175,7 +215,7 @@ final class OverridableResource {
 
             @Override
             public void consume(InputStream in) throws IOException {
-                Files.createDirectories(IOUtils.getParent(dest));
+                Files.createDirectories(dest.getParent());
                 Files.copy(in, dest, StandardCopyOption.REPLACE_EXISTING);
             }
         });
@@ -183,16 +223,6 @@ final class OverridableResource {
 
     Source saveToFile(File dest) throws IOException {
         return saveToFile(toPath(dest));
-    }
-
-    static InputStream readDefault(String resourceName) {
-        return ResourceLocator.class.getResourceAsStream(resourceName);
-    }
-
-    static OverridableResource createResource(String defaultName,
-            Map<String, ? super Object> params) {
-        return new OverridableResource(defaultName).setResourceDir(
-                RESOURCE_DIR.fetchFrom(params));
     }
 
     private Source sendToConsumer(ResourceConsumer consumer) throws IOException {
@@ -214,8 +244,7 @@ final class OverridableResource {
     private boolean useExternal(ResourceConsumer dest) throws IOException {
         boolean used = externalPath != null && Files.exists(externalPath);
         if (used && dest != null) {
-            Log.verbose(MessageFormat.format(I18N.getString(
-                    "message.using-custom-resource-from-file"),
+            Log.verbose(I18N.format("message.using-custom-resource-from-file",
                     getPrintableCategory(),
                     externalPath.toAbsolutePath().normalize()));
 
@@ -240,16 +269,11 @@ final class OverridableResource {
             final Path customResource = resourceDir.resolve(resourceName);
             used = Files.exists(customResource);
             if (used && dest != null) {
-                final Path logResourceName;
-                if (logPublicName != null) {
-                    logResourceName = logPublicName.normalize();
-                } else {
-                    logResourceName = resourceName.normalize();
-                }
+                final Path logResourceName = Optional.ofNullable(logPublicName).orElse(
+                        resourceName).normalize();
 
-                Log.verbose(MessageFormat.format(I18N.getString(
-                        "message.using-custom-resource"), getPrintableCategory(),
-                        logResourceName));
+                Log.verbose(I18N.format("message.using-custom-resource",
+                        getPrintableCategory(), logResourceName));
 
                 try (InputStream in = Files.newInputStream(customResource)) {
                     processResourceStream(in, dest);
@@ -268,11 +292,10 @@ final class OverridableResource {
                     .orElse(Optional
                             .ofNullable(publicName)
                             .orElseGet(() -> dest.publicName()));
-            Log.verbose(MessageFormat.format(
-                    I18N.getString("message.using-default-resource"),
+            Log.verbose(I18N.format("message.using-default-resource",
                     defaultName, getPrintableCategory(), resourceName));
 
-            try (InputStream in = readDefault(defaultName)) {
+            try (InputStream in = defaultResourceSupplier.get()) {
                 processResourceStream(in, dest);
             }
         }
@@ -284,7 +307,7 @@ final class OverridableResource {
         // Order substitution data by the length of keys.
         // Longer keys go first.
         // This is needed to properly handle cases when one key is
-        // a subtring of another and try the later first.
+        // a substring of another and try the later first.
         var orderedEntries = substitutionData.entrySet().stream()
                 .sorted(Map.Entry.<String, String>comparingByKey(
                         Comparator.comparingInt(String::length)).reversed())
@@ -298,7 +321,7 @@ final class OverridableResource {
                 String newResult = result.replace(entry.getKey(),
                         Optional.ofNullable(entry.getValue()).orElse(""));
                 if (!newResult.equals(result)) {
-                    // Substitution occured.
+                    // Substitution occurred.
                     // Remove the matching substitution key from the list and
                     // go over the list of substitution entries again.
                     if (workEntries == orderedEntries) {
@@ -363,15 +386,16 @@ final class OverridableResource {
     private Path logPublicName;
     private Path externalPath;
     private final String defaultName;
+    private final Supplier<InputStream> defaultResourceSupplier;
     private List<Map.Entry<Source, SourceHandler>> sources;
 
     @FunctionalInterface
     private static interface SourceHandler {
-        public boolean apply(ResourceConsumer dest) throws IOException;
+        boolean apply(ResourceConsumer dest) throws IOException;
     }
 
     private static interface ResourceConsumer {
-        public Path publicName();
-        public void consume(InputStream in) throws IOException;
+        Path publicName();
+        void consume(InputStream in) throws IOException;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public class TestHtmlTableTags extends JavadocTester {
 
 
     public static void main(String... args) throws Exception {
-        TestHtmlTableTags tester = new TestHtmlTableTags();
+        var tester = new TestHtmlTableTags();
         tester.runTests();
     }
 
@@ -84,24 +84,24 @@ public class TestHtmlTableTags extends JavadocTester {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <div class="summary-table two-column-summary" aria-labelledby="class-summary-tab0">""");
+                    <div class="summary-table two-column-summary">""");
 
         checkOutput("pkg2/package-summary.html", true,
                 """
-                    <div class="summary-table two-column-summary" aria-labelledby="class-summary-tab0">""");
+                    <div class="summary-table two-column-summary">""");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,
                 """
                     <div class="summary-table three-column-summary">""",
                 """
-                    <div class="summary-table three-column-summary" aria-labelledby="method-summary-table-tab0">""");
+                    <div class="summary-table three-column-summary">""");
 
         checkOutput("pkg2/C2.html", true,
                 """
                     <div class="summary-table three-column-summary">""",
                 """
-                    <div class="summary-table three-column-summary" aria-labelledby="method-summary-table-tab0">""");
+                    <div class="summary-table three-column-summary">""");
 
         checkOutput("pkg2/C2.ModalExclusionType.html", true,
                 """
@@ -704,13 +704,13 @@ public class TestHtmlTableTags extends JavadocTester {
                 """
                     <div class="col-summary-item-name even-row-color"><a href="pkg2/C2.html#dep_field">pkg2.C2.dep_field</a></div>
                     <div class="col-last even-row-color">
-                    <div class="deprecation-comment">don't use this field anymore.</div>
+                    <div class="block">don't use this field anymore.</div>
                     </div>""",
                 """
                     <div class="col-summary-item-name even-row-color"><a href="pkg1/C1.html#deprecat\
                     edMethod()">pkg1.C1.deprecatedMethod()</a></div>
                     <div class="col-last even-row-color">
-                    <div class="deprecation-comment">don't use this anymore.</div>
+                    <div class="block">don't use this anymore.</div>
                     </div>""");
 
         // Constant values

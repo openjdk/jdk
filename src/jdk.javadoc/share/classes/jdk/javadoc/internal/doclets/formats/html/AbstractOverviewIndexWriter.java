@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,18 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.RawHtml;
 
 /**
- * Abstract class to generate the overview files.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- *
+ * Abstract class to generate the top-level "overview" files.
  */
 public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
 
@@ -53,57 +47,60 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
      * @param filename Name of the module index file to be generated.
      */
     public AbstractOverviewIndexWriter(HtmlConfiguration configuration,
-                                      DocPath filename) {
+                                       DocPath filename) {
         super(configuration, filename);
     }
+
+    /**
+     * {@return the page description, for the {@code <meta>} element}
+     */
+    protected abstract String getDescription();
+
+    /**
+     * {@return the title for the page}
+     */
+    protected abstract String getTitleKey();
 
     /**
      * Adds the overview summary comment for this documentation. Add one line
      * summary at the top of the page and generate a link to the description,
      * which is added at the end of this page.
      *
-     * @param main the documentation tree to which the overview header will be added
+     * @param target the content to which the overview header will be added
      */
-    protected void addOverviewHeader(Content main) {
-        addConfigurationTitle(main);
-        addOverviewComment(main);
-        addOverviewTags(main);
+    protected void addOverviewHeader(Content target) {
+        addConfigurationTitle(target);
+        addOverviewComment(target);
+        addOverviewTags(target);
     }
 
     /**
      * Adds the overview comment as provided in the file specified by the
      * "-overview" option on the command line.
      *
-     * @param htmltree the documentation tree to which the overview comment will
-     *                 be added
+     * @param content the content to which the overview comment will be added
      */
-    protected void addOverviewComment(Content htmltree) {
+    protected void addOverviewComment(Content content) {
         if (!utils.getFullBody(configuration.overviewElement).isEmpty()) {
-            addInlineComment(configuration.overviewElement, htmltree);
+            addInlineComment(configuration.overviewElement, content);
         }
     }
 
     /**
      * Adds the block tags provided in the file specified by the "-overview" option.
      *
-     * @param htmlTree the content tree to which the tags will be added
+     * @param content the content to which the tags will be added
      */
-    protected void addOverviewTags(Content htmlTree) {
+    protected void addOverviewTags(Content content) {
         if (!utils.getFullBody(configuration.overviewElement).isEmpty()) {
-            addTagsInfo(configuration.overviewElement, htmlTree);
+            addTagsInfo(configuration.overviewElement, content);
         }
     }
 
-    /**
-     * Generate and prints the contents in the index file.
-     *
-     * @param title the title of the window
-     * @param description the content for the description META tag
-     * @throws DocFileIOException if there is a problem building the package index file
-     */
-    protected void buildOverviewIndexFile(String title, String description)
-            throws DocFileIOException {
-        String windowOverview = resources.getText(title);
+    @Override
+    public void buildPage() throws DocFileIOException {
+        var titleKey = getTitleKey();
+        String windowOverview = resources.getText(titleKey);
         Content body = getBody(getWindowTitle(windowOverview));
         Content main = new ContentBuilder();
         addOverviewHeader(main);
@@ -113,30 +110,35 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
                 .addMainContent(main)
                 .setFooter(getFooter()));
         printHtmlDocument(
-                configuration.metakeywords.getOverviewMetaKeywords(title, configuration.getOptions().docTitle()),
-                description, body);
+                configuration.metakeywords.getOverviewMetaKeywords(titleKey, configuration.getOptions().docTitle()),
+                getDescription(), body);
+    }
+
+    @Override
+    public boolean isIndexable() {
+        return true;
     }
 
     /**
-     * Adds the index to the documentation tree.
+     * Adds the index to the documentation.
      *
-     * @param main the document tree to which the packages/modules list will be added
+     * @param target the content to which the packages/modules list will be added
      */
-    protected abstract void addIndex(Content main);
+    protected abstract void addIndex(Content target);
 
     /**
-     * Adds the doctitle to the documentation tree, if it is specified on the command line.
+     * Adds the doctitle to the documentation, if it is specified on the command line.
      *
-     * @param body the document tree to which the title will be added
+     * @param target the content to which the title will be added
      */
-    protected void addConfigurationTitle(Content body) {
+    protected void addConfigurationTitle(Content target) {
         String doctitle = configuration.getOptions().docTitle();
         if (!doctitle.isEmpty()) {
-            Content title = new RawHtml(doctitle);
-            Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
-                    HtmlStyle.title, title);
-            Content div = HtmlTree.DIV(HtmlStyle.header, heading);
-            body.add(div);
+            var title = RawHtml.of(doctitle);
+            var heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
+                    HtmlStyles.title, title);
+            var div = HtmlTree.DIV(HtmlStyles.header, heading);
+            target.add(div);
         }
     }
 }

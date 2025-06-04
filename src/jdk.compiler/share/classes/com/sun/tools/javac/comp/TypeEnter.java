@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,15 @@
 
 package com.sun.tools.javac.comp;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Directive.ExportsDirective;
+import com.sun.tools.javac.code.Directive.RequiresDirective;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Scope.ImportFilter;
 import com.sun.tools.javac.code.Scope.NamedImportScope;
@@ -56,7 +56,6 @@ import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.code.TypeTag.ERROR;
-import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
@@ -113,7 +112,6 @@ public class TypeEnter implements Completer {
     private final Lint lint;
     private final TypeEnvs typeEnvs;
     private final Dependencies dependencies;
-    private final Preview preview;
 
     public static TypeEnter instance(Context context) {
         TypeEnter instance = context.get(typeEnterKey);
@@ -122,6 +120,7 @@ public class TypeEnter implements Completer {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected TypeEnter(Context context) {
         context.put(typeEnterKey, this);
         names = Names.instance(context);
@@ -140,15 +139,9 @@ public class TypeEnter implements Completer {
         lint = Lint.instance(context);
         typeEnvs = TypeEnvs.instance(context);
         dependencies = Dependencies.instance(context);
-        preview = Preview.instance(context);
         Source source = Source.instance(context);
-        allowTypeAnnos = Feature.TYPE_ANNOTATIONS.allowedInSource(source);
         allowDeprecationOnImport = Feature.DEPRECATION_ON_IMPORT.allowedInSource(source);
     }
-
-    /** Switch: support type annotations.
-     */
-    boolean allowTypeAnnos;
 
     /**
      * Switch: should deprecation warnings be issued on import
@@ -227,6 +220,7 @@ public class TypeEnter implements Completer {
             chk.checkImportedPackagesObservable(toplevel);
             toplevel.namedImportScope.finalizeScope();
             toplevel.starImportScope.finalizeScope();
+            toplevel.moduleImportScope.finalizeScope();
         } catch (CompletionFailure cf) {
             chk.completionError(toplevel.pos(), cf);
         } finally {
@@ -280,7 +274,7 @@ public class TypeEnter implements Completer {
                 queue.add(env);
 
                 JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
-                DiagnosticPosition prevLintPos = deferredLintHandler.setPos(tree.pos());
+                deferredLintHandler.push(tree);
                 try {
                     dependencies.push(env.enclClass.sym, phaseName);
                     runPhase(env);
@@ -288,7 +282,7 @@ public class TypeEnter implements Completer {
                     chk.completionError(tree.pos(), ex);
                 } finally {
                     dependencies.pop();
-                    deferredLintHandler.setPos(prevLintPos);
+                    deferredLintHandler.pop();
                     log.useSource(prev);
                 }
             }
@@ -330,6 +324,25 @@ public class TypeEnter implements Completer {
                 sym.owner.complete();
         }
 
+        private void implicitImports(JCCompilationUnit tree, Env<AttrContext> env) {
+            // Import-on-demand java.lang.
+            PackageSymbol javaLang = syms.enterPackage(syms.java_base, names.java_lang);
+            if (javaLang.members().isEmpty() && !javaLang.exists()) {
+                log.error(Errors.NoJavaLang);
+                throw new Abort();
+            }
+            importAll(make.at(tree.pos()).Import(make.Select(make.QualIdent(javaLang.owner), javaLang), false),
+                javaLang, env, false);
+
+            List<JCTree> defs = tree.getTypeDecls();
+            boolean isImplicitClass = !defs.isEmpty() &&
+                    defs.head instanceof JCClassDecl cls &&
+                    (cls.mods.flags & IMPLICIT_CLASS) != 0;
+            if (isImplicitClass) {
+                doModuleImport(make.ModuleImport(make.QualIdent(syms.java_base)));
+            }
+        }
+
         private void resolveImports(JCCompilationUnit tree, Env<AttrContext> env) {
             if (tree.starImportScope.isFilled()) {
                 // we must have already processed this toplevel
@@ -338,7 +351,7 @@ public class TypeEnter implements Completer {
 
             ImportFilter prevStaticImportFilter = staticImportFilter;
             ImportFilter prevTypeImportFilter = typeImportFilter;
-            DiagnosticPosition prevLintPos = deferredLintHandler.immediate();
+            deferredLintHandler.pushImmediate(lint);
             Lint prevLint = chk.setLint(lint);
             Env<AttrContext> prevEnv = this.env;
             try {
@@ -352,13 +365,7 @@ public class TypeEnter implements Completer {
                         (origin, sym) -> sym.kind == TYP &&
                                          chk.importAccessible(sym, packge);
 
-                // Import-on-demand java.lang.
-                PackageSymbol javaLang = syms.enterPackage(syms.java_base, names.java_lang);
-                if (javaLang.members().isEmpty() && !javaLang.exists()) {
-                    log.error(Errors.NoJavaLang);
-                    throw new Abort();
-                }
-                importAll(make.at(tree.pos()).Import(make.QualIdent(javaLang), false), javaLang, env);
+                implicitImports(tree, env);
 
                 JCModuleDecl decl = tree.getModuleDecl();
 
@@ -366,27 +373,35 @@ public class TypeEnter implements Completer {
                 if (tree.getPackage() != null && decl == null)
                     checkClassPackageClash(tree.getPackage());
 
-                for (JCImport imp : tree.getImports()) {
-                    doImport(imp);
-                }
+                handleImports(tree.getImports());
 
                 if (decl != null) {
-                    DiagnosticPosition prevCheckDeprecatedLintPos = deferredLintHandler.setPos(decl.pos());
+                    deferredLintHandler.push(decl);
                     try {
                         //check @Deprecated:
                         markDeprecated(decl.sym, decl.mods.annotations, env);
                     } finally {
-                        deferredLintHandler.setPos(prevCheckDeprecatedLintPos);
+                        deferredLintHandler.pop();
                     }
                     // process module annotations
-                    annotate.annotateLater(decl.mods.annotations, env, env.toplevel.modle, decl.pos());
+                    annotate.annotateLater(decl.mods.annotations, env, env.toplevel.modle, decl);
                 }
             } finally {
                 this.env = prevEnv;
                 chk.setLint(prevLint);
-                deferredLintHandler.setPos(prevLintPos);
+                deferredLintHandler.pop();
                 this.staticImportFilter = prevStaticImportFilter;
                 this.typeImportFilter = prevTypeImportFilter;
+            }
+        }
+
+        private void handleImports(List<JCImportBase> imports) {
+            for (JCImportBase imp : imports) {
+                if (imp instanceof JCModuleImport mimp) {
+                    doModuleImport(mimp);
+                } else {
+                    doImport((JCImport) imp, false);
+                }
             }
         }
 
@@ -407,11 +422,11 @@ public class TypeEnter implements Completer {
                 }
             }
             // process package annotations
-            annotate.annotateLater(tree.annotations, env, env.toplevel.packge, tree.pos());
+            annotate.annotateLater(tree.annotations, env, env.toplevel.packge, tree);
         }
 
-        private void doImport(JCImport tree) {
-            JCFieldAccess imp = (JCFieldAccess)tree.qualid;
+        private void doImport(JCImport tree, boolean fromModuleImport) {
+            JCFieldAccess imp = tree.qualid;
             Name name = TreeInfo.name(imp);
 
             // Create a local environment pointing to this tree to disable
@@ -422,16 +437,20 @@ public class TypeEnter implements Completer {
             if (name == names.asterisk) {
                 // Import on demand.
                 chk.checkCanonical(imp.selected);
-                if (tree.staticImport)
+                if (tree.staticImport) {
+                    Assert.check(!fromModuleImport);
                     importStaticAll(tree, p, env);
-                else
-                    importAll(tree, p, env);
+                } else {
+                    importAll(tree, p, env, fromModuleImport);
+                }
             } else {
                 // Named type import.
                 if (tree.staticImport) {
+                    Assert.check(!fromModuleImport);
                     importNamedStatic(tree, p, name, localEnv);
                     chk.checkCanonical(imp.selected);
                 } else {
+                    Assert.check(!fromModuleImport);
                     Type importedType = attribImportType(imp, localEnv);
                     Type originalType = importedType.getOriginalType();
                     TypeSymbol c = originalType.hasTag(CLASS) ? originalType.tsym : importedType.tsym;
@@ -441,10 +460,60 @@ public class TypeEnter implements Completer {
             }
         }
 
+        private void doModuleImport(JCModuleImport tree) {
+            Name moduleName = TreeInfo.fullName(tree.module);
+            ModuleSymbol module = syms.getModule(moduleName);
+
+            if (module != null) {
+                if (!env.toplevel.modle.readModules.contains(module)) {
+                    if (env.toplevel.modle.isUnnamed()) {
+                        log.error(tree.pos, Errors.ImportModuleDoesNotReadUnnamed(module));
+                    } else {
+                        log.error(tree.pos, Errors.ImportModuleDoesNotRead(env.toplevel.modle,
+                                                                           module));
+                    }
+                    //error recovery, make sure the module is completed:
+                    module.getDirectives();
+                }
+
+                List<ModuleSymbol> todo = List.of(module);
+                Set<ModuleSymbol> seenModules = new HashSet<>();
+
+                while (!todo.isEmpty()) {
+                    ModuleSymbol currentModule = todo.head;
+
+                    todo = todo.tail;
+
+                    if (!seenModules.add(currentModule)) {
+                        continue;
+                    }
+
+                    for (ExportsDirective export : currentModule.exports) {
+                        if (export.modules != null && !export.modules.contains(env.toplevel.modle)) {
+                            continue;
+                        }
+
+                        PackageSymbol pkg = export.getPackage();
+                        JCImport nestedImport = make.at(tree.pos)
+                                .Import(make.Select(make.QualIdent(pkg), names.asterisk), false);
+
+                        doImport(nestedImport, true);
+                    }
+
+                    for (RequiresDirective requires : currentModule.requires) {
+                        if (requires.isTransitive()) {
+                            todo = todo.prepend(requires.module);
+                        }
+                    }
+                }
+            } else {
+                log.error(tree.pos, Errors.ImportModuleNotFound(moduleName));
+            }
+        }
+
         Type attribImportType(JCTree tree, Env<AttrContext> env) {
             Assert.check(completionEnabled);
-            Lint prevLint = chk.setLint(allowDeprecationOnImport ?
-                    lint : lint.suppress(LintCategory.DEPRECATION, LintCategory.REMOVAL, LintCategory.PREVIEW));
+            boolean prevImportSuppression = chk.setImportSuppression(!allowDeprecationOnImport);
             try {
                 // To prevent deep recursion, suppress completion of some
                 // types.
@@ -452,7 +521,7 @@ public class TypeEnter implements Completer {
                 return attr.attribType(tree, env);
             } finally {
                 completionEnabled = true;
-                chk.setLint(prevLint);
+                chk.setImportSuppression(prevImportSuppression);
             }
         }
 
@@ -463,8 +532,13 @@ public class TypeEnter implements Completer {
          */
         private void importAll(JCImport imp,
                                final TypeSymbol tsym,
-                               Env<AttrContext> env) {
-            env.toplevel.starImportScope.importAll(types, tsym.members(), typeImportFilter, imp, cfHandler);
+                               Env<AttrContext> env,
+                               boolean fromModuleImport) {
+            StarImportScope targetScope =
+                    fromModuleImport ? env.toplevel.moduleImportScope
+                                     : env.toplevel.starImportScope;
+
+            targetScope.importAll(types, tsym.members(), typeImportFilter, imp, cfHandler);
         }
 
         /** Import all static members of a class or package on demand.
@@ -542,7 +616,6 @@ public class TypeEnter implements Completer {
             Env<AttrContext> localEnv = outer.dup(tree, outer.info.dup(baseScope));
             localEnv.baseClause = true;
             localEnv.outer = outer;
-            localEnv.info.isSelfCall = false;
             return localEnv;
         }
 
@@ -733,14 +806,6 @@ public class TypeEnter implements Completer {
                 }
             }
 
-            // Determine permits.
-            ListBuffer<Symbol> permittedSubtypeSymbols = new ListBuffer<>();
-            List<JCExpression> permittedTrees = tree.permitting;
-            for (JCExpression permitted : permittedTrees) {
-                Type pt = attr.attribBase(permitted, baseEnv, false, false, false);
-                permittedSubtypeSymbols.append(pt.tsym);
-            }
-
             if ((sym.flags_field & ANNOTATION) != 0) {
                 ct.interfaces_field = List.of(syms.annotationType);
                 ct.all_interfaces_field = ct.interfaces_field;
@@ -749,15 +814,6 @@ public class TypeEnter implements Completer {
                 ct.all_interfaces_field = (all_interfaces == null)
                         ? ct.interfaces_field : all_interfaces.toList();
             }
-
-            /* it could be that there are already some symbols in the permitted list, for the case
-             * where there are subtypes in the same compilation unit but the permits list is empty
-             * so don't overwrite the permitted list if it is not empty
-             */
-            if (!permittedSubtypeSymbols.isEmpty()) {
-                sym.permitted = permittedSubtypeSymbols.toList();
-            }
-            sym.isPermittedExplicit = !permittedSubtypeSymbols.isEmpty();
         }
             //where:
             protected JCExpression clearTypeParams(JCExpression superType) {
@@ -768,7 +824,7 @@ public class TypeEnter implements Completer {
     private final class HierarchyPhase extends AbstractHeaderPhase implements Completer {
 
         public HierarchyPhase() {
-            super(CompletionCause.HIERARCHY_PHASE, new PermitsPhase());
+            super(CompletionCause.HIERARCHY_PHASE, new HeaderPhase());
         }
 
         @Override
@@ -842,33 +898,6 @@ public class TypeEnter implements Completer {
 
     }
 
-    private final class PermitsPhase extends AbstractHeaderPhase {
-
-        public PermitsPhase() {
-            super(CompletionCause.HIERARCHY_PHASE, new HeaderPhase());
-        }
-
-        @Override
-        protected void runPhase(Env<AttrContext> env) {
-            JCClassDecl tree = env.enclClass;
-            if (!tree.sym.isAnonymous() || tree.sym.isEnum()) {
-                for (Type supertype : types.directSupertypes(tree.sym.type)) {
-                    if (supertype.tsym.kind == TYP) {
-                        ClassSymbol supClass = (ClassSymbol) supertype.tsym;
-                        Env<AttrContext> supClassEnv = enter.getEnv(supClass);
-                        if (supClass.isSealed() &&
-                            !supClass.isPermittedExplicit &&
-                            supClassEnv != null &&
-                            supClassEnv.toplevel == env.toplevel) {
-                            supClass.permitted = supClass.permitted.append(tree.sym);
-                        }
-                    }
-                }
-            }
-        }
-
-    }
-
     private final class HeaderPhase extends AbstractHeaderPhase {
 
         public HeaderPhase() {
@@ -885,14 +914,16 @@ public class TypeEnter implements Completer {
             Env<AttrContext> baseEnv = baseEnv(tree, env);
 
             if (tree.extending != null)
-                annotate.queueScanTreeAndTypeAnnotate(tree.extending, baseEnv, sym, tree.pos());
+                annotate.queueScanTreeAndTypeAnnotate(tree.extending, baseEnv, sym, tree);
             for (JCExpression impl : tree.implementing)
-                annotate.queueScanTreeAndTypeAnnotate(impl, baseEnv, sym, tree.pos());
+                annotate.queueScanTreeAndTypeAnnotate(impl, baseEnv, sym, tree);
             annotate.flush();
 
             attribSuperTypes(env, baseEnv);
 
-            Set<Type> interfaceSet = new HashSet<>();
+            fillPermits(tree, baseEnv);
+
+            Set<Symbol> interfaceSet = new HashSet<>();
 
             for (JCExpression iface : tree.implementing) {
                 Type it = iface.type;
@@ -900,12 +931,11 @@ public class TypeEnter implements Completer {
                     chk.checkNotRepeated(iface.pos(), types.erasure(it), interfaceSet);
             }
 
-            annotate.annotateLater(tree.mods.annotations, baseEnv,
-                        sym, tree.pos());
+            annotate.annotateLater(tree.mods.annotations, baseEnv, sym, tree);
             attr.attribTypeVariables(tree.typarams, baseEnv, false);
 
             for (JCTypeParameter tp : tree.typarams)
-                annotate.queueScanTreeAndTypeAnnotate(tp, baseEnv, sym, tree.pos());
+                annotate.queueScanTreeAndTypeAnnotate(tp, baseEnv, sym, tree);
 
             // check that no package exists with same fully qualified name,
             // but admit classes in the unnamed package which have the same
@@ -918,6 +948,42 @@ public class TypeEnter implements Completer {
             if (sym.owner.kind == PCK && (sym.flags_field & PUBLIC) == 0 &&
                 !env.toplevel.sourcefile.isNameCompatible(sym.name.toString(),JavaFileObject.Kind.SOURCE)) {
                 sym.flags_field |= AUXILIARY;
+            }
+        }
+
+        private void fillPermits(JCClassDecl tree, Env<AttrContext> baseEnv) {
+            ClassSymbol sym = tree.sym;
+
+            //fill in implicit permits in supertypes:
+            if (!sym.isAnonymous() || sym.isEnum()) {
+                for (Type supertype : types.directSupertypes(sym.type)) {
+                    if (supertype.tsym.kind == TYP) {
+                        ClassSymbol supClass = (ClassSymbol) supertype.tsym;
+                        Env<AttrContext> supClassEnv = enter.getEnv(supClass);
+                        if (supClass.isSealed() &&
+                            !supClass.isPermittedExplicit &&
+                            supClassEnv != null &&
+                            supClassEnv.toplevel == baseEnv.toplevel) {
+                            supClass.addPermittedSubclass(sym, tree.pos);
+                        }
+                    }
+                }
+            }
+            // attribute (explicit) permits of the current class:
+            if (sym.isPermittedExplicit) {
+                ListBuffer<Symbol> permittedSubtypeSymbols = new ListBuffer<>();
+                List<JCExpression> permittedTrees = tree.permitting;
+                var isPermitsClause = baseEnv.info.isPermitsClause;
+                try {
+                    baseEnv.info.isPermitsClause = true;
+                    for (JCExpression permitted : permittedTrees) {
+                        Type pt = attr.attribBase(permitted, baseEnv, false, false, false);
+                        permittedSubtypeSymbols.append(pt.tsym);
+                    }
+                    sym.setPermittedSubclasses(permittedSubtypeSymbols.toList());
+                } finally {
+                    baseEnv.info.isPermitsClause = isPermitsClause;
+                }
             }
         }
     }
@@ -981,12 +1047,41 @@ public class TypeEnter implements Completer {
             ClassSymbol sym = tree.sym;
             if ((sym.flags_field & RECORD) != 0) {
                 List<JCVariableDecl> fields = TreeInfo.recordFields(tree);
-                memberEnter.memberEnter(fields, env);
+
+                int fieldPos = 0;
                 for (JCVariableDecl field : fields) {
-                    sym.getRecordComponent(field, true,
-                            field.mods.annotations.isEmpty() ?
-                                    List.nil() :
-                                    new TreeCopier<JCTree>(make.at(field.pos)).copy(field.mods.annotations));
+                    /** Some notes regarding the code below. Annotations applied to elements of a record header are propagated
+                     *  to other elements which, when applicable, not explicitly declared by the user: the canonical constructor,
+                     *  accessors, fields and record components. Of all these the only ones that can't be explicitly declared are
+                     *  the fields and the record components.
+                     *
+                     *  Now given that annotations are propagated to all possible targets  regardless of applicability,
+                     *  annotations not applicable to a given element should be removed. See Check::validateAnnotation. Once
+                     *  annotations are removed we could lose the whole picture, that's why original annotations are stored in
+                     *  the record component, see RecordComponent::originalAnnos, but there is no real AST representing a record
+                     *  component so if there is an annotation processing round it could be that we need to reenter a record for
+                     *  which we need to re-attribute its annotations. This is why one of the things the code below is doing is
+                     *  copying the original annotations from the record component to the corresponding field, again this applies
+                     *  only if APs are present.
+                     *
+                     *  First, we get the record component matching the field position. Then we copy the annotations
+                     *  to the field so that annotations applicable only to the record component
+                     *  can be attributed, as if declared in the field, and then stored in the metadata associated to the record
+                     *  component. The invariance we need to keep here is that record components must be scheduled for
+                     *  annotation only once during this process.
+                     */
+                    RecordComponent rc = getRecordComponentAt(sym, fieldPos);
+
+                    if (rc != null && (rc.getOriginalAnnos().length() != field.mods.annotations.length())) {
+                        TreeCopier<JCTree> tc = new TreeCopier<>(make.at(field.pos));
+                        field.mods.annotations = tc.copy(rc.getOriginalAnnos());
+                    }
+
+                    memberEnter.memberEnter(field, env);
+
+                    JCVariableDecl rcDecl = new TreeCopier<JCTree>(make.at(field.pos)).copy(field);
+                    sym.createRecordComponent(rc, rcDecl, field.sym);
+                    fieldPos++;
                 }
 
                 enterThisAndSuper(sym, env);
@@ -1000,6 +1095,18 @@ public class TypeEnter implements Completer {
             }
         }
     }
+
+    // where
+        private RecordComponent getRecordComponentAt(ClassSymbol sym, int componentPos) {
+            int i = 0;
+            for (RecordComponent rc : sym.getRecordComponents()) {
+                if (i == componentPos) {
+                    return rc;
+                }
+                i++;
+            }
+            return null;
+        }
 
     /** Enter member fields and methods of a class
      */
@@ -1036,10 +1143,8 @@ public class TypeEnter implements Completer {
 
             finishClass(tree, defaultConstructor, env);
 
-            if (allowTypeAnnos) {
-                typeAnnotations.organizeTypeAnnotationsSignatures(env, (JCClassDecl)env.tree);
-                typeAnnotations.validateTypeAnnotationsSignatures(env, (JCClassDecl)env.tree);
-            }
+            typeAnnotations.organizeTypeAnnotationsSignatures(env, (JCClassDecl)env.tree);
+            typeAnnotations.validateTypeAnnotationsSignatures(env, (JCClassDecl)env.tree);
         }
 
         DefaultConstructorHelper getDefaultConstructorHelper(Env<AttrContext> env) {
@@ -1368,7 +1473,7 @@ public class TypeEnter implements Completer {
 
         @Override
         public List<Name> superArgs() {
-            List<JCVariableDecl> params = make.Params(constructorType().getParameterTypes(), constructorSymbol());
+            List<JCVariableDecl> params = make.Params(constructorSymbol());
             if (!enclosingType().hasTag(NONE)) {
                 params = params.tail;
             }
@@ -1406,7 +1511,7 @@ public class TypeEnter implements Completer {
             /* if we have to generate a default constructor for records we will treat it as the compact one
              * to trigger field initialization later on
              */
-            csym.flags_field |= Flags.COMPACT_RECORD_CONSTRUCTOR | GENERATEDCONSTR;
+            csym.flags_field |= GENERATEDCONSTR;
             ListBuffer<VarSymbol> params = new ListBuffer<>();
             JCVariableDecl lastField = recordFieldDecls.last();
             for (JCVariableDecl field : recordFieldDecls) {

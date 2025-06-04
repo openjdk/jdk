@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,13 @@
 
 package sun.nio.fs;
 
-import java.nio.file.*;
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.CopyOption;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.LinkOption;
+import java.nio.file.StandardCopyOption;
 import java.util.concurrent.ExecutionException;
 
 import static sun.nio.fs.WindowsNativeDispatcher.*;
@@ -37,6 +42,9 @@ import static sun.nio.fs.WindowsConstants.*;
  */
 
 class WindowsFileCopy {
+    // file size above which copying uses unbuffered I/O
+    private static final long UNBUFFERED_IO_THRESHOLD = 314572800; // 300 MiB
+
     private WindowsFileCopy() {
     }
 
@@ -72,16 +80,7 @@ class WindowsFileCopy {
             }
             if (option == null)
                 throw new NullPointerException();
-            throw new UnsupportedOperationException("Unsupported copy option");
-        }
-
-        // check permissions. If the source file is a symbolic link then
-        // later we must also check LinkPermission
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            source.checkRead();
-            target.checkWrite();
+            throw new UnsupportedOperationException("Unsupported copy option: " + option);
         }
 
         // get attributes of source file
@@ -135,11 +134,6 @@ class WindowsFileCopy {
             CloseHandle(sourceHandle);
         }
 
-        // if source file is a symbolic link then we must check for LinkPermission
-        if (sm != null && sourceAttrs.isSymbolicLink()) {
-            sm.checkPermission(new LinkPermission("symbolic"));
-        }
-
         // if source is a Unix domain socket, we don't want to copy it for various
         // reasons including consistency with Unix
         if (sourceAttrs.isUnixDomainSocket()) {
@@ -168,13 +162,19 @@ class WindowsFileCopy {
                             target.getPathForExceptionMessage());
                     }
                 }
-                x.rethrowAsIOException(target);
+                // ignore file not found otherwise rethrow
+                if (x.lastError() != ERROR_FILE_NOT_FOUND &&
+                    x.lastError() != ERROR_PATH_NOT_FOUND) {
+                    x.rethrowAsIOException(target);
+                }
             }
         }
 
         // Use CopyFileEx if the file is not a directory or junction
         if (!sourceAttrs.isDirectory() && !sourceAttrs.isDirectoryLink()) {
-            final int flags = (!followLinks) ? COPY_FILE_COPY_SYMLINK : 0;
+            boolean isBuffering = sourceAttrs.size() <= UNBUFFERED_IO_THRESHOLD;
+            final int flags = (followLinks ? 0 : COPY_FILE_COPY_SYMLINK) |
+                              (isBuffering ? 0 : COPY_FILE_NO_BUFFERING);
 
             if (interruptible) {
                 // interruptible copy
@@ -227,9 +227,9 @@ class WindowsFileCopy {
             } else {
                 String linkTarget = WindowsLinkSupport.readLink(source);
                 int flags = SYMBOLIC_LINK_FLAG_DIRECTORY;
-                CreateSymbolicLink(targetPath,
-                                   WindowsPath.addPrefixIfNeeded(linkTarget),
-                                   flags);
+                WindowsLinkSupport.createSymbolicLink(targetPath,
+                                                      WindowsPath.addPrefixIfNeeded(linkTarget),
+                                                      flags);
             }
         } catch (WindowsException x) {
             x.rethrowAsIOException(target);
@@ -290,14 +290,7 @@ class WindowsFileCopy {
                 continue;
             }
             if (option == null) throw new NullPointerException();
-            throw new UnsupportedOperationException("Unsupported copy option");
-        }
-
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            source.checkWrite();
-            target.checkWrite();
+            throw new UnsupportedOperationException("Unsupported option: " + option);
         }
 
         final String sourcePath = asWin32Path(source);
@@ -389,7 +382,11 @@ class WindowsFileCopy {
                             target.getPathForExceptionMessage());
                     }
                 }
-                x.rethrowAsIOException(target);
+                // ignore file not found otherwise rethrow
+                if (x.lastError() != ERROR_FILE_NOT_FOUND &&
+                    x.lastError() != ERROR_PATH_NOT_FOUND) {
+                    x.rethrowAsIOException(target);
+                }
             }
         }
 
@@ -430,9 +427,9 @@ class WindowsFileCopy {
                 CreateDirectory(targetPath, 0L);
             } else {
                 String linkTarget = WindowsLinkSupport.readLink(source);
-                CreateSymbolicLink(targetPath,
-                                   WindowsPath.addPrefixIfNeeded(linkTarget),
-                                   SYMBOLIC_LINK_FLAG_DIRECTORY);
+                WindowsLinkSupport.createSymbolicLink(targetPath,
+                                                      WindowsPath.addPrefixIfNeeded(linkTarget),
+                                                      SYMBOLIC_LINK_FLAG_DIRECTORY);
             }
         } catch (WindowsException x) {
             x.rethrowAsIOException(target);
@@ -503,17 +500,12 @@ class WindowsFileCopy {
         try {
             int request = (DACL_SECURITY_INFORMATION |
                 OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION);
-            NativeBuffer buffer =
-                WindowsAclFileAttributeView.getFileSecurity(path, request);
-            try {
-                try {
-                    SetFileSecurity(target.getPathForWin32Calls(), request,
+            try (NativeBuffer buffer =
+                 WindowsAclFileAttributeView.getFileSecurity(path, request)) {
+                SetFileSecurity(target.getPathForWin32Calls(), request,
                         buffer.address());
-                } catch (WindowsException x) {
-                    x.rethrowAsIOException(target);
-                }
-            } finally {
-                buffer.release();
+            } catch (WindowsException x) {
+                x.rethrowAsIOException(target);
             }
         } finally {
             priv.drop();

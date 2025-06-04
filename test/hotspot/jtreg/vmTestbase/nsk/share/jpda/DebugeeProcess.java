@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ import java.util.function.Consumer;
  * @see nsk.share.jdi.Debugee
  * @see nsk.share.jdwp.Debugee
  */
-abstract public class DebugeeProcess extends FinalizableObject {
+abstract public class DebugeeProcess {
 
     /** Default prefix for log messages. */
     public static final String LOG_PREFIX = "binder> ";
@@ -74,8 +74,8 @@ abstract public class DebugeeProcess extends FinalizableObject {
     /** Argument handler from binder. */
     protected DebugeeArgumentHandler argumentHandler = null;
 
-    /** Need or not to check debuggee process termination at exit. */
-    protected boolean checkTermination = false;
+    /** Need or not to check debuggee process termination. */
+    private boolean checkTermination = true;
 
     /** Debugee VM process or <i>null</i> if not available. */
     protected Process process = null;
@@ -164,26 +164,50 @@ abstract public class DebugeeProcess extends FinalizableObject {
     // --------------------------------------------------- //
 
     /** Wait until the debugee VM shutdown or crash. */
-    abstract protected int waitForDebugee () throws InterruptedException;
+    protected int waitForDebugee() throws InterruptedException {
+        return process.waitFor();
+    }
 
     /** Kill the debugee VM. */
-    abstract protected void killDebugee ();
+    protected void killDebugee() {
+        if (!terminated()) {
+            log.display("Killing debugee VM process");
+            process.destroy();
+        }
+    }
 
     /** Check whether the debugee VM has been terminated. */
-    abstract public boolean terminated ();
+     public boolean terminated() {
+        if (process == null)
+            return true;
+
+        try {
+            int value = process.exitValue();
+            return true;
+        } catch (IllegalThreadStateException e) {
+            return false;
+        }
+    }
 
     /** Return the debugee VM exit status. */
-    abstract public int getStatus ();
+    public int getStatus() {
+        return process.exitValue();
+    }
 
     /** Get a pipe to write to the debugee's stdin stream. */
-    abstract protected OutputStream getInPipe ();
+    protected OutputStream getInPipe() {
+        return process.getOutputStream();
+    }
 
     /** Get a pipe to read the debugee's stdout stream. */
-    abstract protected InputStream getOutPipe ();
+    protected InputStream getOutPipe() {
+        return process.getInputStream();
+    }
 
     /** Get a pipe to read the debugee's stderr stream. */
-    abstract protected InputStream getErrPipe ();
-
+    protected InputStream getErrPipe() {
+        return process.getErrorStream();
+    }
     // --------------------------------------------------- //
 
     /**
@@ -196,16 +220,26 @@ abstract public class DebugeeProcess extends FinalizableObject {
      */
     public int waitFor () {
         long timeout = binder.getArgumentHandler().getWaitTime() * 60 * 1000;
-        int exitCode = 0;
+        int exitCode;
         try {
             exitCode = waitForDebugee();
         } catch (InterruptedException ie) {
             ie.printStackTrace(log.getOutStream());
             throw new Failure("Caught exception while waiting for debuggee process: \n\t" + ie);
-        }
-        waitForRedirectors(timeout);
-        if (process != null) {
-            process.destroy();
+        } finally {
+            try {
+                waitForRedirectors(timeout);
+            } finally {
+                if (process != null) {
+                    process.destroy();
+                }
+                if (pipe != null) {
+                    pipe.close();
+                }
+                if (binder != null) {
+                    binder.close();
+                }
+            }
         }
         return exitCode;
     }
@@ -427,7 +461,7 @@ abstract public class DebugeeProcess extends FinalizableObject {
     /**
      * Kill the debugee VM if it is not terminated yet.
      *
-     * @throws Throwable if any throwable exception is thrown during finalization
+     * @throws Throwable if any throwable exception is thrown during shutdown
      */
     public void close() {
         if (checkTermination) {
@@ -455,13 +489,4 @@ abstract public class DebugeeProcess extends FinalizableObject {
         log.complain(prefix + message);
     }
 
-    /**
-     * Finalize debuggee VM wrapper by invoking <code>close()</code>.
-     *
-     * @throws Throwable if any throwable exception is thrown during finalization
-     */
-    protected void finalize() throws Throwable {
-        close();
-        super.finalize();
-    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,18 +37,18 @@ public class ResourcesMgr {
     private static final Map<String, ResourceBundle> bundles = new ConcurrentHashMap<>();
 
     public static String getString(String s) {
-        return getBundle("sun.security.util.Resources").getString(s);
+        return getBundle("sun.security.util.resources.security").getString(s);
     }
 
     public static String getAuthResourceString(String s) {
-        return getBundle("sun.security.util.AuthResources").getString(s);
+        return getBundle("sun.security.util.resources.auth").getString(s);
     }
 
     private static ResourceBundle getBundle(String bundleName) {
         if (!VM.isBooted()) {
             // don't expect this be called before the system is fully initialized.
             // This triggers loading of any resource bundle that should be
-            // be done during initialization of system class loader.
+            // done during initialization of system class loader.
             throw new InternalError("Expected to use ResourceBundle only after booted");
         }
         return bundles.computeIfAbsent(bundleName, ResourceBundle::getBundle);

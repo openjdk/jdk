@@ -32,7 +32,7 @@ import java.awt.Rectangle;
 import sun.awt.EmbeddedFrame;
 import sun.awt.Win32GraphicsEnvironment;
 
-public class WEmbeddedFramePeer extends WFramePeer {
+public final class WEmbeddedFramePeer extends WFramePeer {
 
     public WEmbeddedFramePeer(EmbeddedFrame target) {
         super(target);
@@ -45,7 +45,7 @@ public class WEmbeddedFramePeer extends WFramePeer {
     @Override
     public void print(Graphics g) {}
 
-    // supress calling native setMinSize()
+    // suppress calling native setMinSize()
     @Override
     public void updateMinimumSize() {}
 

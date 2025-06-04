@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package jdk.jfr.internal.jfc.model;
 
-import java.text.ParseException;
 import java.util.List;
 
 // Corresponds to <not>
@@ -36,9 +35,9 @@ final class XmlNot extends XmlExpression {
     }
 
     @Override
-    protected void validateChildConstraints() throws ParseException {
+    protected void validateChildConstraints() throws JFCModelException {
         if (getExpressions().size() != 1) {
-            throw new ParseException("Expected <not> to have a single child", 0);
+            throw new JFCModelException("Expected <not> to have a single child");
         }
     }
 
@@ -46,7 +45,7 @@ final class XmlNot extends XmlExpression {
     protected Result evaluate() {
         List<XmlElement> producers = getProducers();
         if (!producers.isEmpty()) {
-            Result r = producers.get(0).evaluate();
+            Result r = producers.getFirst().evaluate();
             if (!r.isNull()) {
                 return r.isTrue() ? Result.FALSE : Result.TRUE;
             }

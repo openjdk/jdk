@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -24,6 +24,7 @@ import java.util.ListResourceBundle;
 
 /**
  * @author Morten Jorgensen
+ * @LastModified: Dec 2024
  */
 public class ErrorMessages_de extends ListResourceBundle {
 
@@ -167,7 +168,7 @@ public class ErrorMessages_de extends ListResourceBundle {
          * mentioned in the substitution text is not well-formed syntactically.
          */
         {ErrorMsg.INVALID_URI_ERR,
-        "Ung\u00FCltiger URI \"{0}\"."},
+        "Ung\u00FCltige URI \"{0}\"."},
 
         /*
          * Note to translators:  This message is displayed when the URI
@@ -234,7 +235,7 @@ public class ErrorMessages_de extends ListResourceBundle {
          * text is the offending character.
          */
         {ErrorMsg.ILLEGAL_CHAR_ERR,
-        "Ung\u00FCltiges Zeichen \"{0}\" in XPath-Ausdruck."},
+        "Unzul\u00E4ssiges Zeichen \"{0}\" in XPath-Ausdruck."},
 
         /*
          * Note to translators:  A processing instruction is a mark-up item in
@@ -243,7 +244,7 @@ public class ErrorMessages_de extends ListResourceBundle {
          * text is the name.
          */
         {ErrorMsg.ILLEGAL_PI_ERR,
-        "Ung\u00FCltiger Name \"{0}\" f\u00FCr Verarbeitungsanweisung."},
+        "Unzul\u00E4ssiger Name \"{0}\" f\u00FCr Verarbeitungsanweisung."},
 
         /*
          * Note to translators:  This message is reported if the stylesheet
@@ -261,7 +262,7 @@ public class ErrorMessages_de extends ListResourceBundle {
          * text.
          */
         {ErrorMsg.ILLEGAL_ATTRIBUTE_ERR,
-        "Ung\u00FCltiges Attribut \"{0}\"."},
+        "Unzul\u00E4ssiges Attribut \"{0}\"."},
 
         /*
          * Note to translators:  "import" and "include" are keywords that should
@@ -321,7 +322,7 @@ public class ErrorMessages_de extends ListResourceBundle {
          * function has too many or too few arguments.
          */
         {ErrorMsg.ILLEGAL_ARG_ERR,
-        "Ung\u00FCltige Argumente f\u00FCr Funktionsaufruf."},
+        "Unzul\u00E4ssige Argumente f\u00FCr Funktionsaufruf."},
 
         /*
          * Note to translators:  "document()" is the name of function and must
@@ -383,7 +384,7 @@ public class ErrorMessages_de extends ListResourceBundle {
          * element of a type that it was not permitted to contain.
          */
         {ErrorMsg.ILLEGAL_CHILD_ERR,
-        "Ung\u00FCltiges untergeordnetes Element."},
+        "Unzul\u00E4ssiges untergeordnetes Element."},
 
         /*
          * Note to translators:  The stylesheet tried to create an element with
@@ -547,6 +548,12 @@ public class ErrorMessages_de extends ListResourceBundle {
         {ErrorMsg.DATA_CONVERSION_ERR,
         "Datentyp \"{0}\" kann nicht in \"{1}\" konvertiert werden."},
 
+        /*
+         * Note to translators:  property name "jdk.xml.enableExtensionFunctions"
+         * and value "true" should not be translated.
+         */
+        {ErrorMsg.UNSUPPORTED_EXT_FUNC_ERR,
+        "Verwendung der Erweiterungsfunktion \"{0}\" ist nicht zul\u00E4ssig, wenn die Erweiterungsfunktionen vom Feature f\u00FCr die sichere Verarbeitung oder der Eigenschaft \"jdk.xml.enableExtensionFunctions\" deaktiviert wurden. Setzen Sie \"jdk.xml.enableExtensionFunctions\" auf \"true\", um die Erweiterungsfunktionen zu aktivieren."},
         /*
          * Note to translators:  "Templates" is a Java class name that should
          * not be translated.
@@ -980,9 +987,14 @@ public class ErrorMessages_de extends ListResourceBundle {
          "Interner XSLTC-Fehler: Eine Methode im Translet \u00FCberschreitet die Java Virtual Machine-L\u00E4ngeneinschr\u00E4nkung einer Methode von 64 KB. Ursache hierf\u00FCr sind in der Regel sehr gro\u00DFe Vorlagen in einem Stylesheet. Versuchen Sie, das Stylesheet mit kleineren Vorlagen umzustrukturieren."
         },
 
-         {ErrorMsg.DESERIALIZE_TRANSLET_ERR, "Wenn die Java-Sicherheit aktiviert ist, ist die Unterst\u00FCtzung f\u00FCr das Deserialisieren von TemplatesImpl deaktiviert. Dies kann durch Setzen der Systemeigenschaft jdk.xml.enableTemplatesImplDeserialization auf \"True\" au\u00DFer Kraft gesetzt werden."}
+        {ErrorMsg.XPATH_GROUP_LIMIT,
+            "JAXP0801001: Im Compiler ist ein XPath-Ausdruck mit {0} Gruppen aufgetreten, der den von \"{2}\" festgelegten Grenzwert \"{1}\" \u00FCberschreitet."},
 
-    };
+        {ErrorMsg.XPATH_OPERATOR_LIMIT,
+            "JAXP0801002: Im Compiler ist ein XPath-Ausdruck mit {0} Operatoren aufgetreten, der den von \"{2}\" festgelegten Grenzwert \"{1}\" \u00FCberschreitet."},
+        {ErrorMsg.XPATH_TOTAL_OPERATOR_LIMIT,
+            "JAXP0801003: Im Compiler sind XPath-Ausdr\u00FCcke mit insgesamt {0} Operatoren aufgetreten, die den von \"{2}\" festgelegten Grenzwert \"{1}\" \u00FCberschreiten."},
+      };
 
     }
 }

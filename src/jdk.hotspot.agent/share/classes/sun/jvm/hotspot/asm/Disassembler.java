@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,9 @@ public class Disassembler {
                           .get();
 
          String arch = targetSysProps.getProperty("os.arch");
+         if (arch.equals("x86_64")) {
+            arch = "amd64";
+         }
          String libname = "hsdis-" + arch + ext;
 
          List<String> libs = List.of(
@@ -138,7 +141,7 @@ public class Disassembler {
    }
 
    // This is called from the native code to process various markers
-   // in the dissassembly.
+   // in the disassembly.
    private long handleEvent(InstructionVisitor visitor, String event, long arg) {
       if (match(event, "insn")) {
          try {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,51 +23,64 @@
  */
 package com.sun.hotspot.igv.graph;
 
-import com.sun.hotspot.igv.data.InputBlock;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.Properties;
-import com.sun.hotspot.igv.data.Source;
 import com.sun.hotspot.igv.layout.Cluster;
 import com.sun.hotspot.igv.layout.Vertex;
 import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.*;
 
-public class Figure extends Properties.Entity implements Source.Provider, Vertex {
+public class Figure extends Properties.Entity implements Vertex {
 
-    public static final int INSET = 8;
-    public static int SLOT_WIDTH = 10;
-    public static final int OVERLAPPING = 6;
-    public static final int SLOT_START = 4;
-    public static final int SLOT_OFFSET = 8;
-    public static final boolean VERTICAL_LAYOUT = true;
+    public static final int SLOT_WIDTH = 10;
+    public static final int SLOT_HEIGHT = 10;
+    public static final int BORDER = 1;
+    public static final int PADDING = 4;
+    public static final int SLOT_OFFSET = 16;
+    public static final int WARNING_WIDTH = 16;
+    public static final double BOLD_LINE_FACTOR = 1.06;
     protected List<InputSlot> inputSlots;
     protected List<OutputSlot> outputSlots;
-    private Source source;
-    private Diagram diagram;
+    private final InputNode inputNode;
+    private final Diagram diagram;
     private Point position;
-    private List<Figure> predecessors;
-    private List<Figure> successors;
-    private List<InputGraph> subgraphs;
+    private final List<Figure> predecessors;
+    private final List<Figure> successors;
     private Color color;
-    private int id;
-    private String idString;
+    private String warning;
+    private final int id;
+    private final String idString;
     private String[] lines;
     private int heightCash = -1;
     private int widthCash = -1;
+    private Block block;
+    private final FontMetrics metrics;
 
     public int getHeight() {
         if (heightCash == -1) {
-            BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-            Graphics g = image.getGraphics();
-            g.setFont(diagram.getFont().deriveFont(Font.BOLD));
-            FontMetrics metrics = g.getFontMetrics();
-            String nodeText = diagram.getNodeText();
-            heightCash = nodeText.split("\n").length * metrics.getHeight() + INSET;
+            updateHeight();
         }
         return heightCash;
+    }
+
+    private void updateHeight() {
+        heightCash = getLines().length * metrics.getHeight() + 2 * PADDING;
+        heightCash += getSlotsHeight();
+    }
+
+    public int getSlotsHeight() {
+        int slotHeight = 0;
+        if (diagram.isCFG()) {
+            if (hasNamedInputSlot()) {
+                slotHeight += Figure.SLOT_HEIGHT;
+            }
+            if (hasNamedOutputSlot()) {
+                slotHeight += Figure.SLOT_HEIGHT;
+            }
+        }
+        return slotHeight;
     }
 
     public static <T> List<T> getAllBefore(List<T> inputList, T tIn) {
@@ -91,36 +104,45 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
 
     public int getWidth() {
         if (widthCash == -1) {
-            int max = 0;
-            BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-            Graphics g = image.getGraphics();
-            g.setFont(diagram.getFont().deriveFont(Font.BOLD));
-            FontMetrics metrics = g.getFontMetrics();
-            for (String s : getLines()) {
-                int cur = metrics.stringWidth(s);
-                if (cur > max) {
-                    max = cur;
-                }
-            }
-            widthCash = max + INSET;
-            widthCash = Math.max(widthCash, Figure.getSlotsWidth(inputSlots));
-            widthCash = Math.max(widthCash, Figure.getSlotsWidth(outputSlots));
+            updateWidth();
         }
         return widthCash;
     }
 
-    protected Figure(Diagram diagram, int id) {
-        this.diagram = diagram;
-        this.source = new Source();
-        inputSlots = new ArrayList<>(5);
-        outputSlots = new ArrayList<>(1);
-        predecessors = new ArrayList<>(6);
-        successors = new ArrayList<>(6);
-        this.id = id;
-        idString = Integer.toString(id);
+    public void setWidth(int width) {
+        widthCash = width;
+    }
 
+    private void updateWidth() {
+        widthCash = 0;
+        for (String s : getLines()) {
+            int cur = metrics.stringWidth(s);
+            if (cur > widthCash) {
+                widthCash = cur;
+            }
+        }
+        widthCash += 2 * PADDING;
+        if (getWarning() != null) {
+            widthCash += WARNING_WIDTH + PADDING;
+        }
+        widthCash = Math.max(widthCash, Figure.getSlotsWidth(inputSlots));
+        widthCash = Math.max(widthCash, Figure.getSlotsWidth(outputSlots));
+        widthCash = (int)(widthCash * BOLD_LINE_FACTOR);
+    }
+
+    protected Figure(Diagram diagram, int id, InputNode node) {
+        this.diagram = diagram;
+        this.inputNode = node;
+        this.inputSlots = new ArrayList<>(5);
+        this.outputSlots = new ArrayList<>(1);
+        this.predecessors = new ArrayList<>(6);
+        this.successors = new ArrayList<>(6);
+        this.id = id;
+        this.idString = Integer.toString(id);
         this.position = new Point(0, 0);
         this.color = Color.WHITE;
+        Canvas canvas = new Canvas();
+        this.metrics = canvas.getFontMetrics(Diagram.FONT.deriveFont(Font.BOLD));
     }
 
     public int getId() {
@@ -132,7 +154,32 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
     }
 
     public Color getColor() {
-        return color;
+        Color customColor = inputNode.getCustomColor();
+        if (customColor != null) {
+            return customColor;
+        } else {
+            return color;
+        }
+    }
+
+    public void setWarning(String warning) {
+        this.warning = getProperties().resolveString(warning);
+    }
+
+    public String getWarning() {
+        return warning;
+    }
+
+    public boolean hasInputList() {
+        return diagram.isCFG() && !getInputSlots().isEmpty();
+    }
+
+    public void setBlock(Block block) {
+        this.block = block;
+    }
+
+    public Block getBlock() {
+        return block;
     }
 
     public List<Figure> getPredecessors() {
@@ -140,19 +187,11 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
     }
 
     public Set<Figure> getPredecessorSet() {
-        Set<Figure> result = new HashSet<>();
-        for (Figure f : getPredecessors()) {
-            result.add(f);
-        }
-        return Collections.unmodifiableSet(result);
+        return Collections.unmodifiableSet(new HashSet<>(getPredecessors()));
     }
 
     public Set<Figure> getSuccessorSet() {
-        Set<Figure> result = new HashSet<>();
-        for (Figure f : getSuccessors()) {
-            result.add(f);
-        }
-        return Collections.unmodifiableSet(result);
+        return Collections.unmodifiableSet(new HashSet<>(getSuccessors()));
     }
 
     public List<Figure> getSuccessors() {
@@ -177,14 +216,6 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
         successors.remove(f);
     }
 
-    public List<InputGraph> getSubgraphs() {
-        return subgraphs;
-    }
-
-    public void setSubgraphs(List<InputGraph> subgraphs) {
-        this.subgraphs = subgraphs;
-    }
-
     @Override
     public void setPosition(Point p) {
         this.position = p;
@@ -199,44 +230,32 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
         return diagram;
     }
 
-    @Override
-    public Source getSource() {
-        return source;
+    public InputNode getInputNode() {
+        return inputNode;
     }
 
-    public InputSlot createInputSlot() {
+    public void createInputSlot() {
         InputSlot slot = new InputSlot(this, -1);
         inputSlots.add(slot);
-        return slot;
-    }
-
-    public InputSlot createInputSlot(int index) {
-        InputSlot slot = new InputSlot(this, index);
-        inputSlots.add(slot);
-        inputSlots.sort(Slot.slotIndexComparator);
-        return slot;
     }
 
     public void removeSlot(Slot s) {
 
         assert inputSlots.contains(s) || outputSlots.contains(s);
 
-        List<Connection> connections = new ArrayList<>(s.getConnections());
-        for (Connection c : connections) {
+        List<FigureConnection> connections = new ArrayList<>(s.getConnections());
+        for (FigureConnection c : connections) {
             c.remove();
         }
 
         if (inputSlots.contains(s)) {
             inputSlots.remove(s);
-        } else if (outputSlots.contains(s)) {
-            outputSlots.remove(s);
-        }
+        } else outputSlots.remove(s);
     }
 
-    public OutputSlot createOutputSlot() {
+    public void createOutputSlot() {
         OutputSlot slot = new OutputSlot(this, -1);
         outputSlots.add(slot);
-        return slot;
     }
 
     public OutputSlot createOutputSlot(int index) {
@@ -261,6 +280,24 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
         return Collections.unmodifiableList(outputSlots);
     }
 
+    public boolean hasNamedInputSlot() {
+        for (InputSlot is : getInputSlots()) {
+            if (is.hasSourceNodes() && is.shouldShowName()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasNamedOutputSlot() {
+        for (OutputSlot os : getOutputSlots()) {
+            if (os.hasSourceNodes() && os.shouldShowName()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     void removeInputSlot(InputSlot s) {
         s.removeAllConnections();
         inputSlots.remove(s);
@@ -274,41 +311,92 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
     public String[] getLines() {
         if (lines == null) {
             updateLines();
-            // Set the "label" property of each input node, so that by default
-            // search is done on the node label (without line breaks). See also
-            // class NodeQuickSearch in the View module.
-            for (InputNode n : getSource().getSourceNodes()) {
-                String label = n.getProperties().resolveString(diagram.getNodeText());
-                n.getProperties().setProperty("label", label.replaceAll("\\R", " "));
-            }
         }
         return lines;
     }
 
     public void updateLines() {
         String[] strings = diagram.getNodeText().split("\n");
-        String[] result = new String[strings.length];
+        List<String> result = new ArrayList<>(strings.length + 1);
 
-        for (int i = 0; i < strings.length; i++) {
-            result[i] = getProperties().resolveString(strings[i]);
+        for (String string : strings) {
+            result.add(getProperties().resolveString(string));
         }
 
-        lines = result;
+        if (hasInputList()) {
+            String inputList = " ← ";
+            List<String> inputs = new ArrayList<>(getPredecessors().size());
+            for (InputSlot is : getInputSlots()) {
+                String inputLabel = null;
+                if (is.getConnections().isEmpty()) {
+                    if (is.hasSourceNodes() && is.shouldShowName()) {
+                        inputLabel = "[" + is.getShortName() + "]";
+                    } else {
+                        inputLabel = "_";
+                    }
+                } else {
+                    OutputSlot os = is.getConnections().get(0).getOutputSlot();
+                    Figure f = os.getFigure();
+                    String nodeTinyLabel = f.getProperties().resolveString(diagram.getTinyNodeText());
+                    if (os.hasSourceNodes() && os.shouldShowName()) {
+                        nodeTinyLabel += ":" + os.getShortName();
+                    }
+                    inputLabel = nodeTinyLabel;
+                }
+                int gapSize = is.gapSize();
+                if (gapSize == 1) {
+                    inputs.add("_");
+                } else if (gapSize > 1) {
+                    inputs.add("…");
+                }
+                inputs.add(inputLabel);
+            }
+            inputList += String.join("  ", inputs);
+            if (result.size() == 1) {
+                // Single-line node, append input list to line.
+                result.set(0, result.get(0) + inputList);
+            } else {
+                // Multi-line node, add yet another line for input list.
+                result.add(inputList);
+            }
+        }
+
+        String extraLabel = getProperties().get("extra_label");
+        if (extraLabel != null) {
+            result.add(extraLabel);
+        }
+
+        lines = result.toArray(new String[0]);
+        // Set the "label" property of the input node, so that by default
+        // search is done on the node label (without line breaks). See also
+        // class NodeQuickSearch in the View module.
+        String label = inputNode.getProperties().resolveString(diagram.getNodeText());
+        inputNode.getProperties().setProperty("label", label.replaceAll("\\R", " "));
+
+        // Update figure dimensions, as these are affected by the node text.
+        updateWidth();
+        updateHeight();
     }
 
     @Override
     public Dimension getSize() {
-        if (VERTICAL_LAYOUT) {
-            int width = Math.max(getWidth(), Figure.SLOT_WIDTH * (Math.max(inputSlots.size(), outputSlots.size()) + 1));
-            int height = getHeight() + 2 * Figure.SLOT_WIDTH - 2 * Figure.OVERLAPPING;
+        int width = getWidth();
+        int height = getHeight();
+        return new Dimension(width, height);
+    }
 
-
-            return new Dimension(width, height);
-        } else {
-            int width = getWidth() + 2 * Figure.SLOT_WIDTH - 2*Figure.OVERLAPPING;
-            int height = Figure.SLOT_WIDTH * (Math.max(inputSlots.size(), outputSlots.size()) + 1);
-            return new Dimension(width, height);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Figure other)) {
+            return false;
         }
+        return Objects.equals(this.getInputNode(), other.getInputNode());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getInputNode());
     }
 
     @Override
@@ -317,24 +405,13 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
     }
 
     public Cluster getCluster() {
-        if (getSource().getSourceNodes().size() == 0) {
-            assert false : "Should never reach here, every figure must have at least one source node!";
-            return null;
-        } else {
-            final InputBlock inputBlock = diagram.getGraph().getBlock(getSource().getSourceNodes().get(0));
-            assert inputBlock != null;
-            Cluster result = diagram.getBlock(inputBlock);
-            assert result != null;
-            return result;
-        }
+        return block;
     }
 
     @Override
     public boolean isRoot() {
-
-        List<InputNode> sourceNodes = source.getSourceNodes();
-        if (sourceNodes.size() > 0 && sourceNodes.get(0).getProperties().get("name") != null) {
-            return source.getSourceNodes().get(0).getProperties().get("name").equals("Root");
+        if (inputNode != null && inputNode.getProperties().get("name") != null) {
+            return inputNode.getProperties().get("name").equals("Root");
         } else {
             return false;
         }
@@ -345,7 +422,15 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
         return toString().compareTo(f.toString());
     }
 
-    public Rectangle getBounds() {
-        return new Rectangle(this.getPosition(), new Dimension(this.getWidth(), this.getHeight()));
+    public void setCustomColor(Color color) {
+        // Apply custom color not just to this input node but to all
+        // corresponding input nodes in the group.
+        InputGraph graph = diagram.getInputGraph();
+        for (InputGraph g : graph.getGroup().getGraphs()) {
+            InputNode n = g.getNode(inputNode.getId());
+            if (n != null) {
+                n.setCustomColor(color);
+            }
+        }
     }
 }

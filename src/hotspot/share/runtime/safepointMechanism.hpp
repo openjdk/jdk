@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_RUNTIME_SAFEPOINTMECHANISM_HPP
 
 #include "runtime/globals.hpp"
-#include "runtime/os.hpp"
+#include "runtime/osInfo.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/sizes.hpp"
@@ -49,7 +49,9 @@ class SafepointMechanism : public AllStatic {
 
   static inline bool global_poll();
 
-  static void process(JavaThread *thread, bool allow_suspend);
+  static inline bool has_pending_safepoint(JavaThread* thread);
+
+  static void process(JavaThread *thread, bool allow_suspend, bool check_async_exception);
 
   static void default_initialize();
 
@@ -63,7 +65,7 @@ class SafepointMechanism : public AllStatic {
   static intptr_t poll_bit() { return _poll_bit; }
 
   static address get_polling_page()             { return _polling_page; }
-  static bool    is_poll_address(address addr)  { return addr >= _polling_page && addr < (_polling_page + os::vm_page_size()); }
+  static bool    is_poll_address(address addr)  { return addr >= _polling_page && addr < (_polling_page + OSInfo::vm_page_size()); }
 
   struct ThreadData {
     volatile uintptr_t _polling_word;
@@ -73,15 +75,14 @@ class SafepointMechanism : public AllStatic {
     inline uintptr_t get_polling_word();
 
     inline void set_polling_page(uintptr_t poll_value);
-    inline uintptr_t get_polling_page();
   };
 
   // Call this method to see if this thread should block for a safepoint or process handshake.
   static inline bool should_process(JavaThread* thread, bool allow_suspend = true);
 
   // Processes a pending requested operation.
-  static inline void process_if_requested(JavaThread* thread, bool allow_suspend = true);
-  static inline void process_if_requested_with_exit_check(JavaThread* thread, bool check_asyncs);
+  static inline void process_if_requested(JavaThread* thread, bool allow_suspend, bool check_async_exception);
+  static inline void process_if_requested_with_exit_check(JavaThread* thread, bool check_async_exception);
   // Compute what the poll values should be and install them.
   static void update_poll_values(JavaThread* thread);
 

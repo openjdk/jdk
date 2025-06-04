@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class CertPathValidatorException extends GeneralSecurityException {
      * @serial the {@code CertPath} that was being validated when
      * the exception was thrown
      */
-    private CertPath certPath;
+    private final CertPath certPath;
 
     /**
      * @serial the reason the validation failed
@@ -257,7 +257,7 @@ public class CertPathValidatorException extends GeneralSecurityException {
      *
      * @since 1.7
      */
-    public static interface Reason extends java.io.Serializable { }
+    public interface Reason extends java.io.Serializable { }
 
 
     /**
@@ -266,7 +266,7 @@ public class CertPathValidatorException extends GeneralSecurityException {
      *
      * @since 1.7
      */
-    public static enum BasicReason implements Reason {
+    public enum BasicReason implements Reason {
         /**
          * Unspecified reason.
          */

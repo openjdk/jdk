@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,13 +44,12 @@
                        develop_pd,                                          \
                        product,                                             \
                        product_pd,                                          \
-                       notproduct,                                          \
                        range,                                               \
                        constraint)                                          \
                                                                             \
   /* compiler interface */                                                  \
                                                                             \
-  develop(bool, CIPrintCompilerName, false,                                 \
+  product(bool, CIPrintCompilerName, false, DIAGNOSTIC,                     \
           "when CIPrint is active, print the name of the active compiler")  \
                                                                             \
   product(bool, CIPrintCompileQueue, false, DIAGNOSTIC,                     \
@@ -95,11 +94,11 @@
   product(bool, CICompilerCountPerCPU, false,                               \
           "1 compiler thread for log(N CPUs)")                              \
                                                                             \
-  notproduct(intx, CICrashAt, -1,                                           \
+  develop(intx, CICrashAt, -1,                                              \
           "id of compilation to trigger assert in compiler thread for "     \
           "the purpose of testing, e.g. generation of replay data")         \
                                                                             \
-  notproduct(bool, CIObjectFactoryVerify, false,                            \
+  develop(bool, CIObjectFactoryVerify, false,                               \
           "enable potentially expensive verification in ciObjectFactory")   \
                                                                             \
   develop(intx, CIStart, 0,                                                 \
@@ -217,6 +216,12 @@
           "do not start profiling in the interpreter")                      \
           range(0, max_jint)                                                \
                                                                             \
+  product(intx, TieredOldPercentage, 1000, DIAGNOSTIC,                      \
+          "Percentage over tier 3 thresholds after which a method is "      \
+          "considered old (turns off parts of prioritization based on "     \
+          "compile queue length)")                                          \
+          range(0, max_jint)                                                \
+                                                                            \
   product(intx, Tier3DelayOn, 5,                                            \
           "If C2 queue size grows over this amount per compiler thread "    \
           "stop compiling at tier 3 and start compiling at tier 2")         \
@@ -248,8 +253,7 @@
                                                                             \
   product(intx, Tier0ProfilingStartPercentage, 200,                         \
           "Start profiling in interpreter if the counters exceed the "      \
-          "specified percentage of tier 3 thresholds (tier 4 thresholds "   \
-          "with CompilationMode=high-only|high-only-quick-internal)")       \
+          "specified percentage of tier 3 thresholds")                      \
           range(0, max_jint)                                                \
                                                                             \
   product(uintx, IncreaseFirstTierCompileThresholdAt, 50,                   \
@@ -264,6 +268,17 @@
   product(intx, TieredRateUpdateMaxTime, 25,                                \
           "Maximum rate sampling interval (in milliseconds)")               \
           range(0, max_intx)                                                \
+                                                                            \
+  product(double, Tier0ProfileDelayFactor, 100.0, DIAGNOSTIC,               \
+          "Delay profiling/compiling of methods that were "                 \
+          "observed to be lukewarm")                                        \
+                                                                            \
+  product(double, Tier2ProfileDelayFactor, 250.0, DIAGNOSTIC,               \
+          "Delay profiling of methods that were observed to be lukewarm")   \
+                                                                            \
+  product(bool, SkipTier2IfPossible, false, DIAGNOSTIC,                     \
+          "Compile at tier 4 instead of tier 2 in training replay "         \
+          "mode if posssible")                                              \
                                                                             \
   product(ccstr, CompilationMode, "default",                                \
           "Compilation modes: "                                             \
@@ -291,27 +306,30 @@
   product(ccstrlist, CompileOnly, "",                                       \
           "List of methods (pkg/class.name) to restrict compilation to")    \
                                                                             \
-  product(ccstr, CompileCommandFile, NULL,                                  \
+  product(ccstr, CompileCommandFile, nullptr,                               \
           "Read compiler commands from this file [.hotspot_compiler]")      \
                                                                             \
-  product(ccstr, CompilerDirectivesFile, NULL, DIAGNOSTIC,                  \
+  product(ccstr, CompilerDirectivesFile, nullptr, DIAGNOSTIC,               \
           "Read compiler directives from this file")                        \
                                                                             \
   product(ccstrlist, CompileCommand, "",                                    \
           "Prepend to .hotspot_compiler; e.g. log,java/lang/String.<init>") \
                                                                             \
-  develop(bool, ReplayCompiles, false,                                      \
+  product(bool, ReplayCompiles, false, DIAGNOSTIC,                          \
           "Enable replay of compilations from ReplayDataFile")              \
                                                                             \
-  product(ccstr, ReplayDataFile, NULL,                                      \
+  product(bool, ReplayReduce, false, EXPERIMENTAL,                          \
+          "Enable features to facilitate replay file reduction")            \
+                                                                            \
+  product(ccstr, ReplayDataFile, nullptr,                                   \
           "File containing compilation replay information"                  \
           "[default: ./replay_pid%p.log] (%p replaced with pid)")           \
                                                                             \
-  product(ccstr, InlineDataFile, NULL,                                      \
+  product(ccstr, InlineDataFile, nullptr,                                   \
           "File containing inlining replay information"                     \
           "[default: ./inline_pid%p.log] (%p replaced with pid)")           \
                                                                             \
-  develop(intx, ReplaySuppressInitializers, 2,                              \
+  product(intx, ReplaySuppressInitializers, 2, DIAGNOSTIC,                  \
           "Control handling of class initialization during replay: "        \
           "0 - don't do anything special; "                                 \
           "1 - treat all class initializers as empty; "                     \
@@ -320,7 +338,7 @@
           "    pretend they are empty after starting replay")               \
           range(0, 3)                                                       \
                                                                             \
-  develop(bool, ReplayIgnoreInitErrors, false,                              \
+  product(bool, ReplayIgnoreInitErrors, false, DIAGNOSTIC,                  \
           "Ignore exceptions thrown during initialization for replay")      \
                                                                             \
   product(bool, DumpReplayDataOnError, true,                                \
@@ -371,7 +389,10 @@
           "Don't compile methods larger than this if "                      \
           "+DontCompileHugeMethods")                                        \
                                                                             \
-
+  product(bool, CaptureBailoutInformation, trueInDebug, DIAGNOSTIC,         \
+          "If compilation is stopped with an error, capture diagnostic "    \
+          "information at the bailout point")                               \
+                                                                            \
 // end of COMPILER_FLAGS
 
 DECLARE_FLAGS(COMPILER_FLAGS)

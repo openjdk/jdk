@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,9 @@
  * @summary LambHello World test for regenerate lambda holder classes in dynamic archive
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
- * @build LambHello sun.hotspot.WhiteBox
+ * @build LambHello jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar lambhello.jar LambHello
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. TestDynamicRegenerateHolderClasses
  */
 
@@ -39,7 +39,6 @@ import jdk.test.lib.helpers.ClassFileInstaller;
 public class TestDynamicRegenerateHolderClasses extends DynamicArchiveTestBase {
     static String CHECK_MESSAGES[] = {"java.lang.invoke.Invokers$Holder source: shared objects file (top)",
                                       "java.lang.invoke.DirectMethodHandle$Holder source: shared objects file (top)",
-                                      "java.lang.invoke.DelegatingMethodHandle$Holder source: shared objects file (top)",
                                       "java.lang.invoke.LambdaForm$Holder source: shared objects file (top)"};
     public static void main(String[] args) throws Exception {
         runTest(TestDynamicRegenerateHolderClasses::testDefaultBase);

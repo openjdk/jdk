@@ -26,8 +26,8 @@
  * @summary Tests WB::isMethodCompilable(m) in combination with compiler directives that prevent a compilation of m.
  * @bug 8263582
  * @library /test/lib /
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:CompileCommand=compileonly,compiler.whitebox.TestMethodCompilableCompilerDirectives::doesNotExist
  *      compiler.whitebox.TestMethodCompilableCompilerDirectives
@@ -39,7 +39,7 @@
 package compiler.whitebox;
 
 import jdk.test.lib.Asserts;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import java.lang.reflect.Method;
 
 public class TestMethodCompilableCompilerDirectives {

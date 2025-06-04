@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package javax.imageio.spi;
 
 import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.metadata.IIOMetadataFormat;
 import javax.imageio.metadata.IIOMetadataFormatImpl;
@@ -199,13 +197,13 @@ public abstract class ImageReaderWriterSpi extends IIOServiceProvider {
      * {@code getImageMetadataFormat}.  An array of length
      * 0 is normalized to {@code null}.
      *
-     * @exception IllegalArgumentException if {@code vendorName}
+     * @throws IllegalArgumentException if {@code vendorName}
      * is {@code null}.
-     * @exception IllegalArgumentException if {@code version}
+     * @throws IllegalArgumentException if {@code version}
      * is {@code null}.
-     * @exception IllegalArgumentException if {@code names}
+     * @throws IllegalArgumentException if {@code names}
      * is {@code null} or has length 0.
-     * @exception IllegalArgumentException if {@code pluginClassName}
+     * @throws IllegalArgumentException if {@code pluginClassName}
      * is {@code null}.
      */
     public ImageReaderWriterSpi(String vendorName,
@@ -518,7 +516,7 @@ public abstract class ImageReaderWriterSpi extends IIOServiceProvider {
      *
      * @return an {@code IIOMetadataFormat} object.
      *
-     * @exception IllegalArgumentException if {@code formatName}
+     * @throws IllegalArgumentException if {@code formatName}
      * is {@code null} or is not a supported name.
      */
     public IIOMetadataFormat getStreamMetadataFormat(String formatName) {
@@ -542,7 +540,7 @@ public abstract class ImageReaderWriterSpi extends IIOServiceProvider {
      *
      * @return an {@code IIOMetadataFormat} object.
      *
-     * @exception IllegalArgumentException if {@code formatName}
+     * @throws IllegalArgumentException if {@code formatName}
      * is {@code null} or is not a supported name.
      */
     public IIOMetadataFormat getImageMetadataFormat(String formatName) {
@@ -584,10 +582,7 @@ public abstract class ImageReaderWriterSpi extends IIOServiceProvider {
         }
         try {
             // Try to load from the same location as the module of the SPI
-            final String className = formatClassName;
-            PrivilegedAction<Class<?>> pa = () -> { return getMetadataFormatClass(className); };
-            @SuppressWarnings("removal")
-            Class<?> cls = AccessController.doPrivileged(pa);
+            Class<?> cls = getMetadataFormatClass(formatClassName);
             Method meth = cls.getMethod("getInstance");
             return (IIOMetadataFormat) meth.invoke(null);
         } catch (Exception e) {

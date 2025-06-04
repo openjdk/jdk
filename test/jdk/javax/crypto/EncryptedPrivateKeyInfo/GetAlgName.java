@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,11 @@
 
 /**
  * @test
- * @bug 4941596
+ * @bug 4941596 8296442
  * @summary Test the EncryptedPrivateKeyInfo.getAlgName(...) methods.
  * @author Valerie Peng
  */
-import java.util.*;
-import java.nio.*;
-import java.io.*;
 import java.security.*;
-import java.util.Arrays;
-import java.security.spec.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
@@ -52,17 +47,29 @@ public class GetAlgName {
             String algo = ALGOS[i];
             // generate AlgorithmParameters object
             SecretKeyFactory skf =
-                SecretKeyFactory.getInstance(algo, "SunJCE");
+                    SecretKeyFactory.getInstance(algo,
+                            System.getProperty("test.provider.name", "SunJCE"));
             SecretKey key = skf.generateSecret(ks);
-            Cipher c = Cipher.getInstance(algo, "SunJCE");
+            Cipher c = Cipher.getInstance(algo,
+                    System.getProperty("test.provider.name", "SunJCE"));
             c.init(Cipher.ENCRYPT_MODE, key);
             c.doFinal(BYTES); // force the parameter generation if not already
 
             AlgorithmParameters ap = c.getParameters();
             epki = new EncryptedPrivateKeyInfo(ap, BYTES);
             if (!epki.getAlgName().equalsIgnoreCase(algo)) {
-                System.out.println("...expect: " + algo);
-                System.out.println("...got: " + epki.getAlgName());
+                System.out.println("...expected: " + algo);
+                System.out.println("     ...got: " + epki.getAlgName());
+                status = false;
+            }
+
+            // Make sure EncryptedPrivateKeyInfo can be created with an
+            // uninitialized AlgorithmParameters.
+            AlgorithmParameters ap2 = AlgorithmParameters.getInstance(ap.getAlgorithm());
+            epki = new EncryptedPrivateKeyInfo(ap2, BYTES);
+            if (!epki.getAlgName().equalsIgnoreCase(algo)) {
+                System.out.println("...expected: " + algo);
+                System.out.println("     ...got: " + epki.getAlgName());
                 status = false;
             }
         }

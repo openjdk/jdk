@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,8 @@
 
 package com.sun.crypto.provider;
 
-import java.security.SecureRandom;
-import java.security.InvalidParameterException;
 import java.security.InvalidAlgorithmParameterException;
+import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Arrays;
 import javax.crypto.KeyGeneratorSpi;
@@ -88,6 +87,11 @@ public final class HmacMD5KeyGenerator extends KeyGeneratorSpi {
      * @param random the source of randomness for this key generator
      */
     protected void engineInit(int keysize, SecureRandom random) {
+
+        if (keysize <= 0) {
+            throw new IllegalArgumentException("keysize must not be <= 0");
+        }
+
         this.keysize = (keysize+7) / 8;
         this.engineInit(random);
     }

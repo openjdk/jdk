@@ -211,12 +211,12 @@ public class StressOptions {
     }
 
     /**
-     * Obtain execution time in seconds adjusted for TIMEOUT_FACTOR.
+     * Obtain execution time in seconds.
      *
      * @return time
      */
     public long getTime() {
-        return Utils.adjustTimeout(time);
+        return time;
     }
 
     /**

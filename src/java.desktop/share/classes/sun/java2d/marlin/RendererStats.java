@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package sun.java2d.marlin;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -101,6 +99,8 @@ public final class RendererStats implements MarlinConst {
         = new StatLong("renderer.crossings.bsearch");
     final StatLong stat_rdr_crossings_msorts
         = new StatLong("renderer.crossings.msorts");
+    final StatLong stat_rdr_crossings_dpqs
+        = new StatLong("renderer.crossings.dpqs");
     final StatLong stat_str_polystack_curves
         = new StatLong("stroker.polystack.curves");
     final StatLong stat_str_polystack_types
@@ -196,6 +196,7 @@ public final class RendererStats implements MarlinConst {
         stat_rdr_crossings_sorts,
         stat_rdr_crossings_bsearch,
         stat_rdr_crossings_msorts,
+        stat_rdr_crossings_dpqs,
         stat_str_polystack_types,
         stat_str_polystack_curves,
         stat_cpd_polystack_curves,
@@ -352,13 +353,10 @@ public final class RendererStats implements MarlinConst {
         /* RendererStats collection as hard references
            (only used for debugging purposes) */
         private final ConcurrentLinkedQueue<RendererStats> allStats
-            = new ConcurrentLinkedQueue<RendererStats>();
+            = new ConcurrentLinkedQueue<>();
 
-        @SuppressWarnings("removal")
         private RendererStatsHolder() {
-            AccessController.doPrivileged(
-                (PrivilegedAction<Void>) () -> {
-                    final Thread hook = new Thread(
+            final Thread hook = new Thread(
                         MarlinUtils.getRootThreadGroup(),
                         new Runnable() {
                             @Override
@@ -368,21 +366,18 @@ public final class RendererStats implements MarlinConst {
                         },
                         "MarlinStatsHook"
                     );
-                    hook.setContextClassLoader(null);
-                    Runtime.getRuntime().addShutdownHook(hook);
+            hook.setContextClassLoader(null);
+            Runtime.getRuntime().addShutdownHook(hook);
 
-                    if (USE_DUMP_THREAD) {
-                        final Timer statTimer = new Timer("RendererStats");
-                        statTimer.scheduleAtFixedRate(new TimerTask() {
-                            @Override
-                            public void run() {
-                                dump();
-                            }
-                        }, DUMP_INTERVAL, DUMP_INTERVAL);
+            if (USE_DUMP_THREAD) {
+                final Timer statTimer = new Timer("RendererStats");
+                statTimer.scheduleAtFixedRate(new TimerTask() {
+                    @Override
+                    public void run() {
+                        dump();
                     }
-                    return null;
-                }
-            );
+                }, DUMP_INTERVAL, DUMP_INTERVAL);
+            }
         }
 
         void add(final Object parent, final RendererStats stats) {

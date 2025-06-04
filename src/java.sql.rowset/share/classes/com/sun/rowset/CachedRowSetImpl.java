@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,16 +31,12 @@ import java.io.*;
 import java.math.*;
 import java.util.*;
 import java.text.*;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 
 import javax.sql.rowset.*;
 import javax.sql.rowset.spi.*;
 import javax.sql.rowset.serial.*;
 import com.sun.rowset.internal.*;
 import com.sun.rowset.providers.*;
-import sun.reflect.misc.ReflectUtil;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
@@ -357,7 +353,6 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * <P>
      * @throws SQLException if an error occurs
      */
-    @SuppressWarnings("removal")
     public CachedRowSetImpl() throws SQLException {
 
         try {
@@ -367,16 +362,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         }
 
         // set the Reader, this maybe overridden latter
-        try {
-            provider = AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
-                @Override
-                public SyncProvider run() throws SyncFactoryException {
-                    return SyncFactory.getInstance(DEFAULT_SYNC_PROVIDER);
-                }
-            }, null, new RuntimePermission("accessClassInPackage.com.sun.rowset.providers"));
-        } catch (PrivilegedActionException pae) {
-            throw (SyncFactoryException) pae.getException();
-        }
+        provider = SyncFactory.getInstance(DEFAULT_SYNC_PROVIDER);
 
         if (!(provider instanceof RIOptimisticProvider)) {
             throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.invalidp").toString());
@@ -397,7 +383,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         onInsertRow = false;
         insertRow = null;
 
-        // set the warninings
+        // set the warnings
         sqlwarn = new SQLWarning();
         rowsetWarning = new RowSetWarning();
 
@@ -446,7 +432,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * optimistic provider <code>com.sun.rowset.providers.RIOptimisticProvider</code>.
      * <p>
      * In addition, the following properties can be associated with the
-     * provider to assist in determining the choice of the synchronizaton
+     * provider to assist in determining the choice of the synchronization
      * provider such as:
      * <ul>
      * <li><code>ROWSET_SYNC_PROVIDER</code> - the property specifying the
@@ -459,7 +445,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * software vendor.
      * </ul>
      * More specific detailes are available in the <code>SyncFactory</code>
-     * and <code>SyncProvider</code> specificiations later in this document.
+     * and <code>SyncProvider</code> specifications later in this document.
      * <p>
      * @param env a <code>Hashtable</code> object with a list of desired
      *        synchronization providers
@@ -855,7 +841,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * object.
      * <P>
      * <b>Note</b>In the reference implementation an optimistic concurrency implementation
-     * is provided as a sample implementation of a the <code>SyncProvider</code>
+     * is provided as a sample implementation of the <code>SyncProvider</code>
      * abstract class.
      * <P>
      * This method fails if any of the updates cannot be propagated back
@@ -967,8 +953,8 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * Before returning, this method moves the cursor before the first row
      * and sends a <code>rowSetChanged</code> event to all registered
      * listeners.
-     * @throws SQLException if an error is occurs rolling back the RowSet
-     *           state to the definied original value.
+     * @throws SQLException if an error occurs rolling back the RowSet
+     *           state to the defined original value.
      * @see javax.sql.RowSetListener#rowSetChanged
      */
     public void restoreOriginal() throws SQLException {
@@ -1040,7 +1026,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
     /**
      * Immediately removes the current row from this
      * <code>CachedRowSetImpl</code> object if the row has been inserted, and
-     * also notifies listeners the a row has changed.  An exception is thrown
+     * also notifies listeners the row has changed.  An exception is thrown
      * if the row is not a row that has been inserted or the cursor is before
      * the first row, after the last row, or on the insert row.
      * <P>
@@ -1108,7 +1094,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
     /**
      * Returns a new <code>RowSet</code> object backed by the same data as
      * that of this <code>CachedRowSetImpl</code> object and sharing a set of cursors
-     * with it. This allows cursors to interate over a shared set of rows, providing
+     * with it. This allows cursors to iterate over a shared set of rows, providing
      * multiple views of the underlying data.
      *
      * @return a <code>RowSet</code> object that is a copy of this <code>CachedRowSetImpl</code>
@@ -1285,7 +1271,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
 
     /**
      * Converts this <code>CachedRowSetImpl</code> object to a collection
-     * of tables. The sample implementation utilitizes the <code>TreeMap</code>
+     * of tables. The sample implementation utilizes the <code>TreeMap</code>
      * collection type.
      * This class guarantees that the map will be in ascending key order,
      * sorted according to the natural order for the key's class.
@@ -1312,7 +1298,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
     /**
      * Returns the specified column of this <code>CachedRowSetImpl</code> object
      * as a <code>Collection</code> object.  This method makes a copy of the
-     * column's data and utilitizes the <code>Vector</code> to establish the
+     * column's data and utilizes the <code>Vector</code> to establish the
      * collection. The <code>Vector</code> class implements a growable array
      * objects allowing the individual components to be accessed using an
      * an integer index similar to that of an array.
@@ -1348,7 +1334,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
     /**
      * Returns the specified column of this <code>CachedRowSetImpl</code> object
      * as a <code>Collection</code> object.  This method makes a copy of the
-     * column's data and utilitizes the <code>Vector</code> to establish the
+     * column's data and utilizes the <code>Vector</code> to establish the
      * collection. The <code>Vector</code> class implements a growable array
      * objects allowing the individual components to be accessed using an
      * an integer index similar to that of an array.
@@ -1734,7 +1720,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * @param columnIndex the first column is <code>1</code>, the second
      *        is <code>2</code>, and so on; must be <code>1</code> or larger
      *        and equal to or less than the number of columns in the rowset
-     * @return the column value as a <code>boolean</code> in the Java progamming language;
+     * @return the column value as a <code>boolean</code> in the Java programming language;
      *        if the value is SQL <code>NULL</code>, the result is <code>false</code>
      * @throws SQLException if (1) the given column index is out of bounds,
      *            (2) the cursor is not on one of this rowset's rows or its
@@ -2438,7 +2424,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * (2) the cursor is not on one of this rowset's rows or its
      * insert row, or (3) the designated column does not store an
      * SQL <code>BINARY, VARBINARY</code> or <code><b>LONGVARBINARY</b></code>
-     * The bold type indicates the SQL type that this method is recommened
+     * The bold type indicates the SQL type that this method is recommended
      * to retrieve.
      * @see #getBinaryStream(String)
      */
@@ -2818,7 +2804,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * (2) the cursor is not on one of this rowset's rows or its
      * insert row, or (3) the designated column does not store an
      * SQL <code>BINARY, VARBINARY</code> or <code><b>LONGVARBINARY</b></code>
-     * The bold type indicates the SQL type that this method is recommened
+     * The bold type indicates the SQL type that this method is recommended
      * to retrieve.
      * @see #getBinaryStream(int)
      *
@@ -2976,7 +2962,6 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
                 // create new instance of the class
                 SQLData obj = null;
                 try {
-                    ReflectUtil.checkPackageAccess(c);
                     @SuppressWarnings("deprecation")
                     Object tmp = c.newInstance();
                     obj = (SQLData) tmp;
@@ -3516,7 +3501,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
             throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.absolute").toString());
         }
 
-        if (row > 0) { // we are moving foward
+        if (row > 0) { // we are moving forward
             if (row > numRows) {
                 // fell off the end
                 afterLast();
@@ -3872,7 +3857,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
     }
 
     /**
-     * Indicates whether the given SQL data type is a numberic type.
+     * Indicates whether the given SQL data type is a numeric type.
      *
      * @param type one of the constants from <code>java.sql.Types</code>
      * @return <code>true</code> if the given type is <code>NUMERIC</code>,'
@@ -5726,7 +5711,6 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
                 // create new instance of the class
                 SQLData obj = null;
                 try {
-                    ReflectUtil.checkPackageAccess(c);
                     @SuppressWarnings("deprecation")
                     Object tmp = c.newInstance();
                     obj = (SQLData) tmp;
@@ -5985,7 +5969,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
     /**
      * Retrieves the value of the designated column in this
      * <code>CachedRowSetImpl</code> object as an <code>Array</code> object
-     * in the Java programming langugage.
+     * in the Java programming language.
      *
      * @param colName a <code>String</code> object that must match the
      *        SQL name of a column in this rowset, ignoring case
@@ -6269,7 +6253,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * with the given <code>RowSetMetaData</code> object.
      *
      * @param md a <code>RowSetMetaData</code> object instance containing
-     *            metadata about the columsn in the rowset
+     *            metadata about the columns in the rowset
      * @throws SQLException if invalid meta data is supplied to the
      *            rowset
      */
@@ -6385,7 +6369,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
     /**
      * Marks all rows in this rowset as being original rows. Any updates
      * made to the rows become the original values for the rowset.
-     * Calls to the method <code>setOriginal</code> connot be reversed.
+     * Calls to the method <code>setOriginal</code> cannot be reversed.
      *
      * @throws SQLException if an error occurs
      */
@@ -6804,7 +6788,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * object is returned. Subsequent <code>CachedRowSetImpl</code> warnings will
      * be chained to this <code>SQLWarning</code>. All <code>RowSetWarnings</code>
      * warnings are generated in the disconnected environment and remain a
-     * seperate warning chain to that provided by the <code>getWarnings</code>
+     * separate warning chain to that provided by the <code>getWarnings</code>
      * method.
      *
      * <P>The warning chain is automatically cleared each time a new
@@ -6864,7 +6848,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
                 int idxWhere = tabName.toLowerCase().indexOf("where");
 
                 /**
-                  * Adding the addtional check for conditions following the table name.
+                  * Adding the additional check for conditions following the table name.
                   * If a condition is found truncate it.
                   **/
 
@@ -7240,7 +7224,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      *
      * @param data the <code>ResultSet</code> object containing the data
      *             to be read into this <code>CachedRowSetImpl</code> object
-     * @param start the integer specifing the position in the
+     * @param start the integer specifying the position in the
      *        <code>ResultSet</code> object to popultate the
      *        <code>CachedRowSetImpl</code> object.
      * @throws SQLException if an error occurs; or the max row setting is
@@ -7421,7 +7405,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
 
     /**
      * This is the setter function for setting the size of the page, which specifies
-     * how many rows have to be retrived at a time.
+     * how many rows have to be retrieved at a time.
      *
      * @param size which is the page size
      * @throws SQLException if size is less than zero or greater than max rows.
@@ -7526,7 +7510,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         int counter;
 
         if( page <= 0 ){
-            throw new SQLException("Absolute positoin is invalid");
+            throw new SQLException("Absolute position is invalid");
         }
         counter = 0;
 
@@ -7551,7 +7535,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
 
     /**
      * Goes to the page number passed as the parameter  from the current page.
-     * The parameter can take postive or negative value accordingly.
+     * The parameter can take positive or negative value accordingly.
      * @param page , the page loaded on a call to this function
      * @return true if the page exists false otherwise
      * @throws SQLException if an error occurs
@@ -7629,7 +7613,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
     */
 
     /**
-     * Retrives the last page of data as specified by the page size.
+     * Retrieves the last page of data as specified by the page size.
      * @return boolean value tur if present on the last page, false otherwise
      * @throws SQLException if called before populate or if an error occurs.
      */

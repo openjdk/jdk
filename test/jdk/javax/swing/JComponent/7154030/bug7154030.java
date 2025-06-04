@@ -74,6 +74,8 @@ public class bug7154030 {
                 @Override
                 public void run() {
                     JDesktopPane desktop = new JDesktopPane();
+                    desktop.setBackground(Color.WHITE);
+                    desktop.setForeground(Color.BLACK);
                     button = new JButton("button");
                     frame = new JFrame();
                     frame.setUndecorated(true);
@@ -100,6 +102,8 @@ public class bug7154030 {
 
             robot.waitForIdle(1000);
             robot.delay(1000);
+            robot.mouseMove(0, 0);
+            robot.waitForIdle();
 
             Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
             Rectangle screen = new Rectangle(0, 0, (int) screenSize.getWidth(), (int) screenSize.getHeight());

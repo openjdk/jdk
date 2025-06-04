@@ -28,6 +28,8 @@ import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.DataLine;
 import java.applet.AudioClip;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -49,6 +51,10 @@ public class DataPusherThreadCheck {
         try {
             AudioFormat format =
                     new AudioFormat(PCM_SIGNED, 44100, 8, 1, 1, 44100, false);
+            DataLine.Info info = new DataLine.Info(Clip.class, format);
+            if (!(AudioSystem.isLineSupported(info)) ) {
+                return; // the test is not applicable
+            }
             int dataSize = 6000*1000 * format.getFrameSize();
             InputStream in = new ByteArrayInputStream(new byte[dataSize]);
             AudioInputStream audioStream = new AudioInputStream(in, format, NOT_SPECIFIED);

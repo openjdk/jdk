@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,11 @@
 
 /*
  * @test
+ * @key randomness
+ *
+ * @library /test/lib
  * @modules jdk.incubator.vector
- * @run testng/othervm -ea -esa -Xbatch -XX:-TieredCompilation Short64VectorTests
+ * @run testng/othervm/timeout=300 -ea -esa -Xbatch -XX:-TieredCompilation Short64VectorTests
  */
 
 // -- This file was mechanically generated: Do not edit! -- //
@@ -35,6 +38,7 @@ import jdk.incubator.vector.VectorShuffle;
 import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.Vector;
+import jdk.incubator.vector.VectorMath;
 
 import jdk.incubator.vector.ShortVector;
 
@@ -60,7 +64,17 @@ public class Short64VectorTests extends AbstractVectorTest {
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
 
+    private static final short CONST_SHIFT = Short.SIZE / 2;
+
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 64);
+
+    static void assertArraysStrictlyEquals(short[] r, short[] a) {
+        for (int i = 0; i < a.length; i++) {
+            if (r[i] != a[i]) {
+                Assert.fail("at index #" + i + ", expected = " + a[i] + ", actual = " + r[i]);
+            }
+        }
+    }
 
     interface FUnOp {
         short apply(short a);
@@ -226,25 +240,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 
-    static void assertInsertArraysEquals(short[] r, short[] a, short element, int index, int start, int end) {
-        int i = start;
-        try {
-            for (; i < end; i += 1) {
-                if(i%SPECIES.length() == index) {
-                    Assert.assertEquals(r[i], element);
-                } else {
-                    Assert.assertEquals(r[i], a[i]);
-                }
-            }
-        } catch (AssertionError e) {
-            if (i%SPECIES.length() == index) {
-                Assert.assertEquals(r[i], element, "at index #" + i);
-            } else {
-                Assert.assertEquals(r[i], a[i], "at index #" + i);
-            }
-        }
-    }
-
     static void assertRearrangeArraysEquals(short[] r, short[] a, int[] order, int vector_len) {
         int i = 0, j = 0;
         try {
@@ -256,6 +251,74 @@ public class Short64VectorTests extends AbstractVectorTest {
         } catch (AssertionError e) {
             int idx = i + j;
             Assert.assertEquals(r[i+j], a[i+order[i+j]], "at index #" + idx + ", input = " + a[i+order[i+j]]);
+        }
+    }
+
+    static void assertcompressArraysEquals(short[] r, short[] a, boolean[] m, int vector_len) {
+        int i = 0, j = 0, k = 0;
+        try {
+            for (; i < a.length; i += vector_len) {
+                k = 0;
+                for (j = 0; j < vector_len; j++) {
+                    if (m[(i + j) % SPECIES.length()]) {
+                        Assert.assertEquals(r[i + k], a[i + j]);
+                        k++;
+                    }
+                }
+                for (; k < vector_len; k++) {
+                    Assert.assertEquals(r[i + k], (short)0);
+                }
+            }
+        } catch (AssertionError e) {
+            int idx = i + k;
+            if (m[(i + j) % SPECIES.length()]) {
+                Assert.assertEquals(r[idx], a[i + j], "at index #" + idx);
+            } else {
+                Assert.assertEquals(r[idx], (short)0, "at index #" + idx);
+            }
+        }
+    }
+
+    static void assertexpandArraysEquals(short[] r, short[] a, boolean[] m, int vector_len) {
+        int i = 0, j = 0, k = 0;
+        try {
+            for (; i < a.length; i += vector_len) {
+                k = 0;
+                for (j = 0; j < vector_len; j++) {
+                    if (m[(i + j) % SPECIES.length()]) {
+                        Assert.assertEquals(r[i + j], a[i + k]);
+                        k++;
+                    } else {
+                        Assert.assertEquals(r[i + j], (short)0);
+                    }
+                }
+            }
+        } catch (AssertionError e) {
+            int idx = i + j;
+            if (m[idx % SPECIES.length()]) {
+                Assert.assertEquals(r[idx], a[i + k], "at index #" + idx);
+            } else {
+                Assert.assertEquals(r[idx], (short)0, "at index #" + idx);
+            }
+        }
+    }
+
+    static void assertSelectFromTwoVectorEquals(short[] r, short[] order, short[] a, short[] b, int vector_len) {
+        int i = 0, j = 0;
+        boolean is_exceptional_idx = false;
+        int idx = 0, wrapped_index = 0, oidx = 0;
+        try {
+            for (; i < a.length; i += vector_len) {
+                for (j = 0; j < vector_len; j++) {
+                    idx = i + j;
+                    wrapped_index = Math.floorMod((int)order[idx], 2 * vector_len);
+                    is_exceptional_idx = wrapped_index >= vector_len;
+                    oidx = is_exceptional_idx ? (wrapped_index - vector_len) : wrapped_index;
+                    Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]));
+                }
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]), "at index #" + idx + ", order = " + order[idx] + ", a = " + a[i + oidx] + ", b = " + b[i + oidx]);
         }
     }
 
@@ -353,6 +416,17 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 
+    static void assertArraysEquals(short[] r, short[] a, short b, FBinOp f) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                Assert.assertEquals(r[i], f.apply(a[i], b));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], f.apply(a[i], b), "(" + a[i] + ", " + b + ") at index #" + i);
+        }
+    }
+
     static void assertBroadcastArraysEquals(short[] r, short[] a, short[] b, FBinOp f) {
         int i = 0;
         try {
@@ -389,6 +463,21 @@ public class Short64VectorTests extends AbstractVectorTest {
             }
         } catch (AssertionError err) {
             Assert.assertEquals(r[i], f.apply(a[i], b[i], mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", mask = " + mask[i % SPECIES.length()]);
+        }
+    }
+
+    static void assertArraysEquals(short[] r, short[] a, short b, boolean[] mask, FBinOp f) {
+        assertArraysEquals(r, a, b, mask, FBinMaskOp.lift(f));
+    }
+
+    static void assertArraysEquals(short[] r, short[] a, short b, boolean[] mask, FBinMaskOp f) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                Assert.assertEquals(r[i], f.apply(a[i], b, mask[i % SPECIES.length()]));
+            }
+        } catch (AssertionError err) {
+            Assert.assertEquals(r[i], f.apply(a[i], b, mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b + ", mask = " + mask[i % SPECIES.length()]);
         }
     }
 
@@ -457,6 +546,50 @@ public class Short64VectorTests extends AbstractVectorTest {
             }
         } catch (AssertionError err) {
             Assert.assertEquals(r[i+j], f.apply(a[i+j], b[j], mask[i]), "at index #" + i + ", input1 = " + a[i+j] + ", input2 = " + b[j] + ", mask = " + mask[i]);
+        }
+    }
+
+    interface FBinConstOp {
+        short apply(short a);
+    }
+
+    interface FBinConstMaskOp {
+        short apply(short a, boolean m);
+
+        static FBinConstMaskOp lift(FBinConstOp f) {
+            return (a, m) -> m ? f.apply(a) : a;
+        }
+    }
+
+    static void assertShiftConstEquals(short[] r, short[] a, FBinConstOp f) {
+        int i = 0;
+        int j = 0;
+        try {
+            for (; j < a.length; j += SPECIES.length()) {
+                for (i = 0; i < SPECIES.length(); i++) {
+                    Assert.assertEquals(r[i+j], f.apply(a[i+j]));
+                }
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i+j], f.apply(a[i+j]), "at index #" + i + ", " + j);
+        }
+    }
+
+    static void assertShiftConstEquals(short[] r, short[] a, boolean[] mask, FBinConstOp f) {
+        assertShiftConstEquals(r, a, mask, FBinConstMaskOp.lift(f));
+    }
+
+    static void assertShiftConstEquals(short[] r, short[] a, boolean[] mask, FBinConstMaskOp f) {
+        int i = 0;
+        int j = 0;
+        try {
+            for (; j < a.length; j += SPECIES.length()) {
+                for (i = 0; i < SPECIES.length(); i++) {
+                    Assert.assertEquals(r[i+j], f.apply(a[i+j], mask[i]));
+                }
+            }
+        } catch (AssertionError err) {
+            Assert.assertEquals(r[i+j], f.apply(a[i+j], mask[i]), "at index #" + i + ", input1 = " + a[i+j] + ", mask = " + mask[i]);
         }
     }
 
@@ -605,21 +738,6 @@ public class Short64VectorTests extends AbstractVectorTest {
     }
 
 
-
-    interface FBinArrayOp {
-        short apply(short[] a, int b);
-    }
-
-    static void assertArraysEquals(short[] r, short[] a, FBinArrayOp f) {
-        int i = 0;
-        try {
-            for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a, i));
-            }
-        } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a,i), "at index #" + i);
-        }
-    }
 
     interface FGatherScatterOp {
         short[] apply(short[] a, int ix, int[] b, int iy);
@@ -838,7 +956,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 
-
     static short bits(short e) {
         return  e;
     }
@@ -862,11 +979,43 @@ public class Short64VectorTests extends AbstractVectorTest {
             })
     );
 
+    static final List<IntFunction<short[]>> SHORT_SATURATING_GENERATORS = List.of(
+            withToString("short[Short.MIN_VALUE]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (short)(Short.MIN_VALUE));
+            }),
+            withToString("short[Short.MAX_VALUE]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (short)(Short.MAX_VALUE));
+            }),
+            withToString("short[Short.MAX_VALUE - 100]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (short)(Short.MAX_VALUE - 100));
+            }),
+            withToString("short[Short.MIN_VALUE + 100]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (short)(Short.MIN_VALUE + 100));
+            }),
+            withToString("short[-i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (short)(-i * 5));
+            }),
+            withToString("short[i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (short)(i * 5));
+            })
+    );
+
     // Create combinations of pairs
     // @@@ Might be sensitive to order e.g. div by 0
     static final List<List<IntFunction<short[]>>> SHORT_GENERATOR_PAIRS =
         Stream.of(SHORT_GENERATORS.get(0)).
                 flatMap(fa -> SHORT_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
+                collect(Collectors.toList());
+
+    static final List<List<IntFunction<short[]>>> SHORT_SATURATING_GENERATOR_PAIRS =
+        Stream.of(SHORT_GENERATORS.get(0)).
+                flatMap(fa -> SHORT_SATURATING_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
                 collect(Collectors.toList());
 
     @DataProvider
@@ -881,6 +1030,18 @@ public class Short64VectorTests extends AbstractVectorTest {
                 flatMap(pair -> SHORT_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
                 collect(Collectors.toList());
 
+    static final List<IntFunction<short[]>> SELECT_FROM_INDEX_GENERATORS = List.of(
+            withToString("short[0..VECLEN*2)", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (short)(RAND.nextInt()));
+            })
+    );
+
+    static final List<List<IntFunction<short[]>>> SHORT_GENERATOR_SELECT_FROM_TRIPLES =
+        SHORT_GENERATOR_PAIRS.stream().
+                flatMap(pair -> SELECT_FROM_INDEX_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
+                collect(Collectors.toList());
+
     @DataProvider
     public Object[][] shortBinaryOpProvider() {
         return SHORT_GENERATOR_PAIRS.stream().map(List::toArray).
@@ -888,8 +1049,23 @@ public class Short64VectorTests extends AbstractVectorTest {
     }
 
     @DataProvider
+    public Object[][] shortSaturatingBinaryOpProvider() {
+        return SHORT_SATURATING_GENERATOR_PAIRS.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
     public Object[][] shortIndexedOpProvider() {
         return SHORT_GENERATOR_PAIRS.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] shortSaturatingBinaryOpMaskProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
+                flatMap(fm -> SHORT_SATURATING_GENERATOR_PAIRS.stream().map(lfa -> {
+                    return Stream.concat(lfa.stream(), Stream.of(fm)).toArray();
+                })).
                 toArray(Object[][]::new);
     }
 
@@ -905,6 +1081,12 @@ public class Short64VectorTests extends AbstractVectorTest {
     @DataProvider
     public Object[][] shortTernaryOpProvider() {
         return SHORT_GENERATOR_TRIPLES.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] shortSelectFromTwoVectorOpProvider() {
+        return SHORT_GENERATOR_SELECT_FROM_TRIPLES.stream().map(List::toArray).
                 toArray(Object[][]::new);
     }
 
@@ -932,8 +1114,6 @@ public class Short64VectorTests extends AbstractVectorTest {
                 })).
                 toArray(Object[][]::new);
     }
-
-
 
     @DataProvider
     public Object[][] maskProvider() {
@@ -1009,7 +1189,6 @@ public class Short64VectorTests extends AbstractVectorTest {
                 }))).
                 toArray(Object[][]::new);
     }
-
 
     static final List<IntFunction<short[]>> SHORT_COMPARE_GENERATORS = List.of(
             withToString("short[i]", (int s) -> {
@@ -1108,10 +1287,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 
-    static short get(short[] a, int i) {
-        return (short) a[i];
-    }
-
     static final IntFunction<short[]> fr = (vl) -> {
         int length = BUFFER_REPS * vl;
         return new short[length];
@@ -1149,6 +1324,22 @@ public class Short64VectorTests extends AbstractVectorTest {
 
     static short ROR_scalar(short a, short b) {
         return (short)(((((short)a) & 0xFFFF) >>> (b & 15)) | ((((short)a) & 0xFFFF) << (16 - (b & 15))));
+    }
+
+    static short TRAILING_ZEROS_COUNT_scalar(short a) {
+        return (short) (a != 0 ? Integer.numberOfTrailingZeros(a) : 16);
+    }
+
+    static short LEADING_ZEROS_COUNT_scalar(short a) {
+        return (short) (a >= 0 ? Integer.numberOfLeadingZeros(a) - 16 : 0);
+    }
+
+    static short REVERSE_scalar(short a) {
+        short b = ROL_scalar(a, (short) 8);
+        b = (short) (((b & 0x5555) << 1) | ((b & 0xAAAA) >>> 1));
+        b = (short) (((b & 0x3333) << 2) | ((b & 0xCCCC) >>> 2));
+        b = (short) (((b & 0x0F0F) << 4) | ((b & 0xF0F0) >>> 4));
+        return b;
     }
 
     static boolean eq(short a, short b) {
@@ -1300,6 +1491,7 @@ public class Short64VectorTests extends AbstractVectorTest {
         } catch (ArithmeticException e) {
         }
     }
+
     static short ADD(short a, short b) {
         return (short)(a + b);
     }
@@ -1320,6 +1512,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, Short64VectorTests::ADD);
     }
+
     static short add(short a, short b) {
         return (short)(a + b);
     }
@@ -1376,6 +1569,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, mask, Short64VectorTests::add);
     }
+
     static short SUB(short a, short b) {
         return (short)(a - b);
     }
@@ -1396,6 +1590,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, Short64VectorTests::SUB);
     }
+
     static short sub(short a, short b) {
         return (short)(a - b);
     }
@@ -1452,6 +1647,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, mask, Short64VectorTests::sub);
     }
+
     static short MUL(short a, short b) {
         return (short)(a * b);
     }
@@ -1472,6 +1668,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, Short64VectorTests::MUL);
     }
+
     static short mul(short a, short b) {
         return (short)(a * b);
     }
@@ -1529,8 +1726,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, b, mask, Short64VectorTests::mul);
     }
 
-
-
     static short DIV(short a, short b) {
         return (short)(a / b);
     }
@@ -1553,6 +1748,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, Short64VectorTests::DIV);
     }
+
     static short div(short a, short b) {
         return (short)(a / b);
     }
@@ -1575,8 +1771,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, Short64VectorTests::div);
     }
-
-
 
     @Test(dataProvider = "shortBinaryOpMaskProvider")
     static void DIVShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
@@ -1683,6 +1877,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, Short64VectorTests::AND);
     }
+
     static short and(short a, short b) {
         return (short)(a & b);
     }
@@ -1701,8 +1896,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, Short64VectorTests::and);
     }
-
-
 
     @Test(dataProvider = "shortBinaryOpMaskProvider")
     static void ANDShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
@@ -1723,7 +1916,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, mask, Short64VectorTests::AND);
     }
-
 
     static short AND_NOT(short a, short b) {
         return (short)(a & ~b);
@@ -1746,8 +1938,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, b, Short64VectorTests::AND_NOT);
     }
 
-
-
     @Test(dataProvider = "shortBinaryOpMaskProvider")
     static void AND_NOTShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                           IntFunction<boolean[]> fm) {
@@ -1767,7 +1957,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, mask, Short64VectorTests::AND_NOT);
     }
-
 
     static short OR(short a, short b) {
         return (short)(a | b);
@@ -1789,6 +1978,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, Short64VectorTests::OR);
     }
+
     static short or(short a, short b) {
         return (short)(a | b);
     }
@@ -1807,8 +1997,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, Short64VectorTests::or);
     }
-
-
 
     @Test(dataProvider = "shortBinaryOpMaskProvider")
     static void ORShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
@@ -1829,7 +2017,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, mask, Short64VectorTests::OR);
     }
-
 
     static short XOR(short a, short b) {
         return (short)(a ^ b);
@@ -1852,8 +2039,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, b, Short64VectorTests::XOR);
     }
 
-
-
     @Test(dataProvider = "shortBinaryOpMaskProvider")
     static void XORShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                           IntFunction<boolean[]> fm) {
@@ -1873,7 +2058,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, mask, Short64VectorTests::XOR);
     }
-
 
     @Test(dataProvider = "shortBinaryOpProvider")
     static void addShort64VectorTestsBroadcastSmokeTest(IntFunction<short[]> fa, IntFunction<short[]> fb) {
@@ -1968,9 +2152,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertBroadcastArraysEquals(r, a, b, mask, Short64VectorTests::mul);
     }
 
-
-
-
     @Test(dataProvider = "shortBinaryOpProvider")
     static void divShort64VectorTestsBroadcastSmokeTest(IntFunction<short[]> fa, IntFunction<short[]> fb) {
         short[] a = fa.apply(SPECIES.length());
@@ -1986,8 +2167,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertBroadcastArraysEquals(r, a, b, Short64VectorTests::div);
     }
-
-
 
     @Test(dataProvider = "shortBinaryOpMaskProvider")
     static void divShort64VectorTestsBroadcastMaskedSmokeTest(IntFunction<short[]> fa, IntFunction<short[]> fb,
@@ -2007,8 +2186,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertBroadcastArraysEquals(r, a, b, mask, Short64VectorTests::div);
     }
-
-
 
     @Test(dataProvider = "shortBinaryOpProvider")
     static void ORShort64VectorTestsBroadcastSmokeTest(IntFunction<short[]> fa, IntFunction<short[]> fb) {
@@ -2038,8 +2215,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertBroadcastArraysEquals(r, a, b, Short64VectorTests::or);
     }
 
-
-
     @Test(dataProvider = "shortBinaryOpMaskProvider")
     static void ORShort64VectorTestsBroadcastMaskedSmokeTest(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                           IntFunction<boolean[]> fm) {
@@ -2056,8 +2231,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertBroadcastArraysEquals(r, a, b, mask, Short64VectorTests::OR);
     }
-
-
 
     @Test(dataProvider = "shortBinaryOpProvider")
     static void ANDShort64VectorTestsBroadcastSmokeTest(IntFunction<short[]> fa, IntFunction<short[]> fb) {
@@ -2087,8 +2260,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertBroadcastArraysEquals(r, a, b, Short64VectorTests::and);
     }
 
-
-
     @Test(dataProvider = "shortBinaryOpMaskProvider")
     static void ANDShort64VectorTestsBroadcastMaskedSmokeTest(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                           IntFunction<boolean[]> fm) {
@@ -2106,8 +2277,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertBroadcastArraysEquals(r, a, b, mask, Short64VectorTests::AND);
     }
 
-
-
     @Test(dataProvider = "shortBinaryOpProvider")
     static void ORShort64VectorTestsBroadcastLongSmokeTest(IntFunction<short[]> fa, IntFunction<short[]> fb) {
         short[] a = fa.apply(SPECIES.length());
@@ -2121,8 +2290,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertBroadcastLongArraysEquals(r, a, b, Short64VectorTests::OR);
     }
-
-
 
     @Test(dataProvider = "shortBinaryOpMaskProvider")
     static void ORShort64VectorTestsBroadcastMaskedLongSmokeTest(IntFunction<short[]> fa, IntFunction<short[]> fb,
@@ -2140,7 +2307,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertBroadcastLongArraysEquals(r, a, b, mask, Short64VectorTests::OR);
     }
-
 
     @Test(dataProvider = "shortBinaryOpProvider")
     static void ADDShort64VectorTestsBroadcastLongSmokeTest(IntFunction<short[]> fa, IntFunction<short[]> fb) {
@@ -2173,10 +2339,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertBroadcastLongArraysEquals(r, a, b, mask, Short64VectorTests::ADD);
     }
 
-
-
-
-
     static short LSHL(short a, short b) {
         return (short)((a << (b & 0xF)));
     }
@@ -2198,8 +2360,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, b, Short64VectorTests::LSHL);
     }
 
-
-
     @Test(dataProvider = "shortBinaryOpMaskProvider")
     static void LSHLShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                           IntFunction<boolean[]> fm) {
@@ -2219,11 +2379,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, mask, Short64VectorTests::LSHL);
     }
-
-
-
-
-
 
     static short ASHR(short a, short b) {
         return (short)((a >> (b & 0xF)));
@@ -2246,8 +2401,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, b, Short64VectorTests::ASHR);
     }
 
-
-
     @Test(dataProvider = "shortBinaryOpMaskProvider")
     static void ASHRShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                           IntFunction<boolean[]> fm) {
@@ -2267,11 +2420,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, mask, Short64VectorTests::ASHR);
     }
-
-
-
-
-
 
     static short LSHR(short a, short b) {
         return (short)(((a & 0xFFFF) >>> (b & 0xF)));
@@ -2294,8 +2442,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, b, Short64VectorTests::LSHR);
     }
 
-
-
     @Test(dataProvider = "shortBinaryOpMaskProvider")
     static void LSHRShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                           IntFunction<boolean[]> fm) {
@@ -2315,11 +2461,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, mask, Short64VectorTests::LSHR);
     }
-
-
-
-
-
 
     static short LSHL_unary(short a, short b) {
         return (short)((a << (b & 15)));
@@ -2341,8 +2482,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertShiftArraysEquals(r, a, b, Short64VectorTests::LSHL_unary);
     }
 
-
-
     @Test(dataProvider = "shortBinaryOpMaskProvider")
     static void LSHLShort64VectorTestsScalarShiftMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                           IntFunction<boolean[]> fm) {
@@ -2361,11 +2500,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertShiftArraysEquals(r, a, b, mask, Short64VectorTests::LSHL_unary);
     }
-
-
-
-
-
 
     static short LSHR_unary(short a, short b) {
         return (short)(((a & 0xFFFF) >>> (b & 15)));
@@ -2387,8 +2521,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertShiftArraysEquals(r, a, b, Short64VectorTests::LSHR_unary);
     }
 
-
-
     @Test(dataProvider = "shortBinaryOpMaskProvider")
     static void LSHRShort64VectorTestsScalarShiftMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                           IntFunction<boolean[]> fm) {
@@ -2407,11 +2539,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertShiftArraysEquals(r, a, b, mask, Short64VectorTests::LSHR_unary);
     }
-
-
-
-
-
 
     static short ASHR_unary(short a, short b) {
         return (short)((a >> (b & 15)));
@@ -2433,8 +2560,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertShiftArraysEquals(r, a, b, Short64VectorTests::ASHR_unary);
     }
 
-
-
     @Test(dataProvider = "shortBinaryOpMaskProvider")
     static void ASHRShort64VectorTestsScalarShiftMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                           IntFunction<boolean[]> fm) {
@@ -2453,7 +2578,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertShiftArraysEquals(r, a, b, mask, Short64VectorTests::ASHR_unary);
     }
-
 
     static short ROR(short a, short b) {
         return (short)(ROR_scalar(a,b));
@@ -2476,8 +2600,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, b, Short64VectorTests::ROR);
     }
 
-
-
     @Test(dataProvider = "shortBinaryOpMaskProvider")
     static void RORShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                           IntFunction<boolean[]> fm) {
@@ -2497,7 +2619,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, mask, Short64VectorTests::ROR);
     }
-
 
     static short ROL(short a, short b) {
         return (short)(ROL_scalar(a,b));
@@ -2520,8 +2641,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, b, Short64VectorTests::ROL);
     }
 
-
-
     @Test(dataProvider = "shortBinaryOpMaskProvider")
     static void ROLShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                           IntFunction<boolean[]> fm) {
@@ -2542,9 +2661,8 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, b, mask, Short64VectorTests::ROL);
     }
 
-
     static short ROR_unary(short a, short b) {
-        return (short)(ROR_scalar(a,b));
+        return (short)(ROR_scalar(a, b));
     }
 
     @Test(dataProvider = "shortBinaryOpProvider")
@@ -2562,8 +2680,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertShiftArraysEquals(r, a, b, Short64VectorTests::ROR_unary);
     }
-
-
 
     @Test(dataProvider = "shortBinaryOpMaskProvider")
     static void RORShort64VectorTestsScalarShiftMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
@@ -2584,9 +2700,8 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertShiftArraysEquals(r, a, b, mask, Short64VectorTests::ROR_unary);
     }
 
-
     static short ROL_unary(short a, short b) {
-        return (short)(ROL_scalar(a,b));
+        return (short)(ROL_scalar(a, b));
     }
 
     @Test(dataProvider = "shortBinaryOpProvider")
@@ -2605,8 +2720,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertShiftArraysEquals(r, a, b, Short64VectorTests::ROL_unary);
     }
 
-
-
     @Test(dataProvider = "shortBinaryOpMaskProvider")
     static void ROLShort64VectorTestsScalarShiftMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                           IntFunction<boolean[]> fm) {
@@ -2624,6 +2737,297 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
 
         assertShiftArraysEquals(r, a, b, mask, Short64VectorTests::ROL_unary);
+    }
+    static short LSHR_binary_const(short a) {
+        return (short)(((a & 0xFFFF) >>> CONST_SHIFT));
+    }
+
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void LSHRShort64VectorTestsScalarShiftConst(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.LSHR, CONST_SHIFT).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, Short64VectorTests::LSHR_binary_const);
+    }
+
+    @Test(dataProvider = "shortUnaryOpMaskProvider")
+    static void LSHRShort64VectorTestsScalarShiftMaskedConst(IntFunction<short[]> fa,
+                                          IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.LSHR, CONST_SHIFT, vmask).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, mask, Short64VectorTests::LSHR_binary_const);
+    }
+
+    static short LSHL_binary_const(short a) {
+        return (short)((a << CONST_SHIFT));
+    }
+
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void LSHLShort64VectorTestsScalarShiftConst(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.LSHL, CONST_SHIFT).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, Short64VectorTests::LSHL_binary_const);
+    }
+
+    @Test(dataProvider = "shortUnaryOpMaskProvider")
+    static void LSHLShort64VectorTestsScalarShiftMaskedConst(IntFunction<short[]> fa,
+                                          IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.LSHL, CONST_SHIFT, vmask).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, mask, Short64VectorTests::LSHL_binary_const);
+    }
+
+    static short ASHR_binary_const(short a) {
+        return (short)((a >> CONST_SHIFT));
+    }
+
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void ASHRShort64VectorTestsScalarShiftConst(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.ASHR, CONST_SHIFT).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, Short64VectorTests::ASHR_binary_const);
+    }
+
+    @Test(dataProvider = "shortUnaryOpMaskProvider")
+    static void ASHRShort64VectorTestsScalarShiftMaskedConst(IntFunction<short[]> fa,
+                                          IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.ASHR, CONST_SHIFT, vmask).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, mask, Short64VectorTests::ASHR_binary_const);
+    }
+
+    static short ROR_binary_const(short a) {
+        return (short)(ROR_scalar(a, CONST_SHIFT));
+    }
+
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void RORShort64VectorTestsScalarShiftConst(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.ROR, CONST_SHIFT).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, Short64VectorTests::ROR_binary_const);
+    }
+
+    @Test(dataProvider = "shortUnaryOpMaskProvider")
+    static void RORShort64VectorTestsScalarShiftMaskedConst(IntFunction<short[]> fa,
+                                          IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.ROR, CONST_SHIFT, vmask).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, mask, Short64VectorTests::ROR_binary_const);
+    }
+
+    static short ROL_binary_const(short a) {
+        return (short)(ROL_scalar(a, CONST_SHIFT));
+    }
+
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void ROLShort64VectorTestsScalarShiftConst(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.ROL, CONST_SHIFT).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, Short64VectorTests::ROL_binary_const);
+    }
+
+    @Test(dataProvider = "shortUnaryOpMaskProvider")
+    static void ROLShort64VectorTestsScalarShiftMaskedConst(IntFunction<short[]> fa,
+                                          IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.ROL, CONST_SHIFT, vmask).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, mask, Short64VectorTests::ROL_binary_const);
+    }
+
+
+    static ShortVector bv_MIN = ShortVector.broadcast(SPECIES, (short)10);
+
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void MINShort64VectorTestsWithMemOp(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.MIN, bv_MIN).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (short)10, Short64VectorTests::MIN);
+    }
+
+    static ShortVector bv_min = ShortVector.broadcast(SPECIES, (short)10);
+
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void minShort64VectorTestsWithMemOp(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.min(bv_min).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (short)10, Short64VectorTests::min);
+    }
+
+    static ShortVector bv_MIN_M = ShortVector.broadcast(SPECIES, (short)10);
+
+    @Test(dataProvider = "shortUnaryOpMaskProvider")
+    static void MINShort64VectorTestsMaskedWithMemOp(IntFunction<short[]> fa, IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.MIN, bv_MIN_M, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (short)10, mask, Short64VectorTests::MIN);
+    }
+
+    static ShortVector bv_MAX = ShortVector.broadcast(SPECIES, (short)10);
+
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void MAXShort64VectorTestsWithMemOp(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.MAX, bv_MAX).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (short)10, Short64VectorTests::MAX);
+    }
+
+    static ShortVector bv_max = ShortVector.broadcast(SPECIES, (short)10);
+
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void maxShort64VectorTestsWithMemOp(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.max(bv_max).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (short)10, Short64VectorTests::max);
+    }
+
+    static ShortVector bv_MAX_M = ShortVector.broadcast(SPECIES, (short)10);
+
+    @Test(dataProvider = "shortUnaryOpMaskProvider")
+    static void MAXShort64VectorTestsMaskedWithMemOp(IntFunction<short[]> fa, IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.MAX, bv_MAX_M, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (short)10, mask, Short64VectorTests::MAX);
     }
 
     static short MIN(short a, short b) {
@@ -2646,6 +3050,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, Short64VectorTests::MIN);
     }
+
     static short min(short a, short b) {
         return (short)(Math.min(a, b));
     }
@@ -2664,6 +3069,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, Short64VectorTests::min);
     }
+
     static short MAX(short a, short b) {
         return (short)(Math.max(a, b));
     }
@@ -2684,6 +3090,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, Short64VectorTests::MAX);
     }
+
     static short max(short a, short b) {
         return (short)(Math.max(a, b));
     }
@@ -2701,6 +3108,252 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
 
         assertArraysEquals(r, a, b, Short64VectorTests::max);
+    }
+
+    static short UMIN(short a, short b) {
+        return (short)(VectorMath.minUnsigned(a, b));
+    }
+
+    @Test(dataProvider = "shortBinaryOpProvider")
+    static void UMINShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] b = fb.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.UMIN, bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, Short64VectorTests::UMIN);
+    }
+
+    @Test(dataProvider = "shortBinaryOpMaskProvider")
+    static void UMINShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
+                                          IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] b = fb.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.UMIN, bv, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, mask, Short64VectorTests::UMIN);
+    }
+
+    static short UMAX(short a, short b) {
+        return (short)(VectorMath.maxUnsigned(a, b));
+    }
+
+    @Test(dataProvider = "shortBinaryOpProvider")
+    static void UMAXShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] b = fb.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.UMAX, bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, Short64VectorTests::UMAX);
+    }
+
+    @Test(dataProvider = "shortBinaryOpMaskProvider")
+    static void UMAXShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
+                                          IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] b = fb.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.UMAX, bv, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, mask, Short64VectorTests::UMAX);
+    }
+
+    static short SADD(short a, short b) {
+        return (short)(VectorMath.addSaturating(a, b));
+    }
+
+    @Test(dataProvider = "shortSaturatingBinaryOpProvider")
+    static void SADDShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] b = fb.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.SADD, bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, Short64VectorTests::SADD);
+    }
+
+    @Test(dataProvider = "shortSaturatingBinaryOpMaskProvider")
+    static void SADDShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
+                                          IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] b = fb.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.SADD, bv, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, mask, Short64VectorTests::SADD);
+    }
+
+    static short SSUB(short a, short b) {
+        return (short)(VectorMath.subSaturating(a, b));
+    }
+
+    @Test(dataProvider = "shortSaturatingBinaryOpProvider")
+    static void SSUBShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] b = fb.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.SSUB, bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, Short64VectorTests::SSUB);
+    }
+
+    @Test(dataProvider = "shortSaturatingBinaryOpMaskProvider")
+    static void SSUBShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
+                                          IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] b = fb.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.SSUB, bv, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, mask, Short64VectorTests::SSUB);
+    }
+
+    static short SUADD(short a, short b) {
+        return (short)(VectorMath.addSaturatingUnsigned(a, b));
+    }
+
+    @Test(dataProvider = "shortSaturatingBinaryOpProvider")
+    static void SUADDShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] b = fb.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.SUADD, bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, Short64VectorTests::SUADD);
+    }
+
+    @Test(dataProvider = "shortSaturatingBinaryOpMaskProvider")
+    static void SUADDShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
+                                          IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] b = fb.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.SUADD, bv, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, mask, Short64VectorTests::SUADD);
+    }
+
+    static short SUSUB(short a, short b) {
+        return (short)(VectorMath.subSaturatingUnsigned(a, b));
+    }
+
+    @Test(dataProvider = "shortSaturatingBinaryOpProvider")
+    static void SUSUBShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] b = fb.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.SUSUB, bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, Short64VectorTests::SUSUB);
+    }
+
+    @Test(dataProvider = "shortSaturatingBinaryOpMaskProvider")
+    static void SUSUBShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
+                                          IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] b = fb.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.SUSUB, bv, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, mask, Short64VectorTests::SUSUB);
     }
 
     @Test(dataProvider = "shortBinaryOpProvider")
@@ -2777,7 +3430,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         return res;
     }
 
-
     @Test(dataProvider = "shortUnaryOpProvider")
     static void ANDReduceShort64VectorTests(IntFunction<short[]> fa) {
         short[] a = fa.apply(SPECIES.length());
@@ -2803,7 +3455,6 @@ public class Short64VectorTests extends AbstractVectorTest {
                 Short64VectorTests::ANDReduce, Short64VectorTests::ANDReduceAll);
     }
 
-
     static short ANDReduceMasked(short[] a, int idx, boolean[] mask) {
         short res = -1;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
@@ -2822,7 +3473,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         return res;
     }
-
 
     @Test(dataProvider = "shortUnaryOpMaskProvider")
     static void ANDReduceShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<boolean[]> fm) {
@@ -2851,7 +3501,6 @@ public class Short64VectorTests extends AbstractVectorTest {
                 Short64VectorTests::ANDReduceMasked, Short64VectorTests::ANDReduceAllMasked);
     }
 
-
     static short ORReduce(short[] a, int idx) {
         short res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
@@ -2869,7 +3518,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         return res;
     }
-
 
     @Test(dataProvider = "shortUnaryOpProvider")
     static void ORReduceShort64VectorTests(IntFunction<short[]> fa) {
@@ -2896,7 +3544,6 @@ public class Short64VectorTests extends AbstractVectorTest {
                 Short64VectorTests::ORReduce, Short64VectorTests::ORReduceAll);
     }
 
-
     static short ORReduceMasked(short[] a, int idx, boolean[] mask) {
         short res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
@@ -2915,7 +3562,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         return res;
     }
-
 
     @Test(dataProvider = "shortUnaryOpMaskProvider")
     static void ORReduceShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<boolean[]> fm) {
@@ -2944,7 +3590,6 @@ public class Short64VectorTests extends AbstractVectorTest {
                 Short64VectorTests::ORReduceMasked, Short64VectorTests::ORReduceAllMasked);
     }
 
-
     static short XORReduce(short[] a, int idx) {
         short res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
@@ -2962,7 +3607,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         return res;
     }
-
 
     @Test(dataProvider = "shortUnaryOpProvider")
     static void XORReduceShort64VectorTests(IntFunction<short[]> fa) {
@@ -2989,7 +3633,6 @@ public class Short64VectorTests extends AbstractVectorTest {
                 Short64VectorTests::XORReduce, Short64VectorTests::XORReduceAll);
     }
 
-
     static short XORReduceMasked(short[] a, int idx, boolean[] mask) {
         short res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
@@ -3008,7 +3651,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         return res;
     }
-
 
     @Test(dataProvider = "shortUnaryOpMaskProvider")
     static void XORReduceShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<boolean[]> fm) {
@@ -3054,6 +3696,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         return res;
     }
+
     @Test(dataProvider = "shortUnaryOpProvider")
     static void ADDReduceShort64VectorTests(IntFunction<short[]> fa) {
         short[] a = fa.apply(SPECIES.length());
@@ -3078,6 +3721,7 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertReductionArraysEquals(r, ra, a,
                 Short64VectorTests::ADDReduce, Short64VectorTests::ADDReduceAll);
     }
+
     static short ADDReduceMasked(short[] a, int idx, boolean[] mask) {
         short res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
@@ -3096,6 +3740,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         return res;
     }
+
     @Test(dataProvider = "shortUnaryOpMaskProvider")
     static void ADDReduceShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<boolean[]> fm) {
         short[] a = fa.apply(SPECIES.length());
@@ -3122,6 +3767,7 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertReductionArraysEqualsMasked(r, ra, a, mask,
                 Short64VectorTests::ADDReduceMasked, Short64VectorTests::ADDReduceAllMasked);
     }
+
     static short MULReduce(short[] a, int idx) {
         short res = 1;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
@@ -3139,6 +3785,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         return res;
     }
+
     @Test(dataProvider = "shortUnaryOpProvider")
     static void MULReduceShort64VectorTests(IntFunction<short[]> fa) {
         short[] a = fa.apply(SPECIES.length());
@@ -3163,6 +3810,7 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertReductionArraysEquals(r, ra, a,
                 Short64VectorTests::MULReduce, Short64VectorTests::MULReduceAll);
     }
+
     static short MULReduceMasked(short[] a, int idx, boolean[] mask) {
         short res = 1;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
@@ -3181,6 +3829,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         return res;
     }
+
     @Test(dataProvider = "shortUnaryOpMaskProvider")
     static void MULReduceShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<boolean[]> fm) {
         short[] a = fa.apply(SPECIES.length());
@@ -3207,6 +3856,7 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertReductionArraysEqualsMasked(r, ra, a, mask,
                 Short64VectorTests::MULReduceMasked, Short64VectorTests::MULReduceAllMasked);
     }
+
     static short MINReduce(short[] a, int idx) {
         short res = Short.MAX_VALUE;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
@@ -3224,6 +3874,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         return res;
     }
+
     @Test(dataProvider = "shortUnaryOpProvider")
     static void MINReduceShort64VectorTests(IntFunction<short[]> fa) {
         short[] a = fa.apply(SPECIES.length());
@@ -3248,6 +3899,7 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertReductionArraysEquals(r, ra, a,
                 Short64VectorTests::MINReduce, Short64VectorTests::MINReduceAll);
     }
+
     static short MINReduceMasked(short[] a, int idx, boolean[] mask) {
         short res = Short.MAX_VALUE;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
@@ -3266,6 +3918,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         return res;
     }
+
     @Test(dataProvider = "shortUnaryOpMaskProvider")
     static void MINReduceShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<boolean[]> fm) {
         short[] a = fa.apply(SPECIES.length());
@@ -3292,6 +3945,7 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertReductionArraysEqualsMasked(r, ra, a, mask,
                 Short64VectorTests::MINReduceMasked, Short64VectorTests::MINReduceAllMasked);
     }
+
     static short MAXReduce(short[] a, int idx) {
         short res = Short.MIN_VALUE;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
@@ -3309,6 +3963,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         return res;
     }
+
     @Test(dataProvider = "shortUnaryOpProvider")
     static void MAXReduceShort64VectorTests(IntFunction<short[]> fa) {
         short[] a = fa.apply(SPECIES.length());
@@ -3333,6 +3988,7 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertReductionArraysEquals(r, ra, a,
                 Short64VectorTests::MAXReduce, Short64VectorTests::MAXReduceAll);
     }
+
     static short MAXReduceMasked(short[] a, int idx, boolean[] mask) {
         short res = Short.MIN_VALUE;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
@@ -3351,6 +4007,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         return res;
     }
+
     @Test(dataProvider = "shortUnaryOpMaskProvider")
     static void MAXReduceShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<boolean[]> fm) {
         short[] a = fa.apply(SPECIES.length());
@@ -3377,6 +4034,185 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertReductionArraysEqualsMasked(r, ra, a, mask,
                 Short64VectorTests::MAXReduceMasked, Short64VectorTests::MAXReduceAllMasked);
     }
+
+    static short UMINReduce(short[] a, int idx) {
+        short res = Short.MAX_VALUE;
+        for (int i = idx; i < (idx + SPECIES.length()); i++) {
+            res = (short) VectorMath.minUnsigned(res, a[i]);
+        }
+
+        return res;
+    }
+
+    static short UMINReduceAll(short[] a) {
+        short res = Short.MAX_VALUE;
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            res = (short) VectorMath.minUnsigned(res, UMINReduce(a, i));
+        }
+
+        return res;
+    }
+
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void UMINReduceShort64VectorTests(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        short ra = Short.MAX_VALUE;
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                r[i] = av.reduceLanes(VectorOperators.UMIN);
+            }
+        }
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = Short.MAX_VALUE;
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                ra = (short) VectorMath.minUnsigned(ra, av.reduceLanes(VectorOperators.UMIN));
+            }
+        }
+
+        assertReductionArraysEquals(r, ra, a,
+                Short64VectorTests::UMINReduce, Short64VectorTests::UMINReduceAll);
+    }
+
+    static short UMINReduceMasked(short[] a, int idx, boolean[] mask) {
+        short res = Short.MAX_VALUE;
+        for (int i = idx; i < (idx + SPECIES.length()); i++) {
+            if (mask[i % SPECIES.length()])
+                res = (short) VectorMath.minUnsigned(res, a[i]);
+        }
+
+        return res;
+    }
+
+    static short UMINReduceAllMasked(short[] a, boolean[] mask) {
+        short res = Short.MAX_VALUE;
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            res = (short) VectorMath.minUnsigned(res, UMINReduceMasked(a, i, mask));
+        }
+
+        return res;
+    }
+
+    @Test(dataProvider = "shortUnaryOpMaskProvider")
+    static void UMINReduceShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+        short ra = Short.MAX_VALUE;
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                r[i] = av.reduceLanes(VectorOperators.UMIN, vmask);
+            }
+        }
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = Short.MAX_VALUE;
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                ra = (short) VectorMath.minUnsigned(ra, av.reduceLanes(VectorOperators.UMIN, vmask));
+            }
+        }
+
+        assertReductionArraysEqualsMasked(r, ra, a, mask,
+                Short64VectorTests::UMINReduceMasked, Short64VectorTests::UMINReduceAllMasked);
+    }
+
+    static short UMAXReduce(short[] a, int idx) {
+        short res = Short.MIN_VALUE;
+        for (int i = idx; i < (idx + SPECIES.length()); i++) {
+            res = (short) VectorMath.maxUnsigned(res, a[i]);
+        }
+
+        return res;
+    }
+
+    static short UMAXReduceAll(short[] a) {
+        short res = Short.MIN_VALUE;
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            res = (short) VectorMath.maxUnsigned(res, UMAXReduce(a, i));
+        }
+
+        return res;
+    }
+
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void UMAXReduceShort64VectorTests(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        short ra = Short.MIN_VALUE;
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                r[i] = av.reduceLanes(VectorOperators.UMAX);
+            }
+        }
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = Short.MIN_VALUE;
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                ra = (short) VectorMath.maxUnsigned(ra, av.reduceLanes(VectorOperators.UMAX));
+            }
+        }
+
+        assertReductionArraysEquals(r, ra, a,
+                Short64VectorTests::UMAXReduce, Short64VectorTests::UMAXReduceAll);
+    }
+
+    static short UMAXReduceMasked(short[] a, int idx, boolean[] mask) {
+        short res = Short.MIN_VALUE;
+        for (int i = idx; i < (idx + SPECIES.length()); i++) {
+            if (mask[i % SPECIES.length()])
+                res = (short) VectorMath.maxUnsigned(res, a[i]);
+        }
+
+        return res;
+    }
+
+    static short UMAXReduceAllMasked(short[] a, boolean[] mask) {
+        short res = Short.MIN_VALUE;
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            res = (short) VectorMath.maxUnsigned(res, UMAXReduceMasked(a, i, mask));
+        }
+
+        return res;
+    }
+
+    @Test(dataProvider = "shortUnaryOpMaskProvider")
+    static void UMAXReduceShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+        short ra = Short.MIN_VALUE;
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                r[i] = av.reduceLanes(VectorOperators.UMAX, vmask);
+            }
+        }
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = Short.MIN_VALUE;
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                ra = (short) VectorMath.maxUnsigned(ra, av.reduceLanes(VectorOperators.UMAX, vmask));
+            }
+        }
+
+        assertReductionArraysEqualsMasked(r, ra, a, mask,
+                Short64VectorTests::UMAXReduceMasked, Short64VectorTests::UMAXReduceAllMasked);
+    }
+
     static short FIRST_NONZEROReduce(short[] a, int idx) {
         short res = (short) 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
@@ -3394,6 +4230,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         return res;
     }
+
     @Test(dataProvider = "shortUnaryOpProvider")
     static void FIRST_NONZEROReduceShort64VectorTests(IntFunction<short[]> fa) {
         short[] a = fa.apply(SPECIES.length());
@@ -3418,6 +4255,7 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertReductionArraysEquals(r, ra, a,
                 Short64VectorTests::FIRST_NONZEROReduce, Short64VectorTests::FIRST_NONZEROReduceAll);
     }
+
     static short FIRST_NONZEROReduceMasked(short[] a, int idx, boolean[] mask) {
         short res = (short) 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
@@ -3436,6 +4274,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         return res;
     }
+
     @Test(dataProvider = "shortUnaryOpMaskProvider")
     static void FIRST_NONZEROReduceShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<boolean[]> fm) {
         short[] a = fa.apply(SPECIES.length());
@@ -3472,7 +4311,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         return res;
     }
 
-
     @Test(dataProvider = "boolUnaryOpProvider")
     static void anyTrueShort64VectorTests(IntFunction<boolean[]> fm) {
         boolean[] mask = fm.apply(SPECIES.length());
@@ -3488,7 +4326,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertReductionBoolArraysEquals(r, mask, Short64VectorTests::anyTrue);
     }
 
-
     static boolean allTrue(boolean[] a, int idx) {
         boolean res = true;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
@@ -3497,7 +4334,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         return res;
     }
-
 
     @Test(dataProvider = "boolUnaryOpProvider")
     static void allTrueShort64VectorTests(IntFunction<boolean[]> fm) {
@@ -3514,24 +4350,25 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertReductionBoolArraysEquals(r, mask, Short64VectorTests::allTrue);
     }
 
-
-    @Test(dataProvider = "shortUnaryOpProvider")
-    static void withShort64VectorTests(IntFunction<short []> fa) {
+    @Test(dataProvider = "shortBinaryOpProvider")
+    static void withShort64VectorTests(IntFunction<short []> fa, IntFunction<short []> fb) {
         short[] a = fa.apply(SPECIES.length());
+        short[] b = fb.apply(SPECIES.length());
         short[] r = fr.apply(SPECIES.length());
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0, j = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
-                av.withLane((j++ & (SPECIES.length()-1)), (short)(65535+i)).intoArray(r, i);
+                av.withLane(j, b[i + j]).intoArray(r, i);
+                a[i + j] = b[i + j];
+                j = (j + 1) & (SPECIES.length() - 1);
             }
         }
 
 
-        for (int i = 0, j = 0; i < a.length; i += SPECIES.length()) {
-            assertInsertArraysEquals(r, a, (short)(65535+i), (j++ & (SPECIES.length()-1)), i , i + SPECIES.length());
-        }
+        assertArraysStrictlyEquals(r, a);
     }
+
     static boolean testIS_DEFAULT(short a) {
         return bits(a)==0;
     }
@@ -3554,22 +4391,25 @@ public class Short64VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "shortTestOpMaskProvider")
-    static void IS_DEFAULTMaskedShort64VectorTestsSmokeTest(IntFunction<short[]> fa,
+    static void IS_DEFAULTMaskedShort64VectorTests(IntFunction<short[]> fa,
                                           IntFunction<boolean[]> fm) {
         short[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
 
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            ShortVector av = ShortVector.fromArray(SPECIES, a, i);
-            VectorMask<Short> mv = av.test(VectorOperators.IS_DEFAULT, vmask);
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                VectorMask<Short> mv = av.test(VectorOperators.IS_DEFAULT, vmask);
 
-            // Check results as part of computation.
-            for (int j = 0; j < SPECIES.length(); j++) {
-                Assert.assertEquals(mv.laneIsSet(j),  vmask.laneIsSet(j) && testIS_DEFAULT(a[i + j]));
+                // Check results as part of computation.
+                for (int j = 0; j < SPECIES.length(); j++) {
+                    Assert.assertEquals(mv.laneIsSet(j),  vmask.laneIsSet(j) && testIS_DEFAULT(a[i + j]));
+                }
             }
         }
     }
+
     static boolean testIS_NEGATIVE(short a) {
         return bits(a)<0;
     }
@@ -3592,25 +4432,24 @@ public class Short64VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "shortTestOpMaskProvider")
-    static void IS_NEGATIVEMaskedShort64VectorTestsSmokeTest(IntFunction<short[]> fa,
+    static void IS_NEGATIVEMaskedShort64VectorTests(IntFunction<short[]> fa,
                                           IntFunction<boolean[]> fm) {
         short[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
 
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            ShortVector av = ShortVector.fromArray(SPECIES, a, i);
-            VectorMask<Short> mv = av.test(VectorOperators.IS_NEGATIVE, vmask);
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                VectorMask<Short> mv = av.test(VectorOperators.IS_NEGATIVE, vmask);
 
-            // Check results as part of computation.
-            for (int j = 0; j < SPECIES.length(); j++) {
-                Assert.assertEquals(mv.laneIsSet(j),  vmask.laneIsSet(j) && testIS_NEGATIVE(a[i + j]));
+                // Check results as part of computation.
+                for (int j = 0; j < SPECIES.length(); j++) {
+                    Assert.assertEquals(mv.laneIsSet(j),  vmask.laneIsSet(j) && testIS_NEGATIVE(a[i + j]));
+                }
             }
         }
     }
-
-
-
 
     @Test(dataProvider = "shortCompareOpProvider")
     static void LTShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
@@ -3630,7 +4469,6 @@ public class Short64VectorTests extends AbstractVectorTest {
             }
         }
     }
-
 
     @Test(dataProvider = "shortCompareOpProvider")
     static void ltShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
@@ -3674,7 +4512,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 
-
     @Test(dataProvider = "shortCompareOpProvider")
     static void GTShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
         short[] a = fa.apply(SPECIES.length());
@@ -3717,7 +4554,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 
-
     @Test(dataProvider = "shortCompareOpProvider")
     static void EQShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
         short[] a = fa.apply(SPECIES.length());
@@ -3736,7 +4572,6 @@ public class Short64VectorTests extends AbstractVectorTest {
             }
         }
     }
-
 
     @Test(dataProvider = "shortCompareOpProvider")
     static void eqShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
@@ -3780,7 +4615,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 
-
     @Test(dataProvider = "shortCompareOpProvider")
     static void NEShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
         short[] a = fa.apply(SPECIES.length());
@@ -3822,7 +4656,6 @@ public class Short64VectorTests extends AbstractVectorTest {
             }
         }
     }
-
 
     @Test(dataProvider = "shortCompareOpProvider")
     static void LEShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
@@ -3866,7 +4699,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 
-
     @Test(dataProvider = "shortCompareOpProvider")
     static void GEShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
         short[] a = fa.apply(SPECIES.length());
@@ -3909,10 +4741,8 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 
-
-
     @Test(dataProvider = "shortCompareOpProvider")
-    static void UNSIGNED_LTShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
+    static void ULTShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
 
@@ -3920,7 +4750,7 @@ public class Short64VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
                 ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
-                VectorMask<Short> mv = av.compare(VectorOperators.UNSIGNED_LT, bv);
+                VectorMask<Short> mv = av.compare(VectorOperators.ULT, bv);
 
                 // Check results as part of computation.
                 for (int j = 0; j < SPECIES.length(); j++) {
@@ -3930,10 +4760,8 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 
-
-
     @Test(dataProvider = "shortCompareOpMaskProvider")
-    static void UNSIGNED_LTShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
+    static void ULTShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                                 IntFunction<boolean[]> fm) {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
@@ -3945,7 +4773,7 @@ public class Short64VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
                 ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
-                VectorMask<Short> mv = av.compare(VectorOperators.UNSIGNED_LT, bv, vmask);
+                VectorMask<Short> mv = av.compare(VectorOperators.ULT, bv, vmask);
 
                 // Check results as part of computation.
                 for (int j = 0; j < SPECIES.length(); j++) {
@@ -3955,11 +4783,8 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 
-
-
-
     @Test(dataProvider = "shortCompareOpProvider")
-    static void UNSIGNED_GTShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
+    static void UGTShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
 
@@ -3967,7 +4792,7 @@ public class Short64VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
                 ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
-                VectorMask<Short> mv = av.compare(VectorOperators.UNSIGNED_GT, bv);
+                VectorMask<Short> mv = av.compare(VectorOperators.UGT, bv);
 
                 // Check results as part of computation.
                 for (int j = 0; j < SPECIES.length(); j++) {
@@ -3977,10 +4802,8 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 
-
-
     @Test(dataProvider = "shortCompareOpMaskProvider")
-    static void UNSIGNED_GTShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
+    static void UGTShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                                 IntFunction<boolean[]> fm) {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
@@ -3992,7 +4815,7 @@ public class Short64VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
                 ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
-                VectorMask<Short> mv = av.compare(VectorOperators.UNSIGNED_GT, bv, vmask);
+                VectorMask<Short> mv = av.compare(VectorOperators.UGT, bv, vmask);
 
                 // Check results as part of computation.
                 for (int j = 0; j < SPECIES.length(); j++) {
@@ -4002,11 +4825,8 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 
-
-
-
     @Test(dataProvider = "shortCompareOpProvider")
-    static void UNSIGNED_LEShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
+    static void ULEShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
 
@@ -4014,7 +4834,7 @@ public class Short64VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
                 ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
-                VectorMask<Short> mv = av.compare(VectorOperators.UNSIGNED_LE, bv);
+                VectorMask<Short> mv = av.compare(VectorOperators.ULE, bv);
 
                 // Check results as part of computation.
                 for (int j = 0; j < SPECIES.length(); j++) {
@@ -4024,10 +4844,8 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 
-
-
     @Test(dataProvider = "shortCompareOpMaskProvider")
-    static void UNSIGNED_LEShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
+    static void ULEShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                                 IntFunction<boolean[]> fm) {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
@@ -4039,7 +4857,7 @@ public class Short64VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
                 ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
-                VectorMask<Short> mv = av.compare(VectorOperators.UNSIGNED_LE, bv, vmask);
+                VectorMask<Short> mv = av.compare(VectorOperators.ULE, bv, vmask);
 
                 // Check results as part of computation.
                 for (int j = 0; j < SPECIES.length(); j++) {
@@ -4049,11 +4867,8 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 
-
-
-
     @Test(dataProvider = "shortCompareOpProvider")
-    static void UNSIGNED_GEShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
+    static void UGEShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
 
@@ -4061,7 +4876,7 @@ public class Short64VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
                 ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
-                VectorMask<Short> mv = av.compare(VectorOperators.UNSIGNED_GE, bv);
+                VectorMask<Short> mv = av.compare(VectorOperators.UGE, bv);
 
                 // Check results as part of computation.
                 for (int j = 0; j < SPECIES.length(); j++) {
@@ -4071,10 +4886,8 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 
-
-
     @Test(dataProvider = "shortCompareOpMaskProvider")
-    static void UNSIGNED_GEShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
+    static void UGEShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                                 IntFunction<boolean[]> fm) {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
@@ -4086,7 +4899,7 @@ public class Short64VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
                 ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
-                VectorMask<Short> mv = av.compare(VectorOperators.UNSIGNED_GE, bv, vmask);
+                VectorMask<Short> mv = av.compare(VectorOperators.UGE, bv, vmask);
 
                 // Check results as part of computation.
                 for (int j = 0; j < SPECIES.length(); j++) {
@@ -4095,8 +4908,6 @@ public class Short64VectorTests extends AbstractVectorTest {
             }
         }
     }
-
-
 
     @Test(dataProvider = "shortCompareOpProvider")
     static void LTShort64VectorTestsBroadcastSmokeTest(IntFunction<short[]> fa, IntFunction<short[]> fb) {
@@ -4113,7 +4924,6 @@ public class Short64VectorTests extends AbstractVectorTest {
             }
         }
     }
-
 
     @Test(dataProvider = "shortCompareOpMaskProvider")
     static void LTShort64VectorTestsBroadcastMaskedSmokeTest(IntFunction<short[]> fa,
@@ -4151,7 +4961,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 
-
     @Test(dataProvider = "shortCompareOpMaskProvider")
     static void LTShort64VectorTestsBroadcastLongMaskedSmokeTest(IntFunction<short[]> fa,
                                 IntFunction<short[]> fb, IntFunction<boolean[]> fm) {
@@ -4188,7 +4997,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 
-
     @Test(dataProvider = "shortCompareOpMaskProvider")
     static void EQShort64VectorTestsBroadcastMaskedSmokeTest(IntFunction<short[]> fa,
                                 IntFunction<short[]> fb, IntFunction<boolean[]> fm) {
@@ -4224,7 +5032,6 @@ public class Short64VectorTests extends AbstractVectorTest {
             }
         }
     }
-
 
     @Test(dataProvider = "shortCompareOpMaskProvider")
     static void EQShort64VectorTestsBroadcastLongMaskedSmokeTest(IntFunction<short[]> fa,
@@ -4304,6 +5111,43 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertRearrangeArraysEquals(r, a, order, mask, SPECIES.length());
     }
+
+    @Test(dataProvider = "shortUnaryOpMaskProvider")
+    static void compressShort64VectorTests(IntFunction<short[]> fa,
+                                                IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.compress(vmask).intoArray(r, i);
+            }
+        }
+
+        assertcompressArraysEquals(r, a, mask, SPECIES.length());
+    }
+
+    @Test(dataProvider = "shortUnaryOpMaskProvider")
+    static void expandShort64VectorTests(IntFunction<short[]> fa,
+                                                IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.expand(vmask).intoArray(r, i);
+            }
+        }
+
+        assertexpandArraysEquals(r, a, mask, SPECIES.length());
+    }
+
     @Test(dataProvider = "shortUnaryOpProvider")
     static void getShort64VectorTests(IntFunction<short[]> fa) {
         short[] a = fa.apply(SPECIES.length());
@@ -4457,7 +5301,7 @@ public class Short64VectorTests extends AbstractVectorTest {
             }
         }
 
-        assertArraysEquals(r, a, Short64VectorTests::get);
+        assertArraysStrictlyEquals(r, a);
     }
 
     @Test(dataProvider = "shortUnaryOpProvider")
@@ -4474,10 +5318,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertBroadcastArraysEquals(r, a);
     }
 
-
-
-
-
     @Test(dataProvider = "shortUnaryOpProvider")
     static void ZeroShort64VectorTests(IntFunction<short[]> fa) {
         short[] a = fa.apply(SPECIES.length());
@@ -4491,9 +5331,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         Assert.assertEquals(a, r);
     }
-
-
-
 
     static short[] sliceUnary(short[] a, int origin, int idx) {
         short[] res = new short[SPECIES.length()];
@@ -4510,7 +5347,7 @@ public class Short64VectorTests extends AbstractVectorTest {
     static void sliceUnaryShort64VectorTests(IntFunction<short[]> fa) {
         short[] a = fa.apply(SPECIES.length());
         short[] r = new short[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
+        int origin = RAND.nextInt(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
@@ -4520,6 +5357,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, origin, Short64VectorTests::sliceUnary);
     }
+
     static short[] sliceBinary(short[] a, short[] b, int origin, int idx) {
         short[] res = new short[SPECIES.length()];
         for (int i = 0, j = 0; i < SPECIES.length(); i++){
@@ -4538,7 +5376,7 @@ public class Short64VectorTests extends AbstractVectorTest {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
         short[] r = new short[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
+        int origin = RAND.nextInt(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
@@ -4549,6 +5387,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, origin, Short64VectorTests::sliceBinary);
     }
+
     static short[] slice(short[] a, short[] b, int origin, boolean[] mask, int idx) {
         short[] res = new short[SPECIES.length()];
         for (int i = 0, j = 0; i < SPECIES.length(); i++){
@@ -4571,7 +5410,7 @@ public class Short64VectorTests extends AbstractVectorTest {
         VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
 
         short[] r = new short[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
+        int origin = RAND.nextInt(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
@@ -4582,6 +5421,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, origin, mask, Short64VectorTests::slice);
     }
+
     static short[] unsliceUnary(short[] a, int origin, int idx) {
         short[] res = new short[SPECIES.length()];
         for (int i = 0, j = 0; i < SPECIES.length(); i++){
@@ -4599,7 +5439,7 @@ public class Short64VectorTests extends AbstractVectorTest {
     static void unsliceUnaryShort64VectorTests(IntFunction<short[]> fa) {
         short[] a = fa.apply(SPECIES.length());
         short[] r = new short[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
+        int origin = RAND.nextInt(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
@@ -4609,6 +5449,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, origin, Short64VectorTests::unsliceUnary);
     }
+
     static short[] unsliceBinary(short[] a, short[] b, int origin, int part, int idx) {
         short[] res = new short[SPECIES.length()];
         for (int i = 0, j = 0; i < SPECIES.length(); i++){
@@ -4636,8 +5477,8 @@ public class Short64VectorTests extends AbstractVectorTest {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
         short[] r = new short[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
-        int part = (new java.util.Random()).nextInt(2);
+        int origin = RAND.nextInt(SPECIES.length());
+        int part = RAND.nextInt(2);
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
@@ -4648,6 +5489,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, origin, part, Short64VectorTests::unsliceBinary);
     }
+
     static short[] unslice(short[] a, short[] b, int origin, int part, boolean[] mask, int idx) {
         short[] res = new short[SPECIES.length()];
         for (int i = 0, j = 0; i < SPECIES.length(); i++){
@@ -4692,8 +5534,8 @@ public class Short64VectorTests extends AbstractVectorTest {
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
         short[] r = new short[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
-        int part = (new java.util.Random()).nextInt(2);
+        int origin = RAND.nextInt(SPECIES.length());
+        int part = RAND.nextInt(2);
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
@@ -4705,35 +5547,13 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, b, origin, part, mask, Short64VectorTests::unslice);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     static short BITWISE_BLEND(short a, short b, short c) {
         return (short)((a&~(c))|(b&c));
     }
+
     static short bitwiseBlend(short a, short b, short c) {
         return (short)((a&~(c))|(b&c));
     }
-
 
     @Test(dataProvider = "shortTernaryOpProvider")
     static void BITWISE_BLENDShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb, IntFunction<short[]> fc) {
@@ -4753,6 +5573,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, c, Short64VectorTests::BITWISE_BLEND);
     }
+
     @Test(dataProvider = "shortTernaryOpProvider")
     static void bitwiseBlendShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb, IntFunction<short[]> fc) {
         short[] a = fa.apply(SPECIES.length());
@@ -4769,7 +5590,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, c, Short64VectorTests::bitwiseBlend);
     }
-
 
     @Test(dataProvider = "shortTernaryOpMaskProvider")
     static void BITWISE_BLENDShort64VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
@@ -4792,9 +5612,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, b, c, mask, Short64VectorTests::BITWISE_BLEND);
     }
-
-
-
 
     @Test(dataProvider = "shortTernaryOpProvider")
     static void BITWISE_BLENDShort64VectorTestsBroadcastSmokeTest(IntFunction<short[]> fa, IntFunction<short[]> fb, IntFunction<short[]> fc) {
@@ -4825,6 +5642,7 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
         assertAltBroadcastArraysEquals(r, a, b, c, Short64VectorTests::BITWISE_BLEND);
     }
+
     @Test(dataProvider = "shortTernaryOpProvider")
     static void bitwiseBlendShort64VectorTestsBroadcastSmokeTest(IntFunction<short[]> fa, IntFunction<short[]> fb, IntFunction<short[]> fc) {
         short[] a = fa.apply(SPECIES.length());
@@ -4854,7 +5672,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
         assertAltBroadcastArraysEquals(r, a, b, c, Short64VectorTests::bitwiseBlend);
     }
-
 
     @Test(dataProvider = "shortTernaryOpMaskProvider")
     static void BITWISE_BLENDShort64VectorTestsBroadcastMaskedSmokeTest(IntFunction<short[]> fa, IntFunction<short[]> fb,
@@ -4894,9 +5711,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertAltBroadcastArraysEquals(r, a, b, c, mask, Short64VectorTests::BITWISE_BLEND);
     }
 
-
-
-
     @Test(dataProvider = "shortTernaryOpProvider")
     static void BITWISE_BLENDShort64VectorTestsDoubleBroadcastSmokeTest(IntFunction<short[]> fa, IntFunction<short[]> fb, IntFunction<short[]> fc) {
         short[] a = fa.apply(SPECIES.length());
@@ -4911,6 +5725,7 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertDoubleBroadcastArraysEquals(r, a, b, c, Short64VectorTests::BITWISE_BLEND);
     }
+
     @Test(dataProvider = "shortTernaryOpProvider")
     static void bitwiseBlendShort64VectorTestsDoubleBroadcastSmokeTest(IntFunction<short[]> fa, IntFunction<short[]> fb, IntFunction<short[]> fc) {
         short[] a = fa.apply(SPECIES.length());
@@ -4925,7 +5740,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertDoubleBroadcastArraysEquals(r, a, b, c, Short64VectorTests::bitwiseBlend);
     }
-
 
     @Test(dataProvider = "shortTernaryOpMaskProvider")
     static void BITWISE_BLENDShort64VectorTestsDoubleBroadcastMaskedSmokeTest(IntFunction<short[]> fa, IntFunction<short[]> fb,
@@ -4944,7 +5758,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertDoubleBroadcastArraysEquals(r, a, b, c, mask, Short64VectorTests::BITWISE_BLEND);
     }
-
 
     static short NEG(short a) {
         return (short)(-((short)a));
@@ -5058,7 +5871,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, mask, Short64VectorTests::ABS);
     }
 
-
     static short NOT(short a) {
         return (short)(~((short)a));
     }
@@ -5066,8 +5878,6 @@ public class Short64VectorTests extends AbstractVectorTest {
     static short not(short a) {
         return (short)(~((short)a));
     }
-
-
 
     @Test(dataProvider = "shortUnaryOpProvider")
     static void NOTShort64VectorTests(IntFunction<short[]> fa) {
@@ -5099,8 +5909,6 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, Short64VectorTests::not);
     }
 
-
-
     @Test(dataProvider = "shortUnaryOpMaskProvider")
     static void NOTMaskedShort64VectorTests(IntFunction<short[]> fa,
                                                 IntFunction<boolean[]> fm) {
@@ -5119,13 +5927,9 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, mask, Short64VectorTests::NOT);
     }
 
-
-
     static short ZOMO(short a) {
         return (short)((a==0?0:-1));
     }
-
-
 
     @Test(dataProvider = "shortUnaryOpProvider")
     static void ZOMOShort64VectorTests(IntFunction<short[]> fa) {
@@ -5141,8 +5945,6 @@ public class Short64VectorTests extends AbstractVectorTest {
 
         assertArraysEquals(r, a, Short64VectorTests::ZOMO);
     }
-
-
 
     @Test(dataProvider = "shortUnaryOpMaskProvider")
     static void ZOMOMaskedShort64VectorTests(IntFunction<short[]> fa,
@@ -5162,9 +5964,190 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, mask, Short64VectorTests::ZOMO);
     }
 
+    static short BIT_COUNT(short a) {
+        return (short)(Integer.bitCount((int)a & 0xFFFF));
+    }
 
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void BIT_COUNTShort64VectorTests(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
 
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.BIT_COUNT).intoArray(r, i);
+            }
+        }
 
+        assertArraysEquals(r, a, Short64VectorTests::BIT_COUNT);
+    }
+
+    @Test(dataProvider = "shortUnaryOpMaskProvider")
+    static void BIT_COUNTMaskedShort64VectorTests(IntFunction<short[]> fa,
+                                                IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.BIT_COUNT, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, mask, Short64VectorTests::BIT_COUNT);
+    }
+
+    static short TRAILING_ZEROS_COUNT(short a) {
+        return (short)(TRAILING_ZEROS_COUNT_scalar(a));
+    }
+
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void TRAILING_ZEROS_COUNTShort64VectorTests(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.TRAILING_ZEROS_COUNT).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, Short64VectorTests::TRAILING_ZEROS_COUNT);
+    }
+
+    @Test(dataProvider = "shortUnaryOpMaskProvider")
+    static void TRAILING_ZEROS_COUNTMaskedShort64VectorTests(IntFunction<short[]> fa,
+                                                IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.TRAILING_ZEROS_COUNT, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, mask, Short64VectorTests::TRAILING_ZEROS_COUNT);
+    }
+
+    static short LEADING_ZEROS_COUNT(short a) {
+        return (short)(LEADING_ZEROS_COUNT_scalar(a));
+    }
+
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void LEADING_ZEROS_COUNTShort64VectorTests(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.LEADING_ZEROS_COUNT).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, Short64VectorTests::LEADING_ZEROS_COUNT);
+    }
+
+    @Test(dataProvider = "shortUnaryOpMaskProvider")
+    static void LEADING_ZEROS_COUNTMaskedShort64VectorTests(IntFunction<short[]> fa,
+                                                IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.LEADING_ZEROS_COUNT, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, mask, Short64VectorTests::LEADING_ZEROS_COUNT);
+    }
+
+    static short REVERSE(short a) {
+        return (short)(REVERSE_scalar(a));
+    }
+
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void REVERSEShort64VectorTests(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.REVERSE).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, Short64VectorTests::REVERSE);
+    }
+
+    @Test(dataProvider = "shortUnaryOpMaskProvider")
+    static void REVERSEMaskedShort64VectorTests(IntFunction<short[]> fa,
+                                                IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.REVERSE, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, mask, Short64VectorTests::REVERSE);
+    }
+
+    static short REVERSE_BYTES(short a) {
+        return (short)(Short.reverseBytes(a));
+    }
+
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void REVERSE_BYTESShort64VectorTests(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.REVERSE_BYTES).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, Short64VectorTests::REVERSE_BYTES);
+    }
+
+    @Test(dataProvider = "shortUnaryOpMaskProvider")
+    static void REVERSE_BYTESMaskedShort64VectorTests(IntFunction<short[]> fa,
+                                                IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.REVERSE_BYTES, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, mask, Short64VectorTests::REVERSE_BYTES);
+    }
 
     @Test(dataProvider = "shortCompareOpProvider")
     static void ltShort64VectorTestsBroadcastSmokeTest(IntFunction<short[]> fa, IntFunction<short[]> fb) {
@@ -5384,6 +6367,24 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertSelectFromArraysEquals(r, a, order, SPECIES.length());
     }
 
+    @Test(dataProvider = "shortSelectFromTwoVectorOpProvider")
+    static void SelectFromTwoVectorShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb, IntFunction<short[]> fc) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] b = fb.apply(SPECIES.length());
+        short[] idx = fc.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < idx.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
+                ShortVector idxv = ShortVector.fromArray(SPECIES, idx, i);
+                idxv.selectFrom(av, bv).intoArray(r, i);
+            }
+        }
+        assertSelectFromTwoVectorEquals(r, idx, a, b, SPECIES.length());
+    }
+
     @Test(dataProvider = "shortUnaryOpSelectFromMaskProvider")
     static void SelectFromShort64VectorTestsMaskedSmokeTest(IntFunction<short[]> fa,
                                                            BiFunction<Integer,Integer,short[]> fs,
@@ -5459,6 +6460,82 @@ public class Short64VectorTests extends AbstractVectorTest {
             int to = i + SPECIES.length();
             Assert.assertEquals(equals, Arrays.equals(a, i, to, b, i, to));
         }
+    }
+
+    static boolean band(boolean a, boolean b) {
+        return a & b;
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskAndShort64VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var av = SPECIES.loadMask(a, i);
+            var bv = SPECIES.loadMask(b, i);
+            var cv = av.and(bv);
+            cv.intoArray(r, i);
+        }
+        assertArraysEquals(r, a, b, Short64VectorTests::band);
+    }
+
+    static boolean bor(boolean a, boolean b) {
+        return a | b;
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskOrShort64VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var av = SPECIES.loadMask(a, i);
+            var bv = SPECIES.loadMask(b, i);
+            var cv = av.or(bv);
+            cv.intoArray(r, i);
+        }
+        assertArraysEquals(r, a, b, Short64VectorTests::bor);
+    }
+
+    static boolean bxor(boolean a, boolean b) {
+        return a != b;
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskXorShort64VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var av = SPECIES.loadMask(a, i);
+            var bv = SPECIES.loadMask(b, i);
+            var cv = av.xor(bv);
+            cv.intoArray(r, i);
+        }
+        assertArraysEquals(r, a, b, Short64VectorTests::bxor);
+    }
+
+    static boolean bandNot(boolean a, boolean b) {
+        return a & !b;
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskAndNotShort64VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var av = SPECIES.loadMask(a, i);
+            var bv = SPECIES.loadMask(b, i);
+            var cv = av.andNot(bv);
+            cv.intoArray(r, i);
+        }
+        assertArraysEquals(r, a, b, Short64VectorTests::bandNot);
     }
 
     static boolean beq(boolean a, boolean b) {
@@ -5567,6 +6644,23 @@ public class Short64VectorTests extends AbstractVectorTest {
         assertMaskReductionArraysEquals(r, a, Short64VectorTests::maskFirstTrue);
     }
 
+    @Test(dataProvider = "maskProvider")
+    static void maskCompressShort64VectorTestsSmokeTest(IntFunction<boolean[]> fa) {
+        int trueCount = 0;
+        boolean[] a = fa.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var vmask = SPECIES.loadMask(a, i);
+                trueCount = vmask.trueCount();
+                var rmask = vmask.compress();
+                for (int j = 0; j < SPECIES.length(); j++)  {
+                    Assert.assertEquals(rmask.laneIsSet(j), j < trueCount);
+                }
+            }
+        }
+    }
+
     @DataProvider
     public static Object[][] longMaskProvider() {
         return new Object[][]{
@@ -5609,6 +6703,20 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 
+    @Test(dataProvider = "offsetProvider")
+    static void indexInRangeLongShort64VectorTestsSmokeTest(int offset) {
+        long limit = SPECIES.length() * BUFFER_REPS;
+        for (long i = 0; i < limit; i += SPECIES.length()) {
+            var actualMask = SPECIES.indexInRange(i + offset, limit);
+            var expectedMask = SPECIES.maskAll(true).indexInRange(i + offset, limit);
+            assert(actualMask.equals(expectedMask));
+            for (int j = 0; j < SPECIES.length(); j++)  {
+                long index = i + j + offset;
+                Assert.assertEquals(actualMask.laneIsSet(j), index >= 0 && index < limit);
+            }
+        }
+    }
+
     @DataProvider
     public static Object[][] lengthProvider() {
         return new Object[][]{
@@ -5626,6 +6734,14 @@ public class Short64VectorTests extends AbstractVectorTest {
     static void loopBoundShort64VectorTestsSmokeTest(int length) {
         int actualLoopBound = SPECIES.loopBound(length);
         int expectedLoopBound = length - Math.floorMod(length, SPECIES.length());
+        Assert.assertEquals(actualLoopBound, expectedLoopBound);
+    }
+
+    @Test(dataProvider = "lengthProvider")
+    static void loopBoundLongShort64VectorTestsSmokeTest(int _length) {
+        long length = _length;
+        long actualLoopBound = SPECIES.loopBound(length);
+        long expectedLoopBound = length - Math.floorMod(length, SPECIES.length());
         Assert.assertEquals(actualLoopBound, expectedLoopBound);
     }
 
@@ -5691,4 +6807,3 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 }
-

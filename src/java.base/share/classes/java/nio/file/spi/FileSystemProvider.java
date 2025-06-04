@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
-import java.nio.file.LinkPermission;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.NotLinkException;
@@ -68,8 +67,6 @@ import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import sun.nio.ch.FileChannelImpl;
 
@@ -118,16 +115,7 @@ public abstract class FileSystemProvider {
     private static volatile List<FileSystemProvider> installedProviders;
 
     // used to avoid recursive loading of installed providers
-    private static boolean loadingProviders  = false;
-
-    private static Void checkPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkPermission(new RuntimePermission("fileSystemProvider"));
-        return null;
-    }
-    private FileSystemProvider(Void ignore) { }
+    private static boolean loadingProviders;
 
     /**
      * Initializes a new instance of this class.
@@ -136,13 +124,8 @@ public abstract class FileSystemProvider {
      * with the default provider but care needs to be taken to avoid circular
      * loading of other installed providers. If circular loading of installed
      * providers is detected then an unspecified error is thrown.
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}{@code ("fileSystemProvider")}
      */
     protected FileSystemProvider() {
-        this(checkPermission());
     }
 
     // loads all installed providers
@@ -199,13 +182,7 @@ public abstract class FileSystemProvider {
                     }
                     loadingProviders = true;
 
-                    @SuppressWarnings("removal")
-                    List<FileSystemProvider> list = AccessController
-                        .doPrivileged(new PrivilegedAction<>() {
-                            @Override
-                            public List<FileSystemProvider> run() {
-                                return loadInstalledProviders();
-                        }});
+                    List<FileSystemProvider> list = loadInstalledProviders();
 
                     // insert the default provider at the start of the list
                     list.add(0, defaultProvider);
@@ -256,9 +233,6 @@ public abstract class FileSystemProvider {
      *          by the provider, or a property value is invalid
      * @throws  IOException
      *          An I/O error occurs creating the file system
-     * @throws  SecurityException
-     *          If a security manager is installed and it denies an unspecified
-     *          permission required by the file system provider implementation
      * @throws  FileSystemAlreadyExistsException
      *          If the file system has already been created
      */
@@ -270,7 +244,7 @@ public abstract class FileSystemProvider {
      *
      * <p> This method returns a reference to a {@code FileSystem} that was
      * created by invoking the {@link #newFileSystem(URI,Map) newFileSystem(URI,Map)}
-     * method. File systems created the {@link #newFileSystem(Path,Map)
+     * method. File systems created by the {@link #newFileSystem(Path,Map)
      * newFileSystem(Path,Map)} method are not returned by this method.
      * The file system is identified by its {@code URI}. Its exact form
      * is highly provider dependent. In the case of the default provider the URI's
@@ -286,11 +260,6 @@ public abstract class FileSystemProvider {
      * closed (and before a new instance is created by the {@link #newFileSystem
      * newFileSystem} method).
      *
-     * <p> If a security manager is installed then a provider implementation
-     * may require to check a permission before returning a reference to an
-     * existing file system. In the case of the {@link FileSystems#getDefault
-     * default} file system, no permission check is required.
-     *
      * @param   uri
      *          URI reference
      *
@@ -300,9 +269,6 @@ public abstract class FileSystemProvider {
      *          If the pre-conditions for the {@code uri} parameter aren't met
      * @throws  FileSystemNotFoundException
      *          If the file system does not exist
-     * @throws  SecurityException
-     *          If a security manager is installed and it denies an unspecified
-     *          permission.
      */
     public abstract FileSystem getFileSystem(URI uri);
 
@@ -317,11 +283,6 @@ public abstract class FileSystemProvider {
      * fragment components. The resulting {@code Path} is associated with the
      * default {@link FileSystems#getDefault default} {@code FileSystem}.
      *
-     * <p> If a security manager is installed then a provider implementation
-     * may require to check a permission. In the case of the {@link
-     * FileSystems#getDefault default} file system, no permission check is
-     * required.
-     *
      * @param   uri
      *          The URI to convert
      *
@@ -333,9 +294,6 @@ public abstract class FileSystemProvider {
      * @throws  FileSystemNotFoundException
      *          The file system, identified by the URI, does not exist and
      *          cannot be created automatically
-     * @throws  SecurityException
-     *          If a security manager is installed and it denies an unspecified
-     *          permission.
      */
     public abstract Path getPath(URI uri);
 
@@ -370,9 +328,6 @@ public abstract class FileSystemProvider {
      *          by the provider, or a property value is invalid
      * @throws  IOException
      *          If an I/O error occurs
-     * @throws  SecurityException
-     *          If a security manager is installed and it denies an unspecified
-     *          permission.
      */
     public FileSystem newFileSystem(Path path, Map<String,?> env)
         throws IOException
@@ -403,21 +358,15 @@ public abstract class FileSystemProvider {
      *          if an unsupported option is specified
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the file.
      */
     public InputStream newInputStream(Path path, OpenOption... options)
         throws IOException
     {
-        if (options.length > 0) {
-            for (OpenOption opt: options) {
-                // All OpenOption values except for APPEND and WRITE are allowed
-                if (opt == StandardOpenOption.APPEND ||
-                    opt == StandardOpenOption.WRITE)
-                    throw new UnsupportedOperationException("'" + opt + "' not allowed");
-            }
+        for (OpenOption opt : options) {
+            // All OpenOption values except for APPEND and WRITE are allowed
+            if (opt == StandardOpenOption.APPEND ||
+                opt == StandardOpenOption.WRITE)
+                throw new UnsupportedOperationException("'" + opt + "' not allowed");
         }
         ReadableByteChannel rbc = Files.newByteChannel(path, options);
         if (rbc instanceof FileChannelImpl) {
@@ -457,13 +406,6 @@ public abstract class FileSystemProvider {
      *          If a file of that name already exists and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          <i>(optional specific exception)</i>
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method is invoked to check write access to the file. The {@link
-     *          SecurityManager#checkDelete(String) checkDelete} method is
-     *          invoked to check delete access if the file is opened with the
-     *          {@code DELETE_ON_CLOSE} option.
      */
     public OutputStream newOutputStream(Path path, OpenOption... options)
         throws IOException
@@ -520,12 +462,6 @@ public abstract class FileSystemProvider {
      *          <i>(optional specific exception)</i>
      * @throws  IOException
      *          If an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default file system, the {@link
-     *          SecurityManager#checkRead(String)} method is invoked to check
-     *          read access if the file is opened for reading. The {@link
-     *          SecurityManager#checkWrite(String)} method is invoked to check
-     *          write access if the file is opened for writing
      */
     public FileChannel newFileChannel(Path path,
                                       Set<? extends OpenOption> options,
@@ -573,12 +509,6 @@ public abstract class FileSystemProvider {
      *          <i>(optional specific exception)</i>
      * @throws  IOException
      *          If an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default file system, the {@link
-     *          SecurityManager#checkRead(String)} method is invoked to check
-     *          read access if the file is opened for reading. The {@link
-     *          SecurityManager#checkWrite(String)} method is invoked to check
-     *          write access if the file is opened for writing
      */
     public AsynchronousFileChannel newAsynchronousFileChannel(Path path,
                                                               Set<? extends OpenOption> options,
@@ -616,16 +546,6 @@ public abstract class FileSystemProvider {
      *          <i>(optional specific exception)</i>
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the path if the file is
-     *          opened for reading. The {@link SecurityManager#checkWrite(String)
-     *          checkWrite} method is invoked to check write access to the path
-     *          if the file is opened for writing. The {@link
-     *          SecurityManager#checkDelete(String) checkDelete} method is
-     *          invoked to check delete access if the file is opened with the
-     *          {@code DELETE_ON_CLOSE} option.
      */
     public abstract SeekableByteChannel newByteChannel(Path path,
         Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException;
@@ -649,10 +569,6 @@ public abstract class FileSystemProvider {
      *          a directory <i>(optional specific exception)</i>
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the directory.
      */
     public abstract DirectoryStream<Path> newDirectoryStream(Path dir,
          DirectoryStream.Filter<? super Path> filter) throws IOException;
@@ -675,10 +591,6 @@ public abstract class FileSystemProvider {
      *          that name already exists <i>(optional specific exception)</i>
      * @throws  IOException
      *          if an I/O error occurs or the parent directory does not exist
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method is invoked to check write access to the new directory.
      */
     public abstract void createDirectory(Path dir, FileAttribute<?>... attrs)
         throws IOException;
@@ -707,11 +619,6 @@ public abstract class FileSystemProvider {
      *          exception)</i>
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager
-     *          is installed, it denies {@link LinkPermission}{@code ("symbolic")}
-     *          or its {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method denies write access to the path of the symbolic link.
      */
     public void createSymbolicLink(Path link, Path target, FileAttribute<?>... attrs)
         throws IOException
@@ -740,12 +647,6 @@ public abstract class FileSystemProvider {
      *          that name already exists <i>(optional specific exception)</i>
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager
-     *          is installed, it denies {@link LinkPermission}{@code ("hard")}
-     *          or its {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method denies write access to either the  link or the
-     *          existing file.
      */
     public void createLink(Path link, Path existing) throws IOException {
         throw new UnsupportedOperationException();
@@ -766,10 +667,6 @@ public abstract class FileSystemProvider {
      *          exception)</i>
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkDelete(String)} method
-     *          is invoked to check delete access to the file
      */
     public abstract void delete(Path path) throws IOException;
 
@@ -794,10 +691,6 @@ public abstract class FileSystemProvider {
      *          exception)</i>
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkDelete(String)} method
-     *          is invoked to check delete access to the file
      */
     public boolean deleteIfExists(Path path) throws IOException {
         try {
@@ -827,10 +720,6 @@ public abstract class FileSystemProvider {
      *          is not a symbolic link <i>(optional specific exception)</i>
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager
-     *          is installed, it checks that {@code FilePermission} has been
-     *          granted with the "{@code readlink}" action to read the link.
      */
     public Path readSymbolicLink(Path link) throws IOException {
         throw new UnsupportedOperationException();
@@ -861,14 +750,6 @@ public abstract class FileSystemProvider {
      *          <i>(optional specific exception)</i>
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the source file, the
-     *          {@link SecurityManager#checkWrite(String) checkWrite} is invoked
-     *          to check write access to the target file. If a symbolic link is
-     *          copied the security manager is invoked to check {@link
-     *          LinkPermission}{@code ("symbolic")}.
      */
     public abstract void copy(Path source, Path target, CopyOption... options)
         throws IOException;
@@ -900,11 +781,6 @@ public abstract class FileSystemProvider {
      *          the file cannot be moved as an atomic file system operation.
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method is invoked to check write access to both the source and
-     *          target file.
      */
     public abstract void move(Path source, Path target, CopyOption... options)
         throws IOException;
@@ -922,10 +798,6 @@ public abstract class FileSystemProvider {
      *
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to both files.
      */
     public abstract boolean isSameFile(Path path, Path path2)
         throws IOException;
@@ -944,10 +816,6 @@ public abstract class FileSystemProvider {
      *
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the file.
      */
     public abstract boolean isHidden(Path path) throws IOException;
 
@@ -963,12 +831,6 @@ public abstract class FileSystemProvider {
      *
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the file, and in
-     *          addition it checks
-     *          {@link RuntimePermission}{@code ("getFileStoreAttributes")}
      */
     public abstract FileStore getFileStore(Path path) throws IOException;
 
@@ -1041,14 +903,6 @@ public abstract class FileSystemProvider {
      *          privileges or other reasons. <i>(optional specific exception)</i>
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          is invoked when checking read access to the file or only the
-     *          existence of the file, the {@link SecurityManager#checkWrite(String)
-     *          checkWrite} is invoked when checking write access to the file,
-     *          and {@link SecurityManager#checkExec(String) checkExec} is invoked
-     *          when checking execute access.
      */
     public abstract void checkAccess(Path path, AccessMode... modes)
         throws IOException;
@@ -1094,10 +948,6 @@ public abstract class FileSystemProvider {
      *          if an attributes of the given type are not supported
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, a security manager is
-     *          installed, its {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the file
      */
     public abstract <A extends BasicFileAttributes> A
         readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException;
@@ -1124,12 +974,6 @@ public abstract class FileSystemProvider {
      *          specified
      * @throws  IOException
      *          If an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, its {@link SecurityManager#checkRead(String) checkRead}
-     *          method denies read access to the file. If this method is invoked
-     *          to read security sensitive attributes then the security manager
-     *          may be invoked to check for additional permissions.
      */
     public abstract Map<String,Object> readAttributes(Path path, String attributes,
                                                       LinkOption... options)
@@ -1160,14 +1004,115 @@ public abstract class FileSystemProvider {
      *          type
      * @throws  IOException
      *          If an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, its {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method denies write access to the file. If this method is invoked
-     *          to set security sensitive attributes then the security manager
-     *          may be invoked to check for additional permissions.
      */
     public abstract void setAttribute(Path path, String attribute,
                                       Object value, LinkOption... options)
         throws IOException;
+
+    /**
+     * Tests whether a file exists. This method works in exactly the
+     * manner specified by the {@link Files#exists(Path, LinkOption...)} method.
+     *
+     * @implSpec
+     * The default implementation of this method invokes the
+     * {@link #checkAccess(Path, AccessMode...)} method when symbolic links
+     * are followed. If the option {@link LinkOption#NOFOLLOW_LINKS NOFOLLOW_LINKS}
+     * is present then symbolic links are not followed and the method
+     * {@link #readAttributes(Path, Class, LinkOption...)} is called
+     * to determine whether a file exists.
+     *
+     * @param   path
+     *          the path to the file to test
+     * @param   options
+     *          options indicating how symbolic links are handled
+     *
+     * @return  {@code true} if the file exists; {@code false} if the file does
+     *          not exist or its existence cannot be determined.
+     *
+     * @since 20
+     */
+    public boolean exists(Path path, LinkOption... options) {
+        try {
+            if (followLinks(options)) {
+                this.checkAccess(path);
+            } else {
+                // attempt to read attributes without following links
+                readAttributes(path, BasicFileAttributes.class,  LinkOption.NOFOLLOW_LINKS);
+            }
+            // file exists
+            return true;
+        } catch (IOException x) {
+            // does not exist or unable to determine if file exists
+            return false;
+        }
+    }
+
+    /**
+     * Reads a file's attributes as a bulk operation if it exists.
+     *
+     * <p> The {@code type} parameter is the type of the attributes required
+     * and this method returns an instance of that type if supported. All
+     * implementations support a basic set of file attributes and so invoking
+     * this method with a  {@code type} parameter of {@code
+     * BasicFileAttributes.class} will not throw {@code
+     * UnsupportedOperationException}.
+     *
+     * <p> The {@code options} array may be used to indicate how symbolic links
+     * are handled for the case that the file is a symbolic link. By default,
+     * symbolic links are followed and the file attribute of the final target
+     * of the link is read. If the option {@link LinkOption#NOFOLLOW_LINKS
+     * NOFOLLOW_LINKS} is present then symbolic links are not followed.
+     *
+     * <p> It is implementation specific if all file attributes are read as an
+     * atomic operation with respect to other file system operations.
+     *
+     * @implSpec
+     * The default implementation of this method invokes the
+     * {@link #readAttributes(Path, Class, LinkOption...)} method
+     * to read the file's attributes.
+     *
+     * @param   <A>
+     *          The {@code BasicFileAttributes} type
+     * @param   path
+     *          the path to the file
+     * @param   type
+     *          the {@code Class} of the file attributes required
+     *          to read
+     * @param   options
+     *          options indicating how symbolic links are handled
+     *
+     * @return  the file attributes or null if the file does not exist
+     *
+     * @throws  UnsupportedOperationException
+     *          if an attributes of the given type are not supported
+     * @throws  IOException
+     *          if an I/O error occurs
+     *
+     * @since 20
+     */
+    public <A extends BasicFileAttributes> A readAttributesIfExists(Path path,
+                                                                    Class<A> type,
+                                                                    LinkOption... options)
+        throws IOException
+    {
+        try {
+            return readAttributes(path, type, options);
+        } catch (NoSuchFileException ignore) {
+            return null;
+        }
+    }
+
+    private static boolean followLinks(LinkOption... options) {
+        boolean followLinks = true;
+        for (LinkOption opt: options) {
+            if (opt == LinkOption.NOFOLLOW_LINKS) {
+                followLinks = false;
+                continue;
+            }
+            if (opt == null)
+                throw new NullPointerException();
+            throw new AssertionError("Should not get here");
+        }
+        return followLinks;
+    }
 }

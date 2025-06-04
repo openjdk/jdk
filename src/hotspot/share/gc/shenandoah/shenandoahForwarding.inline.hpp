@@ -29,22 +29,22 @@
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "oops/markWord.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 inline oop ShenandoahForwarding::get_forwardee_raw(oop obj) {
-  shenandoah_assert_in_heap(NULL, obj);
+  shenandoah_assert_in_heap_bounds(nullptr, obj);
   return get_forwardee_raw_unchecked(obj);
 }
 
 inline oop ShenandoahForwarding::get_forwardee_raw_unchecked(oop obj) {
   // JVMTI and JFR code use mark words for marking objects for their needs.
-  // On this path, we can encounter the "marked" object, but with NULL
+  // On this path, we can encounter the "marked" object, but with null
   // fwdptr. That object is still not forwarded, and we need to return
   // the object itself.
   markWord mark = obj->mark();
   if (mark.is_marked()) {
     HeapWord* fwdptr = (HeapWord*) mark.clear_lock_bits().to_pointer();
-    if (fwdptr != NULL) {
+    if (fwdptr != nullptr) {
       return cast_to_oop(fwdptr);
     }
   }
@@ -52,14 +52,14 @@ inline oop ShenandoahForwarding::get_forwardee_raw_unchecked(oop obj) {
 }
 
 inline oop ShenandoahForwarding::get_forwardee_mutator(oop obj) {
-  // Same as above, but mutator thread cannot ever see NULL forwardee.
-  shenandoah_assert_correct(NULL, obj);
+  // Same as above, but mutator thread cannot ever see null forwardee.
+  shenandoah_assert_correct(nullptr, obj);
   assert(Thread::current()->is_Java_thread(), "Must be a mutator thread");
 
   markWord mark = obj->mark();
   if (mark.is_marked()) {
     HeapWord* fwdptr = (HeapWord*) mark.clear_lock_bits().to_pointer();
-    assert(fwdptr != NULL, "Forwarding pointer is never null here");
+    assert(fwdptr != nullptr, "Forwarding pointer is never null here");
     return cast_to_oop(fwdptr);
   } else {
     return obj;
@@ -67,7 +67,7 @@ inline oop ShenandoahForwarding::get_forwardee_mutator(oop obj) {
 }
 
 inline oop ShenandoahForwarding::get_forwardee(oop obj) {
-  shenandoah_assert_correct(NULL, obj);
+  shenandoah_assert_correct(nullptr, obj);
   return get_forwardee_raw_unchecked(obj);
 }
 
@@ -88,6 +88,23 @@ inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
   } else {
     return cast_to_oop(prev_mark.clear_lock_bits().to_pointer());
   }
+}
+
+inline Klass* ShenandoahForwarding::klass(oop obj) {
+  if (UseCompactObjectHeaders) {
+    markWord mark = obj->mark();
+    if (mark.is_marked()) {
+      oop fwd = cast_to_oop(mark.clear_lock_bits().to_pointer());
+      mark = fwd->mark();
+    }
+    return mark.klass();
+  } else {
+    return obj->klass();
+  }
+}
+
+inline size_t ShenandoahForwarding::size(oop obj) {
+  return obj->size_given_klass(klass(obj));
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_INLINE_HPP

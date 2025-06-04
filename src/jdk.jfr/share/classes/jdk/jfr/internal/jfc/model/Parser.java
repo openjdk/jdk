@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.io.Reader;
 import java.text.ParseException;
 import java.util.ArrayDeque;
 import java.util.Deque;
-
 import jdk.internal.org.xml.sax.Attributes;
 import jdk.internal.org.xml.sax.InputSource;
 import jdk.internal.org.xml.sax.SAXException;
@@ -45,10 +44,8 @@ final class Parser {
             ConfigurationHandler handler = new ConfigurationHandler();
             saxParser.parse(new InputSource(reader), handler);
             return handler.configuration;
-        } catch (SAXException sp) {
-            ParseException pe = new ParseException(sp.getMessage(), -1);
-            pe.initCause(sp);
-            throw pe;
+        } catch (SAXException | IllegalStateException e) {
+            throw new ParseException(e.getMessage(), -1);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,7 +292,6 @@ static struct symtab* build_symtab_from_build_id(Elf64_Nhdr *note)
 // try to open an associated debuginfo file
 static struct symtab* build_symtab_internal(int fd, const char *filename, bool try_debuginfo) {
   ELF_EHDR ehdr;
-  char *names = NULL;
   struct symtab* symtab = NULL;
 
   // Reading of elf header
@@ -306,8 +305,6 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
   int cnt = 0;
   ELF_SHDR* shbuf = NULL;
   ELF_SHDR* cursct = NULL;
-  ELF_PHDR* phbuf = NULL;
-  ELF_PHDR* phdr = NULL;
   int sym_section = SHT_DYNSYM;
 
   uintptr_t baseaddr = (uintptr_t)-1;
@@ -359,7 +356,6 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
 
     if (shdr->sh_type == sym_section) {
       ELF_SYM  *syms;
-      int rslt;
       size_t size, n, j, htab_sz;
 
       // FIXME: there could be multiple data buffers associated with the
@@ -393,8 +389,9 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
         goto bad;
       }
 
-      rslt = hcreate_r(n, symtab->hash_table);
-      // guarantee(rslt, "unexpected failure: hcreate_r");
+      if (hcreate_r(htab_sz, symtab->hash_table) == 0) {
+        goto bad;
+      }
 
       // shdr->sh_link points to the section that contains the actual strings
       // for symbol names. the st_name field in ELF_SYM is just the
@@ -502,7 +499,6 @@ bad:
 
 quit:
   if (shbuf) free(shbuf);
-  if (phbuf) free(phbuf);
   if (scn_cache) {
     for (cnt = 0; cnt < ehdr.e_shnum; cnt++) {
       if (scn_cache[cnt].c_data != NULL) {
@@ -550,7 +546,6 @@ uintptr_t search_symbol(struct symtab* symtab, uintptr_t base,
     return rslt;
   }
 
-quit:
   free(item.key);
   return (uintptr_t) NULL;
 }

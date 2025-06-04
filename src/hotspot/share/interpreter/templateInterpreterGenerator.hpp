@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,15 +47,16 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
     return generate_exception_handler_common(name, message, false);
   }
   address generate_klass_exception_handler(const char* name) {
-    return generate_exception_handler_common(name, NULL, true);
+    return generate_exception_handler_common(name, nullptr, true);
   }
   address generate_exception_handler_common(const char* name, const char* message, bool pass_oop);
   address generate_ClassCastException_handler();
   address generate_ArrayIndexOutOfBounds_handler();
   address generate_return_entry_for(TosState state, int step, size_t index_size);
   address generate_earlyret_entry_for(TosState state);
-  address generate_deopt_entry_for(TosState state, int step, address continuation = NULL);
+  address generate_deopt_entry_for(TosState state, int step, address continuation = nullptr);
   address generate_safept_entry_for(TosState state, address runtime_entry);
+  address generate_cont_resume_interpreter_adapter();
   void    generate_throw_exception();
 
   void lock_method();
@@ -74,7 +75,7 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   void set_safepoints_for_all_bytes();
 
   // Helpers for generate_and_dispatch
-  address generate_trace_code(TosState state)   PRODUCT_RETURN0;
+  address generate_trace_code(TosState state)   PRODUCT_RETURN_NULL;
   void count_bytecode()                         PRODUCT_RETURN;
   void histogram_bytecode(Template* t)          PRODUCT_RETURN;
   void histogram_bytecode_pair(Template* t)     PRODUCT_RETURN;
@@ -84,7 +85,10 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   void generate_all();
 
   // entry point generator
-  address generate_method_entry(AbstractInterpreter::MethodKind kind);
+  address generate_method_entry(AbstractInterpreter::MethodKind kind, bool native);
+
+  // generate intrinsic method entries
+  address generate_intrinsic_entry(AbstractInterpreter::MethodKind kind);
 
   address generate_normal_entry(bool synchronized);
   address generate_native_entry(bool synchronized);
@@ -94,15 +98,10 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_CRC32_update_entry();
   address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind);
   address generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind);
-#ifdef AMD64
   address generate_currentThread();
-#endif
-#ifdef IA32
-  address generate_Float_intBitsToFloat_entry();
-  address generate_Float_floatToRawIntBits_entry();
-  address generate_Double_longBitsToDouble_entry();
-  address generate_Double_doubleToRawLongBits_entry();
-#endif // IA32
+  address generate_Float_float16ToFloat_entry();
+  address generate_Float_floatToFloat16_entry();
+
   // Some platforms don't need registers, other need two. Unused function is
   // left unimplemented.
   void generate_stack_overflow_check(void);
@@ -127,7 +126,7 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
 #endif // PPC
 
  public:
-  TemplateInterpreterGenerator(StubQueue* _code);
+  TemplateInterpreterGenerator();
 };
 
 #endif // !ZERO

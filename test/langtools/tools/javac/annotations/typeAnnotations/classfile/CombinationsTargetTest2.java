@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,9 @@
  * @test
  * @bug 8005085 8005877 8004829 8005681 8006734 8006775 8006507
  * @summary Combinations of Target ElementTypes on (repeated)type annotations.
- * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
-import com.sun.tools.classfile.*;
+import java.lang.classfile.*;
 import java.io.File;
 import java.util.List;
 
@@ -42,7 +41,7 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
 
     // Base test case template descriptions;true==annotations in code attribute.
     enum srce  {
-        src1("(repeating) type annotations on on field in method body",true),
+        src1("(repeating) type annotations on field in method body",true),
         src2("(repeating) type annotations on type parameters, bounds and  type arguments", true),
         src3("(repeating) type annotations on type parameters of class, method return value in method", true),
         src4("(repeating) type annotations on field in anonymous class", false),
@@ -161,22 +160,22 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
             classFile=new File(sb.insert(sb.lastIndexOf(".class"),innerClassname).toString());
             println("classfile: " + classFile.getAbsolutePath());
         }
-        ClassFile cf = ClassFile.read(classFile);
+        ClassModel cm = ClassFile.of().parse(classFile.toPath());
 
         //Test class,fields and method counts.
-        test(cf);
+        test(cm);
 
-        for (Field f : cf.fields) {
+        for (FieldModel fm : cm.fields()) {
             if(source.local)
-                test(cf, f, true);
+                test(fm, true);
             else
-                test(cf,f);
+                test(fm);
         }
-        for (Method m: cf.methods) {
+        for (MethodModel mm: cm.methods()) {
             if(source.local)
-                test(cf, m, true);
+                test(mm, true);
             else
-                test(cf, m);
+                test(mm);
         }
         countAnnotations();
         if (errors > 0) {

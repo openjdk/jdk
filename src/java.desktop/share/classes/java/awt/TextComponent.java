@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ import javax.accessibility.AccessibleStateSet;
 import javax.accessibility.AccessibleText;
 import javax.swing.text.AttributeSet;
 
-import sun.awt.AWTPermissions;
 import sun.awt.InputMethodSupport;
 
 /**
@@ -66,8 +65,11 @@ import sun.awt.InputMethodSupport;
  * @author      Sami Shaio
  * @author      Arthur van Hoff
  * @since       1.0
+ * @sealedGraph
  */
-public class TextComponent extends Component implements Accessible {
+public sealed class TextComponent extends Component implements Accessible
+     permits TextArea,
+             TextField {
 
     /**
      * The value of the text.
@@ -113,7 +115,7 @@ public class TextComponent extends Component implements Accessible {
     int selectionEnd;
 
     /**
-     * A flag used to tell whether the background has been set by
+     * @serial A flag used to tell whether the background has been set by
      * developer code (as opposed to AWT code).  Used to determine
      * the background color of non-editable TextComponents.
      */
@@ -137,7 +139,7 @@ public class TextComponent extends Component implements Accessible {
      * @param      text       the text to be displayed; if
      *             {@code text} is {@code null}, the empty
      *             string {@code ""} will be displayed
-     * @exception  HeadlessException if
+     * @throws  HeadlessException if
      *             {@code GraphicsEnvironment.isHeadless}
      *             returns true
      * @see        java.awt.GraphicsEnvironment#isHeadless
@@ -511,7 +513,7 @@ public class TextComponent extends Component implements Accessible {
      * is thrown.
      *
      * @param        position the position of the text insertion caret
-     * @exception    IllegalArgumentException if {@code position}
+     * @throws    IllegalArgumentException if {@code position}
      *               is less than zero
      * @since        1.1
      */
@@ -645,7 +647,7 @@ public class TextComponent extends Component implements Accessible {
      *          <code><em>Foo</em>Listener</code>s on this text component,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if {@code listenerType}
+     * @throws ClassCastException if {@code listenerType}
      *          doesn't specify a class or interface that implements
      *          {@code java.util.EventListener}
      *
@@ -739,20 +741,6 @@ public class TextComponent extends Component implements Accessible {
             str += ",editable";
         }
         return str + ",selection=" + getSelectionStart() + "-" + getSelectionEnd();
-    }
-
-    /**
-     * Assigns a valid value to the canAccessClipboard instance variable.
-     */
-    private boolean canAccessClipboard() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) return true;
-        try {
-            sm.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
-            return true;
-        } catch (SecurityException e) {}
-        return false;
     }
 
     /*
@@ -1219,7 +1207,7 @@ public class TextComponent extends Component implements Accessible {
     }  // end of AccessibleAWTTextComponent
 
     /**
-     * Whether support of input methods should be checked or not.
+     * @serial Whether support of input methods should be checked or not.
      */
     private boolean checkForEnableIM = true;
 }

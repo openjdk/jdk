@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,29 +24,32 @@
 /*
  * @test
  * @key headful
- * @bug 6559152
+ * @bug 6559152 8294067
  * @summary Checks that you can select an item in JComboBox with keyboard
  *          when it is a JTable cell editor.
  * @run main bug6559152
  */
 
+import java.awt.Dimension;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+
 import javax.swing.DefaultCellEditor;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
-import javax.swing.JComboBox;
+import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.JTable;
-import java.awt.Point;
-import java.awt.event.KeyEvent;
-import java.awt.event.InputEvent;
-import java.awt.Robot;
 
 public class bug6559152 {
     private static JFrame frame;
     private static JComboBox cb;
     private static Robot robot;
-    private static Point p = null;
+    private static volatile Point p = null;
+    private static volatile Dimension d;
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
@@ -69,6 +72,7 @@ public class bug6559152 {
             try {
                 SwingUtilities.invokeAndWait(() -> {
                     p = comp.getLocationOnScreen();
+                    d = comp.getSize();
                 });
             } catch (IllegalStateException e) {
                 try {
@@ -80,7 +84,7 @@ public class bug6559152 {
     }
 
     private static void setupUI() {
-        frame = new JFrame();
+        frame = new JFrame("bug6559152");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         DefaultTableModel model = new DefaultTableModel(1, 1);
@@ -97,7 +101,7 @@ public class bug6559152 {
     }
 
     private static void test() throws Exception {
-        robot.mouseMove(p.x, p.y);
+        robot.mouseMove(p.x + d.width / 2, p.y + d.height / 2);
         robot.waitForIdle();
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);

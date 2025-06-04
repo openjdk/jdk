@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,10 +63,11 @@ typedef struct {
     char *display_country;
     char *format_variant;
     char *display_variant;
-    char *encoding;
-    char *sun_jnu_encoding;
-    char *sun_stdout_encoding;
-    char *sun_stderr_encoding;
+    char *encoding;             /* always set non-NULL by platform code */
+    char *sun_jnu_encoding;     /* always set non-NULL by platform code */
+    char *stdin_encoding;
+    char *stdout_encoding;
+    char *stderr_encoding;
 
     char *unicode_encoding;     /* The default endianness of unicode
                                     i.e. UnicodeBig or UnicodeLittle   */

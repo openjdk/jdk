@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.awt.font.FontRenderContext;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
+import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,9 +46,16 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.atomic.AtomicReference;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.CellRendererPane;
+import javax.swing.JEditorPane;
+import javax.swing.JPasswordField;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.JTextPane;
+import javax.swing.JViewport;
+import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 import javax.swing.text.BadLocationException;
@@ -102,8 +110,7 @@ public class TextComponentPrintable implements CountingPrintable {
     /*
      * The FontRenderContext to layout and print with
      */
-    private final AtomicReference<FontRenderContext> frc =
-        new AtomicReference<FontRenderContext>(null);
+    private volatile FontRenderContext frc;
 
     /**
      * Special text component used to print to the printer.
@@ -191,7 +198,7 @@ public class TextComponentPrintable implements CountingPrintable {
      * Returns frames under the {@code editor}.
      * The frames are created if necessary.
      *
-     * @param editor the {@JEditorPane} to find the frames for
+     * @param editor the {@link JEditorPane} to find the frames for
      * @return list of all frames
      */
     private static List<JEditorPane> getFrames(final JEditorPane editor) {
@@ -244,7 +251,7 @@ public class TextComponentPrintable implements CountingPrintable {
                     //the values do not matter
                     //we only need to get frames created
                     rendererPane.setSize(WIDTH, HEIGHT);
-                };
+                }
             };
         if (SwingUtilities.isEventDispatchThread()) {
             doCreateFrames.run();
@@ -324,7 +331,7 @@ public class TextComponentPrintable implements CountingPrintable {
             }
         }
     }
-    @SuppressWarnings("serial") // anonymous class inside
+
     private JTextComponent createPrintShellOnEDT(final JTextComponent textComponent) {
         assert SwingUtilities.isEventDispatchThread();
 
@@ -339,9 +346,10 @@ public class TextComponentPrintable implements CountingPrintable {
                     }
                     @Override
                     public FontMetrics getFontMetrics(Font font) {
-                        return (frc.get() == null)
+                        FontRenderContext frc = TextComponentPrintable.this.frc;
+                        return (frc == null)
                             ? super.getFontMetrics(font)
-                            : FontDesignMetrics.getMetrics(font, frc.get());
+                            : FontDesignMetrics.getMetrics(font, frc);
                     }
                 };
         } else if (textComponent instanceof JTextField) {
@@ -353,9 +361,10 @@ public class TextComponentPrintable implements CountingPrintable {
                     }
                     @Override
                     public FontMetrics getFontMetrics(Font font) {
-                        return (frc.get() == null)
+                        FontRenderContext frc = TextComponentPrintable.this.frc;
+                        return (frc == null)
                             ? super.getFontMetrics(font)
-                            : FontDesignMetrics.getMetrics(font, frc.get());
+                            : FontDesignMetrics.getMetrics(font, frc);
                     }
                 };
         } else if (textComponent instanceof JTextArea) {
@@ -369,9 +378,10 @@ public class TextComponentPrintable implements CountingPrintable {
                     }
                     @Override
                     public FontMetrics getFontMetrics(Font font) {
-                        return (frc.get() == null)
+                        FontRenderContext frc = TextComponentPrintable.this.frc;
+                        return (frc == null)
                             ? super.getFontMetrics(font)
-                            : FontDesignMetrics.getMetrics(font, frc.get());
+                            : FontDesignMetrics.getMetrics(font, frc);
                     }
                 };
         } else if (textComponent instanceof JTextPane) {
@@ -379,9 +389,10 @@ public class TextComponentPrintable implements CountingPrintable {
                 new JTextPane() {
                     @Override
                     public FontMetrics getFontMetrics(Font font) {
-                        return (frc.get() == null)
+                        FontRenderContext frc = TextComponentPrintable.this.frc;
+                        return (frc == null)
                             ? super.getFontMetrics(font)
-                            : FontDesignMetrics.getMetrics(font, frc.get());
+                            : FontDesignMetrics.getMetrics(font, frc);
                     }
                     @Override
                     public EditorKit getEditorKit() {
@@ -397,9 +408,10 @@ public class TextComponentPrintable implements CountingPrintable {
                 new JEditorPane() {
                     @Override
                     public FontMetrics getFontMetrics(Font font) {
-                        return (frc.get() == null)
+                        FontRenderContext frc = TextComponentPrintable.this.frc;
+                        return (frc == null)
                             ? super.getFontMetrics(font)
-                            : FontDesignMetrics.getMetrics(font, frc.get());
+                            : FontDesignMetrics.getMetrics(font, frc);
                     }
                     @Override
                     public EditorKit getEditorKit() {
@@ -465,7 +477,7 @@ public class TextComponentPrintable implements CountingPrintable {
             final int pageIndex) throws PrinterException {
         if (!isLayouted) {
             if (graphics instanceof Graphics2D) {
-                frc.set(((Graphics2D)graphics).getFontRenderContext());
+                frc = ((Graphics2D)graphics).getFontRenderContext();
             }
             layout((int)Math.floor(pf.getImageableWidth()));
             calculateRowsMetrics();
@@ -610,8 +622,7 @@ public class TextComponentPrintable implements CountingPrintable {
                         public void run() {
                         }
                     });
-            } catch (InterruptedException ignore) {
-            } catch (java.lang.reflect.InvocationTargetException ignore) {
+            } catch (InterruptedException | InvocationTargetException ignore) {
             }
             Document document = textComponentToPrint.getDocument();
             ((AbstractDocument) document).readLock();
@@ -768,9 +779,9 @@ public class TextComponentPrintable implements CountingPrintable {
                     if (height != 0
                             && (y != previousY || height != previousHeight)) {
                         /*
-                         * we do not store the same value as previous. in our
-                         * documents it is often for consequent positons to have
-                         * the same modelToView y and height.
+                         * We do not store the same value as previous.
+                         * In our documents, it is common for consecutive
+                         * positions to have the same modelToView y and height.
                          */
                         previousY = y;
                         previousHeight = height;

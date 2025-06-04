@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,8 +158,8 @@ static jobject sAccessibilityClass = NULL;
     [rolesMap setObject:@"TableAccessibility" forKey:@"table"];
     [rolesMap setObject:@"MenuBarAccessibility" forKey:@"menubar"];
     [rolesMap setObject:@"MenuAccessibility" forKey:@"menu"];
-    [rolesMap setObject:@"MenuItemAccessibility" forKey:@"menuitem"];
     [rolesMap setObject:@"MenuAccessibility" forKey:@"popupmenu"];
+    [rolesMap setObject:@"MenuItemAccessibility" forKey:@"menuitem"];
     [rolesMap setObject:@"ProgressIndicatorAccessibility" forKey:@"progressbar"];
 
     /*
@@ -186,7 +186,8 @@ static jobject sAccessibilityClass = NULL;
     [rolesMap setObject:IgnoreClassName forKey:@"viewport"];
     [rolesMap setObject:IgnoreClassName forKey:@"window"];
 
-    rowRolesMapForParent = [[NSMutableDictionary alloc] initWithCapacity:2];
+    rowRolesMapForParent = [[NSMutableDictionary alloc] initWithCapacity:3];
+    [rowRolesMapForParent setObject:@"MenuItemAccessibility" forKey:@"MenuAccessibility"];
 
     [rowRolesMapForParent setObject:@"ListRowAccessibility" forKey:@"ListAccessibility"];
     [rowRolesMapForParent setObject:@"OutlineRowAccessibility" forKey:@"OutlineAccessibility"];
@@ -599,11 +600,9 @@ static jobject sAccessibilityClass = NULL;
     jobject axAction = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getAccessibleAction, fAccessible, fComponent);
     CHECK_EXCEPTION();
     if (axAction != NULL) {
-        jclass jc_AccessibleAction = NULL;
-        GET_CLASS(jc_AccessibleAction, "javax/accessibility/AccessibleAction");
-        jmethodID jm_getAccessibleActionCount = NULL;
-        GET_METHOD(jm_getAccessibleActionCount, jc_AccessibleAction, "getAccessibleActionCount", "()I");
-        jint count = (*env)->CallIntMethod(env, axAction, jm_getAccessibleActionCount);
+        DECLARE_STATIC_METHOD(jm_getAccessibleActionCount, sjc_CAccessibility, "getAccessibleActionCount", "(Ljavax/accessibility/AccessibleAction;Ljava/awt/Component;)I");
+        jint count = (*env)->CallStaticIntMethod(env, sjc_CAccessibility, jm_getAccessibleActionCount, axAction, fComponent);
+        CHECK_EXCEPTION();
         fActions = [[NSMutableDictionary alloc] initWithCapacity:count];
         fActionSelectors = [[NSMutableArray alloc] initWithCapacity:count];
         for (int i =0; i < count; i++) {
@@ -614,8 +613,11 @@ static jobject sAccessibilityClass = NULL;
                 [fActions setObject:action forKey:NSAccessibilityPickAction];
                 [fActionSelectors addObject:[sActionSelectors objectForKey:NSAccessibilityPickAction]];
             } else {
-                [fActions setObject:action forKey:[sActions objectForKey:[action getDescription]]];
-                [fActionSelectors addObject:[sActionSelectors objectForKey:[sActions objectForKey:[action getDescription]]]];
+                NSString *nsActionName = [sActions objectForKey:[action getDescription]];
+                if (nsActionName != nil) {
+                    [fActions setObject:action forKey:nsActionName];
+                    [fActionSelectors addObject:[sActionSelectors objectForKey:nsActionName]];
+                }
             }
             [action release];
         }
@@ -630,7 +632,7 @@ static jobject sAccessibilityClass = NULL;
     }
     if ([[currentAction allKeys] containsObject:actionName]) {
         [(JavaAxAction *)[currentAction objectForKey:actionName] perform];
-        return YES;;
+        return YES;
     }
     return NO;
 }

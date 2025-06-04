@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "memory/metaspaceStats.hpp"
@@ -49,10 +48,10 @@ class MetaspacePerfCounters {
   }
 
  public:
-  MetaspacePerfCounters() : _capacity(NULL), _used(NULL), _max_capacity(NULL) {}
+  MetaspacePerfCounters() : _capacity(nullptr), _used(nullptr), _max_capacity(nullptr) {}
 
   void initialize(const char* ns) {
-    assert(_capacity == NULL, "Only initialize once");
+    assert(_capacity == nullptr, "Only initialize once");
     EXCEPTION_MARK;
     ResourceMark rm;
 

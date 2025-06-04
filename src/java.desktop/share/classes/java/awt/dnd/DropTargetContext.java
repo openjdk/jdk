@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import sun.awt.AWTAccessor.DropTargetContextAccessor;
  * @since 1.2
  */
 
-public class DropTargetContext implements Serializable {
+public final class DropTargetContext implements Serializable {
 
     /**
      * Use serialVersionUID from JDK 1.4 for interoperability.
@@ -229,7 +229,7 @@ public class DropTargetContext implements Serializable {
     }
 
     /**
-     * This method returns a the currently available DataFlavors
+     * This method returns the currently available DataFlavors
      * of the {@code Transferable} operand
      * as a {@code java.util.List}.
      *
@@ -242,15 +242,13 @@ public class DropTargetContext implements Serializable {
     }
 
     /**
-     * This method returns a {@code boolean}
-     * indicating if the given {@code DataFlavor} is
-     * supported by this {@code DropTargetContext}.
+     * This method returns a {@code boolean} indicating if the given
+     * {@code DataFlavor} is supported by this {@code DropTargetContext}.
      *
-     * @param df the {@code DataFlavor}
-     *
-     * @return if the {@code DataFlavor} specified is supported
+     * @param  df the {@code DataFlavor} to test
+     * @return {@code true} if the {@code DataFlavor} specified is supported,
+     *         otherwise {@code false}
      */
-
     protected boolean isDataFlavorSupported(DataFlavor df) {
         return getCurrentDataFlavorsAsList().contains(df);
     }

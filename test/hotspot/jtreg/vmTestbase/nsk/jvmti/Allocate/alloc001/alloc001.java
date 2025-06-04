@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,11 +80,13 @@ public class alloc001 {
     private static final int STATUS_NO_OOM = 3 + STATUS_BASE;
 
     public static void main(String[] args) throws Throwable {
-        String cmd = ProcessTools.getCommandLine(ProcessTools.createTestJvm(
+        String cmd = ProcessTools.getCommandLine(ProcessTools.createTestJavaProcessBuilder(
                 "-XX:MaxHeapSize=" + (Platform.is32bit() ? "256m" : "512m"),
                 "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
                 "-agentpath:" + Utils.TEST_NATIVE_PATH + File.separator + System.mapLibraryName("alloc001"),
                 "-XX:CompressedClassSpaceSize=64m",
+                "-Xint", // Avoids issues with libjvmci failing to reserve
+                         // a large virtual address space for its heap
                 Test.class.getName()
         ));
         cmd = escapeCmd(cmd);

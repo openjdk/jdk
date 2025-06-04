@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,37 +23,35 @@
 # questions.
 #
 
-########################################################################
+################################################################################
 # This file is responsible for detecting, verifying and setting up the
 # toolchain, i.e. the compiler, linker and related utilities. It will setup
 # proper paths to the binaries, but it will not setup any flags.
 #
 # The binaries used is determined by the toolchain type, which is the family of
 # compilers and related tools that are used.
-########################################################################
+################################################################################
 
 m4_include([toolchain_microsoft.m4])
 
 # All valid toolchains, regardless of platform (used by help.m4)
-VALID_TOOLCHAINS_all="gcc clang xlc microsoft"
+VALID_TOOLCHAINS_all="gcc clang microsoft"
 
 # These toolchains are valid on different platforms
 VALID_TOOLCHAINS_linux="gcc clang"
-VALID_TOOLCHAINS_macosx="gcc clang"
-VALID_TOOLCHAINS_aix="xlc"
+VALID_TOOLCHAINS_macosx="clang"
+VALID_TOOLCHAINS_aix="clang"
 VALID_TOOLCHAINS_windows="microsoft"
 
 # Toolchain descriptions
 TOOLCHAIN_DESCRIPTION_clang="clang/LLVM"
 TOOLCHAIN_DESCRIPTION_gcc="GNU Compiler Collection"
 TOOLCHAIN_DESCRIPTION_microsoft="Microsoft Visual Studio"
-TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 
 # Minimum supported versions, empty means unspecified
-TOOLCHAIN_MINIMUM_VERSION_clang="3.5"
-TOOLCHAIN_MINIMUM_VERSION_gcc="6.0"
-TOOLCHAIN_MINIMUM_VERSION_microsoft="19.10.0.0" # VS2017
-TOOLCHAIN_MINIMUM_VERSION_xlc=""
+TOOLCHAIN_MINIMUM_VERSION_clang="13.0"
+TOOLCHAIN_MINIMUM_VERSION_gcc="10.0"
+TOOLCHAIN_MINIMUM_VERSION_microsoft="19.28.0.0" # VS2019 16.8, aka MSVC 14.28
 
 # Minimum supported linker versions, empty means unspecified
 TOOLCHAIN_MINIMUM_LD_VERSION_gcc="2.18"
@@ -176,40 +174,23 @@ AC_DEFUN([TOOLCHAIN_SETUP_FILENAME_PATTERNS],
     LIBRARY_PREFIX=
     SHARED_LIBRARY_SUFFIX='.dll'
     STATIC_LIBRARY_SUFFIX='.lib'
-    SHARED_LIBRARY='[$]1.dll'
-    STATIC_LIBRARY='[$]1.lib'
     OBJ_SUFFIX='.obj'
     EXECUTABLE_SUFFIX='.exe'
   else
     LIBRARY_PREFIX=lib
-    SHARED_LIBRARY_SUFFIX='.so'
+    if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+      SHARED_LIBRARY_SUFFIX='.dylib'
+    else
+      SHARED_LIBRARY_SUFFIX='.so'
+    fi
     STATIC_LIBRARY_SUFFIX='.a'
-    SHARED_LIBRARY='lib[$]1.so'
-    STATIC_LIBRARY='lib[$]1.a'
     OBJ_SUFFIX='.o'
     EXECUTABLE_SUFFIX=''
-    if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-      # For full static builds, we're overloading the SHARED_LIBRARY
-      # variables in order to limit the amount of changes required.
-      # It would be better to remove SHARED and just use LIBRARY and
-      # LIBRARY_SUFFIX for libraries that can be built either
-      # shared or static and use STATIC_* for libraries that are
-      # always built statically.
-      if test "x$STATIC_BUILD" = xtrue; then
-        SHARED_LIBRARY='lib[$]1.a'
-        SHARED_LIBRARY_SUFFIX='.a'
-      else
-        SHARED_LIBRARY='lib[$]1.dylib'
-        SHARED_LIBRARY_SUFFIX='.dylib'
-      fi
-    fi
   fi
 
   AC_SUBST(LIBRARY_PREFIX)
   AC_SUBST(SHARED_LIBRARY_SUFFIX)
   AC_SUBST(STATIC_LIBRARY_SUFFIX)
-  AC_SUBST(SHARED_LIBRARY)
-  AC_SUBST(STATIC_LIBRARY)
   AC_SUBST(OBJ_SUFFIX)
   AC_SUBST(EXECUTABLE_SUFFIX)
 ])
@@ -231,34 +212,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
   toolchain_var_name=VALID_TOOLCHAINS_$OPENJDK_BUILD_OS
   VALID_TOOLCHAINS=${!toolchain_var_name}
 
-  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    if test -n "$XCODEBUILD"; then
-      # On Mac OS X, default toolchain to clang after Xcode 5
-      XCODE_VERSION_OUTPUT=`"$XCODEBUILD" -version | $HEAD -n 1`
-      $ECHO "$XCODE_VERSION_OUTPUT" | $GREP "Xcode " > /dev/null
-      if test $? -ne 0; then
-        AC_MSG_NOTICE([xcodebuild output: $XCODE_VERSION_OUTPUT])
-        AC_MSG_ERROR([Failed to determine Xcode version.])
-      fi
-      XCODE_MAJOR_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | \
-          $SED -e 's/^Xcode \(@<:@1-9@:>@@<:@0-9.@:>@*\)/\1/' | \
-          $CUT -f 1 -d .`
-      AC_MSG_NOTICE([Xcode major version: $XCODE_MAJOR_VERSION])
-      if test $XCODE_MAJOR_VERSION -ge 5; then
-          DEFAULT_TOOLCHAIN="clang"
-      else
-          DEFAULT_TOOLCHAIN="gcc"
-      fi
-    else
-      # If Xcode is not installed, but the command line tools are
-      # then we can't run xcodebuild. On these systems we should
-      # default to clang
-      DEFAULT_TOOLCHAIN="clang"
-    fi
-  else
-    # First toolchain type in the list is the default
-    DEFAULT_TOOLCHAIN=${VALID_TOOLCHAINS%% *}
-  fi
+  # First toolchain type in the list is the default
+  DEFAULT_TOOLCHAIN=${VALID_TOOLCHAINS%% *}
 
   if test "x$with_toolchain_type" = xlist; then
     # List all toolchains
@@ -284,30 +239,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
   fi
   AC_SUBST(TOOLCHAIN_TYPE)
 
-  # on AIX, check for xlclang++ on the PATH and TOOLCHAIN_PATH and use it if it is available
-  if test "x$OPENJDK_TARGET_OS" = xaix; then
-    if test "x$TOOLCHAIN_PATH" != x; then
-      XLC_TEST_PATH=${TOOLCHAIN_PATH}/
-    fi
-
-    XLCLANG_VERSION_OUTPUT=`${XLC_TEST_PATH}xlclang++ -qversion 2>&1 | $HEAD -n 1`
-    $ECHO "$XLCLANG_VERSION_OUTPUT" | $GREP "IBM XL C/C++ for AIX" > /dev/null
-    if test $? -eq 0; then
-      AC_MSG_NOTICE([xlclang++ output: $XLCLANG_VERSION_OUTPUT])
-    else
-      AC_MSG_ERROR([xlclang++ version output check failed, output: $XLCLANG_VERSION_OUTPUT])
-    fi
-  fi
-
-  TOOLCHAIN_CC_BINARY_clang="clang"
+  TOOLCHAIN_CC_BINARY_clang="ibm-clang_r clang"
   TOOLCHAIN_CC_BINARY_gcc="gcc"
   TOOLCHAIN_CC_BINARY_microsoft="cl"
-  TOOLCHAIN_CC_BINARY_xlc="xlclang"
 
-  TOOLCHAIN_CXX_BINARY_clang="clang++"
+  TOOLCHAIN_CXX_BINARY_clang="ibm-clang++_r clang++"
   TOOLCHAIN_CXX_BINARY_gcc="g++"
   TOOLCHAIN_CXX_BINARY_microsoft="cl"
-  TOOLCHAIN_CXX_BINARY_xlc="xlclang++"
 
   # Use indirect variable referencing
   toolchain_var_name=TOOLCHAIN_DESCRIPTION_$TOOLCHAIN_TYPE
@@ -341,10 +279,24 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
   # autoconf magic only relies on PATH, so update it if tools dir is specified
   OLD_PATH="$PATH"
 
-  if test "x$XCODE_VERSION_OUTPUT" != x; then
-    # For Xcode, we set the Xcode version as TOOLCHAIN_VERSION
-    TOOLCHAIN_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | $CUT -f 2 -d ' '`
-    TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode $TOOLCHAIN_VERSION"
+  if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
+    if test "x$XCODEBUILD" != x; then
+      XCODE_VERSION_OUTPUT=`"$XCODEBUILD" -version 2> /dev/null | $HEAD -n 1`
+      $ECHO "$XCODE_VERSION_OUTPUT" | $GREP "^Xcode " > /dev/null
+      if test $? -ne 0; then
+        AC_MSG_NOTICE([xcodebuild -version output: $XCODE_VERSION_OUTPUT])
+        AC_MSG_ERROR([Failed to determine Xcode version])
+      fi
+
+      # For Xcode, we set the Xcode version as TOOLCHAIN_VERSION
+      TOOLCHAIN_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | $CUT -f 2 -d ' '`
+      TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode $TOOLCHAIN_VERSION"
+      if test "x$TOOLCHAIN_VERSION" = "x16" || test "x$TOOLCHAIN_VERSION" = "x16.1" ; then
+        AC_MSG_NOTICE([Xcode $TOOLCHAIN_VERSION has a compiler bug that causes the build to fail.])
+        AC_MSG_NOTICE([Please use Xcode 16.2 or later, or a version prior to 16.])
+        AC_MSG_ERROR([Compiler version is not supported.])
+      fi
+    fi
   fi
   AC_SUBST(TOOLCHAIN_VERSION)
 
@@ -360,7 +312,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_POST_DETECTION],
 [
   # Restore old path, except for the microsoft toolchain, which requires the
   # toolchain path to remain in place. Otherwise the compiler will not work in
-  # some siutations in later configure checks.
+  # some situations in later configure checks.
   if test "x$TOOLCHAIN_TYPE" != "xmicrosoft"; then
     PATH="$OLD_PATH"
   fi
@@ -384,25 +336,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
   COMPILER=[$]$1
   COMPILER_NAME=$2
 
-  if test  "x$TOOLCHAIN_TYPE" = xxlc; then
-    # xlc -qversion output typically looks like
-    #     IBM XL C/C++ for AIX, V11.1 (5724-X13)
-    #     Version: 11.01.0000.0015
-    COMPILER_VERSION_OUTPUT=`$COMPILER -qversion 2>&1`
-    # Check that this is likely to be the IBM XL C compiler.
-    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "IBM XL C" > /dev/null
-    if test $? -ne 0; then
-      ALT_VERSION_OUTPUT=`$COMPILER --version 2>&1`
-      AC_MSG_NOTICE([The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler.])
-      AC_MSG_NOTICE([The result from running with -qversion was: "$COMPILER_VERSION_OUTPUT"])
-      AC_MSG_NOTICE([The result from running with --version was: "$ALT_VERSION_OUTPUT"])
-      AC_MSG_ERROR([A $TOOLCHAIN_TYPE compiler is required. Try setting --with-tools-dir.])
-    fi
-    # Collapse compiler output into a single line
-    COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT`
-    COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
-        $SED -e 's/^.*, V\(@<:@1-9@:>@@<:@0-9.@:>@*\).*$/\1/'`
-  elif test  "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+  if test  "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # There is no specific version flag, but all output starts with a version string.
     # First line typically looks something like:
     # Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.40219.01 for 80x86
@@ -425,6 +359,11 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
     #     Copyright (C) 2013 Free Software Foundation, Inc.
     #     This is free software; see the source for copying conditions.  There is NO
     #     warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    # or look like
+    #     gcc (GCC) 10.2.1 20200825 (Alibaba 10.2.1-3.8 2.32)
+    #     Copyright (C) 2020 Free Software Foundation, Inc.
+    #     This is free software; see the source for copying conditions.  There is NO
+    #     warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
     COMPILER_VERSION_OUTPUT=`$COMPILER --version 2>&1`
     # Check that this is likely to be GCC.
     $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "Free Software Foundation" > /dev/null
@@ -438,15 +377,26 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
     COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT | \
         $SED -e 's/ *Copyright .*//'`
     COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
-        $SED -e 's/^.* \(@<:@1-9@:>@<:@0-9@:>@*\.@<:@0-9.@:>@*\)@<:@^0-9.@:>@.*$/\1/'`
+        $AWK -F ')' '{print [$]2}' | \
+        $AWK '{print [$]1}'`
   elif test  "x$TOOLCHAIN_TYPE" = xclang; then
     # clang --version output typically looks like
-    #    Apple LLVM version 5.0 (clang-500.2.79) (based on LLVM 3.3svn)
-    #    clang version 3.3 (tags/RELEASE_33/final)
+    #    Apple clang version 15.0.0 (clang-1500.3.9.4)
+    #    Target: arm64-apple-darwin23.2.0
+    #    Thread model: posix
+    #    InstalledDir: /Library/Developer/CommandLineTools/usr/bin
     # or
-    #    Debian clang version 3.2-7ubuntu1 (tags/RELEASE_32/final) (based on LLVM 3.2)
+    #    clang version 10.0.0-4ubuntu1
     #    Target: x86_64-pc-linux-gnu
     #    Thread model: posix
+    #    InstalledDir: /usr/bin
+    #    Target: x86_64-pc-linux-gnu
+    #    Thread model: posix
+    # or
+    #    IBM Open XL C/C++ for AIX 17.1.0 (5725-C72, 5765-J18), clang version 13.0.0
+    #    Target: powerpc-ibm-aix7.2.0.0
+    #    Thread model: posix
+    #    InstalledDir: /opt/IBM/openxlC/17.1.0/bin
     COMPILER_VERSION_OUTPUT=`$COMPILER --version 2>&1`
     # Check that this is likely to be clang
     $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "clang" > /dev/null
@@ -455,10 +405,12 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
       AC_MSG_NOTICE([The result from running with --version was: "$COMPILER_VERSION_OUTPUT"])
       AC_MSG_ERROR([A $TOOLCHAIN_TYPE compiler is required. Try setting --with-tools-dir.])
     fi
-    # Collapse compiler output into a single line
-    COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT`
+    # Remove "Thread model:" and further details from the version string, and
+    # collapse into a single line
+    COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT | \
+        $SED -e 's/ *Thread model: .*//'`
     COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
-        $SED -e 's/^.* version \(@<:@1-9@:>@@<:@0-9.@:>@*\).*$/\1/'`
+        $SED -e 's/^.*clang version \(@<:@1-9@:>@@<:@0-9.@:>@*\).*$/\1/'`
   else
       AC_MSG_ERROR([Unknown toolchain type $TOOLCHAIN_TYPE.])
   fi
@@ -498,6 +450,7 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
         AC_MSG_ERROR([User supplied compiler $1=[$]$1 does not exist])
       fi
     fi
+    $1_IS_USER_SUPPLIED=true
   else
     # No user supplied value. Locate compiler ourselves.
 
@@ -515,6 +468,7 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
       HELP_MSG_MISSING_DEPENDENCY([devkit])
       AC_MSG_ERROR([Could not find a $COMPILER_NAME compiler. $HELP_MSG])
     fi
+    $1_IS_USER_SUPPLIED=false
   fi
 
   # Now we have a compiler binary in $1. Make sure it's okay.
@@ -551,10 +505,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_LD_VERSION],
   LINKER=[$]$1
   LINKER_NAME="$2"
 
-  if test  "x$TOOLCHAIN_TYPE" = xxlc; then
-    LINKER_VERSION_STRING="Unknown"
-    LINKER_VERSION_NUMBER="0.0"
-  elif test  "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+  if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # There is no specific version flag, but all output starts with a version string.
     # First line typically looks something like:
     #   Microsoft (R) Incremental Linker Version 12.00.31101.0
@@ -649,7 +600,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   if test "x$TOOLCHAIN_MINIMUM_VERSION" != x; then
     TOOLCHAIN_CHECK_COMPILER_VERSION(VERSION: $TOOLCHAIN_MINIMUM_VERSION,
         IF_OLDER_THAN: [
-          AC_MSG_WARN([You are using $TOOLCHAIN_TYPE older than $TOOLCHAIN_MINIMUM_VERSION. This is not a supported configuration.])
+          AC_MSG_WARN([You are using $TOOLCHAIN_TYPE $CC_VERSION_NUMBER which is older than $TOOLCHAIN_MINIMUM_VERSION. This is not a supported configuration.])
         ]
     )
   fi
@@ -674,6 +625,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     # All other toolchains use the compiler to link.
     LD="$CC"
     LDCXX="$CXX"
+    # Force use of lld, since that is what we expect when setting flags later on
+    if test "x$TOOLCHAIN_TYPE" = xclang; then
+      if test "x$OPENJDK_TARGET_OS" = xlinux; then
+        LD="$LD -fuse-ld=lld"
+        LDCXX="$LDCXX -fuse-ld=lld"
+      fi
+    fi
   fi
   AC_SUBST(LD)
   # FIXME: it should be CXXLD, according to standard (cf CXXCPP)
@@ -698,21 +656,20 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     AS="$CC -c"
   else
     if test "x$OPENJDK_TARGET_CPU_BITS" = "x64"; then
-      # On 64 bit windows, the assember is "ml64.exe"
+      # On 64 bit windows, the assembler is "ml64.exe"
       UTIL_LOOKUP_TOOLCHAIN_PROGS(AS, ml64)
     else
-      # otherwise, the assember is "ml.exe"
+      # otherwise, the assembler is "ml.exe"
       UTIL_LOOKUP_TOOLCHAIN_PROGS(AS, ml)
     fi
   fi
   AC_SUBST(AS)
 
   #
-  # Setup the archiver (AR)
+  # Setup tools for creating static libraries (AR/LIB)
   #
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    # The corresponding ar tool is lib.exe (used to create static libraries)
-    UTIL_LOOKUP_TOOLCHAIN_PROGS(AR, lib)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(LIB, lib)
   elif test "x$TOOLCHAIN_TYPE" = xgcc; then
     UTIL_LOOKUP_TOOLCHAIN_PROGS(AR, ar gcc-ar)
   else
@@ -737,6 +694,9 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
       test_metal=`$METAL --version 2>&1`
       if test $? -ne 0; then
         AC_MSG_RESULT([no])
+        AC_MSG_NOTICE([A full XCode is required to build the JDK (not only command line tools)])
+        AC_MSG_NOTICE([If you have XCode installed, you might need to reset the Xcode active developer directory])
+        AC_MSG_NOTICE([using 'sudo xcode-select -r'])
         AC_MSG_ERROR([XCode tool 'metal' neither found in path nor with xcrun])
       else
         AC_MSG_RESULT([yes, will be using '$METAL'])
@@ -784,7 +744,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
 
   case $TOOLCHAIN_TYPE in
     gcc|clang)
-      UTIL_REQUIRE_TOOLCHAIN_PROGS(CXXFILT, c++filt)
+      if test "x$OPENJDK_TARGET_OS" = xaix; then
+        UTIL_REQUIRE_TOOLCHAIN_PROGS(CXXFILT, ibm-llvm-cxxfilt)
+      else
+        UTIL_REQUIRE_TOOLCHAIN_PROGS(CXXFILT, c++filt)
+      fi
       ;;
   esac
 ])
@@ -881,13 +845,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
       UTIL_REQUIRE_PROGS(BUILD_CC, cl, [$VS_PATH])
       UTIL_REQUIRE_PROGS(BUILD_CXX, cl, [$VS_PATH])
 
-      # On windows, the assember is "ml.exe". We currently don't need this so
+      # On windows, the assembler is "ml.exe". We currently don't need this so
       # do not require.
       if test "x$OPENJDK_BUILD_CPU_BITS" = "x64"; then
-        # On 64 bit windows, the assember is "ml64.exe"
+        # On 64 bit windows, the assembler is "ml64.exe"
         UTIL_LOOKUP_PROGS(BUILD_AS, ml64, [$VS_PATH])
       else
-        # otherwise the assember is "ml.exe"
+        # otherwise the assembler is "ml.exe"
         UTIL_LOOKUP_PROGS(BUILD_AS, ml, [$VS_PATH])
       fi
 
@@ -901,8 +865,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
       BUILD_LDCXX="$BUILD_LD"
     else
       if test "x$OPENJDK_BUILD_OS" = xmacosx; then
-        UTIL_REQUIRE_PROGS(BUILD_CC, clang cc gcc)
-        UTIL_REQUIRE_PROGS(BUILD_CXX, clang++ CC g++)
+        UTIL_REQUIRE_PROGS(BUILD_CC, clang)
+        UTIL_REQUIRE_PROGS(BUILD_CXX, clang++)
       else
         UTIL_REQUIRE_PROGS(BUILD_CC, cc gcc)
         UTIL_REQUIRE_PROGS(BUILD_CXX, CC g++)
@@ -973,6 +937,14 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
       fi
     fi
   fi
+  if test "x$OPENJDK_TARGET_OS" = xaix; then
+    # Make sure we have the Open XL version of clang on AIX
+
+    $ECHO "$CC_VERSION_STRING" | $GREP "IBM Open XL C/C++ for AIX" > /dev/null
+    if test $? -ne 0; then
+      AC_MSG_ERROR([ibm-clang_r version output check failed, output: $CC_VERSION_OUTPUT])
+    fi
+  fi
 
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     # Check if linker has -z noexecstack.
@@ -988,124 +960,4 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
     HOTSPOT_TOOLCHAIN_TYPE=visCPP
   fi
   AC_SUBST(HOTSPOT_TOOLCHAIN_TYPE)
-])
-
-# Setup the JTReg Regression Test Harness.
-AC_DEFUN_ONCE([TOOLCHAIN_SETUP_JTREG],
-[
-  AC_ARG_WITH(jtreg, [AS_HELP_STRING([--with-jtreg],
-      [Regression Test Harness @<:@probed@:>@])])
-
-  if test "x$with_jtreg" = xno; then
-    # jtreg disabled
-    AC_MSG_CHECKING([for jtreg test harness])
-    AC_MSG_RESULT([no, disabled])
-  elif test "x$with_jtreg" != xyes && test "x$with_jtreg" != x; then
-    if test -d "$with_jtreg"; then
-      # An explicit path is specified, use it.
-      JT_HOME="$with_jtreg"
-    else
-      case "$with_jtreg" in
-        *.zip )
-          JTREG_SUPPORT_DIR=$CONFIGURESUPPORT_OUTPUTDIR/jtreg
-          $RM -rf $JTREG_SUPPORT_DIR
-          $MKDIR -p $JTREG_SUPPORT_DIR
-          $UNZIP -qq -d $JTREG_SUPPORT_DIR $with_jtreg
-
-          # Try to find jtreg to determine JT_HOME path
-          JTREG_PATH=`$FIND $JTREG_SUPPORT_DIR | $GREP "/bin/jtreg"`
-          if test "x$JTREG_PATH" != x; then
-            JT_HOME=$($DIRNAME $($DIRNAME $JTREG_PATH))
-          fi
-          ;;
-        * )
-          ;;
-      esac
-    fi
-    UTIL_FIXUP_PATH([JT_HOME])
-    if test ! -d "$JT_HOME"; then
-      AC_MSG_ERROR([jtreg home directory from --with-jtreg=$with_jtreg does not exist])
-    fi
-
-    if test ! -e "$JT_HOME/lib/jtreg.jar"; then
-      AC_MSG_ERROR([jtreg home directory from --with-jtreg=$with_jtreg is not a valid jtreg home])
-    fi
-
-    AC_MSG_CHECKING([for jtreg test harness])
-    AC_MSG_RESULT([$JT_HOME])
-  else
-    # Try to locate jtreg using the JT_HOME environment variable
-    if test "x$JT_HOME" != x; then
-      # JT_HOME set in environment, use it
-      if test ! -d "$JT_HOME"; then
-        AC_MSG_WARN([Ignoring JT_HOME pointing to invalid directory: $JT_HOME])
-        JT_HOME=
-      else
-        if test ! -e "$JT_HOME/lib/jtreg.jar"; then
-          AC_MSG_WARN([Ignoring JT_HOME which is not a valid jtreg home: $JT_HOME])
-          JT_HOME=
-        else
-          AC_MSG_NOTICE([Located jtreg using JT_HOME from environment])
-        fi
-      fi
-    fi
-
-    if test "x$JT_HOME" = x; then
-      # JT_HOME is not set in environment, or was deemed invalid.
-      # Try to find jtreg on path
-      UTIL_LOOKUP_PROGS(JTREGEXE, jtreg)
-      if test "x$JTREGEXE" != x; then
-        # That's good, now try to derive JT_HOME
-        JT_HOME=`(cd $($DIRNAME $JTREGEXE)/.. && pwd)`
-        if test ! -e "$JT_HOME/lib/jtreg.jar"; then
-          AC_MSG_WARN([Ignoring jtreg from path since a valid jtreg home cannot be found])
-          JT_HOME=
-        else
-          AC_MSG_NOTICE([Located jtreg using jtreg executable in path])
-        fi
-      fi
-    fi
-
-    AC_MSG_CHECKING([for jtreg test harness])
-    if test "x$JT_HOME" != x; then
-      AC_MSG_RESULT([$JT_HOME])
-    else
-      AC_MSG_RESULT([no, not found])
-
-      if test "x$with_jtreg" = xyes; then
-        AC_MSG_ERROR([--with-jtreg was specified, but no jtreg found.])
-      fi
-    fi
-  fi
-
-  UTIL_FIXUP_PATH(JT_HOME)
-  AC_SUBST(JT_HOME)
-])
-
-# Setup the JIB dependency resolver
-AC_DEFUN_ONCE([TOOLCHAIN_SETUP_JIB],
-[
-  AC_ARG_WITH(jib, [AS_HELP_STRING([--with-jib],
-      [Jib dependency management tool @<:@not used@:>@])])
-
-  if test "x$with_jib" = xno || test "x$with_jib" = x; then
-    # jib disabled
-    AC_MSG_CHECKING([for jib])
-    AC_MSG_RESULT(no)
-  elif test "x$with_jib" = xyes; then
-    AC_MSG_ERROR([Must supply a value to --with-jib])
-  else
-    JIB_HOME="${with_jib}"
-    AC_MSG_CHECKING([for jib])
-    AC_MSG_RESULT(${JIB_HOME})
-    if test ! -d "${JIB_HOME}"; then
-      AC_MSG_ERROR([--with-jib must be a directory])
-    fi
-    JIB_JAR=$(ls ${JIB_HOME}/lib/jib-*.jar)
-    if test ! -f "${JIB_JAR}"; then
-      AC_MSG_ERROR([Could not find jib jar file in ${JIB_HOME}])
-    fi
-  fi
-
-  AC_SUBST(JIB_HOME)
 ])

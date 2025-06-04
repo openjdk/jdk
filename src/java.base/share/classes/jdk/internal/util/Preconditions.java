@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public class Preconditions {
      *        to the name of one of the range check methods, checkIndex,
      *        checkFromToIndex, checkFromIndexSize
      * @param args the out-of-bounds arguments that failed the range check.
-     *        If the checkKind corresponds a the name of a range check method
+     *        If the checkKind corresponds to the name of a range check method
      *        then the bounds arguments are those that can be passed in order
      *        to the method.
      * @param oobef the exception formatter that when applied with a checkKind

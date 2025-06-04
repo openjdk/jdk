@@ -12,7 +12,7 @@ import jdk.test.lib.process.ProcessTools;
  * @test
  * @summary Checks that locale is respected when using -XX:FlightRecorderOptions
  *          See JDK-8244508
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @modules jdk.jfr
  * @library /test/lib
@@ -36,7 +36,7 @@ public class TestOptionsWithLocale {
             return;
         }
 
-        ProcessBuilder pb = ProcessTools.createTestJvm(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-Duser.country=DE",
                 "-Duser.language=de",
                 "-XX:FlightRecorderOptions:stackdepth=128",

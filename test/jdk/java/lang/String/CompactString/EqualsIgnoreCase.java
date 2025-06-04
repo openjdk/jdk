@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,12 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 /*
  * @test
- * @bug 8077559 8248655
+ * @bug 8077559 8248655 8302871
  * @summary Tests Compact String. This one is for String.equalsIgnoreCase.
  * @run testng/othervm -XX:+CompactStrings EqualsIgnoreCase
  * @run testng/othervm -XX:-CompactStrings EqualsIgnoreCase
@@ -74,5 +76,32 @@ public class EqualsIgnoreCase extends CompactString {
                                             escapeNonASCIIs(anotherString),
                                             source));
                         });
+    }
+
+    /**
+     * Exhaustively check that all 256x256 latin1 code point pairs are equalsIgnoreCased
+     * in a manner consistent with Character.toLowerCase(Character.toUpperCase(c));
+     */
+    @Test
+    public void checkConsistencyWithCharacterUppercaseLowerCase() {
+        for (char a = 0; a < 256; a++) {
+            for (char b = 0; b < 256; b++) {
+
+                int caseFoldA = Character.toLowerCase(Character.toUpperCase(a));
+                int caseFoldB = Character.toLowerCase(Character.toUpperCase(b));
+
+                String astr = Character.toString(a);
+                String bstr = Character.toString(b);
+
+                // If characters fold to the same lowercase, their strings should equalsIgnoreCase:
+                if (caseFoldA == caseFoldB) {
+                    assertTrue(astr.equalsIgnoreCase(bstr),
+                            "Expected %s to equalsIgnoreCase %s".formatted(astr, bstr));
+                } else {
+                    assertFalse(astr.equalsIgnoreCase(bstr),
+                            "Expected %s to not equalsIgnoreCase %s".formatted(astr, bstr));
+                }
+            }
+        }
     }
 }

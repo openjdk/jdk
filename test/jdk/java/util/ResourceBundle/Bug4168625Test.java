@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,9 +61,9 @@ public class Bug4168625Test extends RBTestFmwk {
      */
     public void testMissingParent() throws Exception {
         final Locale oldDefault = Locale.getDefault();
-        Locale.setDefault(new Locale("en", "US"));
+        Locale.setDefault(Locale.US);
         try {
-            final Locale loc = new Locale("jf", "jf");
+            final Locale loc = Locale.of("jf", "jf");
             ResourceBundle bundle = ResourceBundle.getBundle("Bug4168625Resource2", loc);
             final String s1 = bundle.getString("name");
             if (!s1.equals("Bug4168625Resource2_en_US")) {
@@ -87,7 +87,7 @@ public class Bug4168625Test extends RBTestFmwk {
      *  locale is en_US.
      *  <P>
      *  <pre>
-     *  getBundle("Bug4168625Resource", new Locale("fr", "FR"));
+     *  getBundle("Bug4168625Resource", Locale.FRANCE);
      *      -->try to load Bug4168625Resource_fr_FR
      *      -->try to load Bug4168625Resource_fr
      *      -->try to load Bug4168625Resource_en_US
@@ -97,7 +97,7 @@ public class Bug4168625Test extends RBTestFmwk {
      *      -->cache Bug4168625Resource as Bug4168625Resource_en
      *      -->cache Bug4168625Resource as Bug4168625Resource_en_US
      *      -->return Bug4168625Resource
-     *  getBundle("Bug4168625Resource", new Locale("fr", "FR"));
+     *  getBundle("Bug4168625Resource", Locale.FRANCE);
      *      -->try to load Bug4168625Resource_fr_FR
      *      -->try to load Bug4168625Resource_fr
      *      -->find cached Bug4168625Resource_en_US
@@ -112,7 +112,7 @@ public class Bug4168625Test extends RBTestFmwk {
      *  The following, more efficient behavior is desired:
      *  <P>
      *  <pre>
-     *  getBundle("Bug4168625Resource", new Locale("fr", "FR"));
+     *  getBundle("Bug4168625Resource", Locale.FRANCE);
      *      -->try to load Bug4168625Resource_fr_FR
      *      -->try to load Bug4168625Resource_fr
      *      -->try to load Bug4168625Resource_en_US
@@ -124,7 +124,7 @@ public class Bug4168625Test extends RBTestFmwk {
      *      -->cache Bug4168625Resource as Bug4168625Resource_fr
      *      -->cache Bug4168625Resource as Bug4168625Resource_fr_FR
      *      -->return Bug4168625Resource
-     *  getBundle("Bug4168625Resource", new Locale("fr", "FR"));
+     *  getBundle("Bug4168625Resource", Locale.FRANCE);
      *      -->find cached Bug4168625Resource_fr_FR
      *      -->return Bug4168625Resource_en_US (which is realy Bug4168625Resource)
      *  </pre>
@@ -132,7 +132,7 @@ public class Bug4168625Test extends RBTestFmwk {
      *
      */
     public void testCacheFailures() throws Exception {
-        checkResourceLoading("Bug4168625Resource", new Locale("fr", "FR"));
+        checkResourceLoading("Bug4168625Resource", Locale.FRANCE);
     }
 
     /**
@@ -142,7 +142,7 @@ public class Bug4168625Test extends RBTestFmwk {
      *  exist.  The class Bug4168625Resource does.
      *  <P>
      *  <pre>
-     *  getBundle("Bug4168625Resource", new Locale("en", "US"));
+     *  getBundle("Bug4168625Resource", Locale.US);
      *      -->try to load Bug4168625Resource_en_US
      *      -->try to load Bug4168625Resource_en
      *      -->try to load Bug4168625Resource_en_US
@@ -158,7 +158,7 @@ public class Bug4168625Test extends RBTestFmwk {
      *  should not occur.  The desired behavior is as follows:
      *  <P>
      *  <pre>
-     *  getBundle("Bug4168625Resource", new Locale("en", "US"));
+     *  getBundle("Bug4168625Resource", Locale.US);
      *      -->try to load Bug4168625Resource_en_US
      *      -->try to load Bug4168625Resource_en
      *      -->load Bug4168625Resource
@@ -276,8 +276,8 @@ public class Bug4168625Test extends RBTestFmwk {
         final Class c = loader.loadClass("Bug4168625Class");
         final Bug4168625Getter test = (Bug4168625Getter)c.newInstance();
 
-        ConcurrentLoadingThread thread1 = new ConcurrentLoadingThread(loader, test, new Locale("en", "CA"));
-        ConcurrentLoadingThread thread2 = new ConcurrentLoadingThread(loader, test, new Locale("en", "IE"));
+        ConcurrentLoadingThread thread1 = new ConcurrentLoadingThread(loader, test, Locale.of("en", "CA"));
+        ConcurrentLoadingThread thread2 = new ConcurrentLoadingThread(loader, test, Locale.of("en", "IE"));
 
         thread1.start();            //start thread 1
         loader.waitForNotify(1);    //wait for thread1 to do getBundle & block in loader
@@ -306,7 +306,7 @@ public class Bug4168625Test extends RBTestFmwk {
         final Bug4168625Getter test = (Bug4168625Getter)c.newInstance();
         causeResourceBundleCacheFlush();
 
-        ConcurrentLoadingThread thread1 = new ConcurrentLoadingThread(loader, test, new Locale("en", "US"));
+        ConcurrentLoadingThread thread1 = new ConcurrentLoadingThread(loader, test, Locale.US);
         thread1.start();            //start thread 1
         loader.waitForNotify(1);    //wait for thread1 to do getBundle(en_US) & block in loader
         causeResourceBundleCacheFlush();    //cause a cache flush
@@ -561,11 +561,11 @@ public class Bug4168625Test extends RBTestFmwk {
      *  returning from findBundle).
      *  <P>
      *  <pre>
-     *  ThreadA.getBundle("Bug4168625Resource", new Locale("sp"));
+     *  ThreadA.getBundle("Bug4168625Resource", Locale.of("sp"));
      *      A-->load Bug4168625Resource_sp
      *      A-->find cached Bug4168625Resource
      *      A-->cache Bug4168625Resource_sp as Bug4168625Resource_sp
-     *  ThreadB.getBundle("Bug4168625Resource", new Locale("sp"));
+     *  ThreadB.getBundle("Bug4168625Resource", Locale.of("sp"));
      *      B-->find cached Bug4168625Resource_sp
      *      B-->return Bug4168625Resource_sp
      *  ThreadB.bundle.getString("language");

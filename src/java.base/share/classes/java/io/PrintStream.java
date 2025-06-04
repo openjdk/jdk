@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,6 @@ import java.nio.charset.UnsupportedCharsetException;
 public class PrintStream extends FilterOutputStream
     implements Appendable, Closeable
 {
-
     private final boolean autoFlush;
     private boolean trouble = false;
     private Formatter formatter;
@@ -155,6 +154,7 @@ public class PrintStream extends FilterOutputStream
      * @see java.io.PrintWriter#PrintWriter(java.io.OutputStream, boolean)
      * @see Charset#defaultCharset()
      */
+    @SuppressWarnings("this-escape")
     public PrintStream(OutputStream out, boolean autoFlush) {
         this(autoFlush, requireNonNull(out, "Null output stream"));
     }
@@ -200,6 +200,7 @@ public class PrintStream extends FilterOutputStream
      *
      * @since  10
      */
+    @SuppressWarnings("this-escape")
     public PrintStream(OutputStream out, boolean autoFlush, Charset charset) {
         super(out);
         this.autoFlush = autoFlush;
@@ -228,14 +229,11 @@ public class PrintStream extends FilterOutputStream
      *          created, or if some other error occurs while opening or
      *          creating the file
      *
-     * @throws  SecurityException
-     *          If a security manager is present and {@link
-     *          SecurityManager#checkWrite checkWrite(fileName)} denies write
-     *          access to the file
      * @see Charset#defaultCharset()
      *
      * @since  1.5
      */
+    @SuppressWarnings("this-escape")
     public PrintStream(String fileName) throws FileNotFoundException {
         this(false, new FileOutputStream(fileName));
     }
@@ -261,11 +259,6 @@ public class PrintStream extends FilterOutputStream
      *          regular file and a new regular file of that name cannot be
      *          created, or if some other error occurs while opening or
      *          creating the file
-     *
-     * @throws  SecurityException
-     *          If a security manager is present and {@link
-     *          SecurityManager#checkWrite checkWrite(fileName)} denies write
-     *          access to the file
      *
      * @throws  UnsupportedEncodingException
      *          If the named charset is not supported
@@ -298,11 +291,6 @@ public class PrintStream extends FilterOutputStream
      * @throws  IOException
      *          if an I/O error occurs while opening or creating the file
      *
-     * @throws  SecurityException
-     *          If a security manager is present and {@link
-     *          SecurityManager#checkWrite checkWrite(fileName)} denies write
-     *          access to the file
-     *
      * @since  10
      */
     public PrintStream(String fileName, Charset charset) throws IOException {
@@ -329,14 +317,11 @@ public class PrintStream extends FilterOutputStream
      *          created, or if some other error occurs while opening or
      *          creating the file
      *
-     * @throws  SecurityException
-     *          If a security manager is present and {@link
-     *          SecurityManager#checkWrite checkWrite(file.getPath())}
-     *          denies write access to the file
      * @see Charset#defaultCharset()
      *
      * @since  1.5
      */
+    @SuppressWarnings("this-escape")
     public PrintStream(File file) throws FileNotFoundException {
         this(false, new FileOutputStream(file));
     }
@@ -362,11 +347,6 @@ public class PrintStream extends FilterOutputStream
      *          regular file and a new regular file of that name cannot be
      *          created, or if some other error occurs while opening or
      *          creating the file
-     *
-     * @throws  SecurityException
-     *          If a security manager is present and {@link
-     *          SecurityManager#checkWrite checkWrite(file.getPath())}
-     *          denies write access to the file
      *
      * @throws  UnsupportedEncodingException
      *          If the named charset is not supported
@@ -399,11 +379,6 @@ public class PrintStream extends FilterOutputStream
      *
      * @throws  IOException
      *          if an I/O error occurs while opening or creating the file
-     *
-     * @throws  SecurityException
-     *          If a security manager is present and {@link
-     *          SecurityManager#checkWrite checkWrite(file.getPath())}
-     *          denies write access to the file
      *
      * @since  10
      */
@@ -447,7 +422,7 @@ public class PrintStream extends FilterOutputStream
     @Override
     public void close() {
         synchronized (this) {
-            if (! closing) {
+            if (!closing) {
                 closing = true;
                 try {
                     textOut.close();
@@ -464,22 +439,11 @@ public class PrintStream extends FilterOutputStream
     }
 
     /**
-     * Flushes the stream and checks its error state. The internal error state
-     * is set to {@code true} when the underlying output stream throws an
-     * {@code IOException} other than {@code InterruptedIOException},
-     * and when the {@code setError} method is invoked.  If an operation
-     * on the underlying output stream throws an
-     * {@code InterruptedIOException}, then the {@code PrintStream}
-     * converts the exception back into an interrupt by doing:
-     * <pre>{@code
-     *     Thread.currentThread().interrupt();
-     * }</pre>
-     * or the equivalent.
+     * Flushes the stream if it's not closed and checks its error state.
      *
      * @return {@code true} if and only if this stream has encountered an
-     *         {@code IOException} other than
-     *         {@code InterruptedIOException}, or the
-     *         {@code setError} method has been invoked
+     *         {@code IOException}, or the {@code setError} method has been
+     *         invoked
      */
     public boolean checkError() {
         if (out != null)
@@ -504,7 +468,7 @@ public class PrintStream extends FilterOutputStream
     }
 
     /**
-     * Clears the internal error state of this stream.
+     * Clears the error state of this stream.
      *
      * <p> This method will cause subsequent invocations of {@link
      * #checkError()} to return {@code false} until another write
@@ -565,6 +529,7 @@ public class PrintStream extends FilterOutputStream
      * @param  buf   A byte array
      * @param  off   Offset from which to start taking bytes
      * @param  len   Number of bytes to write
+     * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     @Override
     public void write(byte[] buf, int off, int len) {
@@ -613,8 +578,6 @@ public class PrintStream extends FilterOutputStream
      *
      * @see #writeBytes(byte[])
      * @see #write(byte[],int,int)
-     *
-     * @since 14
      */
     @Override
     public void write(byte[] buf) throws IOException {
@@ -1079,9 +1042,9 @@ public class PrintStream extends FilterOutputStream
      * {@code out.printf(format, args)} behaves
      * in exactly the same way as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     out.format(format, args)
-     * }</pre>
+     * }
      *
      * @param  format
      *         A format string as described in <a
@@ -1126,9 +1089,9 @@ public class PrintStream extends FilterOutputStream
      * {@code out.printf(l, format, args)} behaves
      * in exactly the same way as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     out.format(l, format, args)
-     * }</pre>
+     * }
      *
      * @param  l
      *         The {@linkplain java.util.Locale locale} to apply during
@@ -1215,12 +1178,9 @@ public class PrintStream extends FilterOutputStream
         try {
             synchronized (this) {
                 ensureOpen();
-                if ((formatter == null)
-                    || (formatter.locale() !=
-                        Locale.getDefault(Locale.Category.FORMAT)))
+                if ((formatter == null) || (formatter.locale() != Locale.getDefault(Locale.Category.FORMAT)))
                     formatter = new Formatter((Appendable) this);
-                formatter.format(Locale.getDefault(Locale.Category.FORMAT),
-                                 format, args);
+                formatter.format(Locale.getDefault(Locale.Category.FORMAT), format, args);
             }
         } catch (InterruptedIOException x) {
             Thread.currentThread().interrupt();
@@ -1274,8 +1234,7 @@ public class PrintStream extends FilterOutputStream
         try {
             synchronized (this) {
                 ensureOpen();
-                if ((formatter == null)
-                    || (formatter.locale() != l))
+                if ((formatter == null) || (formatter.locale() != l))
                     formatter = new Formatter(this, l);
                 formatter.format(l, format, args);
             }
@@ -1291,15 +1250,16 @@ public class PrintStream extends FilterOutputStream
      * Appends the specified character sequence to this output stream.
      *
      * <p> An invocation of this method of the form {@code out.append(csq)}
-     * behaves in exactly the same way as the invocation
+     * when {@code csq} is not {@code null}, behaves in exactly the same way
+     * as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     out.print(csq.toString())
-     * }</pre>
+     * }
      *
      * <p> Depending on the specification of {@code toString} for the
      * character sequence {@code csq}, the entire sequence may not be
-     * appended.  For instance, invoking then {@code toString} method of a
+     * appended.  For instance, invoking the {@code toString} method of a
      * character buffer will return a subsequence whose content depends upon
      * the buffer's position and limit.
      *
@@ -1326,9 +1286,9 @@ public class PrintStream extends FilterOutputStream
      * {@code csq} is not {@code null}, behaves in
      * exactly the same way as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     out.print(csq.subSequence(start, end).toString())
-     * }</pre>
+     * }
      *
      * @param  csq
      *         The character sequence from which a subsequence will be
@@ -1363,9 +1323,9 @@ public class PrintStream extends FilterOutputStream
      * <p> An invocation of this method of the form {@code out.append(c)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     out.print(c)
-     * }</pre>
+     * }
      *
      * @param  c
      *         The 16-bit character to append

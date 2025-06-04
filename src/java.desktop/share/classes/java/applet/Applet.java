@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package java.applet;
 
-import java.awt.AWTPermission;
 import java.awt.Dimension;
 import java.awt.GraphicsEnvironment;
 import java.awt.HeadlessException;
@@ -108,7 +107,7 @@ public class Applet extends Panel {
      * @throws IOException if an I/O error occurs
      * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
      *         returns {@code true}
-     * @serial
+     *
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since 1.4
      */
@@ -123,21 +122,10 @@ public class Applet extends Panel {
 
     /**
      * Sets this applet's stub. This is done automatically by the system.
-     * <p>
-     * If there is a security manager, its {@code checkPermission} method is
-     * called with the {@code AWTPermission("setAppletStub")} permission if a
-     * stub has already been set.
      *
      * @param  stub the new stub
-     * @throws SecurityException if the caller cannot set the stub
      */
     public final void setStub(AppletStub stub) {
-        if (this.stub != null) {
-            SecurityManager s = System.getSecurityManager();
-            if (s != null) {
-                s.checkPermission(new AWTPermission("setAppletStub"));
-            }
-        }
         this.stub = stub;
     }
 
@@ -313,7 +301,9 @@ public class Applet extends Panel {
      */
     public Image getImage(URL url, String name) {
         try {
-            return getImage(new URL(url, name));
+            @SuppressWarnings("deprecation")
+            var u = new URL(url, name);
+            return getImage(u);
         } catch (MalformedURLException e) {
             return null;
         }
@@ -363,7 +353,9 @@ public class Applet extends Panel {
      */
     public AudioClip getAudioClip(URL url, String name) {
         try {
-            return getAudioClip(new URL(url, name));
+            @SuppressWarnings("deprecation")
+            var u = new URL(url, name);
+            return getAudioClip(u);
         } catch (MalformedURLException e) {
             return null;
         }
@@ -549,7 +541,7 @@ public class Applet extends Panel {
     //
 
     /**
-     * The accessible context associated with this {@code Applet}.
+     * @serial The accessible context associated with this {@code Applet}.
      */
     @SuppressWarnings("serial") // Not statically typed as Serializable
     AccessibleContext accessibleContext = null;

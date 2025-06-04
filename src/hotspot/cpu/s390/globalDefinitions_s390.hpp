@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,15 +26,13 @@
 #ifndef CPU_S390_GLOBALDEFINITIONS_S390_HPP
 #define CPU_S390_GLOBALDEFINITIONS_S390_HPP
 
-// Convenience macro that produces a string literal with the filename
-// and linenumber of the location where the macro was used.
-#ifndef FILE_AND_LINE
-#define FILE_AND_LINE __FILE__ ":" XSTR(__LINE__)
-#endif
-
 #define ShortenBranches true
 
-const int StackAlignmentInBytes = 16;
+const int StackAlignmentInBytes = 8;
+
+// All faults on s390x give the address only on page granularity.
+// Set Pdsegfault_address to minimum one page address.
+const size_t pd_segfault_address = 4096;
 
 #define SUPPORTS_NATIVE_CX8
 
@@ -50,8 +48,9 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 // The expected size in bytes of a cache line, used to pad data structures.
 #define DEFAULT_CACHE_LINE_SIZE 256
 
-#define SUPPORT_RESERVED_STACK_AREA
+// The default padding size for data structures to avoid false sharing.
+#define DEFAULT_PADDING_SIZE DEFAULT_CACHE_LINE_SIZE
 
-#define COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS false
+#define SUPPORT_RESERVED_STACK_AREA
 
 #endif // CPU_S390_GLOBALDEFINITIONS_S390_HPP

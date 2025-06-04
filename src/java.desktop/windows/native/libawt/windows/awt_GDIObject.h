@@ -51,7 +51,7 @@ public:
     INLINE void SetHandle(HGDIOBJ handle) { m_handle = handle; }
 
     /*
-     * NOTE: we don't syncronize access to the reference counter.
+     * NOTE: we don't synchronize access to the reference counter.
      * Currently it is changed only when we are already synchronized
      * on the global BatchDestructionManager lock.
      */

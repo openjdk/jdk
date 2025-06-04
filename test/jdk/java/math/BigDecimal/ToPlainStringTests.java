@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4984872
+ * @bug 4984872 8318915
  * @summary Basic tests of toPlainString method
  * @run main ToPlainStringTests
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+EliminateAutoBox -XX:AutoBoxCacheMax=20000 ToPlainStringTests
@@ -67,6 +67,11 @@ public class ToPlainStringTests {
             {"12345678901234567890",     "12345678901234567890"},
             {"12345678901234567890e22",  "123456789012345678900000000000000000000000"},
             {"12345678901234567890e-22", "0.0012345678901234567890"},
+
+            {"12345e-1",                 "1234.5"},
+            {"12345e-2",                 "123.45"},
+            {"12345e-3",                 "12.345"},
+            {"12345e-4",                 "1.2345"},
         };
 
         int errors = 0;
@@ -87,6 +92,38 @@ public class ToPlainStringTests {
                                    s + "'' from BigDecimal " +
                                    bd);
             }
+        }
+
+        String[] failingCases = {
+            "1E-" + (Integer.MAX_VALUE - 0),            // MAX_VALUE + 2 chars
+            "1E-" + (Integer.MAX_VALUE - 1),            // MAX_VALUE + 1 chars
+
+            "-1E-" + (Integer.MAX_VALUE - 0),           // MAX_VALUE + 3 chars
+            "-1E-" + (Integer.MAX_VALUE - 1),           // MAX_VALUE + 2 chars
+            "-1E-" + (Integer.MAX_VALUE - 2),           // MAX_VALUE + 1 chars
+
+            "123456789E-" + (Integer.MAX_VALUE - 0),    // MAX_VALUE + 2 chars
+            "123456789E-" + (Integer.MAX_VALUE - 1),    // MAX_VALUE + 1 chars
+
+            "-123456789E-" + (Integer.MAX_VALUE - 0),   // MAX_VALUE + 3 chars
+            "-123456789E-" + (Integer.MAX_VALUE - 1),   // MAX_VALUE + 2 chars
+            "-123456789E-" + (Integer.MAX_VALUE - 2),   // MAX_VALUE + 1 chars
+
+            "1E" + Integer.MAX_VALUE,                   // MAX_VALUE + 1 chars
+            "123456789E" + Integer.MAX_VALUE,           // MAX_VALUE + 9 chars
+
+            "-1E" + Integer.MAX_VALUE,                  // MAX_VALUE + 2 chars
+            "-123456789E" + Integer.MAX_VALUE,          // MAX_VALUE + 10 chars
+        };
+        /* We expect pre-emptive OutOfMemoryErrors, nothing else */
+        for (String failingCase : failingCases) {
+            try {
+                new BigDecimal(failingCase).toPlainString();
+            } catch (OutOfMemoryError expected) {
+                continue;
+            } catch (Throwable ignored) {
+            }
+            ++errors;
         }
 
         if(errors > 0)

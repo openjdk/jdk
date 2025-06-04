@@ -45,7 +45,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
      * Constructs an X11InputMethod instance. It initializes the XIM
      * environment if it's not done yet.
      *
-     * @exception AWTException if XOpenIM() failed.
+     * @throws AWTException if XOpenIM() failed.
      */
     public X11InputMethod() throws AWTException {
         super();
@@ -54,6 +54,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
     /**
      * Reset the composition state to the current composition state.
      */
+    @Override
     protected void resetCompositionState() {
         if (compositionEnableSupported && haveActiveClient()) {
             try {
@@ -69,6 +70,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
     /**
      * Activate input method.
      */
+    @Override
     public synchronized void activate() {
         clientComponentWindow = getClientComponentWindow();
         if (clientComponentWindow == null)
@@ -98,9 +100,9 @@ public abstract class X11InputMethod extends X11InputMethodBase {
            lastXICFocussedComponentPeer = getPeer(lastXICFocussedComponent);
         }
 
-        /* If the last XIC focussed component has a different peer as the
-           current focussed component, change the XIC focus to the newly
-           focussed component.
+        /* If the last XIC focused component has a different peer as the
+           current focused component, change the XIC focus to the newly
+           focused component.
         */
         if (isLastTemporary || lastXICFocussedComponentPeer != awtFocussedComponentPeer ||
             isLastXICActive != haveActiveClient()) {
@@ -120,12 +122,13 @@ public abstract class X11InputMethod extends X11InputMethodBase {
     /**
      * Deactivate input method.
      */
+    @Override
     public synchronized void deactivate(boolean isTemporary) {
         boolean   isAc =  haveActiveClient();
         /* Usually as the client component, let's call it component A,
            loses the focus, this method is called. Then when another client
            component, let's call it component B,  gets the focus, activate is first called on
-           the previous focused compoent which is A, then endComposition is called on A,
+           the previous focused component which is A, then endComposition is called on A,
            deactivate is called on A again. And finally activate is called on the newly
            focused component B. Here is the call sequence.
 
@@ -157,6 +160,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
     }
 
     // implements java.awt.im.spi.InputMethod.hideWindows
+    @Override
     public void hideWindows() {
         // ??? need real implementation
     }
@@ -174,6 +178,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
     //       This functionality is implemented in a package-private method
     //       to insure that it cannot be overridden by client subclasses.
     //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
+    @Override
     void dispatchComposedText(String chgText,
                                            int[] chgStyles,
                                            int chgOffset,
@@ -326,6 +331,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
      * Subclasses should override disposeImpl() instead of dispose(). Client
      * code should always invoke dispose(), never disposeImpl().
      */
+    @Override
     protected synchronized void disposeImpl() {
         disposeXIC();
         awtLock();
@@ -340,13 +346,14 @@ public abstract class X11InputMethod extends X11InputMethodBase {
     /**
      * @see java.awt.im.spi.InputMethod#setCompositionEnabled(boolean)
      */
+    @Override
     public void setCompositionEnabled(boolean enable) {
         /* If the composition state is successfully changed, set
            the savedCompositionState to 'enable'. Otherwise, simply
            return.
            setCompositionEnabledNative may throw UnsupportedOperationException.
            Don't try to catch it since the method may be called by clients.
-           Use package private mthod 'resetCompositionState' if you want the
+           Use package private method 'resetCompositionState' if you want the
            exception to be caught.
         */
         if (setCompositionEnabledNative(enable)) {

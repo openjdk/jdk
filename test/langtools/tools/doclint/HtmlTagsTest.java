@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8004832 8247957
+ * @bug 8004832 8247957 8292157
  * @summary Add new doclint package
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
@@ -32,6 +32,7 @@ public class HtmlTagsTest {
 
     /**
      * <span> <p> </span>
+     * <a> <p> </a>
      */
     public void not_allowed_inline() { }
 
@@ -66,6 +67,14 @@ public class HtmlTagsTest {
      */
     public void inline_not_allowed() { }
 
+    /**
+     * <ul> &amp; <li> ... </li> </ul>
+     */
+    public void entity_not_allowed() { }
 
+    /**
+     * <ul> *@/ <li> ... </li> </ul>
+     */
+    public void escape_not_allowed() { }
 }
 

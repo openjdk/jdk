@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,13 @@
  * AccessBridgeCalls.c is available for download from the OpenJDK repository using
  * the following link:
  *
- * http://hg.openjdk.java.net/jdk9/jdk9/jdk/raw-file/tip/src/jdk.accessibility/windows/native/bridge/AccessBridgeCalls.c
+ * https://git.openjdk.org/jdk17/blob/master/src/jdk.accessibility/windows/native/bridge/AccessBridgeCalls.c
  *
  * Also note that the API is used in the jaccessinspector and jaccesswalker tools.
  * The source for those tools is available in the OpenJDK repository at these links:
  *
- * http://hg.openjdk.java.net/jdk9/jdk9/jdk/file/tip/src/jdk.accessibility/windows/native/jaccessinspector/jaccessinspector.cpp
- * http://hg.openjdk.java.net/jdk9/jdk9/jdk/file/tip/src/jdk.accessibility/windows/native/jaccesswalker/jaccesswalker.cpp
+ * https://git.openjdk.org/jdk17/blob/master/src/jdk.accessibility/windows/native/jaccessinspector/jaccessinspector.cpp
+ * https://git.openjdk.org/jdk17/blob/master/src/jdk.accessibility/windows/native/jaccesswalker/jaccesswalker.cpp
  *
  *
  */
@@ -628,9 +628,8 @@ extern "C" {
     AccessibleContext getActiveDescendent (const long vmID, const AccessibleContext accessibleContext);
 
     /**
-       /**
-       * Accessible Value routines
-       */
+     * Accessible Value routines
+     */
     BOOL GetCurrentAccessibleValueFromContext(long vmID, AccessibleValue av, wchar_t *value, short len);
     BOOL GetMaximumAccessibleValueFromContext(long vmID, AccessibleValue av, wchar_t *value, short len);
     BOOL GetMinimumAccessibleValueFromContext(long vmID, AccessibleValue av, wchar_t *value, short len);

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,15 @@
 # questions.
 #
 
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
+
 GENSRC_VARHANDLES :=
 
 VARHANDLES_GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/invoke
-VARHANDLES_SRC_DIR := $(TOPDIR)/src/java.base/share/classes/java/lang/invoke
+VARHANDLES_SRC_DIR := $(MODULE_SRC)/share/classes/java/lang/invoke
 
 ################################################################################
 # Setup a rule for generating a VarHandle java class
@@ -160,14 +165,26 @@ endef
 ################################################################################
 
 ################################################################################
-# Setup a rule for generating a memory access var handle helper classes
+# Setup a rule for generating a memory segment var handle view class
 # Param 1 - Variable declaration prefix
 # Param 2 - Type with first letter capitalized
-define GenerateVarHandleMemoryAccess
+define GenerateVarHandleMemorySegment
 
   $1_Type := $2
 
-  $1_FILENAME := $(VARHANDLES_GENSRC_DIR)/MemoryAccessVarHandle$$($1_Type)Helper.java
+  $1_FILENAME := $(VARHANDLES_GENSRC_DIR)/VarHandleSegmentAs$$($1_Type)s.java
+
+  ifeq ($$($1_Type), Boolean)
+    $1_type := boolean
+    $1_BoxType := $$($1_Type)
+
+    $1_rawType := $$($1_type)
+    $1_RawType := $$($1_Type)
+    $1_RawBoxType := $$($1_BoxType)
+
+    $1_ARGS += -Kbyte
+    $1_ARGS += -KShorterThanInt
+  endif
 
   ifeq ($$($1_Type), Byte)
     $1_type := byte
@@ -178,6 +195,7 @@ define GenerateVarHandleMemoryAccess
     $1_RawBoxType := $$($1_BoxType)
 
     $1_ARGS += -Kbyte
+    $1_ARGS += -KShorterThanInt
   endif
 
   ifeq ($$($1_Type), Short)
@@ -187,6 +205,8 @@ define GenerateVarHandleMemoryAccess
     $1_rawType := $$($1_type)
     $1_RawType := $$($1_Type)
     $1_RawBoxType := $$($1_BoxType)
+
+    $1_ARGS += -KShorterThanInt
   endif
 
   ifeq ($$($1_Type), Char)
@@ -196,6 +216,8 @@ define GenerateVarHandleMemoryAccess
     $1_rawType := $$($1_type)
     $1_RawType := $$($1_Type)
     $1_RawBoxType := $$($1_BoxType)
+
+    $1_ARGS += -KShorterThanInt
   endif
 
   ifeq ($$($1_Type), Int)
@@ -248,7 +270,7 @@ define GenerateVarHandleMemoryAccess
     $1_ARGS += -KfloatingPoint
   endif
 
-  $$($1_FILENAME): $(VARHANDLES_SRC_DIR)/X-VarHandleMemoryAccess.java.template $(BUILD_TOOLS_JDK)
+  $$($1_FILENAME): $(VARHANDLES_SRC_DIR)/X-VarHandleSegmentView.java.template $(BUILD_TOOLS_JDK)
 	$$(call MakeDir, $$(@D))
 	$(RM) $$@
 	$(TOOL_SPP) -nel -K$$($1_type) \
@@ -272,8 +294,13 @@ $(foreach t, $(VARHANDLES_BYTE_ARRAY_TYPES), \
   $(eval $(call GenerateVarHandleByteArray,VAR_HANDLE_BYTE_ARRAY_$t,$t)))
 
 # List the types to generate source for, with capitalized first letter
-VARHANDLES_MEMORY_ADDRESS_TYPES := Byte Short Char Int Long Float Double
-$(foreach t, $(VARHANDLES_MEMORY_ADDRESS_TYPES), \
-  $(eval $(call GenerateVarHandleMemoryAccess,VAR_HANDLE_MEMORY_ADDRESS_$t,$t)))
+VARHANDLES_MEMORY_SEGMENT_TYPES := Boolean Byte Short Char Int Long Float Double
+$(foreach t, $(VARHANDLES_MEMORY_SEGMENT_TYPES), \
+  $(eval $(call GenerateVarHandleMemorySegment,VAR_HANDLE_MEMORY_SEGMENT_$t,$t)))
 
 TARGETS += $(GENSRC_VARHANDLES)
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

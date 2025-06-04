@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,10 @@ public class invokemethod012 {
     private volatile boolean gotEvent = false;
 
     public static void main (String argv[]) {
-        System.exit(run(argv,System.out) + Consts.JCK_STATUS_BASE);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run(String argv[], PrintStream out) {
@@ -202,6 +205,15 @@ public class invokemethod012 {
 
             clsType.setValue(fldToExit, vm.mirrorOf(true));
             invThr.join(argHandler.getWaitTime()*60000);
+            if (invThr.isAlive()) {
+                // The join failed because the invoke never completed.
+                log.complain("TEST FAILED: invoke never completed");
+                tot_res = Consts.TEST_FAILED;
+                // Do a vm.resume() to see if that helps.
+                vm.resume();
+                invThr.join(); // let test time out if this fails
+                return quitDebuggee();
+            }
             log.display("Thread \"" + invThr.getName() + "\" done");
 
             // check threads status after the method invocation

@@ -440,7 +440,7 @@ int regDisable()
     return err;
 }
 
-void main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) {
     bool enableWasRequested = false;
     bool disableWasRequested = false;
     bool badParams = true;
@@ -488,9 +488,6 @@ void main(int argc, char* argv[]) {
         } else {
             printf("disabled.\n");
         }
-        // Use exit so test case can sense for error.
-        if (error != 0) {
-            exit(error);
-        }
     }
+    return error;
 }

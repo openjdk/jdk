@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,6 @@ import javax.management.MBeanRegistrationException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import javax.management.RuntimeOperationsException;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 
 import jdk.internal.misc.VM;
 import jdk.internal.misc.VM.BufferPool;
@@ -47,7 +44,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import java.lang.reflect.UndeclaredThrowableException;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -191,18 +187,13 @@ public class ManagementFactoryHelper {
             return LOG_MANAGER_CLASS != null;
         }
 
-        @SuppressWarnings("removal")
         private static Class<?> loadLoggingClass(String className) {
-            return AccessController.doPrivileged(new PrivilegedAction<>() {
-                @Override
-                public Class<?> run() {
-                    Optional<Module> logging = ModuleLayer.boot().findModule("java.logging");
-                    if (logging.isPresent()) {
-                        return Class.forName(logging.get(), className);
-                    }
-                    return null;
-                }
-            });
+            Optional<Module> logging = ModuleLayer.boot().findModule("java.logging");
+            if (logging.isPresent()) {
+                return Class.forName(logging.get(), className);
+            } else {
+                return null;
+            }
         }
 
         private Map<String, Method> initMethodMap(Object impl) {
@@ -460,29 +451,15 @@ public class ManagementFactoryHelper {
      * Registers a given MBean if not registered in the MBeanServer;
      * otherwise, just return.
      */
-    @SuppressWarnings("removal")
     private static void addMBean(MBeanServer mbs, Object mbean, String mbeanName) {
-        try {
-            final ObjectName objName = Util.newObjectName(mbeanName);
+        final ObjectName objName = Util.newObjectName(mbeanName);
 
-            // inner class requires these fields to be final
-            final MBeanServer mbs0 = mbs;
-            final Object mbean0 = mbean;
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                public Void run() throws MBeanRegistrationException,
-                                         NotCompliantMBeanException {
-                    try {
-                        mbs0.registerMBean(mbean0, objName);
-                        return null;
-                    } catch (InstanceAlreadyExistsException e) {
-                        // if an instance with the object name exists in
-                        // the MBeanServer ignore the exception
-                    }
-                    return null;
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            throw new RuntimeException(e.getException());
+        try {
+            mbs.registerMBean(mbean, objName);
+        } catch (InstanceAlreadyExistsException iaee) {
+            // if an instance with the object name exists in the MBeanServer, ignore the exception
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -521,26 +498,15 @@ public class ManagementFactoryHelper {
         }
     }
 
-    @SuppressWarnings("removal")
     private static void unregisterMBean(MBeanServer mbs, String mbeanName) {
-        try {
-            final ObjectName objName = Util.newObjectName(mbeanName);
+        final ObjectName objName = Util.newObjectName(mbeanName);
 
-            // inner class requires these fields to be final
-            final MBeanServer mbs0 = mbs;
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                public Void run() throws MBeanRegistrationException,
-                                           RuntimeOperationsException  {
-                    try {
-                        mbs0.unregisterMBean(objName);
-                    } catch (InstanceNotFoundException e) {
-                        // ignore exception if not found
-                    }
-                    return null;
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            throw new RuntimeException(e.getException());
+        try {
+            mbs.unregisterMBean(objName);
+        } catch (InstanceNotFoundException infe) {
+            // ignore exception if not found
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

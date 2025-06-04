@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,96 +26,141 @@
 #define SHARE_GC_SERIAL_TENUREDGENERATION_HPP
 
 #include "gc/serial/cSpaceCounters.hpp"
-#include "gc/shared/cardGeneration.hpp"
-#include "gc/shared/gcStats.hpp"
+#include "gc/serial/generation.hpp"
+#include "gc/serial/serialBlockOffsetTable.hpp"
 #include "gc/shared/generationCounters.hpp"
+#include "gc/shared/space.hpp"
 #include "utilities/macros.hpp"
 
+class CardTableRS;
+class ContiguousSpace;
+
 // TenuredGeneration models the heap containing old (promoted/tenured) objects
-// contained in a single contiguous space.
-//
+// contained in a single contiguous space. This generation is covered by a card
+// table, and uses a card-size block-offset array to implement block_start.
 // Garbage collection is performed using mark-compact.
 
-class TenuredGeneration: public CardGeneration {
+class TenuredGeneration: public Generation {
   friend class VMStructs;
   // Abstractly, this is a subtype that gets access to protected fields.
   friend class VM_PopulateDumpSharedSpace;
 
- protected:
+  MemRegion _prev_used_region;
+
+  // This is shared with other generations.
+  CardTableRS* _rs;
+  // This is local to this generation.
+  SerialBlockOffsetTable* _bts;
+
+  // Current shrinking effect: this damps shrinking when the heap gets empty.
+  size_t _shrink_factor;
+
+  size_t _min_heap_delta_bytes;   // Minimum amount to expand.
+
+  // Some statistics from before gc started.
+  // These are gathered in the gc_prologue (and should_collect)
+  // to control growing/shrinking policy in spite of promotions.
+  size_t _capacity_at_prologue;
+  size_t _used_at_prologue;
+
+  void assert_correct_size_change_locking();
+
   ContiguousSpace*    _the_space;       // Actual space holding objects
 
   GenerationCounters* _gen_counters;
   CSpaceCounters*     _space_counters;
 
-  // Allocation failure
-  virtual bool expand(size_t bytes, size_t expand_bytes);
+  // Avg amount promoted; used for avoiding promotion undo
+  // This class does not update deviations if the sample is zero.
+  AdaptivePaddedNoZeroDevAverage*   _avg_promoted;
 
-  // Accessing spaces
+  // Attempt to expand the generation by "bytes".  Expand by at a
+  // minimum "expand_bytes".  Return true if some amount (not
+  // necessarily the full "bytes") was done.
+  bool expand(size_t bytes, size_t expand_bytes);
+
+  // Shrink generation with specified size
+  void shrink(size_t bytes);
+
+  void compute_new_size_inner();
+
+public:
+  void compute_new_size();
+
   ContiguousSpace* space() const { return _the_space; }
 
-  void assert_correct_size_change_locking();
+  // Grow generation with specified size (returns false if unable to grow)
+  bool grow_by(size_t bytes);
+  // Grow generation to reserved size.
+  bool grow_to_reserved();
 
- public:
+  size_t capacity() const;
+  size_t used() const;
+  size_t free() const;
+
+  MemRegion used_region() const { return space()->used_region(); }
+  MemRegion prev_used_region() const { return _prev_used_region; }
+  void save_used_region()   { _prev_used_region = used_region(); }
+
+  HeapWord* block_start(const void* addr) const;
+
+  void scan_old_to_young_refs(HeapWord* saved_top_in_old_gen);
+
+  bool is_in(const void* p) const;
+
   TenuredGeneration(ReservedSpace rs,
                     size_t initial_byte_size,
                     size_t min_byte_size,
                     size_t max_byte_size,
                     CardTableRS* remset);
 
-  Generation::Name kind() { return Generation::MarkSweepCompact; }
-
   // Printing
-  const char* name() const { return "tenured generation"; }
-  const char* short_name() const { return "Tenured"; }
-
-  size_t unsafe_max_alloc_nogc() const;
-  size_t contiguous_available() const;
+  const char* name() const { return "Tenured"; }
 
   // Iteration
   void object_iterate(ObjectClosure* blk);
 
   void complete_loaded_archive_space(MemRegion archive_space);
+  inline void update_for_block(HeapWord* start, HeapWord* end);
 
-  virtual inline HeapWord* allocate(size_t word_size, bool is_tlab);
-  virtual inline HeapWord* par_allocate(size_t word_size, bool is_tlab);
+  // Allocate and returns a block of the requested size, or returns "null".
+  // Assumes the caller has done any necessary locking.
+  inline HeapWord* allocate(size_t word_size);
 
-  template <typename OopClosureType>
-  void oop_since_save_marks_iterate(OopClosureType* cl);
+  // Expand the old-gen then invoke allocate above.
+  HeapWord* expand_and_allocate(size_t size);
 
-  void save_marks();
-  void reset_saved_marks();
-  bool no_allocs_since_save_marks();
+  void gc_prologue();
+  void gc_epilogue();
 
-  inline size_t block_size(const HeapWord* addr) const;
-
-  inline bool block_is_obj(const HeapWord* addr) const;
-
-  virtual void collect(bool full,
-                       bool clear_all_soft_refs,
-                       size_t size,
-                       bool is_tlab);
-
-  HeapWord* expand_and_allocate(size_t size, bool is_tlab);
-
-  virtual void gc_prologue(bool full);
-  virtual void gc_epilogue(bool full);
-
-  bool should_collect(bool   full,
-                      size_t word_size,
-                      bool   is_tlab);
-
-  virtual void compute_new_size();
+  bool should_allocate(size_t word_size, bool is_tlab) {
+    bool result = false;
+    size_t overflow_limit = (size_t)1 << (BitsPerSize_t - LogHeapWordSize);
+    if (!is_tlab) {
+      result = (word_size > 0) && (word_size < overflow_limit);
+    }
+    return result;
+  }
 
   // Performance Counter support
   void update_counters();
 
-  virtual void record_spaces_top();
-
   // Statistics
 
-  virtual void update_gc_stats(Generation* current_generation, bool full);
+  void update_promote_stats();
 
-  virtual bool promotion_attempt_is_safe(size_t max_promoted_in_bytes) const;
+  // Returns true if promotions of the specified amount are
+  // likely to succeed without a promotion failure.
+  // Promotion of the full amount is not guaranteed but
+  // might be attempted in the worst case.
+  bool promotion_attempt_is_safe(size_t max_promoted_in_bytes) const;
+
+  // "obj" is the address of an object in young-gen.  Allocate space for "obj"
+  // in the old-gen, returning the result (or null if the allocation failed).
+  //
+  // The "obj_size" argument is just obj->size(), passed along so the caller can
+  // avoid repeating the virtual call to retrieve it.
+  oop allocate_for_promotion(oop obj, size_t obj_size);
 
   virtual void verify();
   virtual void print_on(outputStream* st) const;

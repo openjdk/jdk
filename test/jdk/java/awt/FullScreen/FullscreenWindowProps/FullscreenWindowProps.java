@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.awt.Rectangle;
 
 /**
  * @test
- * @bug 8211999
+ * @bug 8211999 8282863
  * @key headful
  * @summary verifies the full-screen window bounds and graphics configuration
  */
@@ -52,6 +52,10 @@ public final class FullscreenWindowProps {
                 super.paint(g);
                 g.setColor(Color.GREEN);
                 g.fillRect(0, 0, getWidth(), getHeight());
+                g.setColor(Color.RED);
+                DisplayMode displayMode =
+                        getGraphicsConfiguration().getDevice().getDisplayMode();
+                g.drawString(displayMode.toString(), 100, 100);
             }
         };
         try {

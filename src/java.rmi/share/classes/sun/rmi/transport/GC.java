@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package sun.rmi.transport;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import jdk.internal.misc.InnocuousThread;
@@ -39,7 +37,7 @@ import jdk.internal.misc.InnocuousThread;
  * @since    1.2
  */
 
-@SuppressWarnings("removal")
+@SuppressWarnings("restricted")
 class GC {
 
     private GC() { }            /* To prevent instantiation */
@@ -85,11 +83,7 @@ class GC {
     public static native long maxObjectInspectionAge();
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                System.loadLibrary("rmi");
-                return null;
-            }});
+        System.loadLibrary("rmi");
     }
 
     private static class Daemon implements Runnable {
@@ -110,7 +104,7 @@ class GC {
                     long d = maxObjectInspectionAge();
                     if (d >= l) {
                         /* Do a full collection.  There is a remote possibility
-                         * that a full collection will occurr between the time
+                         * that a full collection will occur between the time
                          * we sample the inspection age and the time the GC
                          * actually starts, but this is sufficiently unlikely
                          * that it doesn't seem worth the more expensive JVM
@@ -134,18 +128,12 @@ class GC {
 
         /* Create a new daemon thread */
         public static void create() {
-            PrivilegedAction<Void> pa = new PrivilegedAction<Void>() {
-                public Void run() {
-                    Thread t = InnocuousThread.newSystemThread("RMI GC Daemon",
-                                                               new Daemon());
-                    assert t.getContextClassLoader() == null;
-                    t.setDaemon(true);
-                    t.setPriority(Thread.MIN_PRIORITY + 1);
-                    t.start();
-                    GC.daemon = t;
-                    return null;
-                }};
-            AccessController.doPrivileged(pa);
+            Thread t = InnocuousThread.newSystemThread("RMI GC Daemon", new Daemon());
+            assert t.getContextClassLoader() == null;
+            t.setDaemon(true);
+            t.setPriority(Thread.MIN_PRIORITY + 1);
+            t.start();
+            GC.daemon = t;
         }
 
     }
@@ -177,7 +165,7 @@ class GC {
     public static class LatencyRequest
         implements Comparable<LatencyRequest> {
 
-        /* Instance counter, used to generate unique identifers */
+        /* Instance counter, used to generate unique identifiers */
         private static long counter = 0;
 
         /* Sorted set of active latency requests */

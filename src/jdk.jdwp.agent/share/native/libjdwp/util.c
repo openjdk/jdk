@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,13 +101,10 @@ findClass(JNIEnv *env, const char * name)
         EXIT_ERROR(AGENT_ERROR_ILLEGAL_ARGUMENT,"findClass name");
     }
     x = JNI_FUNC_PTR(env,FindClass)(env, name);
-    if (x == NULL) {
-        ERROR_MESSAGE(("JDWP Can't find class %s", name));
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
-    }
-    if ( JNI_FUNC_PTR(env,ExceptionOccurred)(env) ) {
-        ERROR_MESSAGE(("JDWP Exception occurred finding class %s", name));
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
+    if ( JNI_FUNC_PTR(env,ExceptionCheck)(env) ) {
+        JNI_FUNC_PTR(env,ExceptionClear)(env); // keep -Xcheck:jni happy
+        ERROR_MESSAGE(("JNI Exception occurred finding class %s", name));
+        EXIT_ERROR(AGENT_ERROR_JNI_EXCEPTION,NULL);
     }
     return x;
 }
@@ -130,15 +127,11 @@ getMethod(JNIEnv *env, jclass clazz, const char * name, const char *signature)
         EXIT_ERROR(AGENT_ERROR_ILLEGAL_ARGUMENT,"getMethod signature");
     }
     method = JNI_FUNC_PTR(env,GetMethodID)(env, clazz, name, signature);
-    if (method == NULL) {
-        ERROR_MESSAGE(("JDWP Can't find method %s with signature %s",
-                                name, signature));
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
-    }
-    if ( JNI_FUNC_PTR(env,ExceptionOccurred)(env) ) {
-        ERROR_MESSAGE(("JDWP Exception occurred finding method %s with signature %s",
-                                name, signature));
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
+    if ( JNI_FUNC_PTR(env,ExceptionCheck)(env) ) {
+        JNI_FUNC_PTR(env,ExceptionClear)(env); // keep -Xcheck:jni happy
+        ERROR_MESSAGE(("JNI Exception occurred finding method %s with signature %s",
+                       name, signature));
+        EXIT_ERROR(AGENT_ERROR_JNI_EXCEPTION,NULL);
     }
     return method;
 }
@@ -161,15 +154,11 @@ getStaticMethod(JNIEnv *env, jclass clazz, const char * name, const char *signat
         EXIT_ERROR(AGENT_ERROR_ILLEGAL_ARGUMENT,"getStaticMethod signature");
     }
     method = JNI_FUNC_PTR(env,GetStaticMethodID)(env, clazz, name, signature);
-    if (method == NULL) {
-        ERROR_MESSAGE(("JDWP Can't find method %s with signature %s",
-                                name, signature));
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
-    }
-    if ( JNI_FUNC_PTR(env,ExceptionOccurred)(env) ) {
+    if ( JNI_FUNC_PTR(env,ExceptionCheck)(env) ) {
+        JNI_FUNC_PTR(env,ExceptionClear)(env); // keep -Xcheck:jni happy
         ERROR_MESSAGE(("JDWP Exception occurred finding method %s with signature %s",
-                                name, signature));
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
+                       name, signature));
+        EXIT_ERROR(AGENT_ERROR_JNI_EXCEPTION,NULL);
     }
     return method;
 }
@@ -222,8 +211,6 @@ util_initialize(JNIEnv *env)
                     "<init>", "(Ljava/lang/ThreadGroup;Ljava/lang/String;)V");
         gdata->threadSetDaemon =
                 getMethod(env, gdata->threadClass, "setDaemon", "(Z)V");
-        gdata->threadResume =
-                getMethod(env, gdata->threadClass, "resume", "()V");
         gdata->systemGetProperty =
                 getStaticMethod(env, gdata->systemClass,
                     "getProperty", "(Ljava/lang/String;)Ljava/lang/String;");
@@ -245,6 +232,7 @@ util_initialize(JNIEnv *env)
         }
         localSystemThreadGroup = groups[0];
         saveGlobalRef(env, localSystemThreadGroup, &(gdata->systemThreadGroup));
+        jvmtiDeallocate(groups);
 
         /* Get some basic Java property values we will need at some point */
         gdata->property_java_version
@@ -267,7 +255,7 @@ util_initialize(JNIEnv *env)
                                           (env, "jdk/internal/vm/VMSupport");
         if (localVMSupportClass == NULL) {
             gdata->agent_properties = NULL;
-            if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+            if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
                 JNI_FUNC_PTR(env,ExceptionClear)(env);
             }
         } else {
@@ -277,12 +265,12 @@ util_initialize(JNIEnv *env)
             localAgentProperties =
                 JNI_FUNC_PTR(env,CallStaticObjectMethod)
                             (env, localVMSupportClass, getAgentProperties);
-            saveGlobalRef(env, localAgentProperties, &(gdata->agent_properties));
-            if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+            if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
                 JNI_FUNC_PTR(env,ExceptionClear)(env);
                 EXIT_ERROR(AGENT_ERROR_INTERNAL,
                     "Exception occurred calling VMSupport.getAgentProperties");
             }
+            saveGlobalRef(env, localAgentProperties, &(gdata->agent_properties));
         }
 
     } END_WITH_LOCAL_REFS(env);
@@ -856,7 +844,7 @@ spawnNewThread(jvmtiStartFunction func, void *arg, char *name)
         jstring nameString;
 
         nameString = JNI_FUNC_PTR(env,NewStringUTF)(env, name);
-        if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+        if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
             JNI_FUNC_PTR(env,ExceptionClear)(env);
             error = AGENT_ERROR_OUT_OF_MEMORY;
             goto err;
@@ -865,7 +853,7 @@ spawnNewThread(jvmtiStartFunction func, void *arg, char *name)
         thread = JNI_FUNC_PTR(env,NewObject)
                         (env, gdata->threadClass, gdata->threadConstructor,
                                    gdata->systemThreadGroup, nameString);
-        if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+        if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
             JNI_FUNC_PTR(env,ExceptionClear)(env);
             error = AGENT_ERROR_OUT_OF_MEMORY;
             goto err;
@@ -876,7 +864,7 @@ spawnNewThread(jvmtiStartFunction func, void *arg, char *name)
          */
         JNI_FUNC_PTR(env,CallVoidMethod)
                         (env, thread, gdata->threadSetDaemon, JNI_TRUE);
-        if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+        if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
             JNI_FUNC_PTR(env,ExceptionClear)(env);
             error = AGENT_ERROR_JNI_EXCEPTION;
             goto err;
@@ -1040,7 +1028,7 @@ debugMonitorWait(jrawMonitorID monitor)
      * According to the JLS (17.8), here we have
      * either :
      * a- been notified
-     * b- gotten a suprious wakeup
+     * b- gotten a spurious wakeup
      * c- been interrupted
      * If both a and c have happened, the VM must choose
      * which way to return - a or c.  If it chooses c
@@ -1071,23 +1059,6 @@ debugMonitorWait(jrawMonitorID monitor)
     error = ignore_vm_death(error);
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error, "on raw monitor wait");
-    }
-}
-
-void
-debugMonitorTimedWait(jrawMonitorID monitor, jlong millis)
-{
-    jvmtiError error;
-    error = JVMTI_FUNC_PTR(gdata->jvmti,RawMonitorWait)
-        (gdata->jvmti, monitor, millis);
-    if (error == JVMTI_ERROR_INTERRUPT) {
-        /* See comment above */
-        handleInterrupt();
-        error = JVMTI_ERROR_NONE;
-    }
-    error = ignore_vm_death(error);
-    if (error != JVMTI_ERROR_NONE) {
-        EXIT_ERROR(error, "on raw monitor timed wait");
     }
 }
 
@@ -1549,6 +1520,13 @@ isClass(jobject object)
 }
 
 jboolean
+isVThread(jobject object)
+{
+    JNIEnv *env = getEnv();
+    return JNI_FUNC_PTR(env,IsVirtualThread)(env, object);
+}
+
+jboolean
 isThread(jobject object)
 {
     JNIEnv *env = getEnv();
@@ -1604,14 +1582,14 @@ getPropertyValue(JNIEnv *env, char *propertyName)
 
     /* Create new String object to hold the property name */
     nameString = JNI_FUNC_PTR(env,NewStringUTF)(env, propertyName);
-    if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+    if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
         JNI_FUNC_PTR(env,ExceptionClear)(env);
         /* NULL will be returned below */
     } else {
         /* Call valueString = System.getProperty(nameString) */
         valueString = JNI_FUNC_PTR(env,CallStaticObjectMethod)
             (env, gdata->systemClass, gdata->systemGetProperty, nameString);
-        if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+        if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
             JNI_FUNC_PTR(env,ExceptionClear)(env);
             valueString = NULL;
         }
@@ -1658,10 +1636,189 @@ setAgentPropertyValue(JNIEnv *env, char *propertyName, char* propertyValue)
             }
         }
     }
-    if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+    if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
         JNI_FUNC_PTR(env,ExceptionClear)(env);
     }
 }
+
+#ifdef DEBUG
+// APIs that can be called when debugging the debug agent
+
+#define check_jvmti_status(err, msg) \
+  if (err != JVMTI_ERROR_NONE) { \
+      EXIT_ERROR(err, msg); \
+  }
+
+char*
+translateThreadState(jint flags) {
+    char str[15 * 20];
+    str[0] = '\0';
+
+    if (flags & JVMTI_THREAD_STATE_ALIVE) {
+        strcat(str, " ALIVE");
+    }
+    if (flags & JVMTI_THREAD_STATE_TERMINATED) {
+        strcat(str, " TERMINATED");
+    }
+    if (flags & JVMTI_THREAD_STATE_RUNNABLE) {
+        strcat(str, " RUNNABLE");
+    }
+    if (flags & JVMTI_THREAD_STATE_WAITING) {
+        strcat(str, " WAITING");
+    }
+    if (flags & JVMTI_THREAD_STATE_WAITING_INDEFINITELY) {
+        strcat(str, " WAITING_INDEFINITELY");
+    }
+    if (flags & JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT) {
+        strcat(str, " WAITING_WITH_TIMEOUT");
+    }
+    if (flags & JVMTI_THREAD_STATE_SLEEPING) {
+        strcat(str, " SLEEPING");
+    }
+    if (flags & JVMTI_THREAD_STATE_IN_OBJECT_WAIT) {
+        strcat(str, " IN_OBJECT_WAIT");
+    }
+    if (flags & JVMTI_THREAD_STATE_PARKED) {
+        strcat(str, " PARKED");
+    }
+    if (flags & JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER) {
+        strcat(str, " BLOCKED_ON_MONITOR_ENTER");
+    }
+    if (flags & JVMTI_THREAD_STATE_SUSPENDED) {
+        strcat(str, " SUSPENDED");
+    }
+    if (flags & JVMTI_THREAD_STATE_INTERRUPTED) {
+        strcat(str, " INTERRUPTED");
+    }
+    if (flags & JVMTI_THREAD_STATE_IN_NATIVE) {
+        strcat(str, " IN_NATIVE");
+    }
+
+    if (strlen(str) == 0) {
+        strcpy(str, "<none>");
+    }
+
+    char* tstate = (char*)jvmtiAllocate((int)strlen(str) + 1);
+    strcpy(tstate, str);
+
+    return tstate;
+}
+
+char*
+getThreadName(jthread thread) {
+    jvmtiThreadInfo thr_info;
+    jvmtiError err;
+
+    memset(&thr_info, 0, sizeof(thr_info));
+    err = JVMTI_FUNC_PTR(gdata->jvmti,GetThreadInfo)
+        (gdata->jvmti, thread, &thr_info);
+    if (err == JVMTI_ERROR_WRONG_PHASE || err == JVMTI_ERROR_THREAD_NOT_ALIVE) {
+        return NULL; // VM or target thread completed its work
+    }
+    check_jvmti_status(err, "getThreadName: error in JVMTI GetThreadInfo call");
+
+    char* tname = thr_info.name;
+    if (tname == NULL) {
+        const char* UNNAMED_STR = "<Unnamed thread>";
+        size_t UNNAMED_LEN = strlen(UNNAMED_STR);
+        tname = (char*)jvmtiAllocate((int)UNNAMED_LEN + 1);
+        strcpy(tname, UNNAMED_STR);
+    }
+    return tname;
+}
+
+char*
+getMethodName(jmethodID method) {
+    char*  mname = NULL;
+    jvmtiError err;
+
+    err = JVMTI_FUNC_PTR(gdata->jvmti,GetMethodName)
+        (gdata->jvmti, method, &mname, NULL, NULL);
+    check_jvmti_status(err, "getMethodName: error in JVMTI GetMethodName call");
+
+    return mname;
+}
+
+static char*
+get_method_class_name(jmethodID method) {
+    jclass klass = NULL;
+    char*  cname = NULL;
+    char*  result = NULL;
+    jvmtiError err;
+
+    err = JVMTI_FUNC_PTR(gdata->jvmti,GetMethodDeclaringClass)
+        (gdata->jvmti, method, &klass);
+    check_jvmti_status(err, "get_method_class_name: error in JVMTI GetMethodDeclaringClass");
+
+    err = JVMTI_FUNC_PTR(gdata->jvmti,GetClassSignature)
+        (gdata->jvmti, klass, &cname, NULL);
+    check_jvmti_status(err, "get_method_class_name: error in JVMTI GetClassSignature");
+
+    size_t len = strlen(cname) - 2; // get rid of leading 'L' and trailing ';'
+    result = (char*)jvmtiAllocate((int)len + 1);
+    strncpy(result, cname + 1, len); // skip leading 'L'
+    result[len] = '\0';
+    jvmtiDeallocate((void*)cname);
+    return result;
+}
+
+static void
+print_method(jmethodID method, jint depth) {
+    char*  cname = NULL;
+    char*  mname = NULL;
+    char*  msign = NULL;
+    jvmtiError err;
+
+    cname = get_method_class_name(method);
+
+    err = JVMTI_FUNC_PTR(gdata->jvmti,GetMethodName)
+        (gdata->jvmti, method, &mname, &msign, NULL);
+    check_jvmti_status(err, "print_method: error in JVMTI GetMethodName");
+
+    tty_message("%2d: %s: %s%s", depth, cname, mname, msign);
+    jvmtiDeallocate((void*)cname);
+    jvmtiDeallocate((void*)mname);
+    jvmtiDeallocate((void*)msign);
+}
+
+#define MAX_FRAME_COUNT_PRINT_STACK_TRACE 200
+
+void
+printStackTrace(jthread thread) {
+    jvmtiFrameInfo frames[MAX_FRAME_COUNT_PRINT_STACK_TRACE];
+    char* tname = getThreadName(thread);
+    jint count = 0;
+
+    jvmtiError err = JVMTI_FUNC_PTR(gdata->jvmti,GetStackTrace)
+        (gdata->jvmti, thread, 0, MAX_FRAME_COUNT_PRINT_STACK_TRACE, frames, &count);
+    check_jvmti_status(err, "printStackTrace: error in JVMTI GetStackTrace");
+
+    tty_message("JVMTI Stack Trace for thread %s: frame count: %d", tname, count);
+    for (int depth = 0; depth < count; depth++) {
+        print_method(frames[depth].method, depth);
+    }
+    jvmtiDeallocate((void*)tname);
+}
+
+void
+printThreadInfo(jthread thread) {
+    jvmtiThreadInfo thread_info;
+    jint thread_state;
+    jvmtiError err;
+    err = JVMTI_FUNC_PTR(gdata->jvmti,GetThreadInfo)
+        (gdata->jvmti, thread, &thread_info);
+    check_jvmti_status(err, "Error in GetThreadInfo");
+    err = JVMTI_FUNC_PTR(gdata->jvmti,GetThreadState)
+        (gdata->jvmti, thread, &thread_state);
+    check_jvmti_status(err, "Error in GetThreadState");
+    const char* state = translateThreadState(thread_state);
+    tty_message("Thread: %p, name: %s, state(%x): %s, attrs: %s %s",
+                thread, thread_info.name, thread_state, state,
+                (isVThread(thread) ? "virtual": "platform"),
+                (thread_info.is_daemon ? "daemon": ""));
+}
+
+#endif /* DEBUG*/
 
 /**
  * Return property value as JDWP allocated string in UTF8 encoding
@@ -1729,7 +1886,7 @@ getSpecialJvmti(void)
     jvmtiCapabilities caps;
 
     rc = JVM_FUNC_PTR(gdata->jvm,GetEnv)
-                     (gdata->jvm, (void **)&jvmti, JVMTI_VERSION_1);
+                     (gdata->jvm, (void **)&jvmti, JVMTI_VERSION);
     if (rc != JNI_OK) {
         return NULL;
     }
@@ -1928,7 +2085,7 @@ eventIndexInit(void)
     index2jvmti[EI_THREAD_START       -EI_min] = JVMTI_EVENT_THREAD_START;
     index2jvmti[EI_THREAD_END         -EI_min] = JVMTI_EVENT_THREAD_END;
     index2jvmti[EI_CLASS_PREPARE      -EI_min] = JVMTI_EVENT_CLASS_PREPARE;
-    index2jvmti[EI_GC_FINISH          -EI_min] = JVMTI_EVENT_GARBAGE_COLLECTION_FINISH;
+    index2jvmti[EI_CLASS_UNLOAD       -EI_min] = 0; // No mapping to JVMTI event
     index2jvmti[EI_CLASS_LOAD         -EI_min] = JVMTI_EVENT_CLASS_LOAD;
     index2jvmti[EI_FIELD_ACCESS       -EI_min] = JVMTI_EVENT_FIELD_ACCESS;
     index2jvmti[EI_FIELD_MODIFICATION -EI_min] = JVMTI_EVENT_FIELD_MODIFICATION;
@@ -1941,6 +2098,8 @@ eventIndexInit(void)
     index2jvmti[EI_MONITOR_WAITED     -EI_min] = JVMTI_EVENT_MONITOR_WAITED;
     index2jvmti[EI_VM_INIT            -EI_min] = JVMTI_EVENT_VM_INIT;
     index2jvmti[EI_VM_DEATH           -EI_min] = JVMTI_EVENT_VM_DEATH;
+    index2jvmti[EI_VIRTUAL_THREAD_START -EI_min] = JVMTI_EVENT_VIRTUAL_THREAD_START;
+    index2jvmti[EI_VIRTUAL_THREAD_END   -EI_min] = JVMTI_EVENT_VIRTUAL_THREAD_END;
 
     index2jdwp[EI_SINGLE_STEP         -EI_min] = JDWP_EVENT(SINGLE_STEP);
     index2jdwp[EI_BREAKPOINT          -EI_min] = JDWP_EVENT(BREAKPOINT);
@@ -1949,7 +2108,7 @@ eventIndexInit(void)
     index2jdwp[EI_THREAD_START        -EI_min] = JDWP_EVENT(THREAD_START);
     index2jdwp[EI_THREAD_END          -EI_min] = JDWP_EVENT(THREAD_END);
     index2jdwp[EI_CLASS_PREPARE       -EI_min] = JDWP_EVENT(CLASS_PREPARE);
-    index2jdwp[EI_GC_FINISH           -EI_min] = JDWP_EVENT(CLASS_UNLOAD);
+    index2jdwp[EI_CLASS_UNLOAD        -EI_min] = JDWP_EVENT(CLASS_UNLOAD);
     index2jdwp[EI_CLASS_LOAD          -EI_min] = JDWP_EVENT(CLASS_LOAD);
     index2jdwp[EI_FIELD_ACCESS        -EI_min] = JDWP_EVENT(FIELD_ACCESS);
     index2jdwp[EI_FIELD_MODIFICATION  -EI_min] = JDWP_EVENT(FIELD_MODIFICATION);
@@ -1962,27 +2121,36 @@ eventIndexInit(void)
     index2jdwp[EI_MONITOR_WAITED      -EI_min] = JDWP_EVENT(MONITOR_WAITED);
     index2jdwp[EI_VM_INIT             -EI_min] = JDWP_EVENT(VM_INIT);
     index2jdwp[EI_VM_DEATH            -EI_min] = JDWP_EVENT(VM_DEATH);
+    /* Just map VIRTUAL_THREAD_START/END to THREAD_START/END. */
+    index2jdwp[EI_VIRTUAL_THREAD_START -EI_min] = JDWP_EVENT(THREAD_START);
+    index2jdwp[EI_VIRTUAL_THREAD_END   -EI_min] = JDWP_EVENT(THREAD_END);
 }
 
 jdwpEvent
-eventIndex2jdwp(EventIndex i)
+eventIndex2jdwp(EventIndex ei)
 {
-    if ( i < EI_min || i > EI_max ) {
-        EXIT_ERROR(AGENT_ERROR_INVALID_INDEX,"bad EventIndex");
+    jdwpEvent event = 0;
+    if (ei >= EI_min && ei <= EI_max) {
+        event = index2jdwp[ei - EI_min];
     }
-    return index2jdwp[i-EI_min];
+    if (event == 0) {
+        EXIT_ERROR(AGENT_ERROR_INVALID_INDEX, "bad EventIndex");
+    }
+    return event;
 }
 
 jvmtiEvent
-eventIndex2jvmti(EventIndex i)
+eventIndex2jvmti(EventIndex ei)
 {
-    if ( i < EI_min || i > EI_max ) {
-        EXIT_ERROR(AGENT_ERROR_INVALID_INDEX,"bad EventIndex");
+    jvmtiEvent event = 0;
+    if (ei >= EI_min && ei <= EI_max) {
+        event = index2jvmti[ei - EI_min];
     }
-    return index2jvmti[i-EI_min];
+    if (event == 0) {
+        EXIT_ERROR(AGENT_ERROR_INVALID_INDEX, "bad EventIndex");
+    }
+    return event;
 }
-
-#ifdef DEBUG
 
 char*
 eventIndex2EventName(EventIndex ei)
@@ -2002,8 +2170,8 @@ eventIndex2EventName(EventIndex ei)
             return "EI_THREAD_END";
         case EI_CLASS_PREPARE:
             return "EI_CLASS_PREPARE";
-        case EI_GC_FINISH:
-            return "EI_GC_FINISH";
+        case EI_CLASS_UNLOAD:
+            return "EI_CLASS_UNLOAD";
         case EI_CLASS_LOAD:
             return "EI_CLASS_LOAD";
         case EI_FIELD_ACCESS:
@@ -2028,13 +2196,15 @@ eventIndex2EventName(EventIndex ei)
             return "EI_VM_INIT";
         case EI_VM_DEATH:
             return "EI_VM_DEATH";
+        case EI_VIRTUAL_THREAD_START:
+            return "EI_VIRTUAL_THREAD_START";
+        case EI_VIRTUAL_THREAD_END:
+            return "EI_VIRTUAL_THREAD_END";
         default:
             JDI_ASSERT(JNI_FALSE);
             return "Bad EI";
     }
 }
-
-#endif
 
 EventIndex
 jdwp2EventIndex(jdwpEvent eventType)
@@ -2055,7 +2225,7 @@ jdwp2EventIndex(jdwpEvent eventType)
         case JDWP_EVENT(CLASS_PREPARE):
             return EI_CLASS_PREPARE;
         case JDWP_EVENT(CLASS_UNLOAD):
-            return EI_GC_FINISH;
+            return EI_CLASS_UNLOAD;
         case JDWP_EVENT(CLASS_LOAD):
             return EI_CLASS_LOAD;
         case JDWP_EVENT(FIELD_ACCESS):
@@ -2111,8 +2281,6 @@ jvmti2EventIndex(jvmtiEvent kind)
             return EI_THREAD_END;
         case JVMTI_EVENT_CLASS_PREPARE:
             return EI_CLASS_PREPARE;
-        case JVMTI_EVENT_GARBAGE_COLLECTION_FINISH:
-            return EI_GC_FINISH;
         case JVMTI_EVENT_CLASS_LOAD:
             return EI_CLASS_LOAD;
         case JVMTI_EVENT_FIELD_ACCESS:
@@ -2141,6 +2309,12 @@ jvmti2EventIndex(jvmtiEvent kind)
             return EI_VM_INIT;
         case JVMTI_EVENT_VM_DEATH:
             return EI_VM_DEATH;
+        /* vthread events */
+        case JVMTI_EVENT_VIRTUAL_THREAD_START:
+            return EI_VIRTUAL_THREAD_START;
+        case JVMTI_EVENT_VIRTUAL_THREAD_END:
+            return EI_VIRTUAL_THREAD_END;
+
         default:
             EXIT_ERROR(AGENT_ERROR_INVALID_INDEX,"JVMTI to EventIndex mapping");
             break;
@@ -2254,6 +2428,8 @@ map2jdwpError(jvmtiError error)
             return JDWP_ERROR(METHOD_MODIFIERS_CHANGE_NOT_IMPLEMENTED);
         case JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED:
             return JDWP_ERROR(CLASS_ATTRIBUTE_CHANGE_NOT_IMPLEMENTED);
+        case JVMTI_ERROR_UNSUPPORTED_OPERATION:
+            return JDWP_ERROR(NOT_IMPLEMENTED);
         case AGENT_ERROR_NOT_CURRENT_FRAME:
             return JDWP_ERROR(NOT_CURRENT_FRAME);
         case AGENT_ERROR_INVALID_TAG:
@@ -2409,7 +2585,7 @@ log_debugee_location(const char *func,
         }
 
         /* Issue log message */
-        LOG_LOC(("%s: debugee: thread=%p(%s:0x%x),method=%p(%s@%d;%s)",
+        LOG_LOC(("%s: debuggee: thread=%p(%s:0x%x),method=%p(%s@%d;%s)",
                 func,
                 thread, info.name==NULL ? "?" : info.name, state,
                 method, method_name==NULL ? "?" : method_name,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import org.w3c.dom.Node;
  * form of a Document Object Model (DOM) tree.</p>
  *
  * <p>Note that XSLT requires namespace support. Attempting to transform a DOM
- * that was not contructed with a namespace-aware parser may result in errors.
+ * that was not constructed with a namespace-aware parser may result in errors.
  * Parsers can be made namespace aware by calling
  * {@link javax.xml.parsers.DocumentBuilderFactory#setNamespaceAware(boolean awareness)}.</p>
  *

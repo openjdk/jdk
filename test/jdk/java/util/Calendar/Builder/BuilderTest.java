@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 4745761
+ * @bug 4745761 8350646
  * @summary Unit test for Calendar.Builder.
+ * @run main BuilderTest
  */
 
 import java.time.LocalDateTime;
@@ -32,8 +33,8 @@ import java.util.*;
 import static java.util.Calendar.*;
 
 public class BuilderTest {
-    private static final Locale jaJPJP = new Locale("ja", "JP", "JP");
-    private static final Locale thTH = new Locale("th", "TH");
+    private static final Locale jaJPJP = Locale.of("ja", "JP", "JP");
+    private static final Locale thTH = Locale.of("th", "TH");
     private static final TimeZone LA = TimeZone.getTimeZone("America/Los_Angeles");
     private static final TimeZone TOKYO = TimeZone.getTimeZone("Asia/Tokyo");
     private static int error;
@@ -245,6 +246,11 @@ public class BuilderTest {
         checkException(calb, IllegalArgumentException.class);
         calb = builder().setCalendarType("japanese").setWeekDate(2013, 1, MONDAY);
         checkException(calb, IllegalArgumentException.class);
+        // JDK-8350646 : Ensure IAE (instead of AIOOBE) for ERA over largest supported
+        calb = builder().setCalendarType("japanese").setFields(ERA, 6);
+        checkException(calb, IllegalArgumentException.class);
+        // Note that we don't check ERAs under BEFORE_MEIJI, i.e. -1, -2, ... as
+        // historically JapaneseImperialCalendar ignores such values when normalizing
     }
 
     private static Calendar.Builder builder() {

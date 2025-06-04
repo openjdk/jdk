@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,14 +49,13 @@ import jdk.internal.misc.Unsafe;
 
 class WindowsSelectorImpl extends SelectorImpl {
     private static final Unsafe unsafe = Unsafe.getUnsafe();
-    private static int addressSize = unsafe.addressSize();
 
     private static int dependsArch(int value32, int value64) {
-        return (addressSize == 4) ? value32 : value64;
+        return (unsafe.addressSize() == 4) ? value32 : value64;
     }
 
     // Initial capacity of the poll array
-    private final int INIT_CAP = 8;
+    private static final int INIT_CAP = 8;
     // Maximum number of sockets for select().
     // Should be INIT_CAP times a power of 2
     private static final int MAX_SELECTABLE_FDS = 1024;
@@ -73,8 +72,8 @@ class WindowsSelectorImpl extends SelectorImpl {
     // array,  where the corresponding entry is occupied by the wakeupSocket
     private SelectionKeyImpl[] channelArray = new SelectionKeyImpl[INIT_CAP];
 
-    // The global native poll array holds file decriptors and event masks
-    private PollArrayWrapper pollWrapper;
+    // The global native poll array holds file descriptors and event masks
+    private final PollArrayWrapper pollWrapper;
 
     // The number of valid entries in  poll array, including entries occupied
     // by wakeup socket handle.
@@ -607,7 +606,6 @@ class WindowsSelectorImpl extends SelectorImpl {
 
     @Override
     public void setEventOps(SelectionKeyImpl ski) {
-        ensureOpen();
         synchronized (updateLock) {
             updateKeys.addLast(ski);
         }

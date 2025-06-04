@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,7 +161,7 @@ public abstract class AbstractColorChooserPanel extends JPanel {
      * If you override this, be sure to call <code>super</code>.
      *
      * @param enclosingChooser the chooser to which the panel is to be added
-     * @exception RuntimeException  if the chooser panel has already been
+     * @throws RuntimeException  if the chooser panel has already been
      *                          installed
      */
     public void installChooserPanel(JColorChooser enclosingChooser) {
@@ -229,6 +229,7 @@ public abstract class AbstractColorChooserPanel extends JPanel {
      *
      * @param b true if the transparency of a color can be selected
      * @see #isColorTransparencySelectionEnabled()
+     * @since 9
      */
     @BeanProperty(description
             = "Sets the transparency of a color selection on or off.")
@@ -241,6 +242,7 @@ public abstract class AbstractColorChooserPanel extends JPanel {
      *
      * @return true if the transparency of a color can be selected
      * @see #setColorTransparencySelectionEnabled(boolean)
+     * @since 9
      */
     public boolean isColorTransparencySelectionEnabled(){
         return true;

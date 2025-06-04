@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,7 +28,7 @@
  * @summary C2 fails with assert(!n->is_Store() && !n->is_LoadStore()) failed: no node with a side effect
  *
  * @requires vm.gc.Serial
- * @run main/othervm -Xcomp -XX:CompileOnly=TestStoreSunkInInnerLoop -XX:CompileCommand=quiet -XX:+UseSerialGC -Xmx256m TestStoreSunkInInnerLoop
+ * @run main/othervm -Xcomp -XX:CompileOnly=TestStoreSunkInInnerLoop::* -XX:CompileCommand=quiet -XX:+UseSerialGC -Xmx256m TestStoreSunkInInnerLoop
  *
  */
 

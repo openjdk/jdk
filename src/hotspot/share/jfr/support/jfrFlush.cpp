@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/recorder/storage/jfrStorage.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/support/jfrFlush.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
 
 JfrFlush::JfrFlush(JfrStorage::BufferPtr old, size_t used, size_t requested, Thread* thread) :
@@ -39,7 +38,7 @@ template <typename T>
 class LessThanHalfBufferSize : AllStatic {
 public:
   static bool evaluate(T* t) {
-    assert(t != NULL, "invariant");
+    assert(t != nullptr, "invariant");
     return t->free_size() < t->size() / 2;
   }
 };
@@ -48,7 +47,7 @@ template <typename T>
 class LessThanSize : AllStatic {
  public:
   static bool evaluate(T* t, size_t size) {
-    assert(t != NULL, "invariant");
+    assert(t != nullptr, "invariant");
     return t->free_size() < size;
   }
 };

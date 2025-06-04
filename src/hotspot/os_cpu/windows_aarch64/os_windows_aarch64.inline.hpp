@@ -27,4 +27,9 @@
 
 #include "runtime/os.hpp"
 
+inline bool os::register_code_area(char *low, char *high) {
+  // Using Vectored Exception Handling
+  return true;
+}
+
 #endif // OS_CPU_WINDOWS_AARCH64_OS_WINDOWS_AARCH64_INLINE_HPP

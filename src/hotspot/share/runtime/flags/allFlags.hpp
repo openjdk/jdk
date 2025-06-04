@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_FLAGS_ALLFLAGS_HPP
 #define SHARE_RUNTIME_FLAGS_ALLFLAGS_HPP
 
+#include "cds/cds_globals.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -39,7 +40,6 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    notproduct,               \
     range,                    \
     constraint)               \
                               \
@@ -48,14 +48,12 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    notproduct,               \
     range,                    \
     constraint)               \
                               \
   ARCH_FLAGS(                 \
     develop,                  \
     product,                  \
-    notproduct,               \
     range,                    \
     constraint)               \
                               \
@@ -64,7 +62,6 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    notproduct,               \
     range,                    \
     constraint))              \
                               \
@@ -73,7 +70,6 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    notproduct,               \
     range,                    \
     constraint))              \
                               \
@@ -82,7 +78,6 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    notproduct,               \
     range,                    \
     constraint))              \
                               \
@@ -91,7 +86,14 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    notproduct,               \
+    range,                    \
+    constraint)               \
+                              \
+  CDS_FLAGS(                  \
+    develop,                  \
+    develop_pd,               \
+    product,                  \
+    product_pd,               \
     range,                    \
     constraint)               \
                               \
@@ -100,7 +102,6 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    notproduct,               \
     range,                    \
     constraint)               \
                               \
@@ -109,7 +110,6 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    notproduct,               \
     range,                    \
     constraint)               \
                               \
@@ -118,7 +118,6 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    notproduct,               \
     range,                    \
     constraint)               \
                               \
@@ -127,7 +126,6 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    notproduct,               \
     range,                    \
     constraint)               \
                               \
@@ -136,7 +134,6 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    notproduct,               \
     range,                    \
     constraint)
 

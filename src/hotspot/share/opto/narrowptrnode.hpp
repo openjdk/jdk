@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ class EncodeNarrowPtrNode : public TypeNode {
   EncodeNarrowPtrNode(Node* value, const Type* type):
   TypeNode(type, 2) {
     init_class_id(Class_EncodeNarrowPtr);
-    init_req(0, NULL);
+    init_req(0, nullptr);
     init_req(1, value);
   }
   public:
@@ -77,7 +77,7 @@ class DecodeNarrowPtrNode : public TypeNode {
   DecodeNarrowPtrNode(Node* value, const Type* type):
   TypeNode(type, 2) {
     init_class_id(Class_DecodeNarrowPtr);
-    init_req(0, NULL);
+    init_req(0, nullptr);
     init_req(1, value);
   }
   public:

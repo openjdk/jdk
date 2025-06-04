@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ package javax.lang.model.type;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeParameterElement;
-import javax.lang.model.util.Types;
-
 
 /**
  * Represents a type variable.
@@ -41,9 +39,6 @@ import javax.lang.model.util.Types;
  * (see chapter {@jls 5} of
  * <cite>The Java Language Specification</cite>).
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see TypeParameterElement
  * @jls 4.4 Type Variables
  * @since 1.6
@@ -76,7 +71,7 @@ public interface TypeVariable extends ReferenceType {
      * non-trivial lower bound.  Type variables otherwise have a
      * lower bound of {@link NullType}.
      *
-     * @jls 18.1.3. Bounds
+     * @jls 18.1.3 Bounds
      */
     TypeMirror getLowerBound();
 }

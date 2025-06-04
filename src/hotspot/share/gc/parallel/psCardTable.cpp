@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/psCardTable.hpp"
@@ -34,48 +33,47 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "utilities/align.hpp"
+#include "utilities/spinYield.hpp"
 
 // Checks an individual oop for missing precise marks. Mark
 // may be either dirty or newgen.
-class CheckForUnmarkedOops : public BasicOopIterateClosure {
- private:
+class PSCheckForUnmarkedOops : public BasicOopIterateClosure {
   PSYoungGen*  _young_gen;
   PSCardTable* _card_table;
   HeapWord*    _unmarked_addr;
 
- protected:
   template <class T> void do_oop_work(T* p) {
     oop obj = RawAccess<>::oop_load(p);
     if (_young_gen->is_in_reserved(obj) &&
-        !_card_table->addr_is_marked_imprecise(p)) {
+        !_card_table->is_dirty_for_addr(p)) {
       // Don't overwrite the first missing card mark
-      if (_unmarked_addr == NULL) {
+      if (_unmarked_addr == nullptr) {
         _unmarked_addr = (HeapWord*)p;
       }
     }
   }
 
  public:
-  CheckForUnmarkedOops(PSYoungGen* young_gen, PSCardTable* card_table) :
-    _young_gen(young_gen), _card_table(card_table), _unmarked_addr(NULL) { }
+  PSCheckForUnmarkedOops(PSYoungGen* young_gen, PSCardTable* card_table) :
+    _young_gen(young_gen), _card_table(card_table), _unmarked_addr(nullptr) { }
 
-  virtual void do_oop(oop* p)       { CheckForUnmarkedOops::do_oop_work(p); }
-  virtual void do_oop(narrowOop* p) { CheckForUnmarkedOops::do_oop_work(p); }
+  void do_oop(oop* p)       override { do_oop_work(p); }
+  void do_oop(narrowOop* p) override { do_oop_work(p); }
 
   bool has_unmarked_oop() {
-    return _unmarked_addr != NULL;
+    return _unmarked_addr != nullptr;
   }
 };
 
 // Checks all objects for the existence of some type of mark,
 // precise or imprecise, dirty or newgen.
-class CheckForUnmarkedObjects : public ObjectClosure {
+class PSCheckForUnmarkedObjects : public ObjectClosure {
  private:
   PSYoungGen*  _young_gen;
   PSCardTable* _card_table;
 
  public:
-  CheckForUnmarkedObjects() {
+  PSCheckForUnmarkedObjects() {
     ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
     _young_gen = heap->young_gen();
     _card_table = heap->card_table();
@@ -86,49 +84,239 @@ class CheckForUnmarkedObjects : public ObjectClosure {
   // we test for missing precise marks first. If any are found, we don't
   // fail unless the object head is also unmarked.
   virtual void do_object(oop obj) {
-    CheckForUnmarkedOops object_check(_young_gen, _card_table);
+    PSCheckForUnmarkedOops object_check(_young_gen, _card_table);
     obj->oop_iterate(&object_check);
     if (object_check.has_unmarked_oop()) {
-      guarantee(_card_table->addr_is_marked_imprecise(obj), "Found unmarked young_gen object");
+      guarantee(_card_table->is_dirty_for_addr(obj), "Found unmarked young_gen object");
     }
   }
 };
 
-// Checks for precise marking of oops as newgen.
-class CheckForPreciseMarks : public BasicOopIterateClosure {
- private:
-  PSYoungGen*  _young_gen;
-  PSCardTable* _card_table;
+static void prefetch_write(void *p) {
+  if (PrefetchScanIntervalInBytes >= 0) {
+    Prefetch::write(p, PrefetchScanIntervalInBytes);
+  }
+}
 
- protected:
-  template <class T> void do_oop_work(T* p) {
-    oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
-    if (_young_gen->is_in_reserved(obj)) {
-      assert(_card_table->addr_is_marked_precise(p), "Found unmarked precise oop");
-      _card_table->set_card_newgen(p);
-    }
+void PSCardTable::scan_obj_with_limit(PSPromotionManager* pm,
+                                      oop obj,
+                                      HeapWord* start,
+                                      HeapWord* end) {
+  if (!obj->is_typeArray()) {
+    prefetch_write(start);
+    pm->push_contents_bounded(obj, start, end);
+  }
+}
+
+void PSCardTable::pre_scavenge(uint active_workers) {
+  _preprocessing_active_workers = active_workers;
+}
+
+// The "shadow" table is a copy of the card table entries of the current stripe.
+// It is used to separate card reading, clearing and redirtying which reduces
+// complexity significantly.
+class PSStripeShadowCardTable {
+  typedef CardTable::CardValue CardValue;
+
+  const uint _card_shift;
+  const uint _card_size;
+  CardValue _table[PSCardTable::num_cards_in_stripe];
+  uintptr_t _table_base;
+
+  // Avoid UB pointer operations by using integers internally.
+
+  static_assert(sizeof(uintptr_t) == sizeof(CardValue*), "simplifying assumption");
+  static_assert(sizeof(CardValue) == 1, "simplifying assumption");
+
+  static uintptr_t iaddr(const void* p) {
+    return reinterpret_cast<uintptr_t>(p);
   }
 
- public:
-  CheckForPreciseMarks(PSYoungGen* young_gen, PSCardTable* card_table) :
-    _young_gen(young_gen), _card_table(card_table) { }
+  uintptr_t compute_table_base(HeapWord* start) const {
+    uintptr_t offset = iaddr(start) >> _card_shift;
+    return iaddr(_table) - offset;
+  }
 
-  virtual void do_oop(oop* p)       { CheckForPreciseMarks::do_oop_work(p); }
-  virtual void do_oop(narrowOop* p) { CheckForPreciseMarks::do_oop_work(p); }
+  void verify_card_inclusive(const CardValue* card) const {
+    assert(iaddr(card) >= iaddr(_table), "out of bounds");
+    assert(iaddr(card) <= (iaddr(_table) + sizeof(_table)), "out of bounds");
+  }
+
+  void verify_card_exclusive(const CardValue* card) const {
+    assert(iaddr(card) >= iaddr(_table), "out of bounds");
+    assert(iaddr(card) < (iaddr(_table) + sizeof(_table)), "out of bounds");
+  }
+
+public:
+  PSStripeShadowCardTable(PSCardTable* pst, HeapWord* const start, HeapWord* const end) :
+    _card_shift(CardTable::card_shift()),
+    _card_size(CardTable::card_size()),
+    _table_base(compute_table_base(start))
+  {
+    size_t stripe_byte_size = pointer_delta(end, start) * HeapWordSize;
+    size_t copy_length = align_up(stripe_byte_size, _card_size) >> _card_shift;
+    // The end of the last stripe may not be card aligned as it is equal to old
+    // gen top at scavenge start. We should not clear the card containing old gen
+    // top if not card aligned because there can be promoted objects on that
+    // same card. If it was marked dirty because of the promoted objects and we
+    // cleared it, we would loose a card mark.
+    size_t clear_length = align_down(stripe_byte_size, _card_size) >> _card_shift;
+    CardValue* stripe_start_card = pst->byte_for(start);
+    memcpy(_table, stripe_start_card, copy_length);
+    memset(stripe_start_card, CardTable::clean_card_val(), clear_length);
+  }
+
+  HeapWord* addr_for(const CardValue* const card) {
+    verify_card_inclusive(card);
+    uintptr_t addr = (iaddr(card) - _table_base) << _card_shift;
+    return reinterpret_cast<HeapWord*>(addr);
+  }
+
+  const CardValue* card_for(HeapWord* addr) {
+    uintptr_t icard = _table_base + (iaddr(addr) >> _card_shift);
+    const CardValue* card = reinterpret_cast<const CardValue*>(icard);
+    verify_card_inclusive(card);
+    return card;
+  }
+
+  bool is_dirty(const CardValue* const card) {
+    return !is_clean(card);
+  }
+
+  bool is_clean(const CardValue* const card) {
+    verify_card_exclusive(card);
+    return *card == PSCardTable::clean_card_val();
+  }
+
+  const CardValue* find_first_dirty_card(const CardValue* const start,
+                                         const CardValue* const end) {
+    for (const CardValue* i = start; i < end; ++i) {
+      if (is_dirty(i)) {
+        return i;
+      }
+    }
+    return end;
+  }
+
+  const CardValue* find_first_clean_card(const CardValue* const start,
+                                         const CardValue* const end) {
+    for (const CardValue* i = start; i < end; ++i) {
+      if (is_clean(i)) {
+        return i;
+      }
+    }
+    return end;
+  }
 };
+
+template <typename Func>
+void PSCardTable::process_range(Func&& object_start,
+                                PSPromotionManager* pm,
+                                HeapWord* const start,
+                                HeapWord* const end) {
+  assert(start < end, "precondition");
+  assert(is_card_aligned(start), "precondition");
+
+  PSStripeShadowCardTable sct(this, start, end);
+
+  // end might not be card-aligned.
+  const CardValue* end_card = sct.card_for(end - 1) + 1;
+
+  for (HeapWord* i_addr = start; i_addr < end; /* empty */) {
+    const CardValue* dirty_l = sct.find_first_dirty_card(sct.card_for(i_addr), end_card);
+    const CardValue* dirty_r = sct.find_first_clean_card(dirty_l, end_card);
+
+    assert(dirty_l <= dirty_r, "inv");
+
+    if (dirty_l == dirty_r) {
+      assert(dirty_r == end_card, "inv");
+      break;
+    }
+
+    // Located a non-empty dirty chunk [dirty_l, dirty_r).
+    HeapWord* addr_l = sct.addr_for(dirty_l);
+    HeapWord* addr_r = MIN2(sct.addr_for(dirty_r), end);
+
+    // Scan objects overlapping [addr_l, addr_r) limited to [start, end).
+    HeapWord* obj_addr = object_start(addr_l);
+
+    while (true) {
+      assert(obj_addr < addr_r, "inv");
+
+      oop obj = cast_to_oop(obj_addr);
+      const bool is_obj_array = obj->is_objArray();
+      HeapWord* const obj_end_addr = obj_addr + obj->size();
+
+      if (is_obj_array) {
+        // Always scan obj arrays precisely (they are always marked precisely)
+        // to avoid unnecessary work.
+        scan_obj_with_limit(pm, obj, addr_l, addr_r);
+      } else {
+        if (obj_addr < i_addr && i_addr > start) {
+          // Already scanned this object. Has been one that spans multiple dirty chunks.
+          // The second condition makes sure objects reaching in the stripe are scanned once.
+        } else {
+          scan_obj_with_limit(pm, obj, addr_l, end);
+        }
+      }
+
+      if (obj_end_addr >= addr_r) {
+        i_addr = is_obj_array ? addr_r : obj_end_addr;
+        break;
+      }
+
+      // Move to next obj inside this dirty chunk.
+      obj_addr = obj_end_addr;
+    }
+
+    // Finished a dirty chunk.
+    pm->drain_stacks_cond_depth();
+  }
+}
+
+template <typename Func>
+void PSCardTable::preprocess_card_table_parallel(Func&& object_start,
+                                                 HeapWord* old_gen_bottom,
+                                                 HeapWord* old_gen_top,
+                                                 uint stripe_index,
+                                                 uint n_stripes) {
+  const size_t num_cards_in_slice = num_cards_in_stripe * n_stripes;
+  CardValue* cur_card = byte_for(old_gen_bottom) + stripe_index * num_cards_in_stripe;
+  CardValue* const end_card = byte_for(old_gen_top - 1) + 1;
+
+  for (/* empty */; cur_card < end_card; cur_card += num_cards_in_slice) {
+    HeapWord* stripe_addr = addr_for(cur_card);
+    if (is_dirty(cur_card)) {
+      // The first card of this stripe is already dirty, no need to see if the
+      // reaching-in object is a potentially imprecisely marked non-array
+      // object.
+      continue;
+    }
+    HeapWord* first_obj_addr = object_start(stripe_addr);
+    if (first_obj_addr == stripe_addr) {
+      // No object reaching into this stripe.
+      continue;
+    }
+    oop first_obj = cast_to_oop(first_obj_addr);
+    if (!first_obj->is_array() && is_dirty(byte_for(first_obj_addr))) {
+      // Found a non-array object reaching into the stripe that has
+      // potentially been marked imprecisely. Mark first card of the stripe
+      // dirty so it will be processed later.
+      *cur_card = dirty_card_val();
+    }
+  }
+}
 
 // We get passed the space_top value to prevent us from traversing into
 // the old_gen promotion labs, which cannot be safely parsed.
 
 // Do not call this method if the space is empty.
 // It is a waste to start tasks and get here only to
-// do no work.  If this method needs to be called
-// when the space is empty, fix the calculation of
-// end_card to allow sp_top == sp->bottom().
+// do no work. This method is just a no-op if space_top == sp->bottom().
 
 // The generation (old gen) is divided into slices, which are further
 // subdivided into stripes, with one stripe per GC thread. The size of
-// a stripe is a constant, ssize.
+// a stripe is a constant, num_cards_in_stripe.
 //
 //      +===============+        slice 0
 //      |  stripe 0     |
@@ -152,195 +340,72 @@ class CheckForPreciseMarks : public BasicOopIterateClosure {
 // In this case there are 4 threads, so 4 stripes.  A GC thread first works on
 // its stripe within slice 0 and then moves to its stripe in the next slice
 // until it has exceeded the top of the generation.  The distance to stripe in
-// the next slice is calculated based on the number of stripes.  The next
-// stripe is at ssize * number_of_stripes (= slice_stride)..  So after
-// finishing stripe 0 in slice 0, the thread finds the stripe 0 in slice1 by
-// adding slice_stride to the start of stripe 0 in slice 0 to get to the start
-// of stride 0 in slice 1.
+// the next slice is calculated based on the number of stripes. After finishing
+// stripe 0 in slice 0, the thread finds the stripe 0 in slice 1 by adding
+// slice_size_in_words to the start of stripe 0 in slice 0 to get to the start
+// of stripe 0 in slice 1.
+
+// Scavenging and accesses to the card table are strictly limited to the stripe.
+// In particular scavenging of an object crossing stripe boundaries is shared
+// among the threads assigned to the stripes it resides on. This reduces
+// complexity and enables shared scanning of large objects.
+// It requires preprocessing of the card table though where imprecise card marks of
+// objects crossing stripe boundaries are propagated to the first card of
+// each stripe covered by the individual object.
 
 void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
-                                             MutableSpace* sp,
-                                             HeapWord* space_top,
+                                             HeapWord* old_gen_bottom,
+                                             HeapWord* old_gen_top,
                                              PSPromotionManager* pm,
-                                             uint stripe_number,
-                                             uint stripe_total) {
-  int ssize = 128; // Naked constant!  Work unit = 64k.
+                                             uint stripe_index,
+                                             uint n_stripes) {
+  // ObjectStartArray queries can be expensive for large objects. We cache known objects.
+  struct {
+    HeapWord* start_addr;
+    HeapWord* end_addr;
+  } cached_obj {nullptr, old_gen_bottom};
 
-  // It is a waste to get here if empty.
-  assert(sp->bottom() < sp->top(), "Should not be called if empty");
-  oop* sp_top = (oop*)space_top;
-  CardValue* start_card = byte_for(sp->bottom());
-  CardValue* end_card   = byte_for(sp_top - 1) + 1;
-  oop* last_scanned = NULL; // Prevent scanning objects more than once
-  // The width of the stripe ssize*stripe_total must be
-  // consistent with the number of stripes so that the complete slice
-  // is covered.
-  size_t slice_width = ssize * stripe_total;
-  for (CardValue* slice = start_card; slice < end_card; slice += slice_width) {
-    CardValue* worker_start_card = slice + stripe_number * ssize;
-    if (worker_start_card >= end_card)
-      return; // We're done.
-
-    CardValue* worker_end_card = worker_start_card + ssize;
-    if (worker_end_card > end_card)
-      worker_end_card = end_card;
-
-    // We do not want to scan objects more than once. In order to accomplish
-    // this, we assert that any object with an object head inside our 'slice'
-    // belongs to us. We may need to extend the range of scanned cards if the
-    // last object continues into the next 'slice'.
-    //
-    // Note! ending cards are exclusive!
-    HeapWord* slice_start = addr_for(worker_start_card);
-    HeapWord* slice_end = MIN2((HeapWord*) sp_top, addr_for(worker_end_card));
-
-    // If there are not objects starting within the chunk, skip it.
-    if (!start_array->object_starts_in_range(slice_start, slice_end)) {
-      continue;
+  // Queries must be monotonic because we don't check addr >= cached_obj.start_addr.
+  auto object_start = [&] (HeapWord* addr) {
+    if (addr < cached_obj.end_addr) {
+      assert(cached_obj.start_addr != nullptr, "inv");
+      return cached_obj.start_addr;
     }
-    // Update our beginning addr
-    HeapWord* first_object = start_array->object_start(slice_start);
-    debug_only(oop* first_object_within_slice = (oop*) first_object;)
-    if (first_object < slice_start) {
-      last_scanned = (oop*)(first_object + cast_to_oop(first_object)->size());
-      debug_only(first_object_within_slice = last_scanned;)
-      worker_start_card = byte_for(last_scanned);
-    }
+    HeapWord* result = start_array->object_start(addr);
 
-    // Update the ending addr
-    if (slice_end < (HeapWord*)sp_top) {
-      // The subtraction is important! An object may start precisely at slice_end.
-      HeapWord* last_object = start_array->object_start(slice_end - 1);
-      slice_end = last_object + cast_to_oop(last_object)->size();
-      // worker_end_card is exclusive, so bump it one past the end of last_object's
-      // covered span.
-      worker_end_card = byte_for(slice_end) + 1;
+    cached_obj.start_addr = result;
+    cached_obj.end_addr = result + cast_to_oop(result)->size();
 
-      if (worker_end_card > end_card)
-        worker_end_card = end_card;
-    }
+    return result;
+  };
 
-    assert(slice_end <= (HeapWord*)sp_top, "Last object in slice crosses space boundary");
-    assert(is_valid_card_address(worker_start_card), "Invalid worker start card");
-    assert(is_valid_card_address(worker_end_card), "Invalid worker end card");
-    // Note that worker_start_card >= worker_end_card is legal, and happens when
-    // an object spans an entire slice.
-    assert(worker_start_card <= end_card, "worker start card beyond end card");
-    assert(worker_end_card <= end_card, "worker end card beyond end card");
+  // Prepare scavenge.
+  preprocess_card_table_parallel(object_start, old_gen_bottom, old_gen_top, stripe_index, n_stripes);
 
-    CardValue* current_card = worker_start_card;
-    while (current_card < worker_end_card) {
-      // Find an unclean card.
-      while (current_card < worker_end_card && card_is_clean(*current_card)) {
-        current_card++;
-      }
-      CardValue* first_unclean_card = current_card;
+  // Sync with other workers.
+  Atomic::dec(&_preprocessing_active_workers);
+  SpinYield spin_yield;
+  while (Atomic::load_acquire(&_preprocessing_active_workers) > 0) {
+    spin_yield.wait();
+  }
 
-      // Find the end of a run of contiguous unclean cards
-      while (current_card < worker_end_card && !card_is_clean(*current_card)) {
-        while (current_card < worker_end_card && !card_is_clean(*current_card)) {
-          current_card++;
-        }
+  // Scavenge
+  cached_obj = {nullptr, old_gen_bottom};
+  const size_t stripe_size_in_words = num_cards_in_stripe * _card_size_in_words;
+  const size_t slice_size_in_words = stripe_size_in_words * n_stripes;
+  HeapWord* cur_addr = old_gen_bottom + stripe_index * stripe_size_in_words;
+  for (/* empty */; cur_addr < old_gen_top; cur_addr += slice_size_in_words) {
+    HeapWord* const stripe_l = cur_addr;
+    HeapWord* const stripe_r = MIN2(cur_addr + stripe_size_in_words,
+                                    old_gen_top);
 
-        if (current_card < worker_end_card) {
-          // Some objects may be large enough to span several cards. If such
-          // an object has more than one dirty card, separated by a clean card,
-          // we will attempt to scan it twice. The test against "last_scanned"
-          // prevents the redundant object scan, but it does not prevent newly
-          // marked cards from being cleaned.
-          HeapWord* last_object_in_dirty_region = start_array->object_start(addr_for(current_card)-1);
-          size_t size_of_last_object = cast_to_oop(last_object_in_dirty_region)->size();
-          HeapWord* end_of_last_object = last_object_in_dirty_region + size_of_last_object;
-          CardValue* ending_card_of_last_object = byte_for(end_of_last_object);
-          assert(ending_card_of_last_object <= worker_end_card, "ending_card_of_last_object is greater than worker_end_card");
-          if (ending_card_of_last_object > current_card) {
-            // This means the object spans the next complete card.
-            // We need to bump the current_card to ending_card_of_last_object
-            current_card = ending_card_of_last_object;
-          }
-        }
-      }
-      CardValue* following_clean_card = current_card;
-
-      if (first_unclean_card < worker_end_card) {
-        oop* p = (oop*) start_array->object_start(addr_for(first_unclean_card));
-        assert((HeapWord*)p <= addr_for(first_unclean_card), "checking");
-        // "p" should always be >= "last_scanned" because newly GC dirtied
-        // cards are no longer scanned again (see comment at end
-        // of loop on the increment of "current_card").  Test that
-        // hypothesis before removing this code.
-        // If this code is removed, deal with the first time through
-        // the loop when the last_scanned is the object starting in
-        // the previous slice.
-        assert((p >= last_scanned) ||
-               (last_scanned == first_object_within_slice),
-               "Should no longer be possible");
-        if (p < last_scanned) {
-          // Avoid scanning more than once; this can happen because
-          // newgen cards set by GC may a different set than the
-          // originally dirty set
-          p = last_scanned;
-        }
-        oop* to = (oop*)addr_for(following_clean_card);
-
-        // Test slice_end first!
-        if ((HeapWord*)to > slice_end) {
-          to = (oop*)slice_end;
-        } else if (to > sp_top) {
-          to = sp_top;
-        }
-
-        // we know which cards to scan, now clear them
-        if (first_unclean_card <= worker_start_card+1)
-          first_unclean_card = worker_start_card+1;
-        if (following_clean_card >= worker_end_card-1)
-          following_clean_card = worker_end_card-1;
-
-        while (first_unclean_card < following_clean_card) {
-          *first_unclean_card++ = clean_card;
-        }
-
-        const int interval = PrefetchScanIntervalInBytes;
-        // scan all objects in the range
-        if (interval != 0) {
-          while (p < to) {
-            Prefetch::write(p, interval);
-            oop m = cast_to_oop(p);
-            assert(oopDesc::is_oop_or_null(m), "Expected an oop or NULL for header field at " PTR_FORMAT, p2i(m));
-            pm->push_contents(m);
-            p += m->size();
-          }
-          pm->drain_stacks_cond_depth();
-        } else {
-          while (p < to) {
-            oop m = cast_to_oop(p);
-            assert(oopDesc::is_oop_or_null(m), "Expected an oop or NULL for header field at " PTR_FORMAT, p2i(m));
-            pm->push_contents(m);
-            p += m->size();
-          }
-          pm->drain_stacks_cond_depth();
-        }
-        last_scanned = p;
-      }
-      // "current_card" is still the "following_clean_card" or
-      // the current_card is >= the worker_end_card so the
-      // loop will not execute again.
-      assert((current_card == following_clean_card) ||
-             (current_card >= worker_end_card),
-        "current_card should only be incremented if it still equals "
-        "following_clean_card");
-      // Increment current_card so that it is not processed again.
-      // It may now be dirty because a old-to-young pointer was
-      // found on it an updated.  If it is now dirty, it cannot be
-      // be safely cleaned in the next iteration.
-      current_card++;
-    }
+    process_range(object_start, pm, stripe_l, stripe_r);
   }
 }
 
 // This should be called before a scavenge.
 void PSCardTable::verify_all_young_refs_imprecise() {
-  CheckForUnmarkedObjects check;
+  PSCheckForUnmarkedObjects check;
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSOldGen* old_gen = heap->old_gen();
@@ -348,69 +413,11 @@ void PSCardTable::verify_all_young_refs_imprecise() {
   old_gen->object_iterate(&check);
 }
 
-// This should be called immediately after a scavenge, before mutators resume.
-void PSCardTable::verify_all_young_refs_precise() {
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  PSOldGen* old_gen = heap->old_gen();
-
-  CheckForPreciseMarks check(heap->young_gen(), this);
-
-  old_gen->oop_iterate(&check);
-
-  verify_all_young_refs_precise_helper(old_gen->object_space()->used_region());
-}
-
-void PSCardTable::verify_all_young_refs_precise_helper(MemRegion mr) {
-  CardValue* bot = byte_for(mr.start());
-  CardValue* top = byte_for(mr.end());
-  while (bot <= top) {
-    assert(*bot == clean_card || *bot == verify_card, "Found unwanted or unknown card mark");
-    if (*bot == verify_card)
-      *bot = youngergen_card;
-    bot++;
-  }
-}
-
-bool PSCardTable::addr_is_marked_imprecise(void *addr) {
+bool PSCardTable::is_dirty_for_addr(void *addr) {
   CardValue* p = byte_for(addr);
-  CardValue val = *p;
-
-  if (card_is_dirty(val))
-    return true;
-
-  if (card_is_newgen(val))
-    return true;
-
-  if (card_is_clean(val))
-    return false;
-
-  assert(false, "Found unhandled card mark type");
-
-  return false;
+  return is_dirty(p);
 }
 
-// Also includes verify_card
-bool PSCardTable::addr_is_marked_precise(void *addr) {
-  CardValue* p = byte_for(addr);
-  CardValue val = *p;
-
-  if (card_is_newgen(val))
-    return true;
-
-  if (card_is_verify(val))
-    return true;
-
-  if (card_is_clean(val))
-    return false;
-
-  if (card_is_dirty(val))
-    return false;
-
-  assert(false, "Found unhandled card mark type");
-
-  return false;
-}
-
-bool PSCardTable::is_in_young(oop obj) const {
-  return ParallelScavengeHeap::heap()->is_in_young(obj);
+bool PSCardTable::is_in_young(const void* p) const {
+  return ParallelScavengeHeap::heap()->is_in_young(p);
 }

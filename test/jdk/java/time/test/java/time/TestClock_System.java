@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -380,7 +380,7 @@ public class TestClock_System {
                 long expNan = (expectedMax % NANOS_IN_MICRO);
                 System.err.println("Excessive adjustment: " + adjSec + "s, "
                         + adjMil + "ms, " + adjMic + "mics, " + adjNan + "ns");
-                System.err.println("Epected max: " + expSec + "s, "
+                System.err.println("Expected max: " + expSec + "s, "
                         + expMil + "ms, " + expMic + "mics, " + expNan + "ns");
 
                 throw new RuntimeException(name

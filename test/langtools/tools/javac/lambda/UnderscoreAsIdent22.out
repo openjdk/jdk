@@ -1,0 +1,15 @@
+UnderscoreAsIdent.java:8:9: compiler.err.use.of.underscore.not.allowed.non.variable
+UnderscoreAsIdent.java:8:11: compiler.err.use.of.underscore.not.allowed.non.variable
+UnderscoreAsIdent.java:10:8: compiler.err.use.of.underscore.not.allowed.non.variable
+UnderscoreAsIdent.java:10:10: compiler.err.use.of.underscore.not.allowed.non.variable
+UnderscoreAsIdent.java:12:7: compiler.err.use.of.underscore.not.allowed.non.variable
+UnderscoreAsIdent.java:13:12: compiler.err.use.of.underscore.not.allowed.non.variable
+UnderscoreAsIdent.java:14:10: compiler.err.use.of.underscore.not.allowed.non.variable
+UnderscoreAsIdent.java:14:19: compiler.err.use.of.underscore.not.allowed.non.variable
+UnderscoreAsIdent.java:19:25: compiler.err.use.of.underscore.not.allowed.non.variable
+UnderscoreAsIdent.java:19:33: compiler.err.use.of.underscore.not.allowed.non.variable
+UnderscoreAsIdent.java:25:9: compiler.err.use.of.underscore.not.allowed.non.variable
+UnderscoreAsIdent.java:27:19: compiler.err.use.of.underscore.not.allowed.non.variable
+UnderscoreAsIdent.java:29:9: compiler.err.use.of.underscore.not.allowed.non.variable
+UnderscoreAsIdent.java:31:22: compiler.err.use.of.underscore.not.allowed.non.variable
+14 errors

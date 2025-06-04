@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,20 +41,20 @@ import javax.lang.model.type.*;
  *
  * As defined by <cite>The Java Language Specification</cite>
  * section {@jls 9.7.4}, an annotation on an element is a
- * <em>declaration annotation</em> and an annotation on a type is a
- * <em>type annotation</em>.
+ * <dfn>{@index "declaration annotation"}</dfn> and an annotation on a type is a
+ * <dfn>{@index "type annotation"}</dfn>.
  *
  * The terms <em>directly present</em>, <em>present</em>,
- * <em>indirectly present</em>, and <em>associated </em> are used
+ * <em>indirectly present</em>, and <em>associated</em> are used
  * throughout this interface to describe precisely which annotations,
  * either declaration annotations or type annotations, are returned by
  * the methods in this interface.
  *
  * <p>In the definitions below, an annotation <i>A</i> has an
- * annotation type <i>AT</i>. If <i>AT</i> is a repeatable annotation
- * type, the type of the containing annotation is <i>ATC</i>.
+ * annotation interface <i>AI</i>. If <i>AI</i> is a repeatable annotation
+ * interface, the type of the container annotation is <i>AIC</i>.
  *
- * <p>Annotation <i>A</i> is <em>directly present</em> on a construct
+ * <p>Annotation <i>A</i> is <dfn>{@index "directly present"}</dfn> on a construct
  * <i>C</i> if either:
  *
  * <ul>
@@ -65,21 +65,21 @@ import javax.lang.model.type.*;
  * declared as applying to
  * the source code representation of <i>C</i>.
  *
- * <p>Typically, if exactly one annotation of type <i>AT</i> appears in
+ * <p>Typically, if exactly one annotation of type <i>AI</i> appears in
  * the source code of representation of <i>C</i>, then <i>A</i> is
  * explicitly declared as applying to <i>C</i>.
  *
- * An annotation of type <i>AT</i> on a {@linkplain
+ * An annotation of type <i>AI</i> on a {@linkplain
  * RecordComponentElement record component} can be implicitly propagated
  * down to affiliated mandated members. Type annotations modifying the
  * type of a record component can be also propagated to mandated
  * members. Propagation of the annotations to mandated members is
  * governed by rules given in the <cite>The Java Language
- * Specification</cite>.
+ * Specification</cite> (JLS {@jls 8.10.1}).
  *
- * If there are multiple annotations of type <i>AT</i> present on
- * <i>C</i>, then if <i>AT</i> is repeatable annotation type, an
- * annotation of type <i>ATC</i> is {@linkplain javax.lang.model.util.Elements#getOrigin(AnnotatedConstruct, AnnotationMirror) implicitly declared} on <i>C</i>.
+ * If there are multiple annotations of type <i>AI</i> present on
+ * <i>C</i>, then if <i>AI</i> is a repeatable annotation interface, an
+ * annotation of type <i>AIC</i> is {@linkplain javax.lang.model.util.Elements#getOrigin(AnnotatedConstruct, AnnotationMirror) implicitly declared} on <i>C</i>.
  * <li> A representation of <i>A</i> appears in the executable output
  * for <i>C</i>, such as the {@code RuntimeVisibleAnnotations} (JVMS {@jvms 4.7.16}) or
  * {@code RuntimeVisibleParameterAnnotations} (JVMS {@jvms 4.7.17}) attributes of a class
@@ -87,42 +87,42 @@ import javax.lang.model.type.*;
  *
  * </ul>
  *
- * <p>An annotation <i>A</i> is <em>present</em> on a
+ * <p>An annotation <i>A</i> is <dfn>{@index "present"}</dfn> on a
  * construct <i>C</i> if either:
  * <ul>
  *
  * <li><i>A</i> is directly present on <i>C</i>.
  *
- * <li>No annotation of type <i>AT</i> is directly present on
- * <i>C</i>, and <i>C</i> is a class and <i>AT</i> is inheritable
+ * <li>No annotation of type <i>AI</i> is directly present on
+ * <i>C</i>, and <i>C</i> is a class and <i>AI</i> is inheritable
  * and <i>A</i> is present on the superclass of <i>C</i>.
  *
  * </ul>
  *
- * An annotation <i>A</i> is <em>indirectly present</em> on a construct
+ * An annotation <i>A</i> is <dfn>{@index "indirectly present"}</dfn> on a construct
  * <i>C</i> if both:
  *
  * <ul>
  *
- * <li><i>AT</i> is a repeatable annotation type with a containing
- * annotation type <i>ATC</i>.
+ * <li><i>AI</i> is a repeatable annotation interface with a containing
+ * annotation interface <i>AIC</i>.
  *
- * <li>An annotation of type <i>ATC</i> is directly present on
+ * <li>An annotation of type <i>AIC</i> is directly present on
  * <i>C</i> and <i>A</i> is an annotation included in the result of
  * calling the {@code value} method of the directly present annotation
- * of type <i>ATC</i>.
+ * of type <i>AIC</i>.
  *
  * </ul>
  *
- * An annotation <i>A</i> is <em>associated</em> with a construct
+ * An annotation <i>A</i> is <dfn>{@index "associated"}</dfn> with a construct
  * <i>C</i> if either:
  *
  * <ul>
  *
  * <li> <i>A</i> is directly or indirectly present on <i>C</i>.
  *
- * <li> No annotation of type <i>AT</i> is directly or indirectly
- * present on <i>C</i>, and <i>C</i> is a class, and <i>AT</i> is
+ * <li> No annotation of type <i>AI</i> is directly or indirectly
+ * present on <i>C</i>, and <i>C</i> is a class, and <i>AI</i> is
  * inheritable, and <i>A</i> is associated with the superclass of
  * <i>C</i>.
  *
@@ -163,19 +163,19 @@ public interface AnnotatedConstruct {
      * <blockquote>
      * <i>Note:</i> This method is unlike others in this and related
      * interfaces.  It operates on runtime reflective information &mdash;
-     * representations of annotation types currently loaded into the
+     * representations of annotation interfaces currently loaded into the
      * VM &mdash; rather than on the representations defined by and used
      * throughout these interfaces.  Consequently, calling methods on
      * the returned annotation object can throw many of the exceptions
      * that can be thrown when calling methods on an annotation object
      * returned by core reflection.  This method is intended for
      * callers that are written to operate on a known, fixed set of
-     * annotation types.
+     * annotation interfaces.
      * </blockquote>
      *
-     * @param <A>  the annotation type
+     * @param <A>  the annotation interface
      * @param annotationType  the {@code Class} object corresponding to
-     *          the annotation type
+     *          the annotation interface
      *
      * @see #getAnnotationMirrors()
      * @see java.lang.reflect.AnnotatedElement#getAnnotation
@@ -189,10 +189,11 @@ public interface AnnotatedConstruct {
     <A extends Annotation> A getAnnotation(Class<A> annotationType);
 
     /**
-     * Returns annotations that are <em>associated</em> with this construct.
+     * Returns annotations of the specified type that are <em>associated</em>
+     * with this construct.
      *
-     * If there are no annotations associated with this construct, the
-     * return value is an array of length 0.
+     * If there are no annotations of the specified type associated with this
+     * construct, the return value is an array of length 0.
      *
      * The order of annotations which are directly or indirectly
      * present on a construct <i>C</i> is computed as if indirectly present
@@ -202,7 +203,7 @@ public interface AnnotatedConstruct {
      *
      * The difference between this method and {@link #getAnnotation(Class)}
      * is that this method detects if its argument is a <em>repeatable
-     * annotation type</em>, and if so, attempts to find one or more
+     * annotation interface</em>, and if so, attempts to find one or more
      * annotations of that type by "looking through" a container annotation.
      *
      * <p> The annotations returned by this method could contain an element
@@ -220,19 +221,19 @@ public interface AnnotatedConstruct {
      * <blockquote>
      * <i>Note:</i> This method is unlike others in this and related
      * interfaces.  It operates on runtime reflective information &mdash;
-     * representations of annotation types currently loaded into the
+     * representations of annotation interfaces currently loaded into the
      * VM &mdash; rather than on the representations defined by and used
      * throughout these interfaces.  Consequently, calling methods on
      * the returned annotation object can throw many of the exceptions
      * that can be thrown when calling methods on an annotation object
      * returned by core reflection.  This method is intended for
      * callers that are written to operate on a known, fixed set of
-     * annotation types.
+     * annotation interfaces.
      * </blockquote>
      *
-     * @param <A>  the annotation type
+     * @param <A>  the annotation interface
      * @param annotationType  the {@code Class} object corresponding to
-     *          the annotation type
+     *          the annotation interface
      * @return this construct's annotations for the specified annotation
      *         type if present on this construct, else an empty array
      *

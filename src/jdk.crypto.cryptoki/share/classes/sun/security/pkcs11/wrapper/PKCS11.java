@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -51,11 +51,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 import sun.security.util.Debug;
 
+import sun.security.pkcs11.P11Util;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 
@@ -79,16 +77,12 @@ public class PKCS11 {
     private static final String PKCS11_WRAPPER = "j2pkcs11";
 
     static {
-        // cannot use LoadLibraryAction because that would make the native
-        // library available to the bootclassloader, but we run in the
-        // extension classloader.
-        @SuppressWarnings("removal")
-        var dummy = AccessController.doPrivileged(new PrivilegedAction<Object>() {
-            public Object run() {
-                System.loadLibrary(PKCS11_WRAPPER);
-                return null;
-            }
-        });
+        loadAndInitializeLibrary();
+    }
+
+    @SuppressWarnings("restricted")
+    private static void loadAndInitializeLibrary() {
+        System.loadLibrary(PKCS11_WRAPPER);
         boolean enableDebug = Debug.getInstance("sunpkcs11") != null;
         initializeLibrary(enableDebug);
     }
@@ -99,18 +93,15 @@ public class PKCS11 {
         // static initializer, hence this method is empty.
     }
 
-    /* *****************************************************************************
-     * Utility, Resource Clean up
-     ******************************************************************************/
-    // always return 0L
-    public static native long freeMechanism(long hMechanism);
-
     /**
      * The PKCS#11 module to connect to. This is the PKCS#11 driver of the token;
      * e.g. pk2priv.dll.
      */
     private final String pkcs11ModulePath;
     private final CK_VERSION version;
+
+    // Note: Please don't update this field other than the constructor.
+    // Otherwise, the native data is not able to be collected.
     private long pNativeData;
 
     /**
@@ -161,6 +152,9 @@ public class PKCS11 {
                 // give up; just use what is returned by connect()
             }
         }
+
+        // Calls disconnect() to cleanup the native part of the wrapper.
+        P11Util.cleaner.register(this, releaserFor(pNativeData));
     }
 
     public CK_VERSION getVersion() {
@@ -196,11 +190,19 @@ public class PKCS11 {
         return pkcs11;
     }
 
+    private static Runnable releaserFor(long pNativeData) {
+        return () -> {
+            if (pNativeData != 0) {
+                PKCS11.disconnect(pNativeData);
+            }
+        };
+    }
+
     /**
      * Connects this object to the specified PKCS#11 library. This method is for
      * internal use only.
      * Declared private, because incorrect handling may result in errors in the
-     * native part.
+     * native part.  Please don't use this method other than the constructor.
      *
      * @param pkcs11ModulePath The PKCS#11 library path.
      * @param functionList the method name for retrieving the PKCS#11
@@ -216,14 +218,16 @@ public class PKCS11 {
      * Disconnects the PKCS#11 library from this object. After calling this
      * method, this object is no longer connected to a native PKCS#11 module
      * and any subsequent calls to C_ methods will fail. This method is for
-     * internal use only.
+     * internal use only.  Please don't use this method other than finalization
+     * as implemented in the releaserFor() method.
+     *
      * Declared private, because incorrect handling may result in errors in the
      * native part.
      *
      * @preconditions
      * @postconditions
      */
-    private native void disconnect();
+    private static native void disconnect(long pNativeData);
 
 
     // Implementation of PKCS11 methods delegated to native pkcs11wrapper library
@@ -782,6 +786,24 @@ public class PKCS11 {
     public native void C_EncryptInit(long hSession, CK_MECHANISM pMechanism,
             long hKey) throws PKCS11Exception;
 
+    /**
+     * C_GCMEncryptInitWithRetry initializes a GCM encryption operation and retry
+     * with alternative param structure for max compatibility.
+     * (Encryption and decryption)
+     *
+     * @param hSession the session's handle
+     *         (PKCS#11 param: CK_SESSION_HANDLE hSession)
+     * @param pMechanism the encryption mechanism
+     *         (PKCS#11 param: CK_MECHANISM_PTR pMechanism)
+     * @param hKey the handle of the encryption key
+     *         (PKCS#11 param: CK_OBJECT_HANDLE hKey)
+     * @param useNormativeVerFirst whether to use normative version of GCM parameter first
+     * @exception PKCS11Exception If function returns other value than CKR_OK.
+     * @preconditions
+     * @postconditions
+     */
+    public native void C_GCMEncryptInitWithRetry(long hSession, CK_MECHANISM pMechanism,
+            long hKey, boolean useNormativeVerFirst) throws PKCS11Exception;
 
     /**
      * C_Encrypt encrypts single-part data.
@@ -876,6 +898,24 @@ public class PKCS11 {
     public native void C_DecryptInit(long hSession, CK_MECHANISM pMechanism,
             long hKey) throws PKCS11Exception;
 
+    /**
+     * C_GCMDecryptInitWithRetry initializes a GCM decryption operation
+     * with alternative param structure for max compatibility.
+     * (Encryption and decryption)
+     *
+     * @param hSession the session's handle
+     *         (PKCS#11 param: CK_SESSION_HANDLE hSession)
+     * @param pMechanism the decryption mechanism
+     *         (PKCS#11 param: CK_MECHANISM_PTR pMechanism)
+     * @param hKey the handle of the decryption key
+     *         (PKCS#11 param: CK_OBJECT_HANDLE hKey)
+     * @param useNormativeVerFirst whether to use normative version of GCM parameter first
+     * @exception PKCS11Exception If function returns other value than CKR_OK.
+     * @preconditions
+     * @postconditions
+     */
+    public native void C_GCMDecryptInitWithRetry(long hSession, CK_MECHANISM pMechanism,
+            long hKey, boolean useNormativeVerFirst) throws PKCS11Exception;
 
     /**
      * C_Decrypt decrypts encrypted data in a single part.
@@ -1655,18 +1695,6 @@ public class PKCS11 {
      */
     public String toString() {
         return "Module name: " + pkcs11ModulePath;
-    }
-
-    /**
-     * Calls disconnect() to cleanup the native part of the wrapper. Once this
-     * method is called, this object cannot be used any longer. Any subsequent
-     * call to a C_* method will result in a runtime exception.
-     *
-     * @exception Throwable If finalization fails.
-     */
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
-        disconnect();
     }
 
 // PKCS11 subclass that has all methods synchronized and delegating to the

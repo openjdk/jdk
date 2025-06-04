@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,8 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
   StandardGlyphVector gv;
   float[] charinfo;
 
+  float advTracking;
+
   /**
    * Create from a TextSource.
    */
@@ -110,6 +112,8 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
           source.getStart() + source.getLength(), source.getFRC());
       cm = CoreMetrics.get(lm);
     }
+
+    advTracking = font.getSize() * AttributeValues.getTracking(atts);
   }
 
 
@@ -378,10 +382,10 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     validate(index);
     float[] charinfo = getCharinfo();
     int idx = l2v(index) * numvals + advx;
-    if (charinfo == null || idx >= charinfo.length) {
+    if (charinfo == null || idx >= charinfo.length || charinfo[idx] == 0) {
         return 0f;
     } else {
-        return charinfo[idx];
+        return charinfo[idx] + advTracking;
     }
   }
 
@@ -477,16 +481,24 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
   }
 
   public int getLineBreakIndex(int start, float width) {
+    final float epsilon = 0.005f;
+
     float[] charinfo = getCharinfo();
     int length = source.getLength();
+
+    if (advTracking > 0) {
+      width += advTracking;
+    }
+
     --start;
-    while (width >= 0 && ++start < length) {
+    while (width >= -epsilon && ++start < length) {
       int cidx = l2v(start) * numvals + advx;
-      if (cidx >= charinfo.length) {
-          break; // layout bailed for some reason
+      float adv = cidx < charinfo.length ?
+                  charinfo[cidx] : // layout provided info for this glyph
+                  0; // glyph info omitted, assume no advance
+      if (adv != 0) {
+          width -= adv + advTracking;
       }
-      float adv = charinfo[cidx];
-      width -= adv;
     }
 
     return start;
@@ -502,7 +514,10 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
       if (cidx >= charinfo.length) {
           break; // layout bailed for some reason
       }
-      a += charinfo[cidx];
+      float adv = charinfo[cidx];
+      if (adv != 0) {
+          a += adv + advTracking;
+      }
     }
 
     return a;
@@ -860,7 +875,14 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
   }
 
   public TextLineComponent getSubset(int start, int limit, int dir) {
-    return new ExtendedTextSourceLabel(source.getSubSource(start, limit-start, dir), decorator);
+    if (start == 0 &&
+        limit == source.getLength() &&
+        (dir == source.getBidiLevel() || dir == TextLineComponent.UNCHANGED)) {
+      return this; // avoid unnecessary object creation and text shaping
+    } else {
+      TextSource subSource = source.getSubSource(start, limit-start, dir);
+      return new ExtendedTextSourceLabel(subSource, decorator);
+    }
   }
 
   public String toString() {

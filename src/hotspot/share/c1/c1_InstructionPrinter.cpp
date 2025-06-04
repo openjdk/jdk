@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,19 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "classfile/vmSymbols.hpp"
 #include "c1/c1_InstructionPrinter.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciArray.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciObject.hpp"
+#include "classfile/vmSymbols.hpp"
 
 
 #ifndef PRODUCT
 
 const char* InstructionPrinter::basic_type_name(BasicType type) {
   const char* n = type2name(type);
-  if (n == NULL || type > T_VOID) {
+  if (n == nullptr || type > T_VOID) {
     return "???";
   }
   return n;
@@ -54,7 +53,7 @@ const char* InstructionPrinter::cond_name(If::Condition cond) {
     case If::beq: return "|<=|";
     default:
       ShouldNotReachHere();
-      return NULL;
+      return nullptr;
   }
 }
 
@@ -102,7 +101,7 @@ const char* InstructionPrinter::op_name(Bytecodes::Code op) {
 
 
 bool InstructionPrinter::is_illegal_phi(Value v) {
-  Phi* phi = v ? v->as_Phi() : NULL;
+  Phi* phi = v ? v->as_Phi() : nullptr;
   if (phi && phi->is_illegal()) {
     return true;
   }
@@ -111,7 +110,7 @@ bool InstructionPrinter::is_illegal_phi(Value v) {
 
 
 bool InstructionPrinter::is_phi_of_block(Value v, BlockBegin* b) {
-  Phi* phi = v ? v->as_Phi() : NULL;
+  Phi* phi = v ? v->as_Phi() : nullptr;
   return phi && phi->block() == b;
 }
 
@@ -123,7 +122,7 @@ void InstructionPrinter::print_klass(ciKlass* klass) {
 
 void InstructionPrinter::print_object(Value obj) {
   ValueType* type = obj->type();
-  if (type->as_ObjectConstant() != NULL) {
+  if (type->as_ObjectConstant() != nullptr) {
     ciObject* value = type->as_ObjectConstant()->value();
     if (value->is_null_object()) {
       output()->print("null");
@@ -134,7 +133,7 @@ void InstructionPrinter::print_object(Value obj) {
       print_klass(value->klass());
       output()->print(">");
     }
-  } else if (type->as_InstanceConstant() != NULL) {
+  } else if (type->as_InstanceConstant() != nullptr) {
     ciInstance* value = type->as_InstanceConstant()->value();
     if (value->is_loaded()) {
       output()->print("<instance " INTPTR_FORMAT " klass=", p2i(value->constant_encoding()));
@@ -143,16 +142,16 @@ void InstructionPrinter::print_object(Value obj) {
     } else {
       output()->print("<unloaded instance " INTPTR_FORMAT ">", p2i(value));
     }
-  } else if (type->as_ArrayConstant() != NULL) {
+  } else if (type->as_ArrayConstant() != nullptr) {
     output()->print("<array " INTPTR_FORMAT ">", p2i(type->as_ArrayConstant()->value()->constant_encoding()));
-  } else if (type->as_ClassConstant() != NULL) {
+  } else if (type->as_ClassConstant() != nullptr) {
     ciInstanceKlass* klass = type->as_ClassConstant()->value();
     if (!klass->is_loaded()) {
       output()->print("<unloaded> ");
     }
     output()->print("class ");
     print_klass(klass);
-  } else if (type->as_MethodConstant() != NULL) {
+  } else if (type->as_MethodConstant() != nullptr) {
     ciMethod* m = type->as_MethodConstant()->value();
     output()->print("<method %s.%s>", m->holder()->name()->as_utf8(), m->name()->as_utf8());
   } else {
@@ -177,7 +176,7 @@ void InstructionPrinter::print_indexed(AccessIndexed* indexed) {
   output()->put('[');
   print_value(indexed->index());
   output()->put(']');
-  if (indexed->length() != NULL) {
+  if (indexed->length() != nullptr) {
     output()->put('(');
     print_value(indexed->length());
     output()->put(')');
@@ -200,8 +199,8 @@ void InstructionPrinter::print_op2(Op2* instr) {
 
 
 void InstructionPrinter::print_value(Value value) {
-  if (value == NULL) {
-    output()->print("NULL");
+  if (value == nullptr) {
+    output()->print("null");
   } else {
     print_temp(value);
   }
@@ -225,7 +224,7 @@ void InstructionPrinter::print_stack(ValueStack* stack) {
       Value value = stack->stack_at_inc(i);
       print_value(value);
       Phi* phi = value->as_Phi();
-      if (phi != NULL) {
+      if (phi != nullptr) {
         if (phi->operand()->is_valid()) {
           output()->print(" ");
           phi->operand()->print(output());
@@ -244,7 +243,7 @@ void InstructionPrinter::print_stack(ValueStack* stack) {
       Value t = stack->lock_at(i);
       if (i > 0) output()->print(", ");
       output()->print("%d:", i);
-      if (t == NULL) {
+      if (t == nullptr) {
         // synchronized methods push null on the lock stack
         output()->print("this");
       } else {
@@ -280,7 +279,7 @@ void InstructionPrinter::print_phi(int i, Value v, BlockBegin* b) {
       output()->print(" ");
       Value opd = phi->operand_at(j);
       if (opd) print_value(opd);
-      else output()->print("NULL");
+      else output()->print("null");
     }
     output()->print("] ");
   }
@@ -324,7 +323,7 @@ void InstructionPrinter::print_line(Instruction* instr) {
   // add a line for StateSplit instructions w/ non-empty stacks
   // (make it robust so we can print incomplete instructions)
   StateSplit* split = instr->as_StateSplit();
-  if (split != NULL && split->state() != NULL && !split->state()->stack_is_empty()) {
+  if (split != nullptr && split->state() != nullptr && !split->state()->stack_is_empty()) {
     fill_to(instr_pos); print_stack(split->state());
     output()->cr();
   }
@@ -464,7 +463,7 @@ void InstructionPrinter::do_TypeCast(TypeCast* x) {
 
 
 void InstructionPrinter::do_Invoke(Invoke* x) {
-  if (x->receiver() != NULL) {
+  if (x->receiver() != nullptr) {
     print_value(x->receiver());
     output()->print(".");
   }
@@ -532,13 +531,13 @@ void InstructionPrinter::do_Intrinsic(Intrinsic* x) {
   const char* name = vmIntrinsics::name_at(x->id());
   if (name[0] == '_')  name++;  // strip leading bug from _hashCode, etc.
   const char* kname = vmSymbols::name_for(vmIntrinsics::class_for(x->id()));
-  if (strchr(name, '_') == NULL) {
-    kname = NULL;
+  if (strchr(name, '_') == nullptr) {
+    kname = nullptr;
   } else {
     const char* kptr = strrchr(kname, '/');
-    if (kptr != NULL)  kname = kptr + 1;
+    if (kptr != nullptr)  kname = kptr + 1;
   }
-  if (kname == NULL)
+  if (kname == nullptr)
     output()->print("%s(", name);
   else
     output()->print("%s.%s(", kname, name);
@@ -588,10 +587,10 @@ void InstructionPrinter::do_BlockBegin(BlockBegin* x) {
   if (printed_flag) output()->print(") ");
 
   // print block bci range
-  output()->print("[%d, %d]", x->bci(), (end == NULL ? -1 : end->printable_bci()));
+  output()->print("[%d, %d]", x->bci(), (end == nullptr ? -1 : end->printable_bci()));
 
   // print block successors
-  if (end != NULL && end->number_of_sux() > 0) {
+  if (end != nullptr && end->number_of_sux() > 0) {
     output()->print(" ->");
     for (int i = 0; i < end->number_of_sux(); i++) {
       output()->print(" B%d", end->sux_at(i)->block_id());
@@ -608,7 +607,7 @@ void InstructionPrinter::do_BlockBegin(BlockBegin* x) {
   }
 
   // print dominator block
-  if (x->dominator() != NULL) {
+  if (x->dominator() != nullptr) {
     output()->print(" dom B%d", x->dominator()->block_id());
   }
 
@@ -645,7 +644,7 @@ void InstructionPrinter::do_BlockBegin(BlockBegin* x) {
         if (v && !v->type()->is_illegal()) i += v->type()->size(); else i ++;
       }
       state = state->caller_state();
-    } while (state != NULL);
+    } while (state != nullptr);
 
   }
 
@@ -667,7 +666,7 @@ void InstructionPrinter::do_BlockBegin(BlockBegin* x) {
       }
       output()->cr();
       state = state->caller_state();
-    } while (state != NULL);
+    } while (state != nullptr);
   }
 
   // print values on stack
@@ -748,7 +747,7 @@ void InstructionPrinter::do_LookupSwitch(LookupSwitch* x) {
 
 
 void InstructionPrinter::do_Return(Return* x) {
-  if (x->result() == NULL) {
+  if (x->result() == nullptr) {
     output()->print("return");
   } else {
     output()->print("%creturn ", x->type()->tchar());
@@ -780,12 +779,6 @@ void InstructionPrinter::do_ExceptionObject(ExceptionObject* x) {
   output()->print("incoming exception");
 }
 
-
-void InstructionPrinter::do_RoundFP(RoundFP* x) {
-  output()->print("round_fp ");
-  print_value(x->input());
-}
-
 void InstructionPrinter::do_UnsafeGet(UnsafeGet* x) {
   print_unsafe_op(x, x->is_raw() ? "UnsafeGet (raw)" : "UnsafeGet");
   output()->put(')');
@@ -807,7 +800,7 @@ void InstructionPrinter::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {
 
 void InstructionPrinter::do_RangeCheckPredicate(RangeCheckPredicate* x) {
 
-  if (x->x() != NULL && x->y() != NULL) {
+  if (x->x() != nullptr && x->y() != nullptr) {
     output()->print("if ");
     print_value(x->x());
     output()->print(" %s ", cond_name(x->cond()));
@@ -831,7 +824,7 @@ void InstructionPrinter::do_ProfileCall(ProfileCall* x) {
   output()->print("profile ");
   print_value(x->recv());
   output()->print(" %s.%s", x->method()->holder()->name()->as_utf8(), x->method()->name()->as_utf8());
-  if (x->known_holder() != NULL) {
+  if (x->known_holder() != nullptr) {
     output()->print(", ");
     print_klass(x->known_holder());
     output()->print(" ");

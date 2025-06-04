@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,53 +59,34 @@
   static constexpr bool isSimpleConstant64(jlong value) {
     // Will one (StoreL ConL) be cheaper than two (StoreI ConI)?.
     //return value == (int) value;  // Cf. storeImmL and immL32.
-
     // Probably always true, even if a temp register is required.
-#ifdef _LP64
     return true;
-#else
-    return false;
-#endif
   }
 
-#ifdef _LP64
   // No additional cost for CMOVL.
   static constexpr int long_cmove_cost() { return 0; }
-#else
-  // Needs 2 CMOV's for longs.
-  static constexpr int long_cmove_cost() { return 1; }
-#endif
 
-#ifdef _LP64
   // No CMOVF/CMOVD with SSE2
   static int float_cmove_cost() { return ConditionalMoveLimit; }
-#else
-  // No CMOVF/CMOVD with SSE/SSE2
-  static int float_cmove_cost() { return (UseSSE>=1) ? ConditionalMoveLimit : 0; }
-#endif
 
   static bool narrow_oop_use_complex_address() {
-    NOT_LP64(ShouldNotCallThis();)
     assert(UseCompressedOops, "only for compressed oops code");
     return (LogMinObjAlignmentInBytes <= 3);
   }
 
   static bool narrow_klass_use_complex_address() {
-    NOT_LP64(ShouldNotCallThis();)
     assert(UseCompressedClassPointers, "only for compressed klass code");
-    return (LogKlassAlignmentInBytes <= 3);
+    return (CompressedKlassPointers::shift() <= 3);
   }
 
   // Prefer ConN+DecodeN over ConP.
-  static const bool const_oop_prefer_decode() {
-    NOT_LP64(ShouldNotCallThis();)
+  static bool const_oop_prefer_decode() {
     // Prefer ConN+DecodeN over ConP.
     return true;
   }
 
   // Prefer ConP over ConNKlass+DecodeNKlass.
-  static const bool const_klass_prefer_decode() {
-    NOT_LP64(ShouldNotCallThis();)
+  static bool const_klass_prefer_decode() {
     return false;
   }
 
@@ -121,37 +102,28 @@
   // Java calling convention forces doubles to be aligned.
   static const bool misaligned_doubles_ok = true;
 
-  // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
-#ifdef _LP64
-  static const bool strict_fp_requires_explicit_rounding = false;
-#else
-  static const bool strict_fp_requires_explicit_rounding = true;
-#endif
-
   // Are floats converted to double when stored to stack during deoptimization?
-  // On x64 it is stored without convertion so we can use normal access.
-  // On x32 it is stored with convertion only when FPU is used for floats.
-#ifdef _LP64
+  // On x64 it is stored without conversion so we can use normal access.
   static constexpr bool float_in_double() {
     return false;
   }
-#else
-  static bool float_in_double() {
-    return (UseSSE == 0);
-  }
-#endif
 
   // Do ints take an entire long register or just half?
-#ifdef _LP64
   static const bool int_in_long = true;
-#else
-  static const bool int_in_long = false;
-#endif
-
 
   // Does the CPU supports vector variable shift instructions?
   static bool supports_vector_variable_shifts(void) {
     return (UseAVX >= 2);
+  }
+
+  // Does target support predicated operation emulation.
+  static bool supports_vector_predicate_op_emulation(int vopc, int vlen, BasicType bt) {
+    switch(vopc) {
+      case Op_LoadVectorGatherMasked:
+        return is_subword_type(bt) && VM_Version::supports_avx2();
+      default:
+        return false;
+    }
   }
 
   // Does the CPU supports vector variable rotate instructions?
@@ -165,16 +137,16 @@
   }
 
   // Does the CPU supports vector unsigned comparison instructions?
-  static const bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
+  static constexpr bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
     return true;
   }
 
   // Some microarchitectures have mask registers used on vectors
-  static const bool has_predicated_vectors(void) {
+  static bool has_predicated_vectors(void) {
     return VM_Version::supports_evex();
   }
 
-  // true means we have fast l2f convers
+  // true means we have fast l2f conversion
   // false means that conversion is done by runtime call
   static constexpr bool convL2FSupported(void) {
       return true;
@@ -182,5 +154,86 @@
 
   // Implements a variant of EncodeISOArrayNode that encode ASCII only
   static const bool supports_encode_ascii_array = true;
+
+  // Without predicated input, an all-one vector is needed for the alltrue vector test
+  static constexpr bool vectortest_needs_second_argument(bool is_alltrue, bool is_predicate) {
+    return is_alltrue && !is_predicate;
+  }
+
+  // BoolTest mask for vector test intrinsics
+  static constexpr BoolTest::mask vectortest_mask(bool is_alltrue, bool is_predicate, int vlen) {
+    if (!is_alltrue) {
+      return BoolTest::ne;
+    }
+    if (!is_predicate) {
+      return BoolTest::lt;
+    }
+    if ((vlen == 8 && !VM_Version::supports_avx512dq()) || vlen < 8) {
+      return BoolTest::eq;
+    }
+    return BoolTest::lt;
+  }
+
+  // Returns pre-selection estimated size of a vector operation.
+  // Currently, it's a rudimentary heuristic based on emitted code size for complex
+  // IR nodes used by unroll policy. Idea is to constrain unrolling factor and prevent
+  // generating bloated loop bodies.
+  static int vector_op_pre_select_sz_estimate(int vopc, BasicType ety, int vlen) {
+    switch(vopc) {
+      default:
+        return 0;
+      case Op_MulVB:
+        return 7;
+      case Op_MulVL:
+        return VM_Version::supports_avx512vldq() ? 0 : 6;
+      case Op_LoadVectorGather:
+      case Op_LoadVectorGatherMasked:
+        return is_subword_type(ety) ? 50 : 0;
+      case Op_VectorCastF2X: // fall through
+      case Op_VectorCastD2X:
+        return is_floating_point_type(ety) ? 0 : (is_subword_type(ety) ? 35 : 30);
+      case Op_CountTrailingZerosV:
+      case Op_CountLeadingZerosV:
+        return VM_Version::supports_avx512cd() && (ety == T_INT || ety == T_LONG) ? 0 : 40;
+      case Op_PopCountVI:
+        if (is_subword_type(ety)) {
+          return VM_Version::supports_avx512_bitalg() ? 0 : 50;
+        } else {
+          assert(ety == T_INT, "sanity"); // for documentation purposes
+          return VM_Version::supports_avx512_vpopcntdq() ? 0 : 50;
+        }
+      case Op_PopCountVL:
+        return VM_Version::supports_avx512_vpopcntdq() ? 0 : 40;
+      case Op_ReverseV:
+        return VM_Version::supports_gfni() ? 0 : 30;
+      case Op_RoundVF: // fall through
+      case Op_RoundVD:
+        return 30;
+    }
+  }
+
+  // Returns pre-selection estimated size of a scalar operation.
+  static int scalar_op_pre_select_sz_estimate(int vopc, BasicType ety) {
+    switch(vopc) {
+      default: return 0;
+      case Op_RoundF: // fall through
+      case Op_RoundD: {
+        return 30;
+      }
+    }
+  }
+
+  // Is SIMD sort supported for this CPU?
+  static bool supports_simd_sort(BasicType bt) {
+    if (VM_Version::supports_avx512_simd_sort()) {
+      return true;
+    }
+    else if (VM_Version::supports_avx2() && !is_double_word_type(bt)) {
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
 
 #endif // CPU_X86_MATCHER_X86_HPP

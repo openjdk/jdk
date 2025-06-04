@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestSummaryTag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestSummaryTag tester = new TestSummaryTag();
+        var tester = new TestSummaryTag();
         tester.runTests();
     }
 
@@ -92,9 +92,11 @@ public class TestSummaryTag extends JavadocTester {
              """
                  <section class="detail" id="m3()">
                  <h3>m3</h3>
+                 <div class="horizontal-scroll">
                  <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                  lass="return-type">void</span>&nbsp;<span class="element-name">m3</span>()</div>
                  <div class="block">First sentence  some text maybe second sentence.</div>
+                 </div>
                  </section>
                  """
         );

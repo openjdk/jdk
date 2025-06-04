@@ -25,6 +25,7 @@
  * @bug 6966350 8160882
  * @summary Verifies if Empty pages are printed on Lexmark E352dn PS3
  *           with "1200 IQ" setting
+ * @key printer
  * @run main/manual PrintTestLexmarkIQ
  */
 import java.awt.BorderLayout;

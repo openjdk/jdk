@@ -679,7 +679,7 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
      *          <code><em>Foo</em>Listener</code>s on this component,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if <code>listenerType</code>
+     * @throws ClassCastException if <code>listenerType</code>
      *          doesn't specify a class or interface that implements
      *          <code>java.util.EventListener</code>
      *
@@ -911,7 +911,7 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
                         else {
                             TreePath[] newSel = new TreePath[counter - min];
                             int[] selectionIndex = rowMapper.getRowsForPaths(selection);
-                            // find the actual selection pathes corresponded to the
+                            // find the actual selection paths corresponded to the
                             // rows of the new selection
                             for (int i = 0; i < selectionIndex.length; i++) {
                                 if (selectionIndex[i]<counter) {
@@ -1187,7 +1187,7 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
      * This method does not duplicate
      * selection listeners and property listeners.
      *
-     * @exception CloneNotSupportedException never thrown by instances of
+     * @throws CloneNotSupportedException never thrown by instances of
      *                                       this class
      */
     public Object clone() throws CloneNotSupportedException {

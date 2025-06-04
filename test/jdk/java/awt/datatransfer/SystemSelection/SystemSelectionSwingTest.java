@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -77,24 +75,6 @@ public class SystemSelectionSwingTest {
         jtf1.setText("Selection Testing");
     }
 
-    // Check whether Security manager is there
-    public void checkSecurity() {
-        SecurityManager sm = System.getSecurityManager();
-
-        if (sm == null) {
-            System.out.println("security manager is not there");
-            getPrimaryClipboard();
-        } else {
-            try {
-                sm.checkPermission(new AWTPermission("accessClipboard"));
-                getPrimaryClipboard();
-            } catch(SecurityException e) {
-                clip = null;
-                System.out.println("Access to System selection is not allowed");
-            }
-        }
-    }
-
     // Get the contents from the clipboard
     void getClipboardContent() throws Exception {
         t = clip.getContents(this);
@@ -138,7 +118,7 @@ public class SystemSelectionSwingTest {
 
         Point tf1Location = jtf1.getLocationOnScreen();
         Dimension tf1Size = jtf1.getSize();
-        checkSecurity();
+        getPrimaryClipboard();
 
         if (clip != null) {
             robot.mouseMove(tf1Location.x + 5, tf1Location.y + tf1Size.height / 2);
@@ -171,4 +151,3 @@ public class SystemSelectionSwingTest {
         }
     }
 }
-

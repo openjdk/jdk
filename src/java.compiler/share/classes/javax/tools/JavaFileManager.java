@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ import static javax.tools.JavaFileObject.Kind;
  *
  * <p>Some methods in this interface use class names.  Such class
  * names must be given in the Java Virtual Machine internal form of
- * fully qualified class and interface names.  For convenience '.'
+ * fully qualified class and interface names.  For convenience, '.'
  * and '/' are interchangeable.  The internal form is defined in
  * chapter four of
  * <cite>The Java Virtual Machine Specification</cite>.
@@ -86,8 +86,6 @@ import static javax.tools.JavaFileObject.Kind;
  *     URI.create(relativeName).normalize().getPath().equals(relativeName)
  *     }
  *
- * <p>All methods in this interface might throw a SecurityException.
- *
  * <p>An object of this interface is not required to support
  * multi-threaded access, that is, be synchronized.  However, it must
  * support concurrent access to different file objects created by this
@@ -103,8 +101,8 @@ import static javax.tools.JavaFileObject.Kind;
  * <p>Unless explicitly allowed, all methods in this interface might
  * throw a NullPointerException if given a {@code null} argument.
  *
- * @author Peter von der Ah&eacute;
- * @author Jonathan Gibbons
+ * @spec https://www.rfc-editor.org/info/rfc3986
+ *      RFC 3986: Uniform Resource Identifier (URI): Generic Syntax
  * @see JavaFileObject
  * @see FileObject
  * @since 1.6
@@ -165,14 +163,14 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
          * The result of this method is undefined if this is an output
          * location.
          *
-         * @implNote This implementation returns true if the name includes
+         * @implSpec This implementation returns true if the name includes
          * the word "MODULE".
          *
          * @return true if this location is expected to contain modules
          * @since 9
          */
         default boolean isModuleOrientedLocation() {
-            return getName().matches("\\bMODULE\\b");
+            return StandardLocation.computeIsModuleOrientedLocation(getName());
         }
     }
 
@@ -188,8 +186,6 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @return a class loader for the given location; or {@code null}
      * if loading plug-ins from the given location is disabled or if
      * the location is not known
-     * @throws SecurityException if a class loader can not be created
-     * in the current security context
      * @throws IllegalStateException if {@link #close} has been called
      * and this file manager cannot be reopened
      * @throws IllegalArgumentException if the location is a module-oriented location
@@ -239,7 +235,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
     String inferBinaryName(Location location, JavaFileObject file);
 
     /**
-     * Compares two file objects and return true if they represent the
+     * Compares two file objects and returns true if they represent the
      * same underlying object.
      *
      * @param a a file object
@@ -255,7 +251,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
 
     /**
      * Handles one option.  If {@code current} is an option to this
-     * file manager it will consume any arguments to that option from
+     * file manager, it will consume any arguments to that option from
      * {@code remaining} and return true, otherwise return false.
      *
      * @param current current option
@@ -390,8 +386,8 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
 
     /**
      * Returns a {@linkplain FileObject file object} for input
-     * representing the specified <a href="JavaFileManager.html#relative_name">relative
-     * name</a> in the specified package in the given package-oriented location.
+     * representing the specified {@linkplain JavaFileManager##relative_name relative
+     * name} in the specified package in the given package-oriented location.
      *
      * <p>If the returned object represents a {@linkplain
      * JavaFileObject.Kind#SOURCE source} or {@linkplain
@@ -437,8 +433,8 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
 
     /**
      * Returns a {@linkplain FileObject file object} for output
-     * representing the specified <a href="JavaFileManager.html#relative_name">relative
-     * name</a> in the specified package in the given location.
+     * representing the specified {@linkplain JavaFileManager##relative_name relative
+     * name} in the specified package in the given location.
      *
      * <p>Optionally, this file manager might consider the sibling as
      * a hint for where to place the output.  The exact semantics of
@@ -484,8 +480,8 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
 
     /**
      * Returns a {@linkplain FileObject file object} for output
-     * representing the specified <a href="JavaFileManager.html#relative_name">relative
-     * name</a> in the specified package in the given location.
+     * representing the specified {@linkplain JavaFileManager##relative_name relative
+     * name} in the specified package in the given location.
      *
      * <p>The provided {@code originatingFiles} represent files that
      * were, in an unspecified way, used to create the content of

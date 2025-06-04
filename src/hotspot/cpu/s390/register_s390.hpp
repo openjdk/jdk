@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,10 @@
 #include "asm/register.hpp"
 #include "runtime/vm_version.hpp"
 
-class Address;
-class VMRegImpl;
+#define NOREG_ENCODING -1
 
+// forward declaration
+class VMRegImpl;
 typedef VMRegImpl* VMReg;
 
 
@@ -57,235 +58,179 @@ typedef VMRegImpl* VMReg;
 //===  Integer Registers  ===
 //===========================
 
-// Use Register as shortcut.
-class RegisterImpl;
-typedef RegisterImpl* Register;
-
 // The implementation of integer registers for z/Architecture.
-
-inline Register as_Register(int encoding) {
-  return (Register)(long)encoding;
-}
-
-class RegisterImpl: public AbstractRegisterImpl {
- public:
+class Register {
+  int _encoding;
+public:
   enum {
     number_of_registers     = 16,
+    max_slots_per_register = 2,
     number_of_arg_registers = 5
   };
 
-  // general construction
-  inline friend Register as_Register(int encoding);
+  constexpr Register(int encoding = NOREG_ENCODING) : _encoding(encoding) {}
+  bool operator==(const Register rhs) const { return _encoding == rhs._encoding; }
+  bool operator!=(const Register rhs) const { return _encoding != rhs._encoding; }
+  const Register* operator->()        const { return this; }
 
-  inline VMReg as_VMReg();
+  // general construction
+  inline constexpr friend Register as_Register(int encoding);
 
   // accessors
-  int   encoding() const      { assert(is_valid(), "invalid register"); return value(); }
   const char* name() const;
+  inline VMReg as_VMReg() const;
+  constexpr int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
+
+  // derived registers, offsets, and addresses
+  Register predecessor() const { return Register((encoding() - 1) & (number_of_registers - 1)); }
+  Register successor()   const { return Register((encoding() + 1) & (number_of_registers - 1)); }
 
   // testers
-  bool is_valid() const       { return (0 <= (value()&0x7F) && (value()&0x7F) < number_of_registers); }
-  bool is_even() const        { return (encoding() & 1) == 0; }
-  bool is_volatile() const    { return (0 <= (value()&0x7F) && (value()&0x7F) <= 5) || (value()&0x7F)==14; }
-  bool is_nonvolatile() const { return is_valid() && !is_volatile(); }
-
- public:
-  // derived registers, offsets, and addresses
-  Register predecessor() const { return as_Register((encoding()-1) & (number_of_registers-1)); }
-  Register successor() const   { return as_Register((encoding() + 1) & (number_of_registers-1)); }
+  constexpr bool is_valid()       const { return (0 <= _encoding && _encoding < number_of_registers); }
+  constexpr bool is_even()        const { return (_encoding & 1) == 0; }
+  constexpr bool is_volatile()    const { return (0 <= _encoding && _encoding <= 5) || _encoding == 14; }
+  constexpr bool is_nonvolatile() const { return is_valid() && !is_volatile(); }
 };
 
+inline constexpr Register as_Register(int encoding) {
+  assert(encoding == NOREG_ENCODING ||
+        (0 <= encoding && encoding < Register::number_of_registers), "bad register encoding");
+  return Register(encoding);
+}
+
 // The integer registers of the z/Architecture.
+constexpr Register noreg = as_Register(NOREG_ENCODING);
 
-CONSTANT_REGISTER_DECLARATION(Register, noreg, (-1));
-
-CONSTANT_REGISTER_DECLARATION(Register, Z_R0,   (0));
-CONSTANT_REGISTER_DECLARATION(Register, Z_R1,   (1));
-CONSTANT_REGISTER_DECLARATION(Register, Z_R2,   (2));
-CONSTANT_REGISTER_DECLARATION(Register, Z_R3,   (3));
-CONSTANT_REGISTER_DECLARATION(Register, Z_R4,   (4));
-CONSTANT_REGISTER_DECLARATION(Register, Z_R5,   (5));
-CONSTANT_REGISTER_DECLARATION(Register, Z_R6,   (6));
-CONSTANT_REGISTER_DECLARATION(Register, Z_R7,   (7));
-CONSTANT_REGISTER_DECLARATION(Register, Z_R8,   (8));
-CONSTANT_REGISTER_DECLARATION(Register, Z_R9,   (9));
-CONSTANT_REGISTER_DECLARATION(Register, Z_R10, (10));
-CONSTANT_REGISTER_DECLARATION(Register, Z_R11, (11));
-CONSTANT_REGISTER_DECLARATION(Register, Z_R12, (12));
-CONSTANT_REGISTER_DECLARATION(Register, Z_R13, (13));
-CONSTANT_REGISTER_DECLARATION(Register, Z_R14, (14));
-CONSTANT_REGISTER_DECLARATION(Register, Z_R15, (15));
+constexpr Register  Z_R0 = as_Register( 0);
+constexpr Register  Z_R1 = as_Register( 1);
+constexpr Register  Z_R2 = as_Register( 2);
+constexpr Register  Z_R3 = as_Register( 3);
+constexpr Register  Z_R4 = as_Register( 4);
+constexpr Register  Z_R5 = as_Register( 5);
+constexpr Register  Z_R6 = as_Register( 6);
+constexpr Register  Z_R7 = as_Register( 7);
+constexpr Register  Z_R8 = as_Register( 8);
+constexpr Register  Z_R9 = as_Register( 9);
+constexpr Register Z_R10 = as_Register(10);
+constexpr Register Z_R11 = as_Register(11);
+constexpr Register Z_R12 = as_Register(12);
+constexpr Register Z_R13 = as_Register(13);
+constexpr Register Z_R14 = as_Register(14);
+constexpr Register Z_R15 = as_Register(15);
 
 
 //=============================
 //===  Condition Registers  ===
 //=============================
 
-// Use ConditionRegister as shortcut
-class ConditionRegisterImpl;
-typedef ConditionRegisterImpl* ConditionRegister;
-
 // The implementation of condition register(s) for the z/Architecture.
 
-class ConditionRegisterImpl: public AbstractRegisterImpl {
- public:
-
+class ConditionRegister {
+  int _encoding;
+public:
   enum {
     number_of_registers = 1
   };
 
+  constexpr ConditionRegister(int encoding = NOREG_ENCODING) : _encoding(encoding) {}
+  bool operator==(const ConditionRegister rhs) const { return _encoding == rhs._encoding; }
+  bool operator!=(const ConditionRegister rhs) const { return _encoding != rhs._encoding; }
+  const ConditionRegister* operator->()        const { return this; }
+
   // accessors
-  int encoding() const {
-    assert(is_valid(), "invalid register"); return value();
-  }
+  constexpr int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
+  inline VMReg  as_VMReg() const;
 
   // testers
-  bool is_valid() const {
-    return (0 <= value() && value() < number_of_registers);
-  }
-  bool is_volatile() const {
-    return true;
-  }
-  bool is_nonvolatile() const {
-    return false;
-  }
+  constexpr bool is_valid()       const { return (0 <= _encoding && _encoding < number_of_registers); }
+  constexpr bool is_volatile()    const { return true; }
+  constexpr bool is_nonvolatile() const { return false;}
 
   // construction.
-  inline friend ConditionRegister as_ConditionRegister(int encoding);
-
-  inline VMReg as_VMReg();
+  inline constexpr friend ConditionRegister as_ConditionRegister(int encoding);
 };
 
-inline ConditionRegister as_ConditionRegister(int encoding) {
-  assert(encoding >= 0 && encoding < ConditionRegisterImpl::number_of_registers, "bad condition register encoding");
-  return (ConditionRegister)(long)encoding;
+inline constexpr ConditionRegister as_ConditionRegister(int encoding) {
+  assert(encoding == NOREG_ENCODING ||
+        (encoding >= 0 && encoding < ConditionRegister::number_of_registers), "bad condition register encoding");
+  return ConditionRegister(encoding);
 }
 
 // The condition register of the z/Architecture.
 
-CONSTANT_REGISTER_DECLARATION(ConditionRegister, Z_CR, (0));
-
-// Because z/Architecture has so many registers, #define'ing values for them is
-// beneficial in code size and is worth the cost of some of the
-// dangers of defines.
-// If a particular file has a problem with these defines then it's possible
-// to turn them off in that file by defining
-// DONT_USE_REGISTER_DEFINES. Register_definitions_s390.cpp does that
-// so that it's able to provide real definitions of these registers
-// for use in debuggers and such.
-
-#ifndef DONT_USE_REGISTER_DEFINES
-#define noreg ((Register)(noreg_RegisterEnumValue))
-
-#define Z_R0  ((Register)(Z_R0_RegisterEnumValue))
-#define Z_R1  ((Register)(Z_R1_RegisterEnumValue))
-#define Z_R2  ((Register)(Z_R2_RegisterEnumValue))
-#define Z_R3  ((Register)(Z_R3_RegisterEnumValue))
-#define Z_R4  ((Register)(Z_R4_RegisterEnumValue))
-#define Z_R5  ((Register)(Z_R5_RegisterEnumValue))
-#define Z_R6  ((Register)(Z_R6_RegisterEnumValue))
-#define Z_R7  ((Register)(Z_R7_RegisterEnumValue))
-#define Z_R8  ((Register)(Z_R8_RegisterEnumValue))
-#define Z_R9  ((Register)(Z_R9_RegisterEnumValue))
-#define Z_R10 ((Register)(Z_R10_RegisterEnumValue))
-#define Z_R11 ((Register)(Z_R11_RegisterEnumValue))
-#define Z_R12 ((Register)(Z_R12_RegisterEnumValue))
-#define Z_R13 ((Register)(Z_R13_RegisterEnumValue))
-#define Z_R14 ((Register)(Z_R14_RegisterEnumValue))
-#define Z_R15 ((Register)(Z_R15_RegisterEnumValue))
-
-#define Z_CR ((ConditionRegister)(Z_CR_ConditionRegisterEnumValue))
-#endif // DONT_USE_REGISTER_DEFINES
-
+constexpr ConditionRegister Z_CR = as_ConditionRegister(0);
 
 //=========================
 //===  Float Registers  ===
 //=========================
 
-// Use FloatRegister as shortcut
-class FloatRegisterImpl;
-typedef FloatRegisterImpl* FloatRegister;
-
 // The implementation of float registers for the z/Architecture.
-
-inline FloatRegister as_FloatRegister(int encoding) {
-  return (FloatRegister)(long)encoding;
-}
-
-class FloatRegisterImpl: public AbstractRegisterImpl {
- public:
+class VectorRegister;
+class FloatRegister {
+  int _encoding;
+public:
   enum {
     number_of_registers     = 16,
+    max_slots_per_register = 2,
     number_of_arg_registers = 4
   };
 
-  // construction
-  inline friend FloatRegister as_FloatRegister(int encoding);
+  constexpr FloatRegister(int encoding = NOREG_ENCODING) : _encoding(encoding) {}
+  bool operator==(const FloatRegister rhs) const { return _encoding == rhs._encoding; }
+  bool operator!=(const FloatRegister rhs) const { return _encoding != rhs._encoding; }
+  const FloatRegister* operator->()        const { return this; }
 
-  inline VMReg as_VMReg();
+  // construction
+  inline constexpr friend FloatRegister as_FloatRegister(int encoding);
 
   // accessors
-  int encoding() const                                {
-     assert(is_valid(), "invalid register"); return value();
-  }
+  constexpr int encoding()  const { assert(is_valid(), "invalid register"); return _encoding; }
+  inline VMReg  as_VMReg()  const;
+  FloatRegister successor() const { return FloatRegister((encoding() + 1) & (number_of_registers - 1)); }
 
-  bool  is_valid() const          { return 0 <= value() && value() < number_of_registers; }
-  bool is_volatile() const        { return (0 <= (value()&0x7F) && (value()&0x7F) <= 7); }
-  bool is_nonvolatile() const     { return (8 <= (value()&0x7F) && (value()&0x7F) <= 15); }
+  // tester
+  constexpr bool is_valid()       const { return 0 <= _encoding && _encoding < number_of_registers; }
+  constexpr bool is_volatile()    const { return (0 <= _encoding && _encoding <= 7); }
+  constexpr bool is_nonvolatile() const { return (8 <= _encoding && _encoding <= 15); }
 
   const char* name() const;
-
-  FloatRegister successor() const { return as_FloatRegister(encoding() + 1); }
+  // convert to VR
+  VectorRegister to_vr() const;
 };
 
+inline constexpr FloatRegister as_FloatRegister(int encoding) {
+  assert(encoding == NOREG_ENCODING ||
+        (encoding >= 0 && encoding < FloatRegister::number_of_registers), "bad float register encoding");
+  return FloatRegister(encoding);
+}
+
 // The float registers of z/Architecture.
+constexpr FloatRegister fnoreg = as_FloatRegister(NOREG_ENCODING);
 
-CONSTANT_REGISTER_DECLARATION(FloatRegister, fnoreg, (-1));
-
-CONSTANT_REGISTER_DECLARATION(FloatRegister,  Z_F0,  (0));
-CONSTANT_REGISTER_DECLARATION(FloatRegister,  Z_F1,  (1));
-CONSTANT_REGISTER_DECLARATION(FloatRegister,  Z_F2,  (2));
-CONSTANT_REGISTER_DECLARATION(FloatRegister,  Z_F3,  (3));
-CONSTANT_REGISTER_DECLARATION(FloatRegister,  Z_F4,  (4));
-CONSTANT_REGISTER_DECLARATION(FloatRegister,  Z_F5,  (5));
-CONSTANT_REGISTER_DECLARATION(FloatRegister,  Z_F6,  (6));
-CONSTANT_REGISTER_DECLARATION(FloatRegister,  Z_F7,  (7));
-CONSTANT_REGISTER_DECLARATION(FloatRegister,  Z_F8,  (8));
-CONSTANT_REGISTER_DECLARATION(FloatRegister,  Z_F9,  (9));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, Z_F10, (10));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, Z_F11, (11));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, Z_F12, (12));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, Z_F13, (13));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, Z_F14, (14));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, Z_F15, (15));
-
-#ifndef DONT_USE_REGISTER_DEFINES
-#define fnoreg ((FloatRegister)(fnoreg_FloatRegisterEnumValue))
-#define Z_F0  ((FloatRegister)(   Z_F0_FloatRegisterEnumValue))
-#define Z_F1  ((FloatRegister)(   Z_F1_FloatRegisterEnumValue))
-#define Z_F2  ((FloatRegister)(   Z_F2_FloatRegisterEnumValue))
-#define Z_F3  ((FloatRegister)(   Z_F3_FloatRegisterEnumValue))
-#define Z_F4  ((FloatRegister)(   Z_F4_FloatRegisterEnumValue))
-#define Z_F5  ((FloatRegister)(   Z_F5_FloatRegisterEnumValue))
-#define Z_F6  ((FloatRegister)(   Z_F6_FloatRegisterEnumValue))
-#define Z_F7  ((FloatRegister)(   Z_F7_FloatRegisterEnumValue))
-#define Z_F8  ((FloatRegister)(   Z_F8_FloatRegisterEnumValue))
-#define Z_F9  ((FloatRegister)(   Z_F9_FloatRegisterEnumValue))
-#define Z_F10 ((FloatRegister)(  Z_F10_FloatRegisterEnumValue))
-#define Z_F11 ((FloatRegister)(  Z_F11_FloatRegisterEnumValue))
-#define Z_F12 ((FloatRegister)(  Z_F12_FloatRegisterEnumValue))
-#define Z_F13 ((FloatRegister)(  Z_F13_FloatRegisterEnumValue))
-#define Z_F14 ((FloatRegister)(  Z_F14_FloatRegisterEnumValue))
-#define Z_F15 ((FloatRegister)(  Z_F15_FloatRegisterEnumValue))
-#endif // DONT_USE_REGISTER_DEFINES
+constexpr FloatRegister  Z_F0 = as_FloatRegister( 0);
+constexpr FloatRegister  Z_F1 = as_FloatRegister( 1);
+constexpr FloatRegister  Z_F2 = as_FloatRegister( 2);
+constexpr FloatRegister  Z_F3 = as_FloatRegister( 3);
+constexpr FloatRegister  Z_F4 = as_FloatRegister( 4);
+constexpr FloatRegister  Z_F5 = as_FloatRegister( 5);
+constexpr FloatRegister  Z_F6 = as_FloatRegister( 6);
+constexpr FloatRegister  Z_F7 = as_FloatRegister( 7);
+constexpr FloatRegister  Z_F8 = as_FloatRegister( 8);
+constexpr FloatRegister  Z_F9 = as_FloatRegister( 9);
+constexpr FloatRegister Z_F10 = as_FloatRegister(10);
+constexpr FloatRegister Z_F11 = as_FloatRegister(11);
+constexpr FloatRegister Z_F12 = as_FloatRegister(12);
+constexpr FloatRegister Z_F13 = as_FloatRegister(13);
+constexpr FloatRegister Z_F14 = as_FloatRegister(14);
+constexpr FloatRegister Z_F15 = as_FloatRegister(15);
 
 // Single, Double and Quad fp reg classes. These exist to map the ADLC
 // encoding for a floating point register, to the FloatRegister number
-// desired by the macroassembler. A FloatRegister is a number between
+// desired by the macroAssembler. A FloatRegister is a number between
 // 0 and 31 passed around as a pointer. For ADLC, an fp register encoding
 // is the actual bit encoding used by the z/Architecture hardware. When ADLC used
-// the macroassembler to generate an instruction that references, e.g., a
-// double fp reg, it passed the bit encoding to the macroassembler via
+// the macroAssembler to generate an instruction that references, e.g., a
+// double fp reg, it passed the bit encoding to the macroAssembler via
 // as_FloatRegister, which, for double regs > 30, returns an illegal
 // register number.
 //
@@ -295,35 +240,39 @@ CONSTANT_REGISTER_DECLARATION(FloatRegister, Z_F15, (15));
 // hence the definitions of as_xxxFloatRegister as class methods rather
 // than as external inline routines.
 
-class SingleFloatRegisterImpl;
-typedef SingleFloatRegisterImpl *SingleFloatRegister;
+class SingleFloatRegister {
+public:
+  enum {
+    number_of_registers = 32
+  };
+  const SingleFloatRegister* operator->() const { return this; }
 
-class SingleFloatRegisterImpl {
- public:
-  friend FloatRegister as_SingleFloatRegister(int encoding) {
-    assert(encoding < 32, "bad single float register encoding");
+  inline constexpr friend FloatRegister as_SingleFloatRegister(int encoding) {
+    assert(encoding < number_of_registers, "bad single float register encoding");
     return as_FloatRegister(encoding);
   }
 };
 
-class DoubleFloatRegisterImpl;
-typedef DoubleFloatRegisterImpl *DoubleFloatRegister;
+class DoubleFloatRegister {
+public:
 
-class DoubleFloatRegisterImpl {
- public:
-  friend FloatRegister as_DoubleFloatRegister(int encoding) {
-    assert(encoding < 32, "bad double float register encoding");
+  const DoubleFloatRegister* operator->() const { return this; }
+
+  inline constexpr friend FloatRegister as_DoubleFloatRegister(int encoding) {
     return as_FloatRegister(((encoding & 1) << 5) | (encoding & 0x1e));
   }
 };
 
-class QuadFloatRegisterImpl;
-typedef QuadFloatRegisterImpl *QuadFloatRegister;
+class QuadFloatRegister {
+public:
+  enum {
+    number_of_registers = 32
+  };
 
-class QuadFloatRegisterImpl {
- public:
-  friend FloatRegister as_QuadFloatRegister(int encoding) {
-    assert(encoding < 32 && ((encoding & 2) == 0), "bad quad float register encoding");
+  const QuadFloatRegister* operator->() const { return this; }
+
+  inline constexpr friend FloatRegister as_QuadFloatRegister(int encoding) {
+    assert(encoding < QuadFloatRegister::number_of_registers && ((encoding & 2) == 0), "bad quad float register encoding");
     return as_FloatRegister(((encoding & 1) << 5) | (encoding & 0x1c));
   }
 };
@@ -333,36 +282,36 @@ class QuadFloatRegisterImpl {
 //===  Vector Registers  ===
 //==========================
 
-// Use VectorRegister as shortcut
-class VectorRegisterImpl;
-typedef VectorRegisterImpl* VectorRegister;
-
 // The implementation of vector registers for z/Architecture.
 
-inline VectorRegister as_VectorRegister(int encoding) {
-  return (VectorRegister)(long)encoding;
-}
-
-class VectorRegisterImpl: public AbstractRegisterImpl {
- public:
+class VectorRegister {
+  int _encoding;
+public:
   enum {
     number_of_registers     = 32,
+    max_slots_per_register = 4,
     number_of_arg_registers = 0
   };
 
-  // construction
-  inline friend VectorRegister as_VectorRegister(int encoding);
+  constexpr VectorRegister(int encoding = NOREG_ENCODING) : _encoding(encoding) {}
+  bool operator==(const VectorRegister rhs) const { return _encoding == rhs._encoding; }
+  bool operator!=(const VectorRegister rhs) const { return _encoding != rhs._encoding; }
+  const VectorRegister* operator->()        const { return this; }
 
-  inline VMReg as_VMReg();
+  // construction
+  inline constexpr friend VectorRegister as_VectorRegister(int encoding);
+
+  inline VMReg as_VMReg() const;
 
   // accessors
-  int encoding() const                                {
-     assert(is_valid(), "invalid register"); return value();
-  }
+  constexpr int  encoding()  const { assert(is_valid(), "invalid register"); return _encoding; }
+  VectorRegister successor() const { return VectorRegister((encoding() + 1) & (number_of_registers - 1)); }
 
-  bool is_valid() const           { return  0 <= value() && value() < number_of_registers; }
-  bool is_volatile() const        { return true; }
-  bool is_nonvolatile() const     { return false; }
+
+  // tester
+  constexpr bool is_valid()       const { return  0 <= _encoding && _encoding < number_of_registers; }
+  constexpr bool is_volatile()    const { return true; }
+  constexpr bool is_nonvolatile() const { return false; }
 
   // Register fields in z/Architecture instructions are 4 bits wide, restricting the
   // addressable register set size to 16.
@@ -374,7 +323,7 @@ class VectorRegisterImpl: public AbstractRegisterImpl {
   // register field in the instruction.
   // Example:
   //   The register field starting at bit position 12 in the instruction is assigned RXB bit 0b0100.
-  int64_t RXB_mask(int pos) {
+  int64_t RXB_mask(int pos) const {
     if (encoding() >= number_of_registers/2) {
       switch (pos) {
         case 8:   return ((int64_t)0b1000) << 8; // actual bit pos: 36
@@ -389,194 +338,126 @@ class VectorRegisterImpl: public AbstractRegisterImpl {
   }
 
   const char* name() const;
-
-  VectorRegister successor() const { return as_VectorRegister(encoding() + 1); }
 };
 
+inline constexpr VectorRegister as_VectorRegister(int encoding) {
+  assert(encoding == NOREG_ENCODING ||
+        (encoding >= 0 && encoding < VectorRegister::number_of_registers), "bad vector register encoding");
+  return VectorRegister(encoding);
+}
+
 // The Vector registers of z/Architecture.
+constexpr VectorRegister vnoreg = as_VectorRegister(NOREG_ENCODING);
 
-CONSTANT_REGISTER_DECLARATION(VectorRegister, vnoreg, (-1));
-
-CONSTANT_REGISTER_DECLARATION(VectorRegister,  Z_V0,  (0));
-CONSTANT_REGISTER_DECLARATION(VectorRegister,  Z_V1,  (1));
-CONSTANT_REGISTER_DECLARATION(VectorRegister,  Z_V2,  (2));
-CONSTANT_REGISTER_DECLARATION(VectorRegister,  Z_V3,  (3));
-CONSTANT_REGISTER_DECLARATION(VectorRegister,  Z_V4,  (4));
-CONSTANT_REGISTER_DECLARATION(VectorRegister,  Z_V5,  (5));
-CONSTANT_REGISTER_DECLARATION(VectorRegister,  Z_V6,  (6));
-CONSTANT_REGISTER_DECLARATION(VectorRegister,  Z_V7,  (7));
-CONSTANT_REGISTER_DECLARATION(VectorRegister,  Z_V8,  (8));
-CONSTANT_REGISTER_DECLARATION(VectorRegister,  Z_V9,  (9));
-CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V10, (10));
-CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V11, (11));
-CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V12, (12));
-CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V13, (13));
-CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V14, (14));
-CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V15, (15));
-CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V16, (16));
-CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V17, (17));
-CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V18, (18));
-CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V19, (19));
-CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V20, (20));
-CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V21, (21));
-CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V22, (22));
-CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V23, (23));
-CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V24, (24));
-CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V25, (25));
-CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V26, (26));
-CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V27, (27));
-CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V28, (28));
-CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V29, (29));
-CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V30, (30));
-CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V31, (31));
-
-#ifndef DONT_USE_REGISTER_DEFINES
-#define vnoreg ((VectorRegister)(vnoreg_VectorRegisterEnumValue))
-#define Z_V0  ((VectorRegister)(   Z_V0_VectorRegisterEnumValue))
-#define Z_V1  ((VectorRegister)(   Z_V1_VectorRegisterEnumValue))
-#define Z_V2  ((VectorRegister)(   Z_V2_VectorRegisterEnumValue))
-#define Z_V3  ((VectorRegister)(   Z_V3_VectorRegisterEnumValue))
-#define Z_V4  ((VectorRegister)(   Z_V4_VectorRegisterEnumValue))
-#define Z_V5  ((VectorRegister)(   Z_V5_VectorRegisterEnumValue))
-#define Z_V6  ((VectorRegister)(   Z_V6_VectorRegisterEnumValue))
-#define Z_V7  ((VectorRegister)(   Z_V7_VectorRegisterEnumValue))
-#define Z_V8  ((VectorRegister)(   Z_V8_VectorRegisterEnumValue))
-#define Z_V9  ((VectorRegister)(   Z_V9_VectorRegisterEnumValue))
-#define Z_V10 ((VectorRegister)(  Z_V10_VectorRegisterEnumValue))
-#define Z_V11 ((VectorRegister)(  Z_V11_VectorRegisterEnumValue))
-#define Z_V12 ((VectorRegister)(  Z_V12_VectorRegisterEnumValue))
-#define Z_V13 ((VectorRegister)(  Z_V13_VectorRegisterEnumValue))
-#define Z_V14 ((VectorRegister)(  Z_V14_VectorRegisterEnumValue))
-#define Z_V15 ((VectorRegister)(  Z_V15_VectorRegisterEnumValue))
-#define Z_V16 ((VectorRegister)(  Z_V16_VectorRegisterEnumValue))
-#define Z_V17 ((VectorRegister)(  Z_V17_VectorRegisterEnumValue))
-#define Z_V18 ((VectorRegister)(  Z_V18_VectorRegisterEnumValue))
-#define Z_V19 ((VectorRegister)(  Z_V19_VectorRegisterEnumValue))
-#define Z_V20 ((VectorRegister)(  Z_V20_VectorRegisterEnumValue))
-#define Z_V21 ((VectorRegister)(  Z_V21_VectorRegisterEnumValue))
-#define Z_V22 ((VectorRegister)(  Z_V22_VectorRegisterEnumValue))
-#define Z_V23 ((VectorRegister)(  Z_V23_VectorRegisterEnumValue))
-#define Z_V24 ((VectorRegister)(  Z_V24_VectorRegisterEnumValue))
-#define Z_V25 ((VectorRegister)(  Z_V25_VectorRegisterEnumValue))
-#define Z_V26 ((VectorRegister)(  Z_V26_VectorRegisterEnumValue))
-#define Z_V27 ((VectorRegister)(  Z_V27_VectorRegisterEnumValue))
-#define Z_V28 ((VectorRegister)(  Z_V28_VectorRegisterEnumValue))
-#define Z_V29 ((VectorRegister)(  Z_V29_VectorRegisterEnumValue))
-#define Z_V30 ((VectorRegister)(  Z_V30_VectorRegisterEnumValue))
-#define Z_V31 ((VectorRegister)(  Z_V31_VectorRegisterEnumValue))
-#endif // DONT_USE_REGISTER_DEFINES
-
+constexpr VectorRegister  Z_V0 = as_VectorRegister( 0);
+constexpr VectorRegister  Z_V1 = as_VectorRegister( 1);
+constexpr VectorRegister  Z_V2 = as_VectorRegister( 2);
+constexpr VectorRegister  Z_V3 = as_VectorRegister( 3);
+constexpr VectorRegister  Z_V4 = as_VectorRegister( 4);
+constexpr VectorRegister  Z_V5 = as_VectorRegister( 5);
+constexpr VectorRegister  Z_V6 = as_VectorRegister( 6);
+constexpr VectorRegister  Z_V7 = as_VectorRegister( 7);
+constexpr VectorRegister  Z_V8 = as_VectorRegister( 8);
+constexpr VectorRegister  Z_V9 = as_VectorRegister( 9);
+constexpr VectorRegister Z_V10 = as_VectorRegister(10);
+constexpr VectorRegister Z_V11 = as_VectorRegister(11);
+constexpr VectorRegister Z_V12 = as_VectorRegister(12);
+constexpr VectorRegister Z_V13 = as_VectorRegister(13);
+constexpr VectorRegister Z_V14 = as_VectorRegister(14);
+constexpr VectorRegister Z_V15 = as_VectorRegister(15);
+constexpr VectorRegister Z_V16 = as_VectorRegister(16);
+constexpr VectorRegister Z_V17 = as_VectorRegister(17);
+constexpr VectorRegister Z_V18 = as_VectorRegister(18);
+constexpr VectorRegister Z_V19 = as_VectorRegister(19);
+constexpr VectorRegister Z_V20 = as_VectorRegister(20);
+constexpr VectorRegister Z_V21 = as_VectorRegister(21);
+constexpr VectorRegister Z_V22 = as_VectorRegister(22);
+constexpr VectorRegister Z_V23 = as_VectorRegister(23);
+constexpr VectorRegister Z_V24 = as_VectorRegister(24);
+constexpr VectorRegister Z_V25 = as_VectorRegister(25);
+constexpr VectorRegister Z_V26 = as_VectorRegister(26);
+constexpr VectorRegister Z_V27 = as_VectorRegister(27);
+constexpr VectorRegister Z_V28 = as_VectorRegister(28);
+constexpr VectorRegister Z_V29 = as_VectorRegister(29);
+constexpr VectorRegister Z_V30 = as_VectorRegister(30);
+constexpr VectorRegister Z_V31 = as_VectorRegister(31);
 
 // Need to know the total number of registers of all sorts for SharedInfo.
 // Define a class that exports it.
-
 class ConcreteRegisterImpl : public AbstractRegisterImpl {
  public:
   enum {
-    number_of_registers =
-      (RegisterImpl::number_of_registers +
-      FloatRegisterImpl::number_of_registers)
-      * 2 // register halves
-      + 1 // condition code register
+    max_gpr = Register::number_of_registers * Register::max_slots_per_register,
+    max_fpr = max_gpr + FloatRegister::number_of_registers * FloatRegister::max_slots_per_register,
+    max_vr  = max_fpr + VectorRegister::number_of_registers * VectorRegister::max_slots_per_register,
+    // A big enough number for C2: all the registers plus flags
+    // This number must be large enough to cover REG_COUNT (defined by c2) registers.
+    // There is no requirement that any ordering here matches any ordering c2 gives
+    // it's optoregs.
+    number_of_registers = max_vr + 1 // gpr/fpr/vr + flags
   };
-  static const int max_gpr;
-  static const int max_fpr;
 };
 
-
 // Common register declarations used in assembler code.
-REGISTER_DECLARATION(Register,      Z_EXC_OOP, Z_R2);
-REGISTER_DECLARATION(Register,      Z_EXC_PC,  Z_R3);
-REGISTER_DECLARATION(Register,      Z_RET,     Z_R2);
-REGISTER_DECLARATION(Register,      Z_ARG1,    Z_R2);
-REGISTER_DECLARATION(Register,      Z_ARG2,    Z_R3);
-REGISTER_DECLARATION(Register,      Z_ARG3,    Z_R4);
-REGISTER_DECLARATION(Register,      Z_ARG4,    Z_R5);
-REGISTER_DECLARATION(Register,      Z_ARG5,    Z_R6);
-REGISTER_DECLARATION(Register,      Z_SP,     Z_R15);
-REGISTER_DECLARATION(FloatRegister, Z_FRET,    Z_F0);
-REGISTER_DECLARATION(FloatRegister, Z_FARG1,   Z_F0);
-REGISTER_DECLARATION(FloatRegister, Z_FARG2,   Z_F2);
-REGISTER_DECLARATION(FloatRegister, Z_FARG3,   Z_F4);
-REGISTER_DECLARATION(FloatRegister, Z_FARG4,   Z_F6);
-
-#ifndef DONT_USE_REGISTER_DEFINES
-#define Z_EXC_OOP         AS_REGISTER(Register,  Z_R2)
-#define Z_EXC_PC          AS_REGISTER(Register,  Z_R3)
-#define Z_RET             AS_REGISTER(Register,  Z_R2)
-#define Z_ARG1            AS_REGISTER(Register,  Z_R2)
-#define Z_ARG2            AS_REGISTER(Register,  Z_R3)
-#define Z_ARG3            AS_REGISTER(Register,  Z_R4)
-#define Z_ARG4            AS_REGISTER(Register,  Z_R5)
-#define Z_ARG5            AS_REGISTER(Register,  Z_R6)
-#define Z_SP              AS_REGISTER(Register, Z_R15)
-#define Z_FRET            AS_REGISTER(FloatRegister, Z_F0)
-#define Z_FARG1           AS_REGISTER(FloatRegister, Z_F0)
-#define Z_FARG2           AS_REGISTER(FloatRegister, Z_F2)
-#define Z_FARG3           AS_REGISTER(FloatRegister, Z_F4)
-#define Z_FARG4           AS_REGISTER(FloatRegister, Z_F6)
-#endif
+constexpr Register       Z_EXC_OOP = Z_R2;
+constexpr Register       Z_EXC_PC  = Z_R3;
+constexpr Register       Z_RET     = Z_R2;
+constexpr Register       Z_ARG1    = Z_R2;
+constexpr Register       Z_ARG2    = Z_R3;
+constexpr Register       Z_ARG3    = Z_R4;
+constexpr Register       Z_ARG4    = Z_R5;
+constexpr Register       Z_ARG5    = Z_R6;
+constexpr Register       Z_SP      = Z_R15;
+constexpr FloatRegister  Z_FRET    = Z_F0;
+constexpr FloatRegister  Z_FARG1   = Z_F0;
+constexpr FloatRegister  Z_FARG2   = Z_F2;
+constexpr FloatRegister  Z_FARG3   = Z_F4;
+constexpr FloatRegister  Z_FARG4   = Z_F6;
 
 // Register declarations to be used in frame manager assembly code.
 // Use only non-volatile registers in order to keep values across C-calls.
 
 // Register to cache the integer value on top of the operand stack.
-REGISTER_DECLARATION(Register, Z_tos,         Z_R2);
+constexpr Register      Z_tos          = Z_R2;
 // Register to cache the fp value on top of the operand stack.
-REGISTER_DECLARATION(FloatRegister, Z_ftos,   Z_F0);
+constexpr FloatRegister Z_ftos         = Z_F0;
 // Expression stack pointer in interpreted java frame.
-REGISTER_DECLARATION(Register, Z_esp,         Z_R7);
+constexpr Register      Z_esp          = Z_R7;
 // Address of current thread.
-REGISTER_DECLARATION(Register, Z_thread,      Z_R8);
+constexpr Register      Z_thread       = Z_R8;
 // Address of current method. only valid in interpreter_entry.
-REGISTER_DECLARATION(Register, Z_method,      Z_R9);
+constexpr Register      Z_method       = Z_R9;
 // Inline cache register. used by c1 and c2.
-REGISTER_DECLARATION(Register, Z_inline_cache,Z_R9);
+constexpr Register      Z_inline_cache = Z_R9;
 // Frame pointer of current interpreter frame. only valid while
 // executing bytecodes.
-REGISTER_DECLARATION(Register, Z_fp,          Z_R9);
+constexpr Register      Z_fp           = Z_R9;
 // Address of the locals array in an interpreted java frame.
-REGISTER_DECLARATION(Register, Z_locals,      Z_R12);
+constexpr Register      Z_locals       = Z_R12;
 // Bytecode pointer.
-REGISTER_DECLARATION(Register, Z_bcp,         Z_R13);
+constexpr Register      Z_bcp          = Z_R13;
 // Bytecode which is dispatched (short lived!).
-REGISTER_DECLARATION(Register, Z_bytecode,    Z_R14);
-#ifndef DONT_USE_REGISTER_DEFINES
-#define Z_tos             AS_REGISTER(Register, Z_R2)
-#define Z_ftos            AS_REGISTER(FloatRegister, Z_F0)
-#define Z_esp             AS_REGISTER(Register, Z_R7)
-#define Z_thread          AS_REGISTER(Register, Z_R8)
-#define Z_method          AS_REGISTER(Register, Z_R9)
-#define Z_inline_cache    AS_REGISTER(Register, Z_R9)
-#define Z_fp              AS_REGISTER(Register, Z_R9)
-#define Z_locals          AS_REGISTER(Register, Z_R12)
-#define Z_bcp             AS_REGISTER(Register, Z_R13)
-#define Z_bytecode        AS_REGISTER(Register, Z_R14)
-#endif
+constexpr Register      Z_bytecode     = Z_R14;
 
 // Temporary registers to be used within frame manager. We can use
-// the nonvolatiles because the call stub has saved them.
+// the nonvolatile ones because the call stub has saved them.
 // Use only non-volatile registers in order to keep values across C-calls.
-REGISTER_DECLARATION(Register, Z_tmp_1,  Z_R10);
-REGISTER_DECLARATION(Register, Z_tmp_2,  Z_R11);
-REGISTER_DECLARATION(Register, Z_tmp_3,  Z_R12);
-REGISTER_DECLARATION(Register, Z_tmp_4,  Z_R13);
-#ifndef DONT_USE_REGISTER_DEFINES
-#define Z_tmp_1      AS_REGISTER(Register, Z_R10)
-#define Z_tmp_2      AS_REGISTER(Register, Z_R11)
-#define Z_tmp_3      AS_REGISTER(Register, Z_R12)
-#define Z_tmp_4      AS_REGISTER(Register, Z_R13)
-#endif
+constexpr Register Z_tmp_1 =  Z_R10;
+constexpr Register Z_tmp_2 =  Z_R11;
+constexpr Register Z_tmp_3 =  Z_R12;
+constexpr Register Z_tmp_4 =  Z_R13;
 
 // Scratch registers are volatile.
-REGISTER_DECLARATION(Register, Z_R0_scratch, Z_R0);
-REGISTER_DECLARATION(Register, Z_R1_scratch, Z_R1);
-REGISTER_DECLARATION(FloatRegister, Z_fscratch_1, Z_F1);
-#ifndef DONT_USE_REGISTER_DEFINES
-#define Z_R0_scratch  AS_REGISTER(Register, Z_R0)
-#define Z_R1_scratch  AS_REGISTER(Register, Z_R1)
-#define Z_fscratch_1  AS_REGISTER(FloatRegister, Z_F1)
-#endif
+constexpr Register      Z_R0_scratch = Z_R0;
+constexpr Register      Z_R1_scratch = Z_R1;
+constexpr FloatRegister Z_fscratch_1 = Z_F1;
 
+typedef AbstractRegSet<Register> RegSet;
+
+template <>
+inline Register AbstractRegSet<Register>::first() {
+  if (_bitset == 0) { return noreg; }
+  return as_Register(count_trailing_zeros(_bitset));
+}
 
 #endif // CPU_S390_REGISTER_S390_HPP

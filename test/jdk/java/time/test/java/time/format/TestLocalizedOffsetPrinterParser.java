@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class TestLocalizedOffsetPrinterParser {
 
     private static final LocalDateTime DT_2012_06_30_12_30_40 = LocalDateTime.of(2012, 6, 30, 12, 30, 40);
 
-    private static final Locale LOCALE_GA = new Locale("ga");
+    private static final Locale LOCALE_GA = Locale.of("ga");
 
     @DataProvider(name="print_localized_custom_locale")
     Object[][] data_print_localized_custom_locale() {

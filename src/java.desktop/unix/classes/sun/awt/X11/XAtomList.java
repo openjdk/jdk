@@ -30,7 +30,7 @@ import java.util.*;
 /**
  * Helper class to ease the work with the lists of atoms.
  */
-class XAtomList {
+final class XAtomList {
     Set<XAtom> atoms = new HashSet<XAtom>();
 
     /**
@@ -103,7 +103,7 @@ class XAtomList {
     }
 
     /**
-     * Removes atom from the list. Does nothing if arrays doesn't conaint this atom.
+     * Removes atom from the list. Does nothing if arrays doesn't contain this atom.
      */
     public void remove(XAtom atom) {
         atoms.remove(atom);
@@ -151,6 +151,7 @@ class XAtomList {
         }
     }
 
+    @Override
     public String toString() {
         StringBuilder buf = new StringBuilder();
         buf.append("[");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1Arguments.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1YoungGenSizer.hpp"
-#include "gc/g1/heapRegion.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals_extension.hpp"
 
@@ -44,19 +43,19 @@ G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults),
 
   if (NewSize > MaxNewSize) {
     if (FLAG_IS_CMDLINE(MaxNewSize)) {
-      log_warning(gc, ergo)("NewSize (" SIZE_FORMAT "k) is greater than the MaxNewSize (" SIZE_FORMAT "k). "
-                            "A new max generation size of " SIZE_FORMAT "k will be used.",
+      log_warning(gc, ergo)("NewSize (%zuk) is greater than the MaxNewSize (%zuk). "
+                            "A new max generation size of %zuk will be used.",
                             NewSize/K, MaxNewSize/K, NewSize/K);
     }
     FLAG_SET_ERGO(MaxNewSize, NewSize);
   }
 
   if (FLAG_IS_CMDLINE(NewSize)) {
-    _min_desired_young_length = MAX2((uint) (NewSize / HeapRegion::GrainBytes),
+    _min_desired_young_length = MAX2((uint) (NewSize / G1HeapRegion::GrainBytes),
                                      1U);
     if (FLAG_IS_CMDLINE(MaxNewSize)) {
       _max_desired_young_length =
-                             MAX2((uint) (MaxNewSize / HeapRegion::GrainBytes),
+                             MAX2((uint) (MaxNewSize / G1HeapRegion::GrainBytes),
                                   1U);
       _sizer_kind = SizerMaxAndNewSize;
       _use_adaptive_sizing = _min_desired_young_length != _max_desired_young_length;
@@ -65,7 +64,7 @@ G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults),
     }
   } else if (FLAG_IS_CMDLINE(MaxNewSize)) {
     _max_desired_young_length =
-                             MAX2((uint) (MaxNewSize / HeapRegion::GrainBytes),
+                             MAX2((uint) (MaxNewSize / G1HeapRegion::GrainBytes),
                                   1U);
     _sizer_kind = SizerMaxNewSizeOnly;
   }
@@ -119,7 +118,7 @@ void G1YoungGenSizer::adjust_max_new_size(uint number_of_heap_regions) {
   uint result = _max_desired_young_length;
   recalculate_min_max_young_length(number_of_heap_regions, &temp, &result);
 
-  size_t max_young_size = result * HeapRegion::GrainBytes;
+  size_t max_young_size = result * G1HeapRegion::GrainBytes;
   if (max_young_size != MaxNewSize) {
     FLAG_SET_ERGO(MaxNewSize, max_young_size);
   }

@@ -33,6 +33,7 @@ import javax.sound.midi.Track;
 
 /**
  * @test
+ * @key sound
  * @bug 5048381
  * @summary Sequencer doesn't create distinct messages when recording events.
  */

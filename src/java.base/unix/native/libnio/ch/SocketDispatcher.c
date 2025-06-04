@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,3 +63,22 @@
          return convertLongReturnVal(env, n, JNI_TRUE);
      }
  }
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_SocketDispatcher_write0(JNIEnv *env, jclass clazz,
+                                        jobject fdo, jlong address, jint len)
+{
+    jint fd = fdval(env, fdo);
+    void *buf = (void *)jlong_to_ptr(address);
+
+    return convertReturnVal(env, write(fd, buf, len), JNI_FALSE);
+}
+
+JNIEXPORT jlong JNICALL
+Java_sun_nio_ch_SocketDispatcher_writev0(JNIEnv *env, jclass clazz,
+                                         jobject fdo, jlong address, jint len)
+{
+    jint fd = fdval(env, fdo);
+    struct iovec *iov = (struct iovec *)jlong_to_ptr(address);
+    return convertLongReturnVal(env, writev(fd, iov, len), JNI_FALSE);
+}

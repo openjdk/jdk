@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,8 @@ public class AESBench extends CryptoBase {
 
     byte[][] data;
     byte[][] encryptedData;
-    private Cipher encryptCipher;
-    private Cipher decryptCipher;
+    Cipher encryptCipher;
+    Cipher decryptCipher;
     int index = 0;
 
     @Setup
@@ -81,5 +81,4 @@ public class AESBench extends CryptoBase {
         index = (index +1) % SET_SIZE;
         return decryptCipher.doFinal(e);
     }
-
 }

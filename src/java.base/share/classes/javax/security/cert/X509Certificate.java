@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,11 @@
 package javax.security.cert;
 
 import java.io.InputStream;
-import java.lang.Class;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.security.Security;
-
 import java.math.BigInteger;
-import java.security.AccessController;
 import java.security.Principal;
-import java.security.PrivilegedAction;
-import java.security.PublicKey;
-import java.util.BitSet;
+import java.security.Security;
 import java.util.Date;
 
 /**
@@ -144,17 +138,7 @@ public abstract class X509Certificate extends Certificate {
      * </pre>
      */
     private static final String X509_PROVIDER = "cert.provider.x509v1";
-    private static String X509Provider;
-
-    static {
-        X509Provider = AccessController.doPrivileged(
-            new PrivilegedAction<>() {
-                public String run() {
-                    return Security.getProperty(X509_PROVIDER);
-                }
-            }
-        );
-    }
+    private static String X509Provider = Security.getProperty(X509_PROVIDER);
 
     /**
      * Instantiates an X509Certificate object, and initializes it with

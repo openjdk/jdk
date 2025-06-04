@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,11 +72,24 @@ public class DebugGraphics extends Graphics {
     /**
      * Constructs a new debug graphics context that supports slowed
      * down drawing.
+     * <p>
+     * NOTE: This constructor should not be called by
+     * applications, it is for internal use only. When called directly
+     * it will create an un-usable instance.
      */
     public DebugGraphics() {
         super();
         buffer = null;
         xOffset = yOffset = 0;
+
+        //  Creates a Graphics context when the constructor is called.
+        if (this.graphics == null) {
+            StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+            if (walker.getCallerClass() != this.getClass()) {
+                BufferedImage bi = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+                this.graphics = bi.createGraphics();
+            }
+        }
     }
 
     /**

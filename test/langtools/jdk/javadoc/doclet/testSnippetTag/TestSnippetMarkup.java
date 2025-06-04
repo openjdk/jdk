@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8266666
+ * @bug 8266666 8281969 8319339 8338833
  * @summary Implementation for snippets
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -52,6 +52,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.regex.MatchResult;
@@ -73,7 +74,7 @@ import static javax.tools.DocumentationTool.Location.DOCUMENTATION_OUTPUT;
 public class TestSnippetMarkup extends SnippetTester {
 
     public static void main(String... args) throws Exception {
-        new TestSnippetMarkup().runTests(m -> new Object[]{Paths.get(m.getName())});
+        new TestSnippetMarkup().runTests();
     }
 
     /*
@@ -180,8 +181,73 @@ public class TestSnippetMarkup extends SnippetTester {
                                 link(First) link(line)
                                   Second line
                                 """, "link\\((.+?)\\)", r -> link(true, "java.lang.Object#Object", r.group(1)))
-                ));
+                ),
+                new TestCase(
+                        """
+                                First line
+                                  Second line // @link substring=" " target="java.lang.System#out"
+                                """,
+                        replace("""
+                                First line
+                                link(  )Secondlink( )line
+                                """, "link\\((.+?)\\)", r -> link(true, "java.lang.System#out", r.group(1)))
+                ),
+                new TestCase(
+                        """
+                                First line
+                                  Second line // @link regex=" " target="java.lang.System#in"
+                                """,
+                        replace("""
+                                First line
+                                link(  )Secondlink( )line
+                                """, "link\\((.+?)\\)", r -> link(true, "java.lang.System#in", r.group(1)))
+                )
+        );
         testPositive(base, testCases);
+    }
+
+    /*
+     * Make sure an error is generated for links with invalid reference.
+     */
+    @Test
+    public void testLinkReferenceNotFound(Path base) throws Exception {
+        Path srcDir = base.resolve("src");
+        Path outDir = base.resolve("out");
+
+        new ClassBuilder(tb, "pkg.A")
+                .setModifiers("public", "class")
+                .addMembers(
+                        ClassBuilder.MethodBuilder
+                                .parse("public void inline() { }")
+                                .setComments("""
+                                    First sentence.
+                                    {@snippet :
+                                        First line  // @link substring="First" target="String"
+                                        Second line // @link substring="Second" target="StringReader"
+                                    }
+                                """))
+                .write(srcDir);
+
+        javadoc("-d", outDir.toString(),
+                "-sourcepath", srcDir.toString(),
+                "pkg");
+
+        checkExit(Exit.ERROR);
+        checkOutput(Output.OUT, false,
+                """
+                        error: reference not found: String
+                        """);
+        checkOutput(Output.OUT, true,
+                """
+                        A.java:5: error: reference not found: StringReader
+                        """);
+        checkOutput("pkg/A.html", true,
+                """
+                        <details class="invalid-tag">
+                        <summary>invalid reference</summary>
+                        <pre><code>Second</code></pre>
+                        </details>""");
+        checkNoCrashes();
     }
 
     @Test
@@ -238,8 +304,12 @@ public class TestSnippetMarkup extends SnippetTester {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var goodFile = "good.txt";
+        // use two files that differ in name but not content, to work around
+        // error deduplication, whereby an error related to coordinates
+        // (file, pos) reported before is suppressed; see:
+        // com.sun.tools.javac.util.Log.shouldReport(JavaFileObject, int)
         var badFile = "bad.txt";
-        var badFile2 = "bad2.txt"; // to workaround error deduplication
+        var badFile2 = "bad2.txt";
         new ClassBuilder(tb, "pkg.A")
                 .setModifiers("public", "class")
                 .addMembers(
@@ -340,7 +410,7 @@ First line // @highlight :
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
                         %s
-                        </div>""".formatted(index, getSnippetHtmlRepresentation("A.html", t.expectedOutput()));
+                        </div>""".formatted(index, getSnippetHtmlRepresentation("A.html", t.expectedOutput(), Optional.of("java"), Optional.of("snippet-case" + index + "()2")));
             checkOutput("A.html", true, html);
         });
     }
@@ -575,7 +645,7 @@ First line // @highlight :
                         """,
                         replace("""
                                 First line
-                                 link(Third line)
+                                link( Third line)
                                 """, "link\\((.+?)\\)", r -> link(true, "java.lang.Object#equals(Object)", r.group(1)))
                 ),
                 new TestCase("""
@@ -604,7 +674,7 @@ First line // @highlight :
     }
 
     @Test
-    public void testPositiveInlineTagMarkup_FalseMarkup(Path base) throws Exception {
+    public void testPositiveInlineTagMarkup_SpuriousMarkup(Path base) throws Exception {
         var testCases = List.of(
                 new TestCase(
                         """
@@ -640,6 +710,134 @@ First line // @highlight :
                         """)
         );
         testPositive(base, testCases);
+        checkOutput(Output.OUT, true, """
+                A.java:6: warning: spurious markup
+                // @formatter:off
+                  ^""","""
+                A.java:9: warning: spurious markup
+                    // @formatter:on
+                      ^""","""
+                A.java:17: warning: spurious markup
+                // @formatter:off
+                  ^""","""
+                A.java:22: warning: spurious markup
+                    // @formatter:on
+                      ^""");
+    }
+
+    /*
+     * If spurious markup appears in an external snippet or either side of a
+     * hybrid snippet, then all of the below is true:
+     *
+     *   - no error is raised
+     *   - relevant warnings are emitted
+     *   - spurious markup is output literally
+     */
+    @Test
+    public void testPositiveExternalHybridTagMarkup_SpuriousMarkup(Path base) throws Exception {
+        Path srcDir = base.resolve("src");
+        Path outDir = base.resolve("out");
+        var plain = "plain.txt";
+        var withRegion = "withRegion.txt";
+        new ClassBuilder(tb, "pkg.A")
+                .setModifiers("public", "class")
+                .addMembers(
+                        ClassBuilder.MethodBuilder
+                                .parse("public void external() { }")
+                                .setComments("""
+                                             {@snippet file="%s"}
+                                             """.formatted(plain)))
+                .addMembers(
+                        ClassBuilder.MethodBuilder
+                                .parse("public void hybrid1() { }")
+                                .setComments("""
+                                             {@snippet file="%s":
+                                                First line
+                                                // @formatter:off
+                                                  Second Line
+                                                    Third line
+                                                    // @formatter:on
+                                                      Fourth line
+                                             }
+                                             """.formatted(plain)))
+                .addMembers(
+                        ClassBuilder.MethodBuilder
+                                .parse("public void hybrid2() { }")
+                                .setComments("""
+                                             {@snippet file="%s" region="showThis" :
+                                             Second Line
+                                               Third line
+                                             }
+                                             """.formatted(withRegion)))
+                .addMembers(
+                        ClassBuilder.MethodBuilder
+                                .parse("public void hybrid3() { }")
+                                .setComments("""
+                                             {@snippet file="%s" region="showThis" :
+                                                First line
+                                                // @formatter:off
+                                                  Second Line // @start region=showThis
+                                                    Third line
+                                                    // @end
+                                                    // @formatter:on
+                                                      Fourth line
+                                             }
+                                             """.formatted(withRegion)))
+                .write(srcDir);
+
+        addSnippetFile(srcDir, "pkg", plain, """
+   First line
+   // @formatter:off
+     Second Line
+       Third line
+       // @formatter:on
+         Fourth line
+""");
+        addSnippetFile(srcDir, "pkg", withRegion, """
+   First line
+   // @formatter:off
+     Second Line // @start region=showThis
+       Third line
+     // @end
+       // @formatter:on
+         Fourth line
+""");
+        javadoc("-d", outDir.toString(),
+                "-sourcepath", srcDir.toString(),
+                "pkg");
+        checkExit(Exit.OK);
+        checkNoCrashes();
+        checkOutput(Output.OUT, true, """
+                %s:2: warning: spurious markup
+                   // @formatter:off
+                     ^""".formatted(plain), """
+                %s:5: warning: spurious markup
+                       // @formatter:on
+                         ^""".formatted(plain), """
+                A.java:11: warning: spurious markup
+                   // @formatter:off
+                     ^""", """
+                A.java:14: warning: spurious markup
+                       // @formatter:on
+                         ^""", """
+                %s:2: warning: spurious markup
+                   // @formatter:off
+                     ^""".formatted(plain), """
+                %s:5: warning: spurious markup
+                       // @formatter:on
+                         ^""".formatted(plain), """
+                %s:2: warning: spurious markup
+                   // @formatter:off
+                     ^""".formatted(withRegion), """
+                %s:6: warning: spurious markup
+                       // @formatter:on
+                         ^""".formatted(withRegion), """
+                A.java:31: warning: spurious markup
+                   // @formatter:off
+                     ^""", """
+                A.java:35: warning: spurious markup
+                       // @formatter:on
+                         ^""");
     }
 
     @Test
@@ -717,19 +915,29 @@ First line // @highlight :
                                String content)
             throws UncheckedIOException {
 
-        // The HTML <a> tag generated from the @link snippet markup tag is the
-        // same as that of the {@link} Standard doclet tag. This is specified
-        // and can be used for comparison and testing.
+        // The HTML A element generated for the @link snippet markup tag is
+        // the same as that for the similar Standard doclet {@link} tag.
+        // This fact can be used for comparison and testing.
 
-        // generate documentation for {@link} to grab its HTML <a> tag;
-        // generate documentation at low cost and do not interfere with the
-        // calling test state; for that, do not create file trees, do not write
-        // to std out/err, and generally try to keep everything in memory
+        // Generate documentation for {@link} to grab its HTML A element.
+        // Generate documentation cheaply and do not interfere with the
+        // calling test state; for that: do not create file trees, do not write
+        // to std out/err, and generally try to keep everything in memory.
 
-        String source = """
+        // Caveat: a label used in snippet's @link tag can start, end, or both,
+        // with whitespace. In this regard, snippet's @link differs from
+        // {@link} and {@linkplain} Standard doclet tags, which trim whitespace
+        // from labels. In particular, {@link} and {@linkplain} treat
+        // whitespace after the reference as an absent label, whereas
+        // snippet's @link does not. To avoid whitespace problems,
+        // LABEL_PLACEHOLDER is used. It is later substituted with "content",
+        // which might be an empty or blank string.
+
+        var LABEL_PLACEHOLDER = "label";
+        var source = """
                 /** {@link %s %s} */
                 public interface A { }
-                """.formatted(targetReference, content);
+                """.formatted(targetReference, LABEL_PLACEHOLDER);
 
         JavaFileObject src = new JavaFileObject() {
             @Override
@@ -809,6 +1017,11 @@ First line // @highlight :
             }
 
             @Override
+            public Iterable<? extends JavaFileObject> getJavaFileObjects(Path... files) {
+                return delegate.getJavaFileObjects(files);
+            }
+
+            @Override
             public Iterable<? extends JavaFileObject> getJavaFileObjectsFromStrings(Iterable<String> names) {
                 return delegate.getJavaFileObjectsFromStrings(names);
             }
@@ -850,12 +1063,12 @@ First line // @highlight :
             }
             String output = fileManager.getFileString(DOCUMENTATION_OUTPUT, "A.html");
             // use the [^<>] regex to select HTML elements that immediately enclose "content"
-            Matcher m = Pattern.compile("(?is)<a href=\"[^<>]*\" title=\"[^<>]*\" class=\"[^<>]*\"><code>"
-                    + content + "</code></a>").matcher(output);
+            Matcher m = Pattern.compile("(?is)(<a href=\"[^<>]*\" title=\"[^<>]*\" class=\"[^<>]*\"><code>)"
+                    +  LABEL_PLACEHOLDER + "(</code></a>)").matcher(output);
             if (!m.find()) {
                 throw new IOException(output);
             }
-            return m.group(0);
+            return m.group(1) + content + m.group(2);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,15 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @library classes
- * @build sun.hotspot.WhiteBox test.Empty
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox test.Empty
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI KeepAliveClassLoader
  */
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.classloader.ClassUnloadCommon;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Test that verifies that classes are not unloaded when specific types of references are kept to them.
@@ -68,13 +70,8 @@ public class KeepAliveClassLoader {
     }
     cl = null;
     escape = null;
-    ClassUnloadCommon.triggerUnloading();
 
-    {
-        boolean isAlive = wb.isClassAlive(className);
-        System.out.println("testClassLoader (3) alive: " + isAlive);
-        ClassUnloadCommon.failIf(isAlive, "should be unloaded");
-    }
-
+    Set<String> aliveClasses = ClassUnloadCommon.triggerUnloading(List.of(className));
+    ClassUnloadCommon.failIf(!aliveClasses.isEmpty(), "testClassLoader (3) should be unloaded: " + aliveClasses);
   }
 }

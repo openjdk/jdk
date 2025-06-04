@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 /*
  * @test HandshakeTimeoutTest
@@ -35,14 +35,14 @@ import sun.hotspot.WhiteBox;
  * @requires vm.debug
  * @library /testlibrary /test/lib
  * @build HandshakeTimeoutTest
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver HandshakeTimeoutTest
  */
 
 public class HandshakeTimeoutTest {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb =
-            ProcessTools.createTestJvm(
+            ProcessTools.createTestJavaProcessBuilder(
                     "-Xbootclasspath/a:.",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+WhiteBoxAPI",

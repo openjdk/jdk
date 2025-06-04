@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@
  * @clean nsk.jdi.StackFrame.setValue.setvalue006.setvalue006t
  * @compile -g:lines,source,vars setvalue006t.java
  *
- * @run main/othervm
+ * @run driver
  *      nsk.jdi.StackFrame.setValue.setvalue006.setvalue006
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -132,7 +132,7 @@ public class setvalue006 {
     };
 
     // debuggee source line where it should be stopped
-    static final int DEBUGGEE_STOPATLINE = 72;
+    static final int DEBUGGEE_STOPATLINE = 75;
 
     static final int DELAY = 500; // in milliseconds
 
@@ -150,7 +150,10 @@ public class setvalue006 {
     private volatile boolean gotEvent = false;
 
     public static void main (String argv[]) {
-        System.exit(run(argv,System.out) + Consts.JCK_STATUS_BASE);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run(String argv[], PrintStream out) {
@@ -174,19 +177,19 @@ public class setvalue006 {
             return quitDebuggee();
         }
 
-        ThreadReference thrRef = null;
-        if ((thrRef =
-                debuggee.threadByName(DEBUGGEE_THRDNAME)) == null) {
-            log.complain("TEST FAILURE: method Debugee.threadByName() returned null for debuggee thread "
+        // debuggee main class
+        ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
+
+        ThreadReference thrRef =
+            debuggee.threadByFieldName(rType, "mainThread", DEBUGGEE_THRDNAME);
+        if (thrRef == null) {
+            log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
                 + DEBUGGEE_THRDNAME);
             tot_res = Consts.TEST_FAILED;
             return quitDebuggee();
         }
 
         try {
-            // debuggee main class
-            ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
-
             suspendAtBP(rType, DEBUGGEE_STOPATLINE);
 
             // find a stack frame which belongs to the "setvalue006tMainThr" thread

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -601,6 +601,7 @@ public class DPrinter {
     protected Object getField(Object o, Class<?> clazz, String name) {
         try {
             Field f = clazz.getDeclaredField(name);
+            @SuppressWarnings("deprecation")
             boolean prev = f.isAccessible();
             f.setAccessible(true);
             try {
@@ -618,6 +619,7 @@ public class DPrinter {
     protected Object callMethod(Object o, Class<?> clazz, String name) {
         try {
             Method m = clazz.getDeclaredMethod(name);
+            @SuppressWarnings("deprecation")
             boolean prev = m.isAccessible();
             m.setAccessible(true);
             try {
@@ -1105,6 +1107,11 @@ public class DPrinter {
             return visitBlockTag(node, null);
         }
 
+        public Void visitRawText(RawTextTree node, Void p) {
+            printLimitedEscapedString("content", node.getContent());
+            return visitTree(node, null);
+        }
+
         public Void visitReference(ReferenceTree node, Void p) {
             printString("signature", node.getSignature());
             return visitTree(node, null);
@@ -1139,6 +1146,12 @@ public class DPrinter {
 
         public Void visitSince(SinceTree node, Void p) {
             printList("body", node.getBody());
+            return visitBlockTag(node, null);
+        }
+
+        public Void visitSpec(SpecTree node, Void p) {
+            printDocTree("url", node.getURL());
+            printList("title", node.getTitle());
             return visitBlockTag(node, null);
         }
 
@@ -1186,6 +1199,7 @@ public class DPrinter {
         }
 
         public Void visitValue(ValueTree node, Void p) {
+            printDocTree("format", node.getFormat());
             printDocTree("value", node.getReference());
             return visitInlineTag(node, null);
         }

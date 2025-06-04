@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,27 +25,21 @@
 
 package com.sun.jndi.ldap;
 
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Vector;
 import javax.naming.*;
 import javax.naming.directory.*;
-import javax.naming.spi.*;
 import javax.naming.ldap.*;
 import javax.naming.ldap.LdapName;
 
 import com.sun.jndi.toolkit.ctx.Continuation;
+import com.sun.naming.internal.NamingManagerHelper;
+import com.sun.naming.internal.ObjectFactoriesFilter;
 
 final class LdapSearchEnumeration
         extends AbstractLdapNamingEnumeration<SearchResult> {
 
     private Name startName;             // prefix of names of search results
     private LdapCtx.SearchArgs searchArgs = null;
-
-    @SuppressWarnings("removal")
-    private final AccessControlContext acc = AccessController.getContext();
 
     LdapSearchEnumeration(LdapCtx homeCtx, LdapResult search_results,
         String starter, LdapCtx.SearchArgs args, Continuation cont)
@@ -60,7 +54,6 @@ final class LdapSearchEnumeration
         searchArgs = args;
     }
 
-    @SuppressWarnings("removal")
     @Override
     protected SearchResult createItem(String dn, Attributes attrs,
                                       Vector<Control> respCtls)
@@ -120,12 +113,7 @@ final class LdapSearchEnumeration
             if (attrs.get(Obj.JAVA_ATTRIBUTES[Obj.CLASSNAME]) != null) {
                 // Entry contains Java-object attributes (ser/ref object)
                 // serialized object or object reference
-                try {
-                    PrivilegedExceptionAction<Object> pea = () -> Obj.decodeObject(attrs);
-                    obj = AccessController.doPrivileged(pea, acc);
-                } catch (PrivilegedActionException e) {
-                    throw (NamingException)e.getException();
-                }
+                obj = Obj.decodeObject(attrs);
             }
             if (obj == null) {
                 obj = new LdapCtx(homeCtx, dn);
@@ -134,9 +122,9 @@ final class LdapSearchEnumeration
             // Call getObjectInstance before removing unrequested attributes
             try {
                 // rcn is either relative to homeCtx or a fully qualified DN
-                obj = DirectoryManager.getObjectInstance(
+                obj = NamingManagerHelper.getDirObjectInstance(
                     obj, rcn, (relative ? homeCtx : null),
-                    homeCtx.envprops, attrs);
+                    homeCtx.envprops, attrs, ObjectFactoriesFilter::checkLdapFilter);
             } catch (NamingException e) {
                 throw e;
             } catch (Exception e) {

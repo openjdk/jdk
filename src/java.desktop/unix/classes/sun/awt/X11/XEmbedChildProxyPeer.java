@@ -54,7 +54,7 @@ import java.awt.peer.ContainerPeer;
 
 import sun.java2d.pipe.Region;
 
-public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
+public final class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
     XEmbeddingContainer container;
     XEmbedChildProxy proxy;
     long handle;
@@ -77,8 +77,11 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
         }
         container.notifyChildEmbedded(handle);
     }
+    @Override
     public boolean isObscured() { return false; }
+    @Override
     public boolean canDetermineObscurity() { return false; }
+    @Override
     public void                 setVisible(boolean b) {
         if (!b) {
             XToolkit.awtLock();
@@ -98,11 +101,15 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
             }
         }
     }
+    @Override
     public void setEnabled(boolean b) {}
+    @Override
     public void paint(Graphics g) {}
+    @Override
     public void print(Graphics g) {}
+    @Override
     public void setBounds(int x, int y, int width, int height, int op) {
-        // Unimplemeneted: Check for min/max hints for non-resizable
+        // Unimplemented: Check for min/max hints for non-resizable
         XToolkit.awtLock();
         try {
             XlibWrapper.XMoveResizeWindow(XToolkit.getDisplay(), handle, x, y, width, height);
@@ -111,6 +118,7 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
             XToolkit.awtUnlock();
         }
     }
+    @Override
     public void handleEvent(AWTEvent e) {
         switch (e.getID()) {
           case FocusEvent.FOCUS_GAINED:
@@ -129,7 +137,9 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
               break;
         }
     }
+    @Override
     public void                coalescePaintEvent(PaintEvent e) {}
+    @Override
     public Point                getLocationOnScreen() {
         XWindowAttributes attr = new XWindowAttributes();
         XToolkit.awtLock();
@@ -141,6 +151,7 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
             attr.dispose();
         }
     }
+    @Override
     public Dimension            getPreferredSize() {
         XToolkit.awtLock();
         long p_hints = XlibWrapper.XAllocSizeHints();
@@ -154,6 +165,7 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
             XToolkit.awtUnlock();
         }
     }
+    @Override
     public Dimension            getMinimumSize() {
         XToolkit.awtLock();
         long p_hints = XlibWrapper.XAllocSizeHints();
@@ -167,17 +179,25 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
             XToolkit.awtUnlock();
         }
     }
+    @Override
     public ColorModel           getColorModel() { return null; }
     public Toolkit              getToolkit() { return Toolkit.getDefaultToolkit(); }
 
+    @Override
     public Graphics             getGraphics() { return null; }
+    @Override
     public FontMetrics          getFontMetrics(Font font) { return null; }
+    @Override
     public void         dispose() {
         container.detachChild(handle);
     }
+    @Override
     public void         setForeground(Color c) {}
+    @Override
     public void         setBackground(Color c) {}
+    @Override
     public void         setFont(Font f) {}
+    @Override
     public void                 updateCursorImmediately() {}
 
     void postEvent(AWTEvent event) {
@@ -209,6 +229,7 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
         return true;
     }
 
+    @Override
     public boolean requestFocus(Component lightweightChild,
                                 boolean temporary,
                                 boolean focusedWindowChangeAllowed,
@@ -258,23 +279,32 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
               return simulateMotifRequestFocus(lightweightChild, temporary, focusedWindowChangeAllowed, time);
               // Motif compatibility code
           case XKeyboardFocusManagerPeer.SNFH_SUCCESS_HANDLED:
-              // Either lightweight or excessive requiest - all events are generated.
+              // Either lightweight or excessive request - all events are generated.
               return true;
         }
         return false;
     }
+    @Override
     public boolean              isFocusable() {
         return true;
     }
 
+    @Override
     public Image                createImage(int width, int height) { return null; }
+    @Override
     public VolatileImage        createVolatileImage(int width, int height) { return null; }
+    @Override
     public GraphicsConfiguration getGraphicsConfiguration() { return null; }
+    @Override
     public boolean     handlesWheelScrolling() { return true; }
+    @Override
     public void createBuffers(int numBuffers, BufferCapabilities caps)
       throws AWTException { }
+    @Override
     public Image getBackBuffer() { return null; }
+    @Override
     public void flip(int x1, int y1, int x2, int y2, BufferCapabilities.FlipContents flipAction) {  }
+    @Override
     public void destroyBuffers() { }
 
     /**
@@ -282,6 +312,7 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
      * its sub-elements.  For instance, a lightweight Checkbox needs to layout
      * the box, as well as the text label.
      */
+    @Override
     public void        layout() {}
 
     Window getTopLevel(Component comp) {
@@ -310,6 +341,7 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
     void handleConfigureNotify(XEvent xev) {
         childResized();
     }
+    @Override
     public void dispatchEvent(XEvent xev) {
         int type = xev.get_type();
         switch (type) {
@@ -330,8 +362,10 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
             }));
     }
 
+    @Override
     public void reparent(ContainerPeer newNativeParent) {
     }
+    @Override
     public boolean isReparentSupported() {
         return false;
     }
@@ -349,12 +383,15 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
     public void setBoundsOperation(int operation) {
     }
 
+    @Override
     public void applyShape(Region shape) {
     }
 
+    @Override
     public void setZOrder(ComponentPeer above) {
     }
 
+    @Override
     public boolean updateGraphicsData(GraphicsConfiguration gc) {
         return false;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/metaspace/chunklevel.hpp"
 #include "memory/metaspace/blockTree.hpp"
 #include "memory/resourceArea.hpp"
@@ -44,7 +43,7 @@ const size_t BlockTree::MinWordSize;
   ", left " PTR_FORMAT \
   ", right " PTR_FORMAT \
   ", next " PTR_FORMAT \
-  ", size " SIZE_FORMAT
+  ", size %zu"
 
 #define NODE_FORMAT_ARGS(n) \
   p2i(n), \
@@ -101,7 +100,7 @@ void BlockTree::verify() const {
   // Traverse the tree and test that all nodes are in the correct order.
 
   MemRangeCounter counter;
-  if (_root != NULL) {
+  if (_root != nullptr) {
 
     ResourceMark rm;
     GrowableArray<walkinfo> stack;
@@ -126,9 +125,9 @@ void BlockTree::verify() const {
       counter.add(n->_word_size);
 
       if (n == _root) {
-        tree_assert_invalid_node(n->_parent == NULL, n);
+        tree_assert_invalid_node(n->_parent == nullptr, n);
       } else {
-        tree_assert_invalid_node(n->_parent != NULL, n);
+        tree_assert_invalid_node(n->_parent != nullptr, n);
       }
 
       // check size and ordering
@@ -138,7 +137,7 @@ void BlockTree::verify() const {
       tree_assert_invalid_node(n->_word_size < info.lim2, n);
 
       // Check children
-      if (n->_left != NULL) {
+      if (n->_left != nullptr) {
         tree_assert_invalid_node(n->_left != n, n);
         tree_assert_invalid_node(n->_left->_parent == n, n);
 
@@ -150,7 +149,7 @@ void BlockTree::verify() const {
         stack.push(info2);
       }
 
-      if (n->_right != NULL) {
+      if (n->_right != nullptr) {
         tree_assert_invalid_node(n->_right != n, n);
         tree_assert_invalid_node(n->_right->_parent == n, n);
 
@@ -164,7 +163,7 @@ void BlockTree::verify() const {
 
       // If node has same-sized siblings check those too.
       const Node* n2 = n->_next;
-      while (n2 != NULL) {
+      while (n2 != nullptr) {
         verify_node_pointer(n2);
         tree_assert_invalid_node(n2 != n, n2); // catch simple circles
         tree_assert_invalid_node(n2->_word_size == n->_word_size, n2);
@@ -178,12 +177,10 @@ void BlockTree::verify() const {
   // (which also verifies that we visited every node, or at least
   //  as many nodes as are in this tree)
   _counter.check(counter);
-
-  #undef assrt0n
 }
 
-void BlockTree::zap_range(MetaWord* p, size_t word_size) {
-  memset(p, 0xF3, word_size * sizeof(MetaWord));
+void BlockTree::zap_block(MetaBlock bl) {
+  memset(bl.base(), 0xF3, bl.word_size() * sizeof(MetaWord));
 }
 
 void BlockTree::print_tree(outputStream* st) const {
@@ -192,7 +189,7 @@ void BlockTree::print_tree(outputStream* st) const {
   //  as a quasi list is much clearer to the eye.
   // We print the tree depth-first, with stacked nodes below normal ones
   //  (normal "real" nodes are marked with a leading '+')
-  if (_root != NULL) {
+  if (_root != nullptr) {
 
     ResourceMark rm;
     GrowableArray<walkinfo> stack;
@@ -216,7 +213,7 @@ void BlockTree::print_tree(outputStream* st) const {
       }
 
       // Print same-sized-nodes stacked under this node
-      for (Node* n2 = n->_next; n2 != NULL; n2 = n2->_next) {
+      for (Node* n2 = n->_next; n2 != nullptr; n2 = n2->_next) {
         st->print_raw("       ");
         if (os::is_readable_pointer(n2)) {
           st->print_cr(NODE_FORMAT, NODE_FORMAT_ARGS(n2));
@@ -226,14 +223,20 @@ void BlockTree::print_tree(outputStream* st) const {
         }
       }
 
+      // Handle simple circularities
+      if (n == n->_right || n == n->_left || n == n->_next) {
+        st->print_cr("@" PTR_FORMAT ": circularity detected.", p2i(n));
+        return; // stop printing
+      }
+
       // Handle children.
-      if (n->_right != NULL) {
+      if (n->_right != nullptr) {
         walkinfo info2;
         info2.n = n->_right;
         info2.depth = info.depth + 1;
         stack.push(info2);
       }
-      if (n->_left != NULL) {
+      if (n->_left != nullptr) {
         walkinfo info2;
         info2.n = n->_left;
         info2.depth = info.depth + 1;

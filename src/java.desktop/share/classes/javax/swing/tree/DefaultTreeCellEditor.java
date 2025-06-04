@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.util.EventObject;
  * A <code>TreeCellEditor</code>. You need to supply an
  * instance of <code>DefaultTreeCellRenderer</code>
  * so that the icons can be obtained. You can optionally supply
- * a <code>TreeCellEditor</code> that will be layed out according
+ * a <code>TreeCellEditor</code> that will be laid out according
  * to the icon in the <code>DefaultTreeCellRenderer</code>.
  * If you do not supply a <code>TreeCellEditor</code>,
  * a <code>TextField</code> will be used. Editing is started
@@ -537,7 +537,6 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
      */
     protected TreeCellEditor createTreeCellEditor() {
         Border              aBorder = UIManager.getBorder("Tree.editorBorder");
-        @SuppressWarnings("serial") // Safe: outer class is non-serializable
         DefaultCellEditor   editor = new DefaultCellEditor
             (new DefaultTextField(aBorder)) {
             public boolean shouldSelectCell(EventObject event) {

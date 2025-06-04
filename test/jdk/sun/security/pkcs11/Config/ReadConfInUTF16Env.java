@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class ReadConfInUTF16Env {
     public void testReadConfInUTF16Env() throws Exception {
         String[] testCommand = new String[] { "-Dfile.encoding=UTF-16",
                 TestSunPKCS11Provider.class.getName()};
-        ProcessTools.executeTestJvm(testCommand).shouldHaveExitValue(0);
+        ProcessTools.executeTestJava(testCommand).shouldHaveExitValue(0);
     }
 
     static class TestSunPKCS11Provider {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-
+import jdk.internal.misc.Blocker;
 import jdk.internal.misc.Unsafe;
 
 /**
@@ -111,11 +111,16 @@ class PollSelectorImpl extends SelectorImpl {
             int numPolled;
             do {
                 long startTime = timedPoll ? System.nanoTime() : 0;
-                numPolled = poll(pollArray.address(), pollArraySize, to);
+                boolean attempted = Blocker.begin(blocking);
+                try {
+                    numPolled = poll(pollArray.address(), pollArraySize, to);
+                } finally {
+                    Blocker.end(attempted);
+                }
                 if (numPolled == IOStatus.INTERRUPTED && timedPoll) {
                     // timed poll interrupted so need to adjust timeout
                     long adjust = System.nanoTime() - startTime;
-                    to -= TimeUnit.MILLISECONDS.convert(adjust, TimeUnit.NANOSECONDS);
+                    to -= (int) TimeUnit.NANOSECONDS.toMillis(adjust);
                     if (to <= 0) {
                         // timeout expired so no retry
                         numPolled = 0;
@@ -226,7 +231,6 @@ class PollSelectorImpl extends SelectorImpl {
 
     @Override
     public void setEventOps(SelectionKeyImpl ski) {
-        ensureOpen();
         synchronized (updateLock) {
             updateKeys.addLast(ski);
         }
@@ -255,7 +259,7 @@ class PollSelectorImpl extends SelectorImpl {
     }
 
     /**
-     * Sets the first pollfd enty in the poll array to the given fd
+     * Sets the first pollfd entry in the poll array to the given fd
      */
     private void setFirst(int fd, int ops) {
         assert pollArraySize == 0;

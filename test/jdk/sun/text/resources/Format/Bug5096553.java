@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,14 @@
 
 /*
  * @test
- * @bug 5096553 8008577
+ * @bug 5096553 8008577 8174269
  * @modules jdk.localedata
  * @summary updating dateformat for da_DK
  *          following resources:
  *          http://oss.software.ibm.com/cvs/icu/~checkout~/locale/common/main/da.xml
  *          http://www.microsoft.com/globaldev/nlsweb/default.asp?submitted=406
  *          see bug evaluation for more details
- * @run main/othervm -Djava.locale.providers=JRE,SPI Bug5096553
+ * @run main Bug5096553
  */
 
 import java.util.Date;
@@ -42,10 +42,10 @@ import java.util.Calendar;
 public class Bug5096553
 {
   public static void main(String[] args) {
-      String expectedMed = "30-04-2008";
-      String expectedShort="30-04-08";
+      String expectedMed = "30. apr. 2008";
+      String expectedShort="30.04.2008";
 
-      Locale dk = new Locale("da", "DK");
+      Locale dk = Locale.of("da", "DK");
       DateFormat df1 = DateFormat.getDateInstance(DateFormat.MEDIUM, dk);
       DateFormat df2 = DateFormat.getDateInstance(DateFormat.SHORT, dk);
       String medString = new String (df1.format(new Date(108, Calendar.APRIL, 30)));

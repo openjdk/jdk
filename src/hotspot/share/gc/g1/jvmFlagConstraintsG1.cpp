@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/g1/heapRegionBounds.inline.hpp"
+#include "gc/g1/g1HeapRegionBounds.inline.hpp"
 #include "gc/g1/jvmFlagConstraintsG1.hpp"
+#include "gc/shared/bufferNode.hpp"
+#include "gc/shared/ptrQueue.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -79,9 +80,9 @@ JVMFlag::Error G1HeapRegionSizeConstraintFunc(size_t value, bool verbose) {
   if (!UseG1GC) return JVMFlag::SUCCESS;
 
   // Default value of G1HeapRegionSize=0 means will be set ergonomically.
-  if (FLAG_IS_CMDLINE(G1HeapRegionSize) && (value < HeapRegionBounds::min_size())) {
+  if (FLAG_IS_CMDLINE(G1HeapRegionSize) && (value < G1HeapRegionBounds::min_size())) {
     JVMFlag::printError(verbose,
-                        "G1HeapRegionSize (" SIZE_FORMAT ") must be "
+                        "G1HeapRegionSize (%zu) must be "
                         "greater than or equal to ergonomic heap region minimum size\n",
                         value);
     return JVMFlag::VIOLATES_CONSTRAINT;
@@ -90,13 +91,13 @@ JVMFlag::Error G1HeapRegionSizeConstraintFunc(size_t value, bool verbose) {
   }
 }
 
-JVMFlag::Error G1NewSizePercentConstraintFunc(uintx value, bool verbose) {
+JVMFlag::Error G1NewSizePercentConstraintFunc(uint value, bool verbose) {
   if (!UseG1GC) return JVMFlag::SUCCESS;
 
   if (value > G1MaxNewSizePercent) {
     JVMFlag::printError(verbose,
-                        "G1NewSizePercent (" UINTX_FORMAT ") must be "
-                        "less than or equal to G1MaxNewSizePercent (" UINTX_FORMAT ")\n",
+                        "G1NewSizePercent (%u) must be "
+                        "less than or equal to G1MaxNewSizePercent (%u)\n",
                         value, G1MaxNewSizePercent);
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
@@ -104,13 +105,13 @@ JVMFlag::Error G1NewSizePercentConstraintFunc(uintx value, bool verbose) {
   }
 }
 
-JVMFlag::Error G1MaxNewSizePercentConstraintFunc(uintx value, bool verbose) {
+JVMFlag::Error G1MaxNewSizePercentConstraintFunc(uint value, bool verbose) {
   if (!UseG1GC) return JVMFlag::SUCCESS;
 
   if (value < G1NewSizePercent) {
     JVMFlag::printError(verbose,
-                        "G1MaxNewSizePercent (" UINTX_FORMAT ") must be "
-                        "greater than or equal to G1NewSizePercent (" UINTX_FORMAT ")\n",
+                        "G1MaxNewSizePercent (%u) must be "
+                        "greater than or equal to G1NewSizePercent (%u)\n",
                         value, G1NewSizePercent);
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
@@ -121,8 +122,8 @@ JVMFlag::Error G1MaxNewSizePercentConstraintFunc(uintx value, bool verbose) {
 JVMFlag::Error MaxGCPauseMillisConstraintFuncG1(uintx value, bool verbose) {
   if (UseG1GC && FLAG_IS_CMDLINE(MaxGCPauseMillis) && (value >= GCPauseIntervalMillis)) {
     JVMFlag::printError(verbose,
-                        "MaxGCPauseMillis (" UINTX_FORMAT ") must be "
-                        "less than GCPauseIntervalMillis (" UINTX_FORMAT ")\n",
+                        "MaxGCPauseMillis (%zu) must be "
+                        "less than GCPauseIntervalMillis (%zu)\n",
                         value, GCPauseIntervalMillis);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
@@ -135,7 +136,7 @@ JVMFlag::Error GCPauseIntervalMillisConstraintFuncG1(uintx value, bool verbose) 
     if (FLAG_IS_CMDLINE(GCPauseIntervalMillis)) {
       if (value < 1) {
         JVMFlag::printError(verbose,
-                            "GCPauseIntervalMillis (" UINTX_FORMAT ") must be "
+                            "GCPauseIntervalMillis (%zu) must be "
                             "greater than or equal to 1\n",
                             value);
         return JVMFlag::VIOLATES_CONSTRAINT;
@@ -150,8 +151,8 @@ JVMFlag::Error GCPauseIntervalMillisConstraintFuncG1(uintx value, bool verbose) 
 
       if (value <= MaxGCPauseMillis) {
         JVMFlag::printError(verbose,
-                            "GCPauseIntervalMillis (" UINTX_FORMAT ") must be "
-                            "greater than MaxGCPauseMillis (" UINTX_FORMAT ")\n",
+                            "GCPauseIntervalMillis (%zu) must be "
+                            "greater than MaxGCPauseMillis (%zu)\n",
                             value, MaxGCPauseMillis);
         return JVMFlag::VIOLATES_CONSTRAINT;
       }
@@ -169,7 +170,7 @@ JVMFlag::Error NewSizeConstraintFuncG1(size_t value, bool verbose) {
   // So maximum of NewSize should be 'max_juint * 1M'
   if (UseG1GC && (value > (max_juint * 1 * M))) {
     JVMFlag::printError(verbose,
-                        "NewSize (" SIZE_FORMAT ") must be less than ergonomic maximum value\n",
+                        "NewSize (%zu) must be less than ergonomic maximum value\n",
                         value);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
@@ -178,5 +179,34 @@ JVMFlag::Error NewSizeConstraintFuncG1(size_t value, bool verbose) {
 }
 
 size_t MaxSizeForHeapAlignmentG1() {
-  return HeapRegionBounds::max_size();
+  return G1HeapRegionBounds::max_size();
+}
+
+static JVMFlag::Error buffer_size_constraint_helper(JVMFlagsEnum flagid,
+                                                    size_t value,
+                                                    bool verbose) {
+  if (UseG1GC) {
+    const size_t min_size = 1;
+    const size_t max_size = BufferNode::max_size();
+    JVMFlag* flag = JVMFlag::flag_from_enum(flagid);
+    if ((value < min_size) || (value > max_size)) {
+      JVMFlag::printError(verbose,
+                          "%s (%zu) must be in range [%zu, %zu]\n",
+                          flag->name(), value, min_size, max_size);
+      return JVMFlag::OUT_OF_BOUNDS;
+    }
+  }
+  return JVMFlag::SUCCESS;
+}
+
+JVMFlag::Error G1SATBBufferSizeConstraintFunc(size_t value, bool verbose) {
+  return buffer_size_constraint_helper(FLAG_MEMBER_ENUM(G1SATBBufferSize),
+                                       value,
+                                       verbose);
+}
+
+JVMFlag::Error G1UpdateBufferSizeConstraintFunc(size_t value, bool verbose) {
+  return buffer_size_constraint_helper(FLAG_MEMBER_ENUM(G1UpdateBufferSize),
+                                       value,
+                                       verbose);
 }

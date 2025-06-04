@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,10 @@ import java.util.List;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.dcmd.CommandExecutorException;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
+import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 import jtreg.SkippedException;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 
 public abstract class JCmdTestDumpBase {
@@ -63,7 +64,8 @@ public abstract class JCmdTestDumpBase {
     private static final String TEST_CLASSES[] =
                              {"JCmdTestLingeredApp",
                               "jdk/test/lib/apps/LingeredApp",
-                              "jdk/test/lib/apps/LingeredApp$1"};
+                              "jdk/test/lib/apps/LingeredApp$1",
+                              "jdk/test/lib/apps/LingeredApp$SteadyStateLock"};
     private static final String BOOT_CLASSES[] = {"Hello"};
 
     protected static String testJar = null;
@@ -88,8 +90,8 @@ public abstract class JCmdTestDumpBase {
     }
 
     protected static void buildJars() throws Exception {
-        testJar = JarBuilder.build("test", TEST_CLASSES);
-        bootJar = JarBuilder.build("boot", BOOT_CLASSES);
+        testJar = ClassFileInstaller.writeJar("test", TEST_CLASSES);
+        bootJar = ClassFileInstaller.writeJar("boot", BOOT_CLASSES);
         System.out.println("Jar file created: " + testJar);
         System.out.println("Jar file created: " + bootJar);
         allJars = testJar + File.pathSeparator + bootJar;
@@ -187,6 +189,10 @@ public abstract class JCmdTestDumpBase {
 
         PidJcmdExecutor cmdExecutor = new PidJcmdExecutor(String.valueOf(pid));
         OutputAnalyzer output = cmdExecutor.execute(jcmd, true/*silent*/);
+
+        if (archiveFileName.contains("%p")) {
+            archiveFileName = archiveFileName.replace("%p", "%d").formatted(pid);
+        }
 
         if (expectOK) {
             output.shouldHaveExitValue(0);

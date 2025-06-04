@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -56,6 +56,7 @@ import com.sun.org.apache.xerces.internal.xs.ElementPSVI;
 import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
 import java.util.Locale;
 import java.util.Stack;
+import jdk.xml.internal.JdkXmlUtils;
 import org.w3c.dom.Attr;
 import org.w3c.dom.CDATASection;
 import org.w3c.dom.Comment;
@@ -84,7 +85,7 @@ import org.xml.sax.SAXException;
  * @author Andy Clark, IBM
  * @author Elena Litani, IBM
  *
- * @LastModified: Jan 2019
+ * @LastModified: July 2021
  */
 public class AbstractDOMParser extends AbstractXMLDocumentParser {
 
@@ -2041,17 +2042,8 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
             else {
                 fInternalSubset.append (name);
             }
-            fInternalSubset.append (' ');
-            if (publicId != null) {
-                fInternalSubset.append ("PUBLIC '");
-                fInternalSubset.append (publicId);
-                fInternalSubset.append ("' '");
-            }
-            else {
-                fInternalSubset.append ("SYSTEM '");
-            }
-            fInternalSubset.append (literalSystemId);
-            fInternalSubset.append ("'>\n");
+            fInternalSubset.append (JdkXmlUtils.getDTDExternalDecl(publicId, literalSystemId));
+            fInternalSubset.append (">\n");
         }
 
         // NOTE: We only know how to create these nodes for the Xerces
@@ -2181,20 +2173,8 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
         if (fInternalSubset != null && !fInDTDExternalSubset) {
             fInternalSubset.append ("<!ENTITY ");
             fInternalSubset.append (name);
-            fInternalSubset.append (' ');
-            if (publicId != null) {
-                fInternalSubset.append ("PUBLIC '");
-                fInternalSubset.append (publicId);
-                if (literalSystemId != null) {
-                    fInternalSubset.append ("' '");
-                    fInternalSubset.append (literalSystemId);
-                }
-            }
-            else {
-                fInternalSubset.append ("SYSTEM '");
-                fInternalSubset.append (literalSystemId);
-            }
-            fInternalSubset.append ("' NDATA ");
+            fInternalSubset.append (JdkXmlUtils.getDTDExternalDecl(publicId, literalSystemId));
+            fInternalSubset.append (" NDATA ");
             fInternalSubset.append (notation);
             fInternalSubset.append (">\n");
         }
@@ -2261,19 +2241,8 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
         if (fInternalSubset != null && !fInDTDExternalSubset) {
             fInternalSubset.append ("<!NOTATION ");
             fInternalSubset.append (name);
-            if (publicId != null) {
-                fInternalSubset.append (" PUBLIC '");
-                fInternalSubset.append (publicId);
-                if (literalSystemId != null) {
-                    fInternalSubset.append ("' '");
-                    fInternalSubset.append (literalSystemId);
-                }
-            }
-            else {
-                fInternalSubset.append (" SYSTEM '");
-                fInternalSubset.append (literalSystemId);
-            }
-            fInternalSubset.append ("'>\n");
+            fInternalSubset.append (JdkXmlUtils.getDTDExternalDecl(publicId, literalSystemId));
+            fInternalSubset.append (">\n");
         }
 
         // NOTE: We only know how to create these nodes for the Xerces

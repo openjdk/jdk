@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package sun.security.rsa;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.math.BigInteger;
 
 import java.security.*;
@@ -43,7 +45,7 @@ import sun.security.rsa.RSAUtil.KeyType;
  * RSA private key implementation for "RSA", "RSASSA-PSS" algorithms in CRT form.
  * For non-CRT private keys, see RSAPrivateKeyImpl. We need separate classes
  * to ensure correct behavior in instanceof checks, etc.
- *
+ * <p>
  * Note: RSA keys must be at least 512 bits long
  *
  * @see RSAPrivateKeyImpl
@@ -65,14 +67,15 @@ public final class RSAPrivateCrtKeyImpl
     private BigInteger q;       // prime q
     private BigInteger pe;      // prime exponent p
     private BigInteger qe;      // prime exponent q
-    private BigInteger coeff;   // CRT coeffcient
+    private BigInteger coeff;   // CRT coefficient
 
-    private transient KeyType type;
+    // RSA or RSA-PSS KeyType
+    private final transient KeyType type;
 
     // Optional parameters associated with this RSA key
     // specified in the encoding of its AlgorithmId.
     // Must be null for "RSA" keys.
-    private transient AlgorithmParameterSpec keyParams;
+    private final transient AlgorithmParameterSpec keyParams;
 
     /**
      * Generate a new RSAPrivate(Crt)Key from the specified type,
@@ -99,7 +102,7 @@ public final class RSAPrivateCrtKeyImpl
             }
         case "PKCS#1":
             try {
-                BigInteger[] comps = parseASN1(encoded);
+                BigInteger[] comps = parsePKCS1(encoded);
                 if ((comps[1].signum() == 0) || (comps[3].signum() == 0) ||
                     (comps[4].signum() == 0) || (comps[5].signum() == 0) ||
                     (comps[6].signum() == 0) || (comps[7].signum() == 0)) {
@@ -171,7 +174,7 @@ public final class RSAPrivateCrtKeyImpl
     }
 
     /**
-     * Construct a RSA key from its components. Used by the
+     * Construct an RSA key from its components. Used by the
      * RSAKeyFactory and the RSAKeyPairGenerator.
      */
     RSAPrivateCrtKeyImpl(KeyType type, AlgorithmParameterSpec keyParams,
@@ -199,49 +202,44 @@ public final class RSAPrivateCrtKeyImpl
         this.type = type;
         this.keyParams = keyParams;
 
-        try {
-            byte[][] nbytes = new byte[8][];
-            nbytes[0] = n.toByteArray();
-            nbytes[1] = e.toByteArray();
-            nbytes[2] = d.toByteArray();
-            nbytes[3] = p.toByteArray();
-            nbytes[4] = q.toByteArray();
-            nbytes[5] = pe.toByteArray();
-            nbytes[6] = qe.toByteArray();
-            nbytes[7] = coeff.toByteArray();
+        byte[][] nbytes = new byte[8][];
+        nbytes[0] = n.toByteArray();
+        nbytes[1] = e.toByteArray();
+        nbytes[2] = d.toByteArray();
+        nbytes[3] = p.toByteArray();
+        nbytes[4] = q.toByteArray();
+        nbytes[5] = pe.toByteArray();
+        nbytes[6] = qe.toByteArray();
+        nbytes[7] = coeff.toByteArray();
 
-            // Initiate with a big enough size so there's no need to
-            // reallocate memory later and thus can be cleaned up
-            // reliably.
-            DerOutputStream out = new DerOutputStream(
-                    nbytes[0].length + nbytes[1].length +
-                    nbytes[2].length + nbytes[3].length +
-                    nbytes[4].length + nbytes[5].length +
-                    nbytes[6].length + nbytes[7].length +
-                    100); // Enough for version(3) and 8 tag+length(3 or 4)
-            out.putInteger(0); // version must be 0
-            out.putInteger(nbytes[0]);
-            out.putInteger(nbytes[1]);
-            out.putInteger(nbytes[2]);
-            out.putInteger(nbytes[3]);
-            out.putInteger(nbytes[4]);
-            out.putInteger(nbytes[5]);
-            out.putInteger(nbytes[6]);
-            out.putInteger(nbytes[7]);
-            // Private values from [2] on.
-            Arrays.fill(nbytes[2], (byte)0);
-            Arrays.fill(nbytes[3], (byte)0);
-            Arrays.fill(nbytes[4], (byte)0);
-            Arrays.fill(nbytes[5], (byte)0);
-            Arrays.fill(nbytes[6], (byte)0);
-            Arrays.fill(nbytes[7], (byte)0);
-            DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
-            key = val.toByteArray();
-            val.clear();
-        } catch (IOException exc) {
-            // should never occur
-            throw new InvalidKeyException(exc);
-        }
+        // Initiate with a big enough size so there's no need to
+        // reallocate memory later and thus can be cleaned up
+        // reliably.
+        DerOutputStream out = new DerOutputStream(
+                nbytes[0].length + nbytes[1].length +
+                        nbytes[2].length + nbytes[3].length +
+                        nbytes[4].length + nbytes[5].length +
+                        nbytes[6].length + nbytes[7].length +
+                        100); // Enough for version(3) and 8 tag+length(3 or 4)
+        out.putInteger(0); // version must be 0
+        out.putInteger(nbytes[0]);
+        out.putInteger(nbytes[1]);
+        out.putInteger(nbytes[2]);
+        out.putInteger(nbytes[3]);
+        out.putInteger(nbytes[4]);
+        out.putInteger(nbytes[5]);
+        out.putInteger(nbytes[6]);
+        out.putInteger(nbytes[7]);
+        // Private values from [2] on.
+        Arrays.fill(nbytes[2], (byte) 0);
+        Arrays.fill(nbytes[3], (byte) 0);
+        Arrays.fill(nbytes[4], (byte) 0);
+        Arrays.fill(nbytes[5], (byte) 0);
+        Arrays.fill(nbytes[6], (byte) 0);
+        Arrays.fill(nbytes[7], (byte) 0);
+        DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
+        privKeyMaterial = val.toByteArray();
+        val.clear();
     }
 
     // see JCA doc
@@ -304,18 +302,10 @@ public final class RSAPrivateCrtKeyImpl
         return keyParams;
     }
 
-    // return a string representation of this key for debugging
-    @Override
-    public String toString() {
-        return "SunRsaSign " + type.keyAlgo + " private CRT key, "
-               + n.bitLength() + " bits" + "\n  params: " + keyParams
-               + "\n  modulus: " + n + "\n  private exponent: " + d;
-    }
-
     // utility method for parsing DER encoding of RSA private keys in PKCS#1
     // format as defined in RFC 8017 Appendix A.1.2, i.e. SEQ of version, n,
     // e, d, p, q, pe, qe, and coeff, and return the parsed components.
-    private static BigInteger[] parseASN1(byte[] raw) throws IOException {
+    private static BigInteger[] parsePKCS1(byte[] raw) throws IOException {
         DerValue derValue = new DerValue(raw);
         try {
             if (derValue.tag != DerValue.tag_Sequence) {
@@ -348,7 +338,7 @@ public final class RSAPrivateCrtKeyImpl
 
     private void parseKeyBits() throws InvalidKeyException {
         try {
-            BigInteger[] comps = parseASN1(key);
+            BigInteger[] comps = parsePKCS1(privKeyMaterial);
             n = comps[0];
             e = comps[1];
             d = comps[2];
@@ -360,5 +350,45 @@ public final class RSAPrivateCrtKeyImpl
         } catch (IOException e) {
             throw new InvalidKeyException("Invalid RSA private key", e);
         }
+    }
+
+    /**
+     * With a given PKCS#1/slleay/OpenSSL old default RSA binary encoding,
+     * decode and return the proper RSA encoded KeySpec
+     * @param encoded RSA binary encoding
+     * @return KeySpec
+     * @throws InvalidKeyException on decoding failure
+     */
+    public static KeySpec getKeySpec(byte[] encoded) throws
+        InvalidKeyException {
+        try {
+            BigInteger[] comps = parsePKCS1(encoded);
+            if ((comps[1].signum() == 0) || (comps[3].signum() == 0) ||
+                (comps[4].signum() == 0) || (comps[5].signum() == 0) ||
+                (comps[6].signum() == 0) || (comps[7].signum() == 0)) {
+                return new RSAPrivateKeySpec(comps[0], comps[2]);
+            } else {
+                return new RSAPrivateCrtKeySpec(comps[0],
+                    comps[1], comps[2], comps[3], comps[4], comps[5],
+                    comps[6], comps[7]);
+            }
+        } catch (IOException ioe) {
+            throw new InvalidKeyException("Invalid PKCS#1 encoding", ioe);
+        }
+    }
+    /**
+     * Restores the state of this object from the stream.
+     * <p>
+     * Deserialization of this object is not supported.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        throw new InvalidObjectException(
+                "RSAPrivateCrtKeyImpl keys are not directly deserializable");
     }
 }

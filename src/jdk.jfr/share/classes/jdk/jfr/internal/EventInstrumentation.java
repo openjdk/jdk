@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,541 +25,515 @@
 
 package jdk.jfr.internal;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
-import java.util.ArrayList;
-import java.util.HashSet;
+import static jdk.jfr.internal.util.Bytecode.classDesc;
+import static jdk.jfr.internal.util.Bytecode.getfield;
+import static jdk.jfr.internal.util.Bytecode.invokestatic;
+import static jdk.jfr.internal.util.Bytecode.invokevirtual;
+import static jdk.jfr.internal.util.Bytecode.putfield;
+
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeBuilder.BlockCodeBuilder;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.Label;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.MethodTransform;
+import java.lang.classfile.TypeKind;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Consumer;
 
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Label;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.Type;
-import jdk.internal.org.objectweb.asm.commons.Method;
-import jdk.internal.org.objectweb.asm.tree.AnnotationNode;
-import jdk.internal.org.objectweb.asm.tree.ClassNode;
-import jdk.internal.org.objectweb.asm.tree.FieldNode;
-import jdk.internal.org.objectweb.asm.tree.MethodNode;
-import jdk.jfr.Enabled;
 import jdk.jfr.Event;
-import jdk.jfr.Name;
-import jdk.jfr.Registered;
 import jdk.jfr.SettingControl;
-import jdk.jfr.SettingDefinition;
-import jdk.jfr.internal.handlers.EventHandler;
+import jdk.jfr.internal.event.EventConfiguration;
+import jdk.jfr.internal.event.EventWriter;
+import jdk.jfr.internal.util.Bytecode;
+import jdk.jfr.internal.util.Bytecode.FieldDesc;
+import jdk.jfr.internal.util.Bytecode.MethodDesc;
+import jdk.jfr.internal.util.Bytecode.SettingDesc;
+import jdk.jfr.internal.util.ImplicitFields;
 
 /**
  * Class responsible for adding instrumentation to a subclass of {@link Event}.
  *
  */
-public final class EventInstrumentation {
-    static final class SettingInfo {
-        private String methodName;
-        private String internalSettingName;
-        private String settingDescriptor;
-        final String fieldName;
-        final int index;
+final class EventInstrumentation {
+    private static final FieldDesc FIELD_EVENT_CONFIGURATION = FieldDesc.of(Object.class, "eventConfiguration");
 
-        // The settingControl is passed to EventHandler where it is
-        // used to check enablement before calling commit
-        // Methods on settingControl must never be invoked
-        // directly by JFR, instead use jdk.jfr.internal.Control
-        SettingControl settingControl;
+    private static final ClassDesc TYPE_EVENT_CONFIGURATION = classDesc(EventConfiguration.class);
+    private static final ClassDesc TYPE_ISE = classDesc(IllegalStateException.class);
+    private static final ClassDesc TYPE_EVENT_WRITER = classDesc(EventWriter.class);
+    private static final ClassDesc TYPE_OBJECT = classDesc(Object.class);
 
-        public SettingInfo(String fieldName, int index) {
-            this.fieldName = fieldName;
-            this.index = index;
+    private static final MethodDesc METHOD_BEGIN = MethodDesc.of("begin", "()V");
+    private static final MethodDesc METHOD_COMMIT = MethodDesc.of("commit", "()V");
+    private static final MethodDesc METHOD_DURATION = MethodDesc.of("duration", "(J)J");
+    private static final MethodDesc METHOD_ENABLED = MethodDesc.of("enabled", "()Z");
+    private static final MethodDesc METHOD_END = MethodDesc.of("end", "()V");
+    private static final MethodDesc METHOD_EVENT_CONFIGURATION_SHOULD_COMMIT = MethodDesc.of("shouldCommit", "(J)Z");
+    private static final MethodDesc METHOD_EVENT_CONFIGURATION_GET_SETTING = MethodDesc.of("getSetting", SettingControl.class, int.class);
+    private static final MethodDesc METHOD_EVENT_SHOULD_COMMIT = MethodDesc.of("shouldCommit", "()Z");
+    private static final MethodDesc METHOD_GET_EVENT_WRITER = MethodDesc.of("getEventWriter", "()" + TYPE_EVENT_WRITER.descriptorString());
+    private static final MethodDesc METHOD_IS_ENABLED = MethodDesc.of("isEnabled", "()Z");
+    private static final MethodDesc METHOD_RESET = MethodDesc.of("reset", "()V");
+    private static final MethodDesc METHOD_SHOULD_COMMIT_LONG = MethodDesc.of("shouldCommit", "(J)Z");
+    private static final MethodDesc METHOD_TIME_STAMP = MethodDesc.of("timestamp", "()J");
+
+    private final ClassInspector inspector;
+    private final long eventTypeId;
+    private final ClassDesc eventClassDesc;
+    private final MethodDesc staticCommitMethod;
+    private final boolean untypedEventConfiguration;
+    private final boolean guardEventConfiguration;
+
+    /**
+     * Creates an EventInstrumentation object.
+     *
+     * @param inspector               class inspector
+     * @param id                      the event type ID to use
+     * @param guardEventConfiguration guard against event configuration being null.
+     *                                Needed when instrumentation is added before
+     *                                registration (bytesForEagerInstrumentation)
+     */
+    EventInstrumentation(ClassInspector inspector, long id, boolean guardEventConfiguration) {
+        inspector.buildFields();
+        if (!inspector.isJDK()) {
+            // Only user-defined events have custom settings.
+            inspector.buildSettings();
         }
+        this.inspector = inspector;
+        this.eventTypeId = id;
+        this.guardEventConfiguration = guardEventConfiguration;
+        this.eventClassDesc = inspector.getClassDesc();
+        this.staticCommitMethod = inspector.findStaticCommitMethod();
+        this.untypedEventConfiguration = hasUntypedConfiguration();
     }
 
-    static final class FieldInfo {
-        private static final Type STRING = Type.getType(String.class);
-        final String fieldName;
-        final String fieldDescriptor;
-        final String internalClassName;
-
-        public FieldInfo(String fieldName, String fieldDescriptor, String internalClassName) {
-            this.fieldName = fieldName;
-            this.fieldDescriptor = fieldDescriptor;
-            this.internalClassName = internalClassName;
-        }
-
-        public boolean isString() {
-            return STRING.getDescriptor().equals(fieldDescriptor);
-        }
+    byte[] buildInstrumented() {
+        return ClassFile.of().transformClass(inspector.getClassModel(), this::transform);
     }
 
-    public static final String FIELD_EVENT_THREAD = "eventThread";
-    public static final String FIELD_STACK_TRACE = "stackTrace";
-    public static final String FIELD_DURATION = "duration";
-
-    static final String FIELD_EVENT_HANDLER = "eventHandler";
-    static final String FIELD_START_TIME = "startTime";
-
-    private static final Type ANNOTATION_TYPE_NAME = Type.getType(Name.class);
-    private static final Type ANNOTATION_TYPE_REGISTERED = Type.getType(Registered.class);
-    private static final Type ANNOTATION_TYPE_ENABLED = Type.getType(Enabled.class);
-    private static final Type TYPE_EVENT_HANDLER = Type.getType(EventHandler.class);
-    private static final Type TYPE_SETTING_CONTROL = Type.getType(SettingControl.class);
-    private static final Type TYPE_OBJECT  = Type.getType(Object.class);
-    private static final Method METHOD_COMMIT = new Method("commit", Type.VOID_TYPE, new Type[0]);
-    private static final Method METHOD_BEGIN = new Method("begin", Type.VOID_TYPE, new Type[0]);
-    private static final Method METHOD_END = new Method("end", Type.VOID_TYPE, new Type[0]);
-    private static final Method METHOD_IS_ENABLED = new Method("isEnabled", Type.BOOLEAN_TYPE, new Type[0]);
-    private static final Method METHOD_TIME_STAMP = new Method("timestamp", Type.LONG_TYPE, new Type[0]);
-    private static final Method METHOD_EVENT_SHOULD_COMMIT = new Method("shouldCommit", Type.BOOLEAN_TYPE, new Type[0]);
-    private static final Method METHOD_EVENT_HANDLER_SHOULD_COMMIT = new Method("shouldCommit", Type.BOOLEAN_TYPE, new Type[] { Type.LONG_TYPE });
-    private static final Method METHOD_DURATION = new Method("duration", Type.LONG_TYPE, new Type[] { Type.LONG_TYPE });
-
-    private final ClassNode classNode;
-    private final List<SettingInfo> settingInfos;
-    private final List<FieldInfo> fieldInfos;;
-    private final Method writeMethod;
-    private final String eventHandlerXInternalName;
-    private final String eventName;
-    private final boolean untypedEventHandler;
-    private boolean guardHandlerReference;
-    private Class<?> superClass;
-
-    EventInstrumentation(Class<?> superClass, byte[] bytes, long id) {
-        this.superClass = superClass;
-        this.classNode = createClassNode(bytes);
-        this.settingInfos = buildSettingInfos(superClass, classNode);
-        this.fieldInfos = buildFieldInfos(superClass, classNode);
-        this.untypedEventHandler = hasUntypedHandler();
-        this.writeMethod = makeWriteMethod(fieldInfos);
-        this.eventHandlerXInternalName = ASMToolkit.getInternalName(EventHandlerCreator.makeEventHandlerName(id));
-        String n =  annotationValue(classNode, ANNOTATION_TYPE_NAME.getDescriptor(), String.class);
-        this.eventName = n == null ? classNode.name.replace("/", ".") : n;
-    }
-
-    private boolean hasUntypedHandler() {
-        for (FieldNode field : classNode.fields) {
-            if (FIELD_EVENT_HANDLER.equals(field.name)) {
-                return field.desc.equals(TYPE_OBJECT.getDescriptor());
-            }
-        }
-        throw new InternalError("Class missing handler field");
-    }
-
-    public String getClassName() {
-      return classNode.name.replace("/",".");
-    }
-
-    private ClassNode createClassNode(byte[] bytes) {
-        ClassNode classNode = new ClassNode();
-        ClassReader classReader = new ClassReader(bytes);
-        classReader.accept(classNode, 0);
-        return classNode;
-    }
-
-    boolean isRegistered() {
-        Boolean result = annotationValue(classNode, ANNOTATION_TYPE_REGISTERED.getDescriptor(), Boolean.class);
-        if (result != null) {
-            return result.booleanValue();
-        }
-        if (superClass != null) {
-            Registered r = superClass.getAnnotation(Registered.class);
-            if (r != null) {
-                return r.value();
-            }
-        }
-        return true;
-    }
-
-    boolean isEnabled() {
-        Boolean result = annotationValue(classNode, ANNOTATION_TYPE_ENABLED.getDescriptor(), Boolean.class);
-        if (result != null) {
-            return result.booleanValue();
-        }
-        if (superClass != null) {
-            Enabled e = superClass.getAnnotation(Enabled.class);
-            if (e != null) {
-                return e.value();
-            }
-        }
-        return true;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> T annotationValue(ClassNode classNode, String typeDescriptor, Class<?> type) {
-        if (classNode.visibleAnnotations != null) {
-            for (AnnotationNode a : classNode.visibleAnnotations) {
-                if (typeDescriptor.equals(a.desc)) {
-                    List<Object> values = a.values;
-                    if (values != null && values.size() == 2) {
-                        Object key = values.get(0);
-                        Object value = values.get(1);
-                        if (key instanceof String keyName && value != null) {
-                            if (type == value.getClass()) {
-                                if ("value".equals(keyName)) {
-                                   return (T) value;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    private static List<SettingInfo> buildSettingInfos(Class<?> superClass, ClassNode classNode) {
-        Set<String> methodSet = new HashSet<>();
-        List<SettingInfo> settingInfos = new ArrayList<>();
-        String settingDescriptor = Type.getType(SettingDefinition.class).getDescriptor();
-        String nameDescriptor = Type.getType(Name.class).getDescriptor();
-        for (MethodNode m : classNode.methods) {
-            if (m.visibleAnnotations != null) {
-                for (AnnotationNode an : m.visibleAnnotations) {
-                    // We can't really validate the method at this
-                    // stage. We would need to check that the parameter
-                    // is an instance of SettingControl.
-                    if (settingDescriptor.equals(an.desc)) {
-                        String name = m.name;
-                        for (AnnotationNode nameCandidate : m.visibleAnnotations) {
-                            if (nameDescriptor.equals(nameCandidate.desc)) {
-                                List<Object> values = nameCandidate.values;
-                                if (values.size() == 1 && values.get(0) instanceof String s) {
-                                    name = Utils.validJavaIdentifier(s, name);
-                                }
-                            }
-                        }
-                        Type returnType = Type.getReturnType(m.desc);
-                        if (returnType.equals(Type.getType(Boolean.TYPE))) {
-                            Type[] args = Type.getArgumentTypes(m.desc);
-                            if (args.length == 1) {
-                                Type paramType = args[0];
-                                String fieldName = EventControl.FIELD_SETTING_PREFIX + settingInfos.size();
-                                int index = settingInfos.size();
-                                SettingInfo si = new SettingInfo(fieldName, index);
-                                si.methodName = m.name;
-                                si.settingDescriptor = paramType.getDescriptor();
-                                si.internalSettingName = paramType.getInternalName();
-                                methodSet.add(m.name);
-                                settingInfos.add(si);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        for (Class<?> c = superClass; c != jdk.internal.event.Event.class; c = c.getSuperclass()) {
-            for (java.lang.reflect.Method method : c.getDeclaredMethods()) {
-                if (!methodSet.contains(method.getName())) {
-                    // skip private method in base classes
-                    if (!Modifier.isPrivate(method.getModifiers())) {
-                        if (method.getReturnType().equals(Boolean.TYPE)) {
-                            if (method.getParameterCount() == 1) {
-                                Parameter param = method.getParameters()[0];
-                                Type paramType = Type.getType(param.getType());
-                                String fieldName = EventControl.FIELD_SETTING_PREFIX + settingInfos.size();
-                                int index = settingInfos.size();
-                                SettingInfo si = new SettingInfo(fieldName, index);
-                                si.methodName = method.getName();
-                                si.settingDescriptor = paramType.getDescriptor();
-                                si.internalSettingName = paramType.getInternalName();
-                                methodSet.add(method.getName());
-                                settingInfos.add(si);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return settingInfos;
-    }
-
-    private static List<FieldInfo> buildFieldInfos(Class<?> superClass, ClassNode classNode) {
-        Set<String> fieldSet = new HashSet<>();
-        List<FieldInfo> fieldInfos = new ArrayList<>(classNode.fields.size());
-        // These two field are added by native as transient so they will be
-        // ignored by the loop below.
-        // The benefit of adding them manually is that we can
-        // control in which order they occur and we can add @Name, @Description
-        // in Java, instead of in native. It also means code for adding implicit
-        // fields for native can be reused by Java.
-        fieldInfos.add(new FieldInfo("startTime", Type.LONG_TYPE.getDescriptor(), classNode.name));
-        fieldInfos.add(new FieldInfo("duration", Type.LONG_TYPE.getDescriptor(), classNode.name));
-        for (FieldNode field : classNode.fields) {
-            if (!fieldSet.contains(field.name) && isValidField(field.access, Type.getType(field.desc).getClassName())) {
-                FieldInfo fi = new FieldInfo(field.name, field.desc, classNode.name);
-                fieldInfos.add(fi);
-                fieldSet.add(field.name);
-            }
-        }
-        for (Class<?> c = superClass; c != jdk.internal.event.Event.class; c = c.getSuperclass()) {
-            for (Field field : c.getDeclaredFields()) {
-                // skip private field in base classes
-                if (!Modifier.isPrivate(field.getModifiers())) {
-                    if (isValidField(field.getModifiers(), field.getType().getName())) {
-                        String fieldName = field.getName();
-                        if (!fieldSet.contains(fieldName)) {
-                            Type fieldType = Type.getType(field.getType());
-                            String internalClassName = ASMToolkit.getInternalName(c.getName());
-                            fieldInfos.add(new FieldInfo(fieldName, fieldType.getDescriptor(), internalClassName));
-                            fieldSet.add(fieldName);
-                        }
-                    }
-                }
-            }
-        }
-        return fieldInfos;
-    }
-
-    public static boolean isValidField(int access, String className) {
-        if (Modifier.isTransient(access) || Modifier.isStatic(access)) {
-            return false;
-        }
-        return jdk.jfr.internal.Type.isValidJavaFieldType(className);
-    }
-
-    public byte[] buildInstrumented() {
-        makeInstrumented();
-        return toByteArray();
-    }
-
-    private byte[] toByteArray() {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-        classNode.accept(cw);
-        cw.visitEnd();
-        byte[] result = cw.toByteArray();
-        Utils.writeGeneratedASM(classNode.name, result);
-        return result;
-    }
-
-    public byte[] buildUninstrumented() {
-        makeUninstrumented();
-        return toByteArray();
-    }
-
-    private void makeInstrumented() {
-        // MyEvent#isEnabled()
-        updateMethod(METHOD_IS_ENABLED, methodVisitor -> {
-            Label nullLabel = new Label();
-            if (guardHandlerReference) {
-                getEventHandler(methodVisitor);
-                methodVisitor.visitJumpInsn(Opcodes.IFNULL, nullLabel);
-            }
-            getEventHandler(methodVisitor);
-            ASMToolkit.invokeVirtual(methodVisitor, TYPE_EVENT_HANDLER.getInternalName(), METHOD_IS_ENABLED);
-            methodVisitor.visitInsn(Opcodes.IRETURN);
-            if (guardHandlerReference) {
-                methodVisitor.visitLabel(nullLabel);
-                methodVisitor.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-                methodVisitor.visitInsn(Opcodes.ICONST_0);
-                methodVisitor.visitInsn(Opcodes.IRETURN);
-            }
-        });
-
-        // MyEvent#begin()
-        updateMethod(METHOD_BEGIN, methodVisitor -> {
-            methodVisitor.visitIntInsn(Opcodes.ALOAD, 0);
-            ASMToolkit.invokeStatic(methodVisitor, TYPE_EVENT_HANDLER.getInternalName(), METHOD_TIME_STAMP);
-            methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, getInternalClassName(), FIELD_START_TIME, "J");
-            methodVisitor.visitInsn(Opcodes.RETURN);
-        });
-
-        // MyEvent#end()
-        updateMethod(METHOD_END, methodVisitor -> {
-            methodVisitor.visitIntInsn(Opcodes.ALOAD, 0);
-            methodVisitor.visitIntInsn(Opcodes.ALOAD, 0);
-            methodVisitor.visitFieldInsn(Opcodes.GETFIELD, getInternalClassName(), FIELD_START_TIME, "J");
-            ASMToolkit.invokeStatic(methodVisitor, TYPE_EVENT_HANDLER.getInternalName(), METHOD_DURATION);
-            methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, getInternalClassName(), FIELD_DURATION, "J");
-            methodVisitor.visitInsn(Opcodes.RETURN);
-            methodVisitor.visitMaxs(0, 0);
-        });
-
-        updateMethod(METHOD_COMMIT, methodVisitor -> {
-            // if (!isEnable()) {
-            // return;
-            // }
-            methodVisitor.visitCode();
-            methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
-            methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, getInternalClassName(), METHOD_IS_ENABLED.getName(), METHOD_IS_ENABLED.getDescriptor(), false);
-            Label l0 = new Label();
-            methodVisitor.visitJumpInsn(Opcodes.IFNE, l0);
-            methodVisitor.visitInsn(Opcodes.RETURN);
-            methodVisitor.visitLabel(l0);
-            methodVisitor.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-            // if (startTime == 0) {
-            // startTime = EventWriter.timestamp();
-            // } else {
-            methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
-            methodVisitor.visitFieldInsn(Opcodes.GETFIELD, getInternalClassName(), FIELD_START_TIME, "J");
-            methodVisitor.visitInsn(Opcodes.LCONST_0);
-            methodVisitor.visitInsn(Opcodes.LCMP);
-            Label durationalEvent = new Label();
-            methodVisitor.visitJumpInsn(Opcodes.IFNE, durationalEvent);
-            methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
-            methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, TYPE_EVENT_HANDLER.getInternalName(), METHOD_TIME_STAMP.getName(), METHOD_TIME_STAMP.getDescriptor(), false);
-            methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, getInternalClassName(), FIELD_START_TIME, "J");
-            Label commit = new Label();
-            methodVisitor.visitJumpInsn(Opcodes.GOTO, commit);
-            // if (duration == 0) {
-            // duration = EventWriter.timestamp() - startTime;
-            // }
-            // }
-            methodVisitor.visitLabel(durationalEvent);
-            methodVisitor.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-            methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
-            methodVisitor.visitFieldInsn(Opcodes.GETFIELD, getInternalClassName(), FIELD_DURATION, "J");
-            methodVisitor.visitInsn(Opcodes.LCONST_0);
-            methodVisitor.visitInsn(Opcodes.LCMP);
-            methodVisitor.visitJumpInsn(Opcodes.IFNE, commit);
-            methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
-            methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, TYPE_EVENT_HANDLER.getInternalName(), METHOD_TIME_STAMP.getName(), METHOD_TIME_STAMP.getDescriptor(), false);
-            methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
-            methodVisitor.visitFieldInsn(Opcodes.GETFIELD, getInternalClassName(), FIELD_START_TIME, "J");
-            methodVisitor.visitInsn(Opcodes.LSUB);
-            methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, getInternalClassName(), FIELD_DURATION, "J");
-            methodVisitor.visitLabel(commit);
-            // if (shouldCommit()) {
-            methodVisitor.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-            methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
-            methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, getInternalClassName(), METHOD_EVENT_SHOULD_COMMIT.getName(), METHOD_EVENT_SHOULD_COMMIT.getDescriptor(), false);
-            Label end = new Label();
-            // eventHandler.write(...);
-            // }
-            methodVisitor.visitJumpInsn(Opcodes.IFEQ, end);
-            getEventHandler(methodVisitor);
-
-            methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, eventHandlerXInternalName);
-            for (FieldInfo fi : fieldInfos) {
-                methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
-                methodVisitor.visitFieldInsn(Opcodes.GETFIELD, fi.internalClassName, fi.fieldName, fi.fieldDescriptor);
-            }
-
-            methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, eventHandlerXInternalName, writeMethod.getName(), writeMethod.getDescriptor(), false);
-            methodVisitor.visitLabel(end);
-            methodVisitor.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-            methodVisitor.visitInsn(Opcodes.RETURN);
-            methodVisitor.visitEnd();
-        });
-
-        // MyEvent#shouldCommit()
-        updateMethod(METHOD_EVENT_SHOULD_COMMIT, methodVisitor -> {
-            Label fail = new Label();
-            if (guardHandlerReference) {
-                getEventHandler(methodVisitor);
-                methodVisitor.visitJumpInsn(Opcodes.IFNULL, fail);
-            }
-            // if (!eventHandler.shouldCommit(duration) goto fail;
-            getEventHandler(methodVisitor);
-            methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
-            methodVisitor.visitFieldInsn(Opcodes.GETFIELD, getInternalClassName(), FIELD_DURATION, "J");
-            ASMToolkit.invokeVirtual(methodVisitor, TYPE_EVENT_HANDLER.getInternalName(), METHOD_EVENT_HANDLER_SHOULD_COMMIT);
-            methodVisitor.visitJumpInsn(Opcodes.IFEQ, fail);
-            for (SettingInfo si : settingInfos) {
-                // if (!settingsMethod(eventHandler.settingX)) goto fail;
-                methodVisitor.visitIntInsn(Opcodes.ALOAD, 0);
-                if (untypedEventHandler) {
-                    methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, getInternalClassName(), FIELD_EVENT_HANDLER, TYPE_OBJECT.getDescriptor());
-                } else {
-                    methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, getInternalClassName(), FIELD_EVENT_HANDLER, Type.getDescriptor(EventHandler.class));
-                }
-                methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, eventHandlerXInternalName);
-                methodVisitor.visitFieldInsn(Opcodes.GETFIELD, eventHandlerXInternalName, si.fieldName, TYPE_SETTING_CONTROL.getDescriptor());
-                methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, si.internalSettingName);
-                methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, getInternalClassName(), si.methodName, "(" + si.settingDescriptor + ")Z", false);
-                methodVisitor.visitJumpInsn(Opcodes.IFEQ, fail);
-            }
-            // return true
-            methodVisitor.visitInsn(Opcodes.ICONST_1);
-            methodVisitor.visitInsn(Opcodes.IRETURN);
-            // return false
-            methodVisitor.visitLabel(fail);
-            methodVisitor.visitInsn(Opcodes.ICONST_0);
-            methodVisitor.visitInsn(Opcodes.IRETURN);
-        });
-    }
-
-
-    private void getEventHandler(MethodVisitor methodVisitor) {
-        if (untypedEventHandler) {
-            methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, getInternalClassName(), FIELD_EVENT_HANDLER, TYPE_OBJECT.getDescriptor());
-            methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, TYPE_EVENT_HANDLER.getInternalName());
+    private void transform(ClassBuilder clb, ClassElement cle) {
+        if (cle instanceof MethodModel method && instrumentable(method) instanceof Consumer<CodeBuilder> modification) {
+            clb.transformMethod(method, MethodTransform.transformingCode((codeBuilder, _) -> modification.accept(codeBuilder)));
         } else {
-            methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, getInternalClassName(), FIELD_EVENT_HANDLER, Type.getDescriptor(EventHandler.class));
+            clb.with(cle);
         }
     }
 
-    private void makeUninstrumented() {
-        updateExistingWithReturnFalse(METHOD_EVENT_SHOULD_COMMIT);
-        updateExistingWithReturnFalse(METHOD_IS_ENABLED);
-        updateExistingWithEmptyVoidMethod(METHOD_COMMIT);
-        updateExistingWithEmptyVoidMethod(METHOD_BEGIN);
-        updateExistingWithEmptyVoidMethod(METHOD_END);
-    }
-
-    private final void updateExistingWithEmptyVoidMethod(Method voidMethod) {
-        updateMethod(voidMethod, methodVisitor -> {
-            methodVisitor.visitInsn(Opcodes.RETURN);
-        });
-    }
-
-    private final void updateExistingWithReturnFalse(Method voidMethod) {
-        updateMethod(voidMethod, methodVisitor -> {
-            methodVisitor.visitInsn(Opcodes.ICONST_0);
-            methodVisitor.visitInsn(Opcodes.IRETURN);
-        });
-    }
-
-    private MethodNode getMethodNode(Method method) {
-        for (MethodNode m : classNode.methods) {
-            if (m.name.equals(method.getName()) && m.desc.equals(method.getDescriptor())) {
-                return m;
+    private Consumer<CodeBuilder> instrumentable(MethodModel method) {
+        if (isMethod(method, METHOD_IS_ENABLED)) {
+            return this::methodIsEnabled;
+        }
+        if (isMethod(method, METHOD_BEGIN)) {
+            return this::methodBegin;
+        }
+        if (isMethod(method, METHOD_END)) {
+            return this::methodEnd;
+        }
+        if (isMethod(method, METHOD_EVENT_SHOULD_COMMIT)) {
+            return this::methodShouldCommit;
+        }
+        if (staticCommitMethod == null && isMethod(method, METHOD_COMMIT)) {
+            return this::methodCommit;
+        }
+        if (inspector.isJDK() && isStatic(method)) {
+            if (isMethod(method, METHOD_ENABLED)) {
+                return this::methodEnabledStatic;
+            }
+            if (isMethod(method, METHOD_SHOULD_COMMIT_LONG)) {
+                return this::methodShouldCommitStatic;
+            }
+            if (isMethod(method, METHOD_TIME_STAMP)) {
+                return this::methodTimestamp;
+            }
+            if (staticCommitMethod != null && isMethod(method, staticCommitMethod)) {
+                return this::methodCommit;
             }
         }
         return null;
     }
 
-    private final void updateMethod(Method method, Consumer<MethodVisitor> code) {
-        MethodNode old = getMethodNode(method);
-        int index = classNode.methods.indexOf(old);
-        classNode.methods.remove(old);
-        MethodVisitor mv = classNode.visitMethod(old.access, old.name, old.desc, null, null);
-        mv.visitCode();
-        code.accept(mv);
-        mv.visitMaxs(0, 0);
-        MethodNode newMethod = getMethodNode(method);
-        classNode.methods.remove(newMethod);
-        classNode.methods.add(index, newMethod);
-    }
-
-    public static Method makeWriteMethod(List<FieldInfo> fields) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("(");
-        for (FieldInfo v : fields) {
-            sb.append(v.fieldDescriptor);
+    private void methodIsEnabled(CodeBuilder codeBuilder) {
+        Label nullLabel = codeBuilder.newLabel();
+        if (guardEventConfiguration) {
+            getEventConfiguration(codeBuilder);
+            codeBuilder.ifnull(nullLabel);
         }
-        sb.append(")V");
-        return new Method("write", sb.toString());
+        getEventConfiguration(codeBuilder);
+        invokevirtual(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_IS_ENABLED);
+        codeBuilder.ireturn();
+        if (guardEventConfiguration) {
+            codeBuilder.labelBinding(nullLabel);
+            codeBuilder.iconst_0();
+            codeBuilder.ireturn();
+        }
     }
 
-    private String getInternalClassName() {
-        return classNode.name;
+    private void methodBegin(CodeBuilder codeBuilder) {
+        if (!inspector.hasDuration()) {
+            throwMissingDuration(codeBuilder, "begin");
+        } else {
+            codeBuilder.aload(0);
+            invokestatic(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_TIME_STAMP);
+            putfield(codeBuilder, eventClassDesc, ImplicitFields.FIELD_START_TIME);
+            codeBuilder.return_();
+        }
     }
 
-    public List<SettingInfo> getSettingInfos() {
-        return settingInfos;
+    private void methodEnd(CodeBuilder codeBuilder) {
+        if (!inspector.hasDuration()) {
+            throwMissingDuration(codeBuilder, "end");
+        } else {
+            codeBuilder.aload(0);
+            codeBuilder.aload(0);
+            getfield(codeBuilder, eventClassDesc, ImplicitFields.FIELD_START_TIME);
+            invokestatic(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_DURATION);
+            putfield(codeBuilder, eventClassDesc, ImplicitFields.FIELD_DURATION);
+            codeBuilder.return_();
+        }
     }
 
-    public List<FieldInfo> getFieldInfos() {
-        return fieldInfos;
+    private void methodShouldCommit(CodeBuilder codeBuilder) {
+        Label fail = codeBuilder.newLabel();
+        if (guardEventConfiguration) {
+            getEventConfiguration(codeBuilder);
+            codeBuilder.ifnull(fail);
+        }
+        // if (!eventConfiguration.shouldCommit(duration) goto fail;
+        getEventConfiguration(codeBuilder);
+        codeBuilder.aload(0);
+        getfield(codeBuilder, eventClassDesc, ImplicitFields.FIELD_DURATION);
+        invokevirtual(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_EVENT_CONFIGURATION_SHOULD_COMMIT);
+        codeBuilder.ifeq(fail);
+        List<SettingDesc> settingDescs = inspector.getSettings();
+        for (int index = 0; index < settingDescs.size(); index++) {
+            SettingDesc sd = settingDescs.get(index);
+            // if (!settingsMethod(eventConfiguration.settingX)) goto fail;
+            codeBuilder.aload(0);
+            getEventConfiguration(codeBuilder);
+            codeBuilder.loadConstant(index);
+            invokevirtual(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_EVENT_CONFIGURATION_GET_SETTING);
+            MethodTypeDesc mdesc = MethodTypeDesc.ofDescriptor("(" + sd.paramType().descriptorString() + ")Z");
+            codeBuilder.checkcast(sd.paramType());
+            codeBuilder.invokevirtual(eventClassDesc, sd.methodName(), mdesc);
+            codeBuilder.ifeq(fail);
+        }
+        // return true
+        codeBuilder.iconst_1();
+        codeBuilder.ireturn();
+        // return false
+        codeBuilder.labelBinding(fail);
+        codeBuilder.iconst_0();
+        codeBuilder.ireturn();
     }
 
-    public String getEventName() {
-        return eventName;
+    private void methodCommit(CodeBuilder codeBuilder) {
+        Label excluded = codeBuilder.newLabel();
+        Label end = codeBuilder.newLabel();
+        codeBuilder.trying(blockCodeBuilder -> {
+            if (staticCommitMethod != null) {
+                updateStaticCommit(blockCodeBuilder, excluded);
+            } else {
+                updateInstanceCommit(blockCodeBuilder, end, excluded);
+            }
+            // stack: [integer]
+            // notified -> restart event write attempt
+            blockCodeBuilder.ifeq(blockCodeBuilder.startLabel());
+            // stack: []
+            blockCodeBuilder.goto_(end);
+        }, catchBuilder -> {
+            catchBuilder.catchingAll(catchAllHandler -> {
+                getEventWriter(catchAllHandler);
+                // stack: [ex] [EW]
+                catchAllHandler.dup();
+                // stack: [ex] [EW] [EW]
+                Label rethrow = catchAllHandler.newLabel();
+                catchAllHandler.ifnull(rethrow);
+                // stack: [ex] [EW]
+                catchAllHandler.dup();
+                // stack: [ex] [EW] [EW]
+                invokevirtual(catchAllHandler, TYPE_EVENT_WRITER, METHOD_RESET);
+                catchAllHandler.labelBinding(rethrow);
+                // stack:[ex] [EW]
+                catchAllHandler.pop();
+                // stack:[ex]
+                catchAllHandler.athrow();
+            });
+        });
+        codeBuilder.labelBinding(excluded);
+        // stack: [EW]
+        codeBuilder.pop();
+        codeBuilder.labelBinding(end);
+        // stack: []
+        codeBuilder.return_();
     }
 
-    public void setGuardHandler(boolean guardHandlerReference) {
-        this.guardHandlerReference = guardHandlerReference;
+    private void methodEnabledStatic(CodeBuilder codeBuilder) {
+        Label nullLabel = codeBuilder.newLabel();
+        if (guardEventConfiguration) {
+            getEventConfiguration(codeBuilder);
+            codeBuilder.ifnull(nullLabel);
+        }
+        getEventConfiguration(codeBuilder);
+        invokevirtual(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_IS_ENABLED);
+        codeBuilder.ireturn();
+        if (guardEventConfiguration) {
+            codeBuilder.labelBinding(nullLabel);
+            codeBuilder.iconst_0();
+            codeBuilder.ireturn();
+        }
+    }
+
+    private void methodTimestamp(CodeBuilder codeBuilder) {
+        invokestatic(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_TIME_STAMP);
+        codeBuilder.lreturn();
+    }
+
+    private void methodShouldCommitStatic(CodeBuilder codeBuilder) {
+        Label fail = codeBuilder.newLabel();
+        if (guardEventConfiguration) {
+            // if (eventConfiguration == null) goto fail;
+            getEventConfiguration(codeBuilder);
+            codeBuilder.ifnull(fail);
+        }
+        // return eventConfiguration.shouldCommit(duration);
+        getEventConfiguration(codeBuilder);
+        codeBuilder.lload(0);
+        codeBuilder.invokevirtual(TYPE_EVENT_CONFIGURATION, METHOD_EVENT_CONFIGURATION_SHOULD_COMMIT.name(), METHOD_EVENT_CONFIGURATION_SHOULD_COMMIT.descriptor());
+        codeBuilder.ireturn();
+        // fail:
+        codeBuilder.labelBinding(fail);
+        // return false
+        codeBuilder.iconst_0();
+        codeBuilder.ireturn();
+    }
+
+    private void throwMissingDuration(CodeBuilder codeBuilder, String method) {
+        String message = "Cannot use method " + method + " when event lacks duration field";
+        Bytecode.throwException(codeBuilder, TYPE_ISE, message);
+    }
+
+    private void updateStaticCommit(BlockCodeBuilder blockCodeBuilder, Label excluded) {
+        // indexes the argument type array, the argument type array does not include
+        // 'this'
+        int argIndex = 0;
+        // indexes the proper slot in the local variable table, takes type size into
+        // account, therefore sometimes argIndex != slotIndex
+        int slotIndex = 0;
+        int fieldIndex = 0;
+        ClassDesc[] argumentTypes = staticCommitMethod.descriptor().parameterArray();
+        TypeKind tk = null;
+        getEventWriter(blockCodeBuilder);
+        // stack: [EW],
+        blockCodeBuilder.dup();
+        // stack: [EW], [EW]
+        // write begin event
+        getEventConfiguration(blockCodeBuilder);
+        // stack: [EW], [EW], [EventConfiguration]
+        blockCodeBuilder.loadConstant(eventTypeId);
+        // stack: [EW], [EW], [EventConfiguration] [long]
+        invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.BEGIN_EVENT.method());
+        // stack: [EW], [integer]
+        blockCodeBuilder.ifeq(excluded);
+        // stack: [EW]
+        // write startTime
+        blockCodeBuilder.dup();
+        // stack: [EW], [EW]
+        tk = TypeKind.from(argumentTypes[argIndex++]);
+        blockCodeBuilder.loadLocal(tk, slotIndex);
+        // stack: [EW], [EW], [long]
+        slotIndex += tk.slotSize();
+        invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_LONG.method());
+        fieldIndex++;
+        // stack: [EW]
+        if (inspector.hasDuration()) {
+            // write duration
+            blockCodeBuilder.dup();
+            // stack: [EW], [EW]
+            tk = TypeKind.from(argumentTypes[argIndex++]);
+            blockCodeBuilder.loadLocal(tk, slotIndex);
+            // stack: [EW], [EW], [long]
+            slotIndex += tk.slotSize();
+            invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_LONG.method());
+            fieldIndex++;
+        }
+        // stack: [EW]
+        if (inspector.hasEventThread()) {
+            // write eventThread
+            blockCodeBuilder.dup();
+            // stack: [EW], [EW]
+            invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_EVENT_THREAD.method());
+        }
+        // stack: [EW]
+        if (inspector.hasStackTrace()) {
+            // write stackTrace
+            blockCodeBuilder.dup();
+            // stack: [EW], [EW]
+            invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_STACK_TRACE.method());
+        }
+        // stack: [EW]
+        // write custom fields
+        List<FieldDesc> fieldDescs = inspector.getFields();
+        while (fieldIndex < fieldDescs.size()) {
+            blockCodeBuilder.dup();
+            // stack: [EW], [EW]
+            tk = TypeKind.from(argumentTypes[argIndex++]);
+            blockCodeBuilder.loadLocal(tk, slotIndex);
+            // stack:[EW], [EW], [field]
+            slotIndex += tk.slotSize();
+            FieldDesc field = fieldDescs.get(fieldIndex);
+            EventWriterMethod eventMethod = EventWriterMethod.lookupMethod(field);
+            invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, eventMethod.method());
+            // stack: [EW]
+            fieldIndex++;
+        }
+        // stack: [EW]
+        // write end event (writer already on stack)
+        invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.END_EVENT.method());
+        // stack: [int]
+    }
+
+    private void updateInstanceCommit(BlockCodeBuilder blockCodeBuilder, Label end, Label excluded) {
+        // if (!isEnable()) {
+        // return;
+        // }
+        blockCodeBuilder.aload(0);
+        invokevirtual(blockCodeBuilder, eventClassDesc, METHOD_IS_ENABLED);
+        Label l0 = blockCodeBuilder.newLabel();
+        blockCodeBuilder.ifne(l0);
+        blockCodeBuilder.return_();
+        blockCodeBuilder.labelBinding(l0);
+        // long startTime = this.startTime
+        blockCodeBuilder.aload(0);
+        getfield(blockCodeBuilder, eventClassDesc, ImplicitFields.FIELD_START_TIME);
+        blockCodeBuilder.lstore(1);
+        // if (startTime == 0) {
+        //   startTime = EventWriter.timestamp();
+        // } else {
+        blockCodeBuilder.lload(1);
+        blockCodeBuilder.lconst_0();
+        blockCodeBuilder.lcmp();
+        Label durationEvent = blockCodeBuilder.newLabel();
+        blockCodeBuilder.ifne(durationEvent);
+        invokestatic(blockCodeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_TIME_STAMP);
+        blockCodeBuilder.lstore(1);
+        Label commit = blockCodeBuilder.newLabel();
+        blockCodeBuilder.goto_(commit);
+        //   if (duration == 0) {
+        //     duration = EventWriter.timestamp() - startTime;
+        //   }
+        // }
+        blockCodeBuilder.labelBinding(durationEvent);
+        blockCodeBuilder.aload(0);
+        getfield(blockCodeBuilder, eventClassDesc, ImplicitFields.FIELD_DURATION);
+        blockCodeBuilder.lconst_0();
+        blockCodeBuilder.lcmp();
+        blockCodeBuilder.ifne(commit);
+        blockCodeBuilder.aload(0);
+        invokestatic(blockCodeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_TIME_STAMP);
+        blockCodeBuilder.lload(1);
+        blockCodeBuilder.lsub();
+        putfield(blockCodeBuilder, eventClassDesc, ImplicitFields.FIELD_DURATION);
+        blockCodeBuilder.labelBinding(commit);
+        // if (shouldCommit()) {
+        blockCodeBuilder.aload(0);
+        invokevirtual(blockCodeBuilder, eventClassDesc, METHOD_EVENT_SHOULD_COMMIT);
+        blockCodeBuilder.ifeq(end);
+        getEventWriter(blockCodeBuilder);
+        // stack: [EW]
+        blockCodeBuilder.dup();
+        // stack: [EW] [EW]
+        getEventConfiguration(blockCodeBuilder);
+        // stack: [EW] [EW] [EC]
+        blockCodeBuilder.loadConstant(eventTypeId);
+        invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.BEGIN_EVENT.method());
+        // stack: [EW] [int]
+        blockCodeBuilder.ifeq(excluded);
+        // stack: [EW]
+        int fieldIndex = 0;
+        blockCodeBuilder.dup();
+        // stack: [EW] [EW]
+        blockCodeBuilder.lload(1);
+        // stack: [EW] [EW] [long]
+        invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_LONG.method());
+        fieldIndex++;
+        // stack: [EW]
+        if (inspector.hasDuration()) {
+            // write duration
+            blockCodeBuilder.dup();
+            // stack: [EW] [EW]
+            blockCodeBuilder.aload(0);
+            // stack: [EW] [EW] [this]
+            getfield(blockCodeBuilder, eventClassDesc, ImplicitFields.FIELD_DURATION);
+            // stack: [EW] [EW] [long]
+            invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_LONG.method());
+            fieldIndex++;
+        }
+        // stack: [EW]
+        if (inspector.hasEventThread()) {
+            // write eventThread
+            blockCodeBuilder.dup();
+            // stack: [EW] [EW]
+            invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_EVENT_THREAD.method());
+        }
+        // stack: [EW]
+        if (inspector.hasStackTrace()) {
+            // write stack trace
+            blockCodeBuilder.dup();
+            // stack: [EW] [EW]
+            invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_STACK_TRACE.method());
+        }
+        // stack: [EW]
+        List<FieldDesc> fieldDescs = inspector.getFields();
+        while (fieldIndex < fieldDescs.size()) {
+            FieldDesc field = fieldDescs.get(fieldIndex);
+            blockCodeBuilder.dup();
+            // stack: [EW] [EW]
+            blockCodeBuilder.aload(0);
+            // stack: [EW] [EW] [this]
+            getfield(blockCodeBuilder, eventClassDesc, field);
+            // stack: [EW] [EW] <T>
+            EventWriterMethod eventMethod = EventWriterMethod.lookupMethod(field);
+            invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, eventMethod.method());
+            // stack: [EW]
+            fieldIndex++;
+        }
+        // stack:[EW]
+        invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.END_EVENT.method());
+        // stack:[int]
+    }
+
+    private static boolean isStatic(MethodModel method) {
+        return (method.flags().flagsMask() & ClassFile.ACC_STATIC) != 0;
+    }
+
+    private static boolean isMethod(MethodModel m, MethodDesc desc) {
+        return desc.matches(m);
+    }
+
+    private static void getEventWriter(CodeBuilder codeBuilder) {
+        invokestatic(codeBuilder, TYPE_EVENT_WRITER, METHOD_GET_EVENT_WRITER);
+    }
+
+    private void getEventConfiguration(CodeBuilder codeBuilder) {
+        if (untypedEventConfiguration) {
+            codeBuilder.getstatic(eventClassDesc, FIELD_EVENT_CONFIGURATION.name(), TYPE_OBJECT);
+            codeBuilder.checkcast(TYPE_EVENT_CONFIGURATION);
+        } else {
+            codeBuilder.getstatic(eventClassDesc, FIELD_EVENT_CONFIGURATION.name(), TYPE_EVENT_CONFIGURATION);
+        }
+    }
+
+    private boolean hasUntypedConfiguration() {
+        for (FieldModel f : inspector.getClassModel().fields()) {
+            if (f.fieldName().equalsString(FIELD_EVENT_CONFIGURATION.name())) {
+                return f.fieldType().equalsString(TYPE_OBJECT.descriptorString());
+            }
+        }
+        throw new InternalError("Class missing configuration field");
     }
 }

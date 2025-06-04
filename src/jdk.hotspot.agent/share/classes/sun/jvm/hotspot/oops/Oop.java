@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 package sun.jvm.hotspot.oops;
 
 import java.io.*;
-import java.util.*;
-import sun.jvm.hotspot.utilities.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
@@ -48,9 +46,14 @@ public class Oop {
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type  = db.lookupType("oopDesc");
     mark       = new CIntField(type.getCIntegerField("_mark"), 0);
-    klass      = new MetadataField(type.getAddressField("_metadata._klass"), 0);
-    compressedKlass  = new NarrowKlassField(type.getAddressField("_metadata._compressed_klass"), 0);
-    headerSize = type.getSize();
+    if (VM.getVM().isCompactObjectHeadersEnabled()) {
+      Type markType = db.lookupType("markWord");
+      headerSize = markType.getSize();
+    } else {
+      headerSize = type.getSize();
+      klass      = new MetadataField(type.getAddressField("_metadata._klass"), 0);
+      compressedKlass  = new NarrowKlassField(type.getAddressField("_metadata._compressed_klass"), 0);
+    }
   }
 
   private OopHandle  handle;
@@ -77,8 +80,12 @@ public class Oop {
 
   // Accessors for declared fields
   public Mark  getMark()   { return new Mark(getHandle()); }
+
   public Klass getKlass() {
-    if (VM.getVM().isCompressedKlassPointersEnabled()) {
+    if (VM.getVM().isCompactObjectHeadersEnabled()) {
+      assert(VM.getVM().isCompressedKlassPointersEnabled());
+      return getMark().getKlass();
+    } else if (VM.getVM().isCompressedKlassPointersEnabled()) {
       return (Klass)compressedKlass.getValue(getHandle());
     } else {
       return (Klass)klass.getValue(getHandle());
@@ -115,8 +122,8 @@ public class Oop {
   }
 
   public boolean equals(Object obj) {
-    if (obj != null && (obj instanceof Oop)) {
-      return getHandle().equals(((Oop) obj).getHandle());
+    if (obj instanceof Oop other) {
+      return getHandle().equals(other.getHandle());
     }
     return false;
  }
@@ -149,10 +156,12 @@ public class Oop {
   void iterateFields(OopVisitor visitor, boolean doVMFields) {
     if (doVMFields) {
       visitor.doCInt(mark, true);
-      if (VM.getVM().isCompressedKlassPointersEnabled()) {
-        visitor.doMetadata(compressedKlass, true);
-      } else {
-        visitor.doMetadata(klass, true);
+      if (!VM.getVM().isCompactObjectHeadersEnabled()) {
+        if (VM.getVM().isCompressedKlassPointersEnabled()) {
+          visitor.doMetadata(compressedKlass, true);
+        } else {
+          visitor.doMetadata(klass, true);
+        }
       }
     }
   }
@@ -208,7 +217,10 @@ public class Oop {
     if (handle == null) {
       return null;
     }
-    if (VM.getVM().isCompressedKlassPointersEnabled()) {
+    if (VM.getVM().isCompactObjectHeadersEnabled()) {
+      Mark mark = new Mark(handle);
+      return mark.getKlass();
+    } else if (VM.getVM().isCompressedKlassPointersEnabled()) {
       return (Klass)Metadata.instantiateWrapperFor(handle.getCompKlassAddressAt(compressedKlass.getOffset()));
     } else {
       return (Klass)Metadata.instantiateWrapperFor(handle.getAddressAt(klass.getOffset()));

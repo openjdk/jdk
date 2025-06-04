@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ public interface DocletElement extends Element {
     Kind getSubKind();
 
     /**
-     * Sub kind enums that this element supports.
+     * Subkind enums that this element supports.
      */
     enum Kind {
         OVERVIEW, DOCFILE;

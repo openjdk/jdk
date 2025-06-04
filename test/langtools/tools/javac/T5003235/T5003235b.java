@@ -2,7 +2,7 @@
  * @test  /nodynamiccopyright/
  * @bug     5003235
  * @summary Accessibility of private inner class
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile/fail/ref=T5003235b.out -XDrawDiagnostics T5003235b.java
  */
 
@@ -22,7 +22,7 @@ class Outer {
 }
 
 class Access {
-    public static void main(String[] args) {
+    public static void meth() {
         Outer outer = new Outer();
         outer.create();
         System.out.println("Value of k: " + outer.inner.k);

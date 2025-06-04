@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestPackageDeprecation extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestPackageDeprecation tester = new TestPackageDeprecation();
+        var tester = new TestPackageDeprecation();
         tester.runTests();
     }
 
@@ -56,7 +56,7 @@ public class TestPackageDeprecation extends JavadocTester {
 
         checkOutput("deprecated-list.html", true,
             """
-                <li><a href="#package">Packages</a></li>"""
+                <li id="contents-package"><a href="#package">Packages</a></li>"""
         );
     }
 

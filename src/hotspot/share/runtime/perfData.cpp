@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,25 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfData.inline.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/globalCounter.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-PerfDataList*   PerfDataManager::_all = NULL;
-PerfDataList*   PerfDataManager::_sampled = NULL;
-PerfDataList*   PerfDataManager::_constants = NULL;
+PerfDataList*   PerfDataManager::_all = nullptr;
+PerfDataList*   PerfDataManager::_constants = nullptr;
 volatile bool   PerfDataManager::_has_PerfData = 0;
 
 /*
@@ -73,6 +74,9 @@ const char* PerfDataManager::_name_spaces[] = {
   "java.threads",           // Threads System name spaces
   "com.sun.threads",
   "sun.threads",
+  "java.threads.cpu_time", //Thread CPU time name spaces
+  "com.sun.threads.cpu_time",
+  "sun.threads.cpu_time",
   "java.property",          // Java Property name spaces
   "com.sun.property",
   "sun.property",
@@ -80,11 +84,12 @@ const char* PerfDataManager::_name_spaces[] = {
 };
 
 PerfData::PerfData(CounterNS ns, const char* name, Units u, Variability v)
-                  : _name(NULL), _v(v), _u(u), _on_c_heap(false), _valuep(NULL) {
+                  : _name(nullptr), _v(v), _u(u), _on_c_heap(false), _valuep(nullptr) {
 
   const char* prefix = PerfDataManager::ns_to_string(ns);
 
-  _name = NEW_C_HEAP_ARRAY(char, strlen(name) + strlen(prefix) + 2, mtInternal);
+  const size_t _name_size = strlen(name) + strlen(prefix) + 2;
+  _name = NEW_C_HEAP_ARRAY(char, _name_size, mtInternal);
   assert(strlen(name) != 0, "invalid name");
 
   if (ns == NULL_NS) {
@@ -100,7 +105,7 @@ PerfData::PerfData(CounterNS ns, const char* name, Units u, Variability v)
      }
   }
   else {
-    sprintf(_name, "%s.%s", prefix, name);
+    os::snprintf_checked(_name, _name_size, "%s.%s", prefix, name);
     // set the F_Supported flag based on the given namespace.
     if (PerfDataManager::is_stable_supported(ns) ||
         PerfDataManager::is_unstable_supported(ns)) {
@@ -135,7 +140,7 @@ void PerfData::create_entry(BasicType dtype, size_t dsize, size_t vlen) {
   size = ((size + align) & ~align);
   char* psmp = PerfMemory::alloc(size);
 
-  if (psmp == NULL) {
+  if (psmp == nullptr) {
     // out of PerfMemory memory resources. allocate on the C heap
     // to avoid vm termination.
     psmp = NEW_C_HEAP_ARRAY(char, size, mtInternal);
@@ -167,8 +172,8 @@ void PerfData::create_entry(BasicType dtype, size_t dsize, size_t vlen) {
   pdep->data_offset = (jint) data_start;
 
   log_debug(perf, datacreation)("name = %s, dtype = %d, variability = %d,"
-                                " units = %d, dsize = " SIZE_FORMAT ", vlen = " SIZE_FORMAT ","
-                                " pad_length = " SIZE_FORMAT ", size = " SIZE_FORMAT ", on_c_heap = %s,"
+                                " units = %d, dsize = %zu, vlen = %zu,"
+                                " pad_length = %zu, size = %zu, on_c_heap = %s,"
                                 " address = " INTPTR_FORMAT ","
                                 " data address = " INTPTR_FORMAT,
                                 cname, dtype, variability(),
@@ -184,36 +189,14 @@ void PerfData::create_entry(BasicType dtype, size_t dsize, size_t vlen) {
   PerfMemory::mark_updated();
 }
 
+bool PerfData::name_equals(const char* name) const {
+  return strcmp(name, this->name()) == 0;
+}
+
 PerfLong::PerfLong(CounterNS ns, const char* namep, Units u, Variability v)
                  : PerfData(ns, namep, u, v) {
 
   create_entry(T_LONG, sizeof(jlong));
-}
-
-int PerfLong::format(char* buffer, int length) {
-  return jio_snprintf(buffer, length, JLONG_FORMAT, *(jlong*)_valuep);
-}
-
-PerfLongVariant::PerfLongVariant(CounterNS ns, const char* namep, Units u,
-                                 Variability v, jlong* sampled)
-                                : PerfLong(ns, namep, u, v),
-                                  _sampled(sampled), _sample_helper(NULL) {
-
-  sample();
-}
-
-PerfLongVariant::PerfLongVariant(CounterNS ns, const char* namep, Units u,
-                                 Variability v, PerfLongSampleHelper* helper)
-                                : PerfLong(ns, namep, u, v),
-                                  _sampled(NULL), _sample_helper(helper) {
-
-  sample();
-}
-
-void PerfLongVariant::sample() {
-  if (_sample_helper != NULL) {
-    *(jlong*)_valuep = _sample_helper->take_sample();
-  }
 }
 
 PerfByteArray::PerfByteArray(CounterNS ns, const char* namep, Units u,
@@ -226,27 +209,23 @@ PerfByteArray::PerfByteArray(CounterNS ns, const char* namep, Units u,
 void PerfString::set_string(const char* s2) {
 
   // copy n bytes of the string, assuring the null string is
-  // copied if s2 == NULL.
-  strncpy((char *)_valuep, s2 == NULL ? "" : s2, _length);
+  // copied if s2 == nullptr.
+  strncpy((char *)_valuep, s2 == nullptr ? "" : s2, _length);
 
   // assure the string is null terminated when strlen(s2) >= _length
   ((char*)_valuep)[_length-1] = '\0';
 }
 
-int PerfString::format(char* buffer, int length) {
-  return jio_snprintf(buffer, length, "%s", (char*)_valuep);
-}
-
 PerfStringConstant::PerfStringConstant(CounterNS ns, const char* namep,
                                        const char* initial_value)
                      : PerfString(ns, namep, V_Constant,
-                                  initial_value == NULL ? 1 :
+                                  initial_value == nullptr ? 1 :
                                   MIN2((jint)(strlen((char*)initial_value)+1),
                                        (jint)(PerfMaxStringConstLength+1)),
                                   initial_value) {
 
   if (PrintMiscellaneous && Verbose) {
-    if (is_valid() && initial_value != NULL &&
+    if (is_valid() && initial_value != nullptr &&
         ((jint)strlen(initial_value) > (jint)PerfMaxStringConstLength)) {
 
       warning("Truncating PerfStringConstant: name = %s,"
@@ -262,23 +241,21 @@ PerfStringConstant::PerfStringConstant(CounterNS ns, const char* namep,
 
 void PerfDataManager::destroy() {
 
-  if (_all == NULL)
+  if (_all == nullptr)
     // destroy already called, or initialization never happened
     return;
 
-  // Clear the flag before we free the PerfData counters. Thus begins
-  // the race between this thread and another thread that has just
-  // queried PerfDataManager::has_PerfData() and gotten back 'true'.
-  // The hope is that the other thread will finish its PerfData
-  // manipulation before we free the memory. The two alternatives are
-  // 1) leak the PerfData memory or 2) do some form of synchronized
-  // access or check before every PerfData operation.
-  _has_PerfData = false;
-  os::naked_short_sleep(1);  // 1ms sleep to let other thread(s) run
+  // About to delete the counters than might still be accessed by other threads.
+  // The shutdown is performed in two stages: a) clear the flag to notify future
+  // counter users that we are at shutdown; b) sync up with current users, waiting
+  // for them to finish with counters.
+  //
+  Atomic::store(&_has_PerfData, false);
+  GlobalCounter::write_synchronize();
 
-  log_debug(perf, datacreation)("Total = %d, Sampled = %d, Constants = %d",
-                                _all->length(), _sampled == NULL ? 0 : _sampled->length(),
-                                _constants == NULL ? 0 : _constants->length());
+  log_debug(perf, datacreation)("Total = %d, Constants = %d",
+                                _all->length(),
+                                _constants == nullptr ? 0 : _constants->length());
 
   for (int index = 0; index < _all->length(); index++) {
     PerfData* p = _all->at(index);
@@ -286,85 +263,43 @@ void PerfDataManager::destroy() {
   }
 
   delete(_all);
-  delete(_sampled);
   delete(_constants);
 
-  _all = NULL;
-  _sampled = NULL;
-  _constants = NULL;
+  _all = nullptr;
+  _constants = nullptr;
 }
 
-void PerfDataManager::add_item(PerfData* p, bool sampled) {
+void PerfDataManager::add_item(PerfData* p) {
 
   MutexLocker ml(PerfDataManager_lock);
 
   // Default sizes determined using -Xlog:perf+datacreation=debug
-  if (_all == NULL) {
+  if (_all == nullptr) {
     _all = new PerfDataList(191);
-    _has_PerfData = true;
+    Atomic::release_store(&_has_PerfData, true);
   }
 
-  assert(!_all->contains(p->name()), "duplicate name added");
+  assert(!_all->contains(p->name()), "duplicate name added: %s", p->name());
 
   // add to the list of all perf data items
   _all->append(p);
 
   if (p->variability() == PerfData::V_Constant) {
-    if (_constants == NULL) {
+    if (_constants == nullptr) {
       _constants = new PerfDataList(51);
     }
     _constants->append(p);
     return;
   }
-
-  if (sampled) {
-    if (_sampled == NULL) {
-      _sampled = new PerfDataList(1);
-    }
-    _sampled->append(p);
-  }
-}
-
-PerfDataList* PerfDataManager::all() {
-
-  MutexLocker ml(PerfDataManager_lock);
-
-  if (_all == NULL)
-    return NULL;
-
-  PerfDataList* clone = _all->clone();
-  return clone;
-}
-
-PerfDataList* PerfDataManager::sampled() {
-
-  MutexLocker ml(PerfDataManager_lock);
-
-  if (_sampled == NULL)
-    return NULL;
-
-  PerfDataList* clone = _sampled->clone();
-  return clone;
-}
-
-PerfDataList* PerfDataManager::constants() {
-
-  MutexLocker ml(PerfDataManager_lock);
-
-  if (_constants == NULL)
-    return NULL;
-
-  PerfDataList* clone = _constants->clone();
-  return clone;
 }
 
 char* PerfDataManager::counter_name(const char* ns, const char* name) {
-   assert(ns != NULL, "ns string required");
-   assert(name != NULL, "name string required");
+   assert(ns != nullptr, "ns string required");
+   assert(name != nullptr, "name string required");
 
    size_t len = strlen(ns) + strlen(name) + 2;
    char* result = NEW_RESOURCE_ARRAY(char, len);
-   sprintf(result, "%s.%s", ns, name);
+   os::snprintf_checked(result, len, "%s.%s", ns, name);
    return result;
 }
 
@@ -391,10 +326,10 @@ PerfStringConstant* PerfDataManager::create_string_constant(CounterNS ns,
   if (!p->is_valid()) {
     // allocation of native resources failed.
     delete p;
-    THROW_0(vmSymbols::java_lang_OutOfMemoryError());
+    THROW_NULL(vmSymbols::java_lang_OutOfMemoryError());
   }
 
-  add_item(p, false);
+  add_item(p);
 
   return p;
 }
@@ -409,10 +344,10 @@ PerfLongConstant* PerfDataManager::create_long_constant(CounterNS ns,
   if (!p->is_valid()) {
     // allocation of native resources failed.
     delete p;
-    THROW_0(vmSymbols::java_lang_OutOfMemoryError());
+    THROW_NULL(vmSymbols::java_lang_OutOfMemoryError());
   }
 
-  add_item(p, false);
+  add_item(p);
 
   return p;
 }
@@ -423,7 +358,7 @@ PerfStringVariable* PerfDataManager::create_string_variable(CounterNS ns,
                                                             const char* s,
                                                             TRAPS) {
 
-  if (max_length == 0 && s != NULL) max_length = (int)strlen(s);
+  if (max_length == 0 && s != nullptr) max_length = (int)strlen(s);
 
   assert(max_length != 0, "PerfStringVariable with length 0");
 
@@ -432,10 +367,10 @@ PerfStringVariable* PerfDataManager::create_string_variable(CounterNS ns,
   if (!p->is_valid()) {
     // allocation of native resources failed.
     delete p;
-    THROW_0(vmSymbols::java_lang_OutOfMemoryError());
+    THROW_NULL(vmSymbols::java_lang_OutOfMemoryError());
   }
 
-  add_item(p, false);
+  add_item(p);
 
   return p;
 }
@@ -450,53 +385,10 @@ PerfLongVariable* PerfDataManager::create_long_variable(CounterNS ns,
   if (!p->is_valid()) {
     // allocation of native resources failed.
     delete p;
-    THROW_0(vmSymbols::java_lang_OutOfMemoryError());
+    THROW_NULL(vmSymbols::java_lang_OutOfMemoryError());
   }
 
-  add_item(p, false);
-
-  return p;
-}
-
-PerfLongVariable* PerfDataManager::create_long_variable(CounterNS ns,
-                                                        const char* name,
-                                                        PerfData::Units u,
-                                                        jlong* sp, TRAPS) {
-
-  // Sampled counters not supported if UsePerfData is false
-  if (!UsePerfData) return NULL;
-
-  PerfLongVariable* p = new PerfLongVariable(ns, name, u, sp);
-
-  if (!p->is_valid()) {
-    // allocation of native resources failed.
-    delete p;
-    THROW_0(vmSymbols::java_lang_OutOfMemoryError());
-  }
-
-  add_item(p, true);
-
-  return p;
-}
-
-PerfLongVariable* PerfDataManager::create_long_variable(CounterNS ns,
-                                                        const char* name,
-                                                        PerfData::Units u,
-                                                        PerfSampleHelper* sh,
-                                                        TRAPS) {
-
-  // Sampled counters not supported if UsePerfData is false
-  if (!UsePerfData) return NULL;
-
-  PerfLongVariable* p = new PerfLongVariable(ns, name, u, sh);
-
-  if (!p->is_valid()) {
-    // allocation of native resources failed.
-    delete p;
-    THROW_0(vmSymbols::java_lang_OutOfMemoryError());
-  }
-
-  add_item(p, true);
+  add_item(p);
 
   return p;
 }
@@ -511,65 +403,146 @@ PerfLongCounter* PerfDataManager::create_long_counter(CounterNS ns,
   if (!p->is_valid()) {
     // allocation of native resources failed.
     delete p;
-    THROW_0(vmSymbols::java_lang_OutOfMemoryError());
+    THROW_NULL(vmSymbols::java_lang_OutOfMemoryError());
   }
 
-  add_item(p, false);
+  add_item(p);
 
   return p;
 }
 
-PerfLongCounter* PerfDataManager::create_long_counter(CounterNS ns,
-                                                      const char* name,
-                                                      PerfData::Units u,
-                                                      jlong* sp, TRAPS) {
+/*
+ * Call into java.lang.System.getProperty to check that the value of the
+ * specified property matches
+ */
+void PerfDataManager::assert_system_property(const char* name, const char* value, TRAPS) {
+#ifdef ASSERT
+  ResourceMark rm(THREAD);
 
-  // Sampled counters not supported if UsePerfData is false
-  if (!UsePerfData) return NULL;
+  // setup the arguments to getProperty
+  Handle key_str   = java_lang_String::create_from_str(name, CHECK);
 
-  PerfLongCounter* p = new PerfLongCounter(ns, name, u, sp);
+  // return value
+  JavaValue result(T_OBJECT);
 
-  if (!p->is_valid()) {
-    // allocation of native resources failed.
-    delete p;
-    THROW_0(vmSymbols::java_lang_OutOfMemoryError());
-  }
+  // public static String getProperty(String key, String def);
+  JavaCalls::call_static(&result, vmClasses::System_klass(),
+                         vmSymbols::getProperty_name(),
+                         vmSymbols::string_string_signature(), key_str, CHECK);
 
-  add_item(p, true);
+  oop value_oop = result.get_oop();
+  assert(value_oop != nullptr, "property must have a value");
 
-  return p;
+  // convert Java String to utf8 string
+  char *system_value = java_lang_String::as_utf8_string(value_oop);
+
+  assert(strcmp(value, system_value) == 0, "property value mustn't differ from System.getProperty. Our value is: %s, System.getProperty is: %s",
+         value, system_value);
+#endif // ASSERT
 }
 
-PerfLongCounter* PerfDataManager::create_long_counter(CounterNS ns,
-                                                      const char* name,
-                                                      PerfData::Units u,
-                                                      PerfSampleHelper* sh,
-                                                      TRAPS) {
+/*
+ * Adds a constant counter of the given property. Asserts the value does not
+ * differ from the value retrievable from System.getProperty(name)
+ */
+void PerfDataManager::add_property_constant(CounterNS name_space, const char* name, const char* value, TRAPS) {
+  // the property must exist
+  assert(value != nullptr, "property name should be have a value: %s", name);
+  assert_system_property(name, value, CHECK);
 
-  // Sampled counters not supported if UsePerfData is false
-  if (!UsePerfData) return NULL;
+  // create the property counter
+  PerfDataManager::create_string_constant(name_space, name, value, CHECK);
+}
 
-  PerfLongCounter* p = new PerfLongCounter(ns, name, u, sh);
+/*
+ * Adds a string constant of the given property. Retrieves the value via
+ * Arguments::get_property() and asserts the value for the does not differ from
+ * the value retrievable from System.getProperty()
+ */
+void PerfDataManager::add_property_constant(CounterNS name_space, const char* name, TRAPS) {
+  add_property_constant(name_space, name, Arguments::get_property(name), CHECK);
+}
 
-  if (!p->is_valid()) {
-    // allocation of native resources failed.
-    delete p;
-    THROW_0(vmSymbols::java_lang_OutOfMemoryError());
+/*
+ * Adds a string constant of the given property. Retrieves the value via
+ * Arguments::get_property() and asserts the value for the does not differ from
+ * the value retrievable from System.getProperty()
+ */
+void PerfDataManager::add_optional_property_constant(CounterNS name_space, const char* name, TRAPS) {
+  const char* value = Arguments::get_property(name);
+
+  if (value != nullptr) {
+    add_property_constant(name_space, name, value, CHECK);
   }
+}
 
-  add_item(p, true);
+void PerfDataManager::create_system_property_instrumentation(TRAPS) {
 
-  return p;
+  // Non-writeable, constant properties
+  add_property_constant(JAVA_PROPERTY, "java.vm.specification.name", "Java Virtual Machine Specification", CHECK);
+  add_property_constant(JAVA_PROPERTY, "java.version", JDK_Version::java_version(), CHECK);
+  add_property_constant(JAVA_PROPERTY, "java.vm.version", VM_Version::vm_release(), CHECK);
+  add_property_constant(JAVA_PROPERTY, "java.vm.name", VM_Version::vm_name(), CHECK);
+  add_property_constant(JAVA_PROPERTY, "java.vm.vendor", VM_Version::vm_vendor(), CHECK);
+  add_property_constant(JAVA_PROPERTY, "jdk.debug", VM_Version::jdk_debug_level(), CHECK);
+
+  // Get remaining property constants via Arguments::get_property,
+  // which does a linear search over the internal system properties list.
+
+  // SUN_PROPERTY properties
+  add_property_constant(SUN_PROPERTY, "sun.boot.library.path", CHECK);
+
+  // JAVA_PROPERTY properties
+  add_property_constant(JAVA_PROPERTY, "java.vm.specification.version", CHECK);
+  add_property_constant(JAVA_PROPERTY, "java.vm.specification.vendor", CHECK);
+  add_property_constant(JAVA_PROPERTY, "java.vm.info", CHECK);
+  add_property_constant(JAVA_PROPERTY, "java.library.path", CHECK);
+  add_property_constant(JAVA_PROPERTY, "java.class.path", CHECK);
+  add_property_constant(JAVA_PROPERTY, "java.home", CHECK);
+
+  add_optional_property_constant(JAVA_PROPERTY, "jdk.module.path", CHECK);
+  add_optional_property_constant(JAVA_PROPERTY, "jdk.module.upgrade.path", CHECK);
+  add_optional_property_constant(JAVA_PROPERTY, "jdk.module.main", CHECK);
+}
+
+void PerfDataManager::create_misc_perfdata() {
+
+  ResourceMark rm;
+  EXCEPTION_MARK;
+
+  // numeric constants
+
+  // frequency of the native high resolution timer
+  create_constant(SUN_OS, "hrt.frequency", PerfData::U_Hertz,
+    os::elapsed_frequency(), CHECK);
+
+  // string constants
+
+  // create string instrumentation for various Java properties.
+  create_system_property_instrumentation(CHECK);
+
+  // HotSpot flags (from .hotspotrc) and args (from command line)
+  //
+  create_string_constant(JAVA_RT, "vmFlags", Arguments::jvm_flags(), CHECK);
+  create_string_constant(JAVA_RT, "vmArgs", Arguments::jvm_args(), CHECK);
+
+  // java class name/jar file and arguments to main class
+  // note: name is coordinated with launcher and Arguments.cpp
+  create_string_constant(SUN_RT, "javaCommand", Arguments::java_command(), CHECK);
+
+  // the Java VM Internal version string
+  create_string_constant(SUN_RT, "internalVersion",
+                         VM_Version::internal_vm_info_string(), CHECK);
 }
 
 PerfDataList::PerfDataList(int length) {
 
-  _set = new(ResourceObj::C_HEAP, mtInternal) PerfDataArray(length, mtInternal);
+  _set = new (mtInternal) PerfDataArray(length, mtInternal);
 }
 
 PerfDataList::PerfDataList(PerfDataList* p) {
 
-  _set = new(ResourceObj::C_HEAP, mtInternal) PerfDataArray(p->length(), mtInternal);
+  _set = new (mtInternal) PerfDataArray(p->length(), mtInternal);
 
   _set->appendAll(p->get_impl());
 }
@@ -580,35 +553,22 @@ PerfDataList::~PerfDataList() {
 
 }
 
-bool PerfDataList::by_name(void* name, PerfData* pd) {
-
-  if (pd == NULL)
-    return false;
-
-  return strcmp((const char*)name, pd->name()) == 0;
-}
-
 PerfData* PerfDataList::find_by_name(const char* name) {
 
-  int i = _set->find((void*)name, PerfDataList::by_name);
+  int i = _set->find_if([&](PerfData* pd) { return pd->name_equals(name); });
 
   if (i >= 0 && i <= _set->length())
     return _set->at(i);
   else
-    return NULL;
+    return nullptr;
 }
 
 PerfDataList* PerfDataList::clone() {
 
   PerfDataList* copy = new PerfDataList(this);
 
-  assert(copy != NULL, "just checking");
+  assert(copy != nullptr, "just checking");
 
   return copy;
 }
 
-PerfTraceTime::~PerfTraceTime() {
-  if (!UsePerfData) return;
-  _t.stop();
-  _timerp->inc(_t.ticks());
-}

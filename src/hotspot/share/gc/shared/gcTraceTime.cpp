@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -48,8 +48,6 @@ void GCTraceTimeLoggerImpl::log_start(Ticks start) {
 
 void GCTraceTimeLoggerImpl::log_end(Ticks end) {
   double duration_in_ms = TimeHelper::counter_to_millis(end.value() - _start.value());
-  double start_time_in_secs = TimeHelper::counter_to_seconds(_start.value());
-  double stop_time_in_secs = TimeHelper::counter_to_seconds(end.value());
 
   LogStream out(_out_end);
 
@@ -64,22 +62,24 @@ void GCTraceTimeLoggerImpl::log_end(Ticks end) {
     size_t used_before_m = _heap_usage_before / M;
     size_t used_m = heap->used() / M;
     size_t capacity_m = heap->capacity() / M;
-    out.print(" " SIZE_FORMAT "M->" SIZE_FORMAT "M("  SIZE_FORMAT "M)", used_before_m, used_m, capacity_m);
+    out.print(" %zuM->%zuM(%zuM)", used_before_m, used_m, capacity_m);
   }
 
   out.print_cr(" %.3fms", duration_in_ms);
 }
 
-GCTraceCPUTime::GCTraceCPUTime() :
-  _active(log_is_enabled(Info, gc, cpu)),
+GCTraceCPUTime::GCTraceCPUTime(GCTracer* tracer) :
+  _active(log_is_enabled(Info, gc, cpu) ||
+          (tracer != nullptr && tracer->should_report_cpu_time_event())),
   _starting_user_time(0.0),
   _starting_system_time(0.0),
-  _starting_real_time(0.0)
+  _starting_real_time(0.0),
+  _tracer(tracer)
 {
   if (_active) {
     bool valid = os::getTimesSecs(&_starting_real_time,
-                               &_starting_user_time,
-                               &_starting_system_time);
+                                  &_starting_user_time,
+                                  &_starting_system_time);
     if (!valid) {
       log_warning(gc, cpu)("TraceCPUTime: os::getTimesSecs() returned invalid result");
       _active = false;
@@ -92,10 +92,13 @@ GCTraceCPUTime::~GCTraceCPUTime() {
     double real_time, user_time, system_time;
     bool valid = os::getTimesSecs(&real_time, &user_time, &system_time);
     if (valid) {
-      log_info(gc, cpu)("User=%3.2fs Sys=%3.2fs Real=%3.2fs",
-                        user_time - _starting_user_time,
-                        system_time - _starting_system_time,
-                        real_time - _starting_real_time);
+      user_time -= _starting_user_time;
+      system_time -= _starting_system_time;
+      real_time -= _starting_real_time;
+      log_info(gc, cpu)("User=%3.2fs Sys=%3.2fs Real=%3.2fs", user_time, system_time, real_time);
+      if (_tracer != nullptr) {
+        _tracer->report_cpu_time_event(user_time, system_time, real_time);
+      }
     } else {
       log_warning(gc, cpu)("TraceCPUTime: os::getTimesSecs() returned invalid result");
     }

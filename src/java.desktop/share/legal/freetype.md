@@ -1,4 +1,4 @@
-## The FreeType Project: Freetype v2.10.4
+## The FreeType Project: Freetype v2.13.3
 
 
 ### FreeType Notice
@@ -20,7 +20,27 @@ which fits your needs best.
 
 ### FreeType License
 ```
-                   The FreeType Project LICENSE
+
+Copyright (C) 1996-2024 by David Turner, Robert Wilhelm, and Werner Lemberg.
+Copyright (C) 2007-2024 by Dereg Clegg and Michael Toftdal.
+Copyright (C) 1996-2024 by Just van Rossum, David Turner, Robert Wilhelm, and Werner Lemberg.
+Copyright (C) 2022-2024 by David Turner, Robert Wilhelm, Werner Lemberg, George Williams, and
+Copyright (C) 2004-2024 by Masatake YAMATO and Redhat K.K.
+Copyright (C) 2007-2024 by Derek Clegg and Michael Toftdal.
+Copyright (C) 2003-2024 by Masatake YAMATO, Red Hat K.K.,
+Copyright (C) 1996-2024 by David Turner, Robert Wilhelm, Werner Lemberg, and Dominik Röttsches.
+Copyright (C) 2007-2024 by David Turner.
+Copyright (C) 2022-2024 by David Turner, Robert Wilhelm, Werner Lemberg, and Moazin Khatti.
+Copyright (C) 2007-2024 by Rahul Bhalerao <rahul.bhalerao@redhat.com>, <b.rahul.pm@gmail.com>.
+Copyright (C) 2008-2024 by David Turner, Robert Wilhelm, Werner Lemberg, and suzuki toshiya.
+Copyright (C) 2013-2024 by Google, Inc.
+Copyright (C) 2019-2024 by Nikhil Ramakrishnan, David Turner, Robert Wilhelm, and Werner Lemberg.
+Copyright (C) 2009-2024 by Oran Agra and Mickey Gabel.
+Copyright (C) 2018-2024 by David Turner, Robert Wilhelm, Dominik Röttsches, and Werner Lemberg.
+Copyright (C) 2004-2024 by David Turner, Robert Wilhelm, Werner Lemberg, and George Williams.
+
+
+                    The FreeType Project LICENSE
                     ----------------------------
 
                             2006-Jan-27
@@ -185,22 +205,22 @@ Legal Terms
 
   Our home page can be found at
 
-    http://www.freetype.org
+    https://www.freetype.org
 
 ```
 
 ### GPL v2
 
 ```
-		    GNU GENERAL PUBLIC LICENSE
-		       Version 2, June 1991
+                    GNU GENERAL PUBLIC LICENSE
+                       Version 2, June 1991
 
  Copyright (C) 1989, 1991 Free Software Foundation, Inc.
      51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  Everyone is permitted to copy and distribute verbatim copies
  of this license document, but changing it is not allowed.
 
-			    Preamble
+                            Preamble
 
   The licenses for most software are designed to take away your
 freedom to share and change it.  By contrast, the GNU General Public
@@ -250,7 +270,7 @@ patent must be licensed for everyone's free use or not licensed at all.
   The precise terms and conditions for copying, distribution and
 modification follow.
 
-		    GNU GENERAL PUBLIC LICENSE
+                    GNU GENERAL PUBLIC LICENSE
    TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 
   0. This License applies to any program or other work which contains
@@ -449,7 +469,7 @@ make exceptions for this.  Our decision will be guided by the two goals
 of preserving the free status of all derivatives of our free software and
 of promoting the sharing and reuse of software generally.
 
-			    NO WARRANTY
+                            NO WARRANTY
 
   11. BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
 FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW.  EXCEPT WHEN
@@ -471,9 +491,9 @@ YOU OR THIRD PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER
 PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGES.
 
-		     END OF TERMS AND CONDITIONS
+                     END OF TERMS AND CONDITIONS
 
-	    How to Apply These Terms to Your New Programs
+            How to Apply These Terms to Your New Programs
 
   If you develop a new program, and you want it to be of the greatest
 possible use to the public, the best way to achieve this is to make it
@@ -533,48 +553,36 @@ consider it more useful to permit linking proprietary applications with the
 library.  If this is what you want to do, use the GNU Library General
 Public License instead of this License.
 
-#########################################################################
+```
 
---- fthash.c and fthash.h are covered by the following notices ---
+### Additional Freetype Attributions
+```
 
-/*
- * Copyright 2000 Computing Research Labs, New Mexico State University
- * Copyright 2001-2015
- *   Francesco Zappa Nardelli
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
- * THE COMPUTING RESEARCH LAB OR NEW MEXICO STATE UNIVERSITY BE LIABLE FOR ANY
- * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT
- * OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
- * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+---------------------------------
+The below applies to the following file(s):
+libfreetype/src/psaux/psarrst.c
+libfreetype/src/psaux/psarrst.h
+libfreetype/src/psaux/psblues.c
+libfreetype/src/psaux/psblues.h
+libfreetype/src/psaux/pserror.c
+libfreetype/src/psaux/pserror.h
+libfreetype/src/psaux/psfixed.h
+libfreetype/src/psaux/psfont.c
+libfreetype/src/psaux/psfont.h
+libfreetype/src/psaux/psft.c
+libfreetype/src/psaux/psft.h
+libfreetype/src/psaux/psglue.h
+libfreetype/src/psaux/pshints.c
+libfreetype/src/psaux/pshints.h
+libfreetype/src/psaux/psintrp.c
+libfreetype/src/psaux/psintrp.h
+libfreetype/src/psaux/psread.c
+libfreetype/src/psaux/psread.h
+libfreetype/src/psaux/psstack.c
+libfreetype/src/psaux/psstack.h
+libfreetype/src/psaux/pstypes.h
 
-  /**************************************************************************
-   *
-   * This file is based on code from bdf.c,v 1.22 2000/03/16 20:08:50
-   *
-   * taken from Mark Leisher's xmbdfed package
-   *
-   */
-   
-#########################################################################
-
-
---- FreeType 2 PSaux module is covered by the following notices ---
-
-Copyright 2006-2014 Adobe Systems Incorporated.
+Copyright (C) 2006-2014 Adobe Systems Incorporated.
 
 This software, and all works of authorship, whether in source or
 object code form as indicated by the copyright notice(s) included
@@ -603,7 +611,39 @@ have read and understood the terms and conditions of the
 FreeType Project License as well as those provided in this section,
 and you accept them fully.
 
-#########################################################################
 
 ```
 
+### MIT License
+```
+
+---------------------------------
+The below applies to the following file(s):
+libfreetype/include/freetype/internal/fthash.h
+libfreetype/src/base/fthash.c
+
+Copyright (C) 2000 Computing Research Labs, New Mexico State University
+Copyright (C) 2001-2015
+
+  Francesco Zappa Nardelli
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+THE COMPUTING RESEARCH LAB OR NEW MEXICO STATE UNIVERSITY BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT
+OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+```

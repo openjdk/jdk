@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/metaspace/commitMask.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
@@ -34,7 +33,7 @@
 namespace metaspace {
 
 CommitMask::CommitMask(const MetaWord* start, size_t word_size) :
-  CHeapBitMap(mask_size(word_size, Settings::commit_granule_words())),
+  CHeapBitMap(mask_size(word_size, Settings::commit_granule_words()), mtMetaspace, true),
   _base(start),
   _word_size(word_size),
   _words_per_bit(Settings::commit_granule_words())
@@ -61,7 +60,7 @@ void CommitMask::check_pointer(const MetaWord* p) const {
 void CommitMask::check_pointer_aligned(const MetaWord* p) const {
   check_pointer(p);
   assert(is_aligned(p, _words_per_bit * BytesPerWord),
-         "Pointer " PTR_FORMAT " should be aligned to commit granule size " SIZE_FORMAT ".",
+         "Pointer " PTR_FORMAT " should be aligned to commit granule size %zu.",
          p2i(p), _words_per_bit * BytesPerWord);
 }
 // Given a range, check if it points into the range this bitmap covers,
@@ -69,7 +68,7 @@ void CommitMask::check_pointer_aligned(const MetaWord* p) const {
 void CommitMask::check_range(const MetaWord* start, size_t word_size) const {
   check_pointer_aligned(start);
   assert(is_aligned(word_size, _words_per_bit),
-         "Range " SIZE_FORMAT " should be aligned to commit granule size " SIZE_FORMAT ".",
+         "Range %zu should be aligned to commit granule size %zu.",
          word_size, _words_per_bit);
   check_pointer(start + word_size - 1);
 }
@@ -78,7 +77,7 @@ void CommitMask::verify() const {
   // Walk the whole commit mask.
   // For each 1 bit, check if the associated granule is accessible.
   // For each 0 bit, check if the associated granule is not accessible. Slow mode only.
-  assert(_base != NULL && _word_size > 0 && _words_per_bit > 0, "Sanity");
+  assert(_base != nullptr && _word_size > 0 && _words_per_bit > 0, "Sanity");
   assert_is_aligned(_base, _words_per_bit * BytesPerWord);
   assert_is_aligned(_word_size, _words_per_bit);
 }

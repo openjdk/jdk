@@ -42,7 +42,7 @@ public class MethodNode extends AbstractNode {
 
         private InputMethod method;
         private InputGraph graph;
-        private String bciString;
+        private final String bciString;
 
         public MethodNodeChildren(InputMethod method, InputGraph graph, String bciString) {
             this.method = method;

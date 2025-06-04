@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_OOPS_GENERATEOOPMAP_HPP
 #define SHARE_OOPS_GENERATEOOPMAP_HPP
 
-#include "interpreter/bytecodeStream.hpp"
 #include "memory/allocation.hpp"
 #include "oops/method.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -33,12 +32,13 @@
 #include "utilities/bitMap.hpp"
 
 // Forward definition
+class BytecodeStream;
 class GenerateOopMap;
 class BasicBlock;
 class CellTypeState;
 class StackMap;
 
-// These two should be removed. But requires som code to be cleaned up
+// These two should be removed. But requires some code to be cleaned up
 #define MAXARGSIZE      256      // This should be enough
 #define MAX_LOCAL_VARS  65536    // 16-bit entry
 
@@ -47,13 +47,13 @@ typedef void (*jmpFct_t)(GenerateOopMap *c, int bcpDelta, int* data);
 
 //  RetTable
 //
-// Contains maping between jsr targets and there return addresses. One-to-many mapping
+// Contains mapping between jsr targets and there return addresses. One-to-many mapping
 //
 class RetTableEntry : public ResourceObj {
  private:
   static int _init_nof_jsrs;                      // Default size of jsrs list
   int _target_bci;                                // Target PC address of jump (bytecode index)
-  GrowableArray<intptr_t> * _jsrs;                     // List of return addresses  (bytecode index)
+  GrowableArray<int> * _jsrs;                     // List of return addresses  (bytecode index)
   RetTableEntry *_next;                           // Link to next entry
  public:
    RetTableEntry(int target, RetTableEntry *next);
@@ -77,7 +77,7 @@ class RetTable {
 
   void add_jsr(int return_bci, int target_bci);   // Adds entry to list
  public:
-  RetTable()                                                  { _first = NULL; }
+  RetTable()                                                  { _first = nullptr; }
   void compute_ret_table(const methodHandle& method);
   void update_ret_table(int bci, int delta);
   RetTableEntry* find_jsrs_for_target(int targBci);
@@ -304,7 +304,7 @@ class GenerateOopMap {
   bool         _got_error;                  // True, if an error occurred during interpretation.
   Handle       _exception;                  // Exception if got_error is true.
   bool         _did_rewriting;              // was bytecodes rewritten
-  bool         _did_relocation;             // was relocation neccessary
+  bool         _did_relocation;             // was relocation necessary
   bool         _monitor_safe;               // The monitors in this method have been determined
                                             // to be safe.
 
@@ -396,8 +396,8 @@ class GenerateOopMap {
   void  do_ldc                              (int bci);
   void  do_astore                           (int idx);
   void  do_jsr                              (int delta);
-  void  do_field                            (int is_get, int is_static, int idx, int bci);
-  void  do_method                           (int is_static, int is_interface, int idx, int bci);
+  void  do_field                            (int is_get, int is_static, int idx, int bci, Bytecodes::Code bc);
+  void  do_method                           (int is_static, int is_interface, int idx, int bci, Bytecodes::Code bc);
   void  do_multianewarray                   (int dims, int bci);
   void  do_monitorenter                     (int bci);
   void  do_monitorexit                      (int bci);
@@ -414,7 +414,7 @@ class GenerateOopMap {
 
   // Create result set
   bool  _report_result;
-  bool  _report_result_for_send;            // Unfortunatly, stackmaps for sends are special, so we need some extra
+  bool  _report_result_for_send;            // Unfortunately, stackmaps for sends are special, so we need some extra
   BytecodeStream *_itr_send;                // variables to handle them properly.
 
   void  report_result                       ();
@@ -441,7 +441,7 @@ class GenerateOopMap {
   bool is_aload                             (BytecodeStream *itr, int *index);
 
   // List of bci's where a return address is on top of the stack
-  GrowableArray<intptr_t> *_ret_adr_tos;
+  GrowableArray<int>* _ret_adr_tos;
 
   bool stack_top_holds_ret_addr             (int bci);
   void compute_ret_adr_at_TOS               ();
@@ -450,7 +450,7 @@ class GenerateOopMap {
   int  binsToHold                           (int no)                      { return  ((no+(BitsPerWord-1))/BitsPerWord); }
   char *state_vec_to_string                 (CellTypeState* vec, int len);
 
-  // Helper method. Can be used in subclasses to fx. calculate gc_points. If the current instuction
+  // Helper method. Can be used in subclasses to fx. calculate gc_points. If the current instruction
   // is a control transfer, then calls the jmpFct all possible destinations.
   void  ret_jump_targets_do                 (BytecodeStream *bcs, jmpFct_t jmpFct, int varNo,int *data);
   bool  jump_targets_do                     (BytecodeStream *bcs, jmpFct_t jmpFct, int *data);
@@ -485,7 +485,7 @@ class GenerateOopMap {
   //   number of gc points
   // - fill_stackmap_for_opcodes is called once for each bytecode index in order (0...code_length-1)
   // - fill_stackmap_epilog is called after all results has been reported. Note: Since the algorithm does not report
-  //   stackmaps for deadcode, fewer gc_points might have been encounted than assumed during the epilog. It is the
+  //   stackmaps for deadcode, fewer gc_points might have been encountered than assumed during the epilog. It is the
   //   responsibility of the subclass to count the correct number.
   // - fill_init_vars are called once with the result of the init_vars computation
   //
@@ -543,7 +543,7 @@ class ResolveOopMapConflicts: public GenerateOopMap {
 
 
 //
-// Subclass used by the compiler to generate pairing infomation
+// Subclass used by the compiler to generate pairing information
 //
 class GeneratePairingInfo: public GenerateOopMap {
  private:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,13 +50,13 @@ public class ChunkedInputStream extends InputStream implements Hurryable {
      * The <code>HttpClient</code> that should be notified when the chunked stream has
      * completed.
      */
-    private HttpClient hc;
+    private final HttpClient hc;
 
     /**
      * The <code>MessageHeader</code> that is populated with any optional trailer
      * that appear after the last chunk.
      */
-    private MessageHeader responses;
+    private final MessageHeader responses;
 
     /**
      * The size, in bytes, of the chunk that is currently being read.
@@ -179,7 +179,7 @@ public class ChunkedInputStream extends InputStream implements Hurryable {
     /**
      * Ensures there is <code>size</code> bytes available in
      * <code>rawData</code>. This requires that we either
-     * shift the bytes in use to the begining of the buffer
+     * shift the bytes in use to the beginning of the buffer
      * or allocate a large buffer with sufficient space available.
      */
     private void ensureRawAvailable(int size) {

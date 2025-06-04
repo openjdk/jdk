@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,16 @@ import java.security.spec.AlgorithmParameterSpec;
  * <a href="http://www.ietf.org/rfc/rfc2898.txt">PKCS #5</a>
  * standard.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2898
+ *      RFC 2898: PKCS #5: Password-Based Cryptography Specification Version 2.0
  * @author Jan Luehe
  *
  * @since 1.4
  */
 public class PBEParameterSpec implements AlgorithmParameterSpec {
 
-    private byte[] salt;
-    private int iterationCount;
+    private final byte[] salt;
+    private final int iterationCount;
     private AlgorithmParameterSpec paramSpec = null;
 
     /**

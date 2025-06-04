@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
      * @param where the starting position &gt;= 0, &lt; length()
      * @param str the non-null string to insert
      * @return an UndoableEdit object for undoing
-     * @exception BadLocationException if the specified position is invalid
+     * @throws BadLocationException if the specified position is invalid
      * @see AbstractDocument.Content#insertString
      */
     public UndoableEdit insertString(int where, String str) throws BadLocationException {
@@ -148,7 +148,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
      * @param where the starting position &gt;= 0, where + nitems &lt; length()
      * @param nitems the number of characters to remove &gt;= 0
      * @return an UndoableEdit object for undoing
-     * @exception BadLocationException if the specified position is invalid
+     * @throws BadLocationException if the specified position is invalid
      * @see AbstractDocument.Content#remove
      */
     public UndoableEdit remove(int where, int nitems) throws BadLocationException {
@@ -168,7 +168,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
      * @param where the starting position &gt;= 0
      * @param len the length to retrieve &gt;= 0
      * @return a string representing the content
-     * @exception BadLocationException if the specified position is invalid
+     * @throws BadLocationException if the specified position is invalid
      * @see AbstractDocument.Content#getString
      */
     public String getString(int where, int len) throws BadLocationException {
@@ -186,7 +186,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
      * @param where the starting position &gt;= 0, where + len &lt;= length()
      * @param len the number of characters to retrieve &gt;= 0
      * @param chars the Segment object to return the characters in
-     * @exception BadLocationException if the specified position is invalid
+     * @throws BadLocationException if the specified position is invalid
      * @see AbstractDocument.Content#getChars
      */
     public void getChars(int where, int len, Segment chars) throws BadLocationException {
@@ -237,7 +237,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
      *
      * @param offset the offset to track &gt;= 0
      * @return the position
-     * @exception BadLocationException if the specified position is invalid
+     * @throws BadLocationException if the specified position is invalid
      */
     public Position createPosition(int offset) throws BadLocationException {
         while ( queue.poll() != null ) {
@@ -256,7 +256,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
         if (sortIndex < marks.size()
             && (m = marks.elementAt(sortIndex)).index == index
             && (position = m.getPosition()) != null) {
-            //position references the correct StickyPostition
+            //position references the correct StickyPosition
         } else {
             position = new StickyPosition();
             m = new MarkData(index,position,queue);
@@ -368,7 +368,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
     }
 
     /**
-     * Overridden to make growth policy less agressive for large
+     * Overridden to make growth policy less aggressive for large
      * text amount.
      */
     int getNewArraySize(int reqSize) {
@@ -771,7 +771,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
     @SuppressWarnings("rawtypes") // UndoPosRef type cannot be exposed
     protected void updateUndoPositions(Vector positions, int offset,
                                        int length) {
-        // Find the indexs of the end points.
+        // Find the indices of the end points.
         int endOffset = offset + length;
         int g1 = getGapEnd();
         int startIndex;
@@ -784,7 +784,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
             startIndex = 0;
         }
 
-        // Reset the location of the refenences.
+        // Reset the location of the references.
         for(int counter = positions.size() - 1; counter >= 0; counter--) {
             UndoPosRef ref = (UndoPosRef) positions.elementAt(counter);
             ref.resetLocation(endOffset, g1);

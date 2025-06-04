@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkObjArrayProcessor.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "memory/memRegion.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 void G1CMObjArrayProcessor::push_array_slice(HeapWord* what) {
   _task->push(G1TaskQueueEntry::from_slice(what));
@@ -43,7 +47,7 @@ size_t G1CMObjArrayProcessor::process_array_slice(objArrayOop obj, HeapWord* sta
 }
 
 size_t G1CMObjArrayProcessor::process_obj(oop obj) {
-  assert(should_be_sliced(obj), "Must be an array object %d and large " SIZE_FORMAT, obj->is_objArray(), obj->size());
+  assert(should_be_sliced(obj), "Must be an array object %d and large %zu", obj->is_objArray(), obj->size());
 
   return process_array_slice(objArrayOop(obj), cast_from_oop<HeapWord*>(obj), objArrayOop(obj)->size());
 }
@@ -55,11 +59,11 @@ size_t G1CMObjArrayProcessor::process_slice(HeapWord* slice) {
   // slide is fast enough for "smaller" objects in non-humongous regions, but is slower
   // than directly using heap region table.
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  HeapRegion* r = g1h->heap_region_containing(slice);
+  G1HeapRegion* r = g1h->heap_region_containing(slice);
 
   HeapWord* const start_address = r->is_humongous() ?
                                   r->humongous_start_region()->bottom() :
-                                  g1h->block_start(slice);
+                                  r->block_start(slice);
 
   assert(cast_to_oop(start_address)->is_objArray(), "Address " PTR_FORMAT " does not refer to an object array ", p2i(start_address));
   assert(start_address < slice,
@@ -69,7 +73,7 @@ size_t G1CMObjArrayProcessor::process_slice(HeapWord* slice) {
 
   objArrayOop objArray = objArrayOop(cast_to_oop(start_address));
 
-  size_t already_scanned = slice - start_address;
+  size_t already_scanned = pointer_delta(slice, start_address);
   size_t remaining = objArray->size() - already_scanned;
 
   return process_array_slice(objArray, slice, remaining);

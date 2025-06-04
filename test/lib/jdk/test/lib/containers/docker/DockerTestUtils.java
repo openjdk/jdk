@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package jdk.test.lib.containers.docker;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -35,6 +36,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import jdk.test.lib.Container;
 import jdk.test.lib.Utils;
@@ -163,7 +165,7 @@ public class DockerTestUtils {
         Path jdkSrcDir = Paths.get(JDK_UNDER_TEST);
         Path jdkDstDir = buildDir.resolve("jdk");
         Files.createDirectories(jdkDstDir);
-        Files.walkFileTree(jdkSrcDir, new CopyFileVisitor(jdkSrcDir, jdkDstDir));
+        Files.walkFileTree(jdkSrcDir, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE, new CopyFileVisitor(jdkSrcDir, jdkDstDir));
 
         buildImage(imageName, buildDir);
     }
@@ -199,9 +201,7 @@ public class DockerTestUtils {
      * @throws Exception
      */
     public static List<String> buildJavaCommand(DockerRunOptions opts) throws Exception {
-        List<String> cmd = new ArrayList<>();
-
-        cmd.add(Container.ENGINE_COMMAND);
+        List<String> cmd = buildContainerCommand();
         cmd.add("run");
         if (opts.tty)
             cmd.add("--tty=true");
@@ -221,6 +221,12 @@ public class DockerTestUtils {
         cmd.add(opts.classToRun);
         cmd.addAll(opts.classParams);
 
+        return cmd;
+    }
+
+    public static List<String> buildContainerCommand() {
+        List<String> cmd = new ArrayList<>();
+        cmd.add(Container.ENGINE_COMMAND);
         return cmd;
     }
 
@@ -269,7 +275,6 @@ public class DockerTestUtils {
      * @throws Exception
      */
     public static OutputAnalyzer execute(String... command) throws Exception {
-
         ProcessBuilder pb = new ProcessBuilder(command);
         System.out.println("[COMMAND]\n" + Utils.getCommandLine(pb));
 
@@ -278,14 +283,19 @@ public class DockerTestUtils {
         long pid = p.pid();
         OutputAnalyzer output = new OutputAnalyzer(p);
 
-        String stdoutLogFile = String.format("docker-stdout-%d.log", pid);
+        int max = MAX_LINES_TO_COPY_FOR_CHILD_STDOUT;
+        String stdout = output.getStdout();
+        String stdoutLimited = limitLines(stdout, max);
         System.out.println("[ELAPSED: " + (System.currentTimeMillis() - started) + " ms]");
         System.out.println("[STDERR]\n" + output.getStderr());
-        System.out.println("[STDOUT]\n" +
-                           trimLines(output.getStdout(),MAX_LINES_TO_COPY_FOR_CHILD_STDOUT));
-        System.out.printf("Child process STDOUT is trimmed to %d lines \n",
-                           MAX_LINES_TO_COPY_FOR_CHILD_STDOUT);
-        writeOutputToFile(output.getStdout(), stdoutLogFile);
+        System.out.println("[STDOUT]\n" + stdoutLimited);
+        if (!stdout.equals(stdoutLimited)) {
+            System.out.printf("Child process STDOUT is limited to %d lines\n",
+                              max);
+        }
+
+        String stdoutLogFile = String.format("docker-stdout-%d.log", pid);
+        writeOutputToFile(stdout, stdoutLogFile);
         System.out.println("Full child process STDOUT was saved to " + stdoutLogFile);
 
         return output;
@@ -299,7 +309,7 @@ public class DockerTestUtils {
     }
 
 
-    private static String trimLines(String buffer, int nrOfLines) {
+    private static String limitLines(String buffer, int nrOfLines) {
         List<String> l = Arrays.asList(buffer.split("\\R"));
         if (l.size() < nrOfLines) {
             return buffer;
@@ -311,9 +321,11 @@ public class DockerTestUtils {
 
     private static void generateDockerFile(Path dockerfile, String baseImage,
                                            String baseImageVersion) throws Exception {
-        String template =
-            "FROM %s:%s\n" +
-            "COPY /jdk /jdk\n" +
+        String template = "FROM %s:%s\n";
+        if (baseImage.contains("ubuntu") && DockerfileConfig.isUbsan()) {
+            template += "RUN apt-get update && apt-get install -y libubsan1\n";
+        }
+        template = template + "COPY /jdk /jdk\n" +
             "ENV JAVA_HOME=/jdk\n" +
             "CMD [\"/bin/bash\"]\n";
         String dockerFileStr = String.format(template, baseImage, baseImageVersion);

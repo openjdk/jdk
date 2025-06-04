@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,7 +230,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     class AquaCustomComboTextField extends JTextField {
-        @SuppressWarnings("serial") // anonymous class
         public AquaCustomComboTextField() {
             final InputMap inputMap = getInputMap();
             inputMap.put(KeyStroke.getKeyStroke("DOWN"), highlightNextAction);
@@ -252,9 +251,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
                         if (editor instanceof AquaCustomComboTextField) {
                             ((AquaCustomComboTextField)editor).selectAll();
                         }
-                    } else {
-                        action.actionPerformed(e);
                     }
+                    action.actionPerformed(e);
                 }
             });
         }
@@ -324,6 +322,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         actionMap.put("aquaSelectPageDown", highlightPageDownAction);
 
         actionMap.put("aquaHidePopup", hideAction);
+        actionMap.put("aquaOpenPopupOrhighlightLast", openPopupOrHighlightLast);
+        actionMap.put("aquaOpenPopupOrhighlightFirst", openPopupOrHighlightFirst);
 
         SwingUtilities.replaceUIActionMap(comboBox, actionMap);
     }
@@ -347,9 +347,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     }
 
     /**
-     * Hilight _but do not select_ the next item in the list.
+     * Highlight _but do not select_ the next item in the list.
      */
-    @SuppressWarnings("serial") // anonymous class
     private Action highlightNextAction = new ComboBoxAction() {
         @Override
         public void performComboBoxAction(AquaComboBoxUI ui) {
@@ -364,9 +363,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     };
 
     /**
-     * Hilight _but do not select_ the previous item in the list.
+     * Highlight _but do not select_ the previous item in the list.
      */
-    @SuppressWarnings("serial") // anonymous class
     private Action highlightPreviousAction = new ComboBoxAction() {
         @Override
         void performComboBoxAction(final AquaComboBoxUI ui) {
@@ -379,7 +377,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
     };
 
-    @SuppressWarnings("serial") // anonymous class
     private Action highlightFirstAction = new ComboBoxAction() {
         @Override
         void performComboBoxAction(final AquaComboBoxUI ui) {
@@ -388,7 +385,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
     };
 
-    @SuppressWarnings("serial") // anonymous class
     private Action highlightLastAction = new ComboBoxAction() {
         @Override
         void performComboBoxAction(final AquaComboBoxUI ui) {
@@ -398,7 +394,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
     };
 
-    @SuppressWarnings("serial") // anonymous class
     private Action highlightPageUpAction = new ComboBoxAction() {
         @Override
         void performComboBoxAction(final AquaComboBoxUI ui) {
@@ -419,7 +414,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
     };
 
-    @SuppressWarnings("serial") // anonymous class
     private Action highlightPageDownAction = new ComboBoxAction() {
         @Override
         void performComboBoxAction(final AquaComboBoxUI ui) {
@@ -454,6 +448,31 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     }
 
     class AquaComboBoxLayoutManager extends BasicComboBoxUI.ComboBoxLayoutManager {
+        protected Rectangle rectangleForCurrentValue() {
+            int width = comboBox.getWidth();
+            int height = comboBox.getBorder() == null ? 22 : comboBox.getHeight();
+            Insets insets = getInsets();
+            int buttonSize = height - (insets.top + insets.bottom);
+            if ( arrowButton != null )  {
+                buttonSize = arrowButton.getWidth();
+            }
+            int midHeight = (comboBox.getHeight() - height - (insets.top + insets.bottom)) / 2 - 1;
+            if (midHeight < 0) {
+                midHeight = 0;
+            }
+
+            if (comboBox.getComponentOrientation().isLeftToRight()) {
+                return new Rectangle(insets.left, insets.top + midHeight,
+                        width - (insets.left + insets.right + buttonSize) + 3,
+                        height - (insets.top + insets.bottom));
+            }
+            else {
+                return new Rectangle(insets.left + buttonSize, insets.top + midHeight,
+                        width - (insets.left + insets.right + buttonSize) + 3,
+                        height - (insets.top + insets.bottom));
+            }
+        }
+
         public void layoutContainer(final Container parent) {
             if (arrowButton != null && !comboBox.isEditable()) {
                 final Insets insets = comboBox.getInsets();
@@ -477,8 +496,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
 
             if (editor != null) {
                 final Rectangle editorRect = rectangleForCurrentValue();
-                editorRect.width += 4;
-                editorRect.height += 1;
                 editor.setBounds(editorRect);
             }
         }
@@ -536,7 +553,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
 
     // This is somewhat messy.  The difference here from BasicComboBoxUI.EnterAction is that
     // arrow up or down does not automatically select the
-    @SuppressWarnings("serial") // anonymous class
     private final Action triggerSelectionAction = new AbstractAction() {
         public void actionPerformed(final ActionEvent e) {
             triggerSelectionEvent((JComboBox)e.getSource(), e);
@@ -548,7 +564,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
     };
 
-    @SuppressWarnings("serial") // anonymous class
     private static final Action toggleSelectionAction = new AbstractAction() {
         public void actionPerformed(final ActionEvent e) {
             final JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
@@ -567,7 +582,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
     };
 
-    @SuppressWarnings("serial") // anonymous class
     private final Action hideAction = new AbstractAction() {
         @Override
         public void actionPerformed(final ActionEvent e) {
@@ -579,6 +593,25 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         @Override
         public boolean isEnabled() {
             return comboBox.isPopupVisible() && super.isEnabled();
+        }
+    };
+
+    private final Action openPopupOrHighlightLast = new ComboBoxAction() {
+        @Override
+        void performComboBoxAction(final AquaComboBoxUI ui) {
+            final int size = listBox.getModel().getSize();
+            listBox.setSelectedIndex(size - 1);
+            listBox.ensureIndexIsVisible(size - 1);
+            comboBox.setSelectedIndex(ui.getPopup().getList().getSelectedIndex());
+        }
+    };
+
+    private final Action openPopupOrHighlightFirst = new ComboBoxAction() {
+        @Override
+        void performComboBoxAction(final AquaComboBoxUI ui) {
+           listBox.setSelectedIndex(0);
+           listBox.ensureIndexIsVisible(0);
+           comboBox.setSelectedIndex(ui.getPopup().getList().getSelectedIndex());
         }
     };
 
@@ -617,13 +650,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
             size.height += margin.top + margin.bottom;
         } else {
             size = super.getMinimumSize(c);
-        }
-
-        final Border border = c.getBorder();
-        if (border != null) {
-            final Insets insets = border.getBorderInsets(c);
-            size.height += insets.top + insets.bottom;
-            size.width += insets.left + insets.right;
         }
 
         cachedMinimumSize.setSize(size.width, size.height);
@@ -689,5 +715,36 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     };
     static ClientPropertyApplicator<JComboBox<?>, AquaComboBoxUI> getApplicator() {
         return APPLICATOR.get();
+    }
+
+    @Override
+    public int getAccessibleChildrenCount(JComponent c) {
+        return 2;
+    }
+
+    @Override
+    public Accessible getAccessibleChild(JComponent c, int i) {
+        // 0 = the popup
+        // 1 = the editor for editable combobox and the arrow button for non-editable combobox
+        switch ( i ) {
+            case 0:
+                if (popup instanceof Accessible accessiblePopup) {
+                    AccessibleContext ac = accessiblePopup.getAccessibleContext();
+                    ac.setAccessibleParent(comboBox);
+                    return accessiblePopup;
+                }
+                break;
+            case 1:
+                if (comboBox.isEditable()
+                        && (editor instanceof Accessible accessibleEditor)) {
+                    AccessibleContext ac = accessibleEditor.getAccessibleContext();
+                    ac.setAccessibleParent(comboBox);
+                    return accessibleEditor;
+                } else if (!comboBox.isEditable()) {
+                    return arrowButton;
+                }
+                break;
+        }
+        return null;
     }
 }
