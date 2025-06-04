@@ -721,9 +721,9 @@ final class DigitList implements Cloneable {
             System.arraycopy(digits, 0, newDigits, 0, digits.length);
             other.digits = newDigits;
 
-            // data and tempBuilder do not need to be copied because they do
-            // not carry significant information. They will be recreated on demand.
-            // Setting them to null is needed to avoid sharing across clones.
+            // Data does not need to be copied because it does
+            // not carry significant information. It will be recreated on demand.
+            // Setting it to null is needed to avoid sharing across clones.
             other.data = null;
 
             return other;
