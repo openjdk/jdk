@@ -634,11 +634,10 @@ void JfrCPUSamplerThread::allow_signal_handlers() {
 
 class VM_CPUTimeSamplerThreadInitializer : public VM_Operation {
  private:
-  JfrCPUSamplerThread *_sampler;
+  JfrCPUSamplerThread* const _sampler;
+  
  public:
-
-  VM_CPUTimeSamplerThreadInitializer(JfrCPUSamplerThread* sampler) : _sampler(sampler) {
-  }
+  VM_CPUTimeSamplerThreadInitializer(JfrCPUSamplerThread* sampler) : _sampler(sampler) {}
 
   VMOp_Type type() const { return VMOp_CPUTimeSamplerThreadInitializer; }
   void doit() {
