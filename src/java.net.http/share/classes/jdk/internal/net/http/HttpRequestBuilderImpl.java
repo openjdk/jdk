@@ -45,6 +45,8 @@ import static java.util.Objects.requireNonNull;
 import static jdk.internal.net.http.common.Utils.isValidName;
 import static jdk.internal.net.http.common.Utils.isValidValue;
 import static jdk.internal.net.http.common.Utils.newIAE;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 public class HttpRequestBuilderImpl implements HttpRequest.Builder {
 
@@ -92,7 +94,8 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
             throw newIAE("invalid URI scheme %s", scheme);
         }
         if (uri.getHost() == null) {
-            throw newIAE("unsupported URI %s", uri);
+            throw new IllegalArgumentException(
+                formatMsg("unsupported URI %s", filterNonSocketInfo(uri.toString())));
         }
     }
 

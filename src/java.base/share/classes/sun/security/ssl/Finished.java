@@ -745,6 +745,12 @@ final class Finished {
                         "Failure to derive application secrets", gse);
             }
 
+            // Calculate/save the exporter_master_secret.  It uses
+            // the same handshakeHash as the client/server app traffic.
+            SecretKey exporterSecret = kd.deriveKey(
+                    "TlsExporterMasterSecret");
+            chc.handshakeSession.setExporterMasterSecret(exporterSecret);
+
             // The resumption master secret is stored in the session so
             // it can be used after the handshake is completed.
             SSLSecretDerivation sd = ((SSLSecretDerivation) kd).forContext(chc);
@@ -1108,6 +1114,12 @@ final class Finished {
 
                 shc.baseReadSecret = readSecret;
                 shc.conContext.inputRecord.changeReadCiphers(readCipher);
+
+                // Calculate/save the exporter_master_secret.  It uses
+                // the same handshakeHash as the client/server app traffic.
+                SecretKey exporterSecret = kd.deriveKey(
+                        "TlsExporterMasterSecret");
+                shc.handshakeSession.setExporterMasterSecret(exporterSecret);
 
                 // The resumption master secret is stored in the session so
                 // it can be used after the handshake is completed.

@@ -205,8 +205,11 @@ public final class MetadataRepository {
                     nativeEventTypes.remove(n);
                     nativeControls.remove(n);
                     TypeLibrary.removeType(nativeType.getId());
-                    pEventType.setAnnotations(nativeType.getAnnotationElements());
-                    pEventType.setFields(nativeType.getFields());
+                    PrivateAccess access = PrivateAccess.getInstance();
+                    for (int i = 0; i < nativeFields.size(); i++) {
+                        access.setAnnotations(nativeFields.get(i), eventFields.get(i).getAnnotationElements());
+                    }
+                    pEventType.setFields(nativeFields);
                 }
             }
         }
