@@ -808,19 +808,10 @@ public sealed class ICC_Profile implements Serializable
         }
 
         try {
-            if (getColorSpaceType(data) == ColorSpace.TYPE_GRAY
-                    && getData(p, icSigMediaWhitePointTag) != null
-                    && getData(p, icSigGrayTRCTag) != null) {
+            int type = getColorSpaceType(data);
+            if (type == ColorSpace.TYPE_GRAY) {
                 return new ICC_ProfileGray(p);
-            }
-            if (getColorSpaceType(data) == ColorSpace.TYPE_RGB
-                    && getData(p, icSigMediaWhitePointTag) != null
-                    && getData(p, icSigRedColorantTag) != null
-                    && getData(p, icSigGreenColorantTag) != null
-                    && getData(p, icSigBlueColorantTag) != null
-                    && getData(p, icSigRedTRCTag) != null
-                    && getData(p, icSigGreenTRCTag) != null
-                    && getData(p, icSigBlueTRCTag) != null) {
+            } else if (type == ColorSpace.TYPE_RGB) {
                 return new ICC_ProfileRGB(p);
             }
         } catch (CMMException c) {
@@ -1117,16 +1108,25 @@ public sealed class ICC_Profile implements Serializable
      * @see #setData(int, byte[])
      */
     public byte[] getData(int tagSignature) {
-        byte[] t = getData(cmmProfile(), tagSignature);
-        return t != null ? t.clone() : null;
-    }
-
-    private static byte[] getData(Profile p, int tagSignature) {
         try {
-            return CMSManager.getModule().getTagData(p, tagSignature);
+            return getData(cmmProfile(), tagSignature).clone();
         } catch (CMMException c) {
             return null;
         }
+    }
+
+    /**
+     * Returns a particular tagged data element from the profile as a non-null
+     * byte array. The returned byte array is not cloned. It must not be exposed
+     * to or used by public APIs. It is intended strictly for internal use only.
+     *
+     * @param  p the ICC profile from which to retrieve the tag data
+     * @param  tagSignature the ICC tag signature for the data to retrieve
+     * @return a non-null byte array containing the tag data
+     * @throws CMMException if the specified tag doesn't exist
+     */
+    static byte[] getData(Profile p, int tagSignature) {
+        return CMSManager.getModule().getTagData(p, tagSignature);
     }
 
     /**
