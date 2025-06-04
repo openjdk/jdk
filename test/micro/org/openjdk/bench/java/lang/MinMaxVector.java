@@ -161,11 +161,11 @@ public class MinMaxVector
             }
 
             final IntSummaryStatistics intStats = Arrays.stream(ints).summaryStatistics();
-            highestInt = (intStats.getMax() * range) / 100;
+            highestInt = (int) (intStats.getMax() * (range / 100f));
             lowestInt = intStats.getMin() + (intStats.getMax() - highestInt);
 
             final LongSummaryStatistics longStats = Arrays.stream(longs).summaryStatistics();
-            highestLong = (longStats.getMax() * range) / 100;
+            highestLong = (long) (longStats.getMax() * (range / 100f));
             lowestLong = longStats.getMin() + (longStats.getMax() - highestLong);
         }
     }
