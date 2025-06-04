@@ -1310,7 +1310,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * {@return a {@code Set} of ISO3166 country codes for the specified type}
+     * {@return an unmodifiable {@code Set} of ISO3166 country codes for the specified type}
      *
      * @param type {@link Locale.IsoCountryCode} specified ISO code type.
      * @see java.util.Locale.IsoCountryCode
