@@ -30,16 +30,12 @@
 #include "classfile/compactHashtable.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "compiler/compiler_globals.hpp"
-#include "gc/shared/oopStorage.hpp"
-#include "gc/shared/oopStorageSet.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspaceClosure.hpp"
-#include "oops/access.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/debug.hpp"
 #include "utilities/resizeableResourceHash.hpp"
 
 class ciEnv;
@@ -176,30 +172,16 @@ public:
   // A set of TD objects that we collect during the training run.
   class TrainingDataSet {
     friend TrainingData;
-    friend KlassTrainingData;
     ResizeableResourceHashtable<const Key*, TrainingData*,
                                 AnyObj::C_HEAP, MemTag::mtCompiler,
                                 &TrainingData::Key::hash,
                                 &TrainingData::Key::equals>
       _table;
 
-    OopStorage* _mirror_refs;
-    void keep_alive(InstanceKlass* klass) {
-      assert(_mirror_refs != nullptr, "Did you forget to call initialize()?");
-      oop* handle = _mirror_refs->allocate();
-      if (handle == nullptr) {
-        vm_exit_out_of_memory(sizeof(oop), OOM_MALLOC_ERROR, "Cannot allocate oop storage for mirror");
-      }
-      NativeAccess<>::oop_store(handle, klass->java_mirror());
-    }
   public:
     template<typename... Arg>
     TrainingDataSet(Arg... arg)
-      : _table(arg...), _mirror_refs(nullptr) {
-    }
-    void initialize_oopstorage() {
-      assert(_mirror_refs == nullptr, "Already initialized");
-      _mirror_refs = OopStorageSet::create_strong("Training OopStorage", mtInternal);
+      : _table(arg...) {
     }
     TrainingData* find(const Key* key) const {
       TrainingDataLocker::assert_locked();
@@ -435,6 +417,7 @@ class KlassTrainingData : public TrainingData {
 
   // cross-link to live klass, or null if not loaded or encountered yet
   InstanceKlass* _holder;
+  jobject _holder_mirror;   // extra link to prevent unloading by GC
 
   DepList<CompileTrainingData*> _comp_deps; // compiles that depend on me
 

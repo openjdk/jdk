@@ -96,7 +96,6 @@ public class TestG1ParallelPhases {
             "Thread OopStorage",
             "ThreadService OopStorage",
             "JVMTI OopStorage",
-            "Training OopStorage",
             "CLDGRoots",
             "CMRefRoots",
             "MergeER",

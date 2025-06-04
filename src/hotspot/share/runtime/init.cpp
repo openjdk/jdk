@@ -189,7 +189,10 @@ jint init_globals2() {
   }
 #endif
 
-  TrainingData::initialize();
+  // Initialize TrainingData only we're recording/replaying
+  if (TrainingData::have_data() || TrainingData::need_data()) {
+   TrainingData::initialize();
+  }
 
   if (!universe_post_init()) {
     return JNI_ERR;
