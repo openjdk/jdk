@@ -619,7 +619,7 @@ public final class Generators {
     }
 
     /**
-     * Fill the array with shorts using the distribution of nextDouble.
+     * Fill the array with shorts using the distribution of the generator.
      *
      * @param a Array to be filled with random values.
      */
