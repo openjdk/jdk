@@ -356,6 +356,26 @@ class PEMData {
             -----END X509 CRL-----
             """, X509CRL.class, "SUN");
 
+    // Few random manipulated Base64 characters in PEM content
+    private static final Entry invalidDer = new Entry("invalidDER", """
+        -----BEGIN PRIVATE KEY-----
+        MIICeAIBADANBhkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAOtjMnCzPy4jCeZb
+        OdOvmvU3jl7+cvPFgL5MfqDCM5a8yI0yImg/hzibJJHLk3emUVBSnekgHvCqyGLW
+        3qGR2DuBEaMy0mkg8hfKcSpHLaYjDYaspO27d2qtb6d1qtsPoPjJFjWFYeW6K463
+        OHG654K5/2FcJgQdlLVyp3zCiQU/AgMBAAECgYEAwNkDkTv5rlX8nWLuLJV5kh/T
+        H9a93SRZxw8qy5Bv7bZ7ZNfHP7uUkHbi7iPojKWRhwo43692SdzR0dCSk7LGgN9q
+        CYvndsYR6gifVGBi0WF+St4+NdtcQ3VlNdsojy2BdIx0oC+r7i3bn+zc968O/kI+
+        EgdgrMcjjFqyx6tMHpECQQD8TYPKGHyN7Jdy28llCoUX/sL/yZ2vIi5mnDAFE5ae
+        KZQSkNAXG+8i9Qbs/Wdd5S3oZDqu+6DBn9gib80pYY05AkEA7tY59Oy8ka7nBlGP
+        g6Wo1usF2bKqk8vjko9ioZQay7f86aB10QFcAjCr+cCUm16Lc9DwzWl02nNggRZa
+        Jz8eNwJBAO+1zfLjFOPb14F/JHdlaVKE8EwKCFDuztsapd0M4Vtf8Zk6ERsDpU63
+        Ml9T2zOwnM9g+whpdjDAZ59ATdJ1JrECQQDReJQ2SxeL0lGPCiOLu9RcQp7L81aF
+        79G1bgp8WlAyEjlAkloiqEWRKiz7DDuKFR7Lwhognng9S+n87aS+PS57AkBh75t8
+        6onPAs4hkm+63dfzCojvEkALevO8J3OVX7YS5q9J1r75wDn60Ob0Zh+iiorpx8Ob
+        WqcWcoJqfdLEyBT+
+        -----END PRIVATE KEY-----
+        """, DEREncodable.class, null);
+
     private static final Entry invalidPEM = new Entry("invalidPEM", """
         -----BEGIN INVALID PEM-----
         MIG2AgEAMBAGByqGSM49AgEGBSuBBAAiBIGeMIGbAgEBBDBVS52ZSKZ0oES7twD2
@@ -571,6 +591,7 @@ class PEMData {
         failureEntryList.add(new Entry("nullPEM", null, DEREncodable.class, null));
         failureEntryList.add(incorrectFooter);
         failureEntryList.add(invalidPEM);
+        failureEntryList.add(invalidDer);
         failureEntryList.add(invalidHeader);
         failureEntryList.add(invalidFooter);
     }
