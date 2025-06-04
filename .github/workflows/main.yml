@@ -393,5 +393,5 @@ jobs:
     with:
       platform: windows-x64
       bootjdk-platform: windows-x64
-      runs-on: windows-2019
+      runs-on: windows-2025
       debug-suffix: -debug
