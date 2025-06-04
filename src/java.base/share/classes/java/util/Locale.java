@@ -48,8 +48,8 @@ import java.io.Serializable;
 import java.text.NumberFormat;
 import java.text.MessageFormat;
 import java.text.ParsePosition;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.spi.LocaleNameProvider;
 import java.util.stream.Stream;
 
@@ -733,58 +733,24 @@ public final class Locale implements Cloneable, Serializable {
      * @see #getISOCountries(Locale.IsoCountryCode)
      * @since 9
      */
-    public static enum IsoCountryCode {
+    public enum IsoCountryCode {
         /**
          * PART1_ALPHA2 is used to represent the ISO3166-1 alpha-2 two letter
          * country codes.
          */
-        PART1_ALPHA2 {
-            @Override
-            Set<String> createCountryCodeSet() {
-                return Set.of(Locale.getISOCountries());
-            }
-        },
+        PART1_ALPHA2,
 
         /**
          *
          * PART1_ALPHA3 is used to represent the ISO3166-1 alpha-3 three letter
          * country codes.
          */
-        PART1_ALPHA3 {
-            @Override
-            Set<String> createCountryCodeSet() {
-                return LocaleISOData.computeISO3166_1Alpha3Countries();
-            }
-        },
+        PART1_ALPHA3,
 
         /**
          * PART3 is used to represent the ISO3166-3 four letter country codes.
          */
-        PART3 {
-            @Override
-            Set<String> createCountryCodeSet() {
-                return Set.of(LocaleISOData.ISO3166_3);
-            }
-        };
-
-        /**
-         * Concrete implementation of this method attempts to compute value
-         * for iso3166CodesMap for each IsoCountryCode type key.
-         */
-        abstract Set<String> createCountryCodeSet();
-
-        /**
-         * Map to hold country codes for each ISO3166 part.
-         */
-        private static final Map<IsoCountryCode, Set<String>> iso3166CodesMap = new ConcurrentHashMap<>();
-
-        /**
-         * This method is called from Locale class to retrieve country code set
-         * for getISOCountries(type)
-         */
-        static Set<String> retrieveISOCountryCodes(IsoCountryCode type) {
-            return iso3166CodesMap.computeIfAbsent(type, IsoCountryCode::createCountryCodeSet);
-        }
+        PART3
     }
 
     /**
@@ -1004,30 +970,28 @@ public final class Locale implements Cloneable, Serializable {
         return getInstance(baseloc, extensions);
     }
 
-
     static Locale getInstance(BaseLocale baseloc, LocaleExtensions extensions) {
         if (extensions == null) {
             Locale locale = CONSTANT_LOCALES.get(baseloc);
             if (locale != null) {
                 return locale;
             }
-            return LocaleCache.cache(baseloc);
+            return LOCALE_CACHE.get().computeIfAbsent(baseloc, LOCALE_CREATOR);
         } else {
             LocaleKey key = new LocaleKey(baseloc, extensions);
-            return LocaleCache.cache(key);
+            return LOCALE_CACHE.get().computeIfAbsent(key, LOCALE_CREATOR);
         }
     }
 
-    private static final class LocaleCache implements Function<Object, Locale> {
-        private static final ReferencedKeyMap<Object, Locale> LOCALE_CACHE
-                = ReferencedKeyMap.create(true, ReferencedKeyMap.concurrentHashMapSupplier());
+    private static final Supplier<ReferencedKeyMap<Object, Locale>> LOCALE_CACHE =
+            StableValue.supplier(new Supplier<>() {
+                @Override
+                public ReferencedKeyMap<Object, Locale> get() {
+                    return ReferencedKeyMap.create(true, ReferencedKeyMap.concurrentHashMapSupplier());
+                }
+            });
 
-        private static final Function<Object, Locale> LOCALE_CREATOR = new LocaleCache();
-
-        public static Locale cache(Object key) {
-            return LOCALE_CACHE.computeIfAbsent(key, LOCALE_CREATOR);
-        }
-
+    private static final Function<Object, Locale> LOCALE_CREATOR = new Function<>() {
         @Override
         public Locale apply(Object key) {
             if (key instanceof BaseLocale base) {
@@ -1036,7 +1000,7 @@ public final class Locale implements Cloneable, Serializable {
             LocaleKey lk = (LocaleKey)key;
             return new Locale(lk.base, lk.exts);
         }
-    }
+    };
 
     private static final class LocaleKey {
 
@@ -1301,12 +1265,8 @@ public final class Locale implements Cloneable, Serializable {
      * @return An array of ISO 3166 two-letter country codes.
      */
     public static String[] getISOCountries() {
-        if (isoCountries == null) {
-            isoCountries = getISO2Table(LocaleISOData.isoCountryTable);
-        }
-        String[] result = new String[isoCountries.length];
-        System.arraycopy(isoCountries, 0, result, 0, isoCountries.length);
-        return result;
+        String[] countries = ISO_3166_1_ALPHA2.get();
+        return Arrays.copyOf(countries, countries.length);
     }
 
     /**
@@ -1319,7 +1279,11 @@ public final class Locale implements Cloneable, Serializable {
      */
     public static Set<String> getISOCountries(IsoCountryCode type) {
         Objects.requireNonNull(type);
-        return IsoCountryCode.retrieveISOCountryCodes(type);
+        return switch (type) {
+            case PART1_ALPHA2 -> Set.of(ISO_3166_1_ALPHA2.get());
+            case PART1_ALPHA3 -> ISO_3166_1_ALPHA3.get();
+            case PART3 -> ISO_3166_3.get();
+        };
     }
 
     /**
@@ -1339,13 +1303,8 @@ public final class Locale implements Cloneable, Serializable {
      * @return An array of ISO 639 two-letter language codes.
      */
     public static String[] getISOLanguages() {
-        String[] languages = Locale.isoLanguages;
-        if (languages == null) {
-            Locale.isoLanguages = languages = getISO2Table(LocaleISOData.isoLanguageTable);
-        }
-        String[] result = new String[languages.length];
-        System.arraycopy(languages, 0, result, 0, languages.length);
-        return result;
+        String[] languages = ISO_639.get();
+        return Arrays.copyOf(languages, languages.length);
     }
 
     private static String[] getISO2Table(String table) {
@@ -1683,61 +1642,54 @@ public final class Locale implements Cloneable, Serializable {
      * @since 1.7
      */
     public String toLanguageTag() {
-        String lTag = this.languageTag;
-        if (lTag != null) {
-            return lTag;
-        }
+        return languageTag.get();
+    }
 
+    private String computeLanguageTag() {
         LanguageTag tag = LanguageTag.parseLocale(baseLocale, localeExtensions);
-        StringBuilder buf = new StringBuilder();
+        StringBuilder bldr = new StringBuilder();
 
         String subtag = tag.language();
         if (!subtag.isEmpty()) {
-            buf.append(LanguageTag.canonicalizeLanguage(subtag));
+            bldr.append(LanguageTag.canonicalizeLanguage(subtag));
         }
 
         subtag = tag.script();
         if (!subtag.isEmpty()) {
-            buf.append(LanguageTag.SEP);
-            buf.append(LanguageTag.canonicalizeScript(subtag));
+            bldr.append(LanguageTag.SEP);
+            bldr.append(LanguageTag.canonicalizeScript(subtag));
         }
 
         subtag = tag.region();
         if (!subtag.isEmpty()) {
-            buf.append(LanguageTag.SEP);
-            buf.append(LanguageTag.canonicalizeRegion(subtag));
+            bldr.append(LanguageTag.SEP);
+            bldr.append(LanguageTag.canonicalizeRegion(subtag));
         }
 
         List<String>subtags = tag.variants();
         for (String s : subtags) {
-            buf.append(LanguageTag.SEP);
+            bldr.append(LanguageTag.SEP);
             // preserve casing
-            buf.append(s);
+            bldr.append(s);
         }
 
         subtags = tag.extensions();
         for (String s : subtags) {
-            buf.append(LanguageTag.SEP);
-            buf.append(LanguageTag.canonicalizeExtension(s));
+            bldr.append(LanguageTag.SEP);
+            bldr.append(LanguageTag.canonicalizeExtension(s));
         }
 
         subtag = tag.privateuse();
         if (!subtag.isEmpty()) {
-            if (buf.length() > 0) {
-                buf.append(LanguageTag.SEP);
+            if (bldr.length() > 0) {
+                bldr.append(LanguageTag.SEP);
             }
-            buf.append(LanguageTag.PRIVATEUSE).append(LanguageTag.SEP);
+            bldr.append(LanguageTag.PRIVATEUSE).append(LanguageTag.SEP);
             // preserve casing
-            buf.append(subtag);
+            bldr.append(subtag);
         }
 
-        String langTag = buf.toString();
-        synchronized (this) {
-            if (this.languageTag == null) {
-                this.languageTag = langTag;
-            }
-        }
-        return langTag;
+        return bldr.toString();
     }
 
     /**
@@ -2393,7 +2345,13 @@ public final class Locale implements Cloneable, Serializable {
     private static volatile Locale defaultDisplayLocale;
     private static volatile Locale defaultFormatLocale;
 
-    private transient volatile String languageTag;
+    private transient final Supplier<String> languageTag =
+            StableValue.supplier(new Supplier<>() {
+                @Override
+                public String get() {
+                    return computeLanguageTag();
+                }
+            });
 
     /**
      * Return an array of the display names of the variant.
@@ -2587,9 +2545,37 @@ public final class Locale implements Cloneable, Serializable {
                 baseLocale.getRegion(), baseLocale.getVariant(), localeExtensions);
     }
 
-    private static volatile String[] isoLanguages;
+    private static final Supplier<String[]> ISO_639 =
+            StableValue.supplier(new Supplier<>() {
+                @Override
+                public String[] get() {
+                    return getISO2Table(LocaleISOData.isoLanguageTable);
+                }
+            });
 
-    private static volatile String[] isoCountries;
+    private static final Supplier<String[]> ISO_3166_1_ALPHA2 =
+            StableValue.supplier(new Supplier<>() {
+                @Override
+                public String[] get() {
+                    return getISO2Table(LocaleISOData.isoCountryTable);
+                }
+            });
+
+    private static final Supplier<Set<String>> ISO_3166_1_ALPHA3 =
+            StableValue.supplier(new Supplier<>() {
+                @Override
+                public Set<String> get() {
+                    return LocaleISOData.computeISO3166_1Alpha3Countries();
+                }
+            });
+
+    private static final Supplier<Set<String>> ISO_3166_3 =
+            StableValue.supplier(new Supplier<>() {
+                @Override
+                public Set<String> get() {
+                    return Set.of(LocaleISOData.ISO3166_3);
+                }
+            });
 
     private static String convertOldISOCodes(String language) {
         // we accept both the old and the new ISO codes for the languages whose ISO
