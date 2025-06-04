@@ -500,7 +500,7 @@ public abstract class ResourceBundle {
                             keys.add(key);
                         }
                     }
-                    return Set.copyOf(keys);
+                    return keys;
                 }
             }
     );

@@ -57,7 +57,7 @@ public abstract class BreakIteratorResourceBundle extends ResourceBundle {
                     final ResourceBundle info = getBreakIteratorInfo();
                     final Set<String> k = info.keySet();
                     k.removeAll(NON_DATA_KEYS);
-                    return Set.copyOf(k);
+                    return k;
                 }
             }
     );

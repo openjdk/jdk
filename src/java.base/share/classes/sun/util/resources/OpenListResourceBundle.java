@@ -131,7 +131,7 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
                         final Object value = Objects.requireNonNull(content[1]);
                         temp.put(key, value);
                     }
-                    return Map.copyOf(temp);
+                    return temp;
                 }
             }
     );
@@ -144,7 +144,7 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
                     if (parent != null) {
                         ks.addAll(parent.keySet());
                     }
-                    return Set.copyOf(ks);
+                    return ks;
                 }
             }
     );
