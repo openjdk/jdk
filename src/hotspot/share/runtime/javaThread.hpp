@@ -81,6 +81,7 @@ typedef void (*ThreadFunction)(JavaThread*, TRAPS);
 
 class EventVirtualThreadPinned;
 
+
 class JavaThread: public Thread {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -683,10 +684,10 @@ private:
 
   // Support for thread handshake operations
   HandshakeState _handshake;
-  HandshakeSuspender _handshake_suspender;
+
  public:
   HandshakeState* handshake_state() { return &_handshake; }
-  HandshakeSuspender* handshake_suspender() { return &_handshake_suspender; }
+
 
   // A JavaThread can always safely operate on it self and other threads
   // can do it safely if they are the active handshaker.
@@ -696,9 +697,13 @@ private:
 
   // Suspend/resume support for JavaThread
   // higher-level suspension/resume logic called by the public APIs
+private:
+  SuspendResumeManager _suspend_resume_manager;
+public:
   bool java_suspend(bool register_vthread_SR);
   bool java_resume(bool register_vthread_SR);
-  bool is_suspended()     { return _handshake_suspender.is_suspended(); }
+  bool is_suspended()     { return _suspend_resume_manager.is_suspended(); }
+  SuspendResumeManager* suspend_resume_manager() { return &_suspend_resume_manager; }
 
   // Check for async exception in addition to safepoint.
   static void check_special_condition_for_native_trans(JavaThread *thread);

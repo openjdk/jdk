@@ -39,7 +39,6 @@ class SuspendThreadHandshake;
 class ThreadSelfSuspensionHandshake;
 class UnsafeAccessErrorHandshake;
 class ThreadsListHandle;
-class HandshakeSuspender;
 
 // A handshake closure is a callback that is executed for a JavaThread
 // while it is in a safepoint/handshake-safe state. Depending on the
@@ -93,7 +92,6 @@ class HandshakeState {
   friend SuspendThreadHandshake;
   friend UnsafeAccessErrorHandshake;
   friend JavaThread;
-  friend HandshakeSuspender;
   // This a back reference to the JavaThread,
   // the target for all operation in the queue.
   JavaThread* _handshakee;
@@ -161,10 +159,11 @@ class HandshakeState {
 
   bool async_exceptions_blocked() { return _async_exceptions_blocked; }
   void set_async_exceptions_blocked(bool b) { _async_exceptions_blocked = b; }
-  void handle_unsafe_access_error(HandshakeSuspender* suspender);
+  void handle_unsafe_access_error();
 };
 
-class HandshakeSuspender {
+
+class SuspendResumeManager {
   friend SuspendThreadHandshake;
   friend ThreadSelfSuspensionHandshake;
   friend JavaThread;
@@ -174,11 +173,11 @@ class HandshakeSuspender {
   Monitor* _state_lock;
 
 public:
-  HandshakeSuspender(JavaThread* thread, Monitor* state_lock);
+  SuspendResumeManager(JavaThread* thread, Monitor* state_lock);
 
 private:
   // This flag is true when the thread owning this
-  // HandshakeSuspender (the _handshakee) is suspended.
+  // SuspendResumeManager (the _handshakee) is suspended.
   volatile bool _suspended;
   // This flag is true while there is async handshake (trap)
   // on queue. Since we do only need one, we can reuse it if
@@ -191,7 +190,7 @@ private:
 
   // Called from the async handshake (the trap)
   // to stop a thread from continuing execution when suspended.
-  void do_self_suspend();
+  void do_owner_suspend();
 
   // Called from the suspend handshake.
   bool suspend_with_handshake(bool register_vthread_SR);
@@ -204,7 +203,6 @@ private:
 
   bool has_async_suspend_handshake() { return _async_suspend_handshake; }
   void set_async_suspend_handshake(bool to) { _async_suspend_handshake = to; }
-
 };
 
 #endif // SHARE_RUNTIME_HANDSHAKE_HPP
