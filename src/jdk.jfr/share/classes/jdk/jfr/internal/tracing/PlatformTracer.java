@@ -53,6 +53,8 @@ public final class PlatformTracer {
     private static List<Filter> timingFilters = List.of();
     private static TimedMethod OBJECT;
 
+    private static boolean initialized;
+
     public static byte[] onMethodTrace(Module module, ClassLoader classLoader, String className,
                                        byte[] oldBytecode, long[] ids, String[] names, String[] signatures,
                                        int[] modifications) {
@@ -159,6 +161,7 @@ public final class PlatformTracer {
     }
 
     public static void setFilters(Modification modification, List<String> filters) {
+        ensureInitialized();
         publishClasses(applyFilter(modification, filters));
     }
 
@@ -251,6 +254,15 @@ public final class PlatformTracer {
         timedClasses.clear();
     }
 
+    // Expected to be called when holding external lock, so no extra
+    // synchronization is required here.
+    private static void ensureInitialized() {
+        if (!initialized) {
+            initialize();
+            initialized = true;
+        }
+    }
+
     // This method has three purposes:
     //
     // 1) Load classes before instrumentation to avoid recursion in class
@@ -264,7 +276,7 @@ public final class PlatformTracer {
     // This method takes 1-10 milliseconds to run and is only executed once,
     // provided a user has specified a non-empty filter for the MethodTrace or
     // MethodTiming event.
-    public static void initialize() {
+    private static void initialize() {
         try {
             Logger.log(LogTag.JFR_METHODTRACE, LogLevel.DEBUG, "Method tracer initialization started.");
             Thread current = Thread.currentThread();
