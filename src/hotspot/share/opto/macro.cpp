@@ -1027,7 +1027,7 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
         }
 #endif
         init->replace_mem_projs_by(mem, &_igvn);
-        assert(init->outcnt() == 0, "only a control and some memory projections expected");
+        assert(init->outcnt() == 0, "should only have had a control and some memory projections, and we removed them");
       } else  {
         assert(false, "only Initialize or AddP expected");
       }
@@ -1302,6 +1302,21 @@ void PhaseMacroExpand::expand_allocate_common(
       yank_alloc_node(alloc);
       return;
     }
+  }
+
+  InitializeNode* init = alloc->initialization();
+  if (init != nullptr) {
+    // Remove NarrowMemProjs and only keep a single Proj: NarrowMemProjs are only useful as long as the Allocate node
+    // exists and can be removed.
+    // To make this logic straightforward, create a new Proj. ProjNode constructor needs a proper input.
+    Node* new_mem_proj = new ProjNode(init, TypeFunc::Memory);
+    // clear input so new Proj is not one of the uses of init
+    new_mem_proj->set_req(0, nullptr);
+    // replace uses (the existing Proj and all NarrowMemProj) with the new Proj
+    init->replace_mem_projs_by(new_mem_proj, &_igvn);
+    // make Proj a use of the Initialize node again
+    new_mem_proj->set_req(0, init);
+    transform_later(new_mem_proj);
   }
 
   enum { too_big_or_final_path = 1, need_gc_path = 2 };
@@ -1652,9 +1667,9 @@ void PhaseMacroExpand::expand_initialize_membar(AllocateNode* alloc, InitializeN
         return MultiNode::CONTINUE;
       };
       init->apply_to_projs(find_raw_mem, TypeFunc::Memory);
+      assert(existing_raw_mem_proj != nullptr, "should have found raw mem Proj");
       Node* raw_mem_proj = new ProjNode(init, TypeFunc::Memory);
       transform_later(raw_mem_proj);
-      assert(existing_raw_mem_proj != nullptr, "");
 
       // The MemBarStoreStore depends on control and memory coming
       // from the InitializeNode

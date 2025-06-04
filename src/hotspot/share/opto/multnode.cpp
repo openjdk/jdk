@@ -48,7 +48,7 @@ ProjNode* MultiNode::proj_out_or_null(uint which_proj) const {
   assert(number_of_projs(which_proj) <= 1, "only when there's a single projection");
   auto find_proj = [&](ProjNode* proj) {
     assert((Opcode() != Op_If && Opcode() != Op_RangeCheck) || proj->Opcode() == (which_proj ? Op_IfTrue : Op_IfFalse),
-           "bad if #2");
+           "incorrect projection node at If/RangeCheck: IfTrue on false path or IfFalse on true path");
     return BREAK_AND_RETURN_CURRENT_PROJ;
   };
   return apply_to_projs(find_proj, which_proj);
@@ -254,7 +254,7 @@ void NarrowMemProjNode::dump_adr_type(outputStream* st) const {
   Compile* C = Compile::current();
   Compile::AliasType* atp = C->alias_type(_adr_type);
   ciField* field = atp->field();
-  if (field) {
+  if (field != nullptr) {
     st->print(", name=");
     field->print_name_on(st);
   }

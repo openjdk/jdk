@@ -57,7 +57,7 @@ public:
     BREAK_AND_RETURN_CURRENT_PROJ
   };
 
-  // Run callback on all Proj projection from this node
+  // Run callback on projections from this node as long as callback returns CONTINUE
   template<class Callback> ProjNode* apply_to_projs(Callback callback) const {
     DUIterator_Fast imax, i = fast_outs(imax);
     return apply_to_projs(imax, i, callback);

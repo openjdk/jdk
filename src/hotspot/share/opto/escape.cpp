@@ -863,7 +863,7 @@ Node* ConnectionGraph::split_castpp_load_through_phi(Node* curr_addp, Node* curr
 //                      \|/
 //                      Phi        # "Field" Phi
 //
-void ConnectionGraph::reduce_phi_on_castpp_field_load(Node* curr_castpp, GrowableArray<Node *>  &alloc_worklist, GrowableArray<Node *>  &memnode_worklist) {
+void ConnectionGraph::reduce_phi_on_castpp_field_load(Node* curr_castpp, GrowableArray<Node*> &alloc_worklist) {
   Node* ophi = curr_castpp->in(1);
   assert(ophi->is_Phi(), "Expected this to be a Phi node.");
 
@@ -1279,7 +1279,7 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
   return true;
 }
 
-void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_worklist, GrowableArray<Node *>  &memnode_worklist) {
+void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node*> &alloc_worklist) {
   bool delay = _igvn->delay_transform();
   _igvn->set_delay_transform(true);
   _igvn->hash_delete(ophi);
@@ -1307,7 +1307,7 @@ void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_wo
   // splitting CastPPs we make reference to the inputs of the Cmp that is used
   // by the If controlling the CastPP.
   for (uint i = 0; i < castpps.size(); i++) {
-    reduce_phi_on_castpp_field_load(castpps.at(i), alloc_worklist, memnode_worklist);
+    reduce_phi_on_castpp_field_load(castpps.at(i), alloc_worklist);
   }
 
   for (uint i = 0; i < others.size(); i++) {
@@ -4534,7 +4534,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       // finishes. For now we just try to split out the SR inputs of the merge.
       Node* parent = n->in(1);
       if (reducible_merges.member(n)) {
-        reduce_phi(n->as_Phi(), alloc_worklist, memnode_worklist);
+        reduce_phi(n->as_Phi(), alloc_worklist);
 #ifdef ASSERT
         if (VerifyReduceAllocationMerges) {
           reduced_merges.push(n);
