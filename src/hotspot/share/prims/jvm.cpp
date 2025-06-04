@@ -3837,6 +3837,11 @@ JVM_LEAF(jboolean, JVM_PrintWarningAtDynamicAgentLoad(void))
   return (EnableDynamicAgentLoading && !FLAG_IS_CMDLINE(EnableDynamicAgentLoading)) ? JNI_TRUE : JNI_FALSE;
 JVM_END
 
+
+/*
+ * Native Memory Tracking
+ */
+
 JNIEXPORT arena_t JNICALL
 JVM_MakeArena(const char *name) {
   return static_cast<arena_t>(MemTagFactory::tag(name));

@@ -199,6 +199,7 @@ char* NativeLookup::long_jni_name(const methodHandle& method) {
 }
 
 extern "C" {
+  void JNICALL JVM_RegisterNativeMemoryTrackingMethods(JNIEnv *env, jclass unsafecls);
   void JNICALL JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass unsafecls);
   void JNICALL JVM_RegisterReferencesMethods(JNIEnv *env, jclass unsafecls);
   void JNICALL JVM_RegisterUpcallHandlerMethods(JNIEnv *env, jclass unsafecls);
@@ -227,6 +228,7 @@ static JNINativeMethod lookup_special_native_methods[] = {
   { CC"Java_sun_hotspot_WhiteBox_registerNatives",                 nullptr, FN_PTR(JVM_RegisterWhiteBoxMethods)     },
   { CC"Java_jdk_test_whitebox_WhiteBox_registerNatives",           nullptr, FN_PTR(JVM_RegisterWhiteBoxMethods)     },
   { CC"Java_jdk_internal_vm_vector_VectorSupport_registerNatives", nullptr, FN_PTR(JVM_RegisterVectorSupportMethods)},
+  { CC"Java_jdk_internal_foreign_NativeMemoryTracking_registerNatives", nullptr, FN_PTR(JVM_RegisterNativeMemoryTrackingMethods)},
 #if INCLUDE_JVMCI
   { CC"Java_jdk_vm_ci_runtime_JVMCI_initializeRuntime",            nullptr, FN_PTR(JVM_GetJVMCIRuntime)             },
   { CC"Java_jdk_vm_ci_services_Services_readSystemPropertiesInfo", nullptr, FN_PTR(JVM_ReadSystemPropertiesInfo)    },

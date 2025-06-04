@@ -244,7 +244,7 @@ public class SegmentFactories {
 
     private static long allocateMemoryWrapper(long size) {
         try {
-            return UNSAFE.allocateMemory(size);
+            return NativeMemoryTracking.allocate(size);
         } catch (IllegalArgumentException ex) {
             throw new OutOfMemoryError();
         }
