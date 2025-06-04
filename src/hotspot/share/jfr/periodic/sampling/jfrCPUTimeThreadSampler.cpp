@@ -664,11 +664,10 @@ bool JfrCPUSamplerThread::init_timers() {
 
 class VM_CPUTimeSamplerThreadTerminator : public VM_Operation {
  private:
-  JfrCPUSamplerThread *_sampler;
- public:
+  JfrCPUSamplerThread* const _sampler;
 
-  VM_CPUTimeSamplerThreadTerminator(JfrCPUSamplerThread* sampler) : _sampler(sampler) {
-  }
+ public:
+  VM_CPUTimeSamplerThreadTerminator(JfrCPUSamplerThread* sampler) : _sampler(sampler) {}
 
   VMOp_Type type() const { return VMOp_CPUTimeSamplerThreadTerminator; }
   void doit() {
