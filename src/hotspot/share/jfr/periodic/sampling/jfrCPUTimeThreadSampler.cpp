@@ -166,9 +166,11 @@ class JfrCPUSamplerThread : public NonJavaThread {
   bool _auto_adapt;
   volatile int64_t _current_sampling_period_ns;
   volatile bool _disenrolled;
-  volatile bool _stop_signals;
-  volatile int _active_signal_handlers;
+  // top bit is used to indicate that no signal handler should proceed
+  volatile u4 _active_signal_handlers;
   volatile bool _is_async_processing_of_cpu_time_jfr_requests_triggered;
+
+  static const u4 STOP_SIGNAL_BIT = 0x80000000;
 
   JfrCPUSamplerThread(double rate, bool auto_adapt);
 
@@ -189,6 +191,15 @@ class JfrCPUSamplerThread : public NonJavaThread {
   void stackwalk_threads_in_native();
   bool create_timer_for_thread(JavaThread* thread, timer_t &timerid);
 
+  void stop_signal_handlers();
+
+  // returns false if the stop signal bit was set, true otherwise
+  bool increment_signal_handler_count();
+
+  void decrement_signal_handler_count();
+
+  void allow_signal_handlers();
+
 protected:
   virtual void post_run();
 public:
@@ -205,11 +216,6 @@ public:
   void trigger_async_processing_of_cpu_time_jfr_requests();
 };
 
-// we have two stop signals, to remove a data race
-// and this works even when the _instance is null
-static volatile bool _static_stop_signals = true;
-
-
 JfrCPUSamplerThread::JfrCPUSamplerThread(double rate, bool auto_adapt) :
   _sample(),
   _sampler_thread(nullptr),
@@ -217,8 +223,7 @@ JfrCPUSamplerThread::JfrCPUSamplerThread(double rate, bool auto_adapt) :
   _auto_adapt(auto_adapt),
   _current_sampling_period_ns(compute_sampling_period(rate)),
   _disenrolled(true),
-  _stop_signals(true),
-  _active_signal_handlers(0),
+  _active_signal_handlers(STOP_SIGNAL_BIT),
   _is_async_processing_of_cpu_time_jfr_requests_triggered(false) {
   assert(rate >= 0, "invariant");
 }
@@ -268,8 +273,7 @@ void JfrCPUSamplerThread::start_thread() {
 
 void JfrCPUSamplerThread::enroll() {
   if (Atomic::cmpxchg(&_disenrolled, true, false)) {
-    Atomic::release_store(&_static_stop_signals, false);
-    Atomic::release_store(&_stop_signals, false);
+    allow_signal_handlers();
     log_trace(jfr)("Enrolling CPU thread sampler");
     _sample.signal();
     if (!init_timers()) {
@@ -285,15 +289,8 @@ void JfrCPUSamplerThread::disenroll() {
   if (!Atomic::cmpxchg(&_disenrolled, false, true)) {
     log_trace(jfr)("Disenrolling CPU thread sampler");
     stop_timer();
-    Atomic::release_store(&_static_stop_signals, true);
-    Atomic::release_store(&_stop_signals, true);
-    while (Atomic::load_acquire(&_active_signal_handlers) > 0) {
-      // wait for all signal handlers to finish
-      os::naked_short_nanosleep(1000);
-    }
+    stop_signal_handlers();
     _sample.wait();
-    Atomic::release_store(&_static_stop_signals, false);
-    Atomic::release_store(&_stop_signals, false);
     log_trace(jfr)("Disenrolled CPU thread sampler");
   }
 }
@@ -479,9 +476,6 @@ void JfrCPUTimeThreadSampling::trigger_async_processing_of_cpu_time_jfr_requests
 
 void handle_timer_signal(int signo, siginfo_t* info, void* context) {
   assert(_instance != nullptr, "invariant");
-  if (Atomic::load_acquire(&_static_stop_signals)) {
-    return;
-  }
   _instance->handle_timer_signal(info, context);
 }
 
@@ -493,11 +487,11 @@ void JfrCPUTimeThreadSampling::handle_timer_signal(siginfo_t* info, void* contex
     return;
   }
 
-  Atomic::inc(&_sampler->_active_signal_handlers, memory_order_acq_rel);
-  if (!Atomic::load_acquire(&_sampler->_stop_signals)) {
-    _sampler->handle_timer_signal(info, context);
+  if (!_sampler->increment_signal_handler_count()) {
+    return;
   }
-  Atomic::dec(&_sampler->_active_signal_handlers, memory_order_acq_rel);
+  _sampler->handle_timer_signal(info, context);
+  _sampler->decrement_signal_handler_count();
 }
 
 void JfrCPUSamplerThread::sample_thread(JfrSampleRequest& request, void* ucontext, JavaThread* jt, JfrThreadLocal* tl) {
@@ -597,6 +591,36 @@ bool JfrCPUSamplerThread::create_timer_for_thread(JavaThread* thread, timer_t& t
   }
   timerid = t;
   return true;
+}
+
+
+void JfrCPUSamplerThread::stop_signal_handlers() {
+  // set the stop signal bit
+  Atomic::or_then_fetch(&_active_signal_handlers, STOP_SIGNAL_BIT, memory_order_acq_rel);
+  while (Atomic::load_acquire(&_active_signal_handlers) > STOP_SIGNAL_BIT) {
+    // wait for all signal handlers to finish
+    os::naked_short_nanosleep(1000);
+  }
+}
+
+// returns false if the stop signal bit was set, true otherwise
+bool JfrCPUSamplerThread::increment_signal_handler_count() {
+  // increment the count of active signal handlers
+  u4 old_value = Atomic::fetch_then_add(&_active_signal_handlers, (u4)1, memory_order_acq_rel);
+  if ((old_value & STOP_SIGNAL_BIT) != 0) {
+    // if the stop signal bit was set, we are not allowed to increment
+    Atomic::dec(&_active_signal_handlers, memory_order_acq_rel);
+    return false;
+  }
+  return true;
+}
+
+void JfrCPUSamplerThread::decrement_signal_handler_count() {
+  Atomic::dec(&_active_signal_handlers, memory_order_acq_rel);
+}
+
+void JfrCPUSamplerThread::allow_signal_handlers() {
+  Atomic::release_store(&_active_signal_handlers, (u4)0);
 }
 
 class VM_CPUTimeSamplerThreadInitializer : public VM_Operation {
