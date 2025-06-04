@@ -2490,7 +2490,7 @@ bool os::Linux::print_container_info(outputStream* st) {
 
   jlong j = OSContainer::cpu_usage_in_micros();
   st->print("cpu_usage_in_micros: ");
-  if (j > 0) {
+  if (j >= 0) {
     st->print_cr(JLONG_FORMAT, j);
   } else {
     st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "no usage");
