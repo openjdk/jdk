@@ -53,7 +53,7 @@ public final class KeyUtil {
      * <p>
      * Traditionally, the key size of an asymmetric key refers to the size of
      * its modulus. For example, a 2048-bit RSA key or a 256-bit NIST P-256 EC
-     * key. However, modern post-quantum algorithms based on lattice cryptography,
+     * key. However, new algorithms based on lattice cryptography,
      * such as ML-KEM, do not use a modulus, and the sizes of their public and
      * private keys can differ significantly from their security strength.
      * Instead of specifying a key length, NIST assigns a security category to
@@ -131,7 +131,7 @@ public final class KeyUtil {
     }
 
     /**
-     * Returns the NIST security categories defined for PQC algorithms. It was
+     * Returns the NIST security categories defined for PQC algorithms. It is
      * defined in Section 4.A.5 of "Submission Requirements and Evaluation Criteria
      * for the Post-Quantum Cryptography Standardization Process" which is available
      * at https://csrc.nist.gov/CSRC/media/Projects/Post-Quantum-Cryptography/documents/call-for-proposals-final-dec-2016.pdf.
