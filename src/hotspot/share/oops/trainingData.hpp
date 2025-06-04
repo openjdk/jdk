@@ -199,7 +199,7 @@ public:
     }
     void initialize_oopstorage() {
       assert(_mirror_refs == nullptr, "Already initialized");
-      _mirror_refs = OopStorageSet::create_strong("Training data mirror references", mtInternal);
+      _mirror_refs = OopStorageSet::create_strong("Training OopStorage", mtInternal);
     }
     TrainingData* find(const Key* key) const {
       TrainingDataLocker::assert_locked();
