@@ -147,7 +147,7 @@ public interface OutputBuffer {
     private LazyOutputBuffer(Process p, Charset cs) {
       this.p = p;
       logProgress("Gathering output");
-      boolean verbose = Boolean.valueOf(System.getProperty("outputanalyzer.verbose", "false"));
+      boolean verbose = Boolean.getBoolean("outputanalyzer.verbose");
       outTask = new StreamTask(p.getInputStream(), cs, verbose ? System.out : null);
       errTask = new StreamTask(p.getErrorStream(), cs, verbose ? System.err : null);
     }
