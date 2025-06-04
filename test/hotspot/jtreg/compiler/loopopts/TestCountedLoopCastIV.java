@@ -21,8 +21,9 @@
  * questions.
  */
 
-package compiler.c2.irTests;
+package compiler.loopopts;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 import compiler.lib.generators.*;
@@ -32,28 +33,27 @@ import jdk.test.lib.Asserts;
  /*
   * @test
   * @bug 8357726
-  * @summary C2 fails to recognize the counted loop when induction variable range is changed multiple times
+  * @summary Improve C2 to recognize counted loops with multiple casts in trip counter
   * @library /test/lib /
-  * @run driver compiler.c2.irTests.TestCountedLoopCastIV
+  * @run driver compiler.loopopts.TestCountedLoopCastIV  DisableUnroll
+  * @run driver compiler.loopopts.TestCountedLoopCastIV
   */
 
 public class TestCountedLoopCastIV {
     private static final int LEN = 1024;
     private static final Generators random = Generators.G;
 
-    private static int[] in = new int[LEN];
-    private static int[] out = new int[LEN];
+    private static int[] in;
+    private static int[] out;
 
     static {
-        for (int i = 0; i < LEN; i++) {
-            random.fill(random.ints(), in);
-        }
+        in = new int[LEN];
+        out = new int[LEN];
+        random.fill(random.ints(), in);
     }
 
     private static void cleanUp() {
-        for (int i = 0; i < LEN; i++) {
-            out[i] = 0;
-        }
+        Arrays.fill(out, 0);
     }
 
     private static void verify(int[] ref, int[] res, int start,
@@ -68,8 +68,17 @@ public class TestCountedLoopCastIV {
     // which will create CastIINodes for loop induction variable.
     // In this case, the loop start, limit and stride are
     // all constants.
+    //
+    // The first IR check with "-XX:LoopUnrollLimit=0" makes sure
+    // the loop is transformed into exactly one CountedLoopNode,
+    // verifying the CastII recognition works correctly.
+    //
+    // The second IR check ensures the optimization works properly
+    // with default vm settings.
+    //
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "1" })
+    @IR(counts = {IRNode.COUNTED_LOOP, "1" }, applyIf = {"LoopUnrollLimit", "0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, ">0" })
     static void test1() {
         for (int i = 0; i < LEN; i += 16) {
             Objects.checkIndex(i, LEN - 3);
@@ -87,7 +96,8 @@ public class TestCountedLoopCastIV {
 
     // Similar to test1, but the loop limit is a variable.
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "1" })
+    @IR(counts = {IRNode.COUNTED_LOOP, "1" }, applyIf = {"LoopUnrollLimit", "0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, ">0" })
     static void test2(int limit) {
         for (int i = 0; i < limit; i += 16) {
             Objects.checkIndex(i, LEN - 3);
@@ -115,7 +125,8 @@ public class TestCountedLoopCastIV {
     // Similar to test1 and test2, but the loop is a
     // while loop with a variable start and limit.
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "1" })
+    @IR(counts = {IRNode.COUNTED_LOOP, "1" }, applyIf = {"LoopUnrollLimit", "0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, ">0" })
     static void test3(int start, int limit) {
         int i = start;
         while (i < limit) {
@@ -145,7 +156,8 @@ public class TestCountedLoopCastIV {
     // Similar to test3, but the type of induction variable
     // is long.
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "1" })
+    @IR(counts = {IRNode.COUNTED_LOOP, "1" }, applyIf = {"LoopUnrollLimit", "0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, ">0" })
     static void test4(long start, long limit) {
         for (long i = start; i < limit; i++) {
             Objects.checkIndex(i, LEN);
@@ -171,6 +183,10 @@ public class TestCountedLoopCastIV {
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:LoopUnrollLimit=0");
+        if (args != null && args.length > 0 && args[0].equals("DisableUnroll")) {
+            TestFramework.runWithFlags("-XX:LoopUnrollLimit=0");
+        } else {
+            TestFramework.run();
+        }
     }
 }

@@ -26,7 +26,6 @@ package org.openjdk.bench.vm.compiler;
 import org.openjdk.jmh.annotations.*;
 
 import java.util.Objects;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 @Warmup(iterations = 3, time = 1)
@@ -36,10 +35,11 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 @Fork(value=3)
 public class CountedLoopCastIV {
-    private static final int LEN = 2048;
-
-    private int start;
+    @Param({"1024", "1536", "2048"})
     private int limit;
+
+    private static final int LEN = 2048;
+    private int start;
     private int[] arr;
 
     @Setup
@@ -49,9 +49,8 @@ public class CountedLoopCastIV {
             arr[i] = i;
         }
 
-        Random r = new Random();
-        start = r.nextInt(LEN >> 2);
-        limit = r.nextInt(LEN >> 1, LEN - 3);
+        start = 0;
+        limit = Math.min(limit, LEN - 4);
     }
 
     @Benchmark
