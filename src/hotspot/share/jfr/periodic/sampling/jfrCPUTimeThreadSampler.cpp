@@ -170,6 +170,7 @@ class JfrCPUSamplerThread : public NonJavaThread {
   // top bit is used to indicate that no signal handler should proceed
   volatile u4 _active_signal_handlers;
   volatile bool _is_async_processing_of_cpu_time_jfr_requests_triggered;
+  bool _warned_about_timer_creation_failure;
 
   static const u4 STOP_SIGNAL_BIT = 0x80000000;
 
@@ -225,7 +226,8 @@ JfrCPUSamplerThread::JfrCPUSamplerThread(double rate, bool auto_adapt) :
   _current_sampling_period_ns(compute_sampling_period(rate)),
   _disenrolled(true),
   _active_signal_handlers(STOP_SIGNAL_BIT),
-  _is_async_processing_of_cpu_time_jfr_requests_triggered(false) {
+  _is_async_processing_of_cpu_time_jfr_requests_triggered(false),
+  _warned_about_timer_creation_failure(false) {
   assert(rate >= 0, "invariant");
 }
 
@@ -244,6 +246,10 @@ void JfrCPUSamplerThread::on_javathread_create(JavaThread* thread) {
   if (create_timer_for_thread(thread, timerid)) {
     tl->set_cpu_timer(&timerid);
   } else {
+    if (!_warned_about_timer_creation_failure) {
+      log_warning(jfr)("Failed to create timer for a thread");
+      _warned_about_timer_creation_failure = true;
+    }
     tl->deallocate_cpu_time_jfr_queue();
   }
 }
@@ -274,6 +280,7 @@ void JfrCPUSamplerThread::start_thread() {
 
 void JfrCPUSamplerThread::enroll() {
   if (Atomic::cmpxchg(&_disenrolled, true, false)) {
+    _warned_about_timer_creation_failure = false;
     allow_signal_handlers();
     log_trace(jfr)("Enrolling CPU thread sampler");
     _sample.signal();
@@ -482,11 +489,11 @@ void handle_timer_signal(int signo, siginfo_t* info, void* context) {
 
 
 void JfrCPUTimeThreadSampling::handle_timer_signal(siginfo_t* info, void* context) {
-  assert(_sampler != nullptr, "invariant");
-  if (info->si_signo != SIGPROF) {
+  if (info->si_code != SIGPROF) {
     // not the signal we are interested in
     return;
   }
+  assert(_sampler != nullptr, "invariant");
 
   if (!_sampler->increment_signal_handler_count()) {
     return;
