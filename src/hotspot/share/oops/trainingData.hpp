@@ -283,6 +283,14 @@ private:
   static bool need_data() { return AOTRecordTraining;  } // Going to write
   static bool assembling_data() { return have_data() && CDSConfig::is_dumping_final_static_archive() && CDSConfig::is_dumping_aot_linked_classes(); }
 
+  static bool is_klass_loaded(Klass* k) {
+    if (have_data()) {
+      // If we're running in AOT mode some classes may not be loaded yet
+      return !k->is_instance_klass() || InstanceKlass::cast(k)->is_loaded();
+    }
+    return true;
+  }
+
   template<typename Function>
   static void iterate(const Function& fn) { iterate(const_cast<Function&>(fn)); }
 
