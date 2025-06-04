@@ -788,6 +788,8 @@ class CheckClass : public MetadataClosure {
       klass = ((Method*)md)->method_holder();
     } else if (md->is_methodData()) {
       klass = ((MethodData*)md)->method()->method_holder();
+    } else if (md->is_methodCounters()) {
+      klass = ((MethodCounters*)md)->method()->method_holder();
     } else {
       md->print();
       ShouldNotReachHere();
