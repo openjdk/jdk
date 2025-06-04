@@ -81,7 +81,6 @@
 #endif
 
 #define SPELL_REG_SP "sp"
-#define SPELL_REG_FP "fp"
 
 #ifdef __APPLE__
 // see darwin-xnu/osfmk/mach/arm/_structs.h
