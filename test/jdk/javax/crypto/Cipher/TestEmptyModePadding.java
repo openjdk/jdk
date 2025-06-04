@@ -25,7 +25,7 @@
  * @test
  * @bug 8358159
  * @summary test that the Cipher.getInstance() handles transformations with empty mode and/or padding
- * @run main TestEmptyModePadding 
+ * @run main TestEmptyModePadding
  */
 
 
