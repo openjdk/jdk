@@ -24,6 +24,7 @@
 #include "asm/codeBuffer.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jfr/periodic/sampling/jfrSampleRequest.hpp"
+#include "jfr/utilities/jfrTime.hpp"
 #include "runtime/continuationEntry.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
@@ -317,8 +318,10 @@ static inline void set_cpu_time_biased_sample(JfrSampleRequest& request, JavaThr
 void JfrSampleRequestBuilder::build_cpu_time_sample_request(JfrSampleRequest& request,
                                                             void* ucontext,
                                                             JavaThread* jt,
-                                                            JfrThreadLocal* tl) {
+                                                            JfrThreadLocal* tl,
+                                                            JfrTicks& now) {
   assert(jt != nullptr, "invariant");
+  request._sample_ticks = now;
 
   // Prioritize the ljf, if one exists.
   request._sample_sp = jt->last_Java_sp();
@@ -330,5 +333,4 @@ void JfrSampleRequestBuilder::build_cpu_time_sample_request(JfrSampleRequest& re
       set_cpu_time_biased_sample(request, jt);
     }
   }
-  request._sample_ticks = JfrTicks::now();
 }

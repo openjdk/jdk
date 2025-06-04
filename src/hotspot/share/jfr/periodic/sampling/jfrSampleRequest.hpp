@@ -84,7 +84,8 @@ class JfrSampleRequestBuilder : AllStatic {
   static void build_cpu_time_sample_request(JfrSampleRequest &request,
                                             void* ucontext,
                                             JavaThread* jt,
-                                            JfrThreadLocal* tl);
+                                            JfrThreadLocal* tl,
+                                            JfrTicks& now);
 };
 
 #endif // SHARE_JFR_PERIODIC_SAMPLING_JFRSAMPLEREQUEST_HPP

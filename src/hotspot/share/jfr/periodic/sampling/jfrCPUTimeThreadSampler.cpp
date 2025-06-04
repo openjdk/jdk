@@ -168,7 +168,7 @@ class JfrCPUSamplerThread : public NonJavaThread {
   volatile int64_t _current_sampling_period_ns;
   volatile bool _disenrolled;
   // top bit is used to indicate that no signal handler should proceed
-  volatile u4 _active_signal_handlers;
+  volatile u4 _initialize_active_signal_handler_counter;
   volatile bool _is_async_processing_of_cpu_time_jfr_requests_triggered;
   volatile bool _warned_about_timer_creation_failure;
   volatile bool _signal_handler_installed;
@@ -188,7 +188,7 @@ class JfrCPUSamplerThread : public NonJavaThread {
   void set_rate(double rate, bool auto_adapt);
   int64_t get_sampling_period() const { return Atomic::load(&_current_sampling_period_ns); };
 
-  void sample_thread(JfrSampleRequest& request, void* ucontext, JavaThread* jt, JfrThreadLocal* tl);
+  void sample_thread(JfrSampleRequest& request, void* ucontext, JavaThread* jt, JfrThreadLocal* tl, JfrTicks& now);
 
   // process the queues for all threads that are in native state (and requested to be processed)
   void stackwalk_threads_in_native();
@@ -226,7 +226,7 @@ JfrCPUSamplerThread::JfrCPUSamplerThread(double rate, bool auto_adapt) :
   _auto_adapt(auto_adapt),
   _current_sampling_period_ns(compute_sampling_period(rate)),
   _disenrolled(true),
-  _active_signal_handlers(STOP_SIGNAL_BIT),
+  _initialize_active_signal_handler_counter(STOP_SIGNAL_BIT),
   _is_async_processing_of_cpu_time_jfr_requests_triggered(false),
   _warned_about_timer_creation_failure(false),
   _signal_handler_installed(false) {
@@ -506,8 +506,8 @@ void JfrCPUTimeThreadSampling::handle_timer_signal(siginfo_t* info, void* contex
   _sampler->decrement_signal_handler_count();
 }
 
-void JfrCPUSamplerThread::sample_thread(JfrSampleRequest& request, void* ucontext, JavaThread* jt, JfrThreadLocal* tl) {
-  JfrSampleRequestBuilder::build_cpu_time_sample_request(request, ucontext, jt, jt->jfr_thread_local());
+void JfrCPUSamplerThread::sample_thread(JfrSampleRequest& request, void* ucontext, JavaThread* jt, JfrThreadLocal* tl, JfrTicks& now) {
+  JfrSampleRequestBuilder::build_cpu_time_sample_request(request, ucontext, jt, jt->jfr_thread_local(), now);
 }
 
 static bool check_state(JavaThread* thread) {
@@ -521,6 +521,7 @@ static bool check_state(JavaThread* thread) {
 }
 
 void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
+  JfrTicks now = JfrTicks::now();
   JavaThread* jt = get_java_thread_if_valid();
   if (jt == nullptr) {
     return;
@@ -541,7 +542,7 @@ void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
   // so samples might be skipped and we have to compute the actual period
   int64_t period = get_sampling_period() * (info->si_overrun + 1);
   request._cpu_time_period = Ticks(period / 1000000000.0 * JfrTime::frequency()) - Ticks(0);
-  sample_thread(request._request, context, jt, tl);
+  sample_thread(request._request, context, jt, tl, now);
 
   if (queue.enqueue(request)) {
     if (queue.size() == 1) {
@@ -606,8 +607,8 @@ bool JfrCPUSamplerThread::create_timer_for_thread(JavaThread* thread, timer_t& t
 
 void JfrCPUSamplerThread::stop_signal_handlers() {
   // set the stop signal bit
-  Atomic::or_then_fetch(&_active_signal_handlers, STOP_SIGNAL_BIT, memory_order_acq_rel);
-  while (Atomic::load_acquire(&_active_signal_handlers) > STOP_SIGNAL_BIT) {
+  Atomic::or_then_fetch(&_initialize_active_signal_handler_counter, STOP_SIGNAL_BIT, memory_order_acq_rel);
+  while (Atomic::load_acquire(&_initialize_active_signal_handler_counter) > STOP_SIGNAL_BIT) {
     // wait for all signal handlers to finish
     os::naked_short_nanosleep(1000);
   }
@@ -616,21 +617,21 @@ void JfrCPUSamplerThread::stop_signal_handlers() {
 // returns false if the stop signal bit was set, true otherwise
 bool JfrCPUSamplerThread::increment_signal_handler_count() {
   // increment the count of active signal handlers
-  u4 old_value = Atomic::fetch_then_add(&_active_signal_handlers, (u4)1, memory_order_acq_rel);
+  u4 old_value = Atomic::fetch_then_add(&_initialize_active_signal_handler_counter, (u4)1, memory_order_acq_rel);
   if ((old_value & STOP_SIGNAL_BIT) != 0) {
     // if the stop signal bit was set, we are not allowed to increment
-    Atomic::dec(&_active_signal_handlers, memory_order_acq_rel);
+    Atomic::dec(&_initialize_active_signal_handler_counter, memory_order_acq_rel);
     return false;
   }
   return true;
 }
 
 void JfrCPUSamplerThread::decrement_signal_handler_count() {
-  Atomic::dec(&_active_signal_handlers, memory_order_acq_rel);
+  Atomic::dec(&_initialize_active_signal_handler_counter, memory_order_acq_rel);
 }
 
 void JfrCPUSamplerThread::allow_signal_handlers() {
-  Atomic::release_store(&_active_signal_handlers, (u4)0);
+  Atomic::release_store(&_initialize_active_signal_handler_counter, (u4)0);
 }
 
 class VM_JFRInitializeCPUTimeSampler : public VM_Operation {
@@ -654,7 +655,7 @@ bool JfrCPUSamplerThread::init_timers() {
   void* prev_handler = PosixSignals::get_signal_handler_for_signal(SIG);
   if ((prev_handler != SIG_DFL && prev_handler != SIG_IGN && prev_handler != (void*)::handle_timer_signal) ||
       PosixSignals::install_generic_signal_handler(SIG, (void*)::handle_timer_signal) == (void*)-1) {
-    log_error(jfr)("CPUTimeSample events will not be recorded: %p", prev_handler);
+    log_error(jfr)("Conflicting SIGPROF handler found: %p. CPUTimeSample events will not be recorded", prev_handler);
     return false;
   }
   Atomic::release_store(&_signal_handler_installed, true);
