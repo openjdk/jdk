@@ -331,6 +331,7 @@ void JfrCPUSamplerThread::run() {
 
 void JfrCPUSamplerThread::stackwalk_threads_in_native() {
   ResourceMark rm;
+  // Required to prevent JFR from sampling through an ongoing safepoint
   MutexLocker tlock(Threads_lock);
   ThreadsListHandle tlh;
   Thread* current = Thread::current();
