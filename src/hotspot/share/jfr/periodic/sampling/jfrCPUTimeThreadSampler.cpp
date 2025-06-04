@@ -297,7 +297,7 @@ void JfrCPUSamplerThread::enroll() {
 void JfrCPUSamplerThread::disenroll() {
   if (!Atomic::cmpxchg(&_disenrolled, false, true)) {
     log_trace(jfr)("Disenrolling CPU thread sampler");
-    if (Atomic::fetch_then_and(&_signal_handler_installed, false)) {
+    if (Atomic::load_acquire(&_signal_handler_installed)) {
       stop_timer();
       stop_signal_handlers();
     }
