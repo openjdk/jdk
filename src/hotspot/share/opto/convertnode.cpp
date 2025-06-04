@@ -292,14 +292,14 @@ Node* ConvF2HFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       // Conditions under which floating point constant can be considered for a pattern match.
       // 1. Constant must lie within Float16 value range, this will ensure that
       // we don't unintentially round off float constant to enforce a pattern match.
-      // 2. If constant value is one of the valid IEEE 754 binary32 NaN bit pattern
-      // then its safe to consider it for pattern match because of following reasons
+      // 2. If a constant value is one of the valid IEEE 754 binary32 NaN bit patterns
+      // then it's safe to consider it for pattern match because of the following reasons:
       //   a. As per section 2.8 of JVMS, Java Virtual Machine does not support
       //   signaling NaN value.
       //   b. Any signaling NaN which takes part in a non-comparison expression
-      //   results into a quiet NaN but preserves the significand bits of signaling NaN.
-      //   c. Pattern being matched includes a Float to Float16 conversion after binary
-      //   expression, this downcast will still preserve significand bits of binary32 NaN.
+      //   results in a quiet NaN but preserves the significand bits of signaling NaN.
+      //   c. The pattern being matched includes a Float to Float16 conversion after binary
+      //   expression, this downcast will still preserve the significand bits of binary32 NaN.
       bool isnan = ((*reinterpret_cast<jint*>(&con) & 0x7F800000) == 0x7F800000) &&
                    ((*reinterpret_cast<jint*>(&con) & 0x7FFFFF) != 0);
       if (StubRoutines::hf2f(StubRoutines::f2hf(con)) == con || isnan) {
