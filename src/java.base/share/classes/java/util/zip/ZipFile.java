@@ -351,11 +351,11 @@ public class ZipFile implements ZipConstants, Closeable {
                 case DEFLATED:
                     // Inflater likes a bit of slack
                     // MORE: Compute good size for inflater stream:
-                    long size = CENSIZ(zsrc.cen, pos);
-                    if (size > 65536) {
-                        size = 8192;
+                    long inputBufSize = CENSIZ(zsrc.cen, pos);
+                    if (inputBufSize > 65536 || inputBufSize <= 0) {
+                        inputBufSize = 8192;
                     }
-                    InputStream is = new ZipFileInflaterInputStream(in, res, (int) size);
+                    InputStream is = new ZipFileInflaterInputStream(in, res, (int) inputBufSize);
                     synchronized (istreams) {
                         istreams.add(is);
                     }
@@ -416,14 +416,14 @@ public class ZipFile implements ZipConstants, Closeable {
         private final Cleanable cleanable;
 
         ZipFileInflaterInputStream(ZipFileInputStream zfin,
-                                   CleanableResource res, int size) {
-            this(zfin, res, res.getInflater(), size);
+                                   CleanableResource res, int inputBufSize) {
+            this(zfin, res, res.getInflater(), inputBufSize);
         }
 
         private ZipFileInflaterInputStream(ZipFileInputStream zfin,
                                            CleanableResource res,
-                                           Inflater inf, int size) {
-            super(zfin, inf, size);
+                                           Inflater inf, int inputBufSize) {
+            super(zfin, inf, inputBufSize);
             this.cleanable = CleanerFactory.cleaner().register(this,
                     new InflaterCleanupAction(inf, res));
         }
