@@ -26,8 +26,42 @@
 #define SHARE_JFR_RECORDER_STACKTRACE_JFRVFRAMESTREAM_INLINE_HPP
 
 #include "jfr/recorder/stacktrace/jfrVframeStream.hpp"
+
 #include "runtime/continuationEntry.inline.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/registerMap.hpp"
+#include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/vframe.inline.hpp"
+
+inline RegisterMap::WalkContinuation JfrVframeStream::walk_continuation(JavaThread* jt) {
+  // NOTE: WalkContinuation::skip, because of interactions with ZGC relocation
+  //       and load barriers. This code is run while generating stack traces for
+  //       the ZPage allocation event, even when ZGC is relocating  objects.
+  //       When ZGC is relocating, it is forbidden to run code that performs
+  //       load barriers. With WalkContinuation::include, we visit heap stack
+  //       chunks and could be using load barriers.
+  //
+  // NOTE: Shenandoah GC also seems to require this check - actual details as to why
+  //       is unknown but to be filled in by others.
+  return ((UseZGC || UseShenandoahGC) && !StackWatermarkSet::processing_started(jt))
+    ? RegisterMap::WalkContinuation::skip
+    : RegisterMap::WalkContinuation::include;
+}
+
+inline JfrVframeStream::JfrVframeStream(JavaThread* jt, const frame& fr, bool in_continuation, bool stop_at_java_call_stub) :
+  vframeStreamCommon(jt, RegisterMap::UpdateMap::skip, RegisterMap::ProcessFrames::skip, walk_continuation(jt)),
+  _vthread(in_continuation) {
+  assert(!_vthread || JfrThreadLocal::is_vthread(jt), "invariant");
+  if (in_continuation) {
+    _cont_entry = jt->last_continuation();
+    assert(_cont_entry != nullptr, "invariant");
+  }
+  _frame = fr;
+  _stop_at_java_call_stub = stop_at_java_call_stub;
+  while (!fill_from_frame()) {
+    _frame = _frame.sender(&_reg_map);
+  }
+}
 
 inline void JfrVframeStream::next_frame() {
   do {

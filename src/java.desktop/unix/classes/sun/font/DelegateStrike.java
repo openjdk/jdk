@@ -37,7 +37,7 @@ import java.awt.geom.Rectangle2D;
  * appropriately.
  */
 
-class DelegateStrike extends NativeStrike {
+final class DelegateStrike extends NativeStrike {
 
     private FontStrike delegateStrike;
 
@@ -55,6 +55,7 @@ class DelegateStrike extends NativeStrike {
      * the metrics and transform them. But currently in such a case it
      * gets the metrics from a different font - its glyph delegate font.
      */
+    @Override
    StrikeMetrics getFontMetrics() {
        if (strikeMetrics == null) {
            if (pScalerContext != 0) {
@@ -67,31 +68,38 @@ class DelegateStrike extends NativeStrike {
         return strikeMetrics;
     }
 
+    @Override
     void getGlyphImagePtrs(int[] glyphCodes, long[] images,int  len) {
         delegateStrike.getGlyphImagePtrs(glyphCodes, images, len);
     }
 
+    @Override
     long getGlyphImagePtr(int glyphCode) {
         return delegateStrike.getGlyphImagePtr(glyphCode);
     }
 
+    @Override
     void getGlyphImageBounds(int glyphCode,
                              Point2D.Float pt, Rectangle result) {
         delegateStrike.getGlyphImageBounds(glyphCode, pt, result);
     }
 
+    @Override
     Point2D.Float getGlyphMetrics(int glyphCode) {
         return delegateStrike.getGlyphMetrics(glyphCode);
     }
 
+    @Override
     float getGlyphAdvance(int glyphCode) {
         return delegateStrike.getGlyphAdvance(glyphCode);
     }
 
+     @Override
      Point2D.Float getCharMetrics(char ch) {
         return delegateStrike.getCharMetrics(ch);
     }
 
+    @Override
     float getCodePointAdvance(int cp) {
         if (cp < 0 || cp >= 0x10000) {
             cp = 0xffff;
@@ -99,14 +107,17 @@ class DelegateStrike extends NativeStrike {
         return delegateStrike.getGlyphAdvance(cp);
     }
 
+    @Override
     Rectangle2D.Float getGlyphOutlineBounds(int glyphCode) {
         return delegateStrike.getGlyphOutlineBounds(glyphCode);
     }
 
+    @Override
     GeneralPath getGlyphOutline(int glyphCode, float x, float y) {
         return delegateStrike.getGlyphOutline(glyphCode, x, y);
     }
 
+    @Override
     GeneralPath getGlyphVectorOutline(int[] glyphs, float x, float y) {
         return delegateStrike.getGlyphVectorOutline(glyphs, x, y);
     }

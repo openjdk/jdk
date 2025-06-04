@@ -49,10 +49,12 @@ import jdk.jfr.events.StackFilter;
 import jdk.jfr.internal.settings.CutoffSetting;
 import jdk.jfr.internal.settings.EnabledSetting;
 import jdk.jfr.internal.settings.LevelSetting;
+import jdk.jfr.internal.settings.MethodSetting;
 import jdk.jfr.internal.settings.PeriodSetting;
 import jdk.jfr.internal.settings.StackTraceSetting;
 import jdk.jfr.internal.settings.ThresholdSetting;
 import jdk.jfr.internal.settings.ThrottleSetting;
+import jdk.jfr.internal.tracing.Modification;
 import jdk.jfr.internal.util.Utils;
 
 // This class can't have a hard reference from PlatformEventType, since it
@@ -70,6 +72,7 @@ public final class EventControl {
     private static final Type TYPE_THROTTLE = TypeLibrary.createType(ThrottleSetting.class);
     private static final long STACK_FILTER_ID = Type.getTypeId(StackFilter.class);
     private static final Type TYPE_LEVEL = TypeLibrary.createType(LevelSetting.class);
+    private static final Type TYPE_METHOD_FILTER = TypeLibrary.createType(MethodSetting.class);
 
     private final ArrayList<SettingControl> settingControls = new ArrayList<>();
     private final ArrayList<NamedControl> namedControls = new ArrayList<>(5);
@@ -95,6 +98,10 @@ public final class EventControl {
         if (eventType.hasLevel()) {
             addControl(Level.NAME, defineLevel(eventType));
         }
+        if (eventType.getModification() != Modification.NONE) {
+            addControl("filter", defineMethodFilter(eventType, eventType.getModification()));
+        }
+
         addControl(Enabled.NAME, defineEnabled(eventType));
 
         addStackFilters(eventType);
@@ -335,11 +342,23 @@ public final class EventControl {
         return new Control(new PeriodSetting(type, def), def);
     }
 
+    private Control defineMethodFilter(PlatformEventType type, Modification modification) {
+        String def = "";
+        type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_METHOD_FILTER, "filter", def, Collections.emptyList()));
+        return new Control(new MethodSetting(type, modification, def), def);
+    }
+
     void disable() {
         for (NamedControl nc : namedControls) {
             if (nc.control.isType(EnabledSetting.class)) {
                 nc.control.setValue("false");
                 return;
+            } else {
+                String v = nc.control.getDefaultValue();
+                // Avoids slow retransformation during shutdown
+                if (v != null && !PlatformRecorder.isInShutDown()) {
+                    nc.control.setValue(v);
+                }
             }
         }
     }
