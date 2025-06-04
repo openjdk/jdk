@@ -384,12 +384,12 @@ void JfrThreadSampling::process_cpu_time_request(JavaThread* jt, JfrThreadLocal*
   drain_enqueued_cpu_time_requests(now, tl, jt, current, lock);
 }
 
-static void drain_all_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl, JavaThread* jt, Thread* current, bool has_cpu_time_sample_request) {
+static void drain_all_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl, JavaThread* jt, Thread* current) {
   assert(tl != nullptr, "invariant");
   assert(jt != nullptr, "invariant");
   assert(current != nullptr, "invariant");
   drain_enqueued_requests(now, tl, jt, current);
-  if (has_cpu_time_sample_request) {
+  if (tl->has_cpu_time_jfr_requests()) {
     drain_enqueued_cpu_time_requests(now, tl, jt, current, true);
   }
 }
@@ -459,7 +459,7 @@ bool JfrThreadSampling::process_native_sample_request(JfrThreadLocal* tl, JavaTh
 }
 
 // Entry point for a sampled thread that discovered pending Jfr Sample Requests as part of a safepoint poll.
-void JfrThreadSampling::process_sample_request(JavaThread* jt, bool has_cpu_time_sample_request) {
+void JfrThreadSampling::process_sample_request(JavaThread* jt) {
   assert(JavaThread::current() == jt, "should be current thread");
   assert(jt->thread_state() == _thread_in_vm || jt->thread_state() == _thread_in_Java, "invariant");
 
@@ -486,6 +486,6 @@ void JfrThreadSampling::process_sample_request(JavaThread* jt, bool has_cpu_time
       break;
     }
   }
-  drain_all_enqueued_requests(now, tl, jt, jt, has_cpu_time_sample_request);
+  drain_all_enqueued_requests(now, tl, jt, jt);
 }
 

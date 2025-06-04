@@ -171,6 +171,7 @@ class JfrCPUSamplerThread : public NonJavaThread {
   volatile u4 _active_signal_handlers;
   volatile bool _is_async_processing_of_cpu_time_jfr_requests_triggered;
   volatile bool _warned_about_timer_creation_failure;
+  volatile bool _signal_handler_installed;
 
   static const u4 STOP_SIGNAL_BIT = 0x80000000;
 
@@ -227,7 +228,8 @@ JfrCPUSamplerThread::JfrCPUSamplerThread(double rate, bool auto_adapt) :
   _disenrolled(true),
   _active_signal_handlers(STOP_SIGNAL_BIT),
   _is_async_processing_of_cpu_time_jfr_requests_triggered(false),
-  _warned_about_timer_creation_failure(false) {
+  _warned_about_timer_creation_failure(false),
+  _signal_handler_installed(false) {
   assert(rate >= 0, "invariant");
 }
 
@@ -236,7 +238,8 @@ void JfrCPUSamplerThread::trigger_async_processing_of_cpu_time_jfr_requests() {
 }
 
 void JfrCPUSamplerThread::on_javathread_create(JavaThread* thread) {
-  if (thread->is_hidden_from_external_view() || thread->is_JfrRecorder_thread()) {
+  if (thread->is_hidden_from_external_view() || thread->is_JfrRecorder_thread() ||
+      !Atomic::load_acquire(&_signal_handler_installed)) {
     return;
   }
   JfrThreadLocal* tl = thread->jfr_thread_local();
@@ -295,8 +298,10 @@ void JfrCPUSamplerThread::enroll() {
 void JfrCPUSamplerThread::disenroll() {
   if (!Atomic::cmpxchg(&_disenrolled, false, true)) {
     log_trace(jfr)("Disenrolling CPU thread sampler");
-    stop_timer();
-    stop_signal_handlers();
+    if (Atomic::fetch_then_and(&_signal_handler_installed, false)) {
+      stop_timer();
+      stop_signal_handlers();
+    }
     _sample.wait();
     log_trace(jfr)("Disenrolled CPU thread sampler");
   }
@@ -327,7 +332,6 @@ void JfrCPUSamplerThread::run() {
 
 void JfrCPUSamplerThread::stackwalk_threads_in_native() {
   ResourceMark rm;
-  MutexLocker tlock(Threads_lock);
   ThreadsListHandle tlh;
   Thread* current = Thread::current();
   for (size_t i = 0; i < tlh.list()->length(); i++) {
@@ -655,6 +659,7 @@ bool JfrCPUSamplerThread::init_timers() {
     log_error(jfr)("CPUTimeSample events will not be recorded: %p", prev_handler);
     return false;
   }
+  Atomic::release_store(&_signal_handler_installed, true);
   VM_CPUTimeSamplerThreadInitializer op(this);
   VMThread::execute(&op);
   return true;
@@ -713,7 +718,6 @@ void JfrCPUSamplerThread::set_rate(double rate, bool auto_adapt) {
 
 void JfrCPUSamplerThread::update_all_thread_timers() {
   int64_t period_millis = get_sampling_period();
-  MutexLocker tlock(Threads_lock);
   ThreadsListHandle tlh;
   for (size_t i = 0; i < tlh.length(); i++) {
     JavaThread* thread = tlh.thread_at(i);

@@ -38,7 +38,7 @@ class JfrThreadSampling : AllStatic {
   static bool process_native_sample_request(JfrThreadLocal* tl, JavaThread* jt, Thread* sampler_thread);
   static void process_cpu_time_request(JavaThread* jt, JfrThreadLocal* tl, Thread* current, bool lock);
  public:
-  static void process_sample_request(JavaThread* jt, bool has_cpu_time_sample_request);
+  static void process_sample_request(JavaThread* jt);
 };
 
 #endif // SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLING_HPP
