@@ -25,9 +25,6 @@
 #ifndef SHARE_RUNTIME_SUSPENDRESUMEMANAGER_HPP
 #define SHARE_RUNTIME_SUSPENDRESUMEMANAGER_HPP
 
-#include "runtime/handshake.hpp"
-#include "runtime/javaThread.hpp"
-
 class SuspendResumeManager {
   friend SuspendThreadHandshake;
   friend ThreadSelfSuspensionHandshake;

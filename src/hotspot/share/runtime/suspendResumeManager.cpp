@@ -22,8 +22,15 @@
  *
  */
 
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
+#include "memory/resourceArea.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/suspendResumeManager.hpp"
 
 // This is the closure that prevents a suspended JavaThread from
@@ -76,7 +83,7 @@ void SuspendResumeManager::set_suspended(bool is_suspend, bool register_vthread_
 
 bool SuspendResumeManager::suspend(bool register_vthread_SR) {
   JVMTI_ONLY(assert(!_handshakee->is_in_VTMS_transition(), "no suspend allowed in VTMS transition");)
-    JavaThread* self = JavaThread::current();
+  JavaThread* self = JavaThread::current();
   if (_handshakee == self) {
     // If target is the current thread we can bypass the handshake machinery
     // and just suspend directly
