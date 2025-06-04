@@ -393,24 +393,6 @@ static void drain_all_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl,
   }
 }
 
-class SampleMonitor : public StackObj {
- private:
-  JfrThreadLocal* const _tl;
-  Monitor* const _sample_monitor;
- public:
-  SampleMonitor(JfrThreadLocal* tl) : _tl(tl), _sample_monitor(tl->sample_monitor()) {
-    assert(tl != nullptr, "invariant");
-    assert(_sample_monitor != nullptr, "invariant");
-    _sample_monitor->lock_without_safepoint_check();
-  }
-  ~SampleMonitor() {
-    assert_lock_strong(_sample_monitor);
-    _tl->set_sample_state(NO_SAMPLE);
-    _sample_monitor->notify_all();
-    _sample_monitor->unlock();
-  }
-};
-
 // Only entered by the JfrSampler thread.
 bool JfrThreadSampling::process_native_sample_request(JfrThreadLocal* tl, JavaThread* jt, Thread* sampler_thread) {
   assert(tl != nullptr, "invairant");
