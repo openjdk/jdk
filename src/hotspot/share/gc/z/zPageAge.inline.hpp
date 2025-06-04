@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZPAGEAGE_INLINE_HPP
 
 #include "gc/z/zPageAge.hpp"
+
 #include "utilities/checkedCast.hpp"
 
 #include <type_traits>
