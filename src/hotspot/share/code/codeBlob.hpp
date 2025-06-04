@@ -318,12 +318,7 @@ public:
   static CodeBlob* create(CodeBlob* archived_blob,
                           const char* name,
                           address archived_reloc_data,
-                          ImmutableOopMapSet* archived_oop_maps
-#ifndef PRODUCT
-                          , AsmRemarks& archived_asm_remarks
-                          , DbgStrings& archived_dbg_strings
-#endif // PRODUCT
-                         );
+                          ImmutableOopMapSet* archived_oop_maps);
 };
 
 //----------------------------------------------------------------------------------------------------
