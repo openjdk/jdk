@@ -644,7 +644,7 @@ class VM_CPUTimeSamplerThreadInitializer : public VM_Operation {
 bool JfrCPUSamplerThread::init_timers() {
   // install sig handler for sig
   if ((s8)PosixSignals::install_generic_signal_handler(SIG, (void*)::handle_timer_signal) == -1) {
-    log_error(jfr)("Failed to install signal handler for CPU thread sampling, possibly because another profiler is active: %s", os::strerror(os::get_last_error()));
+    log_error(jfr)("CPUTimeSample events will not be recorded");
     return false;
   }
   VM_CPUTimeSamplerThreadInitializer op(this);
