@@ -928,20 +928,6 @@ public final class HttpCookie implements Cloneable {
                         cookie.setDomain(attrValue);
                 }
             });
-        assignors.put("max-age", new CookieAttributeAssignor(){
-                public void assign(HttpCookie cookie,
-                                   String attrName,
-                                   String attrValue) {
-                    try {
-                        long maxage = Long.parseLong(attrValue);
-                        if (cookie.getMaxAge() == MAX_AGE_UNSPECIFIED)
-                            cookie.setMaxAge(maxage);
-                    } catch (NumberFormatException ignored) {
-                        throw new IllegalArgumentException(
-                                "Illegal cookie max-age attribute");
-                    }
-                }
-            });
         assignors.put("path", new CookieAttributeAssignor(){
                 public void assign(HttpCookie cookie,
                                    String attrName,
@@ -984,23 +970,13 @@ public final class HttpCookie implements Cloneable {
                     }
                 }
             });
-        assignors.put("expires", new CookieAttributeAssignor(){ // Netscape only
-                public void assign(HttpCookie cookie,
-                                   String attrName,
-                                   String attrValue) {
-                    if (cookie.getMaxAge() == MAX_AGE_UNSPECIFIED) {
-                        long delta = cookie.expiryDate2DeltaSeconds(attrValue);
-                        cookie.setMaxAge(delta > 0 ? delta : 0);
-                    }
-                }
-            });
     }
 
     private static void assignMaxAgeAttribute(HttpCookie cookie,
                                                String expiresValue,
                                                String maxAgeValue)
     {
-	if (cookie.getMaxAge() != MAX_AGE_UNSPECIFIED)
+        if (cookie.getMaxAge() != MAX_AGE_UNSPECIFIED)
             return;
 
         try {
@@ -1013,8 +989,8 @@ public final class HttpCookie implements Cloneable {
 
         try {
             if (expiresValue != null) {
-		long delta = cookie.expiryDate2DeltaSeconds(expiresValue);
-		cookie.setMaxAge(delta > 0 ? delta : 0);
+                long delta = cookie.expiryDate2DeltaSeconds(expiresValue);
+                cookie.setMaxAge(delta > 0 ? delta : 0);
             }
         } catch (NumberFormatException ignored) {}
     }

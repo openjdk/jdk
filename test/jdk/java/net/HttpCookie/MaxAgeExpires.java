@@ -61,6 +61,7 @@ public class MaxAgeExpires {
     }
 
     static Test[] tests = new Test[] {
+        // Date string in past. 
         new Test(-1, "Thu, 01 Jan 2024 00:00:00 GMT", 0, true),
         new Test(1000, "Thu, 01 Jan 2024 00:00:00 GMT", 1000, false),
         new Test(0, "Thu, 01 Jan 2024 00:00:00 GMT", 0, true),
