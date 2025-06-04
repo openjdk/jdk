@@ -246,7 +246,7 @@ void JfrCPUSamplerThread::on_javathread_create(JavaThread* thread) {
   if (create_timer_for_thread(thread, timerid)) {
     tl->set_cpu_timer(&timerid);
   } else {
-    if (!Atomic::xchg(&_warned_about_timer_creation_failure, true)) {
+    if (!Atomic::or_then_fetch(&_warned_about_timer_creation_failure, true)) {
       log_warning(jfr)("Failed to create timer for a thread");
     }
     tl->deallocate_cpu_time_jfr_queue();
@@ -488,7 +488,7 @@ void handle_timer_signal(int signo, siginfo_t* info, void* context) {
 
 
 void JfrCPUTimeThreadSampling::handle_timer_signal(siginfo_t* info, void* context) {
-  if (info->si_code != SIGPROF) {
+  if (info->si_code != SI_TIMER) {
     // not the signal we are interested in
     return;
   }
@@ -649,7 +649,7 @@ class VM_CPUTimeSamplerThreadInitializer : public VM_Operation {
 
 bool JfrCPUSamplerThread::init_timers() {
   // install sig handler for sig
-  if ((s8)PosixSignals::install_generic_signal_handler(SIG, (void*)::handle_timer_signal) == -1) {
+  if (PosixSignals::install_generic_signal_handler(SIG, (void*)::handle_timer_signal) == (void*)-1) {
     log_error(jfr)("CPUTimeSample events will not be recorded");
     return false;
   }
