@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,14 @@ import java.nio.ByteBuffer;
 import java.security.AlgorithmConstraints;
 import java.security.CryptoPrimitive;
 import java.util.*;
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.function.Function;
 import javax.crypto.SecretKey;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLHandshakeException;
 import javax.security.auth.x500.X500Principal;
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
 import static sun.security.ssl.NamedGroup.NamedGroupSpec.*;
-import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 
 abstract class HandshakeContext implements ConnectionContext {
     // System properties
@@ -72,7 +73,7 @@ abstract class HandshakeContext implements ConnectionContext {
     // consolidated parameters
     final List<ProtocolVersion>             activeProtocols;
     final List<CipherSuite>                 activeCipherSuites;
-    final AlgorithmConstraints              algorithmConstraints;
+    final SSLAlgorithmConstraints           algorithmConstraints;
     final ProtocolVersion                   maximumActiveProtocol;
 
     // output stream

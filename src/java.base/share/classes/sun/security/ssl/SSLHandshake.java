@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,6 +369,7 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
                     )
             }),
 
+    // RFC 8879 - TLS Certificate Compression
     @SuppressWarnings({"unchecked", "rawtypes"})
     COMPRESSED_CERTIFICATE      ((byte)0x19, "compressed_certificate",
             (new Map.Entry[] {
@@ -385,6 +386,9 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
                             ProtocolVersion.PROTOCOLS_OF_13
                     )
             })),
+
+    // RFC 8870 - Encrypted Key Transport for DTLS/Secure RTP
+    EKT_KEY                     ((byte)0x1A, "ekt_key"),
 
     MESSAGE_HASH                ((byte)0xFE, "message_hash"),
     NOT_APPLICABLE              ((byte)0xFF, "not_applicable");
