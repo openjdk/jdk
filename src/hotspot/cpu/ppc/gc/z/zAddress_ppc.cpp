@@ -92,6 +92,7 @@ size_t ZPlatformAddressOffsetBits() {
   static const size_t valid_max_address_offset_bits = probe_valid_max_address_bit() + 1;
   const size_t max_address_offset_bits = valid_max_address_offset_bits - 3;
 #ifdef ADDRESS_SANITIZER
+  // The max supported value is 44 because of other internal data structures.
   return MIN2(valid_max_address_offset_bits, (size_t)44);
 #else
   const size_t min_address_offset_bits = max_address_offset_bits - 2;
