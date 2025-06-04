@@ -247,7 +247,6 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
       break;
     }
 
-
     // Check for a matching compiled method.
     if (current->cb()->as_nmethod_or_null() == sampled_nm) {
       if (current->pc() != sampled_pc) {

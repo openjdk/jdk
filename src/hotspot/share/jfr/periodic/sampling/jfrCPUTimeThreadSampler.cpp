@@ -263,7 +263,6 @@ void JfrCPUSamplerThread::on_javathread_terminate(JavaThread* thread) {
   if (timer == nullptr) {
     return; // no timer was created for this thread
   }
-  timer_delete(*timer);
   tl->unset_cpu_timer();
   tl->deallocate_cpu_time_jfr_queue();
   s4 lost_samples = tl->cpu_time_jfr_queue().lost_samples();
@@ -530,7 +529,7 @@ void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
     queue.increment_lost_samples();
     return;
   }
-  if (!tl->acquire_cpu_time_jfr_enqueue_lock()) {
+  if (!tl->try_acquire_cpu_time_jfr_enqueue_lock()) {
     queue.increment_lost_samples();
     return;
   }
@@ -730,12 +729,11 @@ void JfrCPUSamplerThread::update_all_thread_timers() {
 
 #else
 
-static bool _showed_warning = false;
-
 static void warn() {
-  if (!_showed_warning) {
+  static bool displayed_warning = false;
+  if (!displayed_warning) {
     warning("CPU time method sampling not supported in JFR on your platform");
-    _showed_warning = true;
+    displayed_warning = true;
   }
 }
 

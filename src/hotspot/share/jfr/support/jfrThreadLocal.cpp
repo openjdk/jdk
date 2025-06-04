@@ -562,6 +562,7 @@ void JfrThreadLocal::set_cpu_timer(timer_t* timer) {
 
 void JfrThreadLocal::unset_cpu_timer() {
   if (_cpu_timer != nullptr) {
+    timer_delete(*_cpu_timer);
     JfrCHeapObj::free(_cpu_timer, sizeof(timer_t));
     _cpu_timer = nullptr;
   }
@@ -579,7 +580,7 @@ bool JfrThreadLocal::is_cpu_time_jfr_dequeue_locked() {
   return Atomic::load_acquire(&_cpu_time_jfr_locked) == DEQUEUE;
 }
 
-bool JfrThreadLocal::acquire_cpu_time_jfr_enqueue_lock() {
+bool JfrThreadLocal::try_acquire_cpu_time_jfr_enqueue_lock() {
   return Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, ENQUEUE) == UNLOCKED;
 }
 

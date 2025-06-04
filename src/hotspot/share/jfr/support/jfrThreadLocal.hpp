@@ -378,7 +378,7 @@ class JfrThreadLocal {
   bool is_cpu_time_jfr_enqueue_locked();
   bool is_cpu_time_jfr_dequeue_locked();
 
-  bool acquire_cpu_time_jfr_enqueue_lock();
+  bool try_acquire_cpu_time_jfr_enqueue_lock();
   bool try_acquire_cpu_time_jfr_dequeue_lock();
   void acquire_cpu_time_jfr_dequeue_lock();
   void release_cpu_time_jfr_queue_lock();
