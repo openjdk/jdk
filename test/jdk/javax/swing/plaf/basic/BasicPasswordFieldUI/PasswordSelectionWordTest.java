@@ -73,7 +73,7 @@ public class PasswordSelectionWordTest {
                     "because the JPasswordField UI was " + field.getUI());
             return;
         }
-        System.out.println("Testing "+ field.getUI());
+        System.out.println("Testing " + field.getUI());
 
         // do something (anything) to initialize the Views:
         field.setSize(100, 100);
