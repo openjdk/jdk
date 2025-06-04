@@ -279,7 +279,7 @@ void JfrCPUSamplerThread::start_thread() {
 
 void JfrCPUSamplerThread::enroll() {
   if (Atomic::cmpxchg(&_disenrolled, true, false)) {
-    Atomic::store(_warned_about_timer_creation_failure, false);
+    Atomic::store(&_warned_about_timer_creation_failure, false);
     allow_signal_handlers();
     log_trace(jfr)("Enrolling CPU thread sampler");
     _sample.signal();
