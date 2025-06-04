@@ -799,12 +799,9 @@ public sealed class ICC_Profile implements Serializable
      */
     public static ICC_Profile getInstance(byte[] data) {
         ProfileDataVerifier.verify(data);
+        verifyHeader(data);
         Profile p;
         try {
-            byte[] theHeader = new byte[HEADER_SIZE];
-            System.arraycopy(data, 0, theHeader, 0, HEADER_SIZE);
-            verifyHeader(theHeader);
-
             p = CMSManager.getModule().loadProfile(data);
         } catch (CMMException c) {
             throw new IllegalArgumentException("Invalid ICC Profile Data");
