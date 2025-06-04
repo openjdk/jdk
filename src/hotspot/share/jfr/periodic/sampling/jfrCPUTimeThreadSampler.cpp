@@ -632,14 +632,14 @@ void JfrCPUSamplerThread::allow_signal_handlers() {
   Atomic::release_store(&_active_signal_handlers, (u4)0);
 }
 
-class VM_CPUTimeSamplerThreadInitializer : public VM_Operation {
+class VM_JFRInitializeCPUTimeSampler : public VM_Operation {
  private:
   JfrCPUSamplerThread* const _sampler;
-  
- public:
-  VM_CPUTimeSamplerThreadInitializer(JfrCPUSamplerThread* sampler) : _sampler(sampler) {}
 
-  VMOp_Type type() const { return VMOp_CPUTimeSamplerThreadInitializer; }
+ public:
+  VM_JFRInitializeCPUTimeSampler(JfrCPUSamplerThread* sampler) : _sampler(sampler) {}
+
+  VMOp_Type type() const { return VMOp_JFRInitializeCPUTimeSampler; }
   void doit() {
     JfrJavaThreadIterator iter;
     while (iter.has_next()) {
@@ -657,19 +657,19 @@ bool JfrCPUSamplerThread::init_timers() {
     return false;
   }
   Atomic::release_store(&_signal_handler_installed, true);
-  VM_CPUTimeSamplerThreadInitializer op(this);
+  VM_JFRInitializeCPUTimeSampler op(this);
   VMThread::execute(&op);
   return true;
 }
 
-class VM_CPUTimeSamplerThreadTerminator : public VM_Operation {
+class VM_JFRTerminateCPUTimeSampler : public VM_Operation {
  private:
   JfrCPUSamplerThread* const _sampler;
 
  public:
-  VM_CPUTimeSamplerThreadTerminator(JfrCPUSamplerThread* sampler) : _sampler(sampler) {}
+  VM_JFRTerminateCPUTimeSampler(JfrCPUSamplerThread* sampler) : _sampler(sampler) {}
 
-  VMOp_Type type() const { return VMOp_CPUTimeSamplerThreadTerminator; }
+  VMOp_Type type() const { return VMOp_JFRTerminateCPUTimeSampler; }
   void doit() {
     JfrJavaThreadIterator iter;
     while (iter.has_next()) {
@@ -687,7 +687,7 @@ class VM_CPUTimeSamplerThreadTerminator : public VM_Operation {
 };
 
 void JfrCPUSamplerThread::stop_timer() {
-  VM_CPUTimeSamplerThreadTerminator op(this);
+  VM_JFRTerminateCPUTimeSampler op(this);
   VMThread::execute(&op);
 }
 
