@@ -719,7 +719,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   // verify callee-saved register
 #ifdef ASSERT
   guarantee(thread != rax, "change this code");
-  __ push(rax);
+  __ push(rax, true /*is_pair*/);
   { Label L;
     __ get_thread_slow(rax);
     __ cmpptr(thread, rax);
@@ -727,7 +727,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
     __ stop("StubAssembler::call_RT: rdi/r15 not callee saved?");
     __ bind(L);
   }
-  __ pop(rax);
+  __ pop(rax, true /*is_pair*/);
 #endif
   __ reset_last_Java_frame(true);
 

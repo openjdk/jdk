@@ -2943,7 +2943,7 @@ address StubGenerator::generate_generic_copy(address byte_copy_entry, address sh
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
 #ifdef _WIN64
-  __ push(rklass_tmp); // rdi is callee-save on Windows
+  __ push(rklass_tmp, true /*is_pair*/); // rdi is callee-save on Windows
 #endif
 
   // bump this on entry, not on exit:
@@ -3077,7 +3077,7 @@ address StubGenerator::generate_generic_copy(address byte_copy_entry, address sh
   __ andl(rax_lh, Klass::_lh_log2_element_size_mask); // rax_lh -> rax_elsize
 
 #ifdef _WIN64
-  __ pop(rklass_tmp); // Restore callee-save rdi
+  __ pop(rklass_tmp, true /*is_pair*/); // Restore callee-save rdi
 #endif
 
   // next registers should be set before the jump to corresponding stub
