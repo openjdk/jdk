@@ -11324,6 +11324,7 @@ instruct xorL_rReg_im1_ndd(rRegL dst,rRegL src, immL_M1 imm)
 // Xor Register with Immediate
 instruct xorL_rReg_imm(rRegL dst, immL32 src, rFlagsReg cr)
 %{
+  // Strict predicate check to make selection of xorL_rReg_im1 cost agnostic if immL32 src is -1.
   predicate(!UseAPX && n->in(2)->bottom_type()->is_long()->get_con() != -1L);
   match(Set dst (XorL dst src));
   effect(KILL cr);
