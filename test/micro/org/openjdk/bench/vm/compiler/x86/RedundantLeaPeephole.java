@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Warmup(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
+// Fix heap size since the StoreN benchmarks are allocating a lot and dependent on GC selection and compressed oop mode.
 @Fork(value = 3, jvmArgsAppend = {"-Xms1g", "-Xmx1g"})
 @State(Scope.Thread)
 public class RedundantLeaPeephole {
