@@ -59,8 +59,8 @@ public class TestFloat16ScalarOperations {
     private static final Float16 MAX_HALF_ULP = Float16.valueOf(16.0f);
     private static final Float16 SIGNALING_NAN = shortBitsToFloat16((short)31807);
 
-    private static Generator<Float> genF = G.uniformFloats(0.0f, 70000.0f);
-    private static Generator<Short> genHF = G.uniformFloat16s(Float.floatToFloat16(-2000.0f), Float.floatToFloat16(2000.0f));
+    private static Generator<Float> genF = G.uniformFloats();
+    private static Generator<Short> genHF = G.uniformFloat16s();
 
     private static final Float16 RANDOM1 = Float16.valueOf(genF.next());
     private static final Float16 RANDOM2 = Float16.valueOf(genF.next());
@@ -415,7 +415,7 @@ public class TestFloat16ScalarOperations {
     @IR(counts = {IRNode.ADD_HF, " >0 ", IRNode.SUB_HF, " >0 ", IRNode.MUL_HF, " >0 ", IRNode.DIV_HF, " >0 "},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     @Warmup(10000)
-    public short testRandomFP16ConstantPatterns() {
+    public short testRandomFP16ConstantPatternSet1() {
         short res = 0;
         res += Float.floatToFloat16(RANDOM1_VAR.floatValue() + RANDOM2.floatValue());
         res += Float.floatToFloat16(RANDOM2_VAR.floatValue() - RANDOM3.floatValue());
@@ -424,13 +424,35 @@ public class TestFloat16ScalarOperations {
         return res;
     }
 
-    @Check(test="testRandomFP16ConstantPatterns")
-    public void checkRandomFP16ConstantPatterns(short actual) throws Exception {
-        TestFramework.deoptimize(TestFloat16ScalarOperations.class.getMethod("testRandomFP16ConstantPatterns"));
-        short expected = testRandomFP16ConstantPatterns();
+    @Check(test="testRandomFP16ConstantPatternSet1")
+    public void checkRandomFP16ConstantPatternSet1(short actual) throws Exception {
+        TestFramework.deoptimize(TestFloat16ScalarOperations.class.getMethod("testRandomFP16ConstantPatternSet1"));
+        short expected = testRandomFP16ConstantPatternSet1();
         Verify.checkEQ(expected, actual);
     }
 
+
+    @Test
+    @IR(counts = {IRNode.ADD_HF, " >0 ", IRNode.SUB_HF, " >0 ", IRNode.MUL_HF, " >0 ", IRNode.DIV_HF, " >0 "},
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
+    @IR(counts = {IRNode.ADD_HF, " >0 ", IRNode.SUB_HF, " >0 ", IRNode.MUL_HF, " >0 ", IRNode.DIV_HF, " >0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+    @Warmup(10000)
+    public short testRandomFP16ConstantPatternSet2() {
+        short res = 0;
+        res += Float.floatToFloat16(RANDOM2.floatValue() + RANDOM1_VAR.floatValue());
+        res += Float.floatToFloat16(RANDOM3.floatValue() - RANDOM2_VAR.floatValue());
+        res += Float.floatToFloat16(RANDOM4.floatValue() * RANDOM3_VAR.floatValue());
+        res += Float.floatToFloat16(RANDOM5.floatValue() / RANDOM4_VAR.floatValue());
+        return res;
+    }
+
+    @Check(test="testRandomFP16ConstantPatternSet2")
+    public void checkRandomFP16ConstantPatternSet2(short actual) throws Exception {
+        TestFramework.deoptimize(TestFloat16ScalarOperations.class.getMethod("testRandomFP16ConstantPatternSet2"));
+        short expected = testRandomFP16ConstantPatternSet2();
+        Verify.checkEQ(expected, actual);
+    }
 
     //
     // Tests points for various Float16 constant folding transforms. Following figure represents various
