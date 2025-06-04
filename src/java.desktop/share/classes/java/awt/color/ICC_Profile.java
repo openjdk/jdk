@@ -966,7 +966,7 @@ public sealed class ICC_Profile implements Serializable
      * @return the major version of the profile
      */
     public int getMajorVersion() {
-        return getData(icSigHead)[8];
+        return getData(cmmProfile(), icSigHead)[8];
     }
 
     /**
@@ -975,7 +975,7 @@ public sealed class ICC_Profile implements Serializable
      * @return the minor version of the profile
      */
     public int getMinorVersion() {
-        return getData(icSigHead)[9];
+        return getData(cmmProfile(), icSigHead)[9];
     }
 
     /**
@@ -988,7 +988,7 @@ public sealed class ICC_Profile implements Serializable
         if (info != null) {
             return info.profileClass;
         }
-        byte[] theHeader = getData(icSigHead);
+        byte[] theHeader = getData(cmmProfile(), icSigHead);
         return getProfileClass(theHeader);
     }
 
@@ -1048,7 +1048,7 @@ public sealed class ICC_Profile implements Serializable
      *         {@code ColorSpace} class
      */
     public int getPCSType() {
-        byte[] theHeader = getData(icSigHead);
+        byte[] theHeader = getData(cmmProfile(), icSigHead);
         return getPCSType(theHeader);
     }
 
@@ -1209,7 +1209,7 @@ public sealed class ICC_Profile implements Serializable
         if (info != null) {
             return info.numComponents;
         }
-        byte[] theHeader = getData(icSigHead);
+        byte[] theHeader = getData(cmmProfile(), icSigHead);
         int theColorSpaceSig = intFromBigEndian(theHeader, icHdrColorSpace);
         return switch (theColorSpaceSig) {
             case icSigGrayData -> 1;
@@ -1248,7 +1248,7 @@ public sealed class ICC_Profile implements Serializable
      * encoded in an XYZType tag.
      */
     final float[] getXYZTag(int tagSignature) {
-        byte[] theData = getData(tagSignature);
+        byte[] theData = getData(cmmProfile(), tagSignature);
         float[] theXYZNumber = new float[3]; /* array to return */
 
         /* convert s15Fixed16Number to float */
@@ -1272,7 +1272,7 @@ public sealed class ICC_Profile implements Serializable
      *         single gamma value
      */
     float getGamma(int tagSignature) {
-        byte[] theTRCData = getData(tagSignature);
+        byte[] theTRCData = getData(cmmProfile(), tagSignature);
         if (intFromBigEndian(theTRCData, icCurveCount) != 1) {
             throw new ProfileDataException("TRC is not a gamma");
         }
@@ -1303,7 +1303,7 @@ public sealed class ICC_Profile implements Serializable
      *         table
      */
     short[] getTRC(int tagSignature) {
-        byte[] theTRCData = getData(tagSignature);
+        byte[] theTRCData = getData(cmmProfile(), tagSignature);
         int nElements = intFromBigEndian(theTRCData, icCurveCount);
         if (nElements == 1) {
             throw new ProfileDataException("TRC is not a table");
