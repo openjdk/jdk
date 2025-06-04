@@ -33,10 +33,8 @@ class Thread;
 
 class JfrThreadSampling : AllStatic {
   friend class JfrSamplerThread;
-  friend class JfrCPUSamplerThread;
  private:
   static bool process_native_sample_request(JfrThreadLocal* tl, JavaThread* jt, Thread* sampler_thread);
-  static void process_cpu_time_request(JavaThread* jt, JfrThreadLocal* tl, Thread* current, bool lock);
  public:
   static void process_sample_request(JavaThread* jt);
 };
