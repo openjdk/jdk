@@ -27,26 +27,51 @@ import sun.security.util.RawKeySpec;
 
 import java.security.KeyFactory;
 import java.security.KeyPairGenerator;
+import java.security.Provider;
+import java.security.Security;
 import java.util.HexFormat;
 
 /*
  * @test
  * @bug 8358594
- * @library /test/lib
+ * @library /test/lib /test/jdk/sun/security/pkcs11
  * @modules java.base/sun.security.util
  * @summary confirm the hardcoded NIST categories in KeyUtil class
  */
 public class NistCategories {
     public static void main(String[] args) throws Exception {
-        check("ML-KEM-512", 1);
-        check("ML-KEM-768", 3);
-        check("ML-KEM-1024", 5);
-        check("ML-DSA-44", 2);
-        check("ML-DSA-65", 3);
-        check("ML-DSA-87", 5);
-        check("RSA", -1);
-        check("Ed25519", -1);
+        Security.addProvider(PKCS11Test.getSunPKCS11(PKCS11Test.getNssConfig()));
+        for (var p : Security.getProviders()) {
+            for (var s : p.getServices()) {
+                switch (s.getType()) {
+                    case "KeyPairGenerator" -> test(s);
+                }
+            }
+        }
+        testLMS();
+    }
 
+    static void test(Provider.Service s) throws Exception {
+        System.out.println(s.getProvider().getName()
+                + " " + s.getType() + "." + s.getAlgorithm());
+        var alg = s.getAlgorithm();
+        var g = KeyPairGenerator.getInstance(alg);
+        var kp = g.generateKeyPair();
+        var size = switch (g.getAlgorithm()) {
+            case "RSA", "RSASSA-PSS", "DSA", "DiffieHellman", "DH",
+                 "EC", "EdDSA", "Ed25519", "Ed448",
+                 "XDH", "X25519", "X448" -> -1;
+            case "ML-KEM-512" -> 1;
+            case "ML-DSA-44" -> 2;
+            case "ML-KEM", "ML-KEM-768", "ML-DSA", "ML-DSA-65" -> 3;
+            case "ML-KEM-1024", "ML-DSA-87" -> 5;
+            default -> throw new UnsupportedOperationException(alg);
+        };
+        Asserts.assertEQ(size, KeyUtil.getNistCategory(kp.getPublic()));
+        Asserts.assertEQ(size, KeyUtil.getNistCategory(kp.getPrivate()));
+    }
+
+    static void testLMS() throws Exception {
         System.out.println("HSS/LMS");
         var spec = new RawKeySpec(HexFormat.of().parseHex("""
                 00000002
@@ -62,13 +87,5 @@ public class NistCategories {
         // not have a category. It just shows they are not defined in JDK
         // at the moment.
         Asserts.assertEQ(-1, KeyUtil.getNistCategory(key));
-
-    }
-
-    static void check(String alg, int expected) throws Exception {
-        System.out.println(alg);
-        var kp = KeyPairGenerator.getInstance(alg).generateKeyPair();
-        Asserts.assertEQ(expected, KeyUtil.getNistCategory(kp.getPrivate()));
-        Asserts.assertEQ(expected, KeyUtil.getNistCategory(kp.getPublic()));
     }
 }
