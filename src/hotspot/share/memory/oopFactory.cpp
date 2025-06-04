@@ -107,7 +107,6 @@ typeArrayOop oopFactory::new_typeArray_nozero(BasicType type, int length, TRAPS)
 
 
 objArrayOop oopFactory::new_objArray(Klass* klass, int length, TRAPS) {
-  assert(klass->is_klass(), "must be instance class");
   if (klass->is_array_klass()) {
     return ArrayKlass::cast(klass)->allocate_arrayArray(1, length, THREAD);
   } else {
