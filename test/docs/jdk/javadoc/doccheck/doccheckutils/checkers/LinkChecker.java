@@ -220,21 +220,14 @@ public class LinkChecker implements HtmlChecker {
 
     @Override
     public boolean isOK() {
-        return duplicateIds == 0
-                && missingIds == 0
-                && missingFiles == 0
-                && badSchemes == 0
-                && log.noErrors();
+        return log.noErrors() && (missingFiles == 0);
     }
 
     @Override
     public void close() {
-        if (!isOK()) {
+        if (!log.noErrors()) {
             report();
-            throw new RuntimeException(
-                    "LinkChecker encountered errors. Duplicate IDs: "
-                            + duplicateIds + ", Missing IDs: " + missingIds
-                            + ", Missing Files: " + missingFiles + ", Bad Schemes: " + badSchemes);
+            throw new RuntimeException("LinkChecker encountered errors; see log above.");
         }
     }
 
@@ -278,7 +271,7 @@ public class LinkChecker implements HtmlChecker {
                 }
 
                 if (!Files.exists(p)) {
-                    log.log(currFile, line, "missing file reference: " + p);
+                    log.log(currFile, line, "missing file reference: " + log.relativize(p));
                     return;
                 }
 
@@ -398,7 +391,7 @@ public class LinkChecker implements HtmlChecker {
 
         void addID(int line, String name) {
             if (checked) {
-                throw new IllegalStateException("Adding ID after file has been");
+                throw new IllegalStateException("Adding ID after file has been checked");
             }
             Objects.requireNonNull(name);
             IDInfo info = map.computeIfAbsent(name, _ -> new IDInfo());
@@ -419,7 +412,9 @@ public class LinkChecker implements HtmlChecker {
                 if (name != null) {
                     IDInfo id = map.get(name);
                     if (id == null || !id.declared) {
-                        log.log(log.relativize(from), line, "id not found: " + this.pathOrURI + "#" + name);
+                        log.log(log.relativize(from), line,
+                                "id not found: " + this.pathOrURI + "#" + name);
+                        LinkChecker.this.missingIds++;
                     }
                 }
             } else {
@@ -435,7 +430,8 @@ public class LinkChecker implements HtmlChecker {
             map.forEach((name, id) -> {
                 if (name != null && !id.declared) {
                     for (Position ref : id.references) {
-                        log.log(log.relativize(ref.path), ref.line, "id not found: " + this.pathOrURI + "#" + name);
+                        log.log(log.relativize(ref.path), ref.line,
+                                "id not found: " + this.pathOrURI + "#" + name);
                     }
                     missingIds++;
                 }
