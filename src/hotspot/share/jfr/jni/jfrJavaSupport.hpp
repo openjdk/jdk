@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 
 class Klass;
 class outputStream;
+template <typename E> class GrowableArray;
 
 class JfrJavaSupport : public AllStatic {
  public:
@@ -68,7 +69,6 @@ class JfrJavaSupport : public AllStatic {
   static void get_field_local_ref(JfrJavaArguments* args, TRAPS);
 
   static jstring new_string(const char* c_str, TRAPS);
-  static jobjectArray new_string_array(int length, TRAPS);
 
   static jobject new_java_lang_Boolean(bool value, TRAPS);
   static jobject new_java_lang_Integer(jint value, TRAPS);
@@ -88,6 +88,7 @@ class JfrJavaSupport : public AllStatic {
   static const char* c_str(oop string, Thread* thread, bool c_heap = false);
   static void free_c_str(const char* str, bool c_heap);
   static Symbol** symbol_array(jobjectArray string_array, JavaThread* thread, intptr_t* result_size, bool c_heap = false);
+  static jlongArray create_long_array(GrowableArray<jlong>* array, TRAPS);
 
   // exceptions
   static void throw_illegal_state_exception(const char* message, TRAPS);
