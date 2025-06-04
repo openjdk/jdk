@@ -26,6 +26,7 @@
 package java.lang.foreign;
 
 import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.NativeMemoryTracking.NMTArena;
 import jdk.internal.ref.CleanerFactory;
 
 import java.lang.foreign.MemorySegment.Scope;
@@ -258,6 +259,20 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
     }
 
     /**
+     * {@return a new confined arena} Segments allocated with the confined arena can
+     * only be {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by the
+     * thread that created the arena, the arena's <em>owner thread</em>.
+     * <p>
+     * Memory segments {@linkplain #allocate(long, long) allocated} by the returned
+     * arena
+     * are zero-initialized.
+     * @param name The name of the arena
+     */
+    static Arena ofConfined(String name) {
+        return new NMTArena(MemorySessionImpl.createConfined(Thread.currentThread()), name);
+    }
+
+    /**
      * {@return a new shared arena} Segments allocated with the shared arena can be
      *          {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by any thread.
      * <p>
@@ -266,6 +281,19 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      */
     static Arena ofShared() {
         return MemorySessionImpl.createShared().asArena();
+    }
+
+    /**
+     * {@return a new shared arena} Segments allocated with the shared arena can be
+     * {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by any thread.
+     * <p>
+     * Memory segments {@linkplain #allocate(long, long) allocated} by the returned
+     * arena
+     * are zero-initialized.
+     * @param name The name of the arena
+     */
+    static Arena ofShared(String name) {
+        return new NMTArena(MemorySessionImpl.createShared(), name);
     }
 
     /**
