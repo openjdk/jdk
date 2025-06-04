@@ -649,8 +649,10 @@ class VM_CPUTimeSamplerThreadInitializer : public VM_Operation {
 
 bool JfrCPUSamplerThread::init_timers() {
   // install sig handler for sig
-  if (PosixSignals::install_generic_signal_handler(SIG, (void*)::handle_timer_signal) == (void*)-1) {
-    log_error(jfr)("CPUTimeSample events will not be recorded");
+  void* prev_handler = PosixSignals::get_signal_handler_for_signal(SIG);
+  if ((prev_handler != SIG_DFL && prev_handler != SIG_IGN && prev_handler != (void*)::handle_timer_signal) ||
+      PosixSignals::install_generic_signal_handler(SIG, (void*)::handle_timer_signal) == (void*)-1) {
+    log_error(jfr)("CPUTimeSample events will not be recorded: %p", prev_handler);
     return false;
   }
   VM_CPUTimeSamplerThreadInitializer op(this);
