@@ -82,7 +82,6 @@ typedef void (*ThreadFunction)(JavaThread*, TRAPS);
 
 class EventVirtualThreadPinned;
 
-
 class JavaThread: public Thread {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -685,10 +684,8 @@ private:
 
   // Support for thread handshake operations
   HandshakeState _handshake;
-
  public:
   HandshakeState* handshake_state() { return &_handshake; }
-
 
   // A JavaThread can always safely operate on it self and other threads
   // can do it safely if they are the active handshaker.

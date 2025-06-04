@@ -464,7 +464,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _pending_monitorenter(false),
   _pending_transfer_to_interpreter(false),
   _pending_failed_speculation(0),
-  _jvmci{ nullptr },
+  _jvmci{nullptr},
   _libjvmci_runtime(nullptr),
   _jvmci_counters(nullptr),
   _jvmci_reserved0(0),
