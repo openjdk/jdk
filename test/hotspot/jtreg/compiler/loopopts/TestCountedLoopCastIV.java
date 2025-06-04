@@ -186,6 +186,9 @@ public class TestCountedLoopCastIV {
         if (args != null && args.length > 0 && args[0].equals("DisableUnroll")) {
             TestFramework.runWithFlags("-XX:LoopUnrollLimit=0");
         } else {
+            if (args != null && args.length != 0) {
+                throw new RuntimeException("Unexpected args");
+            }
             TestFramework.run();
         }
     }
