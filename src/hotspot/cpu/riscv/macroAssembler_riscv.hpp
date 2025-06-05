@@ -666,7 +666,7 @@ class MacroAssembler: public Assembler {
   // We try to follow risc-v asm menomics.
   // But as we don't layout a reachable GOT,
   // we often need to resort to movptr, li <48imm>.
-  // https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
+  // https://github.com/riscv-non-isa/riscv-asm-manual/blob/main/src/asm-manual.adoc
 
   // Hotspot only use the standard calling convention using x1/ra.
   // The alternative calling convection using x5/t0 is not used.
