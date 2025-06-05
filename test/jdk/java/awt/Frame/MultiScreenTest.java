@@ -131,6 +131,8 @@ public class MultiScreenTest {
         }
         return list;
     }
+
+
     static class GCCanvas extends Canvas {
 
         GraphicsConfiguration gc;
@@ -494,3 +496,4 @@ public class MultiScreenTest {
         }
     }
 }
+
