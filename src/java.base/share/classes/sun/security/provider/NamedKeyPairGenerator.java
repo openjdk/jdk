@@ -103,14 +103,17 @@ import java.security.spec.NamedParameterSpec;
 /// should return both the expanded key and a preferred encoding in its
 ///  [#implGenerateKeyPair] method.
 ///
-/// A `NamedKeyFactory` that must override the `implExpand` method to
-/// derive the expanded format from an encoding format.
+/// A `NamedKeyFactory` that must override the `implExpand` method to derive
+/// the expanded format from an encoding format, or return `null` if there
+/// is no difference.
+///
 /// Implementations may support multiple encoding formats.
 ///
-/// A `NamedKeyFactory` must not modify the `key` field, ensuring that when
-/// re-encoded, the key retains its original encoding format.
+/// A `NamedKeyFactory` must not modify the [NamedPKCS8Key#privKeyMaterial]
+/// field, ensuring that when re-encoded, the key retains its original encoding
+/// format.
 ///
-/// A `NamedKeyFactory` can choose a differnt encoding format when
+/// A `NamedKeyFactory` can choose a different encoding format when
 /// `translateKey` is called.
 ///
 /// When constructing a [NamedX509Key] or [NamedPKCS8Key] object from raw key
@@ -155,7 +158,7 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
         this.pnames = pnames;
     }
 
-    private String checkName(String pname) throws InvalidAlgorithmParameterException  {
+    private String checkName(String pname) throws InvalidAlgorithmParameterException {
         for (var n : pnames) {
             if (n.equalsIgnoreCase(pname)) {
                 // return the stored standard pname
@@ -193,7 +196,8 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
         String tmpName = pname != null ? pname : pnames[0];
         var keys = implGenerateKeyPair(tmpName, secureRandom);
         return new KeyPair(new NamedX509Key(fname, tmpName, keys[0]),
-                new NamedPKCS8Key(fname, tmpName, keys[1], keys[2]));
+                new NamedPKCS8Key(fname, tmpName, keys[1],
+                        keys.length == 2 ? null : keys[2]));
     }
 
     /// User-defined key pair generator.
@@ -202,7 +206,8 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
     /// @param sr `SecureRandom` object, `null` if not initialized
     /// @return the public key, the private key in its encoding format, and
     ///         the private key in its expanded format (in this order) in
-    ///         raw bytes.
+    ///         raw bytes. If the expanded format of the private key is the
+    ///         same as its encoding format, the 3rd element must be omitted.
     /// @throws ProviderException if there is an internal error
     protected abstract byte[][] implGenerateKeyPair(String pname, SecureRandom sr);
 }

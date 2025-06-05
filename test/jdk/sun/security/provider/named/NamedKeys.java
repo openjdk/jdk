@@ -42,11 +42,8 @@ public class NamedKeys {
         var r = SeededSecureRandom.one();
         var raw = r.nBytes(32);
 
-        Asserts.assertThrows(NullPointerException.class,
-                () -> new NamedPKCS8Key("ML-DSA", "ML-DSA-44", raw, null));
-
         // Create a key using raw bytes
-        var sk = new NamedPKCS8Key("ML-DSA", "ML-DSA-44", raw, raw);
+        var sk = new NamedPKCS8Key("ML-DSA", "ML-DSA-44", raw, null);
         var enc = sk.getEncoded().clone();
 
         // The raw bytes array is re-used
@@ -61,10 +58,8 @@ public class NamedKeys {
         // No guarantee on getEncoded() output, could be cached
 
         // Create a key using encoding
-        Asserts.assertThrows(NullPointerException.class,
-                () -> new NamedPKCS8Key("ML-DSA", enc, null));
-        var sk1 = new NamedPKCS8Key("ML-DSA", enc, (_, n) -> n);
-        var sk2 = new NamedPKCS8Key("ML-DSA", enc, (_, n) -> n);
+        var sk1 = new NamedPKCS8Key("ML-DSA", enc, null);
+        var sk2 = new NamedPKCS8Key("ML-DSA", enc, null);
         var raw1 = sk1.getRawBytes();
         Asserts.assertTrue(raw1 != sk2.getRawBytes());
         Asserts.assertTrue(sk1.getEncoded() != sk2.getEncoded());
@@ -75,8 +70,9 @@ public class NamedKeys {
 
         // Same with public key
         // Create a key using raw bytes
+        raw = r.nBytes(32);
         var pk = new NamedX509Key("ML-DSA", "ML-DSA-44", raw);
-        var enc2 = pk.getEncoded().clone();
+        enc = pk.getEncoded().clone();
 
         // The raw bytes array is re-used
         Asserts.assertTrue(pk.getRawBytes() == pk.getRawBytes());
@@ -90,14 +86,14 @@ public class NamedKeys {
         // No guarantee on getEncoded() output, could be cached
 
         // Create a key using encoding
-        var pk1 = new NamedX509Key("ML-DSA", enc2);
-        var pk2 = new NamedX509Key("ML-DSA", enc2);
+        var pk1 = new NamedX509Key("ML-DSA", enc);
+        var pk2 = new NamedX509Key("ML-DSA", enc);
         raw1 = pk1.getRawBytes();
         Asserts.assertTrue(raw1 != pk2.getRawBytes());
         Asserts.assertTrue(pk1.getEncoded() != pk2.getEncoded());
 
-        encCopy = enc2.clone(); // store a copy
-        Arrays.fill(enc2, (byte)0); // clean the source and the key unchanged
+        encCopy = enc.clone(); // store a copy
+        Arrays.fill(enc, (byte)0); // clean the source and the key unchanged
         Asserts.assertEqualsByteArray(encCopy, pk1.getEncoded());
     }
 }

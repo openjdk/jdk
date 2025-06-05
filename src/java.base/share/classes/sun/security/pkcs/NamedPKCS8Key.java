@@ -48,13 +48,21 @@ import java.util.Objects;
 /// identifier in the PKCS #8 encoding of the key is always a single OID derived
 /// from the parameter set name.
 ///
-/// Besides the existing [PKCS8Key#key] field, this class contains an
-/// expanded format stored in [#expanded]. While `key` always represents
-/// the format used for encoding, the expanded format is always used
+/// Besides the existing [PKCS8Key#privKeyMaterial] field, this class optionally
+/// supports an expanded format stored in [#expanded]. While `privKeyMaterial`
+/// always represents the format used for encoding, `expanded` is always used
 /// in computations. The expanded format must be self-sufficient for
 /// cryptographic computations without requiring the encoding format.
 ///
-/// Both fields must be present.
+/// 1. If only `privKeyMaterial` is present, it's also the expanded format.
+/// 2. If both `privKeyMaterial` and `expanded` are available, `privKeyMaterial`
+///     is the encoding format, and `expanded` is the expanded format.
+///
+/// If the two formats are the same, only `privKeyMaterial` is included, and
+/// `expanded` must be `null`. Some implementations might be tempted to put the
+/// same value into `privKeyMaterial` and `expanded`. However, problems can
+/// arise if they happen to be the same object. To avoid ambiguity, always set
+/// `expanded` to `null`.
 ///
 /// @see sun.security.provider.NamedKeyPairGenerator
 public final class NamedPKCS8Key extends PKCS8Key {
@@ -75,11 +83,11 @@ public final class NamedPKCS8Key extends PKCS8Key {
     /// @param fname family name
     /// @param pname parameter set name
     /// @param encoded raw key bytes, not null
-    /// @param expanded expanded key format, not null
+    /// @param expanded expanded key format, can be `null`.
     public NamedPKCS8Key(String fname, String pname, byte[] encoded, byte[] expanded) {
         this.fname = fname;
         this.paramSpec = new NamedParameterSpec(pname);
-        this.expanded = Objects.requireNonNull(expanded);
+        this.expanded = expanded;
         this.privKeyMaterial = Objects.requireNonNull(encoded);
         try {
             this.algid = AlgorithmId.get(pname);
@@ -94,13 +102,18 @@ public final class NamedPKCS8Key extends PKCS8Key {
     /// @param encoded PKCS #8 encoding. It is copied so caller can modify
     ///     it after the method call.
     /// @param expander a function that is able to calculate the expanded
-    ///     format from the encoding format inside `encoded`.The
+    ///     format from the encoding format inside `encoded`. If it recognizes
+    ///     the input already in expanded format, it must return `null`.
+    ///     This argument must be `null` if the algorithm's expanded format
+    ///     is always the same as its encoding format. Whatever the case, the
     ///     ownership of the result is fully granted to this object.
     public NamedPKCS8Key(String fname, byte[] encoded, Expander expander)
             throws InvalidKeyException {
         super(encoded);
         this.fname = fname;
-        this.expanded = expander.expand(algid.getName(), this.privKeyMaterial);
+        this.expanded = expander == null
+                ? null
+                : expander.expand(algid.getName(), this.privKeyMaterial);
         paramSpec = new NamedParameterSpec(algid.getName());
         if (algid.getEncodedParams() != null) {
             throw new InvalidKeyException("algorithm identifier has params");
@@ -117,13 +130,13 @@ public final class NamedPKCS8Key extends PKCS8Key {
     /// Returns the reference to the internal key. Caller must not modify
     /// the content or pass the reference to untrusted application code.
     public byte[] getRawBytes() {
-        return key;
+        return privKeyMaterial;
     }
 
     /// Returns the reference to the key in expanded format. Caller must not
     /// modify the content or pass the reference to untrusted application code.
     public byte[] getExpanded() {
-        return expanded;
+        return expanded == null ? privKeyMaterial : expanded;
     }
 
     @Override
@@ -146,7 +159,9 @@ public final class NamedPKCS8Key extends PKCS8Key {
     @Override
     public void destroy() {
         Arrays.fill(privKeyMaterial, (byte)0);
-        Arrays.fill(expanded, (byte)0);
+        if (expanded != null) {
+            Arrays.fill(expanded, (byte)0);
+        }
         if (encodedKey != null) {
             Arrays.fill(encodedKey, (byte)0);
         }
@@ -160,7 +175,8 @@ public final class NamedPKCS8Key extends PKCS8Key {
 
     /// Expands from encoding format to expanded format.
     public interface Expander {
-        /// The expand method.
+        /// The expand method, returns `null` if `input` is already
+        /// in expanded format.
         byte[] expand(String pname, byte[] input) throws InvalidKeyException;
     }
 }

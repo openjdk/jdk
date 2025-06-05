@@ -77,7 +77,7 @@ public abstract class NamedKeyFactory extends KeyFactorySpi {
         this.pnames = pnames;
     }
 
-    private String checkName(String pname) throws InvalidKeyException  {
+    private String checkName(String pname) throws InvalidKeyException {
         for (var n : pnames) {
             if (n.equalsIgnoreCase(pname)) {
                 // return the stored standard name

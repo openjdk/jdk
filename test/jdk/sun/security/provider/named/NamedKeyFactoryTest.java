@@ -82,7 +82,7 @@ public class NamedKeyFactoryTest {
         checkKeyPair(g.generateKeyPair(), "SHA", "SHA-256");
 
         var pk = new NamedX509Key("sHa", "ShA-256", RAW_PK);
-        var sk = new NamedPKCS8Key("sHa", "SHa-256", RAW_SK, RAW_SK);
+        var sk = new NamedPKCS8Key("sHa", "SHa-256", RAW_SK, null);
         checkKey(pk, "sHa", "ShA-256");
         checkKey(sk, "sHa", "SHa-256");
 
@@ -230,17 +230,17 @@ public class NamedKeyFactoryTest {
         }
     }
     public static class KF extends NamedKeyFactory {
-        @Override
-        protected byte[] implExpand(String pname, byte[] input) {
-            return input;
-        }
-
         public KF() {
             super("SHA", "SHA-256", "SHA-512");
         }
 
         public KF(String name) {
             super("SHA", name);
+        }
+
+        @Override
+        protected byte[] implExpand(String pname, byte[] input) throws InvalidKeyException {
+            return null;
         }
     }
     public static class KF1 extends KF {
@@ -264,10 +264,9 @@ public class NamedKeyFactoryTest {
 
         @Override
         public byte[][] implGenerateKeyPair(String name, SecureRandom sr) {
-            var out = new byte[3][];
+            var out = new byte[2][];
             out[0] = name.endsWith("256") ? Arrays.copyOf(RAW_PK, 8) : RAW_PK;
             out[1] = name.endsWith("256") ? Arrays.copyOf(RAW_SK, 8) : RAW_SK;
-            out[2] = out[1];
             return out;
         }
     }
