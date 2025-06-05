@@ -90,7 +90,7 @@ public class TestSettingsAvailability {
     private static void testKnownSettings() throws Exception {
         testSetting(EventNames.JVMInformation, "enabled", "period");
         testSetting(EventNames.FileRead, "enabled", "threshold", "stackTrace", "throttle");
-        testSetting(EventNames.FileWrite, "enabled", "threshold","stackTrace", "throttle");
+        testSetting(EventNames.FileWrite, "enabled", "threshold", "stackTrace", "throttle");
         testSetting(EventNames.ExceptionStatistics, "enabled", "period");
         testSetting(EventNames.SocketRead, "enabled", "threshold", "stackTrace", "throttle");
         testSetting(EventNames.SocketWrite, "enabled", "threshold", "stackTrace", "throttle");
