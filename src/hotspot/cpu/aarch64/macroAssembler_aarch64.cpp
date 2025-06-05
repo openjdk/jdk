@@ -4331,6 +4331,7 @@ void MacroAssembler::kernel_crc32_using_crypto_pmull(Register crc, Register buf,
         Register len, Register tmp0, Register tmp1, Register tmp2, Register tmp3) {
     Label CRC_by4_loop, CRC_by1_loop, CRC_less128, CRC_by128_pre, CRC_by32_loop, CRC_less32, L_exit;
     assert_different_registers(crc, buf, len, tmp0, tmp1, tmp2);
+    assert(CryptoPmullForCRC32LowLimit >= 256);
 
     subs(tmp0, len, CryptoPmullForCRC32LowLimit);
     mvnw(crc, crc);
@@ -4696,6 +4697,7 @@ void MacroAssembler::kernel_crc32c_using_crypto_pmull(Register crc, Register buf
         Register len, Register tmp0, Register tmp1, Register tmp2, Register tmp3) {
     Label CRC_by4_loop, CRC_by1_loop, CRC_less128, CRC_by128_pre, CRC_by32_loop, CRC_less32, L_exit;
     assert_different_registers(crc, buf, len, tmp0, tmp1, tmp2);
+    assert(CryptoPmullForCRC32LowLimit >= 256);
 
     subs(tmp0, len, CryptoPmullForCRC32LowLimit);
     br(Assembler::GE, CRC_by128_pre);
