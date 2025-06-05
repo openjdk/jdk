@@ -924,7 +924,11 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
         nmethod* osr_nm = mh->lookup_osr_nmethod_for(bci, CompLevel_simple, false);
         if (osr_nm != nullptr && osr_nm->comp_level() > CompLevel_simple) {
           // Invalidate the existing OSR nmethod so that a compile at CompLevel_simple is permitted.
+<<<<<<< HEAD
           osr_nm->make_not_entrant(nmethod::OSR_invalidation_for_compiling_with_C1);
+=======
+          osr_nm->make_not_entrant(nmethod::ChangeReason::OSR_invalidation_for_compiling_with_C1);
+>>>>>>> 62fde687088 (8357396: Refactor nmethod::make_not_entrant to use Enum instead of "const char*")
         }
         compile(mh, bci, CompLevel_simple, THREAD);
       }
@@ -1516,7 +1520,7 @@ void CompilationPolicy::method_back_branch_event(const methodHandle& mh, const m
               int osr_bci = nm->is_osr_method() ? nm->osr_entry_bci() : InvocationEntryBci;
               print_event(MAKE_NOT_ENTRANT, mh(), mh(), osr_bci, level);
             }
-            nm->make_not_entrant(nmethod::OSR_invalidation_back_branch);
+            nm->make_not_entrant(nmethod::ChangeReason::OSR_invalidation_back_branch);
           }
         }
         // Fix up next_level if necessary to avoid deopts

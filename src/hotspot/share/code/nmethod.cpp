@@ -1975,12 +1975,21 @@ void nmethod::invalidate_osr_method() {
   }
 }
 
+<<<<<<< HEAD
 void nmethod::log_state_change(NMethodChangeReason statusReason) const {
   if (LogCompilation) {
     if (xtty != nullptr) {
       ttyLocker ttyl;  // keep the following output all in one block
       xtty->begin_elem("make_not_entrant thread='%zu' reason='%d'",
                        os::current_thread_id(), statusReason);
+=======
+void nmethod::log_state_change(ChangeReason change_reason) const {
+  if (LogCompilation) {
+    if (xtty != nullptr) {
+      ttyLocker ttyl;  // keep the following output all in one block
+      xtty->begin_elem("make_not_entrant thread='%zu' reason='%s'",
+                       os::current_thread_id(), change_reason_to_string(change_reason));
+>>>>>>> 62fde687088 (8357396: Refactor nmethod::make_not_entrant to use Enum instead of "const char*")
       log_identity(xtty);
       xtty->stamp();
       xtty->end_elem();
@@ -1989,7 +1998,11 @@ void nmethod::log_state_change(NMethodChangeReason statusReason) const {
 
   ResourceMark rm;
   stringStream ss(NEW_RESOURCE_ARRAY(char, 256), 256);
+<<<<<<< HEAD
   ss.print("made not entrant: %d", statusReason);
+=======
+  ss.print("made not entrant: %s", change_reason_to_string(change_reason));
+>>>>>>> 62fde687088 (8357396: Refactor nmethod::make_not_entrant to use Enum instead of "const char*")
 
   CompileTask::print_ul(this, ss.freeze());
   if (PrintCompilation) {
@@ -2004,7 +2017,11 @@ void nmethod::unlink_from_method() {
 }
 
 // Invalidate code
+<<<<<<< HEAD
 bool nmethod::make_not_entrant(NMethodChangeReason statusReason) {
+=======
+bool nmethod::make_not_entrant(ChangeReason change_reason) {
+>>>>>>> 62fde687088 (8357396: Refactor nmethod::make_not_entrant to use Enum instead of "const char*")
   // This can be called while the system is already at a safepoint which is ok
   NoSafepointVerifier nsv;
 
@@ -2073,7 +2090,7 @@ bool nmethod::make_not_entrant(NMethodChangeReason statusReason) {
     assert(success, "Transition can't fail");
 
     // Log the transition once
-    log_state_change(statusReason);
+    log_state_change(change_reason);
 
     // Remove nmethod from method.
     unlink_from_method();
