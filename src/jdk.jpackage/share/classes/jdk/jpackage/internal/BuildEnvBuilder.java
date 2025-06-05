@@ -89,7 +89,7 @@ final class BuildEnvBuilder {
 
     BuildEnvBuilder appImageDirFor(Package pkg) {
         appImageDir = defaultAppImageDir(root);
-        appImageLayout = pkg.packageLayout();
+        appImageLayout = pkg.appImageLayout();
         return this;
     }
 
