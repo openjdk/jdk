@@ -52,7 +52,7 @@ public final class SegmentBulkOperations {
     private static final long LONG_MASK = ~7L; // The last three bits are zero
 
     // All the threshold values below MUST be a power of two and greater or equal to 2^3.
-    private static final int NATIVE_THRESHOLD_FILL = powerOfPropertyOr("fill", 5);
+    private static final int NATIVE_THRESHOLD_FILL = 32;
     private static final int NATIVE_THRESHOLD_MISMATCH = powerOfPropertyOr("mismatch", 6);
     private static final int NATIVE_THRESHOLD_COPY = powerOfPropertyOr("copy", 6);
 
@@ -77,14 +77,14 @@ public final class SegmentBulkOperations {
     public static void fill(AbstractMemorySegmentImpl dst, byte value) {
         dst.checkReadOnly(false);
         final long len = dst.length;
-        /* The multiplication below is equivalent to:
+        /* The multiplication below is equivalent to (but faster than):
              long u = Byte.toUnsignedLong(value);
              long longValue = u << 56 | u << 48 | u << 40 | u << 32 | u << 24 | u << 16 | u << 8 | u; */
         final long longValue = 0x01010101_01010101L * Byte.toUnsignedLong(value);
 
         // Switch on log2(len) = 64 - Long.numberOfLeadingZeros(len)
         switch (64 - Long.numberOfLeadingZeros(len)) {
-            case 0 -> dst.sessionImpl().checkValidState(); // Implicit state check
+            case 0 -> dst.sessionImpl().checkValidState(); // Explicit state check
             case 1 -> SCOPED_MEMORY_ACCESS.putByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset(), value);
             case 2 -> fill2(dst, len, (short) longValue);
             case 3 -> fill3(dst, len, (int) longValue);
@@ -93,28 +93,33 @@ public final class SegmentBulkOperations {
         }
     }
 
+    /** This case covers [2, 3] bytes */
     @ForceInline
     private static void fill2(AbstractMemorySegmentImpl dst, long len, short value) {
         SCOPED_MEMORY_ACCESS.putShortUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset(), value, !Architecture.isLittleEndian());
-        SCOPED_MEMORY_ACCESS.putShortUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + len - Short.BYTES, value, !Architecture.isLittleEndian());
+        // `putByte()` below is enough as 3 is the maximum number of bytes covered
+        SCOPED_MEMORY_ACCESS.putByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + len - Byte.BYTES, (byte) value);
     }
 
+    /** This case covers [4, 7] bytes */
     @ForceInline
     private static void fill3(AbstractMemorySegmentImpl dst, long len, int value) {
         SCOPED_MEMORY_ACCESS.putIntUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset(), value, !Architecture.isLittleEndian());
         SCOPED_MEMORY_ACCESS.putIntUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + len - Integer.BYTES, value, !Architecture.isLittleEndian());
     }
 
+    /** This case covers [8, 15] bytes */
     @ForceInline
     private static void fill4(AbstractMemorySegmentImpl dst, long len, long value) {
         SCOPED_MEMORY_ACCESS.putLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset(), value, !Architecture.isLittleEndian());
         SCOPED_MEMORY_ACCESS.putLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + len - Long.BYTES, value, !Architecture.isLittleEndian());
     }
 
+    /** This case covers [16, 2^63) bytes */
     @ForceInline
     private static void fill5AndUpwards(AbstractMemorySegmentImpl dst, long len, long value) {
         if (len < NATIVE_THRESHOLD_FILL) {
-            final int limit = (int) (len & (NATIVE_THRESHOLD_FILL - 8));
+            final int limit = (int) (len & (NATIVE_THRESHOLD_FILL - Long.BYTES));
             for (int offset = 0; offset < limit; offset += Long.BYTES) {
                 SCOPED_MEMORY_ACCESS.putLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + offset, value, !Architecture.isLittleEndian());
             }

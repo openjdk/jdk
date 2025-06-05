@@ -55,7 +55,7 @@ public class SegmentBulkFill {
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
-    @Param({"2", "3", "4", "5", "6", "7", "8", "12", "64", "512",
+    @Param({"2", "3", "4", "5", "6", "7", "8", "12", "24", "64", "512",
             "4096", "32768", "262144", "2097152", "16777216", "134217728"})
     public int ELEM_SIZE;
 
