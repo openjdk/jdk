@@ -35,6 +35,7 @@
 package template_framework.examples;
 
 import java.util.List;
+import java.util.Set;
 
 import compiler.lib.compile_framework.CompileFramework;
 
@@ -132,7 +133,7 @@ public class TestWithTestFrameworkClass {
             """
         ));
 
-        // Create a test for each operator..
+        // Create a test for each operator.
         List<String> ops = List.of("+", "-", "*", "&", "|");
         List<TemplateToken> testTemplateTokens = ops.stream().map(testTemplate::asToken).toList();
 
@@ -140,11 +141,9 @@ public class TestWithTestFrameworkClass {
         return TestFrameworkClass.render(
             // package and class name.
             "p.xyz", "InnerTest",
-            // List of imports. Duplicates are permitted.
-            List.of("compiler.lib.generators.*",
-                    "compiler.lib.ir_framework.*",
-                    "compiler.lib.verify.*",
-                    "compiler.lib.verify.*"),
+            // Set of imports.
+            Set.of("compiler.lib.generators.*",
+                   "compiler.lib.verify.*"),
             // classpath, so the Test VM has access to the compiled class files.
             comp.getEscapedClassPathOfCompiledClasses(),
             // The list of tests.

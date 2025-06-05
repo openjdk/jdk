@@ -24,6 +24,7 @@
 package compiler.lib.template_framework.library;
 
 import java.util.List;
+import java.util.Set;
 
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.compile_framework.CompileFramework;
@@ -62,7 +63,7 @@ public final class TestFrameworkClass {
      *
      * @param packageName The package name of the test class.
      * @param className The name of the test class.
-     * @param imports A list of imports.
+     * @param imports A set of imports.
      * @param classpath The classpath from {@link CompileFramework#getEscapedClassPathOfCompiledClasses},
      *                  so that the Test VM has access to the class files that are compiled from the
      *                  generated source code.
@@ -73,7 +74,7 @@ public final class TestFrameworkClass {
      */
     public static String render(final String packageName,
                                 final String className,
-                                final List<String> imports,
+                                final Set<String> imports,
                                 final String classpath,
                                 final List<TemplateToken> testTemplateTokens) {
         var template = Template.make(() -> body(
