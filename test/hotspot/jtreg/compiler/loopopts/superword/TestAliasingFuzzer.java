@@ -37,6 +37,9 @@ package compiler.loopopts.superword;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Random;
+
+import jdk.test.lib.Utils;
 
 import compiler.lib.compile_framework.*;
 import compiler.lib.generators.Generators;
@@ -51,6 +54,8 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  * Simpler test cases can be found in {@link TestAliasing}.
  */
 public class TestAliasingFuzzer {
+    private static final Random RANDOM = Utils.getRandomInstance();
+
     public record MyType(String name, int byteSize) {
         @Override
         public String toString() { return name(); }
@@ -67,26 +72,43 @@ public class TestAliasingFuzzer {
     public static final List<MyType> allTypes
         = List.of(myByte, myChar, myShort, myInt, myLong, myFloat, myDouble);
 
+    // Do the containers (array, MemorySegment, etc) ever overlap?
+    enum Aliasing {
+        DIFFERENT_CONTAINER, // different array, non-overlapping MemorySegment
+        SAME_CONTAINER, // Same array, same memory region for MemorySegment
+        ALTERNATE_SAME_DIFFERENT_CONTAINER
+    }
+
     public static void main(String[] args) {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
 
+        long t0 = System.nanoTime();
         // Add a java source file.
         comp.addJavaSourceCode("p.xyz.InnerTest", generate(comp));
 
+        long t1 = System.nanoTime();
         // Compile the source file.
         comp.compile();
 
+        long t2 = System.nanoTime();
         // Run the tests without any additional VM flags.
         // p.xyz.InnterTest.main(new String[] {});
         comp.invoke("p.xyz.InnerTest", "main", new Object[] {new String[] {}});
+        long t3 = System.nanoTime();
+
+        System.out.println("Code Generation:  " + (t1-t0) * 1e-9f);
+        System.out.println("Code Compilation: " + (t2-t1) * 1e-9f);
+        System.out.println("Running Tests:    " + (t3-t2) * 1e-9f);
     }
 
     public static String generate(CompileFramework comp) {
         // Create a list to collect all tests.
         List<TemplateToken> testTemplateTokens = new ArrayList<>();
 
-        testTemplateTokens.addAll(allTypes.stream().map(t -> generateArray(t)).toList());
+        for (Aliasing aliasing : Aliasing.values()) {
+            testTemplateTokens.addAll(allTypes.stream().map(t -> generateArray(t, aliasing)).toList());
+        }
 
         // TODO:
         // - array, MemorySegment, Unsafe
@@ -110,14 +132,16 @@ public class TestAliasingFuzzer {
             testTemplateTokens);
     }
 
-    public static TemplateToken generateArray(MyType type) {
+    public static TemplateToken generateArray(MyType type, Aliasing aliasing) {
         final int size = Generators.G.safeRestrict(Generators.G.ints(), 10_000, 20_000).next();
         var template = Template.make(() -> body(
             let("size", size),
             let("type", type),
             let("T", type.letter()),
+            let("aliasing", aliasing),
             """
             // --- $test start ---
+            // size=#size type=#type aliasing=#aliasing
             private static #type[] $ORIGINAL_A = new #type[#size];
             private static #type[] $ORIGINAL_B = new #type[#size];
 
@@ -127,15 +151,38 @@ public class TestAliasingFuzzer {
             private static #type[] $REFERENCE_A = new #type[#size];
             private static #type[] $REFERENCE_B = new #type[#size];
 
+            private static int $iterations = 0;
+
             @Run(test = "$test")
             @Warmup(100)
             public static void $run() {
+                $iterations++;
                 System.arraycopy($ORIGINAL_A, 0, $TEST_A, 0, #size);
                 System.arraycopy($ORIGINAL_B, 0, $TEST_B, 0, #size);
                 System.arraycopy($ORIGINAL_A, 0, $REFERENCE_A, 0, #size);
                 System.arraycopy($ORIGINAL_B, 0, $REFERENCE_B, 0, #size);
-                var result   = $test($TEST_A,           $TEST_B);
-                var expected = $reference($REFERENCE_A, $REFERENCE_B);
+            """,
+            switch(aliasing) {
+                case Aliasing.DIFFERENT_CONTAINER  ->
+                    """
+                    #type[] $TEST_SECOND      = $TEST_B;
+                    #type[] $REFERENCE_SECOND = $REFERENCE_B;
+                    """;
+                case Aliasing.SAME_CONTAINER ->
+                    """
+                    #type[] $TEST_SECOND      = $TEST_A;
+                    #type[] $REFERENCE_SECOND = $REFERENCE_A;
+                    """;
+                case Aliasing.ALTERNATE_SAME_DIFFERENT_CONTAINER ->
+                    """
+                    final boolean isExact = ($iterations % 2 == 0);
+                    #type[] $TEST_SECOND      = isExact ? $TEST_A      : $TEST_B;
+                    #type[] $REFERENCE_SECOND = isExact ? $REFERENCE_A : $REFERENCE_B;
+                    """;
+            },
+            """
+                var result   = $test($TEST_A,           $TEST_SECOND);
+                var expected = $reference($REFERENCE_A, $REFERENCE_SECOND);
                 Verify.checkEQ(result, expected);
             }
 
