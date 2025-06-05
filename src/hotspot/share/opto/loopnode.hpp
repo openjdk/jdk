@@ -391,7 +391,7 @@ private:
 
 public:
   LongCountedLoopNode(Node *entry, Node *backedge)
-    : BaseCountedLoopNode(entry, backedge) {
+    : BaseCountedLoopNode(entry, backedge), _trip_count(max_julong) {
     init_class_id(Class_LongCountedLoop);
   }
 
@@ -401,7 +401,10 @@ public:
     return T_LONG;
   }
 
-  void set_trip_count(julong tc) { _trip_count = tc; }
+  void set_trip_count(julong tc) {
+    assert(tc < max_julong, "Cannot set trip count to max_julong");
+    _trip_count = tc;
+  }
   julong trip_count() const      { return _trip_count; }
 
   LongCountedLoopEndNode* loopexit_or_null() const { return (LongCountedLoopEndNode*) BaseCountedLoopNode::loopexit_or_null(); }
