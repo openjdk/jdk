@@ -115,7 +115,7 @@ class StubGenerator: public StubCodeGenerator {
   //   [SP+176]  - thread                   : Thread*
   //
   address generate_call_stub(address& return_address) {
-    // Set up a new C frame, copy Java arguments, call frame manager
+    // Set up a new C frame, copy Java arguments, call template interpreter
     // or native_entry, and process result.
 
     StubGenStubId stub_id = StubGenStubId::call_stub_id;
@@ -272,10 +272,10 @@ class StubGenerator: public StubCodeGenerator {
 
     BLOCK_COMMENT("call {");
     {
-      // Call frame manager or native entry.
+      // Call template interpreter or native entry.
 
       //
-      // Register state on entry to frame manager / native entry:
+      // Register state on entry to template interpreter / native entry:
       //
       //   Z_ARG1 = r_top_of_arguments_addr  - intptr_t *sender tos (prepushed)
       //                                       Lesp = (SP) + copied_arguments_offset - 8
@@ -290,7 +290,7 @@ class StubGenerator: public StubCodeGenerator {
       __ z_lgr(Z_esp, r_top_of_arguments_addr);
 
       //
-      // Stack on entry to frame manager / native entry:
+      // Stack on entry to template interpreter / native entry:
       //
       //     F0      [TOP_IJAVA_FRAME_ABI]
       //             [outgoing Java arguments]
@@ -300,7 +300,7 @@ class StubGenerator: public StubCodeGenerator {
       //
 
       // Do a light-weight C-call here, r_new_arg_entry holds the address
-      // of the interpreter entry point (frame manager or native entry)
+      // of the interpreter entry point (template interpreter or native entry)
       // and save runtime-value of return_pc in return_address
       // (call by reference argument).
       return_address = __ call_stub(r_new_arg_entry);
@@ -309,11 +309,11 @@ class StubGenerator: public StubCodeGenerator {
 
     {
       BLOCK_COMMENT("restore registers {");
-      // Returned from frame manager or native entry.
+      // Returned from template interpreter or native entry.
       // Now pop frame, process result, and return to caller.
 
       //
-      // Stack on exit from frame manager / native entry:
+      // Stack on exit from template interpreter / native entry:
       //
       //     F0      [ABI]
       //             ...
@@ -330,7 +330,7 @@ class StubGenerator: public StubCodeGenerator {
       __ pop_frame();
 
       // Reload some volatile registers which we've spilled before the call
-      // to frame manager / native entry.
+      // to template interpreter / native entry.
       // Access all locals via frame pointer, because we know nothing about
       // the topmost frame's size.
       __ z_lg(r_arg_result_addr, result_address_offset, r_entryframe_fp);
