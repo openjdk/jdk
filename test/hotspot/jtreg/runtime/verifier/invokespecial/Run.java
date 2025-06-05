@@ -19,26 +19,11 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_JFR_JFR_INLINE_HPP
-#define SHARE_JFR_JFR_INLINE_HPP
-
-#include "jfr/jfr.hpp"
-
-#include "jfr/periodic/sampling/jfrThreadSampling.hpp"
-#include "runtime/javaThread.hpp"
-
-inline bool Jfr::has_sample_request(JavaThread* jt) {
-  assert(jt != nullptr, "invariant");
-  return jt->jfr_thread_local()->has_sample_request();
+/**
+ * A class with a run()V method that doesn't implement Runnable.
+ */
+public class Run {
+    public void run() { }
 }
-
-inline void Jfr::check_and_process_sample_request(JavaThread* jt) {
-  if (has_sample_request(jt)) {
-    JfrThreadSampling::process_sample_request(jt);
-  }
-}
-
-#endif // SHARE_JFR_JFR_INLINE_HPP

@@ -55,8 +55,4 @@ public record Rate(long amount, TimespanUnit unit) {
     private double inNanos() {
         return (double) amount / unit.nanos;
     }
-
-    public double perSecond() {
-        return inNanos() * 1_000_000_000.0;
-    }
 }

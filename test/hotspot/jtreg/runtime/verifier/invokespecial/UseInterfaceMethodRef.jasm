@@ -21,21 +21,17 @@
  * questions.
  */
 
-package jdk.jfr.event.profiling;
+class UseInterfaceMethodRef extends Run version 52:0 {
 
-import jdk.test.lib.jfr.EventNames;
-
-/**
- * @test
- * @requires vm.hasJFR & os.family == "linux"
- * @library /test/lib
- * @build jdk.jfr.event.profiling.BaseTestFullStackTrace
- * @run main/othervm jdk.jfr.event.profiling.TestCPUTimeSampleFullStackTrace
- */
-public class TestCPUTimeSampleFullStackTrace {
-
-    public static void main(String[] args) throws Throwable {
-        new BaseTestFullStackTrace(EventNames.CPUTimeSample, "eventThread").run();
+    public Method "<init>":"()V" stack 1 locals 1 {
+        aload_0;
+        invokespecial   Method Run."<init>":"()V";
+        return;
     }
 
+    public static Method test:"(LUseInterfaceMethodRef;)V" stack 2 {
+        aload_0;
+        invokespecial InterfaceMethod java/lang/Runnable.run:()V; // VerifyError
+        return;
+    }
 }

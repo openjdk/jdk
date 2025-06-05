@@ -19,26 +19,19 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_JFR_JFR_INLINE_HPP
-#define SHARE_JFR_JFR_INLINE_HPP
+class UseMethodRef extends Run version 52:0 {
 
-#include "jfr/jfr.hpp"
+    public Method "<init>":"()V" stack 1 locals 1 {
+        aload_0;
+        invokespecial   Method Run."<init>":"()V";
+        return;
+    }
 
-#include "jfr/periodic/sampling/jfrThreadSampling.hpp"
-#include "runtime/javaThread.hpp"
-
-inline bool Jfr::has_sample_request(JavaThread* jt) {
-  assert(jt != nullptr, "invariant");
-  return jt->jfr_thread_local()->has_sample_request();
+    public static Method test:"(LUseMethodRef;)V" stack 2 {
+        aload_0;
+        invokespecial Method java/lang/Runnable.run:()V; // VerifyError
+        return;
+    }
 }
-
-inline void Jfr::check_and_process_sample_request(JavaThread* jt) {
-  if (has_sample_request(jt)) {
-    JfrThreadSampling::process_sample_request(jt);
-  }
-}
-
-#endif // SHARE_JFR_JFR_INLINE_HPP
