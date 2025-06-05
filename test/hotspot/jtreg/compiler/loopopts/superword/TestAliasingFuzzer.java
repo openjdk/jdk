@@ -115,12 +115,25 @@ public class TestAliasingFuzzer {
             """
             // --- $test array start ---
             // $test with size=#size and type=#type
-            private static #type[] $INPUT_A = new #type[#size];
+            private static #type[] $ORIGINAL_A = new #type[#size];
+            private static #type[] $ORIGINAL_B = new #type[#size];
+
+            private static #type[] $TEST_A = new #type[#size];
+            private static #type[] $TEST_B = new #type[#size];
+
+            private static #type[] $REFERENCE_A = new #type[#size];
+            private static #type[] $REFERENCE_B = new #type[#size];
 
             @Run(test = "$test")
             @Warmup(100)
             public static void $run() {
-                $test($INPUT_A, $INPUT_A);
+                System.arraycopy($ORIGINAL_A, 0, $TEST_A, 0, #size);
+                System.arraycopy($ORIGINAL_B, 0, $TEST_B, 0, #size);
+                System.arraycopy($ORIGINAL_A, 0, $REFERENCE_A, 0, #size);
+                System.arraycopy($ORIGINAL_B, 0, $REFERENCE_B, 0, #size);
+                var result   = $test($TEST_A,           $TEST_B);
+                var expected = $reference($REFERENCE_A, $REFERENCE_B);
+                Verify.checkEQ(result, expected);
             }
 
             @Test
@@ -130,9 +143,18 @@ public class TestAliasingFuzzer {
                 }
                 return new Object[] {a, b};
             }
+
+            @DontCompile
+            public static Object $reference(#type[] a, #type[] b) {
+                for (int i = 0; i < a.length; i++) {
+                    a[i] = (#type)(b[i] + 1);
+                }
+                return new Object[] {a, b};
+            }
             // --- $test array end   ---
             """
         ));
         return template.asToken();
+
     }
 }
