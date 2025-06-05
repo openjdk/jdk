@@ -1016,15 +1016,15 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public VarSymbol sym;
         /** explicit start pos */
         public int startPos = Position.NOPOS;
-        /** declared using `var` */
-        private boolean declaredUsingVar;
+        /** if declared using "var", the "var" source position, otherwise NOPOS */
+        private final int varPos;
 
         protected JCVariableDecl(JCModifiers mods,
                          Name name,
                          JCExpression vartype,
                          JCExpression init,
                          VarSymbol sym) {
-            this(mods, name, vartype, init, sym, false);
+            this(mods, name, vartype, init, sym, Position.NOPOS);
         }
 
         protected JCVariableDecl(JCModifiers mods,
@@ -1032,19 +1032,19 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
                                  JCExpression vartype,
                                  JCExpression init,
                                  VarSymbol sym,
-                                 boolean declaredUsingVar) {
+                                 int varPos) {
             this.mods = mods;
             this.name = name;
             this.vartype = vartype;
             this.init = init;
             this.sym = sym;
-            this.declaredUsingVar = declaredUsingVar;
+            this.varPos = varPos;
         }
 
         protected JCVariableDecl(JCModifiers mods,
                          JCExpression nameexpr,
                          JCExpression vartype) {
-            this(mods, null, vartype, null, null, false);
+            this(mods, null, vartype, null, null, Position.NOPOS);
             this.nameexpr = nameexpr;
             if (nameexpr.hasTag(Tag.IDENT)) {
                 this.name = ((JCIdent)nameexpr).name;
@@ -1059,7 +1059,11 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         }
 
         public boolean declaredUsingVar() {
-            return declaredUsingVar;
+            return varPos != Position.NOPOS;
+        }
+
+        public int varPos() {
+            return varPos;
         }
 
         @Override

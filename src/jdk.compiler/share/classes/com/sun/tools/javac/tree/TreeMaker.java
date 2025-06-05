@@ -237,8 +237,8 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCVariableDecl VarDef(JCModifiers mods, Name name, JCExpression vartype, JCExpression init, boolean declaredUsingVar) {
-        JCVariableDecl tree = new JCVariableDecl(mods, name, vartype, init, null, declaredUsingVar);
+    public JCVariableDecl VarDef(JCModifiers mods, Name name, JCExpression vartype, JCExpression init, int varPos) {
+        JCVariableDecl tree = new JCVariableDecl(mods, name, vartype, init, null, varPos);
         tree.pos = pos;
         return tree;
     }
