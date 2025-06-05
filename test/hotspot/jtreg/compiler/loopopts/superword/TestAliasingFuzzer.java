@@ -28,13 +28,23 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @compile ../../../compiler/lib/ir_framework/TestFramework.java
+ * @compile ../../../compiler/lib/generators/Generators.java
  * @compile ../../../compiler/lib/verify/Verify.java
  * @run driver compiler.loopopts.superword.TestAliasingFuzzer
  */
 
 package compiler.loopopts.superword;
 
+import java.util.List;
+import java.util.ArrayList;
+
 import compiler.lib.compile_framework.*;
+import compiler.lib.template_framework.Template;
+import compiler.lib.template_framework.TemplateToken;
+import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.let;
+
+import compiler.lib.template_framework.library.TestFrameworkClass;
 
 /**
  * Simpler test cases can be found in {@link TestAliasing}.
@@ -52,12 +62,26 @@ public class TestAliasingFuzzer {
         // Compile the source file.
         comp.compile();
 
-        // p.xyz.InnerTest.main();
-        comp.invoke("p.xyz.InnerTest", "main", new Object[] {});
+        // Run the tests without any additional VM flags.
+        // p.xyz.InnterTest.main(new String[] {});
+        comp.invoke("p.xyz.InnerTest", "main", new Object[] {new String[] {}});
     }
 
     public static String generate(CompileFramework comp) {
-        // TODO: code gen
-        return "";
+        // Create a list to collect all tests.
+        List<TemplateToken> testTemplateTokens = new ArrayList<>();
+
+
+        // Create the test class, which runs all testTemplateTokens.
+        return TestFrameworkClass.render(
+            // package and class name.
+            "p.xyz", "InnerTest",
+            // List of imports.
+            List.of("compiler.lib.generators.*",
+                    "compiler.lib.verify.*"),
+            // classpath, so the Test VM has access to the compiled class files.
+            comp.getEscapedClassPathOfCompiledClasses(),
+            // The list of tests.
+            testTemplateTokens);
     }
 }
