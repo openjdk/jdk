@@ -39,7 +39,6 @@ import javax.swing.Action;
 import javax.swing.JPasswordField;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.basic.BasicTextUI;
 import javax.swing.text.DefaultEditorKit;
 import java.awt.event.ActionEvent;
@@ -57,10 +56,7 @@ public class PasswordSelectionWordTest {
     private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
         try {
             UIManager.setLookAndFeel(laf.getClassName());
-        } catch (UnsupportedLookAndFeelException ignored) {
-            System.out.println("Unsupported LAF: " + laf.getClassName());
-        } catch (ClassNotFoundException | InstantiationException
-                 | IllegalAccessException e) {
+        } catch (Exception  e) {
             throw new RuntimeException(e);
         }
     }
