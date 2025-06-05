@@ -38,6 +38,8 @@ package compiler.loopopts.superword;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import jdk.test.lib.Utils;
 
@@ -109,6 +111,9 @@ public class TestAliasingFuzzer {
         // Create a list to collect all tests.
         List<TemplateToken> testTemplateTokens = new ArrayList<>();
 
+        // Add some basic functionalities.
+        testTemplateTokens.add(generateArrayIndexForm());
+
         for (Aliasing aliasing : Aliasing.values()) {
             testTemplateTokens.addAll(allTypes.stream().map(t -> generateArray(t, aliasing)).toList());
         }
@@ -121,6 +126,15 @@ public class TestAliasingFuzzer {
         // - conversions on native
         // Tricky: IR rules. May not vectorize in all cases.. how do we handle that?
         // General strategy: one method compiled, one interpreted -> compare!
+        //
+        // Array index:
+        //   iv: init and limit
+        //   forms: scale, offset, field/args, add/sub, mul for field/args
+        //   fields/args: determine safe range.
+        //   Form determines bounds on init / limit.
+        //   Can we just set a form, and then generate field/arg, and then determine bounds?
+        //   tricky!
+        //   TODO: continue work here.
 
         // Create the test class, which runs all testTemplateTokens.
         return TestFrameworkClass.render(
@@ -135,6 +149,32 @@ public class TestAliasingFuzzer {
             testTemplateTokens);
     }
 
+    // Idea:
+    //   con + invar -> in range [0..256]
+    public static record ArrayIndexForm(int con, int ivScale, int[] invarScales) {
+        public String generate() {
+            return "new ArrayIndexForm(" + con() + ", " + ivScale() + ", new int[] {" +
+                   Arrays.stream(invarScales)
+                         .mapToObj(String::valueOf)
+                         .collect(Collectors.joining(", ")) +
+                   "})";
+        }
+    }
+
+    public static TemplateToken generateArrayIndexForm() {
+        var template = Template.make(() -> body(
+            """
+            public static record ArrayIndexForm(int con, int ivScale, int[] invarScales) {
+                public int init(int size) { return 0; }
+                public int limit(int size) { return size / ivScale; }
+
+                public int[] invarValues() { return null; }
+            }
+            """
+        ));
+        return template.asToken();
+    }
+
     public static TemplateToken generateArray(MyType type, Aliasing aliasing) {
         final int size = Generators.G.safeRestrict(Generators.G.ints(), 10_000, 20_000).next();
         var template = Template.make(() -> body(
@@ -142,6 +182,7 @@ public class TestAliasingFuzzer {
             let("type", type),
             let("T", type.letter()),
             let("aliasing", aliasing),
+            let("aForm", new ArrayIndexForm(1, 1, new int[] {1, 2, 3}).generate()),
             """
             // --- $test start ---
             // size=#size type=#type aliasing=#aliasing
@@ -155,6 +196,8 @@ public class TestAliasingFuzzer {
             private static #type[] $REFERENCE_B = new #type[#size];
 
             private static int $iterations = 0;
+
+            private static ArrayIndexForm $X = #aForm;
 
             @Run(test = "$test")
             @Warmup(100)
