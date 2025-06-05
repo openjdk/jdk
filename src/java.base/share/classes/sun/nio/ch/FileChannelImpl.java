@@ -264,9 +264,8 @@ public class FileChannelImpl
 
     private int traceImplRead(ByteBuffer dst) throws IOException {
         int bytesRead = 0;
-        long start = 0;
+        long start = FileReadEvent.timestamp();
         try {
-            start = FileReadEvent.timestamp();
             bytesRead = implRead(dst);
         } finally {
             FileReadEvent.offer(start, path, bytesRead);
@@ -319,12 +318,10 @@ public class FileChannelImpl
 
     private long traceImplRead(ByteBuffer[] dsts, int offset, int length) throws IOException {
         long bytesRead = 0;
-        long start = 0;
+        long start = FileReadEvent.timestamp();
         try {
-            start = FileReadEvent.timestamp();
             bytesRead = implRead(dsts, offset, length);
         } finally {
-            long end = FileReadEvent.timestamp();
             FileReadEvent.offer(start, path, bytesRead);
         }
         return bytesRead;
@@ -371,15 +368,14 @@ public class FileChannelImpl
     }
 
     private int traceImplWrite(ByteBuffer src) throws IOException {
-        int bytes = 0;
-        long start = 0;
+        int bytesWritten = 0;
+        long start = FileWriteEvent.timestamp();
         try {
-            start = FileWriteEvent.timestamp();
-            bytes = implWrite(src);
+            bytesWritten = implWrite(src);
         } finally {
-            FileWriteEvent.offer(start, path, bytes);
+            FileWriteEvent.offer(start, path, bytesWritten);
         }
-        return bytes;
+        return bytesWritten;
     }
 
     @Override
@@ -424,9 +420,8 @@ public class FileChannelImpl
 
     private long traceImplWrite(ByteBuffer[] srcs, int offset, int length) throws IOException {
         long bytesWritten = 0;
-        long start = 0;
+        long start = FileWriteEvent.timestamp();
         try {
-            start = FileWriteEvent.timestamp();
             bytesWritten = implWrite(srcs, offset, length);
         } finally {
             FileWriteEvent.offer(start, path, bytesWritten);
@@ -1178,9 +1173,8 @@ public class FileChannelImpl
 
     private int traceImplRead(ByteBuffer dst, long position) throws IOException {
         int bytesRead = 0;
-        long start = 0;
+        long start = FileReadEvent.timestamp();
         try {
-            start = FileReadEvent.timestamp();
             bytesRead = implRead(dst, position);
         } finally {
             FileReadEvent.offer(start, path, bytesRead);
@@ -1243,13 +1237,11 @@ public class FileChannelImpl
 
     private int traceImplWrite(ByteBuffer src, long position) throws IOException {
         int bytesWritten = 0;
-        long start = 0;
+        long start = FileWriteEvent.timestamp();
         try {
-            start = FileWriteEvent.timestamp();
             bytesWritten = implWrite(src, position);
         } finally {
-            long bytes = bytesWritten > 0 ? bytesWritten : 0;
-            FileWriteEvent.offer(start, path, bytes);
+            FileWriteEvent.offer(start, path, bytesWritten);
         }
         return bytesWritten;
     }

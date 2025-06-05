@@ -266,9 +266,8 @@ public class FileOutputStream extends OutputStream
 
     private void traceWrite(int b, boolean append) throws IOException {
         long bytesWritten = 0;
-        long start = 0;
+        long start = FileWriteEvent.timestamp();
         try {
-            start = FileWriteEvent.timestamp();
             write(b, append);
             bytesWritten = 1;
         } finally {
@@ -307,9 +306,8 @@ public class FileOutputStream extends OutputStream
 
     private void traceWriteBytes(byte b[], int off, int len, boolean append) throws IOException {
         long bytesWritten = 0;
-        long start = 0;
+        long start = FileWriteEvent.timestamp();
         try {
-            start = FileWriteEvent.timestamp();
             writeBytes(b, off, len, append);
             bytesWritten = len;
         } finally {

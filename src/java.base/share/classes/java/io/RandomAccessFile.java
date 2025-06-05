@@ -367,9 +367,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     private int traceRead0() throws IOException {
         int result = 0;
         long bytesRead = 0;
-        long start = 0;
+        long start = FileReadEvent.timestamp();
         try {
-            start = FileReadEvent.timestamp();
             result = read0();
             if (result < 0) {
                 bytesRead = -1;
@@ -400,9 +399,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     private int traceReadBytes0(byte b[], int off, int len) throws IOException {
         int bytesRead = 0;
-        long start = 0;
+        long start = FileReadEvent.timestamp();
         try {
-            start = FileReadEvent.timestamp();
             bytesRead = readBytes0(b, off, len);
         } finally {
             FileReadEvent.offer(start, path, bytesRead);
@@ -571,9 +569,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     private void traceImplWrite(int b) throws IOException {
         long bytesWritten = 0;
-        long start = 0;
+        long start = FileWriteEvent.timestamp();
         try {
-            start = FileWriteEvent.timestamp();
             implWrite(b);
             bytesWritten = 1;
         } finally {
@@ -610,9 +607,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     private void traceImplWriteBytes(byte b[], int off, int len) throws IOException {
         long bytesWritten = 0;
-        long start = 0;
+        long start = FileWriteEvent.timestamp();
         try {
-            start = FileWriteEvent.timestamp();
             implWriteBytes(b, off, len);
             bytesWritten = len;
         } finally {
