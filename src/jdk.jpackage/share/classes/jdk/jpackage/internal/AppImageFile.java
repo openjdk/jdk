@@ -28,6 +28,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
+import jdk.jpackage.internal.util.function.ExceptionBox;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -45,8 +46,8 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.ApplicationLayout;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.ExternalApplication;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.util.XmlUtils;
@@ -146,22 +147,28 @@ final class AppImageFile implements ExternalApplication {
     }
 
     /**
-     * Returns path to application image info file.
-     * @param appLayout - application layout
+     * Returns the path to the application image info file in the given application layout.
+     *
+     * @param appLayout the application layout
      */
     static Path getPathInAppImage(ApplicationLayout appLayout) {
         return appLayout.appDirectory().resolve(FILENAME);
     }
 
     /**
-     * Loads application image info from application image.
-     * @param appImageDir - path at which to resolve the given application layout
-     * @param appLayout - application layout
+     * Loads application image info from the specified application layout.
+     *
+     * @param appLayout the application layout
      */
-    static AppImageFile load(Path appImageDir, ApplicationLayout appLayout) throws ConfigException, IOException {
-        var srcFilePath = getPathInAppImage(appLayout.resolveAt(appImageDir));
+    static AppImageFile load(ApplicationLayout appLayout) {
+        Objects.requireNonNull(appLayout);
+
+        final var appImageDir = appLayout.rootDirectory();
+        final var appImageFilePath = getPathInAppImage(appLayout);
+        final var relativeAppImageFilePath = appImageDir.relativize(appImageFilePath);
+
         try {
-            final Document doc = XmlUtils.initDocumentBuilder().parse(Files.newInputStream(srcFilePath));
+            final Document doc = XmlUtils.initDocumentBuilder().parse(Files.newInputStream(appImageFilePath));
 
             final XPath xPath = XPathFactory.newInstance().newXPath();
 
@@ -198,15 +205,18 @@ final class AppImageFile implements ExternalApplication {
 
         } catch (XPathExpressionException ex) {
             // This should never happen as XPath expressions should be correct
-            throw new RuntimeException(ex);
+            throw ExceptionBox.rethrowUnchecked(ex);
         } catch (SAXException ex) {
-            // Exception reading input XML (probably malformed XML)
-            throw new IOException(ex);
+            // Malformed input XML
+            throw new JPackageException(I18N.format("error.malformed-app-image-file", relativeAppImageFilePath, appImageDir), ex);
         } catch (NoSuchFileException ex) {
-            throw I18N.buildConfigException("error.foreign-app-image", appImageDir).create();
+            // Don't save the original exception as its error message is redundant.
+            throw new JPackageException(I18N.format("error.missing-app-image-file", relativeAppImageFilePath, appImageDir));
         } catch (InvalidAppImageFileException ex) {
             // Invalid input XML
-            throw I18N.buildConfigException("error.invalid-app-image", appImageDir, srcFilePath).create();
+            throw new JPackageException(I18N.format("error.invalid-app-image-file", relativeAppImageFilePath, appImageDir));
+        } catch (IOException ex) {
+            throw new JPackageException(I18N.format("error.reading-app-image-file", relativeAppImageFilePath, appImageDir), ex);
         }
     }
 

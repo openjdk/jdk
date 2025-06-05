@@ -103,7 +103,7 @@ final class StandardBundlerParam {
             ExternalApplication.class, params -> {
                 if (hasPredefinedAppImage(params)) {
                     var appImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
-                    return AppImageFile.load(appImage, PLATFORM_APPLICATION_LAYOUT);
+                    return AppImageFile.load(PLATFORM_APPLICATION_LAYOUT.resolveAt(appImage));
                 } else {
                     return null;
                 }
