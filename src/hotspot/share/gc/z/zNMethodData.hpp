@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ struct ZNMethodDataBarrier {
 class ZNMethodData : public CHeapObj<mtGC> {
 private:
   ZReentrantLock              _lock;
+  ZReentrantLock              _ic_lock;
   ZArray<ZNMethodDataBarrier> _barriers;
   ZArray<oop*>                _immediate_oops;
   bool                        _has_non_immediate_oops;
@@ -46,6 +47,7 @@ public:
   ZNMethodData();
 
   ZReentrantLock* lock();
+  ZReentrantLock* ic_lock();
 
   const ZArray<ZNMethodDataBarrier>* barriers() const;
   const ZArray<oop*>* immediate_oops() const;

@@ -37,13 +37,18 @@
                                                       \
   /* G1 Heap Size Constraints */                      \
   f(size_t, G1HeapRegionSizeConstraintFunc)           \
-  f(uintx,  G1NewSizePercentConstraintFunc)           \
-  f(uintx,  G1MaxNewSizePercentConstraintFunc)        \
+  f(uint,  G1NewSizePercentConstraintFunc)           \
+  f(uint,  G1MaxNewSizePercentConstraintFunc)        \
                                                       \
   /* G1 Subconstraints */                             \
   f(uintx,  MaxGCPauseMillisConstraintFuncG1)         \
   f(uintx,  GCPauseIntervalMillisConstraintFuncG1)    \
-  f(size_t, NewSizeConstraintFuncG1)
+  f(size_t, NewSizeConstraintFuncG1)                  \
+                                                      \
+  /* G1 PtrQueue buffer size constraints */           \
+  f(size_t, G1SATBBufferSizeConstraintFunc)           \
+  f(size_t, G1UpdateBufferSizeConstraintFunc)         \
+  /* */
 
 G1_GC_CONSTRAINTS(DECLARE_CONSTRAINT)
 

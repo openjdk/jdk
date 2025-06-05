@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  */
 
 import java.io.*;
-import com.sun.tools.classfile.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 /*
  * @test PresenceInner
  * @bug 6843077
  * @summary test that annotations in inner types count only once
- * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 public class PresenceInner {
@@ -40,13 +40,13 @@ public class PresenceInner {
         File javaFile = writeTestFile();
         File classFile = compileTestFile(javaFile);
 
-        ClassFile cf = ClassFile.read(classFile);
-        test(cf);
-        for (Field f : cf.fields) {
-            test(cf, f);
+        ClassModel cm = ClassFile.of().parse(classFile.toPath());
+        test(cm);
+        for (FieldModel fm : cm.fields()) {
+            test(fm);
         }
-        for (Method m: cf.methods) {
-            test(cf, m);
+        for (MethodModel mm: cm.methods()) {
+            test(mm);
         }
 
         // counts are zero when vising outer class
@@ -54,13 +54,13 @@ public class PresenceInner {
 
         // visit inner class
         File innerFile = new File("Test$1Inner.class");
-        ClassFile icf = ClassFile.read(innerFile);
-        test(icf);
-        for (Field f : icf.fields) {
-            test(cf, f);
+        ClassModel icm = ClassFile.of().parse(innerFile.toPath());
+        test(icm);
+        for (FieldModel fm : icm.fields()) {
+            test(fm);
         }
-        for (Method m: icf.methods) {
-            test(cf, m);
+        for (MethodModel mm: icm.methods()) {
+            test(mm);
         }
 
         countAnnotations(1);
@@ -69,66 +69,26 @@ public class PresenceInner {
         System.out.println("PASSED");
     }
 
-    void test(ClassFile cf) {
-        test(cf, Attribute.RuntimeVisibleTypeAnnotations, true);
-        test(cf, Attribute.RuntimeInvisibleTypeAnnotations, false);
+    void test(AttributedElement m) {
+        test(m, Attributes.runtimeVisibleTypeAnnotations());
+        test(m, Attributes.runtimeInvisibleTypeAnnotations());
     }
 
-    void test(ClassFile cf, Method m) {
-        test(cf, m, Attribute.RuntimeVisibleTypeAnnotations, true);
-        test(cf, m, Attribute.RuntimeInvisibleTypeAnnotations, false);
-    }
-
-    void test(ClassFile cf, Field m) {
-        test(cf, m, Attribute.RuntimeVisibleTypeAnnotations, true);
-        test(cf, m, Attribute.RuntimeInvisibleTypeAnnotations, false);
-    }
-
-    // test the result of Attributes.getIndex according to expectations
-    // encoded in the method's name
-    void test(ClassFile cf, String name, boolean visible) {
-        int index = cf.attributes.getIndex(cf.constant_pool, name);
-        if (index != -1) {
-            Attribute attr = cf.attributes.get(index);
-            assert attr instanceof RuntimeTypeAnnotations_attribute;
-            RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
-            all += tAttr.annotations.length;
-            if (visible)
-                visibles += tAttr.annotations.length;
-            else
-                invisibles += tAttr.annotations.length;
-        }
-    }
-
-    // test the result of Attributes.getIndex according to expectations
-    // encoded in the method's name
-    void test(ClassFile cf, Method m, String name, boolean visible) {
-        int index = m.attributes.getIndex(cf.constant_pool, name);
-        if (index != -1) {
-            Attribute attr = m.attributes.get(index);
-            assert attr instanceof RuntimeTypeAnnotations_attribute;
-            RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
-            all += tAttr.annotations.length;
-            if (visible)
-                visibles += tAttr.annotations.length;
-            else
-                invisibles += tAttr.annotations.length;
-        }
-    }
-
-    // test the result of Attributes.getIndex according to expectations
-    // encoded in the method's name
-    void test(ClassFile cf, Field m, String name, boolean visible) {
-        int index = m.attributes.getIndex(cf.constant_pool, name);
-        if (index != -1) {
-            Attribute attr = m.attributes.get(index);
-            assert attr instanceof RuntimeTypeAnnotations_attribute;
-            RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
-            all += tAttr.annotations.length;
-            if (visible)
-                visibles += tAttr.annotations.length;
-            else
-                invisibles += tAttr.annotations.length;
+    // test the result of AttributedElement.findAttribute according to expectations
+    <T extends Attribute<T>> void test(AttributedElement m, AttributeMapper<T> attr_name) {
+        Attribute<T> attr_instance = m.findAttribute(attr_name).orElse(null);
+        if (attr_instance != null) {
+            switch (attr_instance) {
+                case RuntimeVisibleTypeAnnotationsAttribute tAttr -> {
+                    all += tAttr.annotations().size();
+                    visibles += tAttr.annotations().size();
+                }
+                case RuntimeInvisibleTypeAnnotationsAttribute tAttr -> {
+                    all += tAttr.annotations().size();
+                    invisibles += tAttr.annotations().size();
+                }
+                default -> throw new AssertionError();
+            }
         }
     }
 

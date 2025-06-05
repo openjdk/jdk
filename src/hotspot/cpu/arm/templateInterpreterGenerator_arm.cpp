@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.hpp"
@@ -34,9 +33,10 @@
 #include "interpreter/templateTable.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/methodData.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodHandles.hpp"
@@ -174,6 +174,8 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     break;
   case Interpreter::java_lang_math_fmaD:
   case Interpreter::java_lang_math_fmaF:
+  case Interpreter::java_lang_math_tanh:
+  case Interpreter::java_lang_math_cbrt:
     // TODO: Implement intrinsic
     break;
   default:
@@ -369,17 +371,15 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   if (index_size == sizeof(u4)) {
     __ load_resolved_indy_entry(Rcache, Rindex);
     __ ldrh(Rcache, Address(Rcache, in_bytes(ResolvedIndyEntry::num_parameters_offset())));
-    __ check_stack_top();
-    __ add(Rstack_top, Rstack_top, AsmOperand(Rcache, lsl, Interpreter::logStackElementSize));
   } else {
     // Pop N words from the stack
-    __ get_cache_and_index_at_bcp(Rcache, Rindex, 1, index_size);
-
-    __ add(Rtemp, Rcache, AsmOperand(Rindex, lsl, LogBytesPerWord));
-    __ ldrb(Rtemp, Address(Rtemp, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-    __ check_stack_top();
-    __ add(Rstack_top, Rstack_top, AsmOperand(Rtemp, lsl, Interpreter::logStackElementSize));
+    assert(index_size == sizeof(u2), "Can only be u2");
+    __ load_method_entry(Rcache, Rindex);
+    __ ldrh(Rcache, Address(Rcache, in_bytes(ResolvedMethodEntry::num_parameters_offset())));
   }
+
+  __ check_stack_top();
+  __ add(Rstack_top, Rstack_top, AsmOperand(Rcache, lsl, Interpreter::logStackElementSize));
 
   __ convert_retval_to_tos(state);
 
@@ -459,6 +459,10 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state, 
   return entry;
 }
 
+address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter() {
+  return nullptr;
+}
+
 
 // Helpers for commoning out cases in the various type of method entries.
 //
@@ -531,7 +535,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   const Register RmaxStack = R2;
 
   // monitor entry size
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
   // total overhead size: entry_size + (saved registers, thru expr stack bottom).
   // be sure to change this if you add/subtract anything to/from the overhead area
@@ -561,7 +565,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   __ cmp(Rtemp, R0);
 
   __ mov(SP, Rsender_sp, ls);  // restore SP
-  __ b(StubRoutines::throw_StackOverflowError_entry(), ls);
+  __ b(SharedRuntime::throw_StackOverflowError_entry(), ls);
 }
 
 
@@ -570,12 +574,12 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 void TemplateInterpreterGenerator::lock_method() {
   // synchronize method
 
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
   assert ((entry_size % StackAlignmentInBytes) == 0, "should keep stack alignment");
 
   #ifdef ASSERT
     { Label L;
-      __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+      __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
       __ tbnz(Rtemp, JVM_ACC_SYNCHRONIZED_BIT, L);
       __ stop("method doesn't need synchronization");
       __ bind(L);
@@ -584,7 +588,7 @@ void TemplateInterpreterGenerator::lock_method() {
 
   // get synchronization object
   { Label done;
-    __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+    __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
     __ tst(Rtemp, JVM_ACC_STATIC);
     __ ldr(R0, Address(Rlocals, Interpreter::local_offset_in_bytes(0)), eq); // get receiver (assume this is frequent case)
     __ b(done, eq);
@@ -791,10 +795,6 @@ address TemplateInterpreterGenerator::generate_currentThread() { return nullptr;
 address TemplateInterpreterGenerator::generate_CRC32_update_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return nullptr; }
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
 
@@ -847,7 +847,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // make sure method is native & not abstract
 #ifdef ASSERT
-  __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+  __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
   {
     Label L;
     __ tbnz(Rtemp, JVM_ACC_NATIVE_BIT, L);
@@ -889,7 +889,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // no synchronization necessary
 #ifdef ASSERT
       { Label L;
-        __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+        __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
         __ tbz(Rtemp, JVM_ACC_SYNCHRONIZED_BIT, L);
         __ stop("method needs synchronization");
         __ bind(L);
@@ -971,7 +971,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Pass JNIEnv and mirror for static methods
   {
     Label L;
-    __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+    __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
     __ add(R0, Rthread, in_bytes(JavaThread::jni_environment_offset()));
     __ tbz(Rtemp, JVM_ACC_STATIC_BIT, L);
     __ load_mirror(Rtemp, Rmethod, Rtemp);
@@ -1200,7 +1200,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // make sure method is not native & not abstract
 #ifdef ASSERT
-  __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+  __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
   {
     Label L;
     __ tbz(Rtemp, JVM_ACC_NATIVE_BIT, L);
@@ -1245,7 +1245,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     // no synchronization necessary
 #ifdef ASSERT
       { Label L;
-        __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+        __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
         __ tbz(Rtemp, JVM_ACC_SYNCHRONIZED_BIT, L);
         __ stop("method needs synchronization");
         __ bind(L);
@@ -1468,11 +1468,11 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   // preserve exception over this code sequence
   __ pop_ptr(R0_tos);
-  __ str(R0_tos, Address(Rthread, JavaThread::vm_result_offset()));
+  __ str(R0_tos, Address(Rthread, JavaThread::vm_result_oop_offset()));
   // remove the activation (without doing throws on illegalMonitorExceptions)
   __ remove_activation(vtos, Rexception_pc, false, true, false);
   // restore exception
-  __ get_vm_result(Rexception_obj, Rtemp);
+  __ get_vm_result_oop(Rexception_obj, Rtemp);
 
   // In between activations - previous activation type unknown yet
   // compute continuation point - the continuation point expects

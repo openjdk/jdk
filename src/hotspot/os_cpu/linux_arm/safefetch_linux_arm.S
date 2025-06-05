@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,16 @@
  *
  */
 
-    .globl SafeFetch32_impl
-    .globl _SafeFetch32_fault
-    .globl _SafeFetch32_continuation
-    .type SafeFetch32_impl, %function
+#include "defs.S.inc"
 
     # Support for int SafeFetch32(int* address, int defaultval);
     #
     #  r0 : address
     #  r1 : defaultval
-SafeFetch32_impl:
-_SafeFetch32_fault:
+DECLARE_FUNC(SafeFetch32_impl):
+DECLARE_FUNC(_SafeFetch32_fault):
     ldr      r0, [r0]
     bx       lr
-_SafeFetch32_continuation:
+DECLARE_FUNC(_SafeFetch32_continuation):
     mov      r0, r1
     bx       lr

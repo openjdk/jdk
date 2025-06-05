@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public abstract class DumpReplayBase extends CiReplayBase {
             options.add("-XX:CompileCommand=compileonly," + getTestClass() + "::" + getTestMethod());
             options.add("-Xbatch");
             options.add(getTestClass());
-            oa = ProcessTools.executeProcess(ProcessTools.createTestJvm(options));
+            oa = ProcessTools.executeProcess(ProcessTools.createTestJavaProcessBuilder(options));
             Asserts.assertEquals(oa.getExitValue(), 0, "Crash JVM exits gracefully");
             replayFiles = Files.list(Paths.get("."))
                                     .map(Path::toFile)

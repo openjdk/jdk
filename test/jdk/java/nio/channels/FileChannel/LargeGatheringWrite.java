@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,18 +92,19 @@ public class LargeGatheringWrite {
 
         // Write the data to a temporary file
         Path tempFile = Files.createTempFile("LargeGatheringWrite", ".dat");
-
-        printTime("before writing");
-        System.out.printf("Writing %d bytes of data...%n", totalLength);
-        try (FileChannel fcw = FileChannel.open(tempFile, CREATE, WRITE);) {
-            // Print size of individual writes and total number written
-            long bytesWritten = 0;
-            long n;
-            while ((n = fcw.write(bigBuffers)) > 0) {
-                System.out.printf("Wrote %d bytes\n", n);
-                bytesWritten += n;
+        try {
+            printTime("before writing");
+            System.out.printf("Writing %d bytes of data...%n", totalLength);
+            try (FileChannel fcw = FileChannel.open(tempFile, CREATE, WRITE);) {
+                // Print size of individual writes and total number written
+                long bytesWritten = 0;
+                long n;
+                while ((n = fcw.write(bigBuffers)) > 0) {
+                    System.out.printf("Wrote %d bytes\n", n);
+                    bytesWritten += n;
+                }
+                System.out.printf("Total of %d bytes written\n", bytesWritten);
             }
-            System.out.printf("Total of %d bytes written\n", bytesWritten);
             printTime("after writing");
 
             // Verify the content written
@@ -121,8 +122,13 @@ public class LargeGatheringWrite {
                     ByteBuffer dst = ByteBuffer.wrap(bytes).slice(0, length);
                     if (dst.remaining() != length)
                         throw new RuntimeException("remaining");
-                    if (fcr.read(dst) != length)
-                        throw new RuntimeException("length");
+                    long totalRead = 0;
+                    while (totalRead < length) {
+                        int bytesRead = fcr.read(dst);
+                        if (bytesRead < 0)
+                            throw new RuntimeException("premature EOF");
+                        totalRead += bytesRead;
+                    }
                     dst.rewind();
 
                     // Verify that the bytes read from the file match the buffer

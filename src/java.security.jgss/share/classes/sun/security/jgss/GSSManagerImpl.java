@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.security.jgss;
 
 import org.ietf.jgss.*;
-import sun.security.action.GetBooleanAction;
 import sun.security.jgss.spi.*;
 import java.security.Provider;
 
@@ -37,8 +36,8 @@ import java.security.Provider;
 public class GSSManagerImpl extends GSSManager {
 
     // Undocumented property
-    private static final Boolean USE_NATIVE = GetBooleanAction
-            .privilegedGetProperty("sun.security.jgss.native");
+    private static final Boolean USE_NATIVE =
+            Boolean.getBoolean("sun.security.jgss.native");
 
     private final ProviderList list;
 
@@ -88,7 +87,7 @@ public class GSSManagerImpl extends GSSManager {
                 }
             } catch (GSSException e) {
                 // Squelch it and just skip over this mechanism
-                if (GSSUtil.DEBUG) {
+                if (GSSUtil.DEBUG != null) {
                     GSSUtil.debug("Skip " + mech +
                             ": error retrieving supported name types");
                 }

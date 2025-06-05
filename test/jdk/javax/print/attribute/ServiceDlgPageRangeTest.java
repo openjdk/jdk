@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 5080098 8164205
+ * @key printer
  * @summary Verify if PageRanges option is disabled for Non service-formatted
  *          flavors.
  * @run main/manual ServiceDlgPageRangeTest

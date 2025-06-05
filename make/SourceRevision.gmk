@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,7 @@
 # questions.
 #
 
-include $(SPEC)
-include MakeBase.gmk
-
-$(eval $(call IncludeCustomExtension, SourceRevision-pre.gmk))
+include MakeFileStart.gmk
 
 ################################################################################
 # Keep track of what source revision is used to create the build, by creating
@@ -38,8 +35,19 @@ $(eval $(call IncludeCustomExtension, SourceRevision-pre.gmk))
 # bundle. As a part of creating this source bundle, the current SCM revisions of
 # all repos will be stored in a file in the top dir, which is then used when
 # creating the tracker file.
+################################################################################
 
 STORED_SOURCE_REVISION := $(TOPDIR)/.src-rev
+
+# Locate all sourcecode repositories included in the forest, as absolute paths
+FindAllReposAbs = \
+    $(strip $(sort $(dir $(filter-out $(TOPDIR)/build/%, $(wildcard \
+        $(addprefix $(TOPDIR)/, .git */.git */*/.git */*/*/.git */*/*/*/.git) \
+    )))))
+
+# Locate all sourcecode repositories included in the forest, as relative paths
+FindAllReposRel = \
+    $(strip $(subst $(TOPDIR)/,.,$(patsubst $(TOPDIR)/%/, %, $(FindAllReposAbs))))
 
 USE_SCM := false
 ifneq ($(and $(GIT), $(wildcard $(TOPDIR)/.git)), )
@@ -47,14 +55,14 @@ ifneq ($(and $(GIT), $(wildcard $(TOPDIR)/.git)), )
   SCM_DIR := .git
   ID_COMMAND := $(PRINTF) "git:%s%s\n" \
       "$$($(GIT) log -n1 --format=%H | cut -c1-12)" \
-      "$$(if test -n "$$($(GIT) status --porcelain)"; then printf '+'; fi)"
+      "$$(if test -n "$$($(GIT) status --porcelain)"; then $(PRINTF) '+'; fi)"
 endif
 
 ifeq ($(USE_SCM), true)
 
   # Verify that the entire forest is consistent
   $(foreach repo, $(call FindAllReposRel), \
-    $(if $(wildcard $(TOPDIR)/$(repo)/$(SCM_DIR)),, \
+    $(if $(wildcard $(TOPDIR)/$(repo)/$(SCM_DIR)), , \
         $(error Inconsistent revision control: $(repo) is missing $(SCM_DIR) directory)) \
   )
 
@@ -62,7 +70,7 @@ ifeq ($(USE_SCM), true)
   MakeFilenameFromRepo = \
       $(strip $(subst .,top, $(subst /,-, $1)))
 
-  ################################################################################
+  ##############################################################################
   # SetupGetRevisionForRepo defines a make rule for creating a file containing
   # the name of the repository and the output of the scm command for that
   # repository.
@@ -146,10 +154,6 @@ endif
 
 ################################################################################
 
-$(eval $(call IncludeCustomExtension, SourceRevision-post.gmk))
-
-################################################################################
-
 store-source-revision: $(STORE_SOURCE_REVISION_TARGET)
 
 create-source-revision-tracker: $(CREATE_SOURCE_REVISION_TRACKER_TARGET)
@@ -157,3 +161,7 @@ create-source-revision-tracker: $(CREATE_SOURCE_REVISION_TRACKER_TARGET)
 FRC: # Force target
 
 .PHONY: store-source-revision create-source-revision-tracker
+
+################################################################################
+
+include MakeFileEnd.gmk

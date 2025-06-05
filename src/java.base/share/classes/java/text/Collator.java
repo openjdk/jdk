@@ -138,7 +138,7 @@ public abstract class Collator
      * Collator strength value.  When set, only SECONDARY and above differences are
      * considered significant during comparison. The assignment of strengths
      * to language features is locale dependent. A common example is for
-     * different accented forms of the same base letter ("a" vs "\u00E4") to be
+     * different accented forms of the same base letter ("a" vs "ä" (U+00E9)) to be
      * considered a SECONDARY difference.
      * @see java.text.Collator#setStrength
      * @see java.text.Collator#getStrength
@@ -530,10 +530,7 @@ public abstract class Collator
         if (this == that) {
             return true;
         }
-        if (that == null) {
-            return false;
-        }
-        if (getClass() != that.getClass()) {
+        if (that == null || getClass() != that.getClass()) {
             return false;
         }
         Collator other = (Collator) that;

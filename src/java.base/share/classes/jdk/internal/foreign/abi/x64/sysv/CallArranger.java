@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  *  questions.
  *
  */
+
 package jdk.internal.foreign.abi.x64.sysv;
 
 import jdk.internal.foreign.Utils;
@@ -34,7 +35,6 @@ import jdk.internal.foreign.abi.CallingSequenceBuilder;
 import jdk.internal.foreign.abi.DowncallLinker;
 import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.SharedUtils;
-import jdk.internal.foreign.abi.UpcallLinker;
 import jdk.internal.foreign.abi.VMStorage;
 import jdk.internal.foreign.abi.x64.X86_64Architecture;
 
@@ -51,8 +51,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static jdk.internal.foreign.abi.Binding.vmStore;
-import static jdk.internal.foreign.abi.x64.X86_64Architecture.*;
 import static jdk.internal.foreign.abi.x64.X86_64Architecture.Regs.*;
+import static jdk.internal.foreign.abi.x64.X86_64Architecture.StorageType;
 
 /**
  * For the SysV x64 C ABI specifically, this class uses namely CallingSequenceBuilder
@@ -77,7 +77,9 @@ public class CallArranger {
         new VMStorage[] { xmm0, xmm1 },
         2,
         new VMStorage[] { r10, r11 },
-        new VMStorage[] { xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15 },
+        new VMStorage[] { xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15,
+                          xmm16, xmm17, xmm18, xmm19, xmm20, xmm21, xmm22, xmm23,
+                          xmm24, xmm25, xmm26, xmm27, xmm28, xmm29, xmm30, xmm31 },
         16,
         0, //no shadow space
         r10, r11 // scratch 1 & 2
@@ -96,8 +98,8 @@ public class CallArranger {
     public static Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall, LinkerOptions options) {
         CallingSequenceBuilder csb = new CallingSequenceBuilder(CSysV, forUpcall, options);
 
-        BindingCalculator argCalc = forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true);
-        BindingCalculator retCalc = forUpcall ? new UnboxBindingCalculator(false) : new BoxBindingCalculator(false);
+        BindingCalculator argCalc = forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true, options.allowsHeapAccess());
+        BindingCalculator retCalc = forUpcall ? new UnboxBindingCalculator(false, false) : new BoxBindingCalculator(false);
 
         boolean returnInMemory = isInMemoryReturn(cDesc.returnLayout());
         if (returnInMemory) {
@@ -116,7 +118,7 @@ public class CallArranger {
             csb.addArgumentBindings(carrier, layout, argCalc.getBindings(carrier, layout));
         }
 
-        if (!forUpcall) {
+        if (!forUpcall && options.isVariadicFunction()) {
             //add extra binding for number of used vector registers (used for variadic calls)
             csb.addArgumentBindings(long.class, C_LONG,
                     List.of(vmStore(rax, long.class)));
@@ -129,7 +131,9 @@ public class CallArranger {
         Bindings bindings = getBindings(mt, cDesc, false, options);
 
         MethodHandle handle = new DowncallLinker(CSysV, bindings.callingSequence).getBoundMethodHandle();
-        handle = MethodHandles.insertArguments(handle, handle.type().parameterCount() - 1, bindings.nVectorArgs);
+        if (options.isVariadicFunction()) {
+            handle = MethodHandles.insertArguments(handle, handle.type().parameterCount() - 1, bindings.nVectorArgs);
+        }
 
         if (bindings.isInMemoryReturn) {
             handle = SharedUtils.adaptDowncallForIMR(handle, cDesc, bindings.callingSequence);
@@ -206,7 +210,7 @@ public class CallArranger {
                 return typeClass.classes.stream().map(c -> stackAlloc()).toArray(VMStorage[]::new);
             }
 
-            //ok, let's pass pass on registers
+            //ok, let's pass on registers
             VMStorage[] storage = new VMStorage[(int)(nIntegerReg + nVectorReg)];
             for (int i = 0 ; i < typeClass.classes.size() ; i++) {
                 boolean sse = typeClass.classes.get(i) == ArgumentClassImpl.SSE;
@@ -243,9 +247,11 @@ public class CallArranger {
     }
 
     static class UnboxBindingCalculator extends BindingCalculator {
+        private final boolean useAddressPairs;
 
-        UnboxBindingCalculator(boolean forArguments) {
+        UnboxBindingCalculator(boolean forArguments, boolean useAddressPairs) {
             super(forArguments);
+            this.useAddressPairs = useAddressPairs;
         }
 
         @Override
@@ -272,10 +278,18 @@ public class CallArranger {
                     }
                 }
                 case POINTER -> {
-                    bindings.unboxAddress();
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
-                    bindings.vmStore(storage, long.class);
-                                    }
+                    if (useAddressPairs) {
+                        bindings.dup()
+                                .segmentBase()
+                                .vmStore(storage, Object.class)
+                                .segmentOffsetAllowHeap()
+                                .vmStore(null, long.class);
+                    } else {
+                        bindings.unboxAddress();
+                        bindings.vmStore(storage, long.class);
+                    }
+                }
                 case INTEGER -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     bindings.vmStore(storage, carrier);

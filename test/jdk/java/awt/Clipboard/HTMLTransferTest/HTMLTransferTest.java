@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ public class HTMLTransferTest {
             String javaPath = System.getProperty("java.home", "");
             String cmd = javaPath + File.separator + "bin" + File.separator
                 + "java -cp " + System.getProperty("test.classes", ".") +
-                //+ "-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000 "
+                //+ "-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000 "
                 " THTMLConsumer"
                 //+ stFormats
                 ;

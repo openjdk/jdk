@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,7 +202,6 @@ Java_sun_print_CUPSPrinter_getCupsDefaultPrinter(JNIEnv *env,
     cups_dest_t *dests;
     char *defaultPrinter = NULL;
     int num_dests = j2d_cupsGetDests(&dests);
-    int i = 0;
     cups_dest_t *dest = j2d_cupsGetDest(NULL, NULL, num_dests, dests);
     if (dest != NULL) {
         defaultPrinter = dest->name;
@@ -415,6 +414,96 @@ Java_sun_print_CUPSPrinter_getMedia(JNIEnv *env,
     return nameArray;
 }
 
+/*
+ * Returns list of output bins
+ */
+JNIEXPORT jobjectArray JNICALL
+Java_sun_print_CUPSPrinter_getOutputBins(JNIEnv *env,
+                                         jobject printObj,
+                                         jstring printer)
+{
+    ppd_file_t *ppd;
+    ppd_choice_t *choice;
+    ppd_option_t *outputBin;
+    const char *name;
+    const char *filename;
+    int i, nBins=0;
+    jstring utf_str;
+    jclass cls;
+    jobjectArray nameArray = NULL;
+
+    name = (*env)->GetStringUTFChars(env, printer, NULL);
+    if (name == NULL) {
+        (*env)->ExceptionClear(env);
+        JNU_ThrowOutOfMemoryError(env, "Could not create printer name");
+        return NULL;
+    }
+
+    // NOTE: cupsGetPPD returns a pointer to a filename of a temporary file.
+    // unlink() must be caled to remove the file when finished using it.
+    filename = j2d_cupsGetPPD(name);
+    (*env)->ReleaseStringUTFChars(env, printer, name);
+    CHECK_NULL_RETURN(filename, NULL);
+
+    cls = (*env)->FindClass(env, "java/lang/String");
+    CHECK_NULL_RETURN(cls, NULL);
+
+    if ((ppd = j2d_ppdOpenFile(filename)) == NULL) {
+        unlink(filename);
+        DPRINTF("CUPSfuncs::unable to open PPD %s\n", filename);
+        return NULL;
+    }
+
+    outputBin = j2d_ppdFindOption(ppd, "OutputBin");
+    if (outputBin != NULL) {
+        nBins = outputBin->num_choices;
+    }
+
+    if (nBins > 0) {
+        nameArray = (*env)->NewObjectArray(env, nBins * 2, cls, NULL);
+        if (nameArray == NULL) {
+            unlink(filename);
+            j2d_ppdClose(ppd);
+            DPRINTF("CUPSfuncs::bad alloc new array\n", "")
+            if (!(*env)->ExceptionCheck(env)) {
+                JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
+            }
+            return NULL;
+        }
+
+        for (i = 0; outputBin!=NULL && i<nBins; i++) {
+            choice = (outputBin->choices)+i;
+            utf_str = JNU_NewStringPlatform(env, choice->text);
+            if (utf_str == NULL) {
+                unlink(filename);
+                j2d_ppdClose(ppd);
+                DPRINTF("CUPSfuncs::bad alloc new string text\n", "")
+                if (!(*env)->ExceptionCheck(env)) {
+                    JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
+                }
+                return NULL;
+            }
+            (*env)->SetObjectArrayElement(env, nameArray, i*2, utf_str);
+            (*env)->DeleteLocalRef(env, utf_str);
+            utf_str = JNU_NewStringPlatform(env, choice->choice);
+            if (utf_str == NULL) {
+                unlink(filename);
+                j2d_ppdClose(ppd);
+                DPRINTF("CUPSfuncs::bad alloc new string choice\n", "")
+                if (!(*env)->ExceptionCheck(env)) {
+                    JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
+                }
+                return NULL;
+            }
+            (*env)->SetObjectArrayElement(env, nameArray, i*2+1, utf_str);
+            (*env)->DeleteLocalRef(env, utf_str);
+        }
+    }
+
+    j2d_ppdClose(ppd);
+    unlink(filename);
+    return nameArray;
+}
 
 /*
  * Returns list of page sizes and imageable area.
@@ -485,10 +574,10 @@ Java_sun_print_CUPSPrinter_getPageSizes(JNIEnv *env,
                 // paper width and height
                 dims[i*6] = size->width;
                 dims[(i*6)+1] = size->length;
-                // paper printable area
+                // paper printable area. x and y coordinates of the lower left corner, width and height
                 dims[(i*6)+2] = size->left;
-                dims[(i*6)+3] = size->top;
-                dims[(i*6)+4] = size->right;
+                dims[(i*6)+3] = size->top - size->bottom;
+                dims[(i*6)+4] = size->right - size->left;
                 dims[(i*6)+5] = size->bottom;
             }
         }

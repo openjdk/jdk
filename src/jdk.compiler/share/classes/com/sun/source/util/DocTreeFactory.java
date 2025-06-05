@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
+import com.sun.source.doctree.RawTextTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ProvidesTree;
 import com.sun.source.doctree.ReferenceTree;
@@ -288,6 +289,18 @@ public interface DocTreeFactory {
      * @return a {@code ProvidesTree} object
      */
     ProvidesTree newProvidesTree(ReferenceTree name, List<? extends DocTree> description);
+
+    /**
+     * Creates a new {@code RawTextTree} object, to represent a fragment of uninterpreted raw text.
+     *
+     * @param kind the kind of text
+     * @param code the code
+     * @return a {@code RawTextTree} object
+     * @throws IllegalArgumentException if the kind is not a recognized kind for raw text
+     *
+     * @since 23
+     */
+    RawTextTree newRawTextTree(DocTree.Kind kind, String code);
 
     /**
      * Creates a new {@code ReferenceTree} object, to represent a reference to an API element.

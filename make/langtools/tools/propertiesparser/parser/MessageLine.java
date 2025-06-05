@@ -25,6 +25,7 @@
 
 package propertiesparser.parser;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -37,6 +38,7 @@ public class MessageLine {
     static final Pattern typePattern = Pattern.compile("[-\\\\'A-Z\\.a-z ]+( \\([-A-Za-z 0-9]+\\))?");
     static final Pattern infoPattern = Pattern.compile(String.format("# ([0-9]+: %s, )*[0-9]+: %s",
             typePattern.pattern(), typePattern.pattern()));
+    static final Pattern lintPattern = Pattern.compile("# lint: ([a-z\\-]+)");
 
     public String text;
     MessageLine prev;
@@ -52,6 +54,19 @@ public class MessageLine {
 
     public boolean isInfo() {
         return infoPattern.matcher(text).matches();
+    }
+
+    public boolean isLint() {
+        return lintPattern.matcher(text).matches();
+    }
+
+    public String lintCategory() {
+        Matcher matcher = lintPattern.matcher(text);
+        if (matcher.matches()) {
+            return matcher.group(1);
+        } else {
+            return null;
+        }
     }
 
     boolean hasContinuation() {

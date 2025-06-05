@@ -1,0 +1,2 @@
+CrashDueToUnreportedError.java:14:43: compiler.err.prob.found.req: (compiler.misc.infer.no.conforming.assignment.exists: E,compiler.misc.type.captureof: 1, ? extends CrashDueToUnreportedError.Entity<Root>,Root, (compiler.misc.inconvertible.types: java.util.List<compiler.misc.type.captureof: 2, ? extends CrashDueToUnreportedError.Entity<Root>>, java.util.List<? extends CrashDueToUnreportedError.Entity<java.lang.Object>>))
+1 error

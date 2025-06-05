@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGlobals.hpp"
@@ -33,7 +32,7 @@ size_t ZPointerLoadShift;
 size_t ZPlatformAddressOffsetBits() {
   const size_t min_address_offset_bits = 42; // 4TB
   const size_t max_address_offset_bits = 44; // 16TB
-  const size_t address_offset = round_up_power_of_2(MaxHeapSize * ZVirtualToPhysicalRatio);
+  const size_t address_offset = ZGlobalsPointers::min_address_offset_request();
   const size_t address_offset_bits = log2i_exact(address_offset);
   return clamp(address_offset_bits, min_address_offset_bits, max_address_offset_bits);
 }

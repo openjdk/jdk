@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,6 +125,10 @@ public class TrustAnchor {
      * decoded
      * @throws NullPointerException if the specified
      * {@code X509Certificate} is {@code null}
+     *
+     * @spec https://www.rfc-editor.org/info/rfc5280
+     *      RFC 5280: Internet X.509 Public Key Infrastructure Certificate
+     *              and Certificate Revocation List (CRL) Profile
      */
     public TrustAnchor(X509Certificate trustedCert, byte[] nameConstraints)
     {
@@ -207,6 +211,10 @@ public class TrustAnchor {
      * or incorrectly formatted or the name constraints cannot be decoded
      * @throws NullPointerException if the specified {@code caName} or
      * {@code pubKey} parameter is {@code null}
+     *
+     * @spec https://www.rfc-editor.org/info/rfc2253
+     *      RFC 2253: Lightweight Directory Access Protocol (v3):
+     *              UTF-8 String Representation of Distinguished Names
      */
     public TrustAnchor(String caName, PublicKey pubKey, byte[] nameConstraints)
     {

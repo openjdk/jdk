@@ -1082,6 +1082,7 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             site.setReason("succeed: " + search(atts, "reason"));
         } else if (qname.equals("failure")) {
             failureReason = search(atts, "reason");
+            lateInlining = false;
         } else if (qname.equals("task_done")) {
             compile.setEnd(Double.parseDouble(search(atts, "stamp")));
             if (Integer.parseInt(search(atts, "success")) == 0) {
@@ -1098,6 +1099,10 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             e.setCompileKind(compileKind);
             String level = atts.getValue("level");
             e.setLevel(level);
+            String reason = atts.getValue("reason");
+            if (reason != null) {
+              e.setReason(reason);
+            }
             events.add(e);
         } else if (qname.equals("uncommon_trap")) {
             String id = atts.getValue("compile_id");

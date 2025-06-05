@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,7 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 /**
  *
@@ -45,14 +42,13 @@ import java.util.List;
  */
 public abstract class Slot implements Port, Source.Provider, Properties.Provider {
 
-    private int wantedIndex;
-    private Source source;
+    private final int wantedIndex;
+    private final Source source;
     protected List<FigureConnection> connections;
-    private InputNode associatedNode;
     private Color color;
     private String text;
     private String shortName;
-    private Figure figure;
+    private final Figure figure;
 
     protected Slot(Figure figure, int wantedIndex) {
         this.figure = figure;
@@ -80,13 +76,10 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
     }
     public static final Comparator<Slot> slotIndexComparator = Comparator.comparingInt(o -> o.wantedIndex);
 
-    public void setAssociatedNode(InputNode node) {
-        associatedNode = node;
-    }
-
     public int getWidth() {
-        if (shortName == null || shortName.length() <= 1) {
-            return Figure.SLOT_WIDTH;
+        assert shortName != null;
+        if (shortName.isEmpty()) {
+            return 0;
         } else {
             BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
             Graphics g = image.getGraphics();
@@ -96,8 +89,8 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
         }
     }
 
-    public int getWantedIndex() {
-        return wantedIndex;
+    public int getHeight() {
+        return Figure.SLOT_HEIGHT;
     }
 
     @Override
@@ -111,7 +104,6 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
 
     public void setShortName(String s) {
         assert s != null;
-//        assert s.length() <= 2;
         this.shortName = s;
 
     }
@@ -138,7 +130,7 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
     }
 
     public boolean shouldShowName() {
-        return getShortName() != null && getShortName().length() > 0;
+        return getShortName() != null && !getShortName().isEmpty();
     }
 
     public boolean hasSourceNodes() {
@@ -153,7 +145,6 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
     }
 
     public Figure getFigure() {
-        assert figure != null;
         return figure;
     }
 

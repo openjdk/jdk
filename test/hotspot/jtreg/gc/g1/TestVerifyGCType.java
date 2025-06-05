@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,9 +122,9 @@ public class TestVerifyGCType {
     private static void testYoungEvacFail() throws Exception {
         OutputAnalyzer output;
         output = testWithVerificationType(new String[] {"young-evac-fail"},
-                                          new String[] {"-XX:+G1EvacuationFailureALot",
-                                                        "-XX:G1EvacuationFailureALotCount=100",
-                                                        "-XX:G1EvacuationFailureALotInterval=1",
+                                          new String[] {"-XX:+G1GCAllocationFailureALot",
+                                                        "-XX:G1GCAllocationFailureALotCount=100",
+                                                        "-XX:G1GCAllocationFailureALotInterval=1",
                                                         "-XX:+UnlockDiagnosticVMOptions"});
         output.shouldHaveExitValue(0);
 
@@ -178,10 +178,7 @@ public class TestVerifyGCType {
 
         basicOpts.add(TriggerGCs.class.getName());
 
-        ProcessBuilder procBuilder =  ProcessTools.createJavaProcessBuilder(basicOpts);
-        OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
-
-        return analyzer;
+        return ProcessTools.executeLimitedTestJava(basicOpts);
     }
 
     private static void verifyCollection(String name, boolean expectBefore, boolean expectDuring, boolean expectAfter, String data) {

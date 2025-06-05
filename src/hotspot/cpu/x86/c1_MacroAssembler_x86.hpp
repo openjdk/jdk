@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,13 +83,14 @@
   };
 
   // allocation of arrays
-  // obj        : must be rax, will contain pointer to allocated object
-  // len        : array length in number of elements
-  // t          : scratch register - contents destroyed
-  // header_size: size of object header in words
-  // f          : element scale factor
-  // slow_case  : exit to slow case implementation if fast allocation fails
-  void allocate_array(Register obj, Register len, Register t, Register t2, int header_size, Address::ScaleFactor f, Register klass, Label& slow_case);
+  // obj                 : must be rax, will contain pointer to allocated object
+  // len                 : array length in number of elements
+  // t                   : scratch register - contents destroyed
+  // base_offset_in_bytes: offset of the first array element, in bytes
+  // f                   : element scale factor
+  // slow_case           : exit to slow case implementation if fast allocation fails
+  // zero_array          : zero the allocated array or not
+  void allocate_array(Register obj, Register len, Register t, Register t2, int base_offset_in_bytes, Address::ScaleFactor f, Register klass, Label& slow_case, bool zero_array);
 
   int  rsp_offset() const { return _rsp_offset; }
   void set_rsp_offset(int n) { _rsp_offset = n; }

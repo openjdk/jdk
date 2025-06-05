@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderStats.hpp"
 #include "classfile/javaClasses.hpp"
@@ -36,6 +35,7 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jfr/periodic/jfrCompilerQueueUtilization.hpp"
 #include "jfr/periodic/jfrFinalizerStatisticsEvent.hpp"
 #include "jfr/periodic/jfrModuleEvent.hpp"
 #include "jfr/periodic/jfrOSInterface.hpp"
@@ -114,10 +114,10 @@ TRACE_REQUEST_FUNC(JVMInformation) {
 
 TRACE_REQUEST_FUNC(OSInformation) {
   ResourceMark rm;
-  char* os_name = NEW_RESOURCE_ARRAY(char, 2048);
-  JfrOSInterface::os_version(&os_name);
+  char* os_version = nullptr;
+  JfrOSInterface::os_version(&os_version);
   EventOSInformation event;
-  event.set_osVersion(os_name);
+  event.set_osVersion(os_version);
   event.commit();
 }
 
@@ -138,7 +138,7 @@ TRACE_REQUEST_FUNC(ModuleExport) {
 /*
  * This is left empty on purpose, having ExecutionSample as a requestable
  * is a way of getting the period. The period is passed to ThreadSampling::update_period.
- * Implementation in jfrSamples.cpp
+ * Implementation in periodic/sampling/jfrThreadSampler.cpp.
  */
 TRACE_REQUEST_FUNC(ExecutionSample) {
 }
@@ -221,6 +221,10 @@ TRACE_REQUEST_FUNC(ThreadCPULoad) {
   JfrThreadCPULoadEvent::send_events();
 }
 
+TRACE_REQUEST_FUNC(CompilerQueueUtilization) {
+  JfrCompilerQueueUtilization::send_events();
+}
+
 TRACE_REQUEST_FUNC(NetworkUtilization) {
   JfrNetworkUtilization::send_events();
 }
@@ -275,6 +279,7 @@ TRACE_REQUEST_FUNC(SystemProcess) {
   }
 }
 
+#if INCLUDE_JVMTI
 template <typename AgentEvent>
 static void send_agent_event(AgentEvent& event, const JvmtiAgent* agent) {
   event.set_name(agent->name());
@@ -311,6 +316,14 @@ TRACE_REQUEST_FUNC(NativeAgent) {
   const JvmtiAgentList::Iterator xrun_agents_it = JvmtiAgentList::xrun_agents();
   send_native_agent_events(xrun_agents_it);
 }
+#else  // INCLUDE_JVMTI
+TRACE_REQUEST_FUNC(JavaAgent)   {}
+TRACE_REQUEST_FUNC(NativeAgent) {}
+#endif // INCLUDE_JVMTI
+
+TRACE_REQUEST_FUNC(MethodTiming) {
+  // Emitted in Java, but defined in native to have Method type field.
+}
 
 TRACE_REQUEST_FUNC(ThreadContextSwitchRate) {
   double rate = 0.0;
@@ -338,7 +351,7 @@ TRACE_REQUEST_FUNC(ThreadContextSwitchRate) {
 #define SEND_FLAGS_OF_TYPE(eventType, flagType)                   \
   do {                                                            \
     JVMFlag *flag = JVMFlag::flags;                               \
-    while (flag->name() != nullptr) {                                \
+    while (flag->name() != nullptr) {                             \
       if (flag->is_ ## flagType()) {                              \
         if (flag->is_unlocked()) {                                \
           Event ## eventType event;                               \
@@ -416,7 +429,7 @@ TRACE_REQUEST_FUNC(GCConfiguration) {
   event.set_usesDynamicGCThreads(conf.uses_dynamic_gc_threads());
   event.set_isExplicitGCConcurrent(conf.is_explicit_gc_concurrent());
   event.set_isExplicitGCDisabled(conf.is_explicit_gc_disabled());
-  event.set_gcTimeRatio(conf.gc_time_ratio());
+  event.set_gcTimeRatio(static_cast<unsigned int>(conf.gc_time_ratio()));
   event.set_pauseTarget((s8)pause_target);
   event.commit();
 }
@@ -433,8 +446,8 @@ TRACE_REQUEST_FUNC(GCTLABConfiguration) {
 TRACE_REQUEST_FUNC(GCSurvivorConfiguration) {
   GCSurvivorConfiguration conf;
   EventGCSurvivorConfiguration event;
-  event.set_maxTenuringThreshold(conf.max_tenuring_threshold());
-  event.set_initialTenuringThreshold(conf.initial_tenuring_threshold());
+  event.set_maxTenuringThreshold(static_cast<u1>(conf.max_tenuring_threshold()));
+  event.set_initialTenuringThreshold(static_cast<u1>(conf.initial_tenuring_threshold()));
   event.commit();
 }
 
@@ -447,7 +460,7 @@ TRACE_REQUEST_FUNC(GCHeapConfiguration) {
   event.set_usesCompressedOops(conf.uses_compressed_oops());
   event.set_compressedOopsMode(conf.narrow_oop_mode());
   event.set_objectAlignment(conf.object_alignment_in_bytes());
-  event.set_heapAddressBits(conf.heap_address_size_in_bits());
+  event.set_heapAddressBits(static_cast<u1>(conf.heap_address_size_in_bits()));
   event.commit();
 }
 
@@ -457,7 +470,7 @@ TRACE_REQUEST_FUNC(YoungGenerationConfiguration) {
   EventYoungGenerationConfiguration event;
   event.set_maxSize((u8)max_size);
   event.set_minSize(conf.min_size());
-  event.set_newRatio(conf.new_ratio());
+  event.set_newRatio(static_cast<unsigned int>(conf.new_ratio()));
   event.commit();
 }
 
@@ -519,6 +532,13 @@ TRACE_REQUEST_FUNC(PhysicalMemory) {
   EventPhysicalMemory event;
   event.set_totalSize(totalPhysicalMemory);
   event.set_usedSize(totalPhysicalMemory - os::available_memory());
+  event.commit();
+}
+
+TRACE_REQUEST_FUNC(SwapSpace) {
+  EventSwapSpace event;
+  event.set_totalSize(os::total_swap_space());
+  event.set_freeSize(os::free_swap_space());
   event.commit();
 }
 
@@ -660,7 +680,7 @@ TRACE_REQUEST_FUNC(CompilerStatistics) {
 
 TRACE_REQUEST_FUNC(CompilerConfiguration) {
   EventCompilerConfiguration event;
-  event.set_threadCount(CICompilerCount);
+  event.set_threadCount(static_cast<s4>(CICompilerCount));
   event.set_tieredCompilation(TieredCompilation);
   event.set_dynamicCompilerThreadCount(UseDynamicNumberOfCompilerThreads);
   event.commit();
@@ -722,4 +742,10 @@ TRACE_REQUEST_FUNC(NativeMemoryUsage) {
 
 TRACE_REQUEST_FUNC(NativeMemoryUsageTotal) {
   JfrNativeMemoryEvent::send_total_event(timestamp());
+}
+
+TRACE_REQUEST_FUNC(JavaMonitorStatistics) {
+  EventJavaMonitorStatistics event;
+  event.set_count(ObjectSynchronizer::in_use_list_count());
+  event.commit();
 }

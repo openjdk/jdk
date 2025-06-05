@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,10 @@
 
 /*
  * @test id=specialized
- * @enablePreview
  * @library ../
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @requires (!(os.name == "Mac OS X" & os.arch == "aarch64") | jdk.foreign.linker != "FALLBACK")
  * @modules java.base/jdk.internal.foreign
- * @run testng/othervm
+ * @run testng/othervm/native
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
  *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=true
@@ -37,12 +35,10 @@
 
 /*
  * @test id=interpreted
- * @enablePreview
  * @library ../
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @requires (!(os.name == "Mac OS X" & os.arch == "aarch64") | jdk.foreign.linker != "FALLBACK")
  * @modules java.base/jdk.internal.foreign
- * @run testng/othervm
+ * @run testng/othervm/native
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
  *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=false

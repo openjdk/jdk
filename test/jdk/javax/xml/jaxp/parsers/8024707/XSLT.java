@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /**
  * @test
- * @bug 8024707
+ * @bug 8024707 8343001
  * @summary Test for XSLT extension function with 1 element sized nodelist
  * @compile TestFunc.java XSLT.java
- * @run main/othervm XSLT
+ * @run main/othervm -Djdk.xml.enableExtensionFunctions=true XSLT
  * @author aleksej.efimov@oracle.com
  */
 

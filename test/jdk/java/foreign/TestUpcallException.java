@@ -23,8 +23,6 @@
 
 /*
  * @test
- * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @library /test/lib
  * @build TestUpcallException
  *
@@ -50,7 +48,8 @@ public class TestUpcallException extends UpcallTestHelper {
     @Test(dataProvider = "exceptionCases")
     public void testException(Class<?> target, boolean useSpec) throws InterruptedException, IOException {
         runInNewProcess(target, useSpec)
-                .assertStdErrContains("Testing upcall exceptions");
+                .shouldNotHaveExitValue(0)
+                .stderrShouldContain("Testing upcall exceptions");
     }
 
     @DataProvider

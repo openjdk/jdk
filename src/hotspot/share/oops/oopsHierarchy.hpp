@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,6 @@
 
 // Global offset instead of address for an oop within a java object.
 enum class narrowOop : uint32_t { null = 0 };
-
-// If compressed klass pointers then use narrowKlass.
-typedef juint  narrowKlass;
 
 typedef void* OopOrNarrowOopStar;
 
@@ -182,9 +179,6 @@ class   MethodData;
 //      class Metadata
 class   Method;
 class   ConstantPool;
-//      class CHeapObj
-class   CompiledICHolder;
-
 
 // The klass hierarchy is separate from the oop hierarchy.
 

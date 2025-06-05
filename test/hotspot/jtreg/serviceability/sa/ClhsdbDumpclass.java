@@ -39,6 +39,7 @@ import jtreg.SkippedException;
  * @bug 8240990
  * @summary Test clhsdb dumpclass command
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver ClhsdbDumpclass
  */
@@ -75,6 +76,8 @@ public class ClhsdbDumpclass {
             // Run javap on the generated class file to make sure it's valid.
             JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("javap");
             launcher.addVMArgs(Utils.getTestJavaOpts());
+            // Let javap print additional info, e.g., StackMapTable
+            launcher.addToolArg("-verbose");
             launcher.addToolArg(classFile.toString());
             System.out.println("> javap " + classFile.toString());
             List<String> cmdStringList = Arrays.asList(launcher.getCommand());
@@ -86,6 +89,11 @@ public class ClhsdbDumpclass {
             System.err.println(out.getStderr());
             out.shouldHaveExitValue(0);
             out.shouldMatch("public class " + APP_DOT_CLASSNAME);
+            // StackMapTable might not be generated for a class
+            // containing only methods with sequential control flows.
+            // But the class used here (LingeredApp) is not such a case.
+            out.shouldContain("StackMapTable:");
+            out.shouldContain("BootstrapMethods:");
             out.shouldNotContain("Error:");
         } catch (SkippedException se) {
             throw se;

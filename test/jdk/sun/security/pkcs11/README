@@ -4,14 +4,15 @@ perform as a result of bugs or features in NSS or other pkcs11 libraries.
 - How to get NSS libraries?
 The libraries come from the following sources.
 
-1. Specified by system property test.nss.lib.paths
-System property test.nss.lib.paths can specify a set of absolute paths to
-the local NSS library directories. The paths are separated by comma.
+1. Specified by system property jdk.test.lib.artifacts.<NAME>
+The system property, jdk.test.lib.artifacts.<NAME>, can specify an absolute path
+to the local NSS library directory. The <NAME> component should be replaced with
+the name element of the appropriate @Artifact class.
+(See `test/jdk/sun/security/pkcs11/PKCS11Test.java`)
 
 2. Pre-built NSS libraries from artifactory server
-If the value of system property test.nss.lib.paths is not set, the tests will try
-to download pre-built NSS libraries from artifactory server. Currently, the
-tests only looks for libraries for Windows and MacOSX platforms on artifactory.
+If the value of system property jdk.test.lib.artifacts.<NAME> is not set, the
+tests will try to download pre-built NSS libraries from artifactory server.
 Please note that JIB jar MUST be present in classpath when downloading the
 libraries.
 

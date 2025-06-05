@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,45 +25,42 @@
  *  @bug 8034854
  *  @summary Verify that the InnerClasses attribute has outer_class_info_index zero if it has
  *           inner_name_index zero (for synthetic classes)
- *  @modules jdk.jdeps/com.sun.tools.classfile
  *  @compile SyntheticClasses.java
  *  @run main SyntheticClasses
  */
 
 import java.io.*;
 import java.util.*;
-import com.sun.tools.classfile.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 public class SyntheticClasses {
 
-    public static void main(String[] args) throws IOException, ConstantPoolException {
+    public static void main(String[] args) throws IOException {
         new SyntheticClasses().run();
     }
 
-    private void run() throws IOException, ConstantPoolException {
+    private void run() throws IOException {
         File testClasses = new File(System.getProperty("test.classes"));
-        for (File classFile : testClasses.listFiles(f -> f.getName().endsWith(".class"))) {
-            ClassFile cf = ClassFile.read(classFile);
-            if (cf.getName().matches(".*\\$[0-9]+")) {
-                EnclosingMethod_attribute encl =
-                        (EnclosingMethod_attribute) cf.getAttribute(Attribute.EnclosingMethod);
+        for (File classFile : Objects.requireNonNull(testClasses.listFiles(f -> f.getName().endsWith(".class")))) {
+            ClassModel cf = ClassFile.of().parse(classFile.toPath());
+            if (cf.thisClass().asInternalName().matches(".*\\$[0-9]+")) {
+                EnclosingMethodAttribute encl = cf.findAttribute(Attributes.enclosingMethod()).orElse(null);
                 if (encl != null) {
-                    if (encl.method_index != 0)
-                        throw new IllegalStateException("Invalid EnclosingMethod.method_index: " +
-                                                        encl.method_index + ".");
+                    if (encl.enclosingMethodName().isPresent())
+                        throw new IllegalStateException("Invalid EnclosingMethod.method: " +
+                                                        encl.enclosingMethodName().get().stringValue() + ".");
                 }
             }
-            InnerClasses_attribute attr =
-                    (InnerClasses_attribute) cf.getAttribute(Attribute.InnerClasses);
+            InnerClassesAttribute attr = cf.findAttribute(Attributes.innerClasses()).orElse(null);
             if (attr != null) {
-                for (InnerClasses_attribute.Info info : attr.classes) {
-                    if (cf.major_version < 51)
+                for (InnerClassInfo info : attr.classes()) {
+                    if (cf.majorVersion() < 51)
                         throw new IllegalStateException();
-                    if (info.inner_name_index == 0 && info.outer_class_info_index != 0)
-                        throw new IllegalStateException("Invalid outer_class_info_index=" +
-                                                        info.outer_class_info_index +
-                                                        "; inner_name_index=" +
-                                                        info.inner_name_index + ".");
+                    if (info.innerName().isEmpty() && info.outerClass().isPresent() )
+                        throw new IllegalStateException("Invalid outer_class_info: " +
+                                                        info.outerClass().get().asInternalName() +
+                                                        "; inner_name is empty");
                 }
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "jfr/leakprofiler/chains/edge.hpp"
 #include "jfr/leakprofiler/utilities/unifiedOopRef.inline.hpp"
@@ -29,11 +28,11 @@
 Edge::Edge(const Edge* parent, UnifiedOopRef reference) : _parent(parent),
                                                           _reference(reference) {}
 
-const oop Edge::pointee() const {
+oop Edge::pointee() const {
   return _reference.dereference();
 }
 
-const oop Edge::reference_owner() const {
+oop Edge::reference_owner() const {
   return is_root() ? (oop)nullptr : _parent->pointee();
 }
 

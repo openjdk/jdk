@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.Rectangle;
+import java.awt.geom.AffineTransform;
 
 import javax.swing.JComponent;
 import javax.swing.JProgressBar;
@@ -50,7 +51,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
  *
  * @author Michael C. Albers
  */
-public class WindowsProgressBarUI extends BasicProgressBarUI
+public final class WindowsProgressBarUI extends BasicProgressBarUI
 {
 
     private Rectangle previousFullBox;
@@ -61,6 +62,7 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
     }
 
 
+    @Override
     protected void installDefaults() {
         super.installDefaults();
 
@@ -79,6 +81,7 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
      * @see javax.swing.JComponent#getBaseline(int, int)
      * @since 1.6
      */
+    @Override
     public int getBaseline(JComponent c, int width, int height) {
         int baseline = super.getBaseline(c, width, height);
         if (XPStyle.getXP() != null && progressBar.isStringPainted() &&
@@ -101,6 +104,7 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
         return baseline;
     }
 
+    @Override
     protected Dimension getPreferredInnerHorizontal() {
         XPStyle xp = XPStyle.getXP();
         if (xp != null) {
@@ -112,6 +116,7 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
          return super.getPreferredInnerHorizontal();
     }
 
+    @Override
     protected Dimension getPreferredInnerVertical() {
          XPStyle xp = XPStyle.getXP();
          if (xp != null) {
@@ -123,43 +128,49 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
          return super.getPreferredInnerVertical();
     }
 
+    @Override
     protected void paintDeterminate(Graphics g, JComponent c) {
         XPStyle xp = XPStyle.getXP();
         if (xp != null) {
             boolean vertical = (progressBar.getOrientation() == JProgressBar.VERTICAL);
             boolean isLeftToRight = WindowsGraphicsUtils.isLeftToRight(c);
-            int barRectWidth = progressBar.getWidth();
-            int barRectHeight = progressBar.getHeight()-1;
+            Graphics2D g2 = (Graphics2D) g;
+            AffineTransform at = g2.getTransform();
+            double scaleX = at.getScaleX();
+            double scaleY = at.getScaleY();
+
+            int barRectWidth = (int)Math.ceil(progressBar.getWidth() * scaleX);
+            int barRectHeight = (int)Math.ceil(progressBar.getHeight() * scaleY);
+
             // amount of progress to draw
-            int amountFull = getAmountFull(null, barRectWidth, barRectHeight);
+            int amountFull = (int)(getAmountFull(null, barRectWidth, barRectHeight) / scaleX);
 
             paintXPBackground(g, vertical, barRectWidth, barRectHeight);
+
             // Paint progress
             if (progressBar.isStringPainted()) {
                 // Do not paint the standard stripes from the skin, because they obscure
                 // the text
                 g.setColor(progressBar.getForeground());
-                barRectHeight -= 2;
-                barRectWidth -= 2;
 
                 if (barRectWidth <= 0 || barRectHeight <= 0) {
                     return;
                 }
 
-                Graphics2D g2 = (Graphics2D)g;
                 g2.setStroke(new BasicStroke((float)(vertical ? barRectWidth : barRectHeight),
                                              BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL));
                 if (!vertical) {
                     if (isLeftToRight) {
-                        g2.drawLine(2,              barRectHeight / 2 + 1,
-                                    amountFull - 2, barRectHeight / 2 + 1);
+                        g2.drawLine(0,          barRectHeight / 2,
+                                    amountFull, barRectHeight / 2);
                     } else {
                         g2.drawLine(2 + barRectWidth,
                                     barRectHeight / 2 + 1,
                                     2 + barRectWidth - (amountFull - 2),
                                     barRectHeight / 2 + 1);
                     }
-                    paintString(g, 0, 0, barRectWidth, barRectHeight, amountFull, null);
+                    paintString(g, 0, 0, (int)(barRectWidth / scaleX),
+                                (int)(barRectHeight / scaleY), amountFull, null);
                 } else {
                     g2.drawLine(barRectWidth/2 + 1, barRectHeight + 1,
                                 barRectWidth/2 + 1, barRectHeight + 1 - amountFull + 2);
@@ -212,6 +223,7 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
      * {@inheritDoc}
      * @since 1.6
      */
+    @Override
     protected void setAnimationIndex(int newValue) {
         super.setAnimationIndex(newValue);
         XPStyle xp = XPStyle.getXP();
@@ -235,6 +247,7 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
      * {@inheritDoc}
      * @since 1.6
      */
+    @Override
     protected int getBoxLength(int availableLength, int otherDimension) {
         XPStyle xp = XPStyle.getXP();
         if (xp != null) {
@@ -247,6 +260,7 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
      * {@inheritDoc}
      * @since 1.6
      */
+    @Override
     protected Rectangle getBox(Rectangle r) {
         Rectangle rect = super.getBox(r);
 
@@ -292,6 +306,7 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
     }
 
 
+    @Override
     protected void paintIndeterminate(Graphics g, JComponent c) {
         XPStyle xp = XPStyle.getXP();
         if (xp != null) {

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "logging/log.hpp"
 #include "runtime/os.inline.hpp"
 #include "trimCHeapDCmd.hpp"
 #include "utilities/debug.hpp"
@@ -42,6 +42,9 @@ void TrimCLibcHeapDCmd::execute(DCmdSource source, TRAPS) {
         const char sign = sc.after < sc.before ? '-' : '+';
         _output->print_cr("RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT ")",
                           PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), sign, PROPERFMTARGS(delta));
+        // Also log if native trim log is active
+        log_info(trimnative)("Manual Trim: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT ")",
+                             PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), sign, PROPERFMTARGS(delta));
       } else {
         _output->print_cr("(no details available).");
       }

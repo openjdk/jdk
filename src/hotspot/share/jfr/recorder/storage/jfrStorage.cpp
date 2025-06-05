@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
@@ -38,8 +37,10 @@
 #include "jfr/utilities/jfrIterator.hpp"
 #include "jfr/utilities/jfrLinkedList.inline.hpp"
 #include "jfr/utilities/jfrTime.hpp"
+#include "jfr/utilities/jfrTryLock.hpp"
 #include "jfr/writers/jfrNativeEventWriter.hpp"
 #include "logging/log.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
@@ -135,7 +136,7 @@ JfrStorageControl& JfrStorage::control() {
 }
 
 static void log_allocation_failure(const char* msg, size_t size) {
-  log_warning(jfr)("Unable to allocate " SIZE_FORMAT " bytes of %s.", size, msg);
+  log_warning(jfr)("Unable to allocate %zu bytes of %s.", size, msg);
 }
 
 BufferPtr JfrStorage::acquire_thread_local(Thread* thread, size_t size /* 0 */) {
@@ -172,15 +173,18 @@ static BufferPtr acquire_lease(size_t size, JfrStorageMspace* mspace, JfrStorage
   }
 }
 
-static BufferPtr acquire_promotion_buffer(size_t size, JfrStorageMspace* mspace, JfrStorage& storage_instance, size_t retry_count, Thread* thread) {
+BufferPtr JfrStorage::acquire_promotion_buffer(size_t size, JfrStorageMspace* mspace, JfrStorage& storage_instance, size_t retry_count, Thread* thread) {
   assert(size <= mspace->min_element_size(), "invariant");
   while (true) {
-    BufferPtr buffer= mspace_acquire_live_with_retry(size, mspace, retry_count, thread);
-    if (buffer == nullptr && storage_instance.control().should_discard()) {
+    BufferPtr buffer = mspace_acquire_live_with_retry(size, mspace, retry_count, thread);
+    if (buffer != nullptr) {
+      return buffer;
+    }
+    if (storage_instance.control().should_discard()) {
       storage_instance.discard_oldest(thread);
       continue;
     }
-    return buffer;
+    return storage_instance.control().to_disk() ? JfrStorage::acquire_transient(size, thread) : nullptr;
   }
 }
 
@@ -250,6 +254,10 @@ bool JfrStorage::flush_regular_buffer(BufferPtr buffer, Thread* thread) {
   assert(promotion_buffer->free_size() >= unflushed_size, "invariant");
   buffer->move(promotion_buffer, unflushed_size);
   assert(buffer->empty(), "invariant");
+  if (promotion_buffer->transient()) {
+    promotion_buffer->set_retired();
+    register_full(promotion_buffer, thread);
+  }
   return true;
 }
 
@@ -276,9 +284,18 @@ void JfrStorage::release_large(BufferPtr buffer, Thread* thread) {
 
 void JfrStorage::register_full(BufferPtr buffer, Thread* thread) {
   assert(buffer != nullptr, "invariant");
-  assert(buffer->acquired_by(thread), "invariant");
   assert(buffer->retired(), "invariant");
   if (_full_list->add(buffer)) {
+    if (thread->is_Java_thread()) {
+      JavaThread* jt = JavaThread::cast(thread);
+      if (jt->thread_state() == _thread_in_native) {
+        // Transition java thread to vm so it can issue a notify.
+        MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, jt));
+        ThreadInVMfromNative transition(jt);
+        _post_box.post(MSG_FULLBUFFER);
+        return;
+      }
+    }
     _post_box.post(MSG_FULLBUFFER);
   }
 }
@@ -309,14 +326,15 @@ static void log_discard(size_t pre_full_count, size_t post_full_count, size_t am
   if (log_is_enabled(Debug, jfr, system)) {
     const size_t number_of_discards = pre_full_count - post_full_count;
     if (number_of_discards > 0) {
-      log_debug(jfr, system)("Cleared " SIZE_FORMAT " full buffer(s) of " SIZE_FORMAT" bytes.", number_of_discards, amount);
-      log_debug(jfr, system)("Current number of full buffers " SIZE_FORMAT "", number_of_discards);
+      log_debug(jfr, system)("Cleared %zu full buffer(s) of %zu bytes.", number_of_discards, amount);
+      log_debug(jfr, system)("Current number of full buffers %zu", number_of_discards);
     }
   }
 }
 
 void JfrStorage::discard_oldest(Thread* thread) {
-  if (JfrBuffer_lock->try_lock()) {
+  JfrMutexTryLock mutex(JfrBuffer_lock);
+  if (mutex.acquired()) {
     if (!control().should_discard()) {
       // another thread handled it
       return;
@@ -326,7 +344,6 @@ void JfrStorage::discard_oldest(Thread* thread) {
     while (_full_list->is_nonempty()) {
       BufferPtr oldest = _full_list->remove();
       assert(oldest != nullptr, "invariant");
-      assert(oldest->identity() != nullptr, "invariant");
       discarded_size += oldest->discard();
       assert(oldest->unflushed_size() == 0, "invariant");
       if (oldest->transient()) {
@@ -335,10 +352,10 @@ void JfrStorage::discard_oldest(Thread* thread) {
       }
       oldest->reinitialize();
       assert(!oldest->retired(), "invariant");
+      assert(oldest->identity() != nullptr, "invariant");
       oldest->release(); // publish
       break;
     }
-    JfrBuffer_lock->unlock();
     log_discard(num_full_pre_discard, control().full_count(), discarded_size);
   }
 }
@@ -381,7 +398,7 @@ static void assert_flush_large_precondition(ConstBufferPtr cur, const u1* const 
 #endif // ASSERT
 
 BufferPtr JfrStorage::flush(BufferPtr cur, size_t used, size_t req, bool native, Thread* t) {
-  debug_only(assert_flush_precondition(cur, used, native, t);)
+  DEBUG_ONLY(assert_flush_precondition(cur, used, native, t);)
   const u1* const cur_pos = cur->pos();
   req += used;
   // requested size now encompass the outstanding used size
@@ -390,7 +407,7 @@ BufferPtr JfrStorage::flush(BufferPtr cur, size_t used, size_t req, bool native,
 }
 
 BufferPtr JfrStorage::flush_regular(BufferPtr cur, const u1* const cur_pos, size_t used, size_t req, bool native, Thread* t) {
-  debug_only(assert_flush_regular_precondition(cur, cur_pos, used, req, t);)
+  DEBUG_ONLY(assert_flush_regular_precondition(cur, cur_pos, used, req, t);)
   // A flush is needed before memmove since a non-large buffer is thread stable
   // (thread local). The flush will not modify memory in addresses above pos()
   // which is where the "used / uncommitted" data resides. It is therefore both
@@ -433,7 +450,7 @@ static BufferPtr restore_shelved_buffer(bool native, Thread* t) {
 }
 
 BufferPtr JfrStorage::flush_large(BufferPtr cur, const u1* const cur_pos, size_t used, size_t req, bool native, Thread* t) {
-  debug_only(assert_flush_large_precondition(cur, cur_pos, used, req, native, t);)
+  DEBUG_ONLY(assert_flush_large_precondition(cur, cur_pos, used, req, native, t);)
   // Can the "regular" buffer (now shelved) accommodate the requested size?
   BufferPtr shelved = t->jfr_thread_local()->shelved_buffer();
   assert(shelved != nullptr, "invariant");
@@ -463,7 +480,7 @@ static BufferPtr large_fail(BufferPtr cur, bool native, JfrStorage& storage_inst
 // even though it might be smaller than the requested size.
 // Caller needs to ensure if the size was successfully accommodated.
 BufferPtr JfrStorage::provision_large(BufferPtr cur, const u1* const cur_pos, size_t used, size_t req, bool native, Thread* t) {
-  debug_only(assert_provision_large_precondition(cur, used, req, t);)
+  DEBUG_ONLY(assert_provision_large_precondition(cur, used, req, t);)
   assert(t->jfr_thread_local()->shelved_buffer() != nullptr, "invariant");
   BufferPtr const buffer = acquire_large(req, t);
   if (buffer == nullptr) {
@@ -548,7 +565,7 @@ static size_t process_full(Processor& processor, JfrFullList* list, JfrStorageCo
 static void log(size_t count, size_t amount, bool clear = false) {
   if (log_is_enabled(Debug, jfr, system)) {
     if (count > 0) {
-      log_debug(jfr, system)("%s " SIZE_FORMAT " full buffer(s) of " SIZE_FORMAT" B of data%s",
+      log_debug(jfr, system)("%s %zu full buffer(s) of %zu B of data%s",
         clear ? "Discarded" : "Wrote", count, amount, clear ? "." : " to chunk.");
     }
   }

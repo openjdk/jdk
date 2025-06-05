@@ -29,7 +29,8 @@ import compiler.lib.ir_framework.*;
  * @test
  * @bug 8284981
  * @summary Auto-vectorization enhancement for special counting down loops
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
+ * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" |
+             (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestAutoVecCountingDownLoop
  */
@@ -46,7 +47,7 @@ public class TestAutoVecCountingDownLoop {
 
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR,  " >0 "})
+    @IR(counts = {IRNode.LOAD_VECTOR_I,  " >0 "})
     @IR(counts = {IRNode.STORE_VECTOR, " >0 "})
     private static void testCountingDown(int[] a, int[] b) {
         for (int i = 2000; i > 0; i--) {

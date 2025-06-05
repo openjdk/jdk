@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,16 @@
 
 /*
  * @test
- * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
- * @run testng/othervm --enable-native-access=ALL-UNNAMED TestClassLoaderFindNative
+ * @run testng/othervm/native --enable-native-access=ALL-UNNAMED TestClassLoaderFindNative
  */
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
+import java.nio.ByteOrder;
 import org.testng.annotations.Test;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static org.testng.Assert.*;
 
 // FYI this test is run on 64-bit platforms only for now,
@@ -58,8 +57,8 @@ public class TestClassLoaderFindNative {
 
     @Test
     public void testVariableSymbolLookup() {
-        MemorySegment segment = SymbolLookup.loaderLookup().find("c").get().reinterpret(1);
-        assertEquals(segment.get(JAVA_BYTE, 0), 42);
+        MemorySegment segment = SymbolLookup.loaderLookup().find("c").get().reinterpret(4);
+        assertEquals(segment.get(JAVA_INT, 0), 42);
     }
 
     @Test

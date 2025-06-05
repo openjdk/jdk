@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package jdk.internal.vm;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-import sun.security.action.GetPropertyAction;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -36,6 +35,7 @@ import java.util.function.Supplier;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.Hidden;
+import jdk.internal.vm.annotation.JvmtiHideEvents;
 
 /**
  * A one-shot delimited continuation.
@@ -50,7 +50,7 @@ public class Continuation {
 
         StackChunk.init(); // ensure StackChunk class is initialized
 
-        String value = GetPropertyAction.privilegedGetProperty("jdk.preserveScopedValueCache");
+        String value = System.getProperty("jdk.preserveScopedValueCache");
         PRESERVE_SCOPED_VALUE_CACHE = (value == null) || Boolean.parseBoolean(value);
     }
 
@@ -58,7 +58,9 @@ public class Continuation {
     public enum Pinned {
         /** Native frame on stack */ NATIVE,
         /** Monitor held */          MONITOR,
-        /** In critical section */   CRITICAL_SECTION }
+        /** In critical section */   CRITICAL_SECTION,
+        /** Exception (OOME/SOE) */  EXCEPTION
+    }
 
     /** Preemption attempt result */
     public enum PreemptStatus {
@@ -84,6 +86,7 @@ public class Continuation {
             case 2 -> Pinned.CRITICAL_SECTION;
             case 3 -> Pinned.NATIVE;
             case 4 -> Pinned.MONITOR;
+            case 5 -> Pinned.EXCEPTION;
             default -> throw new AssertionError("Unknown pinned reason: " + reason);
         };
     }
@@ -296,15 +299,16 @@ public class Continuation {
     }
 
     @IntrinsicCandidate
-    private native static int doYield();
+    private static native int doYield();
 
     @IntrinsicCandidate
-    private native static void enterSpecial(Continuation c, boolean isContinue, boolean isVirtualThread);
+    private static native void enterSpecial(Continuation c, boolean isContinue, boolean isVirtualThread);
 
 
     @Hidden
     @DontInline
     @IntrinsicCandidate
+    @JvmtiHideEvents
     private static void enter(Continuation c, boolean isContinue) {
         // This method runs in the "entry frame".
         // A yield jumps to this method's caller as if returning from this method.
@@ -316,6 +320,7 @@ public class Continuation {
     }
 
     @Hidden
+    @JvmtiHideEvents
     private void enter0() {
         target.run();
     }
@@ -340,6 +345,7 @@ public class Continuation {
      * @throws IllegalStateException if not currently in the given {@code scope},
      */
     @Hidden
+    @JvmtiHideEvents
     public static boolean yield(ContinuationScope scope) {
         Continuation cont = JLA.getContinuation(currentCarrierThread());
         Continuation c;
@@ -352,9 +358,8 @@ public class Continuation {
     }
 
     @Hidden
+    @JvmtiHideEvents
     private boolean yield0(ContinuationScope scope, Continuation child) {
-        preempted = false;
-
         if (scope != this.scope)
             this.yieldInfo = scope;
         int res = doYield();
@@ -427,6 +432,7 @@ public class Continuation {
      * Pins the current continuation (enters a critical section).
      * This increments an internal semaphore that, when greater than 0, pins the continuation.
      */
+    @IntrinsicCandidate
     public static native void pin();
 
     /**
@@ -434,6 +440,7 @@ public class Continuation {
      * This decrements an internal semaphore that, when equal 0, unpins the current continuation
      * if pinned with {@link #pin()}.
      */
+    @IntrinsicCandidate
     public static native void unpin();
 
     /**
@@ -448,7 +455,7 @@ public class Continuation {
         return res != 0;
     }
 
-    static private native int isPinned0(ContinuationScope scope);
+    private static native int isPinned0(ContinuationScope scope);
 
     private boolean fence() {
         U.storeFence(); // needed to prevent certain transformations by the compiler
@@ -495,7 +502,7 @@ public class Continuation {
     }
 
     private static boolean isEmptyOrTrue(String property) {
-        String value = GetPropertyAction.privilegedGetProperty(property);
+        String value = System.getProperty(property);
         if (value == null)
             return false;
         return value.isEmpty() || Boolean.parseBoolean(value);

@@ -4,7 +4,7 @@
  *
  *   TrueType and OpenType embedded bitmap support (body).
  *
- * Copyright (C) 2005-2023 by
+ * Copyright (C) 2005-2024 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * Copyright 2013 by Google, Inc.
@@ -1677,7 +1677,7 @@
 #else /* !TT_CONFIG_OPTION_EMBEDDED_BITMAPS */
 
   /* ANSI C doesn't like empty source files */
-  typedef int  _tt_sbit_dummy;
+  typedef int  tt_sbit_dummy_;
 
 #endif /* !TT_CONFIG_OPTION_EMBEDDED_BITMAPS */
 

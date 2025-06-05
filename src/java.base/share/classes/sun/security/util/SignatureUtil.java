@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.security.interfaces.RSAKey;
 import java.security.spec.*;
 import java.util.Locale;
 
+import sun.security.pkcs.NamedPKCS8Key;
 import sun.security.rsa.RSAUtil;
 import jdk.internal.access.SharedSecrets;
 import sun.security.x509.AlgorithmId;
@@ -197,7 +198,7 @@ public class SignatureUtil {
         static {
             try {
                 sha512 = new AlgorithmId(ObjectIdentifier.of(KnownOIDs.SHA_512));
-                shake256 = new AlgorithmId(ObjectIdentifier.of(KnownOIDs.SHAKE256));
+                shake256 = new AlgorithmId(ObjectIdentifier.of(KnownOIDs.SHAKE256_512));
                 shake256$512 = new AlgorithmId(
                         ObjectIdentifier.of(KnownOIDs.SHAKE256_LEN),
                         new DerValue((byte) 2, new byte[]{2, 0})); // int 512
@@ -212,12 +213,13 @@ public class SignatureUtil {
      * @param signer Signature object that tells you RSASSA-PSS params
      * @param sigalg Signature algorithm
      * @param privateKey key tells you EdDSA params
+     * @param publicKey key tells you HSS/LMS hash algorithm
      * @param directsign Ed448 uses different digest algs depending on this
      * @return the digest algId
      * @throws NoSuchAlgorithmException
      */
     public static AlgorithmId getDigestAlgInPkcs7SignerInfo(
-            Signature signer, String sigalg, PrivateKey privateKey, boolean directsign)
+            Signature signer, String sigalg, PrivateKey privateKey, PublicKey publicKey, boolean directsign)
             throws NoSuchAlgorithmException {
         AlgorithmId digAlgID;
         String kAlg = privateKey.getAlgorithm();
@@ -243,18 +245,18 @@ public class SignatureUtil {
                 default:
                     throw new AssertionError("Unknown curve name: " + kAlg);
             }
-        } else {
-            if (sigalg.equalsIgnoreCase("RSASSA-PSS")) {
-                try {
-                    digAlgID = AlgorithmId.get(signer.getParameters()
-                            .getParameterSpec(PSSParameterSpec.class)
-                            .getDigestAlgorithm());
-                } catch (InvalidParameterSpecException e) {
-                    throw new AssertionError("Should not happen", e);
-                }
-            } else {
-                digAlgID = AlgorithmId.get(extractDigestAlgFromDwithE(sigalg));
+        } else if (sigalg.equalsIgnoreCase("RSASSA-PSS")) {
+            try {
+                digAlgID = AlgorithmId.get(signer.getParameters()
+                        .getParameterSpec(PSSParameterSpec.class)
+                        .getDigestAlgorithm());
+            } catch (InvalidParameterSpecException e) {
+                throw new AssertionError("Should not happen", e);
             }
+        } else if (sigalg.equalsIgnoreCase("HSS/LMS")) {
+            digAlgID = AlgorithmId.get(KeyUtil.hashAlgFromHSS(publicKey));
+        } else {
+            digAlgID = AlgorithmId.get(extractDigestAlgFromDwithE(sigalg));
         }
         return digAlgID;
     }
@@ -273,7 +275,7 @@ public class SignatureUtil {
             return signatureAlgorithm.substring(0, with);
         } else {
             throw new IllegalArgumentException(
-                    "Unknown algorithm: " + signatureAlgorithm);
+                    "Cannot extract digest algorithm from " + signatureAlgorithm);
         }
     }
 
@@ -295,6 +297,9 @@ public class SignatureUtil {
                 keyAlgorithm = signatureAlgorithm.substring(with + 4, and);
             } else {
                 keyAlgorithm = signatureAlgorithm.substring(with + 4);
+            }
+            if (keyAlgorithm.endsWith("INP1363FORMAT")) {
+                keyAlgorithm = keyAlgorithm.substring(0, keyAlgorithm.length() - 13);
             }
             if (keyAlgorithm.equalsIgnoreCase("ECDSA")) {
                 keyAlgorithm = "EC";
@@ -386,8 +391,8 @@ public class SignatureUtil {
     public static AlgorithmId fromSignature(Signature sigEngine, PrivateKey key)
             throws SignatureException {
         try {
-            if (key instanceof EdECKey) {
-                return AlgorithmId.get(((EdECKey) key).getParams().getName());
+            if (key.getParams() instanceof NamedParameterSpec nps) {
+                return AlgorithmId.get(nps.getName());
             }
 
             AlgorithmParameters params = null;
@@ -427,6 +432,14 @@ public class SignatureUtil {
     public static void checkKeyAndSigAlgMatch(PrivateKey key, String sAlg) {
         String kAlg = key.getAlgorithm().toUpperCase(Locale.ENGLISH);
         sAlg = checkName(sAlg);
+        if (key instanceof NamedPKCS8Key n8k) {
+            if (!sAlg.equalsIgnoreCase(n8k.getAlgorithm())
+                    && !sAlg.equalsIgnoreCase(n8k.getParams().getName())) {
+                throw new IllegalArgumentException(
+                        "key algorithm not compatible with signature algorithm");
+            }
+            return;
+        }
         switch (sAlg) {
             case "RSASSA-PSS" -> {
                 if (!kAlg.equals("RSASSA-PSS")
@@ -484,14 +497,17 @@ public class SignatureUtil {
     public static String getDefaultSigAlgForKey(PrivateKey k) {
         String kAlg = k.getAlgorithm().toUpperCase(Locale.ENGLISH);
         return switch (kAlg) {
+            case "DH", "XDH", "X25519", "X448" -> null;
             case "DSA" -> "SHA256withDSA";
             case "RSA" -> ifcFfcStrength(KeyUtil.getKeySize(k)) + "withRSA";
             case "EC" -> ecStrength(KeyUtil.getKeySize(k)) + "withECDSA";
             case "EDDSA" -> k instanceof EdECPrivateKey
                     ? ((EdECPrivateKey) k).getParams().getName()
                     : kAlg;
-            case "RSASSA-PSS", "ED25519", "ED448" -> kAlg;
-            default -> null;
+            default -> kAlg.contains("KEM") ? null : kAlg;
+                // All modern signature algorithms use the same name across
+                // key algorithms and signature algorithms, for example,
+                // RSASSA-PSS, ED25519, ED448, HSS/LMS, etc
         };
     }
 

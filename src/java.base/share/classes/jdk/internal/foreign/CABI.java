@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,15 @@
  *  questions.
  *
  */
+
 package jdk.internal.foreign;
 
 import jdk.internal.foreign.abi.fallback.FallbackLinker;
-import jdk.internal.vm.ForeignLinkerSupport;
 import jdk.internal.util.OperatingSystem;
 import jdk.internal.util.StaticProperty;
+import jdk.internal.vm.ForeignLinkerSupport;
 
 import static java.lang.foreign.ValueLayout.ADDRESS;
-import static sun.security.action.GetPropertyAction.privilegedGetProperty;
 
 public enum CABI {
     SYS_V,
@@ -39,15 +39,18 @@ public enum CABI {
     LINUX_AARCH_64,
     MAC_OS_AARCH_64,
     WIN_AARCH_64,
+    AIX_PPC_64,
+    LINUX_PPC_64,
     LINUX_PPC_64_LE,
     LINUX_RISCV_64,
+    LINUX_S390,
     FALLBACK,
     UNSUPPORTED;
 
     private static final CABI CURRENT = computeCurrent();
 
     private static CABI computeCurrent() {
-        String abi = privilegedGetProperty("jdk.internal.foreign.CABI");
+        String abi = System.getProperty("jdk.internal.foreign.CABI");
         if (abi != null) {
             return CABI.valueOf(abi);
         }
@@ -73,6 +76,12 @@ public enum CABI {
                     // The Linux ABI follows the standard AAPCS ABI
                     return LINUX_AARCH_64;
                 }
+            } else if (arch.equals("ppc64")) {
+                if (OperatingSystem.isLinux()) {
+                    return LINUX_PPC_64;
+                } else if (OperatingSystem.isAix()) {
+                    return AIX_PPC_64;
+                }
             } else if (arch.equals("ppc64le")) {
                 if (OperatingSystem.isLinux()) {
                     return LINUX_PPC_64_LE;
@@ -81,7 +90,11 @@ public enum CABI {
                 if (OperatingSystem.isLinux()) {
                     return LINUX_RISCV_64;
                 }
-            }
+            } else if (arch.equals("s390x")) {
+                if (OperatingSystem.isLinux()) {
+                    return LINUX_S390;
+                }
+        }
         } else if (FallbackLinker.isSupported()) {
             return FALLBACK; // fallback linker
         }

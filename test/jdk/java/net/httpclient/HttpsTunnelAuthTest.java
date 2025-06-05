@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,7 @@ public class HttpsTunnelAuthTest implements HttpServerAdapters, AutoCloseable {
     }
 
     void setUp() throws IOException {
+        HttpServerAdapters.enableServerLogging();
         // Creates an HTTP/1.1 Server that will authenticate for
         // arthur with password dent
         http1Server = DigestEchoServer.createServer(Version.HTTP_1_1,
@@ -143,10 +144,8 @@ public class HttpsTunnelAuthTest implements HttpServerAdapters, AutoCloseable {
 
         // Creates a proxy selector that unconditionally select the
         // above proxy.
-        var ps = proxySelector = ProxySelector.of(proxy.getProxyAddress());
+        proxySelector = ProxySelector.of(proxy.getProxyAddress());
 
-        // Creates a client that uses the above proxy selector
-        client = newHttpClient(ps);
     }
 
     @Override
@@ -177,23 +176,26 @@ public class HttpsTunnelAuthTest implements HttpServerAdapters, AutoCloseable {
         try (HttpsTunnelAuthTest test = new HttpsTunnelAuthTest()) {
             test.setUp();
 
-            // tests proxy and server authentication through:
-            // - plain proxy connection to plain HTTP/1.1 server,
-            test.test(Version.HTTP_1_1, "http", "/foo/http1");
+            try (HttpClient client = test.newHttpClient(test.proxySelector)) {
+                // tests proxy and server authentication through:
+                // - plain proxy connection to plain HTTP/1.1 server,
+                test.test(client, Version.HTTP_1_1, "http", "/foo/http1");
+            }
 
             // can't really test plain proxy connection to plain HTTP/2 server:
             // this is not supported: we downgrade to HTTP/1.1 in that case
             // so that is actually somewhat equivalent to the first case:
             // therefore we will use a new client to force re-authentication
             // of the proxy connection.
-            test.client = test.newHttpClient(test.proxySelector);
-            test.test(Version.HTTP_2, "http", "/foo/http2");
+            try (HttpClient client = test.newHttpClient(test.proxySelector)) {
+                test.test(client, Version.HTTP_2, "http", "/foo/http2");
 
-            // - proxy tunnel SSL connection to HTTP/1.1 server
-            test.test(Version.HTTP_1_1, "https", "/foo/https1");
+                // - proxy tunnel SSL connection to HTTP/1.1 server
+                test.test(client, Version.HTTP_1_1, "https", "/foo/https1");
 
-            // - proxy tunnel SSl connection to HTTP/2 server
-            test.test(Version.HTTP_2, "https", "/foo/https2");
+                // - proxy tunnel SSl connection to HTTP/2 server
+                test.test(client, Version.HTTP_2, "https", "/foo/https2");
+            }
         }
     }
 
@@ -227,14 +229,14 @@ public class HttpsTunnelAuthTest implements HttpServerAdapters, AutoCloseable {
         return "http".equals(scheme) ? Version.HTTP_1_1 : version;
     }
 
-    public void test(Version version, String scheme, String path) throws Exception {
+    public void test(HttpClient client, Version version, String scheme, String path) throws Exception {
         System.out.printf("%nTesting %s, %s, %s%n", version, scheme, path);
         DigestEchoServer server = server(scheme, version);
         try {
 
             URI uri = jdk.test.lib.net.URIBuilder.newBuilder()
                     .scheme(scheme)
-                    .host("localhost")
+                    .loopback()
                     .port(server.getServerAddress().getPort())
                     .path(path).build();
 

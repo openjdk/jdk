@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/repository/jfrChunk.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/utilities/jfrTime.hpp"
@@ -204,7 +203,7 @@ int64_t JfrChunkWriter::write_chunk_header_checkpoint(bool flushpoint) {
   head.write_next_generation(!flushpoint);
   head.write_flags();
   assert(current_offset() - header_content_pos == HEADER_SIZE, "invariant");
-  const u4 checkpoint_size = current_offset() - event_size_offset;
+  const u4 checkpoint_size = static_cast<u4>(current_offset() - event_size_offset);
   write_padded_at_offset<u4>(checkpoint_size, event_size_offset);
   set_last_checkpoint_offset(event_size_offset);
   const int64_t sz_written = size_written();

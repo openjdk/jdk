@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,13 @@
  * @bug 8000518
  * @summary Javac generates duplicate name_and_type constant pool entry for
  * class BinaryOpValueExp.java
- * @modules jdk.jdeps/com.sun.tools.classfile
  * @run main DuplicateConstantPoolEntry
  */
 
 import com.sun.source.util.JavacTask;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.PoolEntry;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -87,20 +87,16 @@ public class DuplicateConstantPoolEntry {
         }
     }
 
-    void checkReference() throws IOException, ConstantPoolException {
+    void checkReference() throws IOException {
         File file = new File("A.class");
-        ClassFile classFile = ClassFile.read(file);
-        for (int i = 1;
-                i < classFile.constant_pool.size() - 1;
-                i += classFile.constant_pool.get(i).size()) {
-            for (int j = i + classFile.constant_pool.get(i).size();
-                    j < classFile.constant_pool.size();
-                    j += classFile.constant_pool.get(j).size()) {
-                if (classFile.constant_pool.get(i).toString().
-                        equals(classFile.constant_pool.get(j).toString())) {
+        ClassModel classFile = ClassFile.of().parse(file.toPath());
+        ConstantPool constantPool = classFile.constantPool();
+        for (PoolEntry pe1 : constantPool) {
+            for (PoolEntry pe2 : constantPool) {
+                if (pe2.index() > pe1.index() && pe1.equals(pe2)) {
                     throw new AssertionError(
                             "Duplicate entries in the constant pool at positions " +
-                            i + " and " + j);
+                            pe1.index() + " and " + pe2.index());
                 }
             }
         }

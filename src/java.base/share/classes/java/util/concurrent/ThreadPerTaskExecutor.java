@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ package java.util.concurrent;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -38,6 +37,7 @@ import java.util.stream.Stream;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.invoke.MhUtil;
 import jdk.internal.vm.ThreadContainer;
 import jdk.internal.vm.ThreadContainers;
 
@@ -47,16 +47,8 @@ import jdk.internal.vm.ThreadContainers;
  */
 class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-    private static final Permission MODIFY_THREAD = new RuntimePermission("modifyThread");
-    private static final VarHandle STATE;
-    static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            STATE = l.findVarHandle(ThreadPerTaskExecutor.class, "state", int.class);
-        } catch (Exception e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
+    private static final VarHandle STATE = MhUtil.findVarHandle(
+            MethodHandles.lookup(), "state", int.class);
 
     private final ThreadFactory factory;
     private final Set<Thread> threads = ConcurrentHashMap.newKeySet();
@@ -84,18 +76,6 @@ class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
         // register it to allow discovery by serviceability tools
         executor.key = ThreadContainers.registerContainer(executor);
         return executor;
-    }
-
-    /**
-     * Throws SecurityException if there is a security manager set and it denies
-     * RuntimePermission("modifyThread").
-     */
-    @SuppressWarnings("removal")
-    private void checkPermission() {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(MODIFY_THREAD);
-        }
     }
 
     /**
@@ -149,14 +129,12 @@ class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
 
     @Override
     public void shutdown() {
-        checkPermission();
         if (!isShutdown())
             tryShutdownAndTerminate(false);
     }
 
     @Override
     public List<Runnable> shutdownNow() {
-        checkPermission();
         if (!isTerminated())
             tryShutdownAndTerminate(true);
         return List.of();
@@ -208,7 +186,6 @@ class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
 
     @Override
     public void close() {
-        checkPermission();
         awaitTermination();
     }
 
@@ -341,8 +318,12 @@ class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
         }
 
         @Override
-        protected void done() {
-            executor.taskComplete(thread);
+        public void run() {
+            try {
+                super.run();
+            } finally {
+                executor.taskComplete(thread);
+            }
         }
     }
 
@@ -506,14 +487,10 @@ class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
         private static final VarHandle EXCEPTION;
         private static final VarHandle EXCEPTION_COUNT;
         static {
-            try {
-                MethodHandles.Lookup l = MethodHandles.lookup();
-                RESULT = l.findVarHandle(AnyResultHolder.class, "result", Object.class);
-                EXCEPTION = l.findVarHandle(AnyResultHolder.class, "exception", Throwable.class);
-                EXCEPTION_COUNT = l.findVarHandle(AnyResultHolder.class, "exceptionCount", int.class);
-            } catch (Exception e) {
-                throw new InternalError(e);
-            }
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            RESULT = MhUtil.findVarHandle(l, "result", Object.class);
+            EXCEPTION = MhUtil.findVarHandle(l, "exception", Throwable.class);
+            EXCEPTION_COUNT = MhUtil.findVarHandle(l, "exceptionCount", int.class);
         }
         private static final Object NULL = new Object();
 

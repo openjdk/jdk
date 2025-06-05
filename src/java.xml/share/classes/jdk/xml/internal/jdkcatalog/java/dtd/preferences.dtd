@@ -1,0 +1,110 @@
+<!--
+Copyright 2001 Sun Microsystems, Inc. 901 San Antonio Road,
+Palo Alto, CA  94303, U.S.A.  All rights reserved.
+
+This product or document is protected by copyright and distributed
+under licenses restricting its use, copying, distribution, and
+decompilation.  No part of this product or documentation may be
+reproduced in any form by any means without prior written authorization
+of Sun and its licensors, if any.
+
+Third party software, including font technology, is copyrighted and
+licensed from Sun suppliers.
+
+Sun, Sun Microsystems, the Sun Logo, Solaris, Java, JavaServer Pages, Java
+Naming and Directory Interface, JDBC, JDK, JavaMail and Enterprise JavaBeans,
+are trademarks or registered trademarks of Sun Microsystems, Inc in the U.S.
+and other countries.
+
+All SPARC trademarks are used under license and are trademarks
+or registered trademarks of SPARC International, Inc.
+in the U.S. and other countries. Products bearing SPARC
+trademarks are based upon an architecture developed by Sun Microsystems, Inc.
+
+PostScript is a registered trademark of Adobe Systems, Inc.
+
+Federal Acquisitions: Commercial Software - Government Users Subject to
+Standard License Terms and Conditions.
+
+DOCUMENTATION IS PROVIDED "AS IS" AND ALL EXPRESS OR IMPLIED
+CONDITIONS, REPRESENTATIONS AND WARRANTIES, INCLUDING ANY
+IMPLIED WARRANTY OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE OR NON-INFRINGEMENT, ARE DISCLAIMED, EXCEPT
+TO THE EXTENT THAT SUCH DISCLAIMERS ARE HELD TO BE LEGALLY
+INVALID.
+
+_________________________________________________________________________
+
+Copyright 2000-2001 Sun Microsystems, Inc.,
+901 San Antonio Road, Palo Alto, CA  94303, Etats-Unis.
+Tous droits re'serve's.
+
+
+Ce produit ou document est prote'ge' par un copyright et distribue' avec
+des licences qui en restreignent l'utilisation, la copie, la distribution,
+et la de'compilation.  Aucune partie de ce produit ou de sa documentation
+associe'e ne peut e^tre reproduite sous aucune forme, par quelque moyen
+que ce soit, sans l'autorisation pre'alable et e'crite de Sun et de ses
+bailleurs de licence, s'il y en a.
+
+Le logiciel de'tenu par des tiers, et qui comprend la technologie
+relative aux polices de caracte`res, est prote'ge' par un copyright
+et licencie' par des fournisseurs de Sun.
+
+Sun, Sun Microsystems, le logo Sun, Solaris, Java, JavaServer Pages, Java
+Naming and Directory Interface, JDBC, JDK, JavaMail, et Enterprise JavaBeans,
+sont des marques de fabrique ou des marques de'pose'es de Sun
+Microsystems, Inc. aux Etats-Unis et dans d'autres pays.
+
+Toutes les marques SPARC sont utilise'es sous licence et sont
+des marques de fabrique ou des marques de'pose'es de SPARC
+International, Inc. aux Etats-Unis et  dans
+d'autres pays. Les produits portant les marques SPARC sont
+base's sur une architecture de'veloppe'e par Sun Microsystems, Inc.
+
+Postcript est une marque enregistre'e d'Adobe Systems Inc.
+
+LA DOCUMENTATION EST FOURNIE "EN L'ETAT" ET TOUTES AUTRES CONDITIONS,
+DECLARATIONS ET GARANTIES EXPRESSES OU TACITES SONT FORMELLEMENT EXCLUES,
+DANS LA MESURE AUTORISEE PAR LA LOI APPLICABLE, Y COMPRIS NOTAMMENT
+TOUTE GARANTIE IMPLICITE RELATIVE A LA QUALITE MARCHANDE, A L'APTITUDE
+A UNE UTILISATION PARTICULIERE OU A L'ABSENCE DE CONTREFACON.
+-->
+
+
+<!-- DTD for a Preferences tree. -->
+
+<!-- The preferences element is at the root of an XML document
+     representing a Preferences tree. -->
+<!ELEMENT preferences (root)>
+
+<!-- The preferences element contains an optional version attribute,
+      which specifies version of DTD. -->
+<!ATTLIST preferences EXTERNAL_XML_VERSION CDATA "0.0" >  
+
+<!-- The root element has a map representing the root's preferences
+     (if any), and one node for each child of the root (if any). -->
+<!ELEMENT root (map, node*) >
+
+<!-- Additionally, the root contains a type attribute, which
+     specifies whether it's the system or user root. -->
+<!ATTLIST root
+          type (system|user) #REQUIRED >
+
+<!-- Each node has a map representing its preferences (if any),
+     and one node for each child (if any). -->
+<!ELEMENT node (map, node*) >
+
+<!-- Additionally, each node has a name attribute -->
+<!ATTLIST node
+          name CDATA #REQUIRED >
+
+<!-- A map represents the preferences stored at a node (if any). -->
+<!ELEMENT map (entry*) >
+
+<!-- An entry represents a single preference, which is simply
+      a key-value pair. -->
+<!ELEMENT entry EMPTY >
+<!ATTLIST entry
+          key   CDATA #REQUIRED
+          value CDATA #REQUIRED >

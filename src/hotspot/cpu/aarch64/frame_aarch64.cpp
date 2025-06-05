@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
@@ -139,8 +138,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
       sender_sp = (intptr_t*) addr_at(sender_sp_offset);
       sender_unextended_sp = (intptr_t*) this->fp()[interpreter_frame_sender_sp_offset];
       saved_fp = (intptr_t*) this->fp()[link_offset];
-      sender_pc = pauth_strip_verifiable((address) this->fp()[return_addr_offset], (address)saved_fp);
-
+      sender_pc = pauth_strip_verifiable((address) this->fp()[return_addr_offset]);
     } else {
       // must be some sort of compiled/runtime frame
       // fp does not have to be safe (although it could be check for c1?)
@@ -158,10 +156,17 @@ bool frame::safe_for_sender(JavaThread *thread) {
       sender_unextended_sp = sender_sp;
       // Note: frame::sender_sp_offset is only valid for compiled frame
       saved_fp = (intptr_t*) *(sender_sp - frame::sender_sp_offset);
-      sender_pc = pauth_strip_verifiable((address) *(sender_sp-1), (address)saved_fp);
+      // Note: PAC authentication may fail in case broken frame is passed in.
+      // Just strip it for now.
+      sender_pc = pauth_strip_pointer((address) *(sender_sp - 1));
     }
 
     if (Continuation::is_return_barrier_entry(sender_pc)) {
+      // sender_pc might be invalid so check that the frame
+      // actually belongs to a Continuation.
+      if (!Continuation::is_frame_in_continuation(thread, *this)) {
+        return false;
+      }
       // If our sender_pc is the return barrier, then our "real" sender is the continuation entry
       frame s = Continuation::continuation_bottom_sender(thread, *this, sender_sp);
       sender_sp = s.sp();
@@ -221,7 +226,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return false;
     }
 
-    CompiledMethod* nm = sender_blob->as_compiled_method_or_null();
+    nmethod* nm = sender_blob->as_nmethod_or_null();
     if (nm != nullptr) {
       if (nm->is_deopt_mh_entry(sender_pc) || nm->is_deopt_entry(sender_pc) ||
           nm->method()->is_method_handle_intrinsic()) {
@@ -233,7 +238,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     // because the return address counts against the callee's frame.
 
     if (sender_blob->frame_size() <= 0) {
-      assert(!sender_blob->is_compiled(), "should count return address at least");
+      assert(!sender_blob->is_nmethod(), "should count return address at least");
       return false;
     }
 
@@ -242,7 +247,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     // should not be anything but the call stub (already covered), the interpreter (already covered)
     // or an nmethod.
 
-    if (!sender_blob->is_compiled()) {
+    if (!sender_blob->is_nmethod()) {
         return false;
     }
 
@@ -276,9 +281,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
 void frame::patch_pc(Thread* thread, address pc) {
   assert(_cb == CodeCache::find_blob(pc), "unexpected pc");
   address* pc_addr = &(((address*) sp())[-1]);
-  address signing_sp = (((address*) sp())[-2]);
-  address signed_pc = pauth_sign_return_address(pc, (address)signing_sp);
-  address pc_old = pauth_strip_verifiable(*pc_addr, (address)signing_sp);
+  address signed_pc = pauth_sign_return_address(pc);
+  address pc_old = pauth_strip_verifiable(*pc_addr);
 
   if (TracePcPatching) {
     tty->print("patch_pc at address " INTPTR_FORMAT " [" INTPTR_FORMAT " -> " INTPTR_FORMAT "]",
@@ -293,11 +297,11 @@ void frame::patch_pc(Thread* thread, address pc) {
 
   // Either the return address is the original one or we are going to
   // patch in the same address that's already there.
-  assert(_pc == pc_old || pc == pc_old || pc_old == 0, "");
+  assert(_pc == pc_old || pc == pc_old || pc_old == nullptr, "");
   DEBUG_ONLY(address old_pc = _pc;)
   *pc_addr = signed_pc;
   _pc = pc; // must be set before call to get_deopt_original_pc
-  address original_pc = CompiledMethod::get_deopt_original_pc(this);
+  address original_pc = get_deopt_original_pc();
   if (original_pc != nullptr) {
     assert(original_pc == old_pc, "expected original PC to be stored before patching");
     _deopt_state = is_deoptimized;
@@ -342,7 +346,7 @@ BasicObjectLock* frame::interpreter_frame_monitor_begin() const {
 }
 
 BasicObjectLock* frame::interpreter_frame_monitor_end() const {
-  BasicObjectLock* result = (BasicObjectLock*) at(interpreter_frame_monitor_block_top_offset);
+  BasicObjectLock* result = (BasicObjectLock*) at_relative(interpreter_frame_monitor_block_top_offset);
   // make sure the pointer points inside the frame
   assert(sp() <= (intptr_t*) result, "monitor end should be above the stack pointer");
   assert((intptr_t*) result < fp(),  "monitor end should be strictly below the frame pointer");
@@ -350,17 +354,24 @@ BasicObjectLock* frame::interpreter_frame_monitor_end() const {
 }
 
 void frame::interpreter_frame_set_monitor_end(BasicObjectLock* value) {
-  *((BasicObjectLock**)addr_at(interpreter_frame_monitor_block_top_offset)) = value;
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized monitor_block_top
+  ptr_at_put(interpreter_frame_monitor_block_top_offset, (intptr_t*)value - fp());
+  assert(at_absolute(interpreter_frame_monitor_block_top_offset) <= interpreter_frame_monitor_block_top_offset, "");
 }
 
 // Used by template based interpreter deoptimization
 void frame::interpreter_frame_set_last_sp(intptr_t* sp) {
-    *((intptr_t**)addr_at(interpreter_frame_last_sp_offset)) = sp;
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized last_sp
+  ptr_at_put(interpreter_frame_last_sp_offset, sp != nullptr ? (sp - fp()) : 0);
 }
 
 // Used by template based interpreter deoptimization
 void frame::interpreter_frame_set_extended_sp(intptr_t* sp) {
-  *((intptr_t**)addr_at(interpreter_frame_extended_sp_offset)) = sp;
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized extended_sp
+  ptr_at_put(interpreter_frame_extended_sp_offset, (sp - fp()));
 }
 
 frame frame::sender_for_entry_frame(RegisterMap* map) const {
@@ -413,13 +424,43 @@ frame frame::sender_for_upcall_stub_frame(RegisterMap* map) const {
   return fr;
 }
 
+#if defined(ASSERT)
+static address get_register_address_in_stub(const frame& stub_fr, VMReg reg) {
+  RegisterMap map(nullptr,
+                  RegisterMap::UpdateMap::include,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip);
+  stub_fr.oop_map()->update_register_map(&stub_fr, &map);
+  return map.location(reg, stub_fr.sp());
+}
+#endif
+
+JavaThread** frame::saved_thread_address(const frame& f) {
+  CodeBlob* cb = f.cb();
+  assert(cb != nullptr && cb->is_runtime_stub(), "invalid frame");
+
+  JavaThread** thread_addr;
+#ifdef COMPILER1
+  if (cb == Runtime1::blob_for(C1StubId::monitorenter_id) ||
+      cb == Runtime1::blob_for(C1StubId::monitorenter_nofpu_id)) {
+    thread_addr = (JavaThread**)(f.sp() + Runtime1::runtime_blob_current_thread_offset(f));
+  } else
+#endif
+  {
+    // c2 only saves rbp in the stub frame so nothing to do.
+    thread_addr = nullptr;
+  }
+  assert(get_register_address_in_stub(f, SharedRuntime::thread_register()) == (address)thread_addr, "wrong thread address");
+  return thread_addr;
+}
+
 //------------------------------------------------------------------------------
 // frame::verify_deopt_original_pc
 //
 // Verifies the calculated original PC of a deoptimization PC for the
 // given unextended SP.
 #ifdef ASSERT
-void frame::verify_deopt_original_pc(CompiledMethod* nm, intptr_t* unextended_sp) {
+void frame::verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp) {
   frame fr;
 
   // This is ugly but it's better than to change {get,set}_original_pc
@@ -442,12 +483,12 @@ void frame::adjust_unextended_sp() {
   // returning to any of these call sites.
 
   if (_cb != nullptr) {
-    CompiledMethod* sender_cm = _cb->as_compiled_method_or_null();
-    if (sender_cm != nullptr) {
+    nmethod* sender_nm = _cb->as_nmethod_or_null();
+    if (sender_nm != nullptr) {
       // If the sender PC is a deoptimization point, get the original PC.
-      if (sender_cm->is_deopt_entry(_pc) ||
-          sender_cm->is_deopt_mh_entry(_pc)) {
-        verify_deopt_original_pc(sender_cm, _unextended_sp);
+      if (sender_nm->is_deopt_entry(_pc) ||
+          sender_nm->is_deopt_mh_entry(_pc)) {
+        verify_deopt_original_pc(sender_nm, _unextended_sp);
       }
     }
   }
@@ -466,14 +507,15 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
   intptr_t* unextended_sp = interpreter_frame_sender_sp();
   intptr_t* sender_fp = link();
 
-#if COMPILER2_OR_JVMCI
+#if defined(COMPILER1) || COMPILER2_OR_JVMCI
   if (map->update_map()) {
     update_map_with_saved_link(map, (intptr_t**) addr_at(link_offset));
   }
-#endif // COMPILER2_OR_JVMCI
+#endif // defined(COMPILER1) || COMPILER1_OR_COMPILER2
 
-  // For ROP protection, Interpreter will have signed the sender_pc, but there is no requirement to authenticate it here.
-  address sender_pc = pauth_strip_verifiable(sender_pc_maybe_signed(), (address)link());
+  // For ROP protection, Interpreter will have signed the sender_pc,
+  // but there is no requirement to authenticate it here.
+  address sender_pc = pauth_strip_verifiable(sender_pc_maybe_signed());
 
   if (Continuation::is_return_barrier_entry(sender_pc)) {
     if (map->walk_cont()) { // about to walk into an h-stack
@@ -489,10 +531,10 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
 bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   assert(is_interpreted_frame(), "Not an interpreted frame");
   // These are reasonable sanity checks
-  if (fp() == 0 || (intptr_t(fp()) & (wordSize-1)) != 0) {
+  if (fp() == nullptr || (intptr_t(fp()) & (wordSize-1)) != 0) {
     return false;
   }
-  if (sp() == 0 || (intptr_t(sp()) & (wordSize-1)) != 0) {
+  if (sp() == nullptr || (intptr_t(sp()) & (wordSize-1)) != 0) {
     return false;
   }
   if (fp() + interpreter_frame_initial_sp_offset < sp()) {
@@ -508,7 +550,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
   // first the method
 
-  Method* m = *interpreter_frame_method_addr();
+  Method* m = safe_interpreter_frame_method();
 
   // validate the method we'd find in this potential sender
   if (!Method::is_valid_method(m)) return false;
@@ -670,7 +712,7 @@ static void printbc(Method *m, intptr_t bcx) {
   printf("%s : %s ==> %s\n", m->name_and_sig_as_C_string(), buf, name);
 }
 
-void internal_pf(uintptr_t sp, uintptr_t fp, uintptr_t pc, uintptr_t bcx) {
+static void internal_pf(uintptr_t sp, uintptr_t fp, uintptr_t pc, uintptr_t bcx) {
   if (! fp)
     return;
 
@@ -786,7 +828,6 @@ void JavaFrameAnchor::make_walkable() {
   // already walkable?
   if (walkable()) return;
   vmassert(last_Java_sp() != nullptr, "not called from Java code?");
-  vmassert(last_Java_pc() == nullptr, "already walkable");
   _last_Java_pc = (address)_last_Java_sp[-1];
   vmassert(walkable(), "something went wrong");
 }

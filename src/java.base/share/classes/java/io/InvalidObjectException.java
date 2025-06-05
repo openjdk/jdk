@@ -31,8 +31,6 @@ package java.io;
  *
  * @see ObjectInputValidation
  * @since 1.1
- *
- * @since   1.1
  */
 public class InvalidObjectException extends ObjectStreamException {
 

@@ -29,14 +29,14 @@
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
-import static jdk.test.lib.process.ProcessTools.createTestJvm;
+import static jdk.test.lib.process.ProcessTools.createTestJavaProcessBuilder;
 import static jdk.test.lib.process.ProcessTools.executeProcess;
 
 public class ShutdownHook {
 
     public static void main(String[] args) throws Exception {
         if (args.length > 0) {
-            ProcessBuilder pb = createTestJvm("ShutdownHook");
+            ProcessBuilder pb = createTestJavaProcessBuilder("ShutdownHook");
             OutputAnalyzer output = executeProcess(pb);
             output.shouldContain("Shutdown Hook");
             output.shouldHaveExitValue(0);

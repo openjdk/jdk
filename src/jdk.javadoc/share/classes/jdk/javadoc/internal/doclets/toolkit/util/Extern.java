@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -668,11 +668,22 @@ public class Extern {
         } while (redir);
 
         if (!url.equals(conn.getURL())) {
-            configuration.getReporter().print(Kind.WARNING,
-                    resources.getText("doclet.urlRedirected", url, conn.getURL()));
+            if (!getLastPathComponent(conn.getURL()).equals(getLastPathComponent(url))) {
+                configuration.getReporter().print(Kind.ERROR,
+                        resources.getText("doclet.unexpectedRedirect", url, conn.getURL()));
+            } else {
+                configuration.getReporter().print(Kind.WARNING,
+                        resources.getText("doclet.urlRedirected", url, conn.getURL()));
+            }
         }
 
         return in;
+    }
+
+    private String getLastPathComponent(URL u) {
+        var path = u.getPath();
+        var sep = path.lastIndexOf('/');
+        return sep == -1 ? path : path.substring(sep + 1);
     }
 
     private void printModularityMismatchDiagnostic(String key, Object arg) {

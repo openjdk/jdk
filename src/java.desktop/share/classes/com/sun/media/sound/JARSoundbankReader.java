@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,6 @@ import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.Soundbank;
 import javax.sound.midi.spi.SoundbankReader;
 
-import sun.reflect.misc.ReflectUtil;
-
 /**
  * JarSoundbankReader is used to read soundbank object from jar files.
  *
@@ -48,12 +46,12 @@ import sun.reflect.misc.ReflectUtil;
  */
 public final class JARSoundbankReader extends SoundbankReader {
 
-    /*
-     * Name of the system property that enables the Jar soundbank loading
-     * true if jar sound bank is allowed to be loaded
-     * default is false
+    /**
+     * Value of the system property that enables the Jar soundbank loading
+     * {@code true} if jar sound bank is allowed to be loaded default is
+     * {@code false}.
      */
-    private final static String JAR_SOUNDBANK_ENABLED = "jdk.sound.jarsoundbank";
+    private static final boolean JAR_SOUNDBANK_ENABLED = Boolean.getBoolean("jdk.sound.jarsoundbank");
 
     private static boolean isZIP(URL url) {
         boolean ok = false;
@@ -78,7 +76,7 @@ public final class JARSoundbankReader extends SoundbankReader {
     public Soundbank getSoundbank(URL url)
             throws InvalidMidiDataException, IOException {
         Objects.requireNonNull(url);
-        if (!Boolean.getBoolean(JAR_SOUNDBANK_ENABLED) || !isZIP(url))
+        if (!JAR_SOUNDBANK_ENABLED || !isZIP(url))
             return null;
 
         ArrayList<Soundbank> soundbanks = new ArrayList<>();
@@ -95,7 +93,6 @@ public final class JARSoundbankReader extends SoundbankReader {
                     try {
                         Class<?> c = Class.forName(line.trim(), false, ucl);
                         if (Soundbank.class.isAssignableFrom(c)) {
-                            ReflectUtil.checkPackageAccess(c);
                             Object o = c.newInstance();
                             soundbanks.add((Soundbank) o);
                         }

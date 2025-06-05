@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,21 +32,21 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import static java.lang.constant.ConstantDescs.CD_String;
-import static java.lang.constant.ConstantUtils.EMPTY_CONSTANTDESC;
-import static java.lang.constant.ConstantUtils.validateMemberName;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
+import static jdk.internal.constant.ConstantUtils.EMPTY_CONSTANTDESC;
+import static jdk.internal.constant.ConstantUtils.validateMemberName;
 
 /**
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for an
  * {@code invokedynamic} call site.
  *
- * <p>Concrete subtypes of {@linkplain DynamicCallSiteDesc} should be immutable
- * and their behavior should not rely on object identity.
+ * <p>A {@code DynamicCallSiteDesc} is immutable and its behavior does not
+ * rely on object identity.
  *
  * @since 12
  */
-public class DynamicCallSiteDesc {
+public final class DynamicCallSiteDesc {
 
     private final DirectMethodHandleDesc bootstrapMethod;
     private final ConstantDesc[] bootstrapArgs;

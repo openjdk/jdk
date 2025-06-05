@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,17 @@
  * @summary Enhance OCSP, CRL and Certificate Fetch Timeouts
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
- * @library /test/lib ../../../../java/security/testlibrary
- * @build CertificateBuilder
+ * @library /test/lib
  * @run main/othervm -Dcom.sun.security.enableAIAcaIssuers=true
- *      -Dcom.sun.security.cert.readtimeout=1 AIACertTimeout 2000 false
+ *      -Dcom.sun.security.cert.readtimeout=1 AIACertTimeout 5000 false
  * @run main/othervm -Dcom.sun.security.enableAIAcaIssuers=true
- *      -Dcom.sun.security.cert.readtimeout=1s AIACertTimeout 2000 false
+ *      -Dcom.sun.security.cert.readtimeout=1s AIACertTimeout 5000 false
  * @run main/othervm -Dcom.sun.security.enableAIAcaIssuers=true
- *      -Dcom.sun.security.cert.readtimeout=3 AIACertTimeout 2000 true
+ *      -Dcom.sun.security.cert.readtimeout=4 AIACertTimeout 1000 true
  * @run main/othervm -Dcom.sun.security.enableAIAcaIssuers=true
- *      -Dcom.sun.security.cert.readtimeout=1500ms AIACertTimeout 2000 false
+ *      -Dcom.sun.security.cert.readtimeout=1500ms AIACertTimeout 5000 false
  * @run main/othervm -Dcom.sun.security.enableAIAcaIssuers=true
- *      -Dcom.sun.security.cert.readtimeout=2750ms AIACertTimeout 2000 true
+ *      -Dcom.sun.security.cert.readtimeout=4500ms AIACertTimeout 1000 true
  * @run main/othervm -Djava.security.debug=certpath
  *      -Dcom.sun.security.enableAIAcaIssuers=false
  *      -Dcom.sun.security.cert.readtimeout=20000ms AIACertTimeout 10000 false
@@ -55,10 +54,7 @@ import java.security.spec.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import sun.security.testlibrary.CertificateBuilder;
-
-import sun.security.x509.*;
-import sun.security.util.*;
+import jdk.test.lib.security.CertificateBuilder;
 
 public class AIACertTimeout {
 

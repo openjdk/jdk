@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,11 @@
 #define CPU_AARCH64_MACROASSEMBLER_AARCH64_HPP
 
 #include "asm/assembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
+#include "oops/compressedKlass.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -93,10 +95,21 @@ class MacroAssembler: public Assembler {
     KlassDecodeMovk
   };
 
-  KlassDecodeMode klass_decode_mode();
+  // Calculate decoding mode based on given parameters, used for checking then ultimately setting.
+  static KlassDecodeMode klass_decode_mode(address base, int shift, const size_t range);
 
  private:
   static KlassDecodeMode _klass_decode_mode;
+
+  // Returns above setting with asserts
+  static KlassDecodeMode klass_decode_mode();
+
+ public:
+  // Checks the decode mode and returns false if not compatible with preferred decoding mode.
+  static bool check_klass_decode_mode(address base, int shift, const size_t range);
+
+  // Sets the decode mode and returns false if cannot be set.
+  static bool set_klass_decode_mode(address base, int shift, const size_t range);
 
  public:
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
@@ -149,6 +162,7 @@ class MacroAssembler: public Assembler {
   void bind(Label& L) {
     Assembler::bind(L);
     code()->clear_last_insn();
+    code()->set_last_label(pc());
   }
 
   void membar(Membar_mask_bits order_constraint);
@@ -443,6 +457,15 @@ class MacroAssembler: public Assembler {
 
   // macro assembly operations needed for aarch64
 
+public:
+
+  enum FpPushPopMode {
+    PushPopFull,
+    PushPopSVE,
+    PushPopNeon,
+    PushPopFp
+  };
+
   // first two private routines for loading 32 bit or 64 bit constants
 private:
 
@@ -452,8 +475,8 @@ private:
   int push(unsigned int bitset, Register stack);
   int pop(unsigned int bitset, Register stack);
 
-  int push_fp(unsigned int bitset, Register stack);
-  int pop_fp(unsigned int bitset, Register stack);
+  int push_fp(unsigned int bitset, Register stack, FpPushPopMode mode);
+  int pop_fp(unsigned int bitset, Register stack, FpPushPopMode mode);
 
   int push_p(unsigned int bitset, Register stack);
   int pop_p(unsigned int bitset, Register stack);
@@ -461,11 +484,12 @@ private:
   void mov(Register dst, Address a);
 
 public:
+
   void push(RegSet regs, Register stack) { if (regs.bits()) push(regs.bits(), stack); }
   void pop(RegSet regs, Register stack) { if (regs.bits()) pop(regs.bits(), stack); }
 
-  void push_fp(FloatRegSet regs, Register stack) { if (regs.bits()) push_fp(regs.bits(), stack); }
-  void pop_fp(FloatRegSet regs, Register stack) { if (regs.bits()) pop_fp(regs.bits(), stack); }
+  void push_fp(FloatRegSet regs, Register stack, FpPushPopMode mode = PushPopFull) { if (regs.bits()) push_fp(regs.bits(), stack, mode); }
+  void pop_fp(FloatRegSet regs, Register stack, FpPushPopMode mode = PushPopFull) { if (regs.bits()) pop_fp(regs.bits(), stack, mode); }
 
   static RegSet call_clobbered_gp_registers();
 
@@ -568,6 +592,19 @@ public:
   inline void clear_fpsr()
   {
     msr(0b011, 0b0100, 0b0100, 0b001, zr);
+  }
+
+  // FPCR : op1 == 011
+  //        CRn == 0100
+  //        CRm == 0100
+  //        op2 == 000
+
+  inline void get_fpcr(Register reg) {
+    mrs(0b11, 0b0100, 0b0100, 0b000, reg);
+  }
+
+  inline void set_fpcr(Register reg) {
+    msr(0b011, 0b0100, 0b0100, 0b000, reg);
   }
 
   // DCZID_EL0: op1 == 011
@@ -706,6 +743,7 @@ public:
 
   // Alignment
   void align(int modulus);
+  void align(int modulus, int target);
 
   // nop
   void post_call_nop();
@@ -716,9 +754,9 @@ public:
 
   // ROP Protection
   void protect_return_address();
-  void protect_return_address(Register return_reg, Register temp_reg);
-  void authenticate_return_address(Register return_reg = lr);
-  void authenticate_return_address(Register return_reg, Register temp_reg);
+  void protect_return_address(Register return_reg);
+  void authenticate_return_address();
+  void authenticate_return_address(Register return_reg);
   void strip_return_address();
   void check_return_address(Register return_reg=lr) PRODUCT_RETURN;
 
@@ -786,8 +824,8 @@ public:
                Register arg_1, Register arg_2, Register arg_3,
                bool check_exceptions = true);
 
-  void get_vm_result  (Register oop_result, Register thread);
-  void get_vm_result_2(Register metadata_result, Register thread);
+  void get_vm_result_oop(Register oop_result, Register thread);
+  void get_vm_result_metadata(Register metadata_result, Register thread);
 
   // These always tightly bind to MacroAssembler::call_VM_base
   // bypassing the virtual implementation
@@ -849,9 +887,11 @@ public:
   void load_method_holder(Register holder, Register method);
 
   // oop manipulations
+  void load_narrow_klass_compact(Register dst, Register src);
   void load_klass(Register dst, Register src);
   void store_klass(Register dst, Register src);
-  void cmp_klass(Register oop, Register trial_klass, Register tmp);
+  void cmp_klass(Register obj, Register klass, Register tmp);
+  void cmp_klasses_from_objects(Register obj1, Register obj2, Register tmp1, Register tmp2);
 
   void resolve_weak_handle(Register result, Register tmp1, Register tmp2);
   void resolve_oop_handle(Register result, Register tmp1, Register tmp2);
@@ -895,6 +935,8 @@ public:
 
   void set_narrow_oop(Register dst, jobject obj);
 
+  void decode_klass_not_null_for_aot(Register dst, Register src);
+  void encode_klass_not_null_for_aot(Register dst, Register src);
   void encode_klass_not_null(Register r);
   void decode_klass_not_null(Register r);
   void encode_klass_not_null(Register dst, Register src);
@@ -912,8 +954,11 @@ public:
   void pop_CPU_state(bool restore_vectors = false, bool use_sve = false,
                      int sve_vector_size_in_bytes = 0, int total_predicate_in_bytes = 0);
 
-  void push_cont_fastpath(Register java_thread);
-  void pop_cont_fastpath(Register java_thread);
+  void push_cont_fastpath(Register java_thread = rthread);
+  void pop_cont_fastpath(Register java_thread = rthread);
+
+  void inc_held_monitor_count(Register tmp);
+  void dec_held_monitor_count(Register tmp);
 
   // Round up to a power of two
   void round_to(Register reg, int modulus);
@@ -942,6 +987,15 @@ public:
                                Label& no_such_interface,
                    bool return_method = true);
 
+  void lookup_interface_method_stub(Register recv_klass,
+                                    Register holder_klass,
+                                    Register resolved_klass,
+                                    Register method_result,
+                                    Register temp_reg,
+                                    Register temp_reg2,
+                                    int itable_index,
+                                    Label& L_no_such_interface);
+
   // virtual method calling
   // n.b. x86 allows RegisterOrConstant for vtable_index
   void lookup_virtual_method(Register recv_klass,
@@ -960,7 +1014,7 @@ public:
                                      Label* L_success,
                                      Label* L_failure,
                                      Label* L_slow_path,
-                RegisterOrConstant super_check_offset = RegisterOrConstant(-1));
+                                     Register super_check_offset = noreg);
 
   // The rest of the type check; must be wired to a corresponding fast path.
   // It does not repeat the fast path logic, so don't use it standalone.
@@ -974,6 +1028,69 @@ public:
                                      Label* L_success,
                                      Label* L_failure,
                                      bool set_cond_codes = false);
+
+  void check_klass_subtype_slow_path_linear(Register sub_klass,
+                                            Register super_klass,
+                                            Register temp_reg,
+                                            Register temp2_reg,
+                                            Label* L_success,
+                                            Label* L_failure,
+                                            bool set_cond_codes = false);
+
+  void check_klass_subtype_slow_path_table(Register sub_klass,
+                                           Register super_klass,
+                                           Register temp_reg,
+                                           Register temp2_reg,
+                                           Register temp3_reg,
+                                           Register result_reg,
+                                           FloatRegister vtemp_reg,
+                                           Label* L_success,
+                                           Label* L_failure,
+                                           bool set_cond_codes = false);
+
+  // If r is valid, return r.
+  // If r is invalid, remove a register r2 from available_regs, add r2
+  // to regs_to_push, then return r2.
+  Register allocate_if_noreg(const Register r,
+                             RegSetIterator<Register> &available_regs,
+                             RegSet &regs_to_push);
+
+  // Secondary subtype checking
+  void lookup_secondary_supers_table_var(Register sub_klass,
+                                         Register r_super_klass,
+                                         Register temp1,
+                                         Register temp2,
+                                         Register temp3,
+                                         FloatRegister vtemp,
+                                         Register result,
+                                         Label *L_success);
+
+
+  // As above, but with a constant super_klass.
+  // The result is in Register result, not the condition codes.
+  bool lookup_secondary_supers_table_const(Register r_sub_klass,
+                                           Register r_super_klass,
+                                           Register temp1,
+                                           Register temp2,
+                                           Register temp3,
+                                           FloatRegister vtemp,
+                                           Register result,
+                                           u1 super_klass_slot,
+                                           bool stub_is_near = false);
+
+  void verify_secondary_supers_table(Register r_sub_klass,
+                                     Register r_super_klass,
+                                     Register temp1,
+                                     Register temp2,
+                                     Register result);
+
+  void lookup_secondary_supers_table_slow_path(Register r_super_klass,
+                                               Register r_array_base,
+                                               Register r_array_index,
+                                               Register r_bitmap,
+                                               Register temp1,
+                                               Register result,
+                                               bool is_stub = true);
 
   // Simplified, combined version, good for typical uses.
   // Falls through on failure.
@@ -1024,8 +1141,8 @@ public:
 #define verify_method_ptr(reg) _verify_method_ptr(reg, "broken method " #reg, __FILE__, __LINE__)
 #define verify_klass_ptr(reg) _verify_klass_ptr(reg, "broken klass " #reg, __FILE__, __LINE__)
 
-  // only if +VerifyFPU
-  void verify_FPU(int stack_depth, const char* s = "illegal FPU state");
+  // Restore cpu control state after JNI call
+  void restore_cpu_control_state_after_jni(Register tmp1, Register tmp2);
 
   // prints msg, dumps registers and stops execution
   void stop(const char* msg);
@@ -1059,7 +1176,10 @@ public:
 
   // Arithmetics
 
+  // Clobber: rscratch1, rscratch2
   void addptr(const Address &dst, int32_t src);
+
+  // Clobber: rscratch1
   void cmpptr(Register src1, Address src2);
 
   void cmpoop(Register obj1, Register obj2);
@@ -1189,6 +1309,7 @@ public:
   // - relocInfo::virtual_call_type
   //
   // Return: the call PC or null if CodeCache is full.
+  // Clobbers: rscratch1
   address trampoline_call(Address entry);
 
   static bool far_branches() {
@@ -1197,6 +1318,10 @@ public:
 
   // Check if branches to the non nmethod section require a far jump
   static bool codestub_branch_needs_far_jump() {
+    if (AOTCodeCache::is_on_for_dump()) {
+      // To calculate far_codestub_branch_size correctly.
+      return true;
+    }
     return CodeCache::max_distance_to_non_nmethod() > branch_range;
   }
 
@@ -1224,6 +1349,8 @@ public:
 
   // Emit the CompiledIC call idiom
   address ic_call(address entry, jint method_index = 0);
+  static int ic_check_size();
+  int ic_check(int end_alignment);
 
 public:
 
@@ -1352,16 +1479,6 @@ public:
 
   public:
 
-  void ldr_constant(Register dest, const Address &const_addr) {
-    if (NearCpool) {
-      ldr(dest, const_addr);
-    } else {
-      uint64_t offset;
-      adrp(dest, InternalAddress(const_addr.target()), offset);
-      ldr(dest, Address(dest, offset));
-    }
-  }
-
   address read_polling_page(Register r, relocInfo::relocType rtype);
   void get_polling_page(Register dest, relocInfo::relocType rtype);
 
@@ -1376,8 +1493,25 @@ public:
   address arrays_equals(Register a1, Register a2, Register result, Register cnt1,
                         Register tmp1, Register tmp2, Register tmp3, int elem_size);
 
-  void string_equals(Register a1, Register a2, Register result, Register cnt1,
-                     int elem_size);
+// Ensure that the inline code and the stub use the same registers.
+#define ARRAYS_HASHCODE_REGISTERS \
+  do {                      \
+    assert(result == r0  && \
+           ary    == r1  && \
+           cnt    == r2  && \
+           vdata0 == v3  && \
+           vdata1 == v2  && \
+           vdata2 == v1  && \
+           vdata3 == v0  && \
+           vmul0  == v4  && \
+           vmul1  == v5  && \
+           vmul2  == v6  && \
+           vmul3  == v7  && \
+           vpow   == v12 && \
+           vpowm  == v13, "registers must match aarch64.ad"); \
+  } while (0)
+
+  void string_equals(Register a1, Register a2, Register result, Register cnt1);
 
   void fill_words(Register base, Register cnt, Register value);
   address zero_words(Register base, uint64_t cnt);
@@ -1402,11 +1536,6 @@ public:
                         FloatRegister vtmp2, FloatRegister vtmp3,
                         FloatRegister vtmp4, FloatRegister vtmp5);
 
-  void fast_log(FloatRegister vtmp0, FloatRegister vtmp1, FloatRegister vtmp2,
-                FloatRegister vtmp3, FloatRegister vtmp4, FloatRegister vtmp5,
-                FloatRegister tmpC1, FloatRegister tmpC2, FloatRegister tmpC3,
-                FloatRegister tmpC4, Register tmp1, Register tmp2,
-                Register tmp3, Register tmp4, Register tmp5);
   void generate_dsin_dcos(bool isCos, address npio2_hw, address two_over_pi,
       address pio2, address dsin_coef, address dcos_coef);
  private:
@@ -1454,7 +1583,7 @@ public:
   void ghash_load_wide(int index, Register data, FloatRegister result, FloatRegister state);
 public:
   void multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z,
-                       Register zlen, Register tmp1, Register tmp2, Register tmp3,
+                       Register tmp0, Register tmp1, Register tmp2, Register tmp3,
                        Register tmp4, Register tmp5, Register tmp6, Register tmp7);
   void mul_add(Register out, Register in, Register offs, Register len, Register k);
   void ghash_multiply(FloatRegister result_lo, FloatRegister result_hi,
@@ -1479,11 +1608,15 @@ public:
   void aes_round(FloatRegister input, FloatRegister subkey);
 
   // ChaCha20 functions support block
-  void cc20_quarter_round(FloatRegister aVec, FloatRegister bVec,
-          FloatRegister cVec, FloatRegister dVec, FloatRegister scratch,
-          FloatRegister tbl);
-  void cc20_shift_lane_org(FloatRegister bVec, FloatRegister cVec,
-          FloatRegister dVec, bool colToDiag);
+  void cc20_qr_add4(FloatRegister (&addFirst)[4],
+          FloatRegister (&addSecond)[4]);
+  void cc20_qr_xor4(FloatRegister (&firstElem)[4],
+          FloatRegister (&secondElem)[4], FloatRegister (&result)[4]);
+  void cc20_qr_lrot4(FloatRegister (&sourceReg)[4],
+          FloatRegister (&destReg)[4], int bits, FloatRegister table);
+  void cc20_set_qr_registers(FloatRegister (&vectorSet)[4],
+          const FloatRegister (&stateVectors)[16], int idx1, int idx2,
+          int idx3, int idx4);
 
   // Place an ISB after code may have been modified due to a safepoint.
   void safepoint_isb();
@@ -1582,8 +1715,8 @@ public:
   // Code for java.lang.Thread::onSpinWait() intrinsic.
   void spin_wait();
 
-  void fast_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
-  void fast_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
+  void lightweight_lock(Register basic_lock, Register obj, Register t1, Register t2, Register t3, Label& slow);
+  void lightweight_unlock(Register obj, Register t1, Register t2, Register t3, Label& slow);
 
 private:
   // Check the current thread doesn't need a cross modify fence.
@@ -1594,24 +1727,6 @@ private:
 #ifdef ASSERT
 inline bool AbstractAssembler::pd_check_instruction_mark() { return false; }
 #endif
-
-/**
- * class SkipIfEqual:
- *
- * Instantiating this class will result in assembly code being output that will
- * jump around any code emitted between the creation of the instance and it's
- * automatic destruction at the end of a scope block, depending on the value of
- * the flag passed to the constructor, which will be checked at run-time.
- */
-class SkipIfEqual {
- private:
-  MacroAssembler* _masm;
-  Label _label;
-
- public:
-   SkipIfEqual(MacroAssembler*, const bool* flag_addr, bool value);
-   ~SkipIfEqual();
-};
 
 struct tableswitch {
   Register _reg;

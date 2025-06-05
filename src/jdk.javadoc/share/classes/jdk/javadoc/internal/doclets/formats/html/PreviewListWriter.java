@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,16 +33,15 @@ import javax.lang.model.element.Element;
 import com.sun.source.doctree.DocTree;
 
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlStyle;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Generate File to list all the preview elements with the
@@ -54,48 +53,63 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
      * Constructor.
      *
      * @param configuration the configuration for this doclet
-     * @param filename the file to be generated
      */
-    public PreviewListWriter(HtmlConfiguration configuration, DocPath filename) {
-        super(configuration, filename, configuration.previewAPIListBuilder);
+    public PreviewListWriter(HtmlConfiguration configuration) {
+        super(configuration, DocPaths.PREVIEW_LIST, configuration.previewAPIListBuilder);
     }
 
-    /**
-     * Get list of all the preview elements.
-     * Then instantiate PreviewListWriter and generate File.
-     *
-     * @param configuration the current configuration of the doclet.
-     * @throws DocFileIOException if there is a problem writing the preview list
-     */
-    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.PREVIEW)) {
-            DocPath filename = DocPaths.PREVIEW_LIST;
-            PreviewListWriter depr = new PreviewListWriter(configuration, filename);
-            depr.generateSummaryListFile(PageMode.PREVIEW, "preview elements",
-                    configuration.contents.previewAPI, "doclet.Window_Preview_List");
-        }
+    @Override
+    protected PageMode getPageMode() {
+        return PageMode.PREVIEW;
+    }
+
+    @Override
+    protected String getDescription() {
+        return "preview elements";
+    }
+
+    @Override
+    protected Content getHeadContent() {
+        return configuration.contents.previewAPI;
+    }
+
+    @Override
+    protected String getTitleKey() {
+        return "doclet.Window_Preview_List";
     }
 
     @Override
     protected void addContentSelectors(Content target) {
         Set<PreviewAPIListBuilder.JEP> jeps = builder.getJEPs();
         if (!jeps.isEmpty()) {
-            int index = 0;
+            int index = 1;
             target.add(HtmlTree.P(contents.getContent("doclet.Preview_API_Checkbox_Label")));
-            Content list = HtmlTree.UL(HtmlStyle.previewFeatureList);
+            Content list = HtmlTree.UL(HtmlStyles.previewFeatureList).addStyle(HtmlStyles.checkboxes);
             for (var jep : jeps) {
-                index++;
-                HtmlId htmlId = HtmlId.of("feature-" + index);
-                String jepUrl = resources.getText("doclet.Preview_JEP_URL", jep.number());
-                list.add(HtmlTree.LI(HtmlTree.LABEL(htmlId.name(),
-                                HtmlTree.INPUT("checkbox", htmlId)
-                                        .put(HtmlAttr.CHECKED, "")
-                                        .put(HtmlAttr.ONCLICK,
-                                                "toggleGlobal(this, '" + index + "', 3)"))
-                        .add(HtmlTree.SPAN(Text.of(jep.number() + ": "))
-                                .add(HtmlTree.A(jepUrl, Text.of(jep.title() + " (" + jep.status() + ")"))))));
+                String jepUrl = resources.getText("doclet.Preview_JEP_URL", String.valueOf(jep.number()));
+                Content label = new ContentBuilder(Text.of(jep.number() + ": "))
+                        .add(HtmlTree.A(jepUrl, Text.of(jep.title() + " (" + jep.status() + ")")));
+                list.add(HtmlTree.LI(getCheckbox(label, String.valueOf(index++), "feature-")));
             }
+            Content label = contents.getContent("doclet.Preview_API_Checkbox_Toggle_All");
+            list.add(HtmlTree.LI(getCheckbox(label, ID_ALL, "feature-")));
             target.add(list);
+        }
+    }
+
+    @Override
+    protected void addExtraSection(Content content) {
+        var notes = builder.getElementNotes();
+        if (!notes.isEmpty()) {
+            addSummaryAPI(notes, HtmlId.of("preview-api-notes"),
+                    "doclet.Preview_Notes_Elements", "doclet.Element", content);
+        }
+    }
+
+    @Override
+    protected void addExtraIndexLink(Content target) {
+        if (!builder.getElementNotes().isEmpty()) {
+            addIndexLink(HtmlId.of("preview-api-notes"), "doclet.Preview_Notes", target);
         }
     }
 
@@ -111,9 +125,8 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
 
     @Override
     protected void addTableTabs(Table<Element> table, String headingKey) {
-        table.setGridStyle(HtmlStyle.threeColumnSummary)
+        table.setGridStyle(HtmlStyles.threeColumnSummary)
                 .setDefaultTab(getTableCaption(headingKey))
-                .setAlwaysShowDefaultTab(true)
                 .setRenderTabs(false);
         for (PreviewAPIListBuilder.JEP jep : builder.getJEPs()) {
             table.addTab(Text.EMPTY, element -> jep == builder.getJEP(element));
@@ -122,7 +135,7 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
 
     @Override
     protected Content getExtraContent(Element element) {
-        PreviewAPIListBuilder.JEP jep = configuration.previewAPIListBuilder.getJEP(element);
+        PreviewAPIListBuilder.JEP jep = builder.getJEP(element);
         return jep == null ? Text.EMPTY : Text.of(jep.title());
     }
 
@@ -137,6 +150,6 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
 
     @Override
     protected HtmlStyle[] getColumnStyles() {
-        return new HtmlStyle[]{ HtmlStyle.colSummaryItemName, HtmlStyle.colSecond, HtmlStyle.colLast };
+        return new HtmlStyle[]{ HtmlStyles.colSummaryItemName, HtmlStyles.colSecond, HtmlStyles.colLast };
     }
 }

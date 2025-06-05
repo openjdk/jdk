@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,7 +131,10 @@
     object_field(VMIntrinsicMethod, name, "Ljava/lang/String;")                                               \
     object_field(VMIntrinsicMethod, descriptor, "Ljava/lang/String;")                                         \
     int_field(VMIntrinsicMethod, id)                                                                          \
-    jvmci_constructor(VMIntrinsicMethod, "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V")        \
+    boolean_field(VMIntrinsicMethod, isAvailable)                                                             \
+    boolean_field(VMIntrinsicMethod, c1Supported)                                                             \
+    boolean_field(VMIntrinsicMethod, c2Supported)                                                             \
+    jvmci_constructor(VMIntrinsicMethod, "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IZZZ)V")     \
   end_class                                                                                                   \
   start_class(HotSpotCompilationRequestResult, jdk_vm_ci_hotspot_HotSpotCompilationRequestResult)             \
     object_field(HotSpotCompilationRequestResult, failureMessage, "Ljava/lang/String;")                       \
@@ -199,6 +202,7 @@
     objectarray_field(HotSpotJVMCIRuntime, excludeFromJVMCICompilation, "[Ljava/lang/Module;")                \
     jvmci_method(CallNonvirtualObjectMethod, GetMethodID, call_special, JVMCIObject, HotSpotJVMCIRuntime, compileMethod, compileMethod_signature) \
     jvmci_method(CallNonvirtualObjectMethod, GetMethodID, call_special, JVMCIObject, HotSpotJVMCIRuntime, isGCSupported, int_bool_signature) \
+    jvmci_method(CallNonvirtualObjectMethod, GetMethodID, call_special, JVMCIObject, HotSpotJVMCIRuntime, isIntrinsicSupported, int_bool_signature) \
     jvmci_method(CallNonvirtualVoidMethod, GetMethodID, call_special, void, HotSpotJVMCIRuntime, bootstrapFinished, void_method_signature) \
     jvmci_method(CallNonvirtualVoidMethod, GetMethodID, call_special, void, HotSpotJVMCIRuntime, shutdown, void_method_signature) \
     jvmci_method(CallStaticObjectMethod, GetStaticMethodID, call_static, JVMCIObject, HotSpotJVMCIRuntime, runtime, runtime_signature) \
@@ -243,11 +247,11 @@
   start_class(InternalError, java_lang_InternalError)                                                         \
     jvmci_constructor(InternalError, "(Ljava/lang/String;)V")                                                 \
   end_class                                                                                                   \
-  start_class(OutOfMemoryError, java_lang_OutOfMemoryError)                                                         \
-    jvmci_constructor(OutOfMemoryError, "(Ljava/lang/String;)V")                                                 \
+  start_class(OutOfMemoryError, java_lang_OutOfMemoryError)                                                   \
+    jvmci_constructor(OutOfMemoryError, "(Ljava/lang/String;)V")                                              \
   end_class                                                                                                   \
-  start_class(ClassNotFoundException, java_lang_ClassNotFoundException)                                       \
-    jvmci_constructor(ClassNotFoundException, "(Ljava/lang/String;)V")                                        \
+  start_class(NoClassDefFoundError, java_lang_NoClassDefFoundError)                                           \
+    jvmci_constructor(NoClassDefFoundError, "(Ljava/lang/String;)V")                                          \
   end_class                                                                                                   \
   start_class(InvalidInstalledCodeException, jdk_vm_ci_code_InvalidInstalledCodeException)                    \
     jvmci_constructor(InvalidInstalledCodeException, "(Ljava/lang/String;)V")                                 \

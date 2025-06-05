@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/guardedMemory.hpp"
 #include "runtime/os.hpp"
@@ -30,7 +29,7 @@
 #define GEN_PURPOSE_TAG ((void *) ((uintptr_t)0xf000f000))
 
 static void guarded_memory_test_check(void* p, size_t sz, void* tag) {
-  ASSERT_TRUE(p != NULL) << "NULL pointer given to check";
+  ASSERT_TRUE(p != nullptr) << "nullptr pointer given to check";
   u_char* c = (u_char*) p;
   GuardedMemory guarded(c);
   EXPECT_EQ(guarded.get_tag(), tag) << "Tag is not the same as supplied";
@@ -130,19 +129,19 @@ TEST(GuardedMemory, buffer_overrun_tail) {
 
 // Test wrap_copy/wrap_free
 TEST(GuardedMemory, wrap) {
-  EXPECT_TRUE(GuardedMemory::free_copy(NULL)) << "Expected free NULL to be OK";
+  EXPECT_TRUE(GuardedMemory::free_copy(nullptr)) << "Expected free nullptr to be OK";
 
   const char* str = "Check my bounds out";
   size_t str_sz = strlen(str) + 1;
   char* str_copy = (char*) GuardedMemory::wrap_copy(str, str_sz);
-  guarded_memory_test_check(str_copy, str_sz, NULL);
+  guarded_memory_test_check(str_copy, str_sz, nullptr);
   if (HasFatalFailure()) {
     return;
   }
-  EXPECT_EQ(0, strcmp(str, str_copy)) << "Not identical copy";
+  EXPECT_STREQ(str, str_copy) << "Not identical copy";
   EXPECT_TRUE(GuardedMemory::free_copy(str_copy)) << "Free copy failed to verify";
 
-  void* no_data = NULL;
+  void* no_data = nullptr;
   void* no_data_copy = GuardedMemory::wrap_copy(no_data, 0);
   EXPECT_TRUE(GuardedMemory::free_copy(no_data_copy))
           << "Expected valid guards even for no data copy";

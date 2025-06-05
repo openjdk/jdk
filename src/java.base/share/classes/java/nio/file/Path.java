@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,9 +188,6 @@ public interface Path
      *          The file system, identified by the URI, does not exist and
      *          cannot be created automatically, or the provider identified by
      *          the URI's scheme component is not installed
-     * @throws  SecurityException
-     *          if a security manager is installed and it denies an unspecified
-     *          permission to access the file system
      *
      * @since 11
      */
@@ -517,6 +514,90 @@ public interface Path
     }
 
     /**
+     * Resolves a path against this path, and then iteratively resolves any
+     * additional paths.
+     *
+     * <p> This method resolves {@code first} against this {@code Path} as if
+     * by calling {@link #resolve(Path)}. If {@code more} has one or more
+     * elements then it resolves the first element against the result, then
+     * iteratively resolves all subsequent elements. This method returns the
+     * result from the final resolve.
+     *
+     * @implSpec
+     * The default implementation is equivalent to the result obtained with:
+     * {@snippet lang=java :
+     *     Path result = resolve(first);
+     *     for (Path p : more) {
+     *         result = result.resolve(p);
+     *     }
+     * }
+     *
+     * @param   first
+     *          the first path to resolve against this path
+     * @param   more
+     *          additional paths to iteratively resolve
+     *
+     * @return  the resulting path
+     *
+     * @see #resolve(Path)
+     * @since 22
+     */
+    default Path resolve(Path first, Path... more) {
+        Path result = resolve(first);
+        for (Path p : more) {
+            result = result.resolve(p);
+        }
+        return result;
+    }
+
+    /**
+     * Converts a path string to a path, resolves that path against this path,
+     * and then iteratively performs the same procedure for any additional
+     * path strings.
+     *
+     * <p> This method converts {@code first} to a {@code Path} and resolves
+     * that {@code Path} against this {@code Path} as if by calling
+     * {@link #resolve(String)}. If {@code more} has one or more elements
+     * then it converts the first element to a path, resolves that path against
+     * the result, then iteratively converts and resolves all subsequent
+     * elements. This method returns the result from the final resolve.
+     *
+     * @implSpec
+     * The default implementation is equivalent to the result obtained with:
+     * {@snippet lang=java :
+     * Path result = resolve(first);
+     * for (String s : more) {
+     *     result = result.resolve(s);
+     * }
+     * }
+     *
+     * @param   first
+     *          the first path string to convert to a path and
+     *          resolve against this path
+     *
+     * @param   more
+     *          additional path strings to be iteratively converted to
+     *          paths and resolved
+     *
+     * @return  the resulting path
+     *
+     * @throws  InvalidPathException
+     *          if a path string cannot be converted to a Path.
+     *
+     * @see #resolve(Path,Path...)
+     * @see #resolve(String)
+     *
+     * @since 22
+     */
+    default Path resolve(String first, String... more) {
+        Path result = resolve(first);
+        for (String s : more) {
+            result = result.resolve(s);
+        }
+        return result;
+    }
+
+    /**
      * Resolves the given path against this path's {@link #getParent parent}
      * path. This is useful where a file name needs to be <i>replaced</i> with
      * another file name. For example, suppose that the name separator is
@@ -663,17 +744,14 @@ public interface Path
      *          file system is constructed to access the contents of a file as
      *          a file system, and the URI of the enclosing file system cannot be
      *          obtained
-     *
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager
-     *          is installed, the {@link #toAbsolutePath toAbsolutePath} method
-     *          throws a security exception.
      */
     URI toUri();
 
     /**
      * Returns a {@code Path} object representing the absolute path of this
-     * path.
+     * path. Where this {@code Path} is associated with the default provider,
+     * then the returned absolute path will have a non-{@code null}
+     * {@linkplain #getRoot root component}.
      *
      * <p> If this path is already {@link Path#isAbsolute absolute} then this
      * method simply returns this path. Otherwise, this method resolves the path
@@ -685,12 +763,6 @@ public interface Path
      *
      * @throws  java.io.IOError
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, a security manager
-     *          is installed, and this path is not absolute, then the security
-     *          manager's {@link SecurityManager#checkPropertyAccess(String)
-     *          checkPropertyAccess} method is invoked to check access to the
-     *          system property {@code user.dir}
      */
     Path toAbsolutePath();
 
@@ -719,8 +791,8 @@ public interface Path
      * "{@code ..}" (or equivalent) is preceded by a non-"{@code ..}" name then
      * an implementation will typically cause both names to be removed. When
      * not resolving symbolic links and the preceding name is a symbolic link
-     * then the names are only removed if it guaranteed that the resulting path
-     * will locate the same file as this path.
+     * then the names are only removed if it is guaranteed that the resulting
+     * path will locate the same file as this path.
      *
      * @param   options
      *          options indicating how symbolic links are handled
@@ -730,13 +802,6 @@ public interface Path
      *
      * @throws  IOException
      *          if the file does not exist or an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager
-     *          is installed, its {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the file, and where
-     *          this path is not absolute, its {@link SecurityManager#checkPropertyAccess(String)
-     *          checkPropertyAccess} method is invoked to check access to the
-     *          system property {@code user.dir}
      */
     Path toRealPath(LinkOption... options) throws IOException;
 
@@ -829,10 +894,6 @@ public interface Path
      *          and the file is not a directory  <i>(optional specific exception)</i>
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the file.
      */
     @Override
     WatchKey register(WatchService watcher,
@@ -885,10 +946,6 @@ public interface Path
      *          and the file is not a directory  <i>(optional specific exception)</i>
      * @throws  IOException
      *          If an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the file.
      */
     @Override
     default WatchKey register(WatchService watcher,
@@ -984,6 +1041,7 @@ public interface Path
      * @return  {@code true} if, and only if, the given object is a {@code Path}
      *          that is identical to this {@code Path}
      */
+    @Override
     boolean equals(Object other);
 
     /**
@@ -995,10 +1053,11 @@ public interface Path
      *
      * @return  the hash-code value for this path
      */
+    @Override
     int hashCode();
 
     /**
-     * Returns the string representation of this path.
+     * {@return the string representation of this path}
      *
      * <p> If this path was created by converting a path string using the
      * {@link FileSystem#getPath getPath} method then the path string returned
@@ -1006,8 +1065,7 @@ public interface Path
      *
      * <p> The returned path string uses the default name {@link
      * FileSystem#getSeparator separator} to separate names in the path.
-     *
-     * @return  the string representation of this path
      */
+    @Override
     String toString();
 }

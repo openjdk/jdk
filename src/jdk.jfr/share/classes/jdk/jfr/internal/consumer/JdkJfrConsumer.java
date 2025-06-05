@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@
 package jdk.jfr.internal.consumer;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Predicate;
 
 import jdk.jfr.Configuration;
 import jdk.jfr.EventType;
@@ -43,6 +45,7 @@ import jdk.jfr.consumer.RecordedThread;
 import jdk.jfr.consumer.RecordedThreadGroup;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.internal.Type;
+import jdk.jfr.internal.consumer.filter.ChunkWriter.RemovedEvents;;
 
 /*
  * Purpose of this class is to give package private access to
@@ -105,4 +108,5 @@ public abstract class JdkJfrConsumer {
 
     public abstract MetadataEvent newMetadataEvent(List<EventType> previous, List<EventType> current, List<Configuration> configuration);
 
+    public abstract List<RemovedEvents> write(RecordingFile file, Path output, Predicate<RecordedEvent> filter) throws IOException;
 }

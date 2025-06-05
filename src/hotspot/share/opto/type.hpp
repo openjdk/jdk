@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ class Dict;
 class Type;
 class   TypeD;
 class   TypeF;
+class   TypeH;
 class   TypeInteger;
 class     TypeInt;
 class     TypeLong;
@@ -78,7 +79,6 @@ class VerifyMeet;
 // different kind of Type exists.  Types are never modified after creation, so
 // all their interesting fields are constant.
 class Type {
-  friend class VMStructs;
 
 public:
   enum TYPES {
@@ -93,6 +93,8 @@ public:
 
     Tuple,                      // Method signature or object layout
     Array,                      // Array types
+
+    Interfaces,                 // Set of implemented interfaces for oop types
 
     VectorMask,                 // Vector predicate/mask type
     VectorA,                    // (Scalable) Vector types for vector length agnostic
@@ -118,6 +120,9 @@ public:
     Abio,                       // Abstract I/O
     Return_Address,             // Subroutine return address
     Memory,                     // Abstract store
+    HalfFloatTop,               // No float value
+    HalfFloatCon,               // Floating point constant
+    HalfFloatBot,               // Any float value
     FloatTop,                   // No float value
     FloatCon,                   // Floating point constant
     FloatBot,                   // Any float value
@@ -155,7 +160,7 @@ private:
   static const TypeInfo _type_info[];
 
   static int uhash( const Type *const t );
-  // Structural equality check.  Assumes that cmp() has already compared
+  // Structural equality check.  Assumes that equals() has already compared
   // the _base types and thus knows it can cast 't' appropriately.
   virtual bool eq( const Type *t ) const;
 
@@ -214,15 +219,15 @@ public:
   // Create a new hash-consd type
   static const Type *make(enum TYPES);
   // Test for equivalence of types
-  static int cmp( const Type *const t1, const Type *const t2 );
+  static bool equals(const Type* t1, const Type* t2);
   // Test for higher or equal in lattice
   // Variant that drops the speculative part of the types
-  bool higher_equal(const Type *t) const {
-    return !cmp(meet(t),t->remove_speculative());
+  bool higher_equal(const Type* t) const {
+    return equals(meet(t), t->remove_speculative());
   }
   // Variant that keeps the speculative part of the types
-  bool higher_equal_speculative(const Type *t) const {
-    return !cmp(meet_speculative(t),t);
+  bool higher_equal_speculative(const Type* t) const {
+    return equals(meet_speculative(t), t);
   }
 
   // MEET operation; lower in lattice.
@@ -275,7 +280,8 @@ public:
   bool is_ptr_to_narrowklass() const;
 
   // Convenience access
-  float getf() const;
+  short geth() const;
+  virtual float getf() const;
   double getd() const;
 
   const TypeInt    *is_int() const;
@@ -287,6 +293,9 @@ public:
   const TypeD      *isa_double() const;          // Returns null if not a Double{Top,Con,Bot}
   const TypeD      *is_double_constant() const;  // Asserts it is a DoubleCon
   const TypeD      *isa_double_constant() const; // Returns null if not a DoubleCon
+  const TypeH      *isa_half_float() const;          // Returns null if not a Float{Top,Con,Bot}
+  const TypeH      *is_half_float_constant() const;  // Asserts it is a FloatCon
+  const TypeH      *isa_half_float_constant() const; // Returns null if not a FloatCon
   const TypeF      *isa_float() const;           // Returns null if not a Float{Top,Con,Bot}
   const TypeF      *is_float_constant() const;   // Asserts it is a FloatCon
   const TypeF      *isa_float_constant() const;  // Returns null if not a FloatCon
@@ -311,6 +320,9 @@ public:
   const TypeInstPtr  *is_instptr() const;        // Instance
   const TypeAryPtr   *isa_aryptr() const;        // Returns null if not AryPtr
   const TypeAryPtr   *is_aryptr() const;         // Array oop
+
+  template <typename TypeClass>
+  const TypeClass* cast() const;
 
   const TypeMetadataPtr   *isa_metadataptr() const;   // Returns null if not oop ptr type
   const TypeMetadataPtr   *is_metadataptr() const;    // Java-style GC'd pointer
@@ -426,6 +438,7 @@ public:
   static const Type *CONTROL;
   static const Type *DOUBLE;
   static const Type *FLOAT;
+  static const Type *HALF_FLOAT;
   static const Type *HALF;
   static const Type *MEMORY;
   static const Type *MULTI;
@@ -516,6 +529,38 @@ public:
 #endif
 };
 
+// Class of Half Float-Constant Types.
+class TypeH : public Type {
+  TypeH(short f) : Type(HalfFloatCon), _f(f) {};
+public:
+  virtual bool eq(const Type* t) const;
+  virtual uint hash() const;             // Type specific hashing
+  virtual bool singleton(void) const;    // TRUE if type is a singleton
+  virtual bool empty(void) const;        // TRUE if type is vacuous
+public:
+  const short _f;                        // Half Float constant
+
+  static const TypeH* make(float f);
+  static const TypeH* make(short f);
+
+  virtual bool is_finite() const;  // Has a finite value
+  virtual bool is_nan() const;     // Is not a number (NaN)
+
+  virtual float getf() const;
+  virtual const Type* xmeet(const Type* t) const;
+  virtual const Type* xdual() const;    // Compute dual right now.
+  // Convenience common pre-built types.
+  static const TypeH* MAX;
+  static const TypeH* MIN;
+  static const TypeH* ZERO; // positive zero only
+  static const TypeH* ONE;
+  static const TypeH* POS_INF;
+  static const TypeH* NEG_INF;
+#ifndef PRODUCT
+  virtual void dump2(Dict &d, uint depth, outputStream* st) const;
+#endif
+};
+
 //------------------------------TypeD------------------------------------------
 // Class of Double-Constant Types.
 class TypeD : public Type {
@@ -561,6 +606,7 @@ public:
   virtual short widen_limit() const { return _widen; }
 
   static const TypeInteger* make(jlong lo, jlong hi, int w, BasicType bt);
+  static const TypeInteger* make(jlong con, BasicType bt);
 
   static const TypeInteger* bottom(BasicType type);
   static const TypeInteger* zero(BasicType type);
@@ -782,94 +828,122 @@ public:
 //------------------------------TypeVect---------------------------------------
 // Class of Vector Types
 class TypeVect : public Type {
-  const Type*   _elem;  // Vector's element type
-  const uint  _length;  // Elements in vector (power of 2)
+  const BasicType _elem_bt;  // Vector's element type
+  const uint _length;  // Elements in vector (power of 2)
 
 protected:
-  TypeVect(TYPES t, const Type* elem, uint length) : Type(t),
-    _elem(elem), _length(length) {}
+  TypeVect(TYPES t, BasicType elem_bt, uint length) : Type(t),
+    _elem_bt(elem_bt), _length(length) {}
 
 public:
-  const Type* element_type() const { return _elem; }
-  BasicType element_basic_type() const { return _elem->array_element_basic_type(); }
+  BasicType element_basic_type() const { return _elem_bt; }
   uint length() const { return _length; }
   uint length_in_bytes() const {
-   return _length * type2aelembytes(element_basic_type());
+    return _length * type2aelembytes(element_basic_type());
   }
 
-  virtual bool eq(const Type *t) const;
+  virtual bool eq(const Type* t) const;
   virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 
-  static const TypeVect *make(const BasicType elem_bt, uint length, bool is_mask = false) {
-    // Use bottom primitive type.
-    return make(get_const_basic_type(elem_bt), length, is_mask);
-  }
-  // Used directly by Replicate nodes to construct singleton vector.
-  static const TypeVect *make(const Type* elem, uint length, bool is_mask = false);
+  static const TypeVect* make(const BasicType elem_bt, uint length, bool is_mask = false);
+  static const TypeVect* makemask(const BasicType elem_bt, uint length);
 
-  static const TypeVect *makemask(const BasicType elem_bt, uint length) {
-    // Use bottom primitive type.
-    return makemask(get_const_basic_type(elem_bt), length);
-  }
-  static const TypeVect *makemask(const Type* elem, uint length);
+  virtual const Type* xmeet( const Type *t) const;
+  virtual const Type* xdual() const;     // Compute dual right now.
 
-
-  virtual const Type *xmeet( const Type *t) const;
-  virtual const Type *xdual() const;     // Compute dual right now.
-
-  static const TypeVect *VECTA;
-  static const TypeVect *VECTS;
-  static const TypeVect *VECTD;
-  static const TypeVect *VECTX;
-  static const TypeVect *VECTY;
-  static const TypeVect *VECTZ;
-  static const TypeVect *VECTMASK;
+  static const TypeVect* VECTA;
+  static const TypeVect* VECTS;
+  static const TypeVect* VECTD;
+  static const TypeVect* VECTX;
+  static const TypeVect* VECTY;
+  static const TypeVect* VECTZ;
+  static const TypeVect* VECTMASK;
 
 #ifndef PRODUCT
-  virtual void dump2(Dict &d, uint, outputStream *st) const; // Specialized per-Type dumping
+  virtual void dump2(Dict& d, uint, outputStream* st) const; // Specialized per-Type dumping
 #endif
 };
 
 class TypeVectA : public TypeVect {
   friend class TypeVect;
-  TypeVectA(const Type* elem, uint length) : TypeVect(VectorA, elem, length) {}
+  TypeVectA(BasicType elem_bt, uint length) : TypeVect(VectorA, elem_bt, length) {}
 };
 
 class TypeVectS : public TypeVect {
   friend class TypeVect;
-  TypeVectS(const Type* elem, uint length) : TypeVect(VectorS, elem, length) {}
+  TypeVectS(BasicType elem_bt, uint length) : TypeVect(VectorS, elem_bt, length) {}
 };
 
 class TypeVectD : public TypeVect {
   friend class TypeVect;
-  TypeVectD(const Type* elem, uint length) : TypeVect(VectorD, elem, length) {}
+  TypeVectD(BasicType elem_bt, uint length) : TypeVect(VectorD, elem_bt, length) {}
 };
 
 class TypeVectX : public TypeVect {
   friend class TypeVect;
-  TypeVectX(const Type* elem, uint length) : TypeVect(VectorX, elem, length) {}
+  TypeVectX(BasicType elem_bt, uint length) : TypeVect(VectorX, elem_bt, length) {}
 };
 
 class TypeVectY : public TypeVect {
   friend class TypeVect;
-  TypeVectY(const Type* elem, uint length) : TypeVect(VectorY, elem, length) {}
+  TypeVectY(BasicType elem_bt, uint length) : TypeVect(VectorY, elem_bt, length) {}
 };
 
 class TypeVectZ : public TypeVect {
   friend class TypeVect;
-  TypeVectZ(const Type* elem, uint length) : TypeVect(VectorZ, elem, length) {}
+  TypeVectZ(BasicType elem_bt, uint length) : TypeVect(VectorZ, elem_bt, length) {}
 };
 
 class TypeVectMask : public TypeVect {
 public:
   friend class TypeVect;
-  TypeVectMask(const Type* elem, uint length) : TypeVect(VectorMask, elem, length) {}
-  virtual bool eq(const Type *t) const;
-  virtual const Type *xdual() const;
+  TypeVectMask(BasicType elem_bt, uint length) : TypeVect(VectorMask, elem_bt, length) {}
   static const TypeVectMask* make(const BasicType elem_bt, uint length);
-  static const TypeVectMask* make(const Type* elem, uint length);
+};
+
+// Set of implemented interfaces. Referenced from TypeOopPtr and TypeKlassPtr.
+class TypeInterfaces : public Type {
+private:
+  GrowableArrayFromArray<ciInstanceKlass*> _interfaces;
+  uint _hash;
+  ciInstanceKlass* _exact_klass;
+  DEBUG_ONLY(bool _initialized;)
+
+  void initialize();
+
+  void verify() const NOT_DEBUG_RETURN;
+  void compute_hash();
+  void compute_exact_klass();
+
+  TypeInterfaces(ciInstanceKlass** interfaces_base, int nb_interfaces);
+
+  NONCOPYABLE(TypeInterfaces);
+public:
+  static const TypeInterfaces* make(GrowableArray<ciInstanceKlass*>* interfaces = nullptr);
+  bool eq(const Type* other) const;
+  bool eq(ciInstanceKlass* k) const;
+  uint hash() const;
+  const Type *xdual() const;
+  void dump(outputStream* st) const;
+  const TypeInterfaces* union_with(const TypeInterfaces* other) const;
+  const TypeInterfaces* intersection_with(const TypeInterfaces* other) const;
+  bool contains(const TypeInterfaces* other) const {
+    return intersection_with(other)->eq(other);
+  }
+  bool empty() const { return _interfaces.length() == 0; }
+
+  ciInstanceKlass* exact_klass() const;
+  void verify_is_loaded() const NOT_DEBUG_RETURN;
+
+  static int compare(ciInstanceKlass* const& k1, ciInstanceKlass* const& k2);
+  static int compare(ciInstanceKlass** k1, ciInstanceKlass** k2);
+
+  const Type* xmeet(const Type* t) const;
+
+  bool singleton(void) const;
+  bool has_non_array_interface() const;
 };
 
 //------------------------------TypePtr----------------------------------------
@@ -881,47 +955,7 @@ class TypePtr : public Type {
   friend class TypeNarrowPtr;
   friend class Type;
 protected:
-  class InterfaceSet {
-  private:
-    GrowableArray<ciKlass*> _list;
-    uint _hash;
-    ciKlass* _exact_klass;
-    DEBUG_ONLY(bool _initialized;)
-
-    void initialize();
-    void raw_add(ciKlass* interface);
-    void add(ciKlass* interface);
-    void verify() const NOT_DEBUG_RETURN;
-    void compute_hash();
-    void compute_exact_klass();
-  public:
-    InterfaceSet();
-    InterfaceSet(GrowableArray<ciInstanceKlass*>* interfaces);
-    bool eq(const InterfaceSet& other) const;
-    bool eq(ciInstanceKlass* k) const;
-    uint hash() const;
-    void dump(outputStream* st) const;
-    InterfaceSet union_with(const InterfaceSet& other) const;
-    InterfaceSet intersection_with(const InterfaceSet& other) const;
-    bool contains(const InterfaceSet& other) const {
-      return intersection_with(other).eq(other);
-    }
-    bool empty() const { return _list.length() == 0; }
-
-    inline void* operator new(size_t x) throw() {
-      Compile* compile = Compile::current();
-      return compile->type_arena()->AmallocWords(x);
-    }
-    inline void operator delete(void* ptr) {
-      ShouldNotReachHere();
-    }
-    ciKlass* exact_klass() const;
-    void verify_is_loaded() const NOT_DEBUG_RETURN;
-
-    static int compare(ciKlass* const& k1, ciKlass* const& k2);
-  };
-
-  static InterfaceSet interfaces(ciKlass*& k, bool klass, bool interface, bool array, InterfaceHandling interface_handling);
+  static const TypeInterfaces* interfaces(ciKlass*& k, bool klass, bool interface, bool array, InterfaceHandling interface_handling);
 
 public:
   enum PTR { TopPTR, AnyNull, Constant, Null, NotNull, BotPTR, lastPTR };
@@ -981,7 +1015,7 @@ protected:
     NOT_SUBTYPE,
     LCA
   };
-  template<class T> static TypePtr::MeetResult meet_instptr(PTR& ptr, InterfaceSet& interfaces, const T* this_type,
+  template<class T> static TypePtr::MeetResult meet_instptr(PTR& ptr, const TypeInterfaces*& interfaces, const T* this_type,
                                                             const T* other_type, ciKlass*& res_klass, bool& res_xk);
 
   template<class T> static MeetResult meet_aryptr(PTR& ptr, const Type*& elem, const T* this_ary, const T* other_ary,
@@ -999,8 +1033,8 @@ public:
   const int _offset;            // Offset into oop, with TOP & BOT
   const PTR _ptr;               // Pointer equivalence class
 
-  const int offset() const { return _offset; }
-  const PTR ptr()    const { return _ptr; }
+  int offset() const { return _offset; }
+  PTR ptr()    const { return _ptr; }
 
   static const TypePtr *make(TYPES t, PTR ptr, int offset,
                              const TypePtr* speculative = nullptr,
@@ -1103,8 +1137,8 @@ class TypeOopPtr : public TypePtr {
   friend class TypeInstPtr;
   friend class TypeAryPtr;
 protected:
- TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const InterfaceSet& interfaces, bool xk, ciObject* o, int offset, int instance_id,
-             const TypePtr* speculative, int inline_depth);
+ TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const TypeInterfaces* interfaces, bool xk, ciObject* o, int offset, int instance_id,
+            const TypePtr* speculative, int inline_depth);
 public:
   virtual bool eq( const Type *t ) const;
   virtual uint hash() const;             // Type specific hashing
@@ -1120,7 +1154,7 @@ protected:
   // If _klass is null, then so is _sig.  This is an unloaded klass.
   ciKlass*      _klass;       // Klass object
 
-  const InterfaceSet _interfaces;
+  const TypeInterfaces* _interfaces;
 
   // Does the type exclude subclasses of the klass?  (Inexact == polymorphic.)
   bool          _klass_is_exact;
@@ -1138,7 +1172,7 @@ protected:
   int dual_instance_id() const;
   int meet_instance_id(int uid) const;
 
-  InterfaceSet meet_interfaces(const TypeOopPtr* other) const;
+  const TypeInterfaces* meet_interfaces(const TypeOopPtr* other) const;
 
   // Do not allow interface-vs.-noninterface joins to collapse to top.
   virtual const Type *filter_helper(const Type *kills, bool include_speculative) const;
@@ -1252,7 +1286,7 @@ private:
     ShouldNotReachHere(); return false;
   }
 
-  virtual const InterfaceSet interfaces() const {
+  virtual const TypeInterfaces* interfaces() const {
     return _interfaces;
   };
 
@@ -1273,7 +1307,7 @@ private:
 // Class of Java object pointers, pointing either to non-array Java instances
 // or to a Klass* (including array klasses).
 class TypeInstPtr : public TypeOopPtr {
-  TypeInstPtr(PTR ptr, ciKlass* k, const InterfaceSet& interfaces, bool xk, ciObject* o, int offset, int instance_id,
+  TypeInstPtr(PTR ptr, ciKlass* k, const TypeInterfaces* interfaces, bool xk, ciObject* o, int off, int instance_id,
               const TypePtr* speculative, int inline_depth);
   virtual bool eq( const Type *t ) const;
   virtual uint hash() const;             // Type specific hashing
@@ -1295,41 +1329,41 @@ public:
   // Make a pointer to a constant oop.
   static const TypeInstPtr *make(ciObject* o) {
     ciKlass* k = o->klass();
-    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(k, true, false, false, ignore_interfaces);
+    const TypeInterfaces* interfaces = TypePtr::interfaces(k, true, false, false, ignore_interfaces);
     return make(TypePtr::Constant, k, interfaces, true, o, 0, InstanceBot);
   }
   // Make a pointer to a constant oop with offset.
   static const TypeInstPtr *make(ciObject* o, int offset) {
     ciKlass* k = o->klass();
-    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(k, true, false, false, ignore_interfaces);
+    const TypeInterfaces* interfaces = TypePtr::interfaces(k, true, false, false, ignore_interfaces);
     return make(TypePtr::Constant, k, interfaces, true, o, offset, InstanceBot);
   }
 
   // Make a pointer to some value of type klass.
   static const TypeInstPtr *make(PTR ptr, ciKlass* klass, InterfaceHandling interface_handling = ignore_interfaces) {
-    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(klass, true, true, false, interface_handling);
+    const TypeInterfaces* interfaces = TypePtr::interfaces(klass, true, true, false, interface_handling);
     return make(ptr, klass, interfaces, false, nullptr, 0, InstanceBot);
   }
 
   // Make a pointer to some non-polymorphic value of exactly type klass.
   static const TypeInstPtr *make_exact(PTR ptr, ciKlass* klass) {
-    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(klass, true, false, false, ignore_interfaces);
+    const TypeInterfaces* interfaces = TypePtr::interfaces(klass, true, false, false, ignore_interfaces);
     return make(ptr, klass, interfaces, true, nullptr, 0, InstanceBot);
   }
 
   // Make a pointer to some value of type klass with offset.
   static const TypeInstPtr *make(PTR ptr, ciKlass* klass, int offset) {
-    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(klass, true, false, false, ignore_interfaces);
+    const TypeInterfaces* interfaces = TypePtr::interfaces(klass, true, false, false, ignore_interfaces);
     return make(ptr, klass, interfaces, false, nullptr, offset, InstanceBot);
   }
 
-  static const TypeInstPtr *make(PTR ptr, ciKlass* k, const InterfaceSet& interfaces, bool xk, ciObject* o, int offset,
+  static const TypeInstPtr *make(PTR ptr, ciKlass* k, const TypeInterfaces* interfaces, bool xk, ciObject* o, int offset,
                                  int instance_id = InstanceBot,
                                  const TypePtr* speculative = nullptr,
                                  int inline_depth = InlineDepthBottom);
 
   static const TypeInstPtr *make(PTR ptr, ciKlass* k, bool xk, ciObject* o, int offset, int instance_id = InstanceBot) {
-    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(k, true, false, false, ignore_interfaces);
+    const TypeInterfaces* interfaces = TypePtr::interfaces(k, true, false, false, ignore_interfaces);
     return make(ptr, k, interfaces, xk, o, offset, instance_id);
   }
 
@@ -1352,12 +1386,13 @@ public:
 
   // Speculative type helper methods.
   virtual const TypeInstPtr* remove_speculative() const;
+  const TypeInstPtr* with_speculative(const TypePtr* speculative) const;
   virtual const TypePtr* with_inline_depth(int depth) const;
   virtual const TypePtr* with_instance_id(int instance_id) const;
 
   // the core of the computation of the meet of 2 types
   virtual const Type *xmeet_helper(const Type *t) const;
-  virtual const TypeInstPtr *xmeet_unloaded(const TypeInstPtr *t, const InterfaceSet& interfaces) const;
+  virtual const TypeInstPtr *xmeet_unloaded(const TypeInstPtr *tinst, const TypeInterfaces* interfaces) const;
   virtual const Type *xdual() const;    // Compute dual right now.
 
   const TypeKlassPtr* as_klass_type(bool try_for_exact = false) const;
@@ -1376,7 +1411,7 @@ private:
   virtual bool is_meet_subtype_of_helper(const TypeOopPtr* other, bool this_xk, bool other_xk) const;
 
   virtual bool is_meet_same_type_as(const TypePtr* other) const {
-    return _klass->equals(other->is_instptr()->_klass) && _interfaces.eq(other->is_instptr()->_interfaces);
+    return _klass->equals(other->is_instptr()->_klass) && _interfaces->eq(other->is_instptr()->_interfaces);
   }
 
 };
@@ -1386,11 +1421,12 @@ private:
 class TypeAryPtr : public TypeOopPtr {
   friend class Type;
   friend class TypePtr;
+  friend class TypeInterfaces;
 
   TypeAryPtr( PTR ptr, ciObject* o, const TypeAry *ary, ciKlass* k, bool xk,
               int offset, int instance_id, bool is_autobox_cache,
               const TypePtr* speculative, int inline_depth)
-    : TypeOopPtr(AryPtr,ptr,k,*_array_interfaces,xk,o,offset, instance_id, speculative, inline_depth),
+    : TypeOopPtr(AryPtr,ptr,k,_array_interfaces,xk,o,offset, instance_id, speculative, inline_depth),
     _ary(ary),
     _is_autobox_cache(is_autobox_cache)
  {
@@ -1409,11 +1445,11 @@ class TypeAryPtr : public TypeOopPtr {
   const TypeAry *_ary;          // Array we point into
   const bool     _is_autobox_cache;
 
-  ciKlass* compute_klass(DEBUG_ONLY(bool verify = false)) const;
+  ciKlass* compute_klass() const;
 
   // A pointer to delay allocation to Type::Initialize_shared()
 
-  static const InterfaceSet* _array_interfaces;
+  static const TypeInterfaces* _array_interfaces;
   ciKlass* exact_klass_helper() const;
   // Only guaranteed non null for array of basic types
   ciKlass* klass() const;
@@ -1480,16 +1516,17 @@ public:
   virtual const TypeKlassPtr* as_klass_type(bool try_for_exact = false) const;
 
   // Convenience common pre-built types.
-  static const TypeAryPtr *RANGE;
-  static const TypeAryPtr *OOPS;
-  static const TypeAryPtr *NARROWOOPS;
-  static const TypeAryPtr *BYTES;
-  static const TypeAryPtr *SHORTS;
-  static const TypeAryPtr *CHARS;
-  static const TypeAryPtr *INTS;
-  static const TypeAryPtr *LONGS;
-  static const TypeAryPtr *FLOATS;
-  static const TypeAryPtr *DOUBLES;
+  static const TypeAryPtr* BOTTOM;
+  static const TypeAryPtr* RANGE;
+  static const TypeAryPtr* OOPS;
+  static const TypeAryPtr* NARROWOOPS;
+  static const TypeAryPtr* BYTES;
+  static const TypeAryPtr* SHORTS;
+  static const TypeAryPtr* CHARS;
+  static const TypeAryPtr* INTS;
+  static const TypeAryPtr* LONGS;
+  static const TypeAryPtr* FLOATS;
+  static const TypeAryPtr* DOUBLES;
   // selects one of the above:
   static const TypeAryPtr *get_array_body_type(BasicType elem) {
     assert((uint)elem <= T_CONFLICT && _array_body_type[elem] != nullptr, "bad elem type");
@@ -1551,7 +1588,7 @@ class TypeKlassPtr : public TypePtr {
   friend class TypeAryKlassPtr;
   friend class TypePtr;
 protected:
-  TypeKlassPtr(TYPES t, PTR ptr, ciKlass* klass, const InterfaceSet& interfaces, int offset);
+  TypeKlassPtr(TYPES t, PTR ptr, ciKlass* klass, const TypeInterfaces* interfaces, int offset);
 
   virtual const Type *filter_helper(const Type *kills, bool include_speculative) const;
 
@@ -1563,8 +1600,8 @@ public:
 protected:
 
   ciKlass* _klass;
-  const InterfaceSet _interfaces;
-  InterfaceSet meet_interfaces(const TypeKlassPtr* other) const;
+  const TypeInterfaces* _interfaces;
+  const TypeInterfaces* meet_interfaces(const TypeKlassPtr* other) const;
   virtual bool must_be_exact() const { ShouldNotReachHere(); return false; }
   virtual ciKlass* exact_klass_helper() const;
   virtual ciKlass* klass() const { return  _klass; }
@@ -1623,7 +1660,7 @@ private:
     ShouldNotReachHere(); return false;
   }
 
-  virtual const InterfaceSet interfaces() const {
+  virtual const TypeInterfaces* interfaces() const {
     return _interfaces;
   };
 
@@ -1643,7 +1680,7 @@ private:
 // Instance klass pointer, mirrors TypeInstPtr
 class TypeInstKlassPtr : public TypeKlassPtr {
 
-  TypeInstKlassPtr(PTR ptr, ciKlass* klass, const InterfaceSet& interfaces, int offset)
+  TypeInstKlassPtr(PTR ptr, ciKlass* klass, const TypeInterfaces* interfaces, int offset)
     : TypeKlassPtr(InstKlassPtr, ptr, klass, interfaces, offset) {
     assert(klass->is_instance_klass() && (!klass->is_loaded() || !klass->is_interface()), "");
   }
@@ -1657,18 +1694,20 @@ public:
     return klass()->as_instance_klass();
   }
 
+  bool might_be_an_array() const;
+
   bool is_same_java_type_as_helper(const TypeKlassPtr* other) const;
   bool is_java_subtype_of_helper(const TypeKlassPtr* other, bool this_exact, bool other_exact) const;
   bool maybe_java_subtype_of_helper(const TypeKlassPtr* other, bool this_exact, bool other_exact) const;
 
   static const TypeInstKlassPtr *make(ciKlass* k, InterfaceHandling interface_handling) {
-    InterfaceSet interfaces = TypePtr::interfaces(k, true, true, false, interface_handling);
+    const TypeInterfaces* interfaces = TypePtr::interfaces(k, true, true, false, interface_handling);
     return make(TypePtr::Constant, k, interfaces, 0);
   }
-  static const TypeInstKlassPtr* make(PTR ptr, ciKlass* k, const InterfaceSet& interfaces, int offset);
+  static const TypeInstKlassPtr* make(PTR ptr, ciKlass* k, const TypeInterfaces* interfaces, int offset);
 
   static const TypeInstKlassPtr* make(PTR ptr, ciKlass* k, int offset) {
-    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(k, true, false, false, ignore_interfaces);
+    const TypeInterfaces* interfaces = TypePtr::interfaces(k, true, false, false, ignore_interfaces);
     return make(ptr, k, interfaces, offset);
   }
 
@@ -1703,9 +1742,9 @@ class TypeAryKlassPtr : public TypeKlassPtr {
 
   const Type *_elem;
 
-  static const InterfaceSet* _array_interfaces;
+  static const TypeInterfaces* _array_interfaces;
   TypeAryKlassPtr(PTR ptr, const Type *elem, ciKlass* klass, int offset)
-    : TypeKlassPtr(AryKlassPtr, ptr, klass, *_array_interfaces, offset), _elem(elem) {
+    : TypeKlassPtr(AryKlassPtr, ptr, klass, _array_interfaces, offset), _elem(elem) {
     assert(klass == nullptr || klass->is_type_array_klass() || !klass->as_obj_array_klass()->base_element_klass()->is_interface(), "");
   }
 
@@ -1949,6 +1988,11 @@ inline float Type::getf() const {
   return ((TypeF*)this)->_f;
 }
 
+inline short Type::geth() const {
+  assert(_base == HalfFloatCon, "Not a HalfFloatCon");
+  return ((TypeH*)this)->_f;
+}
+
 inline double Type::getd() const {
   assert( _base == DoubleCon, "Not a DoubleCon" );
   return ((TypeD*)this)->_d;
@@ -1979,6 +2023,21 @@ inline const TypeLong *Type::is_long() const {
 
 inline const TypeLong *Type::isa_long() const {
   return ( _base == Long ? (TypeLong*)this : nullptr);
+}
+
+inline const TypeH* Type::isa_half_float() const {
+  return ((_base == HalfFloatTop ||
+           _base == HalfFloatCon ||
+           _base == HalfFloatBot) ? (TypeH*)this : nullptr);
+}
+
+inline const TypeH* Type::is_half_float_constant() const {
+  assert( _base == HalfFloatCon, "Not a HalfFloat" );
+  return (TypeH*)this;
+}
+
+inline const TypeH* Type::isa_half_float_constant() const {
+  return (_base == HalfFloatCon ? (TypeH*)this : nullptr);
 }
 
 inline const TypeF *Type::isa_float() const {
@@ -2170,12 +2229,22 @@ inline const TypeNarrowKlass* Type::make_narrowklass() const {
 }
 
 inline bool Type::is_floatingpoint() const {
-  if( (_base == FloatCon)  || (_base == FloatBot) ||
+  if( (_base == HalfFloatCon)  || (_base == HalfFloatBot) ||
+      (_base == FloatCon)  || (_base == FloatBot) ||
       (_base == DoubleCon) || (_base == DoubleBot) )
     return true;
   return false;
 }
 
+template <>
+inline const TypeInt* Type::cast<TypeInt>() const {
+  return is_int();
+}
+
+template <>
+inline const TypeLong* Type::cast<TypeLong>() const {
+  return is_long();
+}
 
 // ===============================================================
 // Things that need to be 64-bits in the 64-bit build but

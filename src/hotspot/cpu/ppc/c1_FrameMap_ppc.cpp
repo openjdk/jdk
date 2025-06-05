@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_FrameMap.hpp"
 #include "c1/c1_LIR.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -190,7 +189,7 @@ LIR_Opr FrameMap::_caller_save_fpu_regs[] = {};
 
 FloatRegister FrameMap::nr2floatreg (int rnr) {
   assert(_init_done, "tables not initialized");
-  debug_only(fpu_range_check(rnr);)
+  DEBUG_ONLY(fpu_range_check(rnr);)
   return _fpu_regs[rnr];
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package javax.lang.model.util;
 import javax.lang.model.element.*;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.ElementVisitor;
 import static javax.lang.model.SourceVersion.*;
 
 /**
@@ -50,8 +49,8 @@ import static javax.lang.model.SourceVersion.*;
  * @param <P> the type of the additional parameter to this visitor's methods.  Use {@code Void}
  *              for visitors that do not need an additional parameter.
  *
- * @see <a href="SimpleElementVisitor6.html#note_for_subclasses">
- * <strong>Compatibility note for subclasses</strong></a>
+ * @see SimpleElementVisitor6##note_for_subclasses
+ * <strong>Compatibility note for subclasses</strong>
  * @see SimpleElementVisitor6
  * @see SimpleElementVisitor8
  * @see SimpleElementVisitor9

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,22 +28,21 @@
  * @library /tools/lib /tools/javac/lib ../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
  * @run main InnerClassesIndexTest
  */
 
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.ClassEntry;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.InnerClasses_attribute;
-import com.sun.tools.classfile.InnerClasses_attribute.Info;
 
 public class InnerClassesIndexTest extends TestResult {
 
@@ -58,7 +57,7 @@ public class InnerClassesIndexTest extends TestResult {
 
     private Set<String> getInnerClasses() {
         FilenameFilter filter = (dir, name) -> name.matches("InnerClassesIndexTest\\$.*\\.class");
-        return Stream.of(getClassDir().listFiles(filter))
+        return Arrays.stream(Objects.requireNonNull(getClassDir().listFiles(filter)))
                 .map(File::getName)
                 .map(s -> s.replace(".class", ""))
                 .collect(Collectors.toSet());
@@ -67,24 +66,24 @@ public class InnerClassesIndexTest extends TestResult {
     public void test() throws TestFailedException {
         try {
             addTestCase("Source is InnerClassesIndexTest.java");
-            ClassFile classFile = readClassFile(InnerClassesIndexTest.class);
-            InnerClasses_attribute attr = (InnerClasses_attribute)
-                    classFile.getAttribute(Attribute.InnerClasses);
+            ClassModel classFile = readClassFile(InnerClassesIndexTest.class);
+            InnerClassesAttribute attr = classFile.findAttribute(Attributes.innerClasses()).orElse(null);
 
             Set<String> foundClasses = new HashSet<>();
-            for (Info info : attr.classes) {
-                String innerName = classFile.constant_pool.
-                        getClassInfo(info.inner_class_info_index).getBaseName();
+            assert attr != null;
+            for (InnerClassInfo info : attr.classes()) {
+                String innerName = info.innerClass().asInternalName();
                 echo("Testing class : " + innerName);
                 if (isExcluded(innerName)) {
                     echo("Ignored : " + innerName);
                     continue;
                 }
                 foundClasses.add(innerName);
-                checkEquals(info.outer_class_info_index, 0,
+                ClassEntry out = info.outerClass().orElse(null);
+                checkEquals(out == null? 0: out.index(), 0,
                         "outer_class_info_index of " + innerName);
                 if (innerName.matches("\\$\\d+")) {
-                    checkEquals(info.inner_name_index, 0,
+                    checkEquals(Objects.requireNonNull(info.innerName().orElse(null)).index(), 0,
                             "inner_name_index of anonymous class");
                 }
             }

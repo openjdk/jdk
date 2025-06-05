@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -25,17 +23,11 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.impl
- *          java.base/jdk.internal.classfile.impl.verifier
- *          java.base/jdk.internal.classfile.components
+ * @modules java.base/jdk.internal.classfile.impl
  *          java.base/java.util:open
  * @comment Opens java.util so HashMap bytecode generation can access its nested
  *          classes with a proper Lookup object
- * @summary Testing Classfile class hierarchy resolution SPI.
+ * @summary Testing ClassFile class hierarchy resolution SPI.
  * @run junit ClassHierarchyInfoTest
  */
 import java.io.IOException;
@@ -49,11 +41,11 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import jdk.internal.classfile.ClassHierarchyResolver;
+import java.lang.classfile.ClassHierarchyResolver;
 
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.MethodModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.MethodModel;
 import jdk.internal.classfile.impl.Util;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -128,13 +120,13 @@ class ClassHierarchyInfoTest {
 
     void transformAndVerifySingle(ClassHierarchyResolver res) throws Exception {
         Path path = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util/HashMap.class");
-        var classModel = Classfile.parse(path, Classfile.Option.classHierarchyResolver(res));
-        byte[] newBytes = classModel.transform(
+        var classModel = ClassFile.of().parse(path);
+        byte[] newBytes = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(res)).transformClass(classModel,
                 (clb, cle) -> {
                     if (cle instanceof MethodModel mm) {
                         clb.transformMethod(mm, (mb, me) -> {
                             if (me instanceof CodeModel cm) {
-                                mb.withCode(cob -> cm.forEachElement(cob));
+                                mb.withCode(cm::forEach);
                             }
                             else
                                 mb.with(me);
@@ -143,7 +135,7 @@ class ClassHierarchyInfoTest {
                     else
                         clb.with(cle);
                 });
-        var errors = Classfile.parse(newBytes).verify(null);
+        var errors = ClassFile.of().verify(newBytes);
         if (!errors.isEmpty()) {
             var itr = errors.iterator();
             var thrown = itr.next();

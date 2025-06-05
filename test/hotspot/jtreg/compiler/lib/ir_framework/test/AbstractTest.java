@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,15 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
+import compiler.lib.ir_framework.shared.TestFrameworkSocket;
+
 /**
  * Abstract super class for base, checked and custom run tests.
  */
 abstract class AbstractTest {
     protected static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
-    protected static final int TEST_COMPILATION_TIMEOUT = Integer.parseInt(System.getProperty("TestCompilationTimeout", "10000"));
-    protected static final int WAIT_FOR_COMPILATION_TIMEOUT = Integer.parseInt(System.getProperty("WaitForCompilationTimeout", "10000"));
+    protected static final int TEST_COMPILATION_TIMEOUT_MS = Integer.parseInt(System.getProperty("TestCompilationTimeout", "10")) * 1000;
+    protected static final int WAIT_FOR_COMPILATION_TIMEOUT_MS = Integer.parseInt(System.getProperty("WaitForCompilationTimeout", "10")) * 1000;
     protected static final boolean VERIFY_OOPS = (Boolean)WHITE_BOX.getVMFlag("VerifyOops");
 
     protected final int warmupIterations;
@@ -94,7 +96,6 @@ abstract class AbstractTest {
         if (skip) {
             return;
         }
-        onStart();
         for (int i = 0; i < warmupIterations; i++) {
             invokeTest();
         }
@@ -104,17 +105,27 @@ abstract class AbstractTest {
         invokeTest();
     }
 
-    protected void onStart() {
-        // Do nothing by default.
-    }
-
     abstract protected void invokeTest();
 
     abstract protected void onWarmupFinished();
 
     abstract protected void compileTest();
 
+    private class MethodNotCompilableException extends Exception {}
+
     protected void compileMethod(DeclaredTest test) {
+        try {
+            tryCompileMethod(test);
+        } catch (MethodNotCompilableException e) {
+            final Method testMethod = test.getTestMethod();
+            TestFrameworkSocket.write("Method not compilable: " + testMethod, TestFrameworkSocket.NOT_COMPILABLE_TAG, true);
+            TestRun.check(test.isAllowNotCompilable(),
+                          "Method " + testMethod + " not compilable (anymore) at level " + test.getCompLevel() +
+                          ". Most likely, this is not expected, but if it is, you can use 'allowNotCompilable'.");
+        }
+    }
+
+    private void tryCompileMethod(DeclaredTest test) throws MethodNotCompilableException {
         final Method testMethod = test.getTestMethod();
         if (TestFramework.VERBOSE) {
             System.out.println("Compile method " + testMethod + " after warm-up...");
@@ -149,17 +160,18 @@ abstract class AbstractTest {
                 break;
             }
             elapsed = System.currentTimeMillis() - started;
-        } while (elapsed < TEST_COMPILATION_TIMEOUT);
-        TestRun.check(elapsed < TEST_COMPILATION_TIMEOUT,
+        } while (elapsed < TEST_COMPILATION_TIMEOUT_MS);
+        TestRun.check(elapsed < TEST_COMPILATION_TIMEOUT_MS,
                       "Could not compile " + testMethod + " at level " + test.getCompLevel() + " after "
-                      + TEST_COMPILATION_TIMEOUT/1000 + "s. Last compilation level: " + lastCompilationLevel);
+                      + TEST_COMPILATION_TIMEOUT_MS/1000 + "s. Last compilation level: " + lastCompilationLevel);
         checkCompilationLevel(test);
     }
 
-    private void enqueueMethodForCompilation(DeclaredTest test) {
+    private void enqueueMethodForCompilation(DeclaredTest test) throws MethodNotCompilableException {
         final Method testMethod = test.getTestMethod();
-        TestRun.check(WHITE_BOX.isMethodCompilable(testMethod, test.getCompLevel().getValue(), false),
-                      "Method " + testMethod + " not compilable (anymore) at level " + test.getCompLevel());
+        if (!WHITE_BOX.isMethodCompilable(testMethod, test.getCompLevel().getValue(), false)) {
+            throw new MethodNotCompilableException();
+        }
         TestVM.enqueueForCompilation(testMethod, test.getCompLevel());
     }
 
@@ -194,9 +206,9 @@ abstract class AbstractTest {
                 // Don't wait for compilation if -Xcomp is enabled or if we are randomly excluding methods from compilation.
                 return;
             }
-        } while (elapsed < WAIT_FOR_COMPILATION_TIMEOUT);
+        } while (elapsed < WAIT_FOR_COMPILATION_TIMEOUT_MS);
         throw new TestRunException(testMethod + " not compiled after waiting for "
-                                   + WAIT_FOR_COMPILATION_TIMEOUT/1000 + " s");
+                                   + WAIT_FOR_COMPILATION_TIMEOUT_MS/1000 + " s");
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ package sun.util.locale.provider;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
+import java.text.ListFormat;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
@@ -61,7 +62,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import sun.security.action.GetPropertyAction;
+import jdk.internal.util.StaticProperty;
 import sun.util.resources.LocaleData;
 import sun.util.resources.OpenListResourceBundle;
 import sun.util.resources.ParallelListResourceBundle;
@@ -98,6 +99,7 @@ public class LocaleResources {
     private static final String DATE_TIME_PATTERN = "DTP.";
     private static final String RULES_CACHEKEY = "RULE";
     private static final String SKELETON_PATTERN = "SP.";
+    private static final String LIST_PATTERN = "LP.";
 
     // ResourceBundle key names for skeletons
     private static final String SKELETON_INPUT_REGIONS_KEY = "DateFormatItemInputRegions";
@@ -287,6 +289,16 @@ public class LocaleResources {
     }
 
     public String getLocaleName(String key) {
+        // Get names for old ISO codes with new ISO code resources
+        if (StaticProperty.javaLocaleUseOldISOCodes().equalsIgnoreCase("true")) {
+            key = switch (key) {
+                case "iw" -> "he";
+                case "in" -> "id";
+                case "ji" -> "yi";
+                default -> key;
+            };
+        }
+
         Object localeName = null;
         String cacheKey = LOCALE_NAMES + key;
 
@@ -831,6 +843,47 @@ public class LocaleResources {
         return rules;
     }
 
+    /**
+     * {@return the list patterns for the locale}
+     *
+     * @param type a {@link ListFormat.Type}
+     * @param style a {@link ListFormat.Style}
+     */
+    public String[] getListPatterns(ListFormat.Type type, ListFormat.Style style) {
+        String typeStr = type.toString().toLowerCase(Locale.ROOT);
+        String styleStr = style.toString().toLowerCase(Locale.ROOT);
+        String[] lpArray;
+        String cacheKey = LIST_PATTERN + typeStr + styleStr;
+
+        removeEmptyReferences();
+        ResourceReference data = cache.get(cacheKey);
+
+        if (data == null || ((lpArray = (String[]) data.get()) == null)) {
+            var rbKey = "ListPatterns_" + typeStr + (style == ListFormat.Style.FULL ? "" : "-" + styleStr);
+            lpArray = localeData.getDateFormatData(locale).getStringArray(rbKey);
+
+            if (lpArray[0].isEmpty() || lpArray[1].isEmpty() || lpArray[2].isEmpty()) {
+                if (LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR)
+                        instanceof ResourceBundleBasedAdapter rbba) {
+                    var candList = rbba.getCandidateLocales("", locale);
+                    if (!candList.isEmpty()) {
+                        for (var p : candList.subList(1, candList.size())) {
+                            var parentPatterns = localeData.getDateFormatData(p).getStringArray(rbKey);
+                            for (int i = 0; i < 3; i++) { // exclude optional ones, ie, "two"/"three"
+                                if (lpArray[i].isEmpty()) {
+                                    lpArray[i] = parentPatterns[i];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            cache.put(cacheKey, new ResourceReference(cacheKey, lpArray, referenceQueue));
+        }
+
+        return lpArray;
+    }
+
     private static class ResourceReference extends SoftReference<Object> {
         private final String cacheKey;
 
@@ -845,7 +898,7 @@ public class LocaleResources {
     }
 
     private static final boolean TRACE_ON = Boolean.parseBoolean(
-        GetPropertyAction.privilegedGetProperty("locale.resources.debug", "false"));
+        System.getProperty("locale.resources.debug", "false"));
 
     public static void trace(String format, Object... params) {
         if (TRACE_ON) {

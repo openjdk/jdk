@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,8 @@ public class JdkQualifiedExportTest {
                "jdk.internal.vm.ci/jdk.vm.ci.hotspot",
                "jdk.internal.vm.ci/jdk.vm.ci.meta",
                "jdk.internal.vm.ci/jdk.vm.ci.code",
-               "java.base/jdk.internal.javac");
+               "java.base/jdk.internal.javac",
+               "java.base/jdk.internal.misc");
 
     static void checkExports(ModuleDescriptor md) {
         // build a map of upgradeable module to Exports that are qualified to it

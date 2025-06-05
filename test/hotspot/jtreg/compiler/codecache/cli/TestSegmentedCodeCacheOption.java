@@ -25,6 +25,7 @@
  * @test
  * @bug 8015774
  * @summary Verify SegmentedCodeCache option's processing
+ * @requires vm.flagless
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.compiler

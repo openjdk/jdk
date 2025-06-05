@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ import jdk.dynalink.linker.support.TypeUtilities;
  * these conversions, will cause more ambiguity for {@link BeansLinker} in
  * selecting the correct overload when trying to link to an overloaded Java
  * method.
+ * @since 9
  */
 public interface GuardingTypeConverterFactory {
     /**
@@ -114,11 +115,7 @@ public interface GuardingTypeConverterFactory {
      * it will return the public lookup. A typical case where the lookup might
      * be needed is when the converter creates a Java adapter class on the fly
      * (e.g. to convert some object from the dynamic language into a Java
-     * interface for interoperability). Invoking the {@link Supplier#get()}
-     * method on the passed supplier will be subject to the same security checks
-     * as {@link SecureLookupSupplier#getLookup()}. An implementation should avoid
-     * retrieving the lookup if it is not needed so as to avoid the expense of
-     * {@code AccessController.doPrivileged} call.
+     * interface for interoperability).
      * @return a guarded invocation that can take an object (if it passes guard)
      * and return another object that is its representation coerced into the
      * target type. In case the factory is certain it is unable to handle a

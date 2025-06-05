@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -32,6 +31,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/signature.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 
 // Static initialization
 const u2 ConstMethod::MAX_IDNUM   = 0xFFFE;
@@ -383,7 +383,7 @@ AnnotationArray** ConstMethod::default_annotations_addr() const {
   return (AnnotationArray**)constMethod_end() - offset;
 }
 
-Array<u1>* copy_annotations(ClassLoaderData* loader_data, AnnotationArray* from, TRAPS) {
+static Array<u1>* copy_annotations(ClassLoaderData* loader_data, AnnotationArray* from, TRAPS) {
   int length = from->length();
   Array<u1>* a = MetadataFactory::new_array<u1>(loader_data, length, 0, CHECK_NULL);
   memcpy((void*)a->adr_at(0), (void*)from->adr_at(0), length);
@@ -417,7 +417,7 @@ void ConstMethod::copy_annotations_from(ClassLoaderData* loader_data, ConstMetho
 }
 
 void ConstMethod::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(ConstMethod): %p", this);
+  log_trace(aot)("Iter(ConstMethod): %p", this);
 
   if (!method()->method_holder()->is_rewritten()) {
     it->push(&_constants, MetaspaceClosure::_writable);

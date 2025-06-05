@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -82,8 +81,8 @@ LockFreeStackTestBasics::LockFreeStackTestBasics() : stack() {
 void LockFreeStackTestBasics::initialize() {
   ASSERT_TRUE(stack.empty());
   ASSERT_EQ(0u, stack.length());
-  ASSERT_TRUE(stack.pop() == NULL);
-  ASSERT_TRUE(stack.top() == NULL);
+  ASSERT_TRUE(stack.pop() == nullptr);
+  ASSERT_TRUE(stack.top() == nullptr);
 
   for (size_t id = 0; id < nelements; ++id) {
     ASSERT_EQ(id, stack.length());
@@ -101,48 +100,48 @@ TEST_F(LockFreeStackTestBasics, push_pop) {
     ASSERT_EQ(i, stack.length());
     --i;
     Element* e = stack.pop();
-    ASSERT_TRUE(e != NULL);
+    ASSERT_TRUE(e != nullptr);
     ASSERT_EQ(&elements[i], e);
     ASSERT_EQ(i, e->id());
   }
   ASSERT_TRUE(stack.empty());
   ASSERT_EQ(0u, stack.length());
-  ASSERT_TRUE(stack.pop() == NULL);
+  ASSERT_TRUE(stack.pop() == nullptr);
 }
 
 TEST_F(LockFreeStackTestBasics, prepend_one) {
   TestStack other_stack;
   ASSERT_TRUE(other_stack.empty());
-  ASSERT_TRUE(other_stack.pop() == NULL);
+  ASSERT_TRUE(other_stack.pop() == nullptr);
   ASSERT_EQ(0u, other_stack.length());
-  ASSERT_TRUE(other_stack.top() == NULL);
-  ASSERT_TRUE(other_stack.pop() == NULL);
+  ASSERT_TRUE(other_stack.top() == nullptr);
+  ASSERT_TRUE(other_stack.pop() == nullptr);
 
   other_stack.prepend(*stack.pop_all());
   ASSERT_EQ(nelements, other_stack.length());
   ASSERT_TRUE(stack.empty());
   ASSERT_EQ(0u, stack.length());
-  ASSERT_TRUE(stack.pop() == NULL);
-  ASSERT_TRUE(stack.top() == NULL);
+  ASSERT_TRUE(stack.pop() == nullptr);
+  ASSERT_TRUE(stack.top() == nullptr);
 
   for (size_t i = nelements; i > 0; ) {
     ASSERT_EQ(i, other_stack.length());
     --i;
     Element* e = other_stack.pop();
-    ASSERT_TRUE(e != NULL);
+    ASSERT_TRUE(e != nullptr);
     ASSERT_EQ(&elements[i], e);
     ASSERT_EQ(i, e->id());
   }
   ASSERT_EQ(0u, other_stack.length());
-  ASSERT_TRUE(other_stack.pop() == NULL);
+  ASSERT_TRUE(other_stack.pop() == nullptr);
 }
 
 TEST_F(LockFreeStackTestBasics, prepend_two) {
   TestStack other_stack;
   ASSERT_TRUE(other_stack.empty());
   ASSERT_EQ(0u, other_stack.length());
-  ASSERT_TRUE(other_stack.top() == NULL);
-  ASSERT_TRUE(other_stack.pop() == NULL);
+  ASSERT_TRUE(other_stack.top() == nullptr);
+  ASSERT_TRUE(other_stack.pop() == nullptr);
 
   Element* top = stack.pop_all();
   ASSERT_EQ(top, &elements[nelements - 1]);
@@ -152,17 +151,17 @@ TEST_F(LockFreeStackTestBasics, prepend_two) {
     ASSERT_EQ(i, other_stack.length());
     --i;
     Element* e = other_stack.pop();
-    ASSERT_TRUE(e != NULL);
+    ASSERT_TRUE(e != nullptr);
     ASSERT_EQ(&elements[i], e);
     ASSERT_EQ(i, e->id());
   }
   ASSERT_EQ(0u, other_stack.length());
-  ASSERT_TRUE(other_stack.pop() == NULL);
+  ASSERT_TRUE(other_stack.pop() == nullptr);
 }
 
 TEST_F(LockFreeStackTestBasics, two_stacks) {
   TestStack1 stack1;
-  ASSERT_TRUE(stack1.pop() == NULL);
+  ASSERT_TRUE(stack1.pop() == nullptr);
 
   for (size_t id = 0; id < nelements; ++id) {
     stack1.push(elements[id]);
@@ -172,7 +171,7 @@ TEST_F(LockFreeStackTestBasics, two_stacks) {
   Element* e1 = stack1.top();
   while (true) {
     ASSERT_EQ(e0, e1);
-    if (e0 == NULL) break;
+    if (e0 == nullptr) break;
     e0 = stack.next(*e0);
     e1 = stack1.next(*e1);
   }
@@ -182,12 +181,12 @@ TEST_F(LockFreeStackTestBasics, two_stacks) {
     ASSERT_EQ(i, stack1.length());
     --i;
     Element* e = stack.pop();
-    ASSERT_TRUE(e != NULL);
+    ASSERT_TRUE(e != nullptr);
     ASSERT_EQ(&elements[i], e);
     ASSERT_EQ(i, e->id());
 
     Element* e1 = stack1.pop();
-    ASSERT_TRUE(e1 != NULL);
+    ASSERT_TRUE(e1 != nullptr);
     ASSERT_EQ(&elements[i], e1);
     ASSERT_EQ(i, e1->id());
 
@@ -195,8 +194,8 @@ TEST_F(LockFreeStackTestBasics, two_stacks) {
   }
   ASSERT_EQ(0u, stack.length());
   ASSERT_EQ(0u, stack1.length());
-  ASSERT_TRUE(stack.pop() == NULL);
-  ASSERT_TRUE(stack1.pop() == NULL);
+  ASSERT_TRUE(stack.pop() == nullptr);
+  ASSERT_TRUE(stack1.pop() == nullptr);
 }
 
 class LockFreeStackTestThread : public JavaTestThread {
@@ -229,12 +228,12 @@ public:
     Atomic::release_store_fence(&_ready, true);
     while (true) {
       Element* e = _from->pop();
-      if (e != NULL) {
+      if (e != nullptr) {
         _to->push(*e);
         Atomic::inc(_processed);
         ++_local_processed;
       } else if (Atomic::load_acquire(_processed) == _process_limit) {
-        tty->print_cr("thread %u processed " SIZE_FORMAT, _id, _local_processed);
+        tty->print_cr("thread %u processed %zu", _id, _local_processed);
         return;
       }
     }
@@ -300,7 +299,7 @@ TEST_VM(LockFreeStackTest, stress) {
   ASSERT_EQ(0u, start_stack.length());
   ASSERT_EQ(0u, middle_stack.length());
   ASSERT_EQ(nelements, final_stack.length());
-  while (final_stack.pop() != NULL) {}
+  while (final_stack.pop() != nullptr) {}
 
   FREE_C_HEAP_ARRAY(Element, elements);
 }

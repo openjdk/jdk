@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ class compiledVFrame: public javaVFrame {
 
  public:
   // Constructors
-  compiledVFrame(const frame* fr, const RegisterMap* reg_map, JavaThread* thread, CompiledMethod* nm);
+  compiledVFrame(const frame* fr, const RegisterMap* reg_map, JavaThread* thread, nmethod* nm);
 
   // Update a local in a compiled frame. Update happens when deopt occurs
   void update_local(BasicType type, int index, jvalue value);
@@ -77,7 +77,7 @@ class compiledVFrame: public javaVFrame {
   void update_monitor(int index, MonitorInfo* value);
 
   // Returns the active nmethod
-  CompiledMethod*  code() const;
+  nmethod*  code() const;
 
   // Returns the scopeDesc
   ScopeDesc* scope() const { return _scope; }

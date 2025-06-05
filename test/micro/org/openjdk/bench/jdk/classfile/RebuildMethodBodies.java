@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -31,43 +29,41 @@ import java.nio.file.Files;
 import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.List;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.instruction.*;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.instruction.*;
 import org.openjdk.jmh.annotations.*;
 
 @BenchmarkMode(Mode.Throughput)
 @State(Scope.Benchmark)
-@Fork(value = 1, jvmArgsAppend = {
-        "--add-exports", "java.base/jdk.internal.classfile=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.instruction=ALL-UNNAMED"})
+@Fork(value = 1)
 @Warmup(iterations = 2)
 @Measurement(iterations = 4)
 public class RebuildMethodBodies {
 
-    List<ClassModel> shared, unshared;
-    Iterator<ClassModel> it1, it2;
+    ClassFile shared, unshared;
+    List<ClassModel> models;
+    Iterator<ClassModel> it;
 
     @Setup(Level.Trial)
     public void setup() throws IOException {
-        shared = new ArrayList<>();
-        unshared = new ArrayList<>();
+        shared = ClassFile.of(
+                            ClassFile.ConstantPoolSharingOption.SHARED_POOL,
+                            ClassFile.DebugElementsOption.DROP_DEBUG,
+                            ClassFile.LineNumbersOption.DROP_LINE_NUMBERS);
+        unshared = ClassFile.of(
+                            ClassFile.ConstantPoolSharingOption.NEW_POOL,
+                            ClassFile.DebugElementsOption.DROP_DEBUG,
+                            ClassFile.LineNumbersOption.DROP_LINE_NUMBERS);
+        models = new ArrayList<>();
         Files.walk(FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java")).forEach(p -> {
             if (Files.isRegularFile(p) && p.toString().endsWith(".class")) try {
-                var clm = Classfile.parse(p,
-                        Classfile.Option.constantPoolSharing(true),
-                        Classfile.Option.processDebug(false),
-                        Classfile.Option.processLineNumbers(false));
-                shared.add(clm);
-                transform(clm); //dry run to expand model and symbols
-                clm = Classfile.parse(p,
-                        Classfile.Option.constantPoolSharing(false),
-                        Classfile.Option.processDebug(false),
-                        Classfile.Option.processLineNumbers(false));
-                unshared.add(clm);
-                transform(clm); //dry run to expand model and symbols
+                var clm = shared.parse(p);
+                models.add(clm);
+                //dry run to expand model and symbols
+                transform(shared, clm);
+                transform(unshared, clm);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -76,29 +72,29 @@ public class RebuildMethodBodies {
 
     @Benchmark
     public void shared() {
-        if (it1 == null || !it1.hasNext())
-            it1 = shared.iterator();
+        if (it == null || !it.hasNext())
+            it = models.iterator();
         //model and symbols were already expanded, so benchmark is focused more on builder performance
-        transform(it1.next());
+        transform(shared, it.next());
     }
 
     @Benchmark
     public void unshared() {
-        if (it2 == null || !it2.hasNext())
-            it2 = unshared.iterator();
+        if (it == null || !it.hasNext())
+            it = models.iterator();
         //model and symbols were already expanded, so benchmark is focused more on builder performance
-        transform(it2.next());
+        transform(unshared, it.next());
     }
 
-    private static void transform(ClassModel clm) {
-        clm.transform(ClassTransform.transformingMethodBodies((cob, coe) -> {
+    private static void transform(ClassFile cc, ClassModel clm) {
+        cc.transformClass(clm, ClassTransform.transformingMethodBodies((cob, coe) -> {
             switch (coe) {
                 case FieldInstruction i ->
-                    cob.fieldInstruction(i.opcode(), i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol());
+                    cob.fieldAccess(i.opcode(), i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol());
                 case InvokeDynamicInstruction i ->
                     cob.invokedynamic(i.invokedynamic().asSymbol());
                 case InvokeInstruction i ->
-                    cob.invokeInstruction(i.opcode(), i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol(), i.isInterface());
+                    cob.invoke(i.opcode(), i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol(), i.isInterface());
                 case NewMultiArrayInstruction i ->
                     cob.multianewarray(i.arrayType().asSymbol(), i.dimensions());
                 case NewObjectInstruction i ->
@@ -106,7 +102,7 @@ public class RebuildMethodBodies {
                 case NewReferenceArrayInstruction i ->
                     cob.anewarray(i.componentType().asSymbol());
                 case TypeCheckInstruction i ->
-                    cob.typeCheckInstruction(i.opcode(), i.type().asSymbol());
+                    cob.with(TypeCheckInstruction.of(i.opcode(), i.type().asSymbol()));
                 default -> cob.with(coe);
             }
         }));

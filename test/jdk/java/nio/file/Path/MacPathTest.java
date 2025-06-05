@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,9 @@ public class MacPathTest {
         ProcessBuilder pb;
         if (NORMALIZE_FILE_PATHS) {
             String option = "-D" + PROPERTY_NORMALIZE_FILE_PATHS + "=true";
-            pb = ProcessTools.createTestJvm(option, MacPath.class.getName());
+            pb = ProcessTools.createTestJavaProcessBuilder(option, MacPath.class.getName());
         } else {
-            pb = ProcessTools.createTestJvm(MacPath.class.getName());
+            pb = ProcessTools.createTestJavaProcessBuilder(MacPath.class.getName());
         }
         pb.environment().put("LC_ALL", "en_US.UTF-8");
         ProcessTools.executeProcess(pb)

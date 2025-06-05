@@ -91,8 +91,10 @@ void free_static_shaper_list ()
  *
  * Retrieves the list of shapers supported by HarfBuzz.
  *
- * Return value: (transfer none) (array zero-terminated=1): an array of
- *    constant strings
+ * Return value: (transfer none) (array zero-terminated=1): a
+ *    `NULL`-terminated array of supported shapers constant string.
+ *    The returned array is owned by HarfBuzz and should not be
+ *    modified or freed.
  *
  * Since: 0.9.2
  **/
@@ -220,7 +222,7 @@ reset_buffer (hb_buffer_t *buffer,
   assert (buffer->ensure (text.length));
   buffer->have_positions = false;
   buffer->len = text.length;
-  memcpy (buffer->info, text.arrayZ, text.length * sizeof (buffer->info[0]));
+  hb_memcpy (buffer->info, text.arrayZ, text.length * sizeof (buffer->info[0]));
   hb_buffer_set_content_type (buffer, HB_BUFFER_CONTENT_TYPE_UNICODE);
 }
 

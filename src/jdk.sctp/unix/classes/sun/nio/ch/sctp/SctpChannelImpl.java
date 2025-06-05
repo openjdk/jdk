@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package sun.nio.ch.sctp;
 
 import java.net.InetAddress;
@@ -30,8 +31,6 @@ import java.net.SocketException;
 import java.net.InetSocketAddress;
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Set;
 import java.util.HashSet;
@@ -194,11 +193,6 @@ public class SctpChannelImpl extends SctpChannel
                         SctpNet.throwAlreadyBoundException();
                     InetSocketAddress isa = (local == null) ?
                         new InetSocketAddress(0) : Net.checkAddress(local);
-                    @SuppressWarnings("removal")
-                    SecurityManager sm = System.getSecurityManager();
-                    if (sm != null) {
-                        sm.checkListen(isa.getPort());
-                    }
                     Net.bind(fd, isa.getAddress(), isa.getPort());
                     InetSocketAddress boundIsa = Net.localAddress(fd);
                     port = boundIsa.getPort();
@@ -364,11 +358,6 @@ public class SctpChannelImpl extends SctpChannel
             synchronized (sendLock) {
                 ensureOpenAndUnconnected();
                 InetSocketAddress isa = Net.checkAddress(endpoint);
-                @SuppressWarnings("removal")
-                SecurityManager sm = System.getSecurityManager();
-                if (sm != null)
-                    sm.checkConnect(isa.getAddress().getHostAddress(),
-                                    isa.getPort());
                 synchronized (blockingLock()) {
                     int n = 0;
                     try {
@@ -841,7 +830,7 @@ public class SctpChannelImpl extends SctpChannel
     {
         NIO_ACCESS.acquireSession(bb);
         try {
-            int n = receive0(fd, resultContainer, ((DirectBuffer)bb).address() + pos, rem, peek);
+            int n = receive0(fd, resultContainer, NIO_ACCESS.getBufferAddress(bb) + pos, rem, peek);
 
             if (n > 0)
                 bb.position(pos + n);
@@ -1024,7 +1013,7 @@ public class SctpChannelImpl extends SctpChannel
 
         NIO_ACCESS.acquireSession(bb);
         try {
-            int written = send0(fd, ((DirectBuffer)bb).address() + pos, rem, addr,
+            int written = send0(fd, NIO_ACCESS.getBufferAddress(bb) + pos, rem, addr,
                     port, -1 /*121*/, streamNumber, unordered, ppid);
             if (written > 0)
                 bb.position(pos + written);
@@ -1094,16 +1083,10 @@ public class SctpChannelImpl extends SctpChannel
         loadSctpLibrary();
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings("restricted")
     private static void loadSctpLibrary() {
         IOUtil.load();   /* loads nio & net native libraries */
-        AccessController.doPrivileged(
-            new PrivilegedAction<>() {
-                public Void run() {
-                    System.loadLibrary("sctp");
-                    return null;
-                }
-            });
+        System.loadLibrary("sctp");
         initIDs();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,11 @@
  * @test
  * @bug 4185816
  * @library /java/text/testlib
- * @build Bug4185816Test IntlTest HexDumpReader
- * @run main Bug4185816Test
- * @summary test that MessageFormat invariants are preserved across serialization
+ * @build Bug4185816Test HexDumpReader
+ * @run junit Bug4185816Test
+ * @summary test that MessageFormat invariants are preserved across serialization.
  */
+
 /*
  * This file is available under and governed by the GNU General Public
  * License version 2 only, as published by the Free Software Foundation.
@@ -68,30 +69,27 @@ import java.io.*;
 import java.text.ChoiceFormat;
 import java.text.MessageFormat;
 
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.fail;
+
 /**
- *  A Locale can never contains language codes of he, yi or id.
+ *  A Locale can never contain language codes of he, yi or id.
  */
-public class Bug4185816Test extends IntlTest {
+public class Bug4185816Test {
     private static final String FILE_NAME = "Bug4185816.ser";
     private static final String CORRUPT_FILE_NAME = "Bug4185816Corrupt.ser";
 
-    public static void main(String[] args) throws Exception {
-        if (args.length == 1 && args[0].equals("prepTest")) {
-            prepTest();
-        } else {
-            new Bug4185816Test().run(args);
-        }
-    }
-
+    @Test
     public void testIt() throws Exception {
         Exception e = checkStreaming(FILE_NAME);
         if (e != null) {
-            errln("MessageFormat did not stream in valid stream: "+e);
+            fail("MessageFormat did not stream in valid stream: "+e);
             e.printStackTrace();
         }
         e = checkStreaming(CORRUPT_FILE_NAME);
         if (!(e instanceof InvalidObjectException)) {
-            errln("MessageFormat did NOT detect corrupt stream: "+e);
+            fail("MessageFormat did NOT detect corrupt stream: "+e);
             e.printStackTrace();
         }
     }
@@ -108,31 +106,5 @@ public class Bug4185816Test extends IntlTest {
             return e;
         }
         return null;
-    }
-
-    /**
-     * Create a data file for this test.  The data file must be corrupted by hand.
-     */
-    private static void prepTest() {
-        writeFormatToFile(FILE_NAME);
-        writeFormatToFile(CORRUPT_FILE_NAME);
-    }
-
-    private static void writeFormatToFile(final String name) {
-        try {
-            ObjectOutputStream out = new ObjectOutputStream(
-                    new FileOutputStream(name));
-
-            MessageFormat fmt = new MessageFormat("The disk \"{1}\" contains {0}.");
-            double[] filelimits = {0,1,2};
-            String[] filepart = {"no files","one file","{0,number} files"};
-            ChoiceFormat fileform = new ChoiceFormat(filelimits, filepart);
-            fmt.setFormat(1,fileform); // NOT zero, see below
-
-            out.writeObject(fmt);
-            out.close();
-        } catch (Exception e) {
-            System.out.println(e);
-        }
     }
 }

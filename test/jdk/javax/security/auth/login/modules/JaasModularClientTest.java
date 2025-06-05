@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,7 @@ import jdk.test.lib.util.ModuleInfoWriter;
  * @test
  * @bug 8078813 8183310
  * @summary Test custom JAAS login module with all possible modular option.
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.module
+ * @modules java.base/jdk.internal.module
  * @library /test/lib
  * @build jdk.test.lib.util.JarUtils jdk.test.lib.util.ModuleInfoWriter
  * @build TestLoginModule JaasClient
@@ -186,7 +183,7 @@ public class JaasModularClientTest {
             }
             return !s.isEmpty();
         }).toArray(String[]::new);
-        OutputAnalyzer out = ProcessTools.executeTestJvm(safeArgs);
+        OutputAnalyzer out = ProcessTools.executeTestJava(safeArgs);
         // Handle response.
         if (out.getExitValue() != 0) {
             System.out.printf("OUTPUT: %s", out.getOutput());

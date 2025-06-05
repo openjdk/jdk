@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,9 @@ public class popframes001 extends JDIBase {
 
         int result = run(argv, System.out);
 
-        System.exit(result + PASS_BASE);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run (String argv[], PrintStream out) {
@@ -258,18 +260,7 @@ public class popframes001 extends JDIBase {
 
         log2("      received: ClassPrepareEvent for debuggeeClass");
 
-        String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
-        BreakpointRequest bpRequest;
-
-        try {
-            bpRequest = settingBreakpoint(debuggee.threadByNameOrThrow("main"),
-                                          debuggeeClass,
-                                          bPointMethod, lineForComm, "zero");
-        } catch ( Exception e ) {
-            throw e;
-        }
-        bpRequest.enable();
+        setupBreakpointForCommunication(debuggeeClass);
 
     //------------------------------------------------------  testing section
 
@@ -311,7 +302,7 @@ public class popframes001 extends JDIBase {
             }
 
             String thread2Name         = "thread2";
-            ThreadReference thread2Ref = debuggee.threadByNameOrThrow(thread2Name);
+            ThreadReference thread2Ref = debuggee.threadByFieldNameOrThrow(debuggeeClass, thread2Name);
 
 
             String poppedMethod    = "poppedMethod";
@@ -320,7 +311,7 @@ public class popframes001 extends JDIBase {
 
             log2("......setting breakpoint in poppedMethod");
             try {
-                breakpointRequest = settingBreakpoint(debuggee.threadByNameOrThrow(thread2Name),
+                breakpointRequest = settingBreakpoint(thread2Ref,
                                           debuggeeClass,
                                           poppedMethod, breakpointLine, "one");
             } catch ( Exception e ) {

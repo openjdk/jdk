@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,24 +40,6 @@ import jdk.jfr.consumer.RecordedClass;
 import jdk.jfr.consumer.RecordedMethod;
 
 public final class ValueFormatter {
-    private static enum TimespanUnit {
-        NANOSECONDS("ns", 1000),
-        MICROSECONDS("us", 1000),
-        MILLISECONDS("ms", 1000),
-        SECONDS("s", 60), MINUTES("m", 60),
-        HOURS("h", 24),
-        DAYS("d", 7);
-
-        private final String text;
-        private final long amount;
-
-        TimespanUnit(String unit, long amount) {
-            this.text = unit;
-            this.amount = amount;
-        }
-    }
-
-    private static final NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance();
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final Duration MICRO_SECOND = Duration.ofNanos(1_000);
     private static final Duration SECOND = Duration.ofSeconds(1);
@@ -69,6 +51,12 @@ public final class ValueFormatter {
     private static final int DISPLAY_NANO_DIGIT = 3;
     private static final int BASE = 10;
 
+    // -XX:FlightRecorderOptions:repository=<path> triggers an upcall
+    // which will load this class. If NumberFormat.getNumberInstance()
+    // is called during startup, locale settings will not take effect.
+    // Workaround is to create an instance lazily. See numberFormatInstance().
+    private static NumberFormat NUMBER_FORMAT;
+
     public static String formatTimespan(Duration dValue, String separation) {
         if (dValue == null) {
             return "0";
@@ -77,7 +65,7 @@ public final class ValueFormatter {
         TimespanUnit result = TimespanUnit.NANOSECONDS;
         for (TimespanUnit unit : TimespanUnit.values()) {
             result = unit;
-            long amount = unit.amount;
+            long amount = unit.size;
             if (result == TimespanUnit.DAYS || value < amount || value % amount != 0) {
                 break;
             }
@@ -110,32 +98,48 @@ public final class ValueFormatter {
         }
     }
 
+    private static NumberFormat numberFormatInstance() {
+        if (NUMBER_FORMAT == null) {
+            NUMBER_FORMAT = NumberFormat.getNumberInstance();
+        }
+        return NUMBER_FORMAT;
+    }
+
     public static String formatNumber(Number n) {
-        return NUMBER_FORMAT.format(n);
+        return numberFormatInstance().format(n);
     }
 
     public static String formatDuration(Duration d) {
+        return formatDuration(d, -1);
+    }
+
+    public static String formatDuration(Duration d, int precision) {
         Duration roundedDuration = roundDuration(d);
         if (roundedDuration.equals(Duration.ZERO)) {
             return "0 s";
         } else if (roundedDuration.isNegative()) {
-            return "-" + formatPositiveDuration(roundedDuration.abs());
+            return "-" + formatPositiveDuration(roundedDuration.abs(), precision);
         } else {
-            return formatPositiveDuration(roundedDuration);
+            return formatPositiveDuration(roundedDuration, precision);
         }
     }
 
-    private static String formatPositiveDuration(Duration d){
+    public static String formatPositiveDuration(Duration d, int precision) {
         if (d.compareTo(MICRO_SECOND) < 0) {
             // 0.000001 ms - 0.000999 ms
+            if (precision == -1) {
+                precision = 6;
+            }
             double outputMs = (double) d.toNanosPart() / 1_000_000;
-            return String.format("%.6f ms", outputMs);
+            return String.format("%." + precision + "f ms", outputMs);
         } else if (d.compareTo(SECOND) < 0) {
             // 0.001 ms - 999 ms
-            int valueLength = countLength(d.toNanosPart());
-            int outputDigit = NANO_SIGNIFICANT_FIGURES - valueLength;
+            if (precision == -1) {
+                int valueLength = countLength(d.toNanosPart());
+                precision = NANO_SIGNIFICANT_FIGURES - valueLength;
+            }
             double outputMs = (double) d.toNanosPart() / 1_000_000;
-            return String.format("%." + outputDigit + "f ms", outputMs);
+            return String.format("%." + precision + "f ms", outputMs);
         } else if (d.compareTo(MINUTE) < 0) {
             // 1.00 s - 59.9 s
             int valueLength = countLength(d.toSecondsPart());
@@ -281,7 +285,7 @@ public final class ValueFormatter {
         return sb.toString();
     }
 
-    private static List<String> decodeDescriptors(String descriptor, String arraySize) {
+    public static List<String> decodeDescriptors(String descriptor, String arraySize) {
         List<String> descriptors = new ArrayList<>();
         for (int index = 0; index < descriptor.length(); index++) {
             String arrayBrackets = "";
@@ -331,6 +335,9 @@ public final class ValueFormatter {
     }
 
     public static String formatTimestamp(Instant instant) {
+        if (Instant.MIN.equals(instant)) {
+            return "N/A";
+        }
         return LocalTime.ofInstant(instant, ZoneId.systemDefault()).format(DATE_FORMAT);
     }
 }

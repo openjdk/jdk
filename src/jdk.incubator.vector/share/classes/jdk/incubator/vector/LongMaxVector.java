@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -135,6 +137,12 @@ final class LongMaxVector extends LongVector {
     @Override
     @ForceInline
     LongMaxShuffle iotaShuffle() { return LongMaxShuffle.IOTA; }
+
+    @Override
+    @ForceInline
+    LongMaxShuffle iotaShuffle(int start, int step, boolean wrap) {
+        return (LongMaxShuffle) iotaShuffleTemplate(start, step, wrap);
+    }
 
     @Override
     @ForceInline
@@ -339,9 +347,14 @@ final class LongMaxVector extends LongVector {
 
     @Override
     @ForceInline
-    public final
-    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
-        return super.toShuffleTemplate(dsp);
+    final <F> VectorShuffle<F> bitsToShuffle(AbstractSpecies<F> dsp) {
+        return bitsToShuffleTemplate(dsp);
+    }
+
+    @Override
+    @ForceInline
+    public final LongMaxShuffle toShuffle() {
+        return (LongMaxShuffle) toShuffle(vspecies(), false);
     }
 
     // Specialized unary testing
@@ -480,9 +493,16 @@ final class LongMaxVector extends LongVector {
                                    VectorMask<Long> m) {
         return (LongMaxVector)
             super.selectFromTemplate((LongMaxVector) v,
-                                     (LongMaxMask) m);  // specialize
+                                     LongMaxMask.class, (LongMaxMask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public LongMaxVector selectFrom(Vector<Long> v1,
+                                   Vector<Long> v2) {
+        return (LongMaxVector)
+            super.selectFromTemplate((LongMaxVector) v1, (LongMaxVector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -493,6 +513,7 @@ final class LongMaxVector extends LongVector {
         return laneHelper(i);
     }
 
+    @ForceInline
     public long laneHelper(int i) {
         return (long) VectorSupport.extract(
                                 VCLASS, ETYPE, VLENGTH,
@@ -512,6 +533,7 @@ final class LongMaxVector extends LongVector {
         return withLaneHelper(i, e);
     }
 
+    @ForceInline
     public LongMaxVector withLaneHelper(int i, long e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
@@ -715,6 +737,16 @@ final class LongMaxVector extends LongVector {
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
+        // laneIsSet
+
+        @Override
+        @ForceInline
+        public boolean laneIsSet(int i) {
+            Objects.checkIndex(i, length());
+            return VectorSupport.extract(LongMaxMask.class, long.class, VLENGTH,
+                                         this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
+        }
+
         // Reductions
 
         @Override
@@ -785,14 +817,19 @@ final class LongMaxVector extends LongVector {
 
         @Override
         @ForceInline
+        public LongMaxVector toVector() {
+            return toBitsVector();
+        }
+
+        @Override
+        @ForceInline
         LongMaxVector toBitsVector() {
             return (LongMaxVector) super.toBitsVectorTemplate();
         }
 
         @Override
-        @ForceInline
-        LongVector toBitsVector0() {
-            return LongMaxVector.VSPECIES.dummyVector().vectorFactory(indices());
+        LongMaxVector toBitsVector0() {
+            return ((LongMaxVector) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -828,7 +865,66 @@ final class LongMaxVector extends LongVector {
                         a[offset + i] = laneSource(i);
                     }
                 }
+           }
+
+        }
+
+        @Override
+        @ForceInline
+        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+            switch (length()) {
+                case 1 -> ms.set(ValueLayout.OfInt.JAVA_INT_UNALIGNED, offset, laneSource(0));
+                case 2 -> toBitsVector()
+                       .convertShape(VectorOperators.L2I, IntVector.SPECIES_64, 0)
+                       .reinterpretAsInts()
+                       .intoMemorySegment(ms, offset, bo);
+                case 4 -> toBitsVector()
+                       .convertShape(VectorOperators.L2I, IntVector.SPECIES_128, 0)
+                       .reinterpretAsInts()
+                       .intoMemorySegment(ms, offset, bo);
+                case 8 -> toBitsVector()
+                       .convertShape(VectorOperators.L2I, IntVector.SPECIES_256, 0)
+                       .reinterpretAsInts()
+                       .intoMemorySegment(ms, offset, bo);
+                case 16 -> toBitsVector()
+                        .convertShape(VectorOperators.L2I, IntVector.SPECIES_512, 0)
+                        .reinterpretAsInts()
+                        .intoMemorySegment(ms, offset, bo);
+                default -> {
+                    VectorIntrinsics.checkFromIndexSize(offset, length(), ms.byteSize() / 4);
+                    for (int i = 0; i < length(); i++) {
+                        ms.setAtIndex(ValueLayout.JAVA_INT_UNALIGNED, offset + (i << 2), laneSource(i));
+                    }
+                }
             }
+         }
+
+        @Override
+        @ForceInline
+        public final LongMaxMask laneIsValid() {
+            return (LongMaxMask) toBitsVector().compare(VectorOperators.GE, 0)
+                    .cast(vspecies());
+        }
+
+        @ForceInline
+        @Override
+        public final LongMaxShuffle rearrange(VectorShuffle<Long> shuffle) {
+            LongMaxShuffle concreteShuffle = (LongMaxShuffle) shuffle;
+            return (LongMaxShuffle) toBitsVector().rearrange(concreteShuffle)
+                    .toShuffle(vspecies(), false);
+        }
+
+        @ForceInline
+        @Override
+        public final LongMaxShuffle wrapIndexes() {
+            LongMaxVector v = toBitsVector();
+            if ((length() & (length() - 1)) == 0) {
+                v = (LongMaxVector) v.lanewise(VectorOperators.AND, length() - 1);
+            } else {
+                v = (LongMaxVector) v.blend(v.lanewise(VectorOperators.ADD, length()),
+                            v.compare(VectorOperators.LT, 0));
+            }
+            return (LongMaxShuffle) v.toShuffle(vspecies(), false);
         }
 
         private static long[] prepare(int[] indices, int offset) {
@@ -855,14 +951,9 @@ final class LongMaxVector extends LongVector {
             int length = indices.length;
             for (long si : indices) {
                 if (si >= (long)length || si < (long)(-length)) {
-                    boolean assertsEnabled = false;
-                    assert(assertsEnabled = true);
-                    if (assertsEnabled) {
-                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
                                   java.util.Arrays.toString(indices));
-                        throw new AssertionError(msg);
-                    }
-                    return false;
+                    throw new AssertionError(msg);
                 }
             }
             return true;

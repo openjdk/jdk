@@ -23,6 +23,8 @@
  * questions.
  */
 
+import jdk.internal.javac.ParticipatesInPreview;
+
 /**
  * Defines tools for manipulating Java Archive (JAR) files,
  * including the <em>{@index jar jar tool}</em> and
@@ -47,6 +49,7 @@
  * @moduleGraph
  * @since 9
  */
+@ParticipatesInPreview
 module jdk.jartool {
     requires jdk.internal.opt;
 

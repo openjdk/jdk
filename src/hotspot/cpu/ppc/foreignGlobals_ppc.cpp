@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, 2023, SAP SE. All rights reserved.
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/vmreg.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -36,22 +35,8 @@
 
 #define __ masm->
 
-bool ABIDescriptor::is_volatile_reg(Register reg) const {
-  return _integer_argument_registers.contains(reg)
-    || _integer_additional_volatile_registers.contains(reg);
-}
-
-bool ABIDescriptor::is_volatile_reg(FloatRegister reg) const {
-    return _float_argument_registers.contains(reg)
-        || _float_additional_volatile_registers.contains(reg);
-}
-
 bool ForeignGlobals::is_foreign_linker_supported() {
-#ifdef ABI_ELFv2
   return true;
-#else
-  return false;
-#endif
 }
 
 // Stubbed out, implement later
@@ -66,10 +51,6 @@ const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
   objArrayOop outputStorage = jdk_internal_foreign_abi_ABIDescriptor::outputStorage(abi_oop);
   parse_register_array(outputStorage, StorageType::INTEGER, abi._integer_return_registers, as_Register);
   parse_register_array(outputStorage, StorageType::FLOAT, abi._float_return_registers, as_FloatRegister);
-
-  objArrayOop volatileStorage = jdk_internal_foreign_abi_ABIDescriptor::volatileStorage(abi_oop);
-  parse_register_array(volatileStorage, StorageType::INTEGER, abi._integer_additional_volatile_registers, as_Register);
-  parse_register_array(volatileStorage, StorageType::FLOAT, abi._float_additional_volatile_registers, as_FloatRegister);
 
   abi._stack_alignment_bytes = jdk_internal_foreign_abi_ABIDescriptor::stackAlignment(abi_oop);
   abi._shadow_space_bytes = jdk_internal_foreign_abi_ABIDescriptor::shadowSpace(abi_oop);
@@ -131,12 +112,7 @@ static void move_reg64(MacroAssembler* masm, int out_stk_bias,
         __ stw(as_Register(from_reg), -8, R1_SP);
         __ lfs(as_FloatRegister(to_reg), -8, R1_SP); // convert to double precision format
       } else {
-        if (VM_Version::has_mtfprd()) {
-          __ mtfprd(as_FloatRegister(to_reg), as_Register(from_reg));
-        } else {
-          __ std(as_Register(from_reg), -8, R1_SP);
-          __ lfd(as_FloatRegister(to_reg), -8, R1_SP);
-        }
+        __ mtfprd(as_FloatRegister(to_reg), as_Register(from_reg));
       }
       break;
     case StorageType::STACK:
@@ -169,12 +145,7 @@ static void move_float(MacroAssembler* masm, int out_stk_bias,
         __ stfs(as_FloatRegister(from_reg), -8, R1_SP); // convert to single precision format
         __ lwa(as_Register(to_reg), -8, R1_SP);
       } else {
-        if (VM_Version::has_mtfprd()) {
-          __ mffprd(as_Register(to_reg), as_FloatRegister(from_reg));
-        } else {
-          __ stfd(as_FloatRegister(from_reg), -8, R1_SP);
-          __ ld(as_Register(to_reg), -8, R1_SP);
-        }
+        __ mffprd(as_Register(to_reg), as_FloatRegister(from_reg));
       }
       break;
     case StorageType::FLOAT:
@@ -183,7 +154,7 @@ static void move_float(MacroAssembler* masm, int out_stk_bias,
     case StorageType::STACK:
       if (from_reg.segment_mask() == REG32_MASK) {
         assert(to_reg.stack_size() == 4, "size should match");
-        // TODO: Check if AIX needs 4 Byte offset
+        // Note: Argument::float_on_stack_offset_in_bytes_c is handled by CallArranger
         __ stfs(as_FloatRegister(from_reg), reg2offset(to_reg, out_stk_bias), R1_SP);
       } else {
         assert(to_reg.stack_size() == 8, "size should match");
@@ -208,6 +179,7 @@ static void move_stack(MacroAssembler* masm, Register callerSP, int in_stk_bias,
     case StorageType::FLOAT:
       switch (from_reg.stack_size()) {
         case 8: __ lfd(as_FloatRegister(to_reg), reg2offset(from_reg, in_stk_bias), callerSP); break;
+        // Note: Argument::float_on_stack_offset_in_bytes_c is handled by CallArranger
         case 4: __ lfs(as_FloatRegister(to_reg), reg2offset(from_reg, in_stk_bias), callerSP); break;
         default: ShouldNotReachHere();
       }
@@ -230,20 +202,12 @@ static void move_stack(MacroAssembler* masm, Register callerSP, int in_stk_bias,
   }
 }
 
-void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias, const StubLocations& locs) const {
+void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias) const {
   Register callerSP = as_Register(tmp); // preset
   for (int i = 0; i < _moves.length(); i++) {
     Move move = _moves.at(i);
     VMStorage from_reg = move.from;
     VMStorage to_reg   = move.to;
-
-    // replace any placeholders
-    if (from_reg.type() == StorageType::PLACEHOLDER) {
-      from_reg = locs.get(from_reg);
-    }
-    if (to_reg.type() == StorageType::PLACEHOLDER) {
-      to_reg = locs.get(to_reg);
-    }
 
     switch (from_reg.type()) {
       case StorageType::INTEGER:

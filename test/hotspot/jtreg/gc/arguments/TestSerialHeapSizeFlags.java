@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@ package gc.arguments;
  * @test TestSerialHeapSizeFlags
  * @bug 8006088
  * @summary Tests argument processing for initial and maximum heap size for the Serial collector
+ * @key flag-sensitive
+ * @requires vm.gc.Serial & vm.opt.MinHeapSize == null & vm.opt.MaxHeapSize == null & vm.opt.InitialHeapSize == null
+ * @requires vm.compMode != "Xcomp"
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc
@@ -47,4 +50,3 @@ public class TestSerialHeapSizeFlags {
     TestMaxHeapSizeTools.checkGenMaxHeapErgo(gcName);
   }
 }
-

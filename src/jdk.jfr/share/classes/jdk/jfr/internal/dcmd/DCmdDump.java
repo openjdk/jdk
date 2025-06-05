@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,8 @@ import jdk.jfr.Recording;
 import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
-import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.util.ValueParser;
-import jdk.jfr.internal.WriteableUserPath;
+import jdk.jfr.internal.WriteablePath;
 
 /**
  * JFR.dump
@@ -55,7 +54,7 @@ final class DCmdDump extends AbstractDCmd {
     public void execute(ArgumentParser parser) throws DCmdException {
         parser.checkUnknownArguments();
         String name = parser.getOption("name");
-        String filename = expandFilename(parser.getOption("filename"));
+        String filename = parser.getOption("filename");
         Long maxAge = parser.getOption("maxage");
         Long maxSize = parser.getOption("maxsize");
         String begin = parser.getOption("begin");
@@ -126,17 +125,16 @@ final class DCmdDump extends AbstractDCmd {
             // If a filename exist, use it
             // if a filename doesn't exist, use destination set earlier
             // if destination doesn't exist, generate a filename
-            WriteableUserPath wup = null;
+            WriteablePath wp = null;
             if (recording != null) {
                 PlatformRecording pRecording = PrivateAccess.getInstance().getPlatformRecording(recording);
-                wup = pRecording.getDestination();
+                wp = pRecording.getDestination();
             }
-            if (filename != null || (filename == null && wup == null) ) {
-                SafePath safe = resolvePath(recording, filename);
-                wup = new WriteableUserPath(safe.toPath());
+            if (filename != null || (filename == null && wp == null) ) {
+                wp = new WriteablePath(resolvePath(recording, filename));
             }
-            r.dumpStopped(wup);
-            reportOperationComplete("Dumped", name, new SafePath(wup.getRealPathText()));
+            r.dumpStopped(wp);
+            reportOperationComplete("Dumped", name, wp.getReal());
         }
     }
 
@@ -194,66 +192,66 @@ final class DCmdDump extends AbstractDCmd {
     }
 
     @Override
-    public String[] printHelp() {
+    public String[] getHelp() {
             // 0123456789001234567890012345678900123456789001234567890012345678900123456789001234567890
         return """
                Syntax : JFR.dump [options]
 
                Options:
 
-                 begin           (Optional) Specify the time from which recording data will be included
-                                 in the dump file. The format is specified as local time.
-                                 (STRING, no default value)
+                 begin            (Optional) Specify the time from which recording data will be
+                                  included in the dump file. The format is specified as local time.
+                                  (STRING, no default value)
 
-                 end             (Optional) Specify the time to which recording data will be included
-                                 in the dump file. The format is specified as local time.
-                                 (STRING, no default value)
+                 end              (Optional) Specify the time to which recording data will be included
+                                  in the dump file. The format is specified as local time.
+                                  (STRING, no default value)
 
-                                 Note: For both begin and end, the time must be in a format that can
-                                 be read by any of these methods:
+                                  Note: For both begin and end, the time must be in a format that can
+                                  be read by any of these methods:
 
-                                  java.time.LocalTime::parse(String),
-                                  java.time.LocalDateTime::parse(String)
-                                  java.time.Instant::parse(String)
+                                   java.time.LocalTime::parse(String),
+                                   java.time.LocalDateTime::parse(String)
+                                   java.time.Instant::parse(String)
 
-                                 For example, "13:20:15", "2020-03-17T09:00:00" or
-                                 "2020-03-17T09:00:00Z".
+                                  For example, "13:20:15", "2020-03-17T09:00:00" or
+                                  "2020-03-17T09:00:00Z".
 
-                                 Note: begin and end times correspond to the timestamps found within
-                                 the recorded information in the flight recording data.
+                                  Note: begin and end times correspond to the timestamps found within
+                                  the recorded information in the flight recording data.
 
-                                 Another option is to use a time relative to the current time that is
-                                 specified by a negative integer followed by "s", "m" or "h".
-                                 For example, "-12h", "-15m" or "-30s"
+                                  Another option is to use a time relative to the current time that is
+                                  specified by a negative integer followed by "s", "m" or "h".
+                                  For example, "-12h", "-15m" or "-30s"
 
-                 filename        (Optional) Name of the file to which the flight recording data is
-                                 dumped. If no filename is given, a filename is generated from the PID
-                                 and the current date. The filename may also be a directory in which
-                                 case, the filename is generated from the PID and the current date in
-                                 the specified directory. (STRING, no default value)
+                 filename         (Optional) Name of the file to which the flight recording data is
+                                  dumped. If no filename is given, a filename is generated from the PID
+                                  and the current date. The filename may also be a directory in which
+                                  case, the filename is generated from the PID and the current date in
+                                  the specified directory. (FILE, no default value)
 
-                                 Note: If a filename is given, '%%p' in the filename will be
-                                 replaced by the PID, and '%%t' will be replaced by the time in
-                                 'yyyy_MM_dd_HH_mm_ss' format.
+                                  Note: If a filename is given, '%%p' in the filename will be
+                                  replaced by the PID, and '%%t' will be replaced by the time in
+                                  'yyyy_MM_dd_HH_mm_ss' format.
 
-                 maxage          (Optional) Length of time for dumping the flight recording data to a
-                                 file. (INTEGER followed by 's' for seconds 'm' for minutes or 'h' for
-                                 hours, no default value)
+                 maxage           (Optional) Length of time for dumping the flight recording data to a
+                                  file. (INT followed by 's' for seconds 'm' for minutes or 'h' for
+                                  hours, no default value)
 
-                 maxsize         (Optional) Maximum size for the amount of data to dump from a flight
-                                 recording in bytes if one of the following suffixes is not used:
-                                 'm' or 'M' for megabytes OR 'g' or 'G' for gigabytes.
-                                 (STRING, no default value)
+                 maxsize          (Optional) Maximum size for the amount of data to dump from a flight
+                                  recording in bytes if one of the following suffixes is not used:
+                                  'm' or 'M' for megabytes OR 'g' or 'G' for gigabytes.
+                                  (STRING, no default value)
 
-                 name            (Optional) Name of the recording. If no name is given, data from all
-                                 recordings is dumped. (STRING, no default value)
+                 name             (Optional) Name of the recording. If no name is given, data from all
+                                  recordings is dumped. (STRING, no default value)
 
-                 path-to-gc-root (Optional) Flag for saving the path to garbage collection (GC) roots
-                                 at the time the recording data is dumped. The path information is
-                                 useful for finding memory leaks but collecting it can cause the
-                                 application to pause for a short period of time. Turn on this flag
-                                 only when you have an application that you suspect has a memory
-                                 leak. (BOOLEAN, false)
+                 path-to-gc-roots (Optional) Flag for saving the path to garbage collection (GC) roots
+                                  at the time the recording data is dumped. The path information is
+                                  useful for finding memory leaks but collecting it can cause the
+                                  application to pause for a short period of time. Turn on this flag
+                                  only when you have an application that you suspect has a memory
+                                  leak. (BOOLEAN, false)
 
                Options must be specified using the <key> or <key>=<value> syntax.
 
@@ -265,7 +263,7 @@ final class DCmdDump extends AbstractDCmd {
                 $ jcmd <pid> JFR.dump name=1 filename=%s
                 $ jcmd <pid> JFR.dump maxage=1h
                 $ jcmd <pid> JFR.dump maxage=1h maxsize=50M
-                $ jcmd <pid> JFR.dump fillename=leaks.jfr path-to-gc-root=true
+                $ jcmd <pid> JFR.dump filename=leaks.jfr path-to-gc-roots=true
                 $ jcmd <pid> JFR.dump begin=13:15
                 $ jcmd <pid> JFR.dump begin=13:15 end=21:30:00
                 $ jcmd <pid> JFR.dump end=18:00 maxage=10m
@@ -284,7 +282,7 @@ final class DCmdDump extends AbstractDCmd {
                "STRING", false, true, null, false),
            new Argument("filename",
                "Copy recording data to file, e.g. \\\"" + exampleFilename() + "\\\"",
-               "STRING", false, true, null, false),
+               "FILE", false, true, null, false),
            new Argument("maxage",
                "Maximum duration to dump, in (s)econds, (m)inutes, (h)ours, or (d)ays, e.g. 60m, or 0 for no limit",
                "NANOTIME", false, true, null, false),

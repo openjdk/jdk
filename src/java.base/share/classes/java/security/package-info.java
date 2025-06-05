@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 /**
  * Provides the classes and interfaces for the security framework.
- * This includes classes that implement an easily configurable,
- * fine-grained access control security architecture.
  * This package also supports
  * the generation and storage of cryptographic public key pairs,
  * as well as a number of exportable cryptographic operations
@@ -67,18 +65,19 @@
  *   <li> {@extLink security_guide_impl_provider
  *     How to Implement a Provider in the Java Cryptography Architecture}</li>
  *
- *   <li> {@extLink security_guide_default_policy
- *     Default Policy Implementation and Policy File Syntax}</li>
- *
- *   <li> {@extLink security_guide_permissions
- *     Permissions in the Java Development Kit (JDK)}</li>
- *
  *   <li> {@extLink security_guide_tools
  *     Summary of Tools for Java Platform Security}
  *     (for example {@code keytool} and {@code jarsigner}),</li>
  *
  * </ul>
  *
+ * <h2>Additional Specification</h2>
+ * <ul>
+ *   <li><a href="doc-files/debug-system-property.html">
+ *     The {@code java.security.debug} System Property</a></li>
+ * </ul>
+ *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @since 1.1
  */
 package java.security;

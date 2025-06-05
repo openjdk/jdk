@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,15 @@
 #include "gc/z/zIndexDistributor.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageAllocator.inline.hpp"
+
+#include <limits>
+
+inline int ZPageTable::count() const {
+  const size_t size = _map._size;
+  assert(size <= std::numeric_limits<int>::max(), "Invalid page table size");
+
+  return static_cast<int>(size);
+}
 
 inline ZPage* ZPageTable::get(zaddress addr) const {
   assert(!is_null(addr), "Invalid address");
@@ -64,12 +73,12 @@ inline bool ZPageTableIterator::next(ZPage** page) {
 
 inline ZPageTableParallelIterator::ZPageTableParallelIterator(const ZPageTable* table)
   : _table(table),
-    _index_distributor(int(ZAddressOffsetMax >> ZGranuleSizeShift)) {}
+    _index_distributor(table->count()) {}
 
 template <typename Function>
 inline void ZPageTableParallelIterator::do_pages(Function function) {
   _index_distributor.do_indices([&](int index) {
-    ZPage* const page = _table->at(index);
+    ZPage* const page = _table->at(size_t(index));
     if (page != nullptr) {
       const size_t start_index = untype(page->start()) >> ZGranuleSizeShift;
       if (size_t(index) == start_index) {
@@ -94,11 +103,9 @@ inline bool ZGenerationPagesIterator::next(ZPage** page) {
 template <typename Function>
 inline void ZGenerationPagesIterator::yield(Function function) {
   _page_allocator->disable_safe_destroy();
-  _page_allocator->disable_safe_recycle();
 
   function();
 
-  _page_allocator->enable_safe_recycle();
   _page_allocator->enable_safe_destroy();
 }
 

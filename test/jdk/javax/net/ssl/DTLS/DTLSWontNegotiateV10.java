@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,13 @@
  * questions.
  */
 
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.security.SecurityUtils;
 
 import javax.net.ssl.*;
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -48,6 +48,8 @@ public class DTLSWontNegotiateV10 {
     private static final String DTLS = "DTLS";
     private static final String DTLSV_1_2 = "DTLSv1.2";
 
+    private static final int READ_TIMEOUT_SECS = Integer.getInteger("readtimeout", 30);
+
     public static void main(String[] args) throws Exception {
         if (args[0].equals(DTLSV_1_0)) {
             SecurityUtils.removeFromDisabledTlsAlgs(DTLSV_1_0);
@@ -63,20 +65,42 @@ public class DTLSWontNegotiateV10 {
         } else {
             // server process
             // args: protocol
-            try (DTLSServer server = new DTLSServer(args[0])) {
-                List<String> command = List.of(
-                        Path.of(System.getProperty("java.home"), "bin", "java").toString(),
-                        "DTLSWontNegotiateV10",
-                        // if server is "DTLS" then the client should be v1.0 and vice versa
-                        args[0].equals(DTLS) ? DTLSV_1_0 : DTLS,
-                        Integer.toString(server.getListeningPortNumber())
-                );
+            final int totalAttempts = 5;
+            int tries;
+            for (tries = 0 ; tries < totalAttempts ; ++tries) {
+                try {
+                    System.out.printf("Starting server %d/%d attempts%n", tries+1, totalAttempts);
+                    runServer(args[0]);
+                    break;
+                } catch (SocketTimeoutException exc) {
+                    System.out.println("The server timed-out waiting for packets from the client.");
+                }
+            }
+            if (tries == totalAttempts) {
+                throw new RuntimeException("The server/client communications timed-out after " + totalAttempts + " tries.");
+            }
+        }
+    }
 
-                ProcessBuilder builder = new ProcessBuilder(command);
-                Process p = builder.inheritIO().start();
-                server.run();
-                p.destroy();
-                System.out.println("Success: DTLSv1.0 connection was not established.");
+    private static void runServer(String protocol) throws Exception {
+        // args: protocol
+        Process clientProcess = null;
+        try (DTLSServer server = new DTLSServer(protocol)) {
+            List<String> command = List.of(
+                    "DTLSWontNegotiateV10",
+                    // if server is "DTLS" then the client should be v1.0 and vice versa
+                    protocol.equals(DTLS) ? DTLSV_1_0 : DTLS,
+                    Integer.toString(server.getListeningPortNumber())
+            );
+
+            ProcessBuilder builder = ProcessTools.createTestJavaProcessBuilder(command);
+            clientProcess = builder.inheritIO().start();
+            server.run();
+            System.out.println("Success: DTLSv1.0 connection was not established.");
+
+        } finally {
+            if (clientProcess != null) {
+                clientProcess.destroy();
             }
         }
     }
@@ -89,6 +113,9 @@ public class DTLSWontNegotiateV10 {
         public DTLSClient(String protocol, int portNumber) throws Exception {
             super(true, protocol);
             remotePort = portNumber;
+            socket.setSoTimeout(READ_TIMEOUT_SECS * 1000);
+            log("Client listening on port " + socket.getLocalPort()
+                    + ". Sending data to server port " + remotePort);
             log("Enabled protocols: " + String.join(" ", engine.getEnabledProtocols()));
         }
 
@@ -287,6 +314,8 @@ public class DTLSWontNegotiateV10 {
 
         public DTLSServer(String protocol) throws Exception {
             super(false, protocol);
+            socket.setSoTimeout(READ_TIMEOUT_SECS * 1000);
+            log("Server listening on port: " + socket.getLocalPort());
             log("Enabled protocols: " + String.join(" ", engine.getEnabledProtocols()));
         }
 

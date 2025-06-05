@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
@@ -40,7 +40,7 @@ typedef struct {
   jlocation loc;
 } method_location_info;
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
 static jboolean isVirtualExpected = JNI_FALSE;
@@ -73,7 +73,7 @@ void JNICALL MethodExit(jvmtiEnv *jvmti, JNIEnv *jni,
     result = STATUS_FAILED;
     return;
   }
-  if (cls_sig != NULL && strcmp(cls_sig, "Lmexit01a;") == 0) {
+  if (cls_sig != nullptr && strcmp(cls_sig, "Lmexit01a;") == 0) {
 
     LOG(">>> retrieving method exit info ...\n");
     err = jvmti->GetMethodName(method, &name, &sig, &generic);
@@ -95,17 +95,17 @@ void JNICALL MethodExit(jvmtiEnv *jvmti, JNIEnv *jni,
     LOG(">>> ... done\n");
 
     if (eventsCount < sizeof(exits) / sizeof(method_location_info)) {
-      if (cls_sig == NULL || strcmp(cls_sig, exits[eventsCount].cls_sig) != 0) {
+      if (cls_sig == nullptr || strcmp(cls_sig, exits[eventsCount].cls_sig) != 0) {
         LOG("(exit#%" PRIuPTR ") wrong class: \"%s\"", eventsCount, cls_sig);
         LOG(", expected: \"%s\"\n", exits[eventsCount].cls_sig);
         result = STATUS_FAILED;
       }
-      if (name == NULL || strcmp(name, exits[eventsCount].name) != 0) {
+      if (name == nullptr || strcmp(name, exits[eventsCount].name) != 0) {
         LOG("(exit#%" PRIuPTR ") wrong method name: \"%s\"", eventsCount, name);
         LOG(", expected: \"%s\"\n", exits[eventsCount].name);
         result = STATUS_FAILED;
       }
-      if (sig == NULL || strcmp(sig, exits[eventsCount].sig) != 0) {
+      if (sig == nullptr || strcmp(sig, exits[eventsCount].sig) != 0) {
         LOG("(exit#%" PRIuPTR ") wrong method sig: \"%s\"", eventsCount, sig);
         LOG(", expected: \"%s\"\n", exits[eventsCount].sig);
         result = STATUS_FAILED;
@@ -137,7 +137,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jint res;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -177,12 +177,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 JNIEXPORT jint JNICALL
 Java_mexit01_init0(JNIEnv *jni, jclass cls) {
   jvmtiError err;
-  if (jvmti == NULL) {
+  if (jvmti == nullptr) {
     LOG("JVMTI client was not properly loaded!\n");
     return STATUS_FAILED;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_EXIT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_EXIT, nullptr);
   if (err == JVMTI_ERROR_NONE) {
     eventsExpected = sizeof(exits)/sizeof(method_location_info);
     eventsCount = 0;
@@ -200,7 +200,7 @@ Java_mexit01_check(JNIEnv *jni, jclass cls) {
   jclass clz;
   jmethodID mid;
 
-  if (jvmti == NULL) {
+  if (jvmti == nullptr) {
     LOG("JVMTI client was not properly loaded!\n");
     return STATUS_FAILED;
   }
@@ -214,20 +214,20 @@ Java_mexit01_check(JNIEnv *jni, jclass cls) {
   isVirtualExpected = jni->IsVirtualThread(thread);
 
   clz = jni->FindClass("mexit01a");
-  if (clz == NULL) {
+  if (clz == nullptr) {
     LOG("Cannot find MethodExit.mexit01a class!\n");
     return STATUS_FAILED;
   }
 
   mid = jni->GetStaticMethodID(clz, "dummy", "()V");
-  if (mid == NULL) {
+  if (mid == nullptr) {
     LOG("Cannot find metod \"dummy()\"!\n");
     return STATUS_FAILED;
   }
 
   jni->CallStaticVoidMethod(clz, mid);
 
-  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_METHOD_EXIT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_METHOD_EXIT, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Failed to disable JVMTI_EVENT_METHOD_EXIT event: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;

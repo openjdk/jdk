@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,15 @@
  *
  */
 
-// no precompiled headers
 #include "asm/macroAssembler.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
+#include "nmt/memTracker.hpp"
 #include "os_linux.hpp"
 #include "os_posix.hpp"
 #include "prims/jniFastGetField.hpp"
@@ -48,7 +47,6 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/timer.hpp"
 #include "signals_posix.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
@@ -82,6 +80,7 @@
 #define REG_SP REG_RSP
 #define REG_PC REG_RIP
 #define REG_FP REG_RBP
+#define REG_BCP REG_R13
 #define SPELL_REG_SP "rsp"
 #define SPELL_REG_FP "rbp"
 #else
@@ -159,13 +158,20 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
   return frame(sp + 1, fp, (address)*sp);
 }
 
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  assert(ucVoid != nullptr, "invariant");
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  assert(os::Posix::ucontext_is_interpreter(uc), "invariant");
+  return reinterpret_cast<intptr_t*>(uc->uc_mcontext.gregs[REG_BCP]);
+}
+
 // By default, gcc always save frame pointer (%ebp/%rbp) on stack. It may get
 // turned off by -fomit-frame-pointer,
 frame os::get_sender_for_C_frame(frame* fr) {
   return frame(fr->sender_sp(), fr->link(), fr->sender_pc());
 }
 
-intptr_t* _get_previous_fp() {
+static intptr_t* _get_previous_fp() {
 #if defined(__clang__)
   intptr_t **ebp;
   __asm__ __volatile__ ("mov %%" SPELL_REG_FP ", %0":"=r"(ebp):);
@@ -225,7 +231,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   if (info != nullptr && uc != nullptr && thread != nullptr) {
     pc = (address) os::Posix::ucontext_get_pc(uc);
 
-    if (sig == SIGSEGV && info->si_addr == 0 && info->si_code == SI_KERNEL) {
+    if (sig == SIGSEGV && info->si_addr == nullptr && info->si_code == SI_KERNEL) {
       // An irrecoverable SI_KERNEL SIGSEGV has occurred.
       // It's likely caused by dereferencing an address larger than TASK_SIZE.
       return false;
@@ -249,6 +255,14 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       stub = VM_Version::cpuinfo_cont_addr();
     }
 
+#if !defined(PRODUCT) && defined(_LP64)
+    if ((sig == SIGSEGV) && VM_Version::is_cpuinfo_segv_addr_apx(pc)) {
+      // Verify that OS save/restore APX registers.
+      stub = VM_Version::cpuinfo_cont_addr_apx();
+      VM_Version::clear_apx_test_state();
+    }
+#endif
+
     if (thread->thread_state() == _thread_in_Java) {
       // Java thread running in Java code => find exception handler if any
       // a fault inside compiled code, the interpreter, or a stub
@@ -260,20 +274,18 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // here if the underlying file has been truncated.
         // Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
-        CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
-        bool is_unsafe_arraycopy = thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc);
-        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
+        nmethod* nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
+        bool is_unsafe_memory_access = thread->doing_unsafe_access() && UnsafeMemoryAccess::contains_pc(pc);
+        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_memory_access) {
           address next_pc = Assembler::locate_next_instruction(pc);
-          if (is_unsafe_arraycopy) {
-            next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+          if (is_unsafe_memory_access) {
+            next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
           }
           stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
         }
-      }
-      else
-
+      } else
 #ifdef AMD64
-      if (sig == SIGFPE  &&
+      if (sig == SIGFPE &&
           (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV)) {
         stub =
           SharedRuntime::
@@ -318,8 +330,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                (sig == SIGBUS && /* info->si_code == BUS_OBJERR && */
                thread->doing_unsafe_access())) {
         address next_pc = Assembler::locate_next_instruction(pc);
-        if (UnsafeCopyMemory::contains_pc(pc)) {
-          next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+        if (UnsafeMemoryAccess::contains_pc(pc)) {
+          next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
         }
         stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
     }
@@ -463,7 +475,7 @@ juint os::cpu_microcode_revision() {
   fp = os::fopen("/proc/cpuinfo", "r");
   if (fp) {
     char data[2048] = {0}; // lines should fit in 2K buf
-    size_t len = sizeof(data);
+    int len = (int)sizeof(data);
     while (!feof(fp)) {
       if (fgets(data, len, fp)) {
         if (strstr(data, "microcode") != nullptr) {
@@ -539,6 +551,21 @@ void os::print_context(outputStream *st, const void *context) {
   st->print(", ERR=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_ERR]);
   st->cr();
   st->print("  TRAPNO=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_TRAPNO]);
+  // Add XMM registers + MXCSR. Note that C2 uses XMM to spill GPR values including pointers.
+  st->cr();
+  st->cr();
+  // Sanity check: fpregs should point into the context.
+  if ((address)uc->uc_mcontext.fpregs < (address)uc ||
+      pointer_delta(uc->uc_mcontext.fpregs, uc, 1) >= sizeof(ucontext_t)) {
+    st->print_cr("bad uc->uc_mcontext.fpregs: " INTPTR_FORMAT " (uc: " INTPTR_FORMAT ")",
+                 p2i(uc->uc_mcontext.fpregs), p2i(uc));
+  } else {
+    for (int i = 0; i < 16; ++i) {
+      const int64_t* xmm_val_addr = (int64_t*)&(uc->uc_mcontext.fpregs->_xmm[i]);
+      st->print_cr("XMM[%d]=" INTPTR_FORMAT " " INTPTR_FORMAT, i, xmm_val_addr[1], xmm_val_addr[0]);
+    }
+    st->print("  MXCSR=" UINT32_FORMAT_X_0, uc->uc_mcontext.fpregs->mxcsr);
+  }
 #else
   st->print(  "EAX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EAX]);
   st->print(", EBX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EBX]);
@@ -555,23 +582,6 @@ void os::print_context(outputStream *st, const void *context) {
   st->print(", CR2=" UINT64_FORMAT_X_0, (uint64_t)uc->uc_mcontext.cr2);
 #endif // AMD64
   st->cr();
-  st->cr();
-}
-
-void os::print_tos_pc(outputStream *st, const void *context) {
-  if (context == nullptr) return;
-
-  const ucontext_t* uc = (const ucontext_t*)context;
-
-  address sp = (address)os::Linux::ucontext_get_sp(uc);
-  print_tos(st, sp);
-  st->cr();
-
-  // Note: it may be unsafe to inspect memory near pc. For example, pc may
-  // point to garbage if entry point in an nmethod is corrupted. Leave
-  // this at the end, and hope for the best.
-  address pc = os::fetch_frame_from_context(uc).pc();
-  print_instructions(st, pc, sizeof(char));
   st->cr();
 }
 

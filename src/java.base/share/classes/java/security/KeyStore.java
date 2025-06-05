@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,6 +183,7 @@ import sun.security.util.Debug;
  * Consult the release documentation for your implementation to see if any
  * other types are supported.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @author Jan Luehe
  *
  * @see java.security.PrivateKey
@@ -205,7 +206,7 @@ public class KeyStore {
      * the default keystore type.
      * In the Security properties file, the default keystore type is given as:
      * <pre>
-     * keystore.type=jks
+     * keystore.type=pkcs12
      * </pre>
      */
     private static final String KEYSTORE_TYPE = "keystore.type";
@@ -300,6 +301,7 @@ public class KeyStore {
          * @throws    NullPointerException if {@code protectionAlgorithm} is
          *     {@code null}
          *
+         * @spec security/standard-names.html Java Security Standard Algorithm Names
          * @since 1.8
          */
         public PasswordProtection(char[] password, String protectionAlgorithm,
@@ -817,7 +819,7 @@ public class KeyStore {
         this.type = type;
 
         if (!skipDebug && pdebug != null) {
-            pdebug.println("KeyStore." + type.toUpperCase() + " type from: " +
+            pdebug.println("KeyStore." + type.toUpperCase(Locale.ROOT) + " type from: " +
                 getProviderName());
         }
     }
@@ -852,6 +854,7 @@ public class KeyStore {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard keystore types.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a keystore object of the specified type
      *
      * @throws KeyStoreException if no provider supports a
@@ -893,6 +896,7 @@ public class KeyStore {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a keystore object of the specified type
      *
      * @throws IllegalArgumentException if the provider name is {@code null}
@@ -939,6 +943,7 @@ public class KeyStore {
      *
      * @param provider the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a keystore object of the specified type
      *
      * @throws IllegalArgumentException if the specified provider is
@@ -971,8 +976,7 @@ public class KeyStore {
     /**
      * Returns the default keystore type as specified by the
      * {@code keystore.type} security property, or the string
-     * {@literal "jks"} (acronym for {@literal "Java keystore"})
-     * if no such property exists.
+     * {@literal "pkcs12"} if no such property exists.
      *
      * <p>The default keystore type can be used by applications that do not
      * want to use a hard-coded keystore type when calling one of the
@@ -983,16 +987,14 @@ public class KeyStore {
      * {@code keystore.type} security property to the desired keystore type.
      *
      * @return the default keystore type as specified by the
-     * {@code keystore.type} security property, or the string {@literal "jks"}
+     * {@code keystore.type} security property, or the string {@literal "pkcs12"}
      * if no such property exists.
      * @see java.security.Security security properties
      */
     public static final String getDefaultType() {
-        @SuppressWarnings("removal")
-        String kstype = AccessController.doPrivileged((PrivilegedAction<String>) () ->
-            Security.getProperty(KEYSTORE_TYPE));
+        String kstype = Security.getProperty(KEYSTORE_TYPE);
         if (kstype == null) {
-            kstype = "jks";
+            kstype = "pkcs12";
         }
         return kstype;
     }
@@ -1695,9 +1697,6 @@ public class KeyStore {
      * @throws IllegalArgumentException if file does not exist or does not
      *             refer to a normal file.
      * @throws NullPointerException if file is {@code null}.
-     * @throws SecurityException if a security manager exists and its
-     *             {@link java.lang.SecurityManager#checkRead} method denies
-     *             read access to the specified file.
      *
      * @see Provider
      *
@@ -1752,9 +1751,6 @@ public class KeyStore {
      * @throws IllegalArgumentException if file does not exist or does not
      *             refer to a normal file, or if param is not recognized.
      * @throws NullPointerException if file is {@code null}.
-     * @throws SecurityException if a security manager exists and its
-     *             {@link java.lang.SecurityManager#checkRead} method denies
-     *             read access to the specified file.
      *
      * @see Provider
      *
@@ -1971,10 +1967,6 @@ public class KeyStore {
          * object encapsulating the password that was used to invoke the
          * {@code load} method.
          *
-         * <p><em>Note</em> that the {@link #getKeyStore} method is executed
-         * within the {@link AccessControlContext} of the code invoking this
-         * method.
-         *
          * @return a new {@code Builder} object
          * @param type the type of {@code KeyStore} to be constructed
          * @param provider the provider from which the {@code KeyStore} is to
@@ -2004,9 +1996,7 @@ public class KeyStore {
                     ("File does not exist or it does not refer " +
                      "to a normal file: " + file);
             }
-            @SuppressWarnings("removal")
-            var acc = AccessController.getContext();
-            return new FileBuilder(type, provider, file, protection, acc);
+            return new FileBuilder(type, provider, file, protection);
         }
 
         /**
@@ -2035,10 +2025,6 @@ public class KeyStore {
          * object encapsulating the password that was used to invoke the
          * {@code load} method.
          *
-         * <p><em>Note</em> that the {@link #getKeyStore} method is executed
-         * within the {@link AccessControlContext} of the code invoking this
-         * method.
-         *
          * @return a new {@code Builder} object
          * @param file the File that contains the {@code KeyStore} data
          * @param protection the {@code ProtectionParameter} securing the
@@ -2063,24 +2049,19 @@ public class KeyStore {
             private final File file;
             private final ProtectionParameter protection;
             private ProtectionParameter keyProtection;
-            @SuppressWarnings("removal")
-            private final AccessControlContext context;
 
             private KeyStore keyStore;
 
             private Throwable oldException;
 
             FileBuilder(String type, Provider provider, File file,
-                    ProtectionParameter protection,
-                    @SuppressWarnings("removal") AccessControlContext context) {
+                    ProtectionParameter protection) {
                 this.type = type;
                 this.provider = provider;
                 this.file = file;
                 this.protection = protection;
-                this.context = context;
             }
 
-            @SuppressWarnings("removal")
             public synchronized KeyStore getKeyStore() throws KeyStoreException
             {
                 if (keyStore != null) {
@@ -2091,19 +2072,18 @@ public class KeyStore {
                         ("Previous KeyStore instantiation failed",
                          oldException);
                 }
-                PrivilegedExceptionAction<KeyStore> action =
-                        new PrivilegedExceptionAction<KeyStore>() {
-                    public KeyStore run() throws Exception {
-                        if (!(protection instanceof CallbackHandlerProtection)) {
-                            return run0();
-                        }
+                try {
+                    if (!(protection instanceof CallbackHandlerProtection)) {
+                        keyStore = getKeyStore0();
+                    } else {
                         // when using a CallbackHandler,
                         // reprompt if the password is wrong
                         int tries = 0;
                         while (true) {
                             tries++;
                             try {
-                                return run0();
+                                keyStore = getKeyStore0();
+                                break;
                             } catch (IOException e) {
                                 if ((tries < MAX_CALLBACK_TRIES)
                                         && (e.getCause() instanceof UnrecoverableKeyException)) {
@@ -2113,58 +2093,53 @@ public class KeyStore {
                             }
                         }
                     }
-                    public KeyStore run0() throws Exception {
-                        KeyStore ks;
-                        char[] password;
-
-                        // Acquire keystore password
-                        if (protection instanceof PasswordProtection) {
-                            password =
-                                ((PasswordProtection)protection).getPassword();
-                            keyProtection = protection;
-                        } else {
-                            CallbackHandler handler =
-                                ((CallbackHandlerProtection)protection)
-                                    .getCallbackHandler();
-                            PasswordCallback callback = new PasswordCallback
-                                ("Password for keystore " + file.getName(),
-                                    false);
-                            handler.handle(new Callback[] {callback});
-                            password = callback.getPassword();
-                            if (password == null) {
-                                throw new KeyStoreException("No password" +
-                                                            " provided");
-                            }
-                            callback.clearPassword();
-                            keyProtection = new PasswordProtection(password);
-                        }
-
-                        if (type.isEmpty()) {
-                            // Instantiate keystore and load keystore data
-                            ks = KeyStore.getInstance(file, password);
-                        } else {
-                            // Instantiate keystore
-                            if (provider == null) {
-                                ks = KeyStore.getInstance(type);
-                            } else {
-                                ks = KeyStore.getInstance(type, provider);
-                            }
-                            // Load keystore data
-                            try (InputStream in = new FileInputStream(file)) {
-                                ks.load(in, password);
-                            }
-                        }
-                        return ks;
-                    }
-                };
-                try {
-                    keyStore = AccessController.doPrivileged(action, context);
-                    return keyStore;
-                } catch (PrivilegedActionException e) {
-                    oldException = e.getCause();
+                } catch (Exception e) {
+                    oldException = e;
                     throw new KeyStoreException
                         ("KeyStore instantiation failed", oldException);
                 }
+                return keyStore;
+            }
+
+            private KeyStore getKeyStore0() throws Exception {
+                KeyStore ks;
+                char[] password;
+
+                // Acquire keystore password
+                if (protection instanceof PasswordProtection) {
+                    password = ((PasswordProtection)protection).getPassword();
+                    keyProtection = protection;
+                } else {
+                    CallbackHandler handler =
+                        ((CallbackHandlerProtection)protection)
+                            .getCallbackHandler();
+                    PasswordCallback callback = new PasswordCallback
+                        ("Password for keystore " + file.getName(), false);
+                    handler.handle(new Callback[] {callback});
+                    password = callback.getPassword();
+                    if (password == null) {
+                        throw new KeyStoreException("No password" + " provided");
+                    }
+                    callback.clearPassword();
+                    keyProtection = new PasswordProtection(password);
+                }
+
+                if (type.isEmpty()) {
+                    // Instantiate keystore and load keystore data
+                    ks = KeyStore.getInstance(file, password);
+                } else {
+                    // Instantiate keystore
+                    if (provider == null) {
+                        ks = KeyStore.getInstance(type);
+                    } else {
+                        ks = KeyStore.getInstance(type, provider);
+                    }
+                    // Load keystore data
+                    try (InputStream in = new FileInputStream(file)) {
+                        ks.load(in, password);
+                    }
+                }
+                return ks;
             }
 
             public synchronized ProtectionParameter
@@ -2197,10 +2172,6 @@ public class KeyStore {
          * <p>Calls to {@link #getProtectionParameter getProtectionParameter()}
          * will return {@code protection}.
          *
-         * <p><em>Note</em> that the {@link #getKeyStore} method is executed
-         * within the {@link AccessControlContext} of the code invoking this
-         * method.
-         *
          * @return a new {@code Builder} object
          * @param type the type of {@code KeyStore} to be constructed
          * @param provider the provider from which the {@code KeyStore} is to
@@ -2214,16 +2185,18 @@ public class KeyStore {
             if ((type == null) || (protection == null)) {
                 throw new NullPointerException();
             }
-            @SuppressWarnings("removal")
-            final AccessControlContext context = AccessController.getContext();
             return new Builder() {
                 private volatile boolean getCalled;
                 private IOException oldException;
 
-                private final PrivilegedExceptionAction<KeyStore> action
-                        = new PrivilegedExceptionAction<>() {
-
-                    public KeyStore run() throws Exception {
+                public synchronized KeyStore getKeyStore()
+                        throws KeyStoreException {
+                    if (oldException != null) {
+                        throw new KeyStoreException
+                            ("Previous KeyStore instantiation failed",
+                             oldException);
+                    }
+                    try {
                         KeyStore ks;
                         if (provider == null) {
                             ks = KeyStore.getInstance(type);
@@ -2256,23 +2229,9 @@ public class KeyStore {
                         }
                         getCalled = true;
                         return ks;
-                    }
-                };
-
-                @SuppressWarnings("removal")
-                public synchronized KeyStore getKeyStore()
-                        throws KeyStoreException {
-                    if (oldException != null) {
+                    } catch (Exception e) {
                         throw new KeyStoreException
-                            ("Previous KeyStore instantiation failed",
-                             oldException);
-                    }
-                    try {
-                        return AccessController.doPrivileged(action, context);
-                    } catch (PrivilegedActionException e) {
-                        Throwable cause = e.getCause();
-                        throw new KeyStoreException
-                            ("KeyStore instantiation failed", cause);
+                            ("KeyStore instantiation failed", e);
                     }
                 }
 

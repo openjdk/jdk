@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@
                        develop_pd,                                          \
                        product,                                             \
                        product_pd,                                          \
-                       notproduct,                                          \
                        range,                                               \
                        constraint)                                          \
                                                                             \
@@ -95,11 +94,11 @@
   product(bool, CICompilerCountPerCPU, false,                               \
           "1 compiler thread for log(N CPUs)")                              \
                                                                             \
-  notproduct(intx, CICrashAt, -1,                                           \
+  develop(intx, CICrashAt, -1,                                              \
           "id of compilation to trigger assert in compiler thread for "     \
           "the purpose of testing, e.g. generation of replay data")         \
                                                                             \
-  notproduct(bool, CIObjectFactoryVerify, false,                            \
+  develop(bool, CIObjectFactoryVerify, false,                               \
           "enable potentially expensive verification in ciObjectFactory")   \
                                                                             \
   develop(intx, CIStart, 0,                                                 \
@@ -270,6 +269,17 @@
           "Maximum rate sampling interval (in milliseconds)")               \
           range(0, max_intx)                                                \
                                                                             \
+  product(double, Tier0ProfileDelayFactor, 100.0, DIAGNOSTIC,               \
+          "Delay profiling/compiling of methods that were "                 \
+          "observed to be lukewarm")                                        \
+                                                                            \
+  product(double, Tier2ProfileDelayFactor, 250.0, DIAGNOSTIC,               \
+          "Delay profiling of methods that were observed to be lukewarm")   \
+                                                                            \
+  product(bool, SkipTier2IfPossible, false, DIAGNOSTIC,                     \
+          "Compile at tier 4 instead of tier 2 in training replay "         \
+          "mode if posssible")                                              \
+                                                                            \
   product(ccstr, CompilationMode, "default",                                \
           "Compilation modes: "                                             \
           "default: normal tiered compilation; "                            \
@@ -379,7 +389,10 @@
           "Don't compile methods larger than this if "                      \
           "+DontCompileHugeMethods")                                        \
                                                                             \
-
+  product(bool, CaptureBailoutInformation, trueInDebug, DIAGNOSTIC,         \
+          "If compilation is stopped with an error, capture diagnostic "    \
+          "information at the bailout point")                               \
+                                                                            \
 // end of COMPILER_FLAGS
 
 DECLARE_FLAGS(COMPILER_FLAGS)

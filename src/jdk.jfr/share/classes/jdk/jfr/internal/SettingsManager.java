@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ final class SettingsManager {
         // store settings so they are available if a new event class is loaded
         availableSettings = createSettingsMap(activeSettings);
         List<EventControl> eventControls = MetadataRepository.getInstance().getEventControls();
-        if (!JVM.getJVM().isRecording()) {
+        if (!JVM.isRecording()) {
             for (EventControl ec : eventControls) {
                 ec.disable();
             }
@@ -148,8 +148,8 @@ final class SettingsManager {
                 setEventControl(ec, writeSettingEvents, timestamp);
             }
         }
-        if (JVM.getJVM().getAllowedToDoEventRetransforms()) {
-            updateRetransform(JVM.getJVM().getAllEventClasses());
+        if (JVM.getAllowedToDoEventRetransforms()) {
+            updateRetransform(JVM.getAllEventClasses());
         }
     }
 
@@ -158,7 +158,7 @@ final class SettingsManager {
         for(Class<? extends jdk.internal.event.Event> eventClass: eventClasses) {
             EventConfiguration ec = JVMSupport.getConfiguration(eventClass);
             if (ec != null ) {
-                PlatformEventType eventType = ec.getPlatformEventType();
+                PlatformEventType eventType = ec.platformEventType();
                 if (eventType.isMarkedForInstrumentation()) {
                     classes.add(eventClass);
                     eventType.markForInstrumentation(false);
@@ -169,7 +169,7 @@ final class SettingsManager {
             }
         }
         if (!classes.isEmpty()) {
-            JVM.getJVM().retransformClasses(classes.toArray(new Class<?>[0]));
+            JVM.retransformClasses(classes.toArray(new Class<?>[0]));
         }
     }
 

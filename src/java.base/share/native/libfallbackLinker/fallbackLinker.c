@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,10 @@
 #include <ffi.h>
 
 #include <errno.h>
+#include <stdalign.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <wchar.h>
 #ifdef _WIN64
 #include <Windows.h>
 #include <Winsock2.h>
@@ -41,12 +44,29 @@ static jclass LibFallback_class;
 static jmethodID LibFallback_doUpcall_ID;
 static const char* LibFallback_doUpcall_sig = "(JJLjava/lang/invoke/MethodHandle;)V";
 
-JNIEXPORT void JNICALL
+#define CHECK_NULL(expr) \
+  if (expr == NULL) { \
+    return JNI_FALSE; \
+  }
+
+JNIEXPORT jboolean JNICALL
 Java_jdk_internal_foreign_abi_fallback_LibFallback_init(JNIEnv* env, jclass cls) {
-  (*env)->GetJavaVM(env, &VM);
-  LibFallback_class = (*env)->FindClass(env, "jdk/internal/foreign/abi/fallback/LibFallback");
+  jint result = (*env)->GetJavaVM(env, &VM);
+  if (result != 0) {
+    return JNI_FALSE;
+  }
+
+  jclass LibFallback_class_local = (*env)->FindClass(env, "jdk/internal/foreign/abi/fallback/LibFallback");
+  CHECK_NULL(LibFallback_class_local)
+
+  LibFallback_class = (*env)->NewGlobalRef(env, LibFallback_class_local);
+  CHECK_NULL(LibFallback_class)
+
   LibFallback_doUpcall_ID = (*env)->GetStaticMethodID(env,
     LibFallback_class, "doUpcall", LibFallback_doUpcall_sig);
+  CHECK_NULL(LibFallback_doUpcall_ID)
+
+  return JNI_TRUE;
 }
 
 JNIEXPORT jlong JNICALL
@@ -91,19 +111,61 @@ static void do_capture_state(int32_t* value_ptr, int captured_state_mask) {
 }
 
 JNIEXPORT void JNICALL
-Java_jdk_internal_foreign_abi_fallback_LibFallback_doDowncall(JNIEnv* env, jclass cls, jlong cif, jlong fn, jlong rvalue, jlong avalues, jlong jcaptured_state, jint captured_state_mask) {
+Java_jdk_internal_foreign_abi_fallback_LibFallback_doDowncall(JNIEnv* env, jclass cls, jlong cif, jlong fn, jlong rvalue,
+                                                              jlong avalues,
+                                                              jarray capture_state_heap_base, jlong captured_state_offset,
+                                                              jint captured_state_mask,
+                                                              jarray heapBases, jint numArgs) {
+  void** carrays;
+  int capture_state_hb_offset = numArgs;
+  int32_t* captured_state_addr = jlong_to_ptr(captured_state_offset);
+  if (heapBases != NULL) {
+    void** aptrs = jlong_to_ptr(avalues);
+    carrays = malloc(sizeof(void*) * (numArgs + 1));
+    for (int i = 0; i < numArgs; i++) {
+      jarray hb = (jarray) (*env)->GetObjectArrayElement(env, heapBases, i);
+      if (hb != NULL) {
+        // *(aptrs[i]) is the offset into the segment (from MS::address)
+        // we add the base address of the array to it here
+        jboolean isCopy;
+        jbyte* arrayPtr = (*env)->GetPrimitiveArrayCritical(env, hb, &isCopy);
+        carrays[i] = arrayPtr;
+        int offset = *((int*)aptrs[i]);
+        *((void**)aptrs[i]) = arrayPtr + offset;
+      }
+    }
+    if (capture_state_heap_base != NULL) {
+        jboolean isCopy;
+        jbyte* arrayPtr = (*env)->GetPrimitiveArrayCritical(env, capture_state_heap_base, &isCopy);
+        carrays[capture_state_hb_offset] = arrayPtr;
+        captured_state_addr = (int32_t*) (arrayPtr + captured_state_offset);
+    }
+  }
+
   ffi_call(jlong_to_ptr(cif), jlong_to_ptr(fn), jlong_to_ptr(rvalue), jlong_to_ptr(avalues));
 
   if (captured_state_mask != 0) {
-    int32_t* captured_state = jlong_to_ptr(jcaptured_state);
-    do_capture_state(captured_state, captured_state_mask);
+    do_capture_state(captured_state_addr, captured_state_mask);
+  }
+
+  if (heapBases != NULL) {
+    for (int i = 0; i < numArgs; i++) {
+      jarray hb = (jarray) (*env)->GetObjectArrayElement(env, heapBases, i);
+      if (hb != NULL) {
+        (*env)->ReleasePrimitiveArrayCritical(env, hb, carrays[i], JNI_COMMIT);
+      }
+    }
+    if (capture_state_heap_base != NULL) {
+        (*env)->ReleasePrimitiveArrayCritical(env, capture_state_heap_base, carrays[capture_state_hb_offset], JNI_COMMIT);
+    }
+    free(carrays);
   }
 }
 
 static void do_upcall(ffi_cif* cif, void* ret, void** args, void* user_data) {
   // attach thread
   JNIEnv* env;
-  jint result = (*VM)->AttachCurrentThreadAsDaemon(VM, (void**) &env, NULL);
+  (*VM)->AttachCurrentThreadAsDaemon(VM, (void**) &env, NULL);
 
   // call into doUpcall in LibFallback
   jobject upcall_data = (jobject) user_data;
@@ -205,4 +267,34 @@ Java_jdk_internal_foreign_abi_fallback_LibFallback_ffi_1type_1double(JNIEnv* env
 JNIEXPORT jlong JNICALL
 Java_jdk_internal_foreign_abi_fallback_LibFallback_ffi_1type_1pointer(JNIEnv* env, jclass cls) {
   return ptr_to_jlong(&ffi_type_pointer);
+}
+
+JNIEXPORT jint JNICALL
+Java_jdk_internal_foreign_abi_fallback_LibFallback_ffi_1sizeof_1short(JNIEnv* env, jclass cls) {
+  return sizeof(short);
+}
+
+JNIEXPORT jint JNICALL
+Java_jdk_internal_foreign_abi_fallback_LibFallback_ffi_1sizeof_1int(JNIEnv* env, jclass cls) {
+  return sizeof(int);
+}
+
+JNIEXPORT jint JNICALL
+Java_jdk_internal_foreign_abi_fallback_LibFallback_ffi_1sizeof_1long(JNIEnv* env, jclass cls) {
+  return sizeof(long);
+}
+
+JNIEXPORT jint JNICALL
+Java_jdk_internal_foreign_abi_fallback_LibFallback_ffi_1sizeof_1wchar(JNIEnv* env, jclass cls) {
+  return sizeof(wchar_t);
+}
+
+JNIEXPORT jint JNICALL
+Java_jdk_internal_foreign_abi_fallback_LibFallback_alignof_1long_1long(JNIEnv* env, jclass cls) {
+  return alignof(long long);
+}
+
+JNIEXPORT jint JNICALL
+Java_jdk_internal_foreign_abi_fallback_LibFallback_alignof_1double(JNIEnv* env, jclass cls) {
+  return alignof(double);
 }

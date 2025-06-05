@@ -75,12 +75,12 @@ final class MetadataReader {
         }
         descriptor = new MetadataDescriptor();
         Element root = createElement();
-        Element metadata = root.elements("metadata").get(0);
+        Element metadata = root.elements("metadata").getFirst();
         declareTypes(metadata);
         defineTypes(metadata);
         annotateTypes(metadata);
         buildEvenTypes();
-        Element time = root.elements("region").get(0);
+        Element time = root.elements("region").getFirst();
         descriptor.gmtOffset = time.attribute(MetadataDescriptor.ATTRIBUTE_GMT_OFFSET, 1);
         descriptor.dst = time.attribute(MetadataDescriptor.ATTRIBUTE_DST, 0L);
         descriptor.locale = time.attribute(MetadataDescriptor.ATTRIBUTE_LOCALE, "");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,20 @@
 
 /*
  * @test
- * @bug 8167273 8251317 8258794
+ * @bug 8167273 8251317 8258794 8174269
  * @summary Test
  * Era names retrieved from Calendar and DateFormatSymbols class
  * should match for default providers preference
- * as well as when  preference list is [COMPAT, CLDR],
- * Empty era names are not retrieved from DateformatSymbols class.
+ * Empty era names are not retrieved from DateFormatSymbols class.
  * Equivalent locales specified for [zh-HK, no-NO, no] for
  * CLDR Provider works correctly.
- * Implict COMPAT Locale nb is reflected in available locales
- * for all Providers for COMPAT.
+ * Implicit COMPAT Locale nb is reflected in available locales
  * @modules java.base/sun.util.locale.provider
  *          java.base/sun.util.spi
  *          jdk.localedata
- * @run main/othervm -Djava.locale.providers=COMPAT,CLDR Bug8167273 testEraName
- * @run main/othervm  Bug8167273 testEraName
+ * @run main Bug8167273 testEraName
  * @run main/othervm -Djava.locale.providers=CLDR Bug8167273 testCldr
- * @run main/othervm  Bug8167273 testEmptyEraNames
- * @run main/othervm  -Djava.locale.providers=COMPAT Bug8167273 testCompat
+ * @run main Bug8167273 testEmptyEraNames
  */
 import java.text.DateFormatSymbols;
 import java.util.Arrays;
@@ -66,9 +62,6 @@ public class Bug8167273 {
                 break;
             case "testCldr":
                 testCldrSupportedLocales();
-                break;
-            case "testCompat":
-                testCompatSupportedLocale();
                 break;
             default:
                 throw new RuntimeException("no test was specified.");
@@ -156,45 +149,5 @@ public class Bug8167273 {
         locales.stream().filter((loc) -> (!cldr.isSupportedProviderLocale(loc, langtags))).forEachOrdered((loc) -> {
             throw new RuntimeException("Locale " + loc + "  is not supported by CLDR Locale Provider");
         });
-    }
-
-    /**
-     * Tests that locale nb should be supported by JRELocaleProvider .
-     */
-    private static void testCompatSupportedLocale() {
-        LocaleProviderAdapter jre = LocaleProviderAdapter.forJRE();
-        checkPresenceCompat("BreakIteratorProvider",
-                jre.getBreakIteratorProvider().getAvailableLocales());
-        checkPresenceCompat("CollatorProvider",
-                jre.getCollatorProvider().getAvailableLocales());
-        checkPresenceCompat("DateFormatProvider",
-                jre.getDateFormatProvider().getAvailableLocales());
-        checkPresenceCompat("DateFormatSymbolsProvider",
-                jre.getDateFormatSymbolsProvider().getAvailableLocales());
-        checkPresenceCompat("DecimalFormatSymbolsProvider",
-                jre.getDecimalFormatSymbolsProvider().getAvailableLocales());
-        checkPresenceCompat("NumberFormatProvider",
-                jre.getNumberFormatProvider().getAvailableLocales());
-        checkPresenceCompat("CurrencyNameProvider",
-                jre.getCurrencyNameProvider().getAvailableLocales());
-        checkPresenceCompat("LocaleNameProvider",
-                jre.getLocaleNameProvider().getAvailableLocales());
-        checkPresenceCompat("TimeZoneNameProvider",
-                jre.getTimeZoneNameProvider().getAvailableLocales());
-        checkPresenceCompat("CalendarDataProvider",
-                jre.getCalendarDataProvider().getAvailableLocales());
-        checkPresenceCompat("CalendarNameProvider",
-                jre.getCalendarNameProvider().getAvailableLocales());
-        checkPresenceCompat("CalendarProvider",
-                jre.getCalendarProvider().getAvailableLocales());
-    }
-
-    private static void checkPresenceCompat(String testName, Locale[] got) {
-        List<Locale> gotLocalesList = Arrays.asList(got);
-        Locale nb = Locale.forLanguageTag("nb");
-        if (!gotLocalesList.contains(nb)) {
-            throw new RuntimeException("Locale nb not supported by JREProvider for "
-                    + testName + " test ");
-        }
     }
 }

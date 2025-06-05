@@ -133,6 +133,11 @@ public class GetTask_FileManagerTest extends APITest {
         }
 
         @Override
+        public Iterable<? extends JavaFileObject> getJavaFileObjects(Path... files) {
+            return fileManager.getJavaFileObjects(files);
+        }
+
+        @Override
         public Iterable<? extends JavaFileObject> getJavaFileObjectsFromStrings(Iterable<String> names) {
             return fileManager.getJavaFileObjectsFromStrings(names);
         }

@@ -48,7 +48,6 @@ struct SBIXGlyph
   {
     TRACE_SERIALIZE (this);
     SBIXGlyph* new_glyph = c->start_embed<SBIXGlyph> ();
-    if (unlikely (!new_glyph)) return_trace (nullptr);
     if (unlikely (!c->extend_min (new_glyph))) return_trace (nullptr);
 
     new_glyph->xOffset = xOffset;
@@ -143,7 +142,6 @@ struct SBIXStrike
     unsigned int num_output_glyphs = c->plan->num_output_glyphs ();
 
     auto* out = c->serializer->start_embed<SBIXStrike> ();
-    if (unlikely (!out)) return_trace (false);
     auto snap = c->serializer->snapshot ();
     if (unlikely (!c->serializer->extend (out, num_output_glyphs + 1))) return_trace (false);
     out->ppem = ppem;
@@ -239,27 +237,28 @@ struct sbix
 
       int x_offset = 0, y_offset = 0;
       unsigned int strike_ppem = 0;
-      hb_blob_t *blob = reference_png (font, glyph, &x_offset, &y_offset, &strike_ppem);
       hb_glyph_extents_t extents;
       hb_glyph_extents_t pixel_extents;
 
-      if (blob == hb_blob_get_empty ())
-        return false;
-
-      if (!hb_font_get_glyph_extents (font, glyph, &extents))
+      if (!font->get_glyph_extents (glyph, &extents, false))
         return false;
 
       if (unlikely (!get_extents (font, glyph, &pixel_extents, false)))
+        return false;
+
+      hb_blob_t *blob = reference_png (font, glyph, &x_offset, &y_offset, &strike_ppem);
+      if (hb_blob_is_immutable (blob))
         return false;
 
       bool ret = funcs->image (data,
                                blob,
                                pixel_extents.width, -pixel_extents.height,
                                HB_PAINT_IMAGE_FORMAT_PNG,
-                               font->slant_xy,
+                               0.f,
                                &extents);
 
       hb_blob_destroy (blob);
+
       return ret;
     }
 
@@ -370,6 +369,7 @@ struct sbix
   {
     TRACE_SANITIZE (this);
     return_trace (likely (c->check_struct (this) &&
+                          hb_barrier () &&
                           version >= 1 &&
                           strikes.sanitize (c, this)));
   }
@@ -388,7 +388,6 @@ struct sbix
     TRACE_SERIALIZE (this);
 
     auto *out = c->serializer->start_embed<Array32OfOffset32To<SBIXStrike>> ();
-    if (unlikely (!out)) return_trace (false);
     if (unlikely (!c->serializer->extend_min (out))) return_trace (false);
 
     hb_vector_t<Offset32To<SBIXStrike>*> new_strikes;
@@ -423,8 +422,6 @@ struct sbix
   {
     TRACE_SUBSET (this);
 
-    sbix *sbix_prime = c->serializer->start_embed<sbix> ();
-    if (unlikely (!sbix_prime)) return_trace (false);
     if (unlikely (!c->serializer->embed (this->version))) return_trace (false);
     if (unlikely (!c->serializer->embed (this->flags))) return_trace (false);
 

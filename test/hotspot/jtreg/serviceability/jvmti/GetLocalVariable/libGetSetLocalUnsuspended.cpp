@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
@@ -40,7 +40,7 @@ enum Slots {
   SlotDouble = 6,
 };
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 
 static void
 check_jvmti_error_not_suspended(JNIEnv* jni, const char* func_name, jvmtiError err) {
@@ -55,7 +55,7 @@ test_GetLocal(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
   jvmtiError err;
   const int depth = 0;
 
-  jobject msg = NULL;
+  jobject msg = nullptr;
   jint ii = 0;
   jlong ll = 0L;
   jfloat ff = 0.0;
@@ -101,7 +101,7 @@ test_SetLocal(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
   jvmtiError err;
   const int depth = 0;
 
-  const jobject msg = NULL;
+  const jobject msg = nullptr;
   const jint ii = 0;
   const jlong ll = 0L;
   const jfloat ff = 0.0;
@@ -163,7 +163,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 JNIEXPORT void JNICALL
 Java_GetSetLocalUnsuspended_testUnsuspendedThread(JNIEnv *jni, jclass klass, jthread thread) {
   char* tname = get_thread_name(jvmti, jni, thread);
-  jmethodID method = NULL;
+  jmethodID method = nullptr;
   jlocation location = 0;
 
   LOG("\ntestUnsuspendedThread: started for thread: %s\n", tname);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,7 +34,7 @@
   // Whether this platform implements the scalable vector feature
   static const bool implements_scalable_vector = true;
 
-  static const bool supports_scalable_vector() {
+  static bool supports_scalable_vector() {
     return UseRVV;
   }
 
@@ -114,9 +114,6 @@
   // C code as the Java calling convention forces doubles to be aligned.
   static const bool misaligned_doubles_ok = true;
 
-  // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
-  static const bool strict_fp_requires_explicit_rounding = false;
-
   // Are floats converted to double when stored to stack during
   // deoptimization?
   static constexpr bool float_in_double() { return false; }
@@ -128,27 +125,32 @@
   static const bool int_in_long = true;
 
   // Does the CPU supports vector variable shift instructions?
-  static constexpr bool supports_vector_variable_shifts(void) {
+  static bool supports_vector_variable_shifts(void) {
+    return UseRVV;
+  }
+
+  // Does target support predicated operation emulation.
+  static bool supports_vector_predicate_op_emulation(int vopc, int vlen, BasicType bt) {
     return false;
   }
 
   // Does the CPU supports vector variable rotate instructions?
-  static constexpr bool supports_vector_variable_rotates(void) {
-    return false;
+  static bool supports_vector_variable_rotates(void) {
+    return UseZvbb;
   }
 
   // Does the CPU supports vector constant rotate instructions?
-  static constexpr bool supports_vector_constant_rotates(int shift) {
-    return false;
+  static bool supports_vector_constant_rotates(int shift) {
+    return UseZvbb;
   }
 
   // Does the CPU supports vector unsigned comparison instructions?
-  static const bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
-    return false;
+  static bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
+    return UseRVV;
   }
 
   // Some microarchitectures have mask registers used on vectors
-  static const bool has_predicated_vectors(void) {
+  static bool has_predicated_vectors(void) {
     return UseRVV;
   }
 
@@ -190,6 +192,11 @@
         return 30;
       }
     }
+  }
+
+  // Is SIMD sort supported for this CPU?
+  static bool supports_simd_sort(BasicType bt) {
+    return false;
   }
 
 #endif // CPU_RISCV_MATCHER_RISCV_HPP

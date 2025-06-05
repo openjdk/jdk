@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,9 +210,11 @@ static BOOL sSetupHelpMenu = NO;
         // In theory, this might cause flickering if the window gaining focus
         // has its own menu. However, I couldn't reproduce it on practice, so
         // perhaps this is a non issue.
-        CMenuBar* defaultMenu = [[ApplicationDelegate sharedDelegate] defaultMenuBar];
-        if (defaultMenu != nil) {
-            [CMenuBar activate:defaultMenu modallyDisabled:NO];
+        if ([ApplicationDelegate sharedDelegate] != nil) {
+            CMenuBar* defaultMenu = [[ApplicationDelegate sharedDelegate] defaultMenuBar];
+            if (defaultMenu != nil) {
+                [CMenuBar activate:defaultMenu modallyDisabled:NO];
+            }
         }
     }
 }
@@ -436,7 +438,7 @@ Java_sun_lwawt_macosx_CMenuBar_nativeAddAtIndex
      jlong menuBarObject, jlong menuObject, jint index)
 {
     JNI_COCOA_ENTER(env);
-    // Remove the specified item.
+    // Add the specified item.
     [((CMenuBar *) jlong_to_ptr(menuBarObject)) javaAddMenu:(CMenu *) jlong_to_ptr(menuObject) atIndex:index];
     JNI_COCOA_EXIT(env);
 }

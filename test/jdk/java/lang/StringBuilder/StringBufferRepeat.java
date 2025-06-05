@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.util.Arrays;
 
 /**
  * @test
- * @bug 8302323
+ * @bug 8302323 8322512
  * @summary Test StringBuffer.repeat sanity tests
  * @run testng/othervm -XX:-CompactStrings StringBufferRepeat
  * @run testng/othervm -XX:+CompactStrings StringBufferRepeat
@@ -128,6 +128,19 @@ public class StringBufferRepeat {
 
         expected = "\u0000\u0000\u0000\u0000\u0000\u0000\u0020\u0020\u0020\u0020\u0020\u0020\u2461\u2462\u2462\u2462\u2462\u2462\udbff\udfff\udbff\udfff\udbff\udfff\udbff\udfff\udbff\udfff\udbff\udfff";
         assertEquals(expected, sb.toString());
+
+        // toStringCache
+
+        sb.setLength(0);
+        sb.toString();
+        sb.repeat('*', 5);
+        expected = "*****";
+        assertEquals(sb.toString(), expected);
+        sb.setLength(0);
+        sb.toString();
+        sb.repeat("*", 5);
+        assertEquals(sb.toString(), expected);
+
 
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -386,7 +386,11 @@ public class AquaKeyBindings {
             "shift ENTER", "selectPreviousRowCell",
             "alt TAB", "focusHeader",
             "alt shift TAB", "focusHeader",
-            "F8", "focusHeader"
+            "F8", "focusHeader",
+            "ctrl shift UP", "selectFirstRowExtendSelection",
+            "ctrl shift DOWN", "selectLastRowExtendSelection",
+            "ctrl shift RIGHT", "selectLastColumnExtendSelection",
+            "ctrl shift LEFT", "selectFirstColumnExtendSelection"
         }));
     }
 

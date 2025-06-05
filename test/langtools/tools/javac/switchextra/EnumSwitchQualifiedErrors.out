@@ -8,4 +8,7 @@ EnumSwitchQualifiedErrors.java:58:18: compiler.err.enum.label.must.be.enum.const
 EnumSwitchQualifiedErrors.java:65:18: compiler.err.pattern.or.enum.req
 EnumSwitchQualifiedErrors.java:66:18: compiler.err.pattern.or.enum.req
 EnumSwitchQualifiedErrors.java:67:18: compiler.err.pattern.expected
-10 errors
+EnumSwitchQualifiedErrors.java:75:18: compiler.err.duplicate.case.label
+EnumSwitchQualifiedErrors.java:83:18: compiler.err.duplicate.case.label
+EnumSwitchQualifiedErrors.java:91:18: compiler.err.duplicate.case.label
+13 errors

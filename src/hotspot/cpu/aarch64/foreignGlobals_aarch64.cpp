@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2022, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "code/vmreg.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -200,20 +199,12 @@ static void move_v128(MacroAssembler* masm, int out_stk_bias,
   }
 }
 
-void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias, const StubLocations& locs) const {
+void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias) const {
   Register tmp_reg = as_Register(tmp);
   for (int i = 0; i < _moves.length(); i++) {
     Move move = _moves.at(i);
     VMStorage from_reg = move.from;
     VMStorage to_reg   = move.to;
-
-    // replace any placeholders
-    if (from_reg.type() == StorageType::PLACEHOLDER) {
-      from_reg = locs.get(from_reg);
-    }
-    if (to_reg.type() == StorageType::PLACEHOLDER) {
-      to_reg = locs.get(to_reg);
-    }
 
     switch (from_reg.type()) {
       case StorageType::INTEGER:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,15 @@
 
 // Java frames don't have callee saved registers (except for rfp), so we can use a smaller RegisterMap
 class SmallRegisterMap {
+  constexpr SmallRegisterMap() = default;
+  ~SmallRegisterMap() = default;
+  NONCOPYABLE(SmallRegisterMap);
+
 public:
-  static constexpr SmallRegisterMap* instance = nullptr;
+  static const SmallRegisterMap* instance() {
+    static constexpr SmallRegisterMap the_instance{};
+    return &the_instance;
+  }
 private:
   static void assert_is_rfp(VMReg r) NOT_DEBUG_RETURN
                                      DEBUG_ONLY({ assert (r == rfp->as_VMReg() || r == rfp->as_VMReg()->next(), "Reg: %s", r->name()); })
@@ -46,17 +53,6 @@ public:
     map->set_include_argument_oops(this->include_argument_oops());
     frame::update_map_with_saved_link(map, (intptr_t**)sp - frame::sender_sp_offset);
     return map;
-  }
-
-  SmallRegisterMap() {}
-
-  SmallRegisterMap(const RegisterMap* map) {
-  #ifdef ASSERT
-    for(int i = 0; i < RegisterMap::reg_count; i++) {
-      VMReg r = VMRegImpl::as_VMReg(i);
-      if (map->location(r, (intptr_t*)nullptr) != nullptr) assert_is_rfp(r);
-    }
-  #endif
   }
 
   inline address location(VMReg reg, intptr_t* sp) const {

@@ -24,7 +24,7 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.instruction.LineNumber;
+import java.lang.classfile.instruction.LineNumber;
 
 public final class LineNumberImpl
         extends AbstractElement

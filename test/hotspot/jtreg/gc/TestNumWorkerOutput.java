@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class TestNumWorkerOutput {
     }
 
     public static void runTest(String gcArg) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
             "-Xbootclasspath/a:.",
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+UnlockDiagnosticVMOptions",
@@ -67,7 +67,6 @@ public class TestNumWorkerOutput {
             "-Xmx10M",
             "-XX:+PrintGCDetails",
             GCTest.class.getName());
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         output.shouldHaveExitValue(0);
 
@@ -94,4 +93,3 @@ public class TestNumWorkerOutput {
         }
     }
 }
-

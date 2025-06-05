@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,6 +128,11 @@ public class TreeTranslator extends JCTree.Visitor {
 
     public void visitImport(JCImport tree) {
         tree.qualid = translate(tree.qualid);
+        result = tree;
+    }
+
+    public void visitModuleImport(JCModuleImport tree) {
+        tree.module = translate(tree.module);
         result = tree;
     }
 
@@ -406,13 +411,6 @@ public class TreeTranslator extends JCTree.Visitor {
     }
 
     public void visitLiteral(JCLiteral tree) {
-        result = tree;
-    }
-
-    public void visitStringTemplate(JCStringTemplate tree) {
-        tree.processor = translate(tree.processor);
-        tree.expressions = translate(tree.expressions);
-
         result = tree;
     }
 

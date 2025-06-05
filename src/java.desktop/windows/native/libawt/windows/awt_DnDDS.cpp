@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,15 @@ void * operator new(size_t size) {return operator new(size, "stl", 1);}
 #pragma pop_macro("bad_alloc")
 //"bad_alloc" is undefined from here
 
-#include <awt.h>
 #include <shlobj.h>
 
+// These files must be included before awt.h, since the latter redefines malloc
+// to Do_Not_Use_Malloc, etc, and that will break these files.
+#include "awt_ole.h"
+#include "awt_DCHolder.h"
+
 #include "jlong.h"
+#include "awt.h"
 #include "awt_DataTransferer.h"
 #include "awt_DnDDS.h"
 #include "awt_DnDDT.h"
@@ -53,9 +58,6 @@ void * operator new(size_t size) {return operator new(size, "stl", 1);}
 #include "java_awt_event_InputEvent.h"
 #include "java_awt_dnd_DnDConstants.h"
 #include "sun_awt_windows_WDragSourceContextPeer.h"
-
-#include "awt_ole.h"
-#include "awt_DCHolder.h"
 
 bool operator < (const FORMATETC &fr, const FORMATETC &fl) {
     return memcmp(&fr, &fl, sizeof(FORMATETC)) < 0;
@@ -69,8 +71,8 @@ typedef std::map<FORMATETC, STGMEDIUM> CDataMap;
                           java_awt_event_InputEvent_BUTTON3_DOWN_MASK)
 
 extern "C" {
-DWORD __cdecl convertActionsToDROPEFFECT(jint actions);
-jint  __cdecl convertDROPEFFECTToActions(DWORD effects);
+DWORD convertActionsToDROPEFFECT(jint actions);
+jint  convertDROPEFFECTToActions(DWORD effects);
 }
 
 class PictureDragHelper
@@ -154,7 +156,6 @@ public:
     }
     static const FORMATETC *FindFormat(const FORMATETC &format)
     {
-        static FORMATETC fm = {0};
         CDataMap::iterator i = st.find(format);
         if (st.end() != i) {
             return &i->first;
@@ -524,8 +525,7 @@ void AwtDragSource::SetCursor(jobject cursor) {
  * MatchFormatEtc
  */
 
-HRESULT __stdcall
-AwtDragSource::MatchFormatEtc(FORMATETC __RPC_FAR *pFormatEtcIn,
+HRESULT AwtDragSource::MatchFormatEtc(FORMATETC __RPC_FAR *pFormatEtcIn,
                               FORMATETC *cacheEnt) {
     TRY;
 
@@ -585,7 +585,7 @@ AwtDragSource::MatchFormatEtc(FORMATETC __RPC_FAR *pFormatEtcIn,
  * QueryInterface
  */
 
-HRESULT __stdcall AwtDragSource::QueryInterface(REFIID riid, void __RPC_FAR *__RPC_FAR *ppvObject) {
+HRESULT AwtDragSource::QueryInterface(REFIID riid, void __RPC_FAR *__RPC_FAR *ppvObject) {
     TRY;
 
     if (riid == IID_IUnknown) {
@@ -612,7 +612,7 @@ HRESULT __stdcall AwtDragSource::QueryInterface(REFIID riid, void __RPC_FAR *__R
  * AddRef
  */
 
-ULONG __stdcall AwtDragSource::AddRef() {
+ULONG AwtDragSource::AddRef() {
     return (ULONG)++m_refs;
 }
 
@@ -620,7 +620,7 @@ ULONG __stdcall AwtDragSource::AddRef() {
  * Release
  */
 
-ULONG __stdcall AwtDragSource::Release() {
+ULONG AwtDragSource::Release() {
     int refs;
 
     if ((refs = --m_refs) == 0) delete this;
@@ -632,7 +632,7 @@ ULONG __stdcall AwtDragSource::Release() {
  * QueryContinueDrag
  */
 
-HRESULT __stdcall  AwtDragSource::QueryContinueDrag(BOOL fEscapeKeyPressed, DWORD grfKeyState) {
+HRESULT AwtDragSource::QueryContinueDrag(BOOL fEscapeKeyPressed, DWORD grfKeyState) {
     AwtToolkit::GetInstance().eventNumber++;
     TRY;
 
@@ -686,7 +686,7 @@ HRESULT __stdcall  AwtDragSource::QueryContinueDrag(BOOL fEscapeKeyPressed, DWOR
  * GiveFeedback
  */
 
-HRESULT __stdcall  AwtDragSource::GiveFeedback(DWORD dwEffect) {
+HRESULT AwtDragSource::GiveFeedback(DWORD dwEffect) {
     AwtToolkit::GetInstance().eventNumber++;
     TRY;
 
@@ -765,7 +765,7 @@ HRESULT __stdcall  AwtDragSource::GiveFeedback(DWORD dwEffect) {
  * GetData
  */
 
-HRESULT __stdcall AwtDragSource::GetData(FORMATETC __RPC_FAR *pFormatEtc,
+HRESULT AwtDragSource::GetData(FORMATETC __RPC_FAR *pFormatEtc,
                                          STGMEDIUM __RPC_FAR *pmedium) {
     AwtToolkit::GetInstance().eventNumber++;
     TRY;
@@ -940,7 +940,7 @@ HRESULT __stdcall AwtDragSource::GetData(FORMATETC __RPC_FAR *pFormatEtc,
  * GetDataHere
  */
 
-HRESULT __stdcall AwtDragSource::GetDataHere(FORMATETC __RPC_FAR *pFormatEtc,
+HRESULT AwtDragSource::GetDataHere(FORMATETC __RPC_FAR *pFormatEtc,
                                              STGMEDIUM __RPC_FAR *pmedium) {
     AwtToolkit::GetInstance().eventNumber++;
     TRY;
@@ -1044,7 +1044,7 @@ HRESULT __stdcall AwtDragSource::GetDataHere(FORMATETC __RPC_FAR *pFormatEtc,
  * QueryGetData
  */
 
-HRESULT __stdcall  AwtDragSource::QueryGetData(FORMATETC __RPC_FAR *pFormatEtc) {
+HRESULT AwtDragSource::QueryGetData(FORMATETC __RPC_FAR *pFormatEtc) {
     AwtToolkit::GetInstance().eventNumber++;
     TRY;
 
@@ -1058,7 +1058,7 @@ HRESULT __stdcall  AwtDragSource::QueryGetData(FORMATETC __RPC_FAR *pFormatEtc) 
  * GetCanonicalFormatEtc
  */
 
-HRESULT __stdcall  AwtDragSource::GetCanonicalFormatEtc(FORMATETC __RPC_FAR *pFormatEtcIn, FORMATETC __RPC_FAR *pFormatEtcOut) {
+HRESULT AwtDragSource::GetCanonicalFormatEtc(FORMATETC __RPC_FAR *pFormatEtcIn, FORMATETC __RPC_FAR *pFormatEtcOut) {
     AwtToolkit::GetInstance().eventNumber++;
     TRY;
 
@@ -1079,7 +1079,7 @@ HRESULT __stdcall  AwtDragSource::GetCanonicalFormatEtc(FORMATETC __RPC_FAR *pFo
  * SetData
  */
 
-HRESULT __stdcall AwtDragSource::SetData(FORMATETC __RPC_FAR *pFormatEtc, STGMEDIUM __RPC_FAR *pmedium, BOOL fRelease) {
+HRESULT AwtDragSource::SetData(FORMATETC __RPC_FAR *pFormatEtc, STGMEDIUM __RPC_FAR *pmedium, BOOL fRelease) {
     AwtToolkit::GetInstance().eventNumber++;
     if (pFormatEtc->cfFormat == CF_PERFORMEDDROPEFFECT && pmedium->tymed == TYMED_HGLOBAL) {
         m_dwPerformedDropEffect = *(DWORD*)::GlobalLock(pmedium->hGlobal);
@@ -1102,7 +1102,7 @@ HRESULT __stdcall AwtDragSource::SetData(FORMATETC __RPC_FAR *pFormatEtc, STGMED
  * EnumFormatEtc
  */
 
-HRESULT __stdcall  AwtDragSource::EnumFormatEtc(DWORD dwDirection, IEnumFORMATETC *__RPC_FAR *ppenumFormatEtc) {
+HRESULT AwtDragSource::EnumFormatEtc(DWORD dwDirection, IEnumFORMATETC *__RPC_FAR *ppenumFormatEtc) {
     AwtToolkit::GetInstance().eventNumber++;
     TRY;
 
@@ -1116,7 +1116,7 @@ HRESULT __stdcall  AwtDragSource::EnumFormatEtc(DWORD dwDirection, IEnumFORMATET
  * DAdvise
  */
 
-HRESULT __stdcall  AwtDragSource::DAdvise(FORMATETC __RPC_FAR *pFormatEtc, DWORD advf, IAdviseSink __RPC_FAR *pAdvSink, DWORD __RPC_FAR *pdwConnection) {
+HRESULT AwtDragSource::DAdvise(FORMATETC __RPC_FAR *pFormatEtc, DWORD advf, IAdviseSink __RPC_FAR *pAdvSink, DWORD __RPC_FAR *pdwConnection) {
     AwtToolkit::GetInstance().eventNumber++;
     return E_NOTIMPL;
 }
@@ -1125,7 +1125,7 @@ HRESULT __stdcall  AwtDragSource::DAdvise(FORMATETC __RPC_FAR *pFormatEtc, DWORD
  * DUnadvise
  */
 
-HRESULT __stdcall  AwtDragSource::DUnadvise(DWORD dwConnection) {
+HRESULT AwtDragSource::DUnadvise(DWORD dwConnection) {
     AwtToolkit::GetInstance().eventNumber++;
     return OLE_E_ADVISENOTSUPPORTED;
 }
@@ -1134,7 +1134,7 @@ HRESULT __stdcall  AwtDragSource::DUnadvise(DWORD dwConnection) {
  * EnumAdvise
  */
 
-HRESULT __stdcall  AwtDragSource::EnumDAdvise(IEnumSTATDATA __RPC_FAR *__RPC_FAR *ppenumAdvise) {
+HRESULT AwtDragSource::EnumDAdvise(IEnumSTATDATA __RPC_FAR *__RPC_FAR *ppenumAdvise) {
     AwtToolkit::GetInstance().eventNumber++;
     return OLE_E_ADVISENOTSUPPORTED;
 }
@@ -1142,7 +1142,7 @@ HRESULT __stdcall  AwtDragSource::EnumDAdvise(IEnumSTATDATA __RPC_FAR *__RPC_FAR
 const UINT AwtDragSource::PROCESS_ID_FORMAT =
     ::RegisterClipboardFormat(TEXT("_SUNW_JAVA_AWT_PROCESS_ID"));
 
-HRESULT __stdcall AwtDragSource::GetProcessId(FORMATETC __RPC_FAR *pFormatEtc, STGMEDIUM __RPC_FAR *pmedium) {
+HRESULT AwtDragSource::GetProcessId(FORMATETC __RPC_FAR *pFormatEtc, STGMEDIUM __RPC_FAR *pmedium) {
     AwtToolkit::GetInstance().eventNumber++;
     if ((pFormatEtc->tymed & TYMED_HGLOBAL) == 0) {
         return DV_E_TYMED;
@@ -1266,8 +1266,6 @@ AwtDragSource::call_dSCmouseMoved(JNIEnv* env, jobject self, jint targetActions,
     }
 }
 
-DECLARE_JAVA_CLASS(awtIEClazz, "java/awt/event/InputEvent")
-
 /**
  * Constructor
  */
@@ -1295,7 +1293,7 @@ AwtDragSource::ADSIEnumFormatEtc::~ADSIEnumFormatEtc() {
  * QueryInterface
  */
 
-HRESULT __stdcall  AwtDragSource::ADSIEnumFormatEtc::QueryInterface(REFIID riid, void __RPC_FAR *__RPC_FAR *ppvObject) {
+HRESULT AwtDragSource::ADSIEnumFormatEtc::QueryInterface(REFIID riid, void __RPC_FAR *__RPC_FAR *ppvObject) {
     TRY;
 
     if (riid == IID_IUnknown) {
@@ -1318,7 +1316,7 @@ HRESULT __stdcall  AwtDragSource::ADSIEnumFormatEtc::QueryInterface(REFIID riid,
  * AddRef
  */
 
-ULONG __stdcall  AwtDragSource::ADSIEnumFormatEtc::AddRef(void) {
+ULONG AwtDragSource::ADSIEnumFormatEtc::AddRef(void) {
     return (ULONG)++m_refs;
 }
 
@@ -1326,7 +1324,7 @@ ULONG __stdcall  AwtDragSource::ADSIEnumFormatEtc::AddRef(void) {
  * Release
  */
 
-ULONG __stdcall  AwtDragSource::ADSIEnumFormatEtc::Release(void) {
+ULONG AwtDragSource::ADSIEnumFormatEtc::Release(void) {
     int refs;
 
     if ((refs = --m_refs) == 0) delete this;
@@ -1338,7 +1336,7 @@ ULONG __stdcall  AwtDragSource::ADSIEnumFormatEtc::Release(void) {
  * Next
  */
 
-HRESULT _stdcall AwtDragSource::ADSIEnumFormatEtc::Next(ULONG celt, FORMATETC __RPC_FAR *rgelt, ULONG __RPC_FAR *pceltFetched) {
+HRESULT AwtDragSource::ADSIEnumFormatEtc::Next(ULONG celt, FORMATETC __RPC_FAR *rgelt, ULONG __RPC_FAR *pceltFetched) {
     TRY;
 
     unsigned int len = m_parent->getNTypes();
@@ -1360,7 +1358,7 @@ HRESULT _stdcall AwtDragSource::ADSIEnumFormatEtc::Next(ULONG celt, FORMATETC __
  * Skip
  */
 
-HRESULT __stdcall  AwtDragSource::ADSIEnumFormatEtc::Skip(ULONG celt) {
+HRESULT AwtDragSource::ADSIEnumFormatEtc::Skip(ULONG celt) {
     TRY;
 
     unsigned int len = m_parent->getNTypes();
@@ -1383,7 +1381,7 @@ HRESULT __stdcall  AwtDragSource::ADSIEnumFormatEtc::Skip(ULONG celt) {
  * Reset
  */
 
-HRESULT __stdcall  AwtDragSource::ADSIEnumFormatEtc::Reset(void) {
+HRESULT AwtDragSource::ADSIEnumFormatEtc::Reset(void) {
     m_idx = 0;
 
     return S_OK;
@@ -1393,7 +1391,7 @@ HRESULT __stdcall  AwtDragSource::ADSIEnumFormatEtc::Reset(void) {
  * Clone
  */
 
-HRESULT __stdcall  AwtDragSource::ADSIEnumFormatEtc::Clone(IEnumFORMATETC  __RPC_FAR *__RPC_FAR *ppenum) {
+HRESULT AwtDragSource::ADSIEnumFormatEtc::Clone(IEnumFORMATETC  __RPC_FAR *__RPC_FAR *ppenum) {
     TRY;
 
     *ppenum = new ADSIEnumFormatEtc(m_parent);
@@ -1485,7 +1483,7 @@ AwtDragSource::ADSIStreamProxy::~ADSIStreamProxy() {
  * QueryInterface
  */
 
-HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::QueryInterface(REFIID riid, void __RPC_FAR *__RPC_FAR *ppvObject) {
+HRESULT AwtDragSource::ADSIStreamProxy::QueryInterface(REFIID riid, void __RPC_FAR *__RPC_FAR *ppvObject) {
     TRY;
 
     if (riid == IID_IUnknown) {
@@ -1508,7 +1506,7 @@ HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::QueryInterface(REFIID riid, v
  * AddRef
  */
 
-ULONG __stdcall  AwtDragSource::ADSIStreamProxy::AddRef(void) {
+ULONG AwtDragSource::ADSIStreamProxy::AddRef(void) {
     return (ULONG)++m_refs;
 }
 
@@ -1516,7 +1514,7 @@ ULONG __stdcall  AwtDragSource::ADSIStreamProxy::AddRef(void) {
  * Release
  */
 
-ULONG __stdcall  AwtDragSource::ADSIStreamProxy::Release(void) {
+ULONG AwtDragSource::ADSIStreamProxy::Release(void) {
     int refs;
 
     if ((refs = --m_refs) == 0) delete this;
@@ -1528,7 +1526,7 @@ ULONG __stdcall  AwtDragSource::ADSIStreamProxy::Release(void) {
  * Read
  */
 
-HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::Read(void __RPC_FAR *pv, ULONG cb, ULONG __RPC_FAR *pcbRead) {
+HRESULT AwtDragSource::ADSIStreamProxy::Read(void __RPC_FAR *pv, ULONG cb, ULONG __RPC_FAR *pcbRead) {
     TRY;
 
     unsigned int rem  = m_blen - m_off;
@@ -1553,7 +1551,7 @@ HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::Read(void __RPC_FAR *pv, ULON
  * Write
  */
 
-HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::Write(const void __RPC_FAR *pv, ULONG cb, ULONG __RPC_FAR *pcbWritten) {
+HRESULT AwtDragSource::ADSIStreamProxy::Write(const void __RPC_FAR *pv, ULONG cb, ULONG __RPC_FAR *pcbWritten) {
     TRY;
 
     if (pcbWritten != (ULONG __RPC_FAR *)NULL) {
@@ -1571,7 +1569,7 @@ HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::Write(const void __RPC_FAR *p
  * Seek
  */
 
-HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::Seek(LARGE_INTEGER dlibMove, DWORD dwOrigin, ULARGE_INTEGER __RPC_FAR *plibNewPosition) {
+HRESULT AwtDragSource::ADSIStreamProxy::Seek(LARGE_INTEGER dlibMove, DWORD dwOrigin, ULARGE_INTEGER __RPC_FAR *plibNewPosition) {
     TRY;
 
     if (dlibMove.HighPart != 0) return STG_E_INVALIDPOINTER;
@@ -1619,7 +1617,7 @@ HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::Seek(LARGE_INTEGER dlibMove, 
  * SetSize
  */
 
-HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::SetSize(ULARGE_INTEGER libNewSize) {
+HRESULT AwtDragSource::ADSIStreamProxy::SetSize(ULARGE_INTEGER libNewSize) {
     return STG_E_INVALIDFUNCTION;
 }
 
@@ -1627,7 +1625,7 @@ HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::SetSize(ULARGE_INTEGER libNew
  * CopyTo
  */
 
-HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::CopyTo(IStream __RPC_FAR *pstm, ULARGE_INTEGER cb, ULARGE_INTEGER __RPC_FAR *pcbRead, ULARGE_INTEGER __RPC_FAR *pcbWritten) {
+HRESULT AwtDragSource::ADSIStreamProxy::CopyTo(IStream __RPC_FAR *pstm, ULARGE_INTEGER cb, ULARGE_INTEGER __RPC_FAR *pcbRead, ULARGE_INTEGER __RPC_FAR *pcbWritten) {
     TRY;
 
     ULONG written = 0;
@@ -1660,7 +1658,7 @@ HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::CopyTo(IStream __RPC_FAR *pst
  * Commit
  */
 
-HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::Commit(DWORD grfCommitFlags) {
+HRESULT AwtDragSource::ADSIStreamProxy::Commit(DWORD grfCommitFlags) {
     return S_OK;
 }
 
@@ -1668,7 +1666,7 @@ HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::Commit(DWORD grfCommitFlags) 
  * Revert
  */
 
-HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::Revert() {
+HRESULT AwtDragSource::ADSIStreamProxy::Revert() {
     return S_OK;
 }
 
@@ -1676,7 +1674,7 @@ HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::Revert() {
  * LockRegion
  */
 
-HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::LockRegion(ULARGE_INTEGER libOffset, ULARGE_INTEGER cb, DWORD dwLockType) {
+HRESULT AwtDragSource::ADSIStreamProxy::LockRegion(ULARGE_INTEGER libOffset, ULARGE_INTEGER cb, DWORD dwLockType) {
     return STG_E_INVALIDFUNCTION;
 }
 
@@ -1684,7 +1682,7 @@ HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::LockRegion(ULARGE_INTEGER lib
  * UnlockRegion
  */
 
-HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::UnlockRegion(ULARGE_INTEGER libOffset, ULARGE_INTEGER cb, DWORD dwLockType) {
+HRESULT AwtDragSource::ADSIStreamProxy::UnlockRegion(ULARGE_INTEGER libOffset, ULARGE_INTEGER cb, DWORD dwLockType) {
     return STG_E_INVALIDFUNCTION;
 }
 
@@ -1692,7 +1690,7 @@ HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::UnlockRegion(ULARGE_INTEGER l
  * Stat
  */
 
-HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::Stat(STATSTG __RPC_FAR *pstatstg, DWORD grfStatFlag) {
+HRESULT AwtDragSource::ADSIStreamProxy::Stat(STATSTG __RPC_FAR *pstatstg, DWORD grfStatFlag) {
     TRY;
 
     *pstatstg = m_statstg;
@@ -1708,7 +1706,7 @@ HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::Stat(STATSTG __RPC_FAR *pstat
  * Clone
  */
 
-HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::Clone(IStream __RPC_FAR *__RPC_FAR *ppstm) {
+HRESULT AwtDragSource::ADSIStreamProxy::Clone(IStream __RPC_FAR *__RPC_FAR *ppstm) {
     TRY;
 
     *ppstm = new ADSIStreamProxy(this);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,7 +204,7 @@ public class MainModuleOnly extends DynamicArchiveTestBase {
             "--module-path", moduleDir.toString(),
             "-m", TEST_MODULE1)
             .assertAbnormalExit(
-                "A jar file is not the one used while building the shared archive file:");
+                "This file is not the one used while building the shared archive file:");
         // create an archive with a non-empty directory in the --module-path.
         // The dumping process will exit with an error due to non-empty directory
         // in the --module-path.
@@ -213,8 +213,10 @@ public class MainModuleOnly extends DynamicArchiveTestBase {
              "-cp", destJar.toString(),
              "--module-path", MODS_DIR.toString(),
              "-m", TEST_MODULE1 + "/" + MAIN_CLASS)
-            .assertAbnormalExit(output -> {
-                output.shouldMatch("Error: non-empty directory.*com.simple");
+            // After JDK-8328313, non-empty module path directory won't be included
+            // in the shared paths table.
+            .assertNormalExit(output -> {
+                output.shouldNotMatch("Error: non-empty directory.*com.simple");
                 });
 
         // test module path with very long length

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,7 +196,7 @@ class CESU_8 extends Unicode
             int dp = doff + dst.position();
             int dl = doff + dst.limit();
 
-            int n = JLA.decodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
+            int n = JLA.uncheckedDecodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
             sp += n;
             dp += n;
 
@@ -446,7 +446,7 @@ class CESU_8 extends Unicode
             int dl = dst.arrayOffset() + dst.limit();
 
             // Handle ASCII-only prefix
-            int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
+            int n = JLA.uncheckedEncodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
             sp += n;
             dp += n;
 
@@ -551,7 +551,7 @@ class CESU_8 extends Unicode
             int dp = 0;
 
             // Handle ASCII-only prefix
-            int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(len, da.length));
+            int n = JLA.uncheckedEncodeASCII(sa, sp, da, dp, Math.min(len, da.length));
             sp += n;
             dp += n;
 

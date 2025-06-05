@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,7 +35,7 @@
 extern "C" {
 #endif
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 
 JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   return jvm->GetEnv(reinterpret_cast<void**>(&jvmti), JVMTI_VERSION_11);
@@ -103,7 +103,7 @@ JNIEXPORT void JNICALL Java_OneGetThreadListStackTraces_checkCallStacks(JNIEnv *
 
   /* Find jvmtiStackInfo for `thread` (in arguments) */
   jboolean is_same;
-  target_info = NULL;
+  target_info = nullptr;
   for (jint i = 0; i < num_threads; i++) {
     is_same = env->IsSameObject(stack_info[i].thread, thread);
     if (env->ExceptionOccurred()) {
@@ -115,7 +115,7 @@ JNIEXPORT void JNICALL Java_OneGetThreadListStackTraces_checkCallStacks(JNIEnv *
       break;
     }
   }
-  if (target_info == NULL) {
+  if (target_info == nullptr) {
     env->FatalError("Target thread not found");
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,8 +68,9 @@ class WhiteBox : public AllStatic {
     JNINativeMethod* method_array, int method_count);
   static void register_extended(JNIEnv* env, jclass wbclass, JavaThread* thread);
   static bool compile_method(Method* method, int comp_level, int bci, JavaThread* THREAD);
+  static size_t get_in_use_monitor_count();
 #ifdef LINUX
-  static bool validate_cgroup(const char* proc_cgroups, const char* proc_self_cgroup, const char* proc_self_mountinfo, u1* cg_flags);
+  static bool validate_cgroup(bool cgroups_v2_enabled, const char* controllers_file, const char* proc_self_cgroup, const char* proc_self_mountinfo, u1* cg_flags);
 #endif
 };
 

@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,7 +24,8 @@ import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarPool;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
+import jdk.xml.internal.JdkXmlConfig;
+import jdk.xml.internal.XMLSecurityManager;
 
 /**
  * This configuration allows Xerces to behave in a security-conscious manner; that is,
@@ -44,7 +44,7 @@ import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
  * </ul>
  *
  * @author Neil Graham, IBM
- *
+ * @LastModified: May 2025
  */
 public class SecurityConfiguration extends XIncludeAwareParserConfiguration
 {
@@ -108,7 +108,8 @@ public class SecurityConfiguration extends XIncludeAwareParserConfiguration
         super(symbolTable, grammarPool, parentSettings);
 
         // create the SecurityManager property:
-        setProperty(SECURITY_MANAGER_PROPERTY, new XMLSecurityManager(true));
+        setProperty(SECURITY_MANAGER_PROPERTY,
+                JdkXmlConfig.getInstance(false).getXMLSecurityManager(false));
     } // <init>(SymbolTable,XMLGrammarPool)
 
 } // class SecurityConfiguration

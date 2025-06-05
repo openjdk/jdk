@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,10 @@ import java.util.TimeZone;
 /*
  * @test
  * @summary Tests that the Properties.store() APIs generate output that is reproducible
- * @bug 8231640 8282023
+ * @bug 8231640 8282023 8316540
+ * @comment The test launches several processes and in the presence of -Xcomp it's too slow
+ *          and thus causes timeouts
+ * @requires vm.compMode != "Xcomp"
  * @library /test/lib
  * @run driver StoreReproducibilityTest
  */
@@ -56,13 +59,8 @@ public class StoreReproducibilityTest {
             .withZone(ZoneOffset.UTC);
 
     public static void main(final String[] args) throws Exception {
-        // no security manager enabled
-        testWithoutSecurityManager();
-        // security manager enabled and security policy explicitly allows
-        // read permissions on java.properties.date system property
-        testWithSecMgrExplicitPermission();
-        // security manager enabled and no explicit permission on java.properties.date system property
-        testWithSecMgrNoSpecificPermission();
+        // test that store method uses the java.properties.date system property
+        testStoreUsesPropValue();
         // free form non-date value for java.properties.date system property
         testNonDateSysPropValue();
         // blank value for java.properties.date system property
@@ -84,104 +82,15 @@ public class StoreReproducibilityTest {
      * and the output written by each run of this program is verified to be exactly the same.
      * Additionally, the date comment that's written out is verified to be the expected date that
      * corresponds to the passed {@code java.properties.date}.
-     * The launched Java program is run without any security manager
      */
-    private static void testWithoutSecurityManager() throws Exception {
+    private static void testStoreUsesPropValue() throws Exception {
         final List<Path> storedFiles = new ArrayList<>();
         final String sysPropVal = FORMATTER.format(Instant.ofEpochSecond(243535322));
         for (int i = 0; i < 5; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
-            final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+            final ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
-                    StoreTest.class.getName(),
-                    tmpFile.toString(),
-                    i % 2 == 0 ? "--use-outputstream" : "--use-writer");
-            executeJavaProcess(processBuilder);
-            assertExpectedComment(tmpFile, sysPropVal);
-            if (!StoreTest.propsToStore.equals(loadProperties(tmpFile))) {
-                throw new RuntimeException("Unexpected properties stored in " + tmpFile);
-            }
-        }
-        assertAllFileContentsAreSame(storedFiles, sysPropVal);
-    }
-
-    /**
-     * Launches a Java program which is responsible for using Properties.store() to write out the
-     * properties to a file. The launched Java program is passed a value for the
-     * {@code java.properties.date} system property and the date comment written out to the file
-     * is expected to use this value.
-     * The launched Java program is run with the default security manager and is granted
-     * a {@code read} permission on {@code java.properties.date}.
-     * The program is launched multiple times with the same value for {@code java.properties.date}
-     * and the output written by each run of this program is verified to be exactly the same.
-     * Additionally, the date comment that's written out is verified to be the expected date that
-     * corresponds to the passed {@code java.properties.date}.
-     */
-    private static void testWithSecMgrExplicitPermission() throws Exception {
-        final Path policyFile = Files.createTempFile("8231640", ".policy");
-        Files.write(policyFile, Collections.singleton("""
-                grant {
-                    // test writes/stores to a file, so FilePermission
-                    permission java.io.FilePermission "<<ALL FILES>>", "read,write";
-                    // explicitly grant read permission on java.properties.date system property
-                    // to verify store() APIs work fine
-                    permission java.util.PropertyPermission "java.properties.date", "read";
-                };
-                """));
-        final List<Path> storedFiles = new ArrayList<>();
-        final String sysPropVal = FORMATTER.format(Instant.ofEpochSecond(1234342423));
-        for (int i = 0; i < 5; i++) {
-            final Path tmpFile = Files.createTempFile("8231640", ".props");
-            storedFiles.add(tmpFile);
-            final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
-                    "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
-                    "-Djava.security.manager",
-                    "-Djava.security.policy=" + policyFile.toString(),
-                    StoreTest.class.getName(),
-                    tmpFile.toString(),
-                    i % 2 == 0 ? "--use-outputstream" : "--use-writer");
-            executeJavaProcess(processBuilder);
-            assertExpectedComment(tmpFile, sysPropVal);
-            if (!StoreTest.propsToStore.equals(loadProperties(tmpFile))) {
-                throw new RuntimeException("Unexpected properties stored in " + tmpFile);
-            }
-        }
-        assertAllFileContentsAreSame(storedFiles, sysPropVal);
-    }
-
-    /**
-     * Launches a Java program which is responsible for using Properties.store() to write out the
-     * properties to a file. The launched Java program is passed a value for the
-     * {@code java.properties.date} system property and the date comment written out to the file
-     * is expected to use this value.
-     * The launched Java program is run with the default security manager and is NOT granted
-     * any explicit permission for {@code java.properties.date} system property.
-     * The program is launched multiple times with the same value for {@code java.properties.date}
-     * and the output written by each run of this program is verified to be exactly the same.
-     * Additionally, the date comment that's written out is verified to be the expected date that
-     * corresponds to the passed {@code java.properties.date}.
-     */
-    private static void testWithSecMgrNoSpecificPermission() throws Exception {
-        final Path policyFile = Files.createTempFile("8231640", ".policy");
-        Files.write(policyFile, Collections.singleton("""
-                grant {
-                    // test writes/stores to a file, so FilePermission
-                    permission java.io.FilePermission "<<ALL FILES>>", "read,write";
-                    // no other grants, not even "read" java.properties.date system property.
-                    // test should still work fine and the date comment should correspond to the value of
-                    // java.properties.date system property.
-                };
-                """));
-        final List<Path> storedFiles = new ArrayList<>();
-        final String sysPropVal = FORMATTER.format(Instant.ofEpochSecond(1234342423));
-        for (int i = 0; i < 5; i++) {
-            final Path tmpFile = Files.createTempFile("8231640", ".props");
-            storedFiles.add(tmpFile);
-            final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
-                    "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
-                    "-Djava.security.manager",
-                    "-Djava.security.policy=" + policyFile.toString(),
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -208,7 +117,7 @@ public class StoreReproducibilityTest {
         for (int i = 0; i < 2; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
-            final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+            final ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
@@ -240,8 +149,9 @@ public class StoreReproducibilityTest {
     private static void testEmptySysPropValue() throws Exception {
         for (int i = 0; i < 2; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
-            final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
-                    "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + "",
+            final ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(
+                    "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=",
+                    "-Duser.timezone=UTC",
                     StoreTest.class.getName(),
                     tmpFile.toString(),
                     i % 2 == 0 ? "--use-outputstream" : "--use-writer");
@@ -271,7 +181,7 @@ public class StoreReproducibilityTest {
         for (int i = 0; i < 2; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
-            final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+            final ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(
                     "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                     StoreTest.class.getName(),
                     tmpFile.toString(),
@@ -300,7 +210,7 @@ public class StoreReproducibilityTest {
             for (int i = 0; i < 2; i++) {
                 final Path tmpFile = Files.createTempFile("8231640", ".props");
                 storedFiles.add(tmpFile);
-                final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+                final ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(
                         "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                         StoreTest.class.getName(),
                         tmpFile.toString(),
@@ -342,7 +252,7 @@ public class StoreReproducibilityTest {
             for (int i = 0; i < 2; i++) {
                 final Path tmpFile = Files.createTempFile("8231640", ".props");
                 storedFiles.add(tmpFile);
-                final ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+                final ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(
                         "-D" + SYS_PROP_JAVA_PROPERTIES_DATE + "=" + sysPropVal,
                         StoreTest.class.getName(),
                         tmpFile.toString(),
@@ -416,6 +326,9 @@ public class StoreReproducibilityTest {
      * Verifies that the date comment in the {@code destFile} can be parsed using the
      * "EEE MMM dd HH:mm:ss zzz uuuu" format and the time represented by it is {@link Date#after(Date) after}
      * the passed {@code date}
+     * The JVM runtime to invoke this method should set the time zone to UTC, i.e, specify
+     * "-Duser.timezone=UTC" at the command line. Otherwise, it will fail with some time
+     * zones that have ambiguous short names, such as "IST"
      */
     private static void assertCurrentDate(final Path destFile, final Date date) throws Exception {
         final String dateComment = findNthComment(destFile, 2);
@@ -440,7 +353,7 @@ public class StoreReproducibilityTest {
     private static String findNthComment(Path file, int commentIndex) throws IOException {
         List<String> comments = new ArrayList<>();
         try (final BufferedReader reader = Files.newBufferedReader(file)) {
-            String line = null;
+            String line;
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("#")) {
                     comments.add(line.substring(1));

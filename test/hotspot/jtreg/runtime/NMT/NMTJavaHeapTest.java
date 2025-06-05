@@ -37,7 +37,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class NMTJavaHeapTest {
     public static void main(String args[]) throws Exception {
-        ProcessBuilder pb = ProcessTools.createTestJvm(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
               "-XX:+UnlockDiagnosticVMOptions",
               "-XX:+PrintNMTStatistics",
               "-XX:NativeMemoryTracking=summary",

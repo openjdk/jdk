@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 package nsk.share.jpda;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import nsk.share.*;
@@ -35,13 +36,13 @@ import nsk.share.*;
  *
  * Server and client objects should be created using special static methods provided by this class,
  * for example 'createServerIOPipe(Log log, int port, long timeout)' for server SocketIOPipe
- * and 'createClientIOPipe(Log log, String host, int port, long timeout)' for client SocketIOPipe.
+ * and 'createClientIOPipe(Log log, int port, long timeout)' for client SocketIOPipe.
  *
  * When SocketIOPipe is created it can be used to send and receive strings using methods 'readln()' and 'println(String s)'.
  * TCP/IP connection is established at the first attempt to read or write data.
  *
- * For example, if client process should send string 'OK' to the server process which is run
- * at the host 'SERVER_HOST' following code can be written:
+ * For example, if client process should send string 'OK' to the server process,
+ * the following code can be written:
  *
  * Server side:
  *
@@ -53,15 +54,15 @@ import nsk.share.*;
  *
  * Client side:
  *
- *  // initialize SocketIOPipe with given values of server host name and port
- *  SocketIOPipe pipe = SocketIOPipe.createClientIOPipe(log, 'SERVER_HOST', port, timeoutValue);
+ *  // initialize SocketIOPipe with given port
+ *  SocketIOPipe pipe = SocketIOPipe.createClientIOPipe(log, port, timeoutValue);
  *
  *  String command = "OK";
  *  // SocketIOPipe tries to create socket and send command to the server
  *  pipe.println(command);
  *
  */
-public class SocketIOPipe extends Log.Logger implements Finalizable {
+public class SocketIOPipe extends Log.Logger {
 
     public static final int DEFAULT_TIMEOUT_VALUE = 1 * 60 * 1000;
 
@@ -92,8 +93,6 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
         this.timeout = timeout;
         this.listening = listening;
         this.name = name;
-
-        registerCleanup();
     }
 
     /**
@@ -105,8 +104,6 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
         this.port = port;
         this.timeout = timeout;
         this.listening = listening;
-
-        registerCleanup();
     }
 
     /**
@@ -123,7 +120,7 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
               // then we should retry the bind() a few times.
               ss.setReuseAddress(false);
             }
-            ss.bind(new InetSocketAddress(port));
+            ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), port));
             pipe.setServerSocket(ss);
         } catch (IOException e) {
             e.printStackTrace(log.getOutStream());
@@ -143,8 +140,9 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
     /**
      *  Create attaching SocketIOPipe using given port and timeout
      */
-    public static SocketIOPipe createClientIOPipe(Log log, String host, int port, long timeout) {
-        return new SocketIOPipe(log, DEFAULT_PIPE_LOG_PREFIX, host, port, timeout, false);
+    public static SocketIOPipe createClientIOPipe(Log log, int port, long timeout) {
+        // use null for host to connect to loopback address
+        return new SocketIOPipe(log, DEFAULT_PIPE_LOG_PREFIX, null, port, timeout, false);
     }
 
     /**
@@ -307,17 +305,6 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
             throw new TestBug("Attempt to get ping timeout for not established connection");
         }
         return connection.getPingTimeout();
-    }
-
-    /**
-     * Perform finalization of the object by invoking close().
-     *
-     * This is replacement of finalize() method and is called
-     * when this instance becomes unreachable.
-     *
-     */
-    public void cleanup() {
-        close();
     }
 
 

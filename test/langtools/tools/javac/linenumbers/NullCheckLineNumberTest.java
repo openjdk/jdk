@@ -2,15 +2,10 @@
  * @test /nodynamiccopyright/
  * @bug 8172880
  * @summary  Wrong LineNumberTable for synthetic null checks
- * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Method;
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.LineNumberTable_attribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
@@ -40,13 +35,13 @@ public class NullCheckLineNumberTest {
     public static void main(String[] args) throws Exception {
         List<Entry> actualEntries = findEntries();
         List<Entry> expectedEntries = List.of(
-                new SimpleEntry<>(29, 0),
-                new SimpleEntry<>(30, 4),
-                new SimpleEntry<>(32, 9),
-                new SimpleEntry<>(33, 16),
-                new SimpleEntry<>(34, 32),
-                new SimpleEntry<>(35, 46),
-                new SimpleEntry<>(36, 52)
+                new SimpleEntry<>(24, 0),
+                new SimpleEntry<>(25, 4),
+                new SimpleEntry<>(27, 9),
+                new SimpleEntry<>(28, 16),
+                new SimpleEntry<>(29, 32),
+                new SimpleEntry<>(30, 46),
+                new SimpleEntry<>(31, 52)
         );
         if (!Objects.equals(actualEntries, expectedEntries)) {
             error(String.format("Unexpected LineNumberTable: %s", actualEntries.toString()));
@@ -57,21 +52,21 @@ public class NullCheckLineNumberTest {
         } catch (NullPointerException npe) {
             if (Arrays.stream(npe.getStackTrace())
                       .noneMatch(se -> se.getFileName().contains("NullCheckLineNumberTest") &&
-                                       se.getLineNumber() == 34)) {
-                throw new AssertionError("Should go through line 34!");
+                                       se.getLineNumber() == 29)) {
+                throw new AssertionError("Should go through line 29!");
             }
         }
     }
 
-    static List<Entry> findEntries() throws IOException, ConstantPoolException {
-        ClassFile self = ClassFile.read(NullCheckLineNumberTest.Test.class.getResourceAsStream("NullCheckLineNumberTest$Test.class"));
-        for (Method m : self.methods) {
-            if ("<init>".equals(m.getName(self.constant_pool))) {
-                Code_attribute code_attribute = (Code_attribute)m.attributes.get(Attribute.Code);
-                for (Attribute at : code_attribute.attributes) {
-                    if (Attribute.LineNumberTable.equals(at.getName(self.constant_pool))) {
-                        return Arrays.stream(((LineNumberTable_attribute)at).line_number_table)
-                                     .map(e -> new SimpleEntry<> (e.line_number, e.start_pc))
+    static List<Entry> findEntries() throws IOException {
+        ClassModel self = ClassFile.of().parse(Objects.requireNonNull(Test.class.getResourceAsStream("NullCheckLineNumberTest$Test.class")).readAllBytes());
+        for (MethodModel m : self.methods()) {
+            if ("<init>".equals(m.methodName().stringValue())) {
+                CodeAttribute code_attribute = m.findAttribute(Attributes.code()).orElseThrow();
+                for (Attribute<?> at : code_attribute.attributes()) {
+                    if (at instanceof LineNumberTableAttribute lineAt) {
+                        return lineAt.lineNumbers().stream()
+                                     .map(e -> new SimpleEntry<> (e.lineNumber(), e.startPc()))
                                      .collect(Collectors.toList());
                     }
                 }

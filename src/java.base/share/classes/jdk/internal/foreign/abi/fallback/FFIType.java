@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.internal.foreign.abi.fallback;
 
 import jdk.internal.foreign.Utils;
@@ -37,16 +38,12 @@ import java.lang.foreign.UnionLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
 
-import static java.lang.foreign.ValueLayout.ADDRESS;
-import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
-import static java.lang.foreign.ValueLayout.JAVA_SHORT;
+import static java.lang.foreign.ValueLayout.*;
 
 /**
  * typedef struct _ffi_type
@@ -58,18 +55,15 @@ import static java.lang.foreign.ValueLayout.JAVA_SHORT;
  * } ffi_type;
  */
 class FFIType {
-    private static final ValueLayout SIZE_T = switch ((int) ADDRESS.byteSize()) {
-            case 8 -> JAVA_LONG;
-            case 4 -> JAVA_INT;
-            default -> throw new IllegalStateException("Address size not supported: " + ADDRESS.byteSize());
-        };
+
+    static final ValueLayout SIZE_T = layoutFor((int)ADDRESS.byteSize());
     private static final ValueLayout UNSIGNED_SHORT = JAVA_SHORT;
     private static final StructLayout LAYOUT = Utils.computePaddedStructLayout(
             SIZE_T, UNSIGNED_SHORT, UNSIGNED_SHORT.withName("type"), ADDRESS.withName("elements"));
 
     private static final VarHandle VH_TYPE = LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("type"));
     private static final VarHandle VH_ELEMENTS = LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("elements"));
-    private static final VarHandle VH_SIZE_T_ARRAY = SIZE_T.arrayElementVarHandle();
+    private static final VarHandle VH_SIZE_T = SIZE_T.varHandle();
 
     private static MemorySegment make(List<MemoryLayout> elements, FFIABI abi, Arena scope) {
         MemorySegment elementsSeg = scope.allocate((elements.size() + 1) * ADDRESS.byteSize());
@@ -83,8 +77,8 @@ class FFIType {
         elementsSeg.setAtIndex(ADDRESS, i, MemorySegment.NULL);
 
         MemorySegment ffiType = scope.allocate(LAYOUT);
-        VH_TYPE.set(ffiType, LibFallback.structTag());
-        VH_ELEMENTS.set(ffiType, elementsSeg);
+        VH_TYPE.set(ffiType, 0L, LibFallback.structTag());
+        VH_ELEMENTS.set(ffiType, 0L, elementsSeg);
 
         return ffiType;
     }
@@ -132,7 +126,7 @@ class FFIType {
             int offsetIdx = 0;
             for (MemoryLayout element : structLayout.memberLayouts()) {
                 if (!(element instanceof PaddingLayout)) {
-                    long ffiOffset = (long) VH_SIZE_T_ARRAY.get(offsetsOut, offsetIdx++);
+                    long ffiOffset = sizeTAtIndex(offsetsOut, offsetIdx++);
                     if (ffiOffset != expectedOffset) {
                         throw new IllegalArgumentException("Invalid group layout." +
                                 " Offset of '" + element.name().orElse("<unnamed>")
@@ -141,6 +135,25 @@ class FFIType {
                 }
                 expectedOffset += element.byteSize();
             }
+        }
+    }
+
+    static ValueLayout layoutFor(int byteSize) {
+        return switch (byteSize) {
+            case 1 -> JAVA_BYTE;
+            case 2 -> JAVA_SHORT;
+            case 4 -> JAVA_INT;
+            case 8 -> JAVA_LONG;
+            default -> throw new IllegalStateException("Unsupported size: " + byteSize);
+        };
+    }
+
+    private static long sizeTAtIndex(MemorySegment segment, int index) {
+        long offset = SIZE_T.scale(0, index);
+        if (VH_SIZE_T.varType() == long.class) {
+            return (long) VH_SIZE_T.get(segment, offset);
+        } else {
+            return (int) VH_SIZE_T.get(segment, offset); // 'erase' to long
         }
     }
 }

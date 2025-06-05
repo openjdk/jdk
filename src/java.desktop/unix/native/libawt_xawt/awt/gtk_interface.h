@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -532,6 +532,8 @@ typedef void (*GClosureNotify)(gpointer data, GClosure *closure);
 typedef void (*GDestroyNotify)(gpointer data);
 typedef void (*GCallback)(void);
 
+typedef void GdkPixbuf;
+typedef void (* GdkPixbufDestroyNotify) (guchar *pixels, gpointer data);
 
 typedef struct GtkApi {
     int version;
@@ -676,6 +678,7 @@ typedef struct GtkApi {
     GVariant *(*g_variant_new_boolean)(gboolean value);
     GVariant *(*g_variant_new_uint32)(guint32 value);
 
+    gchar *(*g_variant_print)(GVariant* value, gboolean type_annotate);
 
     void (*g_variant_get)(GVariant *value,
                                     const gchar *format_string,
@@ -716,6 +719,10 @@ typedef struct GtkApi {
                                gssize pos,
                                gssize len);
 
+    GString *(*g_string_set_size)(GString* string,
+                                  gsize len);
+
+
     gchar *(*g_string_free)(GString *string,
                             gboolean free_segment);
 
@@ -727,6 +734,8 @@ typedef struct GtkApi {
     void *(*g_string_printf)(GString *string,
                              const gchar *format,
                              ...);
+
+    gchar* (*g_strconcat)(const gchar* string1, ...);
 
     gboolean (*g_uuid_string_is_valid)(const gchar *str);
 
@@ -786,12 +795,54 @@ typedef struct GtkApi {
 
     gboolean (*g_main_context_iteration)(GMainContext *context,
                                          gboolean may_block);
+    GMainContext *(*g_main_context_default)();
+    gboolean (*g_main_context_is_owner)(GMainContext* context);
 
     void (*g_error_free)(GError *error);
 
     gint (*g_unix_fd_list_get)(GUnixFDList *list,
                                gint index_,
                                GError **error);
+
+    GdkPixbuf *(*gdk_pixbuf_new)(GdkColorspace colorspace,
+                                 gboolean has_alpha,
+                                 int bits_per_sample,
+                                 int width,
+                                 int height);
+
+
+    GdkPixbuf *(*gdk_pixbuf_new_from_data)(
+            const guchar *data,
+            GdkColorspace colorspace,
+            gboolean has_alpha,
+            int bits_per_sample,
+            int width,
+            int height,
+            int rowstride,
+            GdkPixbufDestroyNotify destroy_fn,
+            gpointer destroy_fn_data
+    );
+
+
+    GdkPixbuf *(*gdk_pixbuf_scale_simple)(GdkPixbuf *src,
+                                          int dest_width,
+                                          int dest_heigh,
+                                          GdkInterpType interp_type
+    );
+
+    guchar* (*gdk_pixbuf_get_pixels) (const GdkPixbuf* pixbuf);
+
+
+    void (*gdk_pixbuf_copy_area) (
+            const GdkPixbuf* src_pixbuf,
+            int src_x,
+            int src_y,
+            int width,
+            int height,
+            GdkPixbuf* dest_pixbuf,
+            int dest_x,
+            int dest_y
+    );
 
     /* </for screencast, used only with GTK3>  */
 } GtkApi;

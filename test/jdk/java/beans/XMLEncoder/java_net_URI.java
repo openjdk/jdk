@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6245149
  * @summary Tests URI encoding
- * @run main/othervm -Djava.security.manager=allow java_net_URI
+ * @run main/othervm java_net_URI
  * @author Sergey Malenkov
  */
 
@@ -34,7 +34,7 @@ import java.net.URISyntaxException;
 
 public final class java_net_URI extends AbstractTest<URI> {
     public static void main(String[] args) {
-        new java_net_URI().test(true);
+        new java_net_URI().test();
     }
 
     protected URI getObject() {

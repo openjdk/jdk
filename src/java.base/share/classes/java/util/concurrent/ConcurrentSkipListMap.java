@@ -1096,6 +1096,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * @throws NullPointerException if the specified map or any of its keys
      *         or values are null
      */
+    @SuppressWarnings("this-escape")
     public ConcurrentSkipListMap(Map<? extends K, ? extends V> m) {
         this.comparator = null;
         putAll(m);
@@ -1110,6 +1111,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * @throws NullPointerException if the specified sorted map or any of
      *         its keys or values are null
      */
+    @SuppressWarnings("this-escape")
     public ConcurrentSkipListMap(SortedMap<K, ? extends V> m) {
         this.comparator = m.comparator();
         buildFromSorted(m); // initializes transients
@@ -2399,19 +2401,19 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
         implements ConcurrentNavigableMap<K,V>, Serializable {
         private static final long serialVersionUID = -7647078645895051609L;
 
-        /** Underlying map */
+        /** @serial Underlying map */
         final ConcurrentSkipListMap<K,V> m;
-        /** lower bound key, or null if from start */
+        /** @serial lower bound key, or null if from start */
         @SuppressWarnings("serial") // Conditionally serializable
         private final K lo;
-        /** upper bound key, or null if to end */
+        /** @serial upper bound key, or null if to end */
         @SuppressWarnings("serial") // Conditionally serializable
         private final K hi;
-        /** inclusion flag for lo */
+        /** @serial inclusion flag for lo */
         private final boolean loInclusive;
-        /** inclusion flag for hi */
+        /** @serial inclusion flag for hi */
         private final boolean hiInclusive;
-        /** direction */
+        /** @serial direction */
         final boolean isDescending;
 
         // Lazily initialized view holders
@@ -3163,7 +3165,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
                         current = n;
                         Index<K,V> r = q.down;
                         row = (s.right != null) ? s : s.down;
-                        est -= est >>> 2;
+                        est >>>= 1;
                         return new KeySpliterator<K,V>(cmp, r, e, sk, est);
                     }
                 }
@@ -3219,14 +3221,14 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
     }
     // factory method for KeySpliterator
     final KeySpliterator<K,V> keySpliterator() {
-        Index<K,V> h; Node<K,V> n; long est;
+        Index<K,V> h; Node<K,V> hn, n; long est;
         VarHandle.acquireFence();
-        if ((h = head) == null) {
+        if ((h = head) == null || (hn = h.node) == null) {
             n = null;
             est = 0L;
         }
         else {
-            n = h.node;
+            n = hn.next;
             est = getAdderCount();
         }
         return new KeySpliterator<K,V>(comparator, h, n, null, est);
@@ -3253,7 +3255,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
                         current = n;
                         Index<K,V> r = q.down;
                         row = (s.right != null) ? s : s.down;
-                        est -= est >>> 2;
+                        est >>>= 1;
                         return new ValueSpliterator<K,V>(cmp, r, e, sk, est);
                     }
                 }
@@ -3305,14 +3307,14 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
 
     // Almost the same as keySpliterator()
     final ValueSpliterator<K,V> valueSpliterator() {
-        Index<K,V> h; Node<K,V> n; long est;
+        Index<K,V> h; Node<K,V> hn, n; long est;
         VarHandle.acquireFence();
-        if ((h = head) == null) {
+        if ((h = head) == null || (hn = h.node) == null) {
             n = null;
             est = 0L;
         }
         else {
-            n = h.node;
+            n = hn.next;
             est = getAdderCount();
         }
         return new ValueSpliterator<K,V>(comparator, h, n, null, est);
@@ -3339,7 +3341,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
                         current = n;
                         Index<K,V> r = q.down;
                         row = (s.right != null) ? s : s.down;
-                        est -= est >>> 2;
+                        est >>>= 1;
                         return new EntrySpliterator<K,V>(cmp, r, e, sk, est);
                     }
                 }
@@ -3409,14 +3411,14 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
 
     // Almost the same as keySpliterator()
     final EntrySpliterator<K,V> entrySpliterator() {
-        Index<K,V> h; Node<K,V> n; long est;
+        Index<K,V> h; Node<K,V> hn, n; long est;
         VarHandle.acquireFence();
-        if ((h = head) == null) {
+        if ((h = head) == null || (hn = h.node) == null) {
             n = null;
             est = 0L;
         }
         else {
-            n = h.node;
+            n = hn.next;
             est = getAdderCount();
         }
         return new EntrySpliterator<K,V>(comparator, h, n, null, est);

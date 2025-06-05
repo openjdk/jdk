@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,9 @@ public:
   bool is_c1   ()                                { return false; }
   bool is_c2   ()                                { return false; }
 
+  virtual bool is_hidden_from_external_view() const { return UseJVMCINativeLibrary && LibJVMCICompilerThreadHidden; }
+
+
   bool needs_stubs            () { return false; }
 
   // Initialization
@@ -132,6 +135,8 @@ public:
 
   // Print compilation timers and statistics
   virtual void print_timers();
+
+  virtual bool is_intrinsic_supported(const methodHandle& method);
 
   // Gets the number of methods that have been successfully compiled by
   // a call to JVMCICompiler::compile_method().

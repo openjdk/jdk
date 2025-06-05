@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,7 +201,6 @@ private:
   void pre_barrier(LIRGenerator* gen, CodeEmitInfo* info, DecoratorSet decorators, LIR_Opr addr_opr, LIR_Opr pre_val);
 
   LIR_Opr load_reference_barrier(LIRGenerator* gen, LIR_Opr obj, LIR_Opr addr, DecoratorSet decorators);
-  LIR_Opr iu_barrier(LIRGenerator* gen, LIR_Opr obj, CodeEmitInfo* info, DecoratorSet decorators);
 
   LIR_Opr load_reference_barrier_impl(LIRGenerator* gen, LIR_Opr obj, LIR_Opr addr, DecoratorSet decorators);
 
@@ -244,9 +244,11 @@ protected:
 
   virtual LIR_Opr atomic_xchg_at_resolved(LIRAccess& access, LIRItem& value);
 
+  void post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_val);
+
 public:
 
-  virtual void generate_c1_runtime_stubs(BufferBlob* buffer_blob);
+  virtual bool generate_c1_runtime_stubs(BufferBlob* buffer_blob);
 };
 
 #endif // SHARE_GC_SHENANDOAH_C1_SHENANDOAHBARRIERSETC1_HPP

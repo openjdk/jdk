@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,16 +31,14 @@ import jdk.jfr.Label;
 import jdk.jfr.DataAmount;
 import jdk.jfr.Name;
 import jdk.jfr.Timespan;
+import jdk.jfr.internal.MirrorEvent;
 import jdk.jfr.internal.Type;
 
 @Name(Type.EVENT_NAME_PREFIX + "SocketRead")
 @Label("Socket Read")
 @Category("Java Application")
 @Description("Reading data from a socket")
-public final class SocketReadEvent extends AbstractJDKEvent {
-
-    // The order of these fields must be the same as the parameters in
-    // commit(..., String, String, int, long, long, boolean)
+public final class SocketReadEvent extends MirrorEvent {
 
     @Label("Remote Host")
     public String host;
@@ -64,7 +62,4 @@ public final class SocketReadEvent extends AbstractJDKEvent {
     @Description("If end of stream was reached")
     public boolean endOfStream;
 
-    public static void commit(long start, long duration, String host, String address, int port, long timeout, long byteRead, boolean endOfStream) {
-        // Generated
-    }
 }

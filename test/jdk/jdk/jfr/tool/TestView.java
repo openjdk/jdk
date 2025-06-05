@@ -31,7 +31,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 /**
  * @test
  * @summary Test jfr view
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @requires (vm.gc == "G1" | vm.gc == null)
  *           & vm.opt.ExplicitGCInvokesConcurrent != false
@@ -91,13 +91,13 @@ public class TestView {
 
     private static void testEventType(String recording) throws Throwable {
         OutputAnalyzer output = ExecuteHelper.jfr(
-             "view", "--verbose", "--width", "300", "--cell-height", "100", "SystemGC", recording);
+             "view", "--verbose", "--width", "300", "--cell-height", "100", "ThreadSleep", recording);
         // Verify title
-        output.shouldContain("System GC");
+        output.shouldContain("Thread Sleep");
         // Verify headings
-        output.shouldContain("Invoked Concurrent");
+        output.shouldContain("Sleep Time");
         // Verify verbose headings
-        output.shouldContain("invokedConcurrent");
+        output.shouldContain("time");
         // Verify thread value
         output.shouldContain(Thread.currentThread().getName());
         // Verify stack frame

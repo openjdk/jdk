@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,31 +31,35 @@ import java.security.SignedObject;
  * @test
  * @bug 8050374
  * @summary Checks if a signed object is a copy of an original object
+ * @run main Copy DSA 512
+ * @run main Copy SHA256withDSA 2048
  */
 public class Copy {
 
     private static final String DSA = "DSA";
-    private static final int KEY_SIZE = 512;
     private static final int MAGIC = 123;
 
     public static void main(String args[]) throws Exception {
+        int keySize = Integer.parseInt(args[1]);
         KeyPairGenerator kg = KeyPairGenerator.getInstance(DSA);
-        kg.initialize(KEY_SIZE);
+        kg.initialize(keySize);
         KeyPair kp = kg.genKeyPair();
 
-        Signature signature = Signature.getInstance(DSA);
+        String signAlgo = args[0];
+        Signature signature = Signature.getInstance(signAlgo);
         Test original = new Test();
         SignedObject so = new SignedObject(original, kp.getPrivate(),
                 signature);
         System.out.println("Signature algorithm: " + so.getAlgorithm());
 
-        signature = Signature.getInstance(DSA, "SUN");
+        signature = Signature.getInstance(signAlgo,
+                System.getProperty("test.provider.name", "SUN"));
         if (!so.verify(kp.getPublic(), signature)) {
             throw new RuntimeException("Verification failed");
         }
 
         kg = KeyPairGenerator.getInstance(DSA);
-        kg.initialize(KEY_SIZE);
+        kg.initialize(keySize);
         kp = kg.genKeyPair();
 
         if (so.verify(kp.getPublic(), signature)) {

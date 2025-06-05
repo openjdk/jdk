@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
 class frame;
 class ZForwarding;
 class ZPageAllocator;
+
+NOT_DEBUG(inline) void z_verify_safepoints_are_blocked() NOT_DEBUG_RETURN;
 
 class ZVerify : public AllStatic {
 private:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2017, the original author or authors.
+ * Copyright (c) 2002-2017, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -121,7 +121,7 @@ public class NonBlockingPumpReader extends NonBlockingReader {
                     try {
                         if (timeout > 0) {
                             if (!notEmpty.await(timeout, TimeUnit.MILLISECONDS)) {
-                                throw new IOException( "Timeout reading" );
+                                throw new IOException("Timeout reading");
                             }
                         } else {
                             notEmpty.await();
@@ -207,14 +207,11 @@ public class NonBlockingPumpReader extends NonBlockingReader {
         }
 
         @Override
-        public void flush() throws IOException {
-        }
+        public void flush() throws IOException {}
 
         @Override
         public void close() throws IOException {
             NonBlockingPumpReader.this.close();
         }
-
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,8 @@
  * @run main TestTypeElement
  */
 
-import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.List;
 
 import javax.lang.model.element.TypeElement;
@@ -150,19 +148,7 @@ public class TestTypeElement {
     }
 
     private JavaFileObject createFileObject(String name, String body) {
-        return createFileObject(name, JavaFileObject.Kind.SOURCE, body);
-    }
-
-    private JavaFileObject createFileObject(String name, JavaFileObject.Kind kind, String body) {
-        try {
-            return new SimpleJavaFileObject(new URI("myfo:///" + name), kind) {
-                @Override
-                public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
-                    return body;
-                }
-            };
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException(name, e);
-        }
+        return SimpleJavaFileObject.forSource(URI.create("myfo:///" + name),
+                                              body);
     }
 }

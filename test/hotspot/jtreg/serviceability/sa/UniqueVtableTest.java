@@ -26,6 +26,7 @@
  *
  * @library /test/lib
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @modules jdk.hotspot.agent/sun.jvm.hotspot
  *          jdk.hotspot.agent/sun.jvm.hotspot.debugger
  *          jdk.hotspot.agent/sun.jvm.hotspot.types
@@ -146,7 +147,7 @@ public class UniqueVtableTest {
 
     private static void createAnotherToAttach(long lingeredAppPid) throws Throwable {
         // Start a new process to attach to the lingered app
-        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder processBuilder = ProcessTools.createLimitedTestJavaProcessBuilder(
             "--add-modules=jdk.hotspot.agent",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.debugger=ALL-UNNAMED",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.util.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import sun.security.action.GetBooleanAction;
 import sun.security.util.*;
 import sun.security.pkcs.PKCS9Attribute;
 
@@ -64,8 +63,8 @@ public class AVA implements DerEncoder {
     // See CR 6391482: if enabled this flag preserves the old but incorrect
     // PrintableString encoding for DomainComponent. It may need to be set to
     // avoid breaking preexisting certificates generated with sun.security APIs.
-    private static final boolean PRESERVE_OLD_DC_ENCODING = GetBooleanAction
-            .privilegedGetProperty("com.sun.security.preserveOldDCEncoding");
+    private static final boolean PRESERVE_OLD_DC_ENCODING =
+            Boolean.getBoolean("com.sun.security.preserveOldDCEncoding");
 
     /**
      * DEFAULT format allows both RFC1779 and RFC2253 syntax and
@@ -596,6 +595,7 @@ public class AVA implements DerEncoder {
         this(in.getDerValue());
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -608,10 +608,9 @@ public class AVA implements DerEncoder {
     }
 
     /**
-     * Returns a hashcode for this AVA.
-     *
-     * @return a hashcode for this AVA.
+     * {@return a hashcode for this AVA}
      */
+    @Override
     public int hashCode() {
         return toRFC2253CanonicalString().hashCode();
     }
@@ -641,7 +640,7 @@ public class AVA implements DerEncoder {
      */
     public String toString() {
         return toKeywordValueString
-            (toKeyword(DEFAULT, Collections.emptyMap()));
+            (toKeyword(DEFAULT, Collections.emptyMap()), true);
     }
 
     /**
@@ -660,7 +659,7 @@ public class AVA implements DerEncoder {
      * OID/keyword map.
      */
     public String toRFC1779String(Map<String, String> oidMap) {
-        return toKeywordValueString(toKeyword(RFC1779, oidMap));
+        return toKeywordValueString(toKeyword(RFC1779, oidMap), false);
     }
 
     /**
@@ -759,12 +758,6 @@ public class AVA implements DerEncoder {
                     // escape null character
                     sbuffer.append("\\00");
 
-                } else if (debug != null && Debug.isOn("ava")) {
-
-                    // embed non-printable/non-escaped char
-                    // as escaped hex pairs for debugging
-                    byte[] valueBytes = Character.toString(c).getBytes(UTF_8);
-                    HexFormat.of().withPrefix("\\").withUpperCase().formatHex(sbuffer, valueBytes);
                 } else {
 
                     // append non-printable/non-escaped char
@@ -889,14 +882,6 @@ public class AVA implements DerEncoder {
                         }
                     }
 
-                } else if (debug != null && Debug.isOn("ava")) {
-
-                    // embed non-printable/non-escaped char
-                    // as escaped hex pairs for debugging
-
-                    previousWhite = false;
-                    byte[] valueBytes = Character.toString(c).getBytes(UTF_8);
-                    HexFormat.of().withPrefix("\\").withUpperCase().formatHex(sbuffer, valueBytes);
                 } else {
 
                     // append non-printable/non-escaped char
@@ -946,7 +931,7 @@ public class AVA implements DerEncoder {
         return AVAKeyword.hasKeyword(oid, RFC2253);
     }
 
-    private String toKeywordValueString(String keyword) {
+    private String toKeywordValueString(String keyword, Boolean isFromToString) {
         /*
          * Construct the value with as little copying and garbage
          * production as practical.  First the keyword (mandatory),
@@ -1020,7 +1005,7 @@ public class AVA implements DerEncoder {
 
                         sbuffer.append(c);
 
-                    } else if (debug != null && Debug.isOn("ava")) {
+                    } else if (debug != null && isFromToString && Debug.isOn("ava")) {
 
                         // embed non-printable/non-escaped char
                         // as escaped hex pairs for debugging

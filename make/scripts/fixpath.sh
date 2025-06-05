@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -157,11 +157,21 @@ function import_path() {
     if [[ $? -eq 0 && -e "$unixpath" ]]; then
       if [[ ! "$winpath" =~ ^"$ENVROOT"\\.*$ ]] ; then
         # If it is not in envroot, it's a generic windows path
-        if [[ ! $winpath =~ ^[-_.:\\a-zA-Z0-9]*$ ]] ; then
+        if [[ ! $winpath =~ ^[-_.:~+\\a-zA-Z0-9]*$ ]] ; then
           # Path has forbidden characters, rewrite as short name
           # This monster of a command uses the %~s support from cmd.exe to
           # reliably convert to short paths on all winenvs.
           shortpath="$($CMD /q /c for %I in \( "$winpath" \) do echo %~sI 2>/dev/null | tr -d \\n\\r)"
+          if [[ ! $shortpath =~ ^[-_.:~+\\a-zA-Z0-9]*$ ]] ; then
+            if [[ $QUIET != true ]]; then
+              echo fixpath: failure: Path "'"$path"'" could not be converted to short path >&2
+            fi
+            if [[ $IGNOREFAILURES != true ]]; then
+              exit 1
+            else
+              shortpath=""
+            fi
+          fi
           unixpath="$($PATHTOOL -u "$shortpath")"
           # unixpath is based on short name
         fi
@@ -326,7 +336,9 @@ function convert_path() {
     suffix="${BASH_REMATCH[6]}"
 
     # We only believe this is a path if the first part is an existing directory
-    if [[ -d "/$firstdir" ]];  then
+    # and the prefix is not a subdirectory in the current working directory. Remove
+    # any part leading up to a : or = in the prefix before checking.
+    if [[ -d "/$firstdir" && ! -d "${prefix##*:}" && ! -d "${prefix##*=}" ]];  then
       if [[ $ENVROOT == "" ]]; then
         if [[ $QUIET != true ]]; then
           echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path >&2

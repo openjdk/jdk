@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,8 @@ import sun.swing.UIAction;
  * @bug 8133039
  * @summary Provide public API to sun.swing.UIAction#isEnabled(Object)
  * @modules java.desktop/sun.swing
- * @author Alexander Scherbatiy
  */
+
 public class bug8133039 {
 
     private static volatile int ACTION_PERFORMED_CALLS = 0;
@@ -91,6 +91,7 @@ public class bug8133039 {
         Robot robot = new Robot();
         robot.setAutoDelay(100);
         robot.waitForIdle();
+        robot.delay(1000);
 
         robot.keyPress(KeyEvent.VK_A);
         robot.keyRelease(KeyEvent.VK_A);

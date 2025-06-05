@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,16 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
+
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.Utils;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
+import java.lang.foreign.ValueLayout;
+import java.lang.reflect.Array;
 import java.nio.ByteOrder;
+import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
 import static jdk.incubator.vector.VectorOperators.*;
@@ -38,7 +44,7 @@ abstract class AbstractVector<E> extends Vector<E> {
     /**
      * The order of vector bytes when stored in natural,
      * array elements of the same lane type.
-     * This is the also the behavior of the
+     * This is also the behavior of the
      * VectorSupport load/store instructions.
      * If these instructions gain the capability to do
      * byte swapping on the fly, add a bit to those
@@ -188,11 +194,11 @@ abstract class AbstractVector<E> extends Vector<E> {
 
     abstract AbstractMask<E> maskFromArray(boolean[] bits);
 
-    abstract <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp);
+    abstract <F> VectorShuffle<F> bitsToShuffle(AbstractSpecies<F> dsp);
 
     /*package-private*/
     @ForceInline
-    final <F> VectorShuffle<F> toShuffleTemplate(AbstractSpecies<F> dsp) {
+    final <F> VectorShuffle<F> bitsToShuffleTemplate(AbstractSpecies<F> dsp) {
         Class<?> etype = vspecies().elementType();
         Class<?> dvtype = dsp.shuffleType();
         Class<?> dtype = dsp.asIntegral().elementType();
@@ -201,43 +207,29 @@ abstract class AbstractVector<E> extends Vector<E> {
                                      getClass(), etype, length(),
                                      dvtype, dtype, dlength,
                                      this, dsp,
-                                     AbstractVector::toShuffle0);
+                                     AbstractVector::bitsToShuffle0);
     }
 
-    abstract <F> VectorShuffle<F> toShuffle0(AbstractSpecies<F> dsp);
+    abstract <F> VectorShuffle<F> bitsToShuffle0(AbstractSpecies<F> dsp);
+
+    abstract <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp, boolean wrap);
+
+    abstract AbstractShuffle<E> iotaShuffle();
+
+    abstract AbstractShuffle<E> iotaShuffle(int start, int step, boolean wrap);
 
     @ForceInline
-    public final
-    VectorShuffle<E> toShuffle() {
-        return toShuffle(vspecies());
-    }
-
-    abstract VectorShuffle<E> iotaShuffle();
-
-    @ForceInline
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    final VectorShuffle<E> iotaShuffle(int start, int step, boolean wrap) {
-        if (start == 0 && step == 1) {
-            return iotaShuffle();
-        }
-
+    final VectorShuffle<E> iotaShuffleTemplate(int start, int step, boolean wrap) {
         if ((length() & (length() - 1)) != 0) {
+            // Uncommon path, the length is not a power of 2
             return wrap ? shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i * step + start, length())))
                         : shuffleFromOp(i -> i * step + start);
         }
 
-        AbstractSpecies<?> species = vspecies().asIntegral();
-        Vector iota = species.iota();
-        iota = iota.lanewise(VectorOperators.MUL, step)
-                   .lanewise(VectorOperators.ADD, start);
-        Vector wrapped = iota.lanewise(VectorOperators.AND, length() - 1);
-
-        if (!wrap) {
-            Vector wrappedEx = wrapped.lanewise(VectorOperators.SUB, length());
-            VectorMask<?> mask = wrapped.compare(VectorOperators.EQ, iota);
-            wrapped = wrappedEx.blend(wrapped, mask);
-        }
-        return ((AbstractVector) wrapped).toShuffle(vspecies());
+        AbstractVector<?> iota = vspecies().asIntegral().iota();
+        iota = (AbstractVector<?>) iota.lanewise(VectorOperators.MUL, step)
+                .lanewise(VectorOperators.ADD, start);
+        return iota.toShuffle(vspecies(), wrap);
     }
 
     abstract AbstractShuffle<E> shuffleFromArray(int[] indexes, int i);
@@ -310,8 +302,9 @@ abstract class AbstractVector<E> extends Vector<E> {
     Vector<F> convert(Conversion<E,F> conv, int part) {
         // Shape invariance is simple to implement.
         // It's part of the API because shape invariance
-        // is the default mode of operation, and shape
-        // shifting operations must advertise themselves.
+        // is the default mode of operation, and
+        // shape-shifting operations must advertise
+        // themselves.
         ConversionImpl<E,F> c = (ConversionImpl<E,F>) conv;
         @SuppressWarnings("unchecked")
         VectorSpecies<F> rsp = (VectorSpecies<F>)

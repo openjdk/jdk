@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public class HsErrFileUtils {
      * @throws RuntimeException, {@link IOException}
      */
     public static void checkHsErrFileContent(File f, Pattern[] patterns, boolean verbose) throws IOException {
-        checkHsErrFileContent(f, patterns, null, true, verbose);
+        checkHsErrFileContent(f, patterns, null, true, verbose, false);
     }
 
     /**
@@ -80,11 +80,43 @@ public class HsErrFileUtils {
      *                        Order is irrelevant.
      * @param checkEndMarker If true, we check for the final "END" in an hs-err file; if it is missing it indicates
      *                        that hs-err file printing did not complete successfully.
-     * @param verbose If true, the content of the hs-err file is printed while matching. If false, only important
-     *               information are printed.
+     * @param verbose If true, the content of the hs-err file is printed while matching. If false, only the matched patterns
+     *                are printed.
      * @throws RuntimeException, {@link IOException}
      */
     public static void checkHsErrFileContent(File f, Pattern[] positivePatterns, Pattern[] negativePatterns, boolean checkEndMarker, boolean verbose) throws IOException {
+        checkHsErrFileContent(f, positivePatterns, negativePatterns, checkEndMarker, verbose, false);
+    }
+
+    /**
+     * Given an open hs-err file, read it line by line and check for existence of a set of patterns. Will fail
+     * if patterns are missing, or if the END marker is missing.
+     * @param f Input file
+     * @param patterns An array of patterns that need to match, in that order
+     * @param verbose If true, the content of the hs-err file is printed while matching. If false, only the matched patterns
+     *                are printed.
+     * @param printHserrOnError If true, the content of the hs-err file is printed in case of a failing check
+     * @throws RuntimeException, {@link IOException}
+     */
+    public static void checkHsErrFileContent(File f, Pattern[] patterns, boolean verbose, boolean printHserrOnError) throws IOException {
+        checkHsErrFileContent(f, patterns, null, true, verbose, printHserrOnError);
+    }
+
+    /**
+     * Given an open hs-err file, read it line by line and check for various conditions.
+     * @param f input file
+     * @param positivePatterns Optional array of patterns that need to appear, in given order, in the file. Missing
+     *                        patterns cause the test to fail.
+     * @param negativePatterns Optional array of patterns that must not appear in the file; test fails if they do.
+     *                        Order is irrelevant.
+     * @param checkEndMarker If true, we check for the final "END" in an hs-err file; if it is missing it indicates
+     *                        that hs-err file printing did not complete successfully.
+     * @param verbose If true, the content of the hs-err file is printed while matching. If false, only the matched patterns
+     *                are printed.
+     * @param printHserrOnError If true, the content of the hs-err file is printed in case of a failing check
+     * @throws RuntimeException, {@link IOException}
+     */
+    public static void checkHsErrFileContent(File f, Pattern[] positivePatterns, Pattern[] negativePatterns, boolean checkEndMarker, boolean verbose, boolean printHserrOnError) throws IOException {
         try (
                 FileInputStream fis = new FileInputStream(f);
                 BufferedReader br = new BufferedReader(new InputStreamReader(fis));
@@ -123,6 +155,9 @@ public class HsErrFileUtils {
                                 System.out.println(line);
                             }
                             System.out.println("^^^ Forbidden pattern found at line " + lineNo + ": " + negativePattern + "^^^");
+                            if (printHserrOnError) {
+                                printHsErrFile(f);
+                            }
                             throw new RuntimeException("Forbidden pattern found at line " + lineNo + ": " + negativePattern);
                         }
                     }
@@ -132,12 +167,32 @@ public class HsErrFileUtils {
             }
             // If the current pattern is not null then it didn't match
             if (currentPositivePattern != null) {
+                if (printHserrOnError) {
+                    printHsErrFile(f);
+                }
                 throw new RuntimeException("hs-err file incomplete (first missing pattern: " + currentPositivePattern.pattern() + ")");
             }
             if (checkEndMarker && !lastLine.equals("END.")) {
+                if (printHserrOnError) {
+                    printHsErrFile(f);
+                }
                 throw new RuntimeException("hs-err file incomplete (missing END marker.)");
             }
             System.out.println("hs-err file " + f.getAbsolutePath() + " scanned successfully.");
+        }
+    }
+
+    private static void printHsErrFile(File f) throws IOException {
+        try (
+                FileInputStream fis = new FileInputStream(f);
+                BufferedReader br = new BufferedReader(new InputStreamReader(fis));
+        ) {
+            String line;
+            System.out.println("------------------------ hs-err file ------------------------");
+            while ((line = br.readLine()) != null) {
+                System.out.println(line);
+            }
+            System.out.println("-------------------------------------------------------------");
         }
     }
 

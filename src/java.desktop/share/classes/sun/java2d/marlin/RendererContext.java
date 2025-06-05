@@ -78,6 +78,8 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
     final MarlinCache cache;
     // flag indicating the shape is stroked (1) or filled (0)
     int stroking = 0;
+    // flag indicating to render the shape
+    boolean doRender = false;
     // flag indicating to clip the shape
     boolean doClip = false;
     // flag indicating if the path is closed or not (in advance) to handle properly caps
@@ -169,6 +171,7 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
             stats.totalOffHeap = 0L;
         }
         stroking   = 0;
+        doRender   = false;
         doClip     = false;
         closedPath = false;
         clipInvScale = 0.0d;

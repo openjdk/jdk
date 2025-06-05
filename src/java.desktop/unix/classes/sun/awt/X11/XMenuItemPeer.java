@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ public class XMenuItemPeer implements MenuItemPeer {
      */
     private TextMetrics textMetrics;
 
-    static class TextMetrics implements Cloneable {
+    static final class TextMetrics implements Cloneable {
         /*
          * Calculated text size members
          */
@@ -106,6 +106,7 @@ public class XMenuItemPeer implements MenuItemPeer {
             this.textBaseline = textBaseline;
         }
 
+        @Override
         public Object clone() {
             try {
                 return super.clone();
@@ -145,10 +146,12 @@ public class XMenuItemPeer implements MenuItemPeer {
     /*
      * From MenuComponentPeer
      */
+    @Override
     public void dispose() {
         //Empty function
     }
 
+    @Override
     public void setFont(Font font) {
         resetTextMetrics();
         repaintIfShowing();
@@ -156,11 +159,13 @@ public class XMenuItemPeer implements MenuItemPeer {
     /*
      * From MenuItemPeer
      */
+    @Override
     public void setLabel(String label) {
         resetTextMetrics();
         repaintIfShowing();
     }
 
+    @Override
     public void setEnabled(boolean enabled) {
         repaintIfShowing();
     }
@@ -353,7 +358,7 @@ public class XMenuItemPeer implements MenuItemPeer {
     /**
      * Returns width of item's shortcut label,
      * 0 if item has no shortcut.
-     * The height of shortcut can be deternimed
+     * The height of shortcut can be determined
      * from text dimensions.
      * This function does not use any locks
      * and is guaranteed to return some value

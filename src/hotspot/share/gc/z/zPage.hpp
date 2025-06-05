@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,50 +25,34 @@
 #define SHARE_GC_Z_ZPAGE_HPP
 
 #include "gc/z/zGenerationId.hpp"
-#include "gc/z/zList.hpp"
 #include "gc/z/zLiveMap.hpp"
 #include "gc/z/zPageAge.hpp"
 #include "gc/z/zPageType.hpp"
-#include "gc/z/zPhysicalMemory.hpp"
 #include "gc/z/zRememberedSet.hpp"
 #include "gc/z/zVirtualMemory.hpp"
 #include "memory/allocation.hpp"
+#include "oops/oopsHierarchy.hpp"
 
 class ZGeneration;
-
-enum class ZPageResetType {
-  // Normal allocation path
-  Allocation,
-  // Relocation failed and started to relocate in-place
-  InPlaceRelocation,
-  // Page was not selected for relocation, all objects
-  // stayed, but the page aged.
-  FlipAging,
-  // The page was split and needs to be reset
-  Splitting,
-};
+class ZMultiPartitionTracker;
 
 class ZPage : public CHeapObj<mtGC> {
   friend class VMStructs;
-  friend class ZList<ZPage>;
   friend class ZForwardingTest;
 
 private:
-  ZPageType            _type;
-  ZGenerationId        _generation_id;
-  ZPageAge             _age;
-  uint8_t              _numa_id;
-  uint32_t             _seqnum;
-  uint32_t             _seqnum_other;
-  ZVirtualMemory       _virtual;
-  volatile zoffset_end _top;
-  ZLiveMap             _livemap;
-  ZRememberedSet       _remembered_set;
-  uint64_t             _last_used;
-  ZPhysicalMemory      _physical;
-  ZListNode<ZPage>     _node;
+  const ZPageType               _type;
+  ZGenerationId                 _generation_id;
+  ZPageAge                      _age;
+  uint32_t                      _seqnum;
+  uint32_t                      _seqnum_other;
+  const uint32_t                _single_partition_id;
+  const ZVirtualMemory          _virtual;
+  volatile zoffset_end          _top;
+  ZLiveMap                      _livemap;
+  ZRememberedSet                _remembered_set;
+  ZMultiPartitionTracker* const _multi_partition_tracker;
 
-  ZPageType type_from_size(size_t size) const;
   const char* type_to_string() const;
 
   BitMap::idx_t bit_index(zaddress addr) const;
@@ -82,17 +66,14 @@ private:
   const ZGeneration* generation() const;
 
   void reset_seqnum();
-  void reset_remembered_set();
 
-  ZPage* split_with_pmem(ZPageType type, const ZPhysicalMemory& pmem);
-
-  void verify_remset_after_reset(ZPageAge prev_age, ZPageResetType type);
+  ZPage(ZPageType type, ZPageAge age, const ZVirtualMemory& vmem, ZMultiPartitionTracker* multi_partition_tracker, uint32_t partition_id);
 
 public:
-  ZPage(ZPageType type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem);
+  ZPage(ZPageType type, ZPageAge age, const ZVirtualMemory& vmem, uint32_t partition_id);
+  ZPage(ZPageType type, ZPageAge age, const ZVirtualMemory& vmem, ZMultiPartitionTracker* multi_partition_tracker);
 
-  ZPage* clone_limited() const;
-  ZPage* clone_limited_promote_flipped() const;
+  ZPage* clone_for_promotion() const;
 
   uint32_t object_max_count() const;
   size_t object_alignment_shift() const;
@@ -115,29 +96,20 @@ public:
   size_t used() const;
 
   const ZVirtualMemory& virtual_memory() const;
-  const ZPhysicalMemory& physical_memory() const;
-  ZPhysicalMemory& physical_memory();
 
-  uint8_t numa_id();
+  uint32_t single_partition_id() const;
+  bool is_multi_partition() const;
+  ZMultiPartitionTracker* multi_partition_tracker() const;
+
   ZPageAge age() const;
 
   uint32_t seqnum() const;
   bool is_allocating() const;
   bool is_relocatable() const;
 
-  uint64_t last_used() const;
-  void set_last_used();
-
-  void reset(ZPageAge age, ZPageResetType type);
-
-  void finalize_reset_for_in_place_relocation();
-
-  void reset_type_and_size(ZPageType type);
-
-  ZPage* retype(ZPageType type);
-  ZPage* split(size_t split_of_size);
-  ZPage* split(ZPageType type, size_t split_of_size);
-  ZPage* split_committed();
+  ZPage* reset(ZPageAge age);
+  void reset_livemap();
+  void reset_top_for_allocation();
 
   bool is_in(zoffset offset) const;
   bool is_in(zaddress addr) const;
@@ -172,7 +144,7 @@ public:
   void clear_remset_range_non_par_current(uintptr_t l_offset, size_t size);
   void swap_remset_bitmaps();
 
-  void remset_clear();
+  void remset_alloc();
 
   ZBitMap::ReverseIterator remset_reverse_iterator_previous();
   BitMap::Iterator remset_iterator_limited_current(uintptr_t l_offset, size_t size);
@@ -197,7 +169,6 @@ public:
   void verify_remset_cleared_current() const;
   void verify_remset_cleared_previous() const;
 
-  void clear_remset_current();
   void clear_remset_previous();
 
   void* remset_current();
@@ -210,8 +181,8 @@ public:
 
   void log_msg(const char* msg_format, ...) const ATTRIBUTE_PRINTF(2, 3);
 
-  void print_on_msg(outputStream* out, const char* msg) const;
-  void print_on(outputStream* out) const;
+  void print_on_msg(outputStream* st, const char* msg) const;
+  void print_on(outputStream* st) const;
   void print() const;
 
   // Verification

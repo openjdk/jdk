@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -603,6 +603,27 @@ public class StreamSpliteratorTest extends OpTestCase {
         for (Function<DoubleStream, DoubleStream> f : doubleStreamFunctions()) {
             SpliteratorTestHelper.testDoubleSpliterator(() -> f.apply(data.parallelStream()).spliterator());
         }
+    }
+
+    @Test
+    public void testCharacteristicsForSortedUnorderedStreamSpliterators() {
+        assertValidCombinationOfSortedAndOrdered(
+            DoubleStream.of(3d,2d,4d,1d,5d).sorted().unordered().spliterator()
+        );
+        assertValidCombinationOfSortedAndOrdered(
+            IntStream.of(3,2,4,1,5).sorted().unordered().spliterator()
+        );
+        assertValidCombinationOfSortedAndOrdered(
+            LongStream.of(3L,2L,4L,1L,5L).sorted().unordered().spliterator()
+        );
+        assertValidCombinationOfSortedAndOrdered(
+            Stream.of(3,2,4,1,5).sorted().unordered().spliterator()
+        );
+    }
+
+    void assertValidCombinationOfSortedAndOrdered(Spliterator<?> s) {
+        if (s.hasCharacteristics(Spliterator.SORTED))
+            Assert.assertTrue(s.hasCharacteristics(Spliterator.ORDERED));
     }
 
     private List<Function<DoubleStream, DoubleStream>> doubleStreamFunctions;

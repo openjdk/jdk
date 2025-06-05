@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/logConfiguration.hpp"
@@ -200,6 +199,21 @@ bool MemoryService::set_verbose(bool verbose) {
   ClassLoadingService::reset_trace_class_unloading();
 
   return verbose;
+}
+
+bool MemoryService::get_verbose() {
+  for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
+    // set_verbose only sets gc and not gc*, so check for an exact match
+    const bool is_gc_exact_match = ts->contains(LogTag::_gc) && ts->ntags() == 1;
+    if (is_gc_exact_match) {
+      LogLevelType l = ts->level_for(LogConfiguration::StdoutLog);
+      if (l == LogLevel::Info || l == LogLevel::Debug || l == LogLevel::Trace) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 Handle MemoryService::create_MemoryUsage_obj(MemoryUsage usage, TRAPS) {

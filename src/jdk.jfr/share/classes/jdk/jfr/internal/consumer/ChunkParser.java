@@ -127,7 +127,11 @@ public final class ChunkParser {
             this.configuration = previous.configuration;
         }
         this.metadata = header.readMetadata(previousMetadata);
-        this.timeConverter = new TimeConverter(chunkHeader, metadata.getGMTOffset() + metadata.getDST());
+        if (previous == null) {
+            this.timeConverter = new TimeConverter(chunkHeader, metadata.getGMTOffset() + metadata.getDST());
+        } else {
+            this.timeConverter = previous.timeConverter;
+        }
         if (metadata != previousMetadata) {
             ParserFactory factory = new ParserFactory(metadata, constantLookups, timeConverter);
             parsers = factory.getParsers();
@@ -288,9 +292,6 @@ public final class ChunkParser {
         while (true) {
             if (parserState.isClosed()) {
                 return true;
-            }
-            if (chunkHeader.getLastNanos() > filterEnd)  {
-              return true;
             }
             chunkHeader.refresh();
             if (absoluteChunkEnd != chunkHeader.getEnd()) {

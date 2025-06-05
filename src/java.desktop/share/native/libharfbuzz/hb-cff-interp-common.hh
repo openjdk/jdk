@@ -26,6 +26,8 @@
 #ifndef HB_CFF_INTERP_COMMON_HH
 #define HB_CFF_INTERP_COMMON_HH
 
+extern HB_INTERNAL const unsigned char *endchar_str;
+
 namespace CFF {
 
 using namespace OT;
@@ -336,8 +338,6 @@ struct byte_str_ref_t
   hb_ubytes_t       str;
 };
 
-using byte_str_array_t = hb_vector_t<hb_ubytes_t>;
-
 /* stack */
 template <typename ELEM, int LIMIT>
 struct cff_stack_t
@@ -522,7 +522,7 @@ struct parsed_values_t
 
   void alloc (unsigned n)
   {
-    values.alloc (n, true);
+    values.alloc_exact (n);
   }
 
   void add_op (op_code_t op, const byte_str_ref_t& str_ref = byte_str_ref_t (), const VAL &v = VAL ())
@@ -624,7 +624,6 @@ struct opset_t
         } else {
           /* invalid unknown operator */
           env.clear_args ();
-          env.set_error ();
         }
         break;
     }

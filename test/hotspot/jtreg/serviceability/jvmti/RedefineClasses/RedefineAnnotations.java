@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,11 @@
 /*
  * @test
  * @library /test/lib
+ * @library /testlibrary/asm
  * @summary Test that type annotations are retained after a retransform
  * @requires vm.jvmti
  * @modules java.base/jdk.internal.misc
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.instrument
+ * @modules java.instrument
  *          jdk.jartool/sun.tools.jar
  * @run main RedefineAnnotations buildagent
  * @run main/othervm -javaagent:redefineagent.jar RedefineAnnotations
@@ -61,11 +61,11 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.FieldVisitor;
-import static jdk.internal.org.objectweb.asm.Opcodes.ASM7;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
+import static org.objectweb.asm.Opcodes.ASM7;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE_USE)

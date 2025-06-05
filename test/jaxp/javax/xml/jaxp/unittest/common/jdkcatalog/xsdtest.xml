@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<{{rootElement}} xmlns="{{targetNamespace}}"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="{{targetNamespace}} {{SCHEMA_LOCATION}}"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+</{{rootElement}}>

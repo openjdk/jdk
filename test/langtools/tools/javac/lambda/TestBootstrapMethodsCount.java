@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
  * @bug 8129547
  * @summary Excess entries in BootstrapMethods with the same (bsm, bsmKind, bsmStaticArgs), but different dynamicArgs
  * @library /tools/javac/lib
- * @modules jdk.jdeps/com.sun.tools.classfile
- *          jdk.compiler/com.sun.tools.javac.api
+ * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.jvm
  *          jdk.compiler/com.sun.tools.javac.tree
@@ -52,9 +51,8 @@ import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.source.util.TreeScanner;
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.BootstrapMethods_attribute;
-import com.sun.tools.classfile.ClassFile;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.BootstrapMethodsAttribute;
 
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.Symbol;
@@ -111,11 +109,9 @@ public class TestBootstrapMethodsCount {
     void verifyBytecode() {
         File compiledTest = new File("Test.class");
         try {
-            ClassFile cf = ClassFile.read(compiledTest);
-            BootstrapMethods_attribute bsm_attr =
-                    (BootstrapMethods_attribute)cf
-                            .getAttribute(Attribute.BootstrapMethods);
-            int length = bsm_attr.bootstrap_method_specifiers.length;
+            ClassModel cf = ClassFile.of().parse(compiledTest.toPath());
+            BootstrapMethodsAttribute bsm_attr = cf.findAttribute(Attributes.bootstrapMethods()).orElseThrow();
+            int length = bsm_attr.bootstrapMethodsSize();
             if (length != 1) {
                 throw new Error("Bad number of method specifiers " +
                         "in BootstrapMethods attribute: " + length);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,8 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "code/relocInfo.hpp"
 #include "code/nmethod.hpp"
-#include "code/icBuffer.hpp"
+#include "code/relocInfo.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/z/zHash.inline.hpp"
@@ -111,9 +109,9 @@ void ZNMethodTable::rebuild(size_t new_size) {
   assert(is_power_of_2(new_size), "Invalid size");
 
   log_debug(gc, nmethod)("Rebuilding NMethod Table: "
-                         SIZE_FORMAT "->" SIZE_FORMAT " entries, "
-                         SIZE_FORMAT "(%.0f%%->%.0f%%) registered, "
-                         SIZE_FORMAT "(%.0f%%->%.0f%%) unregistered",
+                         "%zu->%zu entries, "
+                         "%zu(%.0f%%->%.0f%%) registered, "
+                         "%zu(%.0f%%->%.0f%%) unregistered",
                          _size, new_size,
                          _nregistered, percent_of(_nregistered, _size), percent_of(_nregistered, new_size),
                          _nunregistered, percent_of(_nunregistered, _size), 0.0);
@@ -145,9 +143,9 @@ void ZNMethodTable::rebuild_if_needed() {
   // grows/shrinks by doubling/halving its size. Pruning of unregistered
   // entries is done by rebuilding the table with or without resizing it.
   const size_t min_size = 1024;
-  const size_t shrink_threshold = _size * 0.30;
-  const size_t prune_threshold = _size * 0.65;
-  const size_t grow_threshold = _size * 0.70;
+  const size_t shrink_threshold = (size_t)(_size * 0.30);
+  const size_t prune_threshold = (size_t)(_size * 0.65);
+  const size_t grow_threshold = (size_t)(_size * 0.70);
 
   if (_size == 0) {
     // Initialize table

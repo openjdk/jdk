@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,22 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/shared/tlab_globals.hpp"
+#include "code/vmreg.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "opto/arraycopynode.hpp"
+#include "opto/block.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/idealKit.hpp"
 #include "opto/macro.hpp"
 #include "opto/narrowptrnode.hpp"
+#include "opto/output.hpp"
+#include "opto/regalloc.hpp"
 #include "opto/runtime.hpp"
 #include "utilities/macros.hpp"
+#include CPU_HEADER(gc/shared/barrierSetAssembler)
 
 // By default this is a no-op.
 void BarrierSetC2::resolve_address(C2Access& access) const { }
@@ -77,6 +82,57 @@ bool C2Access::needs_cpu_membar() const {
   return false;
 }
 
+static BarrierSetC2State* barrier_set_state() {
+  return reinterpret_cast<BarrierSetC2State*>(Compile::current()->barrier_set_state());
+}
+
+RegMask& BarrierStubC2::live() const {
+  return *barrier_set_state()->live(_node);
+}
+
+BarrierStubC2::BarrierStubC2(const MachNode* node)
+  : _node(node),
+    _entry(),
+    _continuation(),
+    _preserve(live()) {}
+
+Label* BarrierStubC2::entry() {
+  // The _entry will never be bound when in_scratch_emit_size() is true.
+  // However, we still need to return a label that is not bound now, but
+  // will eventually be bound. Any eventually bound label will do, as it
+  // will only act as a placeholder, so we return the _continuation label.
+  return Compile::current()->output()->in_scratch_emit_size() ? &_continuation : &_entry;
+}
+
+Label* BarrierStubC2::continuation() {
+  return &_continuation;
+}
+
+uint8_t BarrierStubC2::barrier_data() const {
+  return _node->barrier_data();
+}
+
+void BarrierStubC2::preserve(Register r) {
+  const VMReg vm_reg = r->as_VMReg();
+  assert(vm_reg->is_Register(), "r must be a general-purpose register");
+  _preserve.Insert(OptoReg::as_OptoReg(vm_reg));
+}
+
+void BarrierStubC2::dont_preserve(Register r) {
+  VMReg vm_reg = r->as_VMReg();
+  assert(vm_reg->is_Register(), "r must be a general-purpose register");
+  // Subtract the given register and all its sub-registers (e.g. {R11, R11_H}
+  // for r11 in aarch64).
+  do {
+    _preserve.Remove(OptoReg::as_OptoReg(vm_reg));
+    vm_reg = vm_reg->next();
+  } while (vm_reg->is_Register() && !vm_reg->is_concrete());
+}
+
+const RegMask& BarrierStubC2::preserve_set() const {
+  return _preserve;
+}
+
 Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) const {
   DecoratorSet decorators = access.decorators();
 
@@ -93,14 +149,9 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
     C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
 
     GraphKit* kit = parse_access.kit();
-    if (bt == T_DOUBLE) {
-      Node* new_val = kit->dprecision_rounding(val.node());
-      val.set_node(new_val);
-    }
-
     store = kit->store_to_memory(kit->control(), access.addr().node(), val.node(), bt,
-                                 access.addr().type(), mo, requires_atomic_access, unaligned,
-                                 mismatched, unsafe, access.barrier_data());
+                                 mo, requires_atomic_access, unaligned, mismatched,
+                                 unsafe, access.barrier_data());
   } else {
     assert(access.is_opt_access(), "either parse or opt access");
     C2OptAccess& opt_access = static_cast<C2OptAccess&>(access);
@@ -160,7 +211,7 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
                             unaligned, mismatched, unsafe, access.barrier_data());
       load = kit->gvn().transform(load);
     } else {
-      load = kit->make_load(control, adr, val_type, access.type(), adr_type, mo,
+      load = kit->make_load(control, adr, val_type, access.type(), mo,
                             dep, requires_atomic_access, unaligned, mismatched, unsafe,
                             access.barrier_data());
     }
@@ -653,11 +704,12 @@ int BarrierSetC2::arraycopy_payload_base_offset(bool is_array) {
   int base_off = is_array ? arrayOopDesc::length_offset_in_bytes() :
                             instanceOopDesc::base_offset_in_bytes();
   // base_off:
-  // 8  - 32-bit VM
+  // 8  - 32-bit VM or 64-bit VM, compact headers
   // 12 - 64-bit VM, compressed klass
   // 16 - 64-bit VM, normal klass
   if (base_off % BytesPerLong != 0) {
     assert(UseCompressedClassPointers, "");
+    assert(!UseCompactObjectHeaders, "");
     if (is_array) {
       // Exclude length to copy by 8 bytes words.
       base_off += sizeof(int);
@@ -675,8 +727,15 @@ void BarrierSetC2::clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* si
   Node* payload_size = size;
   Node* offset = kit->MakeConX(base_off);
   payload_size = kit->gvn().transform(new SubXNode(payload_size, offset));
+  if (is_array) {
+    // Ensure the array payload size is rounded up to the next BytesPerLong
+    // multiple when converting to double-words. This is necessary because array
+    // size does not include object alignment padding, so it might not be a
+    // multiple of BytesPerLong for sub-long element types.
+    payload_size = kit->gvn().transform(new AddXNode(payload_size, kit->MakeConX(BytesPerLong - 1)));
+  }
   payload_size = kit->gvn().transform(new URShiftXNode(payload_size, kit->intcon(LogBytesPerLong)));
-  ArrayCopyNode* ac = ArrayCopyNode::make(kit, false, src_base, offset,  dst_base, offset, payload_size, true, false);
+  ArrayCopyNode* ac = ArrayCopyNode::make(kit, false, src_base, offset, dst_base, offset, payload_size, true, false);
   if (is_array) {
     ac->set_clone_array();
   } else {
@@ -754,7 +813,57 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobi
   return old_tlab_top;
 }
 
+static const TypeFunc* clone_type() {
+  // Create input type (domain)
+  int argcnt = NOT_LP64(3) LP64_ONLY(4);
+  const Type** const domain_fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  domain_fields[argp++] = TypeInstPtr::NOTNULL;  // src
+  domain_fields[argp++] = TypeInstPtr::NOTNULL;  // dst
+  domain_fields[argp++] = TypeX_X;               // size lower
+  LP64_ONLY(domain_fields[argp++] = Type::HALF); // size upper
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* const domain = TypeTuple::make(TypeFunc::Parms + argcnt, domain_fields);
+
+  // Create result type (range)
+  const Type** const range_fields = TypeTuple::fields(0);
+  const TypeTuple* const range = TypeTuple::make(TypeFunc::Parms + 0, range_fields);
+
+  return TypeFunc::make(domain, range);
+}
+
 #define XTOP LP64_ONLY(COMMA phase->top())
+
+void BarrierSetC2::clone_in_runtime(PhaseMacroExpand* phase, ArrayCopyNode* ac,
+                                    address clone_addr, const char* clone_name) const {
+  Node* const ctrl = ac->in(TypeFunc::Control);
+  Node* const mem  = ac->in(TypeFunc::Memory);
+  Node* const src  = ac->in(ArrayCopyNode::Src);
+  Node* const dst  = ac->in(ArrayCopyNode::Dest);
+  Node* const size = ac->in(ArrayCopyNode::Length);
+
+  assert(size->bottom_type()->base() == Type_X,
+         "Should be of object size type (int for 32 bits, long for 64 bits)");
+
+  // The native clone we are calling here expects the object size in words.
+  // Add header/offset size to payload size to get object size.
+  Node* const base_offset = phase->MakeConX(arraycopy_payload_base_offset(ac->is_clone_array()) >> LogBytesPerLong);
+  Node* const full_size = phase->transform_later(new AddXNode(size, base_offset));
+  // HeapAccess<>::clone expects size in heap words.
+  // For 64-bits platforms, this is a no-operation.
+  // For 32-bits platforms, we need to multiply full_size by HeapWordsPerLong (2).
+  Node* const full_size_in_heap_words = phase->transform_later(new LShiftXNode(full_size, phase->intcon(LogHeapWordsPerLong)));
+
+  Node* const call = phase->make_leaf_call(ctrl,
+                                           mem,
+                                           clone_type(),
+                                           clone_addr,
+                                           clone_name,
+                                           TypeRawPtr::BOTTOM,
+                                           src, dst, full_size_in_heap_words XTOP);
+  phase->transform_later(call);
+  phase->igvn().replace_node(ac, call);
+}
 
 void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
   Node* ctrl = ac->in(TypeFunc::Control);
@@ -781,3 +890,343 @@ void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac
 }
 
 #undef XTOP
+
+static bool block_has_safepoint(const Block* block, uint from, uint to) {
+  for (uint i = from; i < to; i++) {
+    if (block->get_node(i)->is_MachSafePoint()) {
+      // Safepoint found
+      return true;
+    }
+  }
+
+  // Safepoint not found
+  return false;
+}
+
+static bool block_has_safepoint(const Block* block) {
+  return block_has_safepoint(block, 0, block->number_of_nodes());
+}
+
+static uint block_index(const Block* block, const Node* node) {
+  for (uint j = 0; j < block->number_of_nodes(); ++j) {
+    if (block->get_node(j) == node) {
+      return j;
+    }
+  }
+  ShouldNotReachHere();
+  return 0;
+}
+
+// Look through various node aliases
+static const Node* look_through_node(const Node* node) {
+  while (node != nullptr) {
+    const Node* new_node = node;
+    if (node->is_Mach()) {
+      const MachNode* const node_mach = node->as_Mach();
+      if (node_mach->ideal_Opcode() == Op_CheckCastPP) {
+        new_node = node->in(1);
+      }
+      if (node_mach->is_SpillCopy()) {
+        new_node = node->in(1);
+      }
+    }
+    if (new_node == node || new_node == nullptr) {
+      break;
+    } else {
+      node = new_node;
+    }
+  }
+
+  return node;
+}
+
+// Whether the given offset is undefined.
+static bool is_undefined(intptr_t offset) {
+  return offset == Type::OffsetTop;
+}
+
+// Whether the given offset is unknown.
+static bool is_unknown(intptr_t offset) {
+  return offset == Type::OffsetBot;
+}
+
+// Whether the given offset is concrete (defined and compile-time known).
+static bool is_concrete(intptr_t offset) {
+  return !is_undefined(offset) && !is_unknown(offset);
+}
+
+// Compute base + offset components of the memory address accessed by mach.
+// Return a node representing the base address, or null if the base cannot be
+// found or the offset is undefined or a concrete negative value. If a non-null
+// base is returned, the offset is a concrete, nonnegative value or unknown.
+static const Node* get_base_and_offset(const MachNode* mach, intptr_t& offset) {
+  const TypePtr* adr_type = nullptr;
+  offset = 0;
+  const Node* base = mach->get_base_and_disp(offset, adr_type);
+
+  if (base == nullptr || base == NodeSentinel) {
+    return nullptr;
+  }
+
+  if (offset == 0 && base->is_Mach() && base->as_Mach()->ideal_Opcode() == Op_AddP) {
+    // The memory address is computed by 'base' and fed to 'mach' via an
+    // indirect memory operand (indicated by offset == 0). The ultimate base and
+    // offset can be fetched directly from the inputs and Ideal type of 'base'.
+    const TypeOopPtr* oopptr = base->bottom_type()->isa_oopptr();
+    if (oopptr == nullptr) return nullptr;
+    offset = oopptr->offset();
+    // Even if 'base' is not an Ideal AddP node anymore, Matcher::ReduceInst()
+    // guarantees that the base address is still available at the same slot.
+    base = base->in(AddPNode::Base);
+    assert(base != nullptr, "");
+  }
+
+  if (is_undefined(offset) || (is_concrete(offset) && offset < 0)) {
+    return nullptr;
+  }
+
+  return look_through_node(base);
+}
+
+// Whether a phi node corresponds to an array allocation.
+// This test is incomplete: in some edge cases, it might return false even
+// though the node does correspond to an array allocation.
+static bool is_array_allocation(const Node* phi) {
+  precond(phi->is_Phi());
+  // Check whether phi has a successor cast (CheckCastPP) to Java array pointer,
+  // possibly below spill copies and other cast nodes. Limit the exploration to
+  // a single path from the phi node consisting of these node types.
+  const Node* current = phi;
+  while (true) {
+    const Node* next = nullptr;
+    for (DUIterator_Fast imax, i = current->fast_outs(imax); i < imax; i++) {
+      if (!current->fast_out(i)->isa_Mach()) {
+        continue;
+      }
+      const MachNode* succ = current->fast_out(i)->as_Mach();
+      if (succ->ideal_Opcode() == Op_CheckCastPP) {
+        if (succ->get_ptr_type()->isa_aryptr()) {
+          // Cast to Java array pointer: phi corresponds to an array allocation.
+          return true;
+        }
+        // Other cast: record as candidate for further exploration.
+        next = succ;
+      } else if (succ->is_SpillCopy() && next == nullptr) {
+        // Spill copy, and no better candidate found: record as candidate.
+        next = succ;
+      }
+    }
+    if (next == nullptr) {
+      // No evidence found that phi corresponds to an array allocation, and no
+      // candidates available to continue exploring.
+      return false;
+    }
+    // Continue exploring from the best candidate found.
+    current = next;
+  }
+  ShouldNotReachHere();
+}
+
+bool BarrierSetC2::is_allocation(const Node* node) {
+  assert(node->is_Phi(), "expected phi node");
+  if (node->req() != 3) {
+    return false;
+  }
+  const Node* const fast_node = node->in(2);
+  if (!fast_node->is_Mach()) {
+    return false;
+  }
+  const MachNode* const fast_mach = fast_node->as_Mach();
+  if (fast_mach->ideal_Opcode() != Op_LoadP) {
+    return false;
+  }
+  intptr_t offset;
+  const Node* const base = get_base_and_offset(fast_mach, offset);
+  if (base == nullptr || !base->is_Mach() || !is_concrete(offset)) {
+    return false;
+  }
+  const MachNode* const base_mach = base->as_Mach();
+  if (base_mach->ideal_Opcode() != Op_ThreadLocal) {
+    return false;
+  }
+  return offset == in_bytes(Thread::tlab_top_offset());
+}
+
+void BarrierSetC2::elide_dominated_barriers(Node_List& accesses, Node_List& access_dominators) const {
+  Compile* const C = Compile::current();
+  PhaseCFG* const cfg = C->cfg();
+
+  for (uint i = 0; i < accesses.size(); i++) {
+    MachNode* const access = accesses.at(i)->as_Mach();
+    intptr_t access_offset;
+    const Node* const access_obj = get_base_and_offset(access, access_offset);
+    Block* const access_block = cfg->get_block_for_node(access);
+    const uint access_index = block_index(access_block, access);
+
+    if (access_obj == nullptr) {
+      // No information available
+      continue;
+    }
+
+    for (uint j = 0; j < access_dominators.size(); j++) {
+     const  Node* const mem = access_dominators.at(j);
+      if (mem->is_Phi()) {
+        assert(is_allocation(mem), "expected allocation phi node");
+        if (mem != access_obj) {
+          continue;
+        }
+        if (is_unknown(access_offset) && !is_array_allocation(mem)) {
+          // The accessed address has an unknown offset, but the allocated
+          // object cannot be determined to be an array. Avoid eliding in this
+          // case, to be on the safe side.
+          continue;
+        }
+        assert((is_concrete(access_offset) && access_offset >= 0) || (is_unknown(access_offset) && is_array_allocation(mem)),
+               "candidate allocation-dominated access offsets must be either concrete and nonnegative, or unknown (for array allocations only)");
+      } else {
+        // Access node
+        const MachNode* const mem_mach = mem->as_Mach();
+        intptr_t mem_offset;
+        const Node* const mem_obj = get_base_and_offset(mem_mach, mem_offset);
+
+        if (mem_obj == nullptr ||
+            !is_concrete(access_offset) ||
+            !is_concrete(mem_offset)) {
+          // No information available
+          continue;
+        }
+
+        if (mem_obj != access_obj || mem_offset != access_offset) {
+          // Not the same addresses, not a candidate
+          continue;
+        }
+        assert(is_concrete(access_offset) && access_offset >= 0,
+               "candidate non-allocation-dominated access offsets must be concrete and nonnegative");
+      }
+
+      Block* mem_block = cfg->get_block_for_node(mem);
+      const uint mem_index = block_index(mem_block, mem);
+
+      if (access_block == mem_block) {
+        // Earlier accesses in the same block
+        if (mem_index < access_index && !block_has_safepoint(mem_block, mem_index + 1, access_index)) {
+          elide_dominated_barrier(access);
+        }
+      } else if (mem_block->dominates(access_block)) {
+        // Dominating block? Look around for safepoints
+        ResourceMark rm;
+        Block_List stack;
+        VectorSet visited;
+        stack.push(access_block);
+        bool safepoint_found = block_has_safepoint(access_block);
+        while (!safepoint_found && stack.size() > 0) {
+          const Block* const block = stack.pop();
+          if (visited.test_set(block->_pre_order)) {
+            continue;
+          }
+          if (block_has_safepoint(block)) {
+            safepoint_found = true;
+            break;
+          }
+          if (block == mem_block) {
+            continue;
+          }
+
+          // Push predecessor blocks
+          for (uint p = 1; p < block->num_preds(); ++p) {
+            Block* const pred = cfg->get_block_for_node(block->pred(p));
+            stack.push(pred);
+          }
+        }
+
+        if (!safepoint_found) {
+          elide_dominated_barrier(access);
+        }
+      }
+    }
+  }
+}
+
+void BarrierSetC2::compute_liveness_at_stubs() const {
+  ResourceMark rm;
+  Compile* const C = Compile::current();
+  Arena* const A = Thread::current()->resource_area();
+  PhaseCFG* const cfg = C->cfg();
+  PhaseRegAlloc* const regalloc = C->regalloc();
+  RegMask* const live = NEW_ARENA_ARRAY(A, RegMask, cfg->number_of_blocks() * sizeof(RegMask));
+  BarrierSetAssembler* const bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  BarrierSetC2State* bs_state = barrier_set_state();
+  Block_List worklist;
+
+  for (uint i = 0; i < cfg->number_of_blocks(); ++i) {
+    new ((void*)(live + i)) RegMask();
+    worklist.push(cfg->get_block(i));
+  }
+
+  while (worklist.size() > 0) {
+    const Block* const block = worklist.pop();
+    RegMask& old_live = live[block->_pre_order];
+    RegMask new_live;
+
+    // Initialize to union of successors
+    for (uint i = 0; i < block->_num_succs; i++) {
+      const uint succ_id = block->_succs[i]->_pre_order;
+      new_live.OR(live[succ_id]);
+    }
+
+    // Walk block backwards, computing liveness
+    for (int i = block->number_of_nodes() - 1; i >= 0; --i) {
+      const Node* const node = block->get_node(i);
+
+      // If this node tracks out-liveness, update it
+      if (!bs_state->needs_livein_data()) {
+        RegMask* const regs = bs_state->live(node);
+        if (regs != nullptr) {
+          regs->OR(new_live);
+        }
+      }
+
+      // Remove def bits
+      const OptoReg::Name first = bs->refine_register(node, regalloc->get_reg_first(node));
+      const OptoReg::Name second = bs->refine_register(node, regalloc->get_reg_second(node));
+      if (first != OptoReg::Bad) {
+        new_live.Remove(first);
+      }
+      if (second != OptoReg::Bad) {
+        new_live.Remove(second);
+      }
+
+      // Add use bits
+      for (uint j = 1; j < node->req(); ++j) {
+        const Node* const use = node->in(j);
+        const OptoReg::Name first = bs->refine_register(use, regalloc->get_reg_first(use));
+        const OptoReg::Name second = bs->refine_register(use, regalloc->get_reg_second(use));
+        if (first != OptoReg::Bad) {
+          new_live.Insert(first);
+        }
+        if (second != OptoReg::Bad) {
+          new_live.Insert(second);
+        }
+      }
+
+      // If this node tracks in-liveness, update it
+      if (bs_state->needs_livein_data()) {
+        RegMask* const regs = bs_state->live(node);
+        if (regs != nullptr) {
+          regs->OR(new_live);
+        }
+      }
+    }
+
+    // Now at block top, see if we have any changes
+    new_live.SUBTRACT(old_live);
+    if (new_live.is_NotEmpty()) {
+      // Liveness has refined, update and propagate to prior blocks
+      old_live.OR(new_live);
+      for (uint i = 1; i < block->num_preds(); ++i) {
+        Block* const pred = cfg->get_block_for_node(block->pred(i));
+        worklist.push(pred);
+      }
+    }
+  }
+}

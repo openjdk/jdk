@@ -99,6 +99,7 @@ public class CopyOnWriteArraySet<E> extends AbstractSet<E>
         implements java.io.Serializable {
     private static final long serialVersionUID = 5457747651344034263L;
 
+    /** @serial */
     private final CopyOnWriteArrayList<E> al;
 
     /**

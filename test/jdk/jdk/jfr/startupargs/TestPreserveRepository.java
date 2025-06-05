@@ -31,7 +31,7 @@ import jdk.test.lib.process.ProcessTools;
 /**
  * @test
  * @summary Tests that -XX:FlightRecorderOptions:preserve-repository works
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @modules jdk.jfr
  * @library /test/lib
@@ -46,7 +46,7 @@ public class TestPreserveRepository {
             "-XX:FlightRecorderOptions:repository=" + path + ",preserve-repository=true",
             "-version"
         };
-        ProcessBuilder pb = ProcessTools.createTestJvm(arguments);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(arguments);
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
         output.shouldHaveExitValue(0);
         Optional<Path> p = Files.find(path, 99, (a,b) -> a.getFileName().toString().endsWith(".jfr")).findAny();

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -1716,7 +1716,7 @@ public class Intro extends JPanel {
                 this.beginning = beg;
                 this.ending = end;
                 fm = surf.getMetrics(font);
-                java.util.Arrays.sort(members);
+                Arrays.sort(members);
                 cast.add("CONTRIBUTORS");
                 cast.add(" ");
                 cast.addAll(Arrays.asList(members));

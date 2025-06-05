@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
 
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
+import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
@@ -45,15 +46,14 @@ import javax.net.ssl.SSLContext;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 
-/**
+/*
  * @test
  * @bug 8232853
  * @summary AuthenticationFilter.Cache::remove may throw ConcurrentModificationException
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
- *        DigestEchoServer
+ *        DigestEchoServer jdk.httpclient.test.lib.common.TestServerConfigurator
  * @run testng/othervm -Dtest.requiresHost=true
- * -Djdk.tracePinnedThreads=full
  * -Djdk.httpclient.HttpClient.log=headers
  * -Djdk.internal.httpclient.debug=false
  * AuthFilterCacheTest
@@ -133,7 +133,7 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
             // HTTPS/1.1
             HttpsServer sserver1 = HttpsServer.create(sa, 100);
             sserver1.setExecutor(serverExecutor);
-            sserver1.setHttpsConfigurator(new HttpsConfigurator(context));
+            sserver1.setHttpsConfigurator(new TestServerConfigurator(sa.getAddress(), context));
             https1Server = HttpTestServer.of(sserver1);
             https1Server.addHandler(new TestHandler(), "/AuthFilterCacheTest/https1/");
             https1Server.start();

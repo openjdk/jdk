@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdb.resume.resume002.resume002a
- * @run main/othervm
+ * @run driver
  *      nsk.jdb.resume.resume002.resume002
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
@@ -73,14 +73,10 @@ import java.util.*;
 public class resume002 extends JdbTest {
 
     public static void main (String argv[]) {
-        System.exit(run(argv, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String argv[], PrintStream out) {
         debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
-        return new resume002().runTest(argv, out);
+        new resume002().runTest(argv);
     }
 
     static final String PACKAGE_NAME     = "nsk.jdb.resume.resume002";

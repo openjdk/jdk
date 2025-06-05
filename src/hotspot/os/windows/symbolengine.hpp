@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -49,11 +49,16 @@ namespace SymbolEngine {
   // Returns true for success, false for error.
   bool recalc_search_path(bool* p_search_path_was_updated = nullptr);
 
+  // Refresh the list of loaded modules e.g. pick up any newly loaded dll's
+  // since VM initialization.
+  // Returns true for success, false for error.
+  bool refreshModuleList();
+
   // Print one liner describing state (if library loaded, which functions are
   // missing - if any, and the dbhelp API version)
   void print_state_on(outputStream* st);
 
-  // Call at DLL_PROCESS_ATTACH.
+  // Called at DLL_PROCESS_ATTACH for dynamic builds, and from os::init() for static builds.
   void pre_initialize();
 
 };

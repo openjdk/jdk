@@ -71,7 +71,7 @@ public:
     // Optimistic setting. Need additional checks in Node::is_dead_loop_safe().
     if (con != TypeFunc::Memory || src->is_Start())
       init_flags(Flag_is_dead_loop_safe);
-    debug_only(check_con());
+    DEBUG_ONLY(check_con());
   }
   const uint _con;              // The field in the tuple we are projecting
   const bool _is_io_use;        // Used to distinguish between the projections
@@ -93,13 +93,13 @@ public:
 
   // Return uncommon trap call node if proj is for "proj->[region->..]call_uct"
   // null otherwise
-  CallStaticJavaNode* is_uncommon_trap_proj(Deoptimization::DeoptReason reason);
+  CallStaticJavaNode* is_uncommon_trap_proj(Deoptimization::DeoptReason reason = Deoptimization::Reason_none) const;
   // Return uncommon trap call node for    "if(test)-> proj -> ...
   //                                                 |
   //                                                 V
   //                                             other_proj->[region->..]call_uct"
   // null otherwise
-  CallStaticJavaNode* is_uncommon_trap_if_pattern(Deoptimization::DeoptReason reason);
+  CallStaticJavaNode* is_uncommon_trap_if_pattern(Deoptimization::DeoptReason reason = Deoptimization::Reason_none) const;
 
   // Return other proj node when this is a If proj node
   ProjNode* other_if_proj() const;

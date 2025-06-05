@@ -26,7 +26,6 @@
 #define CPU_ARM_INTERP_MASM_ARM_HPP
 
 #include "asm/macroAssembler.hpp"
-#include "interpreter/invocationCounter.hpp"
 #include "oops/method.hpp"
 #include "runtime/frame.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -90,11 +89,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Sets index. Blows reg_tmp.
   void get_index_at_bcp(Register index, int bcp_offset, Register reg_tmp, size_t index_size = sizeof(u2));
-  // Sets cache, index.
-  void get_cache_and_index_at_bcp(Register cache, Register index, int bcp_offset, size_t index_size = sizeof(u2));
-  void get_cache_and_index_and_bytecode_at_bcp(Register cache, Register index, Register bytecode, int byte_no, int bcp_offset, size_t index_size = sizeof(u2));
-  // Sets cache. Blows reg_tmp.
-  void get_cache_entry_pointer_at_bcp(Register cache, Register reg_tmp, int bcp_offset, size_t index_size = sizeof(u2));
 
   // Load object from cpool->resolved_references(*bcp+1)
   void load_resolved_reference_at_index(Register result, Register tmp);
@@ -103,6 +97,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void load_resolved_klass_at_offset(Register Rcpool, Register Rindex, Register Rklass);
 
   void load_resolved_indy_entry(Register cache, Register index);
+  void load_field_entry(Register cache, Register index, int bcp_offset = 1);
+  void load_method_entry(Register cache, Register index, int bcp_offset = 1);
 
   void pop_ptr(Register r);
   void pop_i(Register r = R0_tos);
@@ -201,10 +197,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Debugging
   void interp_verify_oop(Register reg, TosState state, const char* file, int line);    // only if +VerifyOops && state == atos
-
-  void verify_FPU(int stack_depth, TosState state = ftos) {
-    // No VFP state verification is required for ARM
-  }
 
   // Object locking
   void lock_object  (Register lock_reg);

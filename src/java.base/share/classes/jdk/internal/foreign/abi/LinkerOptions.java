@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package jdk.internal.foreign.abi;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -83,9 +84,9 @@ public class LinkerOptions {
         return getOption(CaptureCallState.class) != null;
     }
 
-    public Stream<CapturableState> capturedCallState() {
+    public int capturedCallStateMask() {
         CaptureCallState stl = getOption(CaptureCallState.class);
-        return stl == null ? Stream.empty() : stl.saved().stream();
+        return stl == null ? 0 : stl.mask();
     }
 
     public boolean isVariadicFunction() {
@@ -97,9 +98,14 @@ public class LinkerOptions {
         return getOption(FirstVariadicArg.class).index();
     }
 
-    public boolean isTrivial() {
-        IsTrivial it = getOption(IsTrivial.class);
-        return it != null;
+    public boolean isCritical() {
+        Critical c = getOption(Critical.class);
+        return c != null;
+    }
+
+    public boolean allowsHeapAccess() {
+        Critical c = getOption(Critical.class);
+        return c != null && c.allowHeapAccess();
     }
 
     @Override
@@ -115,7 +121,7 @@ public class LinkerOptions {
     }
 
     public sealed interface LinkerOptionImpl extends Linker.Option
-            permits CaptureCallState, FirstVariadicArg, IsTrivial {
+            permits CaptureCallState, FirstVariadicArg, Critical {
         default void validateForDowncall(FunctionDescriptor descriptor) {
             throw new IllegalArgumentException("Not supported for downcall: " + this);
         }
@@ -132,17 +138,47 @@ public class LinkerOptions {
                 throw new IllegalArgumentException("Index '" + index + "' not in bounds for descriptor: " + descriptor);
             }
         }
+
+        @Override
+        public int hashCode() {
+            return index;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof FirstVariadicArg that && index == that.index;
+        }
     }
 
-    public record CaptureCallState(Set<CapturableState> saved) implements LinkerOptionImpl {
+    public record CaptureCallState(int mask) implements LinkerOptionImpl {
         @Override
         public void validateForDowncall(FunctionDescriptor descriptor) {
             // done during construction
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof CaptureCallState that && mask == that.mask;
+        }
+
+        @Override
+        public int hashCode() {
+            return mask;
+        }
+
+        @Override
+        public String toString() {
+            return "CaptureCallState" + CapturableState.displayString(mask);
+        }
     }
 
-    public record IsTrivial() implements LinkerOptionImpl {
-        public static IsTrivial INSTANCE = new IsTrivial();
+    public enum Critical implements LinkerOptionImpl {
+        ALLOW_HEAP,
+        DONT_ALLOW_HEAP;
+
+        public boolean allowHeapAccess() {
+            return ordinal() == 0; // this == ALLOW_HEAP
+        }
 
         @Override
         public void validateForDowncall(FunctionDescriptor descriptor) {

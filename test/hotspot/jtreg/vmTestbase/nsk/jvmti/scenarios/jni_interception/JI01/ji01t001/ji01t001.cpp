@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,11 @@
 #include <string.h>
 
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 
-#include "JVMTITools.h"
-#include "jvmti_tools.h"
-#include "nsk_tools.h"
+#include "JVMTITools.hpp"
+#include "jvmti_tools.hpp"
+#include "nsk_tools.hpp"
 
 extern "C" {
 
@@ -40,36 +40,36 @@ extern "C" {
 static const char *classSig =
     "Lnsk/jvmti/scenarios/jni_interception/JI01/ji01t001;";
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jrawMonitorID eventLock;
 static jvmtiEventCallbacks callbacks;
 static jint result = NSK_STATUS_PASSED;
 
 // test thread
-static jthread testThread = NULL;
+static jthread testThread = nullptr;
 
 /* the original JNI function table */
-static jniNativeInterface *orig_jni_functions = NULL;
+static jniNativeInterface *orig_jni_functions = nullptr;
 
 /* the redirected JNI function table */
-static jniNativeInterface *redir_jni_functions = NULL;
+static jniNativeInterface *redir_jni_functions = nullptr;
 
 /* number of the redirected JNI function calls */
 static volatile int fnd_calls = 0;
 
 void setTestThread(JNIEnv *env) {
-    jthread curThread = NULL;
+    jthread curThread = nullptr;
     NSK_JVMTI_VERIFY(jvmti->GetCurrentThread(&curThread));
     testThread = env->NewGlobalRef(curThread);
 }
 
 void resetTestThread(JNIEnv *env) {
      env->DeleteGlobalRef(testThread);
-     testThread = NULL;
+     testThread = nullptr;
 }
 
 bool isOnTestThread(JNIEnv *env) {
-    jthread curThread = NULL;
+    jthread curThread = nullptr;
     NSK_JVMTI_VERIFY(jvmti->GetCurrentThread(&curThread));
     return env->IsSameObject(testThread, curThread);
 }
@@ -329,7 +329,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
 
 
-    if (!NSK_VERIFY(jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1) == JNI_OK && jvmti != NULL))
+    if (!NSK_VERIFY(jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1) == JNI_OK && jvmti != nullptr))
         return JNI_ERR;
 
 
@@ -354,11 +354,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     NSK_DISPLAY0("Event callbacks are set\nEnabling events...\n");
 
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, nullptr)))
         return JNI_ERR;
 
 
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, nullptr)))
         return JNI_ERR;
 
     NSK_DISPLAY0("Events are enabled\n");

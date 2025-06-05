@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,6 +23,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.internal.foreign.abi.ppc64;
 
 import java.lang.foreign.GroupLayout;
@@ -30,8 +31,8 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SequenceLayout;
 import java.lang.foreign.ValueLayout;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 public enum TypeClass {
     STRUCT_REGISTER,
@@ -112,8 +113,8 @@ public enum TypeClass {
         return true;
     }
 
-    private static TypeClass classifyStructType(MemoryLayout layout, boolean useABIv2) {
-        if (isHomogeneousFloatAggregate(layout, useABIv2)) {
+    private static TypeClass classifyStructType(MemoryLayout layout, boolean useABIv2, boolean isAIX) {
+        if (!isAIX && isHomogeneousFloatAggregate(layout, useABIv2)) {
             return TypeClass.STRUCT_HFA;
         }
         return TypeClass.STRUCT_REGISTER;
@@ -124,11 +125,11 @@ public enum TypeClass {
         return isHomogeneousFloatAggregate(layout, true) || isReturnRegisterAggregate(layout);
     }
 
-    public static TypeClass classifyLayout(MemoryLayout type, boolean useABIv2) {
+    public static TypeClass classifyLayout(MemoryLayout type, boolean useABIv2, boolean isAIX) {
         if (type instanceof ValueLayout) {
             return classifyValueType((ValueLayout) type);
         } else if (type instanceof GroupLayout) {
-            return classifyStructType(type, useABIv2);
+            return classifyStructType(type, useABIv2, isAIX);
         } else {
             throw new IllegalArgumentException("Unhandled type " + type);
         }

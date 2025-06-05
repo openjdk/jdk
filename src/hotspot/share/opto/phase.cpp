@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/compileBroker.hpp"
 #include "opto/compile.hpp"
@@ -38,6 +37,16 @@ elapsedTimer Phase::_t_stubCompilation;
 
 // The counters to use for LogCompilation
 elapsedTimer Phase::timers[max_phase_timers];
+
+const char* Phase::get_phase_trace_id_text(PhaseTraceId id) {
+  static const char* const texts[] = {
+  #define DEF_TEXT(name, text) text,
+      ALL_PHASE_TRACE_IDS(DEF_TEXT)
+  #undef DEF_TEXT
+      nullptr
+  };
+  return texts[(int)id];
+}
 
 //------------------------------Phase------------------------------------------
 Phase::Phase( PhaseNumber pnum ) : _pnum(pnum), C( pnum == Compiler ? nullptr : Compile::current()) {
@@ -81,6 +90,7 @@ void Phase::print_timers() {
     tty->print_cr ("             Prune Useless:   %7.3f s", timers[_t_vector_pru].seconds());
     tty->print_cr ("         Renumber Live:       %7.3f s", timers[_t_renumberLive].seconds());
     tty->print_cr ("         IdealLoop:           %7.3f s", timers[_t_idealLoop].seconds());
+    tty->print_cr ("           AutoVectorize:     %7.3f s", timers[_t_autoVectorize].seconds());
     tty->print_cr ("         IdealLoop Verify:    %7.3f s", timers[_t_idealLoopVerify].seconds());
     tty->print_cr ("         Cond Const Prop:     %7.3f s", timers[_t_ccp].seconds());
     tty->print_cr ("         GVN 2:               %7.3f s", timers[_t_iterGVN2].seconds());

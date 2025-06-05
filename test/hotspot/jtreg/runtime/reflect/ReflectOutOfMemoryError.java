@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8297977
  * @summary Test that throwing OOM from reflected method gets InvocationTargetException
- * @run main/othervm/timeout=150 ReflectOutOfMemoryError
+ * @run main/othervm -Xmx128m ReflectOutOfMemoryError
  */
 import java.lang.reflect.*;
 
@@ -88,15 +88,24 @@ public class ReflectOutOfMemoryError {
             Object junk = testMethod.invoke(null, new Object [0]);
             throw new RuntimeException("InvocationTargetException should be thrown");
         } catch (InvocationTargetException ite) {
-            Throwable targetException = ite.getTargetException();
-            if (targetException instanceof OutOfMemoryError) {
-                System.out.println("OutOfMemoryError thrown as expected.");
-                System.out.println("Test passed.");
-            } else {
-                throw new RuntimeException("Unexpected InvocationTargetException: " + targetException);
+            // We may not directly get OOME but it could have caused
+            // secondary exceptions, so walk the chain of exceptions
+            // and see if there is an OOME somewhere.
+            for (Throwable cause = ite.getTargetException();
+                 cause != null;
+                 cause = cause.getCause()) {
+                if (cause instanceof OutOfMemoryError) {
+                    System.out.println("OutOfMemoryError thrown as expected.");
+                    ite.printStackTrace(System.out);
+                    System.out.println("Test passed.");
+                    return;
+                }
             }
+
+            throw new RuntimeException("Unexpected InvocationTargetException: ",
+                                       ite.getTargetException());
         } catch (Exception exception) {
-            throw new RuntimeException("Unexpected exception: " + exception);
+            throw new RuntimeException("Unexpected exception: ", exception);
         }
     }
 }

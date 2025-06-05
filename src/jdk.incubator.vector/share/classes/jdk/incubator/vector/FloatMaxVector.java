@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -140,6 +142,12 @@ final class FloatMaxVector extends FloatVector {
     @Override
     @ForceInline
     FloatMaxShuffle iotaShuffle() { return FloatMaxShuffle.IOTA; }
+
+    @Override
+    @ForceInline
+    FloatMaxShuffle iotaShuffle(int start, int step, boolean wrap) {
+        return (FloatMaxShuffle) iotaShuffleTemplate(start, step, wrap);
+    }
 
     @Override
     @ForceInline
@@ -331,9 +339,14 @@ final class FloatMaxVector extends FloatVector {
 
     @Override
     @ForceInline
-    public final
-    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
-        return super.toShuffleTemplate(dsp);
+    final <F> VectorShuffle<F> bitsToShuffle(AbstractSpecies<F> dsp) {
+        throw new AssertionError();
+    }
+
+    @Override
+    @ForceInline
+    public final FloatMaxShuffle toShuffle() {
+        return (FloatMaxShuffle) toShuffle(vspecies(), false);
     }
 
     // Specialized unary testing
@@ -477,9 +490,16 @@ final class FloatMaxVector extends FloatVector {
                                    VectorMask<Float> m) {
         return (FloatMaxVector)
             super.selectFromTemplate((FloatMaxVector) v,
-                                     (FloatMaxMask) m);  // specialize
+                                     FloatMaxMask.class, (FloatMaxMask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public FloatMaxVector selectFrom(Vector<Float> v1,
+                                   Vector<Float> v2) {
+        return (FloatMaxVector)
+            super.selectFromTemplate((FloatMaxVector) v1, (FloatMaxVector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -491,13 +511,14 @@ final class FloatMaxVector extends FloatVector {
         return Float.intBitsToFloat(bits);
     }
 
+    @ForceInline
     public int laneHelper(int i) {
         return (int) VectorSupport.extract(
                      VCLASS, ETYPE, VLENGTH,
                      this, i,
                      (vec, ix) -> {
                      float[] vecarr = vec.vec();
-                     return (long)Float.floatToIntBits(vecarr[ix]);
+                     return (long)Float.floatToRawIntBits(vecarr[ix]);
                      });
     }
 
@@ -510,10 +531,11 @@ final class FloatMaxVector extends FloatVector {
         return withLaneHelper(i, e);
     }
 
+    @ForceInline
     public FloatMaxVector withLaneHelper(int i, float e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
-                                this, i, (long)Float.floatToIntBits(e),
+                                this, i, (long)Float.floatToRawIntBits(e),
                                 (v, ix, bits) -> {
                                     float[] res = v.vec().clone();
                                     res[ix] = Float.intBitsToFloat((int)bits);
@@ -713,6 +735,16 @@ final class FloatMaxVector extends FloatVector {
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
+        // laneIsSet
+
+        @Override
+        @ForceInline
+        public boolean laneIsSet(int i) {
+            Objects.checkIndex(i, length());
+            return VectorSupport.extract(FloatMaxMask.class, float.class, VLENGTH,
+                                         this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
+        }
+
         // Reductions
 
         @Override
@@ -783,14 +815,19 @@ final class FloatMaxVector extends FloatVector {
 
         @Override
         @ForceInline
+        public FloatMaxVector toVector() {
+            return (FloatMaxVector) toBitsVector().castShape(vspecies(), 0);
+        }
+
+        @Override
+        @ForceInline
         IntMaxVector toBitsVector() {
             return (IntMaxVector) super.toBitsVectorTemplate();
         }
 
         @Override
-        @ForceInline
-        IntVector toBitsVector0() {
-            return IntMaxVector.VSPECIES.dummyVector().vectorFactory(indices());
+        IntMaxVector toBitsVector0() {
+            return ((IntMaxVector) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -803,6 +840,40 @@ final class FloatMaxVector extends FloatVector {
         @ForceInline
         public void intoArray(int[] a, int offset) {
             toBitsVector().intoArray(a, offset);
+        }
+
+        @Override
+        @ForceInline
+        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+            toBitsVector().intoMemorySegment(ms, offset, bo);
+         }
+
+        @Override
+        @ForceInline
+        public final FloatMaxMask laneIsValid() {
+            return (FloatMaxMask) toBitsVector().compare(VectorOperators.GE, 0)
+                    .cast(vspecies());
+        }
+
+        @ForceInline
+        @Override
+        public final FloatMaxShuffle rearrange(VectorShuffle<Float> shuffle) {
+            FloatMaxShuffle concreteShuffle = (FloatMaxShuffle) shuffle;
+            return (FloatMaxShuffle) toBitsVector().rearrange(concreteShuffle.cast(IntVector.SPECIES_MAX))
+                    .toShuffle(vspecies(), false);
+        }
+
+        @ForceInline
+        @Override
+        public final FloatMaxShuffle wrapIndexes() {
+            IntMaxVector v = toBitsVector();
+            if ((length() & (length() - 1)) == 0) {
+                v = (IntMaxVector) v.lanewise(VectorOperators.AND, length() - 1);
+            } else {
+                v = (IntMaxVector) v.blend(v.lanewise(VectorOperators.ADD, length()),
+                            v.compare(VectorOperators.LT, 0));
+            }
+            return (FloatMaxShuffle) v.toShuffle(vspecies(), false);
         }
 
         private static int[] prepare(int[] indices, int offset) {
@@ -829,14 +900,9 @@ final class FloatMaxVector extends FloatVector {
             int length = indices.length;
             for (int si : indices) {
                 if (si >= (int)length || si < (int)(-length)) {
-                    boolean assertsEnabled = false;
-                    assert(assertsEnabled = true);
-                    if (assertsEnabled) {
-                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
                                   java.util.Arrays.toString(indices));
-                        throw new AssertionError(msg);
-                    }
-                    return false;
+                    throw new AssertionError(msg);
                 }
             }
             return true;

@@ -24,6 +24,7 @@
 /*
   @test
   @bug 6594374
+  @key printer
   @summary  Confirm that the orientation is as specified.
   @run main/manual DialogOrient
 */
@@ -32,9 +33,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.*;
 import java.awt.print.*;
-
-// This test is a "main" test as applets would need Runtime permission
-// "queuePrintJob".
 
 public class DialogOrient implements Printable {
 

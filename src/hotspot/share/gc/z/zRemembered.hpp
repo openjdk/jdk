@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ private:
 
   bool should_scan_page(ZPage* page) const;
 
-  bool scan_page(ZPage* page) const;
+  bool scan_page_and_clear_remset(ZPage* page) const;
   bool scan_forwarding(ZForwarding* forwarding, void* context) const;
 
 public:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,15 +32,15 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
-import jdk.internal.classfile.AccessFlags;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.ClassElement;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.constantpool.*;
-import jdk.internal.classfile.FieldModel;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.attribute.EnclosingMethodAttribute;
-import jdk.internal.classfile.attribute.InnerClassesAttribute;
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.attribute.EnclosingMethodAttribute;
+import java.lang.classfile.attribute.InnerClassesAttribute;
 
 /**
  * A FingerPrint is an abstract representation of a JarFile entry that contains
@@ -131,6 +131,14 @@ final class FingerPrint {
         return attrs.name;
     }
 
+    public int classMajorVersion() {
+        return attrs.majorVersion; // ..., 53, 54, ...
+    }
+
+    public int classReleaseVersion() {
+        return attrs.majorVersion - 44; // ..., 53 -> 9, 54 -> 10, ...
+    }
+
     public int mrversion() {
         return mrversion;
     }
@@ -166,13 +174,13 @@ final class FingerPrint {
     }
 
     private static ClassAttributes getClassAttributes(byte[] bytes) {
-        var cm = Classfile.parse(bytes);
+        var cm = ClassFile.of().parse(bytes);
         ClassAttributes attrs = new ClassAttributes(
                 cm.flags(),
                 cm.thisClass().asInternalName(),
                 cm.superclass().map(ClassEntry::asInternalName).orElse(null),
                 cm.majorVersion());
-        cm.forEachElement(attrs);
+        cm.forEach(attrs);
         return attrs;
     }
 
@@ -284,7 +292,7 @@ final class FingerPrint {
                 case MethodModel mm -> {
                     if (isPublic(mm.flags())) {
                         Set<String> exceptionSet = new HashSet<>();
-                        mm.findAttribute(Attributes.EXCEPTIONS).ifPresent(ea ->
+                        mm.findAttribute(Attributes.exceptions()).ifPresent(ea ->
                                 ea.exceptions().forEach(e ->
                                         exceptionSet.add(e.asInternalName())));
                         // treat type descriptor as a proxy for signature because signature

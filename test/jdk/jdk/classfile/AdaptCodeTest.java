@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -25,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile Code Adaptation.
+ * @summary Testing ClassFile Code Adaptation.
  * @run junit AdaptCodeTest
  */
 
@@ -37,13 +35,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
 import helpers.ByteArrayClassLoader;
 import helpers.TestUtil;
 import helpers.Transforms;
-import jdk.internal.classfile.instruction.ConstantInstruction;
+import java.lang.classfile.instruction.ConstantInstruction;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -58,9 +56,10 @@ class AdaptCodeTest {
 
     @Test
     void testNullAdaptIterator() throws Exception {
-        ClassModel cm = Classfile.parse(testClassPath);
+        var cc = ClassFile.of();
+        ClassModel cm = cc.parse(testClassPath);
         for (ClassTransform t : Transforms.noops) {
-            byte[] newBytes = cm.transform(t);
+            byte[] newBytes = cc.transformClass(cm, t);
             String result = (String)
                     new ByteArrayClassLoader(AdaptCodeTest.class.getClassLoader(), testClassName, newBytes)
                             .getMethod(testClassName, "many")
@@ -77,15 +76,17 @@ class AdaptCodeTest {
     })
     void testNullAdaptIterator2(String path) throws Exception {
         FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
-        ClassModel cm = Classfile.parse(fs.getPath(path));
+        var cc = ClassFile.of();
+        ClassModel cm = cc.parse(fs.getPath(path));
         for (ClassTransform t : Transforms.noops) {
-            byte[] newBytes = cm.transform(t);
+            byte[] newBytes = cc.transformClass(cm, t);
         }
     }
 
     @Test
     void testSevenOfThirteenIterator() throws Exception {
-        ClassModel cm = Classfile.parse(testClassPath);
+        var cc = ClassFile.of();
+        ClassModel cm = cc.parse(testClassPath);
 
         var transform = ClassTransform.transformingMethodBodies((codeB, codeE) -> {
             switch (codeE) {
@@ -94,13 +95,13 @@ class AdaptCodeTest {
                     if ((val instanceof Integer) && ((Integer) val) == 13) {
                         val = 7;
                     }
-                    codeB.constantInstruction(i.opcode(), val);
+                    codeB.loadConstant(val);
                 }
                 default -> codeB.with(codeE);
             }
         });
 
-        byte[] newBytes = cm.transform(transform);
+        byte[] newBytes = cc.transformClass(cm, transform);
 //        Files.write(Path.of("foo.class"), newBytes);
         String result = (String)
                 new ByteArrayClassLoader(AdaptCodeTest.class.getClassLoader(), testClassName, newBytes)
@@ -111,8 +112,9 @@ class AdaptCodeTest {
 
     @Test
     void testCopy() throws Exception {
-        ClassModel cm = Classfile.parse(testClassPath);
-        byte[] newBytes = Classfile.build(cm.thisClass().asSymbol(), cb -> cm.forEachElement(cb));
+        var cc = ClassFile.of();
+        ClassModel cm = cc.parse(testClassPath);
+        byte[] newBytes = cc.build(cm.thisClass().asSymbol(), cm::forEach);
 //        TestUtil.writeClass(newBytes, "TestClass.class");
         String result = (String)
                 new ByteArrayClassLoader(AdaptCodeTest.class.getClassLoader(), testClassName, newBytes)

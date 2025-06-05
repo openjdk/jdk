@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,19 +37,18 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
-import jdk.tools.jlink.internal.Jlink;
-import jdk.tools.jlink.internal.JlinkTask;
+
 import jdk.tools.jlink.builder.DefaultImageBuilder;
-import jdk.tools.jlink.plugin.ResourcePool;
-import jdk.tools.jlink.plugin.ResourcePoolBuilder;
-import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.internal.ExecutableImage;
+import jdk.tools.jlink.internal.Jlink;
 import jdk.tools.jlink.internal.Jlink.JlinkConfiguration;
 import jdk.tools.jlink.internal.Jlink.PluginsConfiguration;
+import jdk.tools.jlink.internal.JlinkTask;
+import jdk.tools.jlink.internal.Platform;
 import jdk.tools.jlink.internal.PostProcessor;
-import jdk.tools.jlink.internal.plugins.DefaultCompressPlugin;
-import jdk.tools.jlink.internal.plugins.DefaultStripDebugPlugin;
-
+import jdk.tools.jlink.plugin.Plugin;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import tests.Helper;
 import tests.JImageGenerator;
 
@@ -60,7 +58,6 @@ import tests.JImageGenerator;
  * @author Jean-Francois Denise
  * @library ../lib
  * @modules java.base/jdk.internal.jimage
- *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jlink/jdk.tools.jlink.builder
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.internal.plugins
@@ -72,8 +69,6 @@ import tests.JImageGenerator;
  * @run main/othervm -Xmx1g IntegrationTest
  */
 public class IntegrationTest {
-
-    private static final List<Integer> ordered = new ArrayList<>();
 
     public static class MyPostProcessor implements PostProcessor, Plugin {
 
@@ -159,9 +154,13 @@ public class IntegrationTest {
         mods.add("java.management");
         Set<String> limits = new HashSet<>();
         limits.add("java.management");
+        boolean linkFromRuntime = false;
         JlinkConfiguration config = new Jlink.JlinkConfiguration(output,
-                mods, ByteOrder.nativeOrder(),
-                JlinkTask.newModuleFinder(modulePaths, limits, mods));
+                mods,
+                JlinkTask.limitFinder(JlinkTask.newModuleFinder(modulePaths), limits, mods),
+                linkFromRuntime,
+                false /* ignore modified runtime */,
+                false /* generate run-time image */);
 
         List<Plugin> lst = new ArrayList<>();
 
@@ -189,7 +188,8 @@ public class IntegrationTest {
             lst.add(new MyPostProcessor());
         }
         // Image builder
-        DefaultImageBuilder builder = new DefaultImageBuilder(output, Collections.emptyMap());
+        DefaultImageBuilder builder = new DefaultImageBuilder(output, Collections.emptyMap(),
+                Platform.runtime());
         PluginsConfiguration plugins
                 = new Jlink.PluginsConfiguration(lst, builder, null);
 

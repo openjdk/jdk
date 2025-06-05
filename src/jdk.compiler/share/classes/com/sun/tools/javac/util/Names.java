@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,6 +127,7 @@ public class Names {
 
     // module names
     public final Name java_base;
+    public final Name java_se;
     public final Name jdk_unsupported;
 
     // attribute names
@@ -227,13 +228,8 @@ public class Names {
     public final Name enumSwitch;
     public final Name enumConstant;
 
-    // templated string
-    public final Name process;
-    public final Name STR;
-    public final Name RAW;
-    public final Name newStringTemplate;
-    public final Name newLargeStringTemplate;
-    public final Name processStringTemplate;
+    // special annotation names
+    public final Name requiresIdentityInternal;
 
     public final Name.Table table;
 
@@ -323,6 +319,7 @@ public class Names {
 
         // module names
         java_base = fromString("java.base");
+        java_se = fromString("java.se");
         jdk_unsupported = fromString("jdk.unsupported");
 
         // attribute names
@@ -413,26 +410,37 @@ public class Names {
         permits = fromString("permits");
         sealed = fromString("sealed");
 
-        // templated string
-        process = fromString("process");
-        STR = fromString("STR");
-        RAW = fromString("RAW");
-        newStringTemplate = fromString("newStringTemplate");
-        newLargeStringTemplate = fromString("newLargeStringTemplate");
-        processStringTemplate = fromString("processStringTemplate");
 
         // pattern switches
         typeSwitch = fromString("typeSwitch");
         enumSwitch = fromString("enumSwitch");
         enumConstant = fromString("enumConstant");
+
+        // special annotations:
+        requiresIdentityInternal = fromString("jdk.internal.RequiresIdentity+Annotation");
     }
 
     protected Name.Table createTable(Options options) {
         boolean useUnsharedTable = options.isSet("useUnsharedTable");
         if (useUnsharedTable)
-            return UnsharedNameTable.create(this);
-        else
-            return SharedNameTable.create(this);
+            return newUnsharedNameTable();
+        boolean useSharedTable = options.isSet("useSharedTable");
+        if (useSharedTable)
+            return newSharedNameTable();
+        boolean internStringTable = options.isSet("internStringTable");
+        return newStringNameTable(internStringTable);
+    }
+
+    public StringNameTable newStringNameTable(boolean intern) {
+        return StringNameTable.create(this, intern);
+    }
+
+    public SharedNameTable newSharedNameTable() {
+        return SharedNameTable.create(this);
+    }
+
+    public UnsharedNameTable newUnsharedNameTable() {
+        return UnsharedNameTable.create(this);
     }
 
     public void dispose() {

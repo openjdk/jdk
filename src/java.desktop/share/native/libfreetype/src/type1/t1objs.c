@@ -4,7 +4,7 @@
  *
  *   Type 1 objects manager (body).
  *
- * Copyright (C) 1996-2023 by
+ * Copyright (C) 1996-2024 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -167,8 +167,7 @@
       FT_Module  module;
 
 
-      module = FT_Get_Module( slot->face->driver->root.library,
-                              "pshinter" );
+      module = FT_Get_Module( slot->library, "pshinter" );
       if ( module )
       {
         T1_Hints_Funcs  funcs;
@@ -227,7 +226,7 @@
       face->len_buildchar = 0;
     }
 
-    T1_Done_Blend( face );
+    T1_Done_Blend( t1face );
     face->blend = NULL;
 #endif
 
@@ -290,7 +289,8 @@
    *
    * @Input:
    *   stream ::
-   *     input stream where to load font data.
+   *     Dummy argument for compatibility with the `FT_Face_InitFunc` API.
+   *     Ignored.  The stream should be passed through `face->root.stream`.
    *
    *   face_index ::
    *     The index of the font face in the resource.

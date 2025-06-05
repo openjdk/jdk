@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -35,6 +35,53 @@
 
 // Inline functions for RISCV frames:
 
+#if INCLUDE_JFR
+
+// Static helper routines
+
+inline address frame::interpreter_bcp(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<address>(fp[frame::interpreter_frame_bcp_offset]);
+}
+
+inline address frame::interpreter_return_address(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<address>(fp[frame::return_addr_offset]);
+}
+
+inline intptr_t* frame::interpreter_sender_sp(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<intptr_t*>(fp[frame::interpreter_frame_sender_sp_offset]);
+}
+
+inline bool frame::is_interpreter_frame_setup_at(const intptr_t* fp, const void* sp) {
+  assert(fp != nullptr, "invariant");
+  assert(sp != nullptr, "invariant");
+  return sp <= fp + frame::interpreter_frame_initial_sp_offset;
+}
+
+inline intptr_t* frame::sender_sp(intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return fp + frame::sender_sp_offset;
+}
+
+inline intptr_t* frame::link(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<intptr_t*>(fp[frame::link_offset]);
+}
+
+inline address frame::return_address(const intptr_t* sp) {
+  assert(sp != nullptr, "invariant");
+  return reinterpret_cast<address>(sp[-1]);
+}
+
+inline intptr_t* frame::fp(const intptr_t* sp) {
+  assert(sp != nullptr, "invariant");
+  return reinterpret_cast<intptr_t*>(sp[-2]);
+}
+
+#endif // INCLUDE_JFR
+
 // Constructors:
 
 inline frame::frame() {
@@ -69,11 +116,11 @@ inline void frame::init(intptr_t* ptr_sp, intptr_t* ptr_fp, address pc) {
 inline void frame::setup(address pc) {
   adjust_unextended_sp();
 
-  address original_pc = CompiledMethod::get_deopt_original_pc(this);
+  address original_pc = get_deopt_original_pc();
   if (original_pc != nullptr) {
     _pc = original_pc;
     _deopt_state = is_deoptimized;
-    assert(_cb == nullptr || _cb->as_compiled_method()->insts_contains_inclusive(_pc),
+    assert(_cb == nullptr || _cb->as_nmethod()->insts_contains_inclusive(_pc),
            "original PC must be in the main code section of the compiled method (or must be immediately following it)");
   } else {
     if (_cb == SharedRuntime::deopt_blob()) {
@@ -170,7 +217,7 @@ inline frame::frame(intptr_t* ptr_sp, intptr_t* ptr_fp) {
   _cb = CodeCache::find_blob(_pc);
   adjust_unextended_sp();
 
-  address original_pc = CompiledMethod::get_deopt_original_pc(this);
+  address original_pc = get_deopt_original_pc();
   if (original_pc != nullptr) {
     _pc = original_pc;
     _deopt_state = is_deoptimized;
@@ -186,7 +233,7 @@ inline bool frame::equal(frame other) const {
               unextended_sp() == other.unextended_sp() &&
               fp() == other.fp() &&
               pc() == other.pc();
-  assert(!ret || ret && cb() == other.cb() && _deopt_state == other._deopt_state, "inconsistent construction");
+  assert(!ret || (cb() == other.cb() && _deopt_state == other._deopt_state), "inconsistent construction");
   return ret;
 }
 
@@ -226,13 +273,13 @@ inline intptr_t* frame::real_fp() const {
 
 inline int frame::frame_size() const {
   return is_interpreted_frame()
-    ? sender_sp() - sp()
+    ? pointer_delta_as_int(sender_sp(), sp())
     : cb()->frame_size();
 }
 
 inline int frame::compiled_frame_stack_argsize() const {
-  assert(cb()->is_compiled(), "");
-  return (cb()->as_compiled_method()->method()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord;
+  assert(cb()->is_nmethod(), "");
+  return (cb()->as_nmethod()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord;
 }
 
 inline void frame::interpreted_frame_oop_map(InterpreterOopMap* mask) const {
@@ -253,7 +300,9 @@ inline intptr_t* frame::interpreter_frame_locals() const {
 }
 
 inline intptr_t* frame::interpreter_frame_last_sp() const {
-  return (intptr_t*)at(interpreter_frame_last_sp_offset);
+  intptr_t n = *addr_at(interpreter_frame_last_sp_offset);
+  assert(n <= 0, "n: " INTPTR_FORMAT, n);
+  return n != 0 ? &fp()[n] : nullptr;
 }
 
 inline intptr_t* frame::interpreter_frame_bcp_addr() const {
@@ -343,20 +392,6 @@ inline int frame::sender_sp_ret_address_offset() {
   return frame::sender_sp_offset - frame::return_addr_offset;
 }
 
-inline const ImmutableOopMap* frame::get_oop_map() const {
-  if (_cb == nullptr) return nullptr;
-  if (_cb->oop_maps() != nullptr) {
-    NativePostCallNop* nop = nativePostCallNop_at(_pc);
-    if (nop != nullptr && nop->displacement() != 0) {
-      int slot = ((nop->displacement() >> 24) & 0xff);
-      return _cb->oop_map_for_slot(slot, _pc);
-    }
-    const ImmutableOopMap* oop_map = OopMapSet::find_map(this);
-    return oop_map;
-  }
-  return nullptr;
-}
-
 //------------------------------------------------------------------------------
 // frame::sender
 frame frame::sender(RegisterMap* map) const {
@@ -425,7 +460,7 @@ frame frame::sender_for_compiled_frame(RegisterMap* map) const {
     // Tell GC to use argument oopmaps for some runtime stubs that need it.
     // For C1, the runtime stub might not have oop maps, so set this flag
     // outside of update_register_map.
-    if (!_cb->is_compiled()) { // compiled frames do not use callee-saved registers
+    if (!_cb->is_nmethod()) { // compiled frames do not use callee-saved registers
       map->set_include_argument_oops(_cb->caller_must_gc_arguments(map->thread()));
       if (oop_map() != nullptr) {
         _oop_map->update_register_map(this, map);

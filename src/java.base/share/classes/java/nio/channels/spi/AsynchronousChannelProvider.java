@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@ import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.ServiceConfigurationError;
 import java.util.concurrent.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * Service-provider class for asynchronous channels.
@@ -51,44 +49,26 @@ import java.security.PrivilegedAction;
  */
 
 public abstract class AsynchronousChannelProvider {
-    private static Void checkPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkPermission(new RuntimePermission("asynchronousChannelProvider"));
-        return null;
-    }
-    private AsynchronousChannelProvider(Void ignore) { }
 
     /**
      * Initializes a new instance of this class.
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}{@code ("asynchronousChannelProvider")}
      */
     protected AsynchronousChannelProvider() {
-        this(checkPermission());
     }
 
     // lazy initialization of default provider
     private static class ProviderHolder {
         static final AsynchronousChannelProvider provider = load();
 
-        @SuppressWarnings("removal")
         private static AsynchronousChannelProvider load() {
-            return AccessController
-                .doPrivileged(new PrivilegedAction<>() {
-                    public AsynchronousChannelProvider run() {
-                        AsynchronousChannelProvider p;
-                        p = loadProviderFromProperty();
-                        if (p != null)
-                            return p;
-                        p = loadProviderAsService();
-                        if (p != null)
-                            return p;
-                        return sun.nio.ch.DefaultAsynchronousChannelProvider.create();
-                    }});
+            AsynchronousChannelProvider p;
+            p = loadProviderFromProperty();
+            if (p != null)
+                return p;
+            p = loadProviderAsService();
+            if (p != null)
+                return p;
+            return sun.nio.ch.DefaultAsynchronousChannelProvider.create();
         }
 
         private static AsynchronousChannelProvider loadProviderFromProperty() {
@@ -100,7 +80,7 @@ public abstract class AsynchronousChannelProvider {
                 Object tmp = Class.forName(cn, true,
                                            ClassLoader.getSystemClassLoader()).newInstance();
                 return (AsynchronousChannelProvider)tmp;
-            } catch (ClassNotFoundException | SecurityException |
+            } catch (ClassNotFoundException |
                      InstantiationException | IllegalAccessException x) {
                 throw new ServiceConfigurationError(null, x);
             }
@@ -110,18 +90,7 @@ public abstract class AsynchronousChannelProvider {
             ServiceLoader<AsynchronousChannelProvider> sl =
                 ServiceLoader.load(AsynchronousChannelProvider.class,
                                    ClassLoader.getSystemClassLoader());
-            Iterator<AsynchronousChannelProvider> i = sl.iterator();
-            for (;;) {
-                try {
-                    return (i.hasNext()) ? i.next() : null;
-                } catch (ServiceConfigurationError sce) {
-                    if (sce.getCause() instanceof SecurityException) {
-                        // Ignore the security exception, try the next provider
-                        continue;
-                    }
-                    throw sce;
-                }
-            }
+            return sl.findFirst().orElse(null);
         }
     }
 

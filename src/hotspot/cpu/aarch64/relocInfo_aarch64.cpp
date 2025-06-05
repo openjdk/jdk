@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,16 +23,15 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
-#include "code/compiledMethod.hpp"
+#include "code/nmethod.hpp"
 #include "code/relocInfo.hpp"
 #include "nativeInst_aarch64.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/safepoint.hpp"
 
 
-void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
+void Relocation::pd_set_data_value(address x, bool verify_only) {
   if (verify_only)
     return;
 
@@ -60,13 +59,12 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
 
 address Relocation::pd_call_destination(address orig_addr) {
   assert(is_call(), "should be a call here");
-  if (NativeCall::is_call_at(addr())) {
-    address trampoline = nativeCall_at(addr())->get_trampoline();
-    if (trampoline) {
-      return nativeCallTrampolineStub_at(trampoline)->destination();
+  if (orig_addr == nullptr) {
+    if (NativeCall::is_call_at(addr())) {
+      NativeCall* call = nativeCall_at(addr());
+      return call->destination();
     }
-  }
-  if (orig_addr != nullptr) {
+  } else {
     address new_addr = MacroAssembler::pd_call_destination(orig_addr);
     // If call is branch to self, don't try to relocate it, just leave it
     // as branch to self. This happens during code generation if the code
@@ -82,15 +80,25 @@ address Relocation::pd_call_destination(address orig_addr) {
 void Relocation::pd_set_call_destination(address x) {
   assert(is_call(), "should be a call here");
   if (NativeCall::is_call_at(addr())) {
-    address trampoline = nativeCall_at(addr())->get_trampoline();
-    if (trampoline) {
-      nativeCall_at(addr())->set_destination_mt_safe(x, /* assert_lock */false);
-      return;
-    }
+    NativeCall* call = nativeCall_at(addr());
+    call->set_destination(x);
+  } else {
+    MacroAssembler::pd_patch_instruction(addr(), x);
   }
-  MacroAssembler::pd_patch_instruction(addr(), x);
   assert(pd_call_destination(addr()) == x, "fail in reloc");
 }
+
+void trampoline_stub_Relocation::pd_fix_owner_after_move() {
+  NativeCall* call = nativeCall_at(owner());
+  assert(call->raw_destination() == owner(), "destination should be empty");
+  address trampoline = addr();
+  address dest = nativeCallTrampolineStub_at(trampoline)->destination();
+  if (!Assembler::reachable_from_branch_at(owner(), dest)) {
+    dest = trampoline;
+  }
+  call->set_destination(dest);
+}
+
 
 address* Relocation::pd_address_in_code() {
   return (address*)(addr() + 8);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,8 @@ public class CPUInfoTest {
                     "avx512_vbmi2", "avx512_vbmi",      "rdtscp",            "rdpid",
                     "hv",           "fsrm",             "avx512_bitalg",     "gfni",
                     "f16c",         "pku",              "ospke",             "cet_ibt",
-                    "cet_ss",       "avx512_ifma",      "serialize"
+                    "cet_ss",       "avx512_ifma",      "serialize",         "avx_ifma",
+                    "apx_f",        "avx10_1",          "avx10_2"
                     );
             // @formatter:on
             // Checkstyle: resume

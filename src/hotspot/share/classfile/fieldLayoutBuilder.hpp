@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,17 +101,13 @@ class LayoutRawBlock : public ResourceObj {
   // sort fields in decreasing order.
   // Note: with line types, the comparison should include alignment constraint if sizes are equals
   static int compare_size_inverted(LayoutRawBlock** x, LayoutRawBlock** y)  {
-#ifdef _WINDOWS
-    // qsort() on Windows reverse the order of fields with the same size
-    // the extension of the comparison function below preserves this order
     int diff = (*y)->size() - (*x)->size();
+    // qsort() may reverse the order of fields with the same size.
+    // The extension is to ensure stable sort.
     if (diff == 0) {
       diff = (*x)->field_index() - (*y)->field_index();
     }
     return diff;
-#else
-    return (*y)->size() - (*x)->size();
-#endif // _WINDOWS
   }
 
 };
@@ -173,7 +169,7 @@ class FieldLayout : public ResourceObj {
  public:
   FieldLayout(GrowableArray<FieldInfo>* field_info, ConstantPool* cp);
   void initialize_static_layout();
-  void initialize_instance_layout(const InstanceKlass* ik);
+  void initialize_instance_layout(const InstanceKlass* ik, bool& super_ends_with_oop);
 
   LayoutRawBlock* first_empty_block() {
     LayoutRawBlock* block = _start;
@@ -192,7 +188,7 @@ class FieldLayout : public ResourceObj {
   void add_field_at_offset(LayoutRawBlock* blocks, int offset, LayoutRawBlock* start = nullptr);
   void add_contiguously(GrowableArray<LayoutRawBlock*>* list, LayoutRawBlock* start = nullptr);
   LayoutRawBlock* insert_field_block(LayoutRawBlock* slot, LayoutRawBlock* block);
-  bool reconstruct_layout(const InstanceKlass* ik);
+  void reconstruct_layout(const InstanceKlass* ik, bool& has_instance_fields, bool& ends_with_oop);
   void fill_holes(const InstanceKlass* ik);
   LayoutRawBlock* insert(LayoutRawBlock* slot, LayoutRawBlock* block);
   void remove(LayoutRawBlock* block);
@@ -241,6 +237,7 @@ class FieldLayoutBuilder : public ResourceObj {
   int _alignment;
   bool _has_nonstatic_fields;
   bool _is_contended; // is a contended class?
+  bool _super_ends_with_oop;
 
  public:
   FieldLayoutBuilder(const Symbol* classname, const InstanceKlass* super_klass, ConstantPool* constant_pool,

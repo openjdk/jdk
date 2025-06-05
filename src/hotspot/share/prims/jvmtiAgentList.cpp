@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,11 @@
  * questions.
  */
 
-#include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
+#include "cds/cds_globals.hpp"
+#include "logging/log.hpp"
+#include "memory/universe.hpp"
 #include "prims/jvmtiAgentList.hpp"
-
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
@@ -63,7 +65,6 @@ static inline JvmtiAgent* head(JvmtiAgent** list) {
   assert(list != nullptr, "invariant");
   return Atomic::load_acquire(list);
 }
-
 
 // The storage list is a single cas-linked-list, to allow for concurrent iterations.
 // Especially during initial loading of agents, there exist an order requirement to iterate oldest -> newest.
@@ -124,11 +125,11 @@ void JvmtiAgentList::add(JvmtiAgent* agent) {
   } while (Atomic::cmpxchg(&_list, next, agent) != next);
 }
 
-void JvmtiAgentList::add(const char* name, char* options, bool absolute_path) {
+void JvmtiAgentList::add(const char* name, const char* options, bool absolute_path) {
   add(new JvmtiAgent(name, options, absolute_path));
 }
 
-void JvmtiAgentList::add_xrun(const char* name, char* options, bool absolute_path) {
+void JvmtiAgentList::add_xrun(const char* name, const char* options, bool absolute_path) {
   JvmtiAgent* agent = new JvmtiAgent(name, options, absolute_path);
   agent->set_xrun();
   add(agent);
@@ -198,18 +199,14 @@ void JvmtiAgentList::load_xrun_agents() {
 }
 
 // Invokes Agent_OnAttach for agents loaded dynamically during runtime.
-jint JvmtiAgentList::load_agent(const char* agent_name, const char* absParam,
-                           const char* options, outputStream* st) {
-  // The abs parameter should be "true" or "false"
-  const bool is_absolute_path = (absParam != nullptr) && (strcmp(absParam, "true") == 0);
+void JvmtiAgentList::load_agent(const char* agent_name, bool is_absolute_path,
+                                const char* options, outputStream* st) {
   JvmtiAgent* const agent = new JvmtiAgent(agent_name, options, is_absolute_path, /* dynamic agent */ true);
   if (agent->load(st)) {
     add(agent);
   } else {
     delete agent;
   }
-  // Agent_OnAttach executed so completion status is JNI_OK
-  return JNI_OK;
 }
 
 // Send any Agent_OnUnload notifications
@@ -262,7 +259,6 @@ static bool match(JvmtiEnv* env, const JvmtiAgent* agent, const void* os_module_
 JvmtiAgent* JvmtiAgentList::lookup(JvmtiEnv* env, void* f_ptr) {
   assert(env != nullptr, "invariant");
   assert(f_ptr != nullptr, "invariant");
-  static char ebuf[1024];
   static char buffer[JVM_MAXPATHLEN];
   int offset;
   if (!os::dll_address_to_library_name(reinterpret_cast<address>(f_ptr), &buffer[0], JVM_MAXPATHLEN, &offset)) {
@@ -280,4 +276,13 @@ JvmtiAgent* JvmtiAgentList::lookup(JvmtiEnv* env, void* f_ptr) {
     }
   }
   return nullptr;
+}
+
+void JvmtiAgentList::disable_agent_list() {
+#if INCLUDE_CDS
+  assert(CDSConfig::is_dumping_final_static_archive(), "use this only for -XX:AOTMode=create!");
+  assert(!Universe::is_bootstrapping() && !Universe::is_fully_initialized(), "must do this very early");
+  log_info(aot)("Disabled all JVMTI agents during -XX:AOTMode=create");
+  _list = nullptr; // Pretend that no agents have been added.
+#endif
 }

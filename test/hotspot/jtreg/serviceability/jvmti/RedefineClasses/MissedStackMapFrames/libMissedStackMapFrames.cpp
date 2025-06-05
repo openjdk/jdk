@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ static void _log(const char* format, ...) {
   va_start(args, format);
   vprintf(format, args);
   va_end(args);
-  fflush(0);
+  fflush(nullptr);
 }
 
 static jvmtiEnv* jvmti = nullptr;
@@ -62,7 +62,7 @@ struct SavedClassBytes {
 
     jbyteArray get(JNIEnv *env) {
       if (bytes == nullptr) {
-        _log("SavedClassBytes: NULL\n");
+        _log("SavedClassBytes: null\n");
         return nullptr;
       }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,21 @@
  * @test
  * @bug 5029449
  * @summary Tests for the Julian calendar system (before the Gregorian cutover)
- * @library /java/text/testlib
+ * @run junit JulianTest
  */
 
 import static java.util.GregorianCalendar.*;
 
-public class JulianTest extends IntlTest {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        new JulianTest().run(args);
-    }
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class JulianTest {
 
     /*
      * 5029449: Regression: GregorianCalendar produces wrong Julian calendar dates in BC 1
      */
+    @Test
     public void Test5029449() {
         Koyomi cal = new Koyomi();
         cal.clear();
@@ -46,7 +47,7 @@ public class JulianTest extends IntlTest {
         // Date should be BC 1/12/31
         if (!cal.checkFieldValue(ERA, BC)
             || !cal.checkDate(1, DECEMBER, 31)) {
-            errln(cal.getMessage());
+            fail(cal.getMessage());
         }
     }
 }

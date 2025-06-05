@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,4 +100,22 @@ public final class HotSpotCompiledNmethod extends HotSpotCompiledCode {
     public String getInstallationFailureMessage() {
         return installationFailureMessage;
     }
+
+    /**
+     * Determines if {@code methods} contains at least one entry for which {@code HotSpotResolvedJavaMethod.isScoped()} returns true.
+     */
+    public boolean hasScopedAccess() {
+        if (methods == null) {
+            return false;
+        }
+        for (ResolvedJavaMethod method : methods) {
+            if (method instanceof HotSpotResolvedJavaMethod hotSpotMethod) {
+                if (hotSpotMethod.isScoped()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 }

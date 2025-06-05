@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.ModuleBuilder ModuleTestBase
  * @run main OpenModulesTest
@@ -42,11 +41,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.Attributes;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ClassWriter;
-import com.sun.tools.classfile.Module_attribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.ModuleAttribute;
 import toolbox.JavacTask;
 import toolbox.JavapTask;
 import toolbox.Task;
@@ -234,36 +230,21 @@ public class OpenModulesTest extends ModuleTestBase {
             .writeAll();
 
         Path miClass = m1Classes.resolve("module-info.class");
-        ClassFile cf = ClassFile.read(miClass);
-        Module_attribute module = (Module_attribute) cf.attributes.map.get(Attribute.Module);
-        Module_attribute newModule = new Module_attribute(module.attribute_name_index,
-                                                          module.module_name,
-                                                          module.module_flags | Module_attribute.ACC_OPEN,
-                                                          module.module_version_index,
-                                                          module.requires,
-                                                          module.exports,
-                                                          module.opens,
-                                                          module.uses_index,
-                                                          module.provides);
-        Map<String, Attribute> attrs = new HashMap<>(cf.attributes.map);
+        ClassModel cm = ClassFile.of().parse(miClass);
+        ModuleAttribute module = cm.findAttribute(Attributes.module()).orElseThrow();
+        ModuleAttribute newModule = ModuleAttribute.of(module.moduleName(),
+                                                          module.moduleFlagsMask() | ClassFile.ACC_OPEN,
+                                                          module.moduleVersion().orElse(null),
+                                                          module.requires(),
+                                                          module.exports(),
+                                                          module.opens(),
+                                                          module.uses(),
+                                                          module.provides());
 
-        attrs.put(Attribute.Module, newModule);
-
-        Attributes newAttributes = new Attributes(attrs);
-        ClassFile newClassFile = new ClassFile(cf.magic,
-                                               cf.minor_version,
-                                               cf.major_version,
-                                               cf.constant_pool,
-                                               cf.access_flags,
-                                               cf.this_class,
-                                               cf.super_class,
-                                               cf.interfaces,
-                                               cf.fields,
-                                               cf.methods,
-                                               newAttributes);
-
+        byte[] newBytes = ClassFile.of().transformClass(cm, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute).
+                andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(newModule))));
         try (OutputStream out = Files.newOutputStream(miClass)) {
-            new ClassWriter().write(newClassFile, out);
+            out.write(newBytes);
         }
 
         Path test = base.resolve("test");

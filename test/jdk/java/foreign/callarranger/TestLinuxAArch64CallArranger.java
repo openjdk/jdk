@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @enablePreview
  * @requires sun.arch.data.model == "64"
  * @compile platform/PlatformLayouts.java
  * @modules java.base/jdk.internal.foreign

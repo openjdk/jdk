@@ -26,6 +26,7 @@ package listpkg;
 
 /**
  * Example class containing "list" matching full name.
+ * @param <E> type parameter
  */
 public interface List<E> {
 

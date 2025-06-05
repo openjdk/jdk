@@ -5,7 +5,7 @@
  *   Auto-fitter routines to compute global hinting values
  *   (specification).
  *
- * Copyright (C) 2003-2023 by
+ * Copyright (C) 2003-2024 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -156,7 +156,7 @@ FT_BEGIN_HEADER
                                AF_StyleMetrics  *ametrics );
 
   FT_LOCAL( void )
-  af_face_globals_free( AF_FaceGlobals  globals );
+  af_face_globals_free( void*  globals );
 
   FT_LOCAL( FT_Bool )
   af_face_globals_is_digit( AF_FaceGlobals  globals,

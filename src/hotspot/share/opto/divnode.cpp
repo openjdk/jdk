@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/connode.hpp"
@@ -35,12 +34,30 @@
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "opto/runtime.hpp"
 
 // Portions of code courtesy of Clifford Click
 
 // Optimization - Graph Style
 
 #include <math.h>
+
+ModFloatingNode::ModFloatingNode(Compile* C, const TypeFunc* tf, const char* name) : CallLeafNode(tf, nullptr, name, TypeRawPtr::BOTTOM) {
+  add_flag(Flag_is_macro);
+  C->add_macro_node(this);
+}
+
+ModDNode::ModDNode(Compile* C, Node* a, Node* b) : ModFloatingNode(C, OptoRuntime::Math_DD_D_Type(), "drem") {
+  init_req(TypeFunc::Parms + 0, a);
+  init_req(TypeFunc::Parms + 1, C->top());
+  init_req(TypeFunc::Parms + 2, b);
+  init_req(TypeFunc::Parms + 3, C->top());
+}
+
+ModFNode::ModFNode(Compile* C, Node* a, Node* b) : ModFloatingNode(C, OptoRuntime::modf_Type(), "frem") {
+  init_req(TypeFunc::Parms + 0, a);
+  init_req(TypeFunc::Parms + 1, b);
+}
 
 //----------------------magic_int_divide_constants-----------------------------
 // Compute magic multiplier and shift constant for converting a 32 bit divide
@@ -266,7 +283,6 @@ static Node* long_by_long_mulhi(PhaseGVN* phase, Node* dividend, jlong magic_con
   }
 
   // Taken from Hacker's Delight, Fig. 8-2. Multiply high signed.
-  // (http://www.hackersdelight.org/HDcode/mulhs.c)
   //
   // int mulhs(int u, int v) {
   //    unsigned u0, v0, w0;
@@ -447,6 +463,47 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
 
   return q;
 }
+
+template <typename TypeClass, typename Unsigned>
+Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div) {
+  // Check for dead control input
+  if (div->in(0) != nullptr && div->remove_dead_region(phase, can_reshape)) {
+    return div;
+  }
+  // Don't bother trying to transform a dead node
+  if (div->in(0) != nullptr && div->in(0)->is_top()) {
+    return nullptr;
+  }
+
+  const Type* t = phase->type(div->in(2));
+  if (t == Type::TOP) {
+    return nullptr;
+  }
+  const TypeClass* type_divisor = t->cast<TypeClass>();
+
+  // Check for useless control input
+  // Check for excluding div-zero case
+  if (div->in(0) != nullptr && (type_divisor->_hi < 0 || type_divisor->_lo > 0)) {
+    div->set_req(0, nullptr); // Yank control input
+    return div;
+  }
+
+  if (!type_divisor->is_con()) {
+    return nullptr;
+  }
+  Unsigned divisor = static_cast<Unsigned>(type_divisor->get_con()); // Get divisor
+
+  if (divisor == 0 || divisor == 1) {
+    return nullptr; // Dividing by zero constant does not idealize
+  }
+
+  if (is_power_of_2(divisor)) {
+    return make_urshift<TypeClass>(div->in(1), phase->intcon(log2i_graceful(divisor)));
+  }
+
+  return nullptr;
+}
+
 
 //=============================================================================
 //------------------------------Identity---------------------------------------
@@ -748,6 +805,115 @@ Node *DivFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // return multiplication by the reciprocal
   return (new MulFNode(in(1), phase->makecon(TypeF::make(reciprocal))));
 }
+//=============================================================================
+//------------------------------Value------------------------------------------
+// An DivHFNode divides its inputs.  The third input is a Control input, used to
+// prevent hoisting the divide above an unsafe test.
+const Type* DivHFNode::Value(PhaseGVN* phase) const {
+  // Either input is TOP ==> the result is TOP
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
+  if(t1 == Type::TOP) { return Type::TOP; }
+  if(t2 == Type::TOP) { return Type::TOP; }
+
+  // Either input is BOTTOM ==> the result is the local BOTTOM
+  const Type* bot = bottom_type();
+  if((t1 == bot) || (t2 == bot) ||
+     (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM)) {
+    return bot;
+  }
+
+  // x/x == 1, we ignore 0/0.
+  // Note: if t1 and t2 are zero then result is NaN (JVMS page 213)
+  // Does not work for variables because of NaN's
+  if (in(1) == in(2) && t1->base() == Type::HalfFloatCon &&
+      !g_isnan(t1->getf()) && g_isfinite(t1->getf()) && t1->getf() != 0.0) { // could be negative ZERO or NaN
+    return TypeH::ONE;
+  }
+
+  if (t2 == TypeH::ONE) {
+    return t1;
+  }
+
+  // If divisor is a constant and not zero, divide the numbers
+  if (t1->base() == Type::HalfFloatCon &&
+      t2->base() == Type::HalfFloatCon &&
+      t2->getf() != 0.0)  {
+    // could be negative zero
+    return TypeH::make(t1->getf() / t2->getf());
+  }
+
+  // If the dividend is a constant zero
+  // Note: if t1 and t2 are zero then result is NaN (JVMS page 213)
+  // Test TypeHF::ZERO is not sufficient as it could be negative zero
+
+  if (t1 == TypeH::ZERO && !g_isnan(t2->getf()) && t2->getf() != 0.0) {
+    return TypeH::ZERO;
+  }
+
+  // If divisor or dividend is nan then result is nan.
+  if (g_isnan(t1->getf()) || g_isnan(t2->getf())) {
+    return TypeH::make(NAN);
+  }
+
+  // Otherwise we give up all hope
+  return Type::HALF_FLOAT;
+}
+
+//-----------------------------------------------------------------------------
+// Dividing by self is 1.
+// IF the divisor is 1, we are an identity on the dividend.
+Node* DivHFNode::Identity(PhaseGVN* phase) {
+  return (phase->type( in(2) ) == TypeH::ONE) ? in(1) : this;
+}
+
+
+//------------------------------Idealize---------------------------------------
+Node* DivHFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (in(0) != nullptr && remove_dead_region(phase, can_reshape))  return this;
+  // Don't bother trying to transform a dead node
+  if (in(0) != nullptr && in(0)->is_top())  { return nullptr; }
+
+  const Type* t2 = phase->type(in(2));
+  if (t2 == TypeH::ONE) {      // Identity?
+    return nullptr;            // Skip it
+  }
+  const TypeH* tf = t2->isa_half_float_constant();
+  if(tf == nullptr) { return nullptr; }
+  if(tf->base() != Type::HalfFloatCon) { return nullptr; }
+
+  // Check for out of range values
+  if(tf->is_nan() || !tf->is_finite()) { return nullptr; }
+
+  // Get the value
+  float f = tf->getf();
+  int exp;
+
+  // Consider the following geometric progression series of POT(power of two) numbers.
+  // 0.5 x 2^0 = 0.5, 0.5 x 2^1 = 1.0, 0.5 x 2^2 = 2.0, 0.5 x 2^3 = 4.0 ... 0.5 x 2^n,
+  // In all the above cases, normalized mantissa returned by frexp routine will
+  // be exactly equal to 0.5 while exponent will be 0,1,2,3...n
+  // Perform division to multiplication transform only if divisor is a POT value.
+  if(frexp((double)f, &exp) != 0.5) { return nullptr; }
+
+  // Limit the range of acceptable exponents
+  if(exp < -14 || exp > 15) { return nullptr; }
+
+  // Since divisor is a POT number, hence its reciprocal will never
+  // overflow 11 bits precision range of Float16
+  // value if exponent returned by frexp routine strictly lie
+  // within the exponent range of normal min(0x1.0P-14) and
+  // normal max(0x1.ffcP+15) values.
+  // Thus we can safely compute the reciprocal of divisor without
+  // any concerns about the precision loss and transform the division
+  // into a multiplication operation.
+  float reciprocal = ((float)1.0) / f;
+
+  assert(frexp((double)reciprocal, &exp) == 0.5, "reciprocal should be power of 2");
+
+  // return multiplication by the reciprocal
+  return (new MulHFNode(in(1), phase->makecon(TypeH::make(reciprocal))));
+}
 
 //=============================================================================
 //------------------------------Value------------------------------------------
@@ -874,11 +1040,8 @@ const Type* UDivINode::Value(PhaseGVN* phase) const {
 
 //------------------------------Idealize---------------------------------------
 Node *UDivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Check for dead control input
-  if (in(0) && remove_dead_region(phase, can_reshape))  return this;
-  return nullptr;
+  return unsigned_div_ideal<TypeInt, juint>(phase, can_reshape, this);
 }
-
 
 //=============================================================================
 //------------------------------Identity---------------------------------------
@@ -913,11 +1076,8 @@ const Type* UDivLNode::Value(PhaseGVN* phase) const {
 
 //------------------------------Idealize---------------------------------------
 Node *UDivLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Check for dead control input
-  if (in(0) && remove_dead_region(phase, can_reshape))  return this;
-  return nullptr;
+  return unsigned_div_ideal<TypeLong, julong>(phase, can_reshape, this);
 }
-
 
 //=============================================================================
 //------------------------------Idealize---------------------------------------
@@ -1085,10 +1245,101 @@ const Type* ModINode::Value(PhaseGVN* phase) const {
 
 //=============================================================================
 //------------------------------Idealize---------------------------------------
-Node *UModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
+
+template <typename TypeClass, typename Unsigned>
+static Node* unsigned_mod_ideal(PhaseGVN* phase, bool can_reshape, Node* mod) {
   // Check for dead control input
-  if( in(0) && remove_dead_region(phase, can_reshape) )  return this;
+  if (mod->in(0) != nullptr && mod->remove_dead_region(phase, can_reshape)) {
+    return mod;
+  }
+  // Don't bother trying to transform a dead node
+  if (mod->in(0) != nullptr && mod->in(0)->is_top()) {
+    return nullptr;
+  }
+
+  // Get the modulus
+  const Type* t = phase->type(mod->in(2));
+  if (t == Type::TOP) {
+    return nullptr;
+  }
+  const TypeClass* type_divisor = t->cast<TypeClass>();
+
+  // Check for useless control input
+  // Check for excluding mod-zero case
+  if (mod->in(0) != nullptr && (type_divisor->_hi < 0 || type_divisor->_lo > 0)) {
+    mod->set_req(0, nullptr); // Yank control input
+    return mod;
+  }
+
+  if (!type_divisor->is_con()) {
+    return nullptr;
+  }
+  Unsigned divisor = static_cast<Unsigned>(type_divisor->get_con());
+
+  if (divisor == 0) {
+    return nullptr;
+  }
+
+  if (is_power_of_2(divisor)) {
+    return make_and<TypeClass>(mod->in(1), phase->makecon(TypeClass::make(divisor - 1)));
+  }
+
   return nullptr;
+}
+
+template <typename TypeClass, typename Unsigned, typename Signed>
+static const Type* unsigned_mod_value(PhaseGVN* phase, const Node* mod) {
+  const Type* t1 = phase->type(mod->in(1));
+  const Type* t2 = phase->type(mod->in(2));
+  if (t1 == Type::TOP) {
+    return Type::TOP;
+  }
+  if (t2 == Type::TOP) {
+    return Type::TOP;
+  }
+
+  // 0 MOD X is 0
+  if (t1 == TypeClass::ZERO) {
+    return TypeClass::ZERO;
+  }
+  // X MOD X is 0
+  if (mod->in(1) == mod->in(2)) {
+    return TypeClass::ZERO;
+  }
+
+  // Either input is BOTTOM ==> the result is the local BOTTOM
+  const Type* bot = mod->bottom_type();
+  if ((t1 == bot) || (t2 == bot) ||
+      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM)) {
+    return bot;
+  }
+
+  const TypeClass* type_divisor = t2->cast<TypeClass>();
+  if (type_divisor->is_con() && type_divisor->get_con() == 1) {
+    return TypeClass::ZERO;
+  }
+
+  // Mod by zero?  Throw an exception at runtime!
+  if (type_divisor->is_con() && type_divisor->get_con() == 0) {
+    return TypeClass::POS;
+  }
+
+  const TypeClass* type_dividend = t1->cast<TypeClass>();
+  if (type_dividend->is_con() && type_divisor->is_con()) {
+    Unsigned dividend = static_cast<Unsigned>(type_dividend->get_con());
+    Unsigned divisor = static_cast<Unsigned>(type_divisor->get_con());
+    return TypeClass::make(static_cast<Signed>(dividend % divisor));
+  }
+
+  return bot;
+}
+
+Node* UModINode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  return unsigned_mod_ideal<TypeInt, juint>(phase, can_reshape, this);
+}
+
+const Type* UModINode::Value(PhaseGVN* phase) const {
+  return unsigned_mod_value<TypeInt, juint, jint>(phase, this);
 }
 
 //=============================================================================
@@ -1257,39 +1508,55 @@ const Type* ModLNode::Value(PhaseGVN* phase) const {
   return TypeLong::make( i1->get_con() % i2->get_con() );
 }
 
+Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  return unsigned_mod_ideal<TypeLong, julong>(phase, can_reshape, this);
+}
 
-//=============================================================================
-//------------------------------Value------------------------------------------
-const Type* ModFNode::Value(PhaseGVN* phase) const {
+const Type* UModLNode::Value(PhaseGVN* phase) const {
+  return unsigned_mod_value<TypeLong, julong, jlong>(phase, this);
+}
+
+Node* ModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (!can_reshape) {
+    return nullptr;
+  }
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+
+  bool result_is_unused = proj_out_or_null(TypeFunc::Parms) == nullptr;
+  bool not_dead = proj_out_or_null(TypeFunc::Control) != nullptr;
+  if (result_is_unused && not_dead) {
+    return replace_with_con(igvn, TypeF::make(0.));
+  }
+
   // Either input is TOP ==> the result is TOP
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
-
-  // Either input is BOTTOM ==> the result is the local BOTTOM
-  const Type *bot = bottom_type();
-  if( (t1 == bot) || (t2 == bot) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
-    return bot;
+  const Type* t1 = phase->type(dividend());
+  const Type* t2 = phase->type(divisor());
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return phase->C->top();
+  }
 
   // If either number is not a constant, we know nothing.
   if ((t1->base() != Type::FloatCon) || (t2->base() != Type::FloatCon)) {
-    return Type::FLOAT;         // note: x%x can be either NaN or 0
+    return nullptr; // note: x%x can be either NaN or 0
   }
 
   float f1 = t1->getf();
   float f2 = t2->getf();
-  jint  x1 = jint_cast(f1);     // note:  *(int*)&f1, not just (int)f1
-  jint  x2 = jint_cast(f2);
+  jint x1 = jint_cast(f1); // note:  *(int*)&f1, not just (int)f1
+  jint x2 = jint_cast(f2);
 
   // If either is a NaN, return an input NaN
-  if (g_isnan(f1))    return t1;
-  if (g_isnan(f2))    return t2;
+  if (g_isnan(f1)) {
+    return replace_with_con(igvn, t1);
+  }
+  if (g_isnan(f2)) {
+    return replace_with_con(igvn, t2);
+  }
 
   // If an operand is infinity or the divisor is +/- zero, punt.
-  if (!g_isfinite(f1) || !g_isfinite(f2) || x2 == 0 || x2 == min_jint)
-    return Type::FLOAT;
+  if (!g_isfinite(f1) || !g_isfinite(f2) || x2 == 0 || x2 == min_jint) {
+    return nullptr;
+  }
 
   // We must be modulo'ing 2 float constants.
   // Make sure that the sign of the fmod is equal to the sign of the dividend
@@ -1298,50 +1565,50 @@ const Type* ModFNode::Value(PhaseGVN* phase) const {
     xr ^= min_jint;
   }
 
-  return TypeF::make(jfloat_cast(xr));
+  return replace_with_con(igvn, TypeF::make(jfloat_cast(xr)));
 }
 
-//=============================================================================
-//------------------------------Idealize---------------------------------------
-Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Check for dead control input
-  if( in(0) && remove_dead_region(phase, can_reshape) )  return this;
-  return nullptr;
-}
+Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (!can_reshape) {
+    return nullptr;
+  }
+  PhaseIterGVN* igvn = phase->is_IterGVN();
 
+  bool result_is_unused = proj_out_or_null(TypeFunc::Parms) == nullptr;
+  bool not_dead = proj_out_or_null(TypeFunc::Control) != nullptr;
+  if (result_is_unused && not_dead) {
+    return replace_with_con(igvn, TypeD::make(0.));
+  }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
-const Type* ModDNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
-
-  // Either input is BOTTOM ==> the result is the local BOTTOM
-  const Type *bot = bottom_type();
-  if( (t1 == bot) || (t2 == bot) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
-    return bot;
+  const Type* t1 = phase->type(dividend());
+  const Type* t2 = phase->type(divisor());
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return nullptr;
+  }
 
   // If either number is not a constant, we know nothing.
   if ((t1->base() != Type::DoubleCon) || (t2->base() != Type::DoubleCon)) {
-    return Type::DOUBLE;        // note: x%x can be either NaN or 0
+    return nullptr; // note: x%x can be either NaN or 0
   }
 
   double f1 = t1->getd();
   double f2 = t2->getd();
-  jlong  x1 = jlong_cast(f1);   // note:  *(long*)&f1, not just (long)f1
-  jlong  x2 = jlong_cast(f2);
+  jlong x1 = jlong_cast(f1); // note:  *(long*)&f1, not just (long)f1
+  jlong x2 = jlong_cast(f2);
 
   // If either is a NaN, return an input NaN
-  if (g_isnan(f1))    return t1;
-  if (g_isnan(f2))    return t2;
+  if (g_isnan(f1)) {
+    return replace_with_con(igvn, t1);
+  }
+  if (g_isnan(f2)) {
+    return replace_with_con(igvn, t2);
+  }
 
   // If an operand is infinity or the divisor is +/- zero, punt.
-  if (!g_isfinite(f1) || !g_isfinite(f2) || x2 == 0 || x2 == min_jlong)
-    return Type::DOUBLE;
+  if (!g_isfinite(f1) || !g_isfinite(f2) || x2 == 0 || x2 == min_jlong) {
+    return nullptr;
+  }
 
   // We must be modulo'ing 2 double constants.
   // Make sure that the sign of the fmod is equal to the sign of the dividend
@@ -1350,7 +1617,36 @@ const Type* ModDNode::Value(PhaseGVN* phase) const {
     xr ^= min_jlong;
   }
 
-  return TypeD::make(jdouble_cast(xr));
+  return replace_with_con(igvn, TypeD::make(jdouble_cast(xr)));
+}
+
+Node* ModFloatingNode::replace_with_con(PhaseIterGVN* phase, const Type* con) {
+  Compile* C = phase->C;
+  Node* con_node = phase->makecon(con);
+  CallProjections projs;
+  extract_projections(&projs, false, false);
+  phase->replace_node(projs.fallthrough_proj, in(TypeFunc::Control));
+  if (projs.fallthrough_catchproj != nullptr) {
+    phase->replace_node(projs.fallthrough_catchproj, in(TypeFunc::Control));
+  }
+  if (projs.fallthrough_memproj != nullptr) {
+    phase->replace_node(projs.fallthrough_memproj, in(TypeFunc::Memory));
+  }
+  if (projs.catchall_memproj != nullptr) {
+    phase->replace_node(projs.catchall_memproj, C->top());
+  }
+  if (projs.fallthrough_ioproj != nullptr) {
+    phase->replace_node(projs.fallthrough_ioproj, in(TypeFunc::I_O));
+  }
+  assert(projs.catchall_ioproj == nullptr, "no exceptions from floating mod");
+  assert(projs.catchall_catchproj == nullptr, "no exceptions from floating mod");
+  if (projs.resproj != nullptr) {
+    phase->replace_node(projs.resproj, con_node);
+  }
+  phase->replace_node(this, C->top());
+  C->remove_macro_node(this);
+  disconnect_inputs(C);
+  return nullptr;
 }
 
 //=============================================================================
@@ -1359,6 +1655,24 @@ DivModNode::DivModNode( Node *c, Node *dividend, Node *divisor ) : MultiNode(3) 
   init_req(0, c);
   init_req(1, dividend);
   init_req(2, divisor);
+}
+
+DivModNode* DivModNode::make(Node* div_or_mod, BasicType bt, bool is_unsigned) {
+  assert(bt == T_INT || bt == T_LONG, "only int or long input pattern accepted");
+
+  if (bt == T_INT) {
+    if (is_unsigned) {
+      return UDivModINode::make(div_or_mod);
+    } else {
+      return DivModINode::make(div_or_mod);
+    }
+  } else {
+    if (is_unsigned) {
+      return UDivModLNode::make(div_or_mod);
+    } else {
+      return DivModLNode::make(div_or_mod);
+    }
+  }
 }
 
 //------------------------------make------------------------------------------

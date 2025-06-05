@@ -35,6 +35,7 @@ private:
   };
 
   static State _state;
+  static bool  _os_enforced_transparent_mode;
 
   static void pd_initialize();
 

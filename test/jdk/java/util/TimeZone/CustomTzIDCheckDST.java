@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,18 @@
  * @requires os.family != "windows"
  * @run main/othervm CustomTzIDCheckDST
  */
+
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 import java.time.DayOfWeek;
 import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAdjusters;
+
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+
 public class CustomTzIDCheckDST {
     // Northern Hemisphere
     private static String CUSTOM_TZ = "MEZ-1MESZ,M3.5.0,M10.5.0/3";
@@ -46,7 +48,7 @@ public class CustomTzIDCheckDST {
     private static String CUSTOM_TZ2 = "MEZ-1MESZ,M10.5.0,M3.5.0/3";
     public static void main(String args[]) throws Throwable {
         if (args.length == 0) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(List.of("CustomTzIDCheckDST", "runTZTest"));
+            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("CustomTzIDCheckDST", "runTZTest");
             pb.environment().put("TZ", CUSTOM_TZ);
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             output.shouldHaveExitValue(0);

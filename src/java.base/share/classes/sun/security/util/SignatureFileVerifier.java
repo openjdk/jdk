@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.*;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
+import jdk.internal.util.ArraysSupport;
 import sun.security.jca.Providers;
 import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.SignerInfo;
@@ -82,6 +83,12 @@ public class SignatureFileVerifier {
     private JarConstraintsParameters params;
 
     private static final String META_INF = "META-INF/";
+
+    // the maximum allowed size in bytes for the signature-related files
+    public static final int MAX_SIG_FILE_SIZE = initializeMaxSigFileSize();
+
+    // The maximum size of array to allocate
+    private static final int MAX_ARRAY_SIZE = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 
     /**
      * Create the named SignatureFileVerifier.
@@ -177,21 +184,20 @@ public class SignatureFileVerifier {
     /**
      * Returns the signed JAR block file extension for a key.
      *
+     * Returns "DSA" for unknown algorithms. This is safe because the
+     * signature verification process does not require the extension to
+     * match the key algorithm as long as it is "RSA", "DSA", or "EC."
+     *
      * @param key the key used to sign the JAR file
      * @return the extension
      * @see #isBlockOrSF(String)
      */
     public static String getBlockExtension(PrivateKey key) {
-        String keyAlgorithm = key.getAlgorithm().toUpperCase(Locale.ENGLISH);
-        if (keyAlgorithm.equals("RSASSA-PSS")) {
-            return "RSA";
-        } else if (keyAlgorithm.equals("EDDSA")
-                || keyAlgorithm.equals("ED25519")
-                || keyAlgorithm.equals("ED448")) {
-            return "EC";
-        } else {
-            return keyAlgorithm;
-        }
+        return switch (key.getAlgorithm().toUpperCase(Locale.ENGLISH)) {
+            case "RSA", "RSASSA-PSS" -> "RSA";
+            case "EC", "EDDSA", "ED25519", "ED448" -> "EC";
+            default -> "DSA";
+        };
     }
 
     /**
@@ -512,6 +518,8 @@ public class SignatureFileVerifier {
         boolean attrsVerified = true;
         // If only weak algorithms are used.
         boolean weakAlgs = true;
+        // If only unsupported algorithms are used.
+        boolean unsupportedAlgs = true;
         // If a ATTR_DIGEST entry is found.
         boolean validEntry = false;
 
@@ -536,6 +544,7 @@ public class SignatureFileVerifier {
 
                 MessageDigest digest = getDigest(algorithm);
                 if (digest != null) {
+                    unsupportedAlgs = false;
                     ManifestDigester.Entry mde = md.getMainAttsEntry(false);
                     if (mde == null) {
                         throw new SignatureException("Manifest Main Attribute check " +
@@ -578,12 +587,22 @@ public class SignatureFileVerifier {
             }
         }
 
-        // If there were only weak algorithms entries used, throw an exception.
-        if (validEntry && weakAlgs) {
-            throw new SignatureException("Manifest Main Attribute check " +
-                    "failed (" + ATTR_DIGEST + ").  " +
-                    "Disabled algorithm(s) used: " +
-                    getWeakAlgorithms(ATTR_DIGEST));
+        if (validEntry) {
+            // If there were only weak algorithms entries used, throw an exception.
+            if (weakAlgs) {
+                throw new SignatureException(
+                        "Manifest Main Attribute check "
+                        + "failed (" + ATTR_DIGEST + ").  "
+                        + "Disabled algorithm(s) used: "
+                        + getWeakAlgorithms(ATTR_DIGEST));
+            }
+
+            // If there were only unsupported algorithms entries used, throw an exception.
+            if (unsupportedAlgs) {
+                throw new SignatureException(
+                        "Manifest Main Attribute check failed ("
+                        + ATTR_DIGEST + "). Unsupported algorithm(s) used");
+            }
         }
 
         // this method returns 'true' if either:
@@ -832,5 +851,24 @@ public class SignatureFileVerifier {
         }
         signerCache.add(cachedSigners);
         signers.put(name, cachedSigners);
+    }
+
+    private static int initializeMaxSigFileSize() {
+        /*
+         * System property "jdk.jar.maxSignatureFileSize" used to configure
+         * the maximum allowed number of bytes for the signature-related files
+         * in a JAR file.
+         */
+        int tmp = Integer.getInteger("jdk.jar.maxSignatureFileSize", 16000000);
+        if (tmp < 0 || tmp > MAX_ARRAY_SIZE) {
+            if (debug != null) {
+                debug.println("The default signature file size of 16000000 bytes " +
+                        "will be used for the jdk.jar.maxSignatureFileSize " +
+                        "system property since the specified value " +
+                        "is out of range: " + tmp);
+            }
+            tmp = 16000000;
+        }
+        return tmp;
     }
 }

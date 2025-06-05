@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, DataDog. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,7 +37,7 @@ import jdk.jfr.internal.Type;
 @Label("Container IO Usage")
 @Category({"Operating System", "File System"})
 @Description("Container IO usage related information")
-public class ContainerIOUsageEvent extends AbstractJDKEvent {
+public class ContainerIOUsageEvent extends AbstractPeriodicEvent {
 
   @Label("Block IO Request Count")
   @Description("Number of block IO requests to the disk that have been issued by the container")

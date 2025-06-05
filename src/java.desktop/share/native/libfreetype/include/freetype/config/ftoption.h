@@ -4,7 +4,7 @@
  *
  *   User-selectable configuration macros (specification only).
  *
- * Copyright (C) 1996-2023 by
+ * Copyright (C) 1996-2024 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -661,36 +661,12 @@ FT_BEGIN_HEADER
    * not) instructions in a certain way so that all TrueType fonts look like
    * they do in a Windows ClearType (DirectWrite) environment.  See [1] for a
    * technical overview on what this means.  See `ttinterp.h` for more
-   * details on the LEAN option.
+   * details on this option.
    *
-   * There are three possible values.
-   *
-   * Value 1:
-   *   This value is associated with the 'Infinality' moniker, contributed by
-   *   an individual nicknamed Infinality with the goal of making TrueType
-   *   fonts render better than on Windows.  A high amount of configurability
-   *   and flexibility, down to rules for single glyphs in fonts, but also
-   *   very slow.  Its experimental and slow nature and the original
-   *   developer losing interest meant that this option was never enabled in
-   *   default builds.
-   *
-   *   The corresponding interpreter version is v38.
-   *
-   * Value 2:
-   *   The new default mode for the TrueType driver.  The Infinality code
-   *   base was stripped to the bare minimum and all configurability removed
-   *   in the name of speed and simplicity.  The configurability was mainly
-   *   aimed at legacy fonts like 'Arial', 'Times New Roman', or 'Courier'.
-   *   Legacy fonts are fonts that modify vertical stems to achieve clean
-   *   black-and-white bitmaps.  The new mode focuses on applying a minimal
-   *   set of rules to all fonts indiscriminately so that modern and web
-   *   fonts render well while legacy fonts render okay.
-   *
-   *   The corresponding interpreter version is v40.
-   *
-   * Value 3:
-   *   Compile both, making both v38 and v40 available (the latter is the
-   *   default).
+   * The new default mode focuses on applying a minimal set of rules to all
+   * fonts indiscriminately so that modern and web fonts render well while
+   * legacy fonts render okay.  The corresponding interpreter version is v40.
+   * The so-called Infinality mode (v38) is no longer available in FreeType.
    *
    * By undefining these, you get rendering behavior like on Windows without
    * ClearType, i.e., Windows XP without ClearType enabled and Win9x
@@ -705,9 +681,7 @@ FT_BEGIN_HEADER
    * [1]
    * https://www.microsoft.com/typography/cleartype/truetypecleartype.aspx
    */
-/* #define TT_CONFIG_OPTION_SUBPIXEL_HINTING  1         */
-#define TT_CONFIG_OPTION_SUBPIXEL_HINTING  2
-/* #define TT_CONFIG_OPTION_SUBPIXEL_HINTING  ( 1 | 2 ) */
+#define TT_CONFIG_OPTION_SUBPIXEL_HINTING
 
 
   /**************************************************************************
@@ -781,6 +755,22 @@ FT_BEGIN_HEADER
 #ifndef TT_CONFIG_OPTION_MAX_RUNNABLE_OPCODES
 #define TT_CONFIG_OPTION_MAX_RUNNABLE_OPCODES  1000000L
 #endif
+
+
+  /**************************************************************************
+   *
+   * Option `TT_CONFIG_OPTION_GPOS_KERNING` enables a basic GPOS kerning
+   * implementation (for TrueType fonts only).  With this defined, FreeType
+   * is able to get kerning pair data from the GPOS 'kern' feature as well as
+   * legacy 'kern' tables; without this defined, FreeType will only be able
+   * to use legacy 'kern' tables.
+   *
+   * Note that FreeType does not support more advanced GPOS layout features;
+   * even the 'kern' feature implemented here doesn't handle more
+   * sophisticated kerning variants.  Use a higher-level library like
+   * HarfBuzz instead for that.
+   */
+/* #define TT_CONFIG_OPTION_GPOS_KERNING */
 
 
   /*************************************************************************/
@@ -977,20 +967,13 @@ FT_BEGIN_HEADER
 
 
   /*
-   * The next three macros are defined if native TrueType hinting is
+   * The next two macros are defined if native TrueType hinting is
    * requested by the definitions above.  Don't change this.
    */
 #ifdef TT_CONFIG_OPTION_BYTECODE_INTERPRETER
 #define  TT_USE_BYTECODE_INTERPRETER
-
 #ifdef TT_CONFIG_OPTION_SUBPIXEL_HINTING
-#if TT_CONFIG_OPTION_SUBPIXEL_HINTING & 1
-#define  TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-#endif
-
-#if TT_CONFIG_OPTION_SUBPIXEL_HINTING & 2
 #define  TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
-#endif
 #endif
 #endif
 

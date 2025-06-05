@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -140,6 +142,12 @@ final class Float512Vector extends FloatVector {
     @Override
     @ForceInline
     Float512Shuffle iotaShuffle() { return Float512Shuffle.IOTA; }
+
+    @Override
+    @ForceInline
+    Float512Shuffle iotaShuffle(int start, int step, boolean wrap) {
+        return (Float512Shuffle) iotaShuffleTemplate(start, step, wrap);
+    }
 
     @Override
     @ForceInline
@@ -331,9 +339,14 @@ final class Float512Vector extends FloatVector {
 
     @Override
     @ForceInline
-    public final
-    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
-        return super.toShuffleTemplate(dsp);
+    final <F> VectorShuffle<F> bitsToShuffle(AbstractSpecies<F> dsp) {
+        throw new AssertionError();
+    }
+
+    @Override
+    @ForceInline
+    public final Float512Shuffle toShuffle() {
+        return (Float512Shuffle) toShuffle(vspecies(), false);
     }
 
     // Specialized unary testing
@@ -477,9 +490,16 @@ final class Float512Vector extends FloatVector {
                                    VectorMask<Float> m) {
         return (Float512Vector)
             super.selectFromTemplate((Float512Vector) v,
-                                     (Float512Mask) m);  // specialize
+                                     Float512Mask.class, (Float512Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Float512Vector selectFrom(Vector<Float> v1,
+                                   Vector<Float> v2) {
+        return (Float512Vector)
+            super.selectFromTemplate((Float512Vector) v1, (Float512Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -507,13 +527,14 @@ final class Float512Vector extends FloatVector {
         return Float.intBitsToFloat(bits);
     }
 
+    @ForceInline
     public int laneHelper(int i) {
         return (int) VectorSupport.extract(
                      VCLASS, ETYPE, VLENGTH,
                      this, i,
                      (vec, ix) -> {
                      float[] vecarr = vec.vec();
-                     return (long)Float.floatToIntBits(vecarr[ix]);
+                     return (long)Float.floatToRawIntBits(vecarr[ix]);
                      });
     }
 
@@ -541,10 +562,11 @@ final class Float512Vector extends FloatVector {
         }
     }
 
+    @ForceInline
     public Float512Vector withLaneHelper(int i, float e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
-                                this, i, (long)Float.floatToIntBits(e),
+                                this, i, (long)Float.floatToRawIntBits(e),
                                 (v, ix, bits) -> {
                                     float[] res = v.vec().clone();
                                     res[ix] = Float.intBitsToFloat((int)bits);
@@ -744,6 +766,16 @@ final class Float512Vector extends FloatVector {
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
+        // laneIsSet
+
+        @Override
+        @ForceInline
+        public boolean laneIsSet(int i) {
+            Objects.checkIndex(i, length());
+            return VectorSupport.extract(Float512Mask.class, float.class, VLENGTH,
+                                         this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
+        }
+
         // Reductions
 
         @Override
@@ -814,14 +846,19 @@ final class Float512Vector extends FloatVector {
 
         @Override
         @ForceInline
+        public Float512Vector toVector() {
+            return (Float512Vector) toBitsVector().castShape(vspecies(), 0);
+        }
+
+        @Override
+        @ForceInline
         Int512Vector toBitsVector() {
             return (Int512Vector) super.toBitsVectorTemplate();
         }
 
         @Override
-        @ForceInline
-        IntVector toBitsVector0() {
-            return Int512Vector.VSPECIES.dummyVector().vectorFactory(indices());
+        Int512Vector toBitsVector0() {
+            return ((Int512Vector) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -834,6 +871,40 @@ final class Float512Vector extends FloatVector {
         @ForceInline
         public void intoArray(int[] a, int offset) {
             toBitsVector().intoArray(a, offset);
+        }
+
+        @Override
+        @ForceInline
+        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+            toBitsVector().intoMemorySegment(ms, offset, bo);
+         }
+
+        @Override
+        @ForceInline
+        public final Float512Mask laneIsValid() {
+            return (Float512Mask) toBitsVector().compare(VectorOperators.GE, 0)
+                    .cast(vspecies());
+        }
+
+        @ForceInline
+        @Override
+        public final Float512Shuffle rearrange(VectorShuffle<Float> shuffle) {
+            Float512Shuffle concreteShuffle = (Float512Shuffle) shuffle;
+            return (Float512Shuffle) toBitsVector().rearrange(concreteShuffle.cast(IntVector.SPECIES_512))
+                    .toShuffle(vspecies(), false);
+        }
+
+        @ForceInline
+        @Override
+        public final Float512Shuffle wrapIndexes() {
+            Int512Vector v = toBitsVector();
+            if ((length() & (length() - 1)) == 0) {
+                v = (Int512Vector) v.lanewise(VectorOperators.AND, length() - 1);
+            } else {
+                v = (Int512Vector) v.blend(v.lanewise(VectorOperators.ADD, length()),
+                            v.compare(VectorOperators.LT, 0));
+            }
+            return (Float512Shuffle) v.toShuffle(vspecies(), false);
         }
 
         private static int[] prepare(int[] indices, int offset) {
@@ -860,14 +931,9 @@ final class Float512Vector extends FloatVector {
             int length = indices.length;
             for (int si : indices) {
                 if (si >= (int)length || si < (int)(-length)) {
-                    boolean assertsEnabled = false;
-                    assert(assertsEnabled = true);
-                    if (assertsEnabled) {
-                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
                                   java.util.Arrays.toString(indices));
-                        throw new AssertionError(msg);
-                    }
-                    return false;
+                    throw new AssertionError(msg);
                 }
             }
             return true;

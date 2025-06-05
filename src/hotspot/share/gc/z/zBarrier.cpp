@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
@@ -141,18 +140,6 @@ zaddress ZBarrier::blocking_load_barrier_on_phantom_slow_path(volatile zpointer*
   return addr;
 }
 
-//
-// Clean barrier
-//
-
-zaddress ZBarrier::verify_old_object_live_slow_path(zaddress addr) {
-  // Verify that the object was indeed alive
-  assert(ZHeap::heap()->is_young(addr) || ZHeap::heap()->is_object_live(addr), "Should be live");
-
-  return addr;
-}
-
-//
 // Mark barrier
 //
 
@@ -303,7 +290,7 @@ zaddress ZBarrier::keep_alive_slow_path(zaddress addr) {
 // ON_WEAK barriers should only ever be applied to j.l.r.Reference.referents.
 void ZBarrier::verify_on_weak(volatile zpointer* referent_addr) {
   if (referent_addr != nullptr) {
-    const uintptr_t base = (uintptr_t)referent_addr - java_lang_ref_Reference::referent_offset();
+    const uintptr_t base = (uintptr_t)referent_addr - (size_t)java_lang_ref_Reference::referent_offset();
     const oop obj = cast_to_oop(base);
     assert(oopDesc::is_oop(obj), "Verification failed for: ref " PTR_FORMAT " obj: " PTR_FORMAT, (uintptr_t)referent_addr, base);
     assert(java_lang_ref_Reference::is_referent_field(obj, java_lang_ref_Reference::referent_offset()), "Sanity");

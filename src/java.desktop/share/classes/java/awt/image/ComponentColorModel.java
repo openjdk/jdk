@@ -457,7 +457,7 @@ public class ComponentColorModel extends ColorModel {
             }
         } else if (needScaleInit) {
             // if transferType is byte, ushort, int, or short and we
-            // don't already know the ColorSpace has minVlaue == 0.0f and
+            // don't already know the ColorSpace has minValue == 0.0f and
             // maxValue == 1.0f for all components, we need to check that
             // now and setup the min[] and diffMinMax[] arrays if necessary.
             nonStdScale = false;

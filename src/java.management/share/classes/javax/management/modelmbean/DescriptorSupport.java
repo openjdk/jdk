@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ package javax.management.modelmbean;
 
 import static com.sun.jmx.defaults.JmxProperties.MODELMBEAN_LOGGER;
 import static com.sun.jmx.mbeanserver.Util.cast;
-import com.sun.jmx.mbeanserver.GetPropertyAction;
 import com.sun.jmx.mbeanserver.Util;
 
 import java.io.IOException;
@@ -42,7 +41,6 @@ import java.io.ObjectStreamField;
 
 import java.lang.reflect.Constructor;
 
-import java.security.AccessController;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
@@ -57,8 +55,6 @@ import javax.management.Descriptor;
 import javax.management.ImmutableDescriptor;
 import javax.management.MBeanException;
 import javax.management.RuntimeOperationsException;
-
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * This class represents the metadata set for a ModelMBean element.  A
@@ -81,69 +77,18 @@ import sun.reflect.misc.ReflectUtil;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")  // serialVersionUID not constant
 public class DescriptorSupport
          implements javax.management.Descriptor
 {
 
-    // Serialization compatibility stuff:
-    // Two serial forms are supported in this class. The selected form depends
-    // on system property "jmx.serial.form":
-    //  - "1.0" for JMX 1.0
-    //  - any other value for JMX 1.1 and higher
-    //
-    // Serial version for old serial form
-    private static final long oldSerialVersionUID = 8071560848919417985L;
-    //
-    // Serial version for new serial form
-    private static final long newSerialVersionUID = -6292969195866300415L;
-    //
-    // Serializable fields in old serial form
-    private static final ObjectStreamField[] oldSerialPersistentFields =
-    {
-      new ObjectStreamField("descriptor", HashMap.class),
-      new ObjectStreamField("currClass", String.class)
-    };
-    //
-    // Serializable fields in new serial form
-    private static final ObjectStreamField[] newSerialPersistentFields =
-    {
-      new ObjectStreamField("descriptor", HashMap.class)
-    };
-    //
-    // Actual serial version and serial form
-    private static final long serialVersionUID;
+    private static final long serialVersionUID = -6292969195866300415L;
     /**
      * @serialField descriptor HashMap The collection of fields representing this descriptor
      */
-    private static final ObjectStreamField[] serialPersistentFields;
-    private static final String serialForm;
-    static {
-        serialForm = getForm();
-        boolean compat = "1.0".equals(serialForm);  // serialForm may be null
-        if (compat) {
-            serialPersistentFields = oldSerialPersistentFields;
-            serialVersionUID = oldSerialVersionUID;
-        } else {
-            serialPersistentFields = newSerialPersistentFields;
-            serialVersionUID = newSerialVersionUID;
-        }
-    }
-
-    @SuppressWarnings("removal")
-    private static String getForm() {
-        String form = null;
-        try {
-            GetPropertyAction act = new GetPropertyAction("jmx.serial.form");
-            return  AccessController.doPrivileged(act);
-        } catch (Exception e) {
-            // OK: No compat with 1.0
-            return null;
-        }
-    }
-
-    //
-    // END Serialization compatibility stuff
+    private static final ObjectStreamField[] serialPersistentFields =
+    {
+      new ObjectStreamField("descriptor", HashMap.class)
+    };
 
     /* Spec says that field names are case-insensitive, but that case
        is preserved.  This means that we need to be able to map from a
@@ -256,12 +201,16 @@ public class DescriptorSupport
      * @exception XMLParseException XML parsing problem while parsing
      * the input String
      * @exception MBeanException Wraps a distributed communication Exception.
+     * @deprecated This constructor exists for historical reasons.  If
+     * reading from XML is required, it should be implemented externally.
      */
     /* At some stage we should rewrite this code to be cleverer.  Using
        a StringTokenizer as we do means, first, that we accept a lot of
        bogus strings without noticing they are bogus, and second, that we
        split the string being parsed at characters like > even if they
        occur in the middle of a field value. */
+    @Deprecated(since="25", forRemoval=true)
+    @SuppressWarnings("removal")
     public DescriptorSupport(String inStr)
             throws MBeanException, RuntimeOperationsException,
                    XMLParseException {
@@ -285,6 +234,7 @@ public class DescriptorSupport
         if (!lowerInStr.startsWith("<descriptor>")
             || !lowerInStr.endsWith("</descriptor>")) {
             throw new XMLParseException("No <descriptor>, </descriptor> pair");
+            // XMLParseException is deprecated for removal.
         }
 
         // parse xmlstring into structures
@@ -339,11 +289,13 @@ public class DescriptorSupport
                         final String msg =
                             "Expected `name' or `value', got `" + tok + "'";
                         throw new XMLParseException(msg);
+                        // XMLParseException is deprecated for removal.
                     }
                 } else { // xml parse exception
                     final String msg =
                         "Expected `keyword=value', got `" + tok + "'";
                     throw new XMLParseException(msg);
+                    // XMLParseException is deprecated for removal.
                 }
             }
         }  // while tokens
@@ -1022,7 +974,10 @@ public class DescriptorSupport
      * field Names or field Values.  If the XML formatted string
      * construction fails for any reason, this exception will be
      * thrown.
+     * @deprecated This method exists for historical reasons.  If
+     * writing to XML is required, it should be implemented externally.
      */
+    @Deprecated(since="25", forRemoval=true)
     public synchronized String toXMLString() {
         final StringBuilder buf = new StringBuilder("<Descriptor>");
         Set<Map.Entry<String, Object>> returnedSet = descriptorMap.entrySet();
@@ -1112,9 +1067,12 @@ public class DescriptorSupport
         return buf.toString();
     }
 
+    @SuppressWarnings("removal")
     private static String unquote(String s) throws XMLParseException {
-        if (!s.startsWith("\"") || !s.endsWith("\""))
+        if (!s.startsWith("\"") || !s.endsWith("\"")) {
             throw new XMLParseException("Value must be quoted: <" + s + ">");
+            // XMLParseException is deprecated for removal.
+        }
         final StringBuilder buf = new StringBuilder();
         final int len = s.length() - 1;
         for (int i = 1; i < len; i++) {
@@ -1175,6 +1133,7 @@ public class DescriptorSupport
      * - some other string, in which case the result is that string,
      * without the parentheses.
      */
+    @SuppressWarnings("removal")
     private static Object parseQuotedFieldValue(String s)
             throws XMLParseException {
         s = unquote(s);
@@ -1191,15 +1150,14 @@ public class DescriptorSupport
 
         final Constructor<?> constr;
         try {
-            ReflectUtil.checkPackageAccess(className);
             final ClassLoader contextClassLoader =
                 Thread.currentThread().getContextClassLoader();
             final Class<?> c =
                 Class.forName(className, false, contextClassLoader);
             constr = c.getConstructor(new Class<?>[] {String.class});
         } catch (Exception e) {
-            throw new XMLParseException(e,
-                                        "Cannot parse value: <" + s + ">");
+            throw new XMLParseException(e, "Cannot parse value: <" + s + ">");
+            // XMLParseException is deprecated for removal.
         }
         final String arg = s.substring(slash + 1, s.length() - 1);
         try {
@@ -1209,6 +1167,7 @@ public class DescriptorSupport
                 "Cannot construct instance of " + className +
                 " with arg: <" + s + ">";
             throw new XMLParseException(e, msg);
+            // XMLParseException is deprecated for removal.
         }
     }
 
@@ -1286,22 +1245,8 @@ public class DescriptorSupport
     /**
      * Serializes a {@link DescriptorSupport} to an {@link ObjectOutputStream}.
      */
-    /* If you set jmx.serial.form to "1.2.0" or "1.2.1", then we are
-       bug-compatible with those versions.  Specifically, field names
-       are forced to lower-case before being written.  This
-       contradicts the spec, which, though it does not mention
-       serialization explicitly, does say that the case of field names
-       is preserved.  But in 1.2.0 and 1.2.1, this requirement was not
-       met.  Instead, field names in the descriptor map were forced to
-       lower case.  Those versions expect this to have happened to a
-       descriptor they deserialize and e.g. getFieldValue will not
-       find a field whose name is spelt with a different case.
-    */
     private void writeObject(ObjectOutputStream out) throws IOException {
         ObjectOutputStream.PutField fields = out.putFields();
-        boolean compat = "1.0".equals(serialForm);
-        if (compat)
-            fields.put("currClass", currClass);
 
         /* Purge the field "targetObject" from the DescriptorSupport before
          * serializing since the referenced object is typically not
@@ -1315,15 +1260,7 @@ public class DescriptorSupport
             startMap.remove("targetObject");
         }
 
-        final HashMap<String, Object> descriptor;
-        if (compat || "1.2.0".equals(serialForm) ||
-                "1.2.1".equals(serialForm)) {
-            descriptor = new HashMap<>();
-            for (Map.Entry<String, Object> entry : startMap.entrySet())
-                descriptor.put(entry.getKey().toLowerCase(), entry.getValue());
-        } else
-            descriptor = new HashMap<>(startMap);
-
+        final HashMap<String, Object> descriptor = new HashMap<>(startMap);
         fields.put("descriptor", descriptor);
         out.writeFields();
     }

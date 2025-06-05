@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 
 #include <poll.h>
+#include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <string.h>
@@ -670,6 +671,16 @@ Java_sun_nio_ch_Net_joinOrDrop4(JNIEnv *env, jobject this, jboolean join, jobjec
         n = setsockopt(fdval(env,fdo), IPPROTO_IP, opt, optval, optlen);
     }
 #endif
+#ifdef _AIX
+    // workaround AIX bug where IP_ADD_MEMBERSHIP fails intermittently
+    if (n < 0 && errno == EAGAIN) {
+        int countdown = 3;
+        while (n < 0 && errno == EAGAIN && countdown > 0) {
+            n = setsockopt(fdval(env,fdo), IPPROTO_IP, opt, optval, optlen);
+            countdown--;
+        }
+    }
+#endif
 
     if (n < 0) {
         if (join && (errno == ENOPROTOOPT || errno == EOPNOTSUPP))
@@ -854,7 +865,10 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_available(JNIEnv *env, jclass cl, jobject fdo)
 {
     int count = 0;
-    if (NET_SocketAvailable(fdval(env, fdo), &count) != 0) {
+    int result;
+    RESTARTABLE(ioctl(fdval(env, fdo), FIONREAD, &count), result);
+
+    if (result != 0) {
         handleSocketError(env, errno);
         return IOS_THROWN;
     }

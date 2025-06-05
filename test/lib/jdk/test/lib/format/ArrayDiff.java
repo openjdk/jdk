@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ public class ArrayDiff<E> implements Diff {
      * @throws NullPointerException if at least one of the arrays is null
      * @return an ArrayDiff instance for the two arrays and formatting parameters provided
      */
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public static ArrayDiff<?> of(Object first, Object second, int width, int contextBefore) {
         Objects.requireNonNull(first);
         Objects.requireNonNull(second);

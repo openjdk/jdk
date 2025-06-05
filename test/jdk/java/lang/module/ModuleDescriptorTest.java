@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,6 @@
  * @test
  * @bug 8142968 8158456 8298875
  * @modules java.base/jdk.internal.access
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
  *          java.base/jdk.internal.module
  * @library /test/lib
  * @build jdk.test.lib.util.ModuleInfoWriter
@@ -62,8 +59,10 @@ import static java.lang.module.ModuleDescriptor.Requires.Modifier.*;
 
 import jdk.internal.access.JavaLangModuleAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.attribute.ModuleAttribute;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassFileVersion;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.attribute.ModuleAttribute;
 import java.lang.constant.PackageDesc;
 import java.lang.constant.ModuleDesc;
 import jdk.test.lib.util.ModuleInfoWriter;
@@ -1371,7 +1370,7 @@ public class ModuleDescriptorTest {
      * complete set of packages.
      */
     public void testReadsWithBadPackageFinder() throws Exception {
-        ByteBuffer bb = ByteBuffer.wrap(Classfile.buildModule(
+        ByteBuffer bb = ByteBuffer.wrap(ClassFile.of().buildModule(
                 ModuleAttribute.of(
                         ModuleDesc.of("foo"),
                         mb -> mb.requires(ModuleDesc.of("java.base"), 0, null)
@@ -1524,4 +1523,66 @@ public class ModuleDescriptorTest {
         assertTrue(s.contains("p1"));
     }
 
+    public void testRequiresTransitiveJavaBaseNotPermitted1() throws Exception {
+        ModuleDescriptor descriptor = ModuleDescriptor.newModule("foo")
+                .requires(Set.of(Modifier.TRANSITIVE), "java.base")
+                .build();
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ModuleInfoWriter.write(descriptor, baos);
+        ByteBuffer bb = ByteBuffer.wrap(baos.toByteArray());
+
+        ModuleDescriptor.read(bb, () -> Set.of("p", "q"));
+    }
+
+    public void testRequiresTransitiveJavaBaseNotPermitted2() throws Exception {
+        ModuleDescriptor descriptor = ModuleDescriptor.newModule("foo")
+                .requires(Set.of(Modifier.TRANSITIVE), "java.base")
+                .build();
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ModuleInfoWriter.write(descriptor, baos);
+        byte[] bytecode = baos.toByteArray();
+        ByteBuffer bb = ByteBuffer.wrap(bytecode);
+        setClassFileVersion(bb, ClassFile.JAVA_21_VERSION, -1);
+
+        ModuleDescriptor.read(bb, () -> Set.of("p", "q"));
+    }
+
+    public void testRequiresTransitiveJavaBasePermitted() throws Exception {
+        ModuleDescriptor descriptor = ModuleDescriptor.newModule("foo")
+                .requires(Set.of(Modifier.TRANSITIVE), "java.base")
+                .build();
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ModuleInfoWriter.write(descriptor, baos);
+        byte[] bytecode = baos.toByteArray();
+        ByteBuffer bb = ByteBuffer.wrap(bytecode);
+        setClassFileVersion(bb, -1, ClassFile.PREVIEW_MINOR_VERSION);
+
+        descriptor = ModuleDescriptor.read(bb, () -> Set.of("p", "q"));
+
+        assertEquals(descriptor.requires().size(), 1);
+        Requires javaBase = descriptor.requires().iterator().next();
+        assertEquals(javaBase.name(), "java.base");
+        assertEquals(javaBase.modifiers(), Set.of(Modifier.TRANSITIVE));
+    }
+
+    /**Change the classfile versions of the provided classfile to the provided
+     * values.
+     *
+     * @param bytecode the classfile content to modify
+     * @param major the major classfile version to set,
+     *              -1 if the existing version should be kept
+     * @param minor the minor classfile version to set,
+     *              -1 if the existing version should be kept
+     */
+    private void setClassFileVersion(ByteBuffer bb, int major, int minor) {
+        if (minor != (-1)) {
+            bb.putShort(4, (short) minor);
+        }
+        if (major != (-1)) {
+            bb.putShort(6, (short) major);
+        }
+    }
 }

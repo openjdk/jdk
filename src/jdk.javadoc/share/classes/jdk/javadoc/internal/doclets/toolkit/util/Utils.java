@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.text.ParseException;
 import java.text.RuleBasedCollator;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
@@ -98,7 +97,6 @@ import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTree.Kind;
-import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ProvidesTree;
 import com.sun.source.doctree.ReturnTree;
@@ -107,8 +105,6 @@ import com.sun.source.doctree.SerialDataTree;
 import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SerialTree;
 import com.sun.source.doctree.SpecTree;
-import com.sun.source.doctree.StartElementTree;
-import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.doctree.UsesTree;
 import com.sun.source.tree.CompilationUnitTree;
@@ -116,13 +112,12 @@ import com.sun.source.tree.LineMap;
 import com.sun.source.util.DocSourcePositions;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
+
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentInfo;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
-import jdk.javadoc.internal.doclets.toolkit.taglets.BaseTaglet;
-import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet;
 
 import static javax.lang.model.element.ElementKind.*;
 import static javax.lang.model.type.TypeKind.*;
@@ -382,9 +377,14 @@ public class Utils {
                         .compareTo(SourceVersion.RELEASE_8) >= 0;
     }
 
+    public boolean isFunctionalInterface(TypeElement typeElement) {
+        return typeElement.getAnnotationMirrors().stream()
+                .anyMatch(this::isFunctionalInterface);
+    }
+
     public boolean isUndocumentedEnclosure(TypeElement enclosingTypeElement) {
         return (isPackagePrivate(enclosingTypeElement) || isPrivate(enclosingTypeElement)
-                    || hasHiddenTag(enclosingTypeElement))
+                    || isHidden(enclosingTypeElement))
                 && !isLinkable(enclosingTypeElement);
     }
 
@@ -662,7 +662,7 @@ public class Utils {
     }
 
     public SortedSet<TypeElement> getTypeElementsAsSortedSet(Iterable<TypeElement> typeElements) {
-        SortedSet<TypeElement> set = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+        SortedSet<TypeElement> set = new TreeSet<>(comparators.generalPurposeComparator());
         typeElements.forEach(set::add);
         return set;
     }
@@ -786,7 +786,7 @@ public class Utils {
                 if (!visited.add(e)) {
                     continue; // seen it before
                 }
-                if (isPublic(e) || isLinkable(e)) {
+                if (isVisible(e)) {
                     results.add(t);
                 }
                 addSuperInterfaces(t, results, visited);
@@ -803,20 +803,6 @@ public class Utils {
     }
 
     /**
-     * Lookup for a class within this package.
-     *
-     * @return TypeElement of found class, or null if not found.
-     */
-    public TypeElement findClassInPackageElement(PackageElement pkg, String className) {
-        for (TypeElement c : getAllClasses(pkg)) {
-            if (getSimpleName(c).equals(className)) {
-                return c;
-            }
-        }
-        return null;
-    }
-
-    /**
      * Returns true if {@code type} or any of its enclosing types has non-empty type arguments.
      * @param type the type
      * @return {@code true} if type arguments were found
@@ -829,30 +815,6 @@ public class Utils {
             type = dt.getEnclosingType();
         }
         return false;
-    }
-
-    /**
-     * TODO: FIXME: port to javax.lang.model
-     * Find a class within the context of this class. Search order: qualified name, in this class
-     * (inner), in this package, in the class imports, in the package imports. Return the
-     * TypeElement if found, null if not found.
-     */
-    //### The specified search order is not the normal rule the
-    //### compiler would use.  Leave as specified or change it?
-    public TypeElement findClass(Element element, String className) {
-        TypeElement encl = getEnclosingTypeElement(element);
-        TypeElement searchResult = configuration.workArounds.searchClass(encl, className);
-        if (searchResult == null) {
-            encl = getEnclosingTypeElement(encl);
-            //Expand search space to include enclosing class.
-            while (encl != null && getEnclosingTypeElement(encl) != null) {
-                encl = getEnclosingTypeElement(encl);
-            }
-            searchResult = encl == null
-                    ? null
-                    : configuration.workArounds.searchClass(encl, className);
-        }
-        return searchResult;
     }
 
     /**
@@ -887,7 +849,7 @@ public class Utils {
         return
             typeElem != null &&
             ((isIncluded(typeElem) && configuration.isGeneratedDoc(typeElem) &&
-                    !hasHiddenTag(typeElem)) ||
+                    !isHidden(typeElem)) ||
             (configuration.extern.isExternal(typeElem) &&
                     (isPublic(typeElem) || isProtected(typeElem))));
     }
@@ -912,7 +874,7 @@ public class Utils {
             return isLinkable((TypeElement) elem); // defer to existing behavior
         }
 
-        if (isIncluded(elem) && !hasHiddenTag(elem)) {
+        if (isIncluded(elem) && !isHidden(elem)) {
             return true;
         }
 
@@ -991,7 +953,7 @@ public class Utils {
     /**
      * Return the type's dimension information, as a string.
      * <p>
-     * For example, a two dimensional array of String returns "{@code [][]}".
+     * For example, a two-dimensional array of String returns "{@code [][]}".
      *
      * @return the type's dimension information as a string.
      */
@@ -1044,7 +1006,7 @@ public class Utils {
             t = supertypes.get(0); // if non-empty, the first element is always the superclass
             var te = asTypeElement(t);
             assert alreadySeen.add(te); // it should be the first time we see `te`
-            if (!hasHiddenTag(te) && (isPublic(te) || isLinkable(te))) {
+            if (isVisible(te)) {
                 return t;
             }
         }
@@ -1171,6 +1133,15 @@ public class Utils {
     }
 
     /**
+     * Replaces each group of one or more whitespace characters with a single canonical space
+     * @param s the string to be normalized
+     * @return normalized string
+     */
+    public String normalizeWhitespace(String s) {
+        return s.replaceAll("\\s+", " ");
+    }
+
+    /**
      * Returns a locale independent lower cased String. That is, it
      * always uses US locale, this is a clone of the one in StringUtils.
      * @param s to convert
@@ -1266,16 +1237,32 @@ public class Utils {
     }
 
     /**
-     * Returns true if the element is included or selected, contains &#64;hidden tag,
-     * or if javafx flag is present and element contains &#64;treatAsPrivate
-     * tag.
-     * @param e the queried element
-     * @return true if it exists, false otherwise
+     * Returns {@code true} if the type element is visible. This means that it is not hidden,
+     * and is either public or linkable (either internally or externally).
+     *
+     * @param typeElement the type element
+     * @return {@code true} if the type element is visible
      */
-    public boolean hasHiddenTag(Element e) {
-        // Non-included elements may still be visible via "transclusion" from undocumented enclosures,
-        // but we don't want to run doclint on them, possibly causing warnings or errors.
+    public boolean isVisible(TypeElement typeElement) {
+        return !isHidden(typeElement) && (isPublic(typeElement) || isLinkable(typeElement));
+    }
+
+    /**
+     * Returns true if the element is hidden. An element is hidden if it contains a
+     * &#64;hidden tag, or if javafx flag is present and the element contains a
+     * &#64;treatAsPrivate tag, or the element is a type and is not included and
+     * not exported unconditionally by its module.
+     * @param e the queried element
+     * @return true if element is hidden, false otherwise
+     */
+    public boolean isHidden(Element e) {
+        // Non-included elements may still be visible through the type hierarchy
         if (!isIncluded(e)) {
+            // Treat types that are not included and not unconditionally exported as hidden
+            if (isClassOrInterface(e) && isUnexportedType((TypeElement) e)) {
+                return true;
+            }
+            // Use unchecked method to avoid running doclint, causing warnings or errors.
             return hasBlockTagUnchecked(e, HIDDEN);
         }
         if (options.javafx() &&
@@ -1283,6 +1270,21 @@ public class Utils {
             return true;
         }
         return hasBlockTag(e, DocTree.Kind.HIDDEN);
+    }
+
+    /**
+     * {@return true if typeElement is in a package that is not unconditionally exported
+     * by its module}
+     * @param typeElement a type element
+     */
+    private boolean isUnexportedType(TypeElement typeElement) {
+        var pkg = elementUtils.getPackageOf(typeElement);
+        var mdl = elementUtils.getModuleOf(typeElement);
+        return mdl != null && !mdl.isUnnamed()
+                && mdl.getDirectives().stream()
+                .filter(d -> d.getKind() == ModuleElement.DirectiveKind.EXPORTS)
+                .map(d -> (ModuleElement.ExportsDirective) d)
+                .noneMatch(e -> e.getPackage().equals(pkg) && e.getTargetModules() == null);
     }
 
     /*
@@ -1319,17 +1321,17 @@ public class Utils {
     public SortedSet<TypeElement> filterOutPrivateClasses(Iterable<TypeElement> classlist,
             boolean javafx) {
         SortedSet<TypeElement> filteredOutClasses =
-                new TreeSet<>(comparators.makeGeneralPurposeComparator());
+                new TreeSet<>(comparators.generalPurposeComparator());
         if (!javafx) {
             for (TypeElement te : classlist) {
-                if (!hasHiddenTag(te)) {
+                if (!isHidden(te)) {
                     filteredOutClasses.add(te);
                 }
             }
             return filteredOutClasses;
         }
         for (TypeElement e : classlist) {
-            if (isPrivate(e) || isPackagePrivate(e) || hasHiddenTag(e)) {
+            if (isPrivate(e) || isPackagePrivate(e) || isHidden(e)) {
                 continue;
             }
             filteredOutClasses.add(e);
@@ -1364,38 +1366,6 @@ public class Utils {
             secondaryCollator = new DocCollator(configuration.locale, Collator.SECONDARY);
         }
         return secondaryCollator.compare(s1, s2);
-    }
-
-    public String getHTMLTitle(Element element) {
-        List<? extends DocTree> preamble = getPreamble(element);
-        StringBuilder sb = new StringBuilder();
-        boolean titleFound = false;
-        loop:
-        for (DocTree dt : preamble) {
-            switch (dt.getKind()) {
-                case START_ELEMENT -> {
-                    StartElementTree nodeStart = (StartElementTree) dt;
-                    if (Utils.toLowerCase(nodeStart.getName().toString()).equals("title")) {
-                        titleFound = true;
-                    }
-                }
-                case END_ELEMENT -> {
-                    EndElementTree nodeEnd = (EndElementTree) dt;
-                    if (Utils.toLowerCase(nodeEnd.getName().toString()).equals("title")) {
-                        break loop;
-                    }
-                }
-                case TEXT -> {
-                    TextTree nodeText = (TextTree) dt;
-                    if (titleFound)
-                        sb.append(nodeText.getBody());
-                }
-                default -> {
-                }
-                // do nothing
-            }
-        }
-        return sb.toString().trim();
     }
 
     private static class DocCollator {
@@ -1561,17 +1531,6 @@ public class Utils {
     }
 
     /**
-     * Returns the documented classes in an element,
-     * such as a package element or type element.
-     *
-     * @param e the element
-     * @return the classes
-     */
-    public List<TypeElement> getClasses(Element e) {
-        return getDocumentedItems(e, CLASS, TypeElement.class);
-    }
-
-    /**
      * Returns the documented constructors in a type element.
      *
      * @param te the type element
@@ -1606,7 +1565,7 @@ public class Utils {
     }
 
     public Map<ModuleElement, String> getDependentModules(ModuleElement mdle) {
-        Map<ModuleElement, String> result = new TreeMap<>(comparators.makeModuleComparator());
+        Map<ModuleElement, String> result = new TreeMap<>(comparators.moduleComparator());
         Deque<ModuleElement> queue = new ArrayDeque<>();
         // get all the requires for the element in question
         for (RequiresDirective rd : ElementFilter.requiresIn(mdle.getDirectives())) {
@@ -1680,7 +1639,7 @@ public class Utils {
      * @return the interfaces
      */
     public SortedSet<TypeElement> getAllClassesUnfiltered(PackageElement pkg) {
-        SortedSet<TypeElement> set = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+        SortedSet<TypeElement> set = new TreeSet<>(comparators.generalPurposeComparator());
         set.addAll(getItems(pkg, true, this::isTypeElement, TypeElement.class));
         return set;
     }
@@ -1696,7 +1655,7 @@ public class Utils {
     public SortedSet<TypeElement> getAllClasses(PackageElement pkg) {
         return cachedClasses.computeIfAbsent(pkg, p_ -> {
             List<TypeElement> clist = getItems(pkg, false, this::isTypeElement, TypeElement.class);
-            SortedSet<TypeElement>oset = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+            SortedSet<TypeElement>oset = new TreeSet<>(comparators.generalPurposeComparator());
             oset.addAll(clist);
             return oset;
         });
@@ -2087,47 +2046,102 @@ public class Utils {
         commentHelperCache.remove(element);
     }
 
+    /**
+     * Returns the "raw" list of block tags from the doc-comment tree for an element,
+     * or an empty list if there is no such comment.
+     *
+     * Note: The list may include {@code ErroneousTree} nodes.
+     *
+     * @param element the element
+     * @return the list
+     */
     public List<? extends DocTree> getBlockTags(Element element) {
         return getBlockTags(getDocCommentTree(element));
     }
 
+    /**
+     * Returns the "raw" list of block tags from a {@code DocCommentTree}, or an empty list
+     * if the doc-comment tree is {@code null}.
+     *
+     * Note: The list may include {@code ErroneousTree} nodes.
+     *
+     * @param dcTree the doc-comment tree
+     * @return the list
+     */
     public List<? extends DocTree> getBlockTags(DocCommentTree dcTree) {
         return dcTree == null ? List.of() : dcTree.getBlockTags();
     }
 
-    public List<? extends DocTree> getBlockTags(Element element, Predicate<DocTree> filter) {
+    /**
+     * Returns the list of block tags for the doc-comment tree for an element that match
+     * a given filter, or an empty list if there is no such doc-comment.
+     *
+     * @param element the element
+     * @param filter  the filter
+     * @return the list
+     */
+    public List<? extends BlockTagTree> getBlockTags(Element element, Predicate<? super BlockTagTree> filter) {
         return getBlockTags(element).stream()
                 .filter(t -> t.getKind() != ERRONEOUS)
+                .map(t -> (BlockTagTree) t)
                 .filter(filter)
                 .toList();
     }
 
-    public <T extends DocTree> List<T> getBlockTags(Element element, Predicate<DocTree> filter, Class<T> tClass) {
+    /**
+     * Returns the list of block tags for the doc-comment tree for an element that match
+     * a given filter, or an empty list if there is no such doc-comment.
+     *
+     * @param <T> the type of the required block tags
+     * @param element the element
+     * @param filter  the filter
+     * @return the list
+     */
+    public <T extends BlockTagTree> List<T> getBlockTags(Element element,
+                                                         Predicate<? super BlockTagTree> filter,
+                                                         Class<T> tClass) {
         return getBlockTags(element).stream()
                 .filter(t -> t.getKind() != ERRONEOUS)
+                .map(t -> (BlockTagTree) t)
                 .filter(filter)
                 .map(tClass::cast)
                 .toList();
     }
 
-    public List<? extends DocTree> getBlockTags(Element element, DocTree.Kind kind) {
+    /**
+     * Returns the list of block tags for the doc-comment tree for an element,
+     * or an empty list if there is no such doc-comment.
+     *
+     * @param element the element
+     * @return the list
+     */
+    public List<? extends BlockTagTree> getBlockTags(Element element, DocTree.Kind kind) {
         return getBlockTags(element, t -> t.getKind() == kind);
     }
 
-    public <T extends DocTree> List<? extends T> getBlockTags(Element element, DocTree.Kind kind, Class<T> tClass) {
+    /**
+     * Returns the list of block tags for the doc-comment tree for an element that match a given kind,
+     * or an empty list if there is no such doc-comment.
+     *
+     * @param <T> the type of the required block tags
+     * @param element the element
+     * @param kind the kind for the required block tags
+     * @return the list
+     */
+    public <T extends BlockTagTree> List<? extends T> getBlockTags(Element element, DocTree.Kind kind, Class<T> tClass) {
         return getBlockTags(element, t -> t.getKind() == kind, tClass);
     }
 
-    public List<? extends DocTree> getBlockTags(Element element, Taglet taglet) {
-        return getBlockTags(element, t -> {
-            if (taglet instanceof BaseTaglet baseTaglet) {
-                return baseTaglet.accepts(t);
-            } else if (t instanceof BlockTagTree blockTagTree) {
-                return blockTagTree.getTagName().equals(taglet.getName());
-            } else {
-                return false;
-            }
-        });
+    /**
+     * Returns the list of block tags for the doc-comment tree for an element that match a given name,
+     * or an empty list if there is no such doc-comment.
+     *
+     * @param element the element
+     * @param tagName the name of the required block tags
+     * @return the list
+     */
+    public List<? extends BlockTagTree> getBlockTags(Element element, String tagName) {
+        return getBlockTags(element, t -> t.getTagName().equals(tagName));
     }
 
     public boolean hasBlockTag(Element element, DocTree.Kind kind) {
@@ -2511,7 +2525,6 @@ public class Utils {
                     usedInDeclaration.addAll(types2Classes(tpe.getBounds()));
                 }
                 usedInDeclaration.addAll(types2Classes(List.of(te.getSuperclass())));
-                usedInDeclaration.addAll(types2Classes(te.getInterfaces()));
                 usedInDeclaration.addAll(types2Classes(te.getPermittedSubclasses()));
                 usedInDeclaration.addAll(types2Classes(te.getRecordComponents().stream().map(Element::asType).toList())); //TODO: annotations on record components???
             }
@@ -2683,6 +2696,16 @@ public class Utils {
     }
 
     /**
+     * Checks whether the given ExecutableElement should be marked as a restricted API.
+     *
+     * @param el the element to check
+     * @return true if and only if the given element should be marked as a restricted API
+     */
+    public boolean isRestrictedAPI(Element el) {
+        return configuration.workArounds.isRestrictedAPI(el);
+    }
+
+    /**
      * Return all flags for the given Element.
      *
      * @param el the element to test
@@ -2693,6 +2716,10 @@ public class Utils {
 
         if (isDeprecated(el)) {
             flags.add(ElementFlag.DEPRECATED);
+        }
+
+        if (el.getKind() == ElementKind.METHOD && configuration.workArounds.isRestrictedAPI((ExecutableElement)el)) {
+            flags.add(ElementFlag.RESTRICTED);
         }
 
         if (previewFlagProvider.isPreview(el)) {
@@ -2708,7 +2735,8 @@ public class Utils {
      */
     public enum ElementFlag {
         DEPRECATED,
-        PREVIEW
+        PREVIEW,
+        RESTRICTED
     }
 
     private boolean isClassOrInterface(Element el) {
@@ -2834,7 +2862,7 @@ public class Utils {
                     next = null; // end-of-hierarchy
                     break;
                 }
-                if (isPlainInterface(peek) && !isPublic(peek) && !isLinkable(peek)) {
+                if (isPlainInterface(peek) && !isVisible(peek)) {
                     // we don't consider such interfaces directly, but may consider
                     // their supertypes (subject to this check for each of them)
                     continue;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
@@ -41,23 +40,16 @@ void ObjectToOopClosure::do_object(oop obj) {
   obj->oop_iterate(_cl);
 }
 
-void CodeBlobToOopClosure::do_nmethod(nmethod* nm) {
+void NMethodToOopClosure::do_nmethod(nmethod* nm) {
   nm->oops_do(_cl);
   if (_fix_relocations) {
     nm->fix_oop_relocations();
   }
 }
 
-void CodeBlobToOopClosure::do_code_blob(CodeBlob* cb) {
-  nmethod* nm = cb->as_nmethod_or_null();
-  if (nm != nullptr) {
-    do_nmethod(nm);
-  }
-}
-
-void MarkingCodeBlobClosure::do_code_blob(CodeBlob* cb) {
-  nmethod* nm = cb->as_nmethod_or_null();
-  if (nm != nullptr && nm->oops_do_try_claim()) {
+void MarkingNMethodClosure::do_nmethod(nmethod* nm) {
+  assert(nm != nullptr, "Unexpected nullptr");
+  if (nm->oops_do_try_claim()) {
     // Process the oops in the nmethod
     nm->oops_do(_cl);
 
@@ -66,20 +58,11 @@ void MarkingCodeBlobClosure::do_code_blob(CodeBlob* cb) {
       nm->mark_as_maybe_on_stack();
 
       BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-      if (bs_nm != nullptr) {
-        bs_nm->disarm(nm);
-      }
+      bs_nm->disarm(nm);
     }
 
     if (_fix_relocations) {
       nm->fix_oop_relocations();
     }
-  }
-}
-
-void CodeBlobToNMethodClosure::do_code_blob(CodeBlob* cb) {
-  nmethod* nm = cb->as_nmethod_or_null();
-  if (nm != nullptr) {
-    _nm_cl->do_nmethod(nm);
   }
 }

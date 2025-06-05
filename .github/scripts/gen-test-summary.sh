@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ error_count=$(echo $errors | wc -w || true)
 
 if [[ "$failures" = "" && "$errors" = "" ]]; then
   # We know something went wrong, but not what
+  echo 'failure=true' >> $GITHUB_OUTPUT
   echo 'error-message=Unspecified test suite failure. Please see log for job for details.' >> $GITHUB_OUTPUT
   exit 0
 fi

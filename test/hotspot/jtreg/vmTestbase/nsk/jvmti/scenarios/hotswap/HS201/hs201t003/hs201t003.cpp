@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,12 @@
 #include <string.h>
 
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 
-#include "nsk_tools.h"
-#include "native_thread.h"
-#include "JVMTITools.h"
-#include "jvmti_tools.h"
+#include "nsk_tools.hpp"
+#include "native_thread.hpp"
+#include "JVMTITools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
@@ -50,7 +50,7 @@ static jvmtiEvent eventsList[EVENTS_COUNT] = {
     JVMTI_EVENT_FRAME_POP
 };
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jlong timeout = 0;
 
 static jint bytesCount; /* number of bytes of a redefining class */
@@ -74,7 +74,7 @@ static int expectedMeth(jvmtiEnv *jvmti_env, const char *event,
     char *sig;
     int methFound = 0;
 
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &sig, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &sig, nullptr))) {
         nsk_jvmti_setFailStatus();
         return 0;
     }
@@ -107,7 +107,7 @@ static void doHotSwap(jvmtiEnv *jvmti_env,
         nsk_jvmti_setFailStatus();
         return;
     }
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(decl_cls, &cls_sig, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(decl_cls, &cls_sig, nullptr))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -143,7 +143,7 @@ static void doChecks(jvmtiEnv *jvmti_env,
     jint methBytesCount; /* number of bytes of a method */
     unsigned char *methBytes; /* bytes defining a method */
 
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(tMethodID, &name, &sig, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(tMethodID, &name, &sig, nullptr))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -196,7 +196,7 @@ void JNICALL MethodEntry(jvmtiEnv *jvmti_env, JNIEnv *env,
                 nsk_jvmti_setFailStatus();
         }
 
-        if (!NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_METHOD_ENTRY, NULL)))
+        if (!NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_METHOD_ENTRY, nullptr)))
             nsk_jvmti_setFailStatus();
     }
 }
@@ -298,7 +298,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* add required capabilities */
@@ -324,13 +324,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     NSK_DISPLAY0("setting event callbacks done\nenabling events ...\n");
     if (!nsk_jvmti_enableEvents(JVMTI_ENABLE, EVENTS_COUNT,
-            eventsList, NULL))
+            eventsList, nullptr))
         return JNI_ERR;
 
     NSK_DISPLAY0("enabling the events done\n\n");
 
     /* register agent proc */
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

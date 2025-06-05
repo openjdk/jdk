@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package javax.swing.text;
 
-import sun.reflect.misc.ReflectUtil;
 import sun.swing.SwingUtilities2;
 
 import java.io.Serializable;
@@ -64,7 +63,7 @@ public class DefaultFormatter extends JFormattedTextField.AbstractFormatter
     /** Indicates if the value being edited must match the mask. */
     private boolean allowsInvalid;
 
-    /** If true, editing mode is in overwrite (or strikethough). */
+    /** If true, overwrite mode is enabled. */
     private boolean overwriteMode;
 
     /** If true, any time a valid edit happens commitEdit is invoked. */
@@ -159,7 +158,7 @@ public class DefaultFormatter extends JFormattedTextField.AbstractFormatter
      * <code>overwriteMode</code> is true (the default), new characters
      * overwrite existing characters in the model.
      *
-     * @param overwriteMode Indicates if overwrite or overstrike mode is used
+     * @param overwriteMode Indicates if overwrite mode is used
      */
     public void setOverwriteMode(boolean overwriteMode) {
         this.overwriteMode = overwriteMode;
@@ -248,8 +247,6 @@ public class DefaultFormatter extends JFormattedTextField.AbstractFormatter
             Constructor<?> cons;
 
             try {
-                ReflectUtil.checkPackageAccess(vc);
-                SwingUtilities2.checkAccess(vc.getModifiers());
                 cons = vc.getConstructor(new Class<?>[]{String.class});
 
             } catch (NoSuchMethodException nsme) {
@@ -258,7 +255,6 @@ public class DefaultFormatter extends JFormattedTextField.AbstractFormatter
 
             if (cons != null) {
                 try {
-                    SwingUtilities2.checkAccess(cons.getModifiers());
                     return cons.newInstance(new Object[] { string });
                 } catch (Throwable ex) {
                     throw new ParseException("Error creating instance", 0);

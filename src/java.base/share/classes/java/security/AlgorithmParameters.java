@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,12 +48,19 @@ import java.util.Objects;
  * obtained via a call to {@code getEncoded}.
  *
  * <p> Every implementation of the Java platform is required to support the
- * following standard {@code AlgorithmParameters} algorithms:
+ * following standard {@code AlgorithmParameters} algorithms. For the "EC"
+ * algorithm, implementations must support the curves in parentheses. For the
+ * "RSASSA-PSS" algorithm, implementations must support the parameters in
+ * parentheses.
  * <ul>
  * <li>{@code AES}</li>
+ * <li>{@code ChaCha20-Poly1305}</li>
  * <li>{@code DESede}</li>
  * <li>{@code DiffieHellman}</li>
  * <li>{@code DSA}</li>
+ * <li>{@code EC} (secp256r1, secp384r1)</li>
+ * <li>{@code RSASSA-PSS} (MGF1 mask generation function and SHA-256 or SHA-384
+ *     hash algorithms)</li>
  * </ul>
  * These algorithms are described in the <a href=
  * "{@docRoot}/../specs/security/standard-names.html#algorithmparameters-algorithms">
@@ -62,6 +69,7 @@ import java.util.Objects;
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @author Jan Luehe
  *
  *
@@ -140,6 +148,7 @@ public class AlgorithmParameters {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new parameter object
      *
      * @throws NoSuchAlgorithmException if no {@code Provider} supports an
@@ -187,6 +196,7 @@ public class AlgorithmParameters {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new parameter object
      *
      * @throws IllegalArgumentException if the provider name is {@code null}
@@ -237,6 +247,7 @@ public class AlgorithmParameters {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new parameter object
      *
      * @throws IllegalArgumentException if the provider is {@code null}

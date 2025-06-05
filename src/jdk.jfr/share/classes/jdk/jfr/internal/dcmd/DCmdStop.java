@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,12 @@ package jdk.jfr.internal.dcmd;
 
 import java.io.IOException;
 import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import jdk.jfr.Recording;
 import jdk.jfr.internal.PrivateAccess;
-import jdk.jfr.internal.SecuritySupport.SafePath;
-import jdk.jfr.internal.WriteableUserPath;
+import jdk.jfr.internal.WriteablePath;
 
 /**
  * JFR.stop
@@ -44,23 +44,23 @@ final class DCmdStop extends AbstractDCmd {
     protected void execute(ArgumentParser parser)  throws DCmdException {
         parser.checkUnknownArguments();
         String name = parser.getOption("name");
-        String filename = expandFilename(parser.getOption("filename"));
+        String filename = parser.getOption("filename");
         try {
             Recording recording = findRecording(name);
-            WriteableUserPath path = PrivateAccess.getInstance().getPlatformRecording(recording).getDestination();
-            SafePath safePath = path == null ? null : new SafePath(path.getRealPathText());
+            WriteablePath wp = PrivateAccess.getInstance().getPlatformRecording(recording).getDestination();
+            Path path = wp == null ? null : wp.getReal();
             if (filename != null) {
                 try {
-                    // Ensure path is valid. Don't generate safePath if filename == null, as a user may
+                    // Ensure path is valid. Don't generate path if filename == null, as a user may
                     // want to stop recording without a dump
-                    safePath = resolvePath(null, filename);
+                    path = resolvePath(null, filename);
                     recording.setDestination(Paths.get(filename));
                 } catch (IOException | InvalidPathException  e) {
                     throw new DCmdException("Failed to stop %s. Could not set destination for \"%s\" to file %s", recording.getName(), filename, e.getMessage());
                 }
             }
             recording.stop();
-            reportOperationComplete("Stopped", recording.getName(), safePath);
+            reportOperationComplete("Stopped", recording.getName(), path);
             recording.close();
         } catch (InvalidPathException | DCmdException e) {
             if (filename != null) {
@@ -71,7 +71,7 @@ final class DCmdStop extends AbstractDCmd {
     }
 
     @Override
-    public String[] printHelp() {
+    public String[] getHelp() {
             // 0123456789001234567890012345678900123456789001234567890012345678900123456789001234567890
         return """
                Syntax : JFR.stop [options]
@@ -80,7 +80,7 @@ final class DCmdStop extends AbstractDCmd {
 
                  filename  (Optional) Name of the file to which the recording is written when the
                            recording is stopped. If no path is provided, the data from the recording
-                           is discarded. (STRING, no default value)
+                           is discarded. (FILE, no default value)
 
                            Note: If a path is given, '%%p' in the path will be replaced by the PID,
                            and '%%t' will be replaced by the time in 'yyyy_MM_dd_HH_mm_ss' format.
@@ -107,7 +107,7 @@ final class DCmdStop extends AbstractDCmd {
                 "STRING", true, true, null, false),
             new Argument("filename",
                 "Copy recording data to file, e.g. \\\"" + exampleFilename() +  "\\\"",
-                "STRING", false, true, null, false)
+                "FILE", false, true, null, false)
         };
     }
 }

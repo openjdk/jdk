@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,8 +70,7 @@ public class SelectOneKeyOutOfMany {
          * Setup the tests.
          */
         kmf = KeyManagerFactory.getInstance("SunX509");
-        ks = KeyStore.getInstance("JKS");
-        ks.load(new FileInputStream(keyFilename), passphrase);
+        ks = KeyStore.getInstance(new File(keyFilename), passphrase);
         kmf.init(ks, passphrase);
         km = (X509KeyManager) kmf.getKeyManagers()[0];
 

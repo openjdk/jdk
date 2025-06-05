@@ -1,8 +1,11 @@
-/* Copyright (c) OASIS Open 2016-2019. All Rights Reserved.
- * Distributed under the terms of the OASIS IPR Policy,
- * [http://www.oasis-open.org/policies-guidelines/ipr], AS-IS, WITHOUT ANY
- * IMPLIED OR EXPRESS WARRANTY; there is no warranty of MERCHANTABILITY, FITNESS FOR A
- * PARTICULAR PURPOSE or NONINFRINGEMENT of the rights of others.
+/*
+ * PKCS #11 Specification Version 3.1
+ * OASIS Standard
+ * 23 July 2023
+ * Copyright (c) OASIS Open 2023. All Rights Reserved.
+ * Source: https://docs.oasis-open.org/pkcs11/pkcs11-spec/v3.1/os/include/pkcs11-v3.1/
+ * Latest stage of narrative specification: https://docs.oasis-open.org/pkcs11/pkcs11-spec/v3.1/pkcs11-spec-v3.1.html
+ * TC IPR Statement: https://www.oasis-open.org/committees/pkcs11/ipr.php
  */
 
 #ifndef _PKCS11_H_
@@ -47,7 +50,7 @@ extern "C" {
  *
  * typedef CK_BYTE CK_PTR CK_BYTE_PTR;
  *
- * If you're using windows, it might be defined by:
+ * If you're using Windows, it might be defined by:
  *
  * #define CK_PTR *
  *
@@ -65,7 +68,7 @@ extern "C" {
  *   CK_VOID_PTR pReserved
  * );
  *
- * If you're using Windows to declare a function in a Win32 cryptoki .dll,
+ * If you're using Windows to declare a function in a Win32 Cryptoki .dll,
  * it might be defined by:
  *
  * #define CK_DECLARE_FUNCTION(returnType, name) \
@@ -240,5 +243,4 @@ struct CK_FUNCTION_LIST {
 #endif
 
 #endif /* _PKCS11_H_ */
-
 

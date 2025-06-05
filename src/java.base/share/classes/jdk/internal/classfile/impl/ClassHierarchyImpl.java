@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -28,18 +30,18 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.constant.ClassDesc;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
-import jdk.internal.classfile.ClassHierarchyResolver;
-
+import static java.lang.classfile.ClassFile.ACC_INTERFACE;
+import static java.lang.classfile.constantpool.PoolEntry.*;
 import static java.lang.constant.ConstantDescs.CD_Object;
-import static jdk.internal.classfile.Classfile.*;
+import static java.util.Objects.requireNonNull;
+import static jdk.internal.constant.ConstantUtils.referenceClassDesc;
 
 /**
  * Class hierarchy resolution framework is answering questions about classes assignability, common classes ancestor and whether the class represents an interface.
@@ -52,15 +54,8 @@ public final class ClassHierarchyImpl {
         static final ClassHierarchyResolver.ClassHierarchyInfo OBJECT_INFO = new ClassHierarchyInfoImpl(null, false);
     }
 
-    public static final ClassHierarchyResolver DEFAULT_RESOLVER = ClassHierarchyResolver
-            .ofResourceParsing(ResourceParsingClassHierarchyResolver.SYSTEM_STREAM_PROVIDER)
-            .orElse(new ClassLoadingClassHierarchyResolver(ClassLoadingClassHierarchyResolver.SYSTEM_CLASS_PROVIDER))
-            .cached(new Supplier<>() {
-                @Override
-                public Map<ClassDesc, ClassHierarchyResolver.ClassHierarchyInfo> get() {
-                    return new ConcurrentHashMap<>();
-                }
-            });
+    public static final ClassHierarchyResolver DEFAULT_RESOLVER =
+            new ClassLoadingClassHierarchyResolver(ClassLoadingClassHierarchyResolver.SYSTEM_CLASS_PROVIDER);
 
     private final ClassHierarchyResolver resolver;
 
@@ -69,7 +64,10 @@ public final class ClassHierarchyImpl {
      * @param classHierarchyResolver <code>ClassHierarchyInfoResolver</code> instance
      */
     public ClassHierarchyImpl(ClassHierarchyResolver classHierarchyResolver) {
-        this.resolver = classHierarchyResolver;
+        requireNonNull(classHierarchyResolver);
+        this.resolver = classHierarchyResolver instanceof CachedClassHierarchyResolver
+                ? classHierarchyResolver
+                : classHierarchyResolver.cached();
     }
 
     private ClassHierarchyInfoImpl resolve(ClassDesc classDesc) {
@@ -108,14 +106,14 @@ public final class ClassHierarchyImpl {
     }
 
     public boolean isAssignableFrom(ClassDesc thisClass, ClassDesc fromClass) {
-        //extra check if fromClass is an interface is necessay to handle situation when thisClass might not been fully resolved and so it is potentially an unidentified interface
-        //this special corner-case handling has been added based on better success rate of constructing stack maps with simulated broken resulution of classes and interfaces
+        //extra check if fromClass is an interface is necessary to handle situation when thisClass might not been fully resolved and so it is potentially an unidentified interface
+        //this special corner-case handling has been added based on better success rate of constructing stack maps with simulated broken resolution of classes and interfaces
         if (isInterface(fromClass)) return resolve(thisClass).superClass() == null;
         //regular calculation of assignability is based on common ancestor calculation
         var anc = commonAncestor(thisClass, fromClass);
         //if common ancestor does not exist (as the class hierarchy could not be fully resolved) we optimistically assume the classes might be accessible
         //if common ancestor is equal to thisClass then the classes are clearly accessible
-        //if other common ancestor is calculated (which works even when their grand-parents could not be resolved) then it is clear that thisClass could not be asigned from fromClass
+        //if other common ancestor is calculated (which works even when their grandparents could not be resolved) then it is clear that thisClass could not be assigned from fromClass
         return anc == null || thisClass.equals(anc);
     }
 
@@ -176,10 +174,10 @@ public final class ClassHierarchyImpl {
                     switch (tag = in.readUnsignedByte()) {
                         case TAG_UTF8 -> cpStrings[i] = in.readUTF();
                         case TAG_CLASS -> cpClasses[i] = in.readUnsignedShort();
-                        case TAG_STRING, TAG_METHODTYPE, TAG_MODULE, TAG_PACKAGE -> in.skipBytes(2);
-                        case TAG_METHODHANDLE -> in.skipBytes(3);
-                        case TAG_INTEGER, TAG_FLOAT, TAG_FIELDREF, TAG_METHODREF, TAG_INTERFACEMETHODREF,
-                                TAG_NAMEANDTYPE, TAG_CONSTANTDYNAMIC, TAG_INVOKEDYNAMIC -> in.skipBytes(4);
+                        case TAG_STRING, TAG_METHOD_TYPE, TAG_MODULE, TAG_PACKAGE -> in.skipBytes(2);
+                        case TAG_METHOD_HANDLE -> in.skipBytes(3);
+                        case TAG_INTEGER, TAG_FLOAT, TAG_FIELDREF, TAG_METHODREF, TAG_INTERFACE_METHODREF,
+                             TAG_NAME_AND_TYPE, TAG_DYNAMIC, TAG_INVOKE_DYNAMIC -> in.skipBytes(4);
                         case TAG_LONG, TAG_DOUBLE -> {
                             in.skipBytes(8);
                             i++;
@@ -206,9 +204,9 @@ public final class ClassHierarchyImpl {
             map = HashMap.newHashMap(interfaceNames.size() + classToSuperClass.size() + 1);
             map.put(CD_Object, ClassHierarchyInfoImpl.OBJECT_INFO);
             for (var e : classToSuperClass.entrySet())
-                map.put(e.getKey(), ClassHierarchyInfo.ofClass(e.getValue()));
+                map.put(requireNonNull(e.getKey()), ClassHierarchyInfo.ofClass(e.getValue()));
             for (var i : interfaceNames)
-                map.put(i, ClassHierarchyInfo.ofInterface());
+                map.put(requireNonNull(i), ClassHierarchyInfo.ofInterface());
         }
 
         @Override
@@ -248,7 +246,7 @@ public final class ClassHierarchyImpl {
             }
 
             return cl.isInterface() ? ClassHierarchyInfo.ofInterface()
-                    : ClassHierarchyInfo.ofClass(cl.getSuperclass().describeConstable().orElseThrow());
+                    : ClassHierarchyInfo.ofClass(referenceClassDesc(cl.getSuperclass()));
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import jdk.test.lib.jfr.FileHelper;
 /**
  * @test
  * @summary Test copyTo and parse file
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.dump.TestDumpLongPath
@@ -60,7 +60,7 @@ public class TestDumpLongPath {
         Asserts.assertTrue(Files.exists(path), "Recording file does not exist: " + path);
         List<RecordedEvent> events = RecordingFile.readAllEvents(path);
         Asserts.assertFalse(events.isEmpty(), "No events found");
-        String foundEventPath = events.get(0).getEventType().getName();
+        String foundEventPath = events.getFirst().getEventType().getName();
         System.out.printf("Found event: %s%n", foundEventPath);
         Asserts.assertEquals(foundEventPath, eventPath, "Wrong event");
     }

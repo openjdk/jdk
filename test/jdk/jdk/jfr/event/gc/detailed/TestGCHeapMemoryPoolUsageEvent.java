@@ -33,7 +33,7 @@ import static jdk.test.lib.Asserts.assertFalse;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:-ExplicitGCInvokesConcurrent jdk.jfr.event.gc.detailed.TestGCHeapMemoryPoolUsageEvent
@@ -50,7 +50,7 @@ public class TestGCHeapMemoryPoolUsageEvent {
             System.out.println(events);
             assertFalse(events.isEmpty());
 
-            RecordedEvent event = events.get(0);
+            RecordedEvent event = events.getFirst();
             Events.assertField(event, "name").notNull();
             Events.assertField(event, "used").atLeast(0L);
             Events.assertField(event, "committed").atLeast(0L);

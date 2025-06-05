@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -174,11 +174,6 @@ inline intptr_t* frame::entry_frame_argument_at(int offset) const {
 
 inline intptr_t* frame::unextended_sp() const {
   return (intptr_t *) -1;
-}
-
-inline const ImmutableOopMap* frame::get_oop_map() const {
-  Unimplemented();
-  return nullptr;
 }
 
 inline int frame::compiled_frame_stack_argsize() const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import java.lang.reflect.Field;
 
 public class Utils {
 
-    static final Unsafe unsafe;
+    public static final Unsafe unsafe;
 
     //setup unsafe
     static {

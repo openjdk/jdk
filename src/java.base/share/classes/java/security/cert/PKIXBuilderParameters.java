@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,7 @@ public class PKIXBuilderParameters extends PKIXParameters {
      * {@code trustAnchors} are not of type
      * {@code java.security.cert.TrustAnchor}
      */
+    @SuppressWarnings("this-escape")
     public PKIXBuilderParameters(Set<TrustAnchor> trustAnchors, CertSelector
         targetConstraints) throws InvalidAlgorithmParameterException
     {
@@ -123,6 +124,7 @@ public class PKIXBuilderParameters extends PKIXParameters {
      * @throws NullPointerException if {@code keystore} is
      * {@code null}
      */
+    @SuppressWarnings("this-escape")
     public PKIXBuilderParameters(KeyStore keystore,
         CertSelector targetConstraints)
         throws KeyStoreException, InvalidAlgorithmParameterException

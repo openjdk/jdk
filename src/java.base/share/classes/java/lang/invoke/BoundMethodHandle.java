@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,8 +62,40 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
         return form.editor();
     }
 
-    static BoundMethodHandle bindSingle(MethodType type, LambdaForm form, Object x) {
+    static BoundMethodHandle bindSingleL(MethodType type, LambdaForm form, Object x) {
         return Species_L.make(type, form, x);
+    }
+
+    static BoundMethodHandle bindSingleI(MethodType type, LambdaForm form, int x) {
+        try {
+            return (BoundMethodHandle) SimpleMethodHandle.BMH_SPECIES.extendWith(I_TYPE).factory().invokeBasic(type, form, x);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
+    }
+
+    static BoundMethodHandle bindSingleJ(MethodType type, LambdaForm form, long x) {
+        try {
+            return (BoundMethodHandle) SimpleMethodHandle.BMH_SPECIES.extendWith(J_TYPE).factory().invokeBasic(type, form, x);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
+    }
+
+    static BoundMethodHandle bindSingleF(MethodType type, LambdaForm form, float x) {
+        try {
+            return (BoundMethodHandle) SimpleMethodHandle.BMH_SPECIES.extendWith(F_TYPE).factory().invokeBasic(type, form, x);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
+    }
+
+    static BoundMethodHandle bindSingleD(MethodType type, LambdaForm form, double x) {
+        try {
+            return (BoundMethodHandle) SimpleMethodHandle.BMH_SPECIES.extendWith(D_TYPE).factory().invokeBasic(type, form, x);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
     }
 
     @Override // there is a default binder in the super class, for 'L' types only
@@ -124,8 +156,8 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
     /*non-public*/
     static BoundMethodHandle.SpeciesData speciesDataFor(LambdaForm form) {
         Object c = form.names[0].constraint;
-        if (c instanceof SpeciesData) {
-            return (SpeciesData) c;
+        if (c instanceof SpeciesData sd) {
+            return sd;
         }
         // if there is no BMH constraint, then use the null constraint
         return SPECIALIZER.topSpecies();
@@ -153,8 +185,8 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
         for (int i = 0; i < count; ++i) {
             Object theArg = arg(i);
             sb.append("\n  ").append(prefix).append(i);
-            if (indentLevel >= 0 && theArg instanceof MethodHandle) {
-                sb.append(": MethodHandle = {").append(((MethodHandle)theArg).debugString(indentLevel+1));
+            if (indentLevel >= 0 && theArg instanceof MethodHandle mh) {
+                sb.append(": MethodHandle = {").append(mh.debugString(indentLevel+1));
                 sb.append("\n  ").append(prefix).append("}");
             } else {
                 sb.append(": ( ").append(theArg).append(" )");

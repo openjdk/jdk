@@ -1,0 +1,7 @@
+DanglingDocCommentsClass.java:10:1: compiler.warn.dangling.doc.comment
+DanglingDocCommentsClass.java:13:1: compiler.warn.dangling.doc.comment
+DanglingDocCommentsClass.java:14:8: compiler.warn.dangling.doc.comment
+DanglingDocCommentsClass.java:14:69: compiler.warn.dangling.doc.comment
+DanglingDocCommentsClass.java:15:5: compiler.warn.dangling.doc.comment
+DanglingDocCommentsClass.java:19:5: compiler.warn.dangling.doc.comment
+6 warnings

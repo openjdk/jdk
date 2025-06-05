@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_FrameMap.hpp"
 #include "c1/c1_LIR.hpp"
 #include "code/vmreg.inline.hpp"
@@ -72,7 +71,7 @@ CallingConvention* FrameMap::java_calling_convention(const BasicTypeArray* signa
     }
   }
 
-  intptr_t out_preserve = SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs);
+  intptr_t out_preserve = align_up(SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs), 2);
   LIR_OprList* args = new LIR_OprList(signature->length());
   for (i = 0; i < sizeargs;) {
     BasicType t = sig_bt[i];
@@ -118,7 +117,7 @@ CallingConvention* FrameMap::c_calling_convention(const BasicTypeArray* signatur
     }
   }
 
-  intptr_t out_preserve = SharedRuntime::c_calling_convention(sig_bt, regs, nullptr, sizeargs);
+  intptr_t out_preserve = SharedRuntime::c_calling_convention(sig_bt, regs, sizeargs);
   LIR_OprList* args = new LIR_OprList(signature->length());
   for (i = 0; i < sizeargs;) {
     BasicType t = sig_bt[i];

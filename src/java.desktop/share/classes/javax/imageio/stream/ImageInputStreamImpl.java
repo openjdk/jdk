@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -613,7 +613,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     public void setBitOffset(int bitOffset) throws IOException {
         checkClosed();
         if (bitOffset < 0 || bitOffset > 7) {
-            throw new IllegalArgumentException("bitOffset must be betwwen 0 and 7!");
+            throw new IllegalArgumentException("bitOffset must be between 0 and 7!");
         }
         this.bitOffset = bitOffset;
     }

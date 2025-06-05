@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ class SinkChannelImpl
     implements SelChImpl
 {
     // Used to make native read and write calls
-    private static final NativeDispatcher nd = new FileDispatcherImpl();
+    private static final NativeDispatcher nd = new SocketDispatcher();
 
     // The file descriptor associated with this channel
     private final FileDescriptor fd;
@@ -66,6 +66,13 @@ class SinkChannelImpl
     // ID of native thread doing write, for signalling
     private long thread;
 
+    // True if the channel's socket has been forced into non-blocking mode
+    // by a virtual thread. It cannot be reset. When the channel is in
+    // blocking mode and the channel's socket is in non-blocking mode then
+    // operations that don't complete immediately will poll the socket and
+    // preserve the semantics of blocking operations.
+    private volatile boolean forcedNonBlocking;
+
     // -- End of fields protected by stateLock
 
 
@@ -79,9 +86,32 @@ class SinkChannelImpl
 
     SinkChannelImpl(SelectorProvider sp, FileDescriptor fd) throws IOException {
         super(sp);
-        IOUtil.configureBlocking(fd, false);
         this.fd = fd;
         this.fdVal = IOUtil.fdVal(fd);
+    }
+
+    /**
+     * Checks that the channel is open.
+     *
+     * @throws ClosedChannelException if channel is closed (or closing)
+     */
+    private void ensureOpen() throws ClosedChannelException {
+        if (!isOpen())
+            throw new ClosedChannelException();
+    }
+
+    /**
+     * Ensures that the socket is configured non-blocking when on a virtual thread.
+     */
+    private void configureSocketNonBlockingIfVirtualThread() throws IOException {
+        assert writeLock.isHeldByCurrentThread();
+        if (!forcedNonBlocking && Thread.currentThread().isVirtual()) {
+            synchronized (stateLock) {
+                ensureOpen();
+                IOUtil.configureBlocking(fd, false);
+                forcedNonBlocking = true;
+            }
+        }
     }
 
     /**
@@ -122,15 +152,7 @@ class SinkChannelImpl
             assert state < ST_CLOSING;
             state = ST_CLOSING;
             if (!tryClose()) {
-                long th = thread;
-                if (th != 0) {
-                    if (NativeThread.isVirtualThread(th)) {
-                        Poller.stopPoll(fdVal);
-                    } else {
-                        nd.preClose(fd);
-                        NativeThread.signal(th);
-                    }
-                }
+                nd.preClose(fd, thread, 0);
             }
         }
     }
@@ -171,6 +193,9 @@ class SinkChannelImpl
 
     @Override
     public void kill() {
+        // wait for any write operation to complete before trying to close
+        writeLock.lock();
+        writeLock.unlock();
         synchronized (stateLock) {
             if (state == ST_CLOSING) {
                 tryFinishClose();
@@ -183,9 +208,11 @@ class SinkChannelImpl
         writeLock.lock();
         try {
             synchronized (stateLock) {
-                if (!isOpen())
-                    throw new ClosedChannelException();
-                IOUtil.configureBlocking(fd, block);
+                ensureOpen();
+                // do nothing if virtual thread has forced the socket to be non-blocking
+                if (!forcedNonBlocking) {
+                    IOUtil.configureBlocking(fd, block);
+                }
             }
         } finally {
             writeLock.unlock();
@@ -241,8 +268,7 @@ class SinkChannelImpl
             begin();
         }
         synchronized (stateLock) {
-            if (!isOpen())
-                throw new ClosedChannelException();
+            ensureOpen();
             if (blocking)
                 thread = NativeThread.current();
         }
@@ -275,10 +301,12 @@ class SinkChannelImpl
 
         writeLock.lock();
         try {
+            ensureOpen();
             boolean blocking = isBlocking();
             int n = 0;
             try {
                 beginWrite(blocking);
+                configureSocketNonBlockingIfVirtualThread();
                 n = IOUtil.write(fd, src, -1, nd);
                 if (blocking) {
                     while (IOStatus.okayToRetry(n) && isOpen()) {
@@ -302,10 +330,12 @@ class SinkChannelImpl
 
         writeLock.lock();
         try {
+            ensureOpen();
             boolean blocking = isBlocking();
             long n = 0;
             try {
                 beginWrite(blocking);
+                configureSocketNonBlockingIfVirtualThread();
                 n = IOUtil.write(fd, srcs, offset, length, nd);
                 if (blocking) {
                     while (IOStatus.okayToRetry(n) && isOpen()) {

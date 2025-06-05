@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,17 +56,17 @@ public class TestCopyFiles extends JavadocTester {
                     "Hello World" (phi-WINDOW-TITLE-phi)""",
                 "phi-TOP-phi",
                 // check top navbar
-                "phi-HEADER-phi",
                 """
-                    <a href="../../module-summary.html">Module</a>""",
-                """
-                    <a href="../package-summary.html">Package</a>""",
-                """
-                    <a href="../../../overview-tree.html">Tree</a>""",
+                    <a href="../package-tree.html">Tree</a>""",
                 """
                     <a href="../../../deprecated-list.html">Deprecated</a>""",
                 """
                     <a href="../../../index-all.html">Index</a>""",
+                "phi-HEADER-phi",
+                """
+                    <a href="../../module-summary.html">acme.mdle</a>""",
+                """
+                    <a href="../package-summary.html" class="current-selection">p</a>""",
                 """
                     In a named module acme.module and named package <a href="../package-summary.html"><code>p</code></a>.""",
                 "<dt>Since:</",
@@ -93,17 +93,17 @@ public class TestCopyFiles extends JavadocTester {
                     "Hello World" (phi-WINDOW-TITLE-phi)""",
                 "phi-TOP-phi",
                 // check top navbar
-                "phi-HEADER-phi",
                 """
-                    <a href="../../module-summary.html">Module</a>""",
-                """
-                    <a href="../package-summary.html">Package</a>""",
-                """
-                    <a href="../../../overview-tree.html">Tree</a>""",
+                    <a href="../package-tree.html">Tree</a>""",
                 """
                     <a href="../../../deprecated-list.html">Deprecated</a>""",
                 """
                     <a href="../../../index-all.html">Index</a>""",
+                "phi-HEADER-phi",
+                """
+                    <a href="../../module-summary.html">acme.mdle</a>""",
+                """
+                    <a href="../package-summary.html" class="current-selection">p</a>""",
                 """
                     In a named module acme.module and named package <a href="../package-summary.html"><code>p</code></a>.""",
                 "<dt>Since:</",
@@ -117,17 +117,17 @@ public class TestCopyFiles extends JavadocTester {
                 "SubSubReadme (phi-WINDOW-TITLE-phi)",
                 "phi-TOP-phi",
                 // check top navbar
-                "phi-HEADER-phi",
                 """
-                    <a href="../../../../module-summary.html">Module</a>""",
-                """
-                    <a href="../../../package-summary.html">Package</a>""",
-                """
-                    <a href="../../../../../overview-tree.html">Tree</a>""",
+                    <a href="../../../package-tree.html">Tree</a>""",
                 """
                     <a href="../../../../../deprecated-list.html">Deprecated</a>""",
                 """
                     <a href="../../../../../index-all.html">Index</a>""",
+                "phi-HEADER-phi",
+                """
+                    <a href="../../../../module-summary.html">acme2.mdle</a>""",
+                """
+                    <a href="../../../package-summary.html" class="current-selection">p2</a>""",
                 "SubSubReadme.html at third level of doc-file directory.",
                 // check footer
                 "phi-BOTTOM-phi"

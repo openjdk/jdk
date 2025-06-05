@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,15 @@
 
 /**
  * @test
- * @bug 8309034
+ * @bug 8309034 8334545
  * @summary Test that when saving a class initialization failure caused by
  *          a StackOverflowError, that we record the SOE as the underlying
  *          cause, even if we can't create the ExceptionInInitializerError
- * @requires os.simpleArch == "x64"
- * @comment The reproducer only fails in the desired way on x64.
- * @requires vm.flagless
  * @comment This test could easily be perturbed so don't allow flag settings.
- *
- * @run main/othervm TestStackOverflowDuringInit
+ * @requires vm.flagless
+ * @comment Run with the smallest stack possible to limit the execution time.
+ *          This is the smallest stack that is supported by all platforms.
+ * @run main/othervm -Xss384K -Xint TestStackOverflowDuringInit
  */
 
 import java.io.ByteArrayOutputStream;
@@ -40,22 +39,72 @@ import java.io.PrintStream;
 
 public class TestStackOverflowDuringInit {
 
-    // Test case is fuzzed/obfuscated
+    // The setup for this is somewhat intricate. We need to trigger a
+    // StackOverflowError during execution of the static initializer
+    // for a class, but we need there to be insufficient stack left
+    // for the creation of the ExceptionInInitializerError that would
+    // occur in that case. So we can't just recurse in a static initializer
+    // as that would unwind all the way allowing plenty of stack for the
+    // EIIE. Instead we recurse outside of a static initializer context
+    // and have a finally clause that will trigger class initialization
+    // of another class, which is where we will fail to create the EIIE.
+    // Even then this is non-trivial, only the use of Long.valueOf from
+    // the original reproducer seems to trigger SOE in just the right places.
+    // Later changes to the JDK meant that LongCache was initialized before
+    // the test even started under jtreg so we define local versions.
+
+    static class LongCache {
+        // Must have a static initializer
+        static {
+            System.out.println("LongCache is initializing");
+        }
+        static java.lang.Long valueOf(long l) {
+            return Long.valueOf(l);
+        }
+    }
+
+    static class MyLong {
+        static java.lang.Long valueOf(long l) {
+            if (l > -128 && l < 127) {
+                return LongCache.valueOf(l);
+            } else {
+                return Long.valueOf(l);
+            }
+        }
+    }
+
+    static void recurse() {
+        try {
+            // This will initialize MyLong but not touch LongCache.
+            MyLong.valueOf(1024L);
+            recurse();
+        } finally {
+            // This will require initializing LongCache, which will
+            // initially fail due to StackOverflowError and so LongCache
+            // will be marked erroneous. As we unwind and again execute this
+            // we will throw NoClassDefFoundError due to the erroneous
+            // state of LongCache.
+            MyLong.valueOf(0);
+        }
+    }
 
     public static void main(String[] args) throws Exception {
-        String expected = "java.lang.NoClassDefFoundError: Could not initialize class java.lang.Long$LongCache";
+        String expected = "java.lang.NoClassDefFoundError: Could not initialize class TestStackOverflowDuringInit$LongCache";
         String cause = "Caused by: java.lang.StackOverflowError";
 
-        TestStackOverflowDuringInit i = new TestStackOverflowDuringInit();
+        // Pre-load, but not initialize, LongCache, else we will
+        // hit SOE during class loading.
+        System.out.println("Pre-loading ...");
+        Class<?> c = Class.forName("TestStackOverflowDuringInit$LongCache",
+                                   false,
+                                   TestStackOverflowDuringInit.class.getClassLoader());
         try {
-            i.j();
+            recurse();
         } catch (Throwable ex) {
             //            ex.printStackTrace();
             verify_stack(ex, expected, cause);
         }
     }
-
-    void j() { ((e) new a()).g = 0; }
 
     private static void verify_stack(Throwable e, String expected, String cause) throws Exception {
         ByteArrayOutputStream byteOS = new ByteArrayOutputStream();
@@ -70,22 +119,3 @@ public class TestStackOverflowDuringInit {
         }
     }
 }
-
-class a {
-    Boolean b;
-    {
-        try {
-            Long.valueOf(509505376256L);
-            Boolean c =
-                true ? new d().b
-                : 5 != ((e)java.util.HashSet.newHashSet(301758).clone()).f;
-        } finally {
-            Long.valueOf(0);
-        }
-    }
-}
-class e extends a {
-    double g;
-    int f;
-}
-class d extends a {}

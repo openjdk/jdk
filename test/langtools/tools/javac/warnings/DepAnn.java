@@ -1,7 +1,7 @@
 /*
  * @test /nodynamiccopyright/
  * @bug 4986256
- * @compile/ref=DepAnn.out -XDrawDiagnostics -Xlint:all DepAnn.java
+ * @compile/ref=DepAnn.out -XDrawDiagnostics -Xlint:all,-dangling-doc-comments DepAnn.java
  */
 
 // control: this class should generate warnings

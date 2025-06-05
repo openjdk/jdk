@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,6 +243,15 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                 ((SunGraphics2D)bsg).constrain(xOffset + cx, yOffset + cy,
                                                x + w, y + h);
                 bsg.setClip(x, y, w, h);
+
+                if (!bufferComponent.isOpaque()) {
+                    final SunGraphics2D g2d = (SunGraphics2D) bsg;
+                    final Color oldBg = g2d.getBackground();
+                    g2d.setBackground(paintingComponent.getBackground());
+                    g2d.clearRect(x, y, w, h);
+                    g2d.setBackground(oldBg);
+                }
+
                 paintingComponent.paintToOffscreen(bsg, x, y, w, h,
                                                    x + w, y + h);
                 accumulate(xOffset + x, yOffset + y, w, h);
@@ -556,7 +565,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
         }
         if ((root instanceof RootPaneContainer) &&
             (rootJ instanceof JRootPane)) {
-            // We're in a Swing heavyeight (JFrame/JWindow...), use double
+            // We're in a Swing heavyweight (JFrame/JWindow...), use double
             // buffering if double buffering enabled on the JRootPane and
             // the JRootPane wants true double buffering.
             if (rootJ.isDoubleBuffered() &&
@@ -685,12 +694,12 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
         }
 
         /**
-         * Returns the BufferStartegy.  This will return null if
-         * the BufferStartegy hasn't been created and <code>create</code> is
+         * Returns the BufferStrategy.  This will return null if
+         * the BufferStrategy hasn't been created and <code>create</code> is
          * false, or if there is a problem in creating the
-         * <code>BufferStartegy</code>.
+         * <code>BufferStrategy</code>.
          *
-         * @param create If true, and the BufferStartegy is currently null,
+         * @param create If true and the BufferStrategy is currently null,
          *               one will be created.
          */
         public BufferStrategy getBufferStrategy(boolean create) {
@@ -793,7 +802,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                 } catch (AWTException e) {
                     // Type is not supported
                     if (LOGGER.isLoggable(PlatformLogger.Level.FINER)) {
-                        LOGGER.finer("createBufferStratety failed",
+                        LOGGER.finer("createBufferStrategy failed",
                                      e);
                     }
                 }
@@ -805,7 +814,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                 } catch (AWTException e) {
                     // Type not supported
                     if (LOGGER.isLoggable(PlatformLogger.Level.FINER)) {
-                        LOGGER.finer("createBufferStratety failed",
+                        LOGGER.finer("createBufferStrategy failed",
                                      e);
                     }
                 }

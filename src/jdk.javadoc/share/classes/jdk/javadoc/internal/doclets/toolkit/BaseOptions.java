@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,29 +32,20 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Path;
-import java.time.Instant;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.TreeSet;
 
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.Reporter;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 import static javax.tools.Diagnostic.Kind.ERROR;
@@ -86,11 +77,6 @@ public abstract class BaseOptions {
      * True if we should recursively copy the doc-file subdirectories
      */
     private boolean copyDocfileSubdirs = false;
-
-    /**
-     * Arguments for command-line option {@code -tag} and {@code -taglet}.
-     */
-    private final LinkedHashSet<List<String>> customTagStrs = new LinkedHashSet<>();
 
     /**
      * Argument for command-line option {@code --date}.
@@ -223,6 +209,13 @@ public abstract class BaseOptions {
     private boolean noDeprecated = false;
 
     /**
+     * Argument for command-line option {@code --no-fonts}.
+     * True if command-line option {@code --no-fonts} is used and font files
+     * should not be included in generated documentation. Default value is false.
+     */
+    private boolean noFonts = false;
+
+    /**
      * Argument for command-line option {@code --no-platform-links}.
      * True if command-line option "--no-platform-links" is used. Default value is
      * false.
@@ -242,6 +235,14 @@ public abstract class BaseOptions {
      * Default is false.
      */
     private boolean noTimestamp = false;
+
+
+    /**
+     * Argument for command-line option {@code --preview-note-tag}.
+     * If set, the JavaDoc inline tag with the given name is considered
+     * a preview note and added to the preview API page.
+     */
+    private String previewNoteTag = null;
 
     /**
      * Argument for command-line option {@code -quiet}.
@@ -264,12 +265,6 @@ public abstract class BaseOptions {
      * Default is don't show author information.
      */
     private boolean showAuthor = false;
-
-    /**
-     * Argument for command-line option {@code --show-taglets}.
-     * Show taglets (internal debug switch)
-     */
-    private boolean showTaglets = false;
 
     /**
      * Argument for command-line option {@code -version}.
@@ -312,18 +307,6 @@ public abstract class BaseOptions {
      * footnote section.
      */
     private boolean summarizeOverriddenMethods = false;
-
-    /**
-     * Argument for command-line option {@code -tagletpath}.
-     * The path to Taglets
-     */
-    private String tagletPath = null;
-
-    /**
-     * Argument for command-line option {@code --snippet-path}.
-     * The path for external snippets.
-     */
-    private String snippetPath = null;
 
     //</editor-fold>
 
@@ -513,6 +496,14 @@ public abstract class BaseOptions {
                     }
                 },
 
+                new Option(resources, "--no-fonts") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        noFonts = true;
+                        return true;
+                    }
+                },
+
                 new Option(resources, "-nosince") {
                     @Override
                     public boolean process(String opt, List<String> args) {
@@ -562,6 +553,14 @@ public abstract class BaseOptions {
                                 return false;
                             }
                         }
+                        return true;
+                    }
+                },
+
+                new Hidden(resources, "--preview-note-tag", 1) {
+                    @Override
+                    public boolean process(String option, List<String> args) {
+                        previewNoteTag = args.getFirst();
                         return true;
                     }
                 },
@@ -617,44 +616,6 @@ public abstract class BaseOptions {
                     }
                 },
 
-                new Option(resources, "-tag", 1) {
-                    @Override
-                    public boolean process(String opt, List<String> args) {
-                        ArrayList<String> list = new ArrayList<>();
-                        list.add(opt);
-                        list.add(args.get(0));
-                        customTagStrs.add(list);
-                        return true;
-                    }
-                },
-
-                new Option(resources, "-taglet", 1) {
-                    @Override
-                    public boolean process(String opt, List<String> args) {
-                        ArrayList<String> list = new ArrayList<>();
-                        list.add(opt);
-                        list.add(args.get(0));
-                        customTagStrs.add(list);
-                        return true;
-                    }
-                },
-
-                new Option(resources, "-tagletpath", 1) {
-                    @Override
-                    public boolean process(String opt, List<String> args) {
-                        tagletPath = args.get(0);
-                        return true;
-                    }
-                },
-
-                new Option(resources, "--snippet-path", 1) {
-                    @Override
-                    public boolean process(String opt, List<String> args) {
-                        snippetPath = args.get(0);
-                        return true;
-                    }
-                },
-
                 new Option(resources, "-version") {
                     @Override
                     public boolean process(String opt, List<String> args) {
@@ -703,14 +664,6 @@ public abstract class BaseOptions {
                     @Override
                     public boolean process(String opt, List<String> args) {
                         disableJavaFxStrictChecks = true;
-                        return true;
-                    }
-                },
-
-                new Hidden(resources, "--show-taglets") {
-                    @Override
-                    public boolean process(String opt, List<String> args) {
-                        showTaglets = true;
                         return true;
                     }
                 }
@@ -799,13 +752,6 @@ public abstract class BaseOptions {
      */
     public boolean copyDocfileSubdirs() {
         return copyDocfileSubdirs;
-    }
-
-    /**
-     * Arguments for command-line option {@code -tag} and {@code -taglet}.
-     */
-    LinkedHashSet<List<String>> customTagStrs() {
-        return customTagStrs;
     }
 
     /**
@@ -975,6 +921,15 @@ public abstract class BaseOptions {
     }
 
     /**
+     * Argument for command-line option {@code --no-fonts}.
+     * True if command-line option {@code --no-fonts"} is used.
+     * Default value is false.
+     */
+    public boolean noFonts() {
+        return noFonts;
+    }
+
+    /**
      * Argument for command-line option {@code --no-platform-links}.
      * True if command-line option {@code --no-platform-links"} is used.
      * Default value is false.
@@ -1002,6 +957,12 @@ public abstract class BaseOptions {
     }
 
     /**
+     * Argument for command-line option {@code --preview-note-tag}.
+     * Name of inline tag for preview notes.
+     */
+    public String previewNoteTag() { return previewNoteTag; }
+
+    /**
      * Argument for command-line option {@code -quiet}.
      * Suppress all messages
      */
@@ -1023,18 +984,10 @@ public abstract class BaseOptions {
      * Generate author specific information for all the classes if @author
      * tag is used in the doc comment and if -author option is used.
      * <code>showauthor</code> is set to true if -author option is used.
-     * Default is don't show author information.
+     * Default is to not show author information.
      */
     public boolean showAuthor() {
         return showAuthor;
-    }
-
-    /**
-     * Argument for command-line option {@code --show-taglets}.
-     * Show taglets (internal debug switch)
-     */
-    public boolean showTaglets() {
-        return showTaglets;
     }
 
     /**
@@ -1087,22 +1040,6 @@ public abstract class BaseOptions {
      */
     public boolean summarizeOverriddenMethods() {
         return summarizeOverriddenMethods;
-    }
-
-    /**
-     * Argument for command-line option {@code -tagletpath}.
-     * The path to Taglets
-     */
-    public String tagletPath() {
-        return tagletPath;
-    }
-
-    /**
-     * Argument for command-line option {@code --snippet-path}.
-     * The path for external snippets.
-     */
-    public String snippetPath() {
-        return snippetPath;
     }
 
     protected abstract static class Option implements Doclet.Option, Comparable<Option> {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary test for Calendar
  * @library /java/text/testlib
  * @modules java.base/java.util:+open
- * @run main CalendarTest
+ * @run junit CalendarTest
  * @key randomness
  */
 
@@ -48,18 +48,19 @@ import java.util.TimeZone;
 
 import static java.util.Calendar.*;
 
-public class CalendarTest extends IntlTest {
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class CalendarTest {
 
     static final int ONE_DAY = 24 * 60 * 60 * 1000;
     static final int EPOCH_JULIAN = 2440588;
 
-    public static void main(String argv[]) throws Exception {
-        new CalendarTest().run(argv);
-    }
-
     /**
      * Test the behavior of the GregorianCalendar around the changeover.
      */
+    @Test
     public void TestGregorianChangeover() {
         TimeZone savedZone = TimeZone.getDefault();
         /*
@@ -97,10 +98,10 @@ public class CalendarTest extends IntlTest {
                 int dom = cal.get(DATE);
                 int dow = cal.get(DAY_OF_WEEK);
 
-                logln("Changeover " + (i >= 0 ? "+" : "") + i
+                System.out.println("Changeover " + (i >= 0 ? "+" : "") + i
                         + " days: " + y + "/" + mon + "/" + dom + " dow=" + dow);
                 if (y != 1582 || mon != MON[j] || dom != DOM[j] || dow != DOW[j]) {
-                    errln(" Fail: Above line is wrong");
+                    fail(" Fail: Above line is wrong");
                 }
             }
         } finally {
@@ -114,6 +115,7 @@ public class CalendarTest extends IntlTest {
      * (first day of week, minimal days in first week).
      */
     @SuppressWarnings("deprecation")
+    @Test
     public void TestMapping() {
         TimeZone saveZone = TimeZone.getDefault();
         int[] DATA = {
@@ -160,9 +162,9 @@ public class CalendarTest extends IntlTest {
                         + year2 + "-" + (month2 + 1 - JANUARY) + "-" + dom2;
                 if (delta != 0 || year != year2 || month != month2
                         || dom != dom2) {
-                    errln(s + " FAIL");
+                    fail(s + " FAIL");
                 } else {
-                    logln(s);
+                    System.out.println(s);
                 }
 
                 // Test Julian computation
@@ -184,9 +186,9 @@ public class CalendarTest extends IntlTest {
                         + year2 + "-" + (month2 + 1 - JANUARY) + "-" + dom2;
                 if (delta != 0 || year != year2 || month != month2
                         || dom != dom2) {
-                    errln(s + " FAIL");
+                    fail(s + " FAIL");
                 } else {
-                    logln(s);
+                    System.out.println(s);
                 }
             }
 
@@ -212,16 +214,17 @@ public class CalendarTest extends IntlTest {
         int month2 = cal.get(MONTH);
         int dom2 = cal.get(DAY_OF_MONTH);
         if (y != year2 || m != month2 || dom2 != d) {
-            errln("Round-trip failure: " + y + "-" + (m + 1) + "-" + d + " =>ms=> "
+            fail("Round-trip failure: " + y + "-" + (m + 1) + "-" + d + " =>ms=> "
                     + year2 + "-" + (month2 + 1) + "-" + dom2);
         }
     }
 
     @SuppressWarnings("deprecation")
+    @Test
     public void TestGenericAPI() {
         Locale locale = Locale.getDefault();
         if (!TestUtils.usesGregorianCalendar(locale)) {
-            logln("Skipping this test because locale is " + locale);
+            System.out.println("Skipping this test because locale is " + locale);
             return;
         }
 
@@ -235,7 +238,7 @@ public class CalendarTest extends IntlTest {
         Calendar cal = Calendar.getInstance((SimpleTimeZone) zone.clone());
 
         if (!zone.equals(cal.getTimeZone())) {
-            errln("FAIL: Calendar.getTimeZone failed");
+            fail("FAIL: Calendar.getTimeZone failed");
         }
 
         Calendar cal2 = Calendar.getInstance(cal.getTimeZone());
@@ -244,27 +247,27 @@ public class CalendarTest extends IntlTest {
         cal2.setTime(when);
 
         if (!(cal.equals(cal2))) {
-            errln("FAIL: Calendar.operator== failed");
+            fail("FAIL: Calendar.operator== failed");
         }
         // if ((*cal != *cal2))  errln("FAIL: Calendar.operator!= failed");
         if (!cal.equals(cal2)
                 || cal.before(cal2)
                 || cal.after(cal2)) {
-            errln("FAIL: equals/before/after failed");
+            fail("FAIL: equals/before/after failed");
         }
 
         cal2.setTime(new Date(when.getTime() + 1000));
         if (cal.equals(cal2)
                 || cal2.before(cal)
                 || cal.after(cal2)) {
-            errln("FAIL: equals/before/after failed");
+            fail("FAIL: equals/before/after failed");
         }
 
         cal.roll(SECOND, true);
         if (!cal.equals(cal2)
                 || cal.before(cal2)
                 || cal.after(cal2)) {
-            errln("FAIL: equals/before/after failed");
+            fail("FAIL: equals/before/after failed");
         }
 
         // Roll back to January
@@ -272,20 +275,20 @@ public class CalendarTest extends IntlTest {
         if (cal.equals(cal2)
                 || cal2.before(cal)
                 || cal.after(cal2)) {
-            errln("FAIL: equals/before/after failed");
+            fail("FAIL: equals/before/after failed");
         }
 
         // C++ only
         /* TimeZone z = cal.orphanTimeZone();
         if (z.getID(str) != tzid ||
         z.getRawOffset() != tzoffset)
-        errln("FAIL: orphanTimeZone failed");
+        fail("FAIL: orphanTimeZone failed");
         */
         for (int i = 0; i < 2; ++i) {
             boolean lenient = (i > 0);
             cal.setLenient(lenient);
             if (lenient != cal.isLenient()) {
-                errln("FAIL: setLenient/isLenient failed");
+                fail("FAIL: setLenient/isLenient failed");
             }
             // Later: Check for lenient behavior
         }
@@ -294,26 +297,26 @@ public class CalendarTest extends IntlTest {
         for (i = SUNDAY; i <= SATURDAY; ++i) {
             cal.setFirstDayOfWeek(i);
             if (cal.getFirstDayOfWeek() != i) {
-                errln("FAIL: set/getFirstDayOfWeek failed");
+                fail("FAIL: set/getFirstDayOfWeek failed");
             }
         }
 
         for (i = 0; i <= 7; ++i) {
             cal.setMinimalDaysInFirstWeek(i);
             if (cal.getMinimalDaysInFirstWeek() != i) {
-                errln("FAIL: set/getFirstDayOfWeek failed");
+                fail("FAIL: set/getFirstDayOfWeek failed");
             }
         }
 
         for (i = 0; i < FIELD_COUNT; ++i) {
             if (cal.getMinimum(i) != cal.getGreatestMinimum(i)) {
-                errln("FAIL: getMinimum doesn't match getGreatestMinimum for field " + i);
+                fail("FAIL: getMinimum doesn't match getGreatestMinimum for field " + i);
             }
             if (cal.getLeastMaximum(i) > cal.getMaximum(i)) {
-                errln("FAIL: getLeastMaximum larger than getMaximum for field " + i);
+                fail("FAIL: getLeastMaximum larger than getMaximum for field " + i);
             }
             if (cal.getMinimum(i) >= cal.getMaximum(i)) {
-                errln("FAIL: getMinimum not less than getMaximum for field " + i);
+                fail("FAIL: getMinimum not less than getMaximum for field " + i);
             }
         }
 
@@ -321,22 +324,22 @@ public class CalendarTest extends IntlTest {
         cal.clear();
         cal.set(1984, 5, 24);
         if (cal.getTime().getTime() != new Date(84, 5, 24).getTime()) {
-            errln("FAIL: Calendar.set(3 args) failed");
-            logln(" Got: " + cal.getTime() + "  Expected: " + new Date(84, 5, 24));
+            fail("FAIL: Calendar.set(3 args) failed");
+            System.out.println(" Got: " + cal.getTime() + "  Expected: " + new Date(84, 5, 24));
         }
 
         cal.clear();
         cal.set(1985, 3, 2, 11, 49);
         if (cal.getTime().getTime() != new Date(85, 3, 2, 11, 49).getTime()) {
-            errln("FAIL: Calendar.set(5 args) failed");
-            logln(" Got: " + cal.getTime() + "  Expected: " + new Date(85, 3, 2, 11, 49));
+            fail("FAIL: Calendar.set(5 args) failed");
+            System.out.println(" Got: " + cal.getTime() + "  Expected: " + new Date(85, 3, 2, 11, 49));
         }
 
         cal.clear();
         cal.set(1995, 9, 12, 1, 39, 55);
         if (cal.getTime().getTime() != new Date(95, 9, 12, 1, 39, 55).getTime()) {
-            errln("FAIL: Calendar.set(6 args) failed");
-            logln(" Got: " + cal.getTime() + "  Expected: " + new Date(95, 9, 12, 1, 39, 55));
+            fail("FAIL: Calendar.set(6 args) failed");
+            System.out.println(" Got: " + cal.getTime() + "  Expected: " + new Date(95, 9, 12, 1, 39, 55));
         }
 
         cal.getTime();
@@ -349,17 +352,17 @@ public class CalendarTest extends IntlTest {
                 case MINUTE:
                 case SECOND:
                     if (!cal.isSet(i)) {
-                        errln("FAIL: !Calendar.isSet test failed: " + calendarFieldNames[i]);
+                        fail("FAIL: !Calendar.isSet test failed: " + calendarFieldNames[i]);
                     }
                     break;
                 default:
                     if (cal.isSet(i)) {
-                        errln("FAIL: Calendar.isSet test failed: " + calendarFieldNames[i]);
+                        fail("FAIL: Calendar.isSet test failed: " + calendarFieldNames[i]);
                     }
             }
             cal.clear(i);
             if (cal.isSet(i)) {
-                errln("FAIL: Calendar.clear/isSet failed");
+                fail("FAIL: Calendar.clear/isSet failed");
             }
         }
 
@@ -368,7 +371,7 @@ public class CalendarTest extends IntlTest {
         Locale[] loc = Calendar.getAvailableLocales();
         long count = loc.length;
         if (count < 1 || loc == null) {
-            errln("FAIL: getAvailableLocales failed");
+            fail("FAIL: getAvailableLocales failed");
         } else {
             for (i = 0; i < count; ++i) {
                 cal = Calendar.getInstance(loc[i]);
@@ -399,13 +402,13 @@ public class CalendarTest extends IntlTest {
 
         gc = new GregorianCalendar(1998, 10, 14, 21, 43);
         if (gc.getTime().getTime() != new Date(98, 10, 14, 21, 43).getTime()) {
-            errln("FAIL: new GregorianCalendar(ymdhm) failed");
+            fail("FAIL: new GregorianCalendar(ymdhm) failed");
         }
         // delete gc;
 
         gc = new GregorianCalendar(1998, 10, 14, 21, 43, 55);
         if (gc.getTime().getTime() != new Date(98, 10, 14, 21, 43, 55).getTime()) {
-            errln("FAIL: new GregorianCalendar(ymdhms) failed");
+            fail("FAIL: new GregorianCalendar(ymdhms) failed");
         }
 
         // C++ only:
@@ -417,6 +420,7 @@ public class CalendarTest extends IntlTest {
     }
 
     // Verify Roger Webster's bug
+    @Test
     public void TestRog() {
         GregorianCalendar gc = new GregorianCalendar();
 
@@ -432,12 +436,13 @@ public class CalendarTest extends IntlTest {
             if (gc.get(YEAR) != year
                     || gc.get(MONTH) != month
                     || gc.get(DATE) != (date + i)) {
-                errln("FAIL: Date " + gc.getTime() + " wrong");
+                fail("FAIL: Date " + gc.getTime() + " wrong");
             }
         }
     }
 
     // Verify DAY_OF_WEEK
+    @Test
     public void TestDOW943() {
         dowTest(false);
         dowTest(true);
@@ -453,18 +458,19 @@ public class CalendarTest extends IntlTest {
         int min = cal.getMinimum(DAY_OF_WEEK);
         int max = cal.getMaximum(DAY_OF_WEEK);
         if (dow < min || dow > max) {
-            errln("FAIL: Day of week " + dow + " out of range");
+            fail("FAIL: Day of week " + dow + " out of range");
         }
         if (dow != SUNDAY) {
-            errln("FAIL2: Day of week should be SUNDAY; is " + dow + ": " + cal.getTime());
+            fail("FAIL2: Day of week should be SUNDAY; is " + dow + ": " + cal.getTime());
         }
         if (min != SUNDAY || max != SATURDAY) {
-            errln("FAIL: Min/max bad");
+            fail("FAIL: Min/max bad");
         }
     }
 
     // Verify that the clone method produces distinct objects with no
     // unintentionally shared fields.
+    @Test
     public void TestClonesUnique908() {
         Calendar c = Calendar.getInstance();
         Calendar d = (Calendar) c.clone();
@@ -472,31 +478,33 @@ public class CalendarTest extends IntlTest {
         d.set(MILLISECOND, 456);
         if (c.get(MILLISECOND) != 123
                 || d.get(MILLISECOND) != 456) {
-            errln("FAIL: Clones share fields");
+            fail("FAIL: Clones share fields");
         }
     }
 
     // Verify effect of Gregorian cutoff value
     @SuppressWarnings("deprecation")
+    @Test
     public void TestGregorianChange768() {
         boolean b;
         GregorianCalendar c = new GregorianCalendar();
-        logln("With cutoff " + c.getGregorianChange());
-        logln(" isLeapYear(1800) = " + (b = c.isLeapYear(1800)));
-        logln(" (should be FALSE)");
+        System.out.println("With cutoff " + c.getGregorianChange());
+        System.out.println(" isLeapYear(1800) = " + (b = c.isLeapYear(1800)));
+        System.out.println(" (should be FALSE)");
         if (b != false) {
-            errln("FAIL");
+            fail("FAIL");
         }
         c.setGregorianChange(new Date(0, 0, 1)); // Jan 1 1900
-        logln("With cutoff " + c.getGregorianChange());
-        logln(" isLeapYear(1800) = " + (b = c.isLeapYear(1800)));
-        logln(" (should be TRUE)");
+        System.out.println("With cutoff " + c.getGregorianChange());
+        System.out.println(" isLeapYear(1800) = " + (b = c.isLeapYear(1800)));
+        System.out.println(" (should be TRUE)");
         if (b != true) {
-            errln("FAIL");
+            fail("FAIL");
         }
     }
 
     // Test the correct behavior of the disambiguation algorithm.
+    @Test
     public void TestDisambiguation765() throws Exception {
         Locale savedLocale = Locale.getDefault();
         try {
@@ -562,7 +570,7 @@ public class CalendarTest extends IntlTest {
                 c.set(WEEK_OF_MONTH, 1);
                 verify765("1997 Tuesday in week 0 of June = ", c, 1997, JUNE, 3);
             } catch (IllegalArgumentException ex) {
-                errln("FAIL: Exception seen: " + ex.getMessage());
+                fail("FAIL: Exception seen: " + ex.getMessage());
                 // ex.printStackTrace(log);
             }
 
@@ -596,9 +604,9 @@ public class CalendarTest extends IntlTest {
         if (c.get(YEAR) == year
                 && c.get(MONTH) == month
                 && c.get(DATE) == day) {
-            logln("PASS: " + msg + c.getTime());
+            System.out.println("PASS: " + msg + c.getTime());
         } else {
-            errln("FAIL: " + msg + c.getTime()
+            fail("FAIL: " + msg + c.getTime()
                     + "; expected "
                     + year + "/" + (month + 1) + "/" + day);
         }
@@ -607,17 +615,18 @@ public class CalendarTest extends IntlTest {
     // Called when e expected to be non-null
     void verify765(String msg, IllegalArgumentException e) {
         if (e == null) {
-            errln("FAIL: No IllegalArgumentException for " + msg);
+            fail("FAIL: No IllegalArgumentException for " + msg);
         } else {
-            logln("PASS: " + msg + "IllegalArgument as expected");
+            System.out.println("PASS: " + msg + "IllegalArgument as expected");
         }
     }
 
     // Test the behavior of GMT vs. local time
+    @Test
     public void TestGMTvsLocal4064654() {
         Locale locale = Locale.getDefault();
         if (!TestUtils.usesGregorianCalendar(locale)) {
-            logln("Skipping this test because locale is " + locale);
+            System.out.println("Skipping this test because locale is " + locale);
             return;
         }
 
@@ -645,7 +654,7 @@ public class CalendarTest extends IntlTest {
         gmtcal.set(MILLISECOND, 0);
 
         date = gmtcal.getTime();
-        logln("date = " + date);
+        System.out.println("date = " + date);
 
         Calendar cal = Calendar.getInstance();
         cal.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
@@ -658,7 +667,7 @@ public class CalendarTest extends IntlTest {
                 cal.get(DAY_OF_WEEK),
                 cal.get(MILLISECOND));
 
-        logln("offset for " + date + "= " + (offset / 1000 / 60 / 60.0) + "hr");
+        System.out.println("offset for " + date + "= " + (offset / 1000 / 60 / 60.0) + "hr");
 
         int utc = ((cal.get(HOUR_OF_DAY) * 60
                 + cal.get(MINUTE)) * 60
@@ -668,7 +677,7 @@ public class CalendarTest extends IntlTest {
         int expected = ((hr * 60 + mn) * 60 + sc) * 1000;
 
         if (utc != expected) {
-            errln("FAIL: Discrepancy of "
+            fail("FAIL: Discrepancy of "
                     + (utc - expected) + " millis = "
                     + ((utc - expected) / 1000 / 60 / 60.0) + " hr");
         }
@@ -676,6 +685,7 @@ public class CalendarTest extends IntlTest {
 
     // Verify that add and set work regardless of the order in which
     // they are called.
+    @Test
     public void TestAddSetOrder621() {
         @SuppressWarnings("deprecation")
         Date d = new Date(97, 4, 14, 13, 23, 45);
@@ -699,13 +709,14 @@ public class CalendarTest extends IntlTest {
         String s2 = cal.getTime().toString();
 
         if (s.equals(s2)) {
-            logln("Pass: " + s + " == " + s2);
+            System.out.println("Pass: " + s + " == " + s2);
         } else {
-            errln("FAIL: " + s + " != " + s2);
+            fail("FAIL: " + s + " != " + s2);
         }
     }
 
     // Verify that add works.
+    @Test
     public void TestAdd520() {
         int y = 1997, m = FEBRUARY, d = 1;
         GregorianCalendar temp = new GregorianCalendar(y, m, d);
@@ -737,19 +748,20 @@ public class CalendarTest extends IntlTest {
         if (c.get(YEAR) != y
                 || c.get(MONTH) != m
                 || c.get(DATE) != d) {
-            errln("FAILURE: Expected YEAR/MONTH/DATE of "
+            fail("FAILURE: Expected YEAR/MONTH/DATE of "
                     + y + "/" + (m + 1) + "/" + d
                     + "; got "
                     + c.get(YEAR) + "/"
                     + (c.get(MONTH) + 1) + "/"
                     + c.get(DATE));
         } else {
-            logln("Confirmed: "
+            System.out.println("Confirmed: "
                     + y + "/" + (m + 1) + "/" + d);
         }
     }
 
     // Verify that setting fields works.  This test fails when an exception is thrown.
+    @Test
     public void TestFieldSet4781() {
         try {
             GregorianCalendar g = new GregorianCalendar();
@@ -763,16 +775,17 @@ public class CalendarTest extends IntlTest {
             // The following line will result in IllegalArgumentException because
             // it thinks the YEAR is set and it is NOT.
             if (g2.equals(g)) {
-                logln("Same");
+                System.out.println("Same");
             } else {
-                logln("Different");
+                System.out.println("Different");
             }
         } catch (IllegalArgumentException e) {
-            errln("Unexpected exception seen: " + e);
+            fail("Unexpected exception seen: " + e);
         }
     }
 
     // Test serialization of a Calendar object
+    @Test
     public void TestSerialize337() {
         Calendar cal = Calendar.getInstance();
 
@@ -800,15 +813,15 @@ public class CalendarTest extends IntlTest {
             File fl = new File(FILENAME);
             fl.delete();
         } catch (IOException e) {
-            errln("FAIL: Exception received:");
+            fail("FAIL: Exception received:");
             // e.printStackTrace(log);
         } catch (ClassNotFoundException e) {
-            errln("FAIL: Exception received:");
+            fail("FAIL: Exception received:");
             // e.printStackTrace(log);
         }
 
         if (!ok) {
-            errln("Serialization of Calendar object failed.");
+            fail("Serialization of Calendar object failed.");
         }
     }
     static final String PREFIX = "abc";
@@ -816,6 +829,7 @@ public class CalendarTest extends IntlTest {
     static final String FILENAME = "tmp337.bin";
 
     // Try to zero out the seconds field
+    @Test
     public void TestSecondsZero121() {
         Calendar cal = new GregorianCalendar();
         // Initialize with current date/time
@@ -825,11 +839,12 @@ public class CalendarTest extends IntlTest {
         Date d = cal.getTime();
         String s = d.toString();
         if (s.indexOf(":00 ") < 0) {
-            errln("Expected to see :00 in " + s);
+            fail("Expected to see :00 in " + s);
         }
     }
 
     // Try various sequences of add, set, and get method calls.
+    @Test
     public void TestAddSetGet0610() {
         //
         // Error case 1:
@@ -840,13 +855,13 @@ public class CalendarTest extends IntlTest {
         {
             Calendar calendar = new GregorianCalendar();
             calendar.set(1993, JANUARY, 4);
-            logln("1A) " + value(calendar));
+            System.out.println("1A) " + value(calendar));
             calendar.add(DATE, 1);
             String v = value(calendar);
-            logln("1B) " + v);
-            logln("--) 1993/0/5");
+            System.out.println("1B) " + v);
+            System.out.println("--) 1993/0/5");
             if (!v.equals(EXPECTED_0610)) {
-                errln("Expected " + EXPECTED_0610
+                fail("Expected " + EXPECTED_0610
                         + "; saw " + v);
             }
         }
@@ -858,13 +873,13 @@ public class CalendarTest extends IntlTest {
         //
         {
             Calendar calendar = new GregorianCalendar(1993, JANUARY, 4);
-            logln("2A) " + value(calendar));
+            System.out.println("2A) " + value(calendar));
             calendar.add(DATE, 1);
             String v = value(calendar);
-            logln("2B) " + v);
-            logln("--) 1993/0/5");
+            System.out.println("2B) " + v);
+            System.out.println("--) 1993/0/5");
             if (!v.equals(EXPECTED_0610)) {
-                errln("Expected " + EXPECTED_0610
+                fail("Expected " + EXPECTED_0610
                         + "; saw " + v);
             }
         }
@@ -877,14 +892,14 @@ public class CalendarTest extends IntlTest {
         //
         {
             Calendar calendar = new GregorianCalendar(1993, JANUARY, 4);
-            logln("3A) " + value(calendar));
+            System.out.println("3A) " + value(calendar));
             calendar.getTime();
             calendar.add(DATE, 1);
             String v = value(calendar);
-            logln("3B) " + v);
-            logln("--) 1993/0/5");
+            System.out.println("3B) " + v);
+            System.out.println("--) 1993/0/5");
             if (!v.equals(EXPECTED_0610)) {
-                errln("Expected " + EXPECTED_0610
+                fail("Expected " + EXPECTED_0610
                         + "; saw " + v);
             }
         }
@@ -897,6 +912,7 @@ public class CalendarTest extends IntlTest {
     static String EXPECTED_0610 = "1993/0/5";
 
     // Test that certain fields on a certain date are as expected.
+    @Test
     public void TestFields060() {
         int year = 1997;
         int month = OCTOBER;  //october
@@ -908,7 +924,7 @@ public class CalendarTest extends IntlTest {
             int field = EXPECTED_FIELDS[i++];
             int expected = EXPECTED_FIELDS[i++];
             if (calendar.get(field) != expected) {
-                errln("Expected field " + field + " to have value " + expected
+                fail("Expected field " + field + " to have value " + expected
                         + "; received " + calendar.get(field) + " instead");
             }
         }
@@ -942,6 +958,7 @@ public class CalendarTest extends IntlTest {
 
     // Verify that the fields are as expected (mostly zero) at the epoch start.
     // Note that we adjust for the default timezone to get most things to zero.
+    @Test
     public void TestEpochStartFields() {
         String[][] lt = {
             {"en", "US", "US/Pacific"},        /* First day = 1, Minimum day = 1 */
@@ -988,14 +1005,14 @@ public class CalendarTest extends IntlTest {
                 boolean err = false;
                 for (int i = 0; i < calendarFieldNames.length; ++i) {
                     if ((val = c.get(i)) != EPOCH_FIELDS[i]) {
-                        errln("Wrong value: " + val
+                        fail("Wrong value: " + val
                                 + " for field(" + calendarFieldNames[i]
                                 + "), expected: " + EPOCH_FIELDS[i]);
                         err = true;
                     }
                 }
                 if (err) {
-                    errln("Failed: \n\tDate=" + d + "\n\tTimeZone=" + z
+                    fail("Failed: \n\tDate=" + d + "\n\tTimeZone=" + z
                             + "\n\tLocale=" + l + "\n\tCalendar=" + c);
                 }
             }
@@ -1007,6 +1024,7 @@ public class CalendarTest extends IntlTest {
 
     // Verify that as you add days to the calendar (e.g., 24 day periods),
     // the day of the week shifts in the expected pattern.
+    @Test
     public void TestDOWProgression() {
         Calendar cal
                 = new GregorianCalendar(1972, OCTOBER, 26);
@@ -1020,66 +1038,68 @@ public class CalendarTest extends IntlTest {
         int DOW, newDOW = initialDOW;
         do {
             DOW = newDOW;
-            logln("DOW = " + DOW + "  " + cur.getTime());
+            System.out.println("DOW = " + DOW + "  " + cur.getTime());
 
             cur.add(DAY_OF_WEEK, delta);
             newDOW = cur.get(DAY_OF_WEEK);
             int expectedDOW = 1 + (DOW + delta - 1) % 7;
             if (newDOW != expectedDOW) {
-                errln("Day of week should be " + expectedDOW
+                fail("Day of week should be " + expectedDOW
                         + " instead of " + newDOW + " on " + cur.getTime());
                 return;
             }
         } while (newDOW != initialDOW);
     }
 
+    @Test
     public void TestActualMinMax() {
         Calendar cal = new GregorianCalendar(1967, MARCH, 10);
         cal.setFirstDayOfWeek(SUNDAY);
         cal.setMinimalDaysInFirstWeek(3);
 
         if (cal.getActualMinimum(DAY_OF_MONTH) != 1) {
-            errln("Actual minimum date for 3/10/1967 should have been 1; got "
+            fail("Actual minimum date for 3/10/1967 should have been 1; got "
                     + cal.getActualMinimum(DAY_OF_MONTH));
         }
         if (cal.getActualMaximum(DAY_OF_MONTH) != 31) {
-            errln("Actual maximum date for 3/10/1967 should have been 31; got "
+            fail("Actual maximum date for 3/10/1967 should have been 31; got "
                     + cal.getActualMaximum(DAY_OF_MONTH));
         }
 
         cal.set(MONTH, FEBRUARY);
         if (cal.getActualMaximum(DAY_OF_MONTH) != 28) {
-            errln("Actual maximum date for 2/10/1967 should have been 28; got "
+            fail("Actual maximum date for 2/10/1967 should have been 28; got "
                     + cal.getActualMaximum(DAY_OF_MONTH));
         }
         if (cal.getActualMaximum(DAY_OF_YEAR) != 365) {
-            errln("Number of days in 1967 should have been 365; got "
+            fail("Number of days in 1967 should have been 365; got "
                     + cal.getActualMaximum(DAY_OF_YEAR));
         }
 
         cal.set(YEAR, 1968);
         if (cal.getActualMaximum(DAY_OF_MONTH) != 29) {
-            errln("Actual maximum date for 2/10/1968 should have been 29; got "
+            fail("Actual maximum date for 2/10/1968 should have been 29; got "
                     + cal.getActualMaximum(DAY_OF_MONTH));
         }
         if (cal.getActualMaximum(DAY_OF_YEAR) != 366) {
-            errln("Number of days in 1968 should have been 366; got "
+            fail("Number of days in 1968 should have been 366; got "
                     + cal.getActualMaximum(DAY_OF_YEAR));
         }
         // Using week settings of SUNDAY/3 (see above)
         if (cal.getActualMaximum(WEEK_OF_YEAR) != 52) {
-            errln("Number of weeks in 1968 should have been 52; got "
+            fail("Number of weeks in 1968 should have been 52; got "
                     + cal.getActualMaximum(WEEK_OF_YEAR));
         }
 
         cal.set(YEAR, 1976);
         // Using week settings of SUNDAY/3 (see above)
         if (cal.getActualMaximum(WEEK_OF_YEAR) != 53) {
-            errln("Number of weeks in 1976 should have been 53; got "
+            fail("Number of weeks in 1976 should have been 53; got "
                     + cal.getActualMaximum(WEEK_OF_YEAR));
         }
     }
 
+    @Test
     public void TestRoll() {
         Calendar cal = new GregorianCalendar(1997, JANUARY, 31);
 
@@ -1089,7 +1109,7 @@ public class CalendarTest extends IntlTest {
             Calendar cal2 = (Calendar) cal.clone();
             cal2.roll(MONTH, i);
             if (cal2.get(DAY_OF_MONTH) != dayValues[i]) {
-                errln("Rolling the month in 1/31/1997 up by " + i + " should have yielded "
+                fail("Rolling the month in 1/31/1997 up by " + i + " should have yielded "
                         + ((i + 1) % 12) + "/" + dayValues[i] + "/1997, but actually yielded "
                         + ((i + 1) % 12) + "/" + cal2.get(DAY_OF_MONTH) + "/1997.");
             }
@@ -1105,7 +1125,7 @@ public class CalendarTest extends IntlTest {
             cal2.roll(YEAR, i);
             if (cal2.get(DAY_OF_MONTH) != dayValues2[i] || cal2.get(MONTH)
                     != monthValues[i]) {
-                errln("Rolling the year in 2/29/1996 up by " + i + " should have yielded "
+                fail("Rolling the year in 2/29/1996 up by " + i + " should have yielded "
                         + (monthValues[i] + 1) + "/" + dayValues2[i] + "/"
                         + (1996 + i) + ", but actually yielded "
                         + (cal2.get(MONTH) + 1) + "/"
@@ -1118,17 +1138,17 @@ public class CalendarTest extends IntlTest {
         cal.roll(HOUR_OF_DAY, -2);
         int f = cal.get(HOUR_OF_DAY);
         if (f != 22) {
-            errln("Rolling HOUR_OF_DAY=0 delta=-2 gave " + f + " Wanted 22");
+            fail("Rolling HOUR_OF_DAY=0 delta=-2 gave " + f + " Wanted 22");
         }
         cal.roll(HOUR_OF_DAY, 5);
         f = cal.get(HOUR_OF_DAY);
         if (f != 3) {
-            errln("Rolling HOUR_OF_DAY=22 delta=5 gave " + f + " Wanted 3");
+            fail("Rolling HOUR_OF_DAY=22 delta=5 gave " + f + " Wanted 3");
         }
         cal.roll(HOUR_OF_DAY, 21);
         f = cal.get(HOUR_OF_DAY);
         if (f != 0) {
-            errln("Rolling HOUR_OF_DAY=3 delta=21 gave " + f + " Wanted 0");
+            fail("Rolling HOUR_OF_DAY=3 delta=21 gave " + f + " Wanted 0");
         }
 
         // Test rolling hour
@@ -1136,23 +1156,24 @@ public class CalendarTest extends IntlTest {
         cal.roll(HOUR, -2);
         f = cal.get(HOUR);
         if (f != 10) {
-            errln("Rolling HOUR=0 delta=-2 gave " + f + " Wanted 10");
+            fail("Rolling HOUR=0 delta=-2 gave " + f + " Wanted 10");
         }
         cal.roll(HOUR, 5);
         f = cal.get(HOUR);
         if (f != 3) {
-            errln("Rolling HOUR=10 delta=5 gave " + f + " Wanted 3");
+            fail("Rolling HOUR=10 delta=5 gave " + f + " Wanted 3");
         }
         cal.roll(HOUR, 9);
         f = cal.get(HOUR);
         if (f != 0) {
-            errln("Rolling HOUR=3 delta=9 gave " + f + " Wanted 0");
+            fail("Rolling HOUR=3 delta=9 gave " + f + " Wanted 0");
         }
     }
 
     /*
      * Confirm that multiple calls to Calendar.set() works correctly.
      */
+    @Test
     public void Test4374886() {
         Locale savedLocale = Locale.getDefault();
         TimeZone savedTimeZone = TimeZone.getDefault();
@@ -1171,7 +1192,7 @@ public class CalendarTest extends IntlTest {
                     || cal.get(MONTH) != JANUARY
                     || cal.get(DATE) != 22
                     || cal.get(DAY_OF_WEEK) != MONDAY) {
-                errln("Failed : got " + cal.getTime() + ", expected Mon Jan 22, 2001");
+                fail("Failed : got " + cal.getTime() + ", expected Mon Jan 22, 2001");
             }
         } finally {
             Locale.setDefault(savedLocale);
@@ -1179,6 +1200,7 @@ public class CalendarTest extends IntlTest {
         }
     }
 
+    @Test
     public void TestClonedSharedZones() throws NoSuchFieldException, IllegalAccessException {
         Field zone = Calendar.class.getDeclaredField("zone");
         zone.setAccessible(true);
@@ -1191,13 +1213,13 @@ public class CalendarTest extends IntlTest {
 
         // c1 should have a shared zone
         if (!sharedZone.getBoolean(c1)) {
-            errln("Failed : c1.sharedZone == false");
+            fail("Failed : c1.sharedZone == false");
         } else {
             // c2 should have a shared zone too
             if (!sharedZone.getBoolean(c2)) {
-                errln("Failed : c2.sharedZone == false");
+                fail("Failed : c2.sharedZone == false");
             } else if (zone.get(c1) != zone.get(c2)) {
-                errln("Failed : c1.zone != c2.zone");
+                fail("Failed : c1.zone != c2.zone");
             }
         }
     }

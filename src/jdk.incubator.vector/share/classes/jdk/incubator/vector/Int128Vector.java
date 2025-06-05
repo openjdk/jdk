@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -140,6 +142,12 @@ final class Int128Vector extends IntVector {
     @Override
     @ForceInline
     Int128Shuffle iotaShuffle() { return Int128Shuffle.IOTA; }
+
+    @Override
+    @ForceInline
+    Int128Shuffle iotaShuffle(int start, int step, boolean wrap) {
+        return (Int128Shuffle) iotaShuffleTemplate(start, step, wrap);
+    }
 
     @Override
     @ForceInline
@@ -344,9 +352,14 @@ final class Int128Vector extends IntVector {
 
     @Override
     @ForceInline
-    public final
-    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
-        return super.toShuffleTemplate(dsp);
+    final <F> VectorShuffle<F> bitsToShuffle(AbstractSpecies<F> dsp) {
+        return bitsToShuffleTemplate(dsp);
+    }
+
+    @Override
+    @ForceInline
+    public final Int128Shuffle toShuffle() {
+        return (Int128Shuffle) toShuffle(vspecies(), false);
     }
 
     // Specialized unary testing
@@ -490,9 +503,16 @@ final class Int128Vector extends IntVector {
                                    VectorMask<Integer> m) {
         return (Int128Vector)
             super.selectFromTemplate((Int128Vector) v,
-                                     (Int128Mask) m);  // specialize
+                                     Int128Mask.class, (Int128Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Int128Vector selectFrom(Vector<Integer> v1,
+                                   Vector<Integer> v2) {
+        return (Int128Vector)
+            super.selectFromTemplate((Int128Vector) v1, (Int128Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -506,6 +526,7 @@ final class Int128Vector extends IntVector {
         }
     }
 
+    @ForceInline
     public int laneHelper(int i) {
         return (int) VectorSupport.extract(
                                 VCLASS, ETYPE, VLENGTH,
@@ -528,6 +549,7 @@ final class Int128Vector extends IntVector {
         }
     }
 
+    @ForceInline
     public Int128Vector withLaneHelper(int i, int e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
@@ -731,6 +753,16 @@ final class Int128Vector extends IntVector {
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
+        // laneIsSet
+
+        @Override
+        @ForceInline
+        public boolean laneIsSet(int i) {
+            Objects.checkIndex(i, length());
+            return VectorSupport.extract(Int128Mask.class, int.class, VLENGTH,
+                                         this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
+        }
+
         // Reductions
 
         @Override
@@ -801,14 +833,19 @@ final class Int128Vector extends IntVector {
 
         @Override
         @ForceInline
+        public Int128Vector toVector() {
+            return toBitsVector();
+        }
+
+        @Override
+        @ForceInline
         Int128Vector toBitsVector() {
             return (Int128Vector) super.toBitsVectorTemplate();
         }
 
         @Override
-        @ForceInline
-        IntVector toBitsVector0() {
-            return Int128Vector.VSPECIES.dummyVector().vectorFactory(indices());
+        Int128Vector toBitsVector0() {
+            return ((Int128Vector) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -821,6 +858,40 @@ final class Int128Vector extends IntVector {
         @ForceInline
         public void intoArray(int[] a, int offset) {
             toBitsVector().intoArray(a, offset);
+        }
+
+        @Override
+        @ForceInline
+        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+            toBitsVector().intoMemorySegment(ms, offset, bo);
+         }
+
+        @Override
+        @ForceInline
+        public final Int128Mask laneIsValid() {
+            return (Int128Mask) toBitsVector().compare(VectorOperators.GE, 0)
+                    .cast(vspecies());
+        }
+
+        @ForceInline
+        @Override
+        public final Int128Shuffle rearrange(VectorShuffle<Integer> shuffle) {
+            Int128Shuffle concreteShuffle = (Int128Shuffle) shuffle;
+            return (Int128Shuffle) toBitsVector().rearrange(concreteShuffle)
+                    .toShuffle(vspecies(), false);
+        }
+
+        @ForceInline
+        @Override
+        public final Int128Shuffle wrapIndexes() {
+            Int128Vector v = toBitsVector();
+            if ((length() & (length() - 1)) == 0) {
+                v = (Int128Vector) v.lanewise(VectorOperators.AND, length() - 1);
+            } else {
+                v = (Int128Vector) v.blend(v.lanewise(VectorOperators.ADD, length()),
+                            v.compare(VectorOperators.LT, 0));
+            }
+            return (Int128Shuffle) v.toShuffle(vspecies(), false);
         }
 
         private static int[] prepare(int[] indices, int offset) {
@@ -847,14 +918,9 @@ final class Int128Vector extends IntVector {
             int length = indices.length;
             for (int si : indices) {
                 if (si >= (int)length || si < (int)(-length)) {
-                    boolean assertsEnabled = false;
-                    assert(assertsEnabled = true);
-                    if (assertsEnabled) {
-                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
                                   java.util.Arrays.toString(indices));
-                        throw new AssertionError(msg);
-                    }
-                    return false;
+                    throw new AssertionError(msg);
                 }
             }
             return true;

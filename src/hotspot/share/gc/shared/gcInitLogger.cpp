@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcInitLogger.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "logging/log.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/globals.hpp"
@@ -75,7 +74,7 @@ void GCInitLogger::print_large_pages() {
 void GCInitLogger::print_numa() {
   if (UseNUMA) {
     log_info_p(gc, init)("NUMA Support: Enabled");
-    log_info_p(gc, init)("NUMA Nodes: " SIZE_FORMAT, os::numa_get_groups_num());
+    log_info_p(gc, init)("NUMA Nodes: %zu", os::numa_get_groups_num());
   } else {
     log_info_p(gc, init)("NUMA Support: Disabled");
   }
@@ -91,12 +90,9 @@ void GCInitLogger::print_compressed_oops() {
 }
 
 void GCInitLogger::print_heap() {
-  log_info_p(gc, init)("Heap Min Capacity: " SIZE_FORMAT "%s",
-                       byte_size_in_exact_unit(MinHeapSize), exact_unit_for_byte_size(MinHeapSize));
-  log_info_p(gc, init)("Heap Initial Capacity: " SIZE_FORMAT "%s",
-                       byte_size_in_exact_unit(InitialHeapSize), exact_unit_for_byte_size(InitialHeapSize));
-  log_info_p(gc, init)("Heap Max Capacity: " SIZE_FORMAT "%s",
-                       byte_size_in_exact_unit(MaxHeapSize), exact_unit_for_byte_size(MaxHeapSize));
+  log_info_p(gc, init)("Heap Min Capacity: " EXACTFMT, EXACTFMTARGS(MinHeapSize));
+  log_info_p(gc, init)("Heap Initial Capacity: " EXACTFMT, EXACTFMTARGS(InitialHeapSize));
+  log_info_p(gc, init)("Heap Max Capacity: " EXACTFMT, EXACTFMTARGS(MaxHeapSize));
 
   log_info_p(gc, init)("Pre-touch: %s", AlwaysPreTouch ? "Enabled" : "Disabled");
 }

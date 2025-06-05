@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,25 +68,13 @@
  *          library in the
  *          {@link jdk.javadoc.internal.doclets.formats.html.markup formats.html.markup} package,
  *          to create trees (or acyclic graphs) of
- *          {@linkplain jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree HTML tree nodes}.
+ *          {@linkplain jdk.javadoc.internal.html.HtmlTree HTML tree nodes}.
  *          Apart from using a common format-neutral supertype,
- *          {@link jdk.javadoc.internal.doclets.toolkit.Content}, the {@code markup} library
+ *          {@link jdk.javadoc.internal.html.Content}, the {@code markup} library
  *          is mostly independent of the rest of the javadoc software stack.
  *
  *        <dt id="toolkit">Toolkit
  *        <dd><p>
- *          The {@link jdk.javadoc.internal.doclets.toolkit toolkit} package provides
- *          support for a format-neutral
- *          {@linkplain jdk.javadoc.internal.doclets.toolkit.AbstractDoclet abstract doclet},
- *          which uses
- *          {@linkplain jdk.javadoc.internal.doclets.toolkit.builders.AbstractBuilder builders}
- *          to generate pages of abstract
- *          {@linkplain jdk.javadoc.internal.doclets.toolkit.Content content}.
- *
- *          <p>The format-specific content for each page is provided by implementations
- *          of various <em>writer</em> interfaces, created by a format-specific
- *          {@linkplain jdk.javadoc.internal.doclets.toolkit.WriterFactory writer factory}.
- *
  *          <p>The {@link jdk.javadoc.internal.doclets.toolkit.BaseConfiguration} provides
  *          configuration information that is relevant to all the generated pages.
  *          Some of the information is provided by abstract methods which are implemented

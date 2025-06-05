@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
 #include "jfr/support/jfrThreadId.inline.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/mutex.hpp"
 #include "runtime/safepoint.hpp"
 
 /*
@@ -36,6 +37,7 @@
 */
 u2 JfrTraceIdEpoch::_generation = 0;
 JfrSignal JfrTraceIdEpoch::_tag_state;
+bool JfrTraceIdEpoch::_method_tracer_state = false;
 bool JfrTraceIdEpoch::_epoch_state = false;
 bool JfrTraceIdEpoch::_synchronizing = false;
 
@@ -59,4 +61,22 @@ void JfrTraceIdEpoch::end_epoch_shift() {
   assert(_generation < epoch_generation_overflow, "invariant");
   OrderAccess::storestore();
   _synchronizing = false;
+}
+
+bool JfrTraceIdEpoch::is_synchronizing() {
+  return Atomic::load_acquire(&_synchronizing);
+}
+
+void JfrTraceIdEpoch::set_method_tracer_tag_state() {
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  Atomic::release_store(&_method_tracer_state, true);
+}
+
+void JfrTraceIdEpoch::reset_method_tracer_tag_state() {
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  Atomic::release_store(&_method_tracer_state, false);
+}
+
+bool JfrTraceIdEpoch::has_method_tracer_changed_tag_state() {
+  return Atomic::load_acquire(&_method_tracer_state);
 }

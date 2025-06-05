@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "logging/logLevel.hpp"
 #include "logging/logOutputList.hpp"
 #include "memory/allocation.inline.hpp"
@@ -52,6 +51,7 @@ void LogOutputList::wait_until_no_readers() const {
 }
 
 void LogOutputList::set_output_level(LogOutput* output, LogLevelType level) {
+  assert(output != nullptr, "LogOutput is null");
   LogOutputNode* node = find(output);
   if (level == LogLevel::Off && node != nullptr) {
     remove_output(node);

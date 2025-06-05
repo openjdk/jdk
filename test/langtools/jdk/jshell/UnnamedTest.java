@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 9999999
+ * @bug 8315851 8315588
  * @summary Tests for unnamed variables
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -34,11 +34,16 @@
  */
 
 import java.util.function.Consumer;
+
+import jdk.jshell.SourceCodeAnalysis;
 import jdk.jshell.VarSnippet;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import jdk.jshell.JShell;
+
+import static jdk.jshell.SourceCodeAnalysis.Completeness.COMPLETE;
+import static jdk.jshell.SourceCodeAnalysis.Completeness.DEFINITELY_INCOMPLETE;
 
 public class UnnamedTest extends KullaTesting {
 
@@ -48,6 +53,79 @@ public class UnnamedTest extends KullaTesting {
         VarSnippet sn2 = varKey(assertEval("String _ = \"x\";"));
         Assert.assertEquals(getState().varValue(sn1), "0");
         Assert.assertEquals(getState().varValue(sn2), "\"x\"");
+    }
+
+    static final String[] definitely_incomplete = new String[]{
+            "int _ = ",
+            "int m(String v, int r) {\n" +
+                    "    try {\n" +
+                    "        return Integer.parseInt(v, r);\n" +
+                    "    } catch (NumberFormatException _) {",
+            "try (final Lock _ = ",
+            "try (Lock _ = null) {\n" +
+                "            try (Lock _ = null) {",
+            "for (var _ : strs",
+            "TwoParams p1 = (_, _) ->",
+            "for (int _ = 0, _ = 1, x = 1;",
+            "if (r instanceof R(_"
+    };
+
+    static final String[] complete = new String[]{
+            "int _ = 42;",
+            "int m(String v, int r) {\n" +
+                    "    try {\n" +
+                    "        return Integer.parseInt(v, r);\n" +
+                    "    } catch (NumberFormatException _) { } }",
+            "try (final Lock _ = TEST) {}",
+            "try (Lock _ = null) {\n" +
+                    "            try (Lock _ = null) { } }",
+            "for (var _ : strs) { }",
+            "TwoParams p1 = (_, _) -> {};",
+            "for (int _ = 0, _ = 1, x = 1; x <= 1 ; x++) {}",
+            "if (r instanceof R(_)) { }"
+    };
+
+    private void assertStatus(String input, SourceCodeAnalysis.Completeness status, String source) {
+        String augSrc;
+        switch (status) {
+            case COMPLETE_WITH_SEMI:
+                augSrc = source + ";";
+                break;
+
+            case DEFINITELY_INCOMPLETE:
+                augSrc = null;
+                break;
+
+            case CONSIDERED_INCOMPLETE:
+                augSrc = source + ";";
+                break;
+
+            case EMPTY:
+            case COMPLETE:
+            case UNKNOWN:
+                augSrc = source;
+                break;
+
+            default:
+                throw new AssertionError();
+        }
+        assertAnalyze(input, status, augSrc);
+    }
+
+    private void assertStatus(String[] ins, SourceCodeAnalysis.Completeness status) {
+        for (String input : ins) {
+            assertStatus(input, status, input);
+        }
+    }
+
+    @Test
+    public void test_definitely_incomplete() {
+        assertStatus(definitely_incomplete, DEFINITELY_INCOMPLETE);
+    }
+
+    @Test
+    public void test_definitely_complete() {
+        assertStatus(complete, COMPLETE);
     }
 
     @Override

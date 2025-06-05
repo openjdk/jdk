@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -54,12 +53,10 @@ import org.xml.sax.helpers.XMLFilterImpl;
  * @test
  * @bug 4515660
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow test.gaptest.Bug4515660
  * @run testng/othervm test.gaptest.Bug4515660
  * @summary verify property org.xml.sax.driver is used by SAXTransformerFactory
  */
 @Test(singleThreaded = true)
-@Listeners({jaxp.library.BasePolicy.class})
 public class Bug4515660 {
 
     @BeforeClass

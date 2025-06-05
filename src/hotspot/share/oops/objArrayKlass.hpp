@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,14 +96,6 @@ class ObjArrayKlass : public ArrayKlass {
                arrayOop d, size_t dst_offset,
                int length, TRAPS);
  public:
-  // Returns the ObjArrayKlass for n'th dimension.
-  virtual Klass* array_klass(int n, TRAPS);
-  virtual Klass* array_klass_or_null(int n);
-
-  // Returns the array class with this class as element type.
-  virtual Klass* array_klass(TRAPS);
-  virtual Klass* array_klass_or_null();
-
   static ObjArrayKlass* cast(Klass* k) {
     return const_cast<ObjArrayKlass*>(cast(const_cast<const Klass*>(k)));
   }
@@ -150,11 +142,8 @@ class ObjArrayKlass : public ArrayKlass {
   template <typename T, class OopClosureType>
   inline void oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, void* low, void* high);
 
-  template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, MemRegion mr);
-
  public:
-  jint compute_modifier_flags() const;
+  u2 compute_modifier_flags() const;
 
  public:
   // Printing

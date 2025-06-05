@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,44 +160,23 @@ public final class AccessBridge {
         initStatic();
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings("restricted")
     private static void initStatic() {
         // Load the appropriate DLLs
         boolean is32on64 = false;
         if (System.getProperty("os.arch").equals("x86")) {
             // 32 bit JRE
             // Load jabsysinfo.dll so can determine Win bitness
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Void>() {
-                    public Void run() {
-                        System.loadLibrary("jabsysinfo");
-                        return null;
-                    }
-                }, null, new java.lang.RuntimePermission("loadLibrary.jabsysinfo")
-            );
+            System.loadLibrary("jabsysinfo");
             if (isSysWow()) {
                 // 32 bit JRE on 64 bit OS
                 is32on64 = true;
-                java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Void>() {
-                        public Void run() {
-                            System.loadLibrary("javaaccessbridge-32");
-                            return null;
-                        }
-                    }, null, new java.lang.RuntimePermission("loadLibrary.javaaccessbridge-32")
-                );
+                System.loadLibrary("javaaccessbridge-32");
             }
         }
         if (!is32on64) {
             // 32 bit JRE on 32 bit OS or 64 bit JRE on 64 bit OS
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Void>() {
-                    public Void run() {
-                        System.loadLibrary("javaaccessbridge");
-                        return null;
-                    }
-                }, null, new java.lang.RuntimePermission("loadLibrary.javaaccessbridge")
-            );
+            System.loadLibrary("javaaccessbridge");
         }
     }
 
@@ -3925,6 +3904,8 @@ public final class AccessBridge {
             return 0;
         int code = keyStroke.getKeyCode();
         switch (code) {
+            case KeyEvent.VK_TAB:
+            case KeyEvent.VK_SPACE:
             case KeyEvent.VK_BACK_SPACE:
             case KeyEvent.VK_DELETE:
             case KeyEvent.VK_DOWN:
@@ -3967,15 +3948,10 @@ public final class AccessBridge {
             debugString("[INFO]:   Shortcut is control character: " + Integer.toHexString(keyCode));
             return (char)keyCode;
         }
-        String keyText = KeyEvent.getKeyText(keyStroke.getKeyCode());
-        debugString("[INFO]:   Shortcut is: " + keyText);
-        if (keyText != null || keyText.length() > 0) {
-            CharSequence seq = keyText.subSequence(0, 1);
-            if (seq != null || seq.length() > 0) {
-                return seq.charAt(0);
-            }
-        }
-        return 0;
+
+        keyCode = keyStroke.getKeyCode();
+        debugString("[INFO]:   Shortcut is: " + Integer.toHexString(keyCode));
+        return (char)keyCode;
     }
 
     /*
@@ -6555,7 +6531,7 @@ public final class AccessBridge {
          *
          * @return This component's locale. If this component does not have
          * a locale, the locale of its parent is returned.
-         * @exception IllegalComponentStateException
+         * @throws IllegalComponentStateException
          * If the Component does not have its own locale and has not yet
          * been added to a containment hierarchy such that the locale can be
          * determined from the containing parent.
@@ -7424,7 +7400,7 @@ public final class AccessBridge {
      * A helper class to handle coordinate conversion between screen and user spaces.
      * See {@link sun.java2d.SunGraphicsEnvironment}
      */
-    private static abstract class AccessibilityGraphicsEnvironment extends GraphicsEnvironment {
+    private abstract static class AccessibilityGraphicsEnvironment extends GraphicsEnvironment {
         /**
          * Returns the graphics configuration which bounds contain the given point in the user's space.
          *

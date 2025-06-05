@@ -6,7 +6,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -76,7 +78,7 @@ public enum TypeClass {
      * Struct will be flattened while classifying. That is, struct{struct{int, double}} will be treated
      * same as struct{int, double} and struct{int[2]} will be treated same as struct{int, int}.
      * */
-    private static record FieldCounter(long integerCnt, long floatCnt, long pointerCnt) {
+    private record FieldCounter(long integerCnt, long floatCnt, long pointerCnt) {
         static final FieldCounter EMPTY = new FieldCounter(0, 0, 0);
         static final FieldCounter SINGLE_INTEGER = new FieldCounter(1, 0, 0);
         static final FieldCounter SINGLE_FLOAT = new FieldCounter(0, 1, 0);
@@ -126,39 +128,40 @@ public enum TypeClass {
         }
     }
 
-    public static record FlattenedFieldDesc(TypeClass typeClass, long offset, ValueLayout layout) {
-
-    }
+    public record FlattenedFieldDesc(TypeClass typeClass, long offset, ValueLayout layout) { }
 
     private static List<FlattenedFieldDesc> getFlattenedFieldsInner(long offset, MemoryLayout layout) {
-        if (layout instanceof ValueLayout valueLayout) {
-            TypeClass typeClass = classifyValueType(valueLayout);
-            return List.of(switch (typeClass) {
-                case INTEGER, FLOAT -> new FlattenedFieldDesc(typeClass, offset, valueLayout);
-                default -> throw new IllegalStateException("Should not reach here.");
-            });
-        } else if (layout instanceof GroupLayout groupLayout) {
-            List<FlattenedFieldDesc> fields = new ArrayList<>();
-            for (MemoryLayout memberLayout : groupLayout.memberLayouts()) {
-                if (memberLayout instanceof PaddingLayout) {
+        return switch (layout) {
+            case ValueLayout valueLayout -> {
+                TypeClass typeClass = classifyValueType(valueLayout);
+                yield List.of(switch (typeClass) {
+                    case INTEGER, FLOAT -> new FlattenedFieldDesc(typeClass, offset, valueLayout);
+                    default -> throw new IllegalStateException("Should not reach here.");
+                });
+            }
+            case GroupLayout groupLayout -> {
+                List<FlattenedFieldDesc> fields = new ArrayList<>();
+                for (MemoryLayout memberLayout : groupLayout.memberLayouts()) {
+                    if (memberLayout instanceof PaddingLayout) {
+                        offset += memberLayout.byteSize();
+                        continue;
+                    }
+                    fields.addAll(getFlattenedFieldsInner(offset, memberLayout));
                     offset += memberLayout.byteSize();
-                    continue;
                 }
-                fields.addAll(getFlattenedFieldsInner(offset, memberLayout));
-                offset += memberLayout.byteSize();
+                yield fields;
             }
-            return fields;
-        } else if (layout instanceof SequenceLayout sequenceLayout) {
-            List<FlattenedFieldDesc> fields = new ArrayList<>();
-            MemoryLayout elementLayout = sequenceLayout.elementLayout();
-            for (long i = 0; i < sequenceLayout.elementCount(); i++) {
-                fields.addAll(getFlattenedFieldsInner(offset, elementLayout));
-                offset += elementLayout.byteSize();
+            case SequenceLayout sequenceLayout -> {
+                List<FlattenedFieldDesc> fields = new ArrayList<>();
+                MemoryLayout elementLayout = sequenceLayout.elementLayout();
+                for (long i = 0; i < sequenceLayout.elementCount(); i++) {
+                    fields.addAll(getFlattenedFieldsInner(offset, elementLayout));
+                    offset += elementLayout.byteSize();
+                }
+                yield fields;
             }
-            return fields;
-        } else {
-            throw new IllegalStateException("Cannot get here: " + layout);
-        }
+            case null, default -> throw new IllegalStateException("Cannot get here: " + layout);
+        };
     }
 
     public static List<FlattenedFieldDesc> getFlattenedFields(GroupLayout layout) {

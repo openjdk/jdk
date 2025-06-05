@@ -27,9 +27,10 @@
 // However, the following notice accompanied the original version of this
 // file:
 //
+
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2023 Marti Maria Saguer
+//  Copyright (c) 1998-2024 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -288,6 +289,7 @@ typedef CRITICAL_SECTION _cmsMutex;
 #ifdef _MSC_VER
 #    if (_MSC_VER >= 1800)
 #          pragma warning(disable : 26135)
+#          pragma warning(disable : 4127)
 #    endif
 #endif
 
@@ -466,7 +468,7 @@ cmsBool  _cmsRegisterTransformPlugin(cmsContext ContextID, cmsPluginBase* Plugin
 // Mutex
 cmsBool _cmsRegisterMutexPlugin(cmsContext ContextID, cmsPluginBase* Plugin);
 
-// Paralellization
+// Parallelization
 cmsBool _cmsRegisterParallelizationPlugin(cmsContext ContextID, cmsPluginBase* Plugin);
 
 // ---------------------------------------------------------------------------------------------------------
@@ -545,7 +547,7 @@ struct _cmsContext_struct {
     struct _cmsContext_struct* Next;  // Points to next context in the new style
     _cmsSubAllocator* MemPool;        // The memory pool that stores context data
 
-    void* chunks[MemoryClientMax];    // array of pointers to client chunks. Memory itself is hold in the suballocator.
+    void* chunks[MemoryClientMax];    // array of pointers to client chunks. Memory itself is held in the suballocator.
                                       // If NULL, then it reverts to global Context0
 
     _cmsMemPluginChunkType DefaultMemoryManager;  // The allocators used for creating the context itself. Cannot be overridden
@@ -839,6 +841,9 @@ typedef struct _cms_iccprofile_struct {
     // Creation time
     struct tm                Created;
 
+    // Color management module identification
+    cmsUInt32Number          CMM;
+
     // Only most important items found in ICC profiles
     cmsUInt32Number          Version;
     cmsProfileClassSignature DeviceClass;
@@ -846,6 +851,7 @@ typedef struct _cms_iccprofile_struct {
     cmsColorSpaceSignature   PCS;
     cmsUInt32Number          RenderingIntent;
 
+    cmsPlatformSignature     platform;
     cmsUInt32Number          flags;
     cmsUInt32Number          manufacturer, model;
     cmsUInt64Number          attributes;
@@ -995,7 +1001,7 @@ cmsBool           _cmsReadCHAD(cmsMAT3* Dest, cmsHPROFILE hProfile);
 
 // Link several profiles to obtain a single LUT modelling the whole color transform. Intents, Black point
 // compensation and Adaptation parameters may vary across profiles. BPC and Adaptation refers to the PCS
-// after the profile. I.e, BPC[0] refers to connexion between profile(0) and profile(1)
+// after the profile. I.e, BPC[0] refers to connetion between profile(0) and profile(1)
 cmsPipeline* _cmsLinkProfiles(cmsContext         ContextID,
                               cmsUInt32Number    nProfiles,
                               cmsUInt32Number    TheIntents[],

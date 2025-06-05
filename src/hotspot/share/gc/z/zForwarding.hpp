@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,8 @@ private:
   const size_t           _object_alignment_shift;
   const AttachedArray    _entries;
   ZPage* const           _page;
-  ZPageAge               _from_age;
-  ZPageAge               _to_age;
+  const ZPageAge         _from_age;
+  const ZPageAge         _to_age;
   volatile bool          _claimed;
   mutable ZConditionLock _ref_lock;
   volatile int32_t       _ref_count;
@@ -82,6 +82,14 @@ private:
   ZForwardingEntry at(ZForwardingCursor* cursor) const;
   ZForwardingEntry first(uintptr_t from_index, ZForwardingCursor* cursor) const;
   ZForwardingEntry next(ZForwardingCursor* cursor) const;
+
+  uintptr_t index(zoffset from_offset);
+
+  ZForwardingEntry find(uintptr_t from_index, ZForwardingCursor* cursor) const;
+  zaddress find(zoffset from_offset, ZForwardingCursor* cursor);
+
+  zoffset insert(uintptr_t from_index, zoffset to_offset, ZForwardingCursor* cursor);
+  zaddress insert(zoffset from_offset, zaddress to_addr, ZForwardingCursor* cursor);
 
   template <typename Function>
   void object_iterate_forwarded_via_livemap(Function function);
@@ -140,10 +148,11 @@ public:
   void mark_done();
   bool is_done() const;
 
-  zaddress find(zaddress_unsafe addr);
+  zaddress find(zaddress from_addr, ZForwardingCursor* cursor);
+  zaddress find(zaddress_unsafe from_addr, ZForwardingCursor* cursor);
+  zaddress find(zaddress_unsafe from_addr);
 
-  ZForwardingEntry find(uintptr_t from_index, ZForwardingCursor* cursor) const;
-  zoffset insert(uintptr_t from_index, zoffset to_offset, ZForwardingCursor* cursor);
+  zaddress insert(zaddress from_addr, zaddress to_addr, ZForwardingCursor* cursor);
 
   // Relocated remembered set fields support
   void relocated_remembered_fields_register(volatile zpointer* p);

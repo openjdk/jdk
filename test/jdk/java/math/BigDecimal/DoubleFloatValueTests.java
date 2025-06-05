@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 8205592
- * @summary Verify {double, float}Value methods work
+ * @bug 8205592 8339252 8341260
+ * @summary Verify {double, float, float16}Value methods work
+ * @modules jdk.incubator.vector
  * @library /test/lib
  * @key randomness
  * @build jdk.test.lib.RandomFactory
@@ -35,6 +36,7 @@ import jdk.test.lib.RandomFactory;
 
 import java.math.BigDecimal;
 import java.util.Random;
+import jdk.incubator.vector.Float16;
 
 public class DoubleFloatValueTests {
     private static final BigDecimal HALF = BigDecimal.valueOf(5, 1);
@@ -64,12 +66,28 @@ public class DoubleFloatValueTests {
         return bv.subtract(ulp.multiply(HALF));
     }
 
+    private static BigDecimal nextHalfUp(Float16 v) {
+        BigDecimal bv = new BigDecimal(v.doubleValue());
+        BigDecimal ulp = new BigDecimal(Float16.ulp(v).doubleValue());
+        return bv.add(ulp.multiply(HALF));
+    }
+
+    private static BigDecimal nextHalfDown(Float16 v) {
+        BigDecimal bv = new BigDecimal(v.doubleValue());
+        BigDecimal ulp = new BigDecimal(v.doubleValue() - Float16.nextDown(v).doubleValue());
+        return bv.subtract(ulp.multiply(HALF));
+    }
+
     private static String toDecHexString(double v) {
         return v + " (" + Double.toHexString(v) + ")";
     }
 
     private static String toDecHexString(float v) {
         return v + " (" + Float.toHexString(v) + ")";
+    }
+
+    private static String toDecHexString(Float16 v) {
+        return v + " (" + Float16.toHexString(v) + ")";
     }
 
     private static void checkDouble(BigDecimal bd, double exp) {
@@ -84,6 +102,15 @@ public class DoubleFloatValueTests {
     private static void checkFloat(BigDecimal bv, float exp) {
         float res = bv.floatValue();
         if (exp != res ) {
+            String message = "Bad conversion: got " + toDecHexString(res) +
+                    ", expected " + toDecHexString(exp);
+            throw new RuntimeException(message);
+        }
+    }
+
+    private static void checkFloat16(BigDecimal bv, Float16 exp) {
+        Float16 res =  Float16.valueOf(bv); // bv.float16Value();
+        if (exp.floatValue() != res.floatValue()) {
             String message = "Bad conversion: got " + toDecHexString(res) +
                     ", expected " + toDecHexString(exp);
             throw new RuntimeException(message);
@@ -109,6 +136,15 @@ public class DoubleFloatValueTests {
             checkFloat(b, ((n + 1) / 2 * 2) * Float.MIN_VALUE);
             checkFloat(b.subtract(EPS), n * Float.MIN_VALUE);
             checkFloat(b.add(EPS), (n + 1) * Float.MIN_VALUE);
+        }
+    }
+
+    private static void testFloat16ValueNearMinValue() {
+        for (int n = 0; n < 100; ++n) {
+            BigDecimal b = nextHalfUp(Float16.multiply(Float16.valueOf(n), Float16.MIN_VALUE));
+            checkFloat16(b, Float16.multiply(Float16.valueOf((n + 1) / 2 * 2), Float16.MIN_VALUE));
+            checkFloat16(b.subtract(EPS), Float16.multiply(Float16.valueOf(n), Float16.MIN_VALUE));
+            checkFloat16(b.add(EPS), Float16.multiply(Float16.valueOf(n + 1), Float16.MIN_VALUE));
         }
     }
 
@@ -150,6 +186,25 @@ public class DoubleFloatValueTests {
         }
     }
 
+    private static void testFloat16ValueNearMinNormal() {
+        Float16 v = Float16.MIN_NORMAL;
+        for (int n = 0; n < 100; ++n) {
+            BigDecimal bv = nextHalfDown(v);
+            checkFloat16(bv, isOdd(n) ? Float16.nextDown(v) : v);
+            checkFloat16(bv.subtract(EPS), Float16.nextDown(v));
+            checkFloat16(bv.add(EPS), v);
+            v = Float16.nextDown(v);
+        }
+        v = Float16.MIN_NORMAL;
+        for (int n = 0; n < 100; ++n) {
+            BigDecimal bv = nextHalfUp(v);
+            checkFloat16(bv, isOdd(n) ? Float16.nextUp(v) : v);
+            checkFloat16(bv.subtract(EPS), v);
+            checkFloat16(bv.add(EPS), Float16.nextUp(v));
+            v = Float16.nextUp(v);
+        }
+    }
+
     private static void testDoubleValueNearMaxValue() {
         double v = Double.MAX_VALUE;
         for (int n = 0; n < 100; ++n) {
@@ -178,6 +233,21 @@ public class DoubleFloatValueTests {
         checkFloat(bv, Float.POSITIVE_INFINITY);
         checkFloat(bv.subtract(EPS), Float.MAX_VALUE);
         checkFloat(bv.add(EPS), Float.POSITIVE_INFINITY);
+    }
+
+    private static void testFloat16ValueNearMaxValue() {
+        Float16 v = Float16.MAX_VALUE;
+        for (int n = 0; n < 100; ++n) {
+            BigDecimal bv = nextHalfDown(v);
+            checkFloat16(bv, isOdd(n) ? v : Float16.nextDown(v));
+            checkFloat16(bv.subtract(EPS), Float16.nextDown(v));
+            checkFloat16(bv.add(EPS), v);
+            v = Float16.nextDown(v);
+        }
+        BigDecimal bv = nextHalfUp(Float16.MAX_VALUE);
+        checkFloat16(bv, Float16.POSITIVE_INFINITY);
+        checkFloat16(bv.subtract(EPS), Float16.MAX_VALUE);
+        checkFloat16(bv.add(EPS), Float16.POSITIVE_INFINITY);
     }
 
     private static void testDoubleValueRandom() {
@@ -228,18 +298,49 @@ public class DoubleFloatValueTests {
         }
     }
 
+    private static void testFloat16ValueRandom() {
+        Random r = RandomFactory.getRandom();
+        for (int i = 0; i < 10_000; ++i) {
+            Float16 v = Float16.valueOf(r.nextFloat(-Float16.MAX_VALUE.floatValue(), Float16.MAX_VALUE.floatValue()));
+            checkFloat16(new BigDecimal(v.floatValue()), v);
+        }
+        for (int i = 0; i < 10_000; ++i) {
+            Float16 v = Float16.valueOf(r.nextFloat(-1e4f, 1e4f));
+            checkFloat16(new BigDecimal(v.floatValue()), v);
+        }
+        for (int i = 0; i < 10_000; ++i) {
+            Float16 v = Float16.valueOf(r.nextFloat(-1e3f, 1e3f));
+            checkFloat16(new BigDecimal(v.floatValue()), v);
+        }
+        for (int i = 0; i < 10_000; ++i) {
+            Float16 v = Float16.valueOf(r.nextFloat(-1e-3f, 1e-3f));
+            checkFloat16(new BigDecimal(v.floatValue()), v);
+        }
+        for (int i = 0; i < 10_000; ++i) {
+            Float16 v = Float16.valueOf(r.nextFloat(-1e-4f, 1e-4f));
+            checkFloat16(new BigDecimal(v.floatValue()), v);
+        }
+    }
+
     private static void testDoubleValueExtremes() {
         checkDouble(BigDecimal.valueOf(1, 1000), 0.0);
         checkDouble(BigDecimal.valueOf(-1, 1000), -0.0);
         checkDouble(BigDecimal.valueOf(1, -1000), Double.POSITIVE_INFINITY);
-        checkDouble(BigDecimal.valueOf(-1, -1000), -Double.POSITIVE_INFINITY);
+        checkDouble(BigDecimal.valueOf(-1, -1000), Double.NEGATIVE_INFINITY);
     }
 
     private static void testFloatValueExtremes() {
         checkFloat(BigDecimal.valueOf(1, 1000), 0.0f);
         checkFloat(BigDecimal.valueOf(-1, 1000), -0.0f);
         checkFloat(BigDecimal.valueOf(1, -1000), Float.POSITIVE_INFINITY);
-        checkFloat(BigDecimal.valueOf(-1, -1000), -Float.POSITIVE_INFINITY);
+        checkFloat(BigDecimal.valueOf(-1, -1000), Float.NEGATIVE_INFINITY);
+    }
+
+    private static void testFloat16ValueExtremes() {
+        checkFloat16(BigDecimal.valueOf(1, 1000), Float16.valueOf(0.0f));
+        checkFloat16(BigDecimal.valueOf(-1, 1000), Float16.valueOf(-0.0f));
+        checkFloat16(BigDecimal.valueOf(1, -1000), Float16.POSITIVE_INFINITY);
+        checkFloat16(BigDecimal.valueOf(-1, -1000), Float16.NEGATIVE_INFINITY);
     }
 
     public static void main(String[] args) {
@@ -254,6 +355,12 @@ public class DoubleFloatValueTests {
         testFloatValueNearMaxValue();
         testFloatValueRandom();
         testFloatValueExtremes();
+
+        testFloat16ValueNearMinValue();
+        testFloat16ValueNearMinNormal();
+        testFloat16ValueNearMaxValue();
+        testFloat16ValueRandom();
+        testFloat16ValueExtremes();
     }
 
 }

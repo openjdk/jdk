@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,16 @@
  */
 package jdk.internal.classfile.components;
 
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.CompoundElement;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.MethodModel;
 import java.lang.constant.ConstantDesc;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.FieldModel;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.CompoundElement;
 
 import jdk.internal.classfile.impl.ClassPrinterImpl;
 
@@ -47,6 +47,9 @@ import jdk.internal.classfile.impl.ClassPrinterImpl;
  * <p>
  * Level of details to print or to export is driven by {@link Verbosity} option.
  * <p>
+ * Printing is for debugging purposes only. Printed text schema, tree content and structure
+ * not guaranteed. It may change anytime in a future.
+ * <p>
  * The most frequent use case is to simply print a class:
  * {@snippet lang="java" class="PackageSnippets" region="printClass"}
  * <p>
@@ -57,6 +60,9 @@ import jdk.internal.classfile.impl.ClassPrinterImpl;
  * {@snippet lang="java" class="PackageSnippets" region="printNodesInTest"}
  */
 public final class ClassPrinter {
+
+    private ClassPrinter() {
+    }
 
     /**
      * Level of detail to print or export.

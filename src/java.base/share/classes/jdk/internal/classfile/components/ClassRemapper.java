@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,16 +24,19 @@
  */
 package jdk.internal.classfile.components;
 
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.FieldTransform;
+import java.lang.classfile.MethodTransform;
 import java.lang.constant.ClassDesc;
 import java.util.Map;
 import java.util.function.Function;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.FieldTransform;
-import jdk.internal.classfile.MethodTransform;
+
 import jdk.internal.classfile.impl.ClassRemapperImpl;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * {@code ClassRemapper} is a {@link ClassTransform}, {@link FieldTransform},
@@ -58,6 +63,7 @@ public sealed interface ClassRemapper extends ClassTransform permits ClassRemapp
      * @return new instance of {@code ClassRemapper}
      */
     static ClassRemapper of(Map<ClassDesc, ClassDesc> classMap) {
+        requireNonNull(classMap);
         return of(desc -> classMap.getOrDefault(desc, desc));
     }
 
@@ -69,7 +75,7 @@ public sealed interface ClassRemapper extends ClassTransform permits ClassRemapp
      * @return new instance of {@code ClassRemapper}
      */
     static ClassRemapper of(Function<ClassDesc, ClassDesc> mapFunction) {
-        return new ClassRemapperImpl(mapFunction);
+        return new ClassRemapperImpl(requireNonNull(mapFunction));
     }
 
     /**
@@ -96,11 +102,11 @@ public sealed interface ClassRemapper extends ClassTransform permits ClassRemapp
 
     /**
      * Remaps the whole ClassModel into a new class file, including the class name.
+     * @param context ClassFile context
      * @param clm class model to re-map
      * @return re-mapped class file bytes
      */
-    default byte[] remapClass(ClassModel clm) {
-        return Classfile.build(map(clm.thisClass().asSymbol()),
-                clb -> clm.forEachElement(resolve(clb).consumer()));
+    default byte[] remapClass(ClassFile context, ClassModel clm) {
+        return context.transformClass(clm, map(clm.thisClass().asSymbol()), this);
     }
 }

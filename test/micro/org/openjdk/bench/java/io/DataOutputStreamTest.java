@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 @Fork(2)
 @Measurement(iterations = 6, time = 1)
 @Warmup(iterations=4, time = 2)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 public class DataOutputStreamTest {
 
     public enum BasicType {CHAR, SHORT, INT, STRING}

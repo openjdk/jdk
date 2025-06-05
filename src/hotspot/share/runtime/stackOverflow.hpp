@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -291,6 +291,16 @@ class StackOverflow {
   address shadow_zone_safe_limit() const {
     assert(_shadow_zone_safe_limit != nullptr, "Don't call this before the field is initialized.");
     return _shadow_zone_safe_limit;
+  }
+
+  address shadow_zone_growth_watermark() const {
+    assert(_shadow_zone_growth_watermark != nullptr, "Don't call this before the field is initialized.");
+    return _shadow_zone_growth_watermark;
+  }
+
+  void set_shadow_zone_growth_watermark(address new_watermark) {
+    assert(_shadow_zone_growth_watermark != nullptr, "Don't call this before the field is initialized.");
+    _shadow_zone_growth_watermark = new_watermark;
   }
 
   void create_stack_guard_pages();

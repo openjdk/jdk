@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.nio.fs;
 
 import java.util.regex.Pattern;
-import sun.security.action.GetPropertyAction;
 
 import static sun.nio.fs.MacOSXNativeDispatcher.*;
 
@@ -43,7 +42,7 @@ class MacOSXFileSystem extends BsdFileSystem {
 
     static {
         final String name = PROPERTY_NORMALIZE_FILE_PATHS;
-        String value = GetPropertyAction.privilegedGetProperty(name);
+        String value = System.getProperty(name);
         NORMALIZE_FILE_PATHS = (value != null)
             && ("".equals(value) || Boolean.parseBoolean(value));
     }

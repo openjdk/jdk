@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -140,6 +142,12 @@ final class Short64Vector extends ShortVector {
     @Override
     @ForceInline
     Short64Shuffle iotaShuffle() { return Short64Shuffle.IOTA; }
+
+    @Override
+    @ForceInline
+    Short64Shuffle iotaShuffle(int start, int step, boolean wrap) {
+        return (Short64Shuffle) iotaShuffleTemplate((short) start, (short) step, wrap);
+    }
 
     @Override
     @ForceInline
@@ -344,9 +352,14 @@ final class Short64Vector extends ShortVector {
 
     @Override
     @ForceInline
-    public final
-    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
-        return super.toShuffleTemplate(dsp);
+    final <F> VectorShuffle<F> bitsToShuffle(AbstractSpecies<F> dsp) {
+        return bitsToShuffleTemplate(dsp);
+    }
+
+    @Override
+    @ForceInline
+    public final Short64Shuffle toShuffle() {
+        return (Short64Shuffle) toShuffle(vspecies(), false);
     }
 
     // Specialized unary testing
@@ -490,9 +503,16 @@ final class Short64Vector extends ShortVector {
                                    VectorMask<Short> m) {
         return (Short64Vector)
             super.selectFromTemplate((Short64Vector) v,
-                                     (Short64Mask) m);  // specialize
+                                     Short64Mask.class, (Short64Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Short64Vector selectFrom(Vector<Short> v1,
+                                   Vector<Short> v2) {
+        return (Short64Vector)
+            super.selectFromTemplate((Short64Vector) v1, (Short64Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -506,6 +526,7 @@ final class Short64Vector extends ShortVector {
         }
     }
 
+    @ForceInline
     public short laneHelper(int i) {
         return (short) VectorSupport.extract(
                                 VCLASS, ETYPE, VLENGTH,
@@ -528,6 +549,7 @@ final class Short64Vector extends ShortVector {
         }
     }
 
+    @ForceInline
     public Short64Vector withLaneHelper(int i, short e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
@@ -731,6 +753,16 @@ final class Short64Vector extends ShortVector {
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
+        // laneIsSet
+
+        @Override
+        @ForceInline
+        public boolean laneIsSet(int i) {
+            Objects.checkIndex(i, length());
+            return VectorSupport.extract(Short64Mask.class, short.class, VLENGTH,
+                                         this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
+        }
+
         // Reductions
 
         @Override
@@ -801,14 +833,19 @@ final class Short64Vector extends ShortVector {
 
         @Override
         @ForceInline
+        public Short64Vector toVector() {
+            return toBitsVector();
+        }
+
+        @Override
+        @ForceInline
         Short64Vector toBitsVector() {
             return (Short64Vector) super.toBitsVectorTemplate();
         }
 
         @Override
-        @ForceInline
-        ShortVector toBitsVector0() {
-            return Short64Vector.VSPECIES.dummyVector().vectorFactory(indices());
+        Short64Vector toBitsVector0() {
+            return ((Short64Vector) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -828,6 +865,47 @@ final class Short64Vector extends ShortVector {
             v.convertShape(VectorOperators.S2I, species, 1)
                     .reinterpretAsInts()
                     .intoArray(a, offset + species.length());
+        }
+
+        @Override
+        @ForceInline
+        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+            VectorSpecies<Integer> species = IntVector.SPECIES_64;
+            Vector<Short> v = toBitsVector();
+            v.convertShape(VectorOperators.S2I, species, 0)
+                    .reinterpretAsInts()
+                    .intoMemorySegment(ms, offset, bo);
+            v.convertShape(VectorOperators.S2I, species, 1)
+                    .reinterpretAsInts()
+                    .intoMemorySegment(ms, offset + species.vectorByteSize(), bo);
+         }
+
+        @Override
+        @ForceInline
+        public final Short64Mask laneIsValid() {
+            return (Short64Mask) toBitsVector().compare(VectorOperators.GE, 0)
+                    .cast(vspecies());
+        }
+
+        @ForceInline
+        @Override
+        public final Short64Shuffle rearrange(VectorShuffle<Short> shuffle) {
+            Short64Shuffle concreteShuffle = (Short64Shuffle) shuffle;
+            return (Short64Shuffle) toBitsVector().rearrange(concreteShuffle)
+                    .toShuffle(vspecies(), false);
+        }
+
+        @ForceInline
+        @Override
+        public final Short64Shuffle wrapIndexes() {
+            Short64Vector v = toBitsVector();
+            if ((length() & (length() - 1)) == 0) {
+                v = (Short64Vector) v.lanewise(VectorOperators.AND, length() - 1);
+            } else {
+                v = (Short64Vector) v.blend(v.lanewise(VectorOperators.ADD, length()),
+                            v.compare(VectorOperators.LT, 0));
+            }
+            return (Short64Shuffle) v.toShuffle(vspecies(), false);
         }
 
         private static short[] prepare(int[] indices, int offset) {
@@ -854,14 +932,9 @@ final class Short64Vector extends ShortVector {
             int length = indices.length;
             for (short si : indices) {
                 if (si >= (short)length || si < (short)(-length)) {
-                    boolean assertsEnabled = false;
-                    assert(assertsEnabled = true);
-                    if (assertsEnabled) {
-                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
                                   java.util.Arrays.toString(indices));
-                        throw new AssertionError(msg);
-                    }
-                    return false;
+                    throw new AssertionError(msg);
                 }
             }
             return true;
@@ -886,6 +959,12 @@ final class Short64Vector extends ShortVector {
         return super.fromArray0Template(Short64Mask.class, a, offset, (Short64Mask) m, offsetInRange);  // specialize
     }
 
+    @ForceInline
+    @Override
+    final
+    ShortVector fromArray0(short[] a, int offset, int[] indexMap, int mapOffset, VectorMask<Short> m) {
+        return super.fromArray0Template(Short64Mask.class, a, offset, indexMap, mapOffset, (Short64Mask) m);
+    }
 
     @ForceInline
     @Override

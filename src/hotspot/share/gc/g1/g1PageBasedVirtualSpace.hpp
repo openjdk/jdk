@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@
 #define SHARE_GC_G1_G1PAGEBASEDVIRTUALSPACE_HPP
 
 #include "memory/memRegion.hpp"
-#include "memory/virtualspace.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.hpp"
 
+class ReservedSpace;
 class WorkerThreads;
 
 // Virtual space management helper for a virtual space with an OS page allocation
@@ -83,9 +83,6 @@ class G1PageBasedVirtualSpace {
 
   // Uncommit the given memory range.
   void uncommit_internal(size_t start_page, size_t end_page);
-
-  // Returns the index of the page which contains the given address.
-  size_t  addr_to_page_index(char* addr) const;
 
   // Is the given page index the last page?
   bool is_last_page(size_t index) const { return index == (_committed.size() - 1); }

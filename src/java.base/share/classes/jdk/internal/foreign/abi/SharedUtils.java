@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,26 +24,29 @@
  */
 package jdk.internal.foreign.abi;
 
-import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.foreign.BufferStack;
 import jdk.internal.foreign.CABI;
 import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.windows.WindowsAArch64Linker;
 import jdk.internal.foreign.abi.fallback.FallbackLinker;
+import jdk.internal.foreign.abi.ppc64.aix.AixPPC64Linker;
+import jdk.internal.foreign.abi.ppc64.linux.LinuxPPC64Linker;
 import jdk.internal.foreign.abi.ppc64.linux.LinuxPPC64leLinker;
 import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
+import jdk.internal.foreign.abi.s390.linux.LinuxS390Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.Arena;
-import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
+import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySegment.Scope;
@@ -52,10 +55,8 @@ import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.invoke.VarHandle;
 import java.lang.ref.Reference;
 import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
@@ -71,7 +72,6 @@ public final class SharedUtils {
     private SharedUtils() {
     }
 
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     private static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
 
     private static final MethodHandle MH_ALLOC_BUFFER;
@@ -80,8 +80,9 @@ public final class SharedUtils {
     public static final MethodHandle MH_CHECK_SYMBOL;
     private static final MethodHandle MH_CHECK_CAPTURE_SEGMENT;
 
+    @SuppressWarnings("restricted")
     public static final AddressLayout C_POINTER = ADDRESS
-            .withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE));
+            .withTargetLayout(MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_BYTE));
 
     public static final Arena DUMMY_ARENA = new Arena() {
         @Override
@@ -90,7 +91,7 @@ public final class SharedUtils {
         }
 
         @Override
-        public MemorySegment allocate(long byteSize) {
+        public MemorySegment allocate(long byteSize, long byteAlignment) {
             throw new UnsupportedOperationException();
         }
 
@@ -125,6 +126,10 @@ public final class SharedUtils {
 
     public static long alignUp(long addr, long alignment) {
         return ((addr - 1) | (alignment - 1)) + 1;
+    }
+
+    public static long remainsToAlignment(long addr, long alignment) {
+        return alignUp(addr, alignment) - addr;
     }
 
     /**
@@ -174,7 +179,7 @@ public final class SharedUtils {
         if (dropReturn) { // no handling for return value, need to drop it
             target = dropReturn(target);
         } else {
-            // adjust return type so it matches the inferred type of the effective
+            // adjust return type so that it matches the inferred type of the effective
             // function descriptor
             target = target.asType(target.type().changeReturnType(MemorySegment.class));
         }
@@ -240,29 +245,14 @@ public final class SharedUtils {
             case LINUX_AARCH_64 -> LinuxAArch64Linker.getInstance();
             case MAC_OS_AARCH_64 -> MacOsAArch64Linker.getInstance();
             case WIN_AARCH_64 -> WindowsAArch64Linker.getInstance();
+            case AIX_PPC_64 -> AixPPC64Linker.getInstance();
+            case LINUX_PPC_64 -> LinuxPPC64Linker.getInstance();
             case LINUX_PPC_64_LE -> LinuxPPC64leLinker.getInstance();
             case LINUX_RISCV_64 -> LinuxRISCV64Linker.getInstance();
+            case LINUX_S390 -> LinuxS390Linker.getInstance();
             case FALLBACK -> FallbackLinker.getInstance();
             case UNSUPPORTED -> throw new UnsupportedOperationException("Platform does not support native linker");
         };
-    }
-
-    public static String toJavaStringInternal(MemorySegment segment, long start) {
-        int len = strlen(segment, start);
-        byte[] bytes = new byte[len];
-        MemorySegment.copy(segment, JAVA_BYTE, start, bytes, 0, len);
-        return new String(bytes, StandardCharsets.UTF_8);
-    }
-
-    private static int strlen(MemorySegment segment, long start) {
-        // iterate until overflow (String can only hold a byte[], whose length can be expressed as an int)
-        for (int offset = 0; offset >= 0; offset++) {
-            byte curr = segment.get(JAVA_BYTE, start + offset);
-            if (curr == 0) {
-                return offset;
-            }
-        }
-        throw new IllegalArgumentException("String too large");
     }
 
     static Map<VMStorage, Integer> indexMap(Binding.Move[] moves) {
@@ -319,16 +309,29 @@ public final class SharedUtils {
                 t.printStackTrace();
                 System.err.println("Unrecoverable uncaught exception encountered. The VM will now exit");
             } finally {
-                JLA.exit(1);
+                System.exit(1);
             }
         }
     }
 
-    public static long unboxSegment(MemorySegment segment) {
+    public static void checkNative(MemorySegment segment) {
         if (!segment.isNative()) {
             throw new IllegalArgumentException("Heap segment not allowed: " + segment);
         }
+    }
+
+    @ForceInline
+    public static long unboxSegment(MemorySegment segment) {
+        checkNative(segment);
         return segment.address();
+    }
+
+    @ForceInline
+    public static int unboxSegment32(MemorySegment segment) {
+        // This cast to 'int' is safe, because we only call this method on 32-bit
+        // platforms, where we know the address of a segment is truncated to 32-bits.
+        // There's a similar cast for 4-byte addresses in Unsafe.putAddress.
+        return (int) unboxSegment(segment);
     }
 
     public static void checkExceptions(MethodHandle target) {
@@ -387,26 +390,12 @@ public final class SharedUtils {
                 : chunkOffset;
     }
 
+    private static final int LINKER_STACK_SIZE = Integer.getInteger("jdk.internal.foreign.LINKER_STACK_SIZE", 256);
+    private static final BufferStack LINKER_STACK = BufferStack.of(LINKER_STACK_SIZE, 1);
+
+    @ForceInline
     public static Arena newBoundedArena(long size) {
-        return new Arena() {
-            final Arena arena = Arena.ofConfined();
-            final SegmentAllocator slicingAllocator = SegmentAllocator.slicingAllocator(arena.allocate(size));
-
-            @Override
-            public Scope scope() {
-                return arena.scope();
-            }
-
-            @Override
-            public void close() {
-                arena.close();
-            }
-
-            @Override
-            public MemorySegment allocate(long byteSize, long byteAlignment) {
-                return slicingAllocator.allocate(byteSize, byteAlignment);
-            }
-        };
+        return LINKER_STACK.pushFrame(size, 8);
     }
 
     public static Arena newEmptyArena() {
@@ -428,20 +417,6 @@ public final class SharedUtils {
                 throw new UnsupportedOperationException();
             }
         };
-    }
-
-    public static final class SimpleVaArg {
-        public final MemoryLayout layout;
-        public final Object value;
-
-        public SimpleVaArg(MemoryLayout layout, Object value) {
-            this.layout = layout;
-            this.value = value;
-        }
-
-        public VarHandle varHandle() {
-            return layout.varHandle();
-        }
     }
 
     static void writeOverSized(MemorySegment ptr, Class<?> type, Object o) {
@@ -510,5 +485,36 @@ public final class SharedUtils {
         } else {
             throw new IllegalArgumentException("Unsupported carrier: " + type);
         }
+    }
+
+    public static Map<String, MemoryLayout> canonicalLayouts(ValueLayout longLayout, ValueLayout sizetLayout, ValueLayout wchartLayout) {
+        return Map.ofEntries(
+                // specified canonical layouts
+                Map.entry("bool", ValueLayout.JAVA_BOOLEAN),
+                Map.entry("char", ValueLayout.JAVA_BYTE),
+                Map.entry("short", ValueLayout.JAVA_SHORT),
+                Map.entry("int", ValueLayout.JAVA_INT),
+                Map.entry("float", ValueLayout.JAVA_FLOAT),
+                Map.entry("long", longLayout),
+                Map.entry("long long", ValueLayout.JAVA_LONG),
+                Map.entry("double", ValueLayout.JAVA_DOUBLE),
+                Map.entry("void*", ValueLayout.ADDRESS),
+                Map.entry("size_t", sizetLayout),
+                Map.entry("wchar_t", wchartLayout),
+                // unspecified size-dependent layouts
+                Map.entry("int8_t", ValueLayout.JAVA_BYTE),
+                Map.entry("int16_t", ValueLayout.JAVA_SHORT),
+                Map.entry("int32_t", ValueLayout.JAVA_INT),
+                Map.entry("int64_t", ValueLayout.JAVA_LONG),
+                // unspecified JNI layouts
+                Map.entry("jboolean", ValueLayout.JAVA_BOOLEAN),
+                Map.entry("jchar", ValueLayout.JAVA_CHAR),
+                Map.entry("jbyte", ValueLayout.JAVA_BYTE),
+                Map.entry("jshort", ValueLayout.JAVA_SHORT),
+                Map.entry("jint", ValueLayout.JAVA_INT),
+                Map.entry("jlong", ValueLayout.JAVA_LONG),
+                Map.entry("jfloat", ValueLayout.JAVA_FLOAT),
+                Map.entry("jdouble", ValueLayout.JAVA_DOUBLE)
+        );
     }
 }

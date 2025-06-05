@@ -49,12 +49,11 @@ public class ConstantPoolCache extends Metadata {
     Type type      = db.lookupType("ConstantPoolCache");
     constants      = new MetadataField(type.getAddressField("_constant_pool"), 0);
     baseOffset     = type.getSize();
-    Type elType    = db.lookupType("ConstantPoolCacheEntry");
-    elementSize    = elType.getSize();
-    length         = new CIntField(type.getCIntegerField("_length"), 0);
     intSize        = VM.getVM().getObjectHeap().getIntSize();
     resolvedReferences = type.getAddressField("_resolved_references");
     referenceMap   = type.getAddressField("_reference_map");
+    resolvedFieldArray = type.getAddressField("_resolved_field_entries");
+    resolvedMethodArray = type.getAddressField("_resolved_method_entries");
     resolvedIndyArray = type.getAddressField("_resolved_indy_entries");
   }
 
@@ -72,22 +71,31 @@ public class ConstantPoolCache extends Metadata {
   private static long intSize;
   private static AddressField  resolvedReferences;
   private static AddressField  referenceMap;
+  private static AddressField  resolvedFieldArray;
+  private static AddressField  resolvedMethodArray;
   private static AddressField  resolvedIndyArray;
 
   public ConstantPool getConstants() { return (ConstantPool) constants.getValue(this); }
 
   public long getSize() {
-    return alignSize(baseOffset + getLength() * elementSize);
-  }
-
-  public ConstantPoolCacheEntry getEntryAt(int i) {
-    Objects.checkIndex(i, getLength());
-    return new ConstantPoolCacheEntry(this, i);
+    return alignSize(baseOffset);
   }
 
   public ResolvedIndyEntry getIndyEntryAt(int i) {
     Address addr = resolvedIndyArray.getValue(getAddress());
     ResolvedIndyArray array = new ResolvedIndyArray(addr);
+    return array.getAt(i);
+  }
+
+  public ResolvedFieldEntry getFieldEntryAt(int i) {
+    Address addr = resolvedFieldArray.getValue(getAddress());
+    ResolvedFieldArray array = new ResolvedFieldArray(addr);
+    return array.getAt(i);
+  }
+
+  public ResolvedMethodEntry getMethodEntryAt(int i) {
+    Address addr = resolvedMethodArray.getValue(getAddress());
+    ResolvedMethodArray array = new ResolvedMethodArray(addr);
     return array.getAt(i);
   }
 
@@ -100,19 +108,6 @@ public class ConstantPoolCache extends Metadata {
   public void printValueOn(PrintStream tty) {
     tty.print("ConstantPoolCache for " + getConstants().getPoolHolder().getName().asString() + " address = " + getAddress() + " offset = " + baseOffset);
   }
-
-  public int getLength() {
-    return (int) length.getValue(getAddress());
-  }
-
-  public void iterateFields(MetadataVisitor visitor) {
-    super.iterateFields(visitor);
-    visitor.doMetadata(constants, true);
-      for (int i = 0; i < getLength(); i++) {
-        ConstantPoolCacheEntry entry = getEntryAt(i);
-        entry.iterateFields(visitor);
-      }
-    }
 
   public Oop getResolvedReferences() {
     Address handle = resolvedReferences.getValue(getAddress());

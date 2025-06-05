@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.lang.classfile.ClassFile;
 import java.lang.module.InvalidModuleDescriptorException;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Builder;
@@ -189,6 +190,7 @@ public final class ModuleInfo {
 
         int minor_version = in.readUnsignedShort();
         int major_version = in.readUnsignedShort();
+        boolean isPreview = minor_version == ClassFile.PREVIEW_MINOR_VERSION;
         if (!VM.isSupportedModuleDescriptorVersion(major_version, minor_version)) {
             throw invalidModuleDescriptor("Unsupported major.minor version "
                                           + major_version + "." + minor_version);
@@ -248,7 +250,7 @@ public final class ModuleInfo {
 
             switch (attribute_name) {
                 case MODULE :
-                    builder = readModuleAttribute(in, cpool, major_version);
+                    builder = readModuleAttribute(in, cpool, major_version, isPreview);
                     break;
 
                 case MODULE_PACKAGES :
@@ -344,7 +346,8 @@ public final class ModuleInfo {
      * Reads the Module attribute, returning the ModuleDescriptor.Builder to
      * build the corresponding ModuleDescriptor.
      */
-    private Builder readModuleAttribute(DataInput in, ConstantPool cpool, int major)
+    private Builder readModuleAttribute(DataInput in, ConstantPool cpool, int major,
+                                        boolean isPreview)
         throws IOException
     {
         // module_name
@@ -405,15 +408,10 @@ public final class ModuleInfo {
                     throw invalidModuleDescriptor("The requires entry for java.base"
                                                   + " has ACC_SYNTHETIC set");
                 }
-                if (major >= 54
-                    && (mods.contains(Requires.Modifier.TRANSITIVE)
-                        || mods.contains(Requires.Modifier.STATIC))) {
-                    String flagName;
-                    if (mods.contains(Requires.Modifier.TRANSITIVE)) {
-                        flagName = "ACC_TRANSITIVE";
-                    } else {
-                        flagName = "ACC_STATIC_PHASE";
-                    }
+                // requires static java.base is illegal unless
+                // the major version is 53 (JDK 9)
+                if (major >= 54 && mods.contains(Requires.Modifier.STATIC)) {
+                    String flagName = "ACC_STATIC_PHASE";
                     throw invalidModuleDescriptor("The requires entry for java.base"
                                                   + " has " + flagName + " set");
                 }

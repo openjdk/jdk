@@ -43,8 +43,8 @@ class ResumeOneThreadTarg implements Runnable {
 
     public static void main(String[] args) {
         System.out.println("    Debuggee: Howdy!");
-        Thread t1 = TestScaffold.newThread(new ResumeOneThreadTarg(), name1);
-        Thread t2 = TestScaffold.newThread(new ResumeOneThreadTarg(), name2);
+        Thread t1 = DebuggeeWrapper.newThread(new ResumeOneThreadTarg(), name1);
+        Thread t2 = DebuggeeWrapper.newThread(new ResumeOneThreadTarg(), name2);
         t1.start();
         t2.start();
         // We must block until these threads exit. Otherwise for virtual threads

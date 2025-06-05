@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,28 +25,22 @@ import java.nio.file.Path;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.TKit;
 
-import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 
 import java.util.Collection;
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 
 /*
  * @test
  * @summary jpackage with --type dmg --mac-dmg-content
- * @library ../helpers
- * @library /test/lib
- * @library base
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build DmgContentTest
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "mac")
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=DmgContentTest
@@ -63,7 +57,7 @@ public class DmgContentTest {
             "non-existant").toString();
 
     @Parameters
-    public static Collection input() {
+    public static Collection<?> input() {
         List<Object[]> data = new ArrayList<>();
         data.addAll(List.of(new Object[][] {
             {"0", PackageType.MAC_DMG, new String[] {TEST_JAVA, TEST_DUKE}},

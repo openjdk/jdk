@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,6 @@ public class TestSurvivorRatioFlag {
                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
-                "-XX:GCLockerEdenExpansionPercent=0",
                 "-XX:MaxNewSize=" + NEW_SIZE,
                 "-XX:NewSize=" + NEW_SIZE,
                 "-Xmx" + HEAP_SIZE,
@@ -87,8 +86,7 @@ public class TestSurvivorRatioFlag {
                 Integer.toString(ratio)
         );
 
-        ProcessBuilder procBuilder = GCArguments.createJavaProcessBuilder(vmOptions);
-        OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
+        OutputAnalyzer analyzer = GCArguments.executeLimitedTestJava(vmOptions);
         analyzer.shouldHaveExitValue(0);
     }
 

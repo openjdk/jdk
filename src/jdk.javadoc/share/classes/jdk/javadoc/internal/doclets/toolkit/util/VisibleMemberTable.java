@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
@@ -351,7 +350,7 @@ public class VisibleMemberTable {
         // ... and finally the sorted superinterfaces.
         allSuperinterfaces.stream()
                 .map(vmt -> vmt.te)
-                .sorted(utils.comparators.makeGeneralPurposeComparator())
+                .sorted(utils.comparators.generalPurposeComparator())
                 .forEach(result::add);
 
         return result;
@@ -503,7 +502,7 @@ public class VisibleMemberTable {
 
     private boolean mustDocument(Element e) {
         // these checks are ordered in a particular way to avoid parsing unless absolutely necessary
-        return utils.shouldDocument(e) && !utils.hasHiddenTag(e);
+        return utils.shouldDocument(e) && !utils.isHidden(e);
     }
 
     private boolean allowInheritedMembers(Element e, Kind kind, LocalMemberTable lmt) {

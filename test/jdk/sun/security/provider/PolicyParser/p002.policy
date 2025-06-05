@@ -1,4 +1,0 @@
-grant Codebase "http://java.sun.com/dupsb.jar" SignedBy "gfe" SignedBy "garysign" {
-      permission java.security.SecurityPermission "bogusPolicyParser";
-};
-

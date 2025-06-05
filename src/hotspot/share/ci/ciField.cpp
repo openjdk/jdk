@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciSymbols.hpp"
@@ -35,7 +34,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/reflectionUtils.hpp"
+#include "runtime/reflection.hpp"
 
 // ciField
 //
@@ -102,8 +101,6 @@ ciField::ciField(ciInstanceKlass* klass, int index, Bytecodes::Code bc) :
   } else {
     _type = ciType::make(field_type);
   }
-
-  _name = (ciSymbol*)ciEnv::current(THREAD)->get_symbol(name);
 
   // Get the field's declared holder.
   //

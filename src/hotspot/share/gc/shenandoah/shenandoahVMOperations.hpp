@@ -38,23 +38,30 @@ class ShenandoahFullGC;
 //   - VM_ShenandoahFinalMarkStartEvac: finish up concurrent marking, and start evacuation
 //   - VM_ShenandoahInitUpdateRefs: initiate update references
 //   - VM_ShenandoahFinalUpdateRefs: finish up update references
+//   - VM_ShenandoahFinalRoots: finish up roots on a non-evacuating cycle
 //   - VM_ShenandoahReferenceOperation:
 //       - VM_ShenandoahFullGC: do full GC
 //       - VM_ShenandoahDegeneratedGC: do STW degenerated GC
 
 class VM_ShenandoahOperation : public VM_Operation {
 protected:
-  uint         _gc_id;
+  uint _gc_id;
+
+  void set_active_generation();
 public:
   VM_ShenandoahOperation() : _gc_id(GCId::current()) {};
-  virtual bool skip_thread_oop_barriers() const { return true; }
+  bool skip_thread_oop_barriers() const override { return true; }
+
+  void log_active_generation(const char* prefix);
+  bool doit_prologue() override;
+  void doit_epilogue() override;
 };
 
 class VM_ShenandoahReferenceOperation : public VM_ShenandoahOperation {
 public:
   VM_ShenandoahReferenceOperation() : VM_ShenandoahOperation() {};
-  bool doit_prologue();
-  void doit_epilogue();
+  bool doit_prologue() override;
+  void doit_epilogue() override;
 };
 
 class VM_ShenandoahInitMark: public VM_ShenandoahOperation {

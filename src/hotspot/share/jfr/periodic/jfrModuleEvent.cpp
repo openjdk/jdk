@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -62,7 +61,7 @@ static void write_module_dependency_event(const void* from_module, const ModuleE
   EventModuleRequire event(UNTIMED);
   event.set_starttime(invocation_time);
   event.set_endtime(invocation_time);
-  event.set_source((const ModuleEntry* const)from_module);
+  event.set_source((const ModuleEntry*)from_module);
   event.set_requiredModule(to_module);
   event.commit();
 }

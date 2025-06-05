@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import jdk.jpackage.internal.resources.ResourceLocator;
 
 /**
  * Interface to add custom actions composed of shell commands to installers.
@@ -74,6 +76,26 @@ abstract class ShellCustomAction {
         };
     }
 
+    static void mergeReplacementData(Map<String, String> target,
+            Map<String, String> newValues) {
+        Objects.requireNonNull(target);
+        Objects.requireNonNull(newValues);
+
+        for (var kvp : newValues.entrySet()) {
+            String newValue = kvp.getValue();
+            String existingValue = target.putIfAbsent(kvp.getKey(), newValue);
+            if (existingValue != null) {
+                if (existingValue.isEmpty()) {
+                    target.replace(kvp.getKey(), newValue);
+                } else if (!newValue.isEmpty() && !newValue.
+                        equals(existingValue)) {
+                    throw new IllegalArgumentException(String.format(
+                            "Key [%s] value mismatch", kvp.getKey()));
+                }
+            }
+        }
+    }
+
     protected static String stringifyShellCommands(String... commands) {
         return stringifyShellCommands(Arrays.asList(commands));
     }
@@ -84,7 +106,7 @@ abstract class ShellCustomAction {
     }
 
     protected static String stringifyTextFile(String resourceName) throws IOException {
-        try ( InputStream is = OverridableResource.readDefault(resourceName);
+        try ( InputStream is = ResourceLocator.class.getResourceAsStream(resourceName);
                 InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
                 BufferedReader reader = new BufferedReader(isr)) {
             return reader.lines().collect(Collectors.joining("\n"));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,9 @@ public class ProfileDataException extends RuntimeException {
      * Constructs a {@code ProfileDataException} with the specified detail
      * message.
      *
-     * @param  s the specified detail message
+     * @param  message the specified detail message, or {@code null}
      */
-    public ProfileDataException(String s) {
-        super(s);
+    public ProfileDataException(String message) {
+        super(message);
     }
 }

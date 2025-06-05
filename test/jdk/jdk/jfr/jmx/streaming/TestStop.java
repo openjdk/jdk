@@ -40,7 +40,7 @@ import jdk.management.jfr.RemoteRecordingStream;
 /**
  * @test
  * @summary Tests RemoteRecordingStream::stop()
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @build jdk.jfr.api.consumer.recordingstream.EventProducer

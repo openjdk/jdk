@@ -92,7 +92,7 @@ public class SumRedAbsNeg_Double {
        (with or without store) in SuperWord::profitable. */
     @Test
     @IR(applyIf = {"SuperWordReductions", "false"},
-        failOn = {IRNode.ADD_REDUCTION_VD, IRNode.ABS_V, IRNode.NEG_V})
+        failOn = {IRNode.ADD_REDUCTION_VD, IRNode.ABS_VD, IRNode.NEG_VD})
     public static double sumReductionImplement(
             double[] a,
             double[] b,

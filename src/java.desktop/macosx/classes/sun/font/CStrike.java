@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,17 @@ public final class CStrike extends PhysicalStrike {
         final double[] glyphTx = new double[6];
         desc.glyphTx.getMatrix(glyphTx);
 
+        for (int i = 0; i < 6; i++) {
+            if (Double.isFinite(glyphTx[i])) {
+                continue;
+            }
+            for (int j = 0; j < 6; j++) {
+                glyphTx[j] = 0;
+            }
+            invDevTx = null;
+            break;
+        }
+
         final double[] invDevTxMatrix = new double[6];
         if (invDevTx == null) {
             invDevTxMatrix[0] = 1;
@@ -199,7 +210,7 @@ public final class CStrike extends PhysicalStrike {
         getGlyphImageBounds(glyphCode, pt.x, pt.y, floatRect);
 
         if (floatRect.width == 0 && floatRect.height == 0) {
-            result.setRect(0, 0, -1, -1);
+            result.setRect(0, 0, 0, 0);
             return;
         }
 

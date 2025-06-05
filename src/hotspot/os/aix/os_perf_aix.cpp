@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2022, IBM Corp.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "libperfstat_aix.hpp"
 #include "memory/allocation.inline.hpp"
@@ -73,11 +72,11 @@ enum {
  * Get info for requested PID from /proc/<pid>/psinfo file
  */
 static bool read_psinfo(const u_longlong_t& pid, psinfo_t& psinfo) {
-  static size_t BUF_LENGTH = 32 + sizeof(u_longlong_t);
+  const size_t BUF_LENGTH = 32 + sizeof(u_longlong_t);
 
   FILE* fp;
   char buf[BUF_LENGTH];
-  int len;
+  size_t len;
 
   jio_snprintf(buf, BUF_LENGTH, "/proc/%llu/psinfo", pid);
   fp = fopen(buf, "r");
@@ -87,6 +86,7 @@ static bool read_psinfo(const u_longlong_t& pid, psinfo_t& psinfo) {
   }
 
   len = fread(&psinfo, 1, sizeof(psinfo_t), fp);
+  fclose(fp);
   return len == sizeof(psinfo_t);
 }
 
@@ -118,7 +118,6 @@ static OSReturn get_lcpu_ticks(perfstat_id_t* lcpu_name, cpu_tick_store_t* ptick
  * Return CPU load caused by the currently executing process (the jvm).
  */
 static OSReturn get_jvm_load(double* jvm_uload, double* jvm_sload) {
-  static clock_t ticks_per_sec = sysconf(_SC_CLK_TCK);
   static u_longlong_t last_timebase = 0;
 
   perfstat_process_t jvm_stats;
@@ -204,8 +203,6 @@ static bool populate_lcpu_names(int ncpus, perfstat_id_t* lcpu_names) {
  * (Context Switches / Tick) * (Tick / s) = Context Switches per second
  */
 static OSReturn perf_context_switch_rate(double* rate) {
-  static clock_t ticks_per_sec = sysconf(_SC_CLK_TCK);
-
   u_longlong_t ticks;
   perfstat_cpu_total_t cpu_stats;
 
@@ -214,7 +211,7 @@ static OSReturn perf_context_switch_rate(double* rate) {
    }
 
    ticks = cpu_stats.user + cpu_stats.sys + cpu_stats.idle + cpu_stats.wait;
-   *rate = (cpu_stats.pswitch / ticks) * ticks_per_sec;
+   *rate = (cpu_stats.pswitch / ticks) * os::Posix::clock_tics_per_second();
 
    return OS_OK;
 }

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2017, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
   // Whether this platform implements the scalable vector feature
   static const bool implements_scalable_vector = false;
 
-  static constexpr const bool supports_scalable_vector() {
+  static constexpr bool supports_scalable_vector() {
     return false;
   }
 
@@ -63,11 +63,16 @@
     return true;
   }
 
-  // Suppress CMOVL. Conditional move available on z/Architecture only from z196 onwards. Not exploited yet.
-  static const int long_cmove_cost() { return ConditionalMoveLimit; }
+  // Use conditional move (CMOVL)
+  static int long_cmove_cost() {
+    // z196/z11 or later hardware support conditional moves
+    return VM_Version::has_LoadStoreConditional() ? 0 : ConditionalMoveLimit;
+  }
 
-  // Suppress CMOVF. Conditional move available on z/Architecture only from z196 onwards. Not exploited yet.
-  static const int float_cmove_cost() { return ConditionalMoveLimit; }
+  static int float_cmove_cost() {
+    // z196/z11 or later hardware support conditional moves
+    return VM_Version::has_LoadStoreConditional() ? 0 : ConditionalMoveLimit;
+  }
 
   // Set this as clone_shift_expressions.
   static bool narrow_oop_use_complex_address() {
@@ -103,9 +108,6 @@
   // Java calling convention forces doubles to be aligned.
   static const bool misaligned_doubles_ok = true;
 
-  // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
-  static const bool strict_fp_requires_explicit_rounding = false;
-
   // Do floats take an entire double register or just half?
   //
   // A float in resides in a zarch double register. When storing it by
@@ -121,6 +123,11 @@
 
   // Does the CPU supports vector variable shift instructions?
   static constexpr bool supports_vector_variable_shifts(void) {
+    return false;
+  }
+
+  // Does target support predicated operation emulation.
+  static bool supports_vector_predicate_op_emulation(int vopc, int vlen, BasicType bt) {
     return false;
   }
 
@@ -182,6 +189,11 @@
         return 30;
       }
     }
+  }
+
+  // Is SIMD sort supported for this CPU?
+  static bool supports_simd_sort(BasicType bt) {
+    return false;
   }
 
 #endif // CPU_S390_MATCHER_S390_HPP

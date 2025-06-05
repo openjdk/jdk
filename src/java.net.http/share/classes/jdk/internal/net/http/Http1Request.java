@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,8 @@ import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Utils;
 
 import static java.lang.String.format;
+import static java.net.Authenticator.RequestorType.PROXY;
+import static java.net.Authenticator.RequestorType.SERVER;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
@@ -79,18 +81,22 @@ class Http1Request {
 
     private void logHeaders(String completeHeaders) {
         if (Log.headers()) {
-            //StringBuilder sb = new StringBuilder(256);
-            //sb.append("REQUEST HEADERS:\n");
-            //Log.dumpHeaders(sb, "    ", systemHeaders);
-            //Log.dumpHeaders(sb, "    ", userHeaders);
-            //Log.logHeaders(sb.toString());
-
-            String s = completeHeaders.replaceAll("\r\n", "\n");
-            if (s.endsWith("\n\n")) s = s.substring(0, s.length() - 2);
-            Log.logHeaders("REQUEST HEADERS:\n{0}\n", s);
+            StringBuilder sb = new StringBuilder(completeHeaders.length());
+            sb.append("REQUEST HEADERS:\n");
+            boolean[] firstLine = {true};
+            completeHeaders.lines().forEach(line -> {
+                // First line contains `GET /foo HTTP/1.1`.
+                // Convert it to look like other `Log.logHeaders()` outputs.
+                if (firstLine[0]) {
+                    sb.append("  ").append(line).append('\n');
+                    firstLine[0] = false;
+                } else if (!line.isBlank()) {
+                    sb.append("    ").append(line).append('\n');
+                }
+            });
+            Log.logHeaders(sb.toString());
         }
     }
-
 
     public void collectHeaders0(StringBuilder sb) {
         BiPredicate<String,String> filter =
@@ -104,7 +110,9 @@ class Http1Request {
 
         // Filter overridable headers from userHeaders
         userHeaders = HttpHeaders.of(userHeaders.map(),
-                      connection.contextRestricted(request, client));
+                      connection.contextRestricted(request));
+
+        Utils.setUserAuthFlags(request, userHeaders);
 
         final HttpHeaders uh = userHeaders;
 

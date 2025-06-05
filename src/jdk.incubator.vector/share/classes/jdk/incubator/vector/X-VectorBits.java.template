@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -142,6 +144,20 @@ final class $vectortype$ extends $abstractvectortype$ {
     @Override
     @ForceInline
     $shuffletype$ iotaShuffle() { return $shuffletype$.IOTA; }
+
+    @Override
+    @ForceInline
+    $shuffletype$ iotaShuffle(int start, int step, boolean wrap) {
+#if[byte]
+        return ($shuffletype$) iotaShuffleTemplate((byte) start, (byte) step, wrap);
+#end[byte]
+#if[short]
+        return ($shuffletype$) iotaShuffleTemplate((short) start, (short) step, wrap);
+#end[short]
+#if[!byteOrShort]
+        return ($shuffletype$) iotaShuffleTemplate(start, step, wrap);
+#end[!byteOrShort]
+    }
 
     @Override
     @ForceInline
@@ -348,9 +364,18 @@ final class $vectortype$ extends $abstractvectortype$ {
 
     @Override
     @ForceInline
-    public final
-    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
-        return super.toShuffleTemplate(dsp);
+    final <F> VectorShuffle<F> bitsToShuffle(AbstractSpecies<F> dsp) {
+#if[FP]
+        throw new AssertionError();
+#else[FP]
+        return bitsToShuffleTemplate(dsp);
+#end[FP]
+    }
+
+    @Override
+    @ForceInline
+    public final $shuffletype$ toShuffle() {
+        return ($shuffletype$) toShuffle(vspecies(), false);
     }
 
     // Specialized unary testing
@@ -496,9 +521,16 @@ final class $vectortype$ extends $abstractvectortype$ {
                                    VectorMask<$Boxtype$> m) {
         return ($vectortype$)
             super.selectFromTemplate(($vectortype$) v,
-                                     ($masktype$) m);  // specialize
+                                     $masktype$.class, ($masktype$) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public $vectortype$ selectFrom(Vector<$Boxtype$> v1,
+                                   Vector<$Boxtype$> v2) {
+        return ($vectortype$)
+            super.selectFromTemplate(($vectortype$) v1, ($vectortype$) v2);  // specialize
+    }
 
 #if[FP]
     @ForceInline
@@ -542,13 +574,14 @@ final class $vectortype$ extends $abstractvectortype$ {
         return $Type$.$bitstype$BitsTo$Fptype$(bits);
     }
 
+    @ForceInline
     public $bitstype$ laneHelper(int i) {
         return ($bitstype$) VectorSupport.extract(
                      VCLASS, ETYPE, VLENGTH,
                      this, i,
                      (vec, ix) -> {
                      $type$[] vecarr = vec.vec();
-                     return (long)$Type$.$type$To$Bitstype$Bits(vecarr[ix]);
+                     return (long)$Type$.$type$ToRaw$Bitstype$Bits(vecarr[ix]);
                      });
     }
 
@@ -591,10 +624,11 @@ final class $vectortype$ extends $abstractvectortype$ {
 #end[!Max]
     }
 
+    @ForceInline
     public $vectortype$ withLaneHelper(int i, $type$ e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
-                                this, i, (long)$Type$.$type$To$Bitstype$Bits(e),
+                                this, i, (long)$Type$.$type$ToRaw$Bitstype$Bits(e),
                                 (v, ix, bits) -> {
                                     $type$[] res = v.vec().clone();
                                     res[ix] = $Type$.$bitstype$BitsTo$Type$(($bitstype$)bits);
@@ -693,6 +727,7 @@ final class $vectortype$ extends $abstractvectortype$ {
 #end[!Max]
     }
 
+    @ForceInline
     public $type$ laneHelper(int i) {
         return ($type$) VectorSupport.extract(
                                 VCLASS, ETYPE, VLENGTH,
@@ -794,6 +829,7 @@ final class $vectortype$ extends $abstractvectortype$ {
 #end[!Max]
     }
 
+    @ForceInline
     public $vectortype$ withLaneHelper(int i, $type$ e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
@@ -998,6 +1034,16 @@ final class $vectortype$ extends $abstractvectortype$ {
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
+        // laneIsSet
+
+        @Override
+        @ForceInline
+        public boolean laneIsSet(int i) {
+            Objects.checkIndex(i, length());
+            return VectorSupport.extract($masktype$.class, $type$.class, VLENGTH,
+                                         this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
+        }
+
         // Reductions
 
         @Override
@@ -1081,6 +1127,20 @@ final class $vectortype$ extends $abstractvectortype$ {
         }
         static final $shuffletype$ IOTA = new $shuffletype$(IDENTITY);
 
+#if[FP]
+        @Override
+        @ForceInline
+        public $vectortype$ toVector() {
+            return ($vectortype$) toBitsVector().castShape(vspecies(), 0);
+        }
+#else[FP]
+        @Override
+        @ForceInline
+        public $vectortype$ toVector() {
+            return toBitsVector();
+        }
+#end[FP]
+
         @Override
         @ForceInline
         $bitsvectortype$ toBitsVector() {
@@ -1088,9 +1148,8 @@ final class $vectortype$ extends $abstractvectortype$ {
         }
 
         @Override
-        @ForceInline
-        $Bitstype$Vector toBitsVector0() {
-            return $bitsvectortype$.VSPECIES.dummyVector().vectorFactory(indices());
+        $bitsvectortype$ toBitsVector0() {
+            return (($bitsvectortype$) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -1156,8 +1215,103 @@ final class $vectortype$ extends $abstractvectortype$ {
                         a[offset + i] = laneSource(i);
                     }
                 }
+           }
+
+#end[longOrDouble]
+        }
+
+        @Override
+        @ForceInline
+        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+#if[byte]
+            VectorSpecies<Integer> species = IntVector.SPECIES_$BITS$;
+            Vector<Byte> v = toBitsVector();
+            v.convertShape(VectorOperators.B2I, species, 0)
+                    .reinterpretAsInts()
+                    .intoMemorySegment(ms, offset, bo);
+            v.convertShape(VectorOperators.B2I, species, 1)
+                    .reinterpretAsInts()
+                    .intoMemorySegment(ms, offset + species.vectorByteSize(), bo);
+            v.convertShape(VectorOperators.B2I, species, 2)
+                    .reinterpretAsInts()
+                    .intoMemorySegment(ms, offset + species.vectorByteSize() * 2, bo);
+            v.convertShape(VectorOperators.B2I, species, 3)
+                    .reinterpretAsInts()
+                    .intoMemorySegment(ms, offset + species.vectorByteSize() * 3, bo);
+#end[byte]
+#if[short]
+            VectorSpecies<Integer> species = IntVector.SPECIES_$BITS$;
+            Vector<Short> v = toBitsVector();
+            v.convertShape(VectorOperators.S2I, species, 0)
+                    .reinterpretAsInts()
+                    .intoMemorySegment(ms, offset, bo);
+            v.convertShape(VectorOperators.S2I, species, 1)
+                    .reinterpretAsInts()
+                    .intoMemorySegment(ms, offset + species.vectorByteSize(), bo);
+#end[short]
+#if[intOrFloat]
+            toBitsVector().intoMemorySegment(ms, offset, bo);
+#end[intOrFloat]
+#if[longOrDouble]
+            switch (length()) {
+                case 1 -> ms.set(ValueLayout.OfInt.JAVA_INT_UNALIGNED, offset, laneSource(0));
+                case 2 -> toBitsVector()
+                       .convertShape(VectorOperators.L2I, IntVector.SPECIES_64, 0)
+                       .reinterpretAsInts()
+                       .intoMemorySegment(ms, offset, bo);
+                case 4 -> toBitsVector()
+                       .convertShape(VectorOperators.L2I, IntVector.SPECIES_128, 0)
+                       .reinterpretAsInts()
+                       .intoMemorySegment(ms, offset, bo);
+                case 8 -> toBitsVector()
+                       .convertShape(VectorOperators.L2I, IntVector.SPECIES_256, 0)
+                       .reinterpretAsInts()
+                       .intoMemorySegment(ms, offset, bo);
+                case 16 -> toBitsVector()
+                        .convertShape(VectorOperators.L2I, IntVector.SPECIES_512, 0)
+                        .reinterpretAsInts()
+                        .intoMemorySegment(ms, offset, bo);
+                default -> {
+                    VectorIntrinsics.checkFromIndexSize(offset, length(), ms.byteSize() / 4);
+                    for (int i = 0; i < length(); i++) {
+                        ms.setAtIndex(ValueLayout.JAVA_INT_UNALIGNED, offset + (i << 2), laneSource(i));
+                    }
+                }
             }
 #end[longOrDouble]
+         }
+
+        @Override
+        @ForceInline
+        public final $masktype$ laneIsValid() {
+            return ($masktype$) toBitsVector().compare(VectorOperators.GE, 0)
+                    .cast(vspecies());
+        }
+
+        @ForceInline
+        @Override
+        public final $shuffletype$ rearrange(VectorShuffle<$Boxtype$> shuffle) {
+            $shuffletype$ concreteShuffle = ($shuffletype$) shuffle;
+#if[FP]
+            return ($shuffletype$) toBitsVector().rearrange(concreteShuffle.cast($Bitstype$Vector.SPECIES_$BITS$))
+                    .toShuffle(vspecies(), false);
+#else[FP]
+            return ($shuffletype$) toBitsVector().rearrange(concreteShuffle)
+                    .toShuffle(vspecies(), false);
+#end[FP]
+        }
+
+        @ForceInline
+        @Override
+        public final $shuffletype$ wrapIndexes() {
+            $bitsvectortype$ v = toBitsVector();
+            if ((length() & (length() - 1)) == 0) {
+                v = ($bitsvectortype$) v.lanewise(VectorOperators.AND, length() - 1);
+            } else {
+                v = ($bitsvectortype$) v.blend(v.lanewise(VectorOperators.ADD, length()),
+                            v.compare(VectorOperators.LT, 0));
+            }
+            return ($shuffletype$) v.toShuffle(vspecies(), false);
         }
 
         private static $bitstype$[] prepare(int[] indices, int offset) {
@@ -1184,14 +1338,9 @@ final class $vectortype$ extends $abstractvectortype$ {
             int length = indices.length;
             for ($bitstype$ si : indices) {
                 if (si >= ($bitstype$)length || si < ($bitstype$)(-length)) {
-                    boolean assertsEnabled = false;
-                    assert(assertsEnabled = true);
-                    if (assertsEnabled) {
-                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
                                   java.util.Arrays.toString(indices));
-                        throw new AssertionError(msg);
-                    }
-                    return false;
+                    throw new AssertionError(msg);
                 }
             }
             return true;
@@ -1216,14 +1365,12 @@ final class $vectortype$ extends $abstractvectortype$ {
         return super.fromArray0Template($masktype$.class, a, offset, ($masktype$) m, offsetInRange);  // specialize
     }
 
-#if[!byteOrShort]
     @ForceInline
     @Override
     final
     $abstractvectortype$ fromArray0($type$[] a, int offset, int[] indexMap, int mapOffset, VectorMask<$Boxtype$> m) {
         return super.fromArray0Template($masktype$.class, a, offset, indexMap, mapOffset, ($masktype$) m);
     }
-#end[!byteOrShort]
 
 #if[short]
     @ForceInline

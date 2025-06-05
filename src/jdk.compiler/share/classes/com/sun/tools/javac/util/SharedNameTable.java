@@ -39,7 +39,7 @@ import com.sun.tools.javac.util.DefinedBy.Api;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class SharedNameTable extends Name.Table {
+public class SharedNameTable extends Utf8NameTable {
     // maintain a freelist of recently used name tables for reuse.
     private static List<SoftReference<SharedNameTable>> freelist = List.nil();
 
@@ -79,18 +79,22 @@ public class SharedNameTable extends Name.Table {
      *  @param hashSize the (constant) size to be used for the hash table
      *                  needs to be a power of two.
      *  @param nameSize the initial size of the name table.
+     *  @throws IllegalArgumentException if {@code hashSize} is not a power of two
      */
     public SharedNameTable(Names names, int hashSize, int nameSize) {
         super(names);
+        if (Integer.bitCount(hashSize) != 1)
+            throw new IllegalArgumentException();   // hashSize is not a power of two
         hashMask = hashSize - 1;
         hashes = new NameImpl[hashSize];
         bytes = new byte[nameSize];
-
     }
 
     public SharedNameTable(Names names) {
         this(names, 0x8000, 0x20000);
     }
+
+// Name.Table
 
     @Override
     public Name fromChars(char[] cs, int start, int len) {
@@ -104,17 +108,8 @@ public class SharedNameTable extends Name.Table {
                 !equals(bytes, n.index, bytes, nc, nbytes))) {
             n = n.next;
         }
-        if (n == null) {
-            n = new NameImpl(this);
-            n.index = nc;
-            n.length = nbytes;
-            n.next = hashes[h];
-            hashes[h] = n;
-            this.nc = nc + nbytes;
-            if (nbytes == 0) {
-                this.nc++;
-            }
-        }
+        if (n == null)
+            n = addName(nc, nbytes, h);
         return n;
     }
 
@@ -130,20 +125,18 @@ public class SharedNameTable extends Name.Table {
             n = n.next;
         }
         if (n == null) {
-            int nc = this.nc;
             names = this.bytes = ArrayUtils.ensureCapacity(names, nc + len);
             System.arraycopy(cs, start, names, nc, len);
-            n = new NameImpl(this);
-            n.index = nc;
-            n.length = len;
-            n.next = hashes[h];
-            hashes[h] = n;
-            this.nc = nc + len;
-            if (len == 0) {
-                this.nc++;
-            }
+            n = addName(nc, len, h);
         }
         return n;
+    }
+
+    private NameImpl addName(int index, int len, int hash) {
+        NameImpl name = new NameImpl(this, index, len, hashes[hash]);
+        hashes[hash] = name;
+        this.nc = index + Math.max(len, 1);
+        return name;
     }
 
     @Override
@@ -151,65 +144,52 @@ public class SharedNameTable extends Name.Table {
         dispose(this);
     }
 
-    static class NameImpl extends Name {
+// NameImpl
+
+    static final class NameImpl extends Utf8NameTable.NameImpl {
+
         /** The next name occupying the same hash bucket.
          */
-        NameImpl next;
+        final NameImpl next;
 
         /** The index where the bytes of this name are stored in the global name
          *  buffer `byte'.
          */
-        int index;
+        final int index;
 
         /** The number of bytes in this name.
          */
-        int length;
+        final int length;
 
-        NameImpl(SharedNameTable table) {
+    // Constructor
+
+        NameImpl(SharedNameTable table, int index, int length, NameImpl next) {
             super(table);
+            this.index = index;
+            this.length = length;
+            this.next = next;
+        }
+
+    // Utf8NameTable.NameImpl
+
+        @Override
+        protected byte[] getByteData() {
+            return ((SharedNameTable)table).bytes;
         }
 
         @Override
-        public int getIndex() {
+        protected int getByteOffset() {
             return index;
         }
 
         @Override
-        public int getByteLength() {
+        protected int getByteLength() {
             return length;
         }
 
         @Override
-        public byte getByteAt(int i) {
-            return getByteArray()[index + i];
-        }
-
-        @Override
-        public byte[] getByteArray() {
-            return ((SharedNameTable) table).bytes;
-        }
-
-        @Override
-        public int getByteOffset() {
+        protected int getNameIndex() {
             return index;
         }
-
-        /** Return the hash value of this name.
-         */
-        @DefinedBy(Api.LANGUAGE_MODEL)
-        public int hashCode() {
-            return index;
-        }
-
-        /** Is this name equal to other?
-         */
-        @DefinedBy(Api.LANGUAGE_MODEL)
-        public boolean equals(Object other) {
-            return (other instanceof Name name)
-                    && table == name.table
-                    && index == name.getIndex();
-        }
-
     }
-
 }

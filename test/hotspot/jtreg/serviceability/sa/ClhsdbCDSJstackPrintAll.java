@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,10 @@ public class ClhsdbCDSJstackPrintAll {
             CDSTestUtils.createArchiveAndCheck(opts);
 
             ClhsdbLauncher test = new ClhsdbLauncher();
+            // This test could possibly cause some unexpected SA exceptions because one
+            // or more threads are active during the stack trace. Ignore them. The threads
+            // we care about should still be present in the output.
+            test.ignoreExceptions();
             theApp = LingeredApp.startApp(
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:SharedArchiveFile=" + sharedArchiveName,

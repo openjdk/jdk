@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -140,6 +142,12 @@ final class Double512Vector extends DoubleVector {
     @Override
     @ForceInline
     Double512Shuffle iotaShuffle() { return Double512Shuffle.IOTA; }
+
+    @Override
+    @ForceInline
+    Double512Shuffle iotaShuffle(int start, int step, boolean wrap) {
+        return (Double512Shuffle) iotaShuffleTemplate(start, step, wrap);
+    }
 
     @Override
     @ForceInline
@@ -331,9 +339,14 @@ final class Double512Vector extends DoubleVector {
 
     @Override
     @ForceInline
-    public final
-    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
-        return super.toShuffleTemplate(dsp);
+    final <F> VectorShuffle<F> bitsToShuffle(AbstractSpecies<F> dsp) {
+        throw new AssertionError();
+    }
+
+    @Override
+    @ForceInline
+    public final Double512Shuffle toShuffle() {
+        return (Double512Shuffle) toShuffle(vspecies(), false);
     }
 
     // Specialized unary testing
@@ -477,9 +490,16 @@ final class Double512Vector extends DoubleVector {
                                    VectorMask<Double> m) {
         return (Double512Vector)
             super.selectFromTemplate((Double512Vector) v,
-                                     (Double512Mask) m);  // specialize
+                                     Double512Mask.class, (Double512Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Double512Vector selectFrom(Vector<Double> v1,
+                                   Vector<Double> v2) {
+        return (Double512Vector)
+            super.selectFromTemplate((Double512Vector) v1, (Double512Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -499,13 +519,14 @@ final class Double512Vector extends DoubleVector {
         return Double.longBitsToDouble(bits);
     }
 
+    @ForceInline
     public long laneHelper(int i) {
         return (long) VectorSupport.extract(
                      VCLASS, ETYPE, VLENGTH,
                      this, i,
                      (vec, ix) -> {
                      double[] vecarr = vec.vec();
-                     return (long)Double.doubleToLongBits(vecarr[ix]);
+                     return (long)Double.doubleToRawLongBits(vecarr[ix]);
                      });
     }
 
@@ -525,10 +546,11 @@ final class Double512Vector extends DoubleVector {
         }
     }
 
+    @ForceInline
     public Double512Vector withLaneHelper(int i, double e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
-                                this, i, (long)Double.doubleToLongBits(e),
+                                this, i, (long)Double.doubleToRawLongBits(e),
                                 (v, ix, bits) -> {
                                     double[] res = v.vec().clone();
                                     res[ix] = Double.longBitsToDouble((long)bits);
@@ -728,6 +750,16 @@ final class Double512Vector extends DoubleVector {
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
+        // laneIsSet
+
+        @Override
+        @ForceInline
+        public boolean laneIsSet(int i) {
+            Objects.checkIndex(i, length());
+            return VectorSupport.extract(Double512Mask.class, double.class, VLENGTH,
+                                         this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
+        }
+
         // Reductions
 
         @Override
@@ -798,14 +830,19 @@ final class Double512Vector extends DoubleVector {
 
         @Override
         @ForceInline
+        public Double512Vector toVector() {
+            return (Double512Vector) toBitsVector().castShape(vspecies(), 0);
+        }
+
+        @Override
+        @ForceInline
         Long512Vector toBitsVector() {
             return (Long512Vector) super.toBitsVectorTemplate();
         }
 
         @Override
-        @ForceInline
-        LongVector toBitsVector0() {
-            return Long512Vector.VSPECIES.dummyVector().vectorFactory(indices());
+        Long512Vector toBitsVector0() {
+            return ((Long512Vector) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -841,7 +878,66 @@ final class Double512Vector extends DoubleVector {
                         a[offset + i] = laneSource(i);
                     }
                 }
+           }
+
+        }
+
+        @Override
+        @ForceInline
+        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+            switch (length()) {
+                case 1 -> ms.set(ValueLayout.OfInt.JAVA_INT_UNALIGNED, offset, laneSource(0));
+                case 2 -> toBitsVector()
+                       .convertShape(VectorOperators.L2I, IntVector.SPECIES_64, 0)
+                       .reinterpretAsInts()
+                       .intoMemorySegment(ms, offset, bo);
+                case 4 -> toBitsVector()
+                       .convertShape(VectorOperators.L2I, IntVector.SPECIES_128, 0)
+                       .reinterpretAsInts()
+                       .intoMemorySegment(ms, offset, bo);
+                case 8 -> toBitsVector()
+                       .convertShape(VectorOperators.L2I, IntVector.SPECIES_256, 0)
+                       .reinterpretAsInts()
+                       .intoMemorySegment(ms, offset, bo);
+                case 16 -> toBitsVector()
+                        .convertShape(VectorOperators.L2I, IntVector.SPECIES_512, 0)
+                        .reinterpretAsInts()
+                        .intoMemorySegment(ms, offset, bo);
+                default -> {
+                    VectorIntrinsics.checkFromIndexSize(offset, length(), ms.byteSize() / 4);
+                    for (int i = 0; i < length(); i++) {
+                        ms.setAtIndex(ValueLayout.JAVA_INT_UNALIGNED, offset + (i << 2), laneSource(i));
+                    }
+                }
             }
+         }
+
+        @Override
+        @ForceInline
+        public final Double512Mask laneIsValid() {
+            return (Double512Mask) toBitsVector().compare(VectorOperators.GE, 0)
+                    .cast(vspecies());
+        }
+
+        @ForceInline
+        @Override
+        public final Double512Shuffle rearrange(VectorShuffle<Double> shuffle) {
+            Double512Shuffle concreteShuffle = (Double512Shuffle) shuffle;
+            return (Double512Shuffle) toBitsVector().rearrange(concreteShuffle.cast(LongVector.SPECIES_512))
+                    .toShuffle(vspecies(), false);
+        }
+
+        @ForceInline
+        @Override
+        public final Double512Shuffle wrapIndexes() {
+            Long512Vector v = toBitsVector();
+            if ((length() & (length() - 1)) == 0) {
+                v = (Long512Vector) v.lanewise(VectorOperators.AND, length() - 1);
+            } else {
+                v = (Long512Vector) v.blend(v.lanewise(VectorOperators.ADD, length()),
+                            v.compare(VectorOperators.LT, 0));
+            }
+            return (Double512Shuffle) v.toShuffle(vspecies(), false);
         }
 
         private static long[] prepare(int[] indices, int offset) {
@@ -868,14 +964,9 @@ final class Double512Vector extends DoubleVector {
             int length = indices.length;
             for (long si : indices) {
                 if (si >= (long)length || si < (long)(-length)) {
-                    boolean assertsEnabled = false;
-                    assert(assertsEnabled = true);
-                    if (assertsEnabled) {
-                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
                                   java.util.Arrays.toString(indices));
-                        throw new AssertionError(msg);
-                    }
-                    return false;
+                    throw new AssertionError(msg);
                 }
             }
             return true;

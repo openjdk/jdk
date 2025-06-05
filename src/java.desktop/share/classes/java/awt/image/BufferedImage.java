@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Transparency;
 import java.awt.color.ColorSpace;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Hashtable;
 import java.util.Set;
 import java.util.Vector;
@@ -800,26 +798,16 @@ public class BufferedImage extends java.awt.Image
         }   // else if ((raster instanceof ByteComponentRaster) &&
     }
 
-    @SuppressWarnings("removal")
     private static boolean isStandard(ColorModel cm, WritableRaster wr) {
         final Class<? extends ColorModel> cmClass = cm.getClass();
         final Class<? extends WritableRaster> wrClass = wr.getClass();
         final Class<? extends SampleModel> smClass = wr.getSampleModel().getClass();
 
-        final PrivilegedAction<Boolean> checkClassLoadersAction =
-                new PrivilegedAction<Boolean>()
-        {
+        final ClassLoader std = System.class.getClassLoader();
 
-            @Override
-            public Boolean run() {
-                final ClassLoader std = System.class.getClassLoader();
-
-                return (cmClass.getClassLoader() == std) &&
-                        (smClass.getClassLoader() == std) &&
-                        (wrClass.getClassLoader() == std);
-            }
-        };
-        return AccessController.doPrivileged(checkClassLoadersAction);
+        return (cmClass.getClassLoader() == std) &&
+                (smClass.getClassLoader() == std) &&
+                (wrClass.getClassLoader() == std);
     }
 
     /**
@@ -899,7 +887,7 @@ public class BufferedImage extends java.awt.Image
      *
      * <p>
      *
-     * An {@code ArrayOutOfBoundsException} may be thrown
+     * An {@code ArrayIndexOutOfBoundsException} may be thrown
      * if the coordinates are not in bounds.
      * However, explicit bounds checking is not guaranteed.
      *
@@ -933,7 +921,7 @@ public class BufferedImage extends java.awt.Image
      *
      * <p>
      *
-     * An {@code ArrayOutOfBoundsException} may be thrown
+     * An {@code ArrayIndexOutOfBoundsException} may be thrown
      * if the region is not in bounds.
      * However, explicit bounds checking is not guaranteed.
      *
@@ -1003,7 +991,7 @@ public class BufferedImage extends java.awt.Image
      *
      * <p>
      *
-     * An {@code ArrayOutOfBoundsException} may be thrown
+     * An {@code ArrayIndexOutOfBoundsException} may be thrown
      * if the coordinates are not in bounds.
      * However, explicit bounds checking is not guaranteed.
      *
@@ -1033,7 +1021,7 @@ public class BufferedImage extends java.awt.Image
      *
      * <p>
      *
-     * An {@code ArrayOutOfBoundsException} may be thrown
+     * An {@code ArrayIndexOutOfBoundsException} may be thrown
      * if the region is not in bounds.
      * However, explicit bounds checking is not guaranteed.
      *
@@ -1509,31 +1497,7 @@ public class BufferedImage extends java.awt.Image
      * @see #getData(Rectangle)
     */
     public void setData(Raster r) {
-        int width = r.getWidth();
-        int height = r.getHeight();
-        int startX = r.getMinX();
-        int startY = r.getMinY();
-
-        int[] tdata = null;
-
-        // Clip to the current Raster
-        Rectangle rclip = new Rectangle(startX, startY, width, height);
-        Rectangle bclip = new Rectangle(0, 0, raster.width, raster.height);
-        Rectangle intersect = rclip.intersection(bclip);
-        if (intersect.isEmpty()) {
-            return;
-        }
-        width = intersect.width;
-        height = intersect.height;
-        startX = intersect.x;
-        startY = intersect.y;
-
-        // remind use get/setDataElements for speed if Rasters are
-        // compatible
-        for (int i = startY; i < startY+height; i++)  {
-            tdata = r.getPixels(startX,i,width,1,tdata);
-            raster.setPixels(startX,i,width,1, tdata);
-        }
+        raster.setRect(r);
     }
 
 

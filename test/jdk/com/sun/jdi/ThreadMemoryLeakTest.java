@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@
  * @bug 8297638
  * @summary JDI memory leak when creating and destroying many threads
  *
- * @comment Don't allow -Xcomp or -Xint as they impact memory useage and number of iterations
- * @requires (vm.compMode == "Xmixed")
+ * @comment Don't allow -Xcomp or -Xint as they impact memory useage and number of iterations.
+ *          Require compressed oops because not doing so increases memory usage.
+ * @requires (vm.compMode == "Xmixed") & vm.opt.final.UseCompressedOops
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile -g ThreadMemoryLeakTest.java
  * @comment run with -Xmx7m so any leak will quickly produce OOME
@@ -58,19 +59,18 @@ class ThreadMemoryLeakTarg {
         while (System.currentTimeMillis() - startTime < 100 * 1000) {
             iterations++;
             semaphore.acquire();
-            TestScaffold.newThread(() -> {
+            DebuggeeWrapper.newThread(() -> {
                     adder.increment();
                     long sum = adder.sum();
                     if ((sum % 1000) == 0) {
                         System.out.println("Progress: " + sum);
                     }
                     try {
-                        String mainWrapper = System.getProperty("main.wrapper");
                         // Virtual thread creation tends to overwhelm the debugger,
                         // leading to high memory use for all the unprocessed events
                         // that get queued up, so we need to slow it down a bit more
                         // than we do for platform threads to avoid getting OOME.
-                        long timeToSleep = "Virtual".equals(mainWrapper) ? 100 : 50;
+                        long timeToSleep = DebuggeeWrapper.isVirtual() ? 100 : 50;
                         Thread.sleep(timeToSleep);
                     }
                     catch (InterruptedException e) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import jdk.jfr.Event;
 import jdk.jfr.Registered;
 /**
  * @test Tests that reflective access works as (normally) expected
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  *
@@ -102,7 +102,7 @@ public class TestGetEventWriterReflection {
     private static void testReflectionGetDeclaredFieldSetAccessible() throws Exception {
         try {
             Class<?> c = Class.forName("jdk.jfr.internal.event.EventWriter");
-            Field field = c.getDeclaredField("jvm");
+            Field field = c.getDeclaredField("unsafe");
             field.setAccessible(true);
             throw new RuntimeException("Should not reach here " + field);
         } catch (InaccessibleObjectException ioe) {

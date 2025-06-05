@@ -25,21 +25,18 @@
  * @test
  * @bug 8144185
  * @summary javac produces incorrect RuntimeInvisibleTypeAnnotations length attribute
- * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
 import static java.lang.annotation.ElementType.TYPE_USE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.Method;
-import com.sun.tools.classfile.RuntimeVisibleTypeAnnotations_attribute;
-import com.sun.tools.classfile.TypeAnnotation;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 public class TypeAnnotationPropagationTest extends ClassfileTestHelper {
@@ -48,26 +45,36 @@ public class TypeAnnotationPropagationTest extends ClassfileTestHelper {
     }
 
     public void run() throws Exception {
-        ClassFile cf = getClassFile("TypeAnnotationPropagationTest$Test.class");
+        ClassModel cm = getClassFile("TypeAnnotationPropagationTest$Test.class");
 
-        Method f = null;
-        for (Method m : cf.methods) {
-            if (m.getName(cf.constant_pool).contains("f")) {
-                f = m;
+        MethodModel f = null;
+        for (MethodModel mm : cm.methods()) {
+            if (mm.methodName().stringValue().contains("f")) {
+                f = mm;
                 break;
             }
         }
 
-        int idx = f.attributes.getIndex(cf.constant_pool, Attribute.Code);
-        Code_attribute cattr = (Code_attribute) f.attributes.get(idx);
-        idx = cattr.attributes.getIndex(cf.constant_pool, Attribute.RuntimeVisibleTypeAnnotations);
-        RuntimeVisibleTypeAnnotations_attribute attr =
-                (RuntimeVisibleTypeAnnotations_attribute) cattr.attributes.get(idx);
+        assert f != null;
+        CodeAttribute cattr = f.findAttribute(Attributes.code()).orElse(null);
+        assert cattr != null;
+        RuntimeVisibleTypeAnnotationsAttribute attr = cattr.findAttribute(Attributes.runtimeVisibleTypeAnnotations()).orElse(null);
 
-        TypeAnnotation anno = attr.annotations[0];
-        assertEquals(anno.position.lvarOffset, new int[] {3}, "start_pc");
-        assertEquals(anno.position.lvarLength, new int[] {8}, "length");
-        assertEquals(anno.position.lvarIndex, new int[] {1}, "index");
+        assert attr != null;
+        List<TypeAnnotation.LocalVarTargetInfo> annosPosition = ((TypeAnnotation.LocalVarTarget) attr.annotations().get(0).targetInfo()).table();
+        int[] lvarOffset = annosPosition.stream()
+                .map(e -> cattr.labelToBci(e.startLabel()))
+                .mapToInt(t -> t).toArray();
+        int[] lvarLength = annosPosition.stream()
+                .map(e -> cattr.labelToBci(e.endLabel()) - cattr.labelToBci(e.startLabel()))
+                .mapToInt(t -> t).toArray();
+        int[] lvarIndex = annosPosition.stream()
+                .map(TypeAnnotation.LocalVarTargetInfo::index)
+                .mapToInt(t -> t).toArray();
+
+        assertEquals(lvarOffset, new int[] {3}, "start_pc");
+        assertEquals(lvarLength, new int[] {8}, "length");
+        assertEquals(lvarIndex, new int[] {1}, "index");
     }
 
     void assertEquals(int[] actual, int[] expected, String message) {

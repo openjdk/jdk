@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
@@ -32,10 +31,10 @@
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/fieldStreams.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -59,7 +58,7 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
 
   AccessFlags access_flags = ik->access_flags();
   _flags = ciFlags(access_flags);
-  _has_finalizer = access_flags.has_finalizer();
+  _has_finalizer = ik->has_finalizer();
   _has_subklass = flags().is_final() ? subklass_false : subklass_unknown;
   _init_state = ik->init_state();
   _has_nonstatic_fields = ik->has_nonstatic_fields();
@@ -90,14 +89,10 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
   JavaThread *thread = JavaThread::current();
   if (ciObjectFactory::is_initialized()) {
     _loader = JNIHandles::make_local(thread, ik->class_loader());
-    _protection_domain = JNIHandles::make_local(thread,
-                                                ik->protection_domain());
     _is_shared = false;
   } else {
     Handle h_loader(thread, ik->class_loader());
-    Handle h_protection_domain(thread, ik->protection_domain());
     _loader = JNIHandles::make_global(h_loader);
-    _protection_domain = JNIHandles::make_global(h_protection_domain);
     _is_shared = true;
   }
 
@@ -119,7 +114,7 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
 
 // Version for unloaded classes:
 ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
-                                 jobject loader, jobject protection_domain)
+                                 jobject loader)
   : ciKlass(name, T_OBJECT)
 {
   assert(name->char_at(0) != JVM_SIGNATURE_ARRAY, "not an instance klass");
@@ -130,7 +125,6 @@ ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
   _is_hidden = false;
   _is_record = false;
   _loader = loader;
-  _protection_domain = protection_domain;
   _is_shared = false;
   _super = nullptr;
   _java_mirror = nullptr;
@@ -170,19 +164,6 @@ oop ciInstanceKlass::loader() {
 // ciInstanceKlass::loader_handle
 jobject ciInstanceKlass::loader_handle() {
   return _loader;
-}
-
-// ------------------------------------------------------------------
-// ciInstanceKlass::protection_domain
-oop ciInstanceKlass::protection_domain() {
-  ASSERT_IN_VM;
-  return JNIHandles::resolve(_protection_domain);
-}
-
-// ------------------------------------------------------------------
-// ciInstanceKlass::protection_domain_handle
-jobject ciInstanceKlass::protection_domain_handle() {
-  return _protection_domain;
 }
 
 // ------------------------------------------------------------------
@@ -419,9 +400,6 @@ ciField* ciInstanceKlass::get_field_by_offset(int field_offset, bool is_static) 
       int  field_off = field->offset_in_bytes();
       if (field_off == field_offset)
         return field;
-      if (field_off > field_offset)
-        break;
-      // could do binary search or check bins, but probably not worth it
     }
     return nullptr;
   }
@@ -449,11 +427,6 @@ ciField* ciInstanceKlass::get_field_by_name(ciSymbol* name, ciSymbol* signature,
   return field;
 }
 
-
-static int sort_field_by_offset(ciField** a, ciField** b) {
-  return (*a)->offset_in_bytes() - (*b)->offset_in_bytes();
-  // (no worries about 32-bit overflow...)
-}
 
 // ------------------------------------------------------------------
 // ciInstanceKlass::compute_nonstatic_fields
@@ -495,9 +468,6 @@ int ciInstanceKlass::compute_nonstatic_fields() {
 
   int flen = fields->length();
 
-  // Now sort them by offset, ascending.
-  // (In principle, they could mix with superclass fields.)
-  fields->sort(sort_field_by_offset);
   _nonstatic_fields = fields;
   return flen;
 }
@@ -661,7 +631,8 @@ class StaticFinalFieldPrinter : public FieldClosure {
       ResourceMark rm;
       oop mirror = fd->field_holder()->java_mirror();
       _out->print("staticfield %s %s %s ", _holder, fd->name()->as_quoted_ascii(), fd->signature()->as_quoted_ascii());
-      switch (fd->field_type()) {
+      BasicType field_type = fd->field_type();
+      switch (field_type) {
         case T_BYTE:    _out->print_cr("%d", mirror->byte_field(fd->offset()));   break;
         case T_BOOLEAN: _out->print_cr("%d", mirror->bool_field(fd->offset()));   break;
         case T_SHORT:   _out->print_cr("%d", mirror->short_field(fd->offset()));  break;
@@ -682,9 +653,12 @@ class StaticFinalFieldPrinter : public FieldClosure {
         case T_OBJECT: {
           oop value =  mirror->obj_field_acquire(fd->offset());
           if (value == nullptr) {
-            _out->print_cr("null");
+            if (field_type == T_ARRAY) {
+              _out->print("%d", -1);
+            }
+            _out->cr();
           } else if (value->is_instance()) {
-            assert(fd->field_type() == T_OBJECT, "");
+            assert(field_type == T_OBJECT, "");
             if (value->is_a(vmClasses::String_klass())) {
               const char* ascii_value = java_lang_String::as_quoted_ascii(value);
               _out->print_cr("\"%s\"", (ascii_value != nullptr) ? ascii_value : "");

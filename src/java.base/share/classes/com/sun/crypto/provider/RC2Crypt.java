@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ final class RC2Crypt extends SymmetricCipher {
 
     static void checkKey(String algorithm, int keyLength)
             throws InvalidKeyException {
-        if (algorithm.equals("RC2") == false) {
+        if (!algorithm.equals("RC2")) {
             throw new InvalidKeyException("Key algorithm must be RC2");
         }
         if ((keyLength < 5) || (keyLength > 128)) {

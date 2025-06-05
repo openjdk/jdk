@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "jfr/dcmd/jfrDcmds.hpp"
 #include "jfr/instrumentation/jfrJvmtiAgent.hpp"
@@ -76,6 +76,10 @@ bool JfrRecorder::is_enabled() {
   return _enabled;
 }
 
+bool JfrRecorder::is_started_on_commandline() {
+  return StartFlightRecording != nullptr;
+}
+
 bool JfrRecorder::create_oop_storages() {
   // currently only a single weak oop storage for Leak Profiler
   return ObjectSampler::create_oop_storage();
@@ -83,13 +87,20 @@ bool JfrRecorder::create_oop_storages() {
 
 bool JfrRecorder::on_create_vm_1() {
   if (!is_disabled()) {
-    if (FlightRecorder || StartFlightRecording != nullptr) {
+    if (FlightRecorder || is_started_on_commandline()) {
       enable();
     }
   }
   if (!create_oop_storages()) {
     return false;
   }
+
+  if (is_started_on_commandline()) {
+    if (!create_checkpoint_manager()) {
+      return false;
+    }
+  }
+
   // fast time initialization
   return JfrTime::initialize();
 }
@@ -185,7 +196,7 @@ static void log_jdk_jfr_module_resolution_error(TRAPS) {
 
 static bool is_cds_dump_requested() {
   // we will not be able to launch recordings on startup if a cds dump is being requested
-  if (Arguments::is_dumping_archive() && JfrOptionSet::start_flight_recording_options() != nullptr) {
+  if (CDSConfig::is_dumping_archive() && JfrOptionSet::start_flight_recording_options() != nullptr) {
     warning("JFR will be disabled during CDS dumping");
     teardown_startup_support();
     return true;
@@ -198,7 +209,7 @@ bool JfrRecorder::on_create_vm_2() {
     return true;
   }
   JavaThread* const thread = JavaThread::current();
-  JfrThreadLocal::assign_thread_id(thread, thread->jfr_thread_local());
+  assert(JfrThreadLocal::jvm_thread_id(thread) != 0, "invariant");
 
   if (!JfrOptionSet::initialize(thread)) {
     return false;
@@ -226,8 +237,8 @@ bool JfrRecorder::on_create_vm_2() {
 }
 
 bool JfrRecorder::on_create_vm_3() {
-  assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_LIVE, "invalid init sequence");
-  return Arguments::is_dumping_archive() || launch_command_line_recordings(JavaThread::current());
+  JVMTI_ONLY( assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_LIVE, "invalid init sequence"); )
+  return CDSConfig::is_dumping_archive() || launch_command_line_recordings(JavaThread::current());
 }
 
 static bool _created = false;
@@ -278,7 +289,7 @@ bool JfrRecorder::create_components() {
   if (!create_storage()) {
     return false;
   }
-  if (!create_checkpoint_manager()) {
+  if (!initialize_checkpoint_manager()) {
     return false;
   }
   if (!create_stacktrace_repository()) {
@@ -290,7 +301,7 @@ bool JfrRecorder::create_components() {
   if (!create_stringpool()) {
     return false;
   }
-  if (!create_thread_sampling()) {
+  if (!create_thread_sampler()) {
     return false;
   }
   if (!create_event_throttler()) {
@@ -302,12 +313,12 @@ bool JfrRecorder::create_components() {
 // subsystems
 static JfrPostBox* _post_box = nullptr;
 static JfrStorage* _storage = nullptr;
-static JfrCheckpointManager* _checkpoint_manager = nullptr;
 static JfrRepository* _repository = nullptr;
 static JfrStackTraceRepository* _stack_trace_repository;
 static JfrStringPool* _stringpool = nullptr;
 static JfrOSInterface* _os_interface = nullptr;
-static JfrThreadSampling* _thread_sampling = nullptr;
+static JfrThreadSampler* _thread_sampler = nullptr;
+static JfrCheckpointManager* _checkpoint_manager = nullptr;
 
 bool JfrRecorder::create_java_event_writer() {
   return JfrJavaEventWriter::initialize();
@@ -345,9 +356,19 @@ bool JfrRecorder::create_storage() {
 
 bool JfrRecorder::create_checkpoint_manager() {
   assert(_checkpoint_manager == nullptr, "invariant");
+  _checkpoint_manager = JfrCheckpointManager::create();
+  return _checkpoint_manager != nullptr && _checkpoint_manager->initialize_early();
+}
+
+bool JfrRecorder::initialize_checkpoint_manager() {
+  if (_checkpoint_manager == nullptr) {
+    if (!create_checkpoint_manager()) {
+      return false;
+    }
+  }
+  assert(_checkpoint_manager != nullptr, "invariant");
   assert(_repository != nullptr, "invariant");
-  _checkpoint_manager = JfrCheckpointManager::create(_repository->chunkwriter());
-  return _checkpoint_manager != nullptr && _checkpoint_manager->initialize();
+  return _checkpoint_manager->initialize(&_repository->chunkwriter());
 }
 
 bool JfrRecorder::create_stacktrace_repository() {
@@ -363,10 +384,10 @@ bool JfrRecorder::create_stringpool() {
   return _stringpool != nullptr && _stringpool->initialize();
 }
 
-bool JfrRecorder::create_thread_sampling() {
-  assert(_thread_sampling == nullptr, "invariant");
-  _thread_sampling = JfrThreadSampling::create();
-  return _thread_sampling != nullptr;
+bool JfrRecorder::create_thread_sampler() {
+  assert(_thread_sampler == nullptr, "invariant");
+  _thread_sampler = JfrThreadSampler::create();
+  return _thread_sampler != nullptr;
 }
 
 bool JfrRecorder::create_event_throttler() {
@@ -389,7 +410,7 @@ void JfrRecorder::destroy_components() {
   }
   if (_checkpoint_manager != nullptr) {
     JfrCheckpointManager::destroy();
-    _checkpoint_manager = nullptr;
+    // do not delete the _checkpoint_manager instance
   }
   if (_stack_trace_repository != nullptr) {
     JfrStackTraceRepository::destroy();
@@ -403,15 +424,15 @@ void JfrRecorder::destroy_components() {
     JfrOSInterface::destroy();
     _os_interface = nullptr;
   }
-  if (_thread_sampling != nullptr) {
-    JfrThreadSampling::destroy();
-    _thread_sampling = nullptr;
+  if (_thread_sampler != nullptr) {
+    JfrThreadSampler::destroy();
+    _thread_sampler = nullptr;
   }
   JfrEventThrottler::destroy();
 }
 
 bool JfrRecorder::create_recorder_thread() {
-  return JfrRecorderThread::start(_checkpoint_manager, _post_box, JavaThread::current());
+  return JfrRecorderThreadEntry::start(_checkpoint_manager, _post_box, JavaThread::current());
 }
 
 void JfrRecorder::destroy() {

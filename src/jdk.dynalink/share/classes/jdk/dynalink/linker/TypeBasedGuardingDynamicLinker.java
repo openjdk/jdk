@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ import jdk.dynalink.linker.support.CompositeTypeBasedGuardingDynamicLinker;
  * linkers will fall into this category, as they recognize their native objects as Java objects of classes implementing
  * a specific language-native interface or superclass. The linker mechanism can optimize the dispatch for these linkers,
  * see {@link CompositeTypeBasedGuardingDynamicLinker}.
+ * @since 9
  */
 public interface TypeBasedGuardingDynamicLinker extends GuardingDynamicLinker {
     /**

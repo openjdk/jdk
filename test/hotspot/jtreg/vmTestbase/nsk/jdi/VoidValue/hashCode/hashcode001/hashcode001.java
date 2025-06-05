@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@
  *          /test/lib
  * @build nsk.jdi.VoidValue.hashCode.hashcode001.hashcode001
  *        nsk.jdi.VoidValue.hashCode.hashcode001.hashcode001a
- * @run main/othervm
+ * @run driver
  *      nsk.jdi.VoidValue.hashCode.hashcode001.hashcode001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -127,7 +127,9 @@ public class hashcode001 {
 
     public static void main (String argv[]) {
         int result = run(argv, System.out);
-        System.exit(result + PASS_BASE);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run (String argv[], PrintStream out) {
@@ -215,6 +217,7 @@ public class hashcode001 {
         }
 
         VirtualMachine vm = debuggee.VM();
+        ReferenceType debuggeeClass = debuggee.classByName(debuggeeName);
 
     //------------------------------------------------------  testing section
         log1("      TESTING BEGINS");
@@ -241,8 +244,6 @@ public class hashcode001 {
             eventRManager = vm.eventRequestManager();
             eventQueue    = vm.eventQueue();
 
-            List            allThreads   = null;
-            ListIterator    listIterator = null;
             List            classes      = null;
 
             String threadName = "Thread2";
@@ -257,7 +258,6 @@ public class hashcode001 {
 
                 log2("getting ThreadReference object");
                 try {
-                    allThreads  = vm.allThreads();
                     classes     = vm.classesByName(testedClassName);
                     testedclass = (ReferenceType) classes.get(0);
                 } catch ( Exception e) {
@@ -266,19 +266,7 @@ public class hashcode001 {
                     break label0;
                 }
 
-                listIterator = allThreads.listIterator();
-                for (;;) {
-                    try {
-                        thread2 = (ThreadReference) listIterator.next();
-                        if (thread2.name().equals(threadName))
-                            break ;
-                    } catch ( NoSuchElementException e ) {
-                        log3("ERROR: NoSuchElementException for listIterator.next()");
-                        log3("ERROR: NO THREAD2 ?????????!!!!!!!");
-                        expresult = returnCode1;
-                        break label0;
-                    }
-                }
+                thread2 = debuggee.threadByFieldNameOrThrow(debuggeeClass, "thread2", threadName);
 
                 log2("setting up breakpoint");
 

@@ -32,6 +32,7 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.common
  * @library /compiler/jvmci/jdk.vm.ci.hotspot.test/src
  *          /compiler/jvmci/jdk.vm.ci.code.test/src
+ * @library /test/lib
  * @run testng/othervm
  *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler
  *      jdk.vm.ci.hotspot.test.TestHotSpotJVMCIRuntime
@@ -52,6 +53,8 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaType;
+
+import jdk.test.lib.Platform;
 
 public class TestHotSpotJVMCIRuntime {
 
@@ -157,9 +160,14 @@ public class TestHotSpotJVMCIRuntime {
 
     @Test
     public void jniEnomemTest() throws Exception {
+        if (!Platform.isDebugBuild()) {
+            // The test.jvmci.forceEnomemOnLibjvmciInit property is only
+            // read in a debug VM.
+            return;
+        }
         String[] names = {"translate", "attachCurrentThread", "registerNativeMethods"};
         for (String name : names) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+UnlockExperimentalVMOptions",
                 "-XX:+EnableJVMCI",
                 "-XX:-UseJVMCICompiler",
@@ -174,5 +182,10 @@ public class TestHotSpotJVMCIRuntime {
             output.shouldContain("java.lang.OutOfMemoryError: JNI_ENOMEM creating or attaching to libjvmci");
             output.shouldNotHaveExitValue(0);
         }
+    }
+
+    @Test
+    public void lookupTypeTest() throws Exception {
+        // This is tested by compiler/jvmci/compilerToVM/LookupTypeTest.java
     }
 }

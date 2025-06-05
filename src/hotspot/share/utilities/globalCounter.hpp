@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,9 @@ class GlobalCounter : public AllStatic {
   // Since do not know what we will end up next to in BSS, we make sure the
   // counter is on a separate cacheline.
   struct PaddedCounter {
-    DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
+    DEFINE_PAD_MINUS_SIZE(0, DEFAULT_PADDING_SIZE, 0);
     volatile uintx _counter;
-    DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile uintx));
+    DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, sizeof(volatile uintx));
   };
 
   // The global counter

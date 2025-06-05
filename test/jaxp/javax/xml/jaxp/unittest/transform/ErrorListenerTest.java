@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,9 @@ import org.xml.sax.InputSource;
 
 /*
  * @test
- * @bug 8157830 8228854
+ * @bug 8157830 8228854 8343001
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm transform.ErrorListenerTest
+ * @run testng/othervm -Djdk.xml.enableExtensionFunctions=true transform.ErrorListenerTest
  * @summary Verifies that ErrorListeners are handled properly
  */
 public class ErrorListenerTest {

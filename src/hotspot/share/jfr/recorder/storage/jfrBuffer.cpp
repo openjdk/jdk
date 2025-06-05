@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/storage/jfrBuffer.hpp"
 #include "runtime/javaThread.hpp"
 
@@ -258,4 +257,12 @@ void JfrBuffer::set_context(u1 context) {
 
 void JfrBuffer::clear_context() {
   set(&_context, 0);
+}
+
+ByteSize JfrBuffer::pos_offset() {
+  return byte_offset_of(JfrBuffer, _pos);
+}
+
+ByteSize JfrBuffer::flags_offset() {
+  return byte_offset_of(JfrBuffer, _flags);
 }

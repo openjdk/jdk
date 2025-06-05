@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ import static java.awt.image.BufferedImage.TYPE_USHORT_GRAY;
 
 /*
  * @test
- * @bug 8012229 8300725 8279216
+ * @bug 8012229 8300725 8279216 8323210
  * @summary one more test to check the alpha channel
  */
 public final class ColCvtAlphaDifferentSrcDst {

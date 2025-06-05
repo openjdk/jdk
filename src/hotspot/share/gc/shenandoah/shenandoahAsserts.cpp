@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahForwarding.hpp"
@@ -37,7 +36,7 @@ void print_raw_memory(ShenandoahMessageBuffer &msg, void* loc) {
   // should be in heap, in known committed region, within that region.
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (!heap->is_in(loc)) return;
+  if (!heap->is_in_reserved(loc)) return;
 
   ShenandoahHeapRegion* r = heap->heap_region_containing(loc);
   if (r != nullptr && r->is_committed()) {
@@ -71,13 +70,16 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
   msg.append("    %3s marked strong\n",              ctx->is_marked_strong(obj) ? "" : "not");
   msg.append("    %3s marked weak\n",                ctx->is_marked_weak(obj) ? "" : "not");
   msg.append("    %3s in collection set\n",          heap->in_collection_set(obj) ? "" : "not");
+  if (heap->mode()->is_generational() && !obj->is_forwarded()) {
+    msg.append("  age: %d\n", obj->age());
+  }
   msg.append("  mark:%s\n", mw_ss.freeze());
   msg.append("  region: %s", ss.freeze());
 }
 
 void ShenandoahAsserts::print_non_obj(ShenandoahMessageBuffer& msg, void* loc) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (heap->is_in(loc)) {
+  if (heap->is_in_reserved(loc)) {
     msg.append("  inside Java heap\n");
     ShenandoahHeapRegion *r = heap->heap_region_containing(loc);
     stringStream ss;
@@ -96,7 +98,7 @@ void ShenandoahAsserts::print_non_obj(ShenandoahMessageBuffer& msg, void* loc) {
 void ShenandoahAsserts::print_obj_safe(ShenandoahMessageBuffer& msg, void* loc) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   msg.append("  " PTR_FORMAT " - safe print, no details\n", p2i(loc));
-  if (heap->is_in(loc)) {
+  if (heap->is_in_reserved(loc)) {
     ShenandoahHeapRegion* r = heap->heap_region_containing(loc);
     if (r != nullptr) {
       stringStream ss;
@@ -113,7 +115,7 @@ void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_l
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ResourceMark rm;
 
-  bool loc_in_heap = (loc != nullptr && heap->is_in(loc));
+  bool loc_in_heap = (loc != nullptr && heap->is_in_reserved(loc));
 
   ShenandoahMessageBuffer msg("%s; %s\n\n", phase, label);
 
@@ -166,22 +168,22 @@ void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_l
   report_vm_error(file, line, msg.buffer());
 }
 
-void ShenandoahAsserts::assert_in_heap(void* interior_loc, oop obj, const char *file, int line) {
+void ShenandoahAsserts::assert_in_heap_bounds(void* interior_loc, oop obj, const char *file, int line) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  if (!heap->is_in(obj)) {
-    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_in_heap failed",
-                  "oop must point to a heap address",
+  if (!heap->is_in_reserved(obj)) {
+    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_in_heap_bounds failed",
+                  "oop must be in heap bounds",
                   file, line);
   }
 }
 
-void ShenandoahAsserts::assert_in_heap_or_null(void* interior_loc, oop obj, const char *file, int line) {
+void ShenandoahAsserts::assert_in_heap_bounds_or_null(void* interior_loc, oop obj, const char *file, int line) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  if (obj != nullptr && !heap->is_in(obj)) {
-    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_in_heap_or_null failed",
-                  "oop must point to a heap address",
+  if (obj != nullptr && !heap->is_in_reserved(obj)) {
+    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_in_heap_bounds_or_null failed",
+                  "oop must be in heap bounds",
                   file, line);
   }
 }
@@ -191,13 +193,13 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
 
   // Step 1. Check that obj is correct.
   // After this step, it is safe to call heap_region_containing().
-  if (!heap->is_in(obj)) {
+  if (!heap->is_in_reserved(obj)) {
     print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                  "oop must point to a heap address",
+                  "oop must be in heap bounds",
                   file, line);
   }
 
-  Klass* obj_klass = obj->klass_or_null();
+  Klass* obj_klass = ShenandoahForwarding::klass(obj);
   if (obj_klass == nullptr) {
     print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                   "Object klass pointer should not be null",
@@ -208,6 +210,12 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
     print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                   "Object klass pointer must go to metaspace",
                   file,line);
+  }
+
+  if (!heap->is_in(obj)) {
+    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                  "Object should be in active region area",
+                  file, line);
   }
 
   oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
@@ -223,22 +231,28 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
     }
 
     // Step 2. Check that forwardee is correct
-    if (!heap->is_in(fwd)) {
+    if (!heap->is_in_reserved(fwd)) {
       print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                    "Forwardee must point to a heap address",
+                    "Forwardee must be in heap bounds",
                     file, line);
     }
 
-    if (obj_klass != fwd->klass()) {
+    if (obj_klass != ShenandoahForwarding::klass(fwd)) {
       print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                     "Forwardee klass disagrees with object class",
                     file, line);
     }
 
     // Step 3. Check that forwardee points to correct region
+    if (!heap->is_in(fwd)) {
+      print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                    "Forwardee should be in active region area",
+                    file, line);
+    }
+
     if (heap->heap_region_index_containing(fwd) == heap->heap_region_index_containing(obj)) {
       print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                    "Non-trivial forwardee should in another region",
+                    "Non-trivial forwardee should be in another region",
                     file, line);
     }
 
@@ -247,6 +261,25 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
     if (fwd != fwd2) {
       print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                     "Multiple forwardings",
+                    file, line);
+    }
+  }
+
+  // Do additional checks for special objects: their fields can hold metadata as well.
+  // We want to check class loading/unloading did not corrupt them.
+
+  if (Universe::is_fully_initialized() && (obj_klass == vmClasses::Class_klass())) {
+    Metadata* klass = obj->metadata_field(java_lang_Class::klass_offset());
+    if (klass != nullptr && !Metaspace::contains(klass)) {
+      print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                    "Instance class mirror should point to Metaspace",
+                    file, line);
+    }
+
+    Metadata* array_klass = obj->metadata_field(java_lang_Class::array_klass_offset());
+    if (array_klass != nullptr && !Metaspace::contains(array_klass)) {
+      print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                    "Array class mirror should point to Metaspace",
                     file, line);
     }
   }
@@ -264,10 +297,12 @@ void ShenandoahAsserts::assert_in_correct_region(void* interior_loc, oop obj, co
   }
 
   size_t alloc_size = obj->size();
-  if (alloc_size > ShenandoahHeapRegion::humongous_threshold_words()) {
+  HeapWord* obj_end = cast_from_oop<HeapWord*>(obj) + alloc_size;
+
+  if (ShenandoahHeapRegion::requires_humongous(alloc_size)) {
     size_t idx = r->index();
-    size_t num_regions = ShenandoahHeapRegion::required_regions(alloc_size * HeapWordSize);
-    for (size_t i = idx; i < idx + num_regions; i++) {
+    size_t end_idx = heap->heap_region_index_containing(obj_end - 1);
+    for (size_t i = idx; i < end_idx; i++) {
       ShenandoahHeapRegion* chain_reg = heap->get_region(i);
       if (i == idx && !chain_reg->is_humongous_start()) {
         print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_in_correct_region failed",
@@ -279,6 +314,12 @@ void ShenandoahAsserts::assert_in_correct_region(void* interior_loc, oop obj, co
                       "Humongous continuation should be of proper size",
                       file, line);
       }
+    }
+  } else {
+    if (obj_end > r->top()) {
+      print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_in_correct_region failed",
+                    "Object end should be within the active area of the region",
+                    file, line);
     }
   }
 }
@@ -385,7 +426,7 @@ void ShenandoahAsserts::assert_locked_or_shenandoah_safepoint(Mutex* lock, const
     return;
   }
 
-  ShenandoahMessageBuffer msg("Must ba at a Shenandoah safepoint or held %s lock", lock->name());
+  ShenandoahMessageBuffer msg("Must be at a Shenandoah safepoint or held %s lock", lock->name());
   report_vm_error(file, line, msg.buffer());
 }
 
@@ -418,10 +459,55 @@ void ShenandoahAsserts::assert_heaplocked_or_safepoint(const char* file, int lin
     return;
   }
 
-  if (ShenandoahSafepoint::is_at_shenandoah_safepoint() && Thread::current()->is_VM_thread()) {
+  if (ShenandoahSafepoint::is_at_shenandoah_safepoint()) {
     return;
   }
 
   ShenandoahMessageBuffer msg("Heap lock must be owned by current thread, or be at safepoint");
+  report_vm_error(file, line, msg.buffer());
+}
+
+void ShenandoahAsserts::assert_generational(const char* file, int line) {
+  if (ShenandoahHeap::heap()->mode()->is_generational()) {
+    return;
+  }
+
+  ShenandoahMessageBuffer msg("Must be in generational mode");
+  report_vm_error(file, line, msg.buffer());
+}
+
+void ShenandoahAsserts::assert_control_or_vm_thread_at_safepoint(bool at_safepoint, const char* file, int line) {
+  Thread* thr = Thread::current();
+  if (thr == ShenandoahHeap::heap()->control_thread()) {
+    return;
+  }
+  if (thr->is_VM_thread()) {
+    if (!at_safepoint) {
+      return;
+    } else if (SafepointSynchronize::is_at_safepoint()) {
+      return;
+    }
+  }
+
+  ShenandoahMessageBuffer msg("Must be either control thread, or vm thread");
+  if (at_safepoint) {
+    msg.append(" at a safepoint");
+  }
+  report_vm_error(file, line, msg.buffer());
+}
+
+void ShenandoahAsserts::assert_generations_reconciled(const char* file, int line) {
+  if (!SafepointSynchronize::is_at_safepoint()) {
+    return;
+  }
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahGeneration* ggen = heap->gc_generation();
+  ShenandoahGeneration* agen = heap->active_generation();
+  if (agen == ggen) {
+    return;
+  }
+
+  ShenandoahMessageBuffer msg("Active(%d) & GC(%d) Generations aren't reconciled", agen->type(), ggen->type());
   report_vm_error(file, line, msg.buffer());
 }

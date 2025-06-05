@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,74 +22,92 @@
  */
 
 /* @test
-   @bug 4131169 4109131
-   @summary Basic test for getAbsolutePath method
+ * @bug 4131169 4109131 8287843
+ * @summary Basic test for getAbsolutePath method
+ * @run junit GetAbsolutePath
  */
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.util.stream.Stream;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class GetAbsolutePath {
 
-    private static boolean ignoreCase = false;
+    private static final String USER_DIR = System.getProperty("user.dir");
 
-    private static void ck(String path, String ans) throws Exception {
-        File f = new File(path);
-        String p = f.getAbsolutePath();
-        if ((ignoreCase && p.equalsIgnoreCase(ans)) || p.equals(ans))
-            System.err.println(path + " ==> " + p);
-        else
-            throw new Exception(path + ": expected " + ans + ", got " + p);
+    private static char driveLetter() {
+        assert System.getProperty("os.name").startsWith("Windows");
+
+        if ((USER_DIR.length() > 2) && (USER_DIR.charAt(1) == ':')
+            && (USER_DIR.charAt(2) == '\\'))
+            return USER_DIR.charAt(0);
+
+        throw new RuntimeException("Current directory has no drive");
     }
 
-    private static void testWin32() throws Exception {
-        String wd = System.getProperty("user.dir");
-        char d;
-        if ((wd.length() > 2) && (wd.charAt(1) == ':')
-            && (wd.charAt(2) == '\\'))
-            d = wd.charAt(0);
-        else
-            throw new Exception("Current directory has no drive");
-        ck("/foo/bar", d + ":\\foo\\bar");
-        ck("\\foo\\bar", d + ":\\foo\\bar");
-        ck("c:\\foo\\bar", "c:\\foo\\bar");
-        ck("c:/foo/bar", "c:\\foo\\bar");
-        ck("\\\\foo\\bar", "\\\\foo\\bar");
+    private static Stream<Arguments> windowsSource() {
+        char drive = driveLetter();
+        return Stream.of(Arguments.of("/foo/bar", drive + ":\\foo\\bar"),
+                         Arguments.of("\\foo\\bar", drive + ":\\foo\\bar"),
+                         Arguments.of("c:\\foo\\bar", "c:\\foo\\bar"),
+                         Arguments.of("c:/foo/bar", "c:\\foo\\bar"),
+                         Arguments.of("\\\\foo\\bar", "\\\\foo\\bar"),
+                         Arguments.of("", USER_DIR), // empty path
+                         Arguments.of("\\\\?\\foo", USER_DIR + "\\foo"),
+                         Arguments.of("\\\\?\\C:\\Users\\x", "C:\\Users\\x"),
+                         Arguments.of("\\\\?\\" + drive + ":", USER_DIR),
+                         Arguments.of("\\\\?\\" + drive + ":bar", USER_DIR + "\\bar"));
+    }
 
-        /* Tricky directory-relative case */
-        d = Character.toLowerCase(d);
+    @EnabledOnOs(OS.WINDOWS)
+    @ParameterizedTest
+    @MethodSource("windowsSource")
+    public void windows(String path, String absolute) throws IOException {
+        File file = new File(path);
+        assertEquals(0, absolute.compareToIgnoreCase(file.getAbsolutePath()));
+    }
+
+    @EnabledOnOs(OS.WINDOWS)
+    @Test
+    public void windowsDriveRelative() throws IOException {
+        // Tricky directory-relative case
+        char d = Character.toLowerCase(driveLetter());
         char z = 0;
         if (d != 'c') z = 'c';
         else if (d != 'd') z = 'd';
         if (z != 0) {
             File f = new File(z + ":.");
             if (f.exists()) {
-                String zwd = f.getCanonicalPath();
-                ck(z + ":foo", zwd + "\\foo");
+                String zUSER_DIR = f.getCanonicalPath();
+                File path = new File(z + ":foo");
+                String p = path.getAbsolutePath();
+                String ans = zUSER_DIR + "\\foo";
+                assertEquals(0, p.compareToIgnoreCase(ans));
             }
         }
-
-        /* Empty path */
-        ck("", wd);
     }
 
-    private static void testUnix() throws Exception {
-        String wd = System.getProperty("user.dir");
-        ck("foo", wd + "/foo");
-        ck("foo/bar", wd + "/foo/bar");
-        ck("/foo", "/foo");
-        ck("/foo/bar", "/foo/bar");
-
-        /* Empty path */
-        ck("", wd);
+    private static Stream<Arguments> unixSource() {
+        return Stream.of(Arguments.of("foo", USER_DIR + "/foo"),
+                         Arguments.of("foo/bar", USER_DIR + "/foo/bar"),
+                         Arguments.of("/foo", "/foo"),
+                         Arguments.of("/foo/bar", "/foo/bar"),
+                         Arguments.of("", USER_DIR));
     }
 
-    public static void main(String[] args) throws Exception {
-        if (File.separatorChar == '\\') {
-            ignoreCase = true;
-            testWin32();
-        }
-        if (File.separatorChar == '/') testUnix();
+    @EnabledOnOs({OS.LINUX, OS.MAC})
+    @ParameterizedTest
+    @MethodSource("unixSource")
+    public void unix(String path, String absolute) throws IOException {
+        assertEquals(absolute, new File(path).getAbsolutePath());
     }
-
 }

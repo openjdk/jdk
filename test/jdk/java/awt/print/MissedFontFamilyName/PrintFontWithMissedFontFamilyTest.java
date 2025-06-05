@@ -25,6 +25,7 @@
 /**
  * @test
  * @bug 8265761
+ * @key printer
  * @requires (os.family == "windows")
  * @summary Font with missed font family name is not properly printed on Windows
  * @run main/othervm/manual PrintFontWithMissedFontFamilyTest

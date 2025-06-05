@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,12 @@ class Bundle {
         "narrow.Eras"
     };
 
+    static final String[] LIST_PATTERN_KEYS = {
+            "ListPatterns_standard",
+            "ListPatterns_or",
+            "ListPatterns_unit",
+    };
+
     // DateFormatItem prefix
     static final String DATEFORMATITEM_KEY_PREFIX = "DateFormatItem.";
     static final String DATEFORMATITEM_INPUT_REGIONS_PREFIX = "DateFormatItemInputRegions.";
@@ -192,7 +198,6 @@ class Bundle {
         String[] cldrBundles = getCLDRPath().split(",");
 
         // myMap contains resources for id.
-        @SuppressWarnings("unchecked")
         Map<String, Object> myMap = new HashMap<>();
         int index;
         for (index = 0; index < cldrBundles.length; index++) {
@@ -507,10 +512,8 @@ class Bundle {
                     value = new String[] {"", value[0]};
                     break;
                 }
-                if (!key.equals(realKey)) {
-                    map.put(realKey, value);
-                    map.put("java.time." + realKey, value);
-                }
+                map.put(realKey, value);
+                map.put("java.time." + realKey, value);
             }
             realKeys[index] = realKey;
             eraNames[index++] = value;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import sun.java2d.cmm.PCMM;
  * {@code ColorSpace} class. This representation of device independent and
  * device dependent color spaces is based on the International Color Consortium
  * Specification ICC.1:2001-12, File Format for Color Profiles (see
- * <a href="http://www.color.org">http://www.color.org</a>).
+ * <a href="https://www.color.org">https://www.color.org</a>).
  * <p>
  * Typically, a {@code Color} or {@code ColorModel} would be associated with an
  * ICC Profile which is either an input, display, or output profile (see the ICC
@@ -88,32 +88,32 @@ public class ICC_ColorSpace extends ColorSpace {
     private static final long serialVersionUID = 3455889114070431483L;
 
     /**
-     * The specified {@code ICC_Profile} object.
+     * @serial The specified {@code ICC_Profile} object.
      */
     private ICC_Profile thisProfile;
 
     /**
-     * The maximum normalized component values.
+     * @serial The minimum normalized component values.
      */
     private float[] minVal;
 
     /**
-     * The minimum normalized component values.
+     * @serial The maximum normalized component values.
      */
     private float[] maxVal;
 
     /**
-     * Difference between min and max values.
+     * @serial Difference between min and max values.
      */
     private float[] diffMinMax;
 
     /**
-     * Inverted value of the difference between min and max values.
+     * @serial Inverted value of the difference between min and max values.
      */
     private float[] invDiffMinMax;
 
     /**
-     * Whether the values should be scaled or not.
+     * @serial Whether the values should be scaled or not.
      */
     private boolean needScaleInit = true;
 
@@ -130,6 +130,7 @@ public class ICC_ColorSpace extends ColorSpace {
      * @param  profile the specified {@code ICC_Profile} object
      * @throws IllegalArgumentException if profile is inappropriate for
      *         representing a {@code ColorSpace}
+     * @throws NullPointerException if {@code profile} is {@code null}
      */
     public ICC_ColorSpace(ICC_Profile profile) {
         super(profile.getColorSpaceType(), profile.getNumComponents());
@@ -140,10 +141,11 @@ public class ICC_ColorSpace extends ColorSpace {
         if (profileClass != ICC_Profile.CLASS_INPUT
                 && profileClass != ICC_Profile.CLASS_DISPLAY
                 && profileClass != ICC_Profile.CLASS_OUTPUT
+                && profileClass != ICC_Profile.CLASS_DEVICELINK
                 && profileClass != ICC_Profile.CLASS_COLORSPACECONVERSION
                 && profileClass != ICC_Profile.CLASS_NAMEDCOLOR
                 && profileClass != ICC_Profile.CLASS_ABSTRACT) {
-            throw new IllegalArgumentException("Invalid profile type");
+            throw new IllegalArgumentException("Invalid profile class");
         }
 
         thisProfile = profile;
@@ -157,6 +159,7 @@ public class ICC_ColorSpace extends ColorSpace {
      * @throws ClassNotFoundException if the class of a serialized object could
      *         not be found
      * @throws IOException if an I/O error occurs
+     * @throws NullPointerException if {@code s} is {@code null}
      */
     @Serial
     private void readObject(ObjectInputStream s)
@@ -195,6 +198,7 @@ public class ICC_ColorSpace extends ColorSpace {
      * @return a float array of length 3
      * @throws ArrayIndexOutOfBoundsException if array length is not at least
      *         the number of components in this {@code ColorSpace}
+     * @throws NullPointerException if {@code colorvalue} is {@code null}
      */
     public float[] toRGB(float[] colorvalue) {
         if (this2srgb == null) {
@@ -243,6 +247,7 @@ public class ICC_ColorSpace extends ColorSpace {
      * @return a float array with length equal to the number of components in
      *         this {@code ColorSpace}
      * @throws ArrayIndexOutOfBoundsException if array length is not at least 3
+     * @throws NullPointerException if {@code rgbvalue} is {@code null}
      */
     public float[] fromRGB(float[] rgbvalue) {
         if (srgb2this == null) {
@@ -371,6 +376,7 @@ public class ICC_ColorSpace extends ColorSpace {
      * @return a float array of length 3
      * @throws ArrayIndexOutOfBoundsException if array length is not at least
      *         the number of components in this {@code ColorSpace}
+     * @throws NullPointerException if {@code colorvalue} is {@code null}
      */
     public float[] toCIEXYZ(float[] colorvalue) {
         if (this2xyz == null) {
@@ -502,6 +508,7 @@ public class ICC_ColorSpace extends ColorSpace {
      * @return a float array with length equal to the number of components in
      *         this {@code ColorSpace}
      * @throws ArrayIndexOutOfBoundsException if array length is not at least 3
+     * @throws NullPointerException if {@code colorvalue} is {@code null}
      */
     public float[] fromCIEXYZ(float[] colorvalue) {
         if (xyz2this == null) {

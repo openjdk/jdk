@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@
 #include "gc/g1/g1CardTable.hpp"
 #endif // INCLUDE_G1GC
 
+#define JVMCI_NOT_ENABLED_ERROR_MESSAGE "JVMCI is not enabled. Must specify '-XX:+EnableJVMCI' or '--add-modules=jdk.internal.vm.ci' to the java launcher."
+
 class JVMCIEnv;
 class JVMCICompiler;
 class JVMCICompileState;
@@ -54,10 +56,8 @@ class JVMCINMethodData : public ResourceObj {
   // This is -1 if there is no mirror in the oops table.
   int _nmethod_mirror_index;
 
-  // This is the offset of the patchable part of the nmethod entry barrier sequence.  The meaning is
-  // somewhat platform dependent as the way patching is done varies by architecture.  Older JVMCI
-  // based compilers didn't emit the entry barrier so having a positive value for this offset
-  // confirms that the installed code supports the entry barrier.
+  // This is the offset of the patchable part of the nmethod entry barrier sequence. The meaning is
+  // somewhat platform dependent as the way patching is done varies by architecture.
   int _nmethod_entry_patch_offset;
 
   // Address of the failed speculations list to which a speculation
@@ -124,17 +124,12 @@ public:
   void invalidate_nmethod_mirror(nmethod* nm);
 
   // Gets the mirror from nm's oops table.
-  oop get_nmethod_mirror(nmethod* nm, bool phantom_ref);
+  oop get_nmethod_mirror(nmethod* nm);
 
   // Sets the mirror in nm's oops table.
   void set_nmethod_mirror(nmethod* nm, oop mirror);
 
-  bool has_entry_barrier() {
-    return _nmethod_entry_patch_offset != -1;
-  }
-
   int nmethod_entry_patch_offset() {
-    guarantee(_nmethod_entry_patch_offset != -1, "missing entry barrier");
     return _nmethod_entry_patch_offset;
   }
 };
@@ -190,7 +185,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   JavaVM* _shared_library_javavm;
 
   // Id for _shared_library_javavm.
-  int _shared_library_javavm_id;
+  jlong _shared_library_javavm_id;
 
   // Position and link in global list of JVMCI shared library runtimes.
   // The HotSpot heap based runtime will have an id of -1 and the
@@ -231,8 +226,6 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                                           int klass_index,
                                           bool& is_accessible,
                                           Klass* loading_klass);
-  static void   get_field_by_index_impl(InstanceKlass* loading_klass, fieldDescriptor& fd,
-                                        int field_index, Bytecodes::Code bc);
   static Method*  get_method_by_index_impl(const constantPoolHandle& cpool,
                                            int method_index, Bytecodes::Code bc,
                                            InstanceKlass* loading_klass);
@@ -280,14 +273,16 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // If the JavaVM was created by this call, then the thread-local JNI
   // interface pointer for the JavaVM is returned otherwise null is returned.
   // If this method tried to create the JavaVM but failed, the error code returned
-  // by JNI_CreateJavaVM is returned in create_JavaVM_err.
-  JNIEnv* init_shared_library_javavm(int* create_JavaVM_err);
+  // by JNI_CreateJavaVM is returned in create_JavaVM_err and, if available, an
+  // error message is malloc'ed and assigned to err_msg. The caller is responsible
+  // for freeing err_msg.
+  JNIEnv* init_shared_library_javavm(int* create_JavaVM_err, const char** err_msg);
 
   // Determines if the JVMCI shared library JavaVM exists for this runtime.
   bool has_shared_library_javavm() { return _shared_library_javavm != nullptr; }
 
   // Gets an ID for the JVMCI shared library JavaVM associated with this runtime.
-  int get_shared_library_javavm_id() { return _shared_library_javavm_id; }
+  jlong get_shared_library_javavm_id() { return _shared_library_javavm_id; }
 
   // Copies info about the JVMCI shared library JavaVM associated with this
   // runtime into `info` as follows:
@@ -317,11 +312,12 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // used when creating an IndirectHotSpotObjectConstantImpl in the
   // shared library JavaVM.
   jlong make_oop_handle(const Handle& obj);
+#ifdef ASSERT
+  static bool is_oop_handle(jlong handle);
+#endif
 
   // Releases all the non-null entries in _oop_handles whose referent is null.
   // Returns the number of handles released by this call.
-  // The method also resets _last_found_oop_handle_index to -1
-  // and _null_oop_handles to 0.
   int release_cleared_oop_handles();
 
   // Allocation and management of metadata handles.
@@ -379,8 +375,6 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // Explicitly initialize HotSpotJVMCIRuntime itself
   void initialize_HotSpotJVMCIRuntime(JVMCI_TRAPS);
 
-  void call_getCompiler(TRAPS);
-
   // Shuts down this runtime by calling HotSpotJVMCIRuntime.shutdown().
   // If this is the last thread attached to this runtime, then
   // `_HotSpotJVMCIRuntime_instance` is set to null and `_init_state`
@@ -414,8 +408,6 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                                      int klass_index,
                                      bool& is_accessible,
                                      Klass* loading_klass);
-  static void   get_field_by_index(InstanceKlass* loading_klass, fieldDescriptor& fd,
-                                   int field_index, Bytecodes::Code bc);
   static Method*  get_method_by_index(const constantPoolHandle& cpool,
                                       int method_index, Bytecodes::Code bc,
                                       InstanceKlass* loading_klass);
@@ -439,6 +431,9 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // Determines if the GC identified by `name` is supported by the JVMCI compiler.
   bool is_gc_supported(JVMCIEnv* JVMCIENV, CollectedHeap::Name name);
 
+  // Determines if the intrinsic identified by `id` is supported by the JVMCI compiler.
+  bool is_intrinsic_supported(JVMCIEnv* JVMCIENV, jint id);
+
   // Register the result of a compilation.
   JVMCI::CodeInstallResult register_method(JVMCIEnv* JVMCIENV,
                                            const methodHandle&       target,
@@ -457,6 +452,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                                            int                       compile_id,
                                            bool                      has_monitors,
                                            bool                      has_unsafe_access,
+                                           bool                      has_scoped_access,
                                            bool                      has_wide_vector,
                                            JVMCIObject               compiled_code,
                                            JVMCIObject               nmethod_mirror,
@@ -512,34 +508,16 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
 
   static BasicType kindToBasicType(const Handle& kind, TRAPS);
 
-  static void new_instance_common(JavaThread* current, Klass* klass, bool null_on_fail);
-  static void new_array_common(JavaThread* current, Klass* klass, jint length, bool null_on_fail);
-  static void new_multi_array_common(JavaThread* current, Klass* klass, int rank, jint* dims, bool null_on_fail);
-  static void dynamic_new_array_common(JavaThread* current, oopDesc* element_mirror, jint length, bool null_on_fail);
-  static void dynamic_new_instance_common(JavaThread* current, oopDesc* type_mirror, bool null_on_fail);
-
   // The following routines are called from compiled JVMCI code
 
-  // When allocation fails, these stubs:
-  // 1. Exercise -XX:+HeapDumpOnOutOfMemoryError and -XX:OnOutOfMemoryError handling and also
-  //    post a JVMTI_EVENT_RESOURCE_EXHAUSTED event if the failure is an OutOfMemroyError
-  // 2. Return null with a pending exception.
-  // Compiled code must ensure these stubs are not called twice for the same allocation
-  // site due to the non-repeatable side effects in the case of OOME.
-  static void new_instance(JavaThread* current, Klass* klass) { new_instance_common(current, klass, false); }
-  static void new_array(JavaThread* current, Klass* klass, jint length) { new_array_common(current, klass, length, false); }
-  static void new_multi_array(JavaThread* current, Klass* klass, int rank, jint* dims) { new_multi_array_common(current, klass, rank, dims, false); }
-  static void dynamic_new_array(JavaThread* current, oopDesc* element_mirror, jint length) { dynamic_new_array_common(current, element_mirror, length, false); }
-  static void dynamic_new_instance(JavaThread* current, oopDesc* type_mirror) { dynamic_new_instance_common(current, type_mirror, false); }
-
-  // When allocation fails, these stubs return null and have no pending exception. Compiled code
-  // can use these stubs if a failed allocation will be retried (e.g., by deoptimizing and
-  // re-executing in the interpreter).
-  static void new_instance_or_null(JavaThread* thread, Klass* klass) { new_instance_common(thread, klass, true); }
-  static void new_array_or_null(JavaThread* thread, Klass* klass, jint length) { new_array_common(thread, klass, length, true); }
-  static void new_multi_array_or_null(JavaThread* thread, Klass* klass, int rank, jint* dims) { new_multi_array_common(thread, klass, rank, dims, true); }
-  static void dynamic_new_array_or_null(JavaThread* thread, oopDesc* element_mirror, jint length) { dynamic_new_array_common(thread, element_mirror, length, true); }
-  static void dynamic_new_instance_or_null(JavaThread* thread, oopDesc* type_mirror) { dynamic_new_instance_common(thread, type_mirror, true); }
+  // When allocation fails, these stubs return null and have no pending OutOfMemoryError exception.
+  // Compiled code can use these stubs if a failed allocation will be retried (e.g., by deoptimizing
+  // and re-executing in the interpreter).
+  static void new_instance_or_null(JavaThread* thread, Klass* klass);
+  static void new_array_or_null(JavaThread* thread, Klass* klass, jint length);
+  static void new_multi_array_or_null(JavaThread* thread, Klass* klass, int rank, jint* dims);
+  static void dynamic_new_array_or_null(JavaThread* thread, oopDesc* element_mirror, jint length);
+  static void dynamic_new_instance_or_null(JavaThread* thread, oopDesc* type_mirror);
 
   static void vm_message(jboolean vmError, jlong format, jlong v1, jlong v2, jlong v3);
   static jint identity_hash_code(JavaThread* current, oopDesc* obj);

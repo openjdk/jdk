@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,14 @@
 #include "gc/z/zUncoloredRoot.hpp"
 
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zBarrier.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "oops/oop.hpp"
 
 template <typename ObjectFunctionT>
 inline void ZUncoloredRoot::barrier(ObjectFunctionT function, zaddress_unsafe* p, uintptr_t color) {
-  z_assert_is_barrier_safe();
+  z_verify_safepoints_are_blocked();
 
   const zaddress_unsafe addr = Atomic::load(p);
   assert_is_valid(addr);

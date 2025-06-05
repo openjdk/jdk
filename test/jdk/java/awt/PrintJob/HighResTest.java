@@ -26,7 +26,7 @@
   @test
   @bug 4227128 8066139
   @summary  Test printing at resolutions > 72dpi
-  @author dpm: area=awt.print
+  @key printer
   @run main/manual HighResTest
  */
 import java.awt.Button;

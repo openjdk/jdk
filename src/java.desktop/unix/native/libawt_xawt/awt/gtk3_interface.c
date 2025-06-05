@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -285,6 +285,9 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
 
         fp_g_main_context_iteration =
             dl_symbol("g_main_context_iteration");
+        fp_g_main_context_default = dl_symbol("g_main_context_default");
+        fp_g_main_context_is_owner = dl_symbol("g_main_context_is_owner");
+
 
         fp_g_value_init = dl_symbol("g_value_init");
         fp_g_type_is_a = dl_symbol("g_type_is_a");
@@ -319,6 +322,10 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
 
         /* Pixbuf */
         fp_gdk_pixbuf_new = dl_symbol("gdk_pixbuf_new");
+        fp_gdk_pixbuf_new_from_data = dl_symbol("gdk_pixbuf_new_from_data");
+        fp_gdk_pixbuf_scale_simple = dl_symbol("gdk_pixbuf_scale_simple");
+        fp_gdk_pixbuf_copy_area = dl_symbol("gdk_pixbuf_copy_area");
+
         fp_gdk_pixbuf_new_from_file =
                 dl_symbol("gdk_pixbuf_new_from_file");
         fp_gdk_pixbuf_get_from_drawable =
@@ -552,6 +559,7 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
         fp_g_signal_connect_data = dl_symbol("g_signal_connect_data");
         fp_gtk_widget_show = dl_symbol("gtk_widget_show");
         fp_gtk_main = dl_symbol("gtk_main");
+        fp_gtk_main_level = dl_symbol("gtk_main_level");
 
         fp_g_path_get_dirname = dl_symbol("g_path_get_dirname");
 
@@ -604,15 +612,19 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
 
         fp_g_string_new = dl_symbol("g_string_new");
         fp_g_string_erase = dl_symbol("g_string_erase");
+        fp_g_string_set_size = dl_symbol("g_string_set_size");
         fp_g_string_free = dl_symbol("g_string_free");
 
         glib_version_2_68 = !fp_glib_check_version(2, 68, 0);
         if (glib_version_2_68) {
+            // those function are called only by Screencast / Remote desktop
             fp_g_string_replace = dl_symbol("g_string_replace"); //since: 2.68
             fp_g_uuid_string_is_valid = //since: 2.52
                     dl_symbol("g_uuid_string_is_valid");
+            fp_g_variant_print = dl_symbol("g_variant_print"); // since 2.24
         }
         fp_g_string_printf = dl_symbol("g_string_printf");
+        fp_g_strconcat = dl_symbol("g_strconcat");
 
         fp_g_error_free = dl_symbol("g_error_free");
         fp_g_unix_fd_list_get = dl_symbol("g_unix_fd_list_get");
@@ -1251,7 +1263,7 @@ static GtkWidget *gtk3_get_widget(WidgetType widget_type)
             if (init_result = (NULL == gtk3_widgets[_GTK_NOTEBOOK_TYPE]))
             {
                 gtk3_widgets[_GTK_NOTEBOOK_TYPE] =
-                    (*fp_gtk_notebook_new)(NULL);
+                    (*fp_gtk_notebook_new)();
             }
             result = gtk3_widgets[_GTK_NOTEBOOK_TYPE];
             break;
@@ -1259,7 +1271,7 @@ static GtkWidget *gtk3_get_widget(WidgetType widget_type)
             if (init_result = (NULL == gtk3_widgets[_GTK_TOGGLE_BUTTON_TYPE]))
             {
                 gtk3_widgets[_GTK_TOGGLE_BUTTON_TYPE] =
-                    (*fp_gtk_toggle_button_new)(NULL);
+                    (*fp_gtk_toggle_button_new)();
             }
             result = gtk3_widgets[_GTK_TOGGLE_BUTTON_TYPE];
             break;
@@ -1268,7 +1280,7 @@ static GtkWidget *gtk3_get_widget(WidgetType widget_type)
             if (init_result = (NULL == gtk3_widgets[_GTK_TOOLBAR_TYPE]))
             {
                 gtk3_widgets[_GTK_TOOLBAR_TYPE] =
-                    (*fp_gtk_toolbar_new)(NULL);
+                    (*fp_gtk_toolbar_new)();
             }
             result = gtk3_widgets[_GTK_TOOLBAR_TYPE];
             break;
@@ -2400,9 +2412,12 @@ static gint gtk3_get_color_for_state(JNIEnv *env, WidgetType widget_type,
     init_containers();
 
     if (gtk3_version_3_20) {
-        if ((widget_type == TEXT_FIELD || widget_type == PASSWORD_FIELD || widget_type == SPINNER_TEXT_FIELD ||
-            widget_type == FORMATTED_TEXT_FIELD) && state_type == GTK_STATE_SELECTED && color_type == TEXT_BACKGROUND) {
-            widget_type = TEXT_AREA;
+        if (widget_type == TEXT_FIELD || widget_type == PASSWORD_FIELD
+            || widget_type == SPINNER_TEXT_FIELD || widget_type == FORMATTED_TEXT_FIELD) {
+                if ((state_type == GTK_STATE_SELECTED && color_type == TEXT_BACKGROUND)
+                    || (state_type == GTK_STATE_INSENSITIVE && color_type == TEXT_FOREGROUND)) {
+                    widget_type = TEXT_AREA;
+                }
         } else if (widget_type == MENU_BAR && state_type == GTK_STATE_INSENSITIVE
             && color_type == FOREGROUND) {
             widget_type = MENU;
@@ -3090,6 +3105,7 @@ static void gtk3_init(GtkApi* gtk) {
     gtk->g_variant_new_string = fp_g_variant_new_string;
     gtk->g_variant_new_boolean = fp_g_variant_new_boolean;
     gtk->g_variant_new_uint32 = fp_g_variant_new_uint32;
+    gtk->g_variant_print = fp_g_variant_print;
 
     gtk->g_variant_get = fp_g_variant_get;
     gtk->g_variant_get_string = fp_g_variant_get_string;
@@ -3110,12 +3126,22 @@ static void gtk3_init(GtkApi* gtk) {
 
     gtk->g_string_new = fp_g_string_new;
     gtk->g_string_erase = fp_g_string_erase;
+    gtk->g_string_set_size = fp_g_string_set_size;
     gtk->g_string_free = fp_g_string_free;
     gtk->g_string_replace = fp_g_string_replace;
     gtk->g_string_printf = fp_g_string_printf;
+    gtk->g_strconcat = fp_g_strconcat;
     gtk->g_uuid_string_is_valid = fp_g_uuid_string_is_valid;
 
     gtk->g_main_context_iteration = fp_g_main_context_iteration;
+    gtk->g_main_context_default = fp_g_main_context_default;
+    gtk->g_main_context_is_owner = fp_g_main_context_is_owner;
     gtk->g_error_free = fp_g_error_free;
     gtk->g_unix_fd_list_get = fp_g_unix_fd_list_get;
+
+    gtk->gdk_pixbuf_new = fp_gdk_pixbuf_new;
+    gtk->gdk_pixbuf_new_from_data = fp_gdk_pixbuf_new_from_data;
+    gtk->gdk_pixbuf_scale_simple = fp_gdk_pixbuf_scale_simple;
+    gtk->gdk_pixbuf_get_pixels = fp_gdk_pixbuf_get_pixels;
+    gtk->gdk_pixbuf_copy_area = fp_gdk_pixbuf_copy_area;
 }

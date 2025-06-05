@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,9 @@
  * questions.
  */
 
-// no precompiled headers
+#ifdef COMPILER1
+#include "c1/c1_Compiler.hpp"
+#endif
 #include "ci/ciUtilities.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/oopMap.hpp"
@@ -33,8 +35,8 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #if INCLUDE_ZGC
-#include "gc/x/xBarrierSetRuntime.hpp"
-#include "gc/x/xThreadLocalData.hpp"
+#include "gc/z/zBarrierSetRuntime.hpp"
+#include "gc/z/zThreadLocalData.hpp"
 #endif
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciEnv.hpp"
@@ -42,11 +44,21 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/klass.inline.hpp"
+#include "prims/jvmtiExport.hpp"
+#ifdef COMPILER2
+#include "opto/c2compiler.hpp"
+#endif
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/resourceHash.hpp"
+#if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#endif
 
+int CompilerToVM::Data::oopDesc_klass_offset_in_bytes;
+int CompilerToVM::Data::arrayOopDesc_length_offset_in_bytes;
 
 int CompilerToVM::Data::Klass_vtable_start_offset;
 int CompilerToVM::Data::Klass_vtable_length_offset;
@@ -59,6 +71,7 @@ address CompilerToVM::Data::SharedRuntime_deopt_blob_unpack;
 address CompilerToVM::Data::SharedRuntime_deopt_blob_unpack_with_exception_in_tls;
 address CompilerToVM::Data::SharedRuntime_deopt_blob_uncommon_trap;
 address CompilerToVM::Data::SharedRuntime_polling_page_return_handler;
+address CompilerToVM::Data::SharedRuntime_throw_delayed_StackOverflowError_entry;
 
 address CompilerToVM::Data::nmethod_entry_barrier;
 int CompilerToVM::Data::thread_disarmed_guard_value_offset;
@@ -72,6 +85,15 @@ address CompilerToVM::Data::ZBarrierSetRuntime_weak_load_barrier_on_weak_oop_fie
 address CompilerToVM::Data::ZBarrierSetRuntime_weak_load_barrier_on_phantom_oop_field_preloaded;
 address CompilerToVM::Data::ZBarrierSetRuntime_load_barrier_on_oop_array;
 address CompilerToVM::Data::ZBarrierSetRuntime_clone;
+
+address CompilerToVM::Data::ZPointerVectorLoadBadMask_address;
+address CompilerToVM::Data::ZPointerVectorStoreBadMask_address;
+address CompilerToVM::Data::ZPointerVectorStoreGoodMask_address;
+
+#if INCLUDE_SHENANDOAHGC
+address CompilerToVM::Data::shenandoah_in_cset_fast_test_addr;
+int CompilerToVM::Data::shenandoah_region_size_bytes_shift;
+#endif
 
 bool CompilerToVM::Data::continuations_enabled;
 
@@ -101,6 +123,11 @@ int CompilerToVM::Data::_fields_annotations_base_offset;
 CardTable::CardValue* CompilerToVM::Data::cardtable_start_address;
 int CompilerToVM::Data::cardtable_shift;
 
+#ifdef X86
+int CompilerToVM::Data::L1_line_size;
+bool CompilerToVM::Data::supports_avx512_simd_sort;
+#endif
+
 size_t CompilerToVM::Data::vm_page_size;
 
 int CompilerToVM::Data::sizeof_vtableEntry = sizeof(vtableEntry);
@@ -110,10 +137,15 @@ int CompilerToVM::Data::sizeof_ConstantPool = sizeof(ConstantPool);
 int CompilerToVM::Data::sizeof_narrowKlass = sizeof(narrowKlass);
 int CompilerToVM::Data::sizeof_arrayOopDesc = sizeof(arrayOopDesc);
 int CompilerToVM::Data::sizeof_BasicLock = sizeof(BasicLock);
+#if INCLUDE_ZGC
+int CompilerToVM::Data::sizeof_ZStoreBarrierEntry = sizeof(ZStoreBarrierEntry);
+#endif
 
 address CompilerToVM::Data::dsin;
 address CompilerToVM::Data::dcos;
 address CompilerToVM::Data::dtan;
+address CompilerToVM::Data::dtanh;
+address CompilerToVM::Data::dcbrt;
 address CompilerToVM::Data::dexp;
 address CompilerToVM::Data::dlog;
 address CompilerToVM::Data::dlog10;
@@ -124,7 +156,12 @@ address CompilerToVM::Data::symbol_clinit;
 
 int CompilerToVM::Data::data_section_item_alignment;
 
+JVMTI_ONLY( int* CompilerToVM::Data::_should_notify_object_alloc; )
+
 void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
+  oopDesc_klass_offset_in_bytes = oopDesc::klass_offset_in_bytes();
+  arrayOopDesc_length_offset_in_bytes = arrayOopDesc::length_offset_in_bytes();
+
   Klass_vtable_start_offset = in_bytes(Klass::vtable_start_offset());
   Klass_vtable_length_offset = in_bytes(Klass::vtable_length_offset());
 
@@ -136,28 +173,20 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   SharedRuntime_deopt_blob_unpack_with_exception_in_tls = SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
   SharedRuntime_deopt_blob_uncommon_trap = SharedRuntime::deopt_blob()->uncommon_trap();
   SharedRuntime_polling_page_return_handler = SharedRuntime::polling_page_return_handler_blob()->entry_point();
+  SharedRuntime_throw_delayed_StackOverflowError_entry = SharedRuntime::throw_delayed_StackOverflowError_entry();
 
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm != nullptr) {
-    thread_disarmed_guard_value_offset = in_bytes(bs_nm->thread_disarmed_guard_value_offset());
-    AMD64_ONLY(nmethod_entry_barrier = StubRoutines::x86::method_entry_barrier());
-    AARCH64_ONLY(nmethod_entry_barrier = StubRoutines::aarch64::method_entry_barrier());
-    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-    AARCH64_ONLY(BarrierSetAssembler_nmethod_patching_type = (int) bs_asm->nmethod_patching_type());
-    AARCH64_ONLY(BarrierSetAssembler_patching_epoch_addr = bs_asm->patching_epoch_addr());
-  }
+  thread_disarmed_guard_value_offset = in_bytes(bs_nm->thread_disarmed_guard_value_offset());
+  nmethod_entry_barrier = StubRoutines::method_entry_barrier();
+  BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+  AARCH64_ONLY(BarrierSetAssembler_nmethod_patching_type = (int) bs_asm->nmethod_patching_type());
+  AARCH64_ONLY(BarrierSetAssembler_patching_epoch_addr = bs_asm->patching_epoch_addr());
 
 #if INCLUDE_ZGC
   if (UseZGC) {
-    thread_address_bad_mask_offset = in_bytes(XThreadLocalData::address_bad_mask_offset());
-    ZBarrierSetRuntime_load_barrier_on_oop_field_preloaded =                     XBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr();
-    ZBarrierSetRuntime_load_barrier_on_weak_oop_field_preloaded =                XBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded_addr();
-    ZBarrierSetRuntime_load_barrier_on_phantom_oop_field_preloaded =             XBarrierSetRuntime::load_barrier_on_phantom_oop_field_preloaded_addr();
-    ZBarrierSetRuntime_weak_load_barrier_on_oop_field_preloaded =                XBarrierSetRuntime::weak_load_barrier_on_oop_field_preloaded_addr();
-    ZBarrierSetRuntime_weak_load_barrier_on_weak_oop_field_preloaded =           XBarrierSetRuntime::weak_load_barrier_on_weak_oop_field_preloaded_addr();
-    ZBarrierSetRuntime_weak_load_barrier_on_phantom_oop_field_preloaded =        XBarrierSetRuntime::weak_load_barrier_on_phantom_oop_field_preloaded_addr();
-    ZBarrierSetRuntime_load_barrier_on_oop_array =                               XBarrierSetRuntime::load_barrier_on_oop_array_addr();
-    ZBarrierSetRuntime_clone =                                                   XBarrierSetRuntime::clone_addr();
+    ZPointerVectorLoadBadMask_address   = (address) &ZPointerVectorLoadBadMask;
+    ZPointerVectorStoreBadMask_address  = (address) &ZPointerVectorStoreBadMask;
+    ZPointerVectorStoreGoodMask_address = (address) &ZPointerVectorStoreGoodMask;
   }
 #endif
 
@@ -167,10 +196,20 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
 
   Universe_collectedHeap = Universe::heap();
   Universe_base_vtable_size = Universe::base_vtable_size();
-  Universe_narrow_oop_base = CompressedOops::base();
-  Universe_narrow_oop_shift = CompressedOops::shift();
-  Universe_narrow_klass_base = CompressedKlassPointers::base();
-  Universe_narrow_klass_shift = CompressedKlassPointers::shift();
+  if (UseCompressedOops) {
+    Universe_narrow_oop_base = CompressedOops::base();
+    Universe_narrow_oop_shift = CompressedOops::shift();
+  } else {
+    Universe_narrow_oop_base = nullptr;
+    Universe_narrow_oop_shift = 0;
+  }
+  if (UseCompressedClassPointers) {
+    Universe_narrow_klass_base = CompressedKlassPointers::base();
+    Universe_narrow_klass_shift = CompressedKlassPointers::shift();
+  } else {
+    Universe_narrow_klass_base = nullptr;
+    Universe_narrow_klass_shift = 0;
+  }
   Universe_non_oop_bits = Universe::non_oop_word();
   Universe_verify_oop_mask = Universe::verify_oop_mask();
   Universe_verify_oop_bits = Universe::verify_oop_bits();
@@ -191,17 +230,36 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
 
   data_section_item_alignment = relocInfo::addr_unit();
 
+  JVMTI_ONLY( _should_notify_object_alloc = &JvmtiExport::_should_notify_object_alloc; )
+
   BarrierSet* bs = BarrierSet::barrier_set();
   if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
     CardTable::CardValue* base = ci_card_table_address();
     assert(base != nullptr, "unexpected byte_map_base");
     cardtable_start_address = base;
     cardtable_shift = CardTable::card_shift();
+#if INCLUDE_SHENANDOAHGC
+  } else if (bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
+    cardtable_start_address = nullptr;
+    cardtable_shift = CardTable::card_shift();
+#endif
   } else {
     // No card mark barriers
-    cardtable_start_address = 0;
+    cardtable_start_address = nullptr;
     cardtable_shift = 0;
   }
+
+#if INCLUDE_SHENANDOAHGC
+  if (UseShenandoahGC) {
+    shenandoah_in_cset_fast_test_addr = ShenandoahHeap::in_cset_fast_test_addr();
+    shenandoah_region_size_bytes_shift = ShenandoahHeapRegion::region_size_bytes_shift_jint();
+  }
+#endif
+
+#ifdef X86
+  L1_line_size = VM_Version::L1_line_size();
+  supports_avx512_simd_sort = VM_Version::supports_avx512_simd_sort();
+#endif
 
   vm_page_size = os::vm_page_size();
 
@@ -221,6 +279,36 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   SET_TRIGFUNC(dpow);
 
 #undef SET_TRIGFUNC
+
+#define SET_TRIGFUNC_OR_NULL(name)                              \
+  if (StubRoutines::name() != nullptr) {                        \
+    name = StubRoutines::name();                                \
+  } else {                                                      \
+    name = nullptr;                                             \
+  }
+
+  SET_TRIGFUNC_OR_NULL(dtanh);
+  SET_TRIGFUNC_OR_NULL(dcbrt);
+
+#undef SET_TRIGFUNC_OR_NULL
+
+
+}
+
+static jboolean is_c1_supported(vmIntrinsics::ID id){
+    jboolean supported = false;
+#ifdef COMPILER1
+    supported = (jboolean) Compiler::is_intrinsic_supported(id);
+#endif
+    return supported;
+}
+
+static jboolean is_c2_supported(vmIntrinsics::ID id){
+    jboolean supported = false;
+#ifdef COMPILER2
+    supported = (jboolean) C2Compiler::is_intrinsic_supported(id);
+#endif
+    return supported;
 }
 
 JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
@@ -239,7 +327,10 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
     }                                                                    \
     JVMCIObject name_str = VM_SYMBOL_TO_STRING(name);                    \
     JVMCIObject sig_str = VM_SYMBOL_TO_STRING(sig);                      \
-    JVMCIObject vmIntrinsicMethod = JVMCIENV->new_VMIntrinsicMethod(kls_str, name_str, sig_str, (jint) vmIntrinsics::id, JVMCI_CHECK_NULL); \
+    JVMCIObject vmIntrinsicMethod = JVMCIENV->new_VMIntrinsicMethod(kls_str, name_str, sig_str, (jint) vmIntrinsics::id, \
+                                    (jboolean) vmIntrinsics::is_intrinsic_available(vmIntrinsics::id),                   \
+                                    is_c1_supported(vmIntrinsics::id),                       \
+                                    is_c2_supported(vmIntrinsics::id), JVMCI_CHECK_NULL);    \
     JVMCIENV->put_object_at(vmIntrinsics, index++, vmIntrinsicMethod);   \
   }
 
@@ -253,19 +344,19 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
 }
 
 #define PREDEFINED_CONFIG_FLAGS(do_bool_flag, do_int_flag, do_intx_flag, do_uintx_flag) \
-  do_intx_flag(AllocateInstancePrefetchLines)                              \
-  do_intx_flag(AllocatePrefetchDistance)                                   \
+  do_int_flag(AllocateInstancePrefetchLines)                               \
+  do_int_flag(AllocatePrefetchDistance)                                    \
   do_intx_flag(AllocatePrefetchInstr)                                      \
-  do_intx_flag(AllocatePrefetchLines)                                      \
-  do_intx_flag(AllocatePrefetchStepSize)                                   \
-  do_intx_flag(AllocatePrefetchStyle)                                      \
+  do_int_flag(AllocatePrefetchLines)                                       \
+  do_int_flag(AllocatePrefetchStepSize)                                    \
+  do_int_flag(AllocatePrefetchStyle)                                       \
   do_intx_flag(BciProfileWidth)                                            \
   do_bool_flag(BootstrapJVMCI)                                             \
   do_bool_flag(CITime)                                                     \
   do_bool_flag(CITimeEach)                                                 \
   do_uintx_flag(CodeCacheSegmentSize)                                      \
   do_intx_flag(CodeEntryAlignment)                                         \
-  do_intx_flag(ContendedPaddingWidth)                                      \
+  do_int_flag(ContendedPaddingWidth)                                       \
   do_bool_flag(DontCompileHugeMethods)                                     \
   do_bool_flag(EagerJVMCI)                                                 \
   do_bool_flag(EnableContended)                                            \
@@ -275,18 +366,16 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   do_bool_flag(Inline)                                                     \
   do_intx_flag(JVMCICounterSize)                                           \
   do_bool_flag(JVMCIPrintProperties)                                       \
-  do_bool_flag(JVMCIUseFastLocking)                                        \
   do_int_flag(ObjectAlignmentInBytes)                                      \
   do_bool_flag(PrintInlining)                                              \
   do_bool_flag(ReduceInitialCardMarks)                                     \
   do_bool_flag(RestrictContended)                                          \
   do_intx_flag(StackReservedPages)                                         \
   do_intx_flag(StackShadowPages)                                           \
-  do_bool_flag(TLABStats)                                                  \
   do_uintx_flag(TLABWasteIncrement)                                        \
   do_intx_flag(TypeProfileWidth)                                           \
   do_bool_flag(UseAESIntrinsics)                                           \
-  X86_ONLY(do_int_flag(UseAVX))                                           \
+  X86_ONLY(do_int_flag(UseAVX))                                            \
   do_bool_flag(UseCRC32Intrinsics)                                         \
   do_bool_flag(UseAdler32Intrinsics)                                       \
   do_bool_flag(UseCompressedClassPointers)                                 \
@@ -306,7 +395,7 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   do_bool_flag(UseSHA1Intrinsics)                                          \
   do_bool_flag(UseSHA256Intrinsics)                                        \
   do_bool_flag(UseSHA512Intrinsics)                                        \
-  X86_ONLY(do_int_flag(UseSSE))                                           \
+  X86_ONLY(do_int_flag(UseSSE))                                            \
   COMPILER2_PRESENT(do_bool_flag(UseSquareToLenIntrinsic))                 \
   do_bool_flag(UseTLAB)                                                    \
   do_bool_flag(VerifyOops)                                                 \
@@ -374,6 +463,7 @@ jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
         assert(box.is_non_null(), "must have a box");
       } else if (strcmp(vmField.typeString, "int") == 0 ||
                  strcmp(vmField.typeString, "jint") == 0 ||
+                 strcmp(vmField.typeString, "uint") == 0 ||
                  strcmp(vmField.typeString, "uint32_t") == 0) {
         BOXED_LONG(box, *(jint*) vmField.address);
         assert(box.is_non_null(), "must have a box");
@@ -384,6 +474,7 @@ jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
                  strcmp(vmField.typeString, "intptr_t") == 0 ||
                  strcmp(vmField.typeString, "uintptr_t") == 0 ||
                  strcmp(vmField.typeString, "OopHandle") == 0 ||
+                 strcmp(vmField.typeString, "VM_Version::VM_Features") == 0 ||
                  strcmp(vmField.typeString, "size_t") == 0 ||
                  // All foo* types are addresses.
                  vmField.typeString[strlen(vmField.typeString) - 1] == '*') {

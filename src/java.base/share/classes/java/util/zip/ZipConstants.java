@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,7 +230,7 @@ interface ZipConstants {
     static final int ENDOFF = 16;
 
     /**
-     * End of central directory (END) header zip file comment length field offset.
+     * End of central directory (END) header ZIP file comment length field offset.
      */
     static final int ENDCOM = 20;
 }

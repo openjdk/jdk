@@ -22,15 +22,21 @@
  */
 package com.sun.org.apache.xml.internal.security.algorithms.implementations;
 
+import java.security.InvalidAlgorithmParameterException;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Provider;
+import java.security.SecureRandom;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.spec.AlgorithmParameterSpec;
+
 import com.sun.org.apache.xml.internal.security.algorithms.JCEMapper;
 import com.sun.org.apache.xml.internal.security.algorithms.SignatureAlgorithmSpi;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignature;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureException;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
-
-import java.io.IOException;
-import java.security.*;
-import java.security.spec.AlgorithmParameterSpec;
 
 /**
  *
@@ -77,6 +83,7 @@ public abstract class SignatureEDDSA extends SignatureAlgorithmSpi {
     }
 
     /** {@inheritDoc} */
+    @Override
     protected void engineSetParameter(AlgorithmParameterSpec params)
         throws XMLSignatureException {
         try {
@@ -87,6 +94,7 @@ public abstract class SignatureEDDSA extends SignatureAlgorithmSpi {
     }
 
     /** {@inheritDoc} */
+    @Override
     protected boolean engineVerify(byte[] signature) throws XMLSignatureException {
         try {
 
@@ -101,11 +109,13 @@ public abstract class SignatureEDDSA extends SignatureAlgorithmSpi {
     }
 
     /** {@inheritDoc} */
+    @Override
     protected void engineInitVerify(Key publicKey) throws XMLSignatureException {
         engineInitVerify(publicKey, signatureAlgorithm);
     }
 
     /** {@inheritDoc} */
+    @Override
     protected byte[] engineSign() throws XMLSignatureException {
         try {
             return this.signatureAlgorithm.sign();
@@ -115,6 +125,7 @@ public abstract class SignatureEDDSA extends SignatureAlgorithmSpi {
     }
 
     /** {@inheritDoc} */
+    @Override
     protected void engineInitSign(Key privateKey, SecureRandom secureRandom)
         throws XMLSignatureException {
 
@@ -122,11 +133,13 @@ public abstract class SignatureEDDSA extends SignatureAlgorithmSpi {
     }
 
     /** {@inheritDoc} */
+    @Override
     protected void engineInitSign(Key privateKey) throws XMLSignatureException {
         engineInitSign(privateKey, (SecureRandom)null);
     }
 
     /** {@inheritDoc} */
+    @Override
     protected void engineUpdate(byte[] input) throws XMLSignatureException {
         try {
             this.signatureAlgorithm.update(input);
@@ -136,6 +149,7 @@ public abstract class SignatureEDDSA extends SignatureAlgorithmSpi {
     }
 
     /** {@inheritDoc} */
+    @Override
     protected void engineUpdate(byte input) throws XMLSignatureException {
         try {
             this.signatureAlgorithm.update(input);
@@ -145,6 +159,7 @@ public abstract class SignatureEDDSA extends SignatureAlgorithmSpi {
     }
 
     /** {@inheritDoc} */
+    @Override
     protected void engineUpdate(byte[] buf, int offset, int len) throws XMLSignatureException {
         try {
             this.signatureAlgorithm.update(buf, offset, len);
@@ -154,22 +169,26 @@ public abstract class SignatureEDDSA extends SignatureAlgorithmSpi {
     }
 
     /** {@inheritDoc} */
+    @Override
     protected String engineGetJCEAlgorithmString() {
         return this.signatureAlgorithm.getAlgorithm();
     }
 
     /** {@inheritDoc} */
+    @Override
     protected String engineGetJCEProviderName() {
         return this.signatureAlgorithm.getProvider().getName();
     }
 
     /** {@inheritDoc} */
+    @Override
     protected void engineSetHMACOutputLength(int HMACOutputLength)
         throws XMLSignatureException {
         throw new XMLSignatureException("algorithms.HMACOutputLengthOnlyForHMAC");
     }
 
     /** {@inheritDoc} */
+    @Override
     protected void engineInitSign(
         Key signingKey, AlgorithmParameterSpec algorithmParameterSpec
     ) throws XMLSignatureException {

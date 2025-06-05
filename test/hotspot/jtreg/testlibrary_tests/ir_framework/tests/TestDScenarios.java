@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class TestDScenarios {
         } else {
             // Test invalid -DScenario flag.
             OutputAnalyzer oa;
-            ProcessBuilder process = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder process = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-Dtest.jdk=" + Utils.TEST_JDK, "-DScenarios=a,1,b,10",
                     "ir_framework.tests.TestDScenarios", " test3");
             oa = ProcessTools.executeProcess(process);

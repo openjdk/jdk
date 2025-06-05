@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
 #include "logging/log.hpp"
+#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/timer.hpp"
 #include "runtime/os.hpp"
+#include "runtime/timer.hpp"
 
 G1SentinelTask::G1SentinelTask() : G1ServiceTask("Sentinel Task") {
   set_time(max_jlong);
@@ -130,6 +130,8 @@ void G1ServiceThread::run_task(G1ServiceTask* task) {
 
   task->execute();
 
+  update_thread_cpu_time();
+
   log_debug(gc, task)("G1 Service Thread (%s) (run: %1.3fms) (cpu: %1.3fms)",
                       task->name(),
                       TimeHelper::counter_to_millis(os::elapsed_counter() - start),
@@ -149,6 +151,13 @@ void G1ServiceThread::run_service() {
 void G1ServiceThread::stop_service() {
   MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
   ml.notify();
+}
+
+void G1ServiceThread::update_thread_cpu_time() {
+  if (UsePerfData && os::is_thread_cpu_time_supported()) {
+    ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_service);
+    tttc.do_thread(this);
+  }
 }
 
 G1ServiceTask::G1ServiceTask(const char* name) :

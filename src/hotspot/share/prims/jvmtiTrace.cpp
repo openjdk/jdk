@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
@@ -30,6 +29,7 @@
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiTrace.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/javaThread.inline.hpp"
 
 //
 // class JvmtiTrace
@@ -202,7 +202,7 @@ void JvmtiTrace::initialize() {
             if (op == '+') {
               _trace_flags[i] |= bits;
             } else {
-              _trace_flags[i] &= ~bits;
+              _trace_flags[i] &= (jbyte)~bits;
             }
             _on = true;
           }
@@ -231,7 +231,7 @@ void JvmtiTrace::initialize() {
           if (op == '+') {
             _event_trace_flags[i] |= bits;
           } else {
-            _event_trace_flags[i] &= ~bits;
+            _event_trace_flags[i] &= (jbyte)~bits;
           }
           _on = true;
         }
@@ -260,7 +260,7 @@ void JvmtiTrace::shutdown() {
 
 
 const char* JvmtiTrace::enum_name(const char** names, const jint* values, jint value) {
-  for (int index = 0; names[index] != 0; ++index) {
+  for (int index = 0; names[index] != nullptr; ++index) {
     if (values[index] == value) {
       return names[index];
     }
@@ -276,6 +276,12 @@ const char *JvmtiTrace::safe_get_thread_name(Thread *thread) {
   }
   if (!thread->is_Java_thread()) {
     return thread->name();
+  }
+  if (Thread::current()->is_Java_thread()) {
+    JavaThreadState current_state = JavaThread::cast(Thread::current())->thread_state();
+    if (current_state == _thread_in_native || current_state == _thread_blocked) {
+      return "not readable";
+    }
   }
   JavaThread* java_thread = JavaThread::cast(thread);
   oop threadObj = java_thread->jvmti_vthread();

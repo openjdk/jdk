@@ -23,11 +23,21 @@
 
 /*
  * @test id=default
- * @summary StressStackOverflow the recovery path for ScopedValue
+ * @summary Stress ScopedValue stack overflow recovery path
+ * @enablePreview
+ * @run main/othervm/timeout=300 StressStackOverflow
+ */
+
+/*
+ * @test id=no-TieredCompilation
  * @enablePreview
  * @run main/othervm/timeout=300 -XX:-TieredCompilation StressStackOverflow
+ */
+
+/*
+ * @test id=TieredStopAtLevel1
+ * @enablePreview
  * @run main/othervm/timeout=300 -XX:TieredStopAtLevel=1 StressStackOverflow
- * @run main/othervm/timeout=300 StressStackOverflow
  */
 
 /*
@@ -37,10 +47,12 @@
  * @run main/othervm/timeout=300 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations StressStackOverflow
  */
 
-import java.util.concurrent.Callable;
+import java.lang.ScopedValue.CallableOp;
+import java.time.Duration;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.StructureViolationException;
 import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.StructuredTaskScope.Joiner;
 import java.util.function.Supplier;
 
 public class StressStackOverflow {
@@ -55,14 +67,14 @@ public class StressStackOverflow {
         TestFailureException(String s) { super(s); }
     }
 
-    static final long MINUTES = 60 * 1_000_000_000L; // 60 * 10**9 ns
+    static final long DURATION_IN_NANOS = Duration.ofMinutes(1).toNanos();
 
-    // Test the ScopedValue recovery mechanism for stack overflows. We implement both Callable
+    // Test the ScopedValue recovery mechanism for stack overflows. We implement both CallableOp
     // and Runnable interfaces. Which one gets tested depends on the constructor argument.
-    class DeepRecursion implements Callable<Object>, Supplier<Object>, Runnable {
+    class DeepRecursion implements CallableOp<Object, RuntimeException>, Supplier<Object>, Runnable {
 
         enum Behaviour {
-            CALL, GET, RUN;
+            CALL, RUN;
             private static final Behaviour[] values = values();
             public static Behaviour choose(ThreadLocalRandom tlr) {
                 return values[tlr.nextInt(3)];
@@ -78,7 +90,7 @@ public class StressStackOverflow {
         public void run() {
             final var last = el.get();
             while (ITERS-- > 0) {
-                if (System.nanoTime() - startTime > 3 * MINUTES) { // 3 minutes is long enough
+                if (System.nanoTime() - startTime > DURATION_IN_NANOS) {
                     return;
                 }
 
@@ -86,7 +98,6 @@ public class StressStackOverflow {
                 try {
                     switch (behaviour) {
                         case CALL -> ScopedValue.where(el, el.get() + 1).call(() -> fibonacci_pad(20, this));
-                        case GET -> ScopedValue.where(el, el.get() + 1).get(() -> fibonacci_pad(20, this));
                         case RUN -> ScopedValue.where(el, el.get() + 1).run(() -> fibonacci_pad(20, this));
                     }
                     if (!last.equals(el.get())) {
@@ -159,7 +170,7 @@ public class StressStackOverflow {
     void runInNewThread(Runnable op) {
         var threadFactory
                 = (ThreadLocalRandom.current().nextBoolean() ? Thread.ofPlatform() : Thread.ofVirtual()).factory();
-        try (var scope = new StructuredTaskScope<>("", threadFactory)) {
+        try (var scope = StructuredTaskScope.open(Joiner.awaitAll(), cf -> cf.withThreadFactory(threadFactory))) {
             var handle = scope.fork(() -> {
                 op.run();
                 return null;
@@ -176,7 +187,7 @@ public class StressStackOverflow {
     public void run() {
         try {
             ScopedValue.where(inheritedValue, 42).where(el, 0).run(() -> {
-                try (var scope = new StructuredTaskScope<>()) {
+                try (var scope = StructuredTaskScope.open(Joiner.awaitAll())) {
                     try {
                         if (ThreadLocalRandom.current().nextBoolean()) {
                             // Repeatedly test Scoped Values set by ScopedValue::call(), get(), and run()
@@ -232,7 +243,7 @@ public class StressStackOverflow {
     public static void main(String[] args) {
         var torture = new StressStackOverflow();
         while (torture.ITERS > 0
-                && System.nanoTime() - startTime <= 3 * MINUTES) { // 3 minutes is long enough
+                && System.nanoTime() - startTime <= DURATION_IN_NANOS) {
             try {
                 torture.run();
                 if (inheritedValue.isBound()) {

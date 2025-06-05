@@ -33,6 +33,7 @@ import java.security.cert.*;
 import java.security.cert.CertPathValidatorException.BasicReason;
 import java.security.cert.PKIXReason;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -42,6 +43,7 @@ import javax.security.auth.x500.X500Principal;
 
 import sun.security.provider.certpath.PKIX.BuilderParams;
 import static sun.security.x509.PKIXExtensions.*;
+import sun.security.x509.SubjectAlternativeNameExtension;
 import sun.security.x509.X509CertImpl;
 import sun.security.util.Debug;
 
@@ -265,7 +267,7 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
          */
         Collection<X509Certificate> certs =
             builder.getMatchingCerts(currentState, buildParams.certStores());
-        List<Vertex> vertices = addVertices(certs, adjList);
+        List<Vertex> vertices = addVertices(certs, adjList, cpList);
         if (debug != null) {
             debug.println("SunCertPathBuilder.depthFirstSearchForward(): "
                           + "certs.size=" + vertices.size());
@@ -325,33 +327,9 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                  * cert (which is signed by the trusted public key), but
                  * don't add it yet to the cpList
                  */
-                if (builder.trustAnchor.getTrustedCert() == null) {
-                    appendedCerts.add(0, cert);
-                }
-
-                Set<String> initExpPolSet =
-                    Collections.singleton(PolicyChecker.ANY_POLICY);
-
-                PolicyNodeImpl rootNode = new PolicyNodeImpl(null,
-                    PolicyChecker.ANY_POLICY, null, false, initExpPolSet, false);
-
-                List<PKIXCertPathChecker> checkers = new ArrayList<>();
-                PolicyChecker policyChecker
-                    = new PolicyChecker(buildParams.initialPolicies(),
-                                        appendedCerts.size(),
-                                        buildParams.explicitPolicyRequired(),
-                                        buildParams.policyMappingInhibited(),
-                                        buildParams.anyPolicyInhibited(),
-                                        buildParams.policyQualifiersRejected(),
-                                        rootNode);
-                checkers.add(policyChecker);
-
-                // add the algorithm checker
-                checkers.add(new AlgorithmChecker(builder.trustAnchor,
-                        buildParams.timestamp(), buildParams.variant()));
-
                 PublicKey rootKey = cert.getPublicKey();
                 if (builder.trustAnchor.getTrustedCert() == null) {
+                    appendedCerts.add(0, cert);
                     rootKey = builder.trustAnchor.getCAPublicKey();
                     if (debug != null)
                         debug.println(
@@ -363,11 +341,35 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                     (cert.getSubjectX500Principal(), rootKey, null);
 
                 // add the basic checker
+                List<PKIXCertPathChecker> checkers = new ArrayList<>();
                 BasicChecker basicChecker = new BasicChecker(anchor,
                                                     buildParams.date(),
                                                     buildParams.sigProvider(),
                                                     true);
                 checkers.add(basicChecker);
+                Set<String> initExpPolSet =
+                    Collections.singleton(PolicyChecker.ANY_POLICY);
+
+                PolicyNodeImpl rootNode = new PolicyNodeImpl(null,
+                    PolicyChecker.ANY_POLICY, null, false, initExpPolSet, false);
+
+                PolicyChecker policyChecker
+                    = new PolicyChecker(buildParams.initialPolicies(),
+                                        appendedCerts.size(),
+                                        buildParams.explicitPolicyRequired(),
+                                        buildParams.policyMappingInhibited(),
+                                        buildParams.anyPolicyInhibited(),
+                                        buildParams.policyQualifiersRejected(),
+                                        rootNode);
+                checkers.add(policyChecker);
+
+                // add the constraints checker
+                checkers.add(new ConstraintsChecker(appendedCerts.size()));
+
+                // add the algorithm checker
+                checkers.add(new AlgorithmChecker(builder.trustAnchor,
+                        buildParams.timestamp(), buildParams.variant()));
+
 
                 buildParams.setCertPath(cf.generateCertPath(appendedCerts));
 
@@ -563,16 +565,77 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
      * adjacency list.
      */
     private static List<Vertex> addVertices(Collection<X509Certificate> certs,
-                                            List<List<Vertex>> adjList)
+                                            List<List<Vertex>> adjList,
+                                            List<X509Certificate> cpList)
     {
         List<Vertex> l = adjList.get(adjList.size() - 1);
 
         for (X509Certificate cert : certs) {
-            Vertex v = new Vertex(cert);
-            l.add(v);
+            boolean repeated = false;
+            for (X509Certificate cpListCert : cpList) {
+                /*
+                 * Ignore if we encounter the same certificate or a
+                 * certificate with the same public key, subject DN, and
+                 * subjectAltNames as a cert that is already in path.
+                 */
+                if (repeated(cpListCert, cert)) {
+                    if (debug != null) {
+                        debug.println("cert with repeated subject, " +
+                            "public key, and subjectAltNames detected");
+                    }
+                    repeated = true;
+                    break;
+                }
+            }
+            if (!repeated) {
+                l.add(new Vertex(cert));
+            }
         }
 
         return l;
+    }
+
+    /**
+     * Return true if two certificates are equal or have the same subject,
+     * public key, and subject alternative names.
+     */
+    private static boolean repeated(
+            X509Certificate currCert, X509Certificate nextCert) {
+        if (currCert.equals(nextCert)) {
+            return true;
+        }
+        return (currCert.getSubjectX500Principal().equals(
+            nextCert.getSubjectX500Principal()) &&
+            currCert.getPublicKey().equals(nextCert.getPublicKey()) &&
+            altNamesEqual(currCert, nextCert));
+    }
+
+    /**
+     * Return true if two certificates have the same subject alternative names.
+     */
+    private static boolean altNamesEqual(
+            X509Certificate currCert, X509Certificate nextCert) {
+        X509CertImpl curr, next;
+        try {
+            curr = X509CertImpl.toImpl(currCert);
+            next = X509CertImpl.toImpl(nextCert);
+        } catch (CertificateException ce) {
+            return false;
+        }
+
+        SubjectAlternativeNameExtension currAltNameExt =
+            curr.getSubjectAlternativeNameExtension();
+        SubjectAlternativeNameExtension nextAltNameExt =
+            next.getSubjectAlternativeNameExtension();
+        if (currAltNameExt != null) {
+            if (nextAltNameExt == null) {
+                return false;
+            }
+            return Arrays.equals(currAltNameExt.getExtensionValue(),
+                nextAltNameExt.getExtensionValue());
+        } else {
+            return (nextAltNameExt == null);
+        }
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include "unittest.hpp"
 
 #include <stdio.h>
@@ -66,17 +67,16 @@ static int init_jvm(int argc, char **argv, bool disable_error_handling, JavaVM**
   argc--;
   argv++;
 
-  int extra_jvm_args = disable_error_handling ? 4 : 2;
+  int extra_jvm_args = disable_error_handling ? 3 : 1;
   int num_jvm_options = argc + extra_jvm_args;
 
   JavaVMOption* options = new JavaVMOption[num_jvm_options];
-  options[0].optionString = (char*) "-Dsun.java.launcher.is_altjvm=true";
-  options[1].optionString = (char*) "-XX:+ExecutingUnitTests";
+  options[0].optionString = (char*) "-XX:+ExecutingUnitTests";
 
   if (disable_error_handling) {
     // don't create core files or hs_err files executing assert tests
-    options[2].optionString = (char*) "-XX:+SuppressFatalErrorMessage";
-    options[3].optionString = (char*) "-XX:-CreateCoredumpOnCrash";
+    options[1].optionString = (char*) "-XX:+SuppressFatalErrorMessage";
+    options[2].optionString = (char*) "-XX:-CreateCoredumpOnCrash";
   }
 
   for (int i = 0; i < argc; i++) {
@@ -130,7 +130,7 @@ class JVMInitializerListener : public ::testing::EmptyTestEventListener {
   }
 
   void destroy_jvm() {
-    if (_jvm != NULL) {
+    if (_jvm != nullptr) {
       int ret = _jvm->DestroyJavaVM();
       if (ret != 0) {
         fprintf(stderr, "Warning: DestroyJavaVM error %d\n", ret);
@@ -151,7 +151,7 @@ static char* get_java_home_arg(int argc, char** argv) {
       return argv[i] + strlen("-jdk:");
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 static bool get_spawn_new_main_thread_arg(int argc, char** argv) {
@@ -193,7 +193,7 @@ static int num_args_to_skip(char* arg) {
 
 static char** remove_test_runner_arguments(int* argcp, char **argv) {
   int argc = *argcp;
-  ALLOW_C_FUNCTION(::malloc, char** new_argv = (char**) malloc(sizeof(char*) * argc);)
+  char** new_argv = (char**)permit_forbidden_function::malloc(sizeof(char*) * argc);
   int new_argc = 0;
 
   int i = 0;
@@ -244,7 +244,7 @@ static void runUnitTestsInner(int argc, char** argv) {
   }
 
   char* java_home = get_java_home_arg(argc, argv);
-  if (java_home == NULL) {
+  if (java_home == nullptr) {
     fprintf(stderr, "ERROR: You must specify a JDK (-jdk <image>, --jdk=<image> or -jdk:<image>) to use for running the unit tests.\n");
     os::exit(1);
   }
@@ -270,10 +270,10 @@ static void runUnitTestsInner(int argc, char** argv) {
   argv = remove_test_runner_arguments(&argc, argv);
 
 
-  JVMInitializerListener* jvm_listener = NULL;
+  JVMInitializerListener* jvm_listener = nullptr;
 
   if (is_vmassert_test || is_othervm_test) {
-    JavaVM* jvm = NULL;
+    JavaVM* jvm = nullptr;
     // both vmassert and other vm tests require inited jvm
     // but only vmassert tests disable hs_err and core file generation
     int ret;
@@ -289,7 +289,7 @@ static void runUnitTestsInner(int argc, char** argv) {
 
   int result = RUN_ALL_TESTS();
 
-  ALLOW_C_FUNCTION(::free, ::free(argv);)
+  permit_forbidden_function::free(argv);
 
   // vm_assert and other_vm tests never reach this point as they either abort, or call
   // exit() - see TEST_OTHER_VM macro. We will reach here when all same_vm tests have
@@ -300,7 +300,7 @@ static void runUnitTestsInner(int argc, char** argv) {
     os::exit(2);
   }
 
-  if (jvm_listener != NULL) {
+  if (jvm_listener != nullptr) {
     jvm_listener->destroy_jvm();
   }
 }
@@ -323,8 +323,8 @@ static DWORD WINAPI thread_wrapper(void* p) {
 
 static void run_in_new_thread(const args_t* args) {
   HANDLE hdl;
-  hdl = CreateThread(NULL, STACK_SIZE, thread_wrapper, (void*)args, 0, NULL);
-  if (hdl == NULL) {
+  hdl = CreateThread(nullptr, STACK_SIZE, thread_wrapper, (void*)args, 0, nullptr);
+  if (hdl == nullptr) {
     fprintf(stderr, "Failed to create main thread\n");
     os::exit(2);
   }
@@ -336,7 +336,7 @@ static void run_in_new_thread(const args_t* args) {
 extern "C" void* thread_wrapper(void* p) {
   const args_t* const p_args = (const args_t*) p;
   runUnitTestsInner(p_args->argc, p_args->argv);
-  return 0;
+  return nullptr;
 }
 
 static void run_in_new_thread(const args_t* args) {
@@ -351,7 +351,7 @@ static void run_in_new_thread(const args_t* args) {
     os::exit(2);
   }
 
-  if (pthread_join(tid, NULL) != 0) {
+  if (pthread_join(tid, nullptr) != 0) {
     fprintf(stderr, "Failed to join main thread\n");
     os::exit(2);
   }

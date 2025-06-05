@@ -4,7 +4,7 @@
  *
  *   FreeType outline management (body).
  *
- * Copyright (C) 1996-2023 by
+ * Copyright (C) 1996-2024 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -53,12 +53,14 @@
 
     FT_Vector*  point;
     FT_Vector*  limit;
-    char*       tags;
+    FT_Byte*    tags;
 
     FT_Error    error;
 
     FT_Int   n;         /* index of contour in outline     */
-    FT_UInt  first;     /* index of first point in contour */
+    FT_Int   first;     /* index of first point in contour */
+    FT_Int   last;      /* index of last point in contour  */
+
     FT_Int   tag;       /* current point's state           */
 
     FT_Int   shift;
@@ -73,18 +75,17 @@
 
     shift = func_interface->shift;
     delta = func_interface->delta;
-    first = 0;
 
+    last = -1;
     for ( n = 0; n < outline->n_contours; n++ )
     {
-      FT_Int  last;  /* index of last point in contour */
+      FT_TRACE5(( "FT_Outline_Decompose: Contour %d\n", n ));
 
-
-      FT_TRACE5(( "FT_Outline_Decompose: Outline %d\n", n ));
-
-      last = outline->contours[n];
-      if ( last < 0 )
+      first = last + 1;
+      last  = outline->contours[n];
+      if ( last < first )
         goto Invalid_Outline;
+
       limit = outline->points + last;
 
       v_start   = outline->points[first];
@@ -282,8 +283,6 @@
     Close:
       if ( error )
         goto Exit;
-
-      first = (FT_UInt)last + 1;
     }
 
     FT_TRACE5(( "FT_Outline_Decompose: Done\n" ));
@@ -333,8 +332,8 @@
          FT_NEW_ARRAY( anoutline->contours, numContours ) )
       goto Fail;
 
-    anoutline->n_points    = (FT_Short)numPoints;
-    anoutline->n_contours  = (FT_Short)numContours;
+    anoutline->n_points    = (FT_UShort)numPoints;
+    anoutline->n_contours  = (FT_UShort)numContours;
     anoutline->flags      |= FT_OUTLINE_OWNER;
 
     return FT_Err_Ok;
@@ -360,15 +359,17 @@
       FT_Int  n;
 
 
+      FT_TRACE5(( "FT_Outline_Check: contours = %d, points = %d\n",
+                  n_contours, n_points ));
       /* empty glyph? */
       if ( n_points == 0 && n_contours == 0 )
         return FT_Err_Ok;
 
       /* check point and contour counts */
-      if ( n_points <= 0 || n_contours <= 0 )
+      if ( n_points == 0 || n_contours == 0 )
         goto Bad;
 
-      end0 = end = -1;
+      end0 = -1;
       for ( n = 0; n < n_contours; n++ )
       {
         end = outline->contours[n];
@@ -380,7 +381,7 @@
         end0 = end;
       }
 
-      if ( end != n_points - 1 )
+      if ( end0 != n_points - 1 )
         goto Bad;
 
       /* XXX: check the tags array */
@@ -388,7 +389,7 @@
     }
 
   Bad:
-    return FT_THROW( Invalid_Argument );
+    return FT_THROW( Invalid_Outline );
   }
 
 
@@ -550,10 +551,12 @@
     if ( !outline )
       return;
 
-    first = 0;
-
+    last = -1;
     for ( n = 0; n < outline->n_contours; n++ )
     {
+      /* keep the first contour point as is and swap points around it */
+      /* to guarantee that the cubic arches stay valid after reverse  */
+      first = last + 2;
       last  = outline->contours[n];
 
       /* reverse point table */
@@ -575,13 +578,13 @@
 
       /* reverse tags table */
       {
-        char*  p = outline->tags + first;
-        char*  q = outline->tags + last;
+        FT_Byte*  p = outline->tags + first;
+        FT_Byte*  q = outline->tags + last;
 
 
         while ( p < q )
         {
-          char  swap;
+          FT_Byte  swap;
 
 
           swap = *p;
@@ -591,8 +594,6 @@
           q--;
         }
       }
-
-      first = last + 1;
     }
 
     outline->flags ^= FT_OUTLINE_REVERSE_FILL;
@@ -941,7 +942,7 @@
 
     points = outline->points;
 
-    first = 0;
+    last = -1;
     for ( c = 0; c < outline->n_contours; c++ )
     {
       FT_Vector  in, out, anchor, shift;
@@ -949,8 +950,9 @@
       FT_Int     i, j, k;
 
 
-      l_in = 0;
-      last = outline->contours[c];
+      first = last + 1;
+      last  = outline->contours[c];
+      l_in  = 0;
 
       /* pacify compiler */
       in.x = in.y = anchor.x = anchor.y = 0;
@@ -1037,8 +1039,6 @@
         in   = out;
         l_in = l_out;
       }
-
-      first = last + 1;
     }
 
     return FT_Err_Ok;
@@ -1054,7 +1054,7 @@
     FT_Int      xshift, yshift;
     FT_Vector*  points;
     FT_Vector   v_prev, v_cur;
-    FT_Int      c, n, first;
+    FT_Int      c, n, first, last;
     FT_Pos      area = 0;
 
 
@@ -1086,11 +1086,11 @@
 
     points = outline->points;
 
-    first = 0;
+    last = -1;
     for ( c = 0; c < outline->n_contours; c++ )
     {
-      FT_Int  last = outline->contours[c];
-
+      first = last + 1;
+      last  = outline->contours[c];
 
       v_prev.x = points[last].x >> xshift;
       v_prev.y = points[last].y >> yshift;
@@ -1106,8 +1106,6 @@
 
         v_prev = v_cur;
       }
-
-      first = last + 1;
     }
 
     if ( area > 0 )

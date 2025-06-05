@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -435,6 +435,11 @@ class GTKFileChooserUI extends SynthFileChooserUI {
         }
 
         public void mouseClicked(MouseEvent e) {
+
+            if (!getFileChooser().isEnabled()) {
+                return;
+            }
+
             if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 2) {
                 int index = list.locationToIndex(e.getPoint());
                 if (index >= 0) {
@@ -616,7 +621,6 @@ class GTKFileChooserUI extends SynthFileChooserUI {
 
         fc.add(interior, BorderLayout.CENTER);
 
-        @SuppressWarnings("serial") // anonymous class
         JPanel comboBoxPanel = new JPanel(new FlowLayout(FlowLayout.CENTER,
                                                          0, 0) {
             public void layoutContainer(Container target) {
@@ -728,7 +732,6 @@ class GTKFileChooserUI extends SynthFileChooserUI {
         if (currentDirectory != null) {
             curDirName = currentDirectory.getPath();
         }
-        @SuppressWarnings("serial") // anonymous class
         JLabel tmp = new JLabel(curDirName) {
             public Dimension getMaximumSize() {
                 Dimension d = super.getMaximumSize();
@@ -743,7 +746,6 @@ class GTKFileChooserUI extends SynthFileChooserUI {
         interior.add(pathFieldPanel);
 
         // add the fileName field
-        @SuppressWarnings("serial") // anonymous class
         JTextField tmp2 = new JTextField() {
             public Dimension getMaximumSize() {
                 Dimension d = super.getMaximumSize();
@@ -1179,7 +1181,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
     }
 
     //
-    // DataModel for DirectoryComboxbox
+    // DataModel for DirectoryCombobox
     //
     protected DirectoryComboBoxModel createDirectoryComboBoxModel(JFileChooser fc) {
         return new DirectoryComboBoxModel();
@@ -1468,9 +1470,9 @@ class GTKFileChooserUI extends SynthFileChooserUI {
 
         public Object getSelectedItem() {
             // Ensure that the current filter is in the list.
-            // NOTE: we shouldnt' have to do this, since JFileChooser adds
+            // NOTE: we shouldn't have to do this, since JFileChooser adds
             // the filter to the choosable filters list when the filter
-            // is set. Lets be paranoid just in case someone overrides
+            // is set. Let's be paranoid just in case someone overrides
             // setFileFilter in JFileChooser.
             FileFilter currentFilter = getFileChooser().getFileFilter();
             boolean found = false;

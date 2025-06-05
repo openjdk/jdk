@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,11 +24,12 @@
  */
 package jdk.internal.classfile.components;
 
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.TypeKind;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.AccessFlags;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.TypeKind;
+
 import jdk.internal.classfile.impl.CodeLocalsShifterImpl;
 
 /**

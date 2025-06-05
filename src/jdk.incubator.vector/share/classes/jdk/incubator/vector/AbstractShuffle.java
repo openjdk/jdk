@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
     /*package-private*/
     abstract AbstractVector<?> toBitsVector();
 
+    @ForceInline
     final AbstractVector<?> toBitsVectorTemplate() {
         AbstractSpecies<?> dsp = vspecies().asIntegral();
         Class<?> etype = dsp.elementType();
@@ -65,12 +66,6 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
 
     @Override
     @ForceInline
-    public final Vector<E> toVector() {
-        return toBitsVector().castShape(vspecies(), 0);
-    }
-
-    @Override
-    @ForceInline
     public final int[] toArray() {
         int[] res = new int[length()];
         intoArray(res, 0);
@@ -83,7 +78,7 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
         if (length() != s.length()) {
             throw new IllegalArgumentException("VectorShuffle length and species length differ");
         }
-        return toBitsVector().toShuffle((AbstractSpecies<F>) s);
+        return toBitsVector().bitsToShuffle((AbstractSpecies<F>) s);
     }
 
     @Override
@@ -99,38 +94,6 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
             throw checkIndexFailed(indices[vecmask.firstTrue()], length());
         }
         return this;
-    }
-
-    @Override
-    @ForceInline
-    public final VectorMask<E> laneIsValid() {
-        Vector<?> shufvec = this.toBitsVector();
-        return shufvec.compare(VectorOperators.GE, 0)
-                      .cast(vspecies());
-    }
-
-    @ForceInline
-    @Override
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    public final VectorShuffle<E> rearrange(VectorShuffle<E> shuffle) {
-        Vector v = toBitsVector();
-        return (VectorShuffle<E>) v.rearrange(shuffle.cast(vspecies().asIntegral()))
-                                   .toShuffle()
-                                   .cast(vspecies());
-    }
-
-    @ForceInline
-    @Override
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    public final VectorShuffle<E> wrapIndexes() {
-        Vector v = toBitsVector();
-        if ((length() & (length() - 1)) == 0) {
-            v = v.lanewise(VectorOperators.AND, length() - 1);
-        } else {
-            v = v.blend(v.lanewise(VectorOperators.ADD, length()),
-                        v.compare(VectorOperators.LT, 0));
-        }
-        return (VectorShuffle<E>) v.toShuffle().cast(vspecies());
     }
 
     @Override

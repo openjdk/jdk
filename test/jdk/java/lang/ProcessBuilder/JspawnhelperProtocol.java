@@ -25,8 +25,9 @@
 /*
  * @test
  * @bug 8307990
- * @requires (os.family == "linux") | (os.family == "aix")
+ * @requires (os.family == "linux") | (os.family == "aix") | (os.family == "mac")
  * @requires vm.debug
+ * @requires vm.flagless
  * @library /test/lib
  * @run main/othervm/timeout=300 JspawnhelperProtocol
  */
@@ -48,14 +49,21 @@ public class JspawnhelperProtocol {
     private static final String[] CMD = { "pwd" };
     private static final String ENV_KEY = "JTREG_JSPAWNHELPER_PROTOCOL_TEST";
 
+    private static final String SPAWNHELPER_FAILURE_MSG = "Possible reasons:";
+
     private static void parentCode(String arg) throws IOException, InterruptedException {
         System.out.println("Recursively executing 'JspawnhelperProtocol " + arg + "'");
         Process p = null;
         try {
             p = Runtime.getRuntime().exec(CMD);
         } catch (Exception e) {
+            // Check that exception contains rich message on failure.
             e.printStackTrace(System.out);
-            System.exit(ERROR);
+            if (e instanceof IOException && e.getMessage().contains(SPAWNHELPER_FAILURE_MSG)) {
+                System.exit(ERROR);
+            } else {
+                System.exit(ERROR + 3);
+            }
         }
         if (!p.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
             System.out.println("Child process timed out");
@@ -78,9 +86,9 @@ public class JspawnhelperProtocol {
 
     private static void normalExec() throws Exception {
         ProcessBuilder pb;
-        pb = ProcessTools.createJavaProcessBuilder("-Djdk.lang.Process.launchMechanism=posix_spawn",
-                                                   "JspawnhelperProtocol",
-                                                   "normalExec");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Djdk.lang.Process.launchMechanism=posix_spawn",
+                                                              "JspawnhelperProtocol",
+                                                              "normalExec");
         pb.inheritIO();
         Process p = pb.start();
         if (!p.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
@@ -93,9 +101,9 @@ public class JspawnhelperProtocol {
 
     private static void simulateCrashInChild(int stage) throws Exception {
         ProcessBuilder pb;
-        pb = ProcessTools.createJavaProcessBuilder("-Djdk.lang.Process.launchMechanism=posix_spawn",
-                                                   "JspawnhelperProtocol",
-                                                   "simulateCrashInChild" + stage);
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Djdk.lang.Process.launchMechanism=posix_spawn",
+                                                              "JspawnhelperProtocol",
+                                                              "simulateCrashInChild" + stage);
         pb.environment().put(ENV_KEY, Integer.toString(stage));
         Process p = pb.start();
 
@@ -126,9 +134,9 @@ public class JspawnhelperProtocol {
 
     private static void simulateCrashInParent(int stage) throws Exception {
         ProcessBuilder pb;
-        pb = ProcessTools.createJavaProcessBuilder("-Djdk.lang.Process.launchMechanism=posix_spawn",
-                                                   "JspawnhelperProtocol",
-                                                   "simulateCrashInParent" + stage);
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Djdk.lang.Process.launchMechanism=posix_spawn",
+                                                              "JspawnhelperProtocol",
+                                                              "simulateCrashInParent" + stage);
         pb.environment().put(ENV_KEY, Integer.toString(stage));
         Process p = pb.start();
 
@@ -172,9 +180,9 @@ public class JspawnhelperProtocol {
 
     private static void simulateTruncatedWriteInParent(int stage) throws Exception {
         ProcessBuilder pb;
-        pb = ProcessTools.createJavaProcessBuilder("-Djdk.lang.Process.launchMechanism=posix_spawn",
-                                                   "JspawnhelperProtocol",
-                                                   "simulateTruncatedWriteInParent" + stage);
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Djdk.lang.Process.launchMechanism=posix_spawn",
+                                                              "JspawnhelperProtocol",
+                                                              "simulateTruncatedWriteInParent" + stage);
         pb.environment().put(ENV_KEY, Integer.toString(stage));
         Process p = pb.start();
 

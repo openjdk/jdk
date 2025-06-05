@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,9 @@ import java.net.StandardSocketOptions;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
@@ -61,6 +59,7 @@ class PlainHttpConnection extends HttpConnection {
     private volatile ConnectTimerEvent connectTimerEvent;  // may be null
     private volatile int unsuccessfulAttempts;
     private final ReentrantLock stateLock = new ReentrantLock();
+    private final AtomicReference<Throwable> errorRef = new AtomicReference<>();
 
     // Indicates whether a connection attempt has succeeded or should be retried.
     // If the attempt failed, and shouldn't be retried, there will be an exception
@@ -110,6 +109,11 @@ class PlainHttpConnection extends HttpConnection {
         }
     }
 
+    Throwable getError(Throwable cause) {
+        if (errorRef.compareAndSet(null, cause)) return cause;
+        return errorRef.get();
+    }
+
     final class ConnectEvent extends AsyncEvent {
         private final CompletableFuture<ConnectState> cf;
         private final Exchange<?> exchange;
@@ -152,22 +156,22 @@ class PlainHttpConnection extends HttpConnection {
                     cf.completeAsync(() -> ConnectState.RETRY, client().theExecutor());
                     return;
                 }
-                Throwable t = Utils.toConnectException(e);
+                Throwable t = getError(Utils.toConnectException(e));
                 // complete async since the event runs on the SelectorManager thread
                 client().theExecutor().execute( () -> cf.completeExceptionally(t));
-                close();
+                close(t);
             }
         }
 
         @Override
         public void abort(IOException ioe) {
+            Throwable cause = getError(ioe);
             // complete async since the event runs on the SelectorManager thread
-            client().theExecutor().execute( () -> cf.completeExceptionally(ioe));
-            close();
+            client().theExecutor().execute( () -> cf.completeExceptionally(cause));
+            close(cause);
         }
     }
 
-    @SuppressWarnings("removal")
     @Override
     public CompletableFuture<Void> connectAsync(Exchange<?> exchange) {
         CompletableFuture<ConnectState> cf = new MinimalFuture<>();
@@ -191,14 +195,12 @@ class PlainHttpConnection extends HttpConnection {
                     debug.log("binding to configured local address " + localAddr);
                 }
                 var sockAddr = new InetSocketAddress(localAddr, 0);
-                PrivilegedExceptionAction<SocketChannel> pa = () -> chan.bind(sockAddr);
                 try {
-                    AccessController.doPrivileged(pa);
+                    chan.bind(sockAddr);
                     if (debug.on()) {
                         debug.log("bind completed " + localAddr);
                     }
-                } catch (PrivilegedActionException e) {
-                    var cause = e.getCause();
+                } catch (IOException cause) {
                     if (debug.on()) {
                         debug.log("bind to " + localAddr + " failed: " + cause.getMessage());
                     }
@@ -206,36 +208,31 @@ class PlainHttpConnection extends HttpConnection {
                 }
             }
 
-            PrivilegedExceptionAction<Boolean> pa =
-                    () -> chan.connect(Utils.resolveAddress(address));
-            try {
-                 finished = AccessController.doPrivileged(pa);
-            } catch (PrivilegedActionException e) {
-               throw e.getCause();
-            }
+            finished = chan.connect(Utils.resolveAddress(address));
             if (finished) {
                 if (debug.on()) debug.log("connect finished without blocking");
                 if (connectionOpened()) {
                     cf.complete(ConnectState.SUCCESS);
-                } else throw new ConnectException("connection closed");
+                } else throw getError(new ConnectException("connection closed"));
             } else {
                 if (debug.on()) debug.log("registering connect event");
                 client().registerEvent(new ConnectEvent(cf, exchange));
             }
             cf = exchange.checkCancelled(cf, this);
         } catch (Throwable throwable) {
-            cf.completeExceptionally(Utils.toConnectException(throwable));
+            var cause = getError(Utils.toConnectException(throwable));
+            cf.completeExceptionally(cause);
             try {
                 if (Log.channel()) {
                     Log.logChannel("Closing connection: connect failed due to: " + throwable);
                 }
-                close();
+                close(cause);
             } catch (Exception x) {
                 if (debug.on())
                     debug.log("Failed to close channel after unsuccessful connect");
             }
         }
-        return cf.handle((r,t) -> checkRetryConnect(r, t,exchange))
+        return cf.handle((r,t) -> checkRetryConnect(r, t, exchange))
                 .thenCompose(Function.identity());
     }
 
@@ -313,8 +310,8 @@ class PlainHttpConnection extends HttpConnection {
         return tube;
     }
 
-    PlainHttpConnection(InetSocketAddress addr, HttpClientImpl client) {
-        super(addr, client);
+    PlainHttpConnection(InetSocketAddress addr, HttpClientImpl client, String label) {
+        super(addr, client, label);
         try {
             this.chan = SocketChannel.open();
             chan.configureBlocking(false);
@@ -338,7 +335,7 @@ class PlainHttpConnection extends HttpConnection {
             }
             chan.setOption(StandardSocketOptions.TCP_NODELAY, true);
             // wrap the channel in a Tube for async reading and writing
-            tube = new SocketTube(client(), chan, Utils::getBuffer);
+            tube = new SocketTube(client(), chan, Utils::getBuffer, label);
         } catch (IOException e) {
             throw new InternalError(e);
         }
@@ -414,9 +411,16 @@ class PlainHttpConnection extends HttpConnection {
         try {
             if (closed = this.closed) return;
             closed = this.closed = true;
+            Throwable reason = getError(cause);
             Log.logTrace("Closing: " + toString());
-            if (debug.on())
-                debug.log("Closing channel: " + client().debugInterestOps(chan));
+            if (debug.on()) {
+                String interestOps = client().debugInterestOps(chan);
+                if (reason == null) {
+                    debug.log("Closing channel: " + interestOps);
+                } else {
+                    debug.log("Closing channel: %s due to %s", interestOps, reason);
+                }
+            }
             var connectTimerEvent = this.connectTimerEvent;
             if (connectTimerEvent != null)
                 client().cancelTimer(connectTimerEvent);
@@ -424,8 +428,8 @@ class PlainHttpConnection extends HttpConnection {
                 Log.logChannel("Closing channel: " + chan);
             }
             try {
+                tube.signalClosed(errorRef.get());
                 chan.close();
-                tube.signalClosed(cause);
             } finally {
                 client().connectionClosed(this);
             }

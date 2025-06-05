@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,15 @@ import java.util.stream.Collectors;
  */
 public class Compiler {
 
+    // Call GC after compiling as many methods. This would remove the stale methods.
+    // This threshold should balance the GC overhead and the cost of keeping lots
+    // of stale methods around.
+    private static final long GC_METHOD_THRESHOLD = Long.getLong("gcMethodThreshold", 100);
+
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
-    private static final AtomicLong METHOD_COUNT = new AtomicLong(0L);
+    private static final AtomicLong METHOD_COUNT = new AtomicLong();
+    private static final AtomicLong METHODS_SINCE_LAST_GC = new AtomicLong();
 
     private Compiler() { }
 
@@ -66,13 +72,27 @@ public class Compiler {
     public static void compileClass(Class<?> aClass, long id, Executor executor) {
         Objects.requireNonNull(aClass);
         Objects.requireNonNull(executor);
-        ConstantPool constantPool = SharedSecrets.getJavaLangAccess().
-                getConstantPool(aClass);
+
+        // Initialize all constant pool entries, if requested.
         if (Utils.COMPILE_THE_WORLD_PRELOAD_CLASSES) {
+            ConstantPool constantPool = SharedSecrets.getJavaLangAccess().getConstantPool(aClass);
             preloadClasses(aClass.getName(), id, constantPool);
         }
+
+        // Make sure the class is initialized.
         UNSAFE.ensureClassInitialized(aClass);
         compileClinit(aClass, id);
+
+        // Populate profile for all methods to expand the scope of
+        // compiler optimizations. Do this before compilations start.
+        for (Executable e : aClass.getDeclaredConstructors()) {
+            WHITE_BOX.markMethodProfiled(e);
+        }
+        for (Executable e : aClass.getDeclaredMethods()) {
+            WHITE_BOX.markMethodProfiled(e);
+        }
+
+        // Now schedule the compilations.
         long methodCount = 0;
         for (Executable e : aClass.getDeclaredConstructors()) {
             ++methodCount;
@@ -83,21 +103,35 @@ public class Compiler {
             executor.execute(new CompileMethodCommand(id, e));
         }
         METHOD_COUNT.addAndGet(methodCount);
+
+        // See if we need to schedule a GC
+        while (true) {
+            long current = METHODS_SINCE_LAST_GC.get();
+            long update = current + methodCount;
+            if (update >= GC_METHOD_THRESHOLD) {
+                update = 0;
+            }
+            if (METHODS_SINCE_LAST_GC.compareAndSet(current, update)) {
+                if (update == 0) {
+                    executor.execute(() -> System.gc());
+                }
+                break;
+            }
+        }
     }
 
     private static void preloadClasses(String className, long id,
             ConstantPool constantPool) {
-        try {
-            for (int i = 0, n = constantPool.getSize(); i < n; ++i) {
-                try {
+        for (int i = 0, n = constantPool.getSize(); i < n; ++i) {
+            try {
+                if (constantPool.getTagAt(i) == ConstantPool.Tag.CLASS) {
                     constantPool.getClassAt(i);
-                } catch (IllegalArgumentException ignore) {
                 }
+            } catch (Throwable t) {
+                CompileTheWorld.OUT.println(String.format("[%d]\t%s\tWARNING preloading failed : %s",
+                         id, className, t));
+                t.printStackTrace(CompileTheWorld.ERR);
             }
-        } catch (Throwable t) {
-            CompileTheWorld.OUT.println(String.format("[%d]\t%s\tWARNING preloading failed : %s",
-                    id, className, t));
-            t.printStackTrace(CompileTheWorld.ERR);
         }
     }
 

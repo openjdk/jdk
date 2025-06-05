@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,7 @@
  * and <testtype> in {G1,
  *                    Serial,
  *                    Parallel,
- *                    Shenandoah,
- *                    ShenandoahIU}
+ *                    Shenandoah}
  */
 
 
@@ -95,13 +94,6 @@ public class TestVolatiles {
             procArgs[argcount - 3] = "-XX:+UnlockExperimentalVMOptions";
             procArgs[argcount - 2] = "-XX:+UseShenandoahGC";
             break;
-        case "ShenandoahIU":
-            argcount = 11;
-            procArgs = new String[argcount];
-            procArgs[argcount - 4] = "-XX:+UnlockExperimentalVMOptions";
-            procArgs[argcount - 3] = "-XX:+UseShenandoahGC";
-            procArgs[argcount - 2] = "-XX:ShenandoahGCMode=iu";
-            break;
         default:
             throw new RuntimeException("unexpected test type " + testType);
         }
@@ -132,7 +124,7 @@ public class TestVolatiles {
 
 
     public void runtest(String classname, String testType, boolean useCompressedOops, String[] procArgs) throws Throwable {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(procArgs);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         output.stderrShouldBeEmptyIgnoreVMWarnings();
@@ -269,24 +261,14 @@ public class TestVolatiles {
             };
             break;
         case "G1":
-            // a card mark volatile barrier should be generated
-            // before the card mark strb
-            //
-            // following the fix for 8225776 the G1 barrier is now
-            // scheduled out of line after the membar volatile and
-            // and subsequent return
             matches = new String[] {
                 "membar_release \\(elided\\)",
                 useCompressedOops ? "stlrw?" : "stlr",
                 "membar_volatile \\(elided\\)",
-                "ret",
-                "membar_volatile",
-                "dmb ish",
-                "strb"
+                "ret"
             };
             break;
         case "Shenandoah":
-        case "ShenandoahIU":
              // Shenandoah generates normal object graphs for
              // volatile stores
             matches = new String[] {
@@ -341,24 +323,14 @@ public class TestVolatiles {
             };
             break;
         case "G1":
-            // a card mark volatile barrier should be generated
-            // before the card mark strb
-            //
-            // following the fix for 8225776 the G1 barrier is now
-            // scheduled out of line after the membar acquire and
-            // and subsequent return
             matches = new String[] {
                 "membar_release \\(elided\\)",
                 useCompressedOops ? "cmpxchgw?_acq" : "cmpxchg_acq",
                 "membar_acquire \\(elided\\)",
-                "ret",
-                "membar_volatile",
-                "dmb ish",
-                "strb"
+                "ret"
             };
             break;
         case "Shenandoah":
-        case "ShenandoahIU":
             // For volatile CAS, Shenanodoah generates normal
             // graphs with a shenandoah-specific cmpxchg
             matches = new String[] {
@@ -428,24 +400,14 @@ public class TestVolatiles {
             return;
 
         case "G1":
-            // a card mark volatile barrier should be generated
-            // before the card mark strb
-            //
-            // following the fix for 8225776 the G1 barrier is now
-            // scheduled out of line after the membar acquire and
-            // and subsequent return
             matches = new String[] {
                 "membar_release \\(elided\\)",
                 useCompressedOops ? "cmpxchgw?_acq" : "cmpxchg_acq",
                 "membar_acquire \\(elided\\)",
-                "ret",
-                "membar_volatile",
-                "dmb ish",
-                "strb"
+                "ret"
             };
             break;
         case "Shenandoah":
-        case "ShenandoahIU":
             // For volatile CAS, Shenanodoah generates normal
             // graphs with a shenandoah-specific cmpxchg
             matches = new String[] {
@@ -495,24 +457,14 @@ public class TestVolatiles {
             };
             break;
         case "G1":
-            // a card mark volatile barrier should be generated
-            // before the card mark strb
-            //
-            // following the fix for 8225776 the G1 barrier is now
-            // scheduled out of line after the membar acquire and
-            // and subsequent return
             matches = new String[] {
                 "membar_release \\(elided\\)",
                 useCompressedOops ? "atomic_xchgw?_acq" : "atomic_xchg_acq",
                 "membar_acquire \\(elided\\)",
-                "ret",
-                "membar_volatile",
-                "dmb ish",
-                "strb"
+                "ret"
             };
             break;
         case "Shenandoah":
-        case "ShenandoahIU":
             matches = new String[] {
                 "membar_release \\(elided\\)",
                 useCompressedOops ? "atomic_xchgw?_acq" : "atomic_xchg_acq",

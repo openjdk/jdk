@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciUtilities.hpp"
+#include "gc/shared/c2/cardTableBarrierSetC2.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
-#include "gc/shared/c2/cardTableBarrierSetC2.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/graphKit.hpp"
@@ -50,13 +49,9 @@ Node* CardTableBarrierSetC2::byte_map_base_node(GraphKit* kit) const {
 // Insert a write-barrier store.  This is to let generational GC work; we have
 // to flag all oop-stores before the next GC point.
 void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
-                                         Node* ctl,
-                                         Node* oop_store,
                                          Node* obj,
                                          Node* adr,
-                                         uint  adr_idx,
                                          Node* val,
-                                         BasicType bt,
                                          bool use_precise) const {
   // No store check needed if we're storing a null.
   if (val != nullptr && val->is_Con()) {
@@ -125,37 +120,8 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
   kit->final_sync(ideal);
 }
 
-void CardTableBarrierSetC2::clone(GraphKit* kit, Node* src, Node* dst, Node* size, bool is_array) const {
-  BarrierSetC2::clone(kit, src, dst, size, is_array);
-  const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
-
-  // If necessary, emit some card marks afterwards.  (Non-arrays only.)
-  bool card_mark = !is_array && !use_ReduceInitialCardMarks();
-  if (card_mark) {
-    assert(!is_array, "");
-    // Put in store barrier for any and all oops we are sticking
-    // into this object.  (We could avoid this if we could prove
-    // that the object type contains no oop fields at all.)
-    Node* no_particular_value = nullptr;
-    Node* no_particular_field = nullptr;
-    int raw_adr_idx = Compile::AliasIdxRaw;
-    post_barrier(kit, kit->control(),
-                 kit->memory(raw_adr_type),
-                 dst,
-                 no_particular_field,
-                 raw_adr_idx,
-                 no_particular_value,
-                 T_OBJECT,
-                 false);
-  }
-}
-
-bool CardTableBarrierSetC2::use_ReduceInitialCardMarks() const {
+bool CardTableBarrierSetC2::use_ReduceInitialCardMarks() {
   return ReduceInitialCardMarks;
-}
-
-bool CardTableBarrierSetC2::is_gc_barrier_node(Node* node) const {
-  return ModRefBarrierSetC2::is_gc_barrier_node(node) || node->Opcode() == Op_StoreCM;
 }
 
 void CardTableBarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const {

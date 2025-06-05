@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,5 +27,13 @@
 import java.util.*;
 
 class TypeReqClassArray {
-    boolean b = (this instanceof int);
+    interface Sig {
+        void m(int s);
+    }
+
+    Sig consume(Sig s) { return s; }
+
+    public void meth() {
+        Sig s = consume(int::new);
+    }
 }

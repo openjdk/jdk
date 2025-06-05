@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,10 @@ import java.util.stream.StreamSupport;
 import java.util.stream.$Streamtype$Stream;
 #end[streamableType]
 
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.SegmentFactories;
+import jdk.internal.vm.annotation.ForceInline;
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 import jdk.internal.util.ArraysSupport;
@@ -279,6 +283,9 @@ import jdk.internal.util.ArraysSupport;
  *
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
+#if[byte]
+ * @sealedGraph
+#end[byte]
  * @since 1.4
  */
 
@@ -471,13 +478,16 @@ public abstract sealed class $Type$Buffer
      * Attempts to read characters into the specified character buffer.
      * The buffer is used as a repository of characters as-is: the only
      * changes made are the results of a put operation. No flipping or
-     * rewinding of the buffer is performed.
+     * rewinding of the buffer is performed. If the {@linkplain #length
+     * length} of the specified character buffer is zero, then no characters
+     * will be read and zero will be returned.
      *
      * @param target the buffer to read characters into
-     * @return The number of characters added to the buffer, or
-     *         -1 if this source of characters is at its end
+     * @return The number of characters added to the buffer,
+     *         possibly zero, or -1 if this source of characters is at its end
      * @throws IOException if an I/O error occurs
-     * @throws ReadOnlyBufferException if target is a read only buffer
+     * @throws ReadOnlyBufferException if target is a read only buffer,
+     *         even if its length is zero
      * @since 1.5
      */
     public int read(CharBuffer target) throws IOException {
@@ -1551,7 +1561,7 @@ public abstract sealed class $Type$Buffer
         super.position(newPosition);
         return this;
     }
-    
+
     /**
      * {@inheritDoc}
      * @since 9
@@ -1565,13 +1575,13 @@ public abstract sealed class $Type$Buffer
         super.limit(newLimit);
         return this;
     }
-    
+
     /**
      * {@inheritDoc}
      * @since 9
      */
     @Override
-    public 
+    public
 #if[!byte]
     final
 #end[!byte]
@@ -1585,7 +1595,7 @@ public abstract sealed class $Type$Buffer
      * @since 9
      */
     @Override
-    public 
+    public
 #if[!byte]
     final
 #end[!byte]
@@ -1599,7 +1609,7 @@ public abstract sealed class $Type$Buffer
      * @since 9
      */
     @Override
-    public 
+    public
 #if[!byte]
     final
 #end[!byte]
@@ -1613,7 +1623,7 @@ public abstract sealed class $Type$Buffer
      * @since 9
      */
     @Override
-    public 
+    public
 #if[!byte]
     final
 #end[!byte]
@@ -1627,7 +1637,7 @@ public abstract sealed class $Type$Buffer
      * @since 9
      */
     @Override
-    public 
+    public
 #if[!byte]
     final
 #end[!byte]
@@ -1885,6 +1895,44 @@ public abstract sealed class $Type$Buffer
     // -- Other char stuff --
 
 #if[char]
+
+    /**
+     * Absolute bulk <i>get</i> method.
+     *
+     * <p> This method transfers {@code srcEnd-srcBegin} characters from this
+     * buffer into the given array, starting at index {@code srcBegin} in this
+     * buffer and at offset {@code dstBegin} in the array. The position of this
+     * buffer is unchanged.
+     *
+     * @param  srcBegin
+     *         The index in this buffer from which the first character will be
+     *         read; must be non-negative and less than {@code limit()}
+     *
+     * @param  srcEnd
+     *         The index in this buffer directly before the last character to
+     *         read; must be non-negative and less or equal than {@code limit()}
+     *         and must be greater or equal than {@code srcBegin}
+     *
+     * @param  dst
+     *         The destination array
+     *
+     * @param  dstBegin
+     *         The offset within the array of the first character to be
+     *         written; must be non-negative and less than {@code dst.length}
+     *
+     * @throws  IndexOutOfBoundsException
+     *          If the preconditions on the {@code srcBegin}, {@code srcEnd},
+     *          and {@code dstBegin} parameters do not hold
+     *
+     * @implSpec This method is equivalent to
+     *           {@code get(srcBegin, dst, dstBegin, srcEnd - srcBegin)}.
+     *
+     * @since 25
+     */
+    @Override
+    public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
+        get(srcBegin, dst, dstBegin, srcEnd - srcBegin);
+    }
 
     /**
      * Returns a string containing the characters in this buffer.
@@ -2202,14 +2250,10 @@ public abstract sealed class $Type$Buffer
      *     alignmentOffset(index + (unitSize - value), unitSize) == 0
      * }
      * must hold.
-     * 
+     *
      * @apiNote
      * This method may be utilized to determine if unit size bytes from an
      * index can be accessed atomically, if supported by the native platform.
-     *
-     * @implNote
-     * This implementation throws {@code UnsupportedOperationException} for
-     * non-direct buffers when the given unit size is greater then {@code 8}.
      *
      * @param  index
      *         The index to query for alignment offset, must be non-negative, no
@@ -2225,13 +2269,7 @@ public abstract sealed class $Type$Buffer
      *         {@code 2}
      *
      * @throws UnsupportedOperationException
-     *         If the native platform does not guarantee stable alignment offset
-     *         values for the given unit size when managing the memory regions
-     *         of buffers of the same kind as this buffer (direct or
-     *         non-direct).  For example, if garbage collection would result
-     *         in the moving of a memory region covered by a non-direct buffer
-     *         from one location to another and both locations have different
-     *         alignment characteristics.
+     *         If the buffer is non-direct, and {@code unitSize > 1}
      *
      * @see #alignedSlice(int)
      * @since 9
@@ -2241,7 +2279,7 @@ public abstract sealed class $Type$Buffer
             throw new IllegalArgumentException("Index less than zero: " + index);
         if (unitSize < 1 || (unitSize & (unitSize - 1)) != 0)
             throw new IllegalArgumentException("Unit size not a power of two: " + unitSize);
-        if (unitSize > 8 && !isDirect())
+        if (unitSize > 1 && !isDirect())
             throw new UnsupportedOperationException("Unit size unsupported for non-direct buffers: " + unitSize);
 
         return (int) ((address + index) & (unitSize - 1));
@@ -2281,10 +2319,6 @@ public abstract sealed class $Type$Buffer
      * from index, that is a multiple of the unit size, may be accessed
      * atomically, if supported by the native platform.
      *
-     * @implNote
-     * This implementation throws {@code UnsupportedOperationException} for
-     * non-direct buffers when the given unit size is greater then {@code 8}.
-     *
      * @param  unitSize
      *         The unit size in bytes, must be a power of {@code 2}
      *
@@ -2294,13 +2328,7 @@ public abstract sealed class $Type$Buffer
      *         If the unit size not a power of {@code 2}
      *
      * @throws UnsupportedOperationException
-     *         If the native platform does not guarantee stable aligned slices
-     *         for the given unit size when managing the memory regions
-     *         of buffers of the same kind as this buffer (direct or
-     *         non-direct).  For example, if garbage collection would result
-     *         in the moving of a memory region covered by a non-direct buffer
-     *         from one location to another and both locations have different
-     *         alignment characteristics.
+     *         If the buffer is non-direct, and {@code unitSize > 1}
      *
      * @see #alignmentOffset(int, int)
      * @see #slice()
@@ -2334,6 +2362,22 @@ public abstract sealed class $Type$Buffer
     // and double will be inserted here
 
 #end[byte]
+
+    @ForceInline
+    @Override
+    int scaleShifts() {
+        return Integer.numberOfTrailingZeros($Fulltype$.BYTES);
+    }
+
+    @ForceInline
+    @Override
+    AbstractMemorySegmentImpl heapSegment(Object base,
+                                          long offset,
+                                          long length,
+                                          boolean readOnly,
+                                          MemorySessionImpl bufferScope) {
+        return SegmentFactories.arrayOf$Type$Segment(base, offset, length, readOnly, bufferScope);
+    }
 
 #if[streamableType]
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8298425
+ * @bug 8298425 8344706
  * @summary Verify behavior of System.console()
  * @build KullaTesting TestingInputStream
  * @run testng ConsoleTest
@@ -40,8 +40,10 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import jdk.jshell.EvalException;
 import jdk.jshell.JShell;
 import jdk.jshell.JShellConsole;
+import jdk.jshell.Snippet.Status;
 
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -148,6 +150,31 @@ public class ConsoleTest extends KullaTesting {
     }
 
     @Test
+    public void testConsoleUnicodeWritingTest() {
+        StringBuilder sb = new StringBuilder();
+        console = new ThrowingJShellConsole() {
+            @Override
+            public PrintWriter writer() {
+                return new PrintWriter(new Writer() {
+                    @Override
+                    public void write(char[] cbuf, int off, int len) throws IOException {
+                        sb.append(cbuf, off, len);
+                    }
+                    @Override
+                    public void flush() throws IOException {}
+                    @Override
+                    public void close() throws IOException {}
+                });
+            }
+        };
+        int count = 384; // 128-255, 384-511, 640-767, ... (JDK-8355371)
+        String testStr = "\u30A2"; // Japanese katakana (A2 >= 80) (JDK-8354910)
+        assertEval("System.console().writer().write(\"" + testStr + "\".repeat(" + count + "))");
+        String expected = testStr.repeat(count);
+        assertEquals(sb.toString(), expected);
+    }
+
+    @Test
     public void testConsoleMultiThreading() {
         StringBuilder sb = new StringBuilder();
         console = new ThrowingJShellConsole() {
@@ -181,6 +208,15 @@ public class ConsoleTest extends KullaTesting {
                       .replace("${output}", "" + output));
         String expected = "A".repeat(repeats * output);
         assertEquals(sb.toString(), expected);
+    }
+
+    @Test
+    public void testNPE() {
+        console = new ThrowingJShellConsole();
+        assertEval("System.console().readLine(null)", DiagCheck.DIAG_OK, DiagCheck.DIAG_OK, chain(added(Status.VALID), null, EvalException.class));
+        assertEval("System.console().readPassword(null)", DiagCheck.DIAG_OK, DiagCheck.DIAG_OK, chain(added(Status.VALID), null, EvalException.class));
+        assertEval("System.console().readLine(\"%d\", \"\")", DiagCheck.DIAG_OK, DiagCheck.DIAG_OK, chain(added(Status.VALID), null, EvalException.class));
+        assertEval("System.console().readPassword(\"%d\", \"\")", DiagCheck.DIAG_OK, DiagCheck.DIAG_OK, chain(added(Status.VALID), null, EvalException.class));
     }
 
     @Override

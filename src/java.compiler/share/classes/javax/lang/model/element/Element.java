@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package javax.lang.model.element;
 
 
 import java.lang.annotation.Annotation;
-import java.lang.annotation.AnnotationTypeMismatchException;
-import java.lang.annotation.IncompleteAnnotationException;
 import java.util.List;
 import java.util.Set;
 
@@ -68,6 +66,7 @@ public interface Element extends AnnotatedConstruct {
      * @see TypeElement#asType
      * @see TypeParameterElement#asType
      * @see VariableElement#asType
+     * @see RecordComponentElement#asType
      */
     TypeMirror asType();
 
@@ -153,7 +152,6 @@ public interface Element extends AnnotatedConstruct {
      * @see VariableElement#getSimpleName
      * @see ModuleElement#getSimpleName
      * @see RecordComponentElement#getSimpleName
-     * @revised 9
      */
     Name getSimpleName();
 
@@ -194,7 +192,6 @@ public interface Element extends AnnotatedConstruct {
      *
      * @return the enclosing element, or {@code null} if there is none
      * @see Elements#getPackageOf
-     * @revised 9
      */
     Element getEnclosingElement();
 
@@ -231,7 +228,6 @@ public interface Element extends AnnotatedConstruct {
      * @jls 8.8.9 Default Constructor
      * @jls 8.9 Enum Classes
      * @jls 8.10 Record Classes
-     * @revised 9
      */
     List<? extends Element> getEnclosedElements();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,15 @@ class JvmtiExport : public AllStatic {
     JVMTI_ONLY(_can_access_local_variables = (on != 0);)
   }
   inline static void set_can_hotswap_or_post_breakpoint(bool on) {
-    JVMTI_ONLY(_can_hotswap_or_post_breakpoint = (on != 0);)
+#if INCLUDE_JVMTI
+    // Check that _can_hotswap_or_post_breakpoint is not reset once it
+    // was set to true. When _can_hotswap_or_post_breakpoint is set to true
+    // _all_dependencies_are_recorded is also set to true and never
+    // reset so we have to ensure that evol dependencies are always
+    // recorded from that point on.
+    assert(!_can_hotswap_or_post_breakpoint || on, "sanity check");
+    _can_hotswap_or_post_breakpoint = (on != 0);
+#endif
   }
   inline static void set_can_walk_any_space(bool on) {
     JVMTI_ONLY(_can_walk_any_space = (on != 0);)
@@ -279,10 +287,10 @@ class JvmtiExport : public AllStatic {
   }
 
   // field access management
-  static address  get_field_access_count_addr() NOT_JVMTI_RETURN_(0);
+  static address  get_field_access_count_addr() NOT_JVMTI_RETURN_(nullptr);
 
   // field modification management
-  static address  get_field_modification_count_addr() NOT_JVMTI_RETURN_(0);
+  static address  get_field_modification_count_addr() NOT_JVMTI_RETURN_(nullptr);
 
   // -----------------
 
@@ -297,6 +305,15 @@ class JvmtiExport : public AllStatic {
   static jint get_jvmti_interface(JavaVM *jvm, void **penv, jint version) NOT_JVMTI_RETURN_(0);
   static void decode_version_values(jint version, int * major, int * minor,
                                     int * micro) NOT_JVMTI_RETURN;
+
+  // If the jvmti_thread_state is absent and any thread filtered event
+  // is enabled globally then it is created.
+  // Otherwise, the thread->jvmti_thread_state() is returned.
+  // The 'allow_suspend' parameter is passed as 'true' by default which work for almost all call sites.
+  // It means that a suspend point need to be organized by this function for virtual threads if the call
+  // to jvmtiEventController::thread_started hits a safepoint and gets a new suspend request.
+  // The 'allow_suspend' parameter must be passed as 'false' if thread is holding a VM lock.
+  static JvmtiThreadState* get_jvmti_thread_state(JavaThread *thread, bool allow_suspend = true);
 
   // single stepping management methods
   static void at_single_stepping_point(JavaThread *thread, Method* method, address location) NOT_JVMTI_RETURN;
@@ -358,6 +375,7 @@ class JvmtiExport : public AllStatic {
   }
   static bool is_early_phase() NOT_JVMTI_RETURN_(false);
   static bool has_early_class_hook_env() NOT_JVMTI_RETURN_(false);
+  static bool has_early_vmstart_env() NOT_JVMTI_RETURN_(false);
   // Return true if the class was modified by the hook.
   static bool post_class_file_load_hook(Symbol* h_name, Handle class_loader,
                                         Handle h_protection_domain,
@@ -384,6 +402,7 @@ class JvmtiExport : public AllStatic {
   static void post_monitor_contended_entered(JavaThread *thread, ObjectMonitor *obj_mntr) NOT_JVMTI_RETURN;
   static void post_monitor_wait(JavaThread *thread, oop obj, jlong timeout) NOT_JVMTI_RETURN;
   static void post_monitor_waited(JavaThread *thread, ObjectMonitor *obj_mntr, jboolean timed_out) NOT_JVMTI_RETURN;
+  static void vthread_post_monitor_waited(JavaThread *current, ObjectMonitor *obj_mntr, jboolean timed_out) NOT_JVMTI_RETURN;
   static void post_object_free(JvmtiEnv* env, GrowableArray<jlong>* objects) NOT_JVMTI_RETURN;
   static void post_resource_exhausted(jint resource_exhausted_flags, const char* detail) NOT_JVMTI_RETURN;
   static void record_vm_internal_object_allocation(oop object) NOT_JVMTI_RETURN;
@@ -395,6 +414,9 @@ class JvmtiExport : public AllStatic {
       record_vm_internal_object_allocation(object);
     }
   }
+
+  // Used by C2 to deoptimize allocation intrinsics and post vm_object_alloc
+  static int _should_notify_object_alloc;
 
   static void record_sampled_internal_object_allocation(oop object) NOT_JVMTI_RETURN;
   // Post objects collected by sampled_object_alloc_event_collector.

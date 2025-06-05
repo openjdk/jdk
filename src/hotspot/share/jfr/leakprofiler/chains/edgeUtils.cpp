@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "jfr/leakprofiler/chains/edge.hpp"
 #include "jfr/leakprofiler/chains/edgeStore.hpp"
@@ -72,7 +71,7 @@ const Symbol* EdgeUtils::field_name(const Edge& edge, jshort* modifiers) {
     JavaFieldStream jfs(ik);
     while (!jfs.done()) {
       if (offset == jfs.offset()) {
-        *modifiers = jfs.access_flags().as_short();
+        *modifiers = jfs.access_flags().as_field_flags();
         return jfs.name();
       }
       jfs.next();
@@ -97,7 +96,7 @@ static int array_offset(const Edge& edge) {
   UnifiedOopRef reference = edge.reference();
   assert(!reference.is_null(), "invariant");
   assert(ref_owner->is_array(), "invariant");
-  const objArrayOop ref_owner_array = static_cast<const objArrayOop>(ref_owner);
+  const objArrayOop ref_owner_array = static_cast<objArrayOop>(ref_owner);
   const int offset = (int)pointer_delta(reference.addr<HeapWord*>(), ref_owner_array->base(), heapOopSize);
   assert(offset >= 0 && offset < ref_owner_array->length(), "invariant");
   return offset;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.ref.Reference;
-import java.security.Permission;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -43,14 +40,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import sun.util.logging.PlatformLogger;
 
-
 /**
  * @test
  * @bug     8159245
  * @summary Tests configuration of loggers.
  * @modules java.logging/sun.util.logging.internal java.base/sun.util.logging
- * @run  main/othervm SystemLoggerConfigTest NOSECURITY
- * @run  main/othervm -Djava.security.manager=allow SystemLoggerConfigTest WITHSECURITY
+ * @run  main/othervm SystemLoggerConfigTest
  *
  * @author danielfuchs
  */
@@ -134,59 +129,36 @@ public class SystemLoggerConfigTest {
     static enum TestCase { WITHSECURITY, NOSECURITY }
 
     public static void main(String[] args) {
-        if (args == null || args.length == 0) {
-            args = Stream.of(TestCase.values())
-                    .map(String::valueOf)
-                    .collect(Collectors.toList())
-                    .toArray(new String[0]);
-        }
-        Stream.of(args)
-              .map(TestCase::valueOf)
-              .forEach(SystemLoggerConfigTest::launch);
+        launch();
     }
 
-    public static void launch(TestCase test) {
-        switch(test) {
-            case WITHSECURITY:
-                Policy.setPolicy(new Policy() {
-                    @Override
-                    public boolean implies(ProtectionDomain domain, Permission permission) {
-                        return true;
-                    }
-                });
-                System.setSecurityManager(new SecurityManager());
-                break;
-            case NOSECURITY:
-                break;
-            default:
-                throw new InternalError("Unexpected enum: " + test);
-        }
+    public static void launch() {
         try {
-            test(test.name(), ".1", ".child");
-            test(test.name(), ".2", "");
-            testUpdateConfiguration(test.name(), ".3");
-            testSetPlatformLevel(test.name(), ".4");
+            test("1", ".child");
+            test("2", "");
+            testUpdateConfiguration("3");
+            testSetPlatformLevel("4");
         } catch (IOException io) {
             throw new UncheckedIOException(io);
         }
     }
 
-    public static void test(String name, String step, String ext)
+    public static void test(String step, String ext)
             throws IOException {
 
-        System.out.println("\n*** Testing " + name + step + ext);
+        System.out.println("\n*** Testing " + step + ext);
 
-        final String systemName1a = "system.logger.one.a." + name + step + ext;
-        final String systemName1b = "system.logger.one.b." + name + step + ext;
-        final String appName1a = "system.logger.one.a." + name + step;
-        final String appName1b = "system.logger.one.b." + name + step;
+        final String systemName1a = "system.logger.one.a." + step + ext;
+        final String systemName1b = "system.logger.one.b." + step + ext;
+        final String appName1a = "system.logger.one.a." + step;
+        final String appName1b = "system.logger.one.b." + step;
         final String msg1a = "logger name: " + systemName1a;
         final String msg1b = "logger name: " + systemName1b;
-        final String systemName2 = "system.logger.two." + name + step + ext;
-        final String appName2 = "system.logger.two." + name + step;
+        final String systemName2 = "system.logger.two." + step + ext;
+        final String appName2 = "system.logger.two." + step;
         final String msg2 = "logger name: " + systemName2;
-        final String systemName3 = "system.logger.three." + name + step + ext;
-        final String appName3 = "system.logger.three." + name + step;
+        final String systemName3 = "system.logger.three." + step + ext;
+        final String appName3 = "system.logger.three." + step;
         final String msg3 = "logger name: " + systemName3;
         List<LogRecord> records;
 
@@ -277,16 +249,16 @@ public class SystemLoggerConfigTest {
         logger.setLevel(level);
     }
 
-    public static void testSetPlatformLevel(String name, String step) {
-        System.out.println("\n*** Testing PlatformLogger.setLevel " + name + step);
+    public static void testSetPlatformLevel(String step) {
+        System.out.println("\n*** Testing PlatformLogger.setLevel " + step);
 
-        System.out.println("\n[Case #5] Creating app logger: " + name + step);
+        System.out.println("\n[Case #5] Creating app logger: " + step);
         // this should return named logger in the global context
-        Logger foo = Logger.getLogger(name + step);
+        Logger foo = Logger.getLogger(step);
         foo.setLevel(Level.FINE);
 
-        System.out.println("    Creating platform logger: " + name + step);
-        PlatformLogger foo1 = PlatformLogger.getLogger(name + step);
+        System.out.println("    Creating platform logger: " + step);
+        PlatformLogger foo1 = PlatformLogger.getLogger(step);
         System.out.println("    Configuring platform logger...");
         setPlatformLevel(foo1, PlatformLogger.Level.INFO);
 
@@ -316,12 +288,12 @@ public class SystemLoggerConfigTest {
     // Tests that though two loggers exist, only one handler is created for the
     // pair when reading configuration.
     //
-    public static void testUpdateConfiguration(String name, String step) throws IOException {
+    public static void testUpdateConfiguration(String step) throws IOException {
 
-        System.out.println("\n*** Testing LogManager.updateConfiguration " + name + step);
+        System.out.println("\n*** Testing LogManager.updateConfiguration " + step);
 
-        final String name1a = "system.logger.one.a." + name + step;
-        final String name1b = "system.logger.one.b." + name + step;
+        final String name1a = "system.logger.one.a." + step;
+        final String name1b = "system.logger.one.b." + step;
         final String msg1a = "logger name: " + name1a;
         final String msg1b = "logger name: " + name1b;
         List<LogRecord> records;

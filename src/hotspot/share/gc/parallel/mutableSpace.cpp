@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/shared/pretouchTask.hpp"
-#include "gc/shared/spaceDecorator.inline.hpp"
+#include "gc/shared/spaceDecorator.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -36,7 +35,6 @@
 #include "utilities/macros.hpp"
 
 MutableSpace::MutableSpace(size_t alignment) :
-  _mangler(nullptr),
   _last_setup_region(),
   _alignment(alignment),
   _bottom(nullptr),
@@ -45,11 +43,6 @@ MutableSpace::MutableSpace(size_t alignment) :
 {
   assert(MutableSpace::alignment() % os::vm_page_size() == 0,
          "Space should be aligned");
-  _mangler = new MutableSpaceMangler(this);
-}
-
-MutableSpace::~MutableSpace() {
-  delete _mangler;
 }
 
 void MutableSpace::numa_setup_pages(MemRegion mr, size_t page_size, bool clear_space) {
@@ -60,7 +53,7 @@ void MutableSpace::numa_setup_pages(MemRegion mr, size_t page_size, bool clear_s
       size_t size = pointer_delta(end, start, sizeof(char));
       if (clear_space) {
         // Prefer page reallocation to migration.
-        os::free_memory((char*)start, size, page_size);
+        os::disclaim_memory((char*)start, size);
       }
       os::numa_make_global((char*)start, size);
     }
@@ -120,11 +113,12 @@ void MutableSpace::initialize(MemRegion mr,
     }
 
     if (AlwaysPreTouch) {
+      size_t pretouch_page_size = UseLargePages ? page_size : os::vm_page_size();
       PretouchTask::pretouch("ParallelGC PreTouch head", (char*)head.start(), (char*)head.end(),
-                             page_size, pretouch_workers);
+                             pretouch_page_size, pretouch_workers);
 
       PretouchTask::pretouch("ParallelGC PreTouch tail", (char*)tail.start(), (char*)tail.end(),
-                             page_size, pretouch_workers);
+                             pretouch_page_size, pretouch_workers);
     }
 
     // Remember where we stopped so that we can continue later.
@@ -151,36 +145,15 @@ void MutableSpace::clear(bool mangle_space) {
 }
 
 #ifndef PRODUCT
-void MutableSpace::check_mangled_unused_area(HeapWord* limit) {
-  mangler()->check_mangled_unused_area(limit);
-}
 
-void MutableSpace::check_mangled_unused_area_complete() {
-  mangler()->check_mangled_unused_area_complete();
-}
-
-// Mangle only the unused space that has not previously
-// been mangled and that has not been allocated since being
-// mangled.
 void MutableSpace::mangle_unused_area() {
-  mangler()->mangle_unused_area();
-}
-
-void MutableSpace::mangle_unused_area_complete() {
-  mangler()->mangle_unused_area_complete();
+  mangle_region(MemRegion(_top, _end));
 }
 
 void MutableSpace::mangle_region(MemRegion mr) {
   SpaceMangler::mangle_region(mr);
 }
 
-void MutableSpace::set_top_for_allocations(HeapWord* v) {
-  mangler()->set_top_for_allocations(v);
-}
-
-void MutableSpace::set_top_for_allocations() {
-  mangler()->set_top_for_allocations(top());
-}
 #endif
 
 HeapWord* MutableSpace::cas_allocate(size_t size) {
@@ -216,7 +189,12 @@ bool MutableSpace::cas_deallocate(HeapWord *obj, size_t size) {
 
 // Only used by oldgen allocation.
 bool MutableSpace::needs_expand(size_t word_size) const {
-  assert_lock_strong(PSOldGenExpand_lock);
+#ifdef ASSERT
+  // If called by VM thread, locking is not needed.
+  if (!Thread::current()->is_VM_thread()) {
+    assert_lock_strong(PSOldGenExpand_lock);
+  }
+#endif
   // Holding the lock means end is stable.  So while top may be advancing
   // via concurrent allocations, there is no need to order the reads of top
   // and end here, unlike in cas_allocate.
@@ -235,19 +213,32 @@ void MutableSpace::oop_iterate(OopIterateClosure* cl) {
 void MutableSpace::object_iterate(ObjectClosure* cl) {
   HeapWord* p = bottom();
   while (p < top()) {
-    cl->do_object(cast_to_oop(p));
-    p += cast_to_oop(p)->size();
+    oop obj = cast_to_oop(p);
+    // When promotion-failure occurs during Young GC, eden/from space is not cleared,
+    // so we can encounter objects with "forwarded" markword.
+    // They are essentially dead, so skipping them
+    if (obj->is_forwarded()) {
+      assert(!obj->is_self_forwarded(), "must not be self-forwarded");
+      // It is safe to use the forwardee here. Parallel GC only uses
+      // header-based forwarding during promotion. Full GC doesn't
+      // use the object header for forwarding at all.
+      p += obj->forwardee()->size();
+    } else {
+      cl->do_object(obj);
+      p += obj->size();
+    }
   }
 }
 
 void MutableSpace::print_short() const { print_short_on(tty); }
 void MutableSpace::print_short_on( outputStream* st) const {
-  st->print(" space " SIZE_FORMAT "K, %d%% used", capacity_in_bytes() / K,
+  st->print("space %zuK, %d%% used", capacity_in_bytes() / K,
             (int) ((double) used_in_bytes() * 100 / capacity_in_bytes()));
 }
 
-void MutableSpace::print() const { print_on(tty); }
-void MutableSpace::print_on(outputStream* st) const {
+void MutableSpace::print() const { print_on(tty, ""); }
+void MutableSpace::print_on(outputStream* st, const char* prefix) const {
+  st->print("%s", prefix);
   MutableSpace::print_short_on(st);
   st->print_cr(" [" PTR_FORMAT "," PTR_FORMAT "," PTR_FORMAT ")",
                  p2i(bottom()), p2i(top()), p2i(end()));
@@ -256,10 +247,8 @@ void MutableSpace::print_on(outputStream* st) const {
 void MutableSpace::verify() {
   HeapWord* p = bottom();
   HeapWord* t = top();
-  HeapWord* prev_p = nullptr;
   while (p < t) {
     oopDesc::verify(cast_to_oop(p));
-    prev_p = p;
     p += cast_to_oop(p)->size();
   }
   guarantee(p == top(), "end of last object must match end of space");

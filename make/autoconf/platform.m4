@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -390,7 +390,7 @@ AC_DEFUN([PLATFORM_EXTRACT_TARGET_AND_BUILD],
 AC_DEFUN([PLATFORM_SETUP_TARGET_CPU_BITS],
 [
   AC_ARG_WITH(target-bits, [AS_HELP_STRING([--with-target-bits],
-       [build 32-bit or 64-bit binaries (for platforms that support it), e.g. --with-target-bits=32 @<:@guessed@:>@])])
+      [build 32-bit or 64-bit binaries (for platforms that support it), e.g. --with-target-bits=32 @<:@guessed@:>@])])
 
   # We have three types of compiles:
   # native  == normal compilation, target system == build system
@@ -567,8 +567,6 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS_HELPER],
     HOTSPOT_$1_CPU_DEFINE=PPC64
   elif test "x$OPENJDK_$1_CPU" = xppc64le; then
     HOTSPOT_$1_CPU_DEFINE=PPC64
-  elif test "x$OPENJDK_$1_CPU" = xriscv32; then
-    HOTSPOT_$1_CPU_DEFINE=RISCV32
   elif test "x$OPENJDK_$1_CPU" = xriscv64; then
     HOTSPOT_$1_CPU_DEFINE=RISCV64
 
@@ -577,10 +575,14 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS_HELPER],
     HOTSPOT_$1_CPU_DEFINE=SPARC
   elif test "x$OPENJDK_$1_CPU" = xppc; then
     HOTSPOT_$1_CPU_DEFINE=PPC32
+  elif test "x$OPENJDK_$1_CPU" = xriscv32; then
+    HOTSPOT_$1_CPU_DEFINE=RISCV32
   elif test "x$OPENJDK_$1_CPU" = xs390; then
     HOTSPOT_$1_CPU_DEFINE=S390
   elif test "x$OPENJDK_$1_CPU" = xs390x; then
     HOTSPOT_$1_CPU_DEFINE=S390
+  elif test "x$OPENJDK_$1_CPU" = xloongarch64; then
+    HOTSPOT_$1_CPU_DEFINE=LOONGARCH64
   elif test "x$OPENJDK_$1_CPU" != x; then
     HOTSPOT_$1_CPU_DEFINE=$(echo $OPENJDK_$1_CPU | tr a-z A-Z)
   fi
@@ -663,20 +665,13 @@ AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_BUILD_AND_TARGET],
 AC_DEFUN([PLATFORM_CHECK_DEPRECATION],
 [
   AC_ARG_ENABLE(deprecated-ports, [AS_HELP_STRING([--enable-deprecated-ports@<:@=yes/no@:>@],
-       [Suppress the error when configuring for a deprecated port @<:@no@:>@])])
-  if test "x$OPENJDK_TARGET_OS" = xwindows && test "x$OPENJDK_TARGET_CPU" = xx86; then
-    if test "x$enable_deprecated_ports" = "xyes"; then
-      AC_MSG_WARN([The Windows 32-bit x86 port is deprecated and may be removed in a future release.])
-    else
-      AC_MSG_ERROR(m4_normalize([The Windows 32-bit x86 port is deprecated and may be removed in a future release.
-        Use --enable-deprecated-ports=yes to suppress this error.]))
-    fi
-  fi
+      [Suppress the error when configuring for a deprecated port @<:@no@:>@])])
+  # There are no deprecated ports. Implement the deprecation warnings here.
 ])
 
 AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_BUILD_OS_VERSION],
 [
-  ###############################################################################
+  ##############################################################################
 
   # Note that this is the build platform OS version!
 
@@ -691,7 +686,7 @@ AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_BUILD_OS_VERSION],
 
 AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_TARGET_BITS],
 [
-  ###############################################################################
+  ##############################################################################
   #
   # Now we check if libjvm.so will use 32 or 64 bit pointers for the C/C++ code.
   # (The JVM can use 32 or 64 bit Java pointers but that decision
@@ -737,7 +732,7 @@ AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_TARGET_BITS],
 
 AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_TARGET_ENDIANNESS],
 [
-  ###############################################################################
+  ##############################################################################
   #
   # Is the target little or big endian?
   #

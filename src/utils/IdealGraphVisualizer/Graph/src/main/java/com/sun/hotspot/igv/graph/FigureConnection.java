@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.awt.Color;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  *
@@ -41,7 +42,7 @@ public class FigureConnection implements Connection {
     private Color color;
     private ConnectionStyle style;
     private List<Point> controlPoints;
-    private String label;
+    private final String label;
 
     protected FigureConnection(InputSlot inputSlot, OutputSlot outputSlot, String label) {
         this.inputSlot = inputSlot;
@@ -121,6 +122,14 @@ public class FigureConnection implements Connection {
         return outputSlot;
     }
 
+    public Figure getFromFigure() {
+        return outputSlot.getFigure();
+    }
+
+    public Figure getToFigure() {
+        return inputSlot.getFigure();
+    }
+
     @Override
     public Cluster getFromCluster() {
         return getFrom().getVertex().getCluster();
@@ -134,11 +143,6 @@ public class FigureConnection implements Connection {
     @Override
     public Cluster getToCluster() {
         return getTo().getVertex().getCluster();
-    }
-
-    @Override
-    public boolean isVIP() {
-        return style == ConnectionStyle.BOLD;
     }
 
     @Override
@@ -156,5 +160,17 @@ public class FigureConnection implements Connection {
         return true;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof FigureConnection that)) return false;
+        return Objects.equals(this.outputSlot, that.outputSlot) &&
+                Objects.equals(this.inputSlot, that.inputSlot);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(outputSlot, inputSlot);
+    }
 }
 

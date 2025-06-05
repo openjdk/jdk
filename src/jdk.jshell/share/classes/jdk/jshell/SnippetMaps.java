@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.stream.Stream;
+import javax.lang.model.element.ModuleElement;
+import javax.lang.model.element.ModuleElement.ExportsDirective;
+import javax.lang.model.element.ModuleElement.RequiresDirective;
+import javax.lang.model.util.ElementFilter;
+
+import jdk.jshell.Snippet.SubKind;
+import jdk.jshell.TaskFactory.AnalyzeTask;
 
 import static jdk.jshell.Util.PREFIX_PATTERN;
 import static jdk.jshell.Util.REPL_PACKAGE;
@@ -51,6 +58,7 @@ final class SnippetMaps {
     private final List<Snippet> keyIndexToSnippet = new ArrayList<>();
     private final Set<Snippet> snippets = new LinkedHashSet<>();
     private final Map<String, Set<Integer>> dependencies = new HashMap<>();
+    private final Map<String, Set<String>> module2PackagesForImport = new HashMap<>();
     private final JShell state;
 
     SnippetMaps(JShell proc) {
@@ -158,6 +166,15 @@ final class SnippetMaps {
         if (mat.lookingAt()) {
             return full.substring(mat.end());
         }
+        String simpleName = full.substring(full.lastIndexOf(".") + 1);
+        Stream<String> declaredInSnippets = state.keyMap.typeDeclKeys()
+                .map(key -> (TypeDeclSnippet) getSnippet(key))
+                .map(decl -> decl.name());
+        if (declaredInSnippets.anyMatch(clazz -> simpleName.equals(clazz))) {
+            //simple name of full clashes with a name of a user-defined class,
+            //use the fully-qualified name:
+            return full;
+        }
         state.debug(DBG_DEP, "SM %s %s\n", full, pkg);
         List<String> klasses = importSnippets()
                                .filter(isi -> !isi.isStar)
@@ -165,7 +182,7 @@ final class SnippetMaps {
                                .toList();
         for (String k : klasses) {
             if (k.equals(full)) {
-                return full.substring(full.lastIndexOf(".")+1);
+                return simpleName;
             }
         }
         if (pkg.isEmpty()) {
@@ -175,6 +192,13 @@ final class SnippetMaps {
                                .filter(isi -> isi.isStar)
                                .map(isi -> isi.fullname.substring(0, isi.fullname.lastIndexOf(".")));
         if (Stream.concat(Stream.of("java.lang"), pkgs).anyMatch(pkg::equals)) {
+            return full.substring(pkg.length() + 1);
+        }
+        Stream<String> modPkgs = importSnippets()
+                                   .filter(isi -> isi.subKind() == SubKind.MODULE_IMPORT_SUBKIND)
+                                   .map(isi -> isi.fullname)
+                                   .flatMap(this::module2PackagesForImport);
+        if (modPkgs.anyMatch(pkg::equals)) {
             return full.substring(pkg.length() + 1);
         }
         return full;
@@ -188,5 +212,39 @@ final class SnippetMaps {
         return state.keyMap.importKeys()
                 .map(key -> (ImportSnippet)getSnippet(key))
                 .filter(sn -> sn != null && state.status(sn).isDefined());
+    }
+
+    private Stream<String> module2PackagesForImport(String module) {
+        return module2PackagesForImport.computeIfAbsent(module, mod -> {
+            return state.taskFactory
+                        .analyze(new OuterWrap(Wrap.identityWrap(" ")),
+                                 at -> computeImports(at, mod));
+        }).stream();
+    }
+
+    private Set<String> computeImports(AnalyzeTask at, String mod) {
+        List<ModuleElement> todo = new ArrayList<>();
+        Set<ModuleElement> seenModules = new HashSet<>();
+        Set<String> exportedPackages = new HashSet<>();
+        todo.add(at.getElements().getModuleElement(mod));
+        while (!todo.isEmpty()) {
+            ModuleElement current = todo.remove(todo.size() - 1);
+            if (current == null || !seenModules.add(current)) {
+                continue;
+            }
+            for (ExportsDirective exp : ElementFilter.exportsIn(current.getDirectives())) {
+                if (exp.getTargetModules() != null) {
+                    continue;
+                }
+                exportedPackages.add(exp.getPackage().getQualifiedName().toString());
+            }
+            for (RequiresDirective req : ElementFilter.requiresIn(current.getDirectives())) {
+                if (!req.isTransitive()) {
+                    continue;
+                }
+                todo.add(req.getDependency());
+            }
+        }
+        return exportedPackages;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ private:
   uint                 _nworkers;
   uint                 _nsynchronized;
   bool                 _synchronize;
+  volatile bool        _is_active;
   volatile int         _needs_attention;
 
   bool needs_attention() const;
@@ -52,6 +53,10 @@ private:
 
 public:
   ZRelocateQueue();
+
+  void activate(uint nworkers);
+  void deactivate();
+  bool is_active() const;
 
   void join(uint nworkers);
   void resize_workers(uint nworkers);
@@ -99,6 +104,8 @@ public:
   void desynchronize();
 
   ZRelocateQueue* queue();
+
+  bool is_queue_active() const;
 };
 
 #endif // SHARE_GC_Z_ZRELOCATE_HPP

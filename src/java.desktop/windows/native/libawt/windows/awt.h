@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,15 +155,6 @@ typedef AwtObject* PDATA;
 /*  /NEW JNI */
 
 /*
- * IS_WIN64 returns TRUE on 64-bit Itanium
- */
-#if defined (_WIN64)
-    #define IS_WIN64 TRUE
-#else
-    #define IS_WIN64 FALSE
-#endif
-
-/*
  * IS_WIN2000 returns TRUE on 2000, XP and Vista
  * IS_WINXP returns TRUE on XP and Vista
  * IS_WINVISTA returns TRUE on Vista
@@ -196,35 +187,6 @@ extern JavaVM *jvm;
 #define JNU_ReleaseStringPlatformChars(env, x, y) env->ReleaseStringChars(x, reinterpret_cast<const jchar*>(y))
 
 /*
- * Itanium symbols needed for 64-bit compilation.
- * These are defined in winuser.h in the August 2001 MSDN update.
- */
-#ifndef GCLP_HBRBACKGROUND
-    #ifdef _WIN64
-        #error Macros for GetClassLongPtr, etc. are for 32-bit windows only
-    #endif /* !_WIN64 */
-    #define GetClassLongPtr GetClassLong
-    #define SetClassLongPtr SetClassLong
-    #define GCLP_HBRBACKGROUND GCL_HBRBACKGROUND
-    #define GCLP_HCURSOR GCL_HCURSOR
-    #define GCLP_HICON GCL_HICON
-    #define GCLP_HICONSM GCL_HICONSM
-    #define GCLP_HMODULE GCL_HMODULE
-    #define GCLP_MENUNAME GCL_MENUNAME
-    #define GCLP_WNDPROC GCL_WNDPROC
-    #define GetWindowLongPtr GetWindowLong
-    #define SetWindowLongPtr SetWindowLong
-    #define GWLP_WNDPROC GWL_WNDPROC
-    #define GWLP_HINSTANCE GWL_HINSTANCE
-    #define GWLP_HWNDPARENT GWL_HWNDPARENT
-    #define GWLP_ID GWL_ID
-    #define GWLP_USERDATA GWL_USERDATA
-    #define DWLP_DLGPROC DWL_DLGPROC
-    #define DWLP_MSGRESULT DWL_MSGRESULT
-    #define DWLP_USER DWL_USER
-#endif /* !GCLP_HBRBACKGROUND */
-
-/*
  * macros for saving and restoring FPU control word
  * NOTE: float.h must be defined if using these macros
  */
@@ -251,41 +213,6 @@ extern JavaVM *jvm;
 #define CHECK_ISNOT_TOOLKIT_THREAD()
 #endif
 
-
-struct EnvHolder
-{
-    JavaVM *m_pVM;
-    JNIEnv *m_env;
-    bool    m_isOwner;
-    EnvHolder(
-        JavaVM *pVM,
-        LPCSTR name = "COM holder",
-        jint ver = JNI_VERSION_1_2)
-    : m_pVM(pVM),
-      m_env((JNIEnv *)JNU_GetEnv(pVM, ver)),
-      m_isOwner(false)
-    {
-        if (NULL == m_env) {
-            JavaVMAttachArgs attachArgs;
-            attachArgs.version  = ver;
-            attachArgs.name     = const_cast<char *>(name);
-            attachArgs.group    = NULL;
-            jint status = m_pVM->AttachCurrentThread(
-                (void**)&m_env,
-                &attachArgs);
-            m_isOwner = (NULL!=m_env);
-        }
-    }
-    ~EnvHolder() {
-        if (m_isOwner) {
-            m_pVM->DetachCurrentThread();
-        }
-    }
-    operator bool()  const { return NULL!=m_env; }
-    bool operator !()  const { return NULL==m_env; }
-    operator JNIEnv*() const { return m_env; }
-    JNIEnv* operator ->() const { return m_env; }
-};
 
 template <class T>
 class JLocalRef {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,16 @@
  *
  */
 
-// no precompiled headers
-#include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 
-void OSThread::pd_initialize() {
-  set_thread_handle(nullptr);
-  set_thread_id(0);
-  set_interrupt_event(nullptr);
-}
+#include <Windows.h>
 
-void OSThread::pd_destroy() {
+OSThread::OSThread()
+  : _thread_id(0),
+    _thread_handle(nullptr),
+    _interrupt_event(nullptr) {}
+
+OSThread::~OSThread() {
   if (_interrupt_event != nullptr) {
     CloseHandle(_interrupt_event);
   }

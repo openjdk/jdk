@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class TestOverriddenDeprecatedMethods extends JavadocTester {
         checkOrder("pkg1/SubClass.html",
                 "Method Summary",
                 """
-                    Methods declared in class&nbsp;pkg1.<a href="BaseClass.html" title="class in pkg1">BaseClass</a>""",
+                    Methods declared in class&nbsp;<a href="BaseClass.html#method-summary" title="class in pkg1">BaseClass</a>""",
                 """
                     <a href="BaseClass.html#func3()">func3</a>""");
 

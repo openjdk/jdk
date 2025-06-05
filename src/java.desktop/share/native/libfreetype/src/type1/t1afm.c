@@ -4,7 +4,7 @@
  *
  *   AFM support for Type 1 fonts (body).
  *
- * Copyright (C) 1996-2023 by
+ * Copyright (C) 1996-2024 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -405,7 +405,7 @@
 #else /* T1_CONFIG_OPTION_NO_AFM */
 
   /* ANSI C doesn't like empty source files */
-  typedef int  _t1_afm_dummy;
+  typedef int  t1_afm_dummy_;
 
 #endif /* T1_CONFIG_OPTION_NO_AFM */
 

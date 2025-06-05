@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -380,7 +380,7 @@ while read token; do
     echo "===== begin test case: $token ====="
     make_a_JAR "$token"
 
-    "${JAVA}" ${TESTVMOPTS} -javaagent:${AGENT}.jar \
+    "${JAVA}" ${TESTVMOPTS} ${TESTJAVAOPTS} -javaagent:${AGENT}.jar \
         -classpath "${TESTCLASSES}" ManifestTestApp > output.log 2>&1
     result=$?
 

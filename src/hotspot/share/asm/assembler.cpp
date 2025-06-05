@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
@@ -32,7 +31,7 @@
 #include "runtime/icache.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-
+#include "utilities/checkedCast.hpp"
 
 // Implementation of AbstractAssembler
 //
@@ -86,7 +85,7 @@ address AbstractAssembler::start_a_const(int required_space, int required_align)
   CodeSection* cs = cb->consts();
   assert(_code_section == cb->insts() || _code_section == cb->stubs(), "not in insts/stubs?");
   address end = cs->end();
-  int pad = -(intptr_t)end & (required_align-1);
+  int pad = checked_cast<int>(-(intptr_t)end & (required_align-1));
   if (cs->maybe_expand_to_ensure_remaining(pad + required_space)) {
     if (cb->blob() == nullptr)  return nullptr;
     end = cs->end();  // refresh pointer

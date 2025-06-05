@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,11 +103,11 @@ public abstract class FileStore {
      * <p> The returned number of available bytes is a hint, but not a
      * guarantee, that it is possible to use most or any of these bytes.  The
      * number of usable bytes is most likely to be accurate immediately
-     * after the space attributes are obtained. It is likely to be made inaccurate
+     * after this method returns. It is likely to be made inaccurate
      * by any external I/O operations including those made on the system outside
      * of this Java virtual machine.
      *
-     * @return  the number of bytes available
+     * @return  the current number of usable bytes
      *
      * @throws  IOException
      *          if an I/O error occurs
@@ -122,11 +122,11 @@ public abstract class FileStore {
      * <p> The returned number of unallocated bytes is a hint, but not a
      * guarantee, that it is possible to use most or any of these bytes.  The
      * number of unallocated bytes is most likely to be accurate immediately
-     * after the space attributes are obtained. It is likely to be
+     * after this method returns. It is likely to be
      * made inaccurate by any external I/O operations including those made on
      * the system outside of this virtual machine.
      *
-     * @return  the number of unallocated bytes
+     * @return  the current number of unallocated bytes
      *
      * @throws  IOException
      *          if an I/O error occurs

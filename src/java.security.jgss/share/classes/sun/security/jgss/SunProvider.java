@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package sun.security.jgss;
 
 import java.io.Serial;
 import java.security.Provider;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.NoSuchAlgorithmException;
 import java.security.InvalidParameterException;
 import java.security.ProviderException;
@@ -100,20 +98,16 @@ public final class SunProvider extends Provider {
         }
     }
 
-    @SuppressWarnings("removal")
     public SunProvider() {
         /* We are the Sun JGSS provider */
         super("SunJGSS", PROVIDER_VER, INFO);
 
         final Provider p = this;
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            putService(new ProviderService(p, "GssApiMechanism",
-                       "1.2.840.113554.1.2.2",
-                       "sun.security.jgss.krb5.Krb5MechFactory"));
-            putService(new ProviderService(p, "GssApiMechanism",
-                       "1.3.6.1.5.5.2",
-                       "sun.security.jgss.spnego.SpNegoMechFactory"));
-            return null;
-        });
+        putService(new ProviderService(p, "GssApiMechanism",
+                   "1.2.840.113554.1.2.2",
+                   "sun.security.jgss.krb5.Krb5MechFactory"));
+        putService(new ProviderService(p, "GssApiMechanism",
+                   "1.3.6.1.5.5.2",
+                   "sun.security.jgss.spnego.SpNegoMechFactory"));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import static gc.testlibrary.Allocation.blackHole;
  * @test TestHumongousAllocNearlyFullRegion
  * @bug 8143587
  * @summary G1: humongous object allocations should work even when there is
- *              not enough space in the heapRegion to fit a filler object.
+ *              not enough space in the G1HeapRegion to fit a filler object.
  * @requires vm.gc.G1
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -47,7 +47,7 @@ public class TestHumongousAllocNearlyFullRegion {
     private static final int heapRegionSize                 = 1;   // MB
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
             "-XX:+UseG1GC",
             "-Xms" + heapSize + "m",
             "-Xmx" + heapSize + "m",
@@ -55,7 +55,6 @@ public class TestHumongousAllocNearlyFullRegion {
             "-Xlog:gc",
             HumongousObjectAllocator.class.getName());
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Pause Young (Concurrent Start) (G1 Humongous Allocation)");
         output.shouldHaveExitValue(0);
     }
@@ -63,11 +62,10 @@ public class TestHumongousAllocNearlyFullRegion {
     static class HumongousObjectAllocator {
         public static void main(String [] args) {
             for (int i = 0; i < heapSize; i++) {
-                // 131069 is the number of longs it takes to fill a heapRegion except
+                // 131069 is the number of longs it takes to fill a G1HeapRegion except
                 // for 8 bytes on 64 bit.
                 blackHole(new long[131069]);
             }
         }
     }
 }
-

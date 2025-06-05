@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package javax.crypto.spec;
 
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
 
 /**
  * This class specifies the parameters used with the
@@ -36,10 +37,10 @@ import java.security.spec.AlgorithmParameterSpec;
  * size, and optionally an initialization vector (IV) (only in feedback mode).
  *
  * <p> This class can be used to initialize a {@code Cipher} object that
- * implements the <i>RC5</i> algorithm as supplied by
- * <a href="http://www.rsa.com">RSA Security LLC</a>,
- * or any parties authorized by RSA Security.
+ * implements the <i>RC5</i> algorithm.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2040
+ *      RFC 2040: The RC5, RC5-CBC, RC5-CBC-Pad, and RC5-CTS Algorithms
  * @author Jan Luehe
  *
  * @since 1.4
@@ -105,9 +106,9 @@ public class RC5ParameterSpec implements AlgorithmParameterSpec {
      * bytes of the buffer beginning at {@code offset}
      * inclusive are copied to protect against subsequent modification.
      * @param offset the offset in {@code iv} where the IV starts.
-     * @exception IllegalArgumentException if {@code iv} is
-     * {@code null} or
-     * {@code (iv.length - offset < 2 * (wordSize / 8))}
+     * @exception ArrayIndexOutOfBoundsException if {@code offset} is negative.
+     * @exception IllegalArgumentException if {@code iv} is {@code null}
+     * or {@code (iv.length - offset < 2 * (wordSize / 8))}
      */
     public RC5ParameterSpec(int version, int rounds, int wordSize,
                             byte[] iv, int offset) {
@@ -176,6 +177,7 @@ public class RC5ParameterSpec implements AlgorithmParameterSpec {
      * @return true if the objects are considered equal, false if
      * {@code obj} is null or otherwise.
      */
+    @Override
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;
@@ -187,21 +189,15 @@ public class RC5ParameterSpec implements AlgorithmParameterSpec {
         return ((version == other.version) &&
                 (rounds == other.rounds) &&
                 (wordSize == other.wordSize) &&
-                java.util.Arrays.equals(iv, other.iv));
+                Arrays.equals(iv, other.iv));
     }
 
     /**
      * Calculates a hash code value for the object.
      * Objects that are equal will also have the same hashcode.
      */
+    @Override
     public int hashCode() {
-        int retval = 0;
-        if (iv != null) {
-            for (int i = 1; i < iv.length; i++) {
-                retval += iv[i] * i;
-            }
-        }
-        retval += (version + rounds + wordSize);
-        return retval;
+        return Arrays.hashCode(iv) + version + rounds + wordSize;
     }
 }

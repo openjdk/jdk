@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmClasses.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -40,14 +39,11 @@
 
 // The test doesn't work for PRODUCT because it needs WizardMode
 #ifndef PRODUCT
-static bool test_pattern(stringStream* st, const char* pattern) {
-  return (strstr(st->as_string(), pattern) != NULL);
-}
 
 static void assert_test_pattern(Handle object, const char* pattern) {
   stringStream st;
   object->print_on(&st);
-  ASSERT_TRUE(test_pattern(&st, pattern)) << pattern << " not in " << st.as_string();
+  ASSERT_THAT(st.base(), testing::HasSubstr(pattern));
 }
 
 class LockerThread : public JavaTestThread {
@@ -91,11 +87,11 @@ TEST_VM(markWord, printing) {
     ObjectLocker ol(h_obj, THREAD);
     assert_test_pattern(h_obj, "locked");
   }
-  assert_test_pattern(h_obj, "is_neutral no_hash");
+  assert_test_pattern(h_obj, "is_unlocked no_hash");
 
   // Hash the object then print it.
   intx hash = h_obj->identity_hash();
-  assert_test_pattern(h_obj, "is_neutral hash=0x");
+  assert_test_pattern(h_obj, "is_unlocked hash=0x");
 
   // Wait gets the lock inflated.
   {

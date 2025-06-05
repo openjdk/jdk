@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
    @bug 4033560
    @summary 4033560 limited args of exec to 198 on Solaris. We check
             that we can actually exec more args than that.
+   @requires vm.flagless
    @author Anand Palaniswamy
    @run main/othervm ExecWithLotsOfArgs
 */

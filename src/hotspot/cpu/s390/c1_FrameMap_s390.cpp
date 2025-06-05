@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_FrameMap.hpp"
 #include "c1/c1_LIR.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -145,13 +144,13 @@ LIR_Opr FrameMap::_caller_save_fpu_regs[] = {};
 // c1 rnr -> FloatRegister
 FloatRegister FrameMap::nr2floatreg (int rnr) {
   assert(_init_done, "tables not initialized");
-  debug_only(fpu_range_check(rnr);)
+  DEBUG_ONLY(fpu_range_check(rnr);)
   return _fpu_rnr2reg[rnr];
 }
 
 void FrameMap::map_float_register(int rnr, FloatRegister reg) {
-  debug_only(fpu_range_check(rnr);)
-  debug_only(fpu_range_check(reg->encoding());)
+  DEBUG_ONLY(fpu_range_check(rnr);)
+  DEBUG_ONLY(fpu_range_check(reg->encoding());)
   _fpu_rnr2reg[rnr] = reg;              // mapping c1 regnr. -> FloatRegister
   _fpu_reg2rnr[reg->encoding()] = rnr;  // mapping assembler encoding -> c1 regnr.
 }

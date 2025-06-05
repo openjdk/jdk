@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,10 @@
 /*
  * @test
  * @bug  8295974
- * @requires os.family != "windows"
+ * @requires os.arch != "arm"
  * @library /test/lib
  * @summary Generate a JNI Fatal error, or a warning, in a launched VM and check
  *          the native stack is present as expected.
- * @comment The native code only supports POSIX so no windows testing
  * @run driver TestNativeStack
  */
 
@@ -52,19 +51,19 @@ public class TestNativeStack {
     public static void main(String[] args) throws Throwable {
         // case 1: Trigger a JNI warning with Xcheck:jni
         OutputAnalyzer oa =
-            ProcessTools.executeTestJvm("-Xcheck:jni",
-                                        "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
-                                        "TestNativeStack$Main");
+            ProcessTools.executeTestJava("-Xcheck:jni",
+                                         "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
+                                         "TestNativeStack$Main");
         oa.shouldHaveExitValue(0);
         oa.shouldContain("WARNING in native method");
         oa.shouldContain("thread_start");
         oa.reportDiagnosticSummary();
 
         // Case 2: Trigger a JNI FatalError call
-        oa = ProcessTools.executeTestJvm("-XX:-CreateCoredumpOnCrash",
-                                         "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
-                                         "TestNativeStack$Main",
-                                         "error");
+        oa = ProcessTools.executeTestJava("-XX:-CreateCoredumpOnCrash",
+                                          "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
+                                          "TestNativeStack$Main",
+                                          "error");
         oa.shouldNotHaveExitValue(0);
         oa.shouldContain("FATAL ERROR in native method");
         oa.shouldContain("thread_start");

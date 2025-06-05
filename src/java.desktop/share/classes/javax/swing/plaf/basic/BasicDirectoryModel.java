@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,10 +98,13 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
      * This method is used to interrupt file loading thread.
      */
     public void invalidateFileCache() {
-        if (filesLoader != null) {
-            filesLoader.loadThread.interrupt();
-            filesLoader.cancelRunnables();
-            filesLoader = null;
+        synchronized (this) {
+            if (filesLoader != null) {
+                filesLoader.loadThread.interrupt();
+                filesLoader = null;
+                // Increment fetch ID to invalidate pending DoChangeContents
+                fetchID.incrementAndGet();
+            }
         }
     }
 
@@ -156,14 +159,15 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
         if (currentDirectory == null) {
             return;
         }
-        if (filesLoader != null) {
-            filesLoader.loadThread.interrupt();
-            filesLoader.cancelRunnables();
-        }
+        synchronized (this) {
+            if (filesLoader != null) {
+                filesLoader.loadThread.interrupt();
+            }
 
-        int fid = fetchID.incrementAndGet();
-        setBusy(true, fid);
-        filesLoader = new FilesLoader(currentDirectory, fid);
+            int fid = fetchID.incrementAndGet();
+            setBusy(true, fid);
+            filesLoader = new FilesLoader(currentDirectory, fid);
+        }
     }
 
     /**
@@ -276,7 +280,6 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
         private final boolean fileSelectionEnabled;
         private final int fid;
         private final File currentDirectory;
-        private volatile DoChangeContents runnable;
         private final Thread loadThread;
 
         private FilesLoader(File currentDirectory, int fid) {
@@ -297,22 +300,20 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
         }
 
         private void run0() {
-            FileSystemView fileSystem = fileSystemView;
-
             if (loadThread.isInterrupted()) {
                 return;
             }
 
-            File[] list = fileSystem.getFiles(currentDirectory, useFileHiding);
+            File[] list = fileSystemView.getFiles(currentDirectory, useFileHiding);
 
             if (loadThread.isInterrupted()) {
                 return;
             }
 
             final Vector<File> newFileCache = new Vector<File>();
-            Vector<File> newFiles = new Vector<File>();
+            final Vector<File> newFiles = new Vector<File>();
 
-            // run through the file list, add directories and selectable files to fileCache
+            // Run through the file list, add directories and selectable files to fileCache
             // Note that this block must be OUTSIDE of Invoker thread because of
             // deadlock possibility with custom synchronized FileSystemView
             for (File file : list) {
@@ -339,77 +340,73 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
 
             // To avoid loads of synchronizations with Invoker and improve performance we
             // execute the whole block on the COM thread
-            runnable = ShellFolder.invoke(new Callable<DoChangeContents>() {
+            DoChangeContents runnable = ShellFolder.invoke(new Callable<DoChangeContents>() {
                 public DoChangeContents call() {
-                    int newSize = newFileCache.size();
-                    int oldSize = fileCache.size();
+                    synchronized (fileCache) {
+                        int newSize = newFileCache.size();
+                        int oldSize = fileCache.size();
 
-                    if (newSize > oldSize) {
-                        //see if interval is added
-                        int start = oldSize;
-                        int end = newSize;
-                        for (int i = 0; i < oldSize; i++) {
-                            if (!newFileCache.get(i).equals(fileCache.get(i))) {
-                                start = i;
-                                for (int j = i; j < newSize; j++) {
-                                    if (newFileCache.get(j).equals(fileCache.get(i))) {
-                                        end = j;
-                                        break;
+                        if (newSize > oldSize) {
+                            //see if interval is added
+                            int start = oldSize;
+                            int end = newSize;
+                            for (int i = 0; i < oldSize; i++) {
+                                if (!newFileCache.get(i).equals(fileCache.get(i))) {
+                                    start = i;
+                                    for (int j = i; j < newSize; j++) {
+                                        if (newFileCache.get(j).equals(fileCache.get(i))) {
+                                            end = j;
+                                            break;
+                                        }
                                     }
+                                    break;
                                 }
-                                break;
                             }
-                        }
 
-                        if (start >= 0 && end > start) {
-                            List<File> listStart_OldSize = new Vector<>(fileCache.subList(start, oldSize));
-                            if (newFileCache.subList(end, newSize).equals(listStart_OldSize)) {
+                            if (start >= 0 && end > start
+                                    && newFileCache.subList(end, newSize)
+                                                   .equals(fileCache.subList(start, oldSize))) {
                                 if (loadThread.isInterrupted()) {
                                     return null;
                                 }
-                                return new DoChangeContents(newFileCache.subList(start, end), start, null, 0, fid);
+                                return new DoChangeContents(newFileCache.subList(start, end),
+                                                            start, null, 0, fid);
                             }
-                        }
-                    } else if (newSize < oldSize) {
-                        //see if interval is removed
-                        int start = -1;
-                        int end = -1;
-                        for (int i = 0; i < newSize; i++) {
-                            if (!newFileCache.get(i).equals(fileCache.get(i))) {
-                                start = i;
-                                end = i + oldSize - newSize;
-                                break;
+                        } else if (newSize < oldSize) {
+                            //see if interval is removed
+                            int start = -1;
+                            int end = -1;
+                            for (int i = 0; i < newSize; i++) {
+                                if (!newFileCache.get(i).equals(fileCache.get(i))) {
+                                    start = i;
+                                    end = i + oldSize - newSize;
+                                    break;
+                                }
                             }
-                        }
 
-                        if (start >= 0 && end > start) {
-                            List<File> listEnd_OldSize = new Vector<>(fileCache.subList(end, oldSize));
-                            if (listEnd_OldSize.equals(newFileCache.subList(start, newSize))) {
+                            if (start >= 0 && end > start
+                                    && fileCache.subList(end, oldSize)
+                                                .equals(newFileCache.subList(start, newSize))) {
                                 if (loadThread.isInterrupted()) {
                                     return null;
                                 }
-                                return new DoChangeContents(null, 0, new Vector<>(fileCache.subList(start, end)), start, fid);
+                                return new DoChangeContents(null, 0,
+                                        new Vector<>(fileCache.subList(start, end)), start, fid);
                             }
                         }
-                    }
-                    if (!fileCache.equals(newFileCache)) {
-                        if (loadThread.isInterrupted()) {
-                            cancelRunnables();
+                        if (!fileCache.equals(newFileCache)) {
+                            if (loadThread.isInterrupted()) {
+                                return null;
+                            }
+                            return new DoChangeContents(newFileCache, 0, fileCache, 0, fid);
                         }
-                        return new DoChangeContents(newFileCache, 0, fileCache, 0, fid);
+                        return null;
                     }
-                    return null;
                 }
             });
 
             if (runnable != null && !loadThread.isInterrupted()) {
                 SwingUtilities.invokeLater(runnable);
-            }
-        }
-
-        private void cancelRunnables() {
-            if (runnable != null) {
-                runnable.cancel();
             }
         }
    }
@@ -520,13 +517,13 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
     private final class DoChangeContents implements Runnable {
         private final List<File> addFiles;
         private final List<File> remFiles;
-        private boolean doFire = true;
         private final int fid;
-        private int addStart = 0;
-        private int remStart = 0;
+        private final int addStart;
+        private final int remStart;
 
-        DoChangeContents(List<File> addFiles, int addStart, List<File> remFiles,
-                         int remStart, int fid) {
+        private DoChangeContents(List<File> addFiles, int addStart,
+                                 List<File> remFiles, int remStart,
+                                 int fid) {
             this.addFiles = addFiles;
             this.addStart = addStart;
             this.remFiles = remFiles;
@@ -534,31 +531,32 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
             this.fid = fid;
         }
 
-        synchronized void cancel() {
-            doFire = false;
-        }
+        @Override
+        public void run() {
+            if (fetchID.get() != fid) {
+                return;
+            }
 
-        public synchronized void run() {
-            if (fetchID.get() == fid && doFire) {
-                int remSize = (remFiles == null) ? 0 : remFiles.size();
-                int addSize = (addFiles == null) ? 0 : addFiles.size();
-                synchronized(fileCache) {
-                    if (remSize > 0) {
-                        fileCache.removeAll(remFiles);
-                    }
-                    if (addSize > 0) {
-                        fileCache.addAll(addStart, addFiles);
-                    }
-                    files = null;
-                    directories = null;
+            final int remSize = (remFiles == null) ? 0 : remFiles.size();
+            final int addSize = (addFiles == null) ? 0 : addFiles.size();
+            final int cacheSize;
+            synchronized (fileCache) {
+                if (remSize > 0) {
+                    fileCache.removeAll(remFiles);
                 }
-                if (remSize > 0 && addSize == 0) {
-                    fireIntervalRemoved(BasicDirectoryModel.this, remStart, remStart + remSize - 1);
-                } else if (addSize > 0 && remSize == 0 && addStart + addSize <= fileCache.size()) {
-                    fireIntervalAdded(BasicDirectoryModel.this, addStart, addStart + addSize - 1);
-                } else {
-                    fireContentsChanged();
+                if (addSize > 0) {
+                    fileCache.addAll(addStart, addFiles);
                 }
+                files = null;
+                directories = null;
+                cacheSize = fileCache.size();
+            }
+            if (remSize > 0 && addSize == 0) {
+                fireIntervalRemoved(BasicDirectoryModel.this, remStart, remStart + remSize - 1);
+            } else if (addSize > 0 && remSize == 0 && addStart + addSize <= cacheSize) {
+                fireIntervalAdded(BasicDirectoryModel.this, addStart, addStart + addSize - 1);
+            } else {
+                fireContentsChanged();
             }
         }
     }

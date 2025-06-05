@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.1//EN" "http://www.netbeans.org/dtds/filesystem-1_1.dtd">
+<!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.1//EN" "https://www.netbeans.org/dtds/filesystem-1_1.dtd">
 <filesystem>
     <folder name="Shortcuts">
         <file name="D-F.shadow">
@@ -14,6 +14,7 @@
             <file name="com-sun-hotspot-igv-view-actions-OverviewAction.instance"><attr name="position" intvalue="2001"/></file>
             <file name="com-sun-hotspot-igv-view-actions-PredSuccAction.instance"><attr name="position" intvalue="2001"/></file>
             <file name="com-sun-hotspot-igv-view-actions-ShowEmptyBlocksAction.instance"><attr name="position" intvalue="2001"/></file>
+            <file name="com-sun-hotspot-igv-view-actions-ShowLiveRangesAction.instance"><attr name="position" intvalue="2001"/></file>
             <file name="com-sun-hotspot-igv-view-actions-EnableSeaLayoutAction.instance"><attr name="position" intvalue="2001"/></file>
             <file name="com-sun-hotspot-igv-view-actions-EnableBlockLayoutAction.instance"><attr name="position" intvalue="2001"/></file>
             <file name="com-sun-hotspot-igv-view-actions-EnableCFGLayoutAction.instance"><attr name="position" intvalue="2001"/></file>
@@ -44,6 +45,11 @@
             <attr name="command" stringvalue="b"/>
             <attr name="position" intvalue="1"/>
             <file name="com-sun-hotspot-igv-view-BlockQuickSearch.instance"/>
+        </folder>
+        <folder name="Live Ranges">
+            <attr name="command" stringvalue="l"/>
+            <attr name="position" intvalue="2"/>
+            <file name="com-sun-hotspot-igv-view-LiveRangeQuickSearch.instance"/>
         </folder>
         <file name="Projects_hidden"/>
     </folder>

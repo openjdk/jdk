@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,10 @@ public final class RecordedThread extends RecordedObject {
      * @return the OS thread ID, or {@code -1} if doesn't exist
      */
     public long getOSThreadId() {
-        Long l = getTyped("osThreadId", Long.class, -1L);
+        if (isVirtual()) {
+            return -1L;
+        }
+        Long l = getTyped("osThreadId", Long.class, LONG_MINUS_ONE);
         return l.longValue();
     }
 
@@ -89,8 +92,9 @@ public final class RecordedThread extends RecordedObject {
      * @see java.lang.Thread#threadId()
      */
     public long getJavaThreadId() {
-        Long l = getTyped("javaThreadId", Long.class, -1L);
-        return l.longValue();
+        Long l = getTyped("javaThreadId", Long.class, LONG_MINUS_ONE);
+        long id = l.longValue();
+        return id == 0 ? -1L : id;
     }
 
     /**

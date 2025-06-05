@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/freeChunkList.hpp"
 #include "memory/metaspace/metachunk.hpp"
@@ -44,7 +43,7 @@ using namespace metaspace::chunklevel;
 TEST_VM(metaspace, get_chunk) {
 
   ChunkGtestContext context(8 * M);
-  Metachunk* c = NULL;
+  Metachunk* c = nullptr;
 
   for (chunklevel_t pref_lvl = LOWEST_CHUNK_LEVEL; pref_lvl <= HIGHEST_CHUNK_LEVEL; pref_lvl++) {
 
@@ -70,7 +69,7 @@ TEST_VM(metaspace, get_chunk_with_commit_limit) {
        commit_limit_words < MAX_CHUNK_WORD_SIZE * 2; commit_limit_words *= 2) {
 
     ChunkGtestContext context(commit_limit_words);
-    Metachunk* c = NULL;
+    Metachunk* c = nullptr;
 
     for (chunklevel_t pref_lvl = LOWEST_CHUNK_LEVEL; pref_lvl <= HIGHEST_CHUNK_LEVEL; pref_lvl++) {
 
@@ -82,7 +81,7 @@ TEST_VM(metaspace, get_chunk_with_commit_limit) {
           // When should commit work? As long as min_committed_words is smaller than commit_limit_words.
           bool commit_should_work = min_committed_words <= commit_limit_words;
 
-          // printf("commit_limit: " SIZE_FORMAT ", min_committed_words: " SIZE_FORMAT
+          // printf("commit_limit: %zu, min_committed_words: %zu"
           //       ", max chunk level: " CHKLVL_FORMAT ", preferred chunk level: " CHKLVL_FORMAT ", should work: %d\n",
           //       commit_limit_words, min_committed_words, max_lvl, pref_lvl, commit_should_work);
           // fflush(stdout);
@@ -103,7 +102,7 @@ TEST_VM(metaspace, get_chunk_with_commit_limit) {
 TEST_VM(metaspace, get_chunk_recommit) {
 
   ChunkGtestContext context;
-  Metachunk* c = NULL;
+  Metachunk* c = nullptr;
   context.alloc_chunk_expect_success(&c, ROOT_CHUNK_LEVEL, ROOT_CHUNK_LEVEL, 0);
   context.uncommit_chunk_with_test(c);
 
@@ -136,7 +135,7 @@ TEST_VM(metaspace, get_chunk_with_reserve_limit) {
   //  root chunk.
 
   // Cause allocation of the firstone root chunk, should still work:
-  Metachunk* c = NULL;
+  Metachunk* c = nullptr;
   context.alloc_chunk_expect_success(&c, HIGHEST_CHUNK_LEVEL);
 
   // and this should need a new root chunk and hence fail:
@@ -152,7 +151,7 @@ TEST_VM(metaspace, chunk_allocate_full) {
   ChunkGtestContext context;
 
   for (chunklevel_t lvl = LOWEST_CHUNK_LEVEL; lvl <= HIGHEST_CHUNK_LEVEL; lvl++) {
-    Metachunk* c = NULL;
+    Metachunk* c = nullptr;
     context.alloc_chunk_expect_success(&c, lvl);
     context.allocate_from_chunk(c, c->word_size());
     context.return_chunk(c);
@@ -167,7 +166,7 @@ TEST_VM(metaspace, chunk_allocate_random) {
 
   for (chunklevel_t lvl = LOWEST_CHUNK_LEVEL; lvl <= HIGHEST_CHUNK_LEVEL; lvl++) {
 
-    Metachunk* c = NULL;
+    Metachunk* c = nullptr;
     context.alloc_chunk_expect_success(&c, lvl);
     context.uncommit_chunk_with_test(c); // start out fully uncommitted
 
@@ -202,11 +201,11 @@ TEST_VM(metaspace, chunk_buddy_stuff) {
     // (Note: strictly speaking the ChunkManager does not promise any placement but
     //  we know how the placement works so these tests make sense).
 
-    Metachunk* c1 = NULL;
+    Metachunk* c1 = nullptr;
     context.alloc_chunk(&c1, CHUNK_LEVEL_1K);
     EXPECT_TRUE(c1->is_leader());
 
-    Metachunk* c2 = NULL;
+    Metachunk* c2 = nullptr;
     context.alloc_chunk(&c2, CHUNK_LEVEL_1K);
     EXPECT_FALSE(c2->is_leader());
 
@@ -234,7 +233,7 @@ TEST_VM(metaspace, chunk_allocate_with_commit_limit) {
   ChunkGtestContext context(commit_limit);
 
   // A big chunk, but uncommitted.
-  Metachunk* c = NULL;
+  Metachunk* c = nullptr;
   context.alloc_chunk_expect_success(&c, ROOT_CHUNK_LEVEL, ROOT_CHUNK_LEVEL, 0);
   context.uncommit_chunk_with_test(c); // ... just to make sure.
 
@@ -310,7 +309,7 @@ TEST_VM(metaspace, chunk_split_and_merge) {
 
     // Split a fully committed chunk. The resulting chunk should be fully
     //  committed as well, and have its content preserved.
-    Metachunk* c = NULL;
+    Metachunk* c = nullptr;
     context.alloc_chunk_expect_success(&c, orig_lvl);
 
     // We allocate from this chunk to be able to completely paint the payload.
@@ -387,7 +386,7 @@ TEST_VM(metaspace, chunk_enlarge_in_place) {
   // Starting with the smallest chunk size, attempt to enlarge the chunk in place until we arrive
   // at root chunk size. Since the state is clean, this should work.
 
-  Metachunk* c = NULL;
+  Metachunk* c = nullptr;
   context.alloc_chunk_expect_success(&c, HIGHEST_CHUNK_LEVEL);
 
   chunklevel_t l = c->level();

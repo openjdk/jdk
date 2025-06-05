@@ -25,7 +25,7 @@
  * @test
  * @bug     6399602
  * @summary Verify that files are created relative to sibling
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @modules java.compiler
  *          jdk.compiler
  */

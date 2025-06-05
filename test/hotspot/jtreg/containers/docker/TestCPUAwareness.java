@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @test
  * @key cgroups
  * @summary Test JVM's CPU resource awareness when running inside docker container
- * @requires docker.support
+ * @requires container.support
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.platform

@@ -24,13 +24,15 @@
 
 /*
  * @test
- * @enablePreview
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestArrays
  */
 
 import java.lang.foreign.*;
 import java.lang.foreign.MemoryLayout.PathElement;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -144,34 +146,34 @@ public class TestArrays {
     @DataProvider(name = "arrays")
     public Object[][] nativeAccessOps() {
         Consumer<MemorySegment> byteInitializer =
-                (base) -> initBytes(base, bytes, (addr, pos) -> byteHandle.set(addr, pos, (byte)(long)pos));
+                (base) -> initBytes(base, bytes, (addr, pos) -> byteHandle.set(addr, 0L, pos, (byte)(long)pos));
         Consumer<MemorySegment> charInitializer =
-                (base) -> initBytes(base, chars, (addr, pos) -> charHandle.set(addr, pos, (char)(long)pos));
+                (base) -> initBytes(base, chars, (addr, pos) -> charHandle.set(addr, 0L, pos, (char)(long)pos));
         Consumer<MemorySegment> shortInitializer =
-                (base) -> initBytes(base, shorts, (addr, pos) -> shortHandle.set(addr, pos, (short)(long)pos));
+                (base) -> initBytes(base, shorts, (addr, pos) -> shortHandle.set(addr, 0L, pos, (short)(long)pos));
         Consumer<MemorySegment> intInitializer =
-                (base) -> initBytes(base, ints, (addr, pos) -> intHandle.set(addr, pos, (int)(long)pos));
+                (base) -> initBytes(base, ints, (addr, pos) -> intHandle.set(addr, 0L, pos, (int)(long)pos));
         Consumer<MemorySegment> floatInitializer =
-                (base) -> initBytes(base, floats, (addr, pos) -> floatHandle.set(addr, pos, (float)(long)pos));
+                (base) -> initBytes(base, floats, (addr, pos) -> floatHandle.set(addr, 0L, pos, (float)(long)pos));
         Consumer<MemorySegment> longInitializer =
-                (base) -> initBytes(base, longs, (addr, pos) -> longHandle.set(addr, pos, (long)pos));
+                (base) -> initBytes(base, longs, (addr, pos) -> longHandle.set(addr, 0L, pos, (long)pos));
         Consumer<MemorySegment> doubleInitializer =
-                (base) -> initBytes(base, doubles, (addr, pos) -> doubleHandle.set(addr, pos, (double)(long)pos));
+                (base) -> initBytes(base, doubles, (addr, pos) -> doubleHandle.set(addr, 0L, pos, (double)(long)pos));
 
         Consumer<MemorySegment> byteChecker =
-                (base) -> checkBytes(base, bytes, s -> s.toArray(JAVA_BYTE), (addr, pos) -> (byte)byteHandle.get(addr, pos));
+                (base) -> checkBytes(base, bytes, s -> s.toArray(JAVA_BYTE), (addr, pos) -> (byte)byteHandle.get(addr, 0L, pos));
         Consumer<MemorySegment> shortChecker =
-                (base) -> checkBytes(base, shorts, s -> s.toArray(JAVA_SHORT), (addr, pos) -> (short)shortHandle.get(addr, pos));
+                (base) -> checkBytes(base, shorts, s -> s.toArray(JAVA_SHORT), (addr, pos) -> (short)shortHandle.get(addr, 0L, pos));
         Consumer<MemorySegment> charChecker =
-                (base) -> checkBytes(base, chars, s -> s.toArray(JAVA_CHAR), (addr, pos) -> (char)charHandle.get(addr, pos));
+                (base) -> checkBytes(base, chars, s -> s.toArray(JAVA_CHAR), (addr, pos) -> (char)charHandle.get(addr, 0L, pos));
         Consumer<MemorySegment> intChecker =
-                (base) -> checkBytes(base, ints, s -> s.toArray(JAVA_INT), (addr, pos) -> (int)intHandle.get(addr, pos));
+                (base) -> checkBytes(base, ints, s -> s.toArray(JAVA_INT), (addr, pos) -> (int)intHandle.get(addr, 0L, pos));
         Consumer<MemorySegment> floatChecker =
-                (base) -> checkBytes(base, floats, s -> s.toArray(JAVA_FLOAT), (addr, pos) -> (float)floatHandle.get(addr, pos));
+                (base) -> checkBytes(base, floats, s -> s.toArray(JAVA_FLOAT), (addr, pos) -> (float)floatHandle.get(addr, 0L, pos));
         Consumer<MemorySegment> longChecker =
-                (base) -> checkBytes(base, longs, s -> s.toArray(JAVA_LONG), (addr, pos) -> (long)longHandle.get(addr, pos));
+                (base) -> checkBytes(base, longs, s -> s.toArray(JAVA_LONG), (addr, pos) -> (long)longHandle.get(addr, 0L, pos));
         Consumer<MemorySegment> doubleChecker =
-                (base) -> checkBytes(base, doubles, s -> s.toArray(JAVA_DOUBLE), (addr, pos) -> (double)doubleHandle.get(addr, pos));
+                (base) -> checkBytes(base, doubles, s -> s.toArray(JAVA_DOUBLE), (addr, pos) -> (double)doubleHandle.get(addr, 0L, pos));
 
         return new Object[][]{
                 {byteInitializer, byteChecker, bytes},

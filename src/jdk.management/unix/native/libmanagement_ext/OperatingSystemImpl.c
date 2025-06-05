@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,14 +74,6 @@ static jlong page_size = 0;
 
 #endif /* _ALLBSD_SOURCE */
 
-#if defined(_AIX)
-  #define DIR DIR64
-  #define dirent dirent64
-  #define opendir opendir64
-  #define readdir readdir64
-  #define closedir closedir64
-#endif
-
 // true = get available swap in bytes
 // false = get total swap in bytes
 static jlong get_total_or_available_swap_space_size(JNIEnv* env, jboolean available) {
@@ -105,6 +97,12 @@ static jlong get_total_or_available_swap_space_size(JNIEnv* env, jboolean availa
         throw_internal_error(env, "sysctlbyname failed");
     }
     return available ? (jlong)vmusage.xsu_avail : (jlong)vmusage.xsu_total;
+#elif defined(_AIX)
+    perfstat_memory_total_t memory_info;
+    if (perfstat_memory_total(NULL, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
+        throw_internal_error(env, "perfstat_memory_total failed");
+    }
+    return available ? (jlong)(memory_info.pgsp_free * 4L * 1024L) : (jlong)(memory_info.pgsp_total * 4L * 1024L);
 #else /* _ALLBSD_SOURCE */
     /*
      * XXXBSD: there's no way available to get swap info in

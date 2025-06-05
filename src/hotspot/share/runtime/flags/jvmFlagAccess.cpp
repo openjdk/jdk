@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/flags/jvmFlag.hpp"
@@ -64,7 +63,7 @@ public:
     verbose |= (origin == JVMFlagOrigin::ERGONOMIC);
     T value = *((T*)value_addr);
     const JVMTypedFlagLimit<T>* constraint = (const JVMTypedFlagLimit<T>*)JVMFlagLimit::get_constraint(flag);
-    if (constraint != nullptr && constraint->phase() <= static_cast<int>(JVMFlagLimit::validating_phase())) {
+    if (constraint != nullptr && constraint->phase() <= JVMFlagLimit::validating_phase()) {
       JVMFlag::Error err = typed_check_constraint(constraint->constraint_func(), value, verbose);
       if (err != JVMFlag::SUCCESS) {
         if (origin == JVMFlagOrigin::ERGONOMIC) {
@@ -187,18 +186,18 @@ class FlagAccessImpl_intx : public RangedFlagAccessImpl<intx, EventLongFlagChang
 public:
   void range_error(const char* name, intx value, intx min, intx max, bool verbose) const {
     JVMFlag::printError(verbose,
-                        "intx %s=" INTX_FORMAT " is outside the allowed range "
-                        "[ " INTX_FORMAT " ... " INTX_FORMAT " ]\n",
+                        "intx %s=%zd is outside the allowed range "
+                        "[ %zd ... %zd ]\n",
                         name, value, min, max);
   }
   JVMFlag::Error typed_check_constraint(void* func, intx value, bool verbose) const {
     return ((JVMFlagConstraintFunc_intx)func)(value, verbose);
   }
   void print_range_impl(outputStream* st, intx min, intx max) const {
-    st->print("[ " INTX_FORMAT_W(-25) " ... " INTX_FORMAT_W(25) " ]", min, max);
+    st->print("[ %-25zd ... %25zd ]", min, max);
   }
   void print_default_range(outputStream* st) const {
-    st->print("[ " INTX_FORMAT_W(-25) " ... " INTX_FORMAT_W(25) " ]", min_intx, max_intx);
+    st->print("[ %-25zd ... %25zd ]", min_intx, max_intx);
   }
 };
 
@@ -206,18 +205,18 @@ class FlagAccessImpl_uintx : public RangedFlagAccessImpl<uintx, EventUnsignedLon
 public:
   void range_error(const char* name, uintx value, uintx min, uintx max, bool verbose) const {
     JVMFlag::printError(verbose,
-                        "uintx %s=" UINTX_FORMAT " is outside the allowed range "
-                        "[ " UINTX_FORMAT " ... " UINTX_FORMAT " ]\n",
+                        "uintx %s=%zu is outside the allowed range "
+                        "[ %zu ... %zu ]\n",
                         name, value, min, max);
   }
   JVMFlag::Error typed_check_constraint(void* func, uintx value, bool verbose) const {
     return ((JVMFlagConstraintFunc_uintx)func)(value, verbose);
   }
   void print_range_impl(outputStream* st, uintx min, uintx max) const {
-    st->print("[ " UINTX_FORMAT_W(-25) " ... " UINTX_FORMAT_W(25) " ]", min, max);
+    st->print("[ %-25zu ... %25zu ]", min, max);
   }
   void print_default_range(outputStream* st) const {
-    st->print("[ " UINTX_FORMAT_W(-25) " ... " UINTX_FORMAT_W(25) " ]", uintx(0), max_uintx);
+    st->print("[ %-25zu ... %25zu ]", uintx(0), max_uintx);
   }
 };
 
@@ -244,18 +243,18 @@ class FlagAccessImpl_size_t : public RangedFlagAccessImpl<size_t, EventUnsignedL
 public:
   void range_error(const char* name, size_t value, size_t min, size_t max, bool verbose) const {
     JVMFlag::printError(verbose,
-                        "size_t %s=" SIZE_FORMAT " is outside the allowed range "
-                        "[ " SIZE_FORMAT " ... " SIZE_FORMAT " ]\n",
+                        "size_t %s=%zu is outside the allowed range "
+                        "[ %zu ... %zu ]\n",
                         name, value, min, max);
   }
   JVMFlag::Error typed_check_constraint(void* func, size_t value, bool verbose) const {
     return ((JVMFlagConstraintFunc_size_t)func)(value, verbose);
   }
   void print_range_impl(outputStream* st, size_t min, size_t max) const {
-    st->print("[ " SIZE_FORMAT_W(-25) " ... " SIZE_FORMAT_W(25) " ]", min, max);
+    st->print("[ %-25zu ... %25zu ]", min, max);
   }
   void print_default_range(outputStream* st) const {
-    st->print("[ " SIZE_FORMAT_W(-25) " ... " SIZE_FORMAT_W(25) " ]", size_t(0), size_t(SIZE_MAX));
+    st->print("[ %-25zu ... %25zu ]", size_t(0), size_t(SIZE_MAX));
   }
 };
 
@@ -310,6 +309,17 @@ JVMFlag::Error JVMFlagAccess::set_impl(JVMFlag* flag, void* value, JVMFlagOrigin
 JVMFlag::Error JVMFlagAccess::set_ccstr(JVMFlag* flag, ccstr* value, JVMFlagOrigin origin) {
   if (flag == nullptr) return JVMFlag::INVALID_FLAG;
   if (!flag->is_ccstr()) return JVMFlag::WRONG_FORMAT;
+  const JVMTypedFlagLimit<ccstr>* constraint = (const JVMTypedFlagLimit<ccstr>*)JVMFlagLimit::get_constraint(flag);
+  if (constraint != nullptr && constraint->phase() <= JVMFlagLimit::validating_phase()) {
+    bool verbose = JVMFlagLimit::verbose_checks_needed() | (origin == JVMFlagOrigin::ERGONOMIC);
+    JVMFlag::Error err = ((JVMFlagConstraintFunc_ccstr)constraint->constraint_func())(*value, verbose);
+    if (err != JVMFlag::SUCCESS) {
+      if (origin == JVMFlagOrigin::ERGONOMIC) {
+        fatal("FLAG_SET_ERGO cannot be used to set an invalid value for %s", flag->name());
+      }
+      return err;
+    }
+  }
   ccstr old_value = flag->get_ccstr();
   trace_flag_changed<ccstr, EventStringFlagChanged>(flag, old_value, *value, origin);
   char* new_value = nullptr;
@@ -321,7 +331,7 @@ JVMFlag::Error JVMFlagAccess::set_ccstr(JVMFlag* flag, ccstr* value, JVMFlagOrig
     // Old value is heap allocated so free it.
     FREE_C_HEAP_ARRAY(char, old_value);
   }
-  // Unlike the other APIs, the old vale is NOT returned, so the caller won't need to free it.
+  // Unlike the other APIs, the old value is NOT returned, so the caller won't need to free it.
   // The callers typically don't care what the old value is.
   // If the caller really wants to know the old value, read it (and make a copy if necessary)
   // before calling this API.

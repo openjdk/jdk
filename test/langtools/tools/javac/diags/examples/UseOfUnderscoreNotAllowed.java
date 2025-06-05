@@ -22,10 +22,7 @@
  */
 
 // key: compiler.err.use.of.underscore.not.allowed
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
-
-import java.util.function.*;
 
 class UseOfUnderscoreNotAllowed {
-    IntBinaryOperator f = (int x, int y) -> _ + x;
+    private int a = 0, _ = 1;
 }

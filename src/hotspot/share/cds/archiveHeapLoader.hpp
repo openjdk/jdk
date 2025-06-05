@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_CDS_ARCHIVEHEAPLOADER_HPP
 #define SHARE_CDS_ARCHIVEHEAPLOADER_HPP
 
-#include "cds/filemap.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
@@ -102,7 +101,7 @@ public:
   static void fixup_region() NOT_CDS_JAVA_HEAP_RETURN;
 
 #if INCLUDE_CDS_JAVA_HEAP
-  static void init_mapped_heap_relocation(ptrdiff_t delta, int dumptime_oop_shift);
+  static void init_mapped_heap_info(address mapped_heap_bottom, ptrdiff_t delta, int dumptime_oop_shift);
 private:
   static bool _is_mapped;
   static bool _is_loaded;
@@ -124,6 +123,7 @@ private:
 
   // is_mapped() only: the mapped address of each region is offset by this amount from
   // their requested address.
+  static uintptr_t _mapped_heap_bottom;
   static ptrdiff_t _mapped_heap_delta;
   static bool      _mapped_heap_relocation_initialized;
 
@@ -145,6 +145,7 @@ private:
   inline static oop decode_from_archive_impl(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
 
   class PatchLoadedRegionPointers;
+  class PatchUncompressedLoadedRegionPointers;
 
 public:
 

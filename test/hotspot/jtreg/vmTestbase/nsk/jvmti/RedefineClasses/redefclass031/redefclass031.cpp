@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <jvmti.h>
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -33,13 +33,13 @@ extern "C" {
 #define STATUS_FAILED 2
 #define PASSED 0
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 static int watch_ev = 0;    /* ignore JVMTI events by default */
 static int gen_ev = 0;      /* number of generated events */
 static int result = PASSED; /* total result of the test */
-static jthread test_thread = NULL;
+static jthread test_thread = nullptr;
 
 static jrawMonitorID watch_ev_monitor;
 
@@ -54,9 +54,9 @@ static void set_watch_ev(JNIEnv *env, int value) {
         } else {
             test_thread = env->NewGlobalRef(test_thread);
         }
-    } else if (test_thread != NULL) {
+    } else if (test_thread != nullptr) {
         env->DeleteGlobalRef(test_thread);
-        test_thread = NULL;
+        test_thread = nullptr;
     }
 
     watch_ev = value;
@@ -85,10 +85,10 @@ NativeMethodBind(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thr, jmethodID method
             } else {
                 printf("got JVMTI_EVENT_NATIVE_METHOD_BIND event on thread '%s', ignoring", inf.name);
                 jvmti_env->Deallocate((unsigned char *)inf.name);
-                if (inf.thread_group != NULL) {
+                if (inf.thread_group != nullptr) {
                     env->DeleteLocalRef(inf.thread_group);
                 }
-                if (inf.context_class_loader != NULL) {
+                if (inf.context_class_loader != nullptr) {
                     env->DeleteLocalRef(inf.context_class_loader);
                 }
             }
@@ -168,7 +168,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass031_makeRedefinition(JNIEnv *env,
     jvmtiError err;
     jvmtiClassDefinition classDef;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
     }
@@ -177,7 +177,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass031_makeRedefinition(JNIEnv *env,
         return PASSED;
     }
 
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_NATIVE_METHOD_BIND, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_NATIVE_METHOD_BIND, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable JVMTI_EVENT_NATIVE_METHOD_BIND: %s (%d)\n",
                TranslateError(err), err);
@@ -187,7 +187,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass031_makeRedefinition(JNIEnv *env,
 /* filling the structure jvmtiClassDefinition */
     classDef.klass = redefCls;
     classDef.class_byte_count = env->GetArrayLength(classBytes);
-    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, NULL);
+    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, nullptr);
 
     set_watch_ev(env, 1); /* watch JVMTI events */
 

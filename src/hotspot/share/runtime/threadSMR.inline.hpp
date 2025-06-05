@@ -140,7 +140,7 @@ inline ThreadsList* ThreadsSMRSupport::get_java_thread_list() {
 }
 
 inline bool ThreadsSMRSupport::is_a_protected_JavaThread_with_lock(JavaThread *thread) {
-  MutexLocker ml(Threads_lock->owned_by_self() ? nullptr : Threads_lock);
+  ConditionalMutexLocker ml(Threads_lock, !Threads_lock->owned_by_self());
   return is_a_protected_JavaThread(thread);
 }
 

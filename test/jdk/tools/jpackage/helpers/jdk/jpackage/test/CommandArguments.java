@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,30 +34,35 @@ public class CommandArguments<T> {
         args = new ArrayList<>();
     }
 
-    final public T addArgument(String v) {
+    public final T clearArguments() {
+        args.clear();
+        return thiz();
+    }
+
+    public final T addArgument(String v) {
         args.add(v);
-        return (T) this;
+        return thiz();
     }
 
-    final public T addArguments(List<String> v) {
+    public final T addArguments(List<String> v) {
         args.addAll(v);
-        return (T) this;
+        return thiz();
     }
 
-    final public T addArgument(Path v) {
+    public final T addArgument(Path v) {
         return addArgument(v.toString());
     }
 
-    final public T addArguments(String... v) {
+    public final T addArguments(String... v) {
         return addArguments(Arrays.asList(v));
     }
 
-    final public T addPathArguments(List<Path> v) {
+    public final T addPathArguments(List<Path> v) {
         return addArguments(v.stream().map((p) -> p.toString()).collect(
                 Collectors.toList()));
     }
 
-    final public List<String> getAllArguments() {
+    public final List<String> getAllArguments() {
         return List.copyOf(args);
     }
 
@@ -70,6 +75,11 @@ public class CommandArguments<T> {
 
     protected boolean isMutable() {
         return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private T thiz() {
+        return (T) this;
     }
 
     protected List<String> args;

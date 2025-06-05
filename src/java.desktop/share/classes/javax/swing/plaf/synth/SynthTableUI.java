@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,10 +326,7 @@ public class SynthTableUI extends BasicTableUI
         // into the table's bounds
         bounds.x = bounds.y = 0;
 
-        if (table.getRowCount() <= 0 || table.getColumnCount() <= 0 ||
-                // this check prevents us from painting the entire table
-                // when the clip doesn't intersect our bounds at all
-                !bounds.intersects(clip)) {
+        if (table.getRowCount() <= 0 || table.getColumnCount() <= 0) {
 
             paintDropLines(context, g);
             return;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 
 #ifdef _WINDOWS
 
@@ -39,7 +38,7 @@ namespace {
    public:
     MemoryReleaser(char* ptr, size_t size) : _ptr(ptr), _size(size) { }
     ~MemoryReleaser() {
-      if (_ptr != NULL) {
+      if (_ptr != nullptr) {
         os::release_memory_special(_ptr, _size);
       }
     }
@@ -53,7 +52,7 @@ namespace {
 // This is of course only some dodgy assumption, there is no guarantee that the vicinity of
 // the previously allocated memory is available for allocation. The only actual failure
 // that is reported is when the test tries to allocate at a particular location but gets a
-// different valid one. A NULL return value at this point is not considered an error but may
+// different valid one. A nullptr return value at this point is not considered an error but may
 // be legitimate.
 void TestReserveMemorySpecial_test() {
   if (!UseLargePages) {
@@ -67,8 +66,8 @@ void TestReserveMemorySpecial_test() {
   FLAG_SET_CMDLINE(UseNUMAInterleaving, false);
 
   const size_t large_allocation_size = os::large_page_size() * 4;
-  char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), os::large_page_size(), NULL, false);
-  if (result == NULL) {
+  char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), os::large_page_size(), nullptr, false);
+  if (result == nullptr) {
       // failed to allocate memory, skipping the test
       return;
   }
@@ -78,20 +77,20 @@ void TestReserveMemorySpecial_test() {
   const size_t expected_allocation_size = os::large_page_size();
   char* expected_location = result + os::large_page_size();
   char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, false);
-  EXPECT_TRUE(actual_location == NULL) << "Should not be allowed to reserve within present reservation";
+  EXPECT_TRUE(actual_location == nullptr) << "Should not be allowed to reserve within present reservation";
 
   // Instead try reserving after the first reservation.
   expected_location = result + large_allocation_size;
   actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, false);
-  EXPECT_TRUE(actual_location != NULL) << "Unexpected reservation failure, can’t verify correct location";
+  EXPECT_TRUE(actual_location != nullptr) << "Unexpected reservation failure, can't verify correct location";
   EXPECT_TRUE(actual_location == expected_location) << "Reservation must be at requested location";
   MemoryReleaser m2(actual_location, os::large_page_size());
 
   // Now try to do a reservation with a larger alignment.
   const size_t alignment = os::large_page_size() * 2;
   const size_t new_large_size = alignment * 4;
-  char* aligned_request = os::reserve_memory_special(new_large_size, alignment, os::large_page_size(), NULL, false);
-  EXPECT_TRUE(aligned_request != NULL) << "Unexpected reservation failure, can’t verify correct alignment";
+  char* aligned_request = os::reserve_memory_special(new_large_size, alignment, os::large_page_size(), nullptr, false);
+  EXPECT_TRUE(aligned_request != nullptr) << "Unexpected reservation failure, can't verify correct alignment";
   EXPECT_TRUE(is_aligned(aligned_request, alignment)) << "Returned address must be aligned";
   MemoryReleaser m3(aligned_request, new_large_size);
 }
@@ -139,7 +138,7 @@ static bool file_exists_w(const wchar_t* path) {
 static void create_rel_directory_w(const wchar_t* path) {
   WITH_ABS_PATH(path);
   EXPECT_FALSE(file_exists_w(abs_path)) <<  "Can't create directory: \"" << path << "\" already exists";
-  BOOL result = CreateDirectoryW(abs_path, NULL);
+  BOOL result = CreateDirectoryW(abs_path, nullptr);
   EXPECT_TRUE(result) << "Failed to create directory \"" << path << "\" " << GetLastError();
 }
 
@@ -165,7 +164,7 @@ static void delete_empty_rel_directory_w(const wchar_t* path) {
 static void create_rel_file_w(const wchar_t* path) {
   WITH_ABS_PATH(path);
   EXPECT_FALSE(file_exists_w(abs_path)) << "Can't create file: \"" << path << "\" already exists";
-  HANDLE h = CreateFileW(abs_path, 0, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+  HANDLE h = CreateFileW(abs_path, 0, 0, nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);
   EXPECT_NE(h, INVALID_HANDLE_VALUE) << "Failed to create file \"" << path << "\": " << GetLastError();
   CloseHandle(h);
 }
@@ -218,7 +217,7 @@ static bool unnormalize_path(wchar_t* result, size_t size, bool is_dir, const wc
   } else if (wcsncmp(src, L"\\\\", 2) == 0) {
     path_start = wcschr(src + 2, L'?');
 
-    if (path_start == NULL) {
+    if (path_start == nullptr) {
       path_start = wcschr(src + 2, L'\\');
     } else {
       path_start = wcschr(path_start, L'\\');
@@ -245,7 +244,7 @@ static bool unnormalize_path(wchar_t* result, size_t size, bool is_dir, const wc
           const wchar_t* replacement = sep_replacements[i];
           dest = my_wcscpy_s(dest - 1, size,  result, replacement);
         }
-      } else if (path_start != NULL) {
+      } else if (path_start != nullptr) {
         if (allow_dotdot_change && (src > path_start + 1) && ((os::random() & 7) == 7)) {
           wchar_t const* last_sep = src - 2;
 
@@ -397,7 +396,7 @@ static void bench_path(wchar_t* path) {
         size_t buf_len = strlen(buf);
         wchar_t* w_path = (wchar_t*) os::malloc(sizeof(wchar_t) * (buf_len + 1), mtInternal);
 
-        if (w_path != NULL) {
+        if (w_path != nullptr) {
           size_t converted_chars;
           if (::mbstowcs_s(&converted_chars, w_path, buf_len + 1, buf, buf_len) == ERROR_SUCCESS) {
             if (t == 1) {
@@ -417,7 +416,7 @@ static void bench_path(wchar_t* path) {
               }
               succ = false;
             }
-            HANDLE h = ::CreateFileW(w_path, 0, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+            HANDLE h = ::CreateFileW(w_path, 0, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
 
             if (h != INVALID_HANDLE_VALUE) {
               ::CloseHandle(h);
@@ -439,7 +438,7 @@ static void bench_path(wchar_t* path) {
     jlong ctime = os::javaTimeNanos();
 
     for (int i = 0; i < reps; ++i) {
-      HANDLE h = ::CreateFileA(buf, 0, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+      HANDLE h = ::CreateFileA(buf, 0, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
 
       if (h == INVALID_HANDLE_VALUE) {
         return;
@@ -701,6 +700,133 @@ TEST_VM(os_windows, handle_long_paths) {
 
 TEST_VM(os_windows, reserve_memory_special) {
   TestReserveMemorySpecial_test();
+}
+
+TEST_VM(os_windows, processor_count) {
+  JVMFlag* flag = JVMFlag::find_flag("UseAllWindowsProcessorGroups");
+  EXPECT_NE(flag, nullptr) << "Expected UseAllWindowsProcessorGroups product flag to be available";
+
+  int processors = os::processor_count();
+  EXPECT_GT(processors, 0) << "Expected at least 1 processor";
+
+  int active_processors = os::active_processor_count();
+  EXPECT_GT(active_processors, 0) << "Expected at least 1 active processor";
+
+  bool schedules_all_processor_groups = os::win32::is_windows_11_or_greater() || os::win32::is_windows_server_2022_or_greater();
+  if (schedules_all_processor_groups && UseAllWindowsProcessorGroups) {
+    EXPECT_EQ(active_processors, processors) << "Expected all processors to be active";
+  } else {
+    // active_processors should be at most the number of processors in 1 Windows processor group.
+    EXPECT_LE(active_processors, processors) << "Expected active processors to not exceed available processors";
+  }
+}
+
+TEST_VM(os_windows, large_page_init_multiple_sizes) {
+  // Call request_lock_memory_privilege() and check the result
+  if (!os::win32::request_lock_memory_privilege()) {
+    GTEST_SKIP() << "Skipping test because lock memory privilege is not granted.";
+  }
+  // Set globals to make sure we hit the correct code path
+  AutoSaveRestore<bool> guardUseLargePages(UseLargePages);
+  AutoSaveRestore<bool> guardEnableAllLargePageSizesForWindows(EnableAllLargePageSizesForWindows);
+  AutoSaveRestore<size_t> guardLargePageSizeInBytes(LargePageSizeInBytes);
+  FLAG_SET_CMDLINE(UseLargePages, true);
+  FLAG_SET_CMDLINE(EnableAllLargePageSizesForWindows, true);
+
+  // Determine the minimum page size
+  const size_t min_size = GetLargePageMinimum();
+
+  // End the test if GetLargePageMinimum returns 0
+  if (min_size == 0) {
+    GTEST_SKIP() << "Large pages are not supported on this system.";
+    return;
+  }
+
+  // Set LargePageSizeInBytes to 4 times the minimum page size
+  FLAG_SET_CMDLINE(LargePageSizeInBytes, 4 * min_size); // Set a value for multiple page sizes
+
+  // Initialize large page settings
+  os::large_page_init();
+
+  // Verify that large pages are enabled
+  EXPECT_TRUE(UseLargePages) << "UseLargePages should be true after initialization for LargePageSizeInBytes = 4 * min_size";
+
+  // Verify that decided_large_page_size is greater than the default page size
+  const size_t default_page_size = os::vm_page_size();
+  size_t decided_large_page_size = os::win32::large_page_init_decide_size();
+  EXPECT_GT(decided_large_page_size, default_page_size) << "Large page size should be greater than the default page size for LargePageSizeInBytes = 4 * min_size";
+
+#if !defined(IA32)
+  size_t page_size_count = 0;
+  size_t page_size = os::page_sizes().largest();
+
+  do {
+    ++page_size_count;
+    page_size = os::page_sizes().next_smaller(page_size);
+  } while (page_size >= os::page_sizes().smallest());
+
+  EXPECT_GT(page_size_count, 1u) << "There should be multiple large page sizes available.";
+
+  size_t large_page_size = decided_large_page_size;
+
+  for (size_t page_size = os::page_sizes().largest(); page_size >= min_size; page_size = os::page_sizes().next_smaller(page_size)) {
+    EXPECT_TRUE(page_size % min_size == 0) << "Each page size should be a multiple of the minimum large page size.";
+    EXPECT_LE(page_size, large_page_size) << "Page size should not exceed the determined large page size.";
+  }
+#endif
+}
+
+TEST_VM(os_windows, large_page_init_decide_size) {
+  // Initial setup
+    // Call request_lock_memory_privilege() and check the result
+  if (!os::win32::request_lock_memory_privilege()) {
+    GTEST_SKIP() << "Skipping test because lock memory privilege is not granted.";
+  }
+  AutoSaveRestore<bool> guardUseLargePages(UseLargePages);
+  AutoSaveRestore<size_t> guardLargePageSizeInBytes(LargePageSizeInBytes);
+  FLAG_SET_CMDLINE(UseLargePages, true);
+  FLAG_SET_CMDLINE(LargePageSizeInBytes, 0); // Reset to default
+
+  // Test for large page support
+  size_t decided_size = os::win32::large_page_init_decide_size();
+  size_t min_size = GetLargePageMinimum();
+  if (min_size == 0) {
+    EXPECT_EQ(decided_size, 0) << "Expected decided size to be 0 when large page is not supported by the processor";
+    return;
+  }
+
+  // Scenario 1: Test with 2MB large page size
+  if (min_size == 2 * M) {
+    FLAG_SET_CMDLINE(LargePageSizeInBytes, 2 * M); // Set large page size to 2MB
+    decided_size = os::win32::large_page_init_decide_size(); // Recalculate decided size
+    EXPECT_EQ(decided_size, 2 * M) << "Expected decided size to be 2M when large page and OS reported size are both 2M";
+  }
+
+  // Scenario 2: Test with 1MB large page size
+  if (min_size == 2 * M) {
+    FLAG_SET_CMDLINE(LargePageSizeInBytes, 1 * M); // Set large page size to 1MB
+    decided_size = os::win32::large_page_init_decide_size(); // Recalculate decided size
+    EXPECT_EQ(decided_size, 2 * M) << "Expected decided size to be 2M when large page is 1M and OS reported size is 2M";
+  }
+
+#if defined(IA32) || defined(AMD64)
+  FLAG_SET_CMDLINE(LargePageSizeInBytes, 5 * M); // Set large page size to 5MB
+  if (!EnableAllLargePageSizesForWindows) {
+    decided_size = os::win32::large_page_init_decide_size(); // Recalculate decided size
+    EXPECT_EQ(decided_size, 0) << "Expected decided size to be 0 for large pages bigger than 4mb on IA32 or AMD64";
+  }
+#endif
+
+  // Additional check for non-multiple of minimum size
+  // Set an arbitrary large page size which is not a multiple of min_size
+  FLAG_SET_CMDLINE(LargePageSizeInBytes, 5 * min_size + 1);
+
+  // Recalculate decided size
+  decided_size = os::win32::large_page_init_decide_size();
+
+  // Assert that the decided size defaults to minimum page size when LargePageSizeInBytes
+  // is not a multiple of the minimum size, assuming conditions are always met
+  EXPECT_EQ(decided_size, 0) << "Expected decided size to default to 0 when LargePageSizeInBytes is not a multiple of minimum size";
 }
 
 class ReserveMemorySpecialRunnable : public TestRunnable {

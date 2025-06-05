@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ static const char* invalid_selection_substr[] = {
 };
 
 static inline bool string_contains_substring(const char* haystack, const char* needle) {
-  return strstr(haystack, needle) != NULL;
+  return strstr(haystack, needle) != nullptr;
 }
 
 static inline bool file_exists(const char* filename) {
@@ -60,7 +60,7 @@ static inline void create_directory(const char* name) {
   ASSERT_FALSE(file_exists(name)) << "can't create directory: " << name << " already exists";
   bool failed;
 #ifdef _WINDOWS
-  failed = !CreateDirectory(name, NULL);
+  failed = !CreateDirectory(name, nullptr);
 #else
   failed = mkdir(name, 0777);
 #endif
@@ -115,16 +115,16 @@ static inline char* prepend_prefix_temp_dir(const char* prefix, const char* file
 }
 
 // Read a complete line from fp and return it as a resource allocated string.
-// Returns NULL on EOF.
+// Returns nullptr on EOF.
 static inline char* read_line(FILE* fp) {
-  assert(fp != NULL, "invalid fp");
+  assert(fp != nullptr, "invalid fp");
   int buflen = 512;
   char* buf = NEW_RESOURCE_ARRAY(char, buflen);
   long pos = ftell(fp);
-  if (pos < 0) return NULL;
+  if (pos < 0) return nullptr;
 
   char* ret = fgets(buf, buflen, fp);
-  while (ret != NULL && buf[strlen(buf) - 1] != '\n' && !feof(fp)) {
+  while (ret != nullptr && buf[strlen(buf) - 1] != '\n' && !feof(fp)) {
     // retry with a larger buffer
     buf = REALLOC_RESOURCE_ARRAY(char, buf, buflen, buflen * 2);
     buflen *= 2;
@@ -139,19 +139,19 @@ static inline char* read_line(FILE* fp) {
 static bool file_contains_substrings_in_order(const char* filename, const char* substrs[]) {
   AsyncLogWriter::flush();
   FILE* fp = os::fopen(filename, "r");
-  assert(fp != NULL, "error opening file %s: %s", filename, os::strerror(errno));
+  assert(fp != nullptr, "error opening file %s: %s", filename, os::strerror(errno));
 
   size_t idx = 0;
-  while (substrs[idx] != NULL) {
+  while (substrs[idx] != nullptr) {
     ResourceMark rm;
     char* line = read_line(fp);
-    if (line == NULL) {
+    if (line == nullptr) {
       break;
     }
-    for (char* match = strstr(line, substrs[idx]); match != NULL;) {
+    for (char* match = strstr(line, substrs[idx]); match != nullptr;) {
       size_t match_len = strlen(substrs[idx]);
       idx++;
-      if (substrs[idx] == NULL) {
+      if (substrs[idx] == nullptr) {
         break;
       }
       match = strstr(match + match_len, substrs[idx]);
@@ -159,10 +159,10 @@ static bool file_contains_substrings_in_order(const char* filename, const char* 
   }
 
   fclose(fp);
-  return substrs[idx] == NULL;
+  return substrs[idx] == nullptr;
 }
 
 static inline bool file_contains_substring(const char* filename, const char* substr) {
-  const char* strs[] = {substr, NULL};
+  const char* strs[] = {substr, nullptr};
   return file_contains_substrings_in_order(filename, strs);
 }

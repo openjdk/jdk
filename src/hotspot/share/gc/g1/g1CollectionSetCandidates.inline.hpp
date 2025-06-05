@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,51 +29,21 @@
 
 #include "utilities/growableArray.hpp"
 
-inline G1CollectionCandidateListIterator::G1CollectionCandidateListIterator(G1CollectionCandidateList* which, uint position) :
-  _which(which), _position(position) { }
-
-inline G1CollectionCandidateListIterator& G1CollectionCandidateListIterator::operator++() {
-  assert(_position < _which->length(), "must be");
-  _position++;
-  return *this;
+template<typename Func>
+void G1CSetCandidateGroupList::iterate(Func&& f) const {
+  for (G1CSetCandidateGroup* group : _groups) {
+    for (G1CollectionSetCandidateInfo ci : *group) {
+      G1HeapRegion* r = ci._r;
+      f(r);
+    }
+  }
 }
 
-inline HeapRegion* G1CollectionCandidateListIterator::operator*() {
-  return _which->_candidates.at(_position)._r;
-}
+template<typename Func>
+void G1CollectionSetCandidates::iterate_regions(Func&& f) const {
+  _from_marking_groups.iterate(f);
 
-inline bool G1CollectionCandidateListIterator::operator==(const G1CollectionCandidateListIterator& rhs) {
-  assert(_which == rhs._which, "iterator belongs to different array");
-  return _position == rhs._position;
-}
-
-inline bool G1CollectionCandidateListIterator::operator!=(const G1CollectionCandidateListIterator& rhs) {
-  return !(*this == rhs);
-}
-
-inline G1CollectionSetCandidatesIterator::G1CollectionSetCandidatesIterator(G1CollectionSetCandidates* which, uint marking_position) :
-  _which(which), _marking_position(marking_position) {
-}
-
-inline G1CollectionSetCandidatesIterator& G1CollectionSetCandidatesIterator::operator++() {
-  assert(_marking_position < _which->_marking_regions.length(),
-         "must not be at end already");
-
-  _marking_position++;
-  return *this;
-}
-
-inline HeapRegion* G1CollectionSetCandidatesIterator::operator*() {
-  return _which->_marking_regions.at(_marking_position)._r;
-}
-
-inline bool G1CollectionSetCandidatesIterator::operator==(const G1CollectionSetCandidatesIterator& rhs)  {
-  assert(_which == rhs._which, "iterator belongs to different array");
-  return _marking_position == rhs._marking_position;
-}
-
-inline bool G1CollectionSetCandidatesIterator::operator!=(const G1CollectionSetCandidatesIterator& rhs)  {
-  return !(*this == rhs);
+  _retained_groups.iterate(f);
 }
 
 #endif /* SHARE_GC_G1_G1COLLECTIONSETCANDIDATES_INLINE_HPP */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,9 @@ import javax.imageio.ImageIO;
 /**
  * @test
  * @summary Simple crash rendering test using huge GeneralPaths with the Marlin renderer
- * @run main/othervm -mx512m CrashTest
+ * @run main/othervm -Xmx512m CrashTest
  * @ignore tests that take a long time and consumes 5Gb memory
- * @run main/othervm -ms4g -mx4g CrashTest -slow
+ * @run main/othervm -Xms4g -Xmx4g CrashTest -slow
 */
 public class CrashTest {
 

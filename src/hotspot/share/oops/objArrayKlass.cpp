@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
@@ -34,7 +33,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/arrayKlass.inline.hpp"
+#include "oops/arrayKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.inline.hpp"
@@ -60,36 +59,19 @@ ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_da
   // Eagerly allocate the direct array supertype.
   Klass* super_klass = nullptr;
   if (!Universe::is_bootstrapping() || vmClasses::Object_klass_loaded()) {
+    assert(MultiArray_lock->holds_lock(THREAD), "must hold lock after bootstrapping");
     Klass* element_super = element_klass->super();
     if (element_super != nullptr) {
       // The element type has a direct super.  E.g., String[] has direct super of Object[].
-      super_klass = element_super->array_klass_or_null();
-      bool supers_exist = super_klass != nullptr;
       // Also, see if the element has secondary supertypes.
-      // We need an array type for each.
+      // We need an array type for each before creating this array type.
+      super_klass = element_super->array_klass(CHECK_NULL);
       const Array<Klass*>* element_supers = element_klass->secondary_supers();
-      for( int i = element_supers->length()-1; i >= 0; i-- ) {
+      for (int i = element_supers->length() - 1; i >= 0; i--) {
         Klass* elem_super = element_supers->at(i);
-        if (elem_super->array_klass_or_null() == nullptr) {
-          supers_exist = false;
-          break;
-        }
+        elem_super->array_klass(CHECK_NULL);
       }
-      if (!supers_exist) {
-        // Oops.  Not allocated yet.  Back out, allocate it, and retry.
-        Klass* ek = nullptr;
-        {
-          MutexUnlocker mu(MultiArray_lock);
-          super_klass = element_super->array_klass(CHECK_NULL);
-          for( int i = element_supers->length()-1; i >= 0; i-- ) {
-            Klass* elem_super = element_supers->at(i);
-            elem_super->array_klass(CHECK_NULL);
-          }
-          // Now retry from the beginning
-          ek = element_klass->array_klass(n, CHECK_NULL);
-        }  // re-lock
-        return ObjArrayKlass::cast(ek);
-      }
+      // Fall through because inheritance is acyclic and we hold the global recursive lock to allocate all the arrays.
     } else {
       // The element type is already Object.  Object[] has direct super of Object.
       super_klass = vmClasses::Object_klass();
@@ -150,13 +132,20 @@ ObjArrayKlass::ObjArrayKlass(int n, Klass* element_klass, Symbol* name) : ArrayK
   set_bottom_klass(bk);
   set_class_loader_data(bk->class_loader_data());
 
+  if (element_klass->is_array_klass()) {
+    set_lower_dimension(ArrayKlass::cast(element_klass));
+  }
+
   set_layout_helper(array_layout_helper(T_OBJECT));
   assert(is_array_klass(), "sanity");
   assert(is_objArray_klass(), "sanity");
 }
 
 size_t ObjArrayKlass::oop_size(oop obj) const {
-  assert(obj->is_objArray(), "must be object array");
+  // In this assert, we cannot safely access the Klass* with compact headers,
+  // because size_given_klass() calls oop_size() on objects that might be
+  // concurrently forwarded, which would overwrite the Klass*.
+  assert(UseCompactObjectHeaders || obj->is_objArray(), "must be object array");
   return objArrayOop(obj)->object_size();
 }
 
@@ -169,17 +158,14 @@ objArrayOop ObjArrayKlass::allocate(int length, TRAPS) {
 
 oop ObjArrayKlass::multi_allocate(int rank, jint* sizes, TRAPS) {
   int length = *sizes;
-  // Call to lower_dimension uses this pointer, so most be called before a
-  // possible GC
-  Klass* ld_klass = lower_dimension();
+  ArrayKlass* ld_klass = lower_dimension();
   // If length < 0 allocate will throw an exception.
   objArrayOop array = allocate(length, CHECK_NULL);
   objArrayHandle h_array (THREAD, array);
   if (rank > 1) {
     if (length != 0) {
       for (int index = 0; index < length; index++) {
-        ArrayKlass* ak = ArrayKlass::cast(ld_klass);
-        oop sub_array = ak->multi_allocate(rank-1, &sizes[1], CHECK_NULL);
+        oop sub_array = ld_klass->multi_allocate(rank - 1, &sizes[1], CHECK_NULL);
         h_array->obj_at_put(index, sub_array);
       }
     } else {
@@ -189,7 +175,7 @@ oop ObjArrayKlass::multi_allocate(int rank, jint* sizes, TRAPS) {
       for (int i = 0; i < rank - 1; ++i) {
         sizes += 1;
         if (*sizes < 0) {
-          THROW_MSG_0(vmSymbols::java_lang_NegativeArraySizeException(), err_msg("%d", *sizes));
+          THROW_MSG_NULL(vmSymbols::java_lang_NegativeArraySizeException(), err_msg("%d", *sizes));
         }
       }
     }
@@ -307,64 +293,6 @@ void ObjArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d,
   }
 }
 
-
-Klass* ObjArrayKlass::array_klass(int n, TRAPS) {
-
-  assert(dimension() <= n, "check order of chain");
-  int dim = dimension();
-  if (dim == n) return this;
-
-  // lock-free read needs acquire semantics
-  if (higher_dimension_acquire() == nullptr) {
-
-    ResourceMark rm(THREAD);
-    {
-      // Ensure atomic creation of higher dimensions
-      MutexLocker mu(THREAD, MultiArray_lock);
-
-      // Check if another thread beat us
-      if (higher_dimension() == nullptr) {
-
-        // Create multi-dim klass object and link them together
-        Klass* k =
-          ObjArrayKlass::allocate_objArray_klass(class_loader_data(), dim + 1, this, CHECK_NULL);
-        ObjArrayKlass* ak = ObjArrayKlass::cast(k);
-        ak->set_lower_dimension(this);
-        // use 'release' to pair with lock-free load
-        release_set_higher_dimension(ak);
-        assert(ak->is_objArray_klass(), "incorrect initialization of ObjArrayKlass");
-      }
-    }
-  }
-
-  ObjArrayKlass *ak = ObjArrayKlass::cast(higher_dimension());
-  THREAD->check_possible_safepoint();
-  return ak->array_klass(n, THREAD);
-}
-
-Klass* ObjArrayKlass::array_klass_or_null(int n) {
-
-  assert(dimension() <= n, "check order of chain");
-  int dim = dimension();
-  if (dim == n) return this;
-
-  // lock-free read needs acquire semantics
-  if (higher_dimension_acquire() == nullptr) {
-    return nullptr;
-  }
-
-  ObjArrayKlass *ak = ObjArrayKlass::cast(higher_dimension());
-  return ak->array_klass_or_null(n);
-}
-
-Klass* ObjArrayKlass::array_klass(TRAPS) {
-  return array_klass(dimension() +  1, THREAD);
-}
-
-Klass* ObjArrayKlass::array_klass_or_null() {
-  return array_klass_or_null(dimension() +  1);
-}
-
 bool ObjArrayKlass::can_be_primary_super_slow() const {
   if (!bottom_klass()->can_be_primary_super())
     // array of interfaces
@@ -382,7 +310,8 @@ GrowableArray<Klass*>* ObjArrayKlass::compute_secondary_supers(int num_extra_slo
   int num_secondaries = num_extra_slots + 2 + num_elem_supers;
   if (num_secondaries == 2) {
     // Must share this for correct bootstrapping!
-    set_secondary_supers(Universe::the_array_interfaces_array());
+    set_secondary_supers(Universe::the_array_interfaces_array(),
+                         Universe::the_array_interfaces_bitmap());
     return nullptr;
   } else {
     GrowableArray<Klass*>* secondaries = new GrowableArray<Klass*>(num_elem_supers+2);
@@ -408,14 +337,12 @@ void ObjArrayKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_bottom_klass);
 }
 
-jint ObjArrayKlass::compute_modifier_flags() const {
+u2 ObjArrayKlass::compute_modifier_flags() const {
   // The modifier for an objectArray is the same as its element
-  if (element_klass() == nullptr) {
-    assert(Universe::is_bootstrapping(), "partial objArray only at startup");
-    return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
-  }
+  assert (element_klass() != nullptr, "should be initialized");
+
   // Return the flags of the bottom element type.
-  jint element_flags = bottom_klass()->compute_modifier_flags();
+  u2 element_flags = bottom_klass()->compute_modifier_flags();
 
   return (element_flags & (JVM_ACC_PUBLIC | JVM_ACC_PRIVATE | JVM_ACC_PROTECTED))
                         | (JVM_ACC_ABSTRACT | JVM_ACC_FINAL);
@@ -456,7 +383,7 @@ void ObjArrayKlass::oop_print_on(oop obj, outputStream* st) {
   ArrayKlass::oop_print_on(obj, st);
   assert(obj->is_objArray(), "must be objArray");
   objArrayOop oa = objArrayOop(obj);
-  int print_len = MIN2((intx) oa->length(), MaxElementPrintSize);
+  int print_len = MIN2(oa->length(), MaxElementPrintSize);
   for(int index = 0; index < print_len; index++) {
     st->print(" - %3d : ", index);
     if (oa->obj_at(index) != nullptr) {

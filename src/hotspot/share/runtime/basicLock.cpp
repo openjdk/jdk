@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,35 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/basicLock.hpp"
+#include "runtime/basicLock.inline.hpp"
+#include "runtime/objectMonitor.hpp"
 #include "runtime/synchronizer.hpp"
 
 void BasicLock::print_on(outputStream* st, oop owner) const {
   st->print("monitor");
-  markWord mark_word = displaced_header();
-  if (mark_word.value() != 0) {
-    // Print monitor info if there's an owning oop and it refers to this BasicLock.
-    bool print_monitor_info = (owner != nullptr) && (owner->mark() == markWord::from_pointer((void*)this));
-    mark_word.print_on(st, print_monitor_info);
+  if (UseObjectMonitorTable) {
+    ObjectMonitor* mon = object_monitor_cache();
+    if (mon != nullptr) {
+      mon->print_on(st);
+    }
+  } else if (LockingMode == LM_LEGACY) {
+    markWord mark_word = displaced_header();
+    if (mark_word.value() != 0) {
+      // Print monitor info if there's an owning oop and it refers to this BasicLock.
+      bool print_monitor_info = (owner != nullptr) && (owner->mark() == markWord::from_pointer((void*)this));
+      mark_word.print_on(st, print_monitor_info);
+    }
   }
 }
 
 void BasicLock::move_to(oop obj, BasicLock* dest) {
   // Check to see if we need to inflate the lock. This is only needed
   // if an object is locked using "this" lightweight monitor. In that
-  // case, the displaced_header() is unlocked/is_neutral, because the
+  // case, the displaced_header() is unlocked/neutral, because the
   // displaced_header() contains the header for the originally unlocked
   // object. However the lock could have already been inflated. But it
-  // does not matter, this inflation will just a no-op. For other cases,
+  // does not matter, this inflation will just be a no-op. For other cases,
   // the displaced header will be either 0x0 or 0x3, which are location
   // independent, therefore the BasicLock is free to move.
   //
@@ -63,22 +70,34 @@ void BasicLock::move_to(oop obj, BasicLock* dest) {
   // one stack location to another.  This avoids inflation.  Obviously,
   // we need to ensure that both locations refer to the current thread's stack.
   // There are some subtle concurrency issues, however, and since the benefit is
-  // is small (given the support for inflated fast-path locking in the fast_lock, etc)
+  // small (given the support for inflated fast-path locking in the fast_lock, etc)
   // we'll leave that optimization for another time.
 
-  if (displaced_header().is_neutral()) {
-    // The object is locked and the resulting ObjectMonitor* will also be
-    // locked so it can't be async deflated until ownership is dropped.
-    ObjectSynchronizer::inflate_helper(obj);
-    // WARNING: We cannot put a check here, because the inflation
-    // will not update the displaced header. Once BasicLock is inflated,
-    // no one should ever look at its content.
-  } else {
-    // Typically the displaced header will be 0 (recursive stack lock) or
-    // unused_mark.  Naively we'd like to assert that the displaced mark
-    // value is either 0, neutral, or 3.  But with the advent of the
-    // store-before-CAS avoidance in fast_lock/compiler_lock_object
-    // we can find any flavor mark in the displaced mark.
+  if (LockingMode == LM_LEGACY) {
+    if (displaced_header().is_neutral()) {
+      // The object is locked and the resulting ObjectMonitor* will also be
+      // locked so it can't be async deflated until ownership is dropped.
+      ObjectSynchronizer::inflate_helper(obj);
+      // WARNING: We cannot put a check here, because the inflation
+      // will not update the displaced header. Once BasicLock is inflated,
+      // no one should ever look at its content.
+    } else {
+      // Typically the displaced header will be 0 (recursive stack lock) or
+      // unused_mark.  Naively we'd like to assert that the displaced mark
+      // value is either 0, neutral, or 3.  But with the advent of the
+      // store-before-CAS avoidance in fast_lock/compiler_lock_object
+      // we can find any flavor mark in the displaced mark.
+    }
+    dest->set_displaced_header(displaced_header());
+  } else if (UseObjectMonitorTable) {
+    // Preserve the ObjectMonitor*, the cache is cleared when a box is reused
+    // and only read while the lock is held, so no stale ObjectMonitor* is
+    // encountered.
+    dest->set_object_monitor_cache(object_monitor_cache());
   }
-  dest->set_displaced_header(displaced_header());
+#ifdef ASSERT
+  else {
+    dest->set_bad_metadata_deopt();
+  }
+#endif
 }

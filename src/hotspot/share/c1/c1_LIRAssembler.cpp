@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_Instruction.hpp"
@@ -30,7 +29,6 @@
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_ValueStack.hpp"
-#include "ci/ciInstance.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "runtime/os.hpp"
@@ -487,19 +485,6 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
   if (op->is_method_handle_invoke()) {
     compilation()->set_has_method_handle_invokes(true);
   }
-
-#if defined(IA32) && defined(COMPILER2)
-  // C2 leave fpu stack dirty clean it
-  if (UseSSE < 2 && !CompilerConfig::is_c1_only_no_jvmci()) {
-    int i;
-    for ( i = 1; i <= 7 ; i++ ) {
-      ffree(i);
-    }
-    if (!op->result_opr()->is_float_kind()) {
-      ffree(0);
-    }
-  }
-#endif // IA32 && COMPILER2
 }
 
 
@@ -516,16 +501,21 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
         volatile_move_op(op->in_opr(), op->result_opr(), op->type(), op->info());
       } else {
         move_op(op->in_opr(), op->result_opr(), op->type(),
-                op->patch_code(), op->info(), op->pop_fpu_stack(),
+                op->patch_code(), op->info(),
                 op->move_kind() == lir_move_wide);
       }
       break;
 
-    case lir_roundfp: {
-      LIR_OpRoundFP* round_op = op->as_OpRoundFP();
-      roundfp_op(round_op->in_opr(), round_op->tmp(), round_op->result_opr(), round_op->pop_fpu_stack());
+    case lir_abs:
+    case lir_sqrt:
+    case lir_f2hf:
+    case lir_hf2f:
+      intrinsic_op(op->code(), op->in_opr(), op->tmp_opr(), op->result_opr(), op);
       break;
-    }
+
+    case lir_neg:
+      negate(op->in_opr(), op->result_opr(), op->tmp_opr());
+      break;
 
     case lir_return: {
       assert(op->as_OpReturn() != nullptr, "sanity");
@@ -606,13 +596,14 @@ void LIR_Assembler::emit_op0(LIR_Op0* op) {
       Unimplemented();
       break;
 
-    case lir_std_entry:
+    case lir_std_entry: {
       // init offsets
       offsets()->set_value(CodeOffsets::OSR_Entry, _masm->offset());
-      _masm->align(CodeEntryAlignment);
       if (needs_icache(compilation()->method())) {
-        check_icache();
+        int offset = check_icache();
+        offsets()->set_value(CodeOffsets::Entry, offset);
       }
+      _masm->align(CodeEntryAlignment);
       offsets()->set_value(CodeOffsets::Verified_Entry, _masm->offset());
       _masm->verified_entry(compilation()->directive()->BreakAtExecuteOption);
       if (needs_clinit_barrier_on_entry(compilation()->method())) {
@@ -621,6 +612,7 @@ void LIR_Assembler::emit_op0(LIR_Op0* op) {
       build_frame();
       offsets()->set_value(CodeOffsets::Frame_Complete, _masm->offset());
       break;
+    }
 
     case lir_osr_entry:
       offsets()->set_value(CodeOffsets::OSR_Entry, _masm->offset());
@@ -712,27 +704,12 @@ void LIR_Assembler::emit_op2(LIR_Op2* op) {
     case lir_mul:
     case lir_div:
     case lir_rem:
-      assert(op->fpu_pop_count() < 2, "");
       arith_op(
         op->code(),
         op->in_opr1(),
         op->in_opr2(),
         op->result_opr(),
-        op->info(),
-        op->fpu_pop_count() == 1);
-      break;
-
-    case lir_abs:
-    case lir_sqrt:
-    case lir_tan:
-    case lir_log10:
-    case lir_f2hf:
-    case lir_hf2f:
-      intrinsic_op(op->code(), op->in_opr1(), op->in_opr2(), op->result_opr(), op);
-      break;
-
-    case lir_neg:
-      negate(op->in_opr1(), op->result_opr(), op->in_opr2());
+        op->info());
       break;
 
     case lir_logic_and:
@@ -777,26 +754,16 @@ void LIR_Assembler::build_frame() {
 }
 
 
-void LIR_Assembler::roundfp_op(LIR_Opr src, LIR_Opr tmp, LIR_Opr dest, bool pop_fpu_stack) {
-  assert(strict_fp_requires_explicit_rounding, "not required");
-  assert((src->is_single_fpu() && dest->is_single_stack()) ||
-         (src->is_double_fpu() && dest->is_double_stack()),
-         "round_fp: rounds register -> stack location");
-
-  reg2stack (src, dest, src->type(), pop_fpu_stack);
-}
-
-
-void LIR_Assembler::move_op(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack, bool wide) {
+void LIR_Assembler::move_op(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide) {
   if (src->is_register()) {
     if (dest->is_register()) {
       assert(patch_code == lir_patch_none && info == nullptr, "no patching and info allowed here");
       reg2reg(src,  dest);
     } else if (dest->is_stack()) {
       assert(patch_code == lir_patch_none && info == nullptr, "no patching and info allowed here");
-      reg2stack(src, dest, type, pop_fpu_stack);
+      reg2stack(src, dest, type);
     } else if (dest->is_address()) {
-      reg2mem(src, dest, type, patch_code, info, pop_fpu_stack, wide);
+      reg2mem(src, dest, type, patch_code, info, wide);
     } else {
       ShouldNotReachHere();
     }
@@ -841,8 +808,6 @@ void LIR_Assembler::verify_oop_map(CodeEmitInfo* info) {
       if (v.is_oop()) {
         VMReg r = v.reg();
         if (!r->is_stack()) {
-          stringStream st;
-          st.print("bad oop %s at %d", r->as_Register()->name(), _masm->offset());
           _masm->verify_oop(r->as_Register());
         } else {
           _masm->verify_stack_oop(r->reg2stack() * VMRegImpl::stack_slot_size);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package jdk.jfr.internal.query;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collection;
+import java.util.StringJoiner;
 
 import jdk.jfr.consumer.RecordedClass;
 import jdk.jfr.consumer.RecordedClassLoader;
@@ -51,6 +53,13 @@ public class FieldFormatter {
         if (object == null) {
             return field.missingText;
         }
+        if (object instanceof Collection<?> c) {
+            StringJoiner sj = new StringJoiner(", ");
+            for (Object o : c) {
+                sj.add(format(field, o, compact));
+            }
+            return sj.toString();
+        }
         if (object instanceof String s) {
             return stripFormatting(s);
         }
@@ -69,6 +78,10 @@ public class FieldFormatter {
         }
         if (object instanceof Integer i && i == Integer.MIN_VALUE) {
             return field.missingText;
+        }
+
+        if (object instanceof RecordedFrame f && f.isJavaFrame()) {
+            object = f.getMethod();
         }
 
         if (object instanceof RecordedThread t) {
@@ -110,7 +123,7 @@ public class FieldFormatter {
             if (d.equals(ChronoUnit.FOREVER.getDuration())) {
                 return "Indefinite";
             }
-            return ValueFormatter.formatDuration(d);
+            return ValueFormatter.formatDuration(d, field.precision);
         }
         if (object instanceof Instant instant) {
             return ValueFormatter.formatTimestamp(instant);

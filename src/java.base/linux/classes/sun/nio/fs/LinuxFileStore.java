@@ -142,7 +142,7 @@ class LinuxFileStore
             }
             return xattrEnabled;
         }
-        // POSIX attributes not supported on FAT
+        // POSIX attributes not supported on FAT32
         if (type == PosixFileAttributeView.class && entry().fstype().equals("vfat"))
             return false;
         return super.supportsFileAttributeView(type);

@@ -27,6 +27,7 @@ package jdk.jpackage.internal;
 
 import java.util.EnumSet;
 import java.util.HashMap;
+
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.Arguments.CLIOptions;
 
@@ -61,7 +62,6 @@ class ValidOptions {
     }
 
     private static final HashMap<String, EnumSet<USE>> options = new HashMap<>();
-
 
     // initializing list of mandatory arguments
     static {
@@ -130,6 +130,10 @@ class ValidOptions {
                     EnumSet.of(USE.ALL, USE.SIGN));
             put(CLIOptions.MAC_SIGNING_KEY_NAME.getId(),
                     EnumSet.of(USE.ALL, USE.SIGN));
+            put(CLIOptions.MAC_APP_IMAGE_SIGN_IDENTITY.getId(),
+                    EnumSet.of(USE.ALL, USE.SIGN));
+            put(CLIOptions.MAC_INSTALLER_SIGN_IDENTITY.getId(),
+                    EnumSet.of(USE.INSTALL, USE.SIGN));
             put(CLIOptions.MAC_SIGNING_KEYCHAIN.getId(),
                     EnumSet.of(USE.ALL, USE.SIGN));
             put(CLIOptions.MAC_APP_STORE.getId(), USE.ALL);

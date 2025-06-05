@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.beans.*;
 import java.lang.reflect.*;
 
 import sun.reflect.misc.MethodUtil;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * Component decorator that implements the view interface
@@ -100,7 +99,6 @@ public class ObjectView extends ComponentView  {
         AttributeSet attr = getElement().getAttributes();
         String classname = (String) attr.getAttribute(HTML.Attribute.CLASSID);
         try {
-            ReflectUtil.checkPackageAccess(classname);
             Class<?> c = Class.forName(classname, false,Thread.currentThread().
                                        getContextClassLoader());
             if (Component.class.isAssignableFrom(c)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 2, jvmArgsAppend = {"-XX:LoopUnrollLimit=1"})
+@Fork(value = 2, jvmArgs = {"-XX:LoopUnrollLimit=1"})
 @Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
 @State(Scope.Thread)

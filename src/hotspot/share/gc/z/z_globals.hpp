@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,40 @@
 #ifndef SHARE_GC_Z_Z_GLOBALS_HPP
 #define SHARE_GC_Z_Z_GLOBALS_HPP
 
-#include "zPageAge.hpp"
+#include "gc/z/zGlobals.hpp"
+#include "gc/z/zPageAge.hpp"
 
 #define GC_Z_FLAGS(develop,                                                 \
                    develop_pd,                                              \
                    product,                                                 \
                    product_pd,                                              \
-                   notproduct,                                              \
                    range,                                                   \
                    constraint)                                              \
                                                                             \
+  product(double, ZAllocationSpikeTolerance, 2.0,                           \
+          "Allocation spike tolerance factor")                              \
+                                                                            \
+  product(double, ZFragmentationLimit, 5.0,                                 \
+          "Maximum allowed heap fragmentation")                             \
+          range(0, 100)                                                     \
+                                                                            \
+  product(double, ZCollectionInterval, 0,                                   \
+          "Force GC at a fixed time interval (in seconds). "                \
+          "Backwards compatible alias for ZCollectionIntervalMajor")        \
+                                                                            \
+  product(bool, ZProactive, true,                                           \
+          "Enable proactive GC cycles")                                     \
+                                                                            \
+  product(bool, ZUncommit, true,                                            \
+          "Uncommit unused memory")                                         \
+                                                                            \
+  product(uintx, ZUncommitDelay, 5 * 60,                                    \
+          "Uncommit memory if it has been unused for the specified "        \
+          "amount of time (in seconds)")                                    \
+                                                                            \
   product(double, ZYoungCompactionLimit, 25.0,                              \
           "Maximum allowed garbage in young pages")                         \
+          range(0, 100)                                                     \
                                                                             \
   product(double, ZCollectionIntervalMinor, -1,                             \
           "Force Minor GC at a fixed time interval (in seconds)")           \
@@ -45,6 +67,25 @@
                                                                             \
   product(bool, ZCollectionIntervalOnly, false,                             \
           "Only use timers for GC heuristics")                              \
+                                                                            \
+  product(uint, ZStatisticsInterval, 10, DIAGNOSTIC,                        \
+          "Time between statistics print outs (in seconds)")                \
+          range(1, (uint)-1)                                                \
+                                                                            \
+  product(bool, ZStressRelocateInPlace, false, DIAGNOSTIC,                  \
+          "Always relocate pages in-place")                                 \
+                                                                            \
+  product(bool, ZVerifyRoots, trueInDebug, DIAGNOSTIC,                      \
+          "Verify roots")                                                   \
+                                                                            \
+  product(bool, ZVerifyObjects, false, DIAGNOSTIC,                          \
+          "Verify objects")                                                 \
+                                                                            \
+  product(bool, ZVerifyMarking, trueInDebug, DIAGNOSTIC,                    \
+          "Verify marking stacks")                                          \
+                                                                            \
+  product(bool, ZVerifyForwarding, false, DIAGNOSTIC,                       \
+          "Verify forwarding tables")                                       \
                                                                             \
   product(bool, ZBufferStoreBarriers, true, DIAGNOSTIC,                     \
           "Buffer store barriers")                                          \
@@ -63,12 +104,34 @@
   product(bool, ZVerifyRemembered, trueInDebug, DIAGNOSTIC,                 \
           "Verify remembered sets")                                         \
                                                                             \
-  develop(bool, ZVerifyOops, false,                                         \
-          "Verify accessed oops")                                           \
+  product(bool, ZUseMediumPageSizeRange, true, DIAGNOSTIC,                  \
+          "Allow multiple medium page sizes")                               \
+                                                                            \
+  product(bool, ZStressFastMediumPageAllocation, false, DIAGNOSTIC,         \
+          "Always use the minimum medium page size for fast medium page "   \
+          "allocations")                                                    \
                                                                             \
   product(int, ZTenuringThreshold, -1, DIAGNOSTIC,                          \
           "Young generation tenuring threshold, -1 for dynamic computation")\
-          range(-1, static_cast<int>(ZPageAgeMax))
+          range(-1, static_cast<int>(ZPageAgeMax))                          \
+                                                                            \
+  develop(bool, ZVerifyOops, false,                                         \
+          "Verify accessed oops")                                           \
+                                                                            \
+  develop(uint, ZFakeNUMA, 1,                                               \
+          "ZFakeNUMA is used to test the internal NUMA memory support "     \
+          "without the need for UseNUMA")                                   \
+          range(1, 16)                                                      \
+                                                                            \
+  develop(size_t, ZForceDiscontiguousHeapReservations, 0,                   \
+          "The gc will attempt to split the heap reservation into this "    \
+          "many reservations, subject to available virtual address space "  \
+          "and invariant restrictions. Higher virtual addresses are "       \
+          "preferred "                                                      \
+          "0: Disabled "                                                    \
+          "1: Attempt contiguous reservation starting at a higher address " \
+          "N: Force that many reservations, if possible")                   \
+          range(0, ZMaxVirtualReservations)
 
 // end of GC_Z_FLAGS
 

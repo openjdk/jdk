@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * @requires vm.opt.final.ClassUnloading
  * @library /vmTestbase /test/lib
  * @run main/othervm
- *      -XX:MetaspaceSize=10m
+ *      -XX:MetaspaceSize=20m
  *      -XX:MaxMetaspaceSize=20m
  *      -Xlog:gc*:gc.log
  *      metaspace.shrink_grow.ShrinkGrowTest.ShrinkGrowTest
@@ -52,7 +52,7 @@ import java.util.Map;
 /**
  * This is the main test in the metaspace shrink/grow series.
  *
- * It tries to allocate all available metespace (loads new classes and keeps
+ * It tries to allocate all available metaspace (loads new classes and keeps
  * them in map), then checks that loading new classes causes OOM.
  * After that it does cleanup loaded classes and then expect the new classes
  * could be loaded again.
@@ -87,7 +87,7 @@ public class ShrinkGrowTest {
      * @param classesToLoad - the limit of classes to load expecting OOM
      */
     public ShrinkGrowTest(String name, int classesToLoad) {
-        whoAmI = name;
+        whoAmI = "%" + name + "%";
         maxClassesToLoad = classesToLoad;
 
     }
@@ -98,15 +98,15 @@ public class ShrinkGrowTest {
      * @param message text to print out
      */
     void log(String message) {
-        System.out.println("%" + whoAmI + "% " + message);
+        System.out.println(whoAmI + message);
     }
 
     void throwFault(String message) {
-        throw new TestFault("%" + whoAmI + "% " + message);
+        throw new TestFault(whoAmI + message);
     }
 
     void throwFault(String message, Throwable t) {
-        throw new TestFault("%" + whoAmI + "% " + message, t);
+        throw new TestFault(whoAmI + message, t);
     }
 
     /**
@@ -116,12 +116,12 @@ public class ShrinkGrowTest {
     public void run() {
         if (System.getProperty("requiresCompressedClassSpace") != null &&
                    !isCompressedClassSpaceAvailable()) {
-                System.out.println("Not applicalbe, Compressed Class Space is required");
+                System.out.println("Not applicable, Compressed Class Space is required");
             return;
         }
 
         try {
-            log("Bootstrapping string concatenation for " + whoAmI );
+            log("Bootstrapping string concatenation");
             go();
             // The quest completed! Yahoo!
             setErrorMessage(null);
@@ -150,7 +150,17 @@ public class ShrinkGrowTest {
             throwFault("We haven't cleaned metaspace yet!");
         } catch (OutOfMemoryError error) {
             if (!isMetaspaceError(error)) {
-                throwFault("Hmm, we ran out metaspace. Metaspace error is still excpected here " + error, error);
+                throwFault("Hmm, we ran out metaspace. Metaspace error is still expected here " + error, error);
+            }
+        } catch(BootstrapMethodError bsme) {
+            Throwable cause = bsme.getCause();
+            if (cause instanceof OutOfMemoryError) {
+                OutOfMemoryError error = (OutOfMemoryError)cause;
+                if (!isMetaspaceError(error)) {
+                    throwFault("Hmm, we got BootstrapMethodError. Metaspace error is still expected as the cause " + error, bsme);
+                }
+            } else {
+                throwFault("We should be out of metaspace but got " + cause, bsme);
             }
         }
 

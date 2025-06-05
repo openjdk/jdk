@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ import javax.print.attribute.standard.PrinterStateReasons;
 
 import java.awt.print.*;
 
-public class Win32PrintJob implements CancelablePrintJob {
+public final class Win32PrintJob implements CancelablePrintJob {
 
     private transient ArrayList<PrintJobListener> jobListeners;
     private transient ArrayList<PrintJobAttributeListener> attrListeners;
@@ -113,10 +113,12 @@ public class Win32PrintJob implements CancelablePrintJob {
         this.service = service;
     }
 
+    @Override
     public PrintService getPrintService() {
         return service;
     }
 
+    @Override
     public PrintJobAttributeSet getAttributes() {
         synchronized (this) {
             if (jobAttrSet == null) {
@@ -129,6 +131,7 @@ public class Win32PrintJob implements CancelablePrintJob {
         }
     }
 
+    @Override
     public void addPrintJobListener(PrintJobListener listener) {
         synchronized (this) {
             if (listener == null) {
@@ -141,6 +144,7 @@ public class Win32PrintJob implements CancelablePrintJob {
         }
     }
 
+    @Override
     public void removePrintJobListener(PrintJobListener listener) {
         synchronized (this) {
             if (listener == null || jobListeners == null ) {
@@ -254,6 +258,7 @@ public class Win32PrintJob implements CancelablePrintJob {
        }
     }
 
+    @Override
     public void addPrintJobAttributeListener(
                                   PrintJobAttributeListener listener,
                                   PrintJobAttributeSet attributes) {
@@ -273,6 +278,7 @@ public class Win32PrintJob implements CancelablePrintJob {
         }
     }
 
+    @Override
     public void removePrintJobAttributeListener(
                                         PrintJobAttributeListener listener) {
         synchronized (this) {
@@ -293,6 +299,7 @@ public class Win32PrintJob implements CancelablePrintJob {
         }
     }
 
+    @Override
     public void print(Doc doc, PrintRequestAttributeSet attributes)
         throws PrintException {
 
@@ -592,11 +599,7 @@ public class Win32PrintJob implements CancelablePrintJob {
         }
 
         /* add the user name to the job */
-        String userName = "";
-        try {
-          userName = System.getProperty("user.name");
-        } catch (SecurityException se) {
-        }
+        String userName = System.getProperty("user.name");
 
         if (userName == null || userName.isEmpty()) {
             RequestingUserName ruName =
@@ -674,17 +677,6 @@ public class Win32PrintJob implements CancelablePrintJob {
                 } catch (Exception e) {
                   throw new PrintException(e);
                 }
-                // check write access
-                @SuppressWarnings("removal")
-                SecurityManager security = System.getSecurityManager();
-                if (security != null) {
-                  try {
-                    security.checkWrite(mDestination);
-                  } catch (SecurityException se) {
-                    notifyEvent(PrintJobEvent.JOB_FAILED);
-                    throw new PrintException(se);
-                  }
-                }
               }
             } else if (category == JobName.class) {
                 jobName = ((JobName)attr).getValue();
@@ -712,6 +704,7 @@ public class Win32PrintJob implements CancelablePrintJob {
     private native boolean endPrintRawData();
 
     /* Cancel PrinterJob jobs that haven't yet completed. */
+   @Override
    public void cancel() throws PrintException {
         synchronized (this) {
             if (!printing) {

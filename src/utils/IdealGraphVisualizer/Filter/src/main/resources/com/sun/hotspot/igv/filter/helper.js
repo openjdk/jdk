@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +57,19 @@ function hasAnyNode(selector) {
     return new AnySelector(selector);
 }
 
+// Select the nodes for which the given property is defined.
+function hasProperty(property) {
+    return new MatcherSelector(new Properties.InvertPropertyMatcher(new Properties.RegexpPropertyMatcher(property, "")));
+}
+
 // Select the nodes whose given property matches a given regular expression.
 function matches(property, regexp) {
     return new MatcherSelector(new Properties.RegexpPropertyMatcher(property, regexp));
+}
+
+// Select the nodes for which the given property is defined.
+function hasProperty(property) {
+    return new MatcherSelector(new Properties.InvertPropertyMatcher(new Properties.RegexpPropertyMatcher(property, "")));
 }
 
 // Color the selected nodes.
@@ -190,15 +200,15 @@ var white = Color.white;
 // function that takes as input the old property value and returns the new
 // property value.
 function editSameProperty(selector, propertyName, editFunction) {
-    var f = new EditPropertyFilter("", selector, propertyName, propertyName, editFunction);
+    var f = new EditPropertyFilter("", selector, [propertyName], propertyName, editFunction);
     f.apply(graph);
 }
 
 // Update the value of the given property ('outputPropertyName') in the selected
-// nodes according to a function that takes as input the value of a possibly
-// different property ('inputPropertyName') and returns the new property value.
-function editProperty(selector, inputPropertyName, outputPropertyName, editFunction) {
-    var f = new EditPropertyFilter("", selector, inputPropertyName, outputPropertyName, editFunction);
+// nodes according to a function that takes as input the values of multiple
+// properties ('inputPropertyNames') and returns the new property value.
+function editProperty(selector, inputPropertyNames, outputPropertyName, editFunction) {
+    var f = new EditPropertyFilter("", selector, inputPropertyNames, outputPropertyName, editFunction);
     f.apply(graph);
 }
 
@@ -219,4 +229,16 @@ function removeBlock(selector) {
     var f = new RemoveBlockFilter("");
     f.addRule(new RemoveBlockFilter.RemoveBlockRule(selector));
     f.apply(graph);
+}
+
+// Color the selected live ranges.
+function colorizeLiveRange(selector, color) {
+    var f = new ColorLiveRangeFilter("");
+    f.addRule(new ColorLiveRangeFilter.ColorRule(selector, color));
+    f.apply(graph);
+}
+
+// Select the live ranges whose given property matches a given regular expression.
+function matchesLiveRange(property, regexp) {
+    return new LiveRangeMatcherSelector(new Properties.RegexpPropertyMatcher(property, regexp));
 }

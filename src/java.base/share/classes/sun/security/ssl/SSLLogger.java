@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-import sun.security.action.GetPropertyAction;
 import sun.security.util.HexDumpEncoder;
+import sun.security.util.Debug;
 import sun.security.x509.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -63,7 +63,7 @@ public final class SSLLogger {
     public static final boolean isOn;
 
     static {
-        String p = GetPropertyAction.privilegedGetProperty("javax.net.debug");
+        String p = System.getProperty("javax.net.debug");
         if (p != null) {
             if (p.isEmpty()) {
                 property = "";
@@ -142,8 +142,10 @@ public final class SSLLogger {
         if (property.contains("all")) {
             return true;
         } else {
-            int offset = property.indexOf("ssl");
-            if (offset != -1 && property.indexOf("sslctx", offset) != -1) {
+            // remove first occurrence of "sslctx" since
+            // it interferes with search for "ssl"
+            String modified = property.replaceFirst("sslctx", "");
+            if (modified.contains("ssl")) {
                 // don't enable data and plaintext options by default
                 if (!(option.equals("data")
                         || option.equals("packet")
@@ -485,8 +487,7 @@ public final class SSLLogger {
                 if (certExts == null) {
                     Object[] certFields = {
                         x509.getVersion(),
-                        Utilities.toHexString(
-                                x509.getSerialNumber().toByteArray()),
+                        Debug.toString(x509.getSerialNumber()),
                         x509.getSigAlgName(),
                         x509.getIssuerX500Principal().toString(),
                         dateTimeFormat.format(x509.getNotBefore().toInstant()),
@@ -510,8 +511,7 @@ public final class SSLLogger {
                     }
                     Object[] certFields = {
                         x509.getVersion(),
-                        Utilities.toHexString(
-                                x509.getSerialNumber().toByteArray()),
+                        Debug.toString(x509.getSerialNumber()),
                         x509.getSigAlgName(),
                         x509.getIssuerX500Principal().toString(),
                         dateTimeFormat.format(x509.getNotBefore().toInstant()),

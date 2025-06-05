@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,8 +99,8 @@ class vframe: public ResourceObj {
 
 #ifndef PRODUCT
   // printing operations
-  virtual void print_value() const;
-  virtual void print();
+  virtual void print_value(outputStream* output = tty) const;
+  virtual void print(outputStream* output = tty);
 #endif
 };
 
@@ -139,15 +139,15 @@ class javaVFrame: public vframe {
 
   // printing used during stack dumps and diagnostics
   static void print_locked_object_class_name(outputStream* st, Handle obj, const char* lock_state);
-  void print_lock_info_on(outputStream* st, int frame_count);
-  void print_lock_info(int frame_count) { print_lock_info_on(tty, frame_count); }
+  void print_lock_info_on(outputStream* st, bool is_virtual, int frame_count);
+  void print_lock_info(bool is_virtual, int frame_count) { print_lock_info_on(tty, is_virtual, frame_count); }
 
 #ifndef PRODUCT
  public:
   // printing operations
-  void print();
-  void print_value() const;
-  void print_activation(int index) const;
+  void print(outputStream* output = tty);
+  void print_value(outputStream* output = tty) const;
+  void print_activation(int index, outputStream* output = tty) const;
 #endif
   friend class vframe;
 };
@@ -195,8 +195,8 @@ class externalVFrame: public vframe {
 #ifndef PRODUCT
  public:
   // printing operations
-  void print_value() const;
-  void print();
+  void print_value(outputStream* output = tty) const;
+  void print(outputStream* output = tty);
 #endif
   friend class vframe;
 };
@@ -211,8 +211,8 @@ class entryVFrame: public externalVFrame {
 #ifndef PRODUCT
  public:
   // printing
-  void print_value() const;
-  void print();
+  void print_value(outputStream* output = tty) const;
+  void print(outputStream* output = tty);
 #endif
   friend class vframe;
 };
@@ -281,7 +281,8 @@ class vframeStreamCommon : StackObj {
 
  public:
   // Constructor
-  inline vframeStreamCommon(RegisterMap reg_map);
+  inline vframeStreamCommon(JavaThread* thread, RegisterMap::UpdateMap update_map, RegisterMap::ProcessFrames process_frames, RegisterMap::WalkContinuation walk_cont);
+  vframeStreamCommon(oop continuation);
 
   // Accessors
   Method* method() const { return _method; }
@@ -292,10 +293,10 @@ class vframeStreamCommon : StackObj {
   inline int decode_offset() const;
   inline oop continuation() const;
 
-  CodeBlob*         cb()         const { return _frame.cb();  }
-  CompiledMethod*   nm()         const {
-      assert( cb() != nullptr && cb()->is_compiled(), "usage");
-      return (CompiledMethod*) cb();
+  CodeBlob* cb() const { return _frame.cb();  }
+  nmethod*  nm() const {
+    assert(cb() != nullptr, "usage");
+    return cb()->as_nmethod();
   }
 
   const RegisterMap* reg_map() { return &_reg_map; }

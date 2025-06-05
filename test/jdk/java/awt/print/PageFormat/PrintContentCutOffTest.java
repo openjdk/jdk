@@ -24,6 +24,7 @@
 
 /**
  * @test
+ * @key printer
  * @bug 8295737
  * @summary macOS: Print content cut off when width > height with portrait orientation
  * @run main/othervm/manual PrintContentCutOffTest

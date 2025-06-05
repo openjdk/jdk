@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/oopMap.hpp"
@@ -141,7 +140,7 @@ DebugInformationRecorder::DebugInformationRecorder(OopRecorder* oop_recorder)
 
   add_new_pc_offset(PcDesc::lower_offset_limit);  // sentinel record
 
-  debug_only(_recording_state = rs_null);
+  DEBUG_ONLY(_recording_state = rs_null);
 }
 
 
@@ -160,7 +159,7 @@ void DebugInformationRecorder::add_safepoint(int pc_offset, OopMap* map) {
   add_new_pc_offset(pc_offset);
 
   assert(_recording_state == rs_null, "nesting of recording calls");
-  debug_only(_recording_state = rs_safepoint);
+  DEBUG_ONLY(_recording_state = rs_safepoint);
 }
 
 void DebugInformationRecorder::add_non_safepoint(int pc_offset) {
@@ -170,12 +169,12 @@ void DebugInformationRecorder::add_non_safepoint(int pc_offset) {
   add_new_pc_offset(pc_offset);
 
   assert(_recording_state == rs_null, "nesting of recording calls");
-  debug_only(_recording_state = rs_non_safepoint);
+  DEBUG_ONLY(_recording_state = rs_non_safepoint);
 }
 
 void DebugInformationRecorder::add_new_pc_offset(int pc_offset) {
   assert(_pcs_length == 0 || last_pc()->pc_offset() < pc_offset,
-         "must specify a new, larger pc offset");
+         "must specify a new, larger pc offset: %d >= %d", last_pc()->pc_offset(), pc_offset);
 
   // add the pcdesc
   if (_pcs_length == _pcs_size) {
@@ -244,14 +243,11 @@ static
 struct dir_stats_struct {
   int chunks_queried;
   int chunks_shared;
-  int chunks_reshared;
   int chunks_elided;
 
   void print() {
-    tty->print_cr("Debug Data Chunks: %d, shared %d+%d, non-SP's elided %d",
-                  chunks_queried,
-                  chunks_shared, chunks_reshared,
-                  chunks_elided);
+    tty->print_cr("Debug Data Chunks: %d, shared %d, non-SP's elided %d",
+                  chunks_queried, chunks_shared, chunks_elided);
   }
 } dir_stats;
 #endif //PRODUCT
@@ -364,7 +360,7 @@ void DebugInformationRecorder::dump_object_pool(GrowableArray<ScopeValue*>* obje
 void DebugInformationRecorder::end_scopes(int pc_offset, bool is_safepoint) {
   assert(_recording_state == (is_safepoint? rs_safepoint: rs_non_safepoint),
          "nesting of recording calls");
-  debug_only(_recording_state = rs_null);
+  DEBUG_ONLY(_recording_state = rs_null);
 
   // Try to compress away an equivalent non-safepoint predecessor.
   // (This only works because we have previously recognized redundant
@@ -417,13 +413,13 @@ DebugToken* DebugInformationRecorder::create_monitor_values(GrowableArray<Monito
 
 
 int DebugInformationRecorder::data_size() {
-  debug_only(mark_recorders_frozen());  // mark it "frozen" for asserts
+  DEBUG_ONLY(mark_recorders_frozen());  // mark it "frozen" for asserts
   return _stream->position();
 }
 
 
 int DebugInformationRecorder::pcs_size() {
-  debug_only(mark_recorders_frozen());  // mark it "frozen" for asserts
+  DEBUG_ONLY(mark_recorders_frozen());  // mark it "frozen" for asserts
   if (last_pc()->pc_offset() != PcDesc::upper_offset_limit)
     add_new_pc_offset(PcDesc::upper_offset_limit);
   return _pcs_length * sizeof(PcDesc);

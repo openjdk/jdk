@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2018, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -84,8 +84,7 @@ public class NonBlocking {
 
         @Override
         public int available() {
-            return (int) (reader.available() * this.encoder.averageBytesPerChar())
-                    + bytes.remaining();
+            return (int) (reader.available() * this.encoder.averageBytesPerChar()) + bytes.remaining();
         }
 
         @Override
@@ -124,7 +123,6 @@ public class NonBlocking {
                 return READ_EXPIRED;
             }
         }
-
     }
 
     private static class NonBlockingInputStreamReader extends NonBlockingReader {
@@ -135,10 +133,12 @@ public class NonBlocking {
         private final CharBuffer chars;
 
         public NonBlockingInputStreamReader(NonBlockingInputStream inputStream, Charset encoding) {
-            this(inputStream,
-                (encoding != null ? encoding : Charset.defaultCharset()).newDecoder()
-                    .onMalformedInput(CodingErrorAction.REPLACE)
-                    .onUnmappableCharacter(CodingErrorAction.REPLACE));
+            this(
+                    inputStream,
+                    (encoding != null ? encoding : Charset.defaultCharset())
+                            .newDecoder()
+                            .onMalformedInput(CodingErrorAction.REPLACE)
+                            .onUnmappableCharacter(CodingErrorAction.REPLACE));
         }
 
         public NonBlockingInputStreamReader(NonBlockingInputStream input, CharsetDecoder decoder) {
@@ -201,8 +201,8 @@ public class NonBlocking {
                         bytes.position(0);
                         bytes.limit(0);
                     }
-                    int nb = input.readBuffered(bytes.array(), bytes.limit(),
-                                            bytes.capacity() - bytes.limit(), t.timeout());
+                    int nb = input.readBuffered(
+                            bytes.array(), bytes.limit(), bytes.capacity() - bytes.limit(), t.timeout());
                     if (nb < 0) {
                         return nb;
                     }
@@ -227,5 +227,4 @@ public class NonBlocking {
             input.close();
         }
     }
-
 }

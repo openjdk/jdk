@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.nio.ch;
 
 import java.io.IOException;
-import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
@@ -36,7 +35,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import jdk.internal.misc.Blocker;
 
 import static sun.nio.ch.EPoll.EPOLLIN;
 import static sun.nio.ch.EPoll.EPOLL_CTL_ADD;
@@ -92,11 +90,6 @@ class EPollSelectorImpl extends SelectorImpl {
         EPoll.ctl(epfd, EPOLL_CTL_ADD, eventfd.efd(), EPOLLIN);
     }
 
-    private void ensureOpen() {
-        if (!isOpen())
-            throw new ClosedSelectorException();
-    }
-
     @Override
     protected int doSelect(Consumer<SelectionKey> action, long timeout)
         throws IOException
@@ -111,34 +104,69 @@ class EPollSelectorImpl extends SelectorImpl {
         int numEntries;
         processUpdateQueue();
         processDeregisterQueue();
-        try {
-            begin(blocking);
 
-            do {
-                long startTime = timedPoll ? System.nanoTime() : 0;
-                long comp = Blocker.begin(blocking);
-                try {
+        if (Thread.currentThread().isVirtual()) {
+            numEntries = (timedPoll)
+                    ? timedPoll(TimeUnit.MILLISECONDS.toNanos(to))
+                    : untimedPoll(blocking);
+        } else {
+            try {
+                begin(blocking);
+                do {
+                    long startTime = timedPoll ? System.nanoTime() : 0;
                     numEntries = EPoll.wait(epfd, pollArrayAddress, NUM_EPOLLEVENTS, to);
-                } finally {
-                    Blocker.end(comp);
-                }
-                if (numEntries == IOStatus.INTERRUPTED && timedPoll) {
-                    // timed poll interrupted so need to adjust timeout
-                    long adjust = System.nanoTime() - startTime;
-                    to -= (int) TimeUnit.NANOSECONDS.toMillis(adjust);
-                    if (to <= 0) {
-                        // timeout expired so no retry
-                        numEntries = 0;
+                    if (numEntries == IOStatus.INTERRUPTED && timedPoll) {
+                        // timed poll interrupted so need to adjust timeout
+                        long adjust = System.nanoTime() - startTime;
+                        to -= (int) TimeUnit.NANOSECONDS.toMillis(adjust);
+                        if (to <= 0) {
+                            // timeout expired so no retry
+                            numEntries = 0;
+                        }
                     }
-                }
-            } while (numEntries == IOStatus.INTERRUPTED);
-            assert IOStatus.check(numEntries);
-
-        } finally {
-            end(blocking);
+                } while (numEntries == IOStatus.INTERRUPTED);
+            } finally {
+                end(blocking);
+            }
         }
+        assert IOStatus.check(numEntries);
+
         processDeregisterQueue();
         return processEvents(numEntries, action);
+    }
+
+    /**
+     * If blocking, parks the current virtual thread until a file descriptor is polled
+     * or the thread is interrupted.
+     */
+    private int untimedPoll(boolean block) throws IOException {
+        int numEntries = EPoll.wait(epfd, pollArrayAddress, NUM_EPOLLEVENTS, 0);
+        if (block) {
+            while (numEntries == 0 && !Thread.currentThread().isInterrupted()) {
+                Poller.pollSelector(epfd, 0);
+                numEntries = EPoll.wait(epfd, pollArrayAddress, NUM_EPOLLEVENTS, 0);
+            }
+        }
+        return numEntries;
+    }
+
+    /**
+     * Parks the current virtual thread until a file descriptor is polled, or the thread
+     * is interrupted, for up to the specified waiting time.
+     */
+    private int timedPoll(long nanos) throws IOException {
+        long startNanos = System.nanoTime();
+        int numEntries = EPoll.wait(epfd, pollArrayAddress, NUM_EPOLLEVENTS, 0);
+        while (numEntries == 0 && !Thread.currentThread().isInterrupted()) {
+            long remainingNanos = nanos - (System.nanoTime() - startNanos);
+            if (remainingNanos <= 0) {
+                // timeout
+                break;
+            }
+            Poller.pollSelector(epfd, remainingNanos);
+            numEntries = EPoll.wait(epfd, pollArrayAddress, NUM_EPOLLEVENTS, 0);
+        }
+        return numEntries;
     }
 
     /**
@@ -243,7 +271,6 @@ class EPollSelectorImpl extends SelectorImpl {
 
     @Override
     public void setEventOps(SelectionKeyImpl ski) {
-        ensureOpen();
         synchronized (updateLock) {
             updateKeys.addLast(ski);
         }

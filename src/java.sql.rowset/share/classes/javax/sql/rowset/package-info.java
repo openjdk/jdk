@@ -146,7 +146,7 @@
  * <p>
  * A compliant JDBC {@code RowSet} implementation <b>must</b> implement one or more
  * standard interfaces specified in this package and <b>may</b> extend the
- * {@link BaseRowSet} abstract class. For example, a
+ * {@link javax.sql.rowset.BaseRowSet} abstract class. For example, a
  * {@code CachedRowSet} implementation must implement the {@code CachedRowSet}
  * interface and extend the {@code BaseRowSet} abstract class. The
  * {@code BaseRowSet} class provides the standard architecture on which all
@@ -283,5 +283,6 @@
  * <li><a href="http://docs.oracle.com/javase/tutorial/jdbc/basics/rowset.html">
  * JDBC RowSet Tutorial</a>
  *</ul>
+ * @since 1.5
  */
 package javax.sql.rowset;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /**
  * @test
- * @bug 6683975 8008577
- * @summary Make sure that date is formatted correctlyin th locale.
+ * @bug 6683975 8008577 8174269
+ * @summary Make sure that date is formatted correctly in th locale.
  * @modules jdk.localedata
- * @run main/othervm -Djava.locale.providers=JRE,SPI Bug6683975
+ * @run main Bug6683975
  */
 import java.text.*;
 import java.util.*;
@@ -38,16 +38,16 @@ public class Bug6683975 {
     private static Locale th = Locale.of("th");
     private static Locale th_TH = Locale.of("th", "TH");
     private static String expected_th[] = {
-        "\u0e27\u0e31\u0e19\u0e2d\u0e31\u0e07\u0e04\u0e32\u0e23\u0e17\u0e35\u0e48 30 \u0e01\u0e31\u0e19\u0e22\u0e32\u0e22\u0e19 \u0e04.\u0e28. 2008, 8 \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 0 \u0e19\u0e32\u0e17\u0e35 00 \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35",  // 0: FULL
-        "30 \u0e01\u0e31\u0e19\u0e22\u0e32\u0e22\u0e19 2008, 8 \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 0 \u0e19\u0e32\u0e17\u0e35",  // 1: LONG
-        "30 \u0e01.\u0e22. 2008, 8:00:00",  // 2: MEDIUM
-        "30/9/2008, 8:00 \u0e19.",  // 3: SHORT
+        "\u0e27\u0e31\u0e19\u0e2d\u0e31\u0e07\u0e04\u0e32\u0e23\u0e17\u0e35\u0e48 30 \u0e01\u0e31\u0e19\u0e22\u0e32\u0e22\u0e19 \u0e04.\u0e28. 2008 8 \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 00 \u0e19\u0e32\u0e17\u0e35 00 \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35 \u0e40\u0e27\u0e25\u0e32\u0e2d\u0e2d\u0e21\u0e41\u0e2a\u0e07\u0e41\u0e1b\u0e0b\u0e34\u0e1f\u0e34\u0e01\u0e43\u0e19\u0e2d\u0e40\u0e21\u0e23\u0e34\u0e01\u0e32\u0e40\u0e2b\u0e19\u0e37\u0e2d",  // 0: FULL
+        "30 \u0e01\u0e31\u0e19\u0e22\u0e32\u0e22\u0e19 \u0e04.\u0e28. 2008 8 \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 00 \u0e19\u0e32\u0e17\u0e35 00 \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35 PDT",  // 1: LONG
+        "30 \u0e01.\u0e22. 2008 08:00:00",  // 2: MEDIUM
+        "30/9/08 08:00",  // 3: SHORT
     };
     private static String expected_th_TH[] = {
-        "\u0e27\u0e31\u0e19\u0e2d\u0e31\u0e07\u0e04\u0e32\u0e23\u0e17\u0e35\u0e48 30 \u0e01\u0e31\u0e19\u0e22\u0e32\u0e22\u0e19 \u0e1e.\u0e28. 2551, 8 \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 0 \u0e19\u0e32\u0e17\u0e35 00 \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35",  // 0: FULL
-        "30 \u0e01\u0e31\u0e19\u0e22\u0e32\u0e22\u0e19 2551, 8 \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 0 \u0e19\u0e32\u0e17\u0e35",  // 1: LONG
-        "30 \u0e01.\u0e22. 2551, 8:00:00",  // 2: MEDIUM
-        "30/9/2551, 8:00 \u0e19."  // 3: SHORT
+        "\u0e27\u0e31\u0e19\u0e2d\u0e31\u0e07\u0e04\u0e32\u0e23\u0e17\u0e35\u0e48 30 \u0e01\u0e31\u0e19\u0e22\u0e32\u0e22\u0e19 \u0e1e\u0e38\u0e17\u0e18\u0e28\u0e31\u0e01\u0e23\u0e32\u0e0a 2551 8 \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 00 \u0e19\u0e32\u0e17\u0e35 00 \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35 \u0e40\u0e27\u0e25\u0e32\u0e2d\u0e2d\u0e21\u0e41\u0e2a\u0e07\u0e41\u0e1b\u0e0b\u0e34\u0e1f\u0e34\u0e01\u0e43\u0e19\u0e2d\u0e40\u0e21\u0e23\u0e34\u0e01\u0e32\u0e40\u0e2b\u0e19\u0e37\u0e2d",  // 0: FULL
+        "30 \u0e01\u0e31\u0e19\u0e22\u0e32\u0e22\u0e19 2551 8 \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 00 \u0e19\u0e32\u0e17\u0e35 00 \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35 PDT",  // 1: LONG
+        "30 \u0e01.\u0e22. 2551 08:00:00",  // 2: MEDIUM
+        "30/9/51 08:00"  // 3: SHORT
     };
     private static String stylePattern[] =  {
         "FULL", "LONG", "MEDIUM", "SHORT"
@@ -59,12 +59,13 @@ public class Bug6683975 {
 
         String str_th = ((SimpleDateFormat)df_th).toPattern();
         String str_th_TH = ((SimpleDateFormat)df_th_TH).toPattern();
-        if (!str_th.equals(str_th_TH)) {
-            err = true;
-            System.err.println("Error: Pattern for th locale should be the same as pattern for th_TH locale. (" + stylePattern[style] + ")");
-            System.err.println("\tth: " + str_th);
-            System.err.println("\tth_TH: " + str_th_TH);
-        }
+        // CLDR has different patterns for Gregorian and Buddhist calendars, thus they don't match
+//        if (!str_th.equals(str_th_TH)) {
+//            err = true;
+//            System.err.println("Error: Pattern for th locale should be the same as pattern for th_TH locale. (" + stylePattern[style] + ")");
+//            System.err.println("\tth: " + str_th);
+//            System.err.println("\tth_TH: " + str_th_TH);
+//        }
 
         @SuppressWarnings("deprecation")
         Date date = new Date(2008-1900, Calendar.SEPTEMBER, 30, 8, 0, 0);

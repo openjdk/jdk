@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -59,7 +59,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError err;
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
     }
@@ -95,7 +95,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         }
 
         err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                JVMTI_EVENT_FIELD_ACCESS, NULL);
+                JVMTI_EVENT_FIELD_ACCESS, nullptr);
         if (err != JVMTI_ERROR_NONE) {
             printf("Failed to enable JVMTI_EVENT_FIELD_ACCESS: %s (%d)\n",
                    TranslateError(err), err);
@@ -123,14 +123,14 @@ Java_nsk_jvmti_SetFieldAccessWatch_setfldw002_check(JNIEnv *env, jclass cls) {
             printf(" %s (%d)\n", TranslateError(err), err);
         }
     } else {
-        err = jvmti->SetFieldAccessWatch(NULL, fid);
+        err = jvmti->SetFieldAccessWatch(nullptr, fid);
         if (err != JVMTI_ERROR_INVALID_CLASS) {
             result = STATUS_FAILED;
             printf("Failed to return JVMTI_ERROR_INVALID_CLASS: %s (%d)\n",
                    TranslateError(err), err);
         }
 
-        err = jvmti->SetFieldAccessWatch(cls, NULL);
+        err = jvmti->SetFieldAccessWatch(cls, nullptr);
         if (err != JVMTI_ERROR_INVALID_FIELDID) {
             result = STATUS_FAILED;
             printf("Failed to return JVMTI_ERROR_INVALID_FIELDID: %s (%d)\n",

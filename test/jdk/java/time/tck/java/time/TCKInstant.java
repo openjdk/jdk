@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,10 +187,21 @@ public class TCKInstant extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void now() {
-        Instant expected = Instant.now(Clock.systemUTC());
-        Instant test = Instant.now();
-        long diff = Math.abs(test.toEpochMilli() - expected.toEpochMilli());
-        assertTrue(diff < 100);  // less than 0.1 secs
+        long beforeMillis, instantMillis, afterMillis, diff;
+        int retryRemaining = 5; // MAX_RETRY_COUNT
+        do {
+            beforeMillis = Instant.now(Clock.systemUTC()).toEpochMilli();
+            instantMillis = Instant.now().toEpochMilli();
+            afterMillis = Instant.now(Clock.systemUTC()).toEpochMilli();
+            diff = instantMillis - beforeMillis;
+            if (instantMillis < beforeMillis || instantMillis > afterMillis) {
+                throw new RuntimeException(": Invalid instant: (~" + instantMillis + "ms)"
+                        + " when systemUTC in millis is in ["
+                        + beforeMillis + ", "
+                        + afterMillis + "]");
+            }
+        } while (diff > 100 && --retryRemaining > 0);  // retry if diff more than 0.1 sec
+        assertTrue(retryRemaining > 0);
     }
 
     //-----------------------------------------------------------------------

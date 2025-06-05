@@ -62,6 +62,8 @@ public:
    */
   static inline oop try_update_forwardee(oop obj, oop update);
 
+  static inline size_t size(oop obj);
+  static inline Klass* klass(oop obj);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_HPP

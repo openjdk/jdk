@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,18 @@ class ValueStack: public CompilationResourceObj {
     CallerState,         // Caller state when inlining
     StateBefore,         // Before before execution of instruction
     StateAfter,          // After execution of instruction
-    ExceptionState,      // Exception handling of instruction
-    EmptyExceptionState, // Exception handling of instructions not covered by an xhandler
+    // Exception states for an instruction.
+    // Dead stack items or locals may be invalidated or cleared/removed.
+    // Locals are retained if needed for JVMTI.
+    // "empty" exception states are used when there is no handler,
+    // and invalidate the locals.
+    // "leaf" exception states clear the stack.
+    // "caller" exception states are used for the parent/caller,
+    // and invalidate the stack.
+    ExceptionState,      // Exception state for leaf with handler, stack cleared
+    EmptyExceptionState, // Exception state for leaf w/o handler, stack cleared, locals invalidated
+    CallerExceptionState, // Exception state for parent with handler, stack invalidated
+    CallerEmptyExceptionState, // Exception state for parent w/o handler, stack+locals invalidated
     BlockBeginState      // State of BlockBegin instruction with phi functions of this block
   };
 
@@ -48,9 +58,10 @@ class ValueStack: public CompilationResourceObj {
   Values   _locals;                              // the locals
   Values   _stack;                               // the expression stack
   Values*  _locks;                               // the monitor stack (holding the locked values)
+  bool     _force_reexecute;                     // force the reexecute flag on, used for patching stub
 
   Value check(ValueTag tag, Value t) {
-    assert(tag == t->type()->tag() || tag == objectTag && t->type()->tag() == addressTag, "types must correspond");
+    assert(tag == t->type()->tag() || (tag == objectTag && t->type()->tag() == addressTag), "types must correspond");
     return t;
   }
 
@@ -75,10 +86,16 @@ class ValueStack: public CompilationResourceObj {
   ValueStack* copy(Kind new_kind, int new_bci)   { return new ValueStack(this, new_kind, new_bci); }
   ValueStack* copy_for_parsing()                 { return new ValueStack(this, Parsing, -99); }
 
+  // Used when no exception handler is found
+  static Kind empty_exception_kind(bool caller = false) {
+    return Compilation::current()->env()->should_retain_local_variables() ?
+      (caller ? CallerExceptionState : ExceptionState) : // retain locals
+      (caller ? CallerEmptyExceptionState : EmptyExceptionState);   // clear locals
+  }
+
   void set_caller_state(ValueStack* s)           {
-    assert(kind() == EmptyExceptionState ||
-           (Compilation::current()->env()->should_retain_local_variables() && kind() == ExceptionState),
-           "only EmptyExceptionStates can be modified");
+    assert(kind() == empty_exception_kind(false) || kind() == empty_exception_kind(true),
+           "only empty exception states can be modified");
     _caller_state = s;
   }
 
@@ -133,14 +150,14 @@ class ValueStack: public CompilationResourceObj {
   // stack access
   Value stack_at(int i) const {
     Value x = _stack.at(i);
-    assert(!x->type()->is_double_word() ||
+    assert(x == nullptr || !x->type()->is_double_word() ||
            _stack.at(i + 1) == nullptr, "hi-word of doubleword value must be null");
     return x;
   }
 
   Value stack_at_inc(int& i) const {
     Value x = stack_at(i);
-    i += x->type()->size();
+    i += ((x == nullptr) ? 1 : x->type()->size());
     return x;
   }
 
@@ -209,6 +226,9 @@ class ValueStack: public CompilationResourceObj {
   void setup_phi_for_stack(BlockBegin* b, int index);
   void setup_phi_for_local(BlockBegin* b, int index);
 
+  bool force_reexecute() const         { return _force_reexecute; }
+  void set_force_reexecute()           { _force_reexecute = true; }
+
   // debugging
   void print()  PRODUCT_RETURN;
   void verify() PRODUCT_RETURN;
@@ -260,7 +280,8 @@ class ValueStack: public CompilationResourceObj {
   int temp_var = state->stack_size();                                                          \
   for (index = 0;                                                                              \
        index < temp_var && (value = state->stack_at(index), true);                             \
-       index += value->type()->size())
+       index += (value == nullptr ? 1 : value->type()->size()))                                \
+    if (value != nullptr)
 
 
 #define for_each_lock_value(state, index, value)                                               \

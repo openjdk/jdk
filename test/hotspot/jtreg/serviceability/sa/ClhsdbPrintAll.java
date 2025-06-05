@@ -32,6 +32,7 @@ import jtreg.SkippedException;
  * @bug 8175384
  * @summary Test clhsdb 'printall' command
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm/timeout=2400 -Xmx1g ClhsdbPrintAll
  */

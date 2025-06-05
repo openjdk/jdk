@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 * @summary Basic tests for jdk.internal.vm.Continuation
 * @requires vm.continuations
 * @modules java.base/jdk.internal.vm
+* @library /test/lib
 * @build java.base/java.lang.StackWalkerHelper
 *
 * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames -Xint Basic
@@ -44,6 +45,7 @@
 * @requires vm.continuations
 * @requires vm.debug
 * @modules java.base/jdk.internal.vm
+* @library /test/lib
 * @build java.base/java.lang.StackWalkerHelper
 *
 * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames -XX:+VerifyStack -Xint Basic
@@ -54,11 +56,16 @@
 import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationScope;
 
+import jdk.test.lib.Platform;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import com.sun.management.HotSpotDiagnosticMXBean;
+import java.lang.management.ManagementFactory;
 
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
@@ -92,7 +99,7 @@ public class Basic {
             assertEquals(cont.isPreempted(), false);
 
             List<String> frames = cont.stackWalker().walk(fs -> fs.map(StackWalker.StackFrame::getMethodName).collect(Collectors.toList()));
-            assertEquals(frames, cont.isDone() ? List.of() : Arrays.asList("yield", "bar", "foo", "lambda$test1$0", "run", "enter0", "enter"));
+            assertEquals(frames, cont.isDone() ? List.of() : Arrays.asList("yield0", "yield", "bar", "foo", "lambda$test1$0", "run", "enter0", "enter"));
         }
         assertEquals(res.get(), 247);
         assertEquals(cont.isPreempted(), false);
@@ -276,6 +283,8 @@ public class Basic {
 
     @Test
     public void testPinnedMonitor() {
+        if (!legacyLockingMode()) return;
+
         // Test pinning due to held monitor
         final AtomicReference<Continuation.Pinned> res = new AtomicReference<>();
 
@@ -409,5 +418,10 @@ public class Basic {
 
     static {
         System.loadLibrary("BasicJNI");
+    }
+
+    static boolean legacyLockingMode() {
+        return ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
+                    .getVMOption("LockingMode").getValue().equals("1");
     }
 }

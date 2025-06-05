@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8188248
+ * @bug      8188248 8313931
  * @summary  NullPointerException on generic methods
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -67,7 +67,7 @@ public class TestGenericMethodLinkTaglet extends JavadocTester {
 
         checkOutput("pkg/A.html", true,
                 """
-                    <a href="A.html" title="class in pkg"><code>A</code></a>""");
+                    param <a href="#m1(T)-type-param-T"><code>T</code></a>""");
     }
 
     void createTestClass(Path srcDir) throws Exception {

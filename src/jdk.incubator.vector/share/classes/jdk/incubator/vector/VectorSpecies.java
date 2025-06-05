@@ -272,7 +272,7 @@ public interface VectorSpecies<E> {
      * viewed as measuring the proportion of "dropped input bits"
      * which must be deleted from the input in order for the result to
      * fit in the output vector.  It is also the <em>part limit</em>,
-     * a upper exclusive limit on the {@code part} parameter to a
+     * an upper exclusive limit on the {@code part} parameter to a
      * method that would transform the input species to the output
      * species.
      *
@@ -392,7 +392,7 @@ public interface VectorSpecies<E> {
      * <li>{@linkplain Vector#reinterpretShape(VectorSpecies, int) Reinterpretation casts}
      * between vectors of preferred species will neither truncate
      * lanes nor fill them with default values.
-     * <li>For any particular element type, some platform might possibly
+     * <li>For any particular element type, some platform might
      * provide a {@linkplain #ofLargestShape(Class) larger vector shape}
      * that (as a trade-off) does not support all possible element types.
      * </ul>
@@ -548,7 +548,7 @@ public interface VectorSpecies<E> {
      *
      * <p> This method returns the value of this expression:
      * {@code EVector.broadcast(this, (ETYPE)e)}, where
-     * {@code EVector} is the vector class specific to the
+     * {@code EVector} is the vector class specific to
      * the {@code ETYPE} of this species.
      * The {@code long} value must be accurately representable
      * by {@code ETYPE}, so that {@code e==(long)(ETYPE)e}.

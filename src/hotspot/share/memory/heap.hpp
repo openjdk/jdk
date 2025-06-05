@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@
 #include "runtime/atomic.hpp"
 #include "utilities/macros.hpp"
 
+class ReservedSpace;
+
 // Blocks
 
 class HeapBlock {
@@ -38,8 +40,8 @@ class HeapBlock {
 
  public:
   struct Header {
-    size_t  _length;                             // the length in segments
-    bool    _used;                               // Used bit
+    uint32_t  _length;                           // the length in segments
+    bool      _used;                             // Used bit
   };
 
  protected:
@@ -51,9 +53,11 @@ class HeapBlock {
 
  public:
   // Initialization
-  void initialize(size_t length)                 { _header._length = length; set_used(); }
+  void initialize(size_t length)                 { set_length(length); set_used(); }
   // Merging/splitting
-  void set_length(size_t length)                 { _header._length = length; }
+  void set_length(size_t length)                 {
+    _header._length = checked_cast<uint32_t>(length);
+  }
 
   // Accessors
   void* allocated_space() const                  { return (void*)(this + 1); }
@@ -171,14 +175,9 @@ class CodeHeap : public CHeapObj<mtCode> {
 
   // Containment means "contained in committed space".
   bool contains(const void* p) const             { return low() <= p && p < high(); }
-  bool contains_blob(const CodeBlob* blob) const {
-    return contains((void*)blob);
-  }
 
   void* find_start(void* p)     const;   // returns the block containing p or null
   CodeBlob* find_blob(void* start) const;
-  size_t alignment_unit()       const;           // alignment of any block
-  size_t alignment_offset()     const;           // offset of first byte of any block, within the enclosing alignment unit
   static size_t header_size()         { return sizeof(HeapBlock); } // returns the header size for each heap block
 
   size_t segment_size()         const { return _segment_size; }  // for CodeHeapState

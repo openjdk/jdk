@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,10 +42,8 @@ import jdk.test.lib.util.ModuleInfoWriter;
  * @test
  * @bug 8151654 8183310
  * @summary Test default callback handler with all possible modular option.
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.module
+ * @enablePreview
+ * @modules java.base/jdk.internal.module
  * @library /test/lib
  * @build jdk.test.lib.util.JarUtils jdk.test.lib.util.ModuleInfoWriter
  * @build TestCallbackHandler TestLoginModule JaasClientWithDefaultHandler
@@ -170,7 +168,7 @@ public class JaasModularDefaultHandlerTest {
             }
             return !s.isEmpty();
         }).toArray(String[]::new);
-        OutputAnalyzer out = ProcessTools.executeTestJvm(safeArgs);
+        OutputAnalyzer out = ProcessTools.executeTestJava(safeArgs);
         // Handle response.
         if (out.getExitValue() != 0) {
             System.out.printf("OUTPUT: %s", out.getOutput());

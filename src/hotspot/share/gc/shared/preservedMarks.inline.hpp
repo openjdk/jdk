@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ inline void PreservedMarks::push_if_necessary(oop obj, markWord m) {
 }
 
 inline void PreservedMarks::push_always(oop obj, markWord m) {
-  assert(!m.is_marked(), "precondition");
+  assert(!m.is_forwarded(), "precondition");
   PreservedMark elem(obj, m);
   _stack.push(elem);
 }

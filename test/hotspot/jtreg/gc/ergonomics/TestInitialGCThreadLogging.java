@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,13 +70,13 @@ public class TestInitialGCThreadLogging {
 
   private static void testInitialGCThreadLogging(String gcFlag, String threadName) throws Exception {
     // Base test with gc and +UseDynamicNumberOfGCThreads:
-    ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilder(
+    OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
         "-XX:+UnlockExperimentalVMOptions",
         "-XX:+" + gcFlag,
         "-Xmx10M",
         "-XX:+UseDynamicNumberOfGCThreads",
         "-Xlog:gc+task=trace",
         "-version");
-    verifyDynamicNumberOfGCThreads(new OutputAnalyzer(pb_enabled.start()), threadName);
+    verifyDynamicNumberOfGCThreads(output, threadName);
   }
 }

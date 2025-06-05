@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,11 @@ import java.lang.reflect.Modifier;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Objects;
+
 import jdk.internal.classfile.impl.ClassHierarchyImpl;
 import jdk.internal.classfile.impl.Util;
+
 import static jdk.internal.classfile.impl.verifier.VerifierImpl.*;
-import static jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType.*;
 
 /**
  * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/verificationType.hpp">hotspot/share/classfile/verificationType.hpp</a>
@@ -116,7 +117,7 @@ class VerificationType {
                             Category1                    = (Category1Flag         << BitsPerByte) | Primitive,
                             Category2                    = (Category2Flag         << BitsPerByte) | Primitive,
                             Category2_2nd            = (Category2_2ndFlag << BitsPerByte) | Primitive,
-                            // Primitive values (type descriminator stored in most-signifcant bytes)
+                            // Primitive values (type discriminator stored in most-significant bytes)
                             // Bogus needs the " | Primitive".    Else, isReference(Bogus) returns TRUE.
                             Bogus                            = (ITEM_Bogus            << 2 * BitsPerByte) | Primitive,
                             Boolean                        = (ITEM_Boolean        << 2 * BitsPerByte) | Category1,
@@ -131,7 +132,7 @@ class VerificationType {
                             Double_2nd                 = (ITEM_Double_2nd << 2 * BitsPerByte) | Category2_2nd,
                             // Used by Uninitialized (second and third bytes hold the bci)
                             BciMask                        = 0xffff << BitsPerByte,
-                            // A bci of -1 is an Unintialized-This
+                            // A bci of -1 is an Uninitialized-This
                             BciForThis = 0xffff,
                             // Query values
                             ReferenceQuery         = (ReferenceFlag         << BitsPerByte) | TypeQuery,
@@ -212,7 +213,7 @@ class VerificationType {
         // the 'query' types should technically return 'false' here, if we
         // allow this to return true, we can perform the test using only
         // 2 operations rather than 8 (3 masks, 3 compares and 2 logical 'ands').
-        // Since noone should call this on a query type anyway, this is ok.
+        // Since no one should call this on a query type anyway, this is ok.
         if(is_check()) context.verifyError("Must not be a check type (wrong value returned)");
         // should only return false if it's a primitive, and the category1 flag
         // is not set.

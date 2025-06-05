@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,7 +209,7 @@ FreeColors(Display * display, Screen * screen, int numColors,
 }
 
 static void SplashCenter(Splash * splash) {
-    Atom type, atom, actual_type;
+    Atom atom, actual_type;
     int status, actual_format;
     unsigned long nitems, bytes_after;
     CARD16 *prop = NULL;
@@ -251,8 +251,6 @@ static void SplashUpdateSizeHints(Splash * splash) {
 
 void
 SplashCreateWindow(Splash * splash) {
-    XSizeHints sizeHints;
-
     XSetWindowAttributes attr;
 
     attr.backing_store = NotUseful;
@@ -379,33 +377,6 @@ sendctl(Splash * splash, char code) {
 }
 
 int
-HandleError(Display * disp, XErrorEvent * err) {
-    // silently ignore non-fatal errors
-    /*
-    char msg[0x1000];
-    char buf[0x1000];
-    XGetErrorText(disp, err->error_code, msg, sizeof(msg));
-    fprintf(stderr, "Xerror %s, XID %x, ser# %d\n", msg, err->resourceid,
-        err->serial);
-    snprintf(buf, sizeof(buf), "%d", err->request_code);
-    XGetErrorDatabaseText(disp, "XRequest", buf, "Unknown", msg, sizeof(msg));
-    fprintf(stderr, "Major opcode %d (%s)\n", err->request_code, msg);
-    if (err->request_code > 128) {
-        fprintf(stderr, "Minor opcode %d\n", err->minor_code);
-    }
-    */
-    return 0;
-}
-
-int
-HandleIOError(Display * display) {
-    // for really bad errors, we should exit the thread we're on
-    SplashCleanup(SplashGetInstance());
-    pthread_exit(NULL);
-    return 0;
-}
-
-int
 SplashInitPlatform(Splash * splash) {
     int shapeVersionMajor, shapeVersionMinor;
 
@@ -417,10 +388,6 @@ SplashInitPlatform(Splash * splash) {
 
     pthread_mutex_init(&splash->lock, NULL);
 
-    // We should not ignore any errors.
-    //XSetErrorHandler(HandleError);
-//    XSetIOErrorHandler(HandleIOError);
-    XSetIOErrorHandler(NULL);
     splash->display = XOpenDisplay(NULL);
     if (!splash->display) {
         splash->isVisible = -1;
@@ -771,10 +738,14 @@ void
 SplashCreateThread(Splash * splash) {
     pthread_t thr;
     pthread_attr_t attr;
-    int rc;
 
-    pthread_attr_init(&attr);
-    rc = pthread_create(&thr, &attr, SplashScreenThread, (void *) splash);
+    int rslt = pthread_attr_init(&attr);
+    if (rslt != 0) return;
+    rslt = pthread_create(&thr, &attr, SplashScreenThread, (void *) splash);
+    if (rslt != 0) {
+        fprintf(stderr, "Could not create SplashScreen thread, error number:%d\n", rslt);
+    }
+    pthread_attr_destroy(&attr);
 }
 
 void

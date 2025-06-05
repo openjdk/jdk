@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "jfr/jni/jfrJavaCall.hpp"
@@ -180,7 +179,7 @@ void JfrJavaArguments::Parameters::copy(JavaCallArguments& args, TRAPS) const {
   }
 }
 
-JfrJavaArguments::JfrJavaArguments(JavaValue* result) : _result(result), _klass(nullptr), _name(nullptr), _signature(nullptr), _array_length(-1) {
+JfrJavaArguments::JfrJavaArguments(JavaValue* result) : _result(result), _klass(nullptr), _name(nullptr), _signature(nullptr) {
   assert(result != nullptr, "invariant");
 }
 
@@ -188,8 +187,7 @@ JfrJavaArguments::JfrJavaArguments(JavaValue* result, const char* klass_name, co
   _result(result),
   _klass(nullptr),
   _name(nullptr),
-  _signature(nullptr),
-  _array_length(-1) {
+  _signature(nullptr) {
   assert(result != nullptr, "invariant");
   if (klass_name != nullptr) {
     set_klass(klass_name, CHECK);
@@ -205,8 +203,7 @@ JfrJavaArguments::JfrJavaArguments(JavaValue* result, const char* klass_name, co
 JfrJavaArguments::JfrJavaArguments(JavaValue* result, const Klass* klass, const Symbol* name, const Symbol* signature) : _result(result),
   _klass(nullptr),
   _name(nullptr),
-  _signature(nullptr),
-  _array_length(-1) {
+  _signature(nullptr) {
   assert(result != nullptr, "invariant");
   if (klass != nullptr) {
     set_klass(klass);
@@ -267,15 +264,6 @@ void JfrJavaArguments::set_signature(const char* signature) {
 void JfrJavaArguments::set_signature(const Symbol* signature) {
   assert(signature != nullptr, "invariant");
   _signature = signature;
-}
-
-int JfrJavaArguments::array_length() const {
-  return _array_length;
-}
-
-void JfrJavaArguments::set_array_length(int length) {
-  assert(length >= 0, "invariant");
-  _array_length = length;
 }
 
 JavaValue* JfrJavaArguments::result() const {

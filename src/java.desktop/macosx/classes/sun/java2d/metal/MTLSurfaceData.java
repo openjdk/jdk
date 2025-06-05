@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,7 @@ public abstract class MTLSurfaceData extends SurfaceData
         super(getCustomSurfaceType(type), cm);
         this.graphicsConfig = gc;
         this.type = type;
-        setBlitProxyKey(gc.getProxyKey());
+        setBlitProxyCache(gc.getSurfaceDataProxyCache());
 
         // TEXTURE shouldn't be scaled, it is used for managed BufferedImages.
         scale = type == TEXTURE ? 1 : gc.getDevice().getScaleFactor();

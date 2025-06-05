@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,10 @@
 package jdk.internal.util;
 
 import jdk.internal.misc.VM;
-import sun.security.action.GetPropertyAction;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HexFormat;
 import java.util.Objects;
 import java.util.Set;
@@ -80,7 +77,7 @@ public final class ClassFileDumper {
     private final AtomicInteger counter = new AtomicInteger();
 
     private ClassFileDumper(String key, String path) {
-        String value = GetPropertyAction.privilegedGetProperty(key);
+        String value = VM.getSavedProperty(key);
         this.key = key;
         boolean enabled = value != null && value.isEmpty() ? true : Boolean.parseBoolean(value);
         if (enabled) {
@@ -129,50 +126,39 @@ public final class ClassFileDumper {
         write(pathname(name + ".failed-" + counter.incrementAndGet()), bytes);
     }
 
-    @SuppressWarnings("removal")
     private void write(Path path, byte[] bytes) {
-        AccessController.doPrivileged(new PrivilegedAction<>() {
-            @Override public Void run() {
-                try {
-                    Files.createDirectories(path.getParent());
-                    Files.write(path, bytes);
-                } catch (Exception ex) {
-                    if (VM.isModuleSystemInited()) {
-                        // log only when lambda is ready to use
-                        System.getLogger(ClassFileDumper.class.getName())
-                              .log(System.Logger.Level.WARNING, "Exception writing to " +
-                                        path + " " + ex.getMessage());
-                    }
-                    // simply don't care if this operation failed
-                }
-                return null;
-            }});
+        try {
+            Files.createDirectories(path.getParent());
+            Files.write(path, bytes);
+        } catch (Exception ex) {
+            if (VM.isModuleSystemInited()) {
+                // log only when lambda is ready to use
+                System.getLogger(ClassFileDumper.class.getName())
+                        .log(System.Logger.Level.WARNING, "Exception writing to " +
+                                path + " " + ex.getMessage());
+            }
+            // simply don't care if this operation failed
+        }
     }
 
     /*
      * Validate if the given dir is a writeable directory if exists.
      */
-    @SuppressWarnings("removal")
     private static Path validateDumpDir(String dir) {
-        return AccessController.doPrivileged(new PrivilegedAction<>() {
-            @Override
-            public Path run() {
-                Path path = Path.of(dir);
-                if (Files.notExists(path)) {
-                    try {
-                        Files.createDirectories(path);
-                    } catch (IOException ex) {
-                        throw new IllegalArgumentException("Fail to create " + path, ex);
-                    }
-                }
-                if (!Files.isDirectory(path)) {
-                    throw new IllegalArgumentException("Path " + path + " is not a directory");
-                } else if (!Files.isWritable(path)) {
-                    throw new IllegalArgumentException("Directory " + path + " is not writable");
-                }
-                return path;
+        Path path = Path.of(dir);
+        if (Files.notExists(path)) {
+            try {
+                Files.createDirectories(path);
+            } catch (IOException ex) {
+                throw new IllegalArgumentException("Fail to create " + path, ex);
             }
-        });
+        }
+        if (!Files.isDirectory(path)) {
+            throw new IllegalArgumentException("Path " + path + " is not a directory");
+        } else if (!Files.isWritable(path)) {
+            throw new IllegalArgumentException("Directory " + path + " is not writable");
+        }
+        return path;
     }
 
     private static final HexFormat HEX = HexFormat.of().withUpperCase();

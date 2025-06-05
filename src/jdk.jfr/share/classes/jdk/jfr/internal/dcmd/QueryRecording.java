@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package jdk.jfr.internal.dcmd;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -37,18 +36,14 @@ import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.RepositoryChunk;
 import jdk.jfr.internal.query.Configuration;
-import jdk.jfr.internal.query.QueryPrinter;
-import jdk.jfr.internal.query.ViewPrinter;
 import jdk.jfr.internal.query.Configuration.Truncate;
 import jdk.jfr.internal.util.UserDataException;
-import jdk.jfr.internal.util.UserSyntaxException;
-import jdk.jfr.internal.util.Output;
 
 /**
  * Helper class that holds recording chunks alive during a query. It also helps
  * out with configuration shared by DCmdView and DCmdQuery
  */
-final class QueryRecording implements AutoCloseable {
+public final class QueryRecording implements AutoCloseable {
     private final long DEFAULT_MAX_SIZE = 32 * 1024 * 1024L;
     private final long DEFAULT_MAX_AGE = 60 * 10;
 
@@ -57,9 +52,19 @@ final class QueryRecording implements AutoCloseable {
     private final EventStream eventStream;
     private final Instant endTime;
 
-    public QueryRecording(Configuration configuration, ArgumentParser parser) throws IOException, DCmdException {
+    public QueryRecording(Instant startTime, Instant endTime) throws IOException {
+        this.recorder = PrivateAccess.getInstance().getPlatformRecorder();
+        this.endTime = endTime;
+        this.chunks = acquireChunks(startTime);
+        if (chunks.isEmpty()) {
+            throw new IOException("No recording data found on disk.");
+        }
+        eventStream = makeStream(startTime);
+    }
+
+    public QueryRecording(Configuration configuration, ArgumentParser parser) throws IOException, DCmdException, UserDataException {
         if (!FlightRecorder.isInitialized()) {
-            throw new DCmdException("No recording data available. Start a recording with JFR.start");
+            throw new DCmdException("No recording data available. Start a recording with JFR.start.");
         }
         recorder = PrivateAccess.getInstance().getPlatformRecorder();
         Boolean verbose = parser.getOption("verbose");
@@ -92,6 +97,9 @@ final class QueryRecording implements AutoCloseable {
             startTime = endTime.minus(Duration.ofSeconds(DEFAULT_MAX_AGE));
         }
         chunks = acquireChunks(startTime);
+        if (chunks.isEmpty()) {
+            throw new UserDataException("No recording data found on disk.");
+        }
         Instant streamStart = determineStreamStart(maxSize, startTime);
         configuration.startTime = streamStart;
         eventStream = makeStream(streamStart);
@@ -100,7 +108,10 @@ final class QueryRecording implements AutoCloseable {
     private List<RepositoryChunk> acquireChunks(Instant startTime) {
         synchronized (recorder) {
             List<RepositoryChunk> list = recorder.makeChunkList(startTime, endTime);
-            list.add(currentChunk());
+            RepositoryChunk current = currentChunk();
+            if (current != null) {
+                list.add(current);
+            }
             for (RepositoryChunk r : list) {
                 r.use();
             }

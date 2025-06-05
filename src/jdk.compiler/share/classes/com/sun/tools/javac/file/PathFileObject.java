@@ -355,6 +355,13 @@ public abstract class PathFileObject implements JavaFileObject {
     abstract PathFileObject getSibling(String basename);
 
     /**
+     * Returns whether this file object represents a file in a JAR archive.
+     */
+    boolean isJarFile() {
+        return this instanceof JarFileObject;
+    }
+
+    /**
      * Return the Path for this object.
      * @return the Path for this object.
      * @see StandardJavaFileManager#asPath

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "oops/constMethodFlags.hpp"
 #include "oops/oop.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 
 // An ConstMethod represents portions of a Java method which are not written to after
 // the classfile is parsed(*see below).  This part of the method can be shared across
@@ -324,7 +325,7 @@ public:
   static bool is_read_only_by_default() { return true; }
 
   // code size
-  int code_size() const                          { return _code_size; }
+  u2 code_size() const                          { return _code_size; }
   void set_code_size(int size) {
     assert(max_method_code_size < (1 << 16),
            "u2 is too small to hold method code size in general");
@@ -469,7 +470,6 @@ public:
 
   // Deallocation for RedefineClasses
   void deallocate_contents(ClassLoaderData* loader_data);
-  bool is_klass() const { return false; }
   DEBUG_ONLY(bool on_stack() { return false; })
 
   void metaspace_pointers_do(MetaspaceClosure* it);

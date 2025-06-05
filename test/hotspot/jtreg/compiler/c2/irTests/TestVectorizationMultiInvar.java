@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, 2025, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,8 @@ import java.util.Random;
 /*
  * @test
  * @bug 8300257
- * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64") |
+ *           (os.simpleArch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
  * @summary C2: vectorization fails on some simple Memory Segment loops
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
@@ -60,7 +61,7 @@ public class TestVectorizationMultiInvar {
     static long baseOffset = 0;
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testByteLong1(byte[] dest, long[] src) {
         for (int i = 0; i < src.length; i++) {
             long j = Objects.checkIndex(i * 8, (long)(src.length * 8));
@@ -75,7 +76,7 @@ public class TestVectorizationMultiInvar {
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_B, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testLoopNest1(byte[] dest, byte[] src,
                                      long start1, long stop1,
                                      long start2, long stop2,
@@ -106,7 +107,7 @@ public class TestVectorizationMultiInvar {
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_I, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testLoopNest2(int[] dest, int[] src,
                                      long start1, long stop1,
                                      long start2, long stop2,

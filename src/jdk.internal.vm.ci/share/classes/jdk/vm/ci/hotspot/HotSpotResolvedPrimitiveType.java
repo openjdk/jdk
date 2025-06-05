@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.util.Collections;
 import java.util.List;
 
 import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.common.NativeImageReinitialize;
 import jdk.vm.ci.meta.AnnotationData;
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.JavaConstant;
@@ -46,7 +45,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  */
 public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType {
 
-    @NativeImageReinitialize static HotSpotResolvedPrimitiveType[] primitives;
+    static HotSpotResolvedPrimitiveType[] primitives;
 
     private JavaKind kind;
     HotSpotObjectConstantImpl mirror;

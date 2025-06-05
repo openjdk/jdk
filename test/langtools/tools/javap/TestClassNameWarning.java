@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,12 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.classfile
  *      jdk.jdeps/com.sun.tools.javap
  * @build toolbox.JavacTask toolbox.JavapTask toolbox.ToolBox toolbox.TestRunner
  * @run main TestClassNameWarning
  */
 
+import java.lang.constant.ClassDesc;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,9 +43,8 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ClassWriter;
 
+import java.lang.classfile.*;
 import toolbox.JavacTask;
 import toolbox.JavapTask;
 import toolbox.Task;
@@ -140,7 +139,7 @@ public class TestClassNameWarning extends TestRunner {
         byte[] replaceBytes = "module-info".getBytes("UTF-8");
         for (int i = 0; i < bytes.length - searchBytes.length; i++) {
             if (Arrays.equals(bytes, i, i + searchBytes.length,
-                                searchBytes, 0, searchBytes.length)) {
+                    searchBytes, 0, searchBytes.length)) {
                 System.arraycopy(replaceBytes, 0, bytes, i, replaceBytes.length);
             }
         }
@@ -172,14 +171,15 @@ public class TestClassNameWarning extends TestRunner {
                 .files(tb.findJavaFiles(src))
                 .run()
                 .writeAll();
-
-        ClassFile cf = ClassFile.read(classes.resolve("A.class"));
-        ClassFile cf2 = new ClassFile(
-                cf.magic, cf.minor_version, cf.major_version, cf.constant_pool,
-                cf.access_flags,
-                0, // this_class,
-                cf.super_class, cf.interfaces, cf.fields, cf.methods, cf.attributes);
-        new ClassWriter().write(cf2, Files.newOutputStream(classes.resolve("Z.class")));
+        ClassModel cm = ClassFile.of().parse(classes.resolve("A.class"));
+        ClassFile.of().buildTo(
+                classes.resolve("Z.class"),
+                ClassDesc.of("0"), cb -> {
+                    for (ClassElement ce : cm) {
+                        cb.with(ce);
+                    }
+                }
+        );
 
         List<String> log = new JavapTask(tb)
                 .classpath(classes.toString())
@@ -238,4 +238,3 @@ public class TestClassNameWarning extends TestRunner {
         }
     }
 }
-

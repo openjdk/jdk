@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,9 +89,9 @@ public class TestUnstableStable {
                 stableArray1[0][0] = null;
                 stableArray1[0][0] = 42;
                 stableArray1[0][0] = 43;
-                U.putObject(TestUnstableStable.class, FIELD_OFFSET, null);
-                U.putObject(TestUnstableStable.class, FIELD_OFFSET, 42);
-                U.putObject(TestUnstableStable.class, FIELD_OFFSET, 43);
+                U.putReference(TestUnstableStable.class, FIELD_OFFSET, null);
+                U.putReference(TestUnstableStable.class, FIELD_OFFSET, 42);
+                U.putReference(TestUnstableStable.class, FIELD_OFFSET, 43);
             }
         }
     }

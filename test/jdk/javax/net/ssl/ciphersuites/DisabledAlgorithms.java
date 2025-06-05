@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8076221 8211883 8163327 8279164
+ * @bug 8076221 8211883 8163327 8279164 8245545
  * @summary Check if weak cipher suites are disabled
  * @library /javax/net/ssl/templates
  * @modules jdk.crypto.ec
@@ -124,7 +124,13 @@ public class DisabledAlgorithms {
             "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA",
             "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA",
             "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA",
-            "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA"
+            "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA",
+            "TLS_RSA_WITH_AES_256_GCM_SHA384",
+            "TLS_RSA_WITH_AES_128_GCM_SHA256",
+            "TLS_RSA_WITH_AES_256_CBC_SHA256",
+            "TLS_RSA_WITH_AES_128_CBC_SHA256",
+            "TLS_RSA_WITH_AES_256_CBC_SHA",
+            "TLS_RSA_WITH_AES_128_CBC_SHA"
     };
 
     public static void main(String[] args) throws Exception {

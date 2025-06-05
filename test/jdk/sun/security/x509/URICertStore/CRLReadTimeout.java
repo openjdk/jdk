@@ -28,11 +28,16 @@
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
  * @library /test/lib
- * @run main/othervm -Dcom.sun.security.crl.readtimeout=1 CRLReadTimeout 2000 false
- * @run main/othervm -Dcom.sun.security.crl.readtimeout=1s CRLReadTimeout 2000 false
- * @run main/othervm -Dcom.sun.security.crl.readtimeout=4 CRLReadTimeout 2000 true
- * @run main/othervm -Dcom.sun.security.crl.readtimeout=1500ms CRLReadTimeout 2000 false
- * @run main/othervm -Dcom.sun.security.crl.readtimeout=2750ms CRLReadTimeout 2000 true
+ * @run main/othervm -Dcom.sun.security.crl.readtimeout=1
+ *      CRLReadTimeout 5000 false
+ * @run main/othervm -Dcom.sun.security.crl.readtimeout=1s
+ *      CRLReadTimeout 5000 false
+ * @run main/othervm -Dcom.sun.security.crl.readtimeout=4
+ *      CRLReadTimeout 1000 true
+ * @run main/othervm -Dcom.sun.security.crl.readtimeout=1500ms
+ *      CRLReadTimeout 5000 false
+ * @run main/othervm -Dcom.sun.security.crl.readtimeout=4500ms
+ *      CRLReadTimeout 1000 true
  */
 
 import java.io.*;

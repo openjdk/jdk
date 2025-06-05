@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,14 +41,21 @@ import static java.lang.String.checkIndex;
 import static java.lang.String.checkOffset;
 
 final class StringLatin1 {
-
     public static char charAt(byte[] value, int index) {
         checkIndex(index, value.length);
         return (char)(value[index] & 0xff);
     }
 
+    public static boolean canEncode(char cp) {
+        return cp <= 0xff;
+    }
+
     public static boolean canEncode(int cp) {
-        return cp >>> 8 == 0;
+        return cp >=0 && cp <= 0xff;
+    }
+
+    public static byte coderFromChar(char cp) {
+        return (byte)((0xff - cp) >>> (Integer.SIZE - 1));
     }
 
     public static int length(byte[] value) {
@@ -185,20 +192,12 @@ final class StringLatin1 {
     }
 
     public static int hashCode(byte[] value) {
-        return switch (value.length) {
-            case 0 -> 0;
-            case 1 -> value[0] & 0xff;
-            default -> ArraysSupport.vectorizedHashCode(value, 0, value.length, 0, ArraysSupport.T_BOOLEAN);
-        };
+        return ArraysSupport.hashCodeOfUnsigned(value, 0, value.length, 0);
     }
 
+    // Caller must ensure that from- and toIndex are within bounds
     public static int indexOf(byte[] value, int ch, int fromIndex, int toIndex) {
         if (!canEncode(ch)) {
-            return -1;
-        }
-        fromIndex = Math.max(fromIndex, 0);
-        toIndex = Math.min(toIndex, value.length);
-        if (fromIndex >= toIndex) {
             return -1;
         }
         return indexOfChar(value, ch, fromIndex, toIndex);
@@ -420,10 +419,9 @@ final class StringLatin1 {
         }
         int first;
         final int len = value.length;
-        // Now check if there are any characters that need to be changed, or are surrogate
+        // Now check if there are any characters that need to be changed
         for (first = 0 ; first < len; first++) {
-            int cp = value[first] & 0xff;
-            if (cp != CharacterDataLatin1.instance.toLowerCase(cp)) {  // no need to check Character.ERROR
+            if (CharacterDataLatin1.instance.isUpperCase(value[first] & 0xff)) {
                 break;
             }
         }
@@ -437,12 +435,7 @@ final class StringLatin1 {
         System.arraycopy(value, 0, result, 0, first);  // Just copy the first few
                                                        // lowerCase characters.
         for (int i = first; i < len; i++) {
-            int cp = value[i] & 0xff;
-            cp = CharacterDataLatin1.instance.toLowerCase(cp);
-            if (!canEncode(cp)) {                      // not a latin1 character
-                return toLowerCaseEx(str, value, first, locale, false);
-            }
-            result[i] = (byte)cp;
+            result[i] = (byte)CharacterDataLatin1.instance.toLowerCase(value[i] & 0xff);
         }
         return new String(result, LATIN1);
     }
@@ -494,10 +487,11 @@ final class StringLatin1 {
         int first;
         final int len = value.length;
 
-        // Now check if there are any characters that need to be changed, or are surrogate
+        // Now check if there are any characters that need to be changed
         for (first = 0 ; first < len; first++ ) {
             int cp = value[first] & 0xff;
-            if (cp != CharacterDataLatin1.instance.toUpperCaseEx(cp)) {   // no need to check Character.ERROR
+            boolean notUpperCaseEx = cp >= 'a' && (cp <= 'z' || cp == 0xb5 || (cp >= 0xdf && cp != 0xf7));
+            if (notUpperCaseEx) {
                 break;
             }
         }
@@ -512,8 +506,7 @@ final class StringLatin1 {
         System.arraycopy(value, 0, result, 0, first);  // Just copy the first few
                                                        // upperCase characters.
         for (int i = first; i < len; i++) {
-            int cp = value[i] & 0xff;
-            cp = CharacterDataLatin1.instance.toUpperCaseEx(cp);
+            int cp = CharacterDataLatin1.instance.toUpperCaseEx(value[i] & 0xff);
             if (!canEncode(cp)) {                      // not a latin1 character
                 return toUpperCaseEx(str, value, first, locale, false);
             }
@@ -720,6 +713,21 @@ final class StringLatin1 {
         return StreamSupport.stream(LinesSpliterator.spliterator(value), false);
     }
 
+    public static void putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4) {
+        value[i] = (byte)c1;
+        value[i + 1] = (byte)c2;
+        value[i + 2] = (byte)c3;
+        value[i + 3] = (byte)c4;
+    }
+
+    public static void putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4, char c5) {
+        value[i] = (byte)c1;
+        value[i + 1] = (byte)c2;
+        value[i + 2] = (byte)c3;
+        value[i + 3] = (byte)c4;
+        value[i + 4] = (byte)c5;
+    }
+
     public static void putChar(byte[] val, int index, int c) {
         //assert (canEncode(c));
         val[index] = (byte)(c);
@@ -751,10 +759,6 @@ final class StringLatin1 {
         }
         return new String(Arrays.copyOfRange(val, index, index + len),
                           LATIN1);
-    }
-
-    public static void fillNull(byte[] val, int index, int end) {
-        Arrays.fill(val, index, end, (byte)0);
     }
 
     // inflatedCopy byte[] -> char[]
