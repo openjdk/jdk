@@ -151,14 +151,13 @@ final class LauncherData {
         }
 
         if (launcherData.moduleInfo == null) {
-            throw new ConfigException(MessageFormat.format(I18N.getString(
-                    "error.no-module-in-path"), moduleName), null);
+            throw I18N.buildConfigException("error.no-module-in-path", moduleName).create();
         }
 
         if (launcherData.qualifiedClassName == null) {
             launcherData.qualifiedClassName = launcherData.moduleInfo.mainClass().orElse(null);
             if (launcherData.qualifiedClassName == null) {
-                throw new ConfigException(I18N.getString("ERR_NoMainClass"), null);
+                throw I18N.buildConfigException("ERR_NoMainClass").create();
             }
         }
 
@@ -179,10 +178,10 @@ final class LauncherData {
         if (launcherData.mainJarName != null && mainJarDir != null) {
             mainJarPath = mainJarDir.resolve(launcherData.mainJarName);
             if (!Files.exists(mainJarPath)) {
-                throw new ConfigException(MessageFormat.format(I18N.getString(
-                        "error.main-jar-does-not-exist"),
-                        launcherData.mainJarName), I18N.getString(
-                        "error.main-jar-does-not-exist.advice"));
+                throw I18N.buildConfigException()
+                        .message("error.main-jar-does-not-exist", launcherData.mainJarName)
+                        .advice("error.main-jar-does-not-exist.advice")
+                        .create();
             }
         } else {
             mainJarPath = null;
@@ -190,8 +189,10 @@ final class LauncherData {
 
         if (launcherData.qualifiedClassName == null) {
             if (mainJarPath == null) {
-                throw new ConfigException(I18N.getString("error.no-main-class"),
-                        I18N.getString("error.no-main-class.advice"));
+                throw I18N.buildConfigException()
+                        .message("error.no-main-class")
+                        .advice("error.no-main-class.advice")
+                        .create();
             }
 
             try (JarFile jf = new JarFile(mainJarPath.toFile())) {
@@ -206,12 +207,10 @@ final class LauncherData {
         }
 
         if (launcherData.qualifiedClassName == null) {
-            throw new ConfigException(MessageFormat.format(I18N.getString(
-                    "error.no-main-class-with-main-jar"),
-                    launcherData.mainJarName), MessageFormat.format(
-                            I18N.getString(
-                                    "error.no-main-class-with-main-jar.advice"),
-                            launcherData.mainJarName));
+            throw I18N.buildConfigException()
+                    .message("error.no-main-class-with-main-jar", launcherData.mainJarName)
+                    .advice("error.no-main-class-with-main-jar.advice", launcherData.mainJarName)
+                    .create();
         }
 
         return launcherData;
