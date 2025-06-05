@@ -4534,19 +4534,20 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             this.type = type;
             this.cmin = cmin;
             this.cmax = cmax;
-            /*
-            if (node instanceof SliceNode s && s.length() <= 0) {
-                //We are dealing with a zero length match
-                //Tune quantifier attempts downward
-                this.cmin = this.cmin <= 0 ? 0 : 1;
-                this.cmax = 1;
-            }
-             */
         }
         boolean match(Matcher matcher, int i, CharSequence seq) {
             int j;
             for (j = 0; j < cmin; j++) {
                 if (atom.match(matcher, i, seq)) {
+                    int k = matcher.last - i;
+                    if (k == 0) { // Zero length match
+                        // We have a Curly quantifier that is
+                        // performing a matching zero-length match.
+                        // Repeating it will not change the result
+                        // or consume any input on the string
+                        // so we short circuit and advance to the next node.
+                        return next.match(matcher, i, seq);
+                    }
                     i = matcher.last;
                     continue;
                 }
@@ -4692,19 +4693,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             this.localIndex = local;
             this.groupIndex = group;
             this.capture = capture;
-
-            /*
-            if (node instanceof SliceNode s && s.length() <= 0) {
-                //We are dealing with a zero length match
-                this.cmin = this.cmin <= 0 ? 0 : 1;
-                this.cmax = 1;
-            } else if (node instanceof GroupTail) {
-                // We are dealing with an empty group
-                this.cmin = this.cmin <= 0 ? 0 : 1;
-                this.cmax = 1;
-            }
-             */
         }
+
         boolean match(Matcher matcher, int i, CharSequence seq) {
             int[] groups = matcher.groups;
             int[] locals = matcher.locals;
@@ -4727,6 +4717,15 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                     if (capture) {
                         groups[groupIndex] = i;
                         groups[groupIndex+1] = matcher.last;
+                    }
+                    int k = matcher.last - i;
+                    if (k == 0) { // Zero length match
+                        // We have a Curly quantifier that is
+                        // performing a matching zero-length match.
+                        // Repeating it will not change the result
+                        // or consume any input on the string
+                        // so we short circuit and advance to the next node.
+                        return next.match(matcher, i, seq);
                     }
                     i = matcher.last;
                 } else {
