@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,6 @@
  * @summary Tests correctness of string related intrinsics and C2 optimizations.
  * @library /test/lib
  *
- * @run main/timeout=240 compiler.intrinsics.string.TestStringIntrinsics
- */
-
-/*
- * @test id=stringConcatInline
- * @bug 8054307
- * @summary The same test with an updated compile directive that produces
- *          StringBuilder-backed string concatenations.
- * @library /test/lib
- *
- * @compile -XDstringConcat=inline TestStringIntrinsics.java
  * @run main/timeout=240 compiler.intrinsics.string.TestStringIntrinsics
  */
 
