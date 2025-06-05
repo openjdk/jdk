@@ -269,15 +269,7 @@ public class FileChannelImpl
             start = FileReadEvent.timestamp();
             bytesRead = implRead(dst);
         } finally {
-            long end = FileReadEvent.timestamp();
-            long duration = end - start;
-            if (FileReadEvent.shouldThrottleCommit(duration, end)) {
-                if (bytesRead < 0) {
-                    FileReadEvent.commit(start, duration, path, 0L, true);
-                } else {
-                    FileReadEvent.commit(start, duration, path, bytesRead, false);
-                }
-            }
+            FileReadEvent.offer(start, path, bytesRead);
         }
         return bytesRead;
     }
@@ -333,14 +325,7 @@ public class FileChannelImpl
             bytesRead = implRead(dsts, offset, length);
         } finally {
             long end = FileReadEvent.timestamp();
-            long duration = end - start;
-            if (FileReadEvent.shouldThrottleCommit(duration, end)) {
-                if (bytesRead < 0) {
-                    FileReadEvent.commit(start, duration, path, 0L, true);
-                } else {
-                    FileReadEvent.commit(start, duration, path, bytesRead, false);
-                }
-            }
+            FileReadEvent.offer(start, path, bytesRead);
         }
         return bytesRead;
     }
@@ -386,20 +371,15 @@ public class FileChannelImpl
     }
 
     private int traceImplWrite(ByteBuffer src) throws IOException {
-        int bytesWritten = 0;
+        int bytes = 0;
         long start = 0;
         try {
             start = FileWriteEvent.timestamp();
-            bytesWritten = implWrite(src);
+            bytes = implWrite(src);
         } finally {
-            long end = FileWriteEvent.timestamp();
-            long duration = end - start;
-            if (FileWriteEvent.shouldThrottleCommit(duration, end)) {
-                long bytes = bytesWritten > 0 ? bytesWritten : 0;
-                FileWriteEvent.commit(start, duration, path, bytes);
-            }
+            FileWriteEvent.offer(start, path, bytes);
         }
-        return bytesWritten;
+        return bytes;
     }
 
     @Override
@@ -449,12 +429,7 @@ public class FileChannelImpl
             start = FileWriteEvent.timestamp();
             bytesWritten = implWrite(srcs, offset, length);
         } finally {
-            long end = FileWriteEvent.timestamp();
-            long duration = end - start;
-            if (FileWriteEvent.shouldThrottleCommit(duration, end)) {
-                long bytes = bytesWritten > 0 ? bytesWritten : 0;
-                FileWriteEvent.commit(start, duration, path, bytes);
-            }
+            FileWriteEvent.offer(start, path, bytesWritten);
         }
         return bytesWritten;
     }
@@ -1208,15 +1183,7 @@ public class FileChannelImpl
             start = FileReadEvent.timestamp();
             bytesRead = implRead(dst, position);
         } finally {
-            long end = FileReadEvent.timestamp();
-            long duration = end - start;
-            if (FileReadEvent.shouldThrottleCommit(duration, end)) {
-                if (bytesRead < 0) {
-                    FileReadEvent.commit(start, duration, path, 0L, true);
-                } else {
-                    FileReadEvent.commit(start, duration, path, bytesRead, false);
-                }
-            }
+            FileReadEvent.offer(start, path, bytesRead);
         }
         return bytesRead;
     }
@@ -1281,12 +1248,8 @@ public class FileChannelImpl
             start = FileWriteEvent.timestamp();
             bytesWritten = implWrite(src, position);
         } finally {
-            long end = FileWriteEvent.timestamp();
-            long duration = end - start;
-            if (FileWriteEvent.shouldThrottleCommit(duration, end)) {
-                long bytes = bytesWritten > 0 ? bytesWritten : 0;
-                FileWriteEvent.commit(start, duration, path, bytes);
-            }
+            long bytes = bytesWritten > 0 ? bytesWritten : 0;
+            FileWriteEvent.offer(start, path, bytes);
         }
         return bytesWritten;
     }

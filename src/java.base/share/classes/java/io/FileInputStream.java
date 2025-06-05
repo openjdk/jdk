@@ -205,24 +205,18 @@ public class FileInputStream extends InputStream
 
     private int traceRead0() throws IOException {
         int result = 0;
-        boolean endOfFile = false;
         long bytesRead = 0;
         long start = 0;
         try {
             start = FileReadEvent.timestamp();
             result = read0();
             if (result < 0) {
-                endOfFile = true;
+                bytesRead = -1;
             } else {
                 bytesRead = 1;
             }
         } finally {
-            long end = FileReadEvent.timestamp();
-            long duration = end - start;
-            if (FileReadEvent.shouldThrottleCommit(duration, end)) {
-                FileReadEvent.commit(start, duration, path, bytesRead, endOfFile);
-            }
-
+            FileReadEvent.offer(start, path, bytesRead);
         }
         return result;
     }
@@ -243,15 +237,7 @@ public class FileInputStream extends InputStream
             start = FileReadEvent.timestamp();
             bytesRead = readBytes(b, off, len);
         } finally {
-            long end = FileReadEvent.timestamp();
-            long duration = end - start;
-            if (FileReadEvent.shouldThrottleCommit(duration, end)) {
-                if (bytesRead < 0) {
-                    FileReadEvent.commit(start, duration, path, 0L, true);
-                } else {
-                    FileReadEvent.commit(start, duration, path, bytesRead, false);
-                }
-            }
+            FileReadEvent.offer(start, path, bytesRead);
         }
         return bytesRead;
     }

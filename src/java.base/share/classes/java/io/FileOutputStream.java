@@ -272,11 +272,7 @@ public class FileOutputStream extends OutputStream
             write(b, append);
             bytesWritten = 1;
         } finally {
-            long end = FileWriteEvent.timestamp();
-            long duration = end - start;
-            if (FileWriteEvent.shouldThrottleCommit(duration, end)) {
-                FileWriteEvent.commit(start, duration, path, bytesWritten);
-            }
+            FileWriteEvent.offer(start, path, bytesWritten);
         }
     }
 
@@ -317,11 +313,7 @@ public class FileOutputStream extends OutputStream
             writeBytes(b, off, len, append);
             bytesWritten = len;
         } finally {
-            long end = FileWriteEvent.timestamp();
-            long duration = end - start;
-            if (FileWriteEvent.shouldThrottleCommit(duration, end)) {
-                FileWriteEvent.commit(start, duration, path, bytesWritten);
-            }
+            FileWriteEvent.offer(start, path, bytesWritten);
         }
     }
 

@@ -367,22 +367,17 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     private int traceRead0() throws IOException {
         int result = 0;
         long bytesRead = 0;
-        boolean endOfFile = false;
         long start = 0;
         try {
             start = FileReadEvent.timestamp();
             result = read0();
             if (result < 0) {
-                endOfFile = true;
+                bytesRead = -1;
             } else {
                 bytesRead = 1;
             }
         } finally {
-            long end = FileReadEvent.timestamp();
-            long duration = end - start;
-            if (FileReadEvent.shouldThrottleCommit(duration, end)) {
-                FileReadEvent.commit(start, duration, path, bytesRead, endOfFile);
-            }
+            FileReadEvent.offer(start, path, bytesRead);
         }
         return result;
     }
@@ -410,15 +405,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
             start = FileReadEvent.timestamp();
             bytesRead = readBytes0(b, off, len);
         } finally {
-            long end = FileReadEvent.timestamp();
-            long duration = end - start;
-            if (FileReadEvent.shouldThrottleCommit(duration, end)) {
-                if (bytesRead < 0) {
-                    FileReadEvent.commit(start, duration, path, 0L, true);
-                } else {
-                    FileReadEvent.commit(start, duration, path, bytesRead, false);
-                }
-            }
+            FileReadEvent.offer(start, path, bytesRead);
         }
         return bytesRead;
     }
@@ -590,11 +577,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
             implWrite(b);
             bytesWritten = 1;
         } finally {
-            long end = FileWriteEvent.timestamp();
-            long duration =  end - start;
-            if (FileWriteEvent.shouldThrottleCommit(duration, end)) {
-                FileWriteEvent.commit(start, duration, path, bytesWritten);
-            }
+            FileWriteEvent.offer(start, path, bytesWritten);
         }
     }
 
@@ -633,11 +616,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
             implWriteBytes(b, off, len);
             bytesWritten = len;
         } finally {
-            long end = FileWriteEvent.timestamp();
-            long duration = end - start;
-            if (FileWriteEvent.shouldThrottleCommit(duration, end)) {
-                FileWriteEvent.commit(start, duration, path, bytesWritten);
-            }
+            FileWriteEvent.offer(start, path, bytesWritten);
         }
     }
 
