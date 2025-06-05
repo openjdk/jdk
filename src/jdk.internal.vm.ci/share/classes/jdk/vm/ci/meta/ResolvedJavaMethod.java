@@ -115,6 +115,12 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
     boolean isDefault();
 
     /**
+     * Returns {@code true} if this method is contained in the array returned by
+     * {@code getDeclaringClass().getDeclaredMethods()}
+     */
+    boolean isDeclared();
+
+    /**
      * Checks whether this method is a class initializer.
      *
      * @return {@code true} if the method is a class initializer

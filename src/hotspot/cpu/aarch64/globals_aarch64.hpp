@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -95,6 +95,8 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Use simplest and shortest implementation for array equals")  \
   product(bool, UseSIMDForBigIntegerShiftIntrinsics, true,              \
           "Use SIMD instructions for left/right shift of BigInteger")   \
+  product(bool, UseSIMDForSHA3Intrinsic, true,                          \
+          "Use SIMD SHA3 instructions for SHA3 intrinsic")              \
   product(bool, AvoidUnalignedAccesses, false,                          \
           "Avoid generating unaligned memory accesses")                 \
   product(bool, UseLSE, false,                                          \

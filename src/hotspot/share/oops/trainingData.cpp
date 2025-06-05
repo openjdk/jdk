@@ -432,24 +432,11 @@ void KlassTrainingData::print_on(outputStream* st, bool name_only) const {
 }
 
 KlassTrainingData::KlassTrainingData(InstanceKlass* klass) : TrainingData(klass) {
-  if (holder() == klass) {
-    return;   // no change to make
-  }
-
-  jobject hmj = _holder_mirror;
-  if (hmj != nullptr) {   // clear out previous handle, if any
-    _holder_mirror = nullptr;
-    assert(JNIHandles::is_global_handle(hmj), "");
-    JNIHandles::destroy_global(hmj);
-  }
-
-  if (klass != nullptr) {
-    Handle hm(JavaThread::current(), klass->java_mirror());
-    hmj = JNIHandles::make_global(hm);
-    Atomic::release_store(&_holder_mirror, hmj);
-  }
-
-  Atomic::release_store(&_holder, const_cast<InstanceKlass*>(klass));
+  assert(klass != nullptr, "");
+  Handle hm(JavaThread::current(), klass->java_mirror());
+  jobject hmj = JNIHandles::make_global(hm);
+  _holder_mirror = hmj;
+  _holder = klass;
   assert(holder() == klass, "");
 }
 

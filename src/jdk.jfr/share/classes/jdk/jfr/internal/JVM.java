@@ -271,6 +271,16 @@ public final class JVM {
     public static native void setMethodSamplingPeriod(long type, long periodMillis);
 
     /**
+     * Set the maximum event emission rate for the CPU time sampler
+     *
+     * Setting rate to 0 turns off the CPU time sampler.
+     *
+     * @param rate the new rate in events per second
+     * @param autoAdapt true if the rate should be adapted automatically
+     */
+    public static native void setCPUThrottle(double rate, boolean autoAdapt);
+
+    /**
      * Sets the file where data should be written.
      *
      * Requires that JFR has been started with {@link #createNativeJFR()}

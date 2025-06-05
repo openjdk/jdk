@@ -31,7 +31,6 @@ import static jdk.test.lib.Utils.*;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @test
@@ -64,8 +63,7 @@ public class StdinEncodingTest {
             "-Dstdin.encoding=Uppercasing", // <- gist of this test
             "StdinEncodingTest");
         output.reportDiagnosticSummary();
-        var eval = output.getExitValue();
-        assertEquals(0, eval, "Test failed. Exit value from 'expect' command: " + eval);
+        output.shouldHaveExitValue(0);
     }
 
     public static void main(String... args) throws Throwable {
