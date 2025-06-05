@@ -37,19 +37,18 @@
 #include "utilities/align.hpp"
 
 PSOldGen::PSOldGen(ReservedSpace rs, size_t initial_size, size_t min_size,
-                   size_t max_size, const char* perf_data_name, int level):
+                   size_t max_size):
   _min_gen_size(min_size),
   _max_gen_size(max_size)
 {
-  initialize(rs, initial_size, GenAlignment, perf_data_name, level);
+  initialize(rs, initial_size, GenAlignment);
 }
 
-void PSOldGen::initialize(ReservedSpace rs, size_t initial_size, size_t alignment,
-                          const char* perf_data_name, int level) {
+void PSOldGen::initialize(ReservedSpace rs, size_t initial_size, size_t alignment) {
   initialize_virtual_space(rs, initial_size, alignment);
-  initialize_work(perf_data_name, level);
+  initialize_work();
 
-  initialize_performance_counters(perf_data_name, level);
+  initialize_performance_counters();
 }
 
 void PSOldGen::initialize_virtual_space(ReservedSpace rs,
@@ -63,12 +62,9 @@ void PSOldGen::initialize_virtual_space(ReservedSpace rs,
   }
 }
 
-void PSOldGen::initialize_work(const char* perf_data_name, int level) {
+void PSOldGen::initialize_work() {
   MemRegion const reserved_mr = reserved();
   assert(reserved_mr.byte_size() == max_gen_size(), "invariant");
-
-  // Object start stuff: for all reserved memory
-  start_array()->initialize(reserved_mr);
 
   // Card table stuff: for all committed memory
   MemRegion committed_mr((HeapWord*)virtual_space()->low(),
@@ -108,12 +104,13 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
                              &ParallelScavengeHeap::heap()->workers());
 
   // Update the start_array
+  _start_array = new ObjectStartArray(reserved_mr);
   start_array()->set_covered_region(committed_mr);
 }
 
-void PSOldGen::initialize_performance_counters(const char* perf_data_name, int level) {
-  // Generation Counters, generation 'level', 1 subspace
-  _gen_counters = new GenerationCounters(perf_data_name, level, 1, min_gen_size(),
+void PSOldGen::initialize_performance_counters() {
+  const char* perf_data_name = "old";
+  _gen_counters = new GenerationCounters(perf_data_name, 1, 1, min_gen_size(),
                                          max_gen_size(), virtual_space()->committed_size());
   _space_counters = new SpaceCounters(perf_data_name, 0,
                                       virtual_space()->reserved_size(),
@@ -262,8 +259,9 @@ bool PSOldGen::expand_to_reserved() {
 }
 
 void PSOldGen::shrink(size_t bytes) {
-  assert_lock_strong(PSOldGenExpand_lock);
-  assert_locked_or_safepoint(Heap_lock);
+  assert(Thread::current()->is_VM_thread(), "precondition");
+  assert(SafepointSynchronize::is_at_safepoint(), "precondition");
+  assert(bytes > 0, "precondition");
 
   size_t size = align_down(bytes, virtual_space()->alignment());
   if (size > 0) {
@@ -281,7 +279,7 @@ void PSOldGen::complete_loaded_archive_space(MemRegion archive_space) {
   HeapWord* cur = archive_space.start();
   while (cur < archive_space.end()) {
     size_t word_size = cast_to_oop(cur)->size();
-    _start_array.update_for_block(cur, cur + word_size);
+    _start_array->update_for_block(cur, cur + word_size);
     cur += word_size;
   }
 }
@@ -314,11 +312,9 @@ void PSOldGen::resize(size_t desired_free_space) {
   }
   if (new_size > current_size) {
     size_t change_bytes = new_size - current_size;
-    MutexLocker x(PSOldGenExpand_lock);
     expand(change_bytes);
   } else {
     size_t change_bytes = current_size - new_size;
-    MutexLocker x(PSOldGenExpand_lock);
     shrink(change_bytes);
   }
 
@@ -359,15 +355,12 @@ void PSOldGen::post_resize() {
 
 void PSOldGen::print() const { print_on(tty);}
 void PSOldGen::print_on(outputStream* st) const {
-  st->print(" %-15s", name());
-  st->print(" total %zuK, used %zuK",
-              capacity_in_bytes()/K, used_in_bytes()/K);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-                p2i(virtual_space()->low_boundary()),
-                p2i(virtual_space()->high()),
-                p2i(virtual_space()->high_boundary()));
+  st->print("%-15s", name());
+  st->print(" total %zuK, used %zuK ", capacity_in_bytes() / K, used_in_bytes() / K);
+  virtual_space()->print_space_boundaries_on(st);
 
-  st->print("  object"); object_space()->print_on(st);
+  StreamIndentor si(st, 1);
+  object_space()->print_on(st, "object ");
 }
 
 void PSOldGen::update_counters() {

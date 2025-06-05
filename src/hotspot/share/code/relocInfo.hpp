@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -451,6 +451,8 @@ class relocInfo {
     length_limit       = 1 + 1 + (3*BytesPerWord/BytesPerShort) + 1,
     have_format        = format_width > 0
   };
+
+  static const char* type_name(relocInfo::relocType t);
 };
 
 #define FORWARD_DECLARE_EACH_CLASS(name)              \
@@ -574,7 +576,7 @@ class RelocIterator : public StackObj {
 
   void set_has_current(bool b) {
     _datalen = !b ? -1 : 0;
-    debug_only(_data = nullptr);
+    DEBUG_ONLY(_data = nullptr);
   }
   void set_current(relocInfo& ri) {
     _current = &ri;
@@ -600,6 +602,7 @@ class RelocIterator : public StackObj {
   // constructor
   RelocIterator(nmethod* nm, address begin = nullptr, address limit = nullptr);
   RelocIterator(CodeSection* cb, address begin = nullptr, address limit = nullptr);
+  RelocIterator(CodeBlob* cb);
 
   // get next reloc info, return !eos
   bool next() {
@@ -638,11 +641,11 @@ class RelocIterator : public StackObj {
   bool   addr_in_const()      const;
 
   address section_start(int n) const {
-    assert(_section_start[n], "must be initialized");
+    assert(_section_start[n], "section %d must be initialized", n);
     return _section_start[n];
   }
   address section_end(int n) const {
-    assert(_section_end[n], "must be initialized");
+    assert(_section_end[n], "section %d must be initialized", n);
     return _section_end[n];
   }
 
@@ -658,11 +661,9 @@ class RelocIterator : public StackObj {
   // generic relocation accessor; switches on type to call the above
   Relocation* reloc();
 
-#ifndef PRODUCT
  public:
-  void print();
-  void print_current();
-#endif
+  void print_on(outputStream* st);
+  void print_current_on(outputStream* st);
 };
 
 
@@ -672,6 +673,7 @@ class RelocIterator : public StackObj {
 
 class Relocation {
   friend class RelocIterator;
+  friend class AOTCodeReader;
 
  private:
   // When a relocation has been created by a RelocIterator,
@@ -1377,6 +1379,8 @@ class internal_word_Relocation : public DataRelocation {
   void unpack_data() override;
 
   void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) override;
+  void fix_relocation_after_aot_load(address orig_base_addr, address current_base_addr);
+
   address  target();        // if _target==nullptr, fetch addr from code stream
   int      section()        { return _section;   }
   address  value() override { return target();   }

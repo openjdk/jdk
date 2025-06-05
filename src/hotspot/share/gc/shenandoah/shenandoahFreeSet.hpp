@@ -26,8 +26,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFREESET_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHFREESET_HPP
 
-#include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 
 // Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
@@ -39,12 +39,6 @@ enum class ShenandoahFreeSetPartitionId : uint8_t {
   NotFree                       // Region is in no free set: it has no available memory
 };
 
-// We do not maintain counts, capacity, or used for regions that are not free.  Informally, if a region is NotFree, it is
-// in no partition.  NumPartitions represents the size of an array that may be indexed by Mutator or Collector.
-#define NumPartitions           (ShenandoahFreeSetPartitionId::NotFree)
-#define IntNumPartitions     int(ShenandoahFreeSetPartitionId::NotFree)
-#define UIntNumPartitions   uint(ShenandoahFreeSetPartitionId::NotFree)
-
 // ShenandoahRegionPartitions provides an abstraction to help organize the implementation of ShenandoahFreeSet.  This
 // class implements partitioning of regions into distinct sets.  Each ShenandoahHeapRegion is either in the Mutator free set,
 // the Collector free set, or in neither free set (NotFree).  When we speak of a "free partition", we mean partitions that
@@ -52,6 +46,12 @@ enum class ShenandoahFreeSetPartitionId : uint8_t {
 class ShenandoahRegionPartitions {
 
 private:
+  // We do not maintain counts, capacity, or used for regions that are not free.  Informally, if a region is NotFree, it is
+  // in no partition.  NumPartitions represents the size of an array that may be indexed by Mutator or Collector.
+  static constexpr ShenandoahFreeSetPartitionId NumPartitions     =      ShenandoahFreeSetPartitionId::NotFree;
+  static constexpr int                          IntNumPartitions  =  int(ShenandoahFreeSetPartitionId::NotFree);
+  static constexpr uint                         UIntNumPartitions = uint(ShenandoahFreeSetPartitionId::NotFree);
+
   const ssize_t _max;           // The maximum number of heap regions
   const size_t _region_size_bytes;
   const ShenandoahFreeSet* _free_set;
@@ -80,6 +80,7 @@ private:
   // and _used[p], even though the region may have been removed from the free set.
   size_t _capacity[UIntNumPartitions];
   size_t _used[UIntNumPartitions];
+  size_t _available[UIntNumPartitions];
   size_t _region_counts[UIntNumPartitions];
 
   // For each partition p, _left_to_right_bias is true iff allocations are normally made from lower indexed regions
@@ -107,6 +108,8 @@ private:
 public:
   ShenandoahRegionPartitions(size_t max_regions, ShenandoahFreeSet* free_set);
   ~ShenandoahRegionPartitions() {}
+
+  static const size_t FreeSetUnderConstruction = SIZE_MAX;
 
   // Remove all regions from all partitions and reset all bounds
   void make_all_regions_unavailable();
@@ -220,17 +223,43 @@ public:
 
   inline size_t available_in(ShenandoahFreeSetPartitionId which_partition) const {
     assert (which_partition < NumPartitions, "selected free set must be valid");
-    return _capacity[int(which_partition)] - _used[int(which_partition)];
+    shenandoah_assert_heaplocked();
+    assert(_available[int(which_partition)] == _capacity[int(which_partition)] - _used[int(which_partition)],
+           "Expect available (%zu) equals capacity (%zu) - used (%zu) for partition %s",
+           _available[int(which_partition)], _capacity[int(which_partition)], _used[int(which_partition)],
+           partition_membership_name(ssize_t(which_partition)));
+    return _available[int(which_partition)];
+  }
+
+  // Return available_in assuming caller does not hold the heap lock.  In production builds, available is
+  // returned without acquiring the lock.  In debug builds, the global heap lock is acquired in order to
+  // enforce a consistency assert.
+  inline size_t available_in_not_locked(ShenandoahFreeSetPartitionId which_partition) const {
+    assert (which_partition < NumPartitions, "selected free set must be valid");
+    shenandoah_assert_not_heaplocked();
+#ifdef ASSERT
+    ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock());
+    assert((_available[int(which_partition)] == FreeSetUnderConstruction) ||
+           (_available[int(which_partition)] == _capacity[int(which_partition)] - _used[int(which_partition)]),
+           "Expect available (%zu) equals capacity (%zu) - used (%zu) for partition %s",
+           _available[int(which_partition)], _capacity[int(which_partition)], _used[int(which_partition)],
+           partition_membership_name(ssize_t(which_partition)));
+#endif
+    return _available[int(which_partition)];
   }
 
   inline void set_capacity_of(ShenandoahFreeSetPartitionId which_partition, size_t value) {
+    shenandoah_assert_heaplocked();
     assert (which_partition < NumPartitions, "selected free set must be valid");
     _capacity[int(which_partition)] = value;
+    _available[int(which_partition)] = value - _used[int(which_partition)];
   }
 
   inline void set_used_by(ShenandoahFreeSetPartitionId which_partition, size_t value) {
+    shenandoah_assert_heaplocked();
     assert (which_partition < NumPartitions, "selected free set must be valid");
     _used[int(which_partition)] = value;
+    _available[int(which_partition)] = _capacity[int(which_partition)] - value;
   }
 
   inline size_t count(ShenandoahFreeSetPartitionId which_partition) const { return _region_counts[int(which_partition)]; }
@@ -323,9 +352,12 @@ private:
   //
   // Typical usage: During evacuation, the GC may find it needs more memory than had been reserved at the start of evacuation to
   // hold evacuated objects.  If this occurs and memory is still available in the Mutator's free set, we will flip a region from
-  // the Mutator free set into the Collector or OldCollector free set.
+  // the Mutator free set into the Collector or OldCollector free set. The conditions to move this region are checked by
+  // the caller, so the given region is always moved.
   void flip_to_gc(ShenandoahHeapRegion* r);
-  void flip_to_old_gc(ShenandoahHeapRegion* r);
+
+  // Return true if and only if the given region is successfully flipped to the old partition
+  bool flip_to_old_gc(ShenandoahHeapRegion* r);
 
   // Handle allocation for mutator.
   HeapWord* allocate_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region);
@@ -379,6 +411,8 @@ private:
   void log_status();
 
 public:
+  static const size_t FreeSetUnderConstruction = ShenandoahRegionPartitions::FreeSetUnderConstruction;
+
   ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions);
 
   // Public because ShenandoahRegionPartitions assertions require access.
@@ -438,13 +472,15 @@ public:
   // Note that capacity is the number of regions that had available memory at most recent rebuild.  It is not the
   // entire size of the young or global generation.  (Regions within the generation that were fully utilized at time of
   // rebuild are not counted as part of capacity.)
-  inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator); }
-  inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);     }
 
-  inline size_t available() const {
-    assert(used() <= capacity(), "must use less than capacity");
-    return capacity() - used();
-  }
+  // All three of the following functions may produce stale data if called without owning the global heap lock.
+  // Changes to the values of these variables are performed with a lock.  A change to capacity or used "atomically"
+  // adjusts available with respect to lock holders.  However, sequential calls to these three functions may produce
+  // inconsistent data: available may not equal capacity - used because the intermediate states of any "atomic"
+  // locked action can be seen by these unlocked functions.
+  inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);             }
+  inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);                 }
+  inline size_t available() const { return _partitions.available_in_not_locked(ShenandoahFreeSetPartitionId::Mutator); }
 
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
 

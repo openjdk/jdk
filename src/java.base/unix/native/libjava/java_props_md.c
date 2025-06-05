@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -463,6 +463,10 @@ GetJavaProperties(JNIEnv *env)
 #else
     sprops.sun_jnu_encoding = sprops.encoding;
 #endif
+
+    if (isatty(STDIN_FILENO) == 1) {
+        sprops.stdin_encoding = sprops.encoding;
+    }
     if (isatty(STDOUT_FILENO) == 1) {
         sprops.stdout_encoding = sprops.encoding;
     }

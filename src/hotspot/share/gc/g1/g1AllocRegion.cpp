@@ -23,8 +23,8 @@
  */
 
 #include "gc/g1/g1AllocRegion.inline.hpp"
-#include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -205,7 +205,6 @@ void G1AllocRegion::trace(const char* str, size_t min_word_size, size_t desired_
   bool detailed_info = log.is_trace();
 
   if ((actual_word_size == 0 && result == nullptr) || detailed_info) {
-    ResourceMark rm;
     LogStream ls_trace(log.trace());
     LogStream ls_debug(log.debug());
     outputStream* out = detailed_info ? &ls_trace : &ls_debug;

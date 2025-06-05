@@ -42,11 +42,11 @@ import jdk.internal.misc.Unsafe;
 
 import sun.util.logging.PlatformLogger;
 
-public class XKeysym {
+public final class XKeysym {
 
     private XKeysym() {}
 
-    static class Keysym2JavaKeycode  {
+    static final class Keysym2JavaKeycode  {
         int jkeycode;
         int keyLocation;
         int getJavaKeycode() {

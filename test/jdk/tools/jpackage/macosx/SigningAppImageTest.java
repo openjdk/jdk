@@ -46,16 +46,14 @@ import jdk.jpackage.test.AdditionalLauncher;
  * @test
  * @summary jpackage with --type app-image --mac-sign
  * @library /test/jdk/tools/jpackage/helpers
- * @library /test/lib
  * @library base
  * @build SigningBase
- * @build SigningCheck
- * @build jtreg.SkippedException
  * @build jdk.jpackage.test.*
  * @build SigningAppImageTest
- * @requires (os.family == "mac")
+ * @requires (jpackage.test.MacSignTests == "run")
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningAppImageTest
+ *  --jpt-before-run=SigningBase.verifySignTestEnvReady
  */
 public class SigningAppImageTest {
 
@@ -71,8 +69,6 @@ public class SigningAppImageTest {
     @Parameter({"false", "true", "INVALID_INDEX"})
     public void test(boolean doSign, boolean signingKey, SigningBase.CertIndex certEnum) throws Exception {
         final var certIndex = certEnum.value();
-
-        SigningCheck.checkCertificates(certIndex);
 
         JPackageCommand cmd = JPackageCommand.helloAppImage();
         if (doSign) {

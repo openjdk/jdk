@@ -24,8 +24,8 @@
 
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/space.hpp"
 #include "logging/log.hpp"
 #include "memory/memoryReserver.hpp"
@@ -80,14 +80,14 @@ void CardTable::initialize(void* region0_start, void* region1_start) {
   HeapWord* high_bound = _whole_heap.end();
 
   const size_t rs_align = MAX2(_page_size, os::vm_allocation_granularity());
-  ReservedSpace rs = MemoryReserver::reserve(_byte_map_size, rs_align, _page_size);
+  ReservedSpace rs = MemoryReserver::reserve(_byte_map_size, rs_align, _page_size, mtGC);
 
   if (!rs.is_reserved()) {
     vm_exit_during_initialization("Could not reserve enough space for the "
                                   "card marking array");
   }
 
-  MemTracker::record_virtual_memory_tag((address)rs.base(), mtGC);
+  MemTracker::record_virtual_memory_tag(rs, mtGC);
 
   os::trace_page_sizes("Card Table", num_bytes, num_bytes,
                        rs.base(), rs.size(), _page_size);

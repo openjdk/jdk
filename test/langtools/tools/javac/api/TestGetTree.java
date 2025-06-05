@@ -25,7 +25,7 @@
  * @test
  * @bug     6344177 6392177
  * @summary Can't get tree from a top level class
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @modules jdk.compiler
  * @compile TestGetTree.java
  * @compile -processor TestGetTree -proc:only TestGetTree.java

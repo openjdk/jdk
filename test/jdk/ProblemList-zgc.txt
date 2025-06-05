@@ -38,4 +38,3 @@ sun/tools/jhsdb/heapconfig/JMapHeapConfigTest.java 8307393   generic-all
 sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java 8307393   generic-all
 
 com/sun/jdi/ThreadMemoryLeakTest.java              8307402   generic-all
-com/sun/jdi/JdbStopInNotificationThreadTest.java   8351607   linux-all

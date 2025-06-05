@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,28 @@
 
 package jdk.jfr.internal.tool;
 
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Path;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.SequencedSet;
 import java.util.StringJoiner;
 
-import jdk.jfr.AnnotationElement;
+import jdk.jfr.Contextual;
 import jdk.jfr.DataAmount;
+import jdk.jfr.EventType;
 import jdk.jfr.Frequency;
 import jdk.jfr.MemoryAddress;
-import jdk.jfr.Name;
 import jdk.jfr.Percentage;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.consumer.RecordedClass;
@@ -48,8 +57,7 @@ import jdk.jfr.consumer.RecordedMethod;
 import jdk.jfr.consumer.RecordedObject;
 import jdk.jfr.consumer.RecordedStackTrace;
 import jdk.jfr.consumer.RecordedThread;
-import jdk.jfr.internal.PrivateAccess;
-import jdk.jfr.internal.Type;
+import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.internal.util.ValueFormatter;
 
 /**
@@ -58,155 +66,179 @@ import jdk.jfr.internal.util.ValueFormatter;
  * This class is also used by {@link RecordedObject#toString()}
  */
 public final class PrettyWriter extends EventPrintWriter {
-    private static final String TYPE_OLD_OBJECT = Type.TYPES_PREFIX + "OldObject";
+    private static record Timestamp(RecordedEvent event, long seconds, int nanosCompare, boolean contextual) implements Comparable<Timestamp> {
+        // If the start timestamp from a contextual event has the same start timestamp
+        // as an ordinary instant event, the contextual event should be processed first
+        // One way to ensure this is to multiply the nanos value and add 1 ns to the end
+        // timestamp so the context event always comes first in a comparison.
+        // This also prevents a contextual start time to be processed after a contextual
+        // end time, if the event is instantaneous.
+        public static Timestamp createStart(RecordedEvent event, boolean contextual) {
+            Instant time = event.getStartTime(); // Method allocates, so store seconds and nanos
+            return new Timestamp(event, time.getEpochSecond(), 2 * time.getNano(), contextual);
+        }
+
+        public static Timestamp createEnd(RecordedEvent event, boolean contextual) {
+            Instant time = event.getEndTime(); // Method allocates, so store seconds and nanos
+            return new Timestamp(event, time.getEpochSecond(), 2 * time.getNano() + 1, contextual);
+        }
+
+        public boolean start() {
+            return (nanosCompare & 1L) == 0;
+        }
+
+        @Override
+        public int compareTo(Timestamp that) {
+            // This is taken from Instant::compareTo
+            int cmp = Long.compare(seconds, that.seconds);
+            if (cmp != 0) {
+                return cmp;
+            }
+            return nanosCompare - that.nanosCompare;
+        }
+    }
+
+    private static record TypeInformation(Long id, List<ValueDescriptor> contextualFields, boolean contextual, String simpleName) {
+    }
+
+    private static final SequencedSet<RecordedEvent> EMPTY_SET = new LinkedHashSet<>();
+    private static final String TYPE_OLD_OBJECT = "jdk.types.OldObject";
+    private static final DateTimeFormatter TIME_FORMAT_EXACT = DateTimeFormatter.ofPattern("HH:mm:ss.SSSSSSSSS (yyyy-MM-dd)");
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss.SSS (yyyy-MM-dd)");
     private static final Long ZERO = 0L;
-    private boolean showIds;
+    // Rationale for using one million events in the window.
+    // Events in JFR arrive in batches. The commit time (end time) of an
+    // event in batch N typically doesn't come before any events in batch N - 1,
+    // but it can't be ruled out completely. Data is also partitioned into chunks,
+    // typically 16 MB each. Within a chunk, there must be at least one batch.
+    // The size of an event is typically more than 16 bytes, so an
+    // EVENT_WINDOW_SIZE of 1 000 000 events will likely cover more than one batch.
+    // Having at least two batches in a window avoids boundary issues.
+    // At the same time, a too large window, means it will take more time
+    // before the first event is printed and the tool will feel unresponsive.
+    private static final int EVENT_WINDOW_SIZE = 1_000_000;
+    private final boolean showExact;
     private RecordedEvent currentEvent;
+    private PriorityQueue<Timestamp> timeline;
+    private Map<Long, TypeInformation> typeInformation;
+    private Map<Long, SequencedSet<RecordedEvent>> contexts;
+
+    public PrettyWriter(PrintWriter destination, boolean showExact) {
+        super(destination);
+        this.showExact = showExact;
+    }
 
     public PrettyWriter(PrintWriter destination) {
-        super(destination);
+        this(destination, false);
+    }
+
+    void print(Path source) throws IOException {
+        timeline = new PriorityQueue<>(EVENT_WINDOW_SIZE + 4);
+        typeInformation = new HashMap<>();
+        contexts = new HashMap<>();
+        printBegin();
+        int counter = 0;
+        try (RecordingFile file = new RecordingFile(source)) {
+            while (file.hasMoreEvents()) {
+                RecordedEvent event = file.readEvent();
+                if (typeInformation(event).contextual()) {
+                    timeline.add(Timestamp.createStart(event, true));
+                    timeline.add(Timestamp.createEnd(event, true));
+                }
+                if (acceptEvent(event)) {
+                    timeline.add(Timestamp.createEnd(event, false));
+                }
+                // There should not be a limit on the size of the recording files that
+                // the 'jfr' tool can process. To avoid OutOfMemoryError and time complexity
+                // issues on large recordings, a window size must be set when sorting
+                // and processing contextual events.
+                while (timeline.size() > EVENT_WINDOW_SIZE) {
+                    print(timeline.remove());
+                    flush(false);
+                }
+                if ((++counter % EVENT_WINDOW_SIZE) == 0) {
+                    contexts.entrySet().removeIf(c -> c.getValue().isEmpty());
+                }
+            }
+            while (!timeline.isEmpty()) {
+                print(timeline.remove());
+            }
+        }
+        printEnd();
+        flush(true);
+    }
+
+    private TypeInformation typeInformation(RecordedEvent event) {
+        long id = event.getEventType().getId();
+        TypeInformation ti = typeInformation.get(id);
+        if (ti == null) {
+            ti = createTypeInformation(event.getEventType());
+            typeInformation.put(ti.id(), ti);
+        }
+        return ti;
+    }
+
+    private TypeInformation createTypeInformation(EventType eventType) {
+        ArrayList<ValueDescriptor> contextualFields = new ArrayList<>();
+        for (ValueDescriptor v : eventType.getFields()) {
+            if (v.getAnnotation(Contextual.class) != null) {
+                contextualFields.add(v);
+            }
+        }
+        contextualFields.trimToSize();
+        String name = eventType.getName();
+        String simpleName = name.substring(name.lastIndexOf(".") + 1);
+        boolean contextual = contextualFields.size() > 0;
+        return new TypeInformation(eventType.getId(), contextualFields, contextual, simpleName);
+    }
+
+    private void print(Timestamp t) {
+        RecordedEvent event = t.event();
+        RecordedThread rt = event.getThread();
+        if (rt != null) {
+            processThreadedTimestamp(rt, t);
+        } else {
+            if (!t.contextual()) {
+                print(event);
+            }
+        }
+    }
+
+    public void processThreadedTimestamp(RecordedThread thread, Timestamp t) {
+        RecordedEvent event = t.event();
+        var contextEvents = contexts.computeIfAbsent(thread.getId(), k -> new LinkedHashSet<>(1));
+        if (t.contextual) {
+            if (t.start()) {
+                contextEvents.add(event);
+            } else {
+                contextEvents.remove(event);
+            }
+            return;
+        }
+        if (typeInformation(event).contextual()) {
+            print(event);
+        } else {
+            print(event, contextEvents);
+        }
     }
 
     @Override
     protected void print(List<RecordedEvent> events) {
-        for (RecordedEvent e : events) {
-            print(e);
-            flush(false);
-        }
-    }
-
-    public void printType(Type t) {
-        if (showIds) {
-            print("// id: ");
-            println(String.valueOf(t.getId()));
-        }
-        int commentIndex = t.getName().length() + 10;
-        String typeName = t.getName();
-        int index = typeName.lastIndexOf(".");
-        if (index != -1) {
-            println("@Name(\"" + typeName + "\")");
-        }
-        printAnnotations(commentIndex, t.getAnnotationElements());
-        print("class " + typeName.substring(index + 1));
-        String superType = t.getSuperType();
-        if (superType != null) {
-            print(" extends " + superType);
-        }
-        println(" {");
-        indent();
-        boolean first = true;
-        for (ValueDescriptor v : t.getFields()) {
-            printField(commentIndex, v, first);
-            first = false;
-        }
-        retract();
-        println("}");
-        println();
-    }
-
-    private void printField(int commentIndex, ValueDescriptor v, boolean first) {
-        if (!first) {
-            println();
-        }
-        printAnnotations(commentIndex, v.getAnnotationElements());
-        printIndent();
-        Type vType = PrivateAccess.getInstance().getType(v);
-        if (Type.SUPER_TYPE_SETTING.equals(vType.getSuperType())) {
-            print("static ");
-        }
-        print(makeSimpleType(v.getTypeName()));
-        if (v.isArray()) {
-            print("[]");
-        }
-        print(" ");
-        print(v.getName());
-        print(";");
-        printCommentRef(commentIndex, v.getTypeId());
-    }
-
-    private void printCommentRef(int commentIndex, long typeId) {
-        if (showIds) {
-            int column = getColumn();
-            if (column > commentIndex) {
-                print("  ");
-            } else {
-                while (column < commentIndex) {
-                    print(" ");
-                    column++;
-                }
-            }
-            println(" // id=" + typeId);
-        } else {
-            println();
-        }
-    }
-
-    private void printAnnotations(int commentIndex, List<AnnotationElement> annotations) {
-        for (AnnotationElement a : annotations) {
-            if (!Name.class.getName().equals(a.getTypeName())) {
-                printIndent();
-                print("@");
-                print(makeSimpleType(a.getTypeName()));
-                List<ValueDescriptor> vs = a.getValueDescriptors();
-                if (!vs.isEmpty()) {
-                    printAnnotation(a);
-                    printCommentRef(commentIndex, a.getTypeId());
-                } else {
-                    println();
-                }
-            }
-        }
-    }
-
-    private void printAnnotation(AnnotationElement a) {
-        StringJoiner sj = new StringJoiner(", ", "(", ")");
-        List<ValueDescriptor> vs = a.getValueDescriptors();
-        for (ValueDescriptor v : vs) {
-            Object o = a.getValue(v.getName());
-            if (vs.size() == 1 && v.getName().equals("value")) {
-                sj.add(textify(o));
-            } else {
-                sj.add(v.getName() + "=" + textify(o));
-            }
-        }
-        print(sj.toString());
-    }
-
-    private String textify(Object o) {
-        if (o.getClass().isArray()) {
-            Object[] array = (Object[]) o;
-            if (array.length == 1) {
-                return quoteIfNeeded(array[0]);
-            }
-            StringJoiner s = new StringJoiner(", ", "{", "}");
-            for (Object ob : array) {
-                s.add(quoteIfNeeded(ob));
-            }
-            return s.toString();
-        } else {
-            return quoteIfNeeded(o);
-        }
-    }
-
-    private String quoteIfNeeded(Object o) {
-        if (o instanceof String) {
-            return "\"" + o + "\"";
-        } else {
-            return String.valueOf(o);
-        }
-    }
-
-    private String makeSimpleType(String typeName) {
-        int index = typeName.lastIndexOf(".");
-        return typeName.substring(index + 1);
+        throw new InternalError("Should not reach here!");
     }
 
     public void print(RecordedEvent event) {
+        print(event, EMPTY_SET);
+    }
+
+    public void print(RecordedEvent event, SequencedSet<RecordedEvent> context) {
         currentEvent = event;
         print(event.getEventType().getName(), " ");
         println("{");
         indent();
+        if (!context.isEmpty()) {
+            printContexts(context);
+        }
         for (ValueDescriptor v : event.getFields()) {
             String name = v.getName();
             if (!isZeroDuration(event, name) && !isLateField(name)) {
@@ -227,6 +259,22 @@ public final class PrettyWriter extends EventPrintWriter {
         printIndent();
         println("}");
         println();
+    }
+
+    private void printContexts(SequencedSet<RecordedEvent> contextEvents) {
+        for (RecordedEvent e : contextEvents) {
+            printContextFields(e);
+        }
+    }
+
+    private void printContextFields(RecordedEvent contextEvent) {
+        TypeInformation ti = typeInformation(contextEvent);
+        for (ValueDescriptor v : ti.contextualFields()) {
+            printIndent();
+            String name = "Context: " + ti.simpleName() + "." + v.getName();
+            print(name, " = ");
+            printValue(getValue(contextEvent, v), v, "");
+        }
     }
 
     private boolean isZeroDuration(RecordedEvent event, String name) {
@@ -508,7 +556,11 @@ public final class PrettyWriter extends EventPrintWriter {
                 println("Forever");
                 return true;
             }
-            println(ValueFormatter.formatDuration(d));
+            if (showExact) {
+                println(String.format("%.9f s", (double) d.toNanos() / 1_000_000_000));
+            } else {
+                println(ValueFormatter.formatDuration(d));
+            }
             return true;
         }
         if (value instanceof OffsetDateTime odt) {
@@ -516,40 +568,34 @@ public final class PrettyWriter extends EventPrintWriter {
                 println("N/A");
                 return true;
             }
-            println(TIME_FORMAT.format(odt));
+            if (showExact) {
+                println(TIME_FORMAT_EXACT.format(odt));
+            } else {
+                println(TIME_FORMAT.format(odt));
+            }
             return true;
         }
         Percentage percentage = field.getAnnotation(Percentage.class);
         if (percentage != null) {
             if (value instanceof Number n) {
-                double d = n.doubleValue();
-                println(String.format("%.2f", d * 100) + "%");
+                double p = 100 * n.doubleValue();
+                if (showExact) {
+                    println(String.format("%.9f%%", p));
+                } else {
+                    println(String.format("%.2f%%", p));
+                }
                 return true;
             }
         }
         DataAmount dataAmount = field.getAnnotation(DataAmount.class);
-        if (dataAmount != null) {
-            if (value instanceof Number n) {
-                long amount = n.longValue();
-                if (field.getAnnotation(Frequency.class) != null) {
-                    if (dataAmount.value().equals(DataAmount.BYTES)) {
-                        println(ValueFormatter.formatBytesPerSecond(amount));
-                        return true;
-                    }
-                    if (dataAmount.value().equals(DataAmount.BITS)) {
-                        println(ValueFormatter.formatBitsPerSecond(amount));
-                        return true;
-                    }
-                } else {
-                    if (dataAmount.value().equals(DataAmount.BYTES)) {
-                        println(ValueFormatter.formatBytes(amount));
-                        return true;
-                    }
-                    if (dataAmount.value().equals(DataAmount.BITS)) {
-                        println(ValueFormatter.formatBits(amount));
-                        return true;
-                    }
-                }
+        if (dataAmount != null && value instanceof Number number) {
+            boolean frequency = field.getAnnotation(Frequency.class) != null;
+            String unit = dataAmount.value();
+            boolean bits = unit.equals(DataAmount.BITS);
+            boolean bytes = unit.equals(DataAmount.BYTES);
+            if (bits || bytes) {
+                formatMemory(number.longValue(), bytes, frequency);
+                return true;
             }
         }
         MemoryAddress memoryAddress = field.getAnnotation(MemoryAddress.class);
@@ -571,7 +617,32 @@ public final class PrettyWriter extends EventPrintWriter {
         return false;
     }
 
-    public void setShowIds(boolean showIds) {
-        this.showIds = showIds;
+    private void formatMemory(long value, boolean bytesUnit, boolean frequency) {
+        if (showExact) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(value);
+            sb.append(bytesUnit ? " byte" : " bit");
+            if (value > 1) {
+                sb.append("s");
+            }
+            if (frequency) {
+                sb.append("/s");
+            }
+            println(sb.toString());
+            return;
+        }
+        if (frequency) {
+            if (bytesUnit) {
+                println(ValueFormatter.formatBytesPerSecond(value));
+            } else {
+                println(ValueFormatter.formatBitsPerSecond(value));
+            }
+            return;
+        }
+        if (bytesUnit) {
+            println(ValueFormatter.formatBytes(value));
+        } else {
+            println(ValueFormatter.formatBits(value));
+        }
     }
 }

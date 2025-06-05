@@ -385,10 +385,10 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * {@snippet lang = java:
  *     var number = 1000;
  *     NumberFormat.getCurrencyInstance(Locale.US).format(number); // returns "$1,000.00"
- *     NumberFormat.getCurrencyInstance(Locale.JAPAN).format(number); // returns "\u00A51,000""
+ *     NumberFormat.getCurrencyInstance(Locale.JAPAN).format(number); // returns "¥1,000""
  *     var date = LocalDate.of(2024, 1, 1);
  *     DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).localizedBy(Locale.US).format(date); // returns "January 1, 2024"
- *     DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).localizedBy(Locale.JAPAN).format(date); // returns "2024\u5e741\u67081\u65e5"
+ *     DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).localizedBy(Locale.JAPAN).format(date); // returns "2024年1月1日"
  * }
  *
  * <h2><a id="LocaleMatching">Locale Matching</a></h2>
@@ -418,8 +418,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <p>The filtering operation returns all matching language tags. It is defined
  * in RFC 4647 as follows:
  * "In filtering, each language range represents the least specific language
- * tag (that is, the language tag with fewest number of subtags) that is an
- * acceptable match. All of the language tags in the matching set of tags will
+ * tag (that is, the language tag with the fewest number of subtags) that is an
+ * acceptable match. All the language tags in the matching set of tags will
  * have an equal or greater number of subtags than the language range. Every
  * non-wildcard subtag in the language range will appear in every one of the
  * matching language tags."
@@ -541,9 +541,12 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * {@code true}, those three current language codes are mapped to their
  * backward compatible forms. The property is only read at Java runtime
  * startup and subsequent calls to {@code System.setProperty()} will
- * have no effect.
+ * have no effect. <b>As of Java SE 25, the use of the
+ * {@code java.locale.useOldISOCodes} system property is deprecated.
+ * This backwards compatible behavior will be removed in a future release
+ * of the JDK.</b>
  *
- * <p>The APIs added in 1.7 map between the old and new language codes,
+ * <p>The APIs added in Java SE 7 map between the old and new language codes,
  * maintaining the mapped codes internal to Locale (so that
  * {@code getLanguage} and {@code toString} reflect the mapped
  * code, which depends on the {@code java.locale.useOldISOCodes} system
@@ -1307,7 +1310,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * {@return a {@code Set} of ISO3166 country codes for the specified type}
+     * {@return an unmodifiable {@code Set} of ISO3166 country codes for the specified type}
      *
      * @param type {@link Locale.IsoCountryCode} specified ISO code type.
      * @see java.util.Locale.IsoCountryCode
@@ -1688,37 +1691,37 @@ public final class Locale implements Cloneable, Serializable {
         LanguageTag tag = LanguageTag.parseLocale(baseLocale, localeExtensions);
         StringBuilder buf = new StringBuilder();
 
-        String subtag = tag.getLanguage();
+        String subtag = tag.language();
         if (!subtag.isEmpty()) {
             buf.append(LanguageTag.canonicalizeLanguage(subtag));
         }
 
-        subtag = tag.getScript();
+        subtag = tag.script();
         if (!subtag.isEmpty()) {
             buf.append(LanguageTag.SEP);
             buf.append(LanguageTag.canonicalizeScript(subtag));
         }
 
-        subtag = tag.getRegion();
+        subtag = tag.region();
         if (!subtag.isEmpty()) {
             buf.append(LanguageTag.SEP);
             buf.append(LanguageTag.canonicalizeRegion(subtag));
         }
 
-        List<String>subtags = tag.getVariants();
+        List<String>subtags = tag.variants();
         for (String s : subtags) {
             buf.append(LanguageTag.SEP);
             // preserve casing
             buf.append(s);
         }
 
-        subtags = tag.getExtensions();
+        subtags = tag.extensions();
         for (String s : subtags) {
             buf.append(LanguageTag.SEP);
             buf.append(LanguageTag.canonicalizeExtension(s));
         }
 
-        subtag = tag.getPrivateuse();
+        subtag = tag.privateuse();
         if (!subtag.isEmpty()) {
             if (buf.length() > 0) {
                 buf.append(LanguageTag.SEP);
@@ -1797,7 +1800,7 @@ public final class Locale implements Cloneable, Serializable {
      * to {@link Locale.Builder#setLanguageTag(String)} which throws an exception
      * in this case.
      *
-     * <p>The following <b>conversions</b> are performed:<ul>
+     * <p>The following <b id="langtag_conversions">conversions</b> are performed:<ul>
      *
      * <li>The language code "und" is mapped to language "".
      *
@@ -1823,13 +1826,19 @@ public final class Locale implements Cloneable, Serializable {
      *     loc.getExtension('x'); // returns "urp"
      * }
      *
-     * <li>When the languageTag argument contains an extlang subtag,
-     * the first such subtag is used as the language, and the primary
-     * language subtag and other extlang subtags are ignored:
+     * <li> BCP 47 language tags permit up to three extlang subtags. However,
+     * the second and third extlang subtags are always ignored. As such,
+     * the first extlang subtag in {@code languageTag} is used as the language,
+     * and the primary language subtag and other extlang subtags are ignored.
+     * Language tags that exceed three extlang subtags are considered
+     * ill-formed starting at the offending extlang subtag.
      *
      * {@snippet lang=java :
      *     Locale.forLanguageTag("ar-aao").getLanguage(); // returns "aao"
      *     Locale.forLanguageTag("en-abc-def-us").toString(); // returns "abc_US"
+     *     Locale.forLanguageTag("zh-yue-gan-cmn-czh-CN").toString();
+     *     // returns "yue"; "czh" exceeds the extlang limit, and subsequent
+     *     // subtags are considered ill-formed
      * }
      *
      * <li>Case is normalized except for variant tags, which are left
@@ -2784,6 +2793,9 @@ public final class Locale implements Cloneable, Serializable {
          * just discards ill-formed and following portions of the
          * tag).
          *
+         * <p>See {@link Locale##langtag_conversions converions} for a full list
+         * of conversions that are performed on {@code languageTag}.
+         *
          * @param languageTag the language tag
          * @return This builder.
          * @throws IllformedLocaleException if {@code languageTag} is ill-formed
@@ -3494,8 +3506,7 @@ public final class Locale implements Cloneable, Serializable {
             if (h == 0) {
                 h = 17;
                 h = 37*h + range.hashCode();
-                long bitsWeight = Double.doubleToLongBits(weight);
-                h = 37*h + (int)(bitsWeight ^ (bitsWeight >>> 32));
+                h = 37*h + Double.hashCode(weight);
                 if (h != 0) {
                     hash = h;
                 }

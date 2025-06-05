@@ -139,11 +139,16 @@ public class TestFramework {
                     "UseAVX",
                     "UseSSE",
                     "UseSVE",
-                    "UseZbb",
-                    "UseRVV",
                     "Xlog",
                     "LogCompilation",
-                    "UseCompactObjectHeaders"
+                    "UseCompactObjectHeaders",
+                    "UseFMA",
+                    // Riscv
+                    "UseRVV",
+                    "UseZbb",
+                    "UseZfh",
+                    "UseZicond",
+                    "UseZvbb"
             )
     );
 

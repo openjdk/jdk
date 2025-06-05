@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Flow;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -59,7 +58,6 @@ import jdk.internal.net.http.common.Utils;
 final class SocketTube implements FlowTube {
 
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
-    static final AtomicLong IDS = new AtomicLong();
 
     private final HttpClientImpl client;
     private final SocketChannel channel;
@@ -68,14 +66,15 @@ final class SocketTube implements FlowTube {
     private final AtomicReference<Throwable> errorRef = new AtomicReference<>();
     private final InternalReadPublisher readPublisher;
     private final InternalWriteSubscriber writeSubscriber;
-    private final long id = IDS.incrementAndGet();
+    private final String connectionLabel;
 
     public SocketTube(HttpClientImpl client, SocketChannel channel,
-                      Supplier<ByteBuffer> buffersFactory) {
+                      Supplier<ByteBuffer> buffersFactory,
+                      String connectionLabel) {
         this.client = client;
         this.channel = channel;
         this.sliceBuffersSource = new SliceBufferSource(buffersFactory);
-
+        this.connectionLabel = connectionLabel;
         this.readPublisher = new InternalReadPublisher();
         this.writeSubscriber = new InternalWriteSubscriber();
     }
@@ -1343,7 +1342,7 @@ final class SocketTube implements FlowTube {
     }
 
     final String dbgString() {
-        return "SocketTube("+id+")";
+        return "SocketTube("+ connectionLabel +")";
     }
 
     final String channelDescr() {

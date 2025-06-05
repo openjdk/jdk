@@ -1,4 +1,4 @@
-# Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ OBJDUMP = "objdump"
 X86_AS = "as"
 X86_OBJCOPY = "objcopy"
 SEED = 1327
+TEST_DEMOTION = True
 
 random.seed(SEED)
 
@@ -57,7 +58,7 @@ shift_rot_ops = {'sarl', 'sarq', 'sall', 'salq', 'shll', 'shlq', 'shrl', 'shrq',
 
 registers_mapping = {
     # skip rax, rsi, rdi, rsp, rbp as they have special encodings
-    # 'rax': {64: 'rax', 32: 'eax', 16: 'ax', 8: 'al'},
+    'rax': {64: 'rax', 32: 'eax', 16: 'ax', 8: 'al'},
     'rcx': {64: 'rcx', 32: 'ecx', 16: 'cx', 8: 'cl'},
     'rdx': {64: 'rdx', 32: 'edx', 16: 'dx', 8: 'dl'},
     'rbx': {64: 'rbx', 32: 'ebx', 16: 'bx', 8: 'bl'},
@@ -301,12 +302,18 @@ class CondRegRegRegInstruction(Instruction):
         self.reg3 = Register().generate(reg3, width)
         self.cond = cond
         self.generate_operands(self.reg1, self.reg2, self.reg3)
+        self.demote = True
     
     def cstr(self):
         return f'__ {self._name} (' + 'Assembler::Condition::' + self.cond + ', ' + ', '.join([reg.cstr() for reg in self.operands]) + ');'
     
     def astr(self):
-        return f'{self._aname}' + cond_to_suffix[self.cond] + ' ' + ', '.join([reg.astr() for reg in self.operands])
+        operands = self.operands
+        if self.demote:
+            ops = [op.cstr() for op in self.operands]
+            if ops[0] == ops[1]:
+                operands = operands[1:]
+        return f'{self._aname}' + cond_to_suffix[self.cond] + ' ' + ', '.join([reg.astr() for reg in operands])
 
 class CondRegRegMemInstruction(Instruction):
     def __init__(self, name, aname, width, cond, reg1, reg2, mem_base, mem_idx):
@@ -316,12 +323,18 @@ class CondRegRegMemInstruction(Instruction):
         self.mem = Address().generate(mem_base, mem_idx, width)
         self.cond = cond
         self.generate_operands(self.reg1, self.reg2, self.mem)
+        self.demote = True
     
     def cstr(self):
         return f'__ {self._name} (' + 'Assembler::Condition::' + self.cond + ', ' + ', '.join([reg.cstr() for reg in self.operands]) + ');'
     
     def astr(self):
-        return f'{self._aname}' + cond_to_suffix[self.cond] + ' ' + ', '.join([reg.astr() for reg in self.operands])
+        operands = self.operands
+        if self.demote:
+            ops = [op.cstr() for op in self.operands]
+            if ops[0] == ops[1]:
+                operands = operands[1:]
+        return f'{self._aname}' + cond_to_suffix[self.cond] + ' ' + ', '.join([reg.astr() for reg in operands])
 
 class MoveRegMemInstruction(Instruction):
     def __init__(self, name, aname, width, mem_width, reg, mem_base, mem_idx):
@@ -355,6 +368,15 @@ class RegRegNddInstruction(NFInstruction):
         self.reg1 = Register().generate(reg1, width)
         self.reg2 = Register().generate(reg2, width)
         self.generate_operands(self.reg1, self.reg2)
+        self.demote = True
+
+    def astr(self):
+        if self.demote and self._aname not in ['popcnt', 'lzcnt', 'tzcnt']:
+            ops = [op.cstr() for op in self.operands]
+            if ops[0] == ops[1] and (not self.no_flag):
+                cl_str = (', cl' if self._name in shift_rot_ops and len(self.operands) == 2 else '')
+                return  f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[1:]]) + cl_str
+        return super().astr()
 
 class RegMemNddInstruction(NFInstruction):
     def __init__(self, name, aname, width, no_flag, reg, mem_base, mem_idx):
@@ -386,6 +408,14 @@ class RegRegImmNddInstruction(NFInstruction):
         self.reg2 = Register().generate(reg2, width)
         self.imm = Immediate().generate(imm)
         self.generate_operands(self.reg1, self.reg2, self.imm)
+        self.demote = True
+
+    def astr(self):
+        if self.demote and self._aname not in ['imul']:
+            ops = [op.cstr() for op in self.operands]
+            if ops[0] == ops[1] and (not self.no_flag):
+                return  f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[1:]])
+        return super().astr()
 
 class RegRegMemNddInstruction(NFInstruction):
     def __init__(self, name, aname, width, no_flag, reg1, reg2, mem_base, mem_idx):
@@ -394,6 +424,14 @@ class RegRegMemNddInstruction(NFInstruction):
         self.reg2 = Register().generate(reg2, width)
         self.mem = Address().generate(mem_base, mem_idx, width)
         self.generate_operands(self.reg1, self.reg2, self.mem)
+        self.demote = True
+
+    def astr(self):
+        if self.demote:
+            ops = [op.cstr() for op in self.operands]
+            if ops[0] == ops[1] and (not self.no_flag):
+                return  f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[1:]])
+        return super().astr()
 
 class RegRegRegNddInstruction(NFInstruction):
     def __init__(self, name, aname, width, no_flag, reg1, reg2, reg3):
@@ -402,9 +440,15 @@ class RegRegRegNddInstruction(NFInstruction):
         self.reg2 = Register().generate(reg2, width)
         self.reg3 = Register().generate(reg3, width)
         self.generate_operands(self.reg1, self.reg2, self.reg3)
+        self.demote = True
 
     def astr(self):
-        return f'{{load}}' + super().astr()
+        hdr = f'{{load}}'
+        if self.demote:
+            ops = [op.cstr() for op in self.operands]
+            if ops[0] == ops[1] and (not self.no_flag):
+                return  hdr + f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[1:]])
+        return hdr + super().astr()
 
 class RegRegRegImmNddInstruction(NFInstruction):
     def __init__(self, name, aname, width, no_flag, reg1, reg2, reg3, imm):
@@ -414,8 +458,17 @@ class RegRegRegImmNddInstruction(NFInstruction):
         self.reg3 = Register().generate(reg3, width)
         self.imm = Immediate().generate(imm)
         self.generate_operands(self.reg1, self.reg2, self.reg3, self.imm)
+        self.demote = True
 
-test_regs = list(registers_mapping.keys())
+    def astr(self):
+        if self.demote:
+            ops = [op.cstr() for op in self.operands]
+            if ops[0] == ops[1] and (not self.no_flag):
+                return (f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[1:]]))
+        return super().astr()
+
+
+test_regs = [key for key in registers_mapping.keys() if key != 'rax']
 
 immediates32 = [2 ** i for i in range(0, 32, 4)]
 immediates16 = [2 ** i for i in range(0, 16, 2)]
@@ -499,36 +552,28 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                 print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [TwoRegInstruction, MoveRegRegInstruction, RegRegNddInstruction]:
-            if full_set:
-                for i in range(len(test_regs)):
-                    test_reg1 = test_regs[i]
-                    test_reg2 = test_regs[(i + 1) % len(test_regs)]
+            demote_options = [False, True] if TEST_DEMOTION and RegOp in [RegRegNddInstruction]  else [False]
+            for demote in demote_options:
+                for i in range(len(test_regs) if full_set else 1):
+                    test_reg1 = test_regs[i] if full_set else random.choice(test_regs)
+                    test_reg2 = test_reg1 if demote \
+                                          else test_regs[(i + 1) % len(test_regs)] if full_set \
+                                          else random.choice(test_regs)
                     lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
                     instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
-            else:
-                test_reg1 = random.choice(test_regs)
-                test_reg2 = random.choice(test_regs)
-                lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
-                instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2)
-                print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [RegRegRegNddInstruction, CondRegRegRegInstruction]:
-            if full_set:
-                for i in range(len(test_regs)):
-                    test_reg1 = test_regs[i]
-                    test_reg2 = test_regs[(i + 1) % len(test_regs)]
-                    test_reg3 = test_regs[(i + 2) % len(test_regs)]
+            for demote in [False, True] if TEST_DEMOTION else [False]:
+                for i in range(len(test_regs) if full_set else 1):
+                    test_reg1 = test_regs[i] if full_set else random.choice(test_regs)
+                    test_reg2 = test_reg1 if demote \
+                                          else test_regs[(i + 1) % len(test_regs)] if full_set \
+                                          else random.choice(test_regs)
+                    test_reg3 = test_regs[(i + 2) % len(test_regs)] if full_set else random.choice(test_regs)
                     lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2, test_reg3)
                     instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
-            else:
-                test_reg1 = random.choice(test_regs)
-                test_reg2 = random.choice(test_regs)
-                test_reg3 = random.choice(test_regs)
-                lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2, test_reg3)
-                instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3)
-                print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [MemRegInstruction, RegMemInstruction, MoveRegMemInstruction, CmpxchgInstruction, CondRegMemInstruction, RegMemNddInstruction]:
             if full_set:
@@ -607,22 +652,28 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                 print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [RegRegImmInstruction, RegRegImmNddInstruction]:
-            if full_set:
+            demote_options = [False, True] if TEST_DEMOTION and RegOp in [RegRegImmNddInstruction] else [False]
+            for demote in demote_options:
                 imm_list = get_immediate_list(op_name, width)
-                for i in range(len(test_regs)):
-                    test_reg1 = test_regs[i]
-                    test_reg2 = test_regs[(i + 1) % len(test_regs)]
+                if not full_set:
+                    imm_list = [random.choice(imm_list)]
+                for i in range(len(test_regs) if full_set else 1):
+                    test_reg1 = test_regs[i] if full_set else random.choice(test_regs)
+                    test_reg2 = test_reg1 if demote \
+                                          else test_regs[(i + 1) % len(test_regs)] if full_set \
+                                          else random.choice(test_regs)
                     lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
                     for imm in imm_list:
                         instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, imm=imm)
                         print_instruction(instr, lp64_flag, print_lp64_flag)
-            else:
-                imm = random.choice(get_immediate_list(op_name, width))
-                test_reg1 = random.choice(test_regs)
-                test_reg2 = random.choice(test_regs)
-                lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
-                instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, imm=imm)
-                print_instruction(instr, lp64_flag, print_lp64_flag)
+
+                    # additional tests with rax as destination
+                    if RegOp in [RegRegImmNddInstruction] and not demote and not full_set:
+                        test_reg1 = 'rax'
+                        test_reg2 = random.choice(test_regs)
+                        lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
+                        instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, imm=imm)
+                        print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [RegMemImmInstruction, RegMemImmNddInstruction]:
             if full_set:
@@ -648,46 +699,37 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                 print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [RegMemRegNddInstruction, RegRegMemNddInstruction, CondRegRegMemInstruction]:
-            if full_set:
-                for i in range(len(test_regs)):
-                    test_reg1 = test_regs[i]
-                    test_mem_base = test_regs[(i + 1) % len(test_regs)]
-                    test_mem_idx = test_regs[(i + 2) % len(test_regs)]
-                    test_reg2 = test_regs[(i + 3) % len(test_regs)]
+            demote_options = [False] if TEST_DEMOTION and RegOp not in [RegMemRegNddInstruction] else [False, True]
+            for demote in demote_options:
+                for i in range(len(test_regs) if full_set else 1):
+                    test_reg1 = test_regs[i] if full_set else random.choice(test_regs)
+                    test_mem_base = test_regs[(i + 1) % len(test_regs)] if full_set else random.choice(test_regs)
+                    test_mem_idx = test_regs[(i + 2) % len(test_regs)] if full_set \
+                                   else random.choice([reg for reg in test_regs if reg != 'rsp'])
+                    test_reg2 = test_reg1 if demote \
+                                          else test_regs[(i + 3) % len(test_regs)] if full_set \
+                                          else random.choice(test_regs)
                     if test_mem_idx == 'rsp':
                         continue
                     lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_mem_base, test_mem_idx, test_reg2)
                     instr = RegOp(*op, reg1=test_reg1, mem_base=test_mem_base, mem_idx=test_mem_idx, reg2=test_reg2)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
-            else:
-                filtered_regs = [reg for reg in test_regs if reg != 'rsp']
-                test_reg1 = random.choice(test_regs)
-                test_mem_base = random.choice(test_regs)
-                test_mem_idx = random.choice(filtered_regs)
-                test_reg2 = random.choice(test_regs)
-                lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_mem_base, test_mem_idx, test_reg2)
-                instr = RegOp(*op, reg1=test_reg1, mem_base=test_mem_base, mem_idx=test_mem_idx, reg2=test_reg2)
-                print_instruction(instr, lp64_flag, print_lp64_flag)
-        
+
         elif RegOp in [RegRegRegImmNddInstruction]:
-            if full_set:
+            for demote in [False, True] if TEST_DEMOTION else [False]:
                 imm_list = get_immediate_list(op_name, width)
-                for i in range(len(test_regs)):
-                    test_reg1 = test_regs[i]
-                    test_reg2 = test_regs[(i + 1) % len(test_regs)]
-                    test_reg3 = test_regs[(i + 2) % len(test_regs)]
+                if not full_set:
+                    imm_list = [random.choice(imm_list)]
+                for i in range(len(test_regs) if full_set else 1):
+                    test_reg1 = test_regs[i] if full_set else random.choice(test_regs)
+                    test_reg2 = test_reg1 if demote \
+                                          else test_regs[(i + 1) % len(test_regs)] if full_set \
+                                          else random.choice(test_regs)
+                    test_reg3 = test_regs[(i + 2) % len(test_regs)] if full_set else random.choice(test_regs)
                     lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2, test_reg3)
                     for imm in imm_list:
                         instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3, imm=imm)
                         print_instruction(instr, lp64_flag, print_lp64_flag)
-            else:
-                imm = random.choice(get_immediate_list(op_name, width))
-                test_reg1 = random.choice(test_regs)
-                test_reg2 = random.choice(test_regs)
-                test_reg3 = random.choice(test_regs)
-                lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2, test_reg3)
-                instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3, imm=imm)
-                print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [Push2Instruction, Pop2Instruction]:
             if full_set:
@@ -928,7 +970,7 @@ instruction_set = {
         ('edecl', 'dec', 32, False),
         ('edecl', 'dec', 32, True),
         ('eincl', 'inc', 32, False),
-        ('eincl', 'inc', 32, True), 
+        ('eincl', 'inc', 32, True),
         ('eshll', 'shl', 32, False),
         ('eshll', 'shl', 32, True),
         ('eshrl', 'shr', 32, False),
@@ -1349,8 +1391,8 @@ instruction_set64 = {
         ('exorq', 'xor', 64, True),
         ('eorq_imm32', 'or', 64, False),
         ('eorq_imm32', 'or', 64, False),
-        ('esubq_imm32', 'sub', 64, False), 
-        ('esubq_imm32', 'sub', 64, True), 
+        ('esubq_imm32', 'sub', 64, False),
+        ('esubq_imm32', 'sub', 64, True),
     ],
     RegRegMemNddInstruction: [
         ('eaddq', 'add', 64, False),
@@ -1414,7 +1456,7 @@ if __name__ == "__main__":
 
     for RegOp, ops in instruction_set.items():
         generate(RegOp, ops, True, full_set)
-        
+
     if lp64_flag:
         lp64_flag = False
         print("#endif // _LP64")

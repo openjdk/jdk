@@ -150,6 +150,17 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  * Before returning from {@code awaitAndCheck}, the framework disposes of
  * all the windows and frames.
  *
+ * <p id="forcePassAndFail">
+ * For semi-automatic tests, use {@code forcePass} or
+ * {@code forceFail} methods to forcibly pass or fail the test
+ * when it's determined that the required conditions are already met
+ * or cannot be met correspondingly.
+ * These methods release {@code awaitAndCheck}, and
+ * the test will complete successfully or fail.
+ * <p>
+ * Refer to examples of using these methods in the description of the
+ * {@link #forcePass() forcePass} and {@link #forceFail() forceFail} methods.
+ *
  * <h2 id="sampleManualTest">Sample Manual Test</h2>
  * A simple test would look like this:
  * {@snippet id='sampleManualTestCode' lang='java':
@@ -1294,28 +1305,50 @@ public final class PassFailJFrame {
 
     /**
      * Forcibly pass the test.
-     * <p>The sample usage:
-     * <pre><code>
-     *      PrinterJob pj = PrinterJob.getPrinterJob();
-     *      if (pj == null || pj.getPrintService() == null) {
-     *          System.out.println(""Printer not configured or available.");
-     *          PassFailJFrame.forcePass();
-     *      }
-     * </code></pre>
+     * <p>
+     * Use this method in semi-automatic tests when
+     * the test determines that all the conditions for passing the test are met.
+     * <p>
+     * <strong>Do not use</strong> this method in cases where a resource is unavailable or a
+     * feature isn't supported, throw {@code jtreg.SkippedException} instead.
+     *
+     * <p>A sample usage can be found in
+     * <a href="https://github.com/openjdk/jdk/blob/7283c8b/test/jdk/java/awt/FileDialog/SaveFileNameOverrideTest.java#L84">{@code
+     * SaveFileNameOverrideTest.java}</a>
      */
     public static void forcePass() {
         latch.countDown();
     }
 
     /**
-     *  Forcibly fail the test.
+     * Forcibly fail the test.
+     * <p>
+     * Use this method in semi-automatic tests when
+     * it is determined that the conditions for passing the test cannot be met.
+     * <p>
+     * <strong>Do not use</strong> this method in cases where a resource is unavailable or a
+     * feature isn't supported, throw {@code jtreg.SkippedException} instead.
+     *
+     * <p>A sample usage can be found in
+     * <a href="https://github.com/openjdk/jdk/blob/0844745e7bd954a96441365f8010741ec1c29dbf/test/jdk/javax/swing/JScrollPane/AcceleratedWheelScrolling/HorizScrollers.java#L180">{@code
+     * HorizScrollers.java}</a>
      */
     public static void forceFail() {
         forceFail("forceFail called");
     }
 
     /**
-     *  Forcibly fail the test and provide a reason.
+     * Forcibly fail the test and provide a reason.
+     * <p>
+     * Use this method in semi-automatic tests when
+     * it is determined that the conditions for passing the test cannot be met.
+     * <p>
+     * <strong>Do not use</strong> this method in cases where a resource is unavailable or a
+     * feature isn't supported, throw {@code jtreg.SkippedException} instead.
+     *
+     * <p>A sample usage can be found in
+     * <a href="https://github.com/openjdk/jdk/blob/7283c8b075aa289dbb9cb80f6937b3349c8d4769/test/jdk/java/awt/FileDialog/SaveFileNameOverrideTest.java#L86">{@code
+     * SaveFileNameOverrideTest.java}</a>
      *
      * @param reason the reason why the test is failed
      */
@@ -1714,7 +1747,7 @@ public final class PassFailJFrame {
          *
          * @throws IllegalStateException if a {@code PanelCreator} is
          *              already set
-         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         * @throws IllegalArgumentException if {@code panelCreator} is {@code null}
          */
         public Builder splitUI(PanelCreator panelCreator) {
             return splitUIRight(panelCreator);
@@ -1731,7 +1764,7 @@ public final class PassFailJFrame {
          *
          * @throws IllegalStateException if a {@code PanelCreator} is
          *              already set
-         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         * @throws IllegalArgumentException if {@code panelCreator} is {@code null}
          */
         public Builder splitUIRight(PanelCreator panelCreator) {
             return splitUI(panelCreator, JSplitPane.HORIZONTAL_SPLIT);
@@ -1748,7 +1781,7 @@ public final class PassFailJFrame {
          *
          * @throws IllegalStateException if a {@code PanelCreator} is
          *              already set
-         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         * @throws IllegalArgumentException if {@code panelCreator} is {@code null}
          */
         public Builder splitUIBottom(PanelCreator panelCreator) {
             return splitUI(panelCreator, JSplitPane.VERTICAL_SPLIT);
@@ -1764,7 +1797,7 @@ public final class PassFailJFrame {
          *
          * @throws IllegalStateException if a {@code PanelCreator} is
          *              already set
-         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         * @throws IllegalArgumentException if {@code panelCreator} is {@code null}
          */
         private Builder splitUI(PanelCreator panelCreator,
                                 int splitUIOrientation) {

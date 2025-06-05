@@ -41,6 +41,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.util.PathUtils;
 
 /**

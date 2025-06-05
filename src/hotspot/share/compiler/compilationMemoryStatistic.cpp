@@ -374,7 +374,7 @@ void ArenaStatCounter::on_arena_chunk_deallocation(size_t size, uint64_t stamp) 
 void ArenaStatCounter::print_peak_state_on(outputStream* st) const {
   st->print("Total Usage: %zu ", _peak);
   if (_peak > 0) {
-#ifdef COMPILER2
+#ifdef COMPILER1
     // C1: print allocations broken down by arena types
     if (_comp_type == CompilerType::compiler_c1) {
       st->print("[");
@@ -396,16 +396,16 @@ void ArenaStatCounter::print_peak_state_on(outputStream* st) const {
 #ifdef COMPILER2
     // C2: print counters and timeline on multiple lines, indented
     if (_comp_type == CompilerType::compiler_c2) {
-      streamIndentor si(st, 4);
+      StreamIndentor si(st, 4);
       st->cr();
       st->print_cr("--- Arena Usage by Arena Type and compilation phase, at arena usage peak of %zu ---", _peak);
       {
-        streamIndentor si(st, 4);
+        StreamIndentor si(st, 4);
        _counters_at_global_peak.print_on(st);
       }
       st->print_cr("--- Allocation timelime by phase ---");
       {
-        streamIndentor si(st, 4);
+        StreamIndentor si(st, 4);
         _timeline.print_on(st);
       }
       st->print_cr("---");
@@ -656,7 +656,7 @@ class MemStatStore : public CHeapObj<mtCompiler> {
     assert_lock_strong(NMTCompilationCostHistory_lock);
     const unsigned stop_after = max_num_printed == -1 ? UINT_MAX : (unsigned)max_num_printed;
     result.num = result.num_c1 = result.num_c2 = result.num_filtered_out = 0;
-    for (int i = 0; _entries[i].e != nullptr && i < max_entries && result.num < stop_after; i++) {
+    for (int i = 0; i < max_entries && _entries[i].e != nullptr && result.num < stop_after; i++) {
       if (_entries[i].s >= minsize) {
         f(_entries[i].e);
         result.num++;
@@ -825,7 +825,6 @@ void CompilationMemoryStatistic::on_end_compilation() {
   if (print) {
     // Pre-assemble string to prevent tearing
     stringStream ss;
-    StreamAutoIndentor sai(&ss);
     ss.print("%s (%d) (%s) Arena usage ", compilertype2name(arena_stat->comp_type()), arena_stat->comp_id(), result);
     arena_stat->fmn().print_on(&ss);
     ss.print_raw(": ");
@@ -1000,8 +999,7 @@ void CompilationMemoryStatistic::print_error_report(outputStream* st) {
   if (!check_before_reporting(st)) {
     return;
   }
-  StreamAutoIndentor sai(tty);
-  streamIndentor si(tty, 4);
+  StreamIndentor si(tty, 4);
   const ArenaStatCounter* const oom_stats = Atomic::load(&_arenastat_oom_crash);
   if (oom_stats != nullptr) {
     // we crashed due to a compiler limit hit. Lead with a printout of the offending stats
@@ -1021,8 +1019,7 @@ void CompilationMemoryStatistic::print_final_report(outputStream* st) {
     return;
   }
   st->print_cr("Compiler Memory Statistic, 10 most expensive compilations:");
-  StreamAutoIndentor sai(st);
-  streamIndentor si(st, 4);
+  StreamIndentor si(st, 4);
   print_all_by_size(st, false, false, 0, 10);
 }
 
@@ -1031,8 +1028,7 @@ void CompilationMemoryStatistic::print_jcmd_report(outputStream* st, bool verbos
     return;
   }
   st->print_cr("Compiler Memory Statistic");
-  StreamAutoIndentor sai(st);
-  streamIndentor si(st, 4);
+  StreamIndentor si(st, 4);
   print_all_by_size(st, verbose, legend, minsize, -1);
 }
 

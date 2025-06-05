@@ -221,6 +221,7 @@ public final class TMSchema {
             return str + control.toString();
         }
 
+        @Override
         public String toString() {
             return control.toString()+"."+name();
         }
@@ -531,6 +532,7 @@ public final class TMSchema {
             return value;
         }
 
+        @Override
         public String toString() {
             return name()+"["+type.getName()+"] = "+value;
         }
@@ -559,6 +561,7 @@ public final class TMSchema {
         private final String enumName;
         private final int value;
 
+        @Override
         public String toString() {
             return prop+"="+enumName+"="+value;
         }

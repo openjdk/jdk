@@ -31,8 +31,8 @@
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
 #include "gc/g1/g1OldGenAllocationTracker.hpp"
-#include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "gc/g1/g1Predictions.hpp"
+#include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "runtime/atomic.hpp"
@@ -242,6 +242,10 @@ private:
 public:
   size_t predict_bytes_to_copy(G1HeapRegion* hr) const;
   size_t pending_cards_at_gc_start() const { return _pending_cards_at_gc_start; }
+
+  // GC efficiency for collecting the region based on the time estimate for
+  // merging and scanning incoming references.
+  double predict_gc_efficiency(G1HeapRegion* hr);
 
   // The minimum number of retained regions we will add to the CSet during a young GC.
   uint min_retained_old_cset_length() const;

@@ -25,29 +25,50 @@
  * @test
  * @bug     7028071
  * @summary Basic unit test of OperatingSystemMXBean.getProcessCpuLoad()
- *
+ * @library /test/lib
  * @run main GetProcessCpuLoad
  */
 
-import java.lang.management.*;
 import com.sun.management.OperatingSystemMXBean;
+import java.lang.management.*;
+import jdk.test.lib.Platform;
 
 public class GetProcessCpuLoad {
+
+    private static final int TEST_COUNT = 10;
+
     public static void main(String[] argv) throws Exception {
         OperatingSystemMXBean mbean = (com.sun.management.OperatingSystemMXBean)
             ManagementFactory.getOperatingSystemMXBean();
-        double load;
-        for(int i=0; i<10; i++) {
-            load = mbean.getProcessCpuLoad();
-            if(load<0.0 || load>1.0) {
+
+        Exception ex = null;
+        int good = 0;
+
+        for (int i = 0; i < TEST_COUNT; i++) {
+            double load = mbean.getProcessCpuLoad();
+            if (load == -1.0 && Platform.isWindows()) {
+                // Some Windows systems can return -1 occasionally, at any time.
+                // Will fail if we never see good values.
+                ex = new RuntimeException("getProcessCpuLoad() returns " + load
+                     + " which is not in the [0.0,1.0] interval");
+            } else if (load < 0.0 || load > 1.0) {
                 throw new RuntimeException("getProcessCpuLoad() returns " + load
-                       +   " which is not in the [0.0,1.0] interval");
+                          + " which is not in the [0.0,1.0] interval");
+            } else {
+                // A good reading: forget any previous -1.
+                ex = null;
+                good++;
             }
             try {
                 Thread.sleep(200);
             } catch(InterruptedException e) {
                 e.printStackTrace();
             }
+        }
+
+        if (good == 0) {
+            // Delayed failure for Windows.
+            throw ex;
         }
     }
 }

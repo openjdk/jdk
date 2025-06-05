@@ -91,7 +91,7 @@ import java.util.Vector;
  * This bug is largely unnoticed because most {@code Raster.create}
  * methods actually create {@link WritableRaster} instances, even
  * when the user did not asked for writable raster. To make this
- * bug apparent, we need to invoke {@code Raster.createRaster(…)}
+ * bug apparent, we need to invoke {@code Raster.createRaster(...)}
  * with a sample model for which no optimization is provided.
  */
 public class TiledImage implements RenderedImage {

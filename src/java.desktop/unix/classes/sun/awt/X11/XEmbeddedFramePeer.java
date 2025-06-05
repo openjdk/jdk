@@ -36,7 +36,7 @@ import sun.awt.SunToolkit;
 
 import static sun.awt.X11.XConstants.*;
 
-public class XEmbeddedFramePeer extends XFramePeer {
+public final class XEmbeddedFramePeer extends XFramePeer {
 
     private static final PlatformLogger xembedLog = PlatformLogger.getLogger("sun.awt.X11.xembed.XEmbeddedFramePeer");
 
@@ -53,6 +53,7 @@ public class XEmbeddedFramePeer extends XFramePeer {
             EMBEDDED, Boolean.TRUE}));
     }
 
+    @Override
     public void preInit(XCreateWindowParams params) {
         super.preInit(params);
         strokes = new ArrayList<>();
@@ -60,6 +61,7 @@ public class XEmbeddedFramePeer extends XFramePeer {
             embedder = new XEmbedClientHelper();
         }
     }
+    @Override
     void postInit(XCreateWindowParams params) {
         super.postInit(params);
         if (embedder != null) {
@@ -89,9 +91,11 @@ public class XEmbeddedFramePeer extends XFramePeer {
         super.dispose();
     }
 
+    @Override
     public void updateMinimumSize() {
     }
 
+    @Override
     protected String getWMName() {
         return "JavaEmbeddedFrame";
     }
@@ -104,6 +108,7 @@ public class XEmbeddedFramePeer extends XFramePeer {
         return ((EmbeddedFrame)target).supportsXEmbed();
     }
 
+    @Override
     public boolean requestWindowFocus(long time, boolean timeProvided) {
         // Should check for active state of host application
         if (embedder != null && embedder.isActive()) {
@@ -115,6 +120,7 @@ public class XEmbeddedFramePeer extends XFramePeer {
         }
     }
 
+    @Override
     protected void requestInitialFocus() {
         if (embedder != null && supportsXEmbed()) {
             embedder.requestFocus();
@@ -123,6 +129,7 @@ public class XEmbeddedFramePeer extends XFramePeer {
         }
     }
 
+    @Override
     protected boolean isEventDisabled(XEvent e) {
         if (embedder != null && embedder.isActive()) {
             switch (e.get_type()) {
@@ -134,6 +141,7 @@ public class XEmbeddedFramePeer extends XFramePeer {
         return super.isEventDisabled(e);
     }
 
+    @Override
     public void handleConfigureNotifyEvent(XEvent xev)
     {
         assert (SunToolkit.isAWTLockHeldByCurrentThread());
@@ -187,6 +195,7 @@ public class XEmbeddedFramePeer extends XFramePeer {
     }
 
     // don't use getLocationOnScreen() inherited from XDecoratedPeer
+    @Override
     public Point getLocationOnScreen() {
         XToolkit.awtLock();
         try {
@@ -197,14 +206,17 @@ public class XEmbeddedFramePeer extends XFramePeer {
     }
 
     // don't use getBounds() inherited from XDecoratedPeer
+    @Override
     public Rectangle getBounds() {
         return new Rectangle(x, y, width, height);
     }
 
+    @Override
     public void setBoundsPrivate(int x, int y, int width, int height) {
         setBounds(x, y, width, height, SET_BOUNDS | NO_EMBEDDED_CHECK);
     }
 
+    @Override
     public Rectangle getBoundsPrivate() {
         int x = 0, y = 0;
         int w = 0, h = 0;
@@ -262,6 +274,7 @@ public class XEmbeddedFramePeer extends XFramePeer {
         }
     }
 
+    @Override
     long getFocusTargetWindow() {
         return getWindow();
     }
@@ -270,6 +283,7 @@ public class XEmbeddedFramePeer extends XFramePeer {
         return embedder != null && embedder.isActive();
     }
 
+    @Override
     public int getAbsoluteX()
     {
         Point absoluteLoc = XlibUtil.translateCoordinates(getWindow(),
@@ -278,6 +292,7 @@ public class XEmbeddedFramePeer extends XFramePeer {
         return absoluteLoc != null ? absoluteLoc.x : 0;
     }
 
+    @Override
     public int getAbsoluteY()
     {
         Point absoluteLoc = XlibUtil.translateCoordinates(getWindow(),
@@ -286,19 +301,23 @@ public class XEmbeddedFramePeer extends XFramePeer {
         return absoluteLoc != null ? absoluteLoc.y : 0;
     }
 
+    @Override
     public int getWidth() {
         return width;
     }
+    @Override
     public int getHeight() {
         return height;
     }
 
+    @Override
     public Dimension getSize() {
         return new Dimension(width, height);
     }
 
     // override XWindowPeer's method to let the embedded frame to block
     // the containing window
+    @Override
     public void setModalBlocked(Dialog blocker, boolean blocked) {
         super.setModalBlocked(blocker, blocked);
 
