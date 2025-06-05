@@ -1265,7 +1265,7 @@ public final class Locale implements Cloneable, Serializable {
      * @return An array of ISO 3166 two-letter country codes.
      */
     public static String[] getISOCountries() {
-        String[] countries = ISO_3166_1_ALPHA2.get();
+        String[] countries = LocaleISOData.ISO_3166_1_ALPHA2.get();
         return Arrays.copyOf(countries, countries.length);
     }
 
@@ -1280,9 +1280,9 @@ public final class Locale implements Cloneable, Serializable {
     public static Set<String> getISOCountries(IsoCountryCode type) {
         Objects.requireNonNull(type);
         return switch (type) {
-            case PART1_ALPHA2 -> Set.of(ISO_3166_1_ALPHA2.get());
-            case PART1_ALPHA3 -> ISO_3166_1_ALPHA3.get();
-            case PART3 -> ISO_3166_3.get();
+            case PART1_ALPHA2 -> Set.of(LocaleISOData.ISO_3166_1_ALPHA2.get());
+            case PART1_ALPHA3 -> LocaleISOData.ISO_3166_1_ALPHA3.get();
+            case PART3 -> LocaleISOData.ISO_3166_3.get();
         };
     }
 
@@ -1303,17 +1303,8 @@ public final class Locale implements Cloneable, Serializable {
      * @return An array of ISO 639 two-letter language codes.
      */
     public static String[] getISOLanguages() {
-        String[] languages = ISO_639.get();
+        String[] languages = LocaleISOData.ISO_639.get();
         return Arrays.copyOf(languages, languages.length);
-    }
-
-    private static String[] getISO2Table(String table) {
-        int len = table.length() / 5;
-        String[] isoTable = new String[len];
-        for (int i = 0, j = 0; i < len; i++, j += 5) {
-            isoTable[i] = table.substring(j, j + 2);
-        }
-        return isoTable;
     }
 
     /**
@@ -1913,7 +1904,7 @@ public final class Locale implements Cloneable, Serializable {
             return lang;
         }
 
-        String language3 = getISO3Code(lang, LocaleISOData.isoLanguageTable);
+        String language3 = LocaleISOData.getISO3LangCode(lang);
         if (language3 == null) {
             throw new MissingResourceException("Couldn't find 3-letter language code for "
                     + lang, "FormatData_" + toString(), "ShortLanguage");
@@ -1935,33 +1926,12 @@ public final class Locale implements Cloneable, Serializable {
      * three-letter country abbreviation is not available for this locale.
      */
     public String getISO3Country() throws MissingResourceException {
-        String country3 = getISO3Code(baseLocale.getRegion(), LocaleISOData.isoCountryTable);
+        String country3 = LocaleISOData.getISO3CtryCode(baseLocale.getRegion());
         if (country3 == null) {
             throw new MissingResourceException("Couldn't find 3-letter country code for "
                     + baseLocale.getRegion(), "FormatData_" + toString(), "ShortCountry");
         }
         return country3;
-    }
-
-    private static String getISO3Code(String iso2Code, String table) {
-        int codeLength = iso2Code.length();
-        if (codeLength == 0) {
-            return "";
-        }
-
-        int tableLength = table.length();
-        int index = tableLength;
-        if (codeLength == 2) {
-            char c1 = iso2Code.charAt(0);
-            char c2 = iso2Code.charAt(1);
-            for (index = 0; index < tableLength; index += 5) {
-                if (table.charAt(index) == c1
-                    && table.charAt(index + 1) == c2) {
-                    break;
-                }
-            }
-        }
-        return index < tableLength ? table.substring(index + 2, index + 5) : null;
     }
 
     /**
@@ -2345,7 +2315,7 @@ public final class Locale implements Cloneable, Serializable {
     private static volatile Locale defaultDisplayLocale;
     private static volatile Locale defaultFormatLocale;
 
-    private transient final Supplier<String> languageTag =
+    private final transient Supplier<String> languageTag =
             StableValue.supplier(new Supplier<>() {
                 @Override
                 public String get() {
@@ -2544,38 +2514,6 @@ public final class Locale implements Cloneable, Serializable {
         return getInstance(baseLocale.getLanguage(), baseLocale.getScript(),
                 baseLocale.getRegion(), baseLocale.getVariant(), localeExtensions);
     }
-
-    private static final Supplier<String[]> ISO_639 =
-            StableValue.supplier(new Supplier<>() {
-                @Override
-                public String[] get() {
-                    return getISO2Table(LocaleISOData.isoLanguageTable);
-                }
-            });
-
-    private static final Supplier<String[]> ISO_3166_1_ALPHA2 =
-            StableValue.supplier(new Supplier<>() {
-                @Override
-                public String[] get() {
-                    return getISO2Table(LocaleISOData.isoCountryTable);
-                }
-            });
-
-    private static final Supplier<Set<String>> ISO_3166_1_ALPHA3 =
-            StableValue.supplier(new Supplier<>() {
-                @Override
-                public Set<String> get() {
-                    return LocaleISOData.computeISO3166_1Alpha3Countries();
-                }
-            });
-
-    private static final Supplier<Set<String>> ISO_3166_3 =
-            StableValue.supplier(new Supplier<>() {
-                @Override
-                public Set<String> get() {
-                    return Set.of(LocaleISOData.ISO3166_3);
-                }
-            });
 
     private static String convertOldISOCodes(String language) {
         // we accept both the old and the new ISO codes for the languages whose ISO
