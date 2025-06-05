@@ -54,6 +54,8 @@ public class TestAliasingFuzzer {
     public record MyType(String name, int byteSize) {
         @Override
         public String toString() { return name(); }
+
+        public String letter() { return name().substring(0, 1).toUpperCase(); }
     }
     public static final MyType myByte   = new MyType("byte", 1);
     public static final MyType myChar   = new MyType("char", 2);
@@ -109,12 +111,13 @@ public class TestAliasingFuzzer {
     }
 
     public static TemplateToken generateArray(MyType type) {
+        final int size = Generators.G.safeRestrict(Generators.G.ints(), 10_000, 20_000).next();
         var template = Template.make(() -> body(
-            let("size", Generators.G.safeRestrict(Generators.G.ints(), 10_000, 20_000).next()),
+            let("size", size),
             let("type", type),
+            let("T", type.letter()),
             """
-            // --- $test array start ---
-            // $test with size=#size and type=#type
+            // --- $test start ---
             private static #type[] $ORIGINAL_A = new #type[#size];
             private static #type[] $ORIGINAL_B = new #type[#size];
 
@@ -137,6 +140,10 @@ public class TestAliasingFuzzer {
             }
 
             @Test
+            @IR(counts = {IRNode.LOAD_VECTOR_#T, "> 0",
+                          IRNode.STORE_VECTOR,   "> 0"},
+                applyIfPlatform = {"64-bit", "true"},
+                applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
             public static Object $test(#type[] a, #type[] b) {
                 for (int i = 0; i < a.length; i++) {
                     a[i] = b[i];
@@ -147,11 +154,11 @@ public class TestAliasingFuzzer {
             @DontCompile
             public static Object $reference(#type[] a, #type[] b) {
                 for (int i = 0; i < a.length; i++) {
-                    a[i] = (#type)(b[i] + 1);
+                    a[i] = b[i];
                 }
                 return new Object[] {a, b};
             }
-            // --- $test array end   ---
+            // --- $test end   ---
             """
         ));
         return template.asToken();
