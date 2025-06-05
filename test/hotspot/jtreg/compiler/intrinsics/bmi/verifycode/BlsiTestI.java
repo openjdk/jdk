@@ -75,7 +75,7 @@ public class BlsiTestI extends BmiIntrinsicBase.BmiTestCase {
                 (byte) 0x00,
                 (byte) 0x00,
                 (byte) 0xF3,
-                (byte) 0x3};
+                (byte) 0b0001_1000}; // bits 543 == 011 (3)
     }
 
     public static void main(String[] args) throws Exception {
