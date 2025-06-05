@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,20 +35,23 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.amd64
  *          jdk.internal.vm.ci/jdk.vm.ci.riscv64
  * @compile CodeInstallationTest.java DebugInfoTest.java TestAssembler.java TestHotSpotVMConfig.java amd64/AMD64TestAssembler.java aarch64/AArch64TestAssembler.java riscv64/RISCV64TestAssembler.java
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler jdk.vm.ci.code.test.SimpleCodeInstallationTest
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler jdk.vm.ci.code.test.CodeInvalidationReasonTest
  */
 
 package jdk.vm.ci.code.test;
-import jdk.test.lib.Asserts;
 
+import jdk.test.lib.Asserts;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.hotspot.HotSpotNmethod;
+
 import org.junit.Test;
 
+import java.lang.reflect.Method;
+
 /**
- * Test simple code installation.
+ * Test if passing InstalledCode changeReason around works.
  */
-public class SimpleCodeInstallationTest extends CodeInstallationTest {
+public class CodeInvalidationReasonTest extends CodeInstallationTest {
 
     public static int add(int a, int b) {
         return a + b;
@@ -63,23 +66,12 @@ public class SimpleCodeInstallationTest extends CodeInstallationTest {
 
     @Test
     public void test() {
-        HotSpotNmethod nmethod = test(SimpleCodeInstallationTest::compileAdd, getMethod("add", int.class, int.class), 5, 7);
+        Method method = getMethod("add", int.class, int.class);
 
-        // Test code invalidation
-        Asserts.assertTrue(nmethod.isValid(), "code is not valid, i = " + nmethod);
-        Asserts.assertTrue(nmethod.isAlive(), "code is not alive, i = " + nmethod);
-        Asserts.assertNotEquals(nmethod.getStart(), 0L);
+        HotSpotNmethod nmethod = test(CodeInvalidationReasonTest::compileAdd, method, 5, 7);
+        Asserts.assertEquals(config.JVMCI_new_installation, nmethod.getChangeReason());
 
-        // Make nmethod non-entrant but still alive
-        nmethod.invalidate(false, config.JVMCI_invalidate_nmethod);
-        Asserts.assertFalse(nmethod.isValid(), "code is valid, i = " + nmethod);
-        Asserts.assertTrue(nmethod.isAlive(), "code is not alive, i = " + nmethod);
-        Asserts.assertEquals(nmethod.getStart(), 0L);
-
-        // Deoptimize the nmethod and cut the link to it from the HotSpotNmethod
         nmethod.invalidate(true, config.JVMCI_invalidate_nmethod);
-        Asserts.assertFalse(nmethod.isValid(), "code is valid, i = " + nmethod);
-        Asserts.assertFalse(nmethod.isAlive(), "code is alive, i = " + nmethod);
-        Asserts.assertEquals(nmethod.getStart(), 0L);
+        Asserts.assertEquals(config.JVMCI_invalidate_nmethod, nmethod.getChangeReason());
     }
 }

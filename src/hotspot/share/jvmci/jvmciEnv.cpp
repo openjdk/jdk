@@ -1743,8 +1743,8 @@ void JVMCIEnv::initialize_installed_code(JVMCIObject installed_code, CodeBlob* c
   } else {
     set_InstalledCode_entryPoint(installed_code, (jlong) cb->code_begin());
   }
-  set_InstalledCode_statusReason(installed_code, nmethod::JVMCI_new_installation);
   set_InstalledCode_address(installed_code, (jlong) cb);
+  set_InstalledCode_changeReason(installed_code, static_cast<int>(nmethod::ChangeReason::JVMCI_new_installation));
   set_HotSpotInstalledCode_size(installed_code, cb->size());
   set_HotSpotInstalledCode_codeStart(installed_code, (jlong) cb->code_begin());
   set_HotSpotInstalledCode_codeSize(installed_code, cb->code_size());

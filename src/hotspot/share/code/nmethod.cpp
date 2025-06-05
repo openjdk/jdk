@@ -2101,7 +2101,7 @@ bool nmethod::make_not_entrant(ChangeReason change_reason) {
   // Invalidate can't occur while holding the NMethodState_lock
   JVMCINMethodData* nmethod_data = jvmci_nmethod_data();
   if (nmethod_data != nullptr) {
-    nmethod_data->invalidate_nmethod_mirror(this, statusReason);
+    nmethod_data->invalidate_nmethod_mirror(this, change_reason);
   }
 #endif
 
@@ -2139,7 +2139,7 @@ void nmethod::unlink() {
   // Clear the link between this nmethod and a HotSpotNmethod mirror
   JVMCINMethodData* nmethod_data = jvmci_nmethod_data();
   if (nmethod_data != nullptr) {
-    nmethod_data->invalidate_nmethod_mirror(this, is_cold() ? nmethod::gc_unlinking_cold : nmethod::gc_unlinking);
+    nmethod_data->invalidate_nmethod_mirror(this, is_cold() ? nmethod::ChangeReason::GC_unlinking_cold : nmethod::ChangeReason::GC_unlinking);
   }
 #endif
 
