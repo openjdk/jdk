@@ -472,11 +472,14 @@ class nmethod : public CodeBlob {
 
 public:
   enum class ChangeReason : u1 {
+    unknown,
     C1_codepatch,
     C1_deoptimize,
     C1_deoptimize_for_patching,
     C1_predicate_failed_trap,
     CI_replay,
+    GC_unlinking,
+    GC_unlinking_cold,
     JVMCI_invalidate_nmethod,
     JVMCI_invalidate_nmethod_mirror,
     JVMCI_materialize_virtual_object,

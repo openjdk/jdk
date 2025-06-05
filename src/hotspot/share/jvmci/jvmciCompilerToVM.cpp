@@ -1218,6 +1218,14 @@ C2V_VMENTRY_0(jint, installCode0, (JNIEnv *env, jobject,
   return result;
 C2V_END
 
+C2V_VMENTRY_0(jobject,  getChangeReasonDescription, (JNIEnv *env, jobject, jint change_reason))
+  HandleMark hm(THREAD);
+  JNIHandleMark jni_hm(thread);
+  nmethod::ChangeReason reason = static_cast<nmethod::ChangeReason>(change_reason);
+  JVMCIObject desc = JVMCIENV->create_string(nmethod::change_reason_to_string(reason), JVMCI_CHECK_NULL);
+  return JVMCIENV->get_jobject(desc);
+C2V_END
+
 C2V_VMENTRY(void, resetCompilationStatistics, (JNIEnv* env, jobject))
   JVMCICompiler* compiler = JVMCICompiler::instance(true, CHECK);
   CompilerStatistics* stats = compiler->stats();
@@ -1396,9 +1404,9 @@ C2V_VMENTRY(void, reprofile, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
 C2V_END
 
 
-C2V_VMENTRY(void, invalidateHotSpotNmethod, (JNIEnv* env, jobject, jobject hs_nmethod, jboolean deoptimize))
+C2V_VMENTRY(void, invalidateHotSpotNmethod, (JNIEnv* env, jobject, jobject hs_nmethod, jboolean deoptimize, jint change_reason))
   JVMCIObject nmethod_mirror = JVMCIENV->wrap(hs_nmethod);
-  JVMCIENV->invalidate_nmethod_mirror(nmethod_mirror, deoptimize, nmethod::ChangeReason::JVMCI_invalidate_nmethod, JVMCI_CHECK);
+  JVMCIENV->invalidate_nmethod_mirror(nmethod_mirror, deoptimize, static_cast<nmethod::ChangeReason>(change_reason), JVMCI_CHECK);
 C2V_END
 
 C2V_VMENTRY_NULL(jlongArray, collectCounters, (JNIEnv* env, jobject))
@@ -3352,6 +3360,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getResolvedJavaType0",                         CC "(Ljava/lang/Object;JZ)" HS_KLASS,                                                 FN_PTR(getResolvedJavaType0)},
   {CC "readConfiguration",                            CC "()[" OBJECT,                                                                      FN_PTR(readConfiguration)},
   {CC "installCode0",                                 CC "(JJZ" HS_COMPILED_CODE "[" OBJECT INSTALLED_CODE "J[B)I",                         FN_PTR(installCode0)},
+  {CC "getChangeReasonDescription",                   CC "(I)" STRING,                                                                      FN_PTR(getChangeReasonDescription)},
   {CC "getInstallCodeFlags",                          CC "()I",                                                                             FN_PTR(getInstallCodeFlags)},
   {CC "resetCompilationStatistics",                   CC "()V",                                                                             FN_PTR(resetCompilationStatistics)},
   {CC "disassembleCodeBlob",                          CC "(" INSTALLED_CODE ")" STRING,                                                     FN_PTR(disassembleCodeBlob)},
@@ -3360,7 +3369,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getLocalVariableTableStart",                   CC "(" HS_METHOD2 ")J",                                                               FN_PTR(getLocalVariableTableStart)},
   {CC "getLocalVariableTableLength",                  CC "(" HS_METHOD2 ")I",                                                               FN_PTR(getLocalVariableTableLength)},
   {CC "reprofile",                                    CC "(" HS_METHOD2 ")V",                                                               FN_PTR(reprofile)},
-  {CC "invalidateHotSpotNmethod",                     CC "(" HS_NMETHOD "Z)V",                                                              FN_PTR(invalidateHotSpotNmethod)},
+  {CC "invalidateHotSpotNmethod",                     CC "(" HS_NMETHOD "ZI)V",                                                             FN_PTR(invalidateHotSpotNmethod)},
   {CC "collectCounters",                              CC "()[J",                                                                            FN_PTR(collectCounters)},
   {CC "getCountersSize",                              CC "()I",                                                                             FN_PTR(getCountersSize)},
   {CC "setCountersSize",                              CC "(I)Z",                                                                            FN_PTR(setCountersSize)},
