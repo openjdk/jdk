@@ -30,7 +30,7 @@ class SuspendResumeManager {
   friend ThreadSelfSuspensionHandshake;
   friend JavaThread;
 
-  JavaThread* _handshakee;
+  JavaThread* _target;
   Monitor* _state_lock;
 
 public:
@@ -38,7 +38,7 @@ public:
 
 private:
   // This flag is true when the thread owning this
-  // SuspendResumeManager (the _handshakee) is suspended.
+  // SuspendResumeManager (the _target) is suspended.
   volatile bool _suspended;
   // This flag is true while there is async handshake (trap)
   // on queue. Since we do only need one, we can reuse it if
