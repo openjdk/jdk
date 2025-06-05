@@ -5715,11 +5715,13 @@ public class Attr extends JCTree.Visitor {
     }
 
     private void setSyntheticVariableType(JCVariableDecl tree, Type type) {
-        if (type.isErroneous()) {
-            tree.vartype = make.at(tree.pos()).Erroneous();
+        // Only set an ending position when the source contains an explicit type (i.e., "var")
+        if (tree.declaredUsingVar()) {
+            make.at(tree.varPos(), tree.varPos() + names.var.length() - 1, env.toplevel.endPositions);
         } else {
-            tree.vartype = make.at(tree.pos()).Type(type);
+            make.at(tree.pos());
         }
+        tree.vartype = type.isErroneous() ? make.Erroneous() : make.Type(type);
     }
 
     public void validateTypeAnnotations(JCTree tree, boolean sigOnly) {
