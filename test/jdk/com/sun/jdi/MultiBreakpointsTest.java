@@ -178,7 +178,7 @@ class MultiBreakpointsTarg {
                     System.out.println("Thread " + threadName + " You entered : " + s);
 
                 }
-            } catch(Exception e) {
+            } catch (Exception e) {
                 System.out.println("WOOPS");
             }
         });
