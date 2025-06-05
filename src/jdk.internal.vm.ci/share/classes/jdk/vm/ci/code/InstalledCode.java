@@ -49,7 +49,7 @@ public class InstalledCode {
     /**
      * Identify the reason that caused this installed code to change.
      */
-    protected int statusReason;
+    protected int changeReason;
 
     /**
      * The maximum length of an InstalledCode name. This name is typically installed into
@@ -124,11 +124,11 @@ public class InstalledCode {
         return address != 0;
     }
 
-    public int getStatusReason() {
-        return statusReason;
+    public int getChangeReason() {
+        return changeReason;
     }
 
-    public String getStatusReasonDescription() {
+    public String getChangeReasonDescription() {
         return null;
     }
 
@@ -140,10 +140,10 @@ public class InstalledCode {
     }
 
     /**
-     * Equivalent to calling {@link #invalidate(boolean, int)} with {@code true} and {@code -1} argument.
+     * Equivalent to calling {@link #invalidate(boolean, int)} with {@code true} and {@code 0} as arguments.
      */
     public void invalidate() {
-        invalidate(true, -1);
+        invalidate(true, 0);
     }
 
     /**
@@ -159,6 +159,7 @@ public class InstalledCode {
      *            If {@code false}, any existing invocation will continue until it completes or
      *            there is a subsequent call to this method with {@code deoptimize == true} before
      *            the invocation completes.
+     * @param changeReason an integer code representing the reason why this InstalledCode is being marked as invalidated.
      */
     public void invalidate(boolean deoptimize, int statusReason) {
         throw new UnsupportedOperationException();
