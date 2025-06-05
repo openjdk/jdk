@@ -64,7 +64,7 @@ public class TestPredicatesBasic {
 
     @Test
     // Null check, loop entrance check, array upper bound check
-    @IR(counts = {IRNode.IF, "4"})
+    @IR(counts = {IRNode.IF, "3"})
     public void basicMinus() {
         int[] arr = getArr();
         for (int i = 0; i < arr.length - 1; ++i) {
@@ -74,7 +74,7 @@ public class TestPredicatesBasic {
 
     @Test
     // Null check, loop entrance check, array lower/upper bound check
-    @IR(counts = {IRNode.IF, "4"})
+    @IR(counts = {IRNode.IF, "3"})
     public void basicNeg() {
         int[] arr = getArr();
         for (int i = arr.length - 1; i >= 0; --i) {

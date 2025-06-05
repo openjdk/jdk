@@ -1676,9 +1676,6 @@ bool PhaseIdealLoop::safe_for_if_replacement(const Node* dom) const {
 // like various versions of induction variable+offset.  Clone the
 // computation per usage to allow it to sink out of the loop.
 void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
-  bool is_raw_to_oop_cast = n->is_ConstraintCast() &&
-                            n->in(1)->bottom_type()->isa_rawptr() &&
-                            !n->bottom_type()->isa_rawptr();
   if (has_ctrl(n) &&
       !n->is_Phi() &&
       !n->is_Bool() &&
@@ -2480,11 +2477,7 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
     assert(get_loop(new_ctrl) != outer_loop, "must be out of the loop nest");
     for (uint i = 0; i < wq.size(); i++) {
       Node* n = wq.at(i);
-      if (is_member(outer_loop, get_ctrl(n))) {
-        set_ctrl(n, new_ctrl);
-      } else {
-        assert(n->in(0) == inner_out, "");
-      }
+      set_ctrl(n, new_ctrl);
       if (n->in(0) != nullptr) {
         _igvn.replace_input_of(n, 0, new_ctrl);
       }

@@ -2174,9 +2174,7 @@ Node* PhaseIdealLoop::adjust_limit(bool is_positive_stride, Node* scale, Node* o
 // pre-loop or reduce the number of iterations in the main-loop until the condition
 // holds true in the main-loop. Stride, scale, offset and limit are all loop
 // invariant. Further, stride and scale are constants (offset and limit often are).
-void PhaseIdealLoop::add_constraint(IdealLoopTree* loop, jlong stride_con, jlong scale_con, Node* offset, Node* low_limit,
-                                    Node* upper_limit,
-                                    Node* pre_ctrl, Node** pre_limit, Node** main_limit, Node*& predicate_proj) {
+void PhaseIdealLoop::add_constraint(jlong stride_con, jlong scale_con, Node* offset, Node* low_limit, Node* upper_limit, Node* pre_ctrl, Node** pre_limit, Node** main_limit) {
   assert(_igvn.type(offset)->isa_long() != nullptr && _igvn.type(low_limit)->isa_long() != nullptr &&
          _igvn.type(upper_limit)->isa_long() != nullptr, "arguments should be long values");
 
@@ -2243,35 +2241,6 @@ void PhaseIdealLoop::add_constraint(IdealLoopTree* loop, jlong stride_con, jlong
     //   )
     *main_limit = adjust_limit(is_positive_stride, scale, plus_one, low_limit, *main_limit, pre_ctrl, false);
   }
-
-  CountedLoopNode *cl = loop->_head->as_CountedLoop();
-  Node* init = cl->init_trip();
-
-  // predicate on first value of first iteration
-  predicate_proj = add_range_check_elimination_assertion_predicate(loop, predicate_proj, scale, offset,
-                                             low_limit, upper_limit, init);
-  assert(!assertion_predicate_has_loop_opaque_node(predicate_proj->in(0)->as_If()), "unexpected");
-
-  Node* opaque_init = new OpaqueLoopInitNode(C, init);
-  register_new_node(opaque_init, predicate_proj);
-
-  // template predicate so it can be updated on next unrolling
-  predicate_proj = add_range_check_elimination_assertion_predicate(loop, predicate_proj, scale, offset, low_limit, upper_limit,
-                                             opaque_init);
-  assert(assertion_predicate_has_loop_opaque_node(predicate_proj->in(0)->as_If()), "unexpected");
-
-  Node* opaque_stride = new OpaqueLoopStrideNode(C, cl->stride());
-  register_new_node(opaque_stride, predicate_proj);
-  Node* max_value = new SubINode(opaque_stride, cl->stride());
-  register_new_node(max_value, predicate_proj);
-  max_value = new AddINode(opaque_init, max_value);
-  register_new_node(max_value, predicate_proj);
-  // init + (current stride - initial stride) is within the loop so narrow its type by leveraging the type of the iv Phi
-  max_value = new CastIINode(predicate_proj,max_value, loop->_head->as_CountedLoop()->phi()->bottom_type());
-  register_new_node(max_value, predicate_proj);
-  predicate_proj = add_range_check_elimination_assertion_predicate(loop, predicate_proj, scale, offset, low_limit, upper_limit,
-                                             max_value);
-  assert(assertion_predicate_has_loop_opaque_node(predicate_proj->in(0)->as_If()), "unexpected");
 }
 
 //----------------------------------is_iv------------------------------------

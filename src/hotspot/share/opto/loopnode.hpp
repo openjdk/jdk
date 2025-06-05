@@ -149,8 +149,8 @@ public:
   virtual int Opcode() const;
   bool can_be_counted_loop(PhaseValues* phase) const {
     return req() == 3 && in(0) != nullptr &&
-      in(1) != nullptr && phase->type(in(1)) != Type::TOP &&
-      in(2) != nullptr && phase->type(in(2)) != Type::TOP;
+      in(1) != nullptr && phase->type(in(1), in(1)) != Type::TOP &&
+      in(2) != nullptr && phase->type(in(2), in(2)) != Type::TOP;
   }
   bool is_valid_counted_loop(BasicType bt) const;
 #ifndef PRODUCT
@@ -589,6 +589,9 @@ public:
   virtual OuterStripMinedLoopEndNode* outer_loop_end() const;
   virtual IfFalseNode* outer_loop_exit() const;
   virtual SafePointNode* outer_safepoint() const;
+  CountedLoopNode* inner_loop() const {
+    return unique_ctrl_out()->as_CountedLoop();
+  }
   void adjust_strip_mined_loop(PhaseIterGVN* igvn);
 
   void remove_outer_loop_and_safepoint(PhaseIterGVN* igvn) const;
@@ -614,6 +617,14 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
   bool is_expanded(PhaseGVN *phase) const;
+
+  OuterStripMinedLoopNode* outer_loop() const {
+    return proj_out(true)->unique_ctrl_out()->as_OuterStripMinedLoop();
+  }
+
+  CountedLoopNode* inner_loop() const {
+    return outer_loop()->inner_loop();
+  }
 };
 
 // -----------------------------IdealLoopTree----------------------------------
@@ -971,16 +982,6 @@ private:
   }
   Node *dom_lca_for_get_late_ctrl_internal( Node *lca, Node *n, Node *tag );
 
-  // Helper function for directing control inputs away from CFG split points.
-  Node *find_non_split_ctrl( Node *ctrl ) const {
-    if (ctrl != nullptr) {
-      if (ctrl->is_MultiBranch()) {
-        ctrl = ctrl->in(0);
-      }
-      assert(ctrl->is_CFG(), "CFG");
-    }
-    return ctrl;
-  }
 
   void cast_incr_before_loop(Node* incr, Node* ctrl, CountedLoopNode* loop);
 
@@ -1517,9 +1518,7 @@ public:
   // always holds true.  That is, either increase the number of iterations in
   // the pre-loop or the post-loop until the condition holds true in the main
   // loop.  Scale_con, offset and limit are all loop invariant.
-  void add_constraint(IdealLoopTree* loop, jlong stride_con, jlong scale_con, Node* offset, Node* low_limit,
-                      Node* upper_limit,
-                      Node* pre_ctrl, Node** pre_limit, Node** main_limit, Node*& predicate_proj);
+  void add_constraint(jlong stride_con, jlong scale_con, Node* offset, Node* low_limit, Node* upper_limit, Node* pre_ctrl, Node** pre_limit, Node** main_limit);
   // Helper function for add_constraint().
   Node* adjust_limit(bool reduce, Node* scale, Node* offset, Node* rc_limit, Node* old_limit, Node* pre_ctrl, bool round);
 
@@ -1765,6 +1764,9 @@ public:
   static volatile int _long_loop_candidates;
   static volatile int _long_loop_nests;
   static volatile int _long_loop_counted_loops;
+  static volatile int _loop_conditional_constants;
+  static volatile int _loop_conditional_test;
+  static volatile int _loop_conditional_progress;
 #endif
 
 #ifdef ASSERT
@@ -1827,9 +1829,6 @@ public:
   bool clone_cmp_down(Node* n, const Node* blk1, const Node* blk2);
   void clone_template_assertion_expression_down(Node* node);
 
-  bool at_relevant_ctrl(Node* n, const Node* blk1, const Node* blk2);
-  void conditional_elimination(VectorSet& visited, Node_Stack& nstack, Node_List& rpo_list, int rounds);
-
   Node* similar_subtype_check(const Node* x, Node* r_in);
 
   void update_addp_chain_base(Node* x, Node* old_base, Node* new_base);
@@ -1849,6 +1848,8 @@ public:
   ConNode* integercon(jlong l, BasicType bt);
 
   ConNode* zerocon(BasicType bt);
+
+  void conditional_elimination(VectorSet& visited, Node_Stack& nstack, Node_List& rpo_list, int rounds);
 };
 
 

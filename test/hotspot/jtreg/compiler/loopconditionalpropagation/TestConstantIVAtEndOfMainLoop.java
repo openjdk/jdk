@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2024, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,47 +26,49 @@
  * @bug 8275202
  * @summary C2: optimize out more redundant conditions
  * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
- *                   -XX:CompileOnly=TestCMoveAndIf::test -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+StressIGVN -XX:StressSeed=314529597 -XX:+AbortVMOnCompilationFailure
- *                   -XX:+LoopConditionalPropagationALot TestCMoveAndIf
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
- *                   -XX:CompileOnly=TestCMoveAndIf::test -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+StressIGVN -XX:+AbortVMOnCompilationFailure
- *                   -XX:+LoopConditionalPropagationALot TestCMoveAndIf
+ *                   -XX:+LoopConditionalPropagationALot -XX:-UseLoopPredicate TestConstantIVAtEndOfMainLoop
+ *                   
+ *
  */
-
-
-public class TestCMoveAndIf {
-    private static volatile int barrier;
+public class TestConstantIVAtEndOfMainLoop {
+    private static volatile int volatileField;
+    private static int field;
 
     public static void main(String[] args) {
-        int[] array = new int[1000];
         for (int i = 0; i < 20_000; i++) {
-            test(-100);
-            test(100);
-            testHelper(1000, array);
-        }
-    }
-
-    private static void test(int stop) {
-        int[] src = new int[8];
-        if (stop > 6) {
-            stop = 6;
-        }
-        stop = stop + 1;
-        barrier = 0x42;
-        if (stop <= 0) {
-            stop = 0;
-        }
-        barrier = 0x42;
-        testHelper(stop+1, src);
-    }
-
-    private static void testHelper(int stop, int[] src) {
-        for (int i = 0; i < stop; i += 2) {
-            int v = src[i];
-            if (v != 0) {
+            final int res = test1(0, 0);
+            if (res != 2 + 999) {
+                throw new RuntimeException(res + " != " + 1001);
             }
         }
+    }
+
+    private static int test1(int parallel_iv, int loop_invariant) {
+        int l;
+        for (l = 0; l < 10; l++) {
+
+        }
+        l = l /10;
+        int k;
+        for (k = 0; k < 10; k+=l) {
+
+        }
+        k = k /10;
+        int j;
+        for (j = 0; j < 10; j+=k) {
+
+        }
+        j = j /10;
+        int m = 2;
+        for (int i = 0; i < 1000; i+=k) {
+            if ((k - 1) * i + loop_invariant != 0) {
+
+            }
+            volatileField = parallel_iv;
+            parallel_iv += m;
+            volatileField = parallel_iv - (i + 1) * j;
+            m = j;
+        }
+        return parallel_iv;
     }
 }

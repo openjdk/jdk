@@ -872,6 +872,12 @@
   product(bool, UseLoopConditionalPropagation, true,                        \
           "Perform Loop Conditional Propagation pass")                      \
                                                                             \
+  develop(bool, VerifyLoopConditionalPropagation, false,                    \
+          "expensive Loop Conditional Propagation verification")            \
+                                                                            \
+  product(bool, LoopConditionalPropagationALot, false,                      \
+          "run Loop Conditional Propagation on every round of loop opts")   \
+                                                                            \
 
 // end of C2_FLAGS
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2024, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,47 +26,31 @@
  * @bug 8275202
  * @summary C2: optimize out more redundant conditions
  * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
- *                   -XX:CompileOnly=TestCMoveAndIf::test -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+StressIGVN -XX:StressSeed=314529597 -XX:+AbortVMOnCompilationFailure
- *                   -XX:+LoopConditionalPropagationALot TestCMoveAndIf
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
- *                   -XX:CompileOnly=TestCMoveAndIf::test -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+StressIGVN -XX:+AbortVMOnCompilationFailure
- *                   -XX:+LoopConditionalPropagationALot TestCMoveAndIf
+ *                   -XX:CompileOnly=TestOOBoundsArrayLoadScheduledEarly::test1 -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+StressGCM -XX:+LoopConditionalPropagationALot TestOOBoundsArrayLoadScheduledEarly
  */
 
-
-public class TestCMoveAndIf {
-    private static volatile int barrier;
+public class TestOOBoundsArrayLoadScheduledEarly {
 
     public static void main(String[] args) {
         int[] array = new int[1000];
         for (int i = 0; i < 20_000; i++) {
-            test(-100);
-            test(100);
-            testHelper(1000, array);
+            test1(array, 0, 0);
+            test1(array, 1, 0);
         }
+        test1(array, Integer.MAX_VALUE,  -Integer.MAX_VALUE);
     }
 
-    private static void test(int stop) {
-        int[] src = new int[8];
-        if (stop > 6) {
-            stop = 6;
+    private static int test1(int[] array, int i, int j) {
+        for (int k = 0; k < 10; k++) {
+
         }
-        stop = stop + 1;
-        barrier = 0x42;
-        if (stop <= 0) {
-            stop = 0;
+        i = Math.max(i, 0);
+        int v = array[i + j];
+        if (i == 0) {
+            return v;
         }
-        barrier = 0x42;
-        testHelper(stop+1, src);
+        return 0;
     }
 
-    private static void testHelper(int stop, int[] src) {
-        for (int i = 0; i < stop; i += 2) {
-            int v = src[i];
-            if (v != 0) {
-            }
-        }
-    }
 }

@@ -286,6 +286,7 @@ public:
     return t;
   }
 
+  // Type of n at control c: by default same type of n except for loop conditional propagation
   virtual const Type* type(const Node* n, Node* c) const {
     return type(n);
   }
@@ -409,7 +410,7 @@ public:
 #endif
 };
 
-class PhaseConditionalPropagation;
+
 //------------------------------PhaseGVN---------------------------------------
 // Phase for performing local, pessimistic GVN-style optimizations.
 class PhaseGVN : public PhaseValues {
@@ -435,7 +436,6 @@ public:
   // Check for a simple dead loop when a data node references itself.
   void dead_loop_check(Node *n);
 #endif
-  virtual PhaseConditionalPropagation* is_ConditionalPropagation() { return nullptr; }
 };
 
 //------------------------------PhaseIterGVN-----------------------------------
@@ -632,7 +632,6 @@ class PhaseCCP : public PhaseIterGVN {
   void push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
   void push_cast_ii(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
   void push_opaque_zero_trip_guard(Unique_Node_List& worklist, const Node* use) const;
-  void push_opaque_orig_limit(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
 
  public:
   PhaseCCP( PhaseIterGVN *igvn ); // Compute conditional constants
