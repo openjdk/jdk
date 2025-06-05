@@ -724,7 +724,10 @@ public class Pretty extends JCTree.Visitor {
                     print("... ");
                     print(tree.name);
                 } else {
-                    printExpr(tree.vartype);
+                    if (tree.vartype == null && tree.declaredUsingVar())
+                        print("var");
+                    else
+                        printExpr(tree.vartype);
                     print(' ');
                     if (tree.name.isEmpty()) {
                         print('_');
