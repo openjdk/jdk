@@ -2163,9 +2163,9 @@ Node* OrVNode::Identity(PhaseGVN* phase) {
   return redundant_logical_identity(this);
 }
 
-// Returns whether (XorV (VectorMaskCmp) -1) can be optimized by performing the
-// inverse of a comparison operation.
-bool VectorMaskCmpNode::predicate_can_be_inverted() {
+// Returns whether (XorV (VectorMaskCmp) -1) can be optimized by negating the
+// comparison operation.
+bool VectorMaskCmpNode::predicate_can_be_negated() {
   switch (_predicate) {
     case BoolTest::eq:
     case BoolTest::ne:
@@ -2209,50 +2209,45 @@ bool VectorMaskCmpNode::predicate_can_be_inverted() {
 Node* XorVNode::Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape) {
   Node* in1 = in(1);
   Node* in2 = in(2);
-  // Transformations for predicated IRs are not supported for now.
-  if (is_predicated_vector() || in1->is_predicated_vector() ||
+  // Transformations for predicated vectors are not supported for now.
+  if (is_predicated_vector() ||
+      in1->is_predicated_vector() ||
       in2->is_predicated_vector()) {
     return nullptr;
   }
 
-  // XorV/XorVMask is commutative, swap VectorMaskCmp/Op_VectorMaskCast to in1.
+  // XorV/XorVMask is commutative, swap VectorMaskCmp/VectorMaskCast to in1.
   if (in2->Opcode() == Op_VectorMaskCmp ||
       (in2->Opcode() == Op_VectorMaskCast && in2->in(1)->Opcode() == Op_VectorMaskCmp)) {
     swap(in1, in2);
   }
 
-  const TypeVect* vmcast_vt = nullptr;
-  if (in1->Opcode() == Op_VectorMaskCast && in1->outcnt() == 1 &&
-      in1->in(1)->Opcode() == Op_VectorMaskCmp) {
-    vmcast_vt = in1->as_Vector()->vect_type();
+  const TypeVect* vector_mask_cast_vt = nullptr;
+  // in1 should be single used, otherwise the optimization may be unprofitable.
+  if (in1->Opcode() == Op_VectorMaskCast && in1->outcnt() == 1 && in1->in(1)->Opcode() == Op_VectorMaskCmp) {
+    vector_mask_cast_vt = in1->as_Vector()->vect_type();
     in1 = in1->in(1);
   }
-  if (in2->Opcode() == Op_VectorMaskCast) {
-    in2 = in2->in(1);
-  }
-  if (in1->Opcode() != Op_VectorMaskCmp || in1->outcnt() > 1 ||
-      !((VectorMaskCmpNode*) in1)->predicate_can_be_inverted() ||
+
+  if (in1->Opcode() != Op_VectorMaskCmp ||
+      in1->outcnt() > 1 ||
+      !((VectorMaskCmpNode*) in1)->predicate_can_be_negated() ||
       !VectorNode::is_all_ones_vector(in2)) {
     return nullptr;
   }
 
-  // This is the same with BoolTest::negate(), but we can't call it with a
-  // BoolTest object because the comparison may be unsigned comparison, but
-  // BoolTest doesn't support unsigned comparisons.
-  BoolTest::mask neg_cond =
-      (BoolTest::mask) (((VectorMaskCmpNode*) in1)->get_predicate() ^ 4);
-
+  BoolTest::mask neg_cond = (BoolTest::mask) (((VectorMaskCmpNode*) in1)->get_negative_predicate());
   ConINode* predicate_node = phase->intcon(neg_cond);
   const TypeVect* vt = in1->as_Vector()->vect_type();
-  Node* vmcmp = new VectorMaskCmpNode(neg_cond, in1->in(1), in1->in(2),
+  Node* res = new VectorMaskCmpNode(neg_cond, in1->in(1), in1->in(2),
                                       predicate_node, vt);
-  if (vmcast_vt != nullptr) {
-    // We optimized out an VectorMaskCast, and in order to ensure type
+  if (vector_mask_cast_vt != nullptr) {
+    // We optimized out a VectorMaskCast, and in order to ensure type
     // correctness, we need to regenerate one. VectorMaskCast will be encoded as
-    // empty for types with the same size.
-    vmcmp = new VectorMaskCastNode(phase->transform(vmcmp), vmcast_vt);
+    // a no-op (identity function) for types with the same size.
+    res = new VectorMaskCastNode(phase->transform(res), vector_mask_cast_vt);
   }
-  return vmcmp;
+  return res;
 }
 
 Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {

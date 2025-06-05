@@ -1685,8 +1685,11 @@ class VectorMaskCmpNode : public VectorNode {
   virtual bool cmp( const Node &n ) const {
     return VectorNode::cmp(n) && _predicate == ((VectorMaskCmpNode&)n)._predicate;
   }
-  bool predicate_can_be_inverted();
+  bool predicate_can_be_negated();
   BoolTest::mask get_predicate() { return _predicate; }
+  // This is the same with BoolTest::negate(), but BoolTest doesn't support
+  // unsigned comparison. However _predicate can be unsigned comparison.
+  BoolTest::mask get_negative_predicate() { return BoolTest::mask(_predicate ^ 4); }
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif // !PRODUCT

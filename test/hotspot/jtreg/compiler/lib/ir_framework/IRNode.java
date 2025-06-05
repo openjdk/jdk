@@ -2226,6 +2226,16 @@ public class IRNode {
         vectorNode(VECTOR_BLEND_D, "VectorBlend", TYPE_DOUBLE);
     }
 
+    public static final String VECTOR_MASK_CMP_B = VECTOR_PREFIX + "VECTOR_MASK_CMP_B" + POSTFIX;
+    static {
+        vectorNode(VECTOR_MASK_CMP_B, "VectorMaskCmp", TYPE_BYTE);
+    }
+
+    public static final String VECTOR_MASK_CMP_S = VECTOR_PREFIX + "VECTOR_MASK_CMP_S" + POSTFIX;
+    static {
+        vectorNode(VECTOR_MASK_CMP_S, "VectorMaskCmp", TYPE_SHORT);
+    }
+
     public static final String VECTOR_MASK_CMP_I = VECTOR_PREFIX + "VECTOR_MASK_CMP_I" + POSTFIX;
     static {
         vectorNode(VECTOR_MASK_CMP_I, "VectorMaskCmp", TYPE_INT);
