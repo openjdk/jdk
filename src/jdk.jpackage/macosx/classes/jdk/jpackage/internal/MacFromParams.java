@@ -39,13 +39,12 @@ import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE_FI
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.StandardBundlerParam.hasPredefinedAppImage;
-import static jdk.jpackage.internal.model.MacPackage.RUNTIME_PACKAGE_LAYOUT;
+import static jdk.jpackage.internal.model.MacPackage.RUNTIME_BUNDLE_LAYOUT;
 import static jdk.jpackage.internal.model.StandardPackageType.MAC_DMG;
 import static jdk.jpackage.internal.model.StandardPackageType.MAC_PKG;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
@@ -64,6 +63,7 @@ import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacDmgPackage;
 import jdk.jpackage.internal.model.MacFileAssociation;
 import jdk.jpackage.internal.model.MacLauncher;
+import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.MacPkgPackage;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.RuntimeLayout;
@@ -75,20 +75,16 @@ final class MacFromParams {
     private static MacApplication createMacApplication(
             Map<String, ? super Object> params) throws ConfigException, IOException {
 
-        final var predefinedRuntimeLayout = PREDEFINED_RUNTIME_IMAGE.findIn(params).map(predefinedRuntimeImage -> {
-            if (Files.isDirectory(RUNTIME_PACKAGE_LAYOUT.resolveAt(predefinedRuntimeImage).runtimeDirectory())) {
-                return RUNTIME_PACKAGE_LAYOUT;
-            } else {
-                return RuntimeLayout.DEFAULT;
-            }
-        });
+        final var predefinedRuntimeLayout = PREDEFINED_RUNTIME_IMAGE.findIn(params)
+                .map(MacPackage::guessRuntimeLayout)
+                .map(RuntimeLayout::unresolve);
 
         final var launcherFromParams = new LauncherFromParams(Optional.of(MacFromParams::createMacFa));
 
         final var superAppBuilder = createApplicationBuilder(params, toFunction(launcherParams -> {
             var launcher = launcherFromParams.create(launcherParams);
             return MacLauncher.create(launcher);
-        }), APPLICATION_LAYOUT, predefinedRuntimeLayout);
+        }), APPLICATION_LAYOUT, RUNTIME_BUNDLE_LAYOUT, predefinedRuntimeLayout);
 
         if (hasPredefinedAppImage(params)) {
             // Set the main launcher start up info.
