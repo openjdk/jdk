@@ -74,9 +74,12 @@ public class TestAliasingFuzzer {
 
     // Do the containers (array, MemorySegment, etc) ever overlap?
     enum Aliasing {
-        DIFFERENT_CONTAINER, // different array, non-overlapping MemorySegment
-        SAME_CONTAINER, // Same array, same memory region for MemorySegment
-        ALTERNATE_SAME_DIFFERENT_CONTAINER
+        CONTAINER_DIFFERENT,
+        CONTAINER_SAME_ALIASING_ALWAYS,
+        CONTAINER_SAME_ALIASING_NEVER,
+        CONTAINER_SAME_ALIASING_ALTERNATE,
+        CONTAINER_SAME_ALIASING_RANDOM,
+        CONTAINER_ALTERNATE_ALIASING_NEVER
     }
 
     public static void main(String[] args) {
@@ -163,17 +166,20 @@ public class TestAliasingFuzzer {
                 System.arraycopy($ORIGINAL_B, 0, $REFERENCE_B, 0, #size);
             """,
             switch(aliasing) {
-                case Aliasing.DIFFERENT_CONTAINER  ->
+                case Aliasing.CONTAINER_DIFFERENT  ->
                     """
                     #type[] $TEST_SECOND      = $TEST_B;
                     #type[] $REFERENCE_SECOND = $REFERENCE_B;
                     """;
-                case Aliasing.SAME_CONTAINER ->
+                case Aliasing.CONTAINER_SAME_ALIASING_ALWAYS,
+                     Aliasing.CONTAINER_SAME_ALIASING_NEVER,
+                     Aliasing.CONTAINER_SAME_ALIASING_ALTERNATE,
+                     Aliasing.CONTAINER_SAME_ALIASING_RANDOM ->
                     """
                     #type[] $TEST_SECOND      = $TEST_A;
                     #type[] $REFERENCE_SECOND = $REFERENCE_A;
                     """;
-                case Aliasing.ALTERNATE_SAME_DIFFERENT_CONTAINER ->
+                case Aliasing.CONTAINER_ALTERNATE_ALIASING_NEVER ->
                     """
                     final boolean isExact = ($iterations % 2 == 0);
                     #type[] $TEST_SECOND      = isExact ? $TEST_A      : $TEST_B;
