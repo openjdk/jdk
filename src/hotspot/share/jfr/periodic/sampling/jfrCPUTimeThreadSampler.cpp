@@ -68,12 +68,17 @@ static JavaThread* get_java_thread_if_valid() {
 }
 
 JfrCPUTimeTraceQueue::JfrCPUTimeTraceQueue(u4 capacity) :
-  _capacity(capacity), _head(0), _lost_samples(0) {
-  _data = JfrCHeapObj::new_array<JfrCPUTimeSampleRequest>(capacity);
+   _data(nullptr), _capacity(capacity), _head(0), _lost_samples(0) {
+  if (capacity != 0) {
+    _data = JfrCHeapObj::new_array<JfrCPUTimeSampleRequest>(capacity);
+  }
 }
 
 JfrCPUTimeTraceQueue::~JfrCPUTimeTraceQueue() {
-  JfrCHeapObj::free(_data, _capacity * sizeof(JfrCPUTimeSampleRequest));
+  if (_data != nullptr) {
+    assert(_capacity != 0, "invariant");
+    JfrCHeapObj::free(_data, _capacity * sizeof(JfrCPUTimeSampleRequest));
+  }
 }
 
 bool JfrCPUTimeTraceQueue::enqueue(JfrCPUTimeSampleRequest& request) {
@@ -111,8 +116,15 @@ u4 JfrCPUTimeTraceQueue::capacity() const {
 
 void JfrCPUTimeTraceQueue::set_capacity(u4 capacity) {
   _head = 0;
-  JfrCHeapObj::free(_data, _capacity * sizeof(JfrCPUTimeSampleRequest));
-  _data = JfrCHeapObj::new_array<JfrCPUTimeSampleRequest>(capacity);
+  if (_data != nullptr) {
+    assert(_capacity != 0, "invariant");
+    JfrCHeapObj::free(_data, _capacity * sizeof(JfrCPUTimeSampleRequest));
+  }
+  if (capacity != 0) {
+    _data = JfrCHeapObj::new_array<JfrCPUTimeSampleRequest>(capacity);
+  } else {
+    _data = nullptr;
+  }
   _capacity = capacity;
 }
 
@@ -681,7 +693,6 @@ class VM_JFRTerminateCPUTimeSampler : public VM_Operation {
       if (timer == nullptr) {
         continue;
       }
-      timer_delete(*timer);
       tl->deallocate_cpu_time_jfr_queue();
       tl->unset_cpu_timer();
     }
