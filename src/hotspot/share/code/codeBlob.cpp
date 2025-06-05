@@ -301,6 +301,8 @@ CodeBlob* CodeBlob::create(CodeBlob* archived_blob,
                                     name,
                                     archived_reloc_data,
                                     archived_oop_maps);
+      assert(blob != nullptr, "sanity check");
+
 #ifndef PRODUCT
       blob->use_remarks(archived_asm_remarks);
       archived_asm_remarks.clear();
@@ -308,7 +310,6 @@ CodeBlob* CodeBlob::create(CodeBlob* archived_blob,
       archived_dbg_strings.clear();
 #endif // PRODUCT
 
-      assert(blob != nullptr, "sanity check");
       // Flush the code block
       ICache::invalidate_range(blob->code_begin(), blob->code_size());
       CodeCache::commit(blob); // Count adapters
