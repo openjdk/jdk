@@ -28,6 +28,7 @@
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
  *      4947220 7018606 7034570 4244896 5049299 8003488 8054494 8058464
  *      8067796 8224905 8263729 8265173 8272600 8231297 8282219 8285517
+ *      8352533
  * @key intermittent
  * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
@@ -86,6 +87,7 @@ public class Basic {
     /* Used for regex String matching for long error messages */
     static final String PERMISSION_DENIED_ERROR_MSG = "(Permission denied|error=13)";
     static final String NO_SUCH_FILE_ERROR_MSG = "(No such file|error=2)";
+    static final String SPAWNHELPER_FAILURE_MSG = "(Possible reasons:)";
 
     /**
      * Returns the number of milliseconds since time given by
@@ -318,7 +320,9 @@ public class Basic {
         } catch (IOException e) {
             String m = e.getMessage();
             if (EnglishUnix.is() &&
-                ! matches(m, PERMISSION_DENIED_ERROR_MSG))
+                !matches(m, PERMISSION_DENIED_ERROR_MSG))
+                unexpected(e);
+            if (matches(m, SPAWNHELPER_FAILURE_MSG))
                 unexpected(e);
         } catch (Throwable t) { unexpected(t); }
     }
@@ -428,7 +432,9 @@ public class Basic {
                         } catch (IOException e) {
                             String m = e.getMessage();
                             if (EnglishUnix.is() &&
-                                ! matches(m, NO_SUCH_FILE_ERROR_MSG))
+                                !matches(m, NO_SUCH_FILE_ERROR_MSG))
+                                unexpected(e);
+                            if (matches(m, SPAWNHELPER_FAILURE_MSG))
                                 unexpected(e);
                         } catch (Throwable t) { unexpected(t); }
 
@@ -441,7 +447,9 @@ public class Basic {
                         } catch (IOException e) {
                             String m = e.getMessage();
                             if (EnglishUnix.is() &&
-                                ! matches(m, NO_SUCH_FILE_ERROR_MSG))
+                                !matches(m, NO_SUCH_FILE_ERROR_MSG))
+                                unexpected(e);
+                            if (matches(m, SPAWNHELPER_FAILURE_MSG))
                                 unexpected(e);
                         } catch (Throwable t) { unexpected(t); }
 
@@ -1978,6 +1986,8 @@ public class Basic {
             if (EnglishUnix.is() &&
                 ! matches(m, NO_SUCH_FILE_ERROR_MSG))
                 unexpected(e);
+            if (matches(m, SPAWNHELPER_FAILURE_MSG))
+                unexpected(e);
         } catch (Throwable t) { unexpected(t); }
 
         //----------------------------------------------------------------
@@ -1995,6 +2005,8 @@ public class Basic {
                     || (EnglishUnix.is() &&
                         ! matches(m, NO_SUCH_FILE_ERROR_MSG)))
                     unexpected(e);
+                if (matches(m, SPAWNHELPER_FAILURE_MSG))
+                    unexpected(e);
             } catch (Throwable t) { unexpected(t); }
 
         //----------------------------------------------------------------
@@ -2010,6 +2022,8 @@ public class Basic {
             if (! matches(m, "in directory")
                 || (EnglishUnix.is() &&
                     ! matches(m, NO_SUCH_FILE_ERROR_MSG)))
+                unexpected(e);
+            if (matches(m, SPAWNHELPER_FAILURE_MSG))
                 unexpected(e);
         } catch (Throwable t) { unexpected(t); }
 
@@ -2069,8 +2083,9 @@ public class Basic {
                         op.f();
                         fail();
                     } catch (IOException expected) {
-                        check(expected.getMessage()
-                              .matches("[Ss]tream [Cc]losed"));
+                        String m = expected.getMessage();
+                        check(m.matches("[Ss]tream [Cc]losed"));
+                        check(!matches(m, SPAWNHELPER_FAILURE_MSG));
                     }
                 }
             }
@@ -2122,8 +2137,12 @@ public class Basic {
                             }
                             equal(-1, r);
                         } catch (IOException ioe) {
-                            if (!ioe.getMessage().equals("Stream closed")) {
+                            String m = ioe.getMessage();
+                            if (!m.equals("Stream closed")) {
                                 // BufferedInputStream may throw IOE("Stream closed").
+                                unexpected(ioe);
+                            }
+                            if (matches(m, SPAWNHELPER_FAILURE_MSG)) {
                                 unexpected(ioe);
                             }
                         } catch (Throwable t) { unexpected(t); }}};
@@ -2179,6 +2198,9 @@ public class Basic {
                                 ! (msg.matches(".*Bad file.*") ||
                                         msg.matches(".*Stream closed.*")))
                                 unexpected(e);
+                            if (matches(msg, SPAWNHELPER_FAILURE_MSG)) {
+                                unexpected(e);
+                            }
                         }
                         catch (Throwable t) { unexpected(t); }}};
                 reader.setDaemon(true);
@@ -2271,6 +2293,9 @@ public class Basic {
             if (EnglishUnix.is() &&
                 ! matches(m, PERMISSION_DENIED_ERROR_MSG))
                 unexpected(e);
+            if (matches(m, SPAWNHELPER_FAILURE_MSG)) {
+                unexpected(e);
+            }
         } catch (Throwable t) { unexpected(t); }
 
         new File("emptyCommand").delete();

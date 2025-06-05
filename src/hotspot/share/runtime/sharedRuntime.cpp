@@ -87,7 +87,7 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 #if INCLUDE_JFR
-#include "jfr/jfr.hpp"
+#include "jfr/jfr.inline.hpp"
 #endif
 
 // Shared runtime stub routines reside in their own unique blob with a
@@ -441,7 +441,7 @@ double SharedRuntime::dabs(double f)  {
 
 #endif
 
-#if defined(__SOFTFP__) || defined(PPC)
+#if defined(__SOFTFP__)
 double SharedRuntime::dsqrt(double f) {
   return sqrt(f);
 }
@@ -2177,7 +2177,6 @@ static int _lookups; // number of calls to lookup
 static int _equals;  // number of buckets checked with matching hash
 static int _archived_hits; // number of successful lookups in archived table
 static int _runtime_hits;  // number of successful lookups in runtime table
-static int _compact; // number of equals calls with compact signature
 #endif
 
 // A simple wrapper class around the calling convention information
@@ -2188,18 +2187,23 @@ class AdapterFingerPrint : public MetaspaceObj {
     _basic_type_bits = 4,
     _basic_type_mask = right_n_bits(_basic_type_bits),
     _basic_types_per_int = BitsPerInt / _basic_type_bits,
-    _compact_int_count = 3
   };
   // TO DO:  Consider integrating this with a more global scheme for compressing signatures.
   // For now, 4 bits per components (plus T_VOID gaps after double/long) is not excessive.
 
   int _length;
-  int _value[_compact_int_count];
+
+  static int data_offset() { return sizeof(AdapterFingerPrint); }
+  int* data_pointer() {
+    return (int*)((address)this + data_offset());
+  }
 
   // Private construtor. Use allocate() to get an instance.
-  AdapterFingerPrint(int total_args_passed, BasicType* sig_bt) {
+  AdapterFingerPrint(int total_args_passed, BasicType* sig_bt, int len) {
+    int* data = data_pointer();
     // Pack the BasicTypes with 8 per int
-    _length = (total_args_passed + (_basic_types_per_int-1)) / _basic_types_per_int;
+    assert(len == length(total_args_passed), "sanity");
+    _length = len;
     int sig_index = 0;
     for (int index = 0; index < _length; index++) {
       int value = 0;
@@ -2208,13 +2212,21 @@ class AdapterFingerPrint : public MetaspaceObj {
         assert((bt & _basic_type_mask) == bt, "must fit in 4 bits");
         value = (value << _basic_type_bits) | bt;
       }
-      _value[index] = value;
+      data[index] = value;
     }
   }
 
   // Call deallocate instead
   ~AdapterFingerPrint() {
-    FreeHeap(this);
+    ShouldNotCallThis();
+  }
+
+  static int length(int total_args) {
+    return (total_args + (_basic_types_per_int-1)) / _basic_types_per_int;
+  }
+
+  static int compute_size_in_words(int len) {
+    return (int)heap_word_size(sizeof(AdapterFingerPrint) + (len * sizeof(int)));
   }
 
   // Remap BasicTypes that are handled equivalently by the adapters.
@@ -2276,31 +2288,25 @@ class AdapterFingerPrint : public MetaspaceObj {
   }
 
  public:
-  static int allocation_size(int total_args_passed, BasicType* sig_bt) {
-    int len = (total_args_passed + (_basic_types_per_int-1)) / _basic_types_per_int;
-    return sizeof(AdapterFingerPrint) + (len > _compact_int_count ? (len - _compact_int_count) * sizeof(int) : 0);
-  }
-
   static AdapterFingerPrint* allocate(int total_args_passed, BasicType* sig_bt) {
-    int size_in_bytes = allocation_size(total_args_passed, sig_bt);
-    return new (size_in_bytes) AdapterFingerPrint(total_args_passed, sig_bt);
+    int len = length(total_args_passed);
+    int size_in_bytes = BytesPerWord * compute_size_in_words(len);
+    AdapterFingerPrint* afp = new (size_in_bytes) AdapterFingerPrint(total_args_passed, sig_bt, len);
+    assert((afp->size() * BytesPerWord) == size_in_bytes, "should match");
+    return afp;
   }
 
   static void deallocate(AdapterFingerPrint* fp) {
-    fp->~AdapterFingerPrint();
+    FreeHeap(fp);
   }
 
   int value(int index) {
-    return _value[index];
+    int* data = data_pointer();
+    return data[index];
   }
 
   int length() {
-    if (_length < 0) return -_length;
     return _length;
-  }
-
-  bool is_compact() {
-    return _length <= _compact_int_count;
   }
 
   unsigned int compute_hash() {
@@ -2405,7 +2411,7 @@ class AdapterFingerPrint : public MetaspaceObj {
       return false;
     } else {
       for (int i = 0; i < _length; i++) {
-        if (_value[i] != other->_value[i]) {
+        if (value(i) != other->value(i)) {
           return false;
         }
       }
@@ -2415,7 +2421,7 @@ class AdapterFingerPrint : public MetaspaceObj {
 
   // methods required by virtue of being a MetaspaceObj
   void metaspace_pointers_do(MetaspaceClosure* it) { return; /* nothing to do here */ }
-  int size() const { return (int)heap_word_size(sizeof(AdapterFingerPrint) + (_length > _compact_int_count ? (_length - _compact_int_count) * sizeof(int) : 0)); }
+  int size() const { return compute_size_in_words(_length); }
   MetaspaceObj::Type type() const { return AdapterFingerPrintType; }
 
   static bool equals(AdapterFingerPrint* const& fp1, AdapterFingerPrint* const& fp2) {
@@ -2456,17 +2462,14 @@ AdapterHandlerEntry* AdapterHandlerLibrary::lookup(int total_args_passed, BasicT
 #if INCLUDE_CDS
   // if we are building the archive then the archived adapter table is
   // not valid and we need to use the ones added to the runtime table
-  if (!AOTCodeCache::is_dumping_adapters()) {
+  if (AOTCodeCache::is_using_adapter()) {
     // Search archived table first. It is read-only table so can be searched without lock
     entry = _aot_adapter_handler_table.lookup(fp, fp->compute_hash(), 0 /* unused */);
-    if (entry != nullptr) {
 #ifndef PRODUCT
-      if (fp->is_compact()) {
-        _compact++;
-      }
+    if (entry != nullptr) {
       _archived_hits++;
-#endif
     }
+#endif
   }
 #endif // INCLUDE_CDS
   if (entry == nullptr) {
@@ -2478,7 +2481,6 @@ AdapterHandlerEntry* AdapterHandlerLibrary::lookup(int total_args_passed, BasicT
              entry->fingerprint()->as_basic_args_string(), entry->fingerprint()->as_string(), entry->fingerprint()->compute_hash(),
              fp->as_basic_args_string(), fp->as_string(), fp->compute_hash());
   #ifndef PRODUCT
-      if (fp->is_compact()) _compact++;
       _runtime_hits++;
   #endif
     }
@@ -2497,8 +2499,8 @@ static void print_table_statistics() {
   tty->print_cr("AdapterHandlerTable (table_size=%d, entries=%d)",
                 _adapter_handler_table->table_size(), _adapter_handler_table->number_of_entries());
   int total_hits = _archived_hits + _runtime_hits;
-  tty->print_cr("AdapterHandlerTable: lookups %d equals %d hits %d (archived=%d+runtime=%d) compact %d",
-                _lookups, _equals, total_hits, _archived_hits, _runtime_hits, _compact);
+  tty->print_cr("AdapterHandlerTable: lookups %d equals %d hits %d (archived=%d+runtime=%d)",
+                _lookups, _equals, total_hits, _archived_hits, _runtime_hits);
 }
 #endif
 
@@ -2566,7 +2568,7 @@ void AdapterHandlerLibrary::initialize() {
 
 #if INCLUDE_CDS
   // Link adapters in AOT Cache to their code in AOT Code Cache
-  if (!_aot_adapter_handler_table.empty()) {
+  if (AOTCodeCache::is_using_adapter() && !_aot_adapter_handler_table.empty()) {
     link_aot_adapters();
     lookup_simple_adapters();
     return;
@@ -2838,7 +2840,7 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
     // and we're some non descript Java thread.
     return false;
   }
-  if (!is_transient && AOTCodeCache::is_dumping_adapters()) {
+  if (!is_transient && AOTCodeCache::is_dumping_adapter()) {
     // try to save generated code
     const char* name = AdapterHandlerLibrary::name(handler->fingerprint());
     const uint32_t id = AdapterHandlerLibrary::id(handler->fingerprint());
@@ -2850,7 +2852,7 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
     entry_offset[2] = handler->get_c2i_unverified_entry() - i2c_entry;
     entry_offset[3] = handler->get_c2i_no_clinit_check_entry() - i2c_entry;
     bool success = AOTCodeCache::store_code_blob(*adapter_blob, AOTCodeEntry::Adapter, id, name, AdapterHandlerEntry::ENTRIES_COUNT, entry_offset);
-    assert(success || !AOTCodeCache::is_dumping_adapters(), "caching of adapter must be disabled");
+    assert(success || !AOTCodeCache::is_dumping_adapter(), "caching of adapter must be disabled");
   }
   handler->relocate(adapter_blob->content_begin());
 #ifndef PRODUCT
@@ -2898,7 +2900,7 @@ public:
   {}
 
   bool do_entry(AdapterFingerPrint* fp, AdapterHandlerEntry* entry) {
-    LogStreamHandle(Trace, cds) lsh;
+    LogStreamHandle(Trace, aot) lsh;
     if (ArchiveBuilder::current()->has_been_archived((address)entry)) {
       assert(ArchiveBuilder::current()->has_been_archived((address)fp), "must be");
       AdapterFingerPrint* buffered_fp = ArchiveBuilder::current()->get_buffered_addr(fp);
@@ -2912,11 +2914,11 @@ public:
       if (lsh.is_enabled()) {
         address fp_runtime_addr = (address)buffered_fp + ArchiveBuilder::current()->buffer_to_requested_delta();
         address entry_runtime_addr = (address)buffered_entry + ArchiveBuilder::current()->buffer_to_requested_delta();
-        log_trace(cds)("Added fp=%p (%s), entry=%p to the archived adater table", buffered_fp, buffered_fp->as_basic_args_string(), buffered_entry);
+        log_trace(aot)("Added fp=%p (%s), entry=%p to the archived adater table", buffered_fp, buffered_fp->as_basic_args_string(), buffered_entry);
       }
     } else {
       if (lsh.is_enabled()) {
-        log_trace(cds)("Skipping adapter handler %p (fp=%s) as it is not archived", entry, fp->as_basic_args_string());
+        log_trace(aot)("Skipping adapter handler %p (fp=%s) as it is not archived", entry, fp->as_basic_args_string());
       }
     }
     return true;
@@ -2961,10 +2963,10 @@ void AdapterHandlerEntry::link() {
   // Generate code only if AOTCodeCache is not available, or
   // caching adapters is disabled, or we fail to link
   // the AdapterHandlerEntry to its code in the AOTCodeCache
-  if (AOTCodeCache::is_using_adapters()) {
+  if (AOTCodeCache::is_using_adapter()) {
     adapter_blob = AdapterHandlerLibrary::link_aot_adapter_handler(this);
     if (adapter_blob == nullptr) {
-      log_warning(cds)("Failed to link AdapterHandlerEntry (fp=%s) to its code in the AOT code cache", _fingerprint->as_basic_args_string());
+      log_warning(aot)("Failed to link AdapterHandlerEntry (fp=%s) to its code in the AOT code cache", _fingerprint->as_basic_args_string());
       generate_code = true;
     }
   } else {
@@ -2988,6 +2990,7 @@ void AdapterHandlerEntry::link() {
 }
 
 void AdapterHandlerLibrary::link_aot_adapters() {
+  assert(AOTCodeCache::is_using_adapter(), "AOT adapters code should be available");
   _aot_adapter_handler_table.iterate([](AdapterHandlerEntry* entry) {
     assert(!entry->is_linked(), "AdapterHandlerEntry is already linked!");
     entry->link();
@@ -3052,7 +3055,7 @@ void AdapterHandlerEntry::relocate(address new_base) {
 }
 
 void AdapterHandlerEntry::metaspace_pointers_do(MetaspaceClosure* it) {
-  LogStreamHandle(Trace, cds) lsh;
+  LogStreamHandle(Trace, aot) lsh;
   if (lsh.is_enabled()) {
     lsh.print("Iter(AdapterHandlerEntry): %p(%s)", this, _fingerprint->as_basic_args_string());
     lsh.cr();
@@ -3279,7 +3282,7 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
 
 JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
   assert(current == JavaThread::current(), "pre-condition");
-
+  JFR_ONLY(Jfr::check_and_process_sample_request(current);)
   // During OSR migration, we unwind the interpreted frame and replace it with a compiled
   // frame. The stack watermark code below ensures that the interpreted frame is processed
   // before it gets unwound. This is helpful as the size of the compiled frame could be
@@ -3374,10 +3377,12 @@ JRT_END
 bool AdapterHandlerLibrary::contains(const CodeBlob* b) {
   bool found = false;
 #if INCLUDE_CDS
-  auto findblob_archived_table = [&] (AdapterHandlerEntry* handler) {
-    return (found = (b == CodeCache::find_blob(handler->get_i2c_entry())));
-  };
-  _aot_adapter_handler_table.iterate(findblob_archived_table);
+  if (AOTCodeCache::is_using_adapter()) {
+    auto findblob_archived_table = [&] (AdapterHandlerEntry* handler) {
+      return (found = (b == CodeCache::find_blob(handler->get_i2c_entry())));
+    };
+    _aot_adapter_handler_table.iterate(findblob_archived_table);
+  }
 #endif // INCLUDE_CDS
   if (!found) {
     auto findblob_runtime_table = [&] (AdapterFingerPrint* key, AdapterHandlerEntry* a) {
@@ -3401,18 +3406,19 @@ uint32_t AdapterHandlerLibrary::id(AdapterFingerPrint* fingerprint) {
 void AdapterHandlerLibrary::print_handler_on(outputStream* st, const CodeBlob* b) {
   bool found = false;
 #if INCLUDE_CDS
-  auto findblob_archived_table = [&] (AdapterHandlerEntry* handler) {
-    if (b == CodeCache::find_blob(handler->get_i2c_entry())) {
-      found = true;
-      st->print("Adapter for signature: ");
-      handler->print_adapter_on(st);
-      return true;
-    } else {
-      return false; // keep looking
-
-    }
-  };
-  _aot_adapter_handler_table.iterate(findblob_archived_table);
+  if (AOTCodeCache::is_using_adapter()) {
+    auto findblob_archived_table = [&] (AdapterHandlerEntry* handler) {
+      if (b == CodeCache::find_blob(handler->get_i2c_entry())) {
+        found = true;
+        st->print("Adapter for signature: ");
+        handler->print_adapter_on(st);
+        return true;
+      } else {
+        return false; // keep looking
+      }
+    };
+    _aot_adapter_handler_table.iterate(findblob_archived_table);
+  }
 #endif // INCLUDE_CDS
   if (!found) {
     auto findblob_runtime_table = [&] (AdapterFingerPrint* key, AdapterHandlerEntry* a) {

@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8331535 8351435
+ * @bug 8331535 8351435 8347050
  * @summary Verify the jdk.internal.le's console provider works properly.
  * @modules jdk.internal.le
  * @library /test/lib
@@ -37,6 +37,8 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class JLineConsoleProviderTest {
+
+    private static final String NL = System.getProperty("line.separator");
 
     public static void main(String... args) throws Throwable {
         for (Method m : JLineConsoleProviderTest.class.getDeclaredMethods()) {
@@ -52,6 +54,12 @@ public class JLineConsoleProviderTest {
 
     void testCorrectOutputReadPassword() throws Exception {
         doRunConsoleTest("testCorrectOutputReadPassword", "inp", "%s");
+    }
+
+    void testEvenExpansionDisabled() throws Exception {
+        doRunConsoleTest("readAndPrint", "a\\b\n", "'a\\b'" + NL);
+        doRunConsoleTest("readAndPrint2", "a\n!!\n", "1: 'a'" + NL +
+                                                     "2: '!!'" + NL);
     }
 
     void doRunConsoleTest(String testName,
@@ -95,6 +103,12 @@ public class JLineConsoleProviderTest {
                     System.console().readLine("%%s");
                 case "testCorrectOutputReadPassword" ->
                     System.console().readPassword("%%s");
+                case "readAndPrint" ->
+                    System.out.println("'" + System.console().readLine() + "'");
+                case "readAndPrint2" -> {
+                    System.out.println("1: '" +System.console().readLine() + "'");
+                    System.out.println("2: '" + System.console().readLine() + "'");
+                }
                 default -> throw new UnsupportedOperationException(args[0]);
             }
 

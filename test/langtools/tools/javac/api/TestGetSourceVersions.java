@@ -26,7 +26,7 @@
  * @bug     6395981 6458819 7025784 8028543 8028544 8193291 8193292 8193292 8205393 8245585 8245585 8245585 8286034
  *          8296150 8306585 8319414 8330183 8342982
  * @summary JavaCompilerTool and Tool must specify version of JLS and JVMS
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @modules java.compiler
  *          jdk.compiler
  * @run main/fail TestGetSourceVersions
