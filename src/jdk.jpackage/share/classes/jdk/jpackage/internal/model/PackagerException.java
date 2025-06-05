@@ -38,7 +38,7 @@ import jdk.jpackage.internal.util.StringBundle;
  * throw buildLocalizedException(i18n).message("error.no.name").create();
  * }
  */
-public class PackagerException extends Exception {
+public class PackagerException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
