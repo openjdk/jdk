@@ -458,7 +458,7 @@ Node* PhaseIdealLoop::loop_iv_incr(Node* incr, Node* x, IdealLoopTree* loop, Nod
   return incr;
 }
 
-Node* PhaseIdealLoop::loop_iv_stride(Node *incr, Node *&xphi) {
+Node* PhaseIdealLoop::loop_iv_stride(Node* incr, Node*& xphi) {
   assert(incr->Opcode() == Op_AddI || incr->Opcode() == Op_AddL, "caller resp.");
   // Get merge point
   xphi = incr->in(1);
@@ -474,7 +474,7 @@ Node* PhaseIdealLoop::loop_iv_stride(Node *incr, Node *&xphi) {
   return stride;
 }
 
-PhiNode* PhaseIdealLoop::loop_iv_phi(Node *xphi, Node *phi_incr, Node *x) {
+PhiNode* PhaseIdealLoop::loop_iv_phi(Node* xphi, Node* phi_incr, Node* x) {
   if (!xphi->is_Phi()) {
     return nullptr; // Too much math on the trip counter
   }
