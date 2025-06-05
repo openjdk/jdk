@@ -60,6 +60,10 @@ public class ConfigException extends RuntimeException {
         this.advice = advice;
     }
 
+    public ConfigException(String msg, Throwable cause) {
+        this(msg, null, cause);
+    }
+
     public ConfigException(Throwable cause) {
         super(cause);
         this.advice = null;
