@@ -33,7 +33,7 @@
 
 /*
  * @test id=stringConcatInline
- * @bug 7046096
+ * @bug 7046096 8357822
  * @summary The same test with an updated compile directive that produces
  *          StringBuilder-backed string concatenations.
  *
