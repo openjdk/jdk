@@ -483,8 +483,14 @@ final class PackagingPipeline {
             srcAppImageDesc = new AppImageDesc(appImageLayoutForPackaging, env.appImageDir());
             dstAppImageDesc = srcAppImageDesc;
         } else {
-            srcAppImageDesc = new AppImageDesc(pkg.app().imageLayout(),
-                    pkg.predefinedAppImage().orElseThrow(UnsupportedOperationException::new));
+            srcAppImageDesc = pkg.predefinedAppImage().map(predefinedAppImage -> {
+                // Will create a package from the predefined app image.
+                if (predefinedAppImage.equals(env.appImageDir())) {
+                    return new AppImageDesc(env.appImageLayout().unresolve(), predefinedAppImage);
+                } else {
+                    return new AppImageDesc(pkg.appImageLayout(), predefinedAppImage);
+                }
+            }).orElseThrow(UnsupportedOperationException::new);
 
             if (taskConfig.get(CopyAppImageTaskID.COPY).action().isEmpty()) {
                 // "copy app image" task action is undefined indicating

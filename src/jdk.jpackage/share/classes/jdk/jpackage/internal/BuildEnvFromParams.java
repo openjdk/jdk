@@ -30,13 +30,16 @@ import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.VERBOSE;
 
+import java.nio.file.Path;
 import java.util.Map;
+import java.util.function.Function;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.RuntimeLayout;
 
 final class BuildEnvFromParams {
 
-    static BuildEnv create(Map<String, ? super Object> params) throws ConfigException {
+    static BuildEnv create(Map<String, ? super Object> params,
+            Function<Path, RuntimeLayout> predefinedRuntimeImageLayoutProvider) throws ConfigException {
 
         final var builder = new BuildEnvBuilder(TEMP_ROOT.fetchFrom(params));
 
@@ -48,8 +51,8 @@ final class BuildEnvFromParams {
         final var pkg = FromParams.getCurrentPackage(params);
 
         if (app.isRuntime()) {
-            builder.appImageDir(PREDEFINED_RUNTIME_IMAGE.fetchFrom(params));
-            builder.appImageLayout(RuntimeLayout.DEFAULT);
+            var layout = predefinedRuntimeImageLayoutProvider.apply(PREDEFINED_RUNTIME_IMAGE.findIn(params).orElseThrow());
+            builder.appImageLayout(layout);
         } else if (StandardBundlerParam.hasPredefinedAppImage(params)) {
             PREDEFINED_APP_IMAGE.copyInto(params, builder::appImageDir);
         } else if (pkg.isPresent()) {
@@ -61,6 +64,7 @@ final class BuildEnvFromParams {
         return builder.create();
     }
 
-    static final BundlerParamInfo<BuildEnv> BUILD_ENV = BundlerParamInfo.createBundlerParam(
-            BuildEnv.class, BuildEnvFromParams::create);
+    static final BundlerParamInfo<BuildEnv> BUILD_ENV = BundlerParamInfo.createBundlerParam(BuildEnv.class, params -> {
+        return create(params, RuntimeLayout.DEFAULT::resolveAt);
+    });
 }

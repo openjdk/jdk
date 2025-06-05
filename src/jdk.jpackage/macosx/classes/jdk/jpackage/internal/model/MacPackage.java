@@ -24,6 +24,7 @@
  */
 package jdk.jpackage.internal.model;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import jdk.jpackage.internal.util.CompositeProxy;
 
@@ -34,7 +35,7 @@ public interface MacPackage extends Package, MacPackageMixin {
     @Override
     default AppImageLayout appImageLayout() {
         if (isRuntimeInstaller()) {
-            return RUNTIME_PACKAGE_LAYOUT;
+            return RUNTIME_BUNDLE_LAYOUT;
         } else {
             return Package.super.appImageLayout();
         }
@@ -48,5 +49,19 @@ public interface MacPackage extends Package, MacPackageMixin {
         return CompositeProxy.create(MacPackage.class, pkg, mixin);
     }
 
-    public static final RuntimeLayout RUNTIME_PACKAGE_LAYOUT = RuntimeLayout.create(Path.of("Contents/Home"));
+    /**
+     * Guesses layout of a runtime image at the given path.
+     *
+     * @param path the path to a runtime image
+     * @return the runtime image layout resolved at the given path
+     */
+    public static RuntimeLayout guessRuntimeLayout(Path path) {
+        if (Files.isDirectory(RUNTIME_BUNDLE_LAYOUT.resolveAt(path).runtimeDirectory())) {
+            return RUNTIME_BUNDLE_LAYOUT.resolveAt(path);
+        } else {
+            return RuntimeLayout.DEFAULT.resolveAt(path);
+        }
+    }
+
+    public static final RuntimeLayout RUNTIME_BUNDLE_LAYOUT = RuntimeLayout.create(Path.of("Contents/Home"));
 }
