@@ -1661,6 +1661,17 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     // Found in tier1-3.
     case Op_CMoveI:
       return false;
+
+    // CmpPNode::Ideal calls isa_const_java_mirror
+    // and generates new constant nodes, even if no progress is made.
+    // We can probably rewrite this so that only types are generated.
+    // It seems that object types are not hashed, we could investigate
+    // if that is an option as well.
+    //
+    // Found with:
+    //   java -XX:VerifyIterativeGVN=1110 -Xcomp --version
+    case Op_CmpP:
+      return false;
   }
 
   if (n->is_Load()) {
@@ -1731,10 +1742,23 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     return false;
   }
 
+  // The number of nodes shoud not increase.
+  uint old_unique = C->unique();
+
   Node* i = n->Ideal(this, can_reshape);
-  // If there was no new Idealization, we are happy.
+  // If there was no new Idealization, we are probably happy.
   if (i == nullptr) {
+    if (old_unique < C->unique()) {
+      tty->cr();
+      tty->print_cr("Ideal optimization did not make progress but created new unused nodes.");
+      tty->print_cr("  old_unique = %d, unique = %d", old_unique, C->unique());
+      n->dump_bfs(1, nullptr, "");
+      return true;
+    }
+
     verify_empty_worklist(n);
+
+    // Everything is good.
     return false;
   }
 
