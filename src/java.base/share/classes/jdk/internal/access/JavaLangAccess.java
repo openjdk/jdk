@@ -302,6 +302,8 @@ public interface JavaLangAccess {
 
     /**
      * Count the number of leading positive bytes in the range.
+     *
+     * @implSpec Implementations of this method must perform bounds checks.
      */
     int countPositives(byte[] ba, int off, int len);
 
@@ -388,12 +390,16 @@ public interface JavaLangAccess {
     /**
      * Inflated copy from {@code byte[]} to {@code char[]}, as defined by
      * {@code StringLatin1.inflate}.
+     *
+     * @implSpec Implementations of this method must perform bounds checks.
      */
     void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len);
 
     /**
      * Decodes ASCII from the source byte array into the destination
      * char array.
+     *
+     * @implSpec Implementations of this method must perform bounds checks.
      *
      * @return the number of bytes successfully decoded, at most len
      */
