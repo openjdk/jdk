@@ -424,7 +424,7 @@ public class VMProps implements Callable<Map<String, String>> {
 
         if (Compiler.isC2Enabled() &&
             (Platform.isX86() || Platform.isX64() || Platform.isPPC()) &&
-            is_LM_LIGHTWEIGHT().equals("false")) {
+            vmUseHeavyMonitors().equals("true")) {
             isRTMCompiler = true;
         }
         return "" + isRTMCompiler;
@@ -531,31 +531,10 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
-     * @return LockingMode.
+     * @return UseHeavyMonitors.
      */
-    protected String vmLockingMode() {
-        return "" + WB.getIntVMFlag("LockingMode");
-    }
-
-    /**
-     * @return "true" if LockingMode == 0 (LM_MONITOR)
-     */
-    protected String is_LM_MONITOR() {
-        return "" + vmLockingMode().equals("0");
-    }
-
-    /**
-     * @return "true" if LockingMode == 1 (LM_LEGACY)
-     */
-    protected String is_LM_LEGACY() {
-        return "" + vmLockingMode().equals("1");
-    }
-
-    /**
-     * @return "true" if LockingMode == 2 (LM_LIGHTWEIGHT)
-     */
-    protected String is_LM_LIGHTWEIGHT() {
-        return "" + vmLockingMode().equals("2");
+    protected String vmUseHeavyMonitors() {
+        return "" + WB.getBooleanVMFlag("UseHeavyMonitors");
     }
 
     /**

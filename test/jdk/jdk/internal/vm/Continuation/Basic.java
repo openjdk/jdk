@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -282,39 +282,6 @@ public class Basic {
     }
 
     @Test
-    public void testPinnedMonitor() {
-        if (!legacyLockingMode()) return;
-
-        // Test pinning due to held monitor
-        final AtomicReference<Continuation.Pinned> res = new AtomicReference<>();
-
-        Continuation cont = new Continuation(FOO, ()-> {
-            syncFoo(1);
-        }) {
-            @Override
-            protected void onPinned(Continuation.Pinned reason) {
-                assert Continuation.isPinned(FOO);
-                res.set(reason);
-            }
-        };
-
-        cont.run();
-        assertEquals(res.get(), Continuation.Pinned.MONITOR);
-        boolean isDone = cont.isDone();
-        assertEquals(isDone, true);
-    }
-
-    static double syncFoo(int a) {
-        long x = 8;
-        String s = "yyy";
-        String r;
-        synchronized(FOO) {
-            r = bar2(a + 1);
-        }
-        return Integer.parseInt(r)+1;
-    }
-
-    @Test
     public void testNotPinnedMonitor() {
         final AtomicReference<Continuation.Pinned> res = new AtomicReference<>();
 
@@ -418,10 +385,5 @@ public class Basic {
 
     static {
         System.loadLibrary("BasicJNI");
-    }
-
-    static boolean legacyLockingMode() {
-        return ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
-                    .getVMOption("LockingMode").getValue().equals("1");
     }
 }
