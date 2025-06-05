@@ -508,8 +508,6 @@ final class PackagingPipeline {
             throw new PackagerException(ex.getCause());
         } catch (RuntimeException ex) {
             throw ex;
-        } catch (PackagerException ex) {
-            throw ex;
         } catch (Exception ex) {
             throw new PackagerException(ex);
         }
