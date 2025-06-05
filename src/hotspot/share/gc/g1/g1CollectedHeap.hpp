@@ -966,15 +966,14 @@ public:
   // end fields defining the extent of the contiguous allocation region.)
   // But G1CollectedHeap doesn't yet support this.
 
-  bool is_maximal_no_gc() const override {
-    return _hrm.num_inactive_regions() == 0;
-  }
-
   // Returns true if an incremental GC should be upgrade to a full gc. This
   // is done when there are no free regions and the heap can't be expanded.
   bool should_upgrade_to_full_gc() const {
-    return is_maximal_no_gc() && num_free_regions() == 0;
+    return num_inactive_regions() == 0 && num_free_regions() == 0;
   }
+
+  // The number of inactive regions.
+  uint num_inactive_regions() const { return _hrm.num_inactive_regions(); }
 
   // The current number of regions in the heap.
   uint num_committed_regions() const { return _hrm.num_committed_regions(); }
