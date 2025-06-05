@@ -26,7 +26,6 @@
  * @test
  * @summary Sanity test of AOT Code Cache with compressed oops configurations
  * @requires vm.cds.supports.aot.code.caching
- * @requires !vm.asan
  * @requires vm.compMode != "Xcomp"
  * @comment The test verifies AOT checks during VM startup and not code generation.
  *          No need to run it with -Xcomp. It takes a lot of time to complete all
