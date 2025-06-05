@@ -111,18 +111,54 @@ static double scalbnA(double x, int n) {
     if (n< -50000) return tiny*x;       /*underflow*/
   }
   if (k==0x7ff) return x+x;             /* NaN or Inf */
-  k = k+n;
+
+  // Convert to unsigned to avoid signed integer overflow
+  unsigned u_k = ((unsigned) k) + n;
+
+  if (u_k > 0x7fe && u_k <= 0x7fffffff) return hugeX*copysignA(hugeX,x); /* overflow  */
+  if (u_k > 0 && u_k <= 0x7fe) {                          /* normal result */
+    set_high(&x, (hx&0x800fffff)|((k+n)<<20));
+    return x;
+  }
+
+  if (u_k <= (unsigned)-54) {
+    if (n > 50000)      /* in case integer overflow in n+k */
+      return hugeX*copysignA(hugeX,x);  /*overflow*/
+    else return tiny*copysignA(tiny,x); /*underflow*/
+  }
+  k = u_k + 54;                              /* subnormal result */
+  set_high(&x, (hx&0x800fffff)|(k<<20));
+  return x*twom54;
+}
+
+static double scalbnA_orig(double x, int n) {
+  int  k,hx,lx;
+  hx = high(x);
+  lx = low(x);
+  k = (hx&0x7ff00000)>>20;              /* extract exponent */
+  if (k==0) {                           /* 0 or subnormal x */
+    if ((lx|(hx&0x7fffffff))==0) return x; /* +-0 */
+    x *= two54;
+    hx = high(x);
+    k = ((hx&0x7ff00000)>>20) - 54;
+    if (n< -50000) return tiny*x;       /*underflow*/
+  }
+  if (k==0x7ff) return x+x;             /* NaN or Inf */
+
+  k = k + n;
+
   if (k > 0x7fe) return hugeX*copysignA(hugeX,x); /* overflow  */
   if (k > 0) {                          /* normal result */
     set_high(&x, (hx&0x800fffff)|(k<<20));
     return x;
   }
+
   if (k <= -54) {
     if (n > 50000)      /* in case integer overflow in n+k */
       return hugeX*copysignA(hugeX,x);  /*overflow*/
     else return tiny*copysignA(tiny,x); /*underflow*/
   }
-  k += 54;                              /* subnormal result */
+  k = k + 54;                              /* subnormal result */
   set_high(&x, (hx&0x800fffff)|(k<<20));
   return x*twom54;
 }
