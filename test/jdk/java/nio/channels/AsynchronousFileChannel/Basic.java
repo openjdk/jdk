@@ -567,17 +567,34 @@ public class Basic {
         System.out.println("testViewsOfUnsupportedArenas");
 
         AsynchronousFileChannel ch = AsynchronousFileChannel
-            .open(file, CREATE, WRITE, TRUNCATE_EXISTING);
+            .open(file, CREATE, READ, WRITE, TRUNCATE_EXISTING);
+
+        writeFully(ch, genBuffer(), 0L);
+        long size = ch.size();
 
         try {
-            writeFully(ch, genUnsupportedBuffer(true), 0L);
+            readAll(ch, genUnsupportedBuffer(true), 0L);
             throw new RuntimeException("IllegalStateException expected");
         } catch (IllegalStateException expected) {
             // ignore
         }
 
         try {
-            writeFully(ch, genUnsupportedBuffer(false), 0L);
+            readAll(ch, genUnsupportedBuffer(false), 0L);
+            throw new RuntimeException("UnsupportedOperationException expected");
+        } catch (UnsupportedOperationException expected) {
+            // ignore
+        }
+
+        try {
+            writeFully(ch, genUnsupportedBuffer(true), size);
+            throw new RuntimeException("IllegalStateException expected");
+        } catch (IllegalStateException expected) {
+            // ignore
+        }
+
+        try {
+            writeFully(ch, genUnsupportedBuffer(false), size);
             throw new RuntimeException("UnsupportedOperationException expected");
         } catch (UnsupportedOperationException expected) {
             // ignore
@@ -616,7 +633,6 @@ public class Basic {
     }
 
     // writes all remaining bytes in the buffer to the given channel at the
-    // writes all remaining bytes in the buffer to the given channel at the
     // given position
     static void writeFully(final AsynchronousFileChannel ch,
                            final ByteBuffer src,
@@ -645,7 +661,7 @@ public class Basic {
 
     static void readAll(final AsynchronousFileChannel ch,
                         final ByteBuffer dst,
-                       long position)
+                        long position)
     {
         final CountDownLatch latch = new CountDownLatch(1);
 
