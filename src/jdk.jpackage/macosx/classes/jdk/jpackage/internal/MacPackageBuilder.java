@@ -24,8 +24,11 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.MacPackagingPipeline.LayoutUtils.packagerLayout;
+
 import java.util.Objects;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.MacPackageMixin;
 
@@ -45,7 +48,15 @@ final class MacPackageBuilder {
     }
 
     MacPackage create() throws ConfigException {
-        final var pkg = pkgBuilder.create();
+
+        final var app = (MacApplication)pkgBuilder.app();
+
+        var pkg = pkgBuilder.create();
+
+        pkgBuilder.app(MacApplicationBuilder.overrideAppImageLayout(app, packagerLayout(pkg)))
+                .installedPackageLayout(pkg.installedPackageLayout());
+
+        pkg = pkgBuilder.create();
         return MacPackage.create(pkg, new MacPackageMixin.Stub(pkg.predefinedAppImage().map(v -> predefinedAppImageSigned)));
     }
 
