@@ -75,9 +75,9 @@ sealed abstract class QuicKeyManager
 
     private record CipherPair(QuicReadCipher readCipher,
                               QuicWriteCipher writeCipher) {
-        void discard() {
-            writeCipher.discard();
-            readCipher.discard();
+        void discard(boolean destroyHP) {
+            writeCipher.discard(destroyHP);
+            readCipher.discard(destroyHP);
         }
 
         /**
@@ -250,7 +250,7 @@ sealed abstract class QuicKeyManager
                         + toDiscard.writeCipher.getKeyPhase()
                         + ") of " + this.keySpace + " key space");
             }
-            toDiscard.discard();
+            toDiscard.discard(true);
         }
 
         void deriveKeys(final QuicVersion quicVersion,
@@ -327,7 +327,7 @@ sealed abstract class QuicKeyManager
                 // different quic version was negotiated by the server
                 this.cipherPair = new CipherPair(readCipher, writeCipher);
                 if (old != null) {
-                    old.discard();
+                    old.discard(true);
                 }
             } catch (IOException | GeneralSecurityException e) {
                 throw new AssertionError("Should not happen", e);
@@ -395,7 +395,7 @@ sealed abstract class QuicKeyManager
                         + toDiscard.writeCipher.getKeyPhase()
                         + ") of " + this.keySpace + " key space");
             }
-            toDiscard.discard();
+            toDiscard.discard(true);
         }
 
         void deriveKeys(final QuicVersion quicVersion,
@@ -581,7 +581,7 @@ sealed abstract class QuicKeyManager
                         this.keySpace + " key space");
             }
             if (series.old != null) {
-                series.old.discard();
+                series.old.discard(false);
             }
             discardKeys(series.current);
             discardKeys(series.next);
@@ -777,7 +777,7 @@ sealed abstract class QuicKeyManager
             if (cipherPair == null) {
                 return;
             }
-            cipherPair.discard();
+            cipherPair.discard(true);
         }
 
         /**
@@ -1039,13 +1039,13 @@ sealed abstract class QuicKeyManager
                                 "discarding old read key of key phase: " +
                                 oldReadCipher.getKeyPhase());
                     }
-                    oldReadCipher.discard();
+                    oldReadCipher.discard(false);
                 }
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                     SSLLogger.finest("discarding write key of key phase: " +
                             writeCipherToDiscard.getKeyPhase());
                 }
-                writeCipherToDiscard.discard();
+                writeCipherToDiscard.discard(false);
                 return newSeries;
             } finally {
                 this.keySeriesLock.unlock();

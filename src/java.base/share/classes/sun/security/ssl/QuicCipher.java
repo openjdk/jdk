@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,10 +44,11 @@ import javax.crypto.ShortBufferException;
 import javax.crypto.spec.ChaCha20ParameterSpec;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
-import javax.security.auth.DestroyFailedException;
 
 import jdk.internal.net.quic.QuicTransportErrors;
 import jdk.internal.net.quic.QuicTransportException;
+import sun.security.util.KeyUtil;
+
 import static jdk.internal.net.quic.QuicTLSEngine.KeySpace.ONE_RTT;
 
 abstract class QuicCipher {
@@ -141,9 +142,11 @@ abstract class QuicCipher {
         return this.keyPhase;
     }
 
-    final void discard() {
+    final void discard(boolean destroyHP) {
         safeDiscard(this.secret);
-        this.hpCipher.discard();
+        if (destroyHP) {
+            this.hpCipher.discard();
+        }
         this.doDiscard();
     }
 
@@ -182,11 +185,7 @@ abstract class QuicCipher {
     }
 
     static void safeDiscard(final SecretKey secretKey) {
-        try {
-            secretKey.destroy();
-        } catch (DestroyFailedException e) {
-            // ignore
-        }
+        KeyUtil.destroySecretKeys(secretKey);
     }
 
     abstract static class QuicReadCipher extends QuicCipher {
@@ -243,9 +242,6 @@ abstract class QuicCipher {
         final boolean hasDecryptedAny() {
             return this.lowestDecryptedPktNum.get() != -1;
         }
-
-        @Override
-        protected abstract void doDiscard();
     }
 
     abstract static class QuicWriteCipher extends QuicCipher {
@@ -340,9 +336,6 @@ abstract class QuicCipher {
         // number of
         // packets encrypted with a given key.
         abstract long confidentialityLimit();
-
-        @Override
-        protected abstract void doDiscard();
     }
 
     abstract static class QuicHeaderProtectionCipher {
