@@ -463,7 +463,15 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     /** Set position field and return this tree.
      */
     public JCTree setPos(int pos) {
+        return setPos(pos, Position.NOPOS, null);
+    }
+
+    /** Set start and end position and return this tree.
+     */
+    public JCTree setPos(int pos, int endPos, EndPosTable endPosTable) {
         this.pos = pos;
+        if (endPos != Position.NOPOS && endPosTable != null)
+            endPosTable.storeEnd(this, endPos);
         return this;
     }
 
