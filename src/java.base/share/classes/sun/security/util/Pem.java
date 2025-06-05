@@ -49,7 +49,10 @@ public class Pem {
     public static final String DEFAULT_ALGO;
 
     // Pattern matching for EKPI operations
-    private static final Pattern pbePattern;
+    private static final Pattern PBE_PATTERN;
+
+    // Pattern matching for stripping whitespace.
+    private static final Pattern STRIP_WHITESPACE_PATTERN;
 
     // Lazy initialized PBES2 OID value
     private static ObjectIdentifier PBES2OID;
@@ -61,8 +64,9 @@ public class Pem {
         String algo = Security.getProperty("jdk.epkcs8.defaultAlgorithm");
         DEFAULT_ALGO = (algo == null || algo.isBlank()) ?
             "PBEWithHmacSHA256AndAES_128" : algo;
-        pbePattern = Pattern.compile("^PBEWith.*And.*",
+        PBE_PATTERN = Pattern.compile("^PBEWith.*And.*",
             Pattern.CASE_INSENSITIVE);
+        STRIP_WHITESPACE_PATTERN = Pattern.compile("\\s+");
     }
 
     public static final String CERTIFICATE = "CERTIFICATE";
@@ -84,9 +88,9 @@ public class Pem {
      * @return the decoded bytes
      */
     public static byte[] decode(String input) {
-        byte[] src = input.replaceAll("\\s+", "").
+        byte[] src = STRIP_WHITESPACE_PATTERN.matcher(input).replaceAll("").
             getBytes(StandardCharsets.ISO_8859_1);
-            return Base64.getDecoder().decode(src);
+        return Base64.getDecoder().decode(src);
     }
 
     /**
@@ -100,7 +104,7 @@ public class Pem {
     public static ObjectIdentifier getPBEID(String algorithm) {
 
         // Verify pattern matches PBE Standard Name spec
-        if (!pbePattern.matcher(algorithm).matches()) {
+        if (!PBE_PATTERN.matcher(algorithm).matches()) {
             throw new IllegalArgumentException("Invalid algorithm format.");
         }
 

@@ -226,7 +226,11 @@ public class CommandLineNegativeTest {
     }
 
     static OutputAnalyzer simpleserver(String... args) throws Throwable {
-        var pb = new ProcessBuilder(args)
+        String[] nargs = new String[args.length + 1];
+        nargs[0] = args[0];
+        System.arraycopy(args, 1, nargs, 2, args.length-1);
+        nargs[1] = "-Djdk.includeInExceptions=hostInfo";
+        var pb = new ProcessBuilder(nargs)
                 .directory(TEST_DIR.toFile());
         var outputAnalyser = ProcessTools.executeCommand(pb)
                 .outputTo(System.out)

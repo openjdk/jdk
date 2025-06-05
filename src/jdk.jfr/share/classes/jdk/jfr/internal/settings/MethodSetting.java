@@ -41,7 +41,6 @@ import jdk.jfr.internal.tracing.PlatformTracer;
 @Name(Type.SETTINGS_PREFIX + "Filter")
 public final class MethodSetting extends FilterSetting {
     private final Modification modification;
-    private static volatile boolean initialized;
 
     public MethodSetting(PlatformEventType eventType, Modification modification, String defaultValue) {
         super(eventType, defaultValue);
@@ -54,10 +53,6 @@ public final class MethodSetting extends FilterSetting {
 
     @Override
     protected void apply(PlatformEventType eventType, List<String> filters) {
-        if (!initialized) {
-            PlatformTracer.initialize();
-            initialized = true;
-        }
         PlatformTracer.setFilters(modification, filters);
     }
 }

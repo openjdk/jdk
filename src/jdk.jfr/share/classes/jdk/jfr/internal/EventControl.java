@@ -51,6 +51,7 @@ import jdk.jfr.internal.settings.EnabledSetting;
 import jdk.jfr.internal.settings.LevelSetting;
 import jdk.jfr.internal.settings.MethodSetting;
 import jdk.jfr.internal.settings.PeriodSetting;
+import jdk.jfr.internal.settings.CPUThrottleSetting;
 import jdk.jfr.internal.settings.StackTraceSetting;
 import jdk.jfr.internal.settings.ThresholdSetting;
 import jdk.jfr.internal.settings.ThrottleSetting;
@@ -326,6 +327,9 @@ public final class EventControl {
     private static Control defineThrottle(PlatformEventType type) {
         String def = type.getAnnotationValue(Throttle.class, ThrottleSetting.DEFAULT_VALUE);
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_THROTTLE, Throttle.NAME, def, Collections.emptyList()));
+        if (type.getName().equals("jdk.CPUTimeSample")) {
+            return new Control(new CPUThrottleSetting(type), def);
+        }
         return new Control(new ThrottleSetting(type, def), def);
     }
 
