@@ -19,6 +19,9 @@ public class VarWarnPosition {
 
         // Test 2
         Consumer<Depr> c = d -> { };
+
+        // Test 3
+        Consumer<Depr> c2 = (var d) -> { };
     }
 }
 

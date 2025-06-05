@@ -3798,7 +3798,7 @@ void MacroAssembler::cmpxchg_obj_header(Register oldv, Register newv, Register o
 
 void MacroAssembler::load_reserved(Register dst,
                                    Register addr,
-                                   enum operand_size size,
+                                   Assembler::operand_size size,
                                    Assembler::Aqrl acquire) {
   switch (size) {
     case int64:
@@ -3819,15 +3819,15 @@ void MacroAssembler::load_reserved(Register dst,
 void MacroAssembler::store_conditional(Register dst,
                                        Register new_val,
                                        Register addr,
-                                       enum operand_size size,
+                                       Assembler::operand_size size,
                                        Assembler::Aqrl release) {
   switch (size) {
     case int64:
-      sc_d(dst, new_val, addr, release);
+      sc_d(dst, addr, new_val, release);
       break;
     case int32:
     case uint32:
-      sc_w(dst, new_val, addr, release);
+      sc_w(dst, addr, new_val, release);
       break;
     default:
       ShouldNotReachHere();
@@ -3836,7 +3836,7 @@ void MacroAssembler::store_conditional(Register dst,
 
 
 void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expected, Register new_val,
-                                                 enum operand_size size,
+                                                 Assembler::operand_size size,
                                                  Register shift, Register mask, Register aligned_addr) {
   assert(size == int8 || size == int16, "unsupported operand size");
 
@@ -3866,10 +3866,11 @@ void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expecte
 // which are forced to work with 4-byte aligned address.
 void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
                                           Register new_val,
-                                          enum operand_size size,
+                                          Assembler::operand_size size,
                                           Assembler::Aqrl acquire, Assembler::Aqrl release,
                                           Register result, bool result_as_bool,
                                           Register tmp1, Register tmp2, Register tmp3) {
+  assert(!(UseZacas && UseZabha), "Use amocas");
   assert_different_registers(addr, expected, new_val, result, tmp1, tmp2, tmp3, t0, t1);
 
   Register scratch0 = t0, aligned_addr = t1;
@@ -3902,13 +3903,13 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
     notr(scratch1, mask);
     bind(retry);
 
-    lr_w(result, aligned_addr, acquire);
+    load_reserved(result, aligned_addr, operand_size::int32, acquire);
     andr(scratch0, result, mask);
     bne(scratch0, expected, fail);
 
     andr(scratch0, result, scratch1); // scratch1 is ~mask
     orr(scratch0, scratch0, new_val);
-    sc_w(scratch0, scratch0, aligned_addr, release);
+    store_conditional(scratch0, scratch0, aligned_addr, operand_size::int32, release);
     bnez(scratch0, retry);
   }
 
@@ -3940,10 +3941,11 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
 // failed.
 void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
                                                Register new_val,
-                                               enum operand_size size,
+                                               Assembler::operand_size size,
                                                Assembler::Aqrl acquire, Assembler::Aqrl release,
                                                Register result,
                                                Register tmp1, Register tmp2, Register tmp3) {
+  assert(!(UseZacas && UseZabha), "Use amocas");
   assert_different_registers(addr, expected, new_val, result, tmp1, tmp2, tmp3, t0, t1);
 
   Register scratch0 = t0, aligned_addr = t1;
@@ -3974,13 +3976,13 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
   } else {
     notr(scratch1, mask);
 
-    lr_w(result, aligned_addr, acquire);
+    load_reserved(result, aligned_addr, operand_size::int32, acquire);
     andr(scratch0, result, mask);
     bne(scratch0, expected, fail);
 
     andr(scratch0, result, scratch1); // scratch1 is ~mask
     orr(scratch0, scratch0, new_val);
-    sc_w(scratch0, scratch0, aligned_addr, release);
+    store_conditional(scratch0, scratch0, aligned_addr, operand_size::int32, release);
     bnez(scratch0, fail);
   }
 
@@ -3997,10 +3999,10 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
 
 void MacroAssembler::cmpxchg(Register addr, Register expected,
                              Register new_val,
-                             enum operand_size size,
+                             Assembler::operand_size size,
                              Assembler::Aqrl acquire, Assembler::Aqrl release,
                              Register result, bool result_as_bool) {
-  assert(size != int8 && size != int16, "unsupported operand size");
+  assert((UseZacas && UseZabha) || (size != int8 && size != int16), "unsupported operand size");
   assert_different_registers(addr, t0);
   assert_different_registers(expected, t0);
   assert_different_registers(new_val, t0);
@@ -4058,10 +4060,10 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
 
 void MacroAssembler::weak_cmpxchg(Register addr, Register expected,
                                   Register new_val,
-                                  enum operand_size size,
+                                  Assembler::operand_size size,
                                   Assembler::Aqrl acquire, Assembler::Aqrl release,
                                   Register result) {
-
+  assert((UseZacas && UseZabha) || (size != int8 && size != int16), "unsupported operand size");
   assert_different_registers(addr, t0);
   assert_different_registers(expected, t0);
   assert_different_registers(new_val, t0);
@@ -4134,7 +4136,7 @@ ATOMIC_XCHGU(xchgalwu, xchgalw)
 #undef ATOMIC_XCHGU
 
 void MacroAssembler::atomic_cas(Register prev, Register newv, Register addr,
-                                enum operand_size size, Assembler::Aqrl acquire, Assembler::Aqrl release) {
+                                Assembler::operand_size size, Assembler::Aqrl acquire, Assembler::Aqrl release) {
   switch (size) {
     case int64:
       amocas_d(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
@@ -4145,6 +4147,12 @@ void MacroAssembler::atomic_cas(Register prev, Register newv, Register addr,
     case uint32:
       amocas_w(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
       zext(prev, prev, 32);
+      break;
+    case int16:
+      amocas_h(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
+      break;
+    case int8:
+      amocas_b(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
       break;
     default:
       ShouldNotReachHere();

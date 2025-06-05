@@ -49,6 +49,7 @@
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.inline.hpp"
+#include "oops/trainingData.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
@@ -505,11 +506,15 @@ C2V_VMENTRY_NULL(jobject, getResolvedJavaType0, (JNIEnv* env, jobject, jobject b
       }
     } else if (JVMCIENV->isa_HotSpotMethodData(base_object)) {
       jlong base_address = (intptr_t) JVMCIENV->asMethodData(base_object);
-      klass = *((Klass**) (intptr_t) (base_address + offset));
-      if (klass == nullptr || !klass->is_loader_alive()) {
+      Klass* k = *((Klass**) (intptr_t) (base_address + offset));
+      if (k == nullptr || k->class_loader_data() == nullptr || !TrainingData::is_klass_loaded(k)) {
+        return nullptr;
+      }
+      if (!k->is_loader_alive()) {
         // Klasses in methodData might be concurrently unloading so return null in that case.
         return nullptr;
       }
+      klass = k;
     } else {
       goto unexpected;
     }
@@ -806,6 +811,14 @@ C2V_VMENTRY_NULL(jobject, lookupConstantInPool, (JNIEnv* env, jobject, ARGUMENT_
   }
 #endif
   return JVMCIENV->get_jobject(JVMCIENV->get_object_constant(obj));
+C2V_END
+
+C2V_VMENTRY_0(jint, getNumIndyEntries, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp)))
+  constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
+  if (cp->cache()->resolved_indy_entries() == nullptr) {
+    return 0;
+  }
+  return cp->resolved_indy_entries_length();
 C2V_END
 
 C2V_VMENTRY_NULL(jobjectArray, resolveBootstrapMethod, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))
@@ -2219,6 +2232,26 @@ C2V_VMENTRY_NULL(jobjectArray, getDeclaredMethods, (JNIEnv* env, jobject, ARGUME
   return JVMCIENV->get_jobjectArray(methods);
 C2V_END
 
+C2V_VMENTRY_NULL(jobjectArray, getAllMethods, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass)))
+  Klass* klass = UNPACK_PAIR(Klass, klass);
+  if (klass == nullptr) {
+    JVMCI_THROW_NULL(NullPointerException);
+  }
+  if (!klass->is_instance_klass()) {
+    JVMCIObjectArray methods = JVMCIENV->new_ResolvedJavaMethod_array(0, JVMCI_CHECK_NULL);
+    return JVMCIENV->get_jobjectArray(methods);
+  }
+
+  InstanceKlass* iklass = InstanceKlass::cast(klass);
+  JVMCIObjectArray methods = JVMCIENV->new_ResolvedJavaMethod_array(iklass->methods()->length(), JVMCI_CHECK_NULL);
+  for (int i = 0; i < iklass->methods()->length(); i++) {
+    methodHandle mh(THREAD, iklass->methods()->at(i));
+    JVMCIObject method = JVMCIENV->get_jvmci_method(mh, JVMCI_CHECK_NULL);
+    JVMCIENV->put_object_at(methods, i, method);
+  }
+  return JVMCIENV->get_jobjectArray(methods);
+C2V_END
+
 C2V_VMENTRY_NULL(jobjectArray, getDeclaredFieldsInfo, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass)))
   Klass* klass = UNPACK_PAIR(Klass, klass);
   if (klass == nullptr) {
@@ -2831,7 +2864,7 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
         if (data != nullptr) {
           // Only the mirror in the HotSpot heap is accessible
           // through JVMCINMethodData
-          oop nmethod_mirror = data->get_nmethod_mirror(nm, /* phantom_ref */ true);
+          oop nmethod_mirror = data->get_nmethod_mirror(nm);
           if (nmethod_mirror != nullptr) {
             result = HotSpotJVMCI::wrap(nmethod_mirror);
           }
@@ -2863,7 +2896,7 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
           if (data == nullptr) {
             JVMCI_THROW_MSG_0(IllegalArgumentException, "Missing HotSpotNmethod data");
           }
-          if (data->get_nmethod_mirror(nm, /* phantom_ref */ false) != nullptr) {
+          if (data->get_nmethod_mirror(nm) != nullptr) {
             JVMCI_THROW_MSG_0(IllegalArgumentException, "Cannot overwrite existing HotSpotNmethod mirror for nmethod");
           }
           oop nmethod_mirror = HotSpotJVMCI::resolve(result);
@@ -3295,6 +3328,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "lookupAppendixInPool",                         CC "(" HS_CONSTANT_POOL2 "II)" OBJECTCONSTANT,                                        FN_PTR(lookupAppendixInPool)},
   {CC "lookupMethodInPool",                           CC "(" HS_CONSTANT_POOL2 "IB" HS_METHOD2 ")" HS_METHOD,                               FN_PTR(lookupMethodInPool)},
   {CC "lookupConstantInPool",                         CC "(" HS_CONSTANT_POOL2 "IZ)" JAVACONSTANT,                                          FN_PTR(lookupConstantInPool)},
+  {CC "getNumIndyEntries",                            CC "(" HS_CONSTANT_POOL2 ")I",                                                        FN_PTR(getNumIndyEntries)},
   {CC "resolveBootstrapMethod",                       CC "(" HS_CONSTANT_POOL2 "I)[" OBJECT,                                                FN_PTR(resolveBootstrapMethod)},
   {CC "bootstrapArgumentIndexAt",                     CC "(" HS_CONSTANT_POOL2 "II)I",                                                      FN_PTR(bootstrapArgumentIndexAt)},
   {CC "getUncachedStringInPool",                      CC "(" HS_CONSTANT_POOL2 "I)" JAVACONSTANT,                                           FN_PTR(getUncachedStringInPool)},
@@ -3354,6 +3388,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "boxPrimitive",                                 CC "(" OBJECT ")" OBJECTCONSTANT,                                                     FN_PTR(boxPrimitive)},
   {CC "getDeclaredConstructors",                      CC "(" HS_KLASS2 ")[" RESOLVED_METHOD,                                                FN_PTR(getDeclaredConstructors)},
   {CC "getDeclaredMethods",                           CC "(" HS_KLASS2 ")[" RESOLVED_METHOD,                                                FN_PTR(getDeclaredMethods)},
+  {CC "getAllMethods",                                CC "(" HS_KLASS2 ")[" RESOLVED_METHOD,                                                FN_PTR(getAllMethods)},
   {CC "getDeclaredFieldsInfo",                        CC "(" HS_KLASS2 ")[" FIELDINFO,                                                      FN_PTR(getDeclaredFieldsInfo)},
   {CC "readStaticFieldValue",                         CC "(" HS_KLASS2 "JC)" JAVACONSTANT,                                                  FN_PTR(readStaticFieldValue)},
   {CC "readFieldValue",                               CC "(" OBJECTCONSTANT HS_KLASS2 "JC)" JAVACONSTANT,                                   FN_PTR(readFieldValue)},
