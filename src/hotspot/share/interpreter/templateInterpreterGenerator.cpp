@@ -228,6 +228,7 @@ void TemplateInterpreterGenerator::generate_all() {
   // entries for `native` methods to use the same address in case
   // intrinsic is disabled.
   native_method_entry(java_lang_Thread_currentThread)
+  native_method_entry(java_lang_ref_reference_get0)
 
   native_method_entry(java_util_zip_CRC32_update)
   native_method_entry(java_util_zip_CRC32_updateBytes)
