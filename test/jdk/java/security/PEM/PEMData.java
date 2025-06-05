@@ -497,7 +497,7 @@ class PEMData {
             }
         }
         Entry(String name, String pem, Class clazz, String provider, char[] password) {
-            this(name, pem, clazz,provider, password, null);
+            this(name, pem, clazz, provider, password, null);
         }
 
         Entry(String name, String pem, Class clazz, String provider) {
