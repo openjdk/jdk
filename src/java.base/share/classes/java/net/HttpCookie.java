@@ -868,11 +868,11 @@ public final class HttpCookie implements Cloneable {
                 name = namevaluePair.trim();
                 value = null;
             }
-            if (name.equalsIgnoreCase("max-age")) {
+            if (name.equalsIgnoreCase("max-age") && maxAgeValue == null) {
                 maxAgeValue = value;
                 continue;
             }
-            if (name.equalsIgnoreCase("expires")) {
+            if (name.equalsIgnoreCase("expires") && expiresValue == null) {
                 expiresValue = value;
                 continue;
             }
@@ -978,11 +978,17 @@ public final class HttpCookie implements Cloneable {
     {
         if (cookie.getMaxAge() != MAX_AGE_UNSPECIFIED)
             return;
+        if (expiresValue == null && maxAgeValue == null)
+            return;
+
+        // strip off the surrounding "-sign if there's any
+        expiresValue = stripOffSurroundingQuote(expiresValue);
+        maxAgeValue = stripOffSurroundingQuote(maxAgeValue);
 
         try {
             if (maxAgeValue != null) {
                 long maxAge = Long.parseLong(maxAgeValue);
-                cookie.setMaxAge(maxAge);
+                cookie.maxAge = maxAge;
                 return;
             }
         } catch (NumberFormatException ignored) {}
@@ -990,7 +996,7 @@ public final class HttpCookie implements Cloneable {
         try {
             if (expiresValue != null) {
                 long delta = cookie.expiryDate2DeltaSeconds(expiresValue);
-                cookie.setMaxAge(delta > 0 ? delta : 0);
+                cookie.maxAge = (delta > 0 ? delta : 0);
             }
         } catch (NumberFormatException ignored) {}
     }
