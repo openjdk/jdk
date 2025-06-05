@@ -490,11 +490,8 @@ final class StandardBundlerParam {
         LauncherData launcherData = null;
         try {
             launcherData = LAUNCHER_DATA.fetchFrom(params);
-        } catch (RuntimeException ex) {
-            if (ex.getCause() instanceof ConfigException) {
-                return appVersion;
-            }
-            throw ex;
+        } catch (ConfigException ex) {
+            return appVersion;
         }
 
         if (launcherData.isModular()) {
