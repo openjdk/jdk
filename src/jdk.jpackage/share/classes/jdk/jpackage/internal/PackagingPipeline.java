@@ -41,6 +41,7 @@ import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import java.util.stream.Stream;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
@@ -165,6 +166,11 @@ final class PackagingPipeline {
                 super(id);
             }
 
+            private TaskBuilder(TaskID id, TaskConfig config) {
+                this(id);
+                config.action().ifPresent(this::setAction);
+            }
+
             private TaskBuilder setAction(TaskAction v) {
                 action = v;
                 return this;
@@ -193,6 +199,10 @@ final class PackagingPipeline {
 
             TaskBuilder action(NoArgTaskAction action) {
                 return setAction(action);
+            }
+
+            boolean hasAction() {
+                return action != null;
             }
 
             @Override
@@ -251,6 +261,12 @@ final class PackagingPipeline {
 
         TaskBuilder task(TaskID id) {
             return new TaskBuilder(id);
+        }
+
+        Stream<TaskBuilder> configuredTasks() {
+            return taskConfig.entrySet().stream().map(e -> {
+                return new TaskBuilder(e.getKey(), e.getValue());
+            });
         }
 
         Builder excludeDirFromCopying(Path path) {
