@@ -74,7 +74,7 @@ public class MultiScreenTest {
         ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         gs = ge.getScreenDevices();
         if (gs.length < 2) {
-            throw new SkippedException("You have only one monitor in your system - test passed");
+            throw new SkippedException("You have only one monitor in your system");
         }
         MultiScreenTest obj = new MultiScreenTest();
         String INSTRUCTIONS =
@@ -82,14 +82,19 @@ public class MultiScreenTest {
                 "You have " + gs.length + " monitors in your system.\n" +
                 "Actively drag the DitherTest frames on the secondary screen and " +
                 "if you see garbage appearing on your primary screen " +
-                "test failed otherwise it passed.";;
+                "test failed otherwise it passed.";
 
         PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
                 .columns(40)
                 .testUI(obj::init)
+                .positionTestUI(MultiScreenTest::positionTestWindows)
                 .build()
                 .awaitAndCheck();
+    }
+
+    private static void positionTestWindows(List<Window> windows, PassFailJFrame.InstructionUI instructionUI) {
+        // Do nothing - the location of each window is set when they're created
     }
 
     public List<JFrame> init() {
@@ -98,21 +103,21 @@ public class MultiScreenTest {
             GraphicsConfiguration[] gc = gs[j].getConfigurations();
             if (gc.length > 0) {
                 for (int i = 0; i < gc.length && i < 10; i++) {
-                    JFrame f = new JFrame(gc[i]); // test JFrame( gc )
-                    GCCanvas c = new GCCanvas(gc[i]); // test canvas( gc )
-                    Rectangle gcBounds = gc[i].getBounds(); // test getBounds()
+                    JFrame f = new JFrame(gc[i]);
+                    GCCanvas c = new GCCanvas(gc[i]);
+                    Rectangle gcBounds = gc[i].getBounds();
                     int xoffs = gcBounds.x;
                     int yoffs = gcBounds.y;
 
                     f.getContentPane().add(c);
-                    f.setTitle("Screen# " + Integer.toString(j) + ", GC#" + Integer.toString(i));
+                    f.setTitle("Screen# " + j + ", GC#" + i);
                     f.setSize(300, 200);
-                    f.setLocation(400 + xoffs, (i * 150) + yoffs); // test
-                    // displaying in right location
+                    // test displaying in right location
+                    f.setLocation(400 + xoffs, (i * 150) + yoffs);
                     list.add(f);
 
-                    Frame ditherfs = new Frame("DitherTest GC#" + Integer.toString(i), gc[i]);
-                    ditherfs.setLayout(new BorderLayout()); // showDitherTest
+                    Frame ditherfs = new Frame("DitherTest GC#" + i, gc[i]);
+                    ditherfs.setLayout(new BorderLayout());
                     DitherTest ditherTest = new DitherTest(gc[i]);
                     ditherfs.add("Center", ditherTest);
                     ditherfs.setBounds(300, 200, 300, 200);
@@ -131,7 +136,6 @@ class GCCanvas extends Canvas {
 
     GraphicsConfiguration gc;
     Rectangle bounds;
-    Graphics g = this.getGraphics();
     Dimension size = getSize();
 
     public GCCanvas(GraphicsConfiguration gc) {
