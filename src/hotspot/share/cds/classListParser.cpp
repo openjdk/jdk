@@ -511,7 +511,7 @@ void ClassListParser::constant_pool_resolution_warning(const char* msg, ...) {
 // S2 will be incorrectly used as the supertype of U instead of S1 due to
 // limitations in the loading mechanism of unregistered classes.
 void ClassListParser::check_supertype_obstruction(int specified_supertype_id, const InstanceKlass* specified_supertype, TRAPS) {
-  if (specified_supertype->is_shared_unregistered_class()) {
+  if (specified_supertype->defined_by_other_loaders()) {
     return; // Only registered supertypes can be obstructed
   }
   const InstanceKlass* obstructor = SystemDictionaryShared::get_unregistered_class(specified_supertype->name());
@@ -582,7 +582,7 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
       }
   }
 
-  assert(k->is_shared_unregistered_class(), "must be");
+  assert(k->defined_by_other_loaders(), "must be");
 
   bool added = SystemDictionaryShared::add_unregistered_class(THREAD, k);
   if (!added) {

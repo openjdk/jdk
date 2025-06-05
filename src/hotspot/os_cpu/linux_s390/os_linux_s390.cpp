@@ -155,6 +155,11 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
   return frame(sp, lr);
 }
 
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  Unimplemented();
+  return nullptr;
+}
+
 frame os::get_sender_for_C_frame(frame* fr) {
   if (*fr->sp() == 0) {
     // fr is the last C frame.

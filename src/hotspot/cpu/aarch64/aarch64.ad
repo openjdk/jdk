@@ -7761,14 +7761,12 @@ instruct popCountI(iRegINoSp dst, iRegIorL2I src, vRegF tmp) %{
   effect(TEMP tmp);
   ins_cost(INSN_COST * 13);
 
-  format %{ "movw   $src, $src\n\t"
-            "mov    $tmp, $src\t# vector (1D)\n\t"
+  format %{ "fmovs  $tmp, $src\t# vector (1S)\n\t"
             "cnt    $tmp, $tmp\t# vector (8B)\n\t"
             "addv   $tmp, $tmp\t# vector (8B)\n\t"
             "mov    $dst, $tmp\t# vector (1D)" %}
   ins_encode %{
-    __ movw($src$$Register, $src$$Register); // ensure top 32 bits 0
-    __ mov($tmp$$FloatRegister, __ D, 0, $src$$Register);
+    __ fmovs($tmp$$FloatRegister, $src$$Register);
     __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ mov($dst$$Register, $tmp$$FloatRegister, __ D, 0);
@@ -8234,6 +8232,16 @@ instruct castLL_checked(iRegL dst, rFlagsReg cr)
     __ verify_long_in_range(_idx, bottom_type()->is_long(), $dst$$Register, rscratch1);
   %}
   ins_pipe(pipe_slow);
+%}
+
+instruct castHH(vRegF dst)
+%{
+  match(Set dst (CastHH dst));
+  size(0);
+  format %{ "# castHH of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
 %}
 
 instruct castFF(vRegF dst)
