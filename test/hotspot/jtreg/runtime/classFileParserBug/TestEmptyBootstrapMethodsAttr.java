@@ -55,7 +55,8 @@ public class TestEmptyBootstrapMethodsAttr {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("java.lang.ClassFormatError");
         output.shouldHaveExitValue(1);
-        if (Thread.currentThread().isVirtual()) {
+        boolean vthreadMode = pb.command().toString().contains("test.thread.factory=Virtual");
+        if (vthreadMode) {
             output.shouldContain("java.lang.NoSuchMethodException: " + className + ".main");
         } else {
             output.shouldContain("Main method not found in class " + className);
@@ -74,7 +75,8 @@ public class TestEmptyBootstrapMethodsAttr {
         output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("java.lang.ClassFormatError");
         output.shouldHaveExitValue(1);
-        if (Thread.currentThread().isVirtual()) {
+        vthreadMode = pb.command().toString().contains("test.thread.factory=Virtual");
+        if (vthreadMode) {
             output.shouldContain("java.lang.NoSuchMethodException: " + className + ".main");
         } else {
             output.shouldContain("Main method not found in class " + className);
