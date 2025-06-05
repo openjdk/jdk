@@ -2088,12 +2088,12 @@ public class Cipher {
      * case of decryption.
      * The result is stored in a new buffer.
      *
-     * <p>After completing the operation, this method resets the {@code Cipher} object
-     * to the state it was in the most recent call to {@code init}. This means the
-     * cipher is ready to encrypt or decrypt additional data, depending on the mode
-     * specified during initialization.
-     * Note that AEAD algorithms may not fully reset and could require reinitialization
-     * or {@code update} may throw {@link IllegalStateException}.
+     * <p>This method attempts to reset this {@code Cipher} object to the state it was
+     * in after the most recent call to {@code init}, allowing it to encrypt or decrypt
+     * additional data. A successful reset depends on the mode ({@code ENCRYPT_MODE} or
+     * {@code DECRYPT_MODE}) and the algorithm. Some modes, or the use of an AEAD algorithm,
+     * may require reinitialization and will throw an {@link IllegalStateException} when
+     * {@code update} or {@code doFinal} are called.
      *
      * <p>Note: if any exception is thrown, this {@code Cipher} object
      * may need to be reset before it can be used again.
@@ -2200,12 +2200,12 @@ public class Cipher {
      * case of decryption.
      * The result is stored in a new buffer.
      *
-     * <p>After completing the operation, this method resets the {@code Cipher} object
-     * to the state it was in the most recent call to {@code init}. This means the
-     * cipher is ready to encrypt or decrypt additional data, depending on the mode
-     * specified during initialization.
-     * Note that AEAD algorithms may not fully reset and could require reinitialization
-     * or {@code update} may throw {@link IllegalStateException}.
+     * <p>This method attempts to reset this {@code Cipher} object to the state it was
+     * in after the most recent call to {@code init}, allowing it to encrypt or decrypt
+     * additional data. A successful reset depends on the mode ({@code ENCRYPT_MODE} or
+     * {@code DECRYPT_MODE}) and the algorithm. Some modes, or the use of an AEAD algorithm,
+     * may require reinitialization and will throw an {@link IllegalStateException} when
+     * {@code update} or {@code doFinal} are called.
      *
      * <p>Note: if any exception is thrown, this {@code Cipher} object
      * may need to be reset before it can be used again.
@@ -2255,12 +2255,12 @@ public class Cipher {
      * case of decryption.
      * The result is stored in a new buffer.
      *
-     * <p>After completing the operation, this method resets the {@code Cipher} object
-     * to the state it was in the most recent call to {@code init}. This means the
-     * cipher is ready to encrypt or decrypt additional data, depending on the mode
-     * specified during initialization.
-     * Note that AEAD algorithms may not fully reset and could require reinitialization
-     * or {@code update} may throw {@link IllegalStateException}.
+     * <p>This method attempts to reset this {@code Cipher} object to the state it was
+     * in after the most recent call to {@code init}, allowing it to encrypt or decrypt
+     * additional data. A successful reset depends on the mode ({@code ENCRYPT_MODE} or
+     * {@code DECRYPT_MODE}) and the algorithm. Some modes, or the use of an AEAD algorithm,
+     * may require reinitialization and will throw an {@link IllegalStateException} when
+     * {@code update} or {@code doFinal} are called.
      *
      * <p>Note: if any exception is thrown, this {@code Cipher} object
      * may need to be reset before it can be used again.
@@ -2320,12 +2320,12 @@ public class Cipher {
      * {@link #getOutputSize(int) getOutputSize} to determine how big
      * the output buffer should be.
      *
-     * <p>After completing the operation, this method resets the {@code Cipher} object
-     * to the state it was in the most recent call to {@code init}. This means the
-     * cipher is ready to encrypt or decrypt additional data, depending on the mode
-     * specified during initialization.
-     * Note that AEAD algorithms may not fully reset and could require reinitialization
-     * or {@code update} may throw {@link IllegalStateException}.
+     * <p>This method attempts to reset this {@code Cipher} object to the state it was
+     * in after the most recent call to {@code init}, allowing it to encrypt or decrypt
+     * additional data. A successful reset depends on the mode ({@code ENCRYPT_MODE} or
+     * {@code DECRYPT_MODE}) and the algorithm. Some modes, or the use of an AEAD algorithm,
+     * may require reinitialization and will throw an {@link IllegalStateException} when
+     * {@code update} or {@code doFinal} are called.
      *
      * <p>Note: if any exception is thrown, this {@code Cipher} object
      * may need to be reset before it can be used again.
@@ -2398,12 +2398,12 @@ public class Cipher {
      * {@link #getOutputSize(int) getOutputSize} to determine how big
      * the output buffer should be.
      *
-     * <p>After completing the operation, this method resets the {@code Cipher} object
-     * to the state it was in the most recent call to {@code init}. This means the
-     * cipher is ready to encrypt or decrypt additional data, depending on the mode
-     * specified during initialization.
-     * Note that AEAD algorithms may not fully reset and could require reinitialization
-     * or {@code update} may throw {@link IllegalStateException}.
+     * <p>This method attempts to reset this {@code Cipher} object to the state it was
+     * in after the most recent call to {@code init}, allowing it to encrypt or decrypt
+     * additional data. A successful reset depends on the mode ({@code ENCRYPT_MODE} or
+     * {@code DECRYPT_MODE}) and the algorithm. Some modes, or the use of an AEAD algorithm,
+     * may require reinitialization and will throw an {@link IllegalStateException} when
+     * {@code update} or {@code doFinal} are called.
      *
      * <p>Note: if any exception is thrown, this {@code Cipher} object
      * may need to be reset before it can be used again.
@@ -2479,12 +2479,12 @@ public class Cipher {
      * {@link #getOutputSize(int) getOutputSize} to determine how big
      * the output buffer should be.
      *
-     * <p>After completing the operation, this method resets the {@code Cipher} object
-     * to the state it was in the most recent call to {@code init}. This means the
-     * cipher is ready to encrypt or decrypt additional data, depending on the mode
-     * specified during initialization.
-     * Note that AEAD algorithms may not fully reset and could require reinitialization
-     * or {@code update} may throw {@link IllegalStateException}.
+     * <p>This method attempts to reset this {@code Cipher} object to the state it was
+     * in after the most recent call to {@code init}, allowing it to encrypt or decrypt
+     * additional data. A successful reset depends on the mode ({@code ENCRYPT_MODE} or
+     * {@code DECRYPT_MODE}) and the algorithm. Some modes, or the use of an AEAD algorithm,
+     * may require reinitialization and will throw an {@link IllegalStateException} when
+     * {@code update} or {@code doFinal} are called.
      *
      * <p>Note: if any exception is thrown, this {@code Cipher} object
      * may need to be reset before it can be used again.
