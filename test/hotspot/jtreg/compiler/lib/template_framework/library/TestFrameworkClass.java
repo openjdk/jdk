@@ -33,13 +33,14 @@ import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
 
 /**
- * This class provides a {@link #TEMPLATE} that can be used to simplify generating
- * source code when using the {@link TestFramework} (also known as IR Framework) to run a list of tests.
+ * This class provides a {@link #render} method that can be used to simplify generating
+ * source code when using the {@link TestFramework} (also known as IR Framework) to run
+ * a list of tests.
  *
  * <p>
  * The idea is that the user only has to generate the code for the individual tests,
  * and can then pass the corresponding list of {@link TemplateToken}s to this
- * provided {@link #TEMPLATE} which generates the surrounding class and the main
+ * provided {@link #render} method which generates the surrounding class and the main
  * method that invokes the {@link TestFramework}, so that all the generated tests
  * are run.
  */
@@ -49,11 +50,15 @@ public final class TestFrameworkClass {
     private TestFrameworkClass() {}
 
     /**
-     * To use the {@link TestFrameworkClass#TEMPLATE}, the user must specify the
-     * {@link #packageName} and {@link #className}, as well as a list of {@link #imports}
-     * and the {@link #classpath} from {@link CompileFramework#getEscapedClassPathOfCompiledClasses},
-     * so that the Test VM has access to the class files that are compiled from the generated
-     * source code.
+     * This method renders a list of {@code testTemplateTokens} into the body of a class
+     * and generates a {@code main} method which launches the {@link TestFramework}
+     * to run the generated tests.
+     *
+     * <p>
+     * The generated {@code main} method is to be invoked with a {@code vmFlags} argument,
+     * which must be a {@link String[]}, specifying the VM flags for the Test VM, in which
+     * the tests will be run. Thus, one can generate the test class once, and invoke its
+     * {@code main} method multiple times, each time with a different set of VM flags.
      *
      * @param packageName The package name of the test class.
      * @param className The name of the test class.
@@ -61,33 +66,26 @@ public final class TestFrameworkClass {
      * @param classpath The classpath from {@link CompileFramework#getEscapedClassPathOfCompiledClasses},
      *                  so that the Test VM has access to the class files that are compiled from the
      *                  generated source code.
+     * @param testTemplateTokens The list of tests to be generated into the test class.
+     *                           Every test must be annotated with {@code @Test}, so that
+     *                           the {@link TestFramework} can later find and run them.
+     * @return The generated source code of the test class as a {@link String}.
      */
-    public record Info(String packageName, String className, List<String> imports, String classpath) {};
-
-    /**
-     * This {@link Template} simplifies generating source code when using the {@link TestFramework}
-     * (also known as IR Framework) to run a list of tests.
-     *
-     * <p>
-     * The {@code info} argument encapsulates the context information for the
-     * generated class. The {@code testTemplateTokens} is a list of {@link TemplateToken}s,
-     * which represent the tests that are to be generated inside this test class.
-     *
-     * <p>
-     * The {@code main} method is to be invoked with a {@code vmFlags} argument, where
-     * the Test VM flags can be specified with which the tests are to be run.
-     */
-    public static final Template.TwoArgs<Info, List<TemplateToken>> TEMPLATE =
-        Template.make("info", "testTemplateTokens", (Info info, List<TemplateToken> testTemplateTokens) -> body(
-            let("classpath", info.classpath),
-            let("packageName", info.packageName),
-            let("className", info.className),
+    public static String render(final String packageName,
+                                final String className,
+                                final List<String> imports,
+                                final String classpath,
+                                final List<TemplateToken> testTemplateTokens) {
+        var template = Template.make(() -> body(
+            let("packageName", packageName),
+            let("className", className),
+            let("classpath", classpath),
             """
             package #packageName;
             // --- IMPORTS start ---
             import compiler.lib.ir_framework.*;
             """,
-            info.imports.stream().map(i -> "import " + i + ";\n").toList(),
+            imports.stream().map(i -> "import " + i + ";\n").toList(),
             """
             // --- IMPORTS end   ---
             public class #className {
@@ -111,4 +109,6 @@ public final class TestFrameworkClass {
             }
             """
         ));
+        return template.render();
+    }
 }

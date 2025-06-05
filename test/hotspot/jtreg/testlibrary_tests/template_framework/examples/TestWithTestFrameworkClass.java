@@ -79,21 +79,6 @@ public class TestWithTestFrameworkClass {
 
     // Generate a source Java file as String
     public static String generate(CompileFramework comp) {
-        // Create the info required for the test class.
-        // It is imporant that we pass the classpath to the Test-VM, so that it has access
-        // to all compiled classes.
-        TestFrameworkClass.Info info = new TestFrameworkClass.Info(
-            // package and class name.
-            "p.xyz", "InnerTest",
-            // List of imports. Duplicates are permitted.
-            List.of("compiler.lib.generators.*",
-                    "compiler.lib.ir_framework.*",
-                    "compiler.lib.verify.*",
-                    "compiler.lib.verify.*"),
-            // classpath, so the Test VM has access to the compiled class files.
-            comp.getEscapedClassPathOfCompiledClasses()
-        );
-
         // We define a Test-Template:
         // - static fields for inputs: INPUT_A and INPUT_B
         //   - Data generated with Generators and hashtag replacement #con1.
@@ -147,11 +132,22 @@ public class TestWithTestFrameworkClass {
             """
         ));
 
-        // From a list of operators, create a list of templateTokens with applied arguments.
+        // Create a test for each operator..
         List<String> ops = List.of("+", "-", "*", "&", "|");
-        List<TemplateToken> templateTokens = ops.stream().map(op -> (TemplateToken)testTemplate.asToken(op)).toList();
+        List<TemplateToken> testTemplateTokens = ops.stream().map(testTemplate::asToken).toList();
 
-        // Create the test class, which runs all templateTokens.
-        return TestFrameworkClass.TEMPLATE.render(info, templateTokens);
+        // Create the test class, which runs all testTemplateTokens.
+        return TestFrameworkClass.render(
+            // package and class name.
+            "p.xyz", "InnerTest",
+            // List of imports. Duplicates are permitted.
+            List.of("compiler.lib.generators.*",
+                    "compiler.lib.ir_framework.*",
+                    "compiler.lib.verify.*",
+                    "compiler.lib.verify.*"),
+            // classpath, so the Test VM has access to the compiled class files.
+            comp.getEscapedClassPathOfCompiledClasses(),
+            // The list of tests.
+            testTemplateTokens);
     }
 }
