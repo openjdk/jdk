@@ -73,7 +73,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             Path outputParentDir) throws PackagerException {
 
         final var pkg = MacFromParams.PKG_PACKAGE.fetchFrom(params);
-        var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
+        var env = MacBuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
         final var packager = MacPkgPackager.build().outputDir(outputParentDir).pkg(pkg).env(env);
 
