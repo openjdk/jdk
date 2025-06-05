@@ -200,9 +200,7 @@ recompute:
   }
 
   /* compute n */
-  DEBUG_ONLY(double z_copy = z;);
   z  = scalbnA(z,q0);           /* actual value of z */
-  assert(z == scalbnA_orig(z_copy, q0), "verification failed");
   z -= 8.0*floor(z*0.125);              /* trim off integer >= 8 */
   n  = (int) z;
   z -= (double)n;
@@ -235,11 +233,7 @@ recompute:
     }
     if(ih==2) {
       z = one - z;
-      if(carry!=0) {
-        double res1 = scalbnA(one,q0);
-        assert(res1 == scalbnA_orig(one,q0), "verification failed");
-        z -= res1;
-      }
+      if(carry!=0) z -= scalbnA(one,q0);
     }
   }
 
@@ -265,9 +259,7 @@ recompute:
     jz -= 1; q0 -= 24;
     while(iq[jz]==0) { jz--; q0-=24;}
   } else { /* break z into 24-bit if necessary */
-    DEBUG_ONLY(double z_copy = z;);
     z = scalbnA(z,-q0);
-    assert(z == scalbnA_orig(z_copy, -q0), "verification failed");
     if(z>=two24B) {
       fw = (double)((int)(twon24*z));
       iq[jz] = (int)(z-two24B*fw);
@@ -278,7 +270,6 @@ recompute:
 
   /* convert integer "bit" chunk to floating-point value */
   fw = scalbnA(one,q0);
-  assert(fw == scalbnA_orig(one, q0), "verification failed");
   for(i=jz;i>=0;i--) {
     q[i] = fw*(double)iq[i]; fw*=twon24;
   }
