@@ -1306,17 +1306,7 @@ void PhaseMacroExpand::expand_allocate_common(
 
   InitializeNode* init = alloc->initialization();
   if (init != nullptr) {
-    // Remove NarrowMemProjs and only keep a single Proj: NarrowMemProjs are only useful as long as the Allocate node
-    // exists and can be removed.
-    // To make this logic straightforward, create a new Proj. ProjNode constructor needs a proper input.
-    Node* new_mem_proj = new ProjNode(init, TypeFunc::Memory);
-    // clear input so new Proj is not one of the uses of init
-    new_mem_proj->set_req(0, nullptr);
-    // replace uses (the existing Proj and all NarrowMemProj) with the new Proj
-    init->replace_mem_projs_by(new_mem_proj, &_igvn);
-    // make Proj a use of the Initialize node again
-    new_mem_proj->set_req(0, init);
-    transform_later(new_mem_proj);
+    init->remove_narrow_mem_projs(_igvn);
   }
 
   enum { too_big_or_final_path = 1, need_gc_path = 2 };

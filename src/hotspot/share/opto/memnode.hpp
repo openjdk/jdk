@@ -1384,6 +1384,12 @@ public:
     return apply_to_narrow_mem_projs_any_iterator<Callback, UsesIterator>(UsesIterator(i, this), callback);
   }
 
+  template <class Callback> ProjNode* apply_to_narrow_mem_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback) const {
+    return apply_to_narrow_mem_projs_any_iterator<Callback, UsesIteratorFast>(UsesIteratorFast(imax, i, this), callback);
+  }
+
+  void remove_narrow_mem_projs(PhaseIterGVN& igvn);
+
 private:
   void remove_extra_zeroes();
 
