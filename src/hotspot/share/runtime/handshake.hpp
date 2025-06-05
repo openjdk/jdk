@@ -98,7 +98,7 @@ class HandshakeState {
   // The queue containing handshake operations to be performed on _handshakee.
   FilterQueue<HandshakeOperation*> _queue;
   // Provides mutual exclusion to this state and queue. Also used for
-  // JavaThread suspend/resume operations.
+  // JavaThread suspend/resume operations performed by SuspendResumeManager.
   Monitor _lock;
   // Set to the thread executing the handshake operation.
   Thread* volatile _active_handshaker;
