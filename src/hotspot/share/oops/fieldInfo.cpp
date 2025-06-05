@@ -134,7 +134,6 @@ typedef struct {
   int index;
   int position;
 } field_pos_t;
-field_pos_t* positions = nullptr;
 
 class FieldInfoSupplier: public PackedTableBuilder::Supplier {
 private:
@@ -165,13 +164,6 @@ Array<u1>* FieldInfoStream::create_search_table(ConstantPool* cp, const Array<u1
     return nullptr;
   }
 
-  // We use fixed width to let us skip through the table during binary search.
-  // With the max of 65536 fields (and at most tens of bytes per field),
-  // 3-byte offsets would suffice. In the common case with < 64kB stream 2-byte offsets are enough.
-  PackedTableBuilder builder(fis->length() - 1, java_fields - 1);
-
-  Array<u1>* table = MetadataFactory::new_array<u1>(loader_data, java_fields * builder.element_bytes(), CHECK_NULL);
-
   ResourceMark rm;
   field_pos_t* positions = NEW_RESOURCE_ARRAY(field_pos_t, java_fields);
   for (int i = 0; i < java_fields; ++i) {
@@ -192,6 +184,8 @@ Array<u1>* FieldInfoStream::create_search_table(ConstantPool* cp, const Array<u1
   };
   qsort(positions, java_fields, sizeof(field_pos_t), compare_pair);
 
+  PackedTableBuilder builder(fis->length() - 1, java_fields - 1);
+  Array<u1>* table = MetadataFactory::new_array<u1>(loader_data, java_fields * builder.element_bytes(), CHECK_NULL);
   FieldInfoSupplier supplier(positions, java_fields);
   builder.fill(table->data(), static_cast<size_t>(table->length()), supplier);
   return table;
