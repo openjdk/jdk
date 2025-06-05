@@ -19,26 +19,23 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLING_HPP
-#define SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLING_HPP
+package jdk.jfr.event.profiling;
 
-#include "memory/allocation.hpp"
+import jdk.test.lib.jfr.EventNames;
 
-class JavaThread;
-class JfrThreadLocal;
-class Thread;
+/**
+ * @test
+ * @requires vm.hasJFR & os.family == "linux"
+ * @library /test/lib
+ * @build jdk.jfr.event.profiling.BaseTestFullStackTrace
+ * @run main/othervm jdk.jfr.event.profiling.TestCPUTimeSampleFullStackTrace
+ */
+public class TestCPUTimeSampleFullStackTrace {
 
-class JfrThreadSampling : AllStatic {
-  friend class JfrSamplerThread;
-  friend class JfrCPUSamplerThread;
- private:
-  static bool process_native_sample_request(JfrThreadLocal* tl, JavaThread* jt, Thread* sampler_thread);
-  static void process_cpu_time_request(JavaThread* jt, JfrThreadLocal* tl, Thread* current, bool lock);
- public:
-  static void process_sample_request(JavaThread* jt);
-};
+    public static void main(String[] args) throws Throwable {
+        new BaseTestFullStackTrace(EventNames.CPUTimeSample, "eventThread").run();
+    }
 
-#endif // SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLING_HPP
+}
