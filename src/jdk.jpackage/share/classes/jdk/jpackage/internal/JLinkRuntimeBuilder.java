@@ -36,7 +36,6 @@ import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -177,8 +176,7 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
         for (String option : options) {
             switch (option) {
                 case "--output", "--add-modules", "--module-path" -> {
-                    throw new ConfigException(MessageFormat.format(I18N.getString(
-                            "error.blocked.option"), option), null);
+                    throw I18N.buildConfigException("error.blocked.option", option).create();
                 }
                 default -> {
                     args.add(option);
