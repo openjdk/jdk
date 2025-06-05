@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,21 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal;
 
-import java.nio.file.Path;
-
-// Must be public to allow access from AppImageLayout.toPathGroup()
-public interface MacApplicationLayoutMixin {
-
-    /**
-     * Returns path to the root Java runtime directory in the application image.
-     * <p>
-     * The root Java runtime directory should have "Contents/Home" subdirectory.
-     *
-     * @return the path to the root Java runtime directory in the application image
-     */
-    Path runtimeRootDirectory();
-
-    record Stub(Path runtimeRootDirectory) implements MacApplicationLayoutMixin {}
-}
+/* @test
+ * @summary Test MacApplicationLayoutTest
+ * @requires (os.family == "mac")
+ * @compile/module=jdk.jpackage -Xlint:all -Werror
+ *    jdk/jpackage/internal/MacApplicationLayoutTest.java
+ *    ../../share/jdk.jpackage/jdk/jpackage/internal/model/AppImageLayoutTest.java
+ *    ../../share/jdk.jpackage/jdk/jpackage/internal/model/ApplicationLayoutTest.java
+ * @run junit jdk.jpackage/jdk.jpackage.internal.MacApplicationLayoutTest
+ */
