@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +25,8 @@
 /*
  * @test
  * @bug 8358159
- * @summary test that the Cipher.getInstance() handles transformations with empty mode and/or padding
+ * @summary test that the Cipher.getInstance() handles
+ * transformations with empty mode and/or padding
  * @run main TestEmptyModePadding
  */
 
