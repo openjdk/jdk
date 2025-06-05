@@ -2215,7 +2215,7 @@ public class Cipher {
      * @return the new buffer with the result
      *
      * @throws IllegalStateException if this {@code Cipher} object
-     * is in a wrong state or cannot be reset
+     * is in a wrong state or cannot be reset.
      * @throws IllegalBlockSizeException if this cipher is a block cipher,
      * no padding has been requested (only in encryption mode), and the total
      * input length of the data processed by this cipher is not a multiple of
