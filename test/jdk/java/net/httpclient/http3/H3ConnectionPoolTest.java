@@ -33,6 +33,7 @@
  *                     H3ConnectionPoolTest
  */
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -67,63 +68,110 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
 
     private static final String CLASS_NAME = H3ConnectionPoolTest.class.getSimpleName();
 
-    static int http3Port, https2Port;
+    static int altsvcPort, https2Port, http3Port;
     static Http3TestServer http3OnlyServer;
     static Http2TestServer https2AltSvcServer;
     static HttpClient client = null;
     static SSLContext sslContext;
-    static volatile String http3URIString, https2URIString, http3AltSvcURIString;
+    static volatile String http3OnlyURIString, https2URIString, http3AltSvcURIString, http3DirectURIString;
 
-    static void initialize() throws Exception {
+    static void initialize(boolean samePort) throws Exception {
+        System.out.println("\nConfiguring for advertised AltSvc on "
+                + (samePort ? "same port" : "ephemeral port"));
         try {
             SimpleSSLContext sslct = new SimpleSSLContext();
             sslContext = sslct.get();
             client = null;
             client = getClient();
 
-            // server that only supports HTTP/3
-            http3OnlyServer = new Http3TestServer(sslContext);
-            http3OnlyServer.addHandler("/"+CLASS_NAME+"/http3/", new Http2EchoHandler());
-            System.out.println("HTTP/3 server started at:" + http3OnlyServer.serverAuthority());
-
             // server that supports both HTTP/2 and HTTP/3, with HTTP/3 on an altSvc port.
             https2AltSvcServer = new Http2TestServer(true, sslContext);
-            https2AltSvcServer.enableH3AltServiceOnSamePort();
+            if (samePort) {
+                System.out.println("Attempting to enable advertised HTTP/3 service on same port");
+                https2AltSvcServer.enableH3AltServiceOnSamePort();
+                System.out.println("Advertised AltSvc on same port " +
+                        (https2AltSvcServer.supportsH3DirectConnection() ? "enabled" : " not enabled"));
+            } else {
+                System.out.println("Attempting to enable advertised HTTP/3 service on different port");
+                https2AltSvcServer.enableH3AltServiceOnEphemeralPort();
+            }
             https2AltSvcServer.addHandler(new Http2EchoHandler(), "/" + CLASS_NAME + "/https2/");
+            https2AltSvcServer.addHandler(new Http2EchoHandler(), "/" + CLASS_NAME + "/h2h3/");
             https2Port = https2AltSvcServer.getAddress().getPort();
-            http3Port = https2AltSvcServer.getH3AltService()
+            altsvcPort = https2AltSvcServer.getH3AltService()
                     .map(Http3TestServer::getAddress).stream()
                     .mapToInt(InetSocketAddress::getPort).findFirst()
                     .getAsInt();
-
-            http3URIString = "https://" + http3OnlyServer.serverAuthority() + "/" + CLASS_NAME + "/http3/foo/";
-            https2URIString = "https://" + https2AltSvcServer.serverAuthority() + "/" + CLASS_NAME + "/https2/bar/";
-            http3AltSvcURIString = https2URIString
-                    .replace(":" + https2Port + "/", ":" + http3Port + "/");
-            System.out.println("HTTP/2 server started at: " + https2AltSvcServer.serverAuthority());
-            System.out.println(" with HTTP/3 endpoint at: " + URI.create(http3AltSvcURIString).getRawAuthority());
-
-
-
+            // server that only supports HTTP/3 - we attempt to use the same port
+            // as the HTTP/2 server so that we can pretend that the H2 server as two H3 endpoints:
+            //   one advertised (the alt service endpoint og the HTTP/2 server)
+            //   one non advertised (the direct endpoint, at the same authority as HTTP/2, but which
+            //   is in fact our http3OnlyServer)
+            try {
+                http3OnlyServer = new Http3TestServer(sslContext, samePort ? 0 : https2Port);
+                System.out.println("Unadvertised service enabled on "
+                        + (samePort ? "ephemeral port" : "same port"));
+            } catch (IOException ex) {
+                System.out.println("Can't create HTTP/3 server on same port: " + ex);
+                http3OnlyServer = new Http3TestServer(sslContext, 0);
+            }
+            http3OnlyServer.addHandler("/" + CLASS_NAME + "/http3/", new Http2EchoHandler());
+            http3OnlyServer.addHandler("/" + CLASS_NAME + "/h2h3/", new Http2EchoHandler());
             http3OnlyServer.start();
+            http3Port = http3OnlyServer.getQuicServer().getAddress().getPort();
+
+            if (http3Port == https2Port) {
+                System.out.println("HTTP/3 server enabled on same port than HTTP/2 server");
+                if (samePort) {
+                    System.out.println("WARNING: configuration could not be respected," +
+                            " should have used ephemeral port for HTTP/3 server");
+                }
+            } else {
+                System.out.println("HTTP/3 server enabled on a different port than HTTP/2 server");
+                if (!samePort) {
+                    System.out.println("WARNING: configuration could not be respected," +
+                            " should have used same port for HTTP/3 server");
+                }
+            }
+            if (altsvcPort == https2Port) {
+                if (!samePort) {
+                    System.out.println("WARNING: configuration could not be respected," +
+                            " should have used same port for advertised AltSvc");
+                }
+            } else {
+                if (samePort) {
+                    System.out.println("WARNING: configuration could not be respected," +
+                            " should have used ephemeral port for advertised AltSvc");
+                }
+            }
+
+            http3OnlyURIString = "https://" + http3OnlyServer.serverAuthority() + "/" + CLASS_NAME + "/http3/foo/";
+            https2URIString = "https://" + https2AltSvcServer.serverAuthority() + "/" + CLASS_NAME + "/https2/bar/";
+            http3DirectURIString = "https://" + https2AltSvcServer.serverAuthority() + "/" + CLASS_NAME + "/h2h3/direct/";
+            http3AltSvcURIString = https2URIString
+                    .replace(":" + https2Port + "/", ":" + altsvcPort + "/")
+                    .replace("/https2/bar/", "/h2h3/altsvc/");
+            System.out.println("HTTP/2 server started at: " + https2AltSvcServer.serverAuthority());
+            System.out.println(" with advertised HTTP/3 endpoint at: "
+                    + URI.create(http3AltSvcURIString).getRawAuthority());
+            System.out.println("HTTP/3 server started at:" + http3OnlyServer.serverAuthority());
+
             https2AltSvcServer.start();
         } catch (Throwable e) {
-            System.err.println("Throwing now");
+            System.out.println("Configuration failed: " + e);
+            System.err.println("Throwing now: " + e);
             e.printStackTrace();
             throw e;
         }
     }
 
-    static final List<CompletableFuture<Long>> cfs = Collections
-        .synchronizedList( new LinkedList<>());
-
-
     @Test
     public static void testH3Only() throws Exception {
-        initialize();
+        System.out.println("\nTesting HTTP/3 only");
+        initialize(true);
         try (HttpClient client = getClient()) {
             var reqBuilder = HttpRequest.newBuilder()
-                    .uri(URI.create(http3URIString))
+                    .uri(URI.create(http3OnlyURIString))
                     .version(HTTP_3)
                     .GET();
             HttpRequest request1 = reqBuilder.copy()
@@ -134,6 +182,7 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
             response1.headers().map().entrySet().forEach((e) -> {
                 System.out.printf("     %s: %s%n", e.getKey(), e.getValue());
             });
+            // ANY should reuse the same connection
             HttpRequest request2 = reqBuilder.copy()
                     .setOption(H3_DISCOVERY, ANY)
                     .build();
@@ -142,6 +191,7 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
                     .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                     .build();
             HttpResponse<String> response3 = client.send(request3, BodyHandlers.ofString());
+            // ANY should reuse the same connection
             HttpRequest request4 = reqBuilder.copy()
                     .setOption(H3_DISCOVERY, ANY)
                     .build();
@@ -156,21 +206,34 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
     }
 
     @Test
-    public static void testH2H3() throws Exception {
-        initialize();
+    public static void testH2H3WithTwoAltSVC() throws Exception {
+        testH2H3(false);
+    }
+
+    @Test
+    public static void testH2H3WithAltSVCOnSamePort() throws Exception {
+        testH2H3(true);
+    }
+
+    private static void testH2H3(boolean samePort) throws Exception {
+        System.out.println("\nTesting with advertised AltSvc on "
+                + (samePort ? "same port" : "ephemeral port"));
+        initialize(samePort);
         try (HttpClient client = getClient()) {
             var req1Builder = HttpRequest.newBuilder()
-                    .uri(URI.create(http3AltSvcURIString))
+                    .uri(URI.create(http3DirectURIString))
                     .version(HTTP_3)
                     .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                     .GET();
             var req2Builder = HttpRequest.newBuilder()
-                    .uri(URI.create(https2URIString))
+                    .uri(URI.create(http3DirectURIString))
                     .setOption(H3_DISCOVERY, ALT_SVC)
                     .version(HTTP_3)
                     .GET();
 
-            if (http3Port == https2Port) {
+            if (altsvcPort == https2Port) {
+                System.out.println("Testing with alt service on same port");
+
                 // first request with HTTP3_URI_ONLY should create H3 connection
                 HttpRequest request1 = req1Builder.copy().build();
                 HttpResponse<String> response1 = client.send(request1, BodyHandlers.ofString());
@@ -198,7 +261,6 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
                 checkStatus(200, response3.statusCode());
                 assertEquals(response1.connectionLabel().get(), response3.connectionLabel().get());
 
-
                 // third request with ALT_SVC should reuse the same advertised
                 // connection (from response2), regardless of same origin...
                 HttpRequest request4 = req2Builder.copy().build();
@@ -206,25 +268,69 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
                 assertEquals(HTTP_3, response4.version());
                 checkStatus(200, response4.statusCode());
                 assertEquals(response4.connectionLabel().get(), response2.connectionLabel().get());
-            } else {
+            } else if (http3Port == https2Port) {
+                System.out.println("Testing with two alt services");
+                // first - make a direct connection
+                HttpRequest request1 = req1Builder.copy().build();
+                HttpResponse<String> response1 = client.send(request1, BodyHandlers.ofString());
+                assertEquals(HTTP_3, response1.version());
+                checkStatus(200, response1.statusCode());
+
+                // second, get the alt service
                 HttpRequest request2 = req2Builder.copy().build();
                 // first request with ALT_SVC is to get alt service, should be H2
                 HttpResponse<String> h2resp2 = client.send(request2, BodyHandlers.ofString());
                 assertEquals(HTTP_2, h2resp2.version());
                 checkStatus(200, h2resp2.statusCode());
+
                 // second request should have ALT_SVC and create new connection with H3
                 // it should not reuse the non-advertised connection
                 HttpResponse<String> response2 = client.send(request2, BodyHandlers.ofString());
                 assertEquals(HTTP_3, response2.version());
                 checkStatus(200, response2.statusCode());
                 assertNotEquals(response2.connectionLabel().get(), h2resp2.connectionLabel().get());
+                assertNotEquals(response2.connectionLabel().get(), response1.connectionLabel().get());
+
                 // third request with ALT_SVC should reuse the same advertised
                 // connection (from response2), regardless of same origin...
-                HttpRequest request4 = req2Builder.copy().build();
-                HttpResponse<String> response4 = client.send(request4, BodyHandlers.ofString());
+                HttpRequest request3 = req2Builder.copy().build();
+                HttpResponse<String> response3 = client.send(request3, BodyHandlers.ofString());
+                assertEquals(HTTP_3, response3.version());
+                checkStatus(200, response3.statusCode());
+                assertEquals(response3.connectionLabel().get(), response2.connectionLabel().get());
+                assertNotEquals(response3.connectionLabel().get(), response1.connectionLabel().get());
+
+                // fourth request with HTTP_3_URI_ONLY should reuse the first connection,
+                // and not reuse the second.
+                HttpRequest request4 = req1Builder.copy().build();
+                HttpResponse<String> response4 = client.send(request1, BodyHandlers.ofString());
                 assertEquals(HTTP_3, response4.version());
-                checkStatus(200, response4.statusCode());
-                assertEquals(response4.connectionLabel().get(), response2.connectionLabel().get());
+                assertEquals(response4.connectionLabel().get(), response1.connectionLabel().get());
+                assertNotEquals(response4.connectionLabel().get(), response3.connectionLabel().get());
+                checkStatus(200, response1.statusCode());
+            } else {
+                System.out.println("WARNING: Couldn't create HTTP/3 server on same port! Can't test all...");
+                // Get, get the alt service
+                HttpRequest request2 = req2Builder.copy().build();
+                // first request with ALT_SVC is to get alt service, should be H2
+                HttpResponse<String> h2resp2 = client.send(request2, BodyHandlers.ofString());
+                assertEquals(HTTP_2, h2resp2.version());
+                checkStatus(200, h2resp2.statusCode());
+
+                // second request should have ALT_SVC and create new connection with H3
+                // it should not reuse the non-advertised connection
+                HttpResponse<String> response2 = client.send(request2, BodyHandlers.ofString());
+                assertEquals(HTTP_3, response2.version());
+                checkStatus(200, response2.statusCode());
+                assertNotEquals(response2.connectionLabel().get(), h2resp2.connectionLabel().get());
+
+                // third request with ALT_SVC should reuse the same advertised
+                // connection (from response2), regardless of same origin...
+                HttpRequest request3 = req2Builder.copy().build();
+                HttpResponse<String> response3 = client.send(request3, BodyHandlers.ofString());
+                assertEquals(HTTP_3, response3.version());
+                checkStatus(200, response3.statusCode());
+                assertEquals(response3.connectionLabel().get(), response2.connectionLabel().get());
             }
         } finally {
             http3OnlyServer.stop();
@@ -242,25 +348,18 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
         return client;
     }
 
-    static URI getURI(boolean altsvc) {
-        if (altsvc)
-            return URI.create(https2URIString);
-        else
-            return URI.create(http3URIString);
-    }
-
     static void checkStatus(int expected, int found) throws Exception {
         if (expected != found) {
-            System.err.printf ("Test failed: wrong status code %d/%d\n",
-                expected, found);
+            System.err.printf("Test failed: wrong status code %d/%d\n",
+                    expected, found);
             throw new RuntimeException("Test failed");
         }
     }
 
     static void checkStrings(String expected, String found) throws Exception {
         if (!expected.equals(found)) {
-            System.err.printf ("Test failed: wrong string %s/%s\n",
-                expected, found);
+            System.err.printf("Test failed: wrong string %s/%s\n",
+                    expected, found);
             throw new RuntimeException("Test failed");
         }
     }

@@ -113,6 +113,21 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
         this(sslContext, null);
     }
 
+    /**
+     * Same as calling {@code Http3TestServer(sslContext,
+     * new InetSocketAddress(InetAddress.getLoopbackAddress(), port), null)}
+     *
+     * @param sslContext SSLContext
+     * @throws IOException if the server could not be created
+     */
+    public Http3TestServer(final SSLContext sslContext, int port) throws IOException {
+        this(sslContext, new InetSocketAddress(InetAddress.getLoopbackAddress(), port), null);
+    }
+
+    public Http3TestServer(final SSLContext sslContext, InetSocketAddress address, final ExecutorService executor) throws IOException {
+        this(quicServerBuilder().sslContext(sslContext).executor(executor).bindAddress(address).build(), null);
+    }
+
     public Http3TestServer(final SSLContext sslContext, final ExecutorService executor) throws IOException {
         this(quicServerBuilder().sslContext(sslContext).executor(executor).build(), null);
     }
