@@ -1191,7 +1191,6 @@ public final class ML_KEM {
             int r = a[m] + b[m] + ML_KEM_Q; // This makes r > - ML_KEM_Q
             a[m] = (short) r;
         }
-        mlKemBarrettReduce(a);
     }
 
     // Adds the polynomial b to a in place, i.e. (the modified) a will hold

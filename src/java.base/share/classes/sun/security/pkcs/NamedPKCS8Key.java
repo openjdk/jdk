@@ -80,7 +80,7 @@ public final class NamedPKCS8Key extends PKCS8Key {
         this.fname = fname;
         this.paramSpec = new NamedParameterSpec(pname);
         this.expanded = Objects.requireNonNull(expanded);
-        this.key = Objects.requireNonNull(encoded);
+        this.privKeyMaterial = Objects.requireNonNull(encoded);
         try {
             this.algid = AlgorithmId.get(pname);
         } catch (NoSuchAlgorithmException e) {
@@ -100,7 +100,7 @@ public final class NamedPKCS8Key extends PKCS8Key {
             throws InvalidKeyException {
         super(encoded);
         this.fname = fname;
-        this.expanded = expander.expand(algid.getName(), this.key);
+        this.expanded = expander.expand(algid.getName(), this.privKeyMaterial);
         paramSpec = new NamedParameterSpec(algid.getName());
         if (algid.getEncodedParams() != null) {
             throw new InvalidKeyException("algorithm identifier has params");
@@ -145,7 +145,7 @@ public final class NamedPKCS8Key extends PKCS8Key {
 
     @Override
     public void destroy() {
-        Arrays.fill(key, (byte)0);
+        Arrays.fill(privKeyMaterial, (byte)0);
         Arrays.fill(expanded, (byte)0);
         if (encodedKey != null) {
             Arrays.fill(encodedKey, (byte)0);

@@ -3692,6 +3692,9 @@ void StubGenerator::generate_libm_stubs() {
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtanh)) {
       StubRoutines::_dtanh = generate_libmTanh(); // from stubGenerator_x86_64_tanh.cpp
     }
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dcbrt)) {
+      StubRoutines::_dcbrt = generate_libmCbrt(); // from stubGenerator_x86_64_cbrt.cpp
+    }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dexp)) {
       StubRoutines::_dexp = generate_libmExp(); // from stubGenerator_x86_64_exp.cpp
     }
@@ -4203,6 +4206,8 @@ void StubGenerator::generate_compiler_stubs() {
   generate_ghash_stubs();
 
   generate_chacha_stubs();
+
+  generate_kyber_stubs();
 
   generate_dilithium_stubs();
 
