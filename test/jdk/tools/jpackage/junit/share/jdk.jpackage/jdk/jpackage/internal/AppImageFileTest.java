@@ -24,8 +24,11 @@
 package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,22 +39,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ApplicationLayout;
-import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.ExternalApplication;
 import jdk.jpackage.internal.model.ExternalApplication.LauncherInfo;
+import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
+import jdk.jpackage.test.ObjectMapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 
 public class AppImageFileTest {
@@ -126,8 +132,9 @@ public class AppImageFileTest {
         void createInDir(Path dir) {
             final var file = create();
             final var copy = toSupplier(() -> {
-                file.save(DUMMY_LAYOUT.resolveAt(dir));
-                return AppImageFile.load(dir, DUMMY_LAYOUT);
+                var layout = DUMMY_LAYOUT.resolveAt(dir);
+                file.save(layout);
+                return AppImageFile.load(layout);
             }).get();
 
             assertEquals(file, copy);
@@ -163,27 +170,92 @@ public class AppImageFileTest {
                 .createInDir(tempFolder);
     }
 
+    @Test
+    public void testMalformedXml() throws IOException {
+        var ex = assertThrowsExactly(JPackageException.class, () -> createFromXml(List.of("<a>")));
+        Assertions.assertEquals(I18N.format("error.malformed-app-image-file", ".jpackage.xml", tempFolder), ex.getMessage());
+        assertNotNull(ex.getCause());
+    }
+
+    @Test
+    public void testNoSuchFile() throws IOException {
+        var ex = assertThrowsExactly(JPackageException.class, () -> AppImageFile.load(DUMMY_LAYOUT.resolveAt(tempFolder)));
+        Assertions.assertEquals(I18N.format("error.missing-app-image-file", ".jpackage.xml", tempFolder), ex.getMessage());
+        assertNull(ex.getCause());
+    }
+
+    @Test
+    public void testDirectory() throws IOException {
+        Files.createDirectory(AppImageFile.getPathInAppImage(DUMMY_LAYOUT.resolveAt(tempFolder)));
+
+        var ex = assertThrowsExactly(JPackageException.class, () -> AppImageFile.load(DUMMY_LAYOUT.resolveAt(tempFolder)));
+        Assertions.assertEquals(I18N.format("error.reading-app-image-file", ".jpackage.xml", tempFolder), ex.getMessage());
+        assertNotNull(ex.getCause());
+    }
+
+    @Test
+    @EnabledOnOs(value = OS.WINDOWS, disabledReason = "Can reliably lock a file using FileLock to cuase an IOException on Windows only")
+    @SuppressWarnings("try")
+    public void testGenericIOException() throws IOException {
+
+        final var appImageFile = AppImageFile.getPathInAppImage(DUMMY_LAYOUT.resolveAt(tempFolder));
+        Files.writeString(appImageFile, "");
+
+        try (var out = new FileOutputStream(appImageFile.toFile()); var lock = out.getChannel().lock()) {
+            var ex = assertThrowsExactly(JPackageException.class, () -> AppImageFile.load(DUMMY_LAYOUT.resolveAt(tempFolder)));
+            Assertions.assertEquals(I18N.format("error.reading-app-image-file", ".jpackage.xml", tempFolder), ex.getMessage());
+            assertNotNull(ex.getCause());
+        }
+    }
+
     @ParameterizedTest
     @MethodSource
     public void testInavlidXml(List<String> xmlData) throws IOException {
-        assertThrowsExactly(ConfigException.class, () -> createFromXml(xmlData), () -> {
-            return I18N.format("error.invalid-app-image", tempFolder, ".jpackage.xml");
-        });
+        var ex = assertThrowsExactly(JPackageException.class, () -> createFromXml(xmlData));
+        Assertions.assertEquals(I18N.format("error.invalid-app-image-file", ".jpackage.xml", tempFolder), ex.getMessage());
+        assertNull(ex.getCause());
     }
 
     private static Stream<List<String>> testInavlidXml() {
         return Stream.of(List.of("<foo/>"),
-                List.of("<jpackage-state/>"),
-                createXml(),
+                createValidBodyWithHeader(null, null),
+                createValidBodyWithHeader("foo", "foo"),
+                createValidBodyWithHeader(null, "foo"),
+                createValidBodyWithHeader("foo", null),
+                createValidBodyWithHeader(AppImageFile.getPlatform(), null),
+                createValidBodyWithHeader(AppImageFile.getPlatform(), "foo"),
+                createValidBodyWithHeader(null, AppImageFile.getVersion()),
+                createValidBodyWithHeader("foo", AppImageFile.getVersion()),
                 createXml("<main-launcher></main-launcher>"),
                 createXml("<main-launcher>Foo</main-launcher>", "<main-class></main-class>"),
                 createXml("<add-launcher>A</add-launcher>")
         );
     }
 
+    private static List<String> createValidBodyWithHeader(String platform, String version) {
+
+        var sb = new StringBuilder();
+        sb.append("<jpackage-state");
+        Optional.ofNullable(platform).ifPresent(v -> {
+            sb.append(String.format(" platform=\"%s\"", v));
+        });
+        Optional.ofNullable(version).ifPresent(v -> {
+            sb.append(String.format(" version=\"%s\"", v));
+        });
+        sb.append(">");
+
+        return List.of(
+                sb.toString(),
+                "<main-launcher>D</main-launcher>",
+                "<app-version>100</app-version>",
+                "<main-class>Hello</main-class>",
+                "</jpackage-state>"
+        );
+    }
+
     @ParameterizedTest
     @MethodSource
-    public void testValidXml(AppImageFile expected, List<String> xmlData) throws IOException, ConfigException {
+    public void testValidXml(AppImageFile expected, List<String> xmlData) throws IOException {
         final var actual = createFromXml(xmlData);
         assertEquals(expected, actual);
     }
@@ -230,14 +302,15 @@ public class AppImageFileTest {
                         "<add-launcher name='a'><name>foo</name><bar>foo</bar><service>true</service></add-launcher>",
                         "<other><nested>false</nested></other>",
                         "<another-other>A<child/>B</another-other>")
+                ),
+                Arguments.of(build().version("100").launcherName("D").mainClass("Hello").create(),
+                        createValidBodyWithHeader(AppImageFile.getPlatform(), AppImageFile.getVersion())
                 )
         );
     }
 
-    private AppImageFile createFromXml(List<String> xmlData) throws IOException, ConfigException {
+    private AppImageFile createFromXml(List<String> xmlData) throws IOException {
         Path path = AppImageFile.getPathInAppImage(DUMMY_LAYOUT.resolveAt(tempFolder));
-        path.toFile().mkdirs();
-        Files.delete(path);
 
         List<String> data = new ArrayList<>();
         data.add("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>");
@@ -246,24 +319,16 @@ public class AppImageFileTest {
         Files.write(path, data, StandardOpenOption.CREATE,
                     StandardOpenOption.TRUNCATE_EXISTING);
 
-        AppImageFile image = AppImageFile.load(tempFolder, DUMMY_LAYOUT);
+        AppImageFile image = AppImageFile.load(DUMMY_LAYOUT.resolveAt(tempFolder));
         return image;
     }
 
     private static void assertEquals(AppImageFile expected, AppImageFile actual) {
-        assertPropertyEquals(expected, actual, AppImageFile::getAppVersion);
-        assertPropertyEquals(expected, actual, AppImageFile::getLauncherName);
-        assertPropertyEquals(expected, actual, AppImageFile::getMainClass);
-        assertPropertyEquals(expected, actual, AppImageFile::getExtra);
-        Assertions.assertEquals(additionaLaunchersAsMap(expected), additionaLaunchersAsMap(actual));
+        Assertions.assertEquals(OM.map(expected), OM.map(actual));
     }
 
     private static Map<String, AppImageFile.LauncherInfo> additionaLaunchersAsMap(AppImageFile file) {
         return file.getAddLaunchers().stream().collect(Collectors.toMap(AppImageFile.LauncherInfo::name, x -> x));
-    }
-
-    private static <T, U> void assertPropertyEquals(T expected, T actual, Function<T, U> getProperty) {
-        Assertions.assertEquals(getProperty.apply(expected), getProperty.apply(actual));
     }
 
     private static final List<String> createXml(String ...xml) {
@@ -277,5 +342,8 @@ public class AppImageFileTest {
     @TempDir
     private Path tempFolder;
 
+    private static final ObjectMapper OM = ObjectMapper.standard().subst(ExternalApplication.class, "getAddLaunchers", obj -> {
+        return additionaLaunchersAsMap((AppImageFile)obj);
+    }).create();
     private static final ApplicationLayout DUMMY_LAYOUT = ApplicationLayout.build().setAll("").create();
 }
