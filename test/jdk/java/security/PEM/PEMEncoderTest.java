@@ -233,19 +233,19 @@ public class PEMEncoderTest {
     static void testEncodedKeySpec(PEMEncoder encoder) throws NoSuchAlgorithmException {
         KeyPair kp = getKeyPair();
         encoder.encodeToString(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
-        encoder.encodeToString((new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded())));
+        encoder.encodeToString(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded()));
         System.out.println("PASS: testEncodedKeySpec");
     }
     private static void testEmptyAndNullKey(PEMEncoder encoder) throws NoSuchAlgorithmException {
         KeyPair kp = getKeyPair();
-        assertThrows(IllegalArgumentException.class,() -> encoder.encode(
+        assertThrows(IllegalArgumentException.class, () -> encoder.encode(
                 new KeyPair(kp.getPublic(), new EmptyKey())));
-        assertThrows(IllegalArgumentException.class,() -> encoder.encode(
+        assertThrows(IllegalArgumentException.class, () -> encoder.encode(
                 new KeyPair(kp.getPublic(), null)));
 
-        assertThrows(IllegalArgumentException.class,() -> encoder.encode(
+        assertThrows(IllegalArgumentException.class, () -> encoder.encode(
                 new KeyPair(new EmptyKey(), kp.getPrivate())));
-        assertThrows(IllegalArgumentException.class,() -> encoder.encode(
+        assertThrows(IllegalArgumentException.class, () -> encoder.encode(
                 new KeyPair(null, kp.getPrivate())));
         System.out.println("PASS: testEmptyKey");
     }

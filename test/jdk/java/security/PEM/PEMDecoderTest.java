@@ -533,7 +533,7 @@ public class PEMDecoderTest {
         String algorithm = switch(privateKey.getAlgorithm()) {
             case "EC" -> "SHA256withECDSA";
             case "EdDSA" -> "EdDSA";
-            case "RSASSA-PSS" ->  {
+            case "RSASSA-PSS" -> {
                 spec = new PSSParameterSpec(
                         "SHA-256", "MGF1", MGF1ParameterSpec.SHA256, 32, 1);
                 yield "RSASSA-PSS";

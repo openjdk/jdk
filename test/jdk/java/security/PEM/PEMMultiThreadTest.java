@@ -38,13 +38,15 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import jdk.test.lib.security.SecurityUtils;
+
 public class PEMMultiThreadTest {
     static final int THREAD_COUNT = 5;
     static final int KEYS_COUNT = 50;
 
     public static void main(String[] args) throws Exception {
         PEMEncoder encoder = PEMEncoder.of();
-        try(ExecutorService ex = Executors.newFixedThreadPool(THREAD_COUNT)) {
+        try (ExecutorService ex = Executors.newFixedThreadPool(THREAD_COUNT)) {
             Map<Integer, PublicKey> keys = new HashMap<>();
             Map<Integer, String> encoded = Collections.synchronizedMap(new HashMap<>());
             Map<Integer, String> decoded = Collections.synchronizedMap(new HashMap<>());
@@ -52,7 +54,7 @@ public class PEMMultiThreadTest {
             final CountDownLatch decodingComplete = new CountDownLatch(KEYS_COUNT);
 
             // Generate keys and encode them in parallel
-            for (int i = 0 ; i < KEYS_COUNT ; i++) {
+            for (int i = 0; i < KEYS_COUNT; i++) {
                 final int finalI = i;
                 KeyPair kp = getKeyPair();
                 keys.put(finalI, kp.getPublic());
@@ -73,7 +75,6 @@ public class PEMMultiThreadTest {
                     decodingComplete.countDown();
                 });
             }
-
             decodingComplete.await();
 
             // verify all keys were properly encoded and decoded comparing with the original key map
@@ -90,7 +91,7 @@ public class PEMMultiThreadTest {
     private static KeyPair getKeyPair() throws NoSuchAlgorithmException {
         String alg = "EC";
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(alg);
-        kpg.initialize(jdk.test.lib.security.SecurityUtils.getTestKeySize(alg));
+        kpg.initialize(SecurityUtils.getTestKeySize(alg));
         return kpg.generateKeyPair();
     }
 }
