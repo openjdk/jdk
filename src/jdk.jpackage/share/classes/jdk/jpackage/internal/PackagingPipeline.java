@@ -593,11 +593,11 @@ final class PackagingPipeline {
 
             if (pkg.isPresent() && !pkg.orElseThrow().test(taskID)) {
                 return false;
-            } else if (pkg.isEmpty() && isPackageTask) {
-                // Building application image, skip packaging tasks.
+            } else if (pkg.isEmpty() && (isPackageTask || isCopyAppImageTask)) {
+                // Building application image, skip packaging and copying app image tasks.
                 return false;
-            } else if (app.runtimeBuilder().isEmpty() && isBuildApplicationImageTask && !isCopyAppImageTask) {
-                // Runtime builder is not present, skip building application image tasks.
+            } else if (pkg.isPresent() && app.runtimeBuilder().isEmpty() && isBuildApplicationImageTask && !isCopyAppImageTask) {
+                // Building a package, runtime builder is not present, skip building application image tasks.
                 return false;
             } else if (app.runtimeBuilder().isPresent() && isCopyAppImageTask && !isBuildApplicationImageTask) {
                 // Runtime builder is present, skip copying app image tasks.
