@@ -1600,38 +1600,6 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     case Op_Bool:
       return false;
 
-    // CallStaticJavaNode::Ideal
-    // Led to a crash:
-    //   assert((is_CallStaticJava() && cg->is_mh_late_inline()) || (is_CallDynamicJava() && cg->is_virtual_late_inline())) failed: mismatch
-    //
-    // Did not investigate yet, could be a bug.
-    // Or maybe it does not expect to be called during verification.
-    //
-    // Found with:
-    //   test/jdk/jdk/incubator/vector/VectorRuns.java
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_CallStaticJava:
-      return false;
-
-    // CallDynamicJavaNode::Ideal
-    // During late inlining it can call CallJavaNode::register_for_late_inline
-    // That means we do more rounds of late inlining, but might fail.
-    // Then we do IGVN again, and register the node again for late inlining.
-    // This creates an endless cycle. Everytime we try late inlining, we
-    // are also creating more nodes, especially SafePoint and MergeMem.
-    // These nodes are immediately rejected when the inlining fails in the
-    // do_late_inline_check, but they still grow the memory, until we hit
-    // the MemLimit and crash.
-    // The assumption here seems that CallDynamicJavaNode::Ideal does not get
-    // called repeatedly, and eventually we terminate. I fear this is not
-    // a great assumption to make. We should investigate more.
-    //
-    // Found with:
-    //   compiler/loopopts/superword/TestDependencyOffsets.java#vanilla-U
-    //   -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
-    case Op_CallDynamicJava:
-      return false;
-
     // LShiftLNode::Ideal
     // Looks at pattern: "(x + x) << c0", converts it to "x << (c0 + 1)"
     // Probably a notification issue.
@@ -1758,6 +1726,38 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     // Found with:
     //   compiler/eliminateAutobox/TestShortBoxing.java
     //   -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
+    return false;
+  }
+
+  if (n->is_CallJava()) {
+    // CallStaticJavaNode::Ideal
+    // Led to a crash:
+    //   assert((is_CallStaticJava() && cg->is_mh_late_inline()) || (is_CallDynamicJava() && cg->is_virtual_late_inline())) failed: mismatch
+    //
+    // Did not investigate yet, could be a bug.
+    // Or maybe it does not expect to be called during verification.
+    //
+    // Found with:
+    //   test/jdk/jdk/incubator/vector/VectorRuns.java
+    //   -XX:VerifyIterativeGVN=1110
+
+    // CallDynamicJavaNode::Ideal, and I think also for CallStaticJavaNode::Ideal
+    //  and possibly their subclasses.
+    // During late inlining it can call CallJavaNode::register_for_late_inline
+    // That means we do more rounds of late inlining, but might fail.
+    // Then we do IGVN again, and register the node again for late inlining.
+    // This creates an endless cycle. Everytime we try late inlining, we
+    // are also creating more nodes, especially SafePoint and MergeMem.
+    // These nodes are immediately rejected when the inlining fails in the
+    // do_late_inline_check, but they still grow the memory, until we hit
+    // the MemLimit and crash.
+    // The assumption here seems that CallDynamicJavaNode::Ideal does not get
+    // called repeatedly, and eventually we terminate. I fear this is not
+    // a great assumption to make. We should investigate more.
+    //
+    // Found with:
+    //   compiler/loopopts/superword/TestDependencyOffsets.java#vanilla-U
+    //   -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
     return false;
   }
 
