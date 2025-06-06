@@ -43,7 +43,19 @@ public class GetSystemCpuLoad {
 
         for (int i = 0; i < 10; i++) {
             load = mbean.getSystemCpuLoad();
-            if (load == -1.0 && Platform.isWindows()) {
+           System.out.printf("System load isi %.15f T IEERATION %d%n",load,i);
+            System.out.printf("Time: %d - System load is %.25f ITERATION %d%n", System.currentTimeMillis(), load, i);
+ 
+		if (load == -1.0 && !Platform.isWindows()){
+               try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                load = mbean.getSystemCpuLoad(); 
+
+            }    
+            else if (load == -1.0 && Platform.isWindows()) {
                 // Some Windows 2019 systems can return -1 for the first few reads.
                 // Remember a -1 in case it never gets better.
                 ex = new RuntimeException("getSystemCpuLoad() returns " + load
@@ -57,7 +69,7 @@ public class GetSystemCpuLoad {
                 ex = null;
             }
             try {
-                Thread.sleep(200);
+                Thread.sleep(1000);
             } catch(InterruptedException e) {
                 e.printStackTrace();
             }
