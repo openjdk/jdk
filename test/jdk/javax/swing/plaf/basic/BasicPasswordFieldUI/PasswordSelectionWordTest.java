@@ -45,15 +45,25 @@ public class PasswordSelectionWordTest {
         for (UIManager.LookAndFeelInfo laf :
                 UIManager.getInstalledLookAndFeels()) {
             System.out.println("Testing LAF: " + laf.getClassName());
-            SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
-            SwingUtilities.invokeAndWait(() -> runTest());
+            SwingUtilities.invokeAndWait(() -> {
+                if (setLookAndFeel(laf)) {
+                    runTest();
+                }
+            });
         }
     }
 
-    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
+    private static boolean setLookAndFeel(UIManager.LookAndFeelInfo laf) {
         try {
             UIManager.setLookAndFeel(laf.getClassName());
-        } catch (Exception  e) {
+            return true;
+        } catch (UnsupportedLookAndFeelException  e) {
+            System.err.println("Skipping unsupported look and feel:")
+            e.printStackTrace();
+            return false;
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
