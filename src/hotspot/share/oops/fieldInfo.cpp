@@ -23,6 +23,7 @@
  */
 
 #include "memory/resourceArea.hpp"
+#include "cds/cdsConfig.hpp"
 #include "oops/fieldInfo.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/packedTable.hpp"
@@ -155,6 +156,13 @@ public:
 };
 
 Array<u1>* FieldInfoStream::create_search_table(ConstantPool* cp, const Array<u1>* fis, ClassLoaderData* loader_data, TRAPS) {
+  if (CDSConfig::is_dumping_dynamic_archive()) {
+    // We cannot use search table; in case of dynamic archives it should be sorted by "requested" addresses,
+    // but Symbol* addresses are coming from _constants, which has "buffered" addresses.
+    // For background, see new comments inside allocate_node_impl in symbolTable.cpp
+    return nullptr;
+  }
+
   FieldInfoReader r(fis);
   int java_fields;
   int injected_fields;
