@@ -46,6 +46,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 
 JVMCICompileState::JVMCICompileState(CompileTask* task, JVMCICompiler* compiler):
   _task(task),
@@ -250,12 +251,9 @@ void JVMCIEnv::check_init(TRAPS) {
   if (_init_error == JNI_OK) {
     return;
   }
-  if (_init_error == JNI_ENOMEM) {
-    THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), "JNI_ENOMEM creating or attaching to libjvmci");
-  }
   stringStream st;
   st.print("Error creating or attaching to libjvmci (err: %d, description: %s)",
-           _init_error, _init_error_msg == nullptr ? "unknown" : _init_error_msg);
+            _init_error, _init_error_msg != nullptr ? _init_error_msg : (_init_error == JNI_ENOMEM ? "JNI_ENOMEM" : "none"));
   THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), st.freeze());
 }
 
@@ -612,7 +610,7 @@ JVMCIEnv::~JVMCIEnv() {
   if (_init_error_msg != nullptr) {
     // The memory allocated in libjvmci was not allocated with os::malloc
     // so must not be freed with os::free.
-    ALLOW_C_FUNCTION(::free, ::free((void*) _init_error_msg);)
+    permit_forbidden_function::free((void*)_init_error_msg);
   }
   if (_init_error != JNI_OK) {
     return;

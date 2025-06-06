@@ -678,6 +678,9 @@ public abstract class DoubleVector extends AbstractVector<Double> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0));
             }
+            else if (opKind(op, VO_MATHLIB)) {
+                return unaryMathOp(op);
+            }
         }
         int opc = opCode(op);
         return VectorSupport.unaryOp(
@@ -703,12 +706,22 @@ public abstract class DoubleVector extends AbstractVector<Double> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0, m));
             }
+            else if (opKind(op, VO_MATHLIB)) {
+                return blend(unaryMathOp(op), m);
+            }
         }
         int opc = opCode(op);
         return VectorSupport.unaryOp(
             opc, getClass(), maskClass, double.class, length(),
             this, m,
             UN_IMPL.find(op, opc, DoubleVector::unaryOperations));
+    }
+
+    @ForceInline
+    final
+    DoubleVector unaryMathOp(VectorOperators.Unary op) {
+        return VectorMathLibrary.unaryMathOp(op, opCode(op), species(), DoubleVector::unaryOperations,
+                                             this);
     }
 
     private static final
@@ -781,6 +794,9 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                     = this.viewAsIntegralLanes().compare(EQ, (long) 0);
                 return this.blend(that, mask.cast(vspecies()));
             }
+            else if (opKind(op, VO_MATHLIB)) {
+                return binaryMathOp(op, that);
+            }
         }
 
         int opc = opCode(op);
@@ -815,6 +831,10 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                     = bits.compare(EQ, (long) 0, m.cast(bits.vspecies()));
                 return this.blend(that, mask.cast(vspecies()));
             }
+            else if (opKind(op, VO_MATHLIB)) {
+                return this.blend(binaryMathOp(op, that), m);
+            }
+
         }
 
         int opc = opCode(op);
@@ -822,6 +842,13 @@ public abstract class DoubleVector extends AbstractVector<Double> {
             opc, getClass(), maskClass, double.class, length(),
             this, that, m,
             BIN_IMPL.find(op, opc, DoubleVector::binaryOperations));
+    }
+
+    @ForceInline
+    final
+    DoubleVector binaryMathOp(VectorOperators.Binary op, DoubleVector that) {
+        return VectorMathLibrary.binaryMathOp(op, opCode(op), species(), DoubleVector::binaryOperations,
+                                              this, that);
     }
 
     private static final

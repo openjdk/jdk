@@ -39,6 +39,10 @@ public class ExactOptionMatch {
     record Option(String cmdLine, String property, String valueA, String valueB) {}
 
     static Option[] allOptions = new Option[] {
+        new Option("--add-opens",
+                   "jdk.module.addopens",
+                   "java.base/java.util.concurrent.regex=ALL-UNNAMED",
+                   "java.base/sun.security.x509=ALL-UNNAMED"),
         new Option("--add-exports",
                    "jdk.module.addexports",
                    "java.base/jdk.internal.misc=ALL-UNNAMED",
@@ -67,7 +71,7 @@ public class ExactOptionMatch {
             TestCommon.dumpBaseArchive(archiveName, o.cmdLine(), o.valueA())
                 .shouldHaveExitValue(0);
 
-            TestCommon.execCommon("-Xlog:cds", "--version")
+            TestCommon.execCommon("-Xlog:aot", "-Xlog:cds", "--version")
                 .shouldMatch("Mismatched values for property " + o.property() + ": j.*specified during dump time but not during runtime")
                 .shouldContain(FMG_DISABLED);
 
@@ -75,7 +79,7 @@ public class ExactOptionMatch {
             TestCommon.dumpBaseArchive(archiveName)
                 .shouldHaveExitValue(0);
 
-            TestCommon.execCommon("-Xlog:cds", o.cmdLine(), o.valueA(), "--version")
+            TestCommon.execCommon("-Xlog:aot", "-Xlog:cds", o.cmdLine(), o.valueA(), "--version")
                 .shouldMatch("Mismatched values for property " + o.property() + ": j.*specified during runtime but not during dump time")
                 .shouldContain(FMG_DISABLED);
 
@@ -84,18 +88,18 @@ public class ExactOptionMatch {
                 .shouldHaveExitValue(0);
 
             // (3.1) Run = specified once
-            TestCommon.execCommon("-Xlog:cds", o.cmdLine(), o.valueA(), "--version")
+            TestCommon.execCommon("-Xlog:aot", "-Xlog:cds", o.cmdLine(), o.valueA(), "--version")
                 .shouldMatch("Mismatched values for property " + o.property() + ": runtime.*dump time")
                 .shouldContain(FMG_DISABLED);
 
             // (3.2) Run = specified twice (same order)
             //       Should still be able to use FMG.
-            TestCommon.execCommon("-Xlog:cds", o.cmdLine(), o.valueA(), o.cmdLine(), o.valueB(), "--version")
+            TestCommon.execCommon("-Xlog:aot", "-Xlog:cds", o.cmdLine(), o.valueA(), o.cmdLine(), o.valueB(), "--version")
                 .shouldContain(FMG_ENABLED);
 
             // (3.3) Run = specified twice (but in different order)
             //       Should still be able to use FMG (values are sorted by CDS).
-            TestCommon.execCommon("-Xlog:cds", o.cmdLine(), o.valueB(), o.cmdLine(), o.valueA(), "--version")
+            TestCommon.execCommon("-Xlog:aot", "-Xlog:cds", o.cmdLine(), o.valueB(), o.cmdLine(), o.valueA(), "--version")
                 .shouldContain(FMG_ENABLED);
         }
     }

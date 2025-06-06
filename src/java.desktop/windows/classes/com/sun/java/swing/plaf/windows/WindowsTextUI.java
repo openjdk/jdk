@@ -55,6 +55,7 @@ public abstract class WindowsTextUI extends BasicTextUI {
      *
      * @return the caret object
      */
+    @Override
     protected Caret createCaret() {
         return new WindowsCaret();
     }
@@ -64,20 +65,21 @@ public abstract class WindowsTextUI extends BasicTextUI {
 
     /* public */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class WindowsCaret extends DefaultCaret
+    static final class WindowsCaret extends DefaultCaret
                      implements UIResource {
         /**
          * Gets the painter for the Highlighter.
          *
          * @return the painter
          */
+        @Override
         protected Highlighter.HighlightPainter getSelectionPainter() {
             return WindowsTextUI.WindowsPainter;
         }
     }
 
     /* public */
-    static class WindowsHighlightPainter extends
+    static final class WindowsHighlightPainter extends
                      DefaultHighlighter.DefaultHighlightPainter {
         WindowsHighlightPainter(Color c) {
             super(c);
@@ -94,6 +96,7 @@ public abstract class WindowsTextUI extends BasicTextUI {
          * @param bounds the bounding box for the highlight
          * @param c the editor
          */
+        @Override
         @SuppressWarnings("deprecation")
         public void paint(Graphics g, int offs0, int offs1, Shape bounds, JTextComponent c) {
             Rectangle alloc = bounds.getBounds();
@@ -167,6 +170,7 @@ public abstract class WindowsTextUI extends BasicTextUI {
          * @param view View painting for
          * @return region drawing occurred in
          */
+        @Override
         public Shape paintLayer(Graphics g, int offs0, int offs1,
                                 Shape bounds, JTextComponent c, View view) {
             Color color = getColor();

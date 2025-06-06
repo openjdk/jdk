@@ -40,9 +40,10 @@ import static org.testng.Assert.assertTrue;
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
  *          jdk.jshell/jdk.internal.jshell.tool:+open
+ *          jdk.jshell/jdk.internal.jshell.tool.resources:+open
  * @library /tools/lib
  * @build Compiler toolbox.ToolBox
- * @run testng ToolProviderTest
+ * @run testng/othervm --patch-module jdk.jshell=${test.src}/StartOptionTest-module-patch ToolProviderTest
  */
 @Test
 public class ToolProviderTest extends StartOptionTest {
@@ -72,10 +73,20 @@ public class ToolProviderTest extends StartOptionTest {
     }
 
     @Override
+    protected void startCheckCommandUserOutput(Consumer<String> checkCommandOutput,
+            Consumer<String> checkUserOutput,
+            Consumer<String> checkCombinedCommandUserOutput,
+            String... args) {
+        runShell(args);
+        check(cmdout, checkCombinedCommandUserOutput, "userout");
+        check(usererr, null, "usererr");
+    }
+
+    @Override
     protected int runShell(String... args) {
         //make sure the JShell running during the test is not using persisted preferences from the machine:
         Function<JavaShellToolBuilder, JavaShellToolBuilder> prevAugmentedToolBuilder =
-                getAndSetAugmentedToolBuilder(builder -> builder.persistence(new HashMap<>()));
+                getAndSetAugmentedToolBuilder(builder -> builder.persistence(getThisTestPersistence()));
         try {
             ServiceLoader<Tool> sl = ServiceLoader.load(Tool.class);
             for (Tool provider : sl) {

@@ -476,7 +476,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
   Label slow_path;
 
   if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds.
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
     movptr(Address(box, BasicLock::object_monitor_cache_offset_in_bytes()), 0);
   }
 
@@ -785,6 +785,119 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
   bind(zf_correct);
 #endif
   // C2 uses the value of ZF to determine the continuation.
+}
+
+static void abort_verify_int_in_range(uint idx, jint val, jint lo, jint hi) {
+  fatal("Invalid CastII, idx: %u, val: %d, lo: %d, hi: %d", idx, val, lo, hi);
+}
+
+static void reconstruct_frame_pointer_helper(MacroAssembler* masm, Register dst) {
+  const int framesize = Compile::current()->output()->frame_size_in_bytes();
+  masm->movptr(dst, rsp);
+  if (framesize > 2 * wordSize) {
+    masm->addptr(dst, framesize - 2 * wordSize);
+  }
+}
+
+void C2_MacroAssembler::reconstruct_frame_pointer(Register rtmp) {
+  if (PreserveFramePointer) {
+    // frame pointer is valid
+#ifdef ASSERT
+    // Verify frame pointer value in rbp.
+    reconstruct_frame_pointer_helper(this, rtmp);
+    Label L_success;
+    cmpq(rbp, rtmp);
+    jccb(Assembler::equal, L_success);
+    STOP("frame pointer mismatch");
+    bind(L_success);
+#endif // ASSERT
+  } else {
+    reconstruct_frame_pointer_helper(this, rbp);
+  }
+}
+
+void C2_MacroAssembler::verify_int_in_range(uint idx, const TypeInt* t, Register val) {
+  jint lo = t->_lo;
+  jint hi = t->_hi;
+  assert(lo < hi, "type should not be empty or constant, idx: %u, lo: %d, hi: %d", idx, lo, hi);
+  if (t == TypeInt::INT) {
+    return;
+  }
+
+  BLOCK_COMMENT("CastII {");
+  Label fail;
+  Label succeed;
+  if (hi == max_jint) {
+    cmpl(val, lo);
+    jccb(Assembler::greaterEqual, succeed);
+  } else {
+    if (lo != min_jint) {
+      cmpl(val, lo);
+      jccb(Assembler::less, fail);
+    }
+    cmpl(val, hi);
+    jccb(Assembler::lessEqual, succeed);
+  }
+
+  bind(fail);
+  movl(c_rarg0, idx);
+  movl(c_rarg1, val);
+  movl(c_rarg2, lo);
+  movl(c_rarg3, hi);
+  reconstruct_frame_pointer(rscratch1);
+  call(RuntimeAddress(CAST_FROM_FN_PTR(address, abort_verify_int_in_range)));
+  hlt();
+  bind(succeed);
+  BLOCK_COMMENT("} // CastII");
+}
+
+static void abort_verify_long_in_range(uint idx, jlong val, jlong lo, jlong hi) {
+  fatal("Invalid CastLL, idx: %u, val: " JLONG_FORMAT ", lo: " JLONG_FORMAT ", hi: " JLONG_FORMAT, idx, val, lo, hi);
+}
+
+void C2_MacroAssembler::verify_long_in_range(uint idx, const TypeLong* t, Register val, Register tmp) {
+  jlong lo = t->_lo;
+  jlong hi = t->_hi;
+  assert(lo < hi, "type should not be empty or constant, idx: %u, lo: " JLONG_FORMAT ", hi: " JLONG_FORMAT, idx, lo, hi);
+  if (t == TypeLong::LONG) {
+    return;
+  }
+
+  BLOCK_COMMENT("CastLL {");
+  Label fail;
+  Label succeed;
+
+  auto cmp_val = [&](jlong bound) {
+    if (is_simm32(bound)) {
+      cmpq(val, checked_cast<int>(bound));
+    } else {
+      mov64(tmp, bound);
+      cmpq(val, tmp);
+    }
+  };
+
+  if (hi == max_jlong) {
+    cmp_val(lo);
+    jccb(Assembler::greaterEqual, succeed);
+  } else {
+    if (lo != min_jlong) {
+      cmp_val(lo);
+      jccb(Assembler::less, fail);
+    }
+    cmp_val(hi);
+    jccb(Assembler::lessEqual, succeed);
+  }
+
+  bind(fail);
+  movl(c_rarg0, idx);
+  movq(c_rarg1, val);
+  mov64(c_rarg2, lo);
+  mov64(c_rarg3, hi);
+  reconstruct_frame_pointer(rscratch1);
+  call(RuntimeAddress(CAST_FROM_FN_PTR(address, abort_verify_long_in_range)));
+  hlt();
+  bind(succeed);
+  BLOCK_COMMENT("} // CastLL");
 }
 
 //-------------------------------------------------------------------------------------------
@@ -5618,7 +5731,7 @@ void C2_MacroAssembler::vector_compress_expand_avx2(int opcode, XMMRegister dst,
   // in a permute table row contains either a valid permute index or a -1 (default)
   // value, this can potentially be used as a blending mask after
   // compressing/expanding the source vector lanes.
-  vblendvps(dst, dst, xtmp, permv, vec_enc, false, permv);
+  vblendvps(dst, dst, xtmp, permv, vec_enc, true, permv);
 }
 
 void C2_MacroAssembler::vector_compress_expand(int opcode, XMMRegister dst, XMMRegister src, KRegister mask,

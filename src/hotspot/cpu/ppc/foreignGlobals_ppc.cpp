@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2025, SAP SE. All rights reserved.
  * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,16 +35,6 @@
 
 #define __ masm->
 
-bool ABIDescriptor::is_volatile_reg(Register reg) const {
-  return _integer_argument_registers.contains(reg)
-    || _integer_additional_volatile_registers.contains(reg);
-}
-
-bool ABIDescriptor::is_volatile_reg(FloatRegister reg) const {
-    return _float_argument_registers.contains(reg)
-        || _float_additional_volatile_registers.contains(reg);
-}
-
 bool ForeignGlobals::is_foreign_linker_supported() {
   return true;
 }
@@ -61,10 +51,6 @@ const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
   objArrayOop outputStorage = jdk_internal_foreign_abi_ABIDescriptor::outputStorage(abi_oop);
   parse_register_array(outputStorage, StorageType::INTEGER, abi._integer_return_registers, as_Register);
   parse_register_array(outputStorage, StorageType::FLOAT, abi._float_return_registers, as_FloatRegister);
-
-  objArrayOop volatileStorage = jdk_internal_foreign_abi_ABIDescriptor::volatileStorage(abi_oop);
-  parse_register_array(volatileStorage, StorageType::INTEGER, abi._integer_additional_volatile_registers, as_Register);
-  parse_register_array(volatileStorage, StorageType::FLOAT, abi._float_additional_volatile_registers, as_FloatRegister);
 
   abi._stack_alignment_bytes = jdk_internal_foreign_abi_ABIDescriptor::stackAlignment(abi_oop);
   abi._shadow_space_bytes = jdk_internal_foreign_abi_ABIDescriptor::shadowSpace(abi_oop);
@@ -126,12 +112,7 @@ static void move_reg64(MacroAssembler* masm, int out_stk_bias,
         __ stw(as_Register(from_reg), -8, R1_SP);
         __ lfs(as_FloatRegister(to_reg), -8, R1_SP); // convert to double precision format
       } else {
-        if (VM_Version::has_mtfprd()) {
-          __ mtfprd(as_FloatRegister(to_reg), as_Register(from_reg));
-        } else {
-          __ std(as_Register(from_reg), -8, R1_SP);
-          __ lfd(as_FloatRegister(to_reg), -8, R1_SP);
-        }
+        __ mtfprd(as_FloatRegister(to_reg), as_Register(from_reg));
       }
       break;
     case StorageType::STACK:
@@ -164,12 +145,7 @@ static void move_float(MacroAssembler* masm, int out_stk_bias,
         __ stfs(as_FloatRegister(from_reg), -8, R1_SP); // convert to single precision format
         __ lwa(as_Register(to_reg), -8, R1_SP);
       } else {
-        if (VM_Version::has_mtfprd()) {
-          __ mffprd(as_Register(to_reg), as_FloatRegister(from_reg));
-        } else {
-          __ stfd(as_FloatRegister(from_reg), -8, R1_SP);
-          __ ld(as_Register(to_reg), -8, R1_SP);
-        }
+        __ mffprd(as_Register(to_reg), as_FloatRegister(from_reg));
       }
       break;
     case StorageType::FLOAT:

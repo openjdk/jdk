@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import sun.security.ec.point.MutablePoint;
 import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
 import sun.security.pkcs.PKCS8Key;
+import sun.security.x509.X509Key;
 
 /**
  * Key implementation for EC private keys.
@@ -73,6 +74,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
     private byte[] arrayS;      // private value as a little-endian array
     @SuppressWarnings("serial") // Type of field is not Serializable
     private ECParameterSpec params;
+    private byte[] domainParams;  //Currently unsupported
 
     /**
      * Construct a key from its encoding. Called by the ECKeyFactory.
@@ -111,7 +113,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         out.putOctetString(privBytes);
         Arrays.fill(privBytes, (byte) 0);
         DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
-        key = val.toByteArray();
+        privKeyMaterial = val.toByteArray();
         val.clear();
     }
 
@@ -133,7 +135,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         out.putOctetString(sOctets);
         Arrays.fill(sOctets, (byte) 0);
         DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
-        key = val.toByteArray();
+        privKeyMaterial = val.toByteArray();
         val.clear();
     }
 
@@ -153,15 +155,12 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         return s;
     }
 
-    private byte[] getArrayS0() {
+    // Return the internal arrayS byte[], if arrayS is null generate it.
+    public byte[] getArrayS() {
         if (arrayS == null) {
             arrayS = ECUtil.sArray(getS(), params);
         }
         return arrayS;
-    }
-
-    public byte[] getArrayS() {
-        return getArrayS0().clone();
     }
 
     // see JCA doc
@@ -169,48 +168,65 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         return params;
     }
 
+    /**
+     * Parse the ASN.1 of the privateKey Octet
+     */
     private void parseKeyBits() throws InvalidKeyException {
+        // Parse private key material from PKCS8Key.decode()
         try {
-            DerInputStream in = new DerInputStream(key);
+            DerInputStream in = new DerInputStream(privKeyMaterial);
             DerValue derValue = in.getDerValue();
             if (derValue.tag != DerValue.tag_Sequence) {
                 throw new IOException("Not a SEQUENCE");
             }
             DerInputStream data = derValue.data;
             int version = data.getInteger();
-            if (version != 1) {
+            if (version != V2) {
                 throw new IOException("Version must be 1");
             }
             byte[] privData = data.getOctetString();
             ArrayUtil.reverse(privData);
             arrayS = privData;
-            while (data.available() != 0) {
-                DerValue value = data.getDerValue();
-                if (value.isContextSpecific((byte) 0)) {
-                    // ignore for now
-                } else if (value.isContextSpecific((byte) 1)) {
-                    // ignore for now
-                } else {
-                    throw new InvalidKeyException("Unexpected value: " + value);
-                }
-            }
+
+            // Validate parameters stored from PKCS8Key.decode()
             AlgorithmParameters algParams = this.algid.getParameters();
             if (algParams == null) {
                 throw new InvalidKeyException("EC domain parameters must be "
                     + "encoded in the algorithm identifier");
             }
             params = algParams.getParameterSpec(ECParameterSpec.class);
+
+            if (data.available() == 0) {
+                return;
+            }
+
+            DerValue value = data.getDerValue();
+            if (value.isContextSpecific((byte) 0)) {
+                domainParams = value.getDataBytes();  // Save DER sequence
+                if (data.available() == 0) {
+                    return;
+                }
+                value = data.getDerValue();
+            }
+
+            if (value.isContextSpecific((byte) 1)) {
+                DerValue bits = value.withTag(DerValue.tag_BitString);
+                pubKeyEncoded = new X509Key(algid,
+                    bits.data.getUnalignedBitString()).getEncoded();
+            } else {
+                throw new InvalidKeyException("Unexpected value: " + value);
+            }
+
         } catch (IOException | InvalidParameterSpecException e) {
             throw new InvalidKeyException("Invalid EC private key", e);
         }
     }
 
-    @Override
     public PublicKey calculatePublicKey() {
         ECParameterSpec ecParams = getParams();
         ECOperations ops = ECOperations.forParameters(ecParams)
                 .orElseThrow(ProviderException::new);
-        MutablePoint pub = ops.multiply(ecParams.getGenerator(), getArrayS0());
+        MutablePoint pub = ops.multiply(ecParams.getGenerator(), getArrayS());
         AffinePoint affPub = pub.asAffine();
         ECPoint w = new ECPoint(affPub.getX().asBigInteger(),
                 affPub.getY().asBigInteger());
