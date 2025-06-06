@@ -33,8 +33,33 @@ import java.util.concurrent.atomic.AtomicLong;
  * <p>
  * Fields in record classes are truly final so might help to have a record here.
  */
-record TimedMethod(AtomicLong invocations, AtomicLong time, Method method, AtomicBoolean published) {
+record TimedMethod(AtomicLong invocations, AtomicLong time, AtomicLong minimum, AtomicLong maximum, Method method, AtomicBoolean published) {
     TimedMethod(Method method) {
-        this(new AtomicLong(), new AtomicLong(), method, new AtomicBoolean());
+        this(new AtomicLong(), new AtomicLong(), new AtomicLong(Long.MAX_VALUE), new AtomicLong(Long.MIN_VALUE), method, new AtomicBoolean());
+    }
+
+    public void updateMinMax(long duration) {
+        if (duration > maximum.getPlain()) {
+            while (true) {
+                long max = maximum.get();
+                if (duration <= max) {
+                    return;
+                }
+                if (maximum.weakCompareAndSetVolatile(max, duration)) {
+                    return;
+                }
+            }
+        }
+        if (duration < minimum.getPlain()) {
+            while (true) {
+                long min = minimum.get();
+                if (duration >= min) {
+                    return;
+                }
+                if (minimum.weakCompareAndSetVolatile(min, duration)) {
+                    return;
+                }
+            }
+        }
     }
 }
