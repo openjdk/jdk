@@ -655,8 +655,8 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
 
             if (map.get(DefaultEditorKit.selectWordAction) != null) {
                 Action a = map.get(DefaultEditorKit.selectLineAction);
+                map.remove(DefaultEditorKit.selectWordAction);
                 if (a != null) {
-                    map.remove(DefaultEditorKit.selectWordAction);
                     map.put(DefaultEditorKit.selectWordAction, a);
                 }
             }
