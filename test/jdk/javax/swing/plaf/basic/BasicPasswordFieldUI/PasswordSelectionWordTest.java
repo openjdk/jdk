@@ -70,9 +70,7 @@ public class PasswordSelectionWordTest {
         String str = "one two three";
         JPasswordField field = new JPasswordField(str);
         if (!(field.getUI() instanceof BasicTextUI)) {
-            System.out.println("Skipping PasswordSelectionWordTest " +
-                    "because the JPasswordField UI was " + field.getUI());
-            return;
+            throw new RuntimeException("Unexpected condition: JPasswordField UI was " + field.getUI());
         }
         System.out.println("Testing " + field.getUI());
 
