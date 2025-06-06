@@ -46,6 +46,7 @@ public sealed interface QuicTimedEvent
                 QuicTimerQueue.Marker,
                 QuicEndpoint.ClosedConnection,
                 IdleTimeoutManager.IdleTimeoutEvent,
+                IdleTimeoutManager.StreamDataBlockedEvent,
                 QuicConnectionImpl.MaxInitialTimer {
 
     /**

@@ -36,7 +36,6 @@ import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.TimeLine;
 import jdk.internal.net.http.quic.packets.QuicPacket.PacketNumberSpace;
-import jdk.internal.net.http.quic.streams.QuicConnectionStreams;
 import jdk.internal.net.quic.QuicTLSEngine;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -53,17 +52,22 @@ public final class IdleTimeoutManager {
     private final QuicConnectionImpl connection;
     private final Logger debug;
     private final AtomicBoolean shutdown = new AtomicBoolean();
-    // TODO: this shouldn't be allowed to be too low and instead should be adjusted
-    // relative to PTO. see RFC-9000, section 10.1, implying ever changing value (potentially)
     private final AtomicLong idleTimeoutDurationMs = new AtomicLong();
-    private final ReentrantLock timeoutEventLock = new ReentrantLock();
-    // must be accessed only when holding timeoutEventLock
+    private final ReentrantLock stateLock = new ReentrantLock();
+    // must be accessed only when holding stateLock
     private IdleTimeoutEvent idleTimeoutEvent;
-
+    // must be accessed only when holding stateLock
+    private StreamDataBlockedEvent streamDataBlockedEvent;
+    // the time at which the last outgoing packet was sent or an
+    // incoming packet processed on the connection
     private volatile long lastPacketActivityAt;
 
     private final ReentrantLock idleTerminationLock = new ReentrantLock();
+    // true if it has been decided to terminate the connection due to being idle,
+    // false otherwise. should be accessed only when holding the idleTerminationLock
     private boolean chosenForIdleTermination;
+    // the time at which the connection was last reserved for use.
+    // should be accessed only when holding the idleTerminationLock
     private long lastUsageReservationAt;
 
     IdleTimeoutManager(final QuicConnectionImpl connection) {
@@ -90,18 +94,32 @@ public final class IdleTimeoutManager {
             throw new IllegalStateException("cannot start idle connection management for a failed"
                     + " connection");
         }
-        startPreIdleTimer();
+        startTimers();
     }
 
     /**
-     * Starts the pre idle timeout timer of the QUIC connection, if not already started.
+     * Starts the idle timeout timer of the QUIC connection, if not already started.
      */
-    private void startPreIdleTimer() {
+    private void startTimers() {
         if (shutdown.get()) {
             return;
         }
-        final long idleTimeoutMillis = idleTimeoutDurationMs.get();
-        if (idleTimeoutMillis == NO_IDLE_TIMEOUT) {
+        this.stateLock.lock();
+        try {
+            if (shutdown.get()) {
+                return;
+            }
+            startIdleTerminationTimer();
+            startStreamDataBlockedTimer();
+        } finally {
+            this.stateLock.unlock();
+        }
+    }
+
+    private void startIdleTerminationTimer() {
+        assert stateLock.isHeldByCurrentThread() : "not holding state lock";
+        final Optional<Long> idleTimeoutMillis = getIdleTimeout();
+        if (idleTimeoutMillis.isEmpty()) {
             if (debug.on()) {
                 debug.log("idle connection management disabled for connection");
             } else {
@@ -111,27 +129,78 @@ public final class IdleTimeoutManager {
             return;
         }
         final QuicTimerQueue timerQueue = connection.endpoint().timer();
-        final Deadline deadline = timeLine().instant().plusMillis(idleTimeoutMillis);
-        this.timeoutEventLock.lock();
-        try {
-            // we don't expect idle timeout management to be started more than once
-            assert this.idleTimeoutEvent == null : "idle timeout management"
-                    + " already started for connection";
-            // create the idle timeout event and register with the QuicTimerQueue.
-            this.idleTimeoutEvent = new IdleTimeoutEvent(deadline);
-            timerQueue.offer(this.idleTimeoutEvent);
-            if (debug.on()) {
-                debug.log("started QUIC idle timeout management for connection,"
-                        + " idle timeout event: " + this.idleTimeoutEvent
-                        + " deadline: " + deadline);
-            } else {
-                Log.logQuic("{0} started QUIC idle timeout management for connection,"
-                                + " idle timeout event: {1} deadline: {2}",
-                        connection.logTag(), this.idleTimeoutEvent, deadline);
-            }
-        } finally {
-            this.timeoutEventLock.unlock();
+        final Deadline deadline = timeLine().instant().plusMillis(idleTimeoutMillis.get());
+        // we don't expect idle timeout management to be started more than once
+        assert this.idleTimeoutEvent == null : "idle timeout management"
+                + " already started for connection";
+        // create the idle timeout event and register with the QuicTimerQueue.
+        this.idleTimeoutEvent = new IdleTimeoutEvent(deadline);
+        timerQueue.offer(this.idleTimeoutEvent);
+        if (debug.on()) {
+            debug.log("started QUIC idle timeout management for connection,"
+                    + " idle timeout event: " + this.idleTimeoutEvent
+                    + " deadline: " + deadline);
+        } else {
+            Log.logQuic("{0} started QUIC idle timeout management for connection,"
+                            + " idle timeout event: {1} deadline: {2}",
+                    connection.logTag(), this.idleTimeoutEvent, deadline);
         }
+    }
+
+    private void stopIdleTerminationTimer() {
+        assert stateLock.isHeldByCurrentThread() : "not holding state lock";
+        if (this.idleTimeoutEvent == null) {
+            return;
+        }
+        final QuicEndpoint endpoint = this.connection.endpoint();
+        assert endpoint != null : "QUIC endpoint is null";
+        // disable the event (refreshDeadline() of IdleTimeoutEvent will return Deadline.MAX)
+        final Deadline nextDeadline = this.idleTimeoutEvent.nextDeadline;
+        if (!nextDeadline.equals(Deadline.MAX)) {
+            this.idleTimeoutEvent.nextDeadline = Deadline.MAX;
+            endpoint.timer().reschedule(this.idleTimeoutEvent, Deadline.MIN);
+        }
+        this.idleTimeoutEvent = null;
+    }
+
+    private void startStreamDataBlockedTimer() {
+        assert stateLock.isHeldByCurrentThread() : "not holding state lock";
+        // 75% of idle timeout or if idle timeout is not configured, then 30 seconds
+        final long timeoutMillis = getIdleTimeout()
+                .map((v) -> (long) (0.75 * v))
+                .orElse(30000L);
+        final QuicTimerQueue timerQueue = connection.endpoint().timer();
+        final Deadline deadline = timeLine().instant().plusMillis(timeoutMillis);
+        // we don't expect the timer to be started more than once
+        assert this.streamDataBlockedEvent == null : "STREAM_DATA_BLOCKED timer already started";
+        // create the timeout event and register with the QuicTimerQueue.
+        this.streamDataBlockedEvent = new StreamDataBlockedEvent(deadline, timeoutMillis);
+        timerQueue.offer(this.streamDataBlockedEvent);
+        if (debug.on()) {
+            debug.log("started STREAM_DATA_BLOCKED timer for connection,"
+                    + " event: " + this.streamDataBlockedEvent
+                    + " deadline: " + deadline);
+        } else {
+            Log.logQuic("{0} started STREAM_DATA_BLOCKED timer for connection,"
+                            + " event: {1} deadline: {2}",
+                    connection.logTag(), this.streamDataBlockedEvent, deadline);
+        }
+    }
+
+    private void stopStreamDataBlockedTimer() {
+        assert stateLock.isHeldByCurrentThread() : "not holding state lock";
+        if (this.streamDataBlockedEvent == null) {
+            return;
+        }
+        final QuicEndpoint endpoint = this.connection.endpoint();
+        assert endpoint != null : "QUIC endpoint is null";
+        // disable the event (refreshDeadline() of StreamDataBlockedEvent will return Deadline.MAX)
+        final Deadline nextDeadline = this.streamDataBlockedEvent.nextDeadline;
+        if (!nextDeadline.equals(Deadline.MAX)) {
+            this.streamDataBlockedEvent.nextDeadline = Deadline.MAX;
+            endpoint.timer().reschedule(this.streamDataBlockedEvent, Deadline.MIN);
+        }
+        this.streamDataBlockedEvent = null;
     }
 
     /**
@@ -196,23 +265,13 @@ public final class IdleTimeoutManager {
             // already shutdown
             return;
         }
-        // unregister the timeout event from the QuicTimerQueue
-        // so that the timer queue doesn't hold on to the IdleTimeoutEvent (and thus
-        // the QuicConnectionImpl instance) until the event fires for the next time.
-        this.timeoutEventLock.lock();
+        this.stateLock.lock();
         try {
-            if (this.idleTimeoutEvent != null) {
-                final QuicEndpoint endpoint = this.connection.endpoint();
-                assert endpoint != null : "QUIC endpoint is null";
-                // disable the event (refreshDeadline() of IdleTimeoutEvent will return Deadline.MAX)
-                Deadline nextDeadline = this.idleTimeoutEvent.nextDeadline;
-                if (!nextDeadline.equals(Deadline.MAX)) {
-                    this.idleTimeoutEvent.nextDeadline = Deadline.MAX;
-                    endpoint.timer().reschedule(this.idleTimeoutEvent, Deadline.MIN);
-                }
-            }
+            // unregister the timeout events from the QuicTimerQueue
+            stopIdleTerminationTimer();
+            stopStreamDataBlockedTimer();
         } finally {
-            this.timeoutEventLock.unlock();
+            this.stateLock.unlock();
         }
         if (debug.on()) {
             debug.log("idle timeout manager shutdown");
@@ -257,6 +316,45 @@ public final class IdleTimeoutManager {
 
     private TimeLine timeLine() {
         return this.connection.endpoint().timeSource();
+    }
+
+    // called when the connection has been idle past its idle timeout duration
+    private void idleTimedOut() {
+        if (shutdown.get()) {
+            return; // nothing to do - the idle timeout manager has been shutdown
+        }
+        final Optional<Long> timeoutVal = getIdleTimeout();
+        assert timeoutVal.isPresent() : "unexpectedly idle timing" +
+                " out connection, when no idle timeout is configured";
+        final long timeoutMillis = timeoutVal.get();
+        if (Log.quic() || debug.on()) {
+            // log idle timeout, with packet space statistics
+            final String msg = "silently terminating connection due to idle timeout ("
+                    + timeoutMillis + " milli seconds)";
+            StringBuilder sb = new StringBuilder();
+            for (PacketNumberSpace sp : PacketNumberSpace.values()) {
+                if (sp == PacketNumberSpace.NONE) continue;
+                if (connection.packetNumberSpaces().get(sp) instanceof PacketSpaceManager m) {
+                    sb.append("\n  PacketSpace: ").append(sp).append('\n');
+                    m.debugState("    ", sb);
+                }
+            }
+            if (Log.quic()) {
+                Log.logQuic("{0} {1}: {2}", connection.logTag(), msg, sb.toString());
+            } else if (debug.on()) {
+                debug.log("%s: %s", msg, sb);
+            }
+        }
+        // silently close the connection and discard all its state
+        final TerminationCause cause = forSilentTermination("connection idle timed out ("
+                + timeoutMillis + " milli seconds)");
+        connection.terminator.terminate(cause);
+    }
+
+    private long computeInactivityMillis() {
+        final long currentNanos = System.nanoTime();
+        final long lastActiveNanos = Math.max(lastPacketActivityAt, lastUsageReservationAt);
+        return MILLISECONDS.convert((currentNanos - lastActiveNanos), NANOSECONDS);
     }
 
     final class IdleTimeoutEvent implements QuicTimedEvent {
@@ -318,32 +416,10 @@ public final class IdleTimeoutManager {
 
         private Deadline maybePostponeDeadline(final long expectedIdleDurationMs) {
             assert idleTerminationLock.isHeldByCurrentThread() : "not holding idle termination lock";
-            final long currentNanos = System.nanoTime();
-            final long lastActiveNanos = Math.max(lastPacketActivityAt, lastUsageReservationAt);
-            final long inactivityMs = MILLISECONDS.convert((currentNanos - lastActiveNanos),
-                    NANOSECONDS);
+            final long inactivityMs = computeInactivityMillis();
             if (inactivityMs >= expectedIdleDurationMs) {
-                final QuicConnectionStreams connStreams = connection.streams;
-                if (!connStreams.hasBlockedStreams()) {
-                    // the connection has been idle long enough and there aren't any streams blocked
-                    // due to flow control, so this is a genuine idle connection. don't postpone
-                    // the timeout.
-                    return null;
-                }
-                // has been idle long enough, but there are streams that are blocked due to
-                // flow control limits and that could have lead to the idleness.
-                // trigger sending a STREAM_DATA_BLOCKED frame for the streams
-                // to try and have their limits increased by the peer. also, postpone
-                // the idle timeout deadline to give the connection a chance to be active
-                // again.
-                connStreams.enqueueStreamDataBlocked();
-                final Deadline next = timeLine().instant().plusMillis(expectedIdleDurationMs);
-                if (debug.on()) {
-                    debug.log("streams blocked due to flow control limits, postponing "
-                            + " timeout event: " + this + " to fire in " + expectedIdleDurationMs
-                            + " milli seconds, deadline: " + next);
-                }
-                return next;
+                // the connection has been idle long enough, don't postpone the timeout.
+                return null;
             }
             // not idle long enough, compute the deadline when it's expected to reach
             // idle timeout
@@ -375,37 +451,78 @@ public final class IdleTimeoutManager {
         }
     }
 
-    // called when the connection has been idle past its idle timeout duration
-    private void idleTimedOut() {
-        if (shutdown.get()) {
-            return; // nothing to do - the idle timeout manager has been shutdown
+    final class StreamDataBlockedEvent implements QuicTimedEvent {
+        private final long eventId;
+        private final long timeoutMillis;
+        private volatile Deadline deadline;
+        private volatile Deadline nextDeadline;
+
+        private StreamDataBlockedEvent(final Deadline deadline, final long timeoutMillis) {
+            assert deadline != null : "timeout deadline is null";
+            this.deadline = this.nextDeadline = deadline;
+            this.timeoutMillis = timeoutMillis;
+            this.eventId = QuicTimerQueue.newEventId();
         }
-        final Optional<Long> timeoutVal = getIdleTimeout();
-        assert timeoutVal.isPresent() : "unexpectedly idle timing" +
-                " out connection, when no idle timeout is configured";
-        final long timeoutMillis = timeoutVal.get();
-        if (Log.quic() || debug.on()) {
-            // log idle timeout, with packet space statistics
-            final String msg = "silently terminating connection due to idle timeout ("
-                    + timeoutMillis + " milli seconds)";
-            StringBuilder sb = new StringBuilder();
-            for (PacketNumberSpace sp : PacketNumberSpace.values()) {
-                if (sp == PacketNumberSpace.NONE) continue;
-                if (connection.packetNumberSpaces().get(sp) instanceof PacketSpaceManager m) {
-                    sb.append("\n  PacketSpace: ").append(sp).append('\n');
-                    m.debugState("    ", sb);
+
+        @Override
+        public Deadline deadline() {
+            return this.deadline;
+        }
+
+        @Override
+        public Deadline refreshDeadline() {
+            if (shutdown.get()) {
+                return this.deadline = this.nextDeadline = Deadline.MAX;
+            }
+            return this.deadline = this.nextDeadline;
+        }
+
+        @Override
+        public Deadline handle() {
+            if (shutdown.get()) {
+                // timeout manager is shutdown, nothing more to do
+                return this.nextDeadline = Deadline.MAX;
+            }
+            // check whether the connection has indeed been idle for the idle timeout duration
+            idleTerminationLock.lock();
+            try {
+                if (chosenForIdleTermination) {
+                    // connection is already chosen for termination, no need to send
+                    // a STREAM_DATA_BLOCKED
+                    this.nextDeadline = Deadline.MAX;
+                    return this.nextDeadline;
                 }
-            }
-            if (Log.quic()) {
-                if (debug.on()) debug.log(msg);
-                Log.logQuic("{0} {1}: {2}", connection.logTag(), msg, sb.toString());
-            } else if (debug.on()) {
-                debug.log("%s: %s", msg, sb);
+                final long inactivityMs = computeInactivityMillis();
+                if (inactivityMs >= timeoutMillis && connection.streams.hasBlockedStreams()) {
+                    // has been idle long enough, but there are streams that are blocked due to
+                    // flow control limits and that could have lead to the idleness.
+                    // trigger sending a STREAM_DATA_BLOCKED frame for the streams
+                    // to try and have their limits increased by the peer.
+                    connection.streams.enqueueStreamDataBlocked();
+                    if (debug.on()) {
+                        debug.log("enqueued a STREAM_DATA_BLOCKED frame since connection"
+                                + " has been idle due to blocked stream(s)");
+                    } else {
+                        Log.logQuic("{0} enqueued a STREAM_DATA_BLOCKED frame"
+                                + " since connection has been idle due to"
+                                + " blocked stream(s)", connection.logTag());
+                    }
+                }
+                this.nextDeadline = timeLine().instant().plusMillis(timeoutMillis);
+                return this.nextDeadline;
+            } finally {
+                idleTerminationLock.unlock();
             }
         }
-        // silently close the connection and discard all its state
-        final TerminationCause cause = forSilentTermination("connection idle timed out ("
-                + timeoutMillis + " milli seconds)");
-        connection.terminator.terminate(cause);
+
+        @Override
+        public long eventId() {
+            return this.eventId;
+        }
+
+        @Override
+        public String toString() {
+            return "StreamDataBlockedEvent-" + this.eventId;
+        }
     }
 }
