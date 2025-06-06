@@ -2767,7 +2767,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *                             negative. (This would cause the operation to
      *                             yield non-real roots.)
      * @see #sqrt()
-     * @since 25
+     * @since 26
      */
     public BigInteger nthRoot(int n) {
         return n == 1 ? this : (n == 2 ? sqrt() : nthRootAndRemainder(n, false)[0]);
@@ -2791,7 +2791,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @see #sqrt()
      * @see #sqrtAndRemainder()
      * @see #nthRoot(int)
-     * @since 25
+     * @since 26
      */
     public BigInteger[] nthRootAndRemainder(int n) {
         return n == 1 ? new BigInteger[] { this, ZERO }
