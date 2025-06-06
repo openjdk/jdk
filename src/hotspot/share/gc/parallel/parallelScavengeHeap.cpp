@@ -207,12 +207,6 @@ size_t ParallelScavengeHeap::used() const {
   return value;
 }
 
-bool ParallelScavengeHeap::is_maximal_no_gc() const {
-  // We don't expand young-gen except at a GC.
-  return old_gen()->is_maximal_no_gc();
-}
-
-
 size_t ParallelScavengeHeap::max_capacity() const {
   size_t estimated = reserved_region().byte_size();
   if (UseAdaptiveSizePolicy) {
@@ -327,7 +321,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
       // Did the VM operation execute? If so, return the result directly.
       // This prevents us from looping until time out on requests that can
       // not be satisfied.
-      if (op.prologue_succeeded()) {
+      if (op.gc_succeeded()) {
         assert(is_in_or_null(op.result()), "result not in heap");
 
         // Exit the loop if the gc time limit has been exceeded.

@@ -193,7 +193,6 @@ public class FileFontStrike extends PhysicalStrike {
             this.disposer = new FontStrikeDisposer(fileFont, desc);
             initGlyphCache();
             pScalerContext = NullFontScaler.getNullScalerContext();
-            SunFontManager.getInstance().deRegisterBadFont(fileFont);
             return;
         }
         /* First, see if native code should be used to create the glyph.

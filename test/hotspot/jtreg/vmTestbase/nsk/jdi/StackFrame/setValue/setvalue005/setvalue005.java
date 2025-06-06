@@ -156,19 +156,19 @@ public class setvalue005 {
             return quitDebuggee();
         }
 
-        // debuggee main class
-        ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
-
-        ThreadReference thrRef =
-            debuggee.threadByFieldName(rType, "mainThread", DEBUGGEE_THRDNAME);
-        if (thrRef == null) {
-            log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
-                + DEBUGGEE_THRDNAME);
-            tot_res = Consts.TEST_FAILED;
-            return quitDebuggee();
-        }
-
         try {
+            // debuggee main class
+            ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
+
+            ThreadReference thrRef =
+                debuggee.threadByFieldName(rType, "mainThread", DEBUGGEE_THRDNAME);
+            if (thrRef == null) {
+                log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
+                             + DEBUGGEE_THRDNAME);
+                tot_res = Consts.TEST_FAILED;
+                return quitDebuggee();
+            }
+
             suspendAtBP(rType, DEBUGGEE_STOPATLINE);
 
             // find a stack frame which belongs to the "setvalue005tMainThr" thread
