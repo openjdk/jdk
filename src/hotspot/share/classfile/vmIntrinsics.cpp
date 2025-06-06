@@ -255,18 +255,6 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     }
   }
 
-  // -XX:-InlineIntrinsics disables all intrinsics listed in the following
-  // switch statement
-  if (!InlineIntrinsics) {
-    switch (id) {
-    case vmIntrinsics::_dtanh:
-    case vmIntrinsics::_dcbrt:
-      return true;
-    default:
-      break;
-    }
-  }
-
   switch (id) {
   case vmIntrinsics::_isInstance:
   case vmIntrinsics::_isAssignableFrom:
@@ -301,8 +289,6 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
-  case vmIntrinsics::_dtanh:
-  case vmIntrinsics::_dcbrt:
   case vmIntrinsics::_dlog:
   case vmIntrinsics::_dexp:
   case vmIntrinsics::_dpow:
@@ -327,6 +313,10 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_fmaD:
   case vmIntrinsics::_fmaF:
     if (!InlineMathNatives || !UseFMA) return true;
+    break;
+  case vmIntrinsics::_dtanh:
+  case vmIntrinsics::_dcbrt:
+    if (!InlineMathNatives) return true;
     break;
   case vmIntrinsics::_floatToFloat16:
   case vmIntrinsics::_float16ToFloat:
