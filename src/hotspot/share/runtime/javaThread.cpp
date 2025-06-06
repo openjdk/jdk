@@ -1998,7 +1998,7 @@ void JavaThread::trace_stack() {
 void JavaThread::inc_held_monitor_count(intx i, bool jni) {
 #ifdef SUPPORT_MONITOR_COUNT
 
-  if (LockingMode != LM_LEGACY) {
+  if (LockingMode == LM_LIGHTWEIGHT) {
     // Nothing to do. Just do some sanity check.
     assert(_held_monitor_count == 0, "counter should not be used");
     assert(_jni_monitor_count == 0, "counter should not be used");
@@ -2021,7 +2021,7 @@ void JavaThread::inc_held_monitor_count(intx i, bool jni) {
 void JavaThread::dec_held_monitor_count(intx i, bool jni) {
 #ifdef SUPPORT_MONITOR_COUNT
 
-  if (LockingMode != LM_LEGACY) {
+  if (LockingMode == LM_LIGHTWEIGHT) {
     // Nothing to do. Just do some sanity check.
     assert(_held_monitor_count == 0, "counter should not be used");
     assert(_jni_monitor_count == 0, "counter should not be used");

@@ -23,6 +23,23 @@
  */
 
 /*
+ * @test id=Xint_outer_inner_debug_monitor
+ * @requires vm.flagless
+ * @requires vm.debug
+ * @summary Tests recursive locking in -Xint in outer then inner mode.
+ * @library /testlibrary /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ *
+ * @run main/othervm -Xbootclasspath/a:.
+ *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *     -Xint
+ *     -XX:+UseHeavyMonitors
+ *     -Xms256m -Xmx256m
+ *     TestRecursiveLocking 5 1
+ */
+
+/*
  * @test id=Xint_outer_inner
  * @requires vm.flagless
  * @summary Tests recursive locking in -Xint in outer then inner mode.
@@ -33,23 +50,32 @@
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -Xint
- *     -XX:LockingMode=0
+ *     -XX:+UseObjectMonitorTable
  *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 1
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -Xint
- *     -XX:LockingMode=1
  *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 1
+ */
+
+/*
+ * @test id=Xint_alternate_AB_debug_monitor
+ * @requires vm.flagless
+ * @requires vm.debug
+ * @summary Tests recursive locking in -Xint in alternate A and B mode.
+ * @library /testlibrary /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -Xint
- *     -XX:LockingMode=2
+ *     -XX:+UseHeavyMonitors
  *     -Xms256m -Xmx256m
- *     TestRecursiveLocking 5 1
+ *     TestRecursiveLocking 5 2
  */
 
 /*
@@ -63,23 +89,33 @@
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -Xint
- *     -XX:LockingMode=0
+ *     -XX:+UseObjectMonitorTable
  *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 2
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -Xint
- *     -XX:LockingMode=1
  *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 2
+ */
+
+/*
+ * @test id=C1_outer_inner_debug_monitor
+ * @requires vm.flagless
+ * @requires vm.debug
+ * @requires vm.compiler1.enabled
+ * @summary Tests recursive locking in C1 in outer then inner mode.
+ * @library /testlibrary /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -Xint
- *     -XX:LockingMode=2
+ *     -XX:TieredStopAtLevel=1
+ *     -XX:+UseHeavyMonitors
  *     -Xms256m -Xmx256m
- *     TestRecursiveLocking 5 2
+ *     TestRecursiveLocking 5 1
  */
 
 /*
@@ -94,23 +130,33 @@
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:TieredStopAtLevel=1
- *     -XX:LockingMode=0
+ *     -XX:+UseObjectMonitorTable
  *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 1
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:TieredStopAtLevel=1
- *     -XX:LockingMode=1
  *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 1
+ */
+
+/*
+ * @test id=C1_alternate_AB_debug_monitor
+ * @requires vm.flagless
+ * @requires vm.debug
+ * @requires vm.compiler1.enabled
+ * @summary Tests recursive locking in C1 in alternate A and B mode.
+ * @library /testlibrary /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:TieredStopAtLevel=1
- *     -XX:LockingMode=2
+ *     -XX:+UseHeavyMonitors
  *     -Xms256m -Xmx256m
- *     TestRecursiveLocking 5 1
+ *     TestRecursiveLocking 5 2
  */
 
 /*
@@ -125,23 +171,33 @@
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:TieredStopAtLevel=1
- *     -XX:LockingMode=0
+ *     -XX:+UseObjectMonitorTable
  *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 2
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:TieredStopAtLevel=1
- *     -XX:LockingMode=1
  *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 2
+ */
+
+/*
+ * @test id=C2_outer_inner_debug_monitor
+ * @requires vm.flagless
+ * @requires vm.debug
+ * @requires vm.compiler2.enabled
+ * @summary Tests recursive locking in C2 in outer then inner mode.
+ * @library /testlibrary /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:TieredStopAtLevel=1
- *     -XX:LockingMode=2
+ *     -XX:-EliminateNestedLocks
+ *     -XX:+UseHeavyMonitors
  *     -Xms256m -Xmx256m
- *     TestRecursiveLocking 5 2
+ *     TestRecursiveLocking 5 1
  */
 
 /*
@@ -156,23 +212,33 @@
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:-EliminateNestedLocks
- *     -XX:LockingMode=0
+ *     -XX:+UseObjectMonitorTable
  *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 1
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:-EliminateNestedLocks
- *     -XX:LockingMode=1
  *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 1
+ */
+
+/*
+ * @test id=C2_alternate_AB_debug_monitor
+ * @requires vm.flagless
+ * @requires vm.debug
+ * @requires vm.compiler2.enabled
+ * @summary Tests recursive locking in C2 in alternate A and B mode.
+ * @library /testlibrary /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *     -XX:+UseHeavyMonitors
  *     -XX:-EliminateNestedLocks
- *     -XX:LockingMode=2
  *     -Xms256m -Xmx256m
- *     TestRecursiveLocking 5 1
+ *     TestRecursiveLocking 5 2
  */
 
 /*
@@ -182,25 +248,17 @@
  * @summary Tests recursive locking in C2 in alternate A and B mode.
  * @library /testlibrary /test/lib
  * @build jdk.test.whitebox.WhiteBox
- *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:LockingMode=0
+ *     -XX:+UseObjectMonitorTable
  *     -XX:-EliminateNestedLocks
  *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 2
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:LockingMode=1
- *     -XX:-EliminateNestedLocks
- *     -Xms256m -Xmx256m
- *     TestRecursiveLocking 5 2
- *
- * @run main/othervm -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:LockingMode=2
  *     -XX:-EliminateNestedLocks
  *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 2
@@ -212,11 +270,8 @@ import jtreg.SkippedException;
 
 public class TestRecursiveLocking {
     static final WhiteBox WB = WhiteBox.getWhiteBox();
-    static final int flagLockingMode = WB.getIntVMFlag("LockingMode").intValue();
+    static final boolean flagHeavyMonitors = WB.getBooleanVMFlag("UseHeavyMonitors");
     static final int constLockStackCapacity = WB.getLockStackCapacity();
-    static final int LM_MONITOR = 0;
-    static final int LM_LEGACY = 1;
-    static final int LM_LIGHTWEIGHT = 2;
     static final int def_mode = 2;
     static final int def_n_secs = 30;
     static final SyncThread syncThread = new SyncThread();
@@ -229,18 +284,14 @@ public class TestRecursiveLocking {
         synchronized void runInner(int depth, SynchronizedObject outer) {
             counter++;
 
-            // Legacy mode has no lock stack, i.e., there is no limit
-            // on recursion, so for legacy mode we can't say that
-            // "outer" must be inflated here, which we can say for all
-            // the other locking modes.
-            if (flagLockingMode != LM_LEGACY) {
-                outer.assertInflated();
-            }
+            // There is limit on recursion, so "outer" must be
+            // inflated here.
+            outer.assertInflated();
 
             // We haven't reached the stack lock capacity (recursion
             // level), so we shouldn't be inflated here. Except for
             // monitor mode, which is always inflated.
-            if (flagLockingMode != LM_MONITOR) {
+            if (!flagHeavyMonitors) {
                 assertNotInflated();
             }
             if (depth == 1) {
@@ -248,7 +299,7 @@ public class TestRecursiveLocking {
             } else {
                 runInner(depth - 1, outer);
             }
-            if (flagLockingMode != LM_MONITOR) {
+            if (!flagHeavyMonitors) {
                 assertNotInflated();
             }
         }
@@ -256,7 +307,7 @@ public class TestRecursiveLocking {
         synchronized void runOuter(int depth, SynchronizedObject inner) {
             counter++;
 
-            if (flagLockingMode != LM_MONITOR) {
+            if (!flagHeavyMonitors) {
                 assertNotInflated();
             }
             if (depth == 1) {
@@ -264,9 +315,7 @@ public class TestRecursiveLocking {
             } else {
                 runOuter(depth - 1, inner);
             }
-            if (flagLockingMode != LM_LEGACY) {
-                assertInflated();
-            }
+            assertInflated();
         }
 
         // This test nests x recursive locks of INNER, in x recursive
@@ -283,16 +332,14 @@ public class TestRecursiveLocking {
             synchronized (OUTER) {
                 OUTER.counter++;
 
-                if (flagLockingMode != LM_MONITOR) {
+                if (!flagHeavyMonitors) {
                     OUTER.assertNotInflated();
                 }
                 INNER.assertNotInflated();
                 OUTER.runOuter(constLockStackCapacity - 1, INNER);
 
-                if (flagLockingMode != LM_LEGACY) {
-                    OUTER.assertInflated();
-                }
-                if (flagLockingMode != LM_MONITOR) {
+                OUTER.assertInflated();
+                if (!flagHeavyMonitors) {
                     INNER.assertNotInflated();
                 }
             }
@@ -308,7 +355,7 @@ public class TestRecursiveLocking {
         synchronized void runA(int depth, SynchronizedObject B) {
             counter++;
 
-            if (flagLockingMode == LM_LIGHTWEIGHT) {
+            if (!flagHeavyMonitors) {
                 // First time we lock A, A is the only one on the lock
                 // stack.
                 if (counter == 1) {
@@ -323,7 +370,7 @@ public class TestRecursiveLocking {
                     // to [B, B ... B].
                     assertInflated();
                 }
-            } else if (flagLockingMode == LM_MONITOR) {
+            } else if (flagHeavyMonitors) {
                 assertInflated();
             }
 
@@ -334,7 +381,7 @@ public class TestRecursiveLocking {
         synchronized void runB(int depth, SynchronizedObject A) {
             counter++;
 
-            if (flagLockingMode != LM_MONITOR) {
+            if (!flagHeavyMonitors) {
                 // Legacy tolerates endless recursions. While testing
                 // lightweight we don't go deeper than the size of the
                 // lock stack, which in this test case will be filled
@@ -370,14 +417,11 @@ public class TestRecursiveLocking {
 
             Asserts.assertEquals(A.counter, constLockStackCapacity);
             Asserts.assertEquals(B.counter, constLockStackCapacity);
-            if (flagLockingMode == LM_LEGACY) {
-                A.assertNotInflated();
-            }
-            // Implied else: for LM_MONITOR or LM_LIGHTWEIGHT it can be
-            // either inflated or not because A is not locked anymore
-            // and subject to deflation.
 
-            if (flagLockingMode != LM_MONITOR) {
+            // Here A can be either inflated or not because A is not
+            // locked anymore and subject to deflation.
+
+            if (!flagHeavyMonitors) {
                 B.assertNotInflated();
             }
         }
@@ -443,7 +487,7 @@ public class TestRecursiveLocking {
             }
         }
 
-        System.out.println("INFO: LockingMode=" + flagLockingMode);
+        System.out.println("INFO: UseHeavyMonitors=" + flagHeavyMonitors);
         System.out.println("INFO: LockStackCapacity=" + constLockStackCapacity);
         System.out.println("INFO: n_secs=" + n_secs);
         System.out.println("INFO: mode=" + mode);

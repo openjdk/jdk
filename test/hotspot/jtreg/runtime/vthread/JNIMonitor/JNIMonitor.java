@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import java.util.regex.Pattern;
  * @summary Normal lock then unlock
  * @library /test/lib
  * @modules java.base/java.lang:+open
+ * @requires vm.debug
  * @requires vm.continuations
  * @run driver JNIMonitor Normal
  */
@@ -62,6 +63,7 @@ import java.util.regex.Pattern;
  * @summary Normal lock then unlock by multiple threads
  * @library /test/lib
  * @modules java.base/java.lang:+open
+ * @requires vm.debug
  * @requires vm.continuations
  * @run driver JNIMonitor MultiNormal
  */
@@ -72,6 +74,7 @@ import java.util.regex.Pattern;
  * @summary Don't do the unlock and exit normally
  * @library /test/lib
  * @modules java.base/java.lang:+open
+ * @requires vm.debug
  * @requires vm.continuations
  * @run driver JNIMonitor MissingUnlock
  */
@@ -82,6 +85,7 @@ import java.util.regex.Pattern;
  * @summary Don't do the unlock and exit normally, by multiple threads
  * @library /test/lib
  * @modules java.base/java.lang:+open
+ * @requires vm.debug
  * @requires vm.continuations
  * @run driver JNIMonitor MultiMissingUnlock
  */
@@ -92,6 +96,7 @@ import java.util.regex.Pattern;
  * @summary Don't do the unlock and exit by throwing
  * @library /test/lib
  * @modules java.base/java.lang:+open
+ * @requires vm.debug
  * @requires vm.continuations
  * @run driver JNIMonitor MissingUnlockWithThrow
  */
@@ -102,6 +107,7 @@ import java.util.regex.Pattern;
  * @summary Don't do the unlock and exit by throwing, by multiple threads
  * @library /test/lib
  * @modules java.base/java.lang:+open
+ * @requires vm.debug
  * @requires vm.continuations
  * @run driver JNIMonitor MultiMissingUnlockWithThrow
  */
@@ -120,7 +126,7 @@ public class JNIMonitor {
             // Enable thread termination logging as a visual cross-check
             "-Xlog:thread+os=info",
             // We only count monitors in LM_LEGACY mode
-            "-XX:LockingMode=1",
+            "-XX:+UseHeavyMonitors",
             // Disable compact headers since that switches locking mode to LM_LIGHTWEIGHT
             "-XX:-UseCompactObjectHeaders",
             "JNIMonitor$" + test,

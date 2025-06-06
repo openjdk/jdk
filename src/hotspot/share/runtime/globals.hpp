@@ -1052,9 +1052,12 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, ErrorFileToStdout, false,                                   \
           "If true, error data is printed to stdout instead of a file")     \
                                                                             \
+  develop(bool, UseHeavyMonitors, false,                                    \
+           "Use heavyweight instead of lightweight Java monitors")          \
+                                                                            \
   develop(bool, VerifyHeavyMonitors, false,                                 \
           "Checks that no stack locking happens when using "                \
-          "-XX:LockingMode=0 (LM_MONITOR)")                                 \
+          "heavy monitors")                                                 \
                                                                             \
   product(bool, PrintStringTableStatistics, false,                          \
           "print statistics about the StringTable and SymbolTable")         \
@@ -1952,13 +1955,6 @@ const int ObjectAlignmentInBytes = 8;
           false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
-                                                                            \
-  product(int, LockingMode, LM_LIGHTWEIGHT,                                 \
-          "(Deprecated) Select locking mode: "                              \
-          "0: (Deprecated) monitors only (LM_MONITOR), "                    \
-          "1: (Deprecated) monitors & legacy stack-locking (LM_LEGACY), "   \
-          "2: monitors & new lightweight locking (LM_LIGHTWEIGHT, default)") \
-          range(0, 2)                                                       \
                                                                             \
   product(bool, UseObjectMonitorTable, false, DIAGNOSTIC,                   \
           "With Lightweight Locking mode, use a table to record inflated "  \

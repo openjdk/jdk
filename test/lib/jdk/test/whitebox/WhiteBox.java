@@ -118,6 +118,12 @@ public class WhiteBox {
     return isMonitorInflated0(obj);
   }
 
+  private native void forceInflateMonitorLockedObject0(Object obj);
+  public         void forceInflateMonitorLockedObject(Object obj) {
+    Objects.requireNonNull(obj);
+    forceInflateMonitorLockedObject0(obj);
+  }
+
   public native long getInUseMonitorCount();
 
   public native int getLockStackCapacity();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
  *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
- *                 -XX:LockingMode=1
+ *                 -XX:+UseObjectMonitorTable
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
  *                 -Xms256m -Xmx256m
@@ -51,7 +51,7 @@
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
  *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:-EliminateLocks -XX:+EliminateNestedLocks
- *                 -XX:LockingMode=1
+ *                 -XX:+UseObjectMonitorTable
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
  *                 -Xms256m -Xmx256m
@@ -60,7 +60,7 @@
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
  *                 -XX:+DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
- *                 -XX:LockingMode=1
+ *                 -XX:+UseObjectMonitorTable
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
  *                 -Xms256m -Xmx256m
@@ -69,7 +69,7 @@
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
  *                 -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
- *                 -XX:LockingMode=1
+ *                 -XX:+UseObjectMonitorTable
  *
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
@@ -79,7 +79,6 @@
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
  *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
- *                 -XX:LockingMode=2
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
  *                 -Xms256m -Xmx256m
@@ -88,7 +87,6 @@
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
  *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:-EliminateLocks -XX:+EliminateNestedLocks
- *                 -XX:LockingMode=2
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
  *                 -Xms256m -Xmx256m
@@ -97,7 +95,6 @@
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
  *                 -XX:+DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
- *                 -XX:LockingMode=2
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
  *                 -Xms256m -Xmx256m
@@ -106,7 +103,6 @@
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
  *                 -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
- *                 -XX:LockingMode=2
  *
  * @comment Excercise -XX:+DeoptimizeObjectsALot. Mostly to prevent bit-rot because the option is meant to stress object deoptimization
  *          with non-synthetic workloads.
@@ -132,7 +128,7 @@
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
  *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
- *                 -XX:LockingMode=1
+ *                 -XX:+UseObjectMonitorTable
  *                 -XX:DiagnoseSyncOnValueBasedClasses=2
  *
  * @comment Re-lock may inflate monitors when re-locking, which cause monitorinflation trace logging.
@@ -144,23 +140,10 @@
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
  *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
- *                 -XX:LockingMode=2
  *                 -Xlog:monitorinflation=trace:file=monitorinflation.log
  *
- * @comment Re-lock may race with deflation.
- * @run driver EATests
- *                 -XX:+UnlockDiagnosticVMOptions
- *                 -Xms256m -Xmx256m
- *                 -Xbootclasspath/a:.
- *                 -XX:CompileCommand=dontinline,*::dontinline_*
- *                 -XX:+WhiteBoxAPI
- *                 -Xbatch
- *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
- *                 -XX:LockingMode=0
- *                 -XX:GuaranteedAsyncDeflationInterval=1000
- *
  * @bug 8341819
- * @comment Regression test for re-locking racing with deflation with LM_LIGHTWEIGHT.
+ * @comment Regression test for re-locking racing with deflation with lightweight locking.
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
  *                 -Xms256m -Xmx256m
@@ -169,7 +152,6 @@
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
  *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
- *                 -XX:LockingMode=2
  *                 -XX:GuaranteedAsyncDeflationInterval=1
  */
 
@@ -1815,8 +1797,8 @@ class EARelockingSimpleTarget extends EATestCaseBaseTarget {
 /**
  * Like {@link EARelockingSimple}. The difference is that there are many
  * lightweight locked objects when the relocking is done. With
- * <code>-XX:LockingMode=2</code> the lock stack of the thread will be full
- * because of this.
+ * lightweight the lock stack of the thread will be full because of
+ * this.
  */
 
 class EARelockingWithManyLightweightLocks extends EATestCaseBaseDebugger {
