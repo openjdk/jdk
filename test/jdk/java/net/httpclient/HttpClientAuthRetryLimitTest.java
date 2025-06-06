@@ -30,16 +30,19 @@
  * @summary Retry limit system property
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
- * @run junit HttpClientRetryLimitTest
- * @run junit/othervm -Djdk.httpclient.auth.retrylimit=1 HttpClientRetryLimitTest
- * @run junit/othervm -Djdk.httpclient.auth.retrylimit=0 HttpClientRetryLimitTest
- * @run junit/othervm -Djdk.httpclient.auth.retrylimit=-1 HttpClientRetryLimitTest
+ * @run junit HttpClientAuthRetryLimitTest
+ * @run junit/othervm -Djdk.httpclient.auth.retrylimit=1 HttpClientAuthRetryLimitTest
+ * @run junit/othervm -Djdk.httpclient.auth.retrylimit=0 HttpClientAuthRetryLimitTest
+ * @run junit/othervm -Djdk.httpclient.auth.retrylimit=-1 HttpClientAuthRetryLimitTest
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.test.lib.net.SimpleSSLContext;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
@@ -53,27 +56,52 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+class HttpClientAuthRetryLimitTest implements HttpServerAdapters {
 
-class HttpClientRetryLimitTest implements HttpServerAdapters {
+    private static final SSLContext SSL_CONTEXT = createSslContext();
+
+    private static SSLContext createSslContext() {
+        try {
+            return new SimpleSSLContext().get();
+        } catch (IOException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
 
     // This is the system default value for jdk.httpclient.auth.retrylimit
     private static final int DEFAULT_RETRY_LIMIT = 3;
     private static final int RETRY_LIMIT = Integer.getInteger(
             "jdk.httpclient.auth.retrylimit", DEFAULT_RETRY_LIMIT);
 
-    static Stream<HttpClient.Version> args() {
+    private static Stream<Object> args() {
         return Stream.of(
                 HttpClient.Version.HTTP_1_1,
-                HttpClient.Version.HTTP_2
-        );
+                HttpClient.Version.HTTP_2)
+                .flatMap(version -> Stream
+                        .of(false, true)
+                        .map(secure -> Arguments.of(version, secure)));
+    }
+
+    private static HttpClient.Builder createClient(boolean secure) {
+        HttpClient.Builder builder = HttpClient.newBuilder();
+        if (secure) {
+            builder.sslContext(SSL_CONTEXT);
+        }
+        return builder;
     }
 
     @ParameterizedTest
     @MethodSource("args")
-    public void testDefaultSystemProperty(HttpClient.Version version) throws Exception {
+    void testDefaultSystemProperty(HttpClient.Version version, boolean secure) throws Exception {
+
         AtomicInteger requestCount = new AtomicInteger(0);
 
-        try (HttpTestServer httpTestServer = HttpTestServer.create(version)) {
+        try (HttpTestServer httpTestServer = ((secure)? HttpTestServer.create(
+                version, SSL_CONTEXT): HttpTestServer.create(version))) {
+            final String requestUriScheme = secure ? "https" : "http";
+            final String requestPath = "/" + this.getClass().getSimpleName() + "/";
+            final String uriString = "://" + httpTestServer.serverAuthority() + requestPath;
+            final URI requestUri = URI.create(requestUriScheme + uriString);
 
             HttpTestHandler httpTestHandler = t -> {
                 t.getResponseHeaders()
@@ -81,10 +109,10 @@ class HttpClientRetryLimitTest implements HttpServerAdapters {
                 t.sendResponseHeaders(401,0);
             };
 
-            httpTestServer.addHandler(httpTestHandler, "/");
+            httpTestServer.addHandler(httpTestHandler, requestPath);
             httpTestServer.start();
             try (
-                HttpClient client = HttpClient.newBuilder()
+                HttpClient client = createClient(secure)
                         .authenticator(new Authenticator() {
                             @Override
                             protected PasswordAuthentication getPasswordAuthentication() {
@@ -93,23 +121,15 @@ class HttpClientRetryLimitTest implements HttpServerAdapters {
                             }
                         })
                         .build()) {
-
-                HttpRequest request = HttpRequest.newBuilder()
+                HttpRequest request = HttpRequest.newBuilder().version(version)
                         .GET()
-                        .uri(new URI("http://" + httpTestServer.serverAuthority() + "/" + this.getClass().getSimpleName() + "/"))
+                        .uri(requestUri)
                         .build();
-                throw assertThrows(IOException.class, () -> client.send(request, HttpResponse.BodyHandlers.discarding()));
-            } catch (Exception e) {
-                if (RETRY_LIMIT > 0){
-                    assertEquals(RETRY_LIMIT, requestCount.get(),
-                            "Expected number of request retries was " + RETRY_LIMIT + " but actual was "+requestCount);
-                }
-                else{
-                    requestCount.decrementAndGet();
-                    assertEquals(0, requestCount.get(),
-                            "Expected number of request retries was 0 but actual was "+requestCount);
-                }
-                e.printStackTrace();
+                IOException exception = assertThrows(IOException.class, () -> client.send(
+                        request, HttpResponse.BodyHandlers.discarding()));
+                assertEquals("too many authentication attempts. Limit: " + RETRY_LIMIT, exception.getMessage());
+                assertEquals(RETRY_LIMIT > 0 ? RETRY_LIMIT : 0,
+                        RETRY_LIMIT > 0 ? requestCount.get():requestCount.decrementAndGet());
             }
         }
     }
