@@ -39,7 +39,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.PackagingPipeline.PackageTaskID;
-import jdk.jpackage.internal.PackagingPipeline.StartupParameters;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.MacDmgPackage;
 import jdk.jpackage.internal.model.PackagerException;
@@ -60,7 +59,17 @@ record MacDmgPackager(MacDmgPackage pkg, BuildEnv env, Path hdiutil, Path output
         return new Builder();
     }
 
-    static final class Builder extends PackagerBuilder<MacDmgPackage, Builder> {
+    static final class Builder {
+
+        Builder() {
+            builder = new PackagerBuilder<>();
+
+            builder.pipelineBuilderMutator((pipelineBuilder, env, pkg, outputDir) -> {
+                final var packager = new MacDmgPackager(pkg, env, validatedHdiutil(),
+                        outputDir, Optional.ofNullable(setFileUtility));
+                packager.applyToPipeline(pipelineBuilder);
+            });
+        }
 
         Builder hdiutil(Path v) {
             hdiutil = v;
@@ -72,27 +81,32 @@ record MacDmgPackager(MacDmgPackage pkg, BuildEnv env, Path hdiutil, Path output
             return this;
         }
 
-        Path execute() throws PackagerException {
-            Log.verbose(MessageFormat.format(I18N.getString("message.building-dmg"),
-                    pkg.app().name()));
-
-            IOUtils.writableOutputDir(outputDir);
-
-            return execute(MacPackagingPipeline.build(Optional.of(pkg)));
+        Builder pkg(MacDmgPackage v) {
+            builder.pkg(v);
+            return this;
         }
 
-        @Override
-        protected void configurePackagingPipeline(PackagingPipeline.Builder pipelineBuilder,
-                StartupParameters startupParameters) {
-            final var packager = new MacDmgPackager(pkg, startupParameters.packagingEnv(),
-                    validatedHdiutil(), outputDir, Optional.ofNullable(setFileUtility));
-            packager.applyToPipeline(pipelineBuilder);
+        Builder env(BuildEnv v) {
+            builder.env(v);
+            return this;
+        }
+
+        Builder outputDir(Path v) {
+            builder.outputDir(v);
+            return this;
+        }
+
+        Path execute() throws PackagerException {
+            Log.verbose(I18N.format("message.building-dmg", builder.pkg().app().name()));
+
+            return builder.execute(MacPackagingPipeline.build(Optional.of(builder.pkg())));
         }
 
         private Path validatedHdiutil() {
             return Optional.ofNullable(hdiutil).orElse(HDIUTIL);
         }
 
+        private final PackagerBuilder<MacDmgPackage> builder;
         private Path hdiutil;
         private Path setFileUtility;
     }
