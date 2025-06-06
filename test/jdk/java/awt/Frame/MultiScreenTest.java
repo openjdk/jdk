@@ -496,4 +496,3 @@ public class MultiScreenTest {
         }
     }
 }
-
