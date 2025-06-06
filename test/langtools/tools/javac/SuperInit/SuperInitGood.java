@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8194743 8345438 8356551
+ * @bug 8194743 8345438 8356551 8349754
  * @summary Test valid placements of super()/this() in constructors
  */
 
@@ -501,6 +501,17 @@ public class SuperInitGood {
         }
     }
 
+    // Test for JDK-8349754
+    public static class Test24 {
+        private int i;
+        class Sub extends Test24 {
+            Sub() {
+                i = 3;      // here "i" refers to "Test23.this.i", not "this.i" - so it's OK
+                super();
+            }
+        }
+    }
+
     public static void main(String[] args) {
         new Test0();
         new Test1();
@@ -547,5 +558,6 @@ public class SuperInitGood {
         new Test21((float)123);
         new Test22('x');
         new Test23();
+        new Test24();
     }
 }

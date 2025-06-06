@@ -210,7 +210,7 @@ public:
   uint _freg_pressure;
   uint _fhrp_index;
 
-  // Mark and visited bits for an LCA calculation in insert_anti_dependences.
+  // Mark and visited bits for an LCA calculation in raise_above_anti_dependences.
   // Since they hold unique node indexes, they do not need reinitialization.
   node_idx_t _raise_LCA_mark;
   void    set_raise_LCA_mark(node_idx_t x)    { _raise_LCA_mark = x; }
@@ -447,7 +447,7 @@ class PhaseCFG : public Phase {
   Block* hoist_to_cheaper_block(Block* LCA, Block* early, Node* self);
 
   bool schedule_local(Block* block, GrowableArray<int>& ready_cnt, VectorSet& next_call, intptr_t* recacl_pressure_nodes);
-  void set_next_call(Block* block, Node* n, VectorSet& next_call);
+  void set_next_call(const Block* block, Node* n, VectorSet& next_call) const;
   void needed_for_next_call(Block* block, Node* this_call, VectorSet& next_call);
 
   // Perform basic-block local scheduling
@@ -487,10 +487,10 @@ class PhaseCFG : public Phase {
   // Used when building the CFG and creating end nodes for blocks.
   MachNode* _goto;
 
-  Block* insert_anti_dependences(Block* LCA, Node* load, bool verify = false);
+  Block* raise_above_anti_dependences(Block* LCA, Node* load, bool verify = false);
   void verify_anti_dependences(Block* LCA, Node* load) const {
     assert(LCA == get_block_for_node(load), "should already be scheduled");
-    const_cast<PhaseCFG*>(this)->insert_anti_dependences(LCA, load, true);
+    const_cast<PhaseCFG*>(this)->raise_above_anti_dependences(LCA, load, true);
   }
 
   bool move_to_next(Block* bx, uint b_index);
