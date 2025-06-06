@@ -5717,7 +5717,7 @@ public class Attr extends JCTree.Visitor {
     private void setSyntheticVariableType(JCVariableDecl tree, Type type) {
         // Only set an ending position when the source contains an explicit type (i.e., "var")
         if (tree.declaredUsingVar()) {
-            make.at(tree.varPos(), tree.varPos() + names.var.length() - 1, env.toplevel.endPositions);
+            make.at(tree.varPos(), tree.varPos() + names.var.length(), env.toplevel.endPositions);
         } else {
             make.at(tree.pos());
         }

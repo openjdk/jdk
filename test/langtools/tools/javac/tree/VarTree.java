@@ -144,7 +144,7 @@ public class VarTree {
                             if (typeStart != matcher.start()) {
                                 throw new AssertionError("Unexpected type start: " + typeStart + " != " + matcher.start());
                             }
-                            if (typeEnd != matcher.end() - 1) {
+                            if (typeEnd != matcher.end()) {
                                 throw new AssertionError("Unexpected type end: " + typeEnd + " != " + (matcher.end() - 1));
                             }
 
