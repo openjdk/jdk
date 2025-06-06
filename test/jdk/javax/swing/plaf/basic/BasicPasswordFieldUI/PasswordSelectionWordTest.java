@@ -61,8 +61,6 @@ public class PasswordSelectionWordTest {
             System.err.println("Skipping unsupported look and feel:")
             e.printStackTrace();
             return false;
-        } catch (RuntimeException e) {
-            throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
