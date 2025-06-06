@@ -44,6 +44,7 @@ import jdk.jpackage.internal.model.WinApplication;
 import jdk.jpackage.internal.model.WinLauncher;
 import jdk.jpackage.internal.model.WinLauncherMixin;
 import jdk.jpackage.internal.model.WinMsiPackage;
+import jdk.jpackage.internal.model.WinExePackage;
 
 final class WinFromParams {
 
@@ -99,11 +100,25 @@ final class WinFromParams {
         return pkgBuilder.create();
     }
 
+    private static WinExePackage createWinExePackage(Map<String, ? super Object> params) throws ConfigException, IOException {
+
+        final var msiPkg = MSI_PACKAGE.fetchFrom(params);
+
+        final var pkgBuilder = new WinExePackageBuilder(msiPkg);
+
+        ICON.copyInto(params, pkgBuilder::icon);
+
+        return pkgBuilder.create();
+    }
+
     static final BundlerParamInfo<WinApplication> APPLICATION = createApplicationBundlerParam(
             WinFromParams::createWinApplication);
 
     static final BundlerParamInfo<WinMsiPackage> MSI_PACKAGE = createPackageBundlerParam(
             WinFromParams::createWinMsiPackage);
+
+    static final BundlerParamInfo<WinExePackage> EXE_PACKAGE = createPackageBundlerParam(
+            WinFromParams::createWinExePackage);
 
     private static final BundlerParamInfo<String> WIN_MENU_HINT = createStringBundlerParam(
             Arguments.CLIOptions.WIN_MENU_HINT.getId());
