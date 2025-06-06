@@ -108,15 +108,13 @@ import sun.security.util.KnownOIDs;
  * methods) <b>before</b> the ciphertext is processed (via
  * the {@code update} and {@code doFinal} methods).
  * <p>
- * AEAD modes may have a uniqueness requirement on key and IVs when re-initializing the Cipher object to prevent forgery attacks.
- * This may cause an {@link IllegalStateException} when calling {@code update} after a {@code doFinal}.d.
- *
- * <p> For AEAD modes like GCM, note that:
- *  <ul>
- *    <li>Cipher objects <b>cannot be reused</b> for multiple encryptions or decryptions with the same parameters (key/IV).
- *    <li>Reinitialization with {@code Cipher.init()} must use a <b>fresh IV/nonce</b> to preserve security.
- *    <li>Calling {@code update} is not guaranteed to work and may result in {@link InvalidAlgorithmParameterException}.
- *  </ul>
+ * When {@code doFinal} completes the operation, the {@code Cipher} object will attempt
+ * to reset the state to the most recent call to {@code init}, allowing for additional
+ * operations. A successful reset depends on the mode ({@code ENCRYPT_MODE} or
+ * {@code DECRYPT_MODE}) and the algorithm. AEAD algorithms may not reset to prevent
+ * forgery attacks due to Key and IV uniqueness requirements.
+ * An {@link IllegalStateException} will be thrown when calling {@code update}
+ * or {@code doFinal} when a reset did not occur.
  *
  * <p><b>Important:</b> Reusing the same IV (nonce) with the same key in AEAD modes like GCM is a serious security risk.
  *
@@ -2088,15 +2086,6 @@ public class Cipher {
      * case of decryption.
      * The result is stored in a new buffer.
      *
-     * <p>This method attempts to reset this {@code Cipher} object to the state it was
-     * in after the most recent call to {@code init}, allowing it to encrypt or decrypt
-     * additional data. A successful reset depends on the mode ({@code ENCRYPT_MODE} or
-     * {@code DECRYPT_MODE}) and the algorithm. Some modes, or the use of an AEAD algorithm,
-     * may require reinitialization and will throw an {@link IllegalStateException} when
-     * {@code update} or {@code doFinal} are called.
-     *
-     * <p>Note: if any exception is thrown, this {@code Cipher} object
-     * may need to be reset before it can be used again.
      * @return the new buffer with the result
      *
      * @throws IllegalStateException if this {@code Cipher} object
@@ -2200,16 +2189,6 @@ public class Cipher {
      * case of decryption.
      * The result is stored in a new buffer.
      *
-     * <p>This method attempts to reset this {@code Cipher} object to the state it was
-     * in after the most recent call to {@code init}, allowing it to encrypt or decrypt
-     * additional data. A successful reset depends on the mode ({@code ENCRYPT_MODE} or
-     * {@code DECRYPT_MODE}) and the algorithm. Some modes, or the use of an AEAD algorithm,
-     * may require reinitialization and will throw an {@link IllegalStateException} when
-     * {@code update} or {@code doFinal} are called.
-     *
-     * <p>Note: if any exception is thrown, this {@code Cipher} object
-     * may need to be reset before it can be used again.
-     *
      * @param input the input buffer
      *
      * @return the new buffer with the result
@@ -2254,16 +2233,6 @@ public class Cipher {
      * tag is appended in the case of encryption, or verified in the
      * case of decryption.
      * The result is stored in a new buffer.
-     *
-     * <p>This method attempts to reset this {@code Cipher} object to the state it was
-     * in after the most recent call to {@code init}, allowing it to encrypt or decrypt
-     * additional data. A successful reset depends on the mode ({@code ENCRYPT_MODE} or
-     * {@code DECRYPT_MODE}) and the algorithm. Some modes, or the use of an AEAD algorithm,
-     * may require reinitialization and will throw an {@link IllegalStateException} when
-     * {@code update} or {@code doFinal} are called.
-     *
-     * <p>Note: if any exception is thrown, this {@code Cipher} object
-     * may need to be reset before it can be used again.
      *
      * @param input the input buffer
      * @param inputOffset the offset in {@code input} where the input
@@ -2319,16 +2288,6 @@ public class Cipher {
      * call with a larger output buffer. Use
      * {@link #getOutputSize(int) getOutputSize} to determine how big
      * the output buffer should be.
-     *
-     * <p>This method attempts to reset this {@code Cipher} object to the state it was
-     * in after the most recent call to {@code init}, allowing it to encrypt or decrypt
-     * additional data. A successful reset depends on the mode ({@code ENCRYPT_MODE} or
-     * {@code DECRYPT_MODE}) and the algorithm. Some modes, or the use of an AEAD algorithm,
-     * may require reinitialization and will throw an {@link IllegalStateException} when
-     * {@code update} or {@code doFinal} are called.
-     *
-     * <p>Note: if any exception is thrown, this {@code Cipher} object
-     * may need to be reset before it can be used again.
      *
      * <p>Note: this method should be copy-safe, which means the
      * {@code input} and {@code output} buffers can reference
@@ -2397,16 +2356,6 @@ public class Cipher {
      * call with a larger output buffer. Use
      * {@link #getOutputSize(int) getOutputSize} to determine how big
      * the output buffer should be.
-     *
-     * <p>This method attempts to reset this {@code Cipher} object to the state it was
-     * in after the most recent call to {@code init}, allowing it to encrypt or decrypt
-     * additional data. A successful reset depends on the mode ({@code ENCRYPT_MODE} or
-     * {@code DECRYPT_MODE}) and the algorithm. Some modes, or the use of an AEAD algorithm,
-     * may require reinitialization and will throw an {@link IllegalStateException} when
-     * {@code update} or {@code doFinal} are called.
-     *
-     * <p>Note: if any exception is thrown, this {@code Cipher} object
-     * may need to be reset before it can be used again.
      *
      * <p>Note: this method should be copy-safe, which means the
      * {@code input} and {@code output} buffers can reference
@@ -2478,16 +2427,6 @@ public class Cipher {
      * In this case, repeat this call with a larger output buffer. Use
      * {@link #getOutputSize(int) getOutputSize} to determine how big
      * the output buffer should be.
-     *
-     * <p>This method attempts to reset this {@code Cipher} object to the state it was
-     * in after the most recent call to {@code init}, allowing it to encrypt or decrypt
-     * additional data. A successful reset depends on the mode ({@code ENCRYPT_MODE} or
-     * {@code DECRYPT_MODE}) and the algorithm. Some modes, or the use of an AEAD algorithm,
-     * may require reinitialization and will throw an {@link IllegalStateException} when
-     * {@code update} or {@code doFinal} are called.
-     *
-     * <p>Note: if any exception is thrown, this {@code Cipher} object
-     * may need to be reset before it can be used again.
      *
      * <p>Note: this method should be copy-safe, which means the
      * {@code input} and {@code output} buffers can reference
