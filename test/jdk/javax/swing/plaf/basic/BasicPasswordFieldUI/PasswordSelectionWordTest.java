@@ -88,7 +88,7 @@ public class PasswordSelectionWordTest {
         System.out.println("selectionStart = " + selectionStart);
         System.out.println("selectionEnd = " + selectionEnd);
         if (selectionStart != 0 || selectionEnd != str.length()) {
-            throw new Error("selectionStart = " + selectionStart +
+            throw new RuntimeException("selectionStart = " + selectionStart +
                     " and selectionEnd = " + selectionEnd);
         }
     }
