@@ -239,7 +239,7 @@ public class JMXServiceURL implements Serializable {
      * JMXServiceURL(protocol, host, port, null)}.</p>
      *
      * @param protocol the protocol part of the URL.  Must be specified,
-     * there is no default,
+     * there is no default.
      *
      * @param host the host part of the URL. If host is null and if
      * local host name can be resolved to an IP, then host defaults
@@ -266,7 +266,7 @@ public class JMXServiceURL implements Serializable {
      * <p>Constructs a <code>JMXServiceURL</code> with the given parts.
      *
      * @param protocol the protocol part of the URL.  Must be specified,
-     * there is no default,
+     * there is no default.
      *
      * @param host the host part of the URL. If host is null and if
      * local host name can be resolved to an IP, then host defaults
