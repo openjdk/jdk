@@ -107,8 +107,8 @@ public class PEMDecoderTest {
                 System.err.println("received: " + new String(rec.leadingData()));
                 throw new AssertionError("ecCSRWithData preData wrong");
             }
-            if (rec.pem().lastIndexOf("F") > rec.pem().length() - 5) {
-                System.err.println("received: " + rec.pem());
+            if (rec.content().lastIndexOf("F") > rec.content().length() - 5) {
+                System.err.println("received: " + rec.content());
                 throw new AssertionError("ecCSRWithData: " +
                     "End of PEM data has an unexpected character");
             }
@@ -235,10 +235,10 @@ public class PEMDecoderTest {
         PEMRecord r = PEMDecoder.of().decode(entry.pem(), PEMRecord.class);
         String expected = entry.pem().split("-----")[2].replace(System.lineSeparator(), "");
         try {
-            PEMData.checkResults(expected, r.pem());
+            PEMData.checkResults(expected, r.content());
         } catch (AssertionError e) {
             System.err.println("expected:\n" + expected);
-            System.err.println("received:\n" + r.pem());
+            System.err.println("received:\n" + r.content());
             throw e;
         }
 
