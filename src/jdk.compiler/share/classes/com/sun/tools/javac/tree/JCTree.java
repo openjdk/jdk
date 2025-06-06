@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1133,7 +1133,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         /** statements */
         public List<JCStatement> stats;
         /** Position of closing brace, optional. */
-        public int endpos = Position.NOPOS;
+        public int bracePos = Position.NOPOS;
         /** If this block contains record pattern, it is necessary to catch
          *  exceptions from the deconstructors and wrap them.
          * The {@code patternMatchingCatch} keeps the list of the deconstructor
@@ -1342,7 +1342,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCExpression selector;
         public List<JCCase> cases;
         /** Position of closing brace, optional. */
-        public int endpos = Position.NOPOS;
+        public int bracePos = Position.NOPOS;
         public boolean hasUnconditionalPattern;
         public boolean isExhaustive;
         public boolean patternSwitch;
@@ -1442,7 +1442,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCExpression selector;
         public List<JCCase> cases;
         /** Position of closing brace, optional. */
-        public int endpos = Position.NOPOS;
+        public int bracePos = Position.NOPOS;
         public boolean hasUnconditionalPattern;
         public boolean isExhaustive;
         public boolean patternSwitch;

@@ -460,18 +460,9 @@ AOTCodeCache* AOTCodeCache::open_for_dump() {
 }
 
 void copy_bytes(const char* from, address to, uint size) {
-  assert(size > 0, "sanity");
-  bool by_words = true;
-  if ((size > 2 * HeapWordSize) && (((intptr_t)from | (intptr_t)to) & (HeapWordSize - 1)) == 0) {
-    // Use wordwise copies if possible:
-    Copy::disjoint_words((HeapWord*)from,
-                         (HeapWord*)to,
-                         ((size_t)size + HeapWordSize-1) / HeapWordSize);
-  } else {
-    by_words = false;
-    Copy::conjoint_jbytes(from, to, (size_t)size);
-  }
-  log_trace(aot, codecache)("Copied %d bytes as %s from " INTPTR_FORMAT " to " INTPTR_FORMAT, size, (by_words ? "HeapWord" : "bytes"), p2i(from), p2i(to));
+  assert((int)size > 0, "sanity");
+  memcpy(to, from, size);
+  log_trace(aot, codecache)("Copied %d bytes from " INTPTR_FORMAT " to " INTPTR_FORMAT, size, p2i(from), p2i(to));
 }
 
 AOTCodeReader::AOTCodeReader(AOTCodeCache* cache, AOTCodeEntry* entry) {
