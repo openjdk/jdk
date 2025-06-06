@@ -29,13 +29,24 @@
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.NavigableSet;
+import java.util.Queue;
+import java.util.SequencedCollection;
+import java.util.SequencedSet;
+import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
 
@@ -44,6 +55,12 @@ import static org.testng.Assert.assertTrue;
 @Test(groups = "unit")
 public class Wrappers {
     static Object[][] collections;
+    static int total = 0;
+
+    @AfterClass
+    public void printTotal() {
+        System.out.println(">>>> Total inherited default methods = " + total);
+    }
 
     @DataProvider(name="collections")
     public static Object[][] collectionCases() {
@@ -84,18 +101,19 @@ public class Wrappers {
         cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().entrySet() });
         cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().keySet() });
         cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().values() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedEntrySet() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedKeySet() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedValues() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedEntrySet().reversed() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedKeySet().reversed() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedValues().reversed() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedEntrySet() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedKeySet() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedValues() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedEntrySet().reversed() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedKeySet().reversed() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedValues().reversed() });
+// XXX TODO these tests depend on behavior changes in JDK-8358015
+//        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedEntrySet() });
+//        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedKeySet() });
+//        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedValues() });
+//        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedEntrySet().reversed() });
+//        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedKeySet().reversed() });
+//        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedValues().reversed() });
+//        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedEntrySet() });
+//        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedKeySet() });
+//        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedValues() });
+//        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedEntrySet().reversed() });
+//        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedKeySet().reversed() });
+//        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedValues().reversed() });
         cases.add(new Object[] { Collections.unmodifiableSortedMap(seedMap).entrySet() });
         cases.add(new Object[] { Collections.unmodifiableSortedMap(seedMap).keySet() });
         cases.add(new Object[] { Collections.unmodifiableSortedMap(seedMap).values() });
@@ -141,28 +159,59 @@ public class Wrappers {
 
     static Method[] defaultMethods;
 
+    static final List<Class<?>> interfaces = List.of(
+        Iterable.class,
+        Collection.class,
+        SequencedCollection.class,
+        List.class,
+        Set.class,
+        SequencedSet.class,
+        SortedSet.class,
+        NavigableSet.class,
+        Queue.class,
+        Deque.class);
+
+    static final Map<Class<?>, List<Method>> defaultMethodMap = new HashMap<>();
+
     static {
-        List<Method> list = new ArrayList<>();
-        Method[] methods = Collection.class.getMethods();
-        for (Method m: methods) {
-            if (m.isDefault()) {
-                list.add(m);
+        for (var intf : interfaces) {
+            List<Method> list = new ArrayList<>();
+            Method[] methods = intf.getMethods();
+            for (Method m: methods) {
+                if (m.isDefault()) {
+                    list.add(m);
+                }
             }
+            defaultMethodMap.put(intf, list);
         }
-        defaultMethods = list.toArray(new Method[0]);
     }
 
+//    @Test(dataProvider = "collections")
+//    public static void testAllDefaultMethodsOverridden(Collection c) throws NoSuchMethodException {
+//        Class cls = c.getClass();
+//        var notOverridden = new ArrayList<Method>();
+//        for (var entry : defaultMethodMap.entrySet()) {
+//            if (entry.getKey().isInstance(c)) {
+//                for (Method m : entry.getValue()) {
+//                    Method m2 = cls.getMethod(m.getName(), m.getParameterTypes());
+//                    if (m2.isDefault()) {
+//                        notOverridden.add(m);
+//                    }
+//                }
+//            }
+//        }
+//        total += notOverridden.size();
+//        assertTrue(notOverridden.isEmpty(), cls.getName() + " does not override " + notOverridden);
+//    }
+
     @Test(dataProvider = "collections")
-    public static void testAllDefaultMethodsOverridden(Collection c) throws NoSuchMethodException {
-        Class cls = c.getClass();
-        var notOverridden = new ArrayList<Method>();
-        for (Method m: defaultMethods) {
-            Method m2 = cls.getMethod(m.getName(), m.getParameterTypes());
-            if (m2.isDefault()) {
-                notOverridden.add(m);
-            }
-        }
-        assertTrue(notOverridden.isEmpty(), cls.getName() + " does not override " + notOverridden);
+    public static void testNoDefaultMethodsInherited(Collection c) {
+        List<Method> inherited = Arrays.stream(c.getClass().getMethods())
+                                       .filter(Method::isDefault)
+                                       .toList();
+        total += inherited.size();
+        assertTrue(inherited.isEmpty(),
+                   c.getClass().getName() + " inherited default method " + inherited);
     }
 }
 
