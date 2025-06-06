@@ -39,6 +39,12 @@ protected:
 public:
   // The thresholds are inclusive, and in practice the limits are rounded
   // to the nearest power-of-two - 1.
+  // Based on the max_key and max_value we figure out the number of bits required to store
+  // key and value; imagine that only as bits (not aligned to byte boundary... yet).
+  // Then we concatenate the bits for key and value, and 'add' 1-7 padding zeroes
+  // (high-order bits) to align on bytes.
+  // In the end we have each element in the table consuming 1-8 bytes (case with 0 bits for key
+  // is ruled out).
   PackedTableBase(uint32_t max_key, uint32_t max_value);
 
   // Returns number of bytes each element will occupy.
@@ -59,6 +65,7 @@ public:
 
   // The thresholds are inclusive, and in practice the limits are rounded
   // to the nearest power-of-two - 1.
+  // See PackedTableBase constructor for details.
   PackedTableBuilder(uint32_t max_key, uint32_t max_value): PackedTableBase(max_key, max_value) {}
 
   // Constructs a packed table in the provided array, filling it with elements
@@ -92,6 +99,7 @@ public:
 
   // The thresholds are inclusive, and in practice the limits are rounded
   // to the nearest power-of-two - 1.
+  // See PackedTableBase constructor for details.
   PackedTableLookup(uint32_t max_key, uint32_t max_value): PackedTableBase(max_key, max_value) {}
 
   // Performs a binary search in the packed table, looking for an element with key
