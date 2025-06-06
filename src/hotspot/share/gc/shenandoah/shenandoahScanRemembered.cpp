@@ -282,12 +282,14 @@ HeapWord* ShenandoahCardCluster::block_start(const size_t card_index) const {
   NOT_PRODUCT(obj = cast_to_oop(p);)
   assert(oopDesc::is_oop(obj), "Should be an object");
 #define WALK_FORWARD_IN_BLOCK_START true
-  while (WALK_FORWARD_IN_BLOCK_START && p + obj->size() <= left) {
+  while (WALK_FORWARD_IN_BLOCK_START && p + obj->size() < left) {
     p += obj->size();
     obj = cast_to_oop(p);
+    assert(oopDesc::is_oop(obj), "Should be an object");
   }
 #undef WALK_FORWARD_IN_BLOCK_START // false
-  assert(p + obj->size() > left, "obj should end after left");
+  assert(p <= left, "p should start at or before left end of card");
+  assert(p + obj->size() > left, "obj should end after left end of card");
   return p;
 }
 
