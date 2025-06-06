@@ -329,6 +329,8 @@ struct BoolTest {
   // enum from above.
   mask commute( ) const { return mask("032147658"[_test]-'0'); }
   mask negate( ) const { return mask(_test^4); }
+  // Return the negative mask for the given mask, for both signed and unsigned comparison.
+  static mask negate_mask(mask btm) { return mask(btm^4); }
   bool is_canonical( ) const { return (_test == BoolTest::ne || _test == BoolTest::lt || _test == BoolTest::le || _test == BoolTest::overflow); }
   bool is_less( )  const { return _test == BoolTest::lt || _test == BoolTest::le; }
   bool is_greater( ) const { return _test == BoolTest::gt || _test == BoolTest::ge; }

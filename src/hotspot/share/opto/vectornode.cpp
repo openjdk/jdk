@@ -2236,7 +2236,7 @@ Node* XorVNode::Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape) {
     return nullptr;
   }
 
-  BoolTest::mask neg_cond = (BoolTest::mask) (((VectorMaskCmpNode*) in1)->get_negative_predicate());
+  BoolTest::mask neg_cond = BoolTest::negate_mask(((VectorMaskCmpNode*) in1)->get_predicate());
   ConINode* predicate_node = phase->intcon(neg_cond);
   const TypeVect* vt = in1->as_Vector()->vect_type();
   Node* res = new VectorMaskCmpNode(neg_cond, in1->in(1), in1->in(2),
