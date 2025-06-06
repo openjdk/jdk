@@ -58,7 +58,7 @@ public class PasswordSelectionWordTest {
             UIManager.setLookAndFeel(laf.getClassName());
             return true;
         } catch (UnsupportedLookAndFeelException  e) {
-            System.err.println("Skipping unsupported look and feel:")
+            System.err.println("Skipping unsupported look and feel:");
             e.printStackTrace();
             return false;
         } catch (Exception e) {
