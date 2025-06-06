@@ -2386,28 +2386,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
     C->mark_unbalanced_boxes();
   }
 
-  // First, attempt to eliminate locks
+  // Attempt to eliminate allocations and locks
   bool progress = true;
-  while (progress) {
-    progress = false;
-    for (int i = C->macro_count(); i > 0; i = MIN2(i - 1, C->macro_count())) { // more than 1 element can be eliminated at once
-      Node* n = C->macro_node(i - 1);
-      bool success = false;
-      DEBUG_ONLY(int old_macro_count = C->macro_count();)
-      if (n->is_AbstractLock()) {
-        success = eliminate_locking_node(n->as_AbstractLock());
-#ifndef PRODUCT
-        if (success && PrintOptoStatistics) {
-          Atomic::inc(&PhaseMacroExpand::_monitor_objects_removed_counter);
-        }
-#endif
-      }
-      assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
-      progress = progress || success;
-    }
-  }
-  // Next, attempt to eliminate allocations
-  progress = true;
   while (progress) {
     progress = false;
     for (int i = C->macro_count(); i > 0; i = MIN2(i - 1, C->macro_count())) { // more than 1 element can be eliminated at once
@@ -2429,6 +2409,12 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         break;
       case Node::Class_Lock:
       case Node::Class_Unlock:
+          success = eliminate_locking_node(n->as_AbstractLock());
+#ifndef PRODUCT
+          if (success && PrintOptoStatistics) {
+            Atomic::inc(&PhaseMacroExpand::_monitor_objects_removed_counter);
+          }
+#endif
         assert(!n->as_AbstractLock()->is_eliminated(), "sanity");
         break;
       case Node::Class_ArrayCopy:
