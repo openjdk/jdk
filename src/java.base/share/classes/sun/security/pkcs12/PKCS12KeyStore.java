@@ -179,6 +179,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     private int macIterationCount = -1;
     private int macKeyLength = -1;
     private int macSaltLength = -1;
+    private byte[] extraSalt = null;
+    private int extraIterationCount = -1;
 
     // the source of randomness
     private SecureRandom random;
@@ -1510,7 +1512,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             byte[] macResult = m.doFinal();
 
             // encode as MacData
-            macData = new MacData(algName, macResult, params);
+            macData = new MacData(algName, macResult, params, extraSalt,
+                extraIterationCount);
             DerOutputStream bytes = new DerOutputStream();
             bytes.write(macData.getEncoded());
             mData = bytes.toByteArray();
@@ -2182,6 +2185,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         macKeyLength = macData.getKeyLength();
                         // store salt length in macData
                         macSaltLength = salt.length;
+                        extraSalt = macData.getExtraSalt();
+                        extraIterationCount = macData.getExtraIterations();
                     } else {
 
                         // Change SHA-1 to SHA1

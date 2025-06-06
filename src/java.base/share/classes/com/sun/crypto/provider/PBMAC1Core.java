@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,7 +136,6 @@ abstract class PBMAC1Core extends HmacCore {
                     throw new InvalidAlgorithmParameterException
                             ("PBEParameterSpec required for salt and iteration count");
                 }
-                //keyLength = blockLength;
             } else if ((params instanceof PBEParameterSpec pbeParams)) {
                 // make sure the parameter values are consistent
                 if (salt != null) {
@@ -155,7 +154,6 @@ abstract class PBMAC1Core extends HmacCore {
                 } else {
                     iCount = pbeParams.getIterationCount();
                 }
-                //keyLength = blockLength;
             } else if ((params instanceof PBMAC1ParameterSpec pbmac1Params)) {
                 if (salt != null) {
                     if (!Arrays.equals(salt, pbmac1Params.getSalt())) {
@@ -173,8 +171,9 @@ abstract class PBMAC1Core extends HmacCore {
                 } else {
                     iCount = pbmac1Params.getIterationCount();
                 }
+                // Key length SHOULD be same as the HMAC function output size.
                 keyLength = pbmac1Params.getKeyLength();
-                this.kdfAlgo = pbmac1Params.getkdfHmac();
+                kdfAlgo = pbmac1Params.getkdfHmac();
             } else {
                 throw new InvalidAlgorithmParameterException
                         ("PBEParameterSpec or PBMAC1ParameterSpec required");

@@ -402,10 +402,6 @@ public class PBMAC1Encoding {
                 password.toCharArray());
         System.out.println("A.1 pass");
 
-        // Make sure both cert and key can be retrieved
-        //System.out.println(ks.getCertificate("a"));
-        //System.out.println(ks.getKey("a", "changeit".toCharArray()));
-
         ks = KeyStore.getInstance("PKCS12");
         ks.load(new ByteArrayInputStream(Base64.getDecoder().decode(A2)),
                 password.toCharArray());

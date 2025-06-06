@@ -49,11 +49,13 @@ class MacData {
     private final String digestAlgorithmName;
     private final AlgorithmParameters digestAlgorithmParams;
     private final byte[] digest;
-    private final byte[] macSalt;
-    private final int iterations;
-    private final String kdfHmac;
-    private final String Hmac;
-    private final int keyLength;
+    private byte[] macSalt;
+    private byte[] extraMacSalt;
+    private int iterations;
+    private int extraIterations;
+    private String kdfHmac;
+    private String Hmac;
+    private int keyLength;
 
     // the ASN.1 encoded contents of this class
     private byte[] encoded = null;
@@ -96,29 +98,30 @@ class MacData {
                 throw new IOException(
                         "Invalid PBMAC1 algorithm parameters");
             }
-            this.iterations = pbmac1Spec.getIterationCount();
-            this.macSalt = pbmac1Spec.getSalt();
-            this.kdfHmac = pbmac1Spec.getkdfHmac();
-            this.Hmac = pbmac1Spec.getHmac();
-            this.keyLength = pbmac1Spec.getKeyLength();
-            return;
+            iterations = pbmac1Spec.getIterationCount();
+            macSalt = pbmac1Spec.getSalt();
+            kdfHmac = pbmac1Spec.getkdfHmac();
+            Hmac = pbmac1Spec.getHmac();
+            keyLength = pbmac1Spec.getKeyLength();
         }
 
         // Get the salt.
-        this.macSalt = macData[1].getOctetString();
+        extraMacSalt = macData[1].getOctetString();
 
         // Iterations are optional. The default value is 1.
         if (macData.length > 2) {
-            this.iterations = macData[2].getInteger();
+            extraIterations = macData[2].getInteger();
         } else {
-            this.iterations = 1;
+            extraIterations = 1;
         }
-        this.kdfHmac = null;
-        this.Hmac = null;
-        this.keyLength = 0;
+        if (!digestAlgorithmName.equals("PBMAC1")) {
+            macSalt = extraMacSalt;
+            iterations = extraIterations;
+        }
     }
 
-    MacData(String algName, byte[] digest, AlgorithmParameterSpec params)
+    MacData(String algName, byte[] digest, AlgorithmParameterSpec params,
+            byte[] extraSalt, int extraIterationCount)
         throws NoSuchAlgorithmException
     {
         if (algName == null) {
@@ -141,17 +144,19 @@ class MacData {
         }
 
         if (params instanceof PBMAC1ParameterSpec p) {
-            this.macSalt = p.getSalt();
-            this.iterations = p.getIterationCount();
-            this.kdfHmac = p.getkdfHmac();
-            this.Hmac = p.getHmac();
-            this.keyLength = p.getKeyLength();
+            macSalt = p.getSalt();
+            iterations = p.getIterationCount();
+            kdfHmac = p.getkdfHmac();
+            Hmac = p.getHmac();
+            keyLength = p.getKeyLength();
+            extraMacSalt = extraSalt;
+            extraIterations = extraIterationCount;
         } else if (params instanceof PBEParameterSpec p) {
-            this.macSalt = p.getSalt();
-            this.iterations = p.getIterationCount();
-            this.kdfHmac = null;
-            this.Hmac = null;
-            this.keyLength = 0;
+            macSalt = p.getSalt();
+            iterations = p.getIterationCount();
+            kdfHmac = null;
+            Hmac = null;
+            keyLength = 0;
         } else {
             throw new IllegalArgumentException("unsupported parameter spec");
         }
@@ -189,6 +194,14 @@ class MacData {
         return keyLength;
     }
 
+    byte[] getExtraSalt() {
+        return extraMacSalt;
+    }
+
+    int getExtraIterations() {
+        return extraIterations;
+    }
+
     /**
      * Returns the ASN.1 encoding of this object.
      * @return the ASN.1 encoding.
@@ -199,7 +212,6 @@ class MacData {
             IOException
     {
         if (digestAlgorithmName.equals("PBMAC1")) {
-            byte[] notUsed = { 'N', 'O', 'T', ' ', 'U', 'S', 'E', 'D' };
             ObjectIdentifier pkcs5PBKDF2_OID =
                     ObjectIdentifier.of(KnownOIDs.PBKDF2WithHmacSHA1);
 
@@ -246,12 +258,12 @@ class MacData {
             tmp2.write(DerValue.tag_Sequence, tmp1);
             tmp2.putOctetString(digest);
             tmp0.write(DerValue.tag_Sequence, tmp2);
-            tmp0.putOctetString(notUsed);
-            tmp0.putInteger(1);
+            tmp0.putOctetString(extraMacSalt);
+            tmp0.putInteger(extraIterations);
             out.write(DerValue.tag_Sequence, tmp0);
-            this.encoded = out.toByteArray();
+            encoded = out.toByteArray();
 
-            return this.encoded.clone();
+            return encoded.clone();
         }
 
         if (this.encoded != null)
