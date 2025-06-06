@@ -2415,6 +2415,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
             Atomic::inc(&PhaseMacroExpand::_monitor_objects_removed_counter);
           }
 #endif
+        assert(!n->as_AbstractLock()->is_eliminated(), "sanity");
         break;
       case Node::Class_ArrayCopy:
         break;
