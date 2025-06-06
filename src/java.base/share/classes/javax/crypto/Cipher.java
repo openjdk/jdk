@@ -108,15 +108,13 @@ import sun.security.util.KnownOIDs;
  * methods) <b>before</b> the ciphertext is processed (via
  * the {@code update} and {@code doFinal} methods).
  * <p>
- * When {@code doFinal} completes the operation, the {@code Cipher} object will attempt
+ * When {@code doFinal} methods completes the operation, the {@code Cipher} object will attempt
  * to reset the state to the most recent call to {@code init}, allowing for additional
  * operations. A successful reset depends on the mode ({@code ENCRYPT_MODE} or
  * {@code DECRYPT_MODE}) and the algorithm. AEAD algorithms may not reset to prevent
  * forgery attacks due to Key and IV uniqueness requirements.
  * An {@link IllegalStateException} will be thrown when calling {@code update}
- * or {@code doFinal} when a reset did not occur.
- *
- * <p><b>Important:</b> Reusing the same IV (nonce) with the same key in AEAD modes like GCM is a serious security risk.
+ * or {@code doFinal} methods when a reset did not occur.
  *
  *  @see javax.crypto.Cipher
  *  @see javax.crypto.spec.GCMParameterSpec
