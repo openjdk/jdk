@@ -27,12 +27,11 @@
  * <p>Interfaces for remote access to
  * JMX MBean servers.
  * This package defines the essential interfaces for making a JMX
- * MBean server manageable remotely. The specification of this
- * functionality is completed by Part III of the
- * <a href="https://jcp.org/aboutJava/communityprocess/mrel/jsr160/index2.html">
+ * MBean server manageable remotely. This functionality is based on
+ * Part III of the <a href="https://jcp.org/aboutJava/communityprocess/mrel/jsr160/index2.html">
  * JMX Specification, version 1.4</a></p>
  *
- * <p>The JMX specification defines the notion of <b>connectors</b>.
+ * <p>JMX defines the notion of <b>connectors</b>.
  * A connector is attached to a JMX API MBean server and makes it
  * accessible to remote Java clients. The client end of a
  * connector exports essentially the same interface as the MBean
@@ -41,18 +40,16 @@
  * interface.</p>
  *
  * <p>A connector makes an MBean server remotely accessible through
- * a given protocol. The JMX Remote API allows the use of different
- * type of connectors:
+ * a given protocol.
  *
- *       <ul>
+ *      <ul>
  *        <li>The JMX Remote API defines a standard connector,
  *     the <b>RMI Connector</b>, which provides remote access to an
  *     MBeanServer through RMI.
  *
- *        <li>User-defined connector protocols are also possible using the
+ *        <li>Other connector protocols are also possible using the
  *     {@link javax.management.remote.JMXConnectorFactory
- *     JMXConnectorFactory} and, optionally, the Generic Connector
- *     (not part of this bundle, see note below).
+ *     JMXConnectorFactory}.
  *     </ul>
  *
  *       <h2>Connector addresses</h2>
