@@ -245,8 +245,6 @@ HeapWord* ShenandoahCardCluster::block_start(const size_t card_index) const {
     return left;
   }
 
-  HeapWord* p = nullptr;
-  oop obj = cast_to_oop(p);
   ssize_t cur_index = (ssize_t)card_index;
   assert(cur_index >= 0, "Overflow");
   assert(cur_index > 0, "Should have returned above");
@@ -262,7 +260,7 @@ HeapWord* ShenandoahCardCluster::block_start(const size_t card_index) const {
   assert(starts_object(cur_index), "Error");
   size_t offset = get_last_start(cur_index);
   // can avoid call via card size arithmetic below instead
-  p = _rs->addr_for_card_index(cur_index) + offset;
+  HeapWord* p = _rs->addr_for_card_index(cur_index) + offset;
   // Recall that we already dealt with the co-initial object case above
   assert(p < left, "obj should start before left");
   // While it is safe to ask an object its size in the loop that
@@ -279,7 +277,7 @@ HeapWord* ShenandoahCardCluster::block_start(const size_t card_index) const {
   //    evacuation phase) of young collections. This is never called
   //    during old or global collections.
   // 4. Every allocation under TAMS updates the object start array.
-  NOT_PRODUCT(obj = cast_to_oop(p);)
+  oop obj = cast_to_oop(p);
   assert(oopDesc::is_oop(obj), "Should be an object");
 #define WALK_FORWARD_IN_BLOCK_START true
   while (WALK_FORWARD_IN_BLOCK_START && p + obj->size() < left) {
