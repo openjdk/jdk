@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.security.AlgorithmConstraints;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import javax.crypto.KeyGenerator;
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SNIMatcher;
@@ -62,6 +63,11 @@ final class SSLConfiguration implements Cloneable {
 
     // the configured named groups for the "supported_groups" extensions
     String[]                   namedGroups;
+
+    // The configured certificate compression algorithms for
+    // "compress_certificate" extensions
+    Map<String, Function<byte[], byte[]>> certDeflaters;
+    Map<String, Function<byte[], byte[]>> certInflaters;
 
     // the maximum protocol version of enabled protocols
     ProtocolVersion             maximumProtocolVersion;
@@ -242,6 +248,10 @@ final class SSLConfiguration implements Cloneable {
         this.signatureSchemes = isClientMode ?
                 CustomizedClientSignatureSchemes.signatureSchemes :
                 CustomizedServerSignatureSchemes.signatureSchemes;
+
+        this.certDeflaters = Map.of();
+        this.certInflaters = Map.of();
+
         this.namedGroups = NamedGroup.SupportedGroups.namedGroups;
         this.maximumProtocolVersion = ProtocolVersion.NONE;
         for (ProtocolVersion pv : enabledProtocols) {
@@ -293,6 +303,8 @@ final class SSLConfiguration implements Cloneable {
             params.setSNIMatchers(this.sniMatchers);
         }
 
+        params.setCertificateDeflaters(this.certDeflaters);
+        params.setCertificateInflaters(this.certInflaters);
         params.setApplicationProtocols(this.applicationProtocols);
         params.setUseCipherSuitesOrder(this.preferLocalCipherSuites);
         params.setEnableRetransmissions(this.enableRetransmissions);
@@ -372,6 +384,8 @@ final class SSLConfiguration implements Cloneable {
             this.namedGroups = NamedGroup.SupportedGroups.namedGroups;
         }
 
+        this.certDeflaters = params.getCertificateDeflaters();
+        this.certInflaters = params.getCertificateInflaters();
         this.preferLocalCipherSuites = params.getUseCipherSuitesOrder();
         this.enableRetransmissions = params.getEnableRetransmissions();
         this.maximumPacketSize = params.getMaximumPacketSize();
