@@ -27,7 +27,7 @@
 /*
  * @test
  * @bug 8340182
- * @summary Retry limit system property
+ * @summary Auth retry limit system property
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
  * @run junit HttpClientAuthRetryLimitTest
