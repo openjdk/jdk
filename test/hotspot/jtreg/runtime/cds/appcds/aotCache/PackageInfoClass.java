@@ -27,8 +27,6 @@
  * @summary AOT cache handling for package-info class loaded by jdk/internal/loader/ClassLoaders$BootClassLoader
  * @bug 8354558
  * @requires vm.cds.supports.aot.class.linking
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/lib /test/jdk/java/lang/Package/bootclasspath/boot
  * @build PackageInfoClass foo.Foo foo.MyAnnotation foo.package-info
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar boot.jar foo.Foo foo.package-info foo.MyAnnotation
