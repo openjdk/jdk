@@ -169,16 +169,6 @@ public class CommandLineNegativeTest {
     public Object[][] directoryOptions() { return new Object[][] {{"-d"}, {"--directory"}}; }
 
     @Test(dataProvider = "directoryOptions")
-    public void testRootNotAbsolute(String opt) throws Throwable {
-        out.println("\n--- testRootNotAbsolute, opt=\"%s\" ".formatted(opt));
-        var root = Path.of(".");
-        assertFalse(root.isAbsolute());
-        simpleserver(JAVA, LOCALE_OPT, "-m", "jdk.httpserver", opt, root.toString())
-                .shouldNotHaveExitValue(0)
-                .shouldContain("Error: server config failed: " + "Path is not absolute:");
-    }
-
-    @Test(dataProvider = "directoryOptions")
     public void testRootNotADirectory(String opt) throws Throwable {
         out.println("\n--- testRootNotADirectory, opt=\"%s\" ".formatted(opt));
         var file = TEST_FILE.toString();
@@ -236,7 +226,11 @@ public class CommandLineNegativeTest {
     }
 
     static OutputAnalyzer simpleserver(String... args) throws Throwable {
-        var pb = new ProcessBuilder(args)
+        String[] nargs = new String[args.length + 1];
+        nargs[0] = args[0];
+        System.arraycopy(args, 1, nargs, 2, args.length-1);
+        nargs[1] = "-Djdk.includeInExceptions=hostInfo";
+        var pb = new ProcessBuilder(nargs)
                 .directory(TEST_DIR.toFile());
         var outputAnalyser = ProcessTools.executeCommand(pb)
                 .outputTo(System.out)

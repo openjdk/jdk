@@ -30,6 +30,7 @@ import java.lang.classfile.ClassReader;
 import java.lang.classfile.attribute.BootstrapMethodsAttribute;
 import java.lang.classfile.constantpool.*;
 import java.lang.constant.ClassDesc;
+import java.lang.constant.DynamicCallSiteDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
 import java.util.List;
@@ -521,6 +522,10 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     AbstractPoolEntry.ClassEntryImpl cloneClassEntry(AbstractPoolEntry.ClassEntryImpl e) {
         var ce = tryFindClassEntry(e.hashCode(), e.ref1);
         if (ce != null) {
+            var mySym = e.sym;
+            if (ce.sym == null && mySym != null) {
+                ce.sym = mySym;
+            }
             return ce;
         }
 

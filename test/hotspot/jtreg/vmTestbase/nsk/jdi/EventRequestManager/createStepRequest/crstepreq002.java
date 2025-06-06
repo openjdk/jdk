@@ -275,7 +275,7 @@ public class crstepreq002 extends JDIBase {
 
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ variable part
 
-            thread = debuggee.threadByNameOrThrow(threadName);
+            thread = debuggee.threadByFieldNameOrThrow(debuggeeClass, threadName);
 
             if (StepRequest.STEP_MIN > StepRequest.STEP_LINE) {
                 maxSize = StepRequest.STEP_MIN;

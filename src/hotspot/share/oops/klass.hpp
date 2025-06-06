@@ -730,6 +730,7 @@ public:
   virtual MetaspaceObj::Type type() const { return ClassType; }
 
   inline bool is_loader_alive() const;
+  inline bool is_loader_present_and_alive() const;
 
   void clean_subklass();
 

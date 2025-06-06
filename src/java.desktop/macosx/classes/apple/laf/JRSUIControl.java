@@ -324,7 +324,7 @@ public final class JRSUIControl {
 
     @Override
     public int hashCode() {
-        int bits = (int)(currentEncodedProperties ^ (currentEncodedProperties >>> 32));
+        int bits = Long.hashCode(currentEncodedProperties);
         bits ^= nativeMap.hashCode();
         bits ^= changes.hashCode();
         return bits;

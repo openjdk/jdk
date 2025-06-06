@@ -314,7 +314,12 @@ class MetaspaceObj {
   f(ConstantPoolCache) \
   f(Annotations) \
   f(MethodCounters) \
-  f(RecordComponent)
+  f(RecordComponent) \
+  f(KlassTrainingData) \
+  f(MethodTrainingData) \
+  f(CompileTrainingData) \
+  f(AdapterHandlerEntry) \
+  f(AdapterFingerPrint)
 
 #define METASPACE_OBJ_TYPE_DECLARE(name) name ## Type,
 #define METASPACE_OBJ_TYPE_NAME_CASE(name) case name ## Type: return #name;
@@ -352,6 +357,8 @@ class MetaspaceObj {
   void* operator new(size_t size, ClassLoaderData* loader_data,
                      size_t word_size,
                      Type type) throw();
+  // This is used for allocating training data. We are allocating training data in many cases where a GC cannot be triggered.
+  void* operator new(size_t size, MemTag flags);
   void operator delete(void* p) = delete;
 
   // Declare a *static* method with the same signature in any subclass of MetaspaceObj

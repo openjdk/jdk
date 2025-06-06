@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,9 +83,9 @@ import java.net.ServerSocket;
  */
 public class DebugeeArgumentHandler extends ArgumentParser {
 
-    public static final String DEFAULT_PIPE_PORT                                = "7123";
-    public static final String DEFAULT_TRANSPORT_PORT                   = "8123";
-    public static final String DEFAULT_BIND_PORT                                = "9123";
+    public static final String DEFAULT_PIPE_PORT      = "7123";
+    public static final String DEFAULT_TRANSPORT_PORT = "8123";
+    public static final String DEFAULT_BIND_PORT      = "9123";
 
 
     /**
@@ -101,6 +101,16 @@ public class DebugeeArgumentHandler extends ArgumentParser {
      */
     public DebugeeArgumentHandler(String args[]) {
         super(args);
+    }
+
+    /**
+     * Return <i>true</i> if <code>-includevirtualthreads</code> command line option
+     * is specified.
+     *
+     * @see #setRawArguments(String[])
+     */
+    public boolean isIncludeVirtualThreads() {
+        return options.getProperty("includevirtualthreads") != null;
     }
 
     /**
@@ -471,7 +481,7 @@ public class DebugeeArgumentHandler extends ArgumentParser {
     }
 
     /**
-     * Return <i>true</i> if JVMDI strict mode for launching debugeeVM is used^
+     * Return <i>true</i> if JVMDI strict mode for launching debugeeVM is used
      * either by specifying in command line or by default.
      *
      * @see #getJVMDIStrictMode()
@@ -648,8 +658,13 @@ public class DebugeeArgumentHandler extends ArgumentParser {
      */
     protected boolean checkOption(String option, String value) {
 
-        if(option.equals("traceAll"))
-            return true;
+        if (option.equals("traceAll")
+            || option.equals("includevirtualthreads")) {
+            if (!(value == null || value.length() == 0)) {
+                throw new BadOption(option + ": no value must be specified");
+            }
+           return true;
+        }
 
         // option with any string value
         if (option.equals("debugee.vmkeys")) {

@@ -30,6 +30,7 @@
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/spinYield.hpp"
 
 static const ZStatCounter ZCounterMarkSeqNumResetContention("Contention", "Mark SeqNum Reset Contention", ZStatUnitOpsPerSecond);
 static const ZStatCounter ZCounterMarkSegmentResetContention("Contention", "Mark Segment Reset Contention", ZStatUnitOpsPerSecond);
@@ -55,33 +56,40 @@ void ZLiveMap::reset(ZGenerationId id) {
   const uint32_t seqnum_initializing = (uint32_t)-1;
   bool contention = false;
 
+  SpinYield yielder(0, 0, 1000);
+
   // Multiple threads can enter here, make sure only one of them
   // resets the marking information while the others busy wait.
   for (uint32_t seqnum = Atomic::load_acquire(&_seqnum);
        seqnum != generation->seqnum();
        seqnum = Atomic::load_acquire(&_seqnum)) {
-    if ((seqnum != seqnum_initializing) &&
-        (Atomic::cmpxchg(&_seqnum, seqnum, seqnum_initializing) == seqnum)) {
-      // Reset marking information
-      _live_bytes = 0;
-      _live_objects = 0;
 
-      // Clear segment claimed/live bits
-      segment_live_bits().clear();
-      segment_claim_bits().clear();
+    if (seqnum != seqnum_initializing) {
+      // No one has claimed initialization of the livemap yet
+      if (Atomic::cmpxchg(&_seqnum, seqnum, seqnum_initializing) == seqnum) {
+        // This thread claimed the initialization
 
-      // We lazily initialize the bitmap the first time the page is marked, i.e.
-      // a bit is about to be set for the first time.
-      initialize_bitmap();
+        // Reset marking information
+        _live_bytes = 0;
+        _live_objects = 0;
 
-      assert(_seqnum == seqnum_initializing, "Invalid");
+        // Clear segment claimed/live bits
+        segment_live_bits().clear();
+        segment_claim_bits().clear();
 
-      // Make sure the newly reset marking information is ordered
-      // before the update of the page seqnum, such that when the
-      // up-to-date seqnum is load acquired, the bit maps will not
-      // contain stale information.
-      Atomic::release_store(&_seqnum, generation->seqnum());
-      break;
+        // We lazily initialize the bitmap the first time the page is marked, i.e.
+        // a bit is about to be set for the first time.
+        initialize_bitmap();
+
+        assert(_seqnum == seqnum_initializing, "Invalid");
+
+        // Make sure the newly reset marking information is ordered
+        // before the update of the page seqnum, such that when the
+        // up-to-date seqnum is load acquired, the bit maps will not
+        // contain stale information.
+        Atomic::release_store(&_seqnum, generation->seqnum());
+        break;
+      }
     }
 
     // Mark reset contention
@@ -93,6 +101,9 @@ void ZLiveMap::reset(ZGenerationId id) {
       log_trace(gc)("Mark seqnum reset contention, thread: " PTR_FORMAT " (%s), map: " PTR_FORMAT,
                     p2i(Thread::current()), ZUtils::thread_name(), p2i(this));
     }
+
+    // "Yield" to allow the thread that's resetting the livemap to finish
+    yielder.wait();
   }
 }
 

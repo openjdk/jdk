@@ -227,7 +227,7 @@ void MetaspaceUtils::print_on(outputStream* out) {
                 stats.reserved()/K);
 
   if (Metaspace::using_class_space()) {
-    StreamAutoIndentor indentor(out, 1);
+    StreamIndentor si(out, 1);
     out->print("class space ");
     out->fill_to(17);
     out->print_cr("used %zuK, "
@@ -598,7 +598,7 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
   if (result == nullptr) {
     // Fallback: reserve anywhere
     log_debug(metaspace, map)("Trying anywhere...");
-    result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), false);
+    result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), mtClass);
   }
 
   // Wrap resulting range in ReservedSpace
@@ -771,7 +771,8 @@ void Metaspace::global_initialize() {
       rs = MemoryReserver::reserve((char*)base,
                                    size,
                                    Metaspace::reserve_alignment(),
-                                   os::vm_page_size());
+                                   os::vm_page_size(),
+                                   mtClass);
 
       if (rs.is_reserved()) {
         log_info(metaspace)("Successfully forced class space address to " PTR_FORMAT, p2i(base));
