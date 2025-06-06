@@ -255,9 +255,9 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     }
   }
 
-  // -XX:UseLibmIntrinsic or -XX:-InlineIntrinsics disables all intrinsics
-  // listed in the following switch statement
-  if (!UseLibmIntrinsic || !InlineIntrinsics) {
+  // -XX:-InlineIntrinsics disables all intrinsics listed in the following
+  // switch statement
+  if (!InlineIntrinsics) {
     switch (id) {
     case vmIntrinsics::_dtanh:
     case vmIntrinsics::_dcbrt:

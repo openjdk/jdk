@@ -396,6 +396,13 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   //        [ hi(arg) ]
   //
 
+  if (!UseLibmIntrinsic) {
+    if (kind == Interpreter::java_lang_math_tanh ||
+        kind == Interpreter::java_lang_math_cbrt) {
+      return nullptr; // Fallback to default implementation
+    }
+  }
+
   if (kind == Interpreter::java_lang_math_fmaD) {
     if (!UseFMA) {
       return nullptr; // Generate a vanilla entry
