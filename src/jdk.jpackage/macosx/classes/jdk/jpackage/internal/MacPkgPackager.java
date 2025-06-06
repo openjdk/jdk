@@ -52,52 +52,30 @@ import javax.xml.transform.stream.StreamSource;
 import jdk.internal.util.Architecture;
 import jdk.internal.util.OSVersion;
 import jdk.jpackage.internal.PackagingPipeline.PackageTaskID;
-import jdk.jpackage.internal.PackagingPipeline.StartupParameters;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.MacPkgPackage;
-import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.resources.ResourceLocator;
 import jdk.jpackage.internal.util.XmlUtils;
 import org.xml.sax.SAXException;
 
-record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> services, Path outputDir) {
+record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> services, Path outputDir) {
+
+    MacPkgPackager {
+        Objects.requireNonNull(env);
+        Objects.requireNonNull(pkg);
+        Objects.requireNonNull(services);
+        Objects.requireNonNull(outputDir);
+    }
+
+    MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Path outputDir) {
+        this(env, pkg, createServices(env, pkg), outputDir);
+    }
 
     enum PkgPackageTaskID implements TaskID {
         PREPARE_MAIN_SCRIPTS,
         CREATE_DISTRIBUTION_XML_FILE,
         CREATE_COMPONENT_PLIST_FILE,
         PREPARE_SERVICES
-    }
-
-    static Builder build() {
-        return new Builder();
-    }
-
-    static final class Builder extends PackagerBuilder<MacPkgPackage, Builder> {
-
-        Path execute() throws PackagerException {
-            Log.verbose(MessageFormat.format(I18N.getString("message.building-pkg"),
-                    pkg.app().name()));
-
-            IOUtils.writableOutputDir(outputDir);
-
-            return execute(MacPackagingPipeline.build(Optional.of(pkg)));
-        }
-
-        @Override
-        protected void configurePackagingPipeline(PackagingPipeline.Builder pipelineBuilder,
-                StartupParameters startupParameters) {
-            final var packager = new MacPkgPackager(pkg, startupParameters.packagingEnv(), createServices(), outputDir);
-            packager.applyToPipeline(pipelineBuilder);
-        }
-
-        private Optional<Services> createServices() {
-            if (pkg.app().isService()) {
-                return Optional.of(Services.create(pkg, env));
-            } else {
-                return Optional.empty();
-            }
-        }
     }
 
     record InternalPackage(Path srcRoot, String identifier, Path path, List<String> otherPkgbuildArgs) {
@@ -230,7 +208,7 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
         private final Optional<String> nameSuffix;
     }
 
-    private void applyToPipeline(PackagingPipeline.Builder pipelineBuilder) {
+    void applyToPipeline(PackagingPipeline.Builder pipelineBuilder) {
         pipelineBuilder
                 .excludeDirFromCopying(outputDir)
                 .task(PkgPackageTaskID.PREPARE_MAIN_SCRIPTS)
@@ -557,6 +535,14 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
 
         final var pb = new ProcessBuilder(commandLine);
         IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
+    }
+
+    private static Optional<Services> createServices(BuildEnv env, MacPkgPackage pkg) {
+        if (pkg.app().isService()) {
+            return Optional.of(Services.create(pkg, env));
+        } else {
+            return Optional.empty();
+        }
     }
 
     private static final String DEFAULT_BACKGROUND_IMAGE = "background_pkg.png";

@@ -26,50 +26,34 @@ package jdk.jpackage.internal;
 
 import java.nio.file.Path;
 import java.util.Objects;
-import jdk.jpackage.internal.PackagingPipeline.StartupParameters;
-import jdk.jpackage.internal.model.Package;
-import jdk.jpackage.internal.model.PackagerException;
+import java.util.stream.Stream;
+import jdk.jpackage.internal.util.Result;
 
-abstract class PackagerBuilder<T extends Package, U extends PackagerBuilder<T, U>> {
+public interface LinuxDebSystemEnvironmentMixin {
+    Path dpkg();
+    Path dpkgdeb();
+    Path fakeroot();
 
-    U pkg(T v) {
-        pkg = v;
-        return thiz();
+    record Stub(Path dpkg, Path dpkgdeb, Path fakeroot) implements LinuxDebSystemEnvironmentMixin {
     }
 
-    U env(BuildEnv v) {
-        env = v;
-        return thiz();
+    static Result<LinuxDebSystemEnvironmentMixin> create() {
+        final var errors = Stream.of(Internal.TOOL_DPKG_DEB, Internal.TOOL_DPKG, Internal.TOOL_FAKEROOT)
+                .map(ToolValidator::new)
+                .map(ToolValidator::validate)
+                .filter(Objects::nonNull)
+                .toList();
+        if (errors.isEmpty()) {
+            return Result.ofValue(new Stub(Internal.TOOL_DPKG, Internal.TOOL_DPKG_DEB, Internal.TOOL_FAKEROOT));
+        } else {
+            return Result.ofErrors(errors);
+        }
     }
 
-    U outputDir(Path v) {
-        outputDir = v;
-        return thiz();
+    final static class Internal {
+
+        private static final Path TOOL_DPKG_DEB = Path.of("dpkg-deb");
+        private static final Path TOOL_DPKG = Path.of("dpkg");
+        private static final Path TOOL_FAKEROOT = Path.of("fakeroot");
     }
-
-    @SuppressWarnings("unchecked")
-    private U thiz() {
-        return (U)this;
-    }
-
-    protected abstract void configurePackagingPipeline(PackagingPipeline.Builder pipelineBuilder,
-            StartupParameters startupParameters);
-
-    Path execute(PackagingPipeline.Builder pipelineBuilder) throws PackagerException {
-        Objects.requireNonNull(pkg);
-        Objects.requireNonNull(env);
-        Objects.requireNonNull(outputDir);
-
-        final var startupParameters = pipelineBuilder.createStartupParameters(env, pkg, outputDir);
-
-        configurePackagingPipeline(pipelineBuilder, startupParameters);
-
-        pipelineBuilder.create().execute(startupParameters);
-
-        return outputDir.resolve(pkg.packageFileNameWithSuffix());
-    }
-
-    protected T pkg;
-    protected BuildEnv env;
-    protected Path outputDir;
 }
