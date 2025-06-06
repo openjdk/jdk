@@ -205,11 +205,7 @@ final class DigitList implements Cloneable {
      */
     public final BigDecimal getBigDecimal() {
         if (count == 0) {
-            if (decimalAt == 0) {
-                return BigDecimal.ZERO;
-            } else {
-                return new BigDecimal("0E" + decimalAt);
-            }
+            return BigDecimal.valueOf(0, -decimalAt);
         }
 
        if (decimalAt == count) {
