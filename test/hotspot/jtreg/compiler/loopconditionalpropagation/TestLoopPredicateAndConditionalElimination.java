@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2025, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,15 +39,15 @@ public class TestLoopPredicateAndConditionalElimination {
     public static void main(String[] args) {
         float[] array = new float[1000];
         for (int i = 0; i < 20_000; i++) {
-//            test1(false, 0);
-//            inlined1(0, array, 42, true, 0);
-//            inlined1(0, array, 2, true, 0);
-//            test2(false, 0, 1000, 1000);
-//            inlined2(0, array, 42, true, 0, 1000, 1000);
-//            inlined2(0, array, 2, true, 0, 1000, 1000);
-//            test3(false, 0);
-//            inlined3(0, array, -42, true, 0);
-//            inlined3(0, array, 2, true, 0);
+            test1(false, 0);
+            inlined1(0, array, 42, true, 0);
+            inlined1(0, array, 2, true, 0);
+            test2(false, 0, 1000, 1000);
+            inlined2(0, array, 42, true, 0, 1000, 1000);
+            inlined2(0, array, 2, true, 0, 1000, 1000);
+            test3(false, 0);
+            inlined3(0, array, -42, true, 0);
+            inlined3(0, array, 2, true, 0);
             test4(false, 0);
             inlined4(0, array, 42, true, 0);
             inlined4(0, array, 2, true, 0);
@@ -163,13 +163,6 @@ public class TestLoopPredicateAndConditionalElimination {
             int k;
             int idx = 0;
             for (k = 0; k < 10; k++) {
-//                if (boolArray[k]) {
-//                    if (boolArray[(k + 1) % 10]) {
-//                        otherIntField = 42;
-//                    }
-//                } else {
-//                    otherIntField = 42;
-//                }
                 final boolean[] localBoolArray = boolArray;
                 if (localBoolArray == null) {
                 }
@@ -190,7 +183,6 @@ public class TestLoopPredicateAndConditionalElimination {
             }
             if (start >= 1000) {
             }
-//            final float unused = array[start + idx];
             if (Long.compareUnsigned(((long) start) + idx, array.length) >= 0) {
 
             }

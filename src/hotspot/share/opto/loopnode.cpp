@@ -4952,6 +4952,7 @@ void PhaseIdealLoop::build_and_optimize() {
 #endif
       }
     } else {
+      // If we made some progress since we last tried Loop Conditional Propagation, give it another try
       C->set_run_loop_conditional_propagation(true);
     }
   }

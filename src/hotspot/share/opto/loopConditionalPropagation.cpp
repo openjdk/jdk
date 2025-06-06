@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2025, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1594,27 +1594,6 @@ void PhaseConditionalPropagation::Transformer::transform_helper(Node* c) {
     transform_when_constant_seen(c, node, t, prev_t);
   };
   _type_table->apply_at_control(c, transform_constant);
-
-  // if (c->is_IfProj()) {
-  //   IfNode* iff = c->in(0)->as_If();
-  //   if (!iff->in(0)->is_top()) {
-  //     Node* bol = iff->in(1);
-  //     const TypeInt* bol_t = bol->bottom_type()->is_int();
-  //     if (bol->Opcode() == Op_OpaqueInitializedAssertionPredicate) {
-  //       bol_t = TypeInt::ONE;
-  //     }
-  //     if (bol_t->is_con()) {
-  //       if (iff->proj_out(bol_t->get_con()) == c) {
-  //         _controls.push(c);
-  //         assert(_type_table->type(c, c) != Type::TOP, "should not be dead");
-  //       }
-  //     } else {
-  //       _controls.push(c);
-  //     }
-  //   }
-  // } else {
-  //   _controls.push(c);
-  // }
 }
 
 // Compute and cache early control for data nodes
@@ -1828,7 +1807,6 @@ PhaseConditionalPropagation::PhaseConditionalPropagation(PhaseIdealLoop* phase, 
 }
 
 void PhaseIdealLoop::conditional_elimination(VectorSet &visited, Node_Stack &nstack, Node_List &rpo_list, int rounds) {
-  C->print_method(PHASE_DEBUG, 2);
   TraceTime tt("loop conditional propagation", UseNewCode);
   PhaseConditionalPropagation pcp(this, visited, nstack, rpo_list);
   pcp.analyze_and_transform(rounds);
