@@ -1261,69 +1261,6 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // Nothing to do beyond of what os::print_cpu_info() does.
 }
 
-static char saved_jvm_path[MAXPATHLEN] = {0};
-
-// Find the full path to the current module, libjvm.so.
-void os::jvm_path(char *buf, jint buflen) {
-  // Error checking.
-  if (buflen < MAXPATHLEN) {
-    assert(false, "must use a large-enough buffer");
-    buf[0] = '\0';
-    return;
-  }
-  // Lazy resolve the path to current module.
-  if (saved_jvm_path[0] != 0) {
-    strcpy(buf, saved_jvm_path);
-    return;
-  }
-
-  Dl_info dlinfo;
-  int ret = dladdr(CAST_FROM_FN_PTR(void *, os::jvm_path), &dlinfo);
-  assert(ret != 0, "cannot locate libjvm");
-  char* rp = os::realpath((char *)dlinfo.dli_fname, buf, buflen);
-  assert(rp != nullptr, "error in realpath(): maybe the 'path' argument is too long?");
-
-  // If executing unit tests we require JAVA_HOME to point to the real JDK.
-  if (Arguments::executing_unit_tests()) {
-    // Look for JAVA_HOME in the environment.
-    char* java_home_var = ::getenv("JAVA_HOME");
-    if (java_home_var != nullptr && java_home_var[0] != 0) {
-
-      // Check the current module name "libjvm.so".
-      const char* p = strrchr(buf, '/');
-      if (p == nullptr) {
-        return;
-      }
-      assert(strstr(p, "/libjvm") == p, "invalid library name");
-
-      stringStream ss(buf, buflen);
-      rp = os::realpath(java_home_var, buf, buflen);
-      if (rp == nullptr) {
-        return;
-      }
-
-      assert((int)strlen(buf) < buflen, "Ran out of buffer room");
-      ss.print("%s/lib", buf);
-
-      if (0 == access(buf, F_OK)) {
-        // Use current module name "libjvm.so"
-        ss.print("/%s/libjvm%s", Abstract_VM_Version::vm_variant(), JNI_LIB_SUFFIX);
-        assert(strcmp(buf + strlen(buf) - strlen(JNI_LIB_SUFFIX), JNI_LIB_SUFFIX) == 0,
-               "buf has been truncated");
-      } else {
-        // Go back to path of .so
-        rp = os::realpath((char *)dlinfo.dli_fname, buf, buflen);
-        if (rp == nullptr) {
-          return;
-        }
-      }
-    }
-  }
-
-  strncpy(saved_jvm_path, buf, sizeof(saved_jvm_path));
-  saved_jvm_path[sizeof(saved_jvm_path) - 1] = '\0';
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Virtual Memory
 
