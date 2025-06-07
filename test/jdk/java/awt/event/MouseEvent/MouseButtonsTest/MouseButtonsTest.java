@@ -49,7 +49,6 @@ import static jdk.test.lib.Asserts.*;
  * @build LWComponent
  * @build LWButton
  * @build LWList
- * @build ExtendedRobot
  * @run main/timeout=600 MouseButtonsTest
  */
 
@@ -69,7 +68,7 @@ public class MouseButtonsTest implements MouseListener {
     private int modifiers = 0;
 
 
-    private final ExtendedRobot robot;
+    private final Robot robot;
 
     private final static int robotDelay = 1000;
     private final static int waitDelay  = 3500;
@@ -81,7 +80,7 @@ public class MouseButtonsTest implements MouseListener {
 
     MouseButtonsTest() throws Exception {
         lock = new Object();
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeAndWait( this::createGUI );
     }
 
@@ -195,7 +194,7 @@ public class MouseButtonsTest implements MouseListener {
             Point center = new Point(xc, yc);
 
             robot.delay(robotDelay);
-            robot.glide(origin, center);
+            robot.glide(origin.x, origin.y, center.x, center.y);
             robot.click();
             robot.delay(robotDelay);
 

@@ -26,6 +26,7 @@ import jtreg.SkippedException;
 
 import java.awt.EventQueue;
 import java.awt.Point;
+import java.awt.Robot;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.event.InputEvent;
@@ -57,11 +58,17 @@ import java.awt.image.BufferedImage;
 public class TrayIconMouseTest {
 
     TrayIcon icon;
+<<<<<<< HEAD
+    Robot robot;
+    boolean actionPerformed = false;
+    Object actionLock = new Object();
+=======
     ExtendedRobot robot;
 
     volatile boolean actionPerformed = false;
     final Object actionLock = new Object();
 
+>>>>>>> 10791477cf0a0a31d2703fc718a7a649d494d534
     static boolean isMacOS = false;
     static boolean isWinOS = false;
     static boolean isOelOS = false;
@@ -99,7 +106,7 @@ public class TrayIconMouseTest {
     }
 
     TrayIconMouseTest() throws Exception {
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeAndWait(this::initializeGUI);
     }
 
