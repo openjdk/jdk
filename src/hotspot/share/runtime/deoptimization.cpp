@@ -1274,11 +1274,11 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
       assert(sv->field_size() % type2size[ak->element_type()] == 0, "non-integral array length");
       int len = sv->field_size() / type2size[ak->element_type()];
       InternalOOMEMark iom(THREAD);
-      obj = ak->allocate(len, THREAD);
+      obj = ak->allocate_instance(len, THREAD);
     } else if (k->is_objArray_klass()) {
       ObjArrayKlass* ak = ObjArrayKlass::cast(k);
       InternalOOMEMark iom(THREAD);
-      obj = ak->allocate(sv->field_size(), THREAD);
+      obj = ak->allocate_instance(sv->field_size(), THREAD);
     }
 
     if (obj == nullptr) {
