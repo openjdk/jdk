@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8141211 8147477
+ * @bug 8141211 8147477 8358080
  * @summary exceptions=info output should have an exception message for interpreter methods
  * @requires vm.flagless
  * @library /test/lib
@@ -45,9 +45,14 @@ public class ExceptionsTest {
 
     static void analyzeOutputOn(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        System.out.println(output.getStdout());
         output.shouldContain("<a 'java/lang/RuntimeException'").shouldContain(": Test exception 1 for logging>");
         output.shouldContain(" thrown in interpreter method ");
-        output.shouldHaveExitValue(0);
+        output.shouldMatch("info..exceptions,stacktrace.*at ExceptionsTest[$]InternalClass.bar[(]ExceptionsTest.java:[0-9]+" +
+                           ".*\n.*" +
+                           "info..exceptions,stacktrace.*at ExceptionsTest[$]InternalClass.foo[(]ExceptionsTest.java:[0-9]+" +
+                           ".*\n.*" +
+                           "info..exceptions,stacktrace.*at ExceptionsTest[$]InternalClass.main[(]ExceptionsTest.java:[0-9]+");
     }
 
     static void analyzeOutputOff(ProcessBuilder pb) throws Exception {
@@ -57,7 +62,7 @@ public class ExceptionsTest {
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:exceptions=info",
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:exceptions,exceptions+stacktrace",
                                                                              InternalClass.class.getName());
         analyzeOutputOn(pb);
 
@@ -66,7 +71,7 @@ public class ExceptionsTest {
         analyzeOutputOff(pb);
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(InternalClass.class.getName());
-        updateEnvironment(pb, "_JAVA_OPTIONS", "-Xlog:exceptions=info");
+        updateEnvironment(pb, "_JAVA_OPTIONS", "-Xlog:exceptions,exceptions+stacktrace");
         analyzeOutputOn(pb);
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(InternalClass.class.getName());
@@ -80,7 +85,15 @@ public class ExceptionsTest {
     }
 
     public static class InternalClass {
-        public static void main(String[] args) throws Exception {
+        public static void main(String[] args) {
+            foo();
+        }
+
+        static void foo() {
+            bar();
+        }
+
+        static void bar() {
             try {
                 throw new RuntimeException("Test exception 1 for logging");
             } catch (Exception e) {
