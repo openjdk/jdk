@@ -35,7 +35,7 @@ extern size_t SpaceAlignment;
 
 class GCArguments {
 protected:
-  // Initialize HeapAlignment, SpaceAlignment, and extra alignments (E.g. GenAlignment)
+  // Initialize HeapAlignment, SpaceAlignment
   virtual void initialize_alignments() = 0;
   virtual void initialize_heap_flags_and_sizes();
   virtual void initialize_size_info();

@@ -117,7 +117,7 @@ class TestGenCollectorPolicy {
         initial_heap_size = InitialHeapSize;
       }
 
-      size_t expected = scale_by_NewRatio_aligned(initial_heap_size, GenAlignment);
+      size_t expected = scale_by_NewRatio_aligned(initial_heap_size, SpaceAlignment);
       ASSERT_EQ(expected, NewSize);
     }
   };
