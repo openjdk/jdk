@@ -561,13 +561,9 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
         public ArchiveContainer(Path archivePath) throws IOException, ProviderNotFoundException {
             this.archivePath = archivePath;
-            Map<String,String> env = new HashMap<>();
-            // ignores timestamps not stored in ZIP central directory, reducing I/O
-            // This key is handled by ZipFileSystem only.
-            env.put("zipinfo-time", "false");
-
+            // Common parameters for opening ZIP/JAR file systems in Javac.
+            Map<String, ?> env = FSInfo.readOnlyJarFSEnv(multiReleaseValue);
             if (multiReleaseValue != null && archivePath.toString().endsWith(".jar")) {
-                env.put("multi-release", multiReleaseValue);
                 FileSystemProvider jarFSProvider = fsInfo.getJarFSProvider();
                 Assert.checkNonNull(jarFSProvider, "should have been caught before!");
                 try {
@@ -577,8 +573,10 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                 }
             } else {
                 // Less common case is possible if the file manager was not initialized in JavacTask,
-                // or if non "*.jar" files are on the classpath.
-                this.fileSystem = FileSystems.newFileSystem(archivePath, env, (ClassLoader)null);
+                // or if non "*.jar" files are on the classpath. If this is not a ZIP/JAR file then it
+                // will ignore ZIP specific parameters in env, and may not end up being read-only.
+                // However Javac should never attempt to write back to archives either way.
+                this.fileSystem = FileSystems.newFileSystem(archivePath, env);
             }
             packages = new HashMap<>();
             for (Path root : fileSystem.getRootDirectories()) {
