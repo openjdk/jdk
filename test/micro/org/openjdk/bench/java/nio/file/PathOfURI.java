@@ -22,6 +22,8 @@
  */
 package org.openjdk.bench.java.nio.file;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Param;
@@ -29,23 +31,15 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 
 @State(Scope.Benchmark)
-public class PathOfString {
-    @Param({"C:\\Users\\foo\\bar\\gus.txt",              // absolute
-            "C:\\Users\\\\foo\\\\bar\\gus.txt",          // ... with extra '\\'s
-            "\\\\.\\UNC\\localhost\\C$\\Users\\foo",     // UNC
-            "\\\\.\\UNC\\localhost\\C$\\\\Users\\\\foo", // ... with extra '\\'s
-            "\\\\?\\C:\\Users\\foo\\bar\\gus.txt",       // long path prefix
-            "\\\\?\\C:\\Users\\\\foo\\bar\\\\gus.txt",   // ... with extra '\\'s
-            ".\\foo\\bar\\gus.txt",                      // relative
-            ".\\foo\\\\bar\\\\gus.txt",                  // ... with extra '\\'s
-            "\\foo\\bar\\gus.txt",                     // current drive-relative
-            "\\foo\\\\bar\\\\gus.txt",                 // ... with extra '\\'s
-            "C:foo\\bar\\gus.txt",         // drive's current directory-relative
-            "C:foo\\\\bar\\\\gus.txt"})    // ... with extra '\\'s
-    public String path;
+public class PathOfURI {
+    @Param({"file:/C:/Users/bpb/git/foo/bar/classes/gus/dir/",
+            "file:/C:/Users/bpb/git/foo/bar/classes/gus/dir",
+            "file:/C:/Users/bpb/git/foo/bar/classes//gus/dir/",
+            "file:/C:/Users/bpb/git/foo/bar/classes//gus/dir"})
+    public String uri;
 
     @Benchmark
-    public Path ofString() {
-        return Path.of(path);
+    public Path ofURI() throws URISyntaxException {
+        return Path.of(new URI(uri));
     }
 }
