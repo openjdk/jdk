@@ -402,6 +402,14 @@ void CallRelocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer
   // The enhanced use of pd_call_destination sorts this all out.
   address orig_addr = old_addr_for(addr(), src, dest);
   address callee    = pd_call_destination(orig_addr);
+
+  if (src->contains(callee)) {
+    // If the original call is to an address in the src CodeBuffer (such as a stub call)
+    // the updated call should be to the corresponding address in dest CodeBuffer
+    ptrdiff_t offset = callee - orig_addr;
+    callee = addr() + offset;
+  }
+
   // Reassert the callee address, this time in the new copy of the code.
   pd_set_call_destination(callee);
 }
@@ -411,6 +419,8 @@ void CallRelocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer
 void trampoline_stub_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) {
   // Finalize owner destination only for nmethods
   if (dest->blob() != nullptr) return;
+  // We either relocate a nmethod residing in CodeCache or just generated code from CodeBuffer
+  assert(src->blob() == nullptr || nativeCall_at(owner())->raw_destination() == owner(), "destination should be empty");
   pd_fix_owner_after_move();
 }
 #endif
