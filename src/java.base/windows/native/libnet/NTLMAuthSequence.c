@@ -47,7 +47,7 @@ static jfieldID ntlm_ctxHandleID;
 static jfieldID ntlm_crdHandleID;
 static jfieldID status_seqCompleteID;
 
-static HINSTANCE lib = NULL;
+// static HINSTANCE lib = NULL;
 
 JNIEXPORT void JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequence_initFirst
 (JNIEnv *env, jclass authseq_clazz, jclass status_clazz)
