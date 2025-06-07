@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,6 +327,11 @@ public class SimpleAsynchronousFileChannelImpl
             return null;
         }
 
+        if (dst.isDirect()) {
+            IOUtil.acquireScope(dst, true);
+            ((DirectBuffer)dst).address();
+        }
+
         final PendingFuture<Integer,A> result = (handler == null) ?
             new PendingFuture<Integer,A>(this) : null;
         Runnable task = new Runnable() {
@@ -349,6 +354,8 @@ public class SimpleAsynchronousFileChannelImpl
                 } finally {
                     end();
                     threads.remove(ti);
+                    if (dst.isDirect())
+                        IOUtil.releaseScope(dst);
                 }
                 if (handler == null) {
                     result.setResult(n, exc);
@@ -381,6 +388,11 @@ public class SimpleAsynchronousFileChannelImpl
             return null;
         }
 
+        if (src.isDirect()) {
+            IOUtil.acquireScope(src, true);
+            ((DirectBuffer)src).address();
+        }
+
         final PendingFuture<Integer,A> result = (handler == null) ?
             new PendingFuture<Integer,A>(this) : null;
         Runnable task = new Runnable() {
@@ -403,6 +415,8 @@ public class SimpleAsynchronousFileChannelImpl
                 } finally {
                     end();
                     threads.remove(ti);
+                    if (src.isDirect())
+                        IOUtil.releaseScope(src);
                 }
                 if (handler == null) {
                     result.setResult(n, exc);
