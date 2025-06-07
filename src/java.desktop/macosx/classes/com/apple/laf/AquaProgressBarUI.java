@@ -43,7 +43,7 @@ import apple.laf.JRSUIState.ValueState;
 import com.apple.laf.AquaUtilControlSize.*;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 
-public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, PropertyChangeListener, AncestorListener, Sizeable {
+public final class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, PropertyChangeListener, AncestorListener, Sizeable {
     private static final boolean ADJUSTTIMER = true;
 
     private static final RecyclableSingleton<SizeDescriptor> sizeDescriptor = new RecyclableSingleton<SizeDescriptor>() {
@@ -76,12 +76,14 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
 
     protected AquaProgressBarUI() { }
 
+    @Override
     public void installUI(final JComponent c) {
         progressBar = (JProgressBar)c;
         installDefaults();
         installListeners();
     }
 
+    @Override
     public void uninstallUI(final JComponent c) {
         uninstallDefaults();
         uninstallListeners();
@@ -114,10 +116,12 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         progressBar.removeChangeListener(this);
     }
 
+    @Override
     public void stateChanged(final ChangeEvent e) {
         progressBar.repaint();
     }
 
+    @Override
     public void propertyChange(final PropertyChangeEvent e) {
         final String prop = e.getPropertyName();
         if ("indeterminate".equals(prop)) {
@@ -137,10 +141,12 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
 
     // listen for Ancestor events to stop our timer when we are no longer visible
     // <rdar://problem/5405035> JProgressBar: UI in Aqua look and feel causes memory leaks
+    @Override
     public void ancestorRemoved(final AncestorEvent e) {
         stopAnimationTimer();
     }
 
+    @Override
     public void ancestorAdded(final AncestorEvent e) {
         if (!progressBar.isIndeterminate()) return;
         if (progressBar.isDisplayable()) {
@@ -148,8 +154,10 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         }
     }
 
+    @Override
     public void ancestorMoved(final AncestorEvent e) { }
 
+    @Override
     public void paint(final Graphics g, final JComponent c) {
         revalidateAnimationTimers(); // revalidate to turn on/off timers when values change
 
@@ -263,6 +271,7 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         return new Dimension(20, 20);
     }
 
+    @Override
     public Dimension getPreferredSize(final JComponent c) {
         if (isCircular) {
             return getCircularPreferredSize();
@@ -322,6 +331,7 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         return size;
     }
 
+    @Override
     public Dimension getMinimumSize(final JComponent c) {
         if (isCircular) {
             return getCircularPreferredSize();
@@ -340,6 +350,7 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         return pref;
     }
 
+    @Override
     public Dimension getMaximumSize(final JComponent c) {
         if (isCircular) {
             return getCircularPreferredSize();
@@ -356,6 +367,7 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         return pref;
     }
 
+    @Override
     public void applySizeFor(final JComponent c, final Size size) {
         painter.state.set(sizeVariant = size == Size.MINI ? Size.SMALL : sizeVariant); // CUI doesn't support mini progress bars right now
     }
@@ -440,7 +452,7 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         progressBar.repaint(repaintRect);
     }
 
-    protected class Animator implements ActionListener {
+    protected final class Animator implements ActionListener {
         private static final int MINIMUM_DELAY = 5;
         private Timer timer;
         private long previousDelay; // used to tune the repaint interval
@@ -476,6 +488,7 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
             timer.stop();
         }
 
+        @Override
         public void actionPerformed(final ActionEvent e) {
             if (!ADJUSTTIMER) {
                 repaint();

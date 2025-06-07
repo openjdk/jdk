@@ -36,7 +36,7 @@ import javax.swing.*;
 import static sun.awt.AWTAccessor.*;
 
 @SuppressWarnings("serial") // JDK implementation class
-public class ScreenMenuBar extends MenuBar
+public final class ScreenMenuBar extends MenuBar
         implements ContainerListener, ScreenMenuPropertyHandler,
                    ComponentListener {
 
@@ -53,6 +53,7 @@ public class ScreenMenuBar extends MenuBar
         fSubmenus = new Hashtable<JMenu, ScreenMenu>(fSwingBar.getMenuCount());
     }
 
+    @Override
     public void addNotify() {
         super.addNotify();
 
@@ -82,6 +83,7 @@ public class ScreenMenuBar extends MenuBar
         }
     }
 
+    @Override
     public void removeNotify() {
         // KCH - 3974930 - We do null checks for fSwingBar and fSubmenus because some people are using
         // reflection to muck about with our ivars
@@ -110,6 +112,7 @@ public class ScreenMenuBar extends MenuBar
     /**
      * Invoked when a component has been added to the container.
      */
+    @Override
     public void componentAdded(final ContainerEvent e) {
         final Component child = e.getChild();
         if (!(child instanceof JMenu)) return;
@@ -119,6 +122,7 @@ public class ScreenMenuBar extends MenuBar
     /**
      * Invoked when a component has been removed from the container.
      */
+    @Override
     public void componentRemoved(final ContainerEvent e) {
           final Component child = e.getChild();
           if (!(child instanceof JMenu)) return;
@@ -128,11 +132,13 @@ public class ScreenMenuBar extends MenuBar
     /**
         * Invoked when the component's size changes.
      */
+    @Override
     public void componentResized(final ComponentEvent e)  {}
 
     /**
         * Invoked when the component's position changes.
      */
+    @Override
     public void componentMoved(final ComponentEvent e)  {}
 
     /**
@@ -140,6 +146,7 @@ public class ScreenMenuBar extends MenuBar
      * See componentHidden - we should still have a MenuItem
      * it just isn't inserted
      */
+    @Override
     public void componentShown(final ComponentEvent e) {
         final Object source = e.getSource();
         if (!(source instanceof JMenuItem)) return;
@@ -152,6 +159,7 @@ public class ScreenMenuBar extends MenuBar
      * so we remove the ScreenMenuItem from the ScreenMenu
      * but leave it in fItems
      */
+    @Override
     public void componentHidden(final ComponentEvent e)  {
         final Object source = e.getSource();
         if (!(source instanceof JMenuItem)) return;
@@ -163,6 +171,7 @@ public class ScreenMenuBar extends MenuBar
      * so we just add or remove the child from the ScreenMenuBar
      * but leave it in the list
      */
+    @Override
     public void setChildVisible(final JMenuItem child, final boolean b) {
         if (child instanceof JMenu) {
             if (b) {
@@ -184,9 +193,12 @@ public class ScreenMenuBar extends MenuBar
         }
     }
 
+    @Override
     public void setIcon(final Icon i) {}
+    @Override
     public void setLabel(final String s) {}
 
+    @Override
     public void setEnabled(final boolean b) {
         final int count = fSwingBar.getMenuCount();
         for (int i = 0; i < count; i++) {
@@ -194,10 +206,13 @@ public class ScreenMenuBar extends MenuBar
         }
     }
 
+    @Override
     public void setAccelerator(final KeyStroke ks) {}
+    @Override
     public void setToolTipText(final String tooltip) {}
 
     // only check and radio items can be indeterminate
+    @Override
     public void setIndeterminate(boolean indeterminate) { }
 
     ScreenMenu addSubmenu(final JMenu m) {

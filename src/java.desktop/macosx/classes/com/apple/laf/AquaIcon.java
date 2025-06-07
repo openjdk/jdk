@@ -39,7 +39,7 @@ import com.apple.laf.AquaUtilControlSize.*;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 import sun.lwawt.macosx.CImage;
 
-public class AquaIcon {
+public final class AquaIcon {
     interface InvertableIcon extends Icon {
         public Icon getInvertedIcon();
     }
@@ -77,6 +77,7 @@ public class AquaIcon {
     abstract static class JRSUIIcon implements Icon, UIResource {
         protected final AquaPainter<JRSUIState> painter = AquaPainter.create(JRSUIState.getInstance());
 
+        @Override
         public void paintIcon(final Component c, final Graphics g, final int x, final int y) {
             painter.paint(g, c, x, y, getIconWidth(), getIconHeight());
         }
@@ -94,14 +95,17 @@ public class AquaIcon {
 
         public abstract void initJRSUIState();
 
+        @Override
         public int getIconHeight() {
             return sizeVariant == null ? 0 : sizeVariant.h;
         }
 
+        @Override
         public int getIconWidth() {
             return sizeVariant == null ? 0 : sizeVariant.w;
         }
 
+        @Override
         public void paintIcon(final Component c, final Graphics g, final int x, final int y) {
             final Size size = c instanceof JComponent ? AquaUtilControlSize.getUserSizeFrom((JComponent)c) : Size.REGULAR;
             sizeVariant = sizeDescriptor.get(size);
@@ -142,6 +146,7 @@ public class AquaIcon {
             return getImage() != null;
         }
 
+        @Override
         public void paintIcon(final Component c, Graphics g, final int x, final int y) {
             g = g.create();
 
@@ -158,10 +163,12 @@ public class AquaIcon {
             g.dispose();
         }
 
+        @Override
         public int getIconWidth() {
             return width;
         }
 
+        @Override
         public int getIconHeight() {
             return height;
         }
@@ -214,7 +221,7 @@ public class AquaIcon {
         }
     }
 
-    static class FileIcon extends CachingScalingIcon {
+    static final class FileIcon extends CachingScalingIcon {
         final File file;
 
         public FileIcon(final File file, final int width, final int height) {
@@ -226,12 +233,13 @@ public class AquaIcon {
             this(file, 16, 16);
         }
 
+        @Override
         Image createImage() {
             return CImage.createImageOfFile(file.getAbsolutePath(), getIconWidth(), getIconHeight());
         }
     }
 
-    static class SystemIconSingleton extends RecyclableSingleton<SystemIcon> {
+    static final class SystemIconSingleton extends RecyclableSingleton<SystemIcon> {
         final String selector;
 
         public SystemIconSingleton(String selector) {
@@ -244,7 +252,7 @@ public class AquaIcon {
         }
     }
 
-    static class SystemIconUIResourceSingleton extends RecyclableSingleton<IconUIResource> {
+    static final class SystemIconUIResourceSingleton extends RecyclableSingleton<IconUIResource> {
         final String selector;
 
         public SystemIconUIResourceSingleton(String selector) {
@@ -257,7 +265,7 @@ public class AquaIcon {
         }
     }
 
-    static class SystemIcon extends CachingScalingIcon {
+    static final class SystemIcon extends CachingScalingIcon {
         private static final SystemIconUIResourceSingleton folderIcon = new SystemIconUIResourceSingleton("fldr");
         static IconUIResource getFolderIconUIResource() { return folderIcon.get(); }
 
@@ -299,6 +307,7 @@ public class AquaIcon {
             this(iconSelector, 16, 16);
         }
 
+        @Override
         Image createImage() {
             return CImage.createSystemImageFromSelector(
                     selector, getIconWidth(), getIconHeight());

@@ -39,7 +39,7 @@ import java.awt.image.RescaleOp;
 
 import static sun.java2d.metal.MTLContext.MTLContextCaps.CAPS_EXT_BIOP_SHADER;
 
-class MTLBufImgOps extends BufferedBufImgOps {
+final class MTLBufImgOps extends BufferedBufImgOps {
 
     /**
      * This method is called from MTLDrawImage.transformImage() only.  It

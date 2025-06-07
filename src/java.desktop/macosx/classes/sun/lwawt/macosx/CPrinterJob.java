@@ -984,7 +984,7 @@ public final class CPrinterJob extends RasterPrinterJob {
     // FlipPageFormat preserves the original PageFormat class
     // to pass it to Printable.print(Graphics, PageFormat, int)
     // method overridden by a user.
-    private static class FlipPageFormat extends PageFormat {
+    private static final class FlipPageFormat extends PageFormat {
 
         private final PageFormat original;
 

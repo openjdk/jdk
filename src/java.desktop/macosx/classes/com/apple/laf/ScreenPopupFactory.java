@@ -31,7 +31,7 @@ import javax.swing.*;
 import sun.lwawt.macosx.CPlatformWindow;
 import sun.swing.SwingAccessor;
 
-class ScreenPopupFactory extends PopupFactory {
+final class ScreenPopupFactory extends PopupFactory {
     static final Float TRANSLUCENT = 248f/255f;
     static final Float OPAQUE = 1.0f;
 
@@ -50,6 +50,7 @@ class ScreenPopupFactory extends PopupFactory {
         return (Window)w;
     }
 
+    @Override
     public Popup getPopup(final Component comp, final Component invoker, final int x, final int y) {
         if (invoker == null) throw new IllegalArgumentException("Popup.getPopup must be passed non-null contents");
 

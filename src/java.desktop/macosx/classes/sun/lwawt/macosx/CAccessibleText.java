@@ -38,7 +38,7 @@ import javax.accessibility.AccessibleText;
 import javax.swing.text.Element;
 import javax.swing.text.JTextComponent;
 
-class CAccessibleText {
+final class CAccessibleText {
     static AccessibleEditableText getAccessibleEditableText(final Accessible a, final Component c) {
         if (a == null) return null;
 
