@@ -33,6 +33,7 @@ import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.MemorySegment;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 
 import static java.lang.foreign.ValueLayout.*;
@@ -71,7 +72,12 @@ public final class StringSupport {
         final int len = strlenByte(segment, offset, segment.byteSize());
         final byte[] bytes = new byte[len];
         MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, len);
-        return new String(bytes, charset);
+        try {
+            return JAVA_LANG_ACCESS.uncheckedNewStringNoRepl(bytes, charset);
+        } catch (CharacterCodingException _) {
+            // use replacement characters for malformed input
+            return new String(bytes, charset);
+        }
     }
 
     @ForceInline
@@ -85,7 +91,12 @@ public final class StringSupport {
         int len = strlenShort(segment, offset, segment.byteSize());
         byte[] bytes = new byte[len];
         MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, len);
-        return new String(bytes, charset);
+        try {
+            return JAVA_LANG_ACCESS.uncheckedNewStringNoRepl(bytes, charset);
+        } catch (CharacterCodingException _) {
+          // use replacement characters for malformed input
+          return new String(bytes, charset);
+        }
     }
 
     @ForceInline
@@ -99,7 +110,12 @@ public final class StringSupport {
         int len = strlenInt(segment, offset, segment.byteSize());
         byte[] bytes = new byte[len];
         MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, len);
-        return new String(bytes, charset);
+        try {
+            return JAVA_LANG_ACCESS.uncheckedNewStringNoRepl(bytes, charset);
+        } catch (CharacterCodingException _) {
+            // use replacement characters for malformed input
+            return new String(bytes, charset);
+        }
     }
 
     @ForceInline
