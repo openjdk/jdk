@@ -181,6 +181,9 @@ public enum KnownOIDs {
     ML_KEM_768("2.16.840.1.101.3.4.4.2", "ML-KEM-768"),
     ML_KEM_1024("2.16.840.1.101.3.4.4.3", "ML-KEM-1024"),
 
+    // X-Wing
+    X_WING("1.3.6.1.4.1.62253.25722", "X-Wing"),
+
     // RSASecurity
     // PKCS1 1.2.840.113549.1.1.*
     PKCS1("1.2.840.113549.1.1", "RSA", false), // RSA KeyPairGenerator and KeyFactory
