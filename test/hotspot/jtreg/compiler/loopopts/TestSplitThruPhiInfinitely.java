@@ -52,6 +52,6 @@ public class TestSplitThruPhiInfinitely {
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:-PartialPeelLoop");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-PartialPeelLoop");
     }
 }

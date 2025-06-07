@@ -86,7 +86,7 @@ public class TestMemorySegmentUnalignedAddress {
         framework.addFlags("-DmemorySegmentProviderNameForTestVM=" + args[0]);
         if (args.length > 1) {
             switch (args[1]) {
-                case "AlignVector" ->       { framework.addFlags("-XX:+AlignVector"); }
+                case "AlignVector" ->       { framework.addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:+AlignVector"); }
                 case "VerifyAlignVector" -> { framework.addFlags("-XX:+AlignVector", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+VerifyAlignVector"); }
                 default ->                  { throw new RuntimeException("unexpected: " + args[1]); }
             }
