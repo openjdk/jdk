@@ -316,7 +316,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_dtanh:
   case vmIntrinsics::_dcbrt:
-    if (!InlineMathNatives) return true;
+    if (!InlineMathNatives || !InlineIntrinsics) return true;
     break;
   case vmIntrinsics::_floatToFloat16:
   case vmIntrinsics::_float16ToFloat:
