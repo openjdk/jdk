@@ -106,6 +106,13 @@ instruct zLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
   match(Set dst (LoadP mem));
   predicate(UseZGC && !needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
   effect(TEMP dst, KILL cr);
+  // The main load is a candidate to implement implicit null checks, as long as
+  // legitimize_address() does not require a preceding lea instruction to
+  // materialize the memory operand. The absence of a preceding lea instruction
+  // is guaranteed for immLoffset8 memory operands, because these do not lead to
+  // out-of-range offsets (see definition of immLoffset8). Fortunately,
+  // immLoffset8 memory operands are the most common ones in practice.
+  ins_is_late_expanded_null_check_candidate(opnd_array(1)->opcode() == INDOFFL8);
 
   ins_cost(4 * INSN_COST);
 
@@ -117,7 +124,11 @@ instruct zLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
       // Fix up any out-of-range offsets.
       assert_different_registers(rscratch2, as_Register($mem$$base));
       assert_different_registers(rscratch2, $dst$$Register);
-      ref_addr = __ legitimize_address(ref_addr, 8, rscratch2);
+      int size = 8;
+      assert(!this->is_late_expanded_null_check_candidate() ||
+             !MacroAssembler::legitimize_address_requires_lea(ref_addr, size),
+             "an instruction that can be used for implicit null checking should emit the candidate memory access first");
+      ref_addr = __ legitimize_address(ref_addr, size, rscratch2);
     }
     __ ldr($dst$$Register, ref_addr);
     z_load_barrier(masm, this, ref_addr, $dst$$Register, rscratch1);
