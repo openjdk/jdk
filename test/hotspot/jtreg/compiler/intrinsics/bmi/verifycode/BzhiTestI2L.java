@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,21 @@ public class BzhiTestI2L extends BmiIntrinsicBase.BmiTestCase_x64 {
             (byte) 0x62,    // 00010 implied 0F 38 leading opcode bytes
             (byte) 0xA8,
             (byte) 0xF5};
+
+        // from intel apx specifications EVEX.128.NP.0F38.W0 F5 /r
+        instrMaskAPX = new byte[]{
+                (byte) 0xFF,
+                (byte) 0x07,
+                (byte) 0x00,
+                (byte) 0x00,
+                (byte) 0xFF};
+
+        instrPatternAPX = new byte[]{
+                (byte) 0x62, // fixed prefix byte 0x62 for extended EVEX instruction
+                (byte) 0x02, // 00010 implied 0F 38 leading opcode bytes
+                (byte) 0x00,
+                (byte) 0x00,
+                (byte) 0xF5};
     }
 
     public static void main(String[] args) throws Exception {
