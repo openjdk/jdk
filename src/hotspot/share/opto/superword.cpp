@@ -2535,6 +2535,39 @@ VStatus VLoopBody::construct() {
   return VStatus::make_success();
 }
 
+// Returns true if the given operation can be vectorized with "truncation" where the upper bits in the integer do not
+// contribute to the result. This is true for most arithmetic operations, but false for operations such as
+// leading/trailing zero count.
+static bool can_subword_truncate(Node* in, const Type* type) {
+  if (in->is_Load() || in->is_Store() || in->is_Convert() || in->is_Phi()) {
+    return true;
+  }
+
+  int opc = in->Opcode();
+
+  // For shorts and chars, check an additional set of nodes.
+  if (type == TypeInt::SHORT || type == TypeInt::CHAR) {
+    switch (opc) {
+    case Op_ReverseBytesS:
+    case Op_ReverseBytesUS:
+      return true;
+    }
+  }
+
+  switch (opc) {
+  case Op_AddI:
+  case Op_SubI:
+  case Op_MulI:
+  case Op_AndI:
+  case Op_OrI:
+  case Op_XorI:
+    return true;
+  }
+
+  // Default to disallowing vector truncation
+  return false;
+}
+
 void VLoopTypes::compute_vector_element_type() {
 #ifndef PRODUCT
   if (_vloop.is_trace_vector_element_type()) {
@@ -2589,18 +2622,19 @@ void VLoopTypes::compute_vector_element_type() {
             // be vectorized if the higher order bits info is imprecise.
             const Type* vt = vtn;
             int op = in->Opcode();
-            if (VectorNode::is_shift_opcode(op) || op == Op_AbsI || op == Op_ReverseBytesI) {
+            if (!can_subword_truncate(in, vt)) {
               Node* load = in->in(1);
-              if (load->is_Load() &&
+              // For certain operations such as shifts and abs(), use the size of the load if it exists
+              if ((VectorNode::is_shift_opcode(op) || op == Op_AbsI) && load->is_Load() &&
                   _vloop.in_bb(load) &&
                   (velt_type(load)->basic_type() == T_INT)) {
                 // Only Load nodes distinguish signed (LoadS/LoadB) and unsigned
                 // (LoadUS/LoadUB) values. Store nodes only have one version.
                 vt = velt_type(load);
               } else if (op != Op_LShiftI) {
-                // Widen type to int to avoid the creation of vector nodes. Note
+                // Widen type to the node type to avoid the creation of vector nodes. Note
                 // that left shifts work regardless of the signedness.
-                vt = TypeInt::INT;
+                vt = container_type(in);
               }
             }
             set_velt_type(in, vt);
