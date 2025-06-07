@@ -35,6 +35,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
@@ -67,6 +69,12 @@ public class VarTree {
                  "java.lang.String testVar");
         test.run("java.util.function.Consumer<String> c = (|var testVar|) -> {};",
                  "java.lang.String testVar");
+        test.run("java.util.function.Consumer<String> c = (|final var testVar|) -> {};",
+                 "final java.lang.String testVar");
+        test.run("record Rec(int x) { }; switch (null) { case Rec(|var testVar|) -> {} default -> {} };",
+                 "int testVar");
+        test.run("record Rec(int x) { }; switch (null) { case Rec(|final var testVar|) -> {} default -> {} };",
+                 "final int testVar");
     }
 
     void run(String code, String expected) throws IOException {
@@ -115,12 +123,15 @@ public class VarTree {
     private void runSpanCheck(JavacTask ct, Iterable<? extends CompilationUnitTree> units, String src, int spanStart, int spanEnd) {
         Trees trees = Trees.instance(ct);
         boolean[] found = new boolean[1];
+        Pattern varPat = Pattern.compile("(?<!\\p{javaJavaIdentifierPart})var(?!\\p{javaJavaIdentifierPart})");
 
         for (CompilationUnitTree cut : units) {
             new TreeScanner<Void, Void>() {
                 @Override
                 public Void visitVariable(VariableTree node, Void p) {
                     if (node.getName().contentEquals("testVar")) {
+
+                        // Verify start and position of the variable declaration
                         int start = (int) trees.getSourcePositions().getStartPosition(cut, node);
                         int end   = (int) trees.getSourcePositions().getEndPosition(cut, node);
 
@@ -130,10 +141,19 @@ public class VarTree {
                             throw new AssertionError("Unexpected span: " + snip);
                         }
 
+                        // Verify start and position of the variable type
                         int typeStart = (int) trees.getSourcePositions().getStartPosition(cut, node.getType());
                         int typeEnd   = (int) trees.getSourcePositions().getEndPosition(cut, node.getType());
 
-                        if (typeStart != (-1) && typeEnd != (-1)) {
+                        Matcher matcher;
+                        if (node.getType() != null && (matcher = varPat.matcher(src)).find(start)) {
+                            if (typeStart != matcher.start()) {
+                                throw new AssertionError("Unexpected type start: " + typeStart + " != " + matcher.start());
+                            }
+                            if (typeEnd != matcher.end()) {
+                                throw new AssertionError("Unexpected type end: " + typeEnd + " != " + matcher.end());
+                            }
+                        } else if (typeStart != (-1) && typeEnd != (-1)) {
                             throw new AssertionError("Unexpected type position: " + typeStart + ", " + typeEnd);
                         }
 

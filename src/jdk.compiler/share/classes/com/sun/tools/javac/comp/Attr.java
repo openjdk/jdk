@@ -5717,6 +5717,9 @@ public class Attr extends JCTree.Visitor {
     private void setSyntheticVariableType(JCVariableDecl tree, Type type) {
         if (type.isErroneous()) {
             tree.vartype = make.at(tree.pos()).Erroneous();
+        } else if (tree.declaredUsingVar()) {       // set the type's start and end positions to match the "var" keyword
+            Assert.check(tree.typePos != Position.NOPOS);
+            tree.vartype = make.at(tree.typePos, tree.typePos + names.var.length(), env.toplevel.endPositions).Type(type);
         } else {
             tree.vartype = make.at(tree.pos()).Type(type);
         }
