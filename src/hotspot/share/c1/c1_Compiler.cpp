@@ -142,7 +142,7 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_arraycopy:
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:
-  case vmIntrinsics::_Reference_get:
+  case vmIntrinsics::_Reference_get0:
     // Use the intrinsic version of Reference.get() so that the value in
     // the referent field can be registered by the G1 pre-barrier code.
     // Also to prevent commoning reads from this field across safepoint
