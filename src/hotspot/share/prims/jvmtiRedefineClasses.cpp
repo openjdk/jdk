@@ -1356,7 +1356,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
     InstanceKlass* the_class = get_ik(_class_defs[i].klass);
 
     log_debug(redefine, class, load)
-      ("loading name=%s kind=%d (avail_mem=" UINT64_FORMAT "K)",
+      ("loading name=%s kind=%d (avail_mem= %zu" "K)",
        the_class->external_name(), _class_load_kind, os::available_memory() >> 10);
 
     ClassFileStream st((u1*)_class_defs[i].class_bytes,
@@ -1523,7 +1523,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
     }
 
     log_debug(redefine, class, load)
-      ("loaded name=%s (avail_mem=" UINT64_FORMAT "K)", the_class->external_name(), os::available_memory() >> 10);
+      ("loaded name=%s (avail_mem= %zu" "K)", the_class->external_name(), os::available_memory() >> 10);
   }
 
   return JVMTI_ERROR_NONE;
@@ -4414,7 +4414,7 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
     // increment the classRedefinedCount field in the_class and in any
     // direct and indirect subclasses of the_class
     log_info(redefine, class, load)
-      ("redefined name=%s, count=%d (avail_mem=" UINT64_FORMAT "K)",
+      ("redefined name=%s, count=%d (avail_mem= %zu" "K)",
        the_class->external_name(), java_lang_Class::classRedefinedCount(the_class->java_mirror()), os::available_memory() >> 10);
     Events::log_redefinition(current, "redefined class name=%s, count=%d",
                              the_class->external_name(),

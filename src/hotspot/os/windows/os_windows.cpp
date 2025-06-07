@@ -848,39 +848,39 @@ jlong os::elapsed_frequency() {
 }
 
 
-julong os::available_memory() {
+size_t os::available_memory() {
   return win32::available_memory();
 }
 
-julong os::free_memory() {
+size_t os::free_memory() {
   return win32::available_memory();
 }
 
-julong os::win32::available_memory() {
+size_t os::win32::available_memory() {
   // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
   // value if total memory is larger than 4GB
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   GlobalMemoryStatusEx(&ms);
 
-  return (julong)ms.ullAvailPhys;
+  return static_cast<size_t>(ms.ullAvailPhys);
 }
 
-jlong os::total_swap_space() {
+ptrdiff_t os::total_swap_space() {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   GlobalMemoryStatusEx(&ms);
-  return (jlong) ms.ullTotalPageFile;
+  return static_cast<ptrdiff_t>(ms.ullTotalPageFile);
 }
 
-jlong os::free_swap_space() {
+ptrdiff_t os::free_swap_space() {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   GlobalMemoryStatusEx(&ms);
-  return (jlong) ms.ullAvailPageFile;
+  return static_cast<ptrdiff_t>(ms.ullAvailPageFile);
 }
 
-julong os::physical_memory() {
+size_t os::physical_memory() {
   return win32::physical_memory();
 }
 
@@ -3900,7 +3900,7 @@ int os::current_process_id() {
 int    os::win32::_processor_type            = 0;
 // Processor level is not available on non-NT systems, use vm_version instead
 int    os::win32::_processor_level           = 0;
-julong os::win32::_physical_memory           = 0;
+size_t os::win32::_physical_memory           = 0;
 
 bool   os::win32::_is_windows_server         = false;
 
