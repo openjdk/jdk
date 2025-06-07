@@ -2807,13 +2807,13 @@ public class IRNode {
 
     public static final String MOD_F = PREFIX + "MOD_F" + POSTFIX;
     static {
-        String regex = START + "ModF" + MID + END;
+        String regex = START + "PureModF" + MID + END;
         macroNodes(MOD_F, regex);
     }
 
     public static final String MOD_D = PREFIX + "MOD_D" + POSTFIX;
     static {
-        String regex = START + "ModD" + MID + END;
+        String regex = START + "PureModD" + MID + END;
         macroNodes(MOD_D, regex);
     }
 
