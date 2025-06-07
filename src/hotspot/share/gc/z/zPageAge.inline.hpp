@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,40 +21,32 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZALLOCATOR_INLINE_HPP
-#define SHARE_GC_Z_ZALLOCATOR_INLINE_HPP
+#ifndef SHARE_GC_Z_ZPAGEAGE_INLINE_HPP
+#define SHARE_GC_Z_ZPAGEAGE_INLINE_HPP
 
-#include "gc/z/zAllocator.hpp"
+#include "gc/z/zPageAge.hpp"
 
-#include "gc/z/zAddress.inline.hpp"
-#include "gc/z/zHeap.hpp"
-#include "gc/z/zPageAge.inline.hpp"
+#include "utilities/checkedCast.hpp"
 
-inline ZAllocatorEden* ZAllocator::eden() {
-  return _eden;
+#include <type_traits>
+
+inline uint untype(ZPageAge age) {
+  return static_cast<uint>(age);
 }
 
-inline ZAllocatorForRelocation* ZAllocator::relocation(ZPageAge page_age) {
-  return _relocation[untype(page_age - 1)];
+inline ZPageAge to_zpageage(uint age) {
+  assert(age < ZPageAgeCount, "Invalid age");
+  return static_cast<ZPageAge>(age);
 }
 
-inline ZAllocatorForRelocation* ZAllocator::old() {
-  return relocation(ZPageAge::old);
+inline ZPageAge operator+(ZPageAge age, size_t size) {
+  const auto size_value = checked_cast<std::underlying_type_t<ZPageAge>>(size);
+  return to_zpageage(untype(age) + size_value);
 }
 
-inline zaddress ZAllocatorEden::alloc_tlab(size_t size) {
-  guarantee(size <= ZHeap::heap()->max_tlab_size(), "TLAB too large");
-  return _object_allocator.alloc_object(size);
+inline ZPageAge operator-(ZPageAge age, size_t size) {
+  const auto size_value = checked_cast<std::underlying_type_t<ZPageAge>>(size);
+  return to_zpageage(untype(age) - size_value);
 }
 
-inline zaddress ZAllocatorEden::alloc_object(size_t size) {
-  const zaddress addr = _object_allocator.alloc_object(size);
-
-  if (is_null(addr)) {
-    ZHeap::heap()->out_of_memory();
-  }
-
-  return addr;
-}
-
-#endif // SHARE_GC_Z_ZALLOCATOR_INLINE_HPP
+#endif // SHARE_GC_Z_ZPAGEAGE_INLINE_HPP
