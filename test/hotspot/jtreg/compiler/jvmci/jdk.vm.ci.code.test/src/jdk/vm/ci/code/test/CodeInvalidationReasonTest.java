@@ -49,7 +49,7 @@ import org.junit.Test;
 import java.lang.reflect.Method;
 
 /**
- * Test simple code installation.
+ * Test if passing InstalledCode changeReason around works.
  */
 public class CodeInvalidationReasonTest extends CodeInstallationTest {
 
