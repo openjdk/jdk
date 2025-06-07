@@ -100,6 +100,10 @@ final class AppImageSigner {
 
     private void sign(MacApplication app, Path appImage) throws CodesignException, IOException {
 
+        if (!app.imageLayout().runtimeDirectory().getName(0).equals(Path.of("Contents"))) {
+            throw new IllegalArgumentException();
+        }
+
         final var fileFilter = new SignFilter(app, appImage);
 
         try (var content = Files.walk(appImage)) {

@@ -22,35 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.jpackage.internal;
 
-import java.nio.file.Path;
-import java.util.Objects;
-import java.util.Optional;
-import jdk.jpackage.internal.model.AppImageLayout;
-import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.MacPackage;
 
-record AppImageDesc(AppImageLayout appImageLayout, Path path) {
+final class MacBuildEnvFromParams {
 
-    AppImageDesc {
-        Objects.requireNonNull(appImageLayout);
-        Objects.requireNonNull(path);
-    }
-
-    AppImageLayout resolvedAppImagelayout() {
-        return appImageLayout.resolveAt(path);
-    }
-
-    Optional<ApplicationLayout> asResolvedApplicationLayout() {
-        return asApplicationLayout().map(v -> v.resolveAt(path));
-    }
-
-    Optional<ApplicationLayout> asApplicationLayout() {
-        if (appImageLayout instanceof ApplicationLayout layout) {
-            return Optional.of(layout);
-        } else {
-            return Optional.empty();
-        }
-    }
+    static final BundlerParamInfo<BuildEnv> BUILD_ENV = BundlerParamInfo.createBundlerParam(BuildEnv.class, params -> {
+        return BuildEnvFromParams.create(params, MacPackage::guessRuntimeLayout);
+    });
 }

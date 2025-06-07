@@ -26,50 +26,73 @@ package jdk.jpackage.internal;
 
 import java.nio.file.Path;
 import java.util.Objects;
-import jdk.jpackage.internal.PackagingPipeline.StartupParameters;
+import java.util.Optional;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackagerException;
 
-abstract class PackagerBuilder<T extends Package, U extends PackagerBuilder<T, U>> {
+final class PackagerBuilder<T extends Package> {
 
-    U pkg(T v) {
+    PackagerBuilder<T> pkg(T v) {
         pkg = v;
-        return thiz();
+        return this;
     }
 
-    U env(BuildEnv v) {
+    PackagerBuilder<T> env(BuildEnv v) {
         env = v;
-        return thiz();
+        return this;
     }
 
-    U outputDir(Path v) {
+    PackagerBuilder<T> outputDir(Path v) {
         outputDir = v;
-        return thiz();
+        return this;
     }
 
-    @SuppressWarnings("unchecked")
-    private U thiz() {
-        return (U)this;
+    PackagerBuilder<T> pipelineBuilderMutator(PackagingPipelineMutator<T> v) {
+        pipelineBuilderMutator = v;
+        return this;
     }
 
-    protected abstract void configurePackagingPipeline(PackagingPipeline.Builder pipelineBuilder,
-            StartupParameters startupParameters);
+    T pkg() {
+        return Objects.requireNonNull(pkg);
+    }
+
+    Path outputDir() {
+        return Objects.requireNonNull(outputDir);
+    }
+
+    BuildEnv env() {
+        return Objects.requireNonNull(env);
+    }
 
     Path execute(PackagingPipeline.Builder pipelineBuilder) throws PackagerException {
         Objects.requireNonNull(pkg);
         Objects.requireNonNull(env);
         Objects.requireNonNull(outputDir);
 
+        IOUtils.writableOutputDir(outputDir);
+
         final var startupParameters = pipelineBuilder.createStartupParameters(env, pkg, outputDir);
 
-        configurePackagingPipeline(pipelineBuilder, startupParameters);
+        pipelineBuilderMutator().ifPresent(m -> m.mutate(pipelineBuilder, startupParameters.packagingEnv(), pkg, outputDir));
 
         pipelineBuilder.create().execute(startupParameters);
 
         return outputDir.resolve(pkg.packageFileNameWithSuffix());
     }
 
-    protected T pkg;
-    protected BuildEnv env;
-    protected Path outputDir;
+
+    @FunctionalInterface
+    interface PackagingPipelineMutator<T extends Package> {
+        void mutate(PackagingPipeline.Builder pipelineBuilder, BuildEnv env, T pkg, Path outputDir);
+    }
+
+
+    private Optional<PackagingPipelineMutator<T>> pipelineBuilderMutator() {
+        return Optional.ofNullable(pipelineBuilderMutator);
+    }
+
+    private T pkg;
+    private BuildEnv env;
+    private Path outputDir;
+    private PackagingPipelineMutator<T> pipelineBuilderMutator;
 }

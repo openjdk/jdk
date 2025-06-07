@@ -52,7 +52,6 @@ import javax.xml.transform.stream.StreamSource;
 import jdk.internal.util.Architecture;
 import jdk.internal.util.OSVersion;
 import jdk.jpackage.internal.PackagingPipeline.PackageTaskID;
-import jdk.jpackage.internal.PackagingPipeline.StartupParameters;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.MacPkgPackage;
 import jdk.jpackage.internal.model.PackagerException;
@@ -73,31 +72,47 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
         return new Builder();
     }
 
-    static final class Builder extends PackagerBuilder<MacPkgPackage, Builder> {
+    static final class Builder {
+
+        Builder() {
+            builder = new PackagerBuilder<>();
+
+            builder.pipelineBuilderMutator((pipelineBuilder, env, pkg, outputDir) -> {
+                final var packager = new MacPkgPackager(pkg, env, createServices(env, pkg), outputDir);
+                packager.applyToPipeline(pipelineBuilder);
+            });
+        }
 
         Path execute() throws PackagerException {
-            Log.verbose(MessageFormat.format(I18N.getString("message.building-pkg"),
-                    pkg.app().name()));
+            Log.verbose(I18N.format("message.building-pkg", builder.pkg().app().name()));
 
-            IOUtils.writableOutputDir(outputDir);
-
-            return execute(MacPackagingPipeline.build(Optional.of(pkg)));
+            return builder.execute(MacPackagingPipeline.build(Optional.of(builder.pkg())));
         }
 
-        @Override
-        protected void configurePackagingPipeline(PackagingPipeline.Builder pipelineBuilder,
-                StartupParameters startupParameters) {
-            final var packager = new MacPkgPackager(pkg, startupParameters.packagingEnv(), createServices(), outputDir);
-            packager.applyToPipeline(pipelineBuilder);
+        Builder pkg(MacPkgPackage v) {
+            builder.pkg(v);
+            return this;
         }
 
-        private Optional<Services> createServices() {
+        Builder env(BuildEnv v) {
+            builder.env(v);
+            return this;
+        }
+
+        Builder outputDir(Path v) {
+            builder.outputDir(v);
+            return this;
+        }
+
+        private static Optional<Services> createServices(BuildEnv env, MacPkgPackage pkg) {
             if (pkg.app().isService()) {
                 return Optional.of(Services.create(pkg, env));
             } else {
                 return Optional.empty();
             }
         }
+
+        private final PackagerBuilder<MacPkgPackage> builder;
     }
 
     record InternalPackage(Path srcRoot, String identifier, Path path, List<String> otherPkgbuildArgs) {
