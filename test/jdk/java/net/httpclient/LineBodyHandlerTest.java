@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.io.UncheckedIOException;
 import java.math.BigInteger;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Builder;
@@ -55,10 +53,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -67,6 +61,9 @@ import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.net.http.HttpRequest.BodyPublishers.ofString;
@@ -90,14 +87,16 @@ import static org.testng.Assert.assertTrue;
 public class LineBodyHandlerTest implements HttpServerAdapters {
 
     SSLContext sslContext;
-    HttpTestServer httpTestServer;    // HTTP/1.1    [ 4 servers ]
+    HttpTestServer httpTestServer;    // HTTP/1.1    [ 5 servers ]
     HttpTestServer httpsTestServer;   // HTTPS/1.1
     HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
     HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
     String httpURI;
     String httpsURI;
     String http2URI;
     String https2URI;
+    String http3URI;
 
     final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
     final AtomicInteger clientCount = new AtomicInteger();
@@ -106,6 +105,7 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
     @DataProvider(name = "uris")
     public Object[][] variants() {
         return new Object[][]{
+                { http3URI   },
                 { httpURI   },
                 { httpsURI  },
                 { http2URI  },
@@ -195,17 +195,26 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
             return sharedClient;
         }
         clientCount.incrementAndGet();
-        return sharedClient = TRACKER.track(HttpClient.newBuilder()
+        return sharedClient = TRACKER.track(newClientBuilderForH3()
                 .sslContext(sslContext)
                 .proxy(Builder.NO_PROXY)
                 .build());
+    }
+
+    HttpRequest.Builder newRequestBuilder(URI uri) {
+        var builder = HttpRequest.newBuilder(uri);
+        if (uri.getRawPath().contains("/http3/")) {
+            builder = builder.version(HTTP_3)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
+        return builder;
     }
 
     @Test(dataProvider = "uris")
     void testStringWithFinisher(String url) {
         String body = "May the luck of the Irish be with you!";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(body))
                 .build();
 
@@ -226,7 +235,7 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
     void testAsStream(String url) {
         String body = "May the luck of the Irish be with you!";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(body))
                 .build();
 
@@ -249,7 +258,7 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
         String body = "May the luck\r\n\r\n of the Irish be with you!";
         HttpClient client = newClient();
 
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(body))
                 .build();
 
@@ -270,7 +279,7 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
     void testAsStreamWithCRLF(String url) {
         String body = "May the luck\r\n\r\n of the Irish be with you!";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(body))
                 .build();
 
@@ -294,7 +303,7 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
     void testStringWithFinisherBlocking(String url) throws Exception {
         String body = "May the luck of the Irish be with you!";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(body)).build();
 
         StringSubscriber subscriber = new StringSubscriber();
@@ -311,7 +320,7 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
     void testStringWithoutFinisherBlocking(String url) throws Exception {
         String body = "May the luck of the Irish be with you!";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(body)).build();
 
         StringSubscriber subscriber = new StringSubscriber();
@@ -330,7 +339,7 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
     void testAsStreamWithMixedCRLF(String url) {
         String body = "May\r\n the wind\r\n always be\rat your back.\r\r";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(body))
                 .build();
 
@@ -357,7 +366,7 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
     void testAsStreamWithMixedCRLF_UTF8(String url) {
         String body = "May\r\n the wind\r\n always be\rat your back.\r\r";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .header("Content-type", "text/text; charset=UTF-8")
                 .POST(BodyPublishers.ofString(body, UTF_8)).build();
 
@@ -383,7 +392,7 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
     void testAsStreamWithMixedCRLF_UTF16(String url) {
         String body = "May\r\n the wind\r\n always be\rat your back.\r\r";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .header("Content-type", "text/text; charset=UTF-16")
                 .POST(BodyPublishers.ofString(body, UTF_16)).build();
 
@@ -410,7 +419,7 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
     void testObjectWithFinisher(String url) {
         String body = "May\r\n the wind\r\n always be\rat your back.";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(body))
                 .build();
 
@@ -435,7 +444,7 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
     void testObjectWithFinisher_UTF16(String url) {
         String body = "May\r\n the wind\r\n always be\rat your back.\r\r";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .header("Content-type", "text/text; charset=UTF-16")
                 .POST(BodyPublishers.ofString(body, UTF_16)).build();
         ObjectSubscriber subscriber = new ObjectSubscriber();
@@ -461,7 +470,7 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
     void testObjectWithoutFinisher(String url) {
         String body = "May\r\n the wind\r\n always be\rat your back.";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(body))
                 .build();
 
@@ -487,7 +496,7 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
     void testObjectWithFinisherBlocking(String url) throws Exception {
         String body = "May\r\n the wind\r\n always be\nat your back.";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(body))
                 .build();
 
@@ -511,7 +520,7 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
     void testObjectWithoutFinisherBlocking(String url) throws Exception {
         String body = "May\r\n the wind\r\n always be\nat your back.";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(body))
                 .build();
 
@@ -546,7 +555,7 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
     void testBigTextFromLineSubscriber(String url) {
         HttpClient client = newClient();
         String bigtext = bigtext();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(bigtext))
                 .build();
 
@@ -567,7 +576,7 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
     void testBigTextAsStream(String url) {
         HttpClient client = newClient();
         String bigtext = bigtext();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(bigtext))
                 .build();
 
@@ -690,10 +699,15 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
         https2TestServer.addHandler(new HttpTestEchoHandler(), "/https2/echo");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo";
 
+        http3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        http3TestServer.addHandler(new HttpTestEchoHandler(), "/http3/echo");
+        http3URI = "https://" + http3TestServer.serverAuthority() + "/http3/echo";
+
         httpTestServer.start();
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        http3TestServer.start();
     }
 
     @AfterTest
@@ -712,6 +726,7 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
         httpsTestServer.stop();
         http2TestServer.stop();
         https2TestServer.stop();
+        http3TestServer.stop();
         if (fail != null) throw fail;
     }
 

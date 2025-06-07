@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * @summary verify that the HttpClient's HTTP2 idle connection management doesn't close a connection
  *          when that connection has been handed out from the pool to a caller
  * @library /test/jdk/java/net/httpclient/lib
+ *          /test/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
- *
+ *        jdk.test.lib.Asserts
  * @run junit/othervm   -Djdk.internal.httpclient.debug=true
  *                      -Djdk.httpclient.keepalive.timeout.h2=3
  *                      IdlePooledConnectionTest
