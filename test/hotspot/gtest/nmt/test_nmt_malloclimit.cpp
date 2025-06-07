@@ -41,9 +41,9 @@ static bool compare_limits(const malloclimit* a, const malloclimit* b) {
 
 static bool compare_sets(const MallocLimitSet* a, const MallocLimitSet* b) {
   if (compare_limits(a->global_limit(), b->global_limit())) {
-    for (int i = 0; i < mt_number_of_tags; i++) {
-      if (!compare_limits(a->category_limit(NMTUtil::index_to_tag(i)),
-                          b->category_limit(NMTUtil::index_to_tag(i)))) {
+    for (int i = 0; i < MemTagFactory::number_of_tags(); i++) {
+      if (!compare_limits(const_cast<MallocLimitSet*>(a)->category_limit(NMTUtil::index_to_tag(i)),
+                          const_cast<MallocLimitSet*>(b)->category_limit(NMTUtil::index_to_tag(i)))) {
         return false;
       }
     }
@@ -95,11 +95,11 @@ TEST(NMT, MallocLimitPerCategory) {
 TEST(NMT, MallocLimitCategoryEnumNames) {
   MallocLimitSet expected;
   stringStream option;
-  for (int i = 0; i < mt_number_of_tags; i++) {
+  for (int i = 0; i < MemTagFactory::number_of_tags(); i++) {
     MemTag mem_tag = NMTUtil::index_to_tag(i);
     if (mem_tag != MemTag::mtNone) {
       expected.set_category_limit(mem_tag, (i + 1) * M, MallocLimitMode::trigger_fatal);
-      option.print("%s%s:%dM", (i > 0 ? "," : ""), NMTUtil::tag_to_enum_name(mem_tag), i + 1);
+      option.print("%s%s:%dM", (i > 0 ? "," : ""), MemTagFactory::name_of(mem_tag), i + 1);
     }
   }
   test(option.base(), expected);
@@ -108,11 +108,11 @@ TEST(NMT, MallocLimitCategoryEnumNames) {
 TEST(NMT, MallocLimitAllCategoriesHaveHumanReadableNames) {
   MallocLimitSet expected;
   stringStream option;
-  for (int i = 0; i < mt_number_of_tags; i++) {
+  for (int i = 0; i < MemTagFactory::number_of_tags(); i++) {
     MemTag mem_tag = NMTUtil::index_to_tag(i);
     if (mem_tag != MemTag::mtNone) {
       expected.set_category_limit(mem_tag, (i + 1) * M, MallocLimitMode::trigger_fatal);
-      option.print("%s%s:%dM", (i > 0 ? "," : ""), NMTUtil::tag_to_name(mem_tag), i + 1);
+      option.print("%s%s:%dM", (i > 0 ? "," : ""), MemTagFactory::human_readable_name_of(mem_tag), i + 1);
     }
   }
   test(option.base(), expected);

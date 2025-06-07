@@ -674,7 +674,7 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
       tree_diff = tree.release_mapping(start, size);
     }
 
-    for (int j = 0; j < mt_number_of_tags; j++) {
+    for (int j = 0; j < MemTagFactory::number_of_tags(); j++) {
       VMATree::SingleDiff td = tree_diff.tag[j];
       VMATree::SingleDiff sd = simple_diff.tag[j];
       ASSERT_EQ(td.reserve, sd.reserve);
