@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -587,12 +587,12 @@ public class PreviewTest extends TestRunner {
                         "Test.java:19:11: compiler.err.is.preview: test()",
                         "Test.java:20:11: compiler.err.is.preview: test()",
                         "Test.java:21:11: compiler.err.is.preview: test()",
-                        "Test.java:24:11: compiler.warn.is.preview.reflective: test()",
                         "Test.java:29:16: compiler.err.is.preview: preview.api.Preview",
                         "Test.java:32:21: compiler.err.is.preview: test()",
                         "Test.java:36:21: compiler.err.is.preview: test()",
                         "Test.java:40:13: compiler.err.is.preview: test()",
                         "Test.java:41:21: compiler.err.is.preview: FIELD",
+                        "Test.java:24:11: compiler.warn.is.preview.reflective: test()",
                         "17 errors",
                         "1 warning");
 
@@ -790,6 +790,99 @@ public class PreviewTest extends TestRunner {
 
         if (!log.equals(expected))
             throw new Exception("expected output not found" + log);
+    }
+
+    @Test //JDK-8224228:
+    public void testSuppressWarnings(Path base) throws Exception {
+        Path apiSrc = base.resolve("api-src");
+        tb.writeJavaFiles(apiSrc,
+                          """
+                          package preview.api;
+                          @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.TEST)
+                          public class Preview {
+                              public static int test() {
+                                return 0;
+                              }
+                          }
+                          """);
+        Path apiClasses = base.resolve("api-classes");
+
+        new JavacTask(tb, Task.Mode.CMDLINE)
+                .outdir(apiClasses)
+                .options("--patch-module", "java.base=" + apiSrc.toString(),
+                         "-Werror")
+                .files(tb.findJavaFiles(apiSrc))
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        Path testSrc = base.resolve("test-src");
+        tb.writeJavaFiles(testSrc,
+                          """
+                          package test;
+                          import preview.api.Preview;
+                          public class Test {
+
+                            public static class Example1 {
+                                public void method() {
+                                    Preview.test();         // SHOULD get a warning here
+                                }
+                            }
+
+                            @SuppressWarnings("preview")
+                            public static class Example2 {
+                                public void method() {
+                                    Preview.test();         // SHOULD NOT get a warning here
+                                }
+                            }
+
+                            public static class Example3 {
+                                @SuppressWarnings("preview")
+                                public void method() {
+                                    Preview.test();         // SHOULD NOT get a warning here
+                                }
+                            }
+
+                            public static class Example4 {
+                                {
+                                    Preview.test();         // SHOULD get a warning here
+                                }
+                            }
+
+                            @SuppressWarnings("preview")
+                            public static class Example5 {
+                                {
+                                    Preview.test();         // SHOULD NOT get a warning here
+                                }
+                            }
+
+                            public static class Example6 {
+                                @SuppressWarnings("preview")
+                                int x = Preview.test();     // SHOULD NOT get a warning here
+                            }
+                          }
+                          """);
+        Path testClasses = base.resolve("test-classes");
+        List<String> log = new JavacTask(tb, Task.Mode.CMDLINE)
+                .outdir(testClasses)
+                .options("--patch-module", "java.base=" + apiClasses.toString(),
+                         "--add-exports", "java.base/preview.api=ALL-UNNAMED",
+                         "--enable-preview",
+                         "-Xlint:preview",
+                         "-source", String.valueOf(Runtime.version().feature()),
+                         "-XDrawDiagnostics")
+                .files(tb.findJavaFiles(testSrc))
+                .run(Task.Expect.SUCCESS)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected =
+                List.of("Test.java:7:11: compiler.warn.is.preview: preview.api.Preview",
+                        "Test.java:27:11: compiler.warn.is.preview: preview.api.Preview",
+                        "2 warnings");
+
+        if (!log.equals(expected))
+            throw new Exception("expected output not found: " + log);
     }
 
     @Test //JDK-8343540:

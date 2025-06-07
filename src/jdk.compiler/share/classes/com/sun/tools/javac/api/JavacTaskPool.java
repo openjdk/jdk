@@ -55,6 +55,7 @@ import com.sun.source.util.TaskEvent.Kind;
 import com.sun.source.util.TaskListener;
 import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.code.Kinds;
+import com.sun.tools.javac.code.LintMapper;
 import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symtab;
@@ -268,12 +269,11 @@ public class JavacTaskPool {
             if (ht.get(Log.logKey) instanceof ReusableLog) {
                 //log already inited - not first round
                 Log.instance(this).clear();
+                LintMapper.instance(this).clear();
                 Enter.instance(this).newRound();
                 ((ReusableJavaCompiler)ReusableJavaCompiler.instance(this)).clear();
                 Types.instance(this).newRound();
                 Check.instance(this).newRound();
-                Check.instance(this).clear(); //clear mandatory warning handlers
-                Preview.instance(this).clear(); //clear mandatory warning handlers
                 Modules.instance(this).newRound();
                 Annotate.instance(this).newRound();
                 CompileStates.instance(this).clear();
