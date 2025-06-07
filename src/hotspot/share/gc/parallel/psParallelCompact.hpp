@@ -683,12 +683,15 @@ public:
   // Convenient access to type names.
   typedef ParallelCompactData::RegionData RegionData;
 
+  // By the end of full-gc, all live objs are compacted into the first three spaces, old, eden, and from.
   typedef enum {
-    old_space_id, eden_space_id,
-    from_space_id, to_space_id, last_space_id
+    old_space_id,
+    eden_space_id,
+    from_space_id,
+    to_space_id,
+    last_space_id
   } SpaceId;
 
-public:
   // Inline closure decls
   //
   class IsAliveClosure: public BoolObjectClosure {
