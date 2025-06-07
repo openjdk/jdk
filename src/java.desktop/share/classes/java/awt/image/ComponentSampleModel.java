@@ -280,6 +280,9 @@ public class ComponentSampleModel extends SampleModel
 
          size += val;
 
+         // Align to the pixel stride.
+         size = (size + pixelStride - 1) / pixelStride * pixelStride;
+
          return size;
      }
 
