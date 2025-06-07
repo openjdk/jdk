@@ -206,6 +206,8 @@ void CodeBlob::purge() {
   if (_mutable_data != blob_end()) {
     os::free(_mutable_data);
     _mutable_data = blob_end(); // Valid not null address
+    _mutable_data_size = 0;
+    _relocation_size = 0;
   }
   if (_oop_maps != nullptr) {
     delete _oop_maps;
