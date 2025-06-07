@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,6 +120,19 @@ public class FloatingDecimal{
      */
     public static float parseFloat(String s) throws NumberFormatException {
         return readJavaFormatString(s, BINARY_32_IX).floatValue();
+    }
+
+    /**
+     * Converts a sequence of digits ('0'-'9') as well as an exponent to a positive
+     * double value
+     *
+     * @param decExp The decimal exponent of the value to generate
+     * @param digits The digits of the significand.
+     * @param length Number of digits to use
+     * @return The double-precision value of the conversion
+     */
+    public static double parseDoubleDigits(int decExp, char[] digits, int length) throws NumberFormatException {
+        return readDoubleDigits(decExp, digits, length).doubleValue();
     }
 
     /**
@@ -1822,6 +1835,17 @@ public class FloatingDecimal{
         // call the routine that actually does all the hard work.
         buf.dtoa(binExp, ((long)fractBits)<<(EXP_SHIFT-SINGLE_EXP_SHIFT), nSignificantBits, true);
         return buf;
+    }
+
+    static ASCIIToBinaryConverter readDoubleDigits(int decExp, char[] digits, int length) {
+        if (decExp < MIN_DECIMAL_EXPONENT) {
+            return buildZero(BINARY_64_IX, 1);
+        }
+        byte[] buf = new byte[length];
+        for (int i = 0; i < length; i++) {
+            buf[i] = (byte) digits[i];
+        }
+        return new ASCIIToBinaryBuffer(false, decExp, buf, length);
     }
 
     /**
