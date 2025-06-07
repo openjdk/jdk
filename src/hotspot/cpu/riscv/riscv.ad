@@ -1368,14 +1368,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   // n.b. frame size includes space for return pc and fp
   const int framesize = C->output()->frame_size_in_bytes();
 
-  // insert a nop at the start of the prolog so we can patch in a
-  // branch if we need to invalidate the method later
-  {
-    Assembler::IncompressibleScope scope(masm); // keep the nop as 4 bytes for patching.
-    MacroAssembler::assert_alignment(__ pc());
-    __ nop();  // 4 bytes
-  }
-
   assert_cond(C != nullptr);
 
   if (C->clinit_barrier_on_entry()) {

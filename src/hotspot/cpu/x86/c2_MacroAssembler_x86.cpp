@@ -50,13 +50,6 @@
 
 // C2 compiled method's prolog code.
 void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub) {
-
-  // WARNING: Initial instruction MUST be 5 bytes or longer so that
-  // NativeJump::patch_verified_entry will be able to patch out the entry
-  // code safely. The push to verify stack depth is ok at 5 bytes,
-  // the frame allocation can be either 3 or 6 bytes. So if we don't do
-  // stack bang then we must use the 6 byte frame allocation even if
-  // we have no frame. :-(
   assert(stack_bang_size >= framesize || stack_bang_size <= 0, "stack bang size incorrect");
 
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
@@ -87,8 +80,7 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
       subptr(rsp, framesize);
     }
   } else {
-    // Create frame (force generation of a 4 byte immediate value)
-    subptr_imm32(rsp, framesize);
+    subptr(rsp, framesize);
 
     // Save RBP register now.
     framesize -= wordSize;
