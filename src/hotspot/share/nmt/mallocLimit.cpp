@@ -25,6 +25,7 @@
 
 #include "nmt/mallocLimit.hpp"
 #include "nmt/memTag.hpp"
+#include "nmt/memTagFactory.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "runtime/java.hpp"
 #include "runtime/globals.hpp"
@@ -32,7 +33,7 @@
 #include "utilities/parseInteger.hpp"
 #include "utilities/ostream.hpp"
 
-MallocLimitSet MallocLimitHandler::_limits;
+Deferred<MallocLimitSet> MallocLimitHandler::_limits;
 bool MallocLimitHandler::_have_limit = false;
 
 static const char* const MODE_OOM = "oom";
@@ -89,7 +90,7 @@ public:
     }
     stringStream ss;
     ss.print("%.*s", (int)(end - _p), _p);
-    MemTag mem_tag = NMTUtil::string_to_mem_tag(ss.base());
+    MemTag mem_tag = MemTagFactory::tag(ss.freeze());
     if (mem_tag != mtNone) {
       *out = mem_tag;
       _p = end;
@@ -132,28 +133,29 @@ void MallocLimitSet::set_global_limit(size_t s, MallocLimitMode flag) {
 
 void MallocLimitSet::set_category_limit(MemTag mem_tag, size_t s, MallocLimitMode flag) {
   const int i = NMTUtil::tag_to_index(mem_tag);
-  _cat[i].sz = s; _cat[i].mode = flag;
+  malloclimit& tag_limit = _cat.at_grow(i);
+  tag_limit.sz = s; tag_limit.mode = flag;
 }
 
 void MallocLimitSet::reset() {
   set_global_limit(0, MallocLimitMode::trigger_fatal);
   _glob.sz = 0; _glob.mode = MallocLimitMode::trigger_fatal;
-  for (int i = 0; i < mt_number_of_tags; i++) {
+  for (int i = 0; i < MemTagFactory::number_of_tags(); i++) {
     set_category_limit(NMTUtil::index_to_tag(i), 0, MallocLimitMode::trigger_fatal);
   }
 }
 
-void MallocLimitSet::print_on(outputStream* st) const {
+void MallocLimitSet::print_on(outputStream* st) {
   static const char* flagnames[] = { MODE_FATAL, MODE_OOM };
   if (_glob.sz > 0) {
     st->print_cr("MallocLimit: total limit: " PROPERFMT " (%s)", PROPERFMTARGS(_glob.sz),
                  mode_to_name(_glob.mode));
   } else {
-    for (int i = 0; i < mt_number_of_tags; i++) {
-      if (_cat[i].sz > 0) {
+    for (int i = 0; i < MemTagFactory::number_of_tags(); i++) {
+      if (_cat.at_grow(i).sz > 0) {
         st->print_cr("MallocLimit: category \"%s\" limit: " PROPERFMT " (%s)",
-                     NMTUtil::tag_to_enum_name(NMTUtil::index_to_tag(i)),
-                     PROPERFMTARGS(_cat[i].sz), mode_to_name(_cat[i].mode));
+                     MemTagFactory::name_of(NMTUtil::index_to_tag(i)),
+                     PROPERFMTARGS(_cat.at_grow(i).sz), mode_to_name(_cat.at_grow(i).mode));
       }
     }
   }
@@ -192,7 +194,7 @@ bool MallocLimitSet::parse_malloclimit_option(const char* v, const char** err) {
       BAIL_UNLESS(sst.match_category(&mem_tag), "Expected category name");
       BAIL_UNLESS(sst.match_char(':'), "Expected colon following category");
 
-      malloclimit* const modified_limit = &_cat[NMTUtil::tag_to_index(mem_tag)];
+      malloclimit* const modified_limit = &_cat.at_grow(NMTUtil::tag_to_index(mem_tag));
 
       // Match size
       BAIL_UNLESS(sst.match_size(&modified_limit->sz), "Expected size");
@@ -213,9 +215,10 @@ bool MallocLimitSet::parse_malloclimit_option(const char* v, const char** err) {
 
 void MallocLimitHandler::initialize(const char* options) {
   _have_limit = false;
+  _limits.initialize();
   if (options != nullptr && options[0] != '\0') {
     const char* err = nullptr;
-    if (!_limits.parse_malloclimit_option(options, &err)) {
+    if (!_limits->parse_malloclimit_option(options, &err)) {
       vm_exit_during_initialization("Failed to parse MallocLimit", err);
     }
     _have_limit = true;
@@ -224,7 +227,7 @@ void MallocLimitHandler::initialize(const char* options) {
 
 void MallocLimitHandler::print_on(outputStream* st) {
   if (have_limit()) {
-    _limits.print_on(st);
+    _limits->print_on(st);
   } else {
     st->print_cr("MallocLimit: unset");
   }

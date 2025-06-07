@@ -34,18 +34,20 @@
 #include "nmt/mallocSiteTable.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memTracker.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/deferred.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-MallocMemorySnapshot MallocMemorySummary::_snapshot;
+Deferred<MallocMemorySnapshot> MallocMemorySummary::_snapshot;
 
 void MemoryCounter::update_peak(size_t size, size_t cnt) {
   size_t peak_sz = peak_size();
@@ -61,27 +63,29 @@ void MemoryCounter::update_peak(size_t size, size_t cnt) {
   }
 }
 
-void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
+void MallocMemorySnapshot::copy_to(MallocMemorySnapshot** result) {
   // Use lock to make sure that mtChunks don't get deallocated while the
   // copy is going on, because their size is adjusted using this
   // buffer in make_adjustment().
+  MallocMemorySnapshot* s = new MallocMemorySnapshot(*this);
   ChunkPoolLocker lock;
   s->_all_mallocs = _all_mallocs;
   size_t total_size = 0;
   size_t total_count = 0;
-  for (int index = 0; index < mt_number_of_tags; index ++) {
+  for (int index = 0; index <MemTagFactory::number_of_tags(); index ++) {
     s->_malloc[index] = _malloc[index];
     total_size += s->_malloc[index].malloc_size();
     total_count += s->_malloc[index].malloc_count();
   }
   // malloc counters may be updated concurrently
   s->_all_mallocs.set_size_and_count(total_size, total_count);
+  *result = s;
 }
 
 // Total malloc'd memory used by arenas
 size_t MallocMemorySnapshot::total_arena() const {
   size_t amount = 0;
-  for (int index = 0; index < mt_number_of_tags; index ++) {
+  for (int index = 0; index < MemTagFactory::number_of_tags(); index ++) {
     amount += _malloc[index].arena_size();
   }
   return amount;
@@ -91,14 +95,17 @@ size_t MallocMemorySnapshot::total_arena() const {
 // from total chunks to get total free chunk size
 void MallocMemorySnapshot::make_adjustment() {
   size_t arena_size = total_arena();
-  int chunk_idx = NMTUtil::tag_to_index(mtChunk);
-  _malloc[chunk_idx].record_free(arena_size);
+  _malloc[mtChunk].record_free(arena_size);
   _all_mallocs.deallocate(arena_size);
 }
 
-void MallocMemorySummary::initialize() {
-  // Uses placement new operator to initialize static area.
+bool MallocMemorySummary::initialize() {
+  _snapshot.initialize();
+  if (!_snapshot->is_valid()) {
+    return false;
+  }
   MallocLimitHandler::initialize(MallocLimit);
+  return true;
 }
 
 bool MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const malloclimit* limit) {
@@ -132,7 +139,7 @@ bool MallocMemorySummary::category_limit_reached(MemTag mem_tag, size_t s, size_
 
 #define FORMATTED \
   "MallocLimit: reached category \"%s\" limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
-  NMTUtil::tag_to_enum_name(mem_tag), PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
+  MemTagFactory::name_of(mem_tag), PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
 
   // If we hit the limit during error reporting, we print a short warning but otherwise ignore it.
   // We don't want to risk recursive assertion or torn hs-err logs.
@@ -157,9 +164,11 @@ bool MallocMemorySummary::category_limit_reached(MemTag mem_tag, size_t s, size_
 
 bool MallocTracker::initialize(NMT_TrackingLevel level) {
   if (level >= NMT_summary) {
-    MallocMemorySummary::initialize();
+    bool success = MallocMemorySummary::initialize();
+    if (!success) {
+      return false;
+    }
   }
-
   if (level == NMT_detail) {
     return MallocSiteTable::initialize();
   }
@@ -299,7 +308,7 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
                  p2i(p), where,
                  (block->is_dead() ? "dead" : "live"),
                  p2i(block + 1), // lets print the payload start, not the header
-                 block->size(), NMTUtil::tag_to_enum_name(block->mem_tag()));
+                 block->size(), MemTagFactory::name_of(block->mem_tag()));
     if (MemTracker::tracking_level() == NMT_detail) {
       NativeCallStack ncs;
       if (MallocSiteTable::access_stack(ncs, *block)) {
@@ -313,4 +322,14 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
 #endif // !INCLUDE_ASAN
 
   return false;
+}
+
+void MallocMemorySnapshot::MemTagArray::register_virtual_memory_usage(VirtualMemoryTracker& tracker) {
+  address base = (address)_allocator.at_offset(0);
+  tracker.add_reserved_region(base, _allocator.size(), CALLER_PC, mtNMT);
+  tracker.add_committed_region(base, _allocator.amount_committed(), CALLER_PC);
+}
+
+void MallocMemorySnapshot::register_virtual_memory_usage(VirtualMemoryTracker& tracker) {
+  this->_malloc.register_virtual_memory_usage(tracker);
 }
