@@ -254,8 +254,9 @@ public class TreeMaker implements JCTree.Factory {
         return setPos(new JCVariableDecl(mods, name, vartype, init, null));
     }
 
-    public JCVariableDecl VarDef(JCModifiers mods, Name name, JCExpression vartype, JCExpression init, int varPos) {
-        return setPos(new JCVariableDecl(mods, name, vartype, init, null, varPos));
+    public JCVariableDecl VarDef(JCModifiers mods, Name name, JCExpression vartype, JCExpression init,
+      JCVariableDecl.DeclKind declKind, int typePos) {
+        return setPos(new JCVariableDecl(mods, name, vartype, init, null, declKind, typePos));
     }
 
     public JCVariableDecl ReceiverVarDef(JCModifiers mods, JCExpression name, JCExpression vartype) {

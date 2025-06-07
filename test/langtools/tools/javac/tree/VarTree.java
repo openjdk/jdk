@@ -69,6 +69,12 @@ public class VarTree {
                  "java.lang.String testVar");
         test.run("java.util.function.Consumer<String> c = (|var testVar|) -> {};",
                  "java.lang.String testVar");
+        test.run("java.util.function.Consumer<String> c = (|final var testVar|) -> {};",
+                 "final java.lang.String testVar");
+        test.run("record Rec(int x) { }; switch (null) { case Rec(|var testVar|) -> {} default -> {} };",
+                 "int testVar");
+        test.run("record Rec(int x) { }; switch (null) { case Rec(|final var testVar|) -> {} default -> {} };",
+                 "final int testVar");
     }
 
     void run(String code, String expected) throws IOException {
@@ -145,9 +151,8 @@ public class VarTree {
                                 throw new AssertionError("Unexpected type start: " + typeStart + " != " + matcher.start());
                             }
                             if (typeEnd != matcher.end()) {
-                                throw new AssertionError("Unexpected type end: " + typeEnd + " != " + (matcher.end() - 1));
+                                throw new AssertionError("Unexpected type end: " + typeEnd + " != " + matcher.end());
                             }
-
                         } else if (typeStart != (-1) && typeEnd != (-1)) {
                             throw new AssertionError("Unexpected type position: " + typeStart + ", " + typeEnd);
                         }
