@@ -31,6 +31,7 @@ package gc.arguments;
  * @library /test/lib
  * @library /
  * @requires vm.bits == "64"
+ * @requires !vm.asan
  * @requires os.family == "linux"
  * @requires vm.gc != "Z"
  * @requires vm.opt.UseCompressedOops == null

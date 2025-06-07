@@ -32,6 +32,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @summary Test of diagnostic command System.map
  * @library /test/lib
  * @requires (vm.gc != "Z") & (os.family == "linux" | os.family == "windows" | os.family == "mac")
+ * @requires !vm.asan
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
@@ -47,6 +48,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @summary Test of diagnostic command System.map using ZGC
  * @library /test/lib
  * @requires vm.gc.Z & (os.family == "linux" | os.family == "windows" | os.family == "mac")
+ * @requires !vm.asan
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
