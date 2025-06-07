@@ -2407,7 +2407,6 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
     }
   }
   // Next, attempt to eliminate allocations
-  _has_locks = false;
   progress = true;
   while (progress) {
     progress = false;
@@ -2431,7 +2430,6 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       case Node::Class_Lock:
       case Node::Class_Unlock:
         assert(!n->as_AbstractLock()->is_eliminated(), "sanity");
-        _has_locks = true;
         break;
       case Node::Class_ArrayCopy:
         break;
