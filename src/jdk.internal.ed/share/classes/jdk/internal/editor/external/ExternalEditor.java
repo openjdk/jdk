@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.internal.editor.external;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
@@ -165,7 +166,8 @@ public class ExternalEditor {
             // wait to exit edit mode in one of these ways...
             if (wait) {
                 // -wait option -- ignore process exit, wait for carriage-return
-                Scanner scanner = new Scanner(System.in);
+                Charset charset = Charset.forName(System.getProperty("stdin.encoding"), Charset.defaultCharset());
+                Scanner scanner = new Scanner(System.in, charset);
                 promptForNewLineToEndWait.run();
                 scanner.nextLine();
             } else {
