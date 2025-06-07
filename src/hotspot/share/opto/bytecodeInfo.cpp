@@ -178,6 +178,13 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
         callee_method->inline_instructions_size() > inline_small_code_size) {
       set_msg("already compiled into a medium method");
       return false;
+    } else if (!callee_method->has_compiled_code()) {
+      // Look up profiled compiled size to avoid aggressive inlining of large methods
+      if (callee_method->was_executed_more_than(CompilationPolicy::min_invocations()) &&
+          C->directive()->is_estimated_size_bigger_than(callee_method, inline_small_code_size)) {
+        set_msg("Profiling info: might be compiled into a medium method");
+        return false;
+      }
     }
   }
   if (size > max_inline_size) {
@@ -274,6 +281,13 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
       callee_method->inline_instructions_size() > InlineSmallCode) {
     set_msg("already compiled into a big method");
     return true;
+  } else if (!callee_method->has_compiled_code()) {
+    // Look up profiled compiled size to avoid aggressive inlining of large methods
+    if (callee_method->was_executed_more_than(CompilationPolicy::min_invocations()) &&
+        C->directive()->is_estimated_size_bigger_than(callee_method, InlineSmallCode)) {
+      set_msg("Profiling info: might be compiled into a big method");
+      return true;
+    }
   }
 
   // don't inline exception code unless the top method belongs to an
