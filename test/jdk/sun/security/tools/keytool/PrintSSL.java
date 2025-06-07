@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@
 import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.Security;
 import java.util.concurrent.CountDownLatch;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
@@ -48,6 +49,10 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class PrintSSL {
 
     public static void main(String[] args) throws Throwable {
+        // Disable KeyManager's algorithm constraints checking.
+        System.setProperty(
+                "jdk.tls.keymanager.disableConstraintsChecking", "true");
+
         Files.deleteIfExists(Paths.get("keystore"));
 
         // make sure that "-printcert" works with weak algorithms
