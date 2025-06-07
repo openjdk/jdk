@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,18 +111,22 @@ static double scalbnA(double x, int n) {
     if (n< -50000) return tiny*x;       /*underflow*/
   }
   if (k==0x7ff) return x+x;             /* NaN or Inf */
-  k = k+n;
-  if (k > 0x7fe) return hugeX*copysignA(hugeX,x); /* overflow  */
-  if (k > 0) {                          /* normal result */
-    set_high(&x, (hx&0x800fffff)|(k<<20));
+
+  // Convert to unsigned to avoid signed integer overflow
+  unsigned u_k = ((unsigned) k) + n;
+
+  if (u_k > 0x7fe && u_k <= 0x7fffffff) return hugeX*copysignA(hugeX,x); /* overflow  */
+  if (u_k > 0 && u_k <= 0x7fe) {                          /* normal result */
+    set_high(&x, (hx&0x800fffff)|((k+n)<<20));
     return x;
   }
-  if (k <= -54) {
+
+  if (u_k <= (unsigned)-54) {
     if (n > 50000)      /* in case integer overflow in n+k */
       return hugeX*copysignA(hugeX,x);  /*overflow*/
     else return tiny*copysignA(tiny,x); /*underflow*/
   }
-  k += 54;                              /* subnormal result */
+  k = u_k + 54;                              /* subnormal result */
   set_high(&x, (hx&0x800fffff)|(k<<20));
   return x*twom54;
 }
