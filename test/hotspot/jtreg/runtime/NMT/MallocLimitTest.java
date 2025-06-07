@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,16 +123,16 @@ public class MallocLimitTest {
         ProcessBuilder pb = processBuilderWithSetting("-XX:MallocLimit=compiler:1234k", "-Xcomp");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotHaveExitValue(0);
-        output.shouldContain("[nmt] MallocLimit: category \"mtCompiler\" limit: 1234K (fatal)");
-        output.shouldMatch("#  fatal error: MallocLimit: reached category \"mtCompiler\" limit \\(triggering allocation size: \\d+[BKM], allocated so far: \\d+[BKM], limit: 1234K\\)");
+        output.shouldContain("[nmt] MallocLimit: MemTag \"mtCompiler\" limit: 1234K (fatal)");
+        output.shouldMatch("#  fatal error: MallocLimit: reached MemTag \"mtCompiler\" limit \\(triggering allocation size: \\d+[BKM], allocated so far: \\d+[BKM], limit: 1234K\\)");
     }
 
     private static void testCompilerLimitOOM() throws IOException {
         ProcessBuilder pb = processBuilderWithSetting("-XX:MallocLimit=compiler:1234k:oom", "-Xcomp");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotHaveExitValue(0);
-        output.shouldContain("[nmt] MallocLimit: category \"mtCompiler\" limit: 1234K (oom)");
-        output.shouldMatch(".*\\[warning\\]\\[nmt\\] MallocLimit: reached category \"mtCompiler\" limit \\(triggering allocation size: \\d+[BKM], allocated so far: \\d+[BKM], limit: 1234K\\)");
+        output.shouldContain("[nmt] MallocLimit: MemTag \"mtCompiler\" limit: 1234K (oom)");
+        output.shouldMatch(".*\\[warning\\]\\[nmt\\] MallocLimit: reached MemTag \"mtCompiler\" limit \\(triggering allocation size: \\d+[BKM], allocated so far: \\d+[BKM], limit: 1234K\\)");
         // The rest is fuzzy. We may get SIGSEGV or a native OOM message, depending on how the failing allocation was handled.
     }
 
@@ -140,10 +140,10 @@ public class MallocLimitTest {
         ProcessBuilder pb = processBuilderWithSetting("-XX:MallocLimit=other:2g,compiler:1g:oom,internal:1k");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotHaveExitValue(0);
-        output.shouldContain("[nmt] MallocLimit: category \"mtCompiler\" limit: 1024M (oom)");
-        output.shouldContain("[nmt] MallocLimit: category \"mtInternal\" limit: 1024B (fatal)");
-        output.shouldContain("[nmt] MallocLimit: category \"mtOther\" limit: 2048M (fatal)");
-        output.shouldMatch("#  fatal error: MallocLimit: reached category \"mtInternal\" limit \\(triggering allocation size: \\d+[BKM], allocated so far: \\d+[BKM], limit: 1024B\\)");
+        output.shouldContain("[nmt] MallocLimit: MemTag \"mtCompiler\" limit: 1024M (oom)");
+        output.shouldContain("[nmt] MallocLimit: MemTag \"mtInternal\" limit: 1024B (fatal)");
+        output.shouldContain("[nmt] MallocLimit: MemTag \"mtOther\" limit: 2048M (fatal)");
+        output.shouldMatch("#  fatal error: MallocLimit: reached MemTag \"mtInternal\" limit \\(triggering allocation size: \\d+[BKM], allocated so far: \\d+[BKM], limit: 1024B\\)");
     }
 
     private static void testLimitWithoutNmt() throws IOException {
