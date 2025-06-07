@@ -1005,8 +1005,12 @@ public class JavacParser implements Parser {
             pattern = toP(F.at(token.pos).AnyPattern());
         }
         else {
+            int declaredUsingVarPos = Position.NOPOS;
             if (parsedType == null) {
                 boolean var = token.kind == IDENTIFIER && token.name() == names.var;
+                if (var) {
+                    declaredUsingVarPos = token.pos;
+                }
                 e = unannotatedType(allowVar, TYPE | NOLAMBDA);
                 if (var) {
                     e = null;
@@ -1046,7 +1050,7 @@ public class JavacParser implements Parser {
                 if (Feature.UNNAMED_VARIABLES.allowedInSource(source) && name == names.underscore) {
                     name = names.empty;
                 }
-                JCVariableDecl var = toP(F.at(varPos).VarDef(mods, name, e, null));
+                JCVariableDecl var = toP(F.at(varPos).VarDef(mods, name, e, null, declaredUsingVarPos));
                 if (e == null) {
                     var.startPos = pos;
                     if (var.name == names.underscore && !allowVar) {
