@@ -565,6 +565,10 @@
   declare_constant_with_value("OMCache::oop_to_oop_difference", OMCache::oop_to_oop_difference()) \
   declare_constant_with_value("OMCache::oop_to_monitor_difference", OMCache::oop_to_monitor_difference()) \
                                                                           \
+  declare_constant_with_value("nmethod::ChangeReason::GC_unlinking_cold", nmethod::ChangeReason::GC_unlinking_cold) \
+  declare_constant_with_value("nmethod::ChangeReason::JVMCI_new_installation", nmethod::ChangeReason::JVMCI_new_installation) \
+  declare_constant_with_value("nmethod::ChangeReason::JVMCI_invalidate_nmethod", nmethod::ChangeReason::JVMCI_invalidate_nmethod) \
+                                                                          \
   declare_constant(CodeInstaller::VERIFIED_ENTRY)                         \
   declare_constant(CodeInstaller::UNVERIFIED_ENTRY)                       \
   declare_constant(CodeInstaller::OSR_ENTRY)                              \
