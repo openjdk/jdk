@@ -82,7 +82,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
   }
 
  private:
-  static CompileTask*  _task_free_list;
   int                  _compile_id;
   Method*              _method;
   jobject              _method_holder;
@@ -103,7 +102,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
   int                  _comp_level;
   int                  _num_inlined_bytecodes;
   CompileTask*         _next, *_prev;
-  bool                 _is_free;
   // Fields used for logging why the compilation was initiated:
   jlong                _time_queued;  // time when task was enqueued
   jlong                _time_started; // time when compilation started
@@ -116,13 +114,9 @@ class CompileTask : public CHeapObj<mtCompiler> {
   size_t               _arena_bytes;  // peak size of temporary memory during compilation (e.g. node arenas)
 
  public:
-  CompileTask() : _failure_reason(nullptr), _failure_reason_on_C_heap(false) {}
-  void initialize(int compile_id, const methodHandle& method, int osr_bci, int comp_level,
-                  int hot_count,
-                  CompileTask::CompileReason compile_reason, bool is_blocking);
-
-  static CompileTask* allocate();
-  static void         free(CompileTask* task);
+  CompileTask(int compile_id, const methodHandle& method, int osr_bci, int comp_level,
+              int hot_count, CompileReason compile_reason, bool is_blocking);
+  ~CompileTask();
 
   int          compile_id() const                { return _compile_id; }
   Method*      method() const                    { return _method; }
@@ -204,8 +198,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
   void         set_next(CompileTask* next)       { _next = next; }
   CompileTask* prev() const                      { return _prev; }
   void         set_prev(CompileTask* prev)       { _prev = prev; }
-  bool         is_free() const                   { return _is_free; }
-  void         set_is_free(bool val)             { _is_free = val; }
   bool         is_unloaded() const;
 
   CompileTrainingData* training_data() const      { return _training_data; }
