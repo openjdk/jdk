@@ -94,7 +94,6 @@
   do_klass(Module_klass,                                java_lang_Module                                      ) \
   do_klass(reflect_AccessibleObject_klass,              java_lang_reflect_AccessibleObject                    ) \
   do_klass(reflect_Field_klass,                         java_lang_reflect_Field                               ) \
-  do_klass(reflect_Parameter_klass,                     java_lang_reflect_Parameter                           ) \
   do_klass(reflect_Method_klass,                        java_lang_reflect_Method                              ) \
   do_klass(reflect_Constructor_klass,                   java_lang_reflect_Constructor                         ) \
                                                                                                                 \

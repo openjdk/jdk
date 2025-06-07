@@ -709,7 +709,10 @@ JNIEXPORT jbyte JNICALL JVM_ConstantPoolGetTagAt
  */
 
 JNIEXPORT jobjectArray JNICALL
-JVM_GetMethodParameters(JNIEnv *env, jobject method);
+JVM_GetMethodParameterNames(JNIEnv *env, jobject method);
+
+JNIEXPORT jcharArray JNICALL
+JVM_GetMethodParameterFlags(JNIEnv *env, jobject method);
 
 /*
  * Ensure that code doing a stackwalk and using javaVFrame::locals() to
