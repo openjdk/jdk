@@ -5628,9 +5628,13 @@ void Assembler::evpdpwssd(XMMRegister dst, XMMRegister nds, XMMRegister src, int
 }
 
 // generic
-void Assembler::pop(Register dst) {
-  int encode = prefix_and_encode(dst->encoding());
-  emit_int8(0x58 | encode);
+void Assembler::pop(Register dst, bool is_pair) {
+  if (is_pair && VM_Version::supports_apx_f()) {
+    popp(dst);
+  } else {
+    int encode = prefix_and_encode(dst->encoding());
+    emit_int8(0x58 | encode);
+  }
 }
 
 void Assembler::popcntl(Register dst, Address src) {
@@ -6191,9 +6195,13 @@ void Assembler::push(int32_t imm32) {
   emit_int32(imm32);
 }
 
-void Assembler::push(Register src) {
-  int encode = prefix_and_encode(src->encoding());
-  emit_int8(0x50 | encode);
+void Assembler::push(Register src, bool is_pair) {
+  if (is_pair && VM_Version::supports_apx_f()) {
+    pushp(src);
+  } else {
+    int encode = prefix_and_encode(src->encoding());
+    emit_int8(0x50 | encode);
+  }
 }
 
 void Assembler::pushf() {
