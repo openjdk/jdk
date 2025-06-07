@@ -38,7 +38,7 @@ import jdk.jpackage.internal.model.Package;
  */
 public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
 
-    private LinuxLaunchersAsServices(BuildEnv env, Package pkg) throws IOException {
+    private LinuxLaunchersAsServices(BuildEnv env, Package pkg) {
         super(env.appImageDir(), pkg.app(), REQUIRED_PACKAGES, launcher -> {
             return new LauncherImpl(env, pkg, launcher);
         });
@@ -58,7 +58,7 @@ public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
         return data;
     }
 
-    static ShellCustomAction create(BuildEnv env, Package pkg) throws IOException {
+    static ShellCustomAction create(BuildEnv env, Package pkg) {
         if (pkg.isRuntimeInstaller()) {
             return ShellCustomAction.nop(LINUX_REPLACEMENT_STRING_IDS);
         }
