@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -700,6 +700,13 @@ public abstract sealed class Buffer
     abstract Object base();
 
     /**
+     * Returns the buffer's address.
+     */
+    long address() {
+        return address;
+    }
+
+    /**
      * Checks the current position against the limit, throwing a {@link
      * BufferUnderflowException} if it is not smaller than the limit, and then
      * increments the position.
@@ -860,7 +867,7 @@ public abstract sealed class Buffer
 
                 @Override
                 public long getBufferAddress(Buffer buffer) {
-                    return buffer.address;
+                    return buffer.address();
                 }
 
                 @Override
