@@ -457,7 +457,7 @@ public class Cipher {
         String mode = (parts[1].length() == 0 ? null : parts[1]);
         String pad = (parts[2].length() == 0 ? null : parts[2]);
 
-        if ((mode == null || mode.isEmpty()) && (pad == null || pad.isEmpty())) {
+        if ((mode == null) && (pad == null)) {
             // Algorithm only
             Transform tr = new Transform(alg, "", null, null);
             return Collections.singletonList(tr);
@@ -467,8 +467,12 @@ public class Cipher {
             if ((mode != null) && (pad != null)) {
                 list.add(new Transform(alg, "/" + mode + "/" + pad, null, null));
             }
-            list.add(new Transform(alg, "/" + mode, null, pad));
-            list.add(new Transform(alg, "//" + pad, mode, null));
+            if (mode != null) {
+                list.add(new Transform(alg, "/" + mode, null, pad));
+            }
+            if (pad != null) {
+                list.add(new Transform(alg, "//" + pad, mode, null));
+            }
             list.add(new Transform(alg, "", mode, pad));
             return list;
         }
