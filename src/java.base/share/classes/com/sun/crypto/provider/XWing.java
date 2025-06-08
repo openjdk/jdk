@@ -54,11 +54,11 @@ public final class XWing extends NamedKEM {
 		var pkMKey = parsedPk.getMLKemPublicKey();
 		KEM.Encapsulated encapsulated;
 		try {
-			KEM kem = KEM.getInstance("ML-KEM");
+			KEM kem = KEM.getInstance("ML-KEM", SunJCE.getInstance());
 			KEM.Encapsulator enc = kem.newEncapsulator(pkMKey, sr);
 			encapsulated = enc.encapsulate();
 		} catch (NoSuchAlgorithmException e) {
-			throw new UnsupportedOperationException("ML-KEM algorithm not supported", e);
+			throw new AssertionError("SunJCE known to support ML-KEM", e);
 		} catch (InvalidKeyException e) {
 			throw new IllegalArgumentException("Invalid ML-KEM key part of X-Wing public key", e);
 		}
@@ -101,11 +101,11 @@ public final class XWing extends NamedKEM {
 		var ctM = Arrays.copyOfRange(encap, 0, 1088);
 		byte[] ssM;
 		try {
-			KEM kem = KEM.getInstance("ML-KEM");
+			KEM kem = KEM.getInstance("ML-KEM", SunJCE.getInstance());
 			KEM.Decapsulator dec = kem.newDecapsulator(skM);
 			ssM = dec.decapsulate(ctM).getEncoded();
 		} catch (NoSuchAlgorithmException e) {
-			throw new UnsupportedOperationException("ML-KEM algorithm not supported", e);
+			throw new AssertionError("SunJCE known to support ML-KEM", e);
 		} catch (InvalidKeyException e) {
 			throw new IllegalArgumentException("Invalid ML-KEM key part of X-Wing public key", e);
 		} finally {
@@ -174,11 +174,11 @@ public final class XWing extends NamedKEM {
 		/// @return a new {@link PublicKey} instance constructed from {@link #pkM()}
 		default PublicKey getMLKemPublicKey() {
 			try {
-				KeyFactory keyFactory = KeyFactory.getInstance("ML-KEM");
+				KeyFactory keyFactory = KeyFactory.getInstance("ML-KEM", SunJCE.getInstance());
 				PublicKey key = new NamedX509Key("ML-KEM", "ML-KEM-768", pkM().clone()); // get translatable key from raw bytes
 				return (PublicKey) keyFactory.translateKey(key);
 			} catch (NoSuchAlgorithmException e) {
-				throw new UnsupportedOperationException("JVM does not support ML-KEM", e);
+				throw new AssertionError("SunJCE known to support ML-KEM", e);
 			} catch (InvalidKeyException e) {
 				throw new IllegalStateException("Implementation-internal key invalid", e);
 			}
@@ -207,11 +207,11 @@ public final class XWing extends NamedKEM {
 
 		public PrivateKey getMLKemPrivateKey() {
 			try {
-				KeyFactory keyFactory = KeyFactory.getInstance("ML-KEM");
+				KeyFactory keyFactory = KeyFactory.getInstance("ML-KEM", SunJCE.getInstance());
 				PrivateKey key = new NamedPKCS8Key("ML-KEM", "ML-KEM-768", skM().clone()); // get translatable key from raw bytes
 				return (PrivateKey) keyFactory.translateKey(key);
 			} catch (NoSuchAlgorithmException e) {
-				throw new UnsupportedOperationException("JVM does not support ML-KEM", e);
+				throw new AssertionError("SunJCE known to support ML-KEM", e);
 			} catch (InvalidKeyException e) {
 				throw new IllegalStateException("Implementation-internal key invalid", e);
 			}
@@ -282,7 +282,7 @@ public final class XWing extends NamedKEM {
 			MessageDigest sha3 = MessageDigest.getInstance("SHA3-256");
 			return sha3.digest(input);
 		} catch (NoSuchAlgorithmException e) {
-			throw new AssertionError("SHA3-256 not supported", e);
+			throw new UnsupportedOperationException("JVM does not support SHA3-256", e);
 		}
 	}
 
@@ -361,7 +361,7 @@ public final class XWing extends NamedKEM {
 				keyAgreement.doPhase(publicKey, true);
 				return keyAgreement.generateSecret();
 			} catch (NoSuchAlgorithmException e) {
-				throw new AssertionError("JVM does not support X25519", e);
+				throw new UnsupportedOperationException("JVM does not support X25519", e);
 			} catch (InvalidKeyException e) {
 				throw new IllegalArgumentException("Internal implementation passed unsuitable key", e);
 			}
@@ -378,7 +378,7 @@ public final class XWing extends NamedKEM {
 			try {
 				return KeyFactory.getInstance("X25519");
 			} catch (NoSuchAlgorithmException e) {
-				throw new AssertionError("JVM does not support X25519", e);
+				throw new UnsupportedOperationException("JVM does not support X25519", e);
 			}
 		}
 
