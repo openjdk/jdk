@@ -26,7 +26,7 @@ public class XWingKeyPairGenerator extends NamedKeyPairGenerator {
 
     // visible for testing
     // similar to `GenerateKeyPairDerand` defined in https://www.ietf.org/archive/id/draft-connolly-cfrg-xwing-kem-07.html#section-5.2.1
-    byte[] derivePublicKey(byte[] sk) {
+    public static byte[] derivePublicKey(byte[] sk) {
         var expanded = XWing.expandDecapsulationKey(sk);
 
         var pkM = expanded.pkM();
