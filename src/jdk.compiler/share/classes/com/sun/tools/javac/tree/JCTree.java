@@ -1056,7 +1056,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             this.sym = sym;
             this.declKind = declKind;
             this.typePos = typePos;
-            Assert.check(vartype != null || typePos != Position.NOPOS);
         }
 
         protected JCVariableDecl(JCModifiers mods,
