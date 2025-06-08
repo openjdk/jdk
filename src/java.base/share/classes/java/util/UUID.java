@@ -95,6 +95,18 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
 
     private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
 
+    /**
+     * Record a fixed point in nano-time corresponding to a fix point in System.currentTimeMillis()
+     * and use the delta from the current nano-time as the current nano-time.
+     */
+    private static final long ORIGIN_MS = System.currentTimeMillis();
+
+    private static final long ORIGIN_NS = System.nanoTime();
+
+    private static long monotonicMS() {
+        return ORIGIN_MS + (System.nanoTime() - ORIGIN_NS) / 1_000_000;
+    }
+
     /*
      * The random number generator used by this class to create random
      * based UUIDs. In a holder class to defer initialization until needed.
@@ -195,7 +207,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * @spec RFC 9562
      */
     public static UUID unixEpochTimeMillis() {
-        long timestamp = System.currentTimeMillis();
+        long timestamp = monotonicMS();
         return unixEpochTimeMillis(timestamp);
     }
 
@@ -221,8 +233,8 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * @spec RFC 9562
      */
     public static UUID unixEpochTimeMillis(long timestamp) {
-        if (timestamp < 0 || (timestamp >>> 48) != 0) {
-            throw new IllegalArgumentException("Timestamp must be a 48-bit Unix Epoch time in milliseconds.");
+        if ((timestamp >> 48) != 0) {
+            throw new IllegalArgumentException("Timestamp must be an unsigned 48-bit Unix Epoch time in milliseconds.");
         }
 
         SecureRandom ng = Holder.numberGenerator;
