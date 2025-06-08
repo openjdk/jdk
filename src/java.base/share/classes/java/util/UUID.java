@@ -207,7 +207,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * @spec RFC 9562
      */
     public static UUID unixEpochTimeMillis() {
-        long timestamp = System.currentTimeMillis();
+        long timestamp = monotonicMS();
         return unixEpochTimeMillis(timestamp);
     }
 
