@@ -1482,6 +1482,14 @@
                                                                           \
   declare_constant(Symbol::max_symbol_length)                             \
                                                                           \
+  /******************************************************/                \
+  /* BSMAttributeEntry* - layout enum for InvokeDynamic */                \
+  /******************************************************/                \
+                                                                          \
+  declare_constant(BSMAttributeEntry::_bsmi_offset)                       \
+  declare_constant(BSMAttributeEntry::_argc_offset)                       \
+  declare_constant(BSMAttributeEntry::_argv_offset)                       \
+                                                                          \
   /***************************************/                               \
   /* JavaThreadStatus enum               */                               \
   /***************************************/                               \

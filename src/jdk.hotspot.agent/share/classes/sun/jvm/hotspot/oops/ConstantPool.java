@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,10 @@ public class ConstantPool extends Metadata implements ClassConstants {
     genericSignatureIndex = new CIntField(type.getCIntegerField("_generic_signature_index"), 0);
     headerSize  = type.getSize();
     elementSize = 0;
+    // fetch constants:
+    INDY_BSM_OFFSET = db.lookupIntConstant("BSMAttributeEntry::_bsmi_offset").intValue();
+    INDY_ARGC_OFFSET = db.lookupIntConstant("BSMAttributeEntry::_argc_offset").intValue();
+    INDY_ARGV_OFFSET = db.lookupIntConstant("BSMAttributeEntry::_argv_offset").intValue();
   }
 
   public ConstantPool(Address addr) {
@@ -121,9 +125,9 @@ public class ConstantPool extends Metadata implements ClassConstants {
   private static long headerSize;
   private static long elementSize;
 
-  private static int INDY_BSM_OFFSET = 0;
-  private static int INDY_ARGC_OFFSET = 1;
-  private static int INDY_ARGV_OFFSET = 2;
+  private static int INDY_BSM_OFFSET;
+  private static int INDY_ARGC_OFFSET;
+  private static int INDY_ARGV_OFFSET;
 
   public U1Array           getTags()       { return new U1Array(tags.getValue(getAddress())); }
   public U2Array           getOperands()   {

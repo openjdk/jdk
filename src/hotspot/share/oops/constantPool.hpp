@@ -80,6 +80,13 @@ public:
 class BSMAttributeEntry {
   friend class ConstantPool;
 
+  // Offsets for SA
+  enum {
+    _bsmi_offset = 0,
+    _argc_offset = 1,
+    _argv_offset = 2
+  };
+
   u2 _bootstrap_method_index;
   u2 _argument_count;
 
