@@ -180,154 +180,154 @@ public class XMLErrorResources_tr extends ListResourceBundle
     {"ER0000" , "{0}" },
 
     { ER_FUNCTION_NOT_SUPPORTED,
-      "İşlev desteklenmiyor!"},
+      "\u0130\u015flev desteklenmiyor!"},
 
     { ER_CANNOT_OVERWRITE_CAUSE,
-      "Nedenin üzerine yazılamaz"},
+      "Nedenin \u00fczerine yaz\u0131lamaz"},
 
     { ER_NO_DEFAULT_IMPL,
-      "Varsayılan uygulama bulunamadı"},
+      "Varsay\u0131lan uygulama bulunamad\u0131"},
 
     { ER_CHUNKEDINTARRAY_NOT_SUPPORTED,
-      "ChunkedIntArray({0}) şu an desteklenmiyor"},
+      "ChunkedIntArray({0}) \u015fu an desteklenmiyor"},
 
     { ER_OFFSET_BIGGER_THAN_SLOT,
-      "Göreli konum yuvadan büyük"},
+      "G\u00f6reli konum yuvadan b\u00fcy\u00fck"},
 
     { ER_COROUTINE_NOT_AVAIL,
-      "Coroutine kullanılamıyor, id={0}"},
+      "Coroutine kullan\u0131lam\u0131yor, id={0}"},
 
     { ER_COROUTINE_CO_EXIT,
-      "CoroutineManager co_exit() isteği aldı"},
+      "CoroutineManager co_exit() iste\u011fi ald\u0131"},
 
     { ER_COJOINROUTINESET_FAILED,
-      "co_joinCoroutineSet() başarısız oldu"},
+      "co_joinCoroutineSet() ba\u015far\u0131s\u0131z oldu"},
 
     { ER_COROUTINE_PARAM,
-      "Coroutine değiştirgesi hatası ({0})"},
+      "Coroutine de\u011fi\u015ftirgesi hatas\u0131 ({0})"},
 
     { ER_PARSER_DOTERMINATE_ANSWERS,
-      "\nBEKLENMEYEN: Parser doTerminate yanıtı {0}"},
+      "\nBEKLENMEYEN: Parser doTerminate yan\u0131t\u0131 {0}"},
 
     { ER_NO_PARSE_CALL_WHILE_PARSING,
-      "Ayrıştırma sırasında parse çağrılamaz"},
+      "Ayr\u0131\u015ft\u0131rma s\u0131ras\u0131nda parse \u00e7a\u011fr\u0131lamaz"},
 
     { ER_TYPED_ITERATOR_AXIS_NOT_IMPLEMENTED,
-      "Hata: {0} ekseni için tip atanmış yineleyici gerçekleştirilmedi"},
+      "Hata: {0} ekseni i\u00e7in tip atanm\u0131\u015f yineleyici ger\u00e7ekle\u015ftirilmedi"},
 
     { ER_ITERATOR_AXIS_NOT_IMPLEMENTED,
-      "Hata: {0} ekseni için yineleyici gerçekleştirilmedi"},
+      "Hata: {0} ekseni i\u00e7in yineleyici ger\u00e7ekle\u015ftirilmedi"},
 
     { ER_ITERATOR_CLONE_NOT_SUPPORTED,
-      "Yineleyici eşkopyası desteklenmiyor"},
+      "Yineleyici e\u015fkopyas\u0131 desteklenmiyor"},
 
     { ER_UNKNOWN_AXIS_TYPE,
-      "Bilinmeyen eksen dolaşma tipi: {0}"},
+      "Bilinmeyen eksen dola\u015fma tipi: {0}"},
 
     { ER_AXIS_NOT_SUPPORTED,
-      "Eksen dolaşıcı desteklenmiyor: {0}"},
+      "Eksen dola\u015f\u0131c\u0131 desteklenmiyor: {0}"},
 
     { ER_NO_DTMIDS_AVAIL,
-      "Kullanılabilecek başka DTM tanıtıcısı yok"},
+      "Kullan\u0131labilecek ba\u015fka DTM tan\u0131t\u0131c\u0131s\u0131 yok"},
 
     { ER_NOT_SUPPORTED,
       "Desteklenmiyor: {0}"},
 
     { ER_NODE_NON_NULL,
-      "getDTMHandleFromNode için düğüm boş değerli olmamalıdır"},
+      "getDTMHandleFromNode i\u00e7in d\u00fc\u011f\u00fcm bo\u015f de\u011ferli olmamal\u0131d\u0131r"},
 
     { ER_COULD_NOT_RESOLVE_NODE,
-      "Düğüm tanıtıcı değere çözülemedi"},
+      "D\u00fc\u011f\u00fcm tan\u0131t\u0131c\u0131 de\u011fere \u00e7\u00f6z\u00fclemedi"},
 
     { ER_STARTPARSE_WHILE_PARSING,
-       "Ayrıştırma sırasında startParse çağrılamaz"},
+       "Ayr\u0131\u015ft\u0131rma s\u0131ras\u0131nda startParse \u00e7a\u011fr\u0131lamaz"},
 
     { ER_STARTPARSE_NEEDS_SAXPARSER,
-       "startParse için boş değerli olmayan SAXParser gerekiyor"},
+       "startParse i\u00e7in bo\u015f de\u011ferli olmayan SAXParser gerekiyor"},
 
     { ER_COULD_NOT_INIT_PARSER,
-       "Ayrıştırıcı bununla kullanıma hazırlanamadı"},
+       "Ayr\u0131\u015ft\u0131r\u0131c\u0131 bununla kullan\u0131ma haz\u0131rlanamad\u0131"},
 
     { ER_EXCEPTION_CREATING_POOL,
-       "Havuz için yeni örnek yaratılırken kural dışı durum"},
+       "Havuz i\u00e7in yeni \u00f6rnek yarat\u0131l\u0131rken kural d\u0131\u015f\u0131 durum"},
 
     { ER_PATH_CONTAINS_INVALID_ESCAPE_SEQUENCE,
-       "Yol geçersiz kaçış dizisi içeriyor"},
+       "Yol ge\u00e7ersiz ka\u00e7\u0131\u015f dizisi i\u00e7eriyor"},
 
     { ER_SCHEME_REQUIRED,
-       "Şema gerekli!"},
+       "\u015eema gerekli!"},
 
     { ER_NO_SCHEME_IN_URI,
-       "URI içinde şema bulunamadı: {0}"},
+       "URI i\u00e7inde \u015fema bulunamad\u0131: {0}"},
 
     { ER_NO_SCHEME_INURI,
-       "URI içinde şema bulunamadı"},
+       "URI i\u00e7inde \u015fema bulunamad\u0131"},
 
     { ER_PATH_INVALID_CHAR,
-       "Yol geçersiz karakter içeriyor: {0}"},
+       "Yol ge\u00e7ersiz karakter i\u00e7eriyor: {0}"},
 
     { ER_SCHEME_FROM_NULL_STRING,
-       "Boş değerli dizgiden şema tanımlanamaz"},
+       "Bo\u015f de\u011ferli dizgiden \u015fema tan\u0131mlanamaz"},
 
     { ER_SCHEME_NOT_CONFORMANT,
-       "Şema uyumlu değil."},
+       "\u015eema uyumlu de\u011fil."},
 
     { ER_HOST_ADDRESS_NOT_WELLFORMED,
-       "Anasistem doğru biçimli bir adres değil"},
+       "Anasistem do\u011fru bi\u00e7imli bir adres de\u011fil"},
 
     { ER_PORT_WHEN_HOST_NULL,
-       "Anasistem boş değerliyken kapı tanımlanamaz"},
+       "Anasistem bo\u015f de\u011ferliyken kap\u0131 tan\u0131mlanamaz"},
 
     { ER_INVALID_PORT,
-       "Kapı numarası geçersiz"},
+       "Kap\u0131 numaras\u0131 ge\u00e7ersiz"},
 
     { ER_FRAG_FOR_GENERIC_URI,
-       "Parça yalnızca soysal URI için tanımlanabilir"},
+       "Par\u00e7a yaln\u0131zca soysal URI i\u00e7in tan\u0131mlanabilir"},
 
     { ER_FRAG_WHEN_PATH_NULL,
-       "Yol boş değerliyken parça tanımlanamaz"},
+       "Yol bo\u015f de\u011ferliyken par\u00e7a tan\u0131mlanamaz"},
 
     { ER_FRAG_INVALID_CHAR,
-       "Parça geçersiz karakter içeriyor"},
+       "Par\u00e7a ge\u00e7ersiz karakter i\u00e7eriyor"},
 
     { ER_PARSER_IN_USE,
-      "Ayrıştırıcı kullanımda"},
+      "Ayr\u0131\u015ft\u0131r\u0131c\u0131 kullan\u0131mda"},
 
     { ER_CANNOT_CHANGE_WHILE_PARSING,
-      "Ayrıştırma sırasında {0} {1} değiştirilemez"},
+      "Ayr\u0131\u015ft\u0131rma s\u0131ras\u0131nda {0} {1} de\u011fi\u015ftirilemez"},
 
     { ER_SELF_CAUSATION_NOT_PERMITTED,
-      "Öznedenselliğe izin verilmez"},
+      "\u00d6znedenselli\u011fe izin verilmez"},
 
     { ER_NO_USERINFO_IF_NO_HOST,
-      "Anasistem belirtilmediyse kullanıcı bilgisi belirtilemez"},
+      "Anasistem belirtilmediyse kullan\u0131c\u0131 bilgisi belirtilemez"},
 
     { ER_NO_PORT_IF_NO_HOST,
-      "Anasistem belirtilmediyse kapı belirtilemez"},
+      "Anasistem belirtilmediyse kap\u0131 belirtilemez"},
 
     { ER_NO_QUERY_STRING_IN_PATH,
       "Yol ve sorgu dizgisinde sorgu dizgisi belirtilemez"},
 
     { ER_NO_FRAGMENT_STRING_IN_PATH,
-      "Parça hem yolda, hem de parçada belirtilemez"},
+      "Par\u00e7a hem yolda, hem de par\u00e7ada belirtilemez"},
 
     { ER_CANNOT_INIT_URI_EMPTY_PARMS,
-      "Boş değiştirgelerle URI kullanıma hazırlanamaz"},
+      "Bo\u015f de\u011fi\u015ftirgelerle URI kullan\u0131ma haz\u0131rlanamaz"},
 
     { ER_METHOD_NOT_SUPPORTED,
-      "Yöntem henüz desteklenmiyor"},
+      "Y\u00f6ntem hen\u00fcz desteklenmiyor"},
 
     { ER_INCRSAXSRCFILTER_NOT_RESTARTABLE,
-      "IncrementalSAXSource_Filter şu an yeniden başlatılabilir durumda değil"},
+      "IncrementalSAXSource_Filter \u015fu an yeniden ba\u015flat\u0131labilir durumda de\u011fil"},
 
     { ER_XMLRDR_NOT_BEFORE_STARTPARSE,
-      "XMLReader, startParse isteğinden önce olmaz"},
+      "XMLReader, startParse iste\u011finden \u00f6nce olmaz"},
 
     { ER_AXIS_TRAVERSER_NOT_SUPPORTED,
-      "Eksen dolaşıcı desteklenmiyor: {0}"},
+      "Eksen dola\u015f\u0131c\u0131 desteklenmiyor: {0}"},
 
     { ER_ERRORHANDLER_CREATED_WITH_NULL_PRINTWRITER,
-      "ListingErrorHandler boş değerli PrintWriter ile yaratıldı!"},
+      "ListingErrorHandler bo\u015f de\u011ferli PrintWriter ile yarat\u0131ld\u0131!"},
 
     { ER_SYSTEMID_UNKNOWN,
       "SystemId bilinmiyor"},
@@ -336,63 +336,63 @@ public class XMLErrorResources_tr extends ListResourceBundle
       "Hata yeri bilinmiyor"},
 
     { ER_PREFIX_MUST_RESOLVE,
-      "Önek bir ad alanına çözülmelidir: {0}"},
+      "\u00d6nek bir ad alan\u0131na \u00e7\u00f6z\u00fclmelidir: {0}"},
 
     { ER_CREATEDOCUMENT_NOT_SUPPORTED,
-      "XPathContext içinde createDocument() desteklenmiyor!"},
+      "XPathContext i\u00e7inde createDocument() desteklenmiyor!"},
 
     { ER_CHILD_HAS_NO_OWNER_DOCUMENT,
-      "Özniteliğin alt öğesinin iye belgesi yok!"},
+      "\u00d6zniteli\u011fin alt \u00f6\u011fesinin iye belgesi yok!"},
 
     { ER_CHILD_HAS_NO_OWNER_DOCUMENT_ELEMENT,
-      "Özniteliğin alt öğesinin iye belge öğesi yok!"},
+      "\u00d6zniteli\u011fin alt \u00f6\u011fesinin iye belge \u00f6\u011fesi yok!"},
 
     { ER_CANT_OUTPUT_TEXT_BEFORE_DOC,
-      "Uyarı: Belge öğesinden önce metin çıkışı olamaz!  Yoksayılıyor..."},
+      "Uyar\u0131: Belge \u00f6\u011fesinden \u00f6nce metin \u00e7\u0131k\u0131\u015f\u0131 olamaz!  Yoksay\u0131l\u0131yor..."},
 
     { ER_CANT_HAVE_MORE_THAN_ONE_ROOT,
-      "DOM üzerinde birden fazla kök olamaz!"},
+      "DOM \u00fczerinde birden fazla k\u00f6k olamaz!"},
 
     { ER_ARG_LOCALNAME_NULL,
-       "'localName' bağımsız değiştirgesi boş değerli"},
+       "'localName' ba\u011f\u0131ms\u0131z de\u011fi\u015ftirgesi bo\u015f de\u011ferli"},
 
     // Note to translators:  A QNAME has the syntactic form [NCName:]NCName
     // The localname is the portion after the optional colon; the message indicates
     // that there is a problem with that part of the QNAME.
     { ER_ARG_LOCALNAME_INVALID,
-       "QNAME içindeki yerel ad (localname) geçerli bir NCName olmalıdır"},
+       "QNAME i\u00e7indeki yerel ad (localname) ge\u00e7erli bir NCName olmal\u0131d\u0131r"},
 
     // Note to translators:  A QNAME has the syntactic form [NCName:]NCName
     // The prefix is the portion before the optional colon; the message indicates
     // that there is a problem with that part of the QNAME.
     { ER_ARG_PREFIX_INVALID,
-       "QNAME içindeki önek geçerli bir NCName olmalıdır"},
+       "QNAME i\u00e7indeki \u00f6nek ge\u00e7erli bir NCName olmal\u0131d\u0131r"},
 
-    { "BAD_CODE", "createMessage için kullanılan değiştirge sınırların dışında"},
-    { "FORMAT_FAILED", "messageFormat çağrısı sırasında kural dışı durum yayınlandı"},
-    { "line", "Satır #"},
+    { "BAD_CODE", "createMessage i\u00e7in kullan\u0131lan de\u011fi\u015ftirge s\u0131n\u0131rlar\u0131n d\u0131\u015f\u0131nda"},
+    { "FORMAT_FAILED", "messageFormat \u00e7a\u011fr\u0131s\u0131 s\u0131ras\u0131nda kural d\u0131\u015f\u0131 durum yay\u0131nland\u0131"},
+    { "line", "Sat\u0131r #"},
     { "column","Kolon #"},
 
     {ER_SERIALIZER_NOT_CONTENTHANDLER,
-      "Diziselleştirici sınıfı ''{0}'' org.xml.sax.ContentHandler işlevini uygulamıyor."},
+      "Diziselle\u015ftirici s\u0131n\u0131f\u0131 ''{0}'' org.xml.sax.ContentHandler i\u015flevini uygulam\u0131yor."},
 
     {ER_RESOURCE_COULD_NOT_FIND,
-      "Kaynak [ {0} ] bulunamadı.\n {1}" },
+      "Kaynak [ {0} ] bulunamad\u0131.\n {1}" },
 
     {ER_RESOURCE_COULD_NOT_LOAD,
-      "Kaynak [ {0} ] yükleyemedi: {1} \n {2} \t {3}" },
+      "Kaynak [ {0} ] y\u00fckleyemedi: {1} \n {2} \t {3}" },
 
     {ER_BUFFER_SIZE_LESSTHAN_ZERO,
-      "Arabellek büyüklüğü <=0" },
+      "Arabellek b\u00fcy\u00fckl\u00fc\u011f\u00fc <=0" },
 
     {ER_INVALID_UTF16_SURROGATE,
-      "UTF-16 yerine kullanılan değer geçersiz: {0} ?" },
+      "UTF-16 yerine kullan\u0131lan de\u011fer ge\u00e7ersiz: {0} ?" },
 
     {ER_OIERROR,
-      "GÇ hatası" },
+      "G\u00c7 hatas\u0131" },
 
     {ER_ILLEGAL_ATTRIBUTE_POSITION,
-      "Alt düğümlerden sonra ya da bir öğe üretilmeden önce {0} özniteliği eklenemez. Öznitelik yoksayılacak."},
+      "Alt d\u00fc\u011f\u00fcmlerden sonra ya da bir \u00f6\u011fe \u00fcretilmeden \u00f6nce {0} \u00f6zniteli\u011fi eklenemez. \u00d6znitelik yoksay\u0131lacak."},
 
       /*
        * Note to translators:  The stylesheet contained a reference to a
@@ -400,7 +400,7 @@ public class XMLErrorResources_tr extends ListResourceBundle
        * text is the name of the prefix.
        */
     {ER_NAMESPACE_PREFIX,
-      "''{0}'' önekine ilişkin ad alanı bildirilmedi." },
+      "''{0}'' \u00f6nekine ili\u015fkin ad alan\u0131 bildirilmedi." },
       /*
        * Note to translators:  This message is reported if the stylesheet
        * being processed attempted to construct an XML document with an
@@ -408,7 +408,7 @@ public class XMLErrorResources_tr extends ListResourceBundle
        * specifies the name of the attribute.
        */
     {ER_STRAY_ATTRIBUTE,
-      "''{0}'' özniteliği öğenin dışında." },
+      "''{0}'' \u00f6zniteli\u011fi \u00f6\u011fenin d\u0131\u015f\u0131nda." },
 
       /*
        * Note to translators:  As with the preceding message, a namespace
@@ -418,13 +418,13 @@ public class XMLErrorResources_tr extends ListResourceBundle
        * namespace declaration.
        */
     {ER_STRAY_NAMESPACE,
-      "''{0}''=''{1}'' ad alanı bildirimi öğenin dışında." },
+      "''{0}''=''{1}'' ad alan\u0131 bildirimi \u00f6\u011fenin d\u0131\u015f\u0131nda." },
 
     {ER_COULD_NOT_LOAD_RESOURCE,
-      "''{0}'' yüklenemedi (CLASSPATH değişkeninizi inceleyin), yalnızca varsayılanlar kullanılıyor"},
+      "''{0}'' y\u00fcklenemedi (CLASSPATH de\u011fi\u015fkeninizi inceleyin), yaln\u0131zca varsay\u0131lanlar kullan\u0131l\u0131yor"},
 
     {ER_COULD_NOT_LOAD_METHOD_PROPERTY,
-      "''{1}'' çıkış yöntemi için ''{0}'' özellik dosyası yüklenemedi (CLASSPATH değişkenini inceleyin)" }
+      "''{1}'' \u00e7\u0131k\u0131\u015f y\u00f6ntemi i\u00e7in ''{0}'' \u00f6zellik dosyas\u0131 y\u00fcklenemedi (CLASSPATH de\u011fi\u015fkenini inceleyin)" }
 
 
   };

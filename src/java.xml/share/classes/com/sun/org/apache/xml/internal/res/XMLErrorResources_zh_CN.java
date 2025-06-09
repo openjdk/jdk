@@ -184,222 +184,222 @@ public class XMLErrorResources_zh_CN extends ListResourceBundle
     {"ER0000" , "{0}" },
 
     { ER_FUNCTION_NOT_SUPPORTED,
-      "不支持该函数!"},
+      "\u4E0D\u652F\u6301\u8BE5\u51FD\u6570!"},
 
     { ER_CANNOT_OVERWRITE_CAUSE,
-      "无法覆盖原因"},
+      "\u65E0\u6CD5\u8986\u76D6\u539F\u56E0"},
 
     { ER_NO_DEFAULT_IMPL,
-      "找不到默认实现 "},
+      "\u627E\u4E0D\u5230\u9ED8\u8BA4\u5B9E\u73B0 "},
 
     { ER_CHUNKEDINTARRAY_NOT_SUPPORTED,
-      "当前不支持 ChunkedIntArray({0})"},
+      "\u5F53\u524D\u4E0D\u652F\u6301 ChunkedIntArray({0})"},
 
     { ER_OFFSET_BIGGER_THAN_SLOT,
-      "偏移量大于插槽"},
+      "\u504F\u79FB\u91CF\u5927\u4E8E\u63D2\u69FD"},
 
     { ER_COROUTINE_NOT_AVAIL,
-      "Coroutine 不可用, id={0}"},
+      "Coroutine \u4E0D\u53EF\u7528, id={0}"},
 
     { ER_COROUTINE_CO_EXIT,
-      "CoroutineManager 收到 co_exit() 请求"},
+      "CoroutineManager \u6536\u5230 co_exit() \u8BF7\u6C42"},
 
     { ER_COJOINROUTINESET_FAILED,
-      "co_joinCoroutineSet() 失败"},
+      "co_joinCoroutineSet() \u5931\u8D25"},
 
     { ER_COROUTINE_PARAM,
-      "Coroutine 参数错误 ({0})"},
+      "Coroutine \u53C2\u6570\u9519\u8BEF ({0})"},
 
     { ER_PARSER_DOTERMINATE_ANSWERS,
-      "\n意外: 解析器对答复{0}执行 doTerminate"},
+      "\n\u610F\u5916: \u89E3\u6790\u5668\u5BF9\u7B54\u590D{0}\u6267\u884C doTerminate"},
 
     { ER_NO_PARSE_CALL_WHILE_PARSING,
-      "无法在解析时调用 parse"},
+      "\u65E0\u6CD5\u5728\u89E3\u6790\u65F6\u8C03\u7528 parse"},
 
     { ER_TYPED_ITERATOR_AXIS_NOT_IMPLEMENTED,
-      "错误: 未实现轴{0}的类型化迭代器"},
+      "\u9519\u8BEF: \u672A\u5B9E\u73B0\u8F74{0}\u7684\u7C7B\u578B\u5316\u8FED\u4EE3\u5668"},
 
     { ER_ITERATOR_AXIS_NOT_IMPLEMENTED,
-      "错误: 未实现轴{0}的迭代器 "},
+      "\u9519\u8BEF: \u672A\u5B9E\u73B0\u8F74{0}\u7684\u8FED\u4EE3\u5668 "},
 
     { ER_ITERATOR_CLONE_NOT_SUPPORTED,
-      "不支持克隆迭代器"},
+      "\u4E0D\u652F\u6301\u514B\u9686\u8FED\u4EE3\u5668"},
 
     { ER_UNKNOWN_AXIS_TYPE,
-      "轴遍历类型未知: {0}"},
+      "\u8F74\u904D\u5386\u7C7B\u578B\u672A\u77E5: {0}"},
 
     { ER_AXIS_NOT_SUPPORTED,
-      "不支持轴遍历程序: {0}"},
+      "\u4E0D\u652F\u6301\u8F74\u904D\u5386\u7A0B\u5E8F: {0}"},
 
     { ER_NO_DTMIDS_AVAIL,
-      "无法使用更多 DTM ID"},
+      "\u65E0\u6CD5\u4F7F\u7528\u66F4\u591A DTM ID"},
 
     { ER_NOT_SUPPORTED,
-      "不支持: {0}"},
+      "\u4E0D\u652F\u6301: {0}"},
 
     { ER_NODE_NON_NULL,
-      "getDTMHandleFromNode 的节点必须为非空值"},
+      "getDTMHandleFromNode \u7684\u8282\u70B9\u5FC5\u987B\u4E3A\u975E\u7A7A\u503C"},
 
     { ER_COULD_NOT_RESOLVE_NODE,
-      "无法将节点解析为句柄"},
+      "\u65E0\u6CD5\u5C06\u8282\u70B9\u89E3\u6790\u4E3A\u53E5\u67C4"},
 
     { ER_STARTPARSE_WHILE_PARSING,
-       "无法在解析时调用 startParse"},
+       "\u65E0\u6CD5\u5728\u89E3\u6790\u65F6\u8C03\u7528 startParse"},
 
     { ER_STARTPARSE_NEEDS_SAXPARSER,
-       "startParse 需要非空 SAXParser"},
+       "startParse \u9700\u8981\u975E\u7A7A SAXParser"},
 
     { ER_COULD_NOT_INIT_PARSER,
-       "无法使用以下对象初始化解析器"},
+       "\u65E0\u6CD5\u4F7F\u7528\u4EE5\u4E0B\u5BF9\u8C61\u521D\u59CB\u5316\u89E3\u6790\u5668"},
 
     { ER_EXCEPTION_CREATING_POOL,
-       "为池创建新实例时出现异常错误"},
+       "\u4E3A\u6C60\u521B\u5EFA\u65B0\u5B9E\u4F8B\u65F6\u51FA\u73B0\u5F02\u5E38\u9519\u8BEF"},
 
     { ER_PATH_CONTAINS_INVALID_ESCAPE_SEQUENCE,
-       "路径包含无效的逃逸 序列"},
+       "\u8DEF\u5F84\u5305\u542B\u65E0\u6548\u7684\u9003\u9038 \u5E8F\u5217"},
 
     { ER_SCHEME_REQUIRED,
-       "方案是必需的!"},
+       "\u65B9\u6848\u662F\u5FC5\u9700\u7684!"},
 
     { ER_NO_SCHEME_IN_URI,
-       "在 URI 中找不到方案: {0}"},
+       "\u5728 URI \u4E2D\u627E\u4E0D\u5230\u65B9\u6848: {0}"},
 
     { ER_NO_SCHEME_INURI,
-       "在 URI 中找不到方案"},
+       "\u5728 URI \u4E2D\u627E\u4E0D\u5230\u65B9\u6848"},
 
     { ER_PATH_INVALID_CHAR,
-       "路径包含无效的字符: {0}"},
+       "\u8DEF\u5F84\u5305\u542B\u65E0\u6548\u7684\u5B57\u7B26: {0}"},
 
     { ER_SCHEME_FROM_NULL_STRING,
-       "无法从空字符串设置方案"},
+       "\u65E0\u6CD5\u4ECE\u7A7A\u5B57\u7B26\u4E32\u8BBE\u7F6E\u65B9\u6848"},
 
     { ER_SCHEME_NOT_CONFORMANT,
-       "方案不一致。"},
+       "\u65B9\u6848\u4E0D\u4E00\u81F4\u3002"},
 
     { ER_HOST_ADDRESS_NOT_WELLFORMED,
-       "主机不是格式良好的地址"},
+       "\u4E3B\u673A\u4E0D\u662F\u683C\u5F0F\u826F\u597D\u7684\u5730\u5740"},
 
     { ER_PORT_WHEN_HOST_NULL,
-       "主机为空时, 无法设置端口"},
+       "\u4E3B\u673A\u4E3A\u7A7A\u65F6, \u65E0\u6CD5\u8BBE\u7F6E\u7AEF\u53E3"},
 
     { ER_INVALID_PORT,
-       "无效的端口号"},
+       "\u65E0\u6548\u7684\u7AEF\u53E3\u53F7"},
 
     { ER_FRAG_FOR_GENERIC_URI,
-       "只能为一般 URI 设置片段"},
+       "\u53EA\u80FD\u4E3A\u4E00\u822C URI \u8BBE\u7F6E\u7247\u6BB5"},
 
     { ER_FRAG_WHEN_PATH_NULL,
-       "路径为空时, 无法设置片段"},
+       "\u8DEF\u5F84\u4E3A\u7A7A\u65F6, \u65E0\u6CD5\u8BBE\u7F6E\u7247\u6BB5"},
 
     { ER_FRAG_INVALID_CHAR,
-       "片段包含无效的字符"},
+       "\u7247\u6BB5\u5305\u542B\u65E0\u6548\u7684\u5B57\u7B26"},
 
     { ER_PARSER_IN_USE,
-      "解析器已在使用"},
+      "\u89E3\u6790\u5668\u5DF2\u5728\u4F7F\u7528"},
 
     { ER_CANNOT_CHANGE_WHILE_PARSING,
-      "无法在解析时更改{0} {1}"},
+      "\u65E0\u6CD5\u5728\u89E3\u6790\u65F6\u66F4\u6539{0} {1}"},
 
     { ER_SELF_CAUSATION_NOT_PERMITTED,
-      "不允许使用自因"},
+      "\u4E0D\u5141\u8BB8\u4F7F\u7528\u81EA\u56E0"},
 
     { ER_NO_USERINFO_IF_NO_HOST,
-      "如果没有指定主机, 则不可以指定 Userinfo"},
+      "\u5982\u679C\u6CA1\u6709\u6307\u5B9A\u4E3B\u673A, \u5219\u4E0D\u53EF\u4EE5\u6307\u5B9A Userinfo"},
 
     { ER_NO_PORT_IF_NO_HOST,
-      "如果没有指定主机, 则不可以指定端口"},
+      "\u5982\u679C\u6CA1\u6709\u6307\u5B9A\u4E3B\u673A, \u5219\u4E0D\u53EF\u4EE5\u6307\u5B9A\u7AEF\u53E3"},
 
     { ER_NO_QUERY_STRING_IN_PATH,
-      "路径和查询字符串中不能指定查询字符串"},
+      "\u8DEF\u5F84\u548C\u67E5\u8BE2\u5B57\u7B26\u4E32\u4E2D\u4E0D\u80FD\u6307\u5B9A\u67E5\u8BE2\u5B57\u7B26\u4E32"},
 
     { ER_NO_FRAGMENT_STRING_IN_PATH,
-      "路径和片段中都无法指定片段"},
+      "\u8DEF\u5F84\u548C\u7247\u6BB5\u4E2D\u90FD\u65E0\u6CD5\u6307\u5B9A\u7247\u6BB5"},
 
     { ER_CANNOT_INIT_URI_EMPTY_PARMS,
-      "无法以空参数初始化 URI"},
+      "\u65E0\u6CD5\u4EE5\u7A7A\u53C2\u6570\u521D\u59CB\u5316 URI"},
 
     { ER_METHOD_NOT_SUPPORTED,
-      "尚不支持该方法 "},
+      "\u5C1A\u4E0D\u652F\u6301\u8BE5\u65B9\u6CD5 "},
 
     { ER_INCRSAXSRCFILTER_NOT_RESTARTABLE,
-      "当前无法重新启动 IncrementalSAXSource_Filter"},
+      "\u5F53\u524D\u65E0\u6CD5\u91CD\u65B0\u542F\u52A8 IncrementalSAXSource_Filter"},
 
     { ER_XMLRDR_NOT_BEFORE_STARTPARSE,
-      "XMLReader 不在 startParse 请求之前"},
+      "XMLReader \u4E0D\u5728 startParse \u8BF7\u6C42\u4E4B\u524D"},
 
     { ER_AXIS_TRAVERSER_NOT_SUPPORTED,
-      "不支持轴遍历程序: {0}"},
+      "\u4E0D\u652F\u6301\u8F74\u904D\u5386\u7A0B\u5E8F: {0}"},
 
     { ER_ERRORHANDLER_CREATED_WITH_NULL_PRINTWRITER,
-      "使用空 PrintWriter 创建了 ListingErrorHandler!"},
+      "\u4F7F\u7528\u7A7A PrintWriter \u521B\u5EFA\u4E86 ListingErrorHandler!"},
 
     { ER_SYSTEMID_UNKNOWN,
-      "SystemId 未知"},
+      "SystemId \u672A\u77E5"},
 
     { ER_LOCATION_UNKNOWN,
-      "错误所在的位置未知"},
+      "\u9519\u8BEF\u6240\u5728\u7684\u4F4D\u7F6E\u672A\u77E5"},
 
     { ER_PREFIX_MUST_RESOLVE,
-      "前缀必须解析为名称空间: {0}"},
+      "\u524D\u7F00\u5FC5\u987B\u89E3\u6790\u4E3A\u540D\u79F0\u7A7A\u95F4: {0}"},
 
     { ER_CREATEDOCUMENT_NOT_SUPPORTED,
-      "XPathContext 中不支持 createDocument()!"},
+      "XPathContext \u4E2D\u4E0D\u652F\u6301 createDocument()!"},
 
     { ER_CHILD_HAS_NO_OWNER_DOCUMENT,
-      "属性子级没有所有者文档!"},
+      "\u5C5E\u6027\u5B50\u7EA7\u6CA1\u6709\u6240\u6709\u8005\u6587\u6863!"},
 
     { ER_CHILD_HAS_NO_OWNER_DOCUMENT_ELEMENT,
-      "属性子级没有所有者文档元素!"},
+      "\u5C5E\u6027\u5B50\u7EA7\u6CA1\u6709\u6240\u6709\u8005\u6587\u6863\u5143\u7D20!"},
 
     { ER_CANT_OUTPUT_TEXT_BEFORE_DOC,
-      "警告: 无法输出文档元素之前的文本! 将忽略..."},
+      "\u8B66\u544A: \u65E0\u6CD5\u8F93\u51FA\u6587\u6863\u5143\u7D20\u4E4B\u524D\u7684\u6587\u672C! \u5C06\u5FFD\u7565..."},
 
     { ER_CANT_HAVE_MORE_THAN_ONE_ROOT,
-      "DOM 上不能有多个根!"},
+      "DOM \u4E0A\u4E0D\u80FD\u6709\u591A\u4E2A\u6839!"},
 
     { ER_ARG_LOCALNAME_NULL,
-       "参数 'localName' 为空值"},
+       "\u53C2\u6570 'localName' \u4E3A\u7A7A\u503C"},
 
     // Note to translators:  A QNAME has the syntactic form [NCName:]NCName
     // The localname is the portion after the optional colon; the message indicates
     // that there is a problem with that part of the QNAME.
     { ER_ARG_LOCALNAME_INVALID,
-       "QNAME 中的本地名称应为有效 NCName"},
+       "QNAME \u4E2D\u7684\u672C\u5730\u540D\u79F0\u5E94\u4E3A\u6709\u6548 NCName"},
 
     // Note to translators:  A QNAME has the syntactic form [NCName:]NCName
     // The prefix is the portion before the optional colon; the message indicates
     // that there is a problem with that part of the QNAME.
     { ER_ARG_PREFIX_INVALID,
-       "QNAME 中的前缀应为有效 NCName"},
+       "QNAME \u4E2D\u7684\u524D\u7F00\u5E94\u4E3A\u6709\u6548 NCName"},
 
     { ER_NAME_CANT_START_WITH_COLON,
-      "名称不能以冒号开头"},
+      "\u540D\u79F0\u4E0D\u80FD\u4EE5\u5192\u53F7\u5F00\u5934"},
 
-    { "BAD_CODE", "createMessage 的参数超出范围"},
-    { "FORMAT_FAILED", "调用 messageFormat 时抛出异常错误"},
-    { "line", "行号"},
-    { "column","列号"},
+    { "BAD_CODE", "createMessage \u7684\u53C2\u6570\u8D85\u51FA\u8303\u56F4"},
+    { "FORMAT_FAILED", "\u8C03\u7528 messageFormat \u65F6\u629B\u51FA\u5F02\u5E38\u9519\u8BEF"},
+    { "line", "\u884C\u53F7"},
+    { "column","\u5217\u53F7"},
 
     {ER_SERIALIZER_NOT_CONTENTHANDLER,
-      "串行器类 ''{0}'' 不实现 org.xml.sax.ContentHandler。"},
+      "\u4E32\u884C\u5668\u7C7B ''{0}'' \u4E0D\u5B9E\u73B0 org.xml.sax.ContentHandler\u3002"},
 
     {ER_RESOURCE_COULD_NOT_FIND,
-      "找不到资源 [ {0} ]。\n {1}" },
+      "\u627E\u4E0D\u5230\u8D44\u6E90 [ {0} ]\u3002\n {1}" },
 
     {ER_RESOURCE_COULD_NOT_LOAD,
-      "资源 [ {0} ] 无法加载: {1} \n {2} \t {3}" },
+      "\u8D44\u6E90 [ {0} ] \u65E0\u6CD5\u52A0\u8F7D: {1} \n {2} \t {3}" },
 
     {ER_BUFFER_SIZE_LESSTHAN_ZERO,
-      "缓冲区大小 <=0" },
+      "\u7F13\u51B2\u533A\u5927\u5C0F <=0" },
 
     {ER_INVALID_UTF16_SURROGATE,
-      "检测到无效的 UTF-16 代理: {0}?" },
+      "\u68C0\u6D4B\u5230\u65E0\u6548\u7684 UTF-16 \u4EE3\u7406: {0}?" },
 
     {ER_OIERROR,
-      "IO 错误" },
+      "IO \u9519\u8BEF" },
 
     {ER_ILLEGAL_ATTRIBUTE_POSITION,
-      "在生成子节点之后或在生成元素之前无法添加属性 {0}。将忽略属性。"},
+      "\u5728\u751F\u6210\u5B50\u8282\u70B9\u4E4B\u540E\u6216\u5728\u751F\u6210\u5143\u7D20\u4E4B\u524D\u65E0\u6CD5\u6DFB\u52A0\u5C5E\u6027 {0}\u3002\u5C06\u5FFD\u7565\u5C5E\u6027\u3002"},
 
       /*
        * Note to translators:  The stylesheet contained a reference to a
@@ -407,7 +407,7 @@ public class XMLErrorResources_zh_CN extends ListResourceBundle
        * text is the name of the prefix.
        */
     {ER_NAMESPACE_PREFIX,
-      "没有说明名称空间前缀 ''{0}''。" },
+      "\u6CA1\u6709\u8BF4\u660E\u540D\u79F0\u7A7A\u95F4\u524D\u7F00 ''{0}''\u3002" },
       /*
        * Note to translators:  This message is reported if the stylesheet
        * being processed attempted to construct an XML document with an
@@ -415,7 +415,7 @@ public class XMLErrorResources_zh_CN extends ListResourceBundle
        * specifies the name of the attribute.
        */
     {ER_STRAY_ATTRIBUTE,
-      "属性 ''{0}'' 在元素外部。" },
+      "\u5C5E\u6027 ''{0}'' \u5728\u5143\u7D20\u5916\u90E8\u3002" },
 
       /*
        * Note to translators:  As with the preceding message, a namespace
@@ -425,16 +425,16 @@ public class XMLErrorResources_zh_CN extends ListResourceBundle
        * namespace declaration.
        */
     {ER_STRAY_NAMESPACE,
-      "名称空间声明 ''{0}''=''{1}'' 在元素外部。" },
+      "\u540D\u79F0\u7A7A\u95F4\u58F0\u660E ''{0}''=''{1}'' \u5728\u5143\u7D20\u5916\u90E8\u3002" },
 
     {ER_COULD_NOT_LOAD_RESOURCE,
-      "无法加载 ''{0}'' (检查 CLASSPATH), 现在只使用默认值"},
+      "\u65E0\u6CD5\u52A0\u8F7D ''{0}'' (\u68C0\u67E5 CLASSPATH), \u73B0\u5728\u53EA\u4F7F\u7528\u9ED8\u8BA4\u503C"},
 
     { ER_ILLEGAL_CHARACTER,
-       "尝试输出未以{1}的指定输出编码表示的整数值 {0} 的字符。"},
+       "\u5C1D\u8BD5\u8F93\u51FA\u672A\u4EE5{1}\u7684\u6307\u5B9A\u8F93\u51FA\u7F16\u7801\u8868\u793A\u7684\u6574\u6570\u503C {0} \u7684\u5B57\u7B26\u3002"},
 
     {ER_COULD_NOT_LOAD_METHOD_PROPERTY,
-      "无法为输出方法 ''{1}'' 加载属性文件 ''{0}'' (检查 CLASSPATH)" }
+      "\u65E0\u6CD5\u4E3A\u8F93\u51FA\u65B9\u6CD5 ''{1}'' \u52A0\u8F7D\u5C5E\u6027\u6587\u4EF6 ''{0}'' (\u68C0\u67E5 CLASSPATH)" }
 
 
   };

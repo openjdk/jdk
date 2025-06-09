@@ -33,90 +33,90 @@ public class SerializerMessages_cs extends ListResourceBundle {
         // BAD_MSGKEY needs translation
         // BAD_MSGFORMAT needs translation
       { MsgKey.ER_SERIALIZER_NOT_CONTENTHANDLER,
-        "Třída serializace ''{0}'' neimplementuje org.xml.sax.ContentHandler."},
+        "T\u0159\u00edda serializace ''{0}'' neimplementuje org.xml.sax.ContentHandler."},
 
       { MsgKey.ER_RESOURCE_COULD_NOT_FIND,
-        "Nelze najít zdroj [ {0} ].\n {1}"},
+        "Nelze naj\u00edt zdroj [ {0} ].\n {1}"},
 
       { MsgKey.ER_RESOURCE_COULD_NOT_LOAD,
-        "Nelze zavést zdroj [ {0} ]: {1} \n {2} \n {3}"},
+        "Nelze zav\u00e9st zdroj [ {0} ]: {1} \n {2} \n {3}"},
 
       { MsgKey.ER_BUFFER_SIZE_LESSTHAN_ZERO,
-        "Velikost vyrovnávací paměti <=0"},
+        "Velikost vyrovn\u00e1vac\u00ed pam\u011bti <=0"},
 
       { MsgKey.ER_INVALID_UTF16_SURROGATE,
-        "Byla zjištěna neplatná náhrada UTF-16: {0} ?"},
+        "Byla zji\u0161t\u011bna neplatn\u00e1 n\u00e1hrada UTF-16: {0} ?"},
 
       { MsgKey.ER_OIERROR,
-        "Chyba vstupu/výstupu"},
+        "Chyba vstupu/v\u00fdstupu"},
 
       { MsgKey.ER_ILLEGAL_ATTRIBUTE_POSITION,
-        "Nelze přidat atribut {0} po uzlech potomků ani před tím, než je vytvořen prvek. Atribut bude ignorován."},
+        "Nelze p\u0159idat atribut {0} po uzlech potomk\u016f ani p\u0159ed t\u00edm, ne\u017e je vytvo\u0159en prvek. Atribut bude ignorov\u00e1n."},
 
       { MsgKey.ER_NAMESPACE_PREFIX,
-        "Obor názvů pro předponu ''{0}'' nebyl deklarován."},
+        "Obor n\u00e1zv\u016f pro p\u0159edponu ''{0}'' nebyl deklarov\u00e1n."},
 
         // ER_STRAY_ATTRIBUTE needs translation
       { MsgKey.ER_STRAY_NAMESPACE,
-        "Deklarace oboru názvů ''{0}''=''{1}'' je vně prvku."},
+        "Deklarace oboru n\u00e1zv\u016f ''{0}''=''{1}'' je vn\u011b prvku."},
 
       { MsgKey.ER_COULD_NOT_LOAD_RESOURCE,
-        "Nelze zavést ''{0}'' (zkontrolujte proměnnou CLASSPATH), proto se používají pouze výchozí hodnoty"},
+        "Nelze zav\u00e9st ''{0}'' (zkontrolujte prom\u011bnnou CLASSPATH), proto se pou\u017e\u00edvaj\u00ed pouze v\u00fdchoz\u00ed hodnoty"},
 
         // ER_ILLEGAL_CHARACTER needs translation
       { MsgKey.ER_COULD_NOT_LOAD_METHOD_PROPERTY,
-        "Nelze načíst soubor vlastností ''{0}'' pro výstupní metodu ''{1}'' (zkontrolujte proměnnou CLASSPATH)."},
+        "Nelze na\u010d\u00edst soubor vlastnost\u00ed ''{0}'' pro v\u00fdstupn\u00ed metodu ''{1}'' (zkontrolujte prom\u011bnnou CLASSPATH)."},
 
       { MsgKey.ER_INVALID_PORT,
-        "Neplatné číslo portu."},
+        "Neplatn\u00e9 \u010d\u00edslo portu."},
 
       { MsgKey.ER_PORT_WHEN_HOST_NULL,
-        "Má-li hostitel hodnotu null, nelze nastavit port."},
+        "M\u00e1-li hostitel hodnotu null, nelze nastavit port."},
 
       { MsgKey.ER_HOST_ADDRESS_NOT_WELLFORMED,
-        "Adresa hostitele má nesprávný formát."},
+        "Adresa hostitele m\u00e1 nespr\u00e1vn\u00fd form\u00e1t."},
 
       { MsgKey.ER_SCHEME_NOT_CONFORMANT,
-        "Schéma nevyhovuje."},
+        "Sch\u00e9ma nevyhovuje."},
 
       { MsgKey.ER_SCHEME_FROM_NULL_STRING,
-        "Nelze nastavit schéma řetězce s hodnotou null."},
+        "Nelze nastavit sch\u00e9ma \u0159et\u011bzce s hodnotou null."},
 
       { MsgKey.ER_PATH_CONTAINS_INVALID_ESCAPE_SEQUENCE,
         "Cesta obsahuje neplatnou escape sekvenci"},
 
       { MsgKey.ER_PATH_INVALID_CHAR,
-        "Cesta obsahuje neplatný znak: {0}"},
+        "Cesta obsahuje neplatn\u00fd znak: {0}"},
 
       { MsgKey.ER_FRAG_INVALID_CHAR,
-        "Fragment obsahuje neplatný znak."},
+        "Fragment obsahuje neplatn\u00fd znak."},
 
       { MsgKey.ER_FRAG_WHEN_PATH_NULL,
-        "Má-li cesta hodnotu null, nelze nastavit fragment."},
+        "M\u00e1-li cesta hodnotu null, nelze nastavit fragment."},
 
       { MsgKey.ER_FRAG_FOR_GENERIC_URI,
-        "Fragment lze nastavit jen u generického URI."},
+        "Fragment lze nastavit jen u generick\u00e9ho URI."},
 
       { MsgKey.ER_NO_SCHEME_IN_URI,
-        "V URI nebylo nalezeno žádné schéma: {0}"},
+        "V URI nebylo nalezeno \u017e\u00e1dn\u00e9 sch\u00e9ma: {0}"},
 
       { MsgKey.ER_CANNOT_INIT_URI_EMPTY_PARMS,
-        "URI nelze inicializovat s prázdnými parametry."},
+        "URI nelze inicializovat s pr\u00e1zdn\u00fdmi parametry."},
 
       { MsgKey.ER_NO_FRAGMENT_STRING_IN_PATH,
-        "Fragment nelze určit zároveň v cestě i ve fragmentu."},
+        "Fragment nelze ur\u010dit z\u00e1rove\u0148 v cest\u011b i ve fragmentu."},
 
       { MsgKey.ER_NO_QUERY_STRING_IN_PATH,
-        "V řetězci cesty a dotazu nelze zadat řetězec dotazu."},
+        "V \u0159et\u011bzci cesty a dotazu nelze zadat \u0159et\u011bzec dotazu."},
 
       { MsgKey.ER_NO_PORT_IF_NO_HOST,
-        "Není-li určen hostitel, nelze zadat port."},
+        "Nen\u00ed-li ur\u010den hostitel, nelze zadat port."},
 
       { MsgKey.ER_NO_USERINFO_IF_NO_HOST,
-        "Není-li určen hostitel, nelze zadat údaje o uživateli."},
+        "Nen\u00ed-li ur\u010den hostitel, nelze zadat \u00fadaje o u\u017eivateli."},
 
       { MsgKey.ER_SCHEME_REQUIRED,
-        "Je vyžadováno schéma!"},
+        "Je vy\u017eadov\u00e1no sch\u00e9ma!"},
 
       /*
        * Note to translators:  The words 'Properties' and
@@ -124,97 +124,97 @@ public class SerializerMessages_cs extends ListResourceBundle {
        * and should not be translated.
        */
       {   MsgKey.ER_FACTORY_PROPERTY_MISSING,
-          "Objekt vlastností předaný faktorii SerializerFactory neobsahuje vlastnost ''{0}''. " },
+          "Objekt vlastnost\u00ed p\u0159edan\u00fd faktorii SerializerFactory neobsahuje vlastnost ''{0}''. " },
 
       {   MsgKey.ER_ENCODING_NOT_SUPPORTED,
-          "Varování: Kódování ''{0}'' není v běhovém prostředí Java podporováno." },
+          "Varov\u00e1n\u00ed: K\u00f3dov\u00e1n\u00ed ''{0}'' nen\u00ed v b\u011bhov\u00e9m prost\u0159ed\u00ed Java podporov\u00e1no." },
 
        {MsgKey.ER_FEATURE_NOT_FOUND,
-       "Parametr ''{0}'' nebyl rozpoznán."},
+       "Parametr ''{0}'' nebyl rozpozn\u00e1n."},
 
        {MsgKey.ER_FEATURE_NOT_SUPPORTED,
-       "Parametr ''{0}'' byl rozpoznán, ale nelze nastavit požadovanou hodnotu."},
+       "Parametr ''{0}'' byl rozpozn\u00e1n, ale nelze nastavit po\u017eadovanou hodnotu."},
 
        {MsgKey.ER_STRING_TOO_LONG,
-       "Výsledný řetězec je příliš dlouhý pro řetězec DOMString: ''{0}''."},
+       "V\u00fdsledn\u00fd \u0159et\u011bzec je p\u0159\u00edli\u0161 dlouh\u00fd pro \u0159et\u011bzec DOMString: ''{0}''."},
 
        {MsgKey.ER_TYPE_MISMATCH_ERR,
-       "Typ hodnoty pro tento název parametru není kompatibilní s očekávaným typem hodnoty."},
+       "Typ hodnoty pro tento n\u00e1zev parametru nen\u00ed kompatibiln\u00ed s o\u010dek\u00e1van\u00fdm typem hodnoty."},
 
        {MsgKey.ER_NO_OUTPUT_SPECIFIED,
-       "Cílové umístění výstupu pro data určená k zápisu je rovno hodnotě Null. "},
+       "C\u00edlov\u00e9 um\u00edst\u011bn\u00ed v\u00fdstupu pro data ur\u010den\u00e1 k z\u00e1pisu je rovno hodnot\u011b Null. "},
 
        {MsgKey.ER_UNSUPPORTED_ENCODING,
-       "Bylo nalezeno nepodporované kódování."},
+       "Bylo nalezeno nepodporovan\u00e9 k\u00f3dov\u00e1n\u00ed."},
 
        {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
-       "Nelze provést serializaci uzlu. "},
+       "Nelze prov\u00e9st serializaci uzlu. "},
 
        {MsgKey.ER_CDATA_SECTIONS_SPLIT,
-       "Sekce CDATA obsahuje jednu nebo více ukončovacích značek ']]>'."},
+       "Sekce CDATA obsahuje jednu nebo v\u00edce ukon\u010dovac\u00edch zna\u010dek ']]>'."},
 
        {MsgKey.ER_WARNING_WF_NOT_CHECKED,
-           "Nelze vytvořit instanci modulu pro kontrolu správného utvoření. Parametr správného utvoření byl nastaven na hodnotu true, nepodařilo se však zkontrolovat správnost utvoření. "
+           "Nelze vytvo\u0159it instanci modulu pro kontrolu spr\u00e1vn\u00e9ho utvo\u0159en\u00ed. Parametr spr\u00e1vn\u00e9ho utvo\u0159en\u00ed byl nastaven na hodnotu true, nepoda\u0159ilo se v\u0161ak zkontrolovat spr\u00e1vnost utvo\u0159en\u00ed. "
        },
 
        {MsgKey.ER_WF_INVALID_CHARACTER,
-           "Uzel ''{0}'' obsahuje neplatné znaky XML. "
+           "Uzel ''{0}'' obsahuje neplatn\u00e9 znaky XML. "
        },
 
        { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
-           "V poznámce byl zjištěn neplatný znak XML (Unicode: 0x{0})."
+           "V pozn\u00e1mce byl zji\u0161t\u011bn neplatn\u00fd znak XML (Unicode: 0x{0})."
        },
 
        { MsgKey.ER_WF_INVALID_CHARACTER_IN_PI,
-           "V datech instrukce zpracování byl nalezen neplatný znak XML (Unicode: 0x{0})."
+           "V datech instrukce zpracov\u00e1n\u00ed byl nalezen neplatn\u00fd znak XML (Unicode: 0x{0})."
        },
 
        { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
-           "V oddílu CDATASection byl nalezen neplatný znak XML (Unicode: 0x{0})."
+           "V odd\u00edlu CDATASection byl nalezen neplatn\u00fd znak XML (Unicode: 0x{0})."
        },
 
        { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
-           "V obsahu znakových dat uzlu byl nalezen neplatný znak XML (Unicode: 0x{0})."
+           "V obsahu znakov\u00fdch dat uzlu byl nalezen neplatn\u00fd znak XML (Unicode: 0x{0})."
        },
 
        { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
-           "V objektu {0} s názvem ''{1}'' byl nalezen neplatný znak XML. "
+           "V objektu {0} s n\u00e1zvem ''{1}'' byl nalezen neplatn\u00fd znak XML. "
        },
 
        { MsgKey.ER_WF_DASH_IN_COMMENT,
-           "V poznámkách není povolen řetězec \"--\"."
+           "V pozn\u00e1mk\u00e1ch nen\u00ed povolen \u0159et\u011bzec \"--\"."
        },
 
        {MsgKey.ER_WF_LT_IN_ATTVAL,
-           "Hodnota atributu \"{1}\" souvisejícího s typem prvku \"{0}\" nesmí obsahovat znak ''<''."
+           "Hodnota atributu \"{1}\" souvisej\u00edc\u00edho s typem prvku \"{0}\" nesm\u00ed obsahovat znak ''<''."
        },
 
        {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
-           "Odkaz na neanalyzovanou entitu \"&{0};\" není povolen."
+           "Odkaz na neanalyzovanou entitu \"&{0};\" nen\u00ed povolen."
        },
 
        {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
-           "Externí odkaz na entitu \"&{0};\" není v hodnotě atributu povolen."
+           "Extern\u00ed odkaz na entitu \"&{0};\" nen\u00ed v hodnot\u011b atributu povolen."
        },
 
        {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
-           "Předpona \"{0}\" nesmí být vázaná k oboru názvů \"{1}\"."
+           "P\u0159edpona \"{0}\" nesm\u00ed b\u00fdt v\u00e1zan\u00e1 k oboru n\u00e1zv\u016f \"{1}\"."
        },
 
        {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
-           "Lokální název prvku \"{0}\" má hodnotu Null. "
+           "Lok\u00e1ln\u00ed n\u00e1zev prvku \"{0}\" m\u00e1 hodnotu Null. "
        },
 
        {MsgKey.ER_NULL_LOCAL_ATTR_NAME,
-           "Lokální název atributu \"{0}\" má hodnotu Null. "
+           "Lok\u00e1ln\u00ed n\u00e1zev atributu \"{0}\" m\u00e1 hodnotu Null. "
        },
 
        { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
-           "Nový text uzlu entity \"{0}\" obsahuje uzel prvku \"{1}\" s nesvázanou předponou \"{2}\"."
+           "Nov\u00fd text uzlu entity \"{0}\" obsahuje uzel prvku \"{1}\" s nesv\u00e1zanou p\u0159edponou \"{2}\"."
        },
 
        { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
-           "Nový text uzlu entity \"{0}\" obsahuje uzel atributu \"{1}\" s nesvázanou předponou \"{2}\". "
+           "Nov\u00fd text uzlu entity \"{0}\" obsahuje uzel atributu \"{1}\" s nesv\u00e1zanou p\u0159edponou \"{2}\". "
        },
 
     };
