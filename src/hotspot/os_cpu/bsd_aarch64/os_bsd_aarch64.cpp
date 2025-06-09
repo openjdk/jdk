@@ -250,7 +250,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
 #ifdef __APPLE__
     if (sig == SIGBUS && pc != info->si_addr
-        && CodeCache::contains(info->si_addr) && thread->maybe_enable_write()) {
+        && CodeCache::contains(info->si_addr) && thread->wx_enable_write()) {
       FILE *tty = fopen("/dev/ttys009", "w");
       fprintf(tty, "PID %ld enable write, returning\n", (long)getpid());
       fclose(tty);
@@ -578,7 +578,7 @@ void os::current_thread_enable_wx(WXMode mode) {
   _jit_exec_enabled = exec_enabled;
 }
 
-bool Thread::maybe_enable_write() {
+bool Thread::wx_enable_write() {
   if (_wx_state == WXArmedForWrite) {
     os::current_thread_enable_wx(WXWrite);
     return true;

@@ -500,7 +500,6 @@ ExceptionCache* nmethod::exception_cache_acquire() const {
 }
 
 void nmethod::add_exception_cache_entry(ExceptionCache* new_entry) {
-  
   assert(ExceptionCache_lock->owned_by_self(),"Must hold the ExceptionCache_lock");
   assert(new_entry != nullptr,"Must be non null");
   assert(new_entry->next() == nullptr, "Must be null");
@@ -1932,8 +1931,8 @@ void nmethod::verify_clean_inline_caches() {
 }
 
 void nmethod::mark_as_maybe_on_stack() {
-  Thread::current()->maybe_enable_write();
- Atomic::store(&_gc_epoch, CodeCache::gc_epoch());
+  MACOS_AARCH64_ONLY(thread_wx_enable_write());
+  Atomic::store(&_gc_epoch, CodeCache::gc_epoch());
 }
 
 bool nmethod::is_maybe_on_stack() {
@@ -2401,7 +2400,7 @@ public:
 };
 
 bool nmethod::is_unloading() {
-  Thread::current()->maybe_enable_write();
+  MACOS_AARCH64_ONLY(thread_wx_enable_write());
 
   uint8_t state = Atomic::load(&_is_unloading_state);
   bool state_is_unloading = IsUnloadingState::is_unloading(state);
