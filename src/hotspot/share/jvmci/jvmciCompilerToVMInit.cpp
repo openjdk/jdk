@@ -125,6 +125,7 @@ int CompilerToVM::Data::cardtable_shift;
 
 #ifdef X86
 int CompilerToVM::Data::L1_line_size;
+bool CompilerToVM::Data::supports_avx512_simd_sort;
 #endif
 
 size_t CompilerToVM::Data::vm_page_size;
@@ -144,6 +145,7 @@ address CompilerToVM::Data::dsin;
 address CompilerToVM::Data::dcos;
 address CompilerToVM::Data::dtan;
 address CompilerToVM::Data::dtanh;
+address CompilerToVM::Data::dcbrt;
 address CompilerToVM::Data::dexp;
 address CompilerToVM::Data::dlog;
 address CompilerToVM::Data::dlog10;
@@ -256,6 +258,7 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
 
 #ifdef X86
   L1_line_size = VM_Version::L1_line_size();
+  supports_avx512_simd_sort = VM_Version::supports_avx512_simd_sort();
 #endif
 
   vm_page_size = os::vm_page_size();
@@ -285,6 +288,7 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   }
 
   SET_TRIGFUNC_OR_NULL(dtanh);
+  SET_TRIGFUNC_OR_NULL(dcbrt);
 
 #undef SET_TRIGFUNC_OR_NULL
 
@@ -470,6 +474,7 @@ jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
                  strcmp(vmField.typeString, "intptr_t") == 0 ||
                  strcmp(vmField.typeString, "uintptr_t") == 0 ||
                  strcmp(vmField.typeString, "OopHandle") == 0 ||
+                 strcmp(vmField.typeString, "VM_Version::VM_Features") == 0 ||
                  strcmp(vmField.typeString, "size_t") == 0 ||
                  // All foo* types are addresses.
                  vmField.typeString[strlen(vmField.typeString) - 1] == '*') {

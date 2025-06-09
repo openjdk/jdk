@@ -1,0 +1,6 @@
+VarWarnPosition.java:18:14: compiler.warn.has.been.deprecated: Depr, compiler.misc.unnamed.package
+VarWarnPosition.java:21:18: compiler.warn.has.been.deprecated: Depr, compiler.misc.unnamed.package
+VarWarnPosition.java:21:28: compiler.warn.has.been.deprecated: Depr, compiler.misc.unnamed.package
+VarWarnPosition.java:24:18: compiler.warn.has.been.deprecated: Depr, compiler.misc.unnamed.package
+VarWarnPosition.java:24:30: compiler.warn.has.been.deprecated: Depr, compiler.misc.unnamed.package
+5 warnings
