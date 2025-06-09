@@ -91,6 +91,8 @@ class PeriodicTask: public CHeapObj<mtInternal> {
     return _interval - _counter;
   }
 
+  int interval() const { return _interval; }
+
   // Calculate when the next periodic task will fire.
   // Called by the WatcherThread's run method.
   // Requires the PeriodicTask_lock.
