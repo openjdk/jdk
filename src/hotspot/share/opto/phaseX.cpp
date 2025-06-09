@@ -1966,6 +1966,7 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
     // Found with:
     //   applications/ctw/modules/java_base_2.java
     //   -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -Djava.awt.headless=true -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
+    return false;
   }
 
   if (n->is_Vector()) {
