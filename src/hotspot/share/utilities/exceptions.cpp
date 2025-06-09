@@ -618,18 +618,16 @@ void Exceptions::log_exception(Handle exception, const char* message) {
 // Whenever a GC happens, this will be cleared by Exceptions::clear_logging_cache().
 static oop _last_logged_exception;
 
+// This should be called only from a live Java thread.
 void Exceptions::maybe_log_call_stack(Handle exception) {
   LogStreamHandle(Info, exceptions, stacktrace) st;
   if (st.is_enabled()) {
     oop exception_oop = exception();
     oop old_exception = NativeAccess<MO_SEQ_CST>::oop_atomic_xchg(&_last_logged_exception, exception_oop);
     if (old_exception != exception_oop) {
-      Thread* t = Thread::current_or_null();
-      if (t != nullptr && t->is_Java_thread()) { // sanity
-        JavaThread* jt = JavaThread::current();
-        if (jt->has_last_Java_frame()) {
-          jt->print_active_stack_on(&st);
-        }
+      JavaThread* t = JavaThread::current();
+      if (t->has_last_Java_frame()) {
+        t->print_active_stack_on(&st);
       }
     }
   }
