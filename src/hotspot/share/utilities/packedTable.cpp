@@ -46,7 +46,8 @@ void PackedTableBuilder::fill(u1* table, size_t table_length, Supplier &supplier
   for (; offset + sizeof(uint64_t) <= table_length && supplier.next(&key, &value); offset += _element_bytes) {
     assert((key & ~_key_mask) == 0, "key out of bounds");
     assert((value & ~_value_mask) == 0, "value out of bounds: %x vs. %x (%x)", value, _value_mask, ~_value_mask);
-    *reinterpret_cast<uint64_t*>(table + offset) = static_cast<uint64_t>(key) | (static_cast<uint64_t>(value) << _value_shift);
+    uint64_t element = static_cast<uint64_t>(key) | (static_cast<uint64_t>(value) << _value_shift);
+    __builtin_memcpy(table + offset, &element, _element_bytes);
   }
   // last bytes
   for (; offset < table_length && supplier.next(&key, &value); offset += _element_bytes) {
@@ -61,14 +62,8 @@ void PackedTableBuilder::fill(u1* table, size_t table_length, Supplier &supplier
 }
 
 uint64_t PackedTableLookup::read_element(size_t offset) const {
-  if (offset + sizeof(uint64_t) <= _table_length) {
-    return *reinterpret_cast<const uint64_t*>(_table + offset);
-  }
-  // slow path for accessing end of array
   uint64_t element = 0;
-  for (size_t i = 0; i < _element_bytes && offset + i < _table_length; ++i) {
-    element = element | (static_cast<uint64_t>(_table[offset + i]) << (i * 8));
-  }
+  __builtin_memcpy(&element, _table + offset, _element_bytes);
   assert((element & ~((uint64_t) _key_mask | ((uint64_t) _value_mask << _value_shift))) == 0, "read too much");
   return element;
 }
