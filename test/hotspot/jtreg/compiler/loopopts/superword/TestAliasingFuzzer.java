@@ -266,7 +266,7 @@ public class TestAliasingFuzzer {
                         if (invar0Scale > 0) {
                             // invar0 * invar0Scale >=  range.lo - con - iv.lo * ivScale + err
                             // invar0               >= (range.lo - con - iv.lo * ivScale + err) / invar0Scale
-                            return (rhs + invar0Scale + 1) / invar0Scale; // round up division
+                            return (rhs + invar0Scale - 1) / invar0Scale; // round up division
                         } else {
                             // invar0 * invar0Scale >=  range.lo - con - iv.lo * ivScale + err
                             // invar0               <= (range.lo - con - iv.lo * ivScale + err) / invar0Scale
@@ -321,7 +321,13 @@ public class TestAliasingFuzzer {
     }
 
     public static TemplateToken generateArray(MyType type, Aliasing aliasing) {
-        final int size = Generators.G.safeRestrict(Generators.G.ints(), 10_000, 20_000).next();
+        // size must be large enough for:
+        //   - scale = 4
+        //   - range with size / 4
+        // -> need at least size 16_000 to ensure we have 1000 iterations
+        // We want there to be a little variation, so alignment is not always the same.
+        final int size = Generators.G.safeRestrict(Generators.G.ints(), 18_000, 20_000).next();
+        final boolean forwardLoop = RANDOM.nextBoolean();
 
         final int numInvarRest = RANDOM.nextInt(5);
         var form_a = IntIndexForm.random(numInvarRest);
@@ -491,8 +497,10 @@ public class TestAliasingFuzzer {
                     """),
                 """
                 public static Object $test(#type[] a, #type[] b, int ivLo, int ivHi, int invar0_A, int invar0_B) {
-                    for (int i = ivLo; i < ivHi; i++) {
                 """,
+                (forwardLoop
+                ?   "for (int i = ivLo; i < ivHi; i++) {\n"
+                :   "for (int i = ivHi-1; i >= ivLo; i--) {\n"),
                 "a[", form_a.index("invar0_A", invarRest), "] = b[", form_b.index("invar0_B", invarRest), "];\n",
                 """
                     }
@@ -501,8 +509,10 @@ public class TestAliasingFuzzer {
 
                 @DontCompile
                 public static Object $reference(#type[] a, #type[] b, int ivLo, int ivHi, int invar0_A, int invar0_B) {
-                    for (int i = ivLo; i < ivHi; i++) {
                 """,
+                (forwardLoop
+                ?   "for (int i = ivLo; i < ivHi; i++) {\n"
+                :   "for (int i = ivHi-1; i >= ivLo; i--) {\n"),
                 "a[", form_a.index("invar0_A", invarRest), "] = b[", form_b.index("invar0_B", invarRest), "];\n",
                 """
                     }
