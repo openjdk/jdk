@@ -1958,6 +1958,16 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
     return false;
   }
 
+  if (n->is_Store()) {
+    // StoreNode::Identity
+    // Not investigated, but found missing optimization for StoreI.
+    // Looks like a StoreI is replaced with an InitializeNode.
+    //
+    // Found with:
+    //   applications/ctw/modules/java_base_2.java
+    //   -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -Djava.awt.headless=true -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
+  }
+
   if (n->is_Vector()) {
     // Found with tier1-3. Not investigated yet.
     // The observed issue was with AndVNode::Identity
