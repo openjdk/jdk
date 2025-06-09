@@ -84,9 +84,10 @@ inline WXMode Thread::enable_wx(WXMode new_state) {
   assert(this == Thread::current(), "should only be called for current thread");
   assert(_wx_init, "should be inited");
   WXMode old = _wx_state;
-  if (_wx_state != new_state) {
-  _wx_state = new_state;
-  switch (new_state) {
+  // if (_wx_state != new_state)
+  {
+    _wx_state = new_state;
+    switch (new_state) {
       case WXWrite:
       case WXExec:
         os::current_thread_enable_wx(new_state);

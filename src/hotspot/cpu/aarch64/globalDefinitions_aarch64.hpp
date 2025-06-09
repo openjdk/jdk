@@ -35,6 +35,14 @@ extern FILE *aph_do_trace_file;
 #define BT_BUF_SIZE 10
 #define pthread_jit_write_protect_np_wrapper(arg)                       \
 do {                                                                    \
+      {                                                                 \
+        char name[16];                                                  \
+        auto self = pthread_self();                                     \
+        pthread_getname_np(self, name, sizeof name - 1);                \
+        if (strcmp(name, "Java: Thread-1") == 0) {                      \
+          asm("nop");                                                   \
+        }                                                               \
+      }                                                                 \
   if (aph_do_trace) {                                                   \
     char name[16];                                                      \
     auto self = pthread_self();                                         \

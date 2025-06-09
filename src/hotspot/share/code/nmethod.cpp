@@ -500,7 +500,7 @@ ExceptionCache* nmethod::exception_cache_acquire() const {
 }
 
 void nmethod::add_exception_cache_entry(ExceptionCache* new_entry) {
-  Thread::current()->maybe_enable_write();
+  
   assert(ExceptionCache_lock->owned_by_self(),"Must hold the ExceptionCache_lock");
   assert(new_entry != nullptr,"Must be non null");
   assert(new_entry->next() == nullptr, "Must be null");
@@ -2010,6 +2010,8 @@ bool nmethod::make_not_entrant(const char* reason) {
   // This can be called while the system is already at a safepoint which is ok
   NoSafepointVerifier nsv;
 
+  os::current_thread_enable_wx(WXWrite);
+
   if (is_unloading()) {
     // If the nmethod is unloading, then it is already not entrant through
     // the nmethod entry barriers. No need to do anything; GC will unload it.
@@ -2399,6 +2401,8 @@ public:
 };
 
 bool nmethod::is_unloading() {
+  Thread::current()->maybe_enable_write();
+
   uint8_t state = Atomic::load(&_is_unloading_state);
   bool state_is_unloading = IsUnloadingState::is_unloading(state);
   if (state_is_unloading) {

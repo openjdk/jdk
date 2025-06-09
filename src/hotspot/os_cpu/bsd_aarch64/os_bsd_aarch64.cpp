@@ -197,24 +197,70 @@ NOINLINE frame os::current_frame() {
   }
 }
 
+int bruce = 1;
+
+void after_sigreturn() {
+  FILE *tty2 = fopen("/dev/ttys000", "w");
+  dup2(fileno(tty2), fileno(stdout));
+  dup2(fileno(tty2), fileno(stderr));
+
+  printf("Returned from handler\n");
+  {
+    char name[16];
+    auto self = pthread_self();
+    pthread_getname_np(self, name, sizeof name - 1);
+    while (bruce) {
+      fflush(stdout);
+      fprintf(stdout, "PID %ld (Thread %s) stopped, waiting for a debugger!\n",
+              (long)getpid(), name);
+      {
+        fprintf(stdout, "Unblocking signals\n");
+        sigset_t set, oset;
+        sigfillset(&set);
+        sigprocmask(SIG_UNBLOCK, &set, &oset);
+      }
+      fprintf(stdout, "Stopping %ld!\n", (long)getpid());
+      // kill(getpid(), SIGSTOP);
+      {
+        fprintf(stdout, "Unblocking signals\n");
+        sigset_t set, oset;
+        sigfillset(&set);
+        sigprocmask(SIG_UNBLOCK, &set, &oset);
+      }
+      fprintf(stdout, "Unblocking signals again\n");
+      // kill(getpid(), SIGSTOP);
+      // getchar();
+    }
+    // for (;;) {
+    //   printf("sleeping\n");
+    //   sleep(1);
+    // }
+  }
+}
+
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
-  if (sig == SIGBUS && thread->maybe_enable_write()) {
-    return true;
-  }
-  
-  // Enable WXWrite: this function is called by the signal handler at arbitrary
-  // point of execution.
-  ThreadWXEnable wx(WXWrite, thread);
-
   // decide if this trap can be handled by a stub
   address stub = nullptr;
-
-  address pc          = nullptr;
+  address pc   = nullptr;
 
   //%note os_trap_1
   if (info != nullptr && uc != nullptr && thread != nullptr) {
     pc = (address) os::Posix::ucontext_get_pc(uc);
+
+#ifdef __APPLE__
+    if (sig == SIGBUS && pc != info->si_addr
+        && CodeCache::contains(info->si_addr) && thread->maybe_enable_write()) {
+      FILE *tty = fopen("/dev/ttys009", "w");
+      fprintf(tty, "PID %ld enable write, returning\n", (long)getpid());
+      fclose(tty);
+      return true;
+    }
+#endif
+
+    // Enable WXWrite: this function is called by the signal handler at arbitrary
+    // point of execution.
+    ThreadWXEnable wx(WXWrite, thread);
 
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV || sig == SIGBUS) {
@@ -497,6 +543,10 @@ bool jit_exec_enabled() {
   return _jit_exec_enabled;;
 }
 
+bool *jit_exec_enabled_addr() {
+  return &_jit_exec_enabled;;
+}
+
 long pthread_jit_write_protect_np_counter;
 
 bool aph_do_trace;
@@ -506,7 +556,10 @@ void poo() __attribute__((constructor));
 void poo() {
   atexit([]() {
     fclose(aph_do_trace_file);
-    printf("pthread_jit_write_protect_np_counter == %ld\n", pthread_jit_write_protect_np_counter); });
+    if (getenv("JDK_PRINT_WX_COUNTER")) {
+      printf("pthread_jit_write_protect_np_counter == %ld\n", pthread_jit_write_protect_np_counter);
+    }
+  });
   aph_do_trace = getenv("APH_DO_TRACE");
   if (aph_do_trace) {
     errno = 0;
@@ -526,7 +579,7 @@ void os::current_thread_enable_wx(WXMode mode) {
 }
 
 bool Thread::maybe_enable_write() {
-  if (jit_exec_enabled()) {
+  if (_wx_state == WXArmedForWrite) {
     os::current_thread_enable_wx(WXWrite);
     return true;
   } else {

@@ -144,7 +144,7 @@ intptr_t NativeMovConstReg::data() const {
 }
 
 void NativeMovConstReg::set_data(intptr_t x) {
-  Thread::current()->maybe_enable_write();
+  // Thread::current()->maybe_enable_write();
   if (maybe_cpool_ref(instruction_address())) {
     address addr = MacroAssembler::target_addr_for_insn(instruction_address());
     *(intptr_t*)addr = x;
