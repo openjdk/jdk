@@ -25,11 +25,13 @@
  * @test
  * @bug 8273042
  * @summary TLS certificate compression
- * @library /javax/net/ssl/templates
+ * @library /test/lib
  * @run main/othervm HttpsCompressedCert
  */
 
-import javax.net.ssl.SSLParameters;
+import static java.net.http.HttpResponse.BodyHandlers.ofString;
+import static jdk.test.lib.Asserts.assertEquals;
+
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -37,8 +39,7 @@ import java.net.http.HttpResponse;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.zip.Inflater;
-
-import static java.net.http.HttpResponse.BodyHandlers.ofString;
+import javax.net.ssl.SSLParameters;
 
 public class HttpsCompressedCert {
     private static final Function<byte[], byte[]> certInflater = (input) -> {
@@ -61,7 +62,7 @@ public class HttpsCompressedCert {
 
     public static void main(String[] args) throws Exception {
         SSLParameters sslParameters = new SSLParameters();
-        sslParameters.setCertificateInflaters(Map.of("brotli", certInflater));
+        sslParameters.setCertificateInflaters(Map.of("zlib", certInflater));
         HttpClient httpClient = HttpClient.newBuilder()
                 .sslContext(SSLClientContext.createClientSSLContext())
                 .version(HttpClient.Version.HTTP_2)
@@ -73,6 +74,7 @@ public class HttpsCompressedCert {
                 .GET()
                 .build();
         HttpResponse<String> response = httpClient.send(httpRequest, ofString());
+        assertEquals(response.statusCode(), 200);
     }
 }
 
