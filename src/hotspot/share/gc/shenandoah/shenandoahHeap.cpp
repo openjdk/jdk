@@ -2202,6 +2202,7 @@ uint ShenandoahHeap::max_workers() {
 }
 
 void ShenandoahHeap::stop() {
+  log_gc_vtime();
   // The shutdown sequence should be able to terminate when GC is running.
 
   // Step 0. Notify policy to disable event recording and prevent visiting gc threads during shutdown
@@ -2217,6 +2218,23 @@ void ShenandoahHeap::stop() {
   if (_uncommit_thread != nullptr) {
     _uncommit_thread->stop();
   }
+}
+
+class ShenandoahCPUThreadClosure : public ThreadClosure {
+private:
+  volatile jlong _vtime = 0;
+
+public:
+  virtual void do_thread(Thread *thread) {
+      Atomic::add(&_vtime, os::thread_cpu_time(thread));
+  }
+  jlong vtime() { return _vtime; };
+};
+
+double ShenandoahHeap::elapsed_gc_vtime() {
+  ShenandoahCPUThreadClosure cl;
+  ShenandoahHeap::heap()->gc_threads_do(&cl);
+  return (double)(cl.vtime() + Universe::heap()->vm_vtime()) / NANOSECS_PER_SEC;
 }
 
 void ShenandoahHeap::stw_unload_classes(bool full_gc) {

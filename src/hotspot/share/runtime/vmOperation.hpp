@@ -172,6 +172,8 @@ class VM_Operation : public StackObj {
   // or concurrently with Java threads running.
   virtual bool evaluate_at_safepoint() const { return true; }
 
+  virtual bool operation_is_gc() const { return false; }
+
   // Debugging
   virtual void print_on_error(outputStream* st) const;
   virtual const char* name() const  { return _names[type()]; }

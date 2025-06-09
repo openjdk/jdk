@@ -126,3 +126,7 @@ void ThreadTotalCPUTimeClosure::do_thread(Thread* thread) {
   // must ensure the thread exists and has not terminated.
   _total += os::thread_cpu_time(thread);
 }
+
+void ThreadTotalCPUTimeClosure::inc_total(jlong value) {
+  _total += value;
+}

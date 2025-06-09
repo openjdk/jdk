@@ -271,7 +271,8 @@ static void post_vm_operation_event(EventExecuteVMOperation* event, VM_Operation
 
 void VMThread::evaluate_operation(VM_Operation* op) {
   ResourceMark rm;
-
+  const bool gcLogging = log_is_enabled(Info, gc) || log_is_enabled(Info, gc, cpu);
+  jlong start = 0;
   {
     PerfTraceTime vm_op_timer(perf_accumulated_vm_operation_time());
     HOTSPOT_VMOPS_BEGIN(
@@ -279,6 +280,9 @@ void VMThread::evaluate_operation(VM_Operation* op) {
                      op->evaluate_at_safepoint() ? 0 : 1);
 
     EventExecuteVMOperation event;
+    if (gcLogging && os::is_thread_cpu_time_supported()) {
+      start = os::thread_cpu_time(this);
+    }
     op->evaluate();
     if (event.should_commit()) {
       post_vm_operation_event(&event, op);
@@ -289,11 +293,18 @@ void VMThread::evaluate_operation(VM_Operation* op) {
                      op->evaluate_at_safepoint() ? 0 : 1);
   }
 
-  if (UsePerfData && os::is_thread_cpu_time_supported()) {
-    assert(Thread::current() == this, "Must be called from VM thread");
-    // Update vm_thread_cpu_time after each VM operation.
-    ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::vm);
-    tttc.do_thread(this);
+  if (os::is_thread_cpu_time_supported()) {
+    jlong end = gcLogging || UsePerfData ? os::thread_cpu_time(this) : 0;
+    if (gcLogging) {
+      jlong duration = end > start ? end - start : 0;
+      Universe::heap()->add_vm_vtime(duration);
+    }
+    if (UsePerfData) {
+      assert(Thread::current() == this, "Must be called from VM thread");
+      // Update vm_thread_cpu_time after each VM operation.
+      ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::vm);
+      tttc.inc_total(end);
+    }
   }
 }
 
