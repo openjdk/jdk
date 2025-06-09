@@ -285,6 +285,8 @@ class FieldInfoStream : AllStatic {
   static void print_from_fieldinfo_stream(Array<u1>* fis, outputStream* os, ConstantPool* cp);
 
   DEBUG_ONLY(static void validate_search_table(ConstantPool* cp, const Array<u1>* fis, const Array<u1>* search_table);)
+
+  static void print_search_table(outputStream* st, ConstantPool* cp, const Array<u1>* fis, const Array<u1>* search_table);
 };
 
 class FieldStatus {

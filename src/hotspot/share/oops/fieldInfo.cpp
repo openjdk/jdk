@@ -298,6 +298,32 @@ void FieldInfoStream::validate_search_table(ConstantPool* cp, const Array<u1>* f
 }
 #endif // ASSERT
 
+void FieldInfoStream::print_search_table(outputStream* st, ConstantPool* cp, const Array<u1>* fis, const Array<u1>* search_table) {
+  if (search_table == nullptr) {
+    return;
+  }
+  FieldInfoReader reader(fis);
+  int java_fields, injected_fields;
+  reader.read_field_counts(&java_fields, &injected_fields);
+  assert(java_fields > 0, "must be");
+  PackedTableLookup lookup(fis->length() - 1, java_fields - 1, search_table);
+  auto printer = [&] (size_t offset, uint32_t position, uint32_t index) {
+    reader.set_position_and_next_index(position, -1);
+    u2 name_index, sig_index;
+    reader.read_name_and_signature(&name_index, &sig_index);
+    Symbol* name = cp->symbol_at(name_index);
+    Symbol* sig = cp->symbol_at(sig_index);
+    st->print("   [%zu] #%d,#%d = ", offset, name_index, sig_index);
+    name->print_symbol_on(st);
+    st->print(":");
+    sig->print_symbol_on(st);
+    st->print(" @ %p,%p", name, sig);
+    st->cr();
+  };
+
+  lookup.iterate(printer);
+}
+
 int FieldInfoReader::search_table_lookup(const Array<u1>* search_table, const Symbol* name, const Symbol* signature, ConstantPool* cp, int java_fields) {
   assert(java_fields >= 0, "must be");
   if (java_fields == 0) {

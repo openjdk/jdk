@@ -111,4 +111,14 @@ public:
 
   // Asserts that elements in the packed table follow the order defined by the comparator.
   DEBUG_ONLY(void validate_order(Comparator &comparator) const);
+
+  template<typename Function>
+  void iterate(Function func) const {
+    for (size_t offset = 0; offset < _table_length; offset += _element_bytes) {
+      uint64_t element = read_element(offset);
+      uint32_t key = static_cast<uint32_t>(element) & _key_mask;
+      uint32_t value = checked_cast<uint32_t>(element >> _value_shift) & _value_mask;
+      func(offset, key, value);
+    }
+  }
 };

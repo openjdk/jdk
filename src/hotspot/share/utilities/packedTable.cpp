@@ -103,15 +103,12 @@ bool PackedTableLookup::search(Comparator& comparator, uint32_t* found_key, uint
 
 #ifdef ASSERT
 void PackedTableLookup::validate_order(Comparator &comparator) const {
-  for (size_t offset = 0; offset < _table_length; offset += _element_bytes) {
-    uint64_t element = read_element(offset);
-    // Ignoring high 32 bits in element on purpose
-    uint32_t key = static_cast<uint32_t>(element) & _key_mask;
-
+  auto validator = [&] (size_t offset, uint32_t key, uint32_t value) {
     if (offset != 0) {
       assert(comparator.compare_to(key) < 0, "not sorted");
     }
     comparator.reset(key);
-  }
+  };
+  iterate(validator);
 }
 #endif
