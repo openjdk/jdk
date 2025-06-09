@@ -846,7 +846,7 @@ class SocketChannelImpl
     /**
      * Marks the beginning of a connect operation that might block.
      * @param blocking true if configured blocking
-     * @param isa the remote address
+     * @param sa the remote socket address
      * @throws ClosedChannelException if the channel is closed
      * @throws AlreadyConnectedException if already connected
      * @throws ConnectionPendingException is a connection is pending
@@ -1098,9 +1098,11 @@ class SocketChannelImpl
     /**
      * Closes this channel when configured in blocking mode.
      *
-     * If there is an I/O operation in progress then the socket is pre-closed
-     * and the I/O threads signalled, in which case the final close is deferred
-     * until all I/O operations complete.
+     * On Unix systems, if there are I/O operations in progress then the channel's
+     * socket is pre-closed and the threads are signalled. The final close is
+     * deferred until all I/O operations complete.
+     *
+     * On Windows, the socket is closed after first shutting down output.
      *
      * Note that a channel configured blocking may be registered with a Selector
      * This arises when a key is canceled and the channel configured to blocking
@@ -1112,17 +1114,17 @@ class SocketChannelImpl
             boolean connected = (state == ST_CONNECTED);
             state = ST_CLOSING;
 
-            if (!tryClose()) {
+            if (connected && Net.shouldShutdownWriteBeforeClose()) {
                 // shutdown output when linger interval not set to 0
-                if (connected) {
-                    try {
-                        var SO_LINGER = StandardSocketOptions.SO_LINGER;
-                        if ((int) Net.getSocketOption(fd, SO_LINGER) != 0) {
-                            Net.shutdown(fd, Net.SHUT_WR);
-                        }
-                    } catch (IOException ignore) { }
-                }
+                try {
+                    var SO_LINGER = StandardSocketOptions.SO_LINGER;
+                    if ((int) Net.getSocketOption(fd, SO_LINGER) != 0) {
+                        Net.shutdown(fd, Net.SHUT_WR);
+                    }
+                } catch (IOException ignore) { }
+            }
 
+            if (!tryClose()) {
                 // prepare file descriptor for closing
                 nd.preClose(fd, readerThread, writerThread);
             }
