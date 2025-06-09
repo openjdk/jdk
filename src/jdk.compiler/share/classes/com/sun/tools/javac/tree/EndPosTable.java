@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,21 @@
 
 package com.sun.tools.javac.tree;
 
+import com.sun.tools.javac.util.Position;
+
 /**
  * Specifies the methods to access a mappings of syntax trees to end positions.
+ *
+ * <p>
+ * Implementations <b>must</b> store end positions for at least these node types:
+ * <ul>
+ *  <li>{@link JCTree.JCModuleDecl}
+ *  <li>{@link JCTree.JCPackageDecl}
+ *  <li>{@link JCTree.JCClassDecl}
+ *  <li>{@link JCTree.JCMethodDecl}
+ *  <li>{@link JCTree.JCVariableDecl}
+ * </ul>
+ *
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own
  * risk.  This code and its internal interfaces are subject to change
@@ -40,23 +53,31 @@ public interface EndPosTable {
      * @param tree JCTree
      * @return position of the source tree or Positions.NOPOS for non-existent mapping
      */
-    public int getEndPos(JCTree tree);
+    int getEndPos(JCTree tree);
 
     /**
      * Store ending position for a tree, the value of which is the greater of
      * last error position and the given ending position.
      * @param tree The tree.
      * @param endpos The ending position to associate with the tree.
+     * @return the {@code tree}
      */
-    public abstract void storeEnd(JCTree tree, int endpos);
+    <T extends JCTree> T storeEnd(T tree, int endpos);
+
+    /**
+     * Set the error position during the parsing phases, the value of which
+     * will be set only if it is greater than the last stored error position.
+     * @param errPos The error position
+     */
+    void setErrorEndPos(int errPos);
 
     /**
      * Give an old tree and a new tree, the old tree will be replaced with
      * the new tree, the position of the new tree will be that of the old
      * tree.
      * @param oldtree a JCTree to be replaced
-     * @param newtree a JCTree to be replaced with
+     * @param newtree a JCTree to be replaced with, or null to just remove {@code oldtree}
      * @return position of the old tree or Positions.NOPOS for non-existent mapping
      */
-    public int replaceTree(JCTree oldtree, JCTree newtree);
+    int replaceTree(JCTree oldtree, JCTree newtree);
 }

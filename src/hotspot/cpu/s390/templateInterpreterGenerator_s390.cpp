@@ -1180,7 +1180,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ z_stg(Z_R0, _z_ijava_state_neg(monitors), fp);
 
   __ add2reg(Z_esp, -Interpreter::stackElementSize);
-  __ z_stg(Z_esp, _z_ijava_state_neg(esp), fp);
+
+  __ save_esp(fp);
 
   // z_ijava_state->cpoolCache = Z_R1_scratch (see load above);
   __ z_stg(Z_R1_scratch, _z_ijava_state_neg(cpoolCache), fp);
@@ -1216,7 +1217,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
 // Various method entries
 
-// Math function, frame manager must set up an interpreter state, etc.
+// Math function, template interpreter must set up an interpreter state, etc.
 address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
 
   // Decide what to do: Use same platform specific instructions and runtime calls as compilers.
@@ -1239,6 +1240,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_cos  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);   break;
     case Interpreter::java_lang_math_tan  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);   break;
     case Interpreter::java_lang_math_tanh : /* run interpreted */ break;
+    case Interpreter::java_lang_math_cbrt : /* run interpreted */ break;
     case Interpreter::java_lang_math_abs  : /* run interpreted */ break;
     case Interpreter::java_lang_math_sqrt : /* runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt); not available */ break;
     case Interpreter::java_lang_math_log  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);   break;

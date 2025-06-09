@@ -185,7 +185,7 @@ class SharedRuntime: AllStatic {
   static double dabs(double f);
 #endif
 
-#if defined(__SOFTFP__) || defined(PPC)
+#if defined(__SOFTFP__)
   static double dsqrt(double f);
 #endif
 
@@ -711,6 +711,7 @@ class AdapterHandlerEntry : public MetaspaceObj {
   // Dummy argument is used to avoid C++ warning about using
   // deleted opearator MetaspaceObj::delete().
   void* operator new(size_t size, size_t dummy) throw() {
+    assert(size == BytesPerWord * heap_word_size(sizeof(AdapterHandlerEntry)), "should match");
     void* p = AllocateHeap(size, mtCode);
     memset(p, 0, size);
     return p;
