@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.Arrays;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import jdk.test.lib.Utils;
 
@@ -49,6 +50,7 @@ import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateToken;
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
+import static compiler.lib.template_framework.Template.$;
 
 import compiler.lib.template_framework.library.TestFrameworkClass;
 
@@ -140,7 +142,9 @@ public class TestAliasingFuzzer {
             "p.xyz", "InnerTest",
             // List of imports.
             List.of("compiler.lib.generators.*",
-                    "compiler.lib.verify.*"),
+                    "compiler.lib.verify.*",
+                    "java.util.Random",
+                    "jdk.test.lib.Utils"),
             // classpath, so the Test VM has access to the compiled class files.
             comp.getEscapedClassPathOfCompiledClasses(),
             // The list of tests.
@@ -192,12 +196,34 @@ public class TestAliasingFuzzer {
                          .collect(Collectors.joining(", ")) +
                    "})";
         }
+
+        public TemplateToken index(String invar0, String[] invarRest) {
+            var template = Template.make(() -> body(
+                let("con", con),
+                let("ivScale", ivScale),
+                let("invar0Scale", invar0Scale),
+                let("invar0", invar0),
+                "#con + #ivScale * i + #invar0Scale * #invar0",
+                IntStream.range(0, invarRestScales.length).mapToObj(
+                    i -> List.of(" + ", invarRestScales[i], " * ", invarRest[i])
+                ).toList()
+            ));
+            return template.asToken();
+        }
     }
 
     public static TemplateToken generateIntIndexForm() {
         var template = Template.make(() -> body(
             """
+            private static final Random RANDOM = Utils.getRandomInstance();
+
             public static record IntIndexForm(int con, int ivScale, int invar0Scale, int[] invarRestScales) {
+                public IntIndexForm {
+                    if (ivScale == 0 || invar0Scale == 0) {
+                        throw new RuntimeException("Bad scales: " + ivScale + " " + invar0Scale);
+                    }
+                }
+
                 public static record Range(int lo, int hi) {
                     public Range {
                         if (lo >= hi) { throw new RuntimeException("Bad range: " + lo + " " + hi); }
@@ -210,8 +236,37 @@ public class TestAliasingFuzzer {
                     return sum;
                 }
 
-                public int invar0ForIvLo(Range range, int ivLo) { return 0; }
-                public int ivHiForInvar0(Range range, int invar0) { return 0; }
+                public int invar0ForIvLo(Range range, int ivLo) {
+                    if (ivScale > 0) {
+                        // index(iv) is smallest for iv = ivLo, so we must satisfy:
+                        //   range.lo <= con + iv.lo * ivScale + invar0 * invar0Scale + invarRest
+                        //            <= con + iv.lo * ivScale + invar0 * invar0Scale - err
+                        // It follows:
+                        //   invar0 * invar0Scale >= range.lo - con - iv.lo * ivScale + err
+                        int rhs = range.lo() - con - ivLo * ivScale + err();
+                        if (invar0Scale > 0) {
+                            return (rhs + invar0Scale - 1) / invar0Scale; // round up division
+                        } else {
+                            throw new RuntimeException("not implemented 1");
+                        }
+                    } else {
+                        throw new RuntimeException("not implemented 2");
+                    }
+                }
+
+                public int ivHiForInvar0(Range range, int invar0) {
+                    if (ivScale > 0) {
+                        // index(iv) is largest for iv = ivHi, so we must satisfy:
+                        //   range.hi > con + iv.hi * ivScale + invar0 * invar0Scale + invarRest
+                        //            > con + iv.hi * ivScale + invar0 * invar0Scale + err
+                        // It follows:
+                        //   iv.hi * ivScale < range.hi - con - invar0 * invar0Scale - err
+                        int rhs = range.hi() - con - invar0 * invar0Scale - err();
+                        return (rhs - 1) / ivScale; // round down division
+                    } else {
+                        throw new RuntimeException("not implemented 2");
+                    }
+                }
             }
             """
         ));
@@ -220,6 +275,8 @@ public class TestAliasingFuzzer {
 
     public static TemplateToken generateArray(MyType type, Aliasing aliasing) {
         final int size = Generators.G.safeRestrict(Generators.G.ints(), 10_000, 20_000).next();
+        var form_a = new IntIndexForm(42, 1, 1, new int[] {1, 2, 3});
+        var form_b = new IntIndexForm(42, 1, 1, new int[] {1, 2, 3});
 
         var templateRandomRanges = Template.make(() -> body(
             let("size", size),
@@ -229,111 +286,129 @@ public class TestAliasingFuzzer {
             """
         ));
 
-        var template = Template.make(() -> body(
-            let("size", size),
-            let("type", type),
-            let("T", type.letter()),
-            let("aliasing", aliasing),
-            let("FORM_A", new IntIndexForm(42, 1, 1, new int[] {1, 2, 3}).generate()),
-            let("FORM_B", new IntIndexForm(42, 1, 1, new int[] {1, 2, 3}).generate()),
-            """
-            // --- $test start ---
-            // size=#size type=#type aliasing=#aliasing
-            private static #type[] $ORIGINAL_1 = new #type[#size];
-            private static #type[] $ORIGINAL_2 = new #type[#size];
+        var template = Template.make(() -> {
+            String[] invarRest = new String[] {$("invar1"), $("invar2"), $("invar3")};
+            return body(
+                let("size", size),
+                let("type", type),
+                let("T", type.letter()),
+                let("aliasing", aliasing),
+                let("form_a", form_a.generate()),
+                let("form_b", form_b.generate()),
+                """
+                // --- $test start ---
+                // size=#size type=#type aliasing=#aliasing
+                private static #type[] $ORIGINAL_1 = new #type[#size];
+                private static #type[] $ORIGINAL_2 = new #type[#size];
 
-            private static #type[] $TEST_1 = new #type[#size];
-            private static #type[] $TEST_2 = new #type[#size];
+                private static #type[] $TEST_1 = new #type[#size];
+                private static #type[] $TEST_2 = new #type[#size];
 
-            private static #type[] $REFERENCE_1 = new #type[#size];
-            private static #type[] $REFERENCE_2 = new #type[#size];
+                private static #type[] $REFERENCE_1 = new #type[#size];
+                private static #type[] $REFERENCE_2 = new #type[#size];
 
-            private static int $iterations = 0;
+                private static int $iterations = 0;
 
-            private static IntIndexForm $FORM_A = #FORM_A;
-            private static IntIndexForm $FORM_B = #FORM_B;
+                private static IntIndexForm $form_a = #form_a;
+                private static IntIndexForm $form_b = #form_b;
 
-            @Run(test = "$test")
-            @Warmup(1000)
-            public static void $run() {
-                $iterations++;
-                System.arraycopy($ORIGINAL_1, 0, $TEST_1, 0, #size);
-                System.arraycopy($ORIGINAL_2, 0, $TEST_2, 0, #size);
-                System.arraycopy($ORIGINAL_1, 0, $REFERENCE_1, 0, #size);
-                System.arraycopy($ORIGINAL_2, 0, $REFERENCE_2, 0, #size);
-            """,
-            switch(aliasing) {
-                case Aliasing.CONTAINER_DIFFERENT ->
-                    """
-                    #type[] TEST_SECOND      = $TEST_2;
-                    #type[] REFERENCE_SECOND = $REFERENCE_2;
-                    """;
-                case Aliasing.CONTAINER_SAME_ALIASING_NEVER,
-                     Aliasing.CONTAINER_SAME_ALIASING_UNKNOWN ->
-                    """
-                    #type[] TEST_SECOND      = $TEST_1;
-                    #type[] REFERENCE_SECOND = $REFERENCE_1;
-                    """;
-                case Aliasing.CONTAINER_UNKNOWN_ALIASING_NEVER,
-                     Aliasing.CONTAINER_UNKNOWN_ALIASING_UNKNOWN ->
-                    """
-                    final boolean isSame = ($iterations % 2 == 0);
-                    #type[] TEST_SECOND      = isSame ? $TEST_1      : $TEST_2;
-                    #type[] REFERENCE_SECOND = isSame ? $REFERENCE_1 : $REFERENCE_2;
-                    """;
-            },
-            // TODO: ranges!
-            switch(aliasing) {
-                case Aliasing.CONTAINER_DIFFERENT ->
-                    templateRandomRanges.asToken();
-                case Aliasing.CONTAINER_SAME_ALIASING_NEVER ->
-                    templateRandomRanges.asToken();
-                case Aliasing.CONTAINER_SAME_ALIASING_UNKNOWN ->
-                    templateRandomRanges.asToken();
-                case Aliasing.CONTAINER_UNKNOWN_ALIASING_NEVER ->
-                    templateRandomRanges.asToken();
-                case Aliasing.CONTAINER_UNKNOWN_ALIASING_UNKNOWN ->
-                    templateRandomRanges.asToken();
-            },
-            """
-                // Compute loop bounds and loop invariants.
-                int ivLo = 0;
-                int ivHi = #size;
-                int invar0_A = $FORM_A.invar0ForIvLo(r1, ivLo);
-                ivHi = Math.min(ivHi, $FORM_A.ivHiForInvar0(r1, invar0_A));
-                int invar0_B = $FORM_B.invar0ForIvLo(r2, ivLo);
-                ivHi = Math.min(ivHi, $FORM_B.ivHiForInvar0(r2, invar0_B));
+                """,
+                Arrays.stream(invarRest).map(invar ->
+                    List.of("private static int ", invar, " = 0;\n")
+                ).toList(),
+                """
 
-                if (ivLo + 1000 > ivHi) { throw new RuntimeException("iv range too small: " + ivHi + " " + ivLo); }
+                @Run(test = "$test")
+                @Warmup(100)
+                public static void $run() {
+                    $iterations++;
+                    System.arraycopy($ORIGINAL_1, 0, $TEST_1, 0, #size);
+                    System.arraycopy($ORIGINAL_2, 0, $TEST_2, 0, #size);
+                    System.arraycopy($ORIGINAL_1, 0, $REFERENCE_1, 0, #size);
+                    System.arraycopy($ORIGINAL_2, 0, $REFERENCE_2, 0, #size);
+                """,
+                switch(aliasing) {
+                    case Aliasing.CONTAINER_DIFFERENT ->
+                        """
+                        #type[] TEST_SECOND      = $TEST_2;
+                        #type[] REFERENCE_SECOND = $REFERENCE_2;
+                        """;
+                    case Aliasing.CONTAINER_SAME_ALIASING_NEVER,
+                         Aliasing.CONTAINER_SAME_ALIASING_UNKNOWN ->
+                        """
+                        #type[] TEST_SECOND      = $TEST_1;
+                        #type[] REFERENCE_SECOND = $REFERENCE_1;
+                        """;
+                    case Aliasing.CONTAINER_UNKNOWN_ALIASING_NEVER,
+                         Aliasing.CONTAINER_UNKNOWN_ALIASING_UNKNOWN ->
+                        """
+                        final boolean isSame = ($iterations % 2 == 0);
+                        #type[] TEST_SECOND      = isSame ? $TEST_1      : $TEST_2;
+                        #type[] REFERENCE_SECOND = isSame ? $REFERENCE_1 : $REFERENCE_2;
+                        """;
+                },
+                // TODO: ranges!
+                switch(aliasing) {
+                    case Aliasing.CONTAINER_DIFFERENT ->
+                        templateRandomRanges.asToken();
+                    case Aliasing.CONTAINER_SAME_ALIASING_NEVER ->
+                        templateRandomRanges.asToken();
+                    case Aliasing.CONTAINER_SAME_ALIASING_UNKNOWN ->
+                        templateRandomRanges.asToken();
+                    case Aliasing.CONTAINER_UNKNOWN_ALIASING_NEVER ->
+                        templateRandomRanges.asToken();
+                    case Aliasing.CONTAINER_UNKNOWN_ALIASING_UNKNOWN ->
+                        templateRandomRanges.asToken();
+                },
+                """
+                    // Compute loop bounds and loop invariants.
+                    int ivLo = RANDOM.nextInt(-1000, 1000);
+                    int ivHi = ivLo + #size;
+                    int invar0_A = $form_a.invar0ForIvLo(r1, ivLo);
+                    ivHi = Math.min(ivHi, $form_a.ivHiForInvar0(r1, invar0_A));
+                    int invar0_B = $form_b.invar0ForIvLo(r2, ivLo);
+                    ivHi = Math.min(ivHi, $form_b.ivHiForInvar0(r2, invar0_B));
 
-                // Run test and compare with interpreter results.
-                var result   = $test($TEST_1,           TEST_SECOND,      ivLo, ivHi);
-                var expected = $reference($REFERENCE_1, REFERENCE_SECOND, ivLo, ivHi);
-                Verify.checkEQ(result, expected);
-            }
+                    if (ivLo + 1000 > ivHi) { throw new RuntimeException("iv range too small: " + ivLo + " " + ivHi); }
+                """,
+                Arrays.stream(invarRest).map(invar ->
+                    List.of(invar, " = RANDOM.nextInt(-1, 2);\n")
+                ).toList(),
+                """
 
-            @Test
-            @IR(counts = {IRNode.LOAD_VECTOR_#T, "> 0",
-                          IRNode.STORE_VECTOR,   "> 0"},
-                applyIfPlatform = {"64-bit", "true"},
-                applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-            public static Object $test(#type[] a, #type[] b, int ivLo, int ivHi) {
-                for (int i = ivLo; i < ivHi; i++) {
-                    a[i] = b[i];
+                    // Run test and compare with interpreter results.
+                    var result   = $test($TEST_1,           TEST_SECOND,      ivLo, ivHi, invar0_A, invar0_B);
+                    var expected = $reference($REFERENCE_1, REFERENCE_SECOND, ivLo, ivHi, invar0_A, invar0_B);
+                    Verify.checkEQ(result, expected);
                 }
-                return new Object[] {a, b};
-            }
 
-            @DontCompile
-            public static Object $reference(#type[] a, #type[] b, int ivLo, int ivHi) {
-                for (int i = ivLo; i < ivHi; i++) {
-                    a[i] = b[i];
+                @Test
+                @IR(counts = {IRNode.LOAD_VECTOR_#T, "> 0",
+                              IRNode.STORE_VECTOR,   "> 0"},
+                    applyIfPlatform = {"64-bit", "true"},
+                    applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+                public static Object $test(#type[] a, #type[] b, int ivLo, int ivHi, int invar0_A, int invar0_B) {
+                    for (int i = ivLo; i < ivHi; i++) {
+                """,
+                "a[", form_a.index("invar0_A", invarRest), "] = b[", form_b.index("invar0_B", invarRest), "];\n",
+                """
+                    }
+                    return new Object[] {a, b};
                 }
-                return new Object[] {a, b};
-            }
-            // --- $test end   ---
-            """
-        ));
+
+                @DontCompile
+                public static Object $reference(#type[] a, #type[] b, int ivLo, int ivHi, int invar0_A, int invar0_B) {
+                    for (int i = ivLo; i < ivHi; i++) {
+                """,
+                "a[", form_a.index("invar0_A", invarRest), "] = b[", form_b.index("invar0_B", invarRest), "];\n",
+                """
+                    }
+                    return new Object[] {a, b};
+                }
+                // --- $test end   ---
+                """
+          );
+        });
         return template.asToken();
 
     }
