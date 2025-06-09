@@ -1634,6 +1634,14 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     case Op_StrIndexOfChar:
       return false;
 
+    // StrEqualsNode::Identity
+    //
+    // Found (linux x64 only?) with:
+    //   serviceability/sa/ClhsdbThreadContext.java
+    //   -XX:+UnlockExperimentalVMOptions -XX:LockingMode=1 -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
+    case Op_StrEquals:
+      return false;
+
     // MergeMemNode::Ideal
     // Found in tier1-3.
     case Op_MergeMem:
