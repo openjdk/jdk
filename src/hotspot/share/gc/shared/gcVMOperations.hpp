@@ -93,6 +93,8 @@ public:
   virtual bool doit_prologue();
   // Releases the Heap_lock.
   virtual void doit_epilogue();
+
+  bool operation_is_gc() const { return true; }
 };
 
 class VM_Verify : public VM_GC_Sync_Operation {

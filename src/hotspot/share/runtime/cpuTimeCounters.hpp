@@ -109,6 +109,7 @@ class ThreadTotalCPUTimeClosure: public ThreadClosure {
   ~ThreadTotalCPUTimeClosure();
 
   virtual void do_thread(Thread* thread);
+  void inc_total(jlong value);
 };
 
 #endif // SHARE_RUNTIME_CPUTIMECOUNTERS_HPP

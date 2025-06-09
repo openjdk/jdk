@@ -66,6 +66,7 @@ size_t CollectedHeap::_lab_alignment_reserve = SIZE_MAX;
 Klass* CollectedHeap::_filler_object_klass = nullptr;
 size_t CollectedHeap::_filler_array_max_size = 0;
 size_t CollectedHeap::_stack_chunk_max_size = 0;
+jlong CollectedHeap::_vm_vtime = 0;
 
 class GCLogMessage : public FormatBuffer<512> {};
 
@@ -211,6 +212,27 @@ void CollectedHeap::print_after_gc() const {
 void CollectedHeap::print() const {
   print_heap_on(tty);
   print_gc_on(tty);
+}
+
+void CollectedHeap::log_gc_vtime() {
+  if (os::is_thread_cpu_time_supported()) {
+    double process_vtime = os::elapsed_process_vtime();
+    double gc_vtime = elapsed_gc_vtime();
+
+    if (process_vtime == -1 || gc_vtime == -1) return;
+
+    log_info(gc, cpu)("Process CPU time: %fs", process_vtime);
+    log_info(gc, cpu)("GC CPU time: %fs", gc_vtime);
+    double cost = -1;
+    if (gc_vtime > process_vtime || process_vtime == 0 || gc_vtime == 0) {
+      // This can happen e.g. for short running processes with
+      // low CPU utilization
+      cost = 0;
+    } else {
+      cost = 100 * gc_vtime / process_vtime;
+    }
+    log_info(gc)("GC CPU cost: %2.2f%%", cost);
+  }
 }
 
 void CollectedHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {

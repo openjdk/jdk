@@ -105,9 +105,29 @@ public:
 
 void ZCollectedHeap::stop() {
   log_info_p(gc, exit)("Stopping ZGC");
+  log_gc_vtime();
   ZAbort::abort();
   ZStopConcurrentGCThreadClosure cl;
   gc_threads_do(&cl);
+}
+
+class ZVCPUThreadClosure : public ThreadClosure {
+private:
+  volatile jlong _vtime = 0;
+public:
+  virtual void do_thread(Thread *thread) {
+    if (thread->is_ConcurrentGC_thread() ||
+        strstr(thread->name(), "ZWorker") != nullptr) {
+      Atomic::add(&_vtime, os::thread_cpu_time(thread));
+    }
+  }
+  jlong vtime() { return _vtime; };
+};
+
+double ZCollectedHeap::elapsed_gc_vtime() {
+  ZVCPUThreadClosure cl;
+  gc_threads_do(&cl);
+  return (double)(cl.vtime() + Universe::heap()->vm_vtime()) / NANOSECS_PER_SEC;
 }
 
 size_t ZCollectedHeap::max_capacity() const {

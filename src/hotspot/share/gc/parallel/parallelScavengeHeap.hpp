@@ -214,6 +214,9 @@ public:
   void gc_threads_do(ThreadClosure* tc) const override;
   void print_tracing_info() const override;
 
+  void stop() override;
+  double elapsed_gc_vtime() override;
+
   WorkerThreads* safepoint_workers() override { return &_workers; }
 
   PreGenGCValues get_pre_gc_values() const;
