@@ -159,12 +159,10 @@ void *run_java_overflow (void *p) {
 
 void do_overflow(){
   volatile int *p = NULL;
-  if (_kp_rec_count == 0 || _rec_count < _kp_rec_count) {
-    for(;;) {
-      _rec_count++;
-      p = (int*)alloca(128);
-      _peek_value = p[0]; // Peek
-    }
+  while (_kp_rec_count == 0 || _rec_count < _kp_rec_count) {
+    _rec_count++;
+    p = (int*)alloca(128);
+    _peek_value = p[0]; // Peek
   }
 }
 
