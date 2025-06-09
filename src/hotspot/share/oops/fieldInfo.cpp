@@ -270,12 +270,12 @@ void FieldInfoStream::validate_search_table(ConstantPool* cp, const Array<u1>* f
   reader.read_field_counts(&java_fields, &injected_fields);
   assert(java_fields > 0, "must be");
 
-  PackedTableLookup lookup(fis->length() - 1, java_fields - 1);
+  PackedTableLookup lookup(fis->length() - 1, java_fields - 1, search_table);
   assert(lookup.element_bytes() * java_fields == static_cast<unsigned int>(search_table->length()), "size does not match");
 
   FieldInfoComparator comparator(&reader, cp, nullptr, nullptr);
   // Check 1: assert that elements have the correct order based on the comparison function
-  lookup.validate_order(comparator, search_table->data(), static_cast<size_t>(search_table->length()));
+  lookup.validate_order(comparator);
 
   // Check 2: Iterate through the original stream (not just search_table) and try if lookup works as expected
   reader.set_position_and_next_index(0, 0);
@@ -304,11 +304,10 @@ int FieldInfoReader::search_table_lookup(const Array<u1>* search_table, const Sy
     return -1;
   }
   FieldInfoComparator comp(this, cp, name, signature);
-  PackedTableLookup lookup(_r.limit() - 1, java_fields - 1);
+  PackedTableLookup lookup(_r.limit() - 1, java_fields - 1, search_table);
   uint32_t position;
   static_assert(sizeof(uint32_t) == sizeof(_next_index), "field size assert");
-  if (lookup.search(comp, search_table->data(), static_cast<size_t>(search_table->length()),
-      &position, reinterpret_cast<uint32_t*>(&_next_index))) {
+  if (lookup.search(comp, &position, reinterpret_cast<uint32_t*>(&_next_index))) {
     _r.set_position(static_cast<int>(position));
     return _next_index;
   } else {

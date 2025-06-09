@@ -40,46 +40,46 @@ PackedTableBase::PackedTableBase(uint32_t max_key, uint32_t max_value) {
 
 // Note: we require the supplier to provide the elements in the final order as we can't easily sort
 // within this method - qsort() accepts only pure function as comparator.
-void PackedTableBuilder::fill(u1* data, size_t length, Supplier &supplier) const {
+void PackedTableBuilder::fill(u1* table, size_t table_length, Supplier &supplier) const {
   uint32_t key, value;
   size_t offset = 0;
-  for (; offset + sizeof(uint64_t) <= length && supplier.next(&key, &value); offset += _element_bytes) {
+  for (; offset + sizeof(uint64_t) <= table_length && supplier.next(&key, &value); offset += _element_bytes) {
     assert((key & ~_key_mask) == 0, "key out of bounds");
     assert((value & ~_value_mask) == 0, "value out of bounds: %x vs. %x (%x)", value, _value_mask, ~_value_mask);
-    *reinterpret_cast<uint64_t*>(data + offset) = static_cast<uint64_t>(key) | (static_cast<uint64_t>(value) << _value_shift);
+    *reinterpret_cast<uint64_t*>(table + offset) = static_cast<uint64_t>(key) | (static_cast<uint64_t>(value) << _value_shift);
   }
   // last bytes
-  for (; offset < length && supplier.next(&key, &value); offset += _element_bytes) {
+  for (; offset < table_length && supplier.next(&key, &value); offset += _element_bytes) {
     uint64_t element = static_cast<uint64_t>(key) | (static_cast<uint64_t>(value) << _value_shift);
     for (unsigned int i = 0; i < _element_bytes; ++i) {
-      data[offset + i] = static_cast<u1>(0xFF & (element >> (8 * i)));
+      table[offset + i] = static_cast<u1>(0xFF & (element >> (8 * i)));
     }
   }
 
-  assert(offset == length, "Did not fill whole array");
+  assert(offset == table_length, "Did not fill whole array");
   assert(!supplier.next(&key, &value), "Supplier has more elements");
 }
 
-uint64_t PackedTableLookup::read_element(const u1* data, size_t length, size_t offset) const {
-  if (offset + sizeof(uint64_t) <= length) {
-    return *reinterpret_cast<const uint64_t*>(data + offset);
+uint64_t PackedTableLookup::read_element(size_t offset) const {
+  if (offset + sizeof(uint64_t) <= _table_length) {
+    return *reinterpret_cast<const uint64_t*>(_table + offset);
   }
   // slow path for accessing end of array
   uint64_t element = 0;
-  for (size_t i = 0; i < _element_bytes && offset + i < length; ++i) {
-    element = element | (static_cast<uint64_t>(data[offset + i]) << (i * 8));
+  for (size_t i = 0; i < _element_bytes && offset + i < _table_length; ++i) {
+    element = element | (static_cast<uint64_t>(_table[offset + i]) << (i * 8));
   }
   assert((element & ~((uint64_t) _key_mask | ((uint64_t) _value_mask << _value_shift))) == 0, "read too much");
   return element;
 }
 
-bool PackedTableLookup::search(Comparator& comparator, const u1* data, size_t length, uint32_t* found_key, uint32_t* found_value) const {
-  unsigned int low = 0, high = checked_cast<unsigned int>(length / _element_bytes);
+bool PackedTableLookup::search(Comparator& comparator, uint32_t* found_key, uint32_t* found_value) const {
+  unsigned int low = 0, high = checked_cast<unsigned int>(_table_length / _element_bytes);
   assert(low < high, "must be");
   while (low < high) {
     unsigned int mid = low + (high - low) / 2;
     assert(mid >= low && mid < high, "integer overflow?");
-    uint64_t element = read_element(data, length, _element_bytes * mid);
+    uint64_t element = read_element(_element_bytes * mid);
     uint32_t key = element & _key_mask;
     int cmp = comparator.compare_to(key);
     if (cmp == 0) {
@@ -96,9 +96,9 @@ bool PackedTableLookup::search(Comparator& comparator, const u1* data, size_t le
 }
 
 #ifdef ASSERT
-void PackedTableLookup::validate_order(Comparator &comparator, const u1* table, size_t length) const {
-  for (size_t offset = 0; offset < length; offset += _element_bytes) {
-    uint64_t element = read_element(table, length, offset);
+void PackedTableLookup::validate_order(Comparator &comparator) const {
+  for (size_t offset = 0; offset < _table_length; offset += _element_bytes) {
+    uint64_t element = read_element(offset);
     uint32_t key = element & _key_mask;
 
     if (offset != 0) {

@@ -22,8 +22,8 @@
  *
  */
 
+#include "oops/array.hpp"
 #include "utilities/globalDefinitions.hpp"
-
 
 // Base for space-optimized structure supporting binary search. Each element
 // consists of up to 32-bit key, and up to 32-bit value; these are packed
@@ -80,7 +80,10 @@ public:
 // Helper class for lookup in a packed table.
 class PackedTableLookup: public PackedTableBase {
 private:
-  uint64_t read_element(const u1* data, size_t length, size_t offset) const;
+  const u1* const _table;
+  const size_t _table_length;
+
+  uint64_t read_element(size_t offset) const;
 
 public:
 
@@ -100,7 +103,11 @@ public:
   // The thresholds are inclusive, and in practice the limits are rounded
   // to the nearest power-of-two - 1.
   // See PackedTableBase constructor for details.
-  PackedTableLookup(uint32_t max_key, uint32_t max_value): PackedTableBase(max_key, max_value) {}
+  PackedTableLookup(uint32_t max_key, uint32_t max_value, const u1 *table, size_t table_length):
+    PackedTableBase(max_key, max_value), _table(table), _table_length(table_length) {}
+
+  PackedTableLookup(uint32_t max_key, uint32_t max_value, const Array<u1> *table):
+    PackedTableLookup(max_key, max_value, table->data(), static_cast<size_t>(table->length())) {}
 
   // Performs a binary search in the packed table, looking for an element with key
   // referring to a target equal according to the comparator.
@@ -108,8 +115,8 @@ public:
   // and the function returns true.
   // When the element is not found, found_key and found_value are not changed and
   // the function returns false.
-  bool search(Comparator& comparator, const u1* table, size_t table_length, uint32_t* found_key, uint32_t* found_value) const;
+  bool search(Comparator& comparator, uint32_t* found_key, uint32_t* found_value) const;
 
   // Asserts that elements in the packed table follow the order defined by the comparator.
-  DEBUG_ONLY(void validate_order(Comparator &comparator, const u1* table, size_t table_length) const);
+  DEBUG_ONLY(void validate_order(Comparator &comparator) const);
 };

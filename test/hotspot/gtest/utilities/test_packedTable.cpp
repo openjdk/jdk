@@ -69,8 +69,8 @@ static void test(uint32_t max_key, uint32_t max_value, unsigned int length) {
         return;
     }
     PackedTableBuilder builder(max_key, max_value);
-    size_t table_bytes = length * builder.element_bytes();
-    u1* table = new u1[table_bytes];
+    size_t table_length = length * builder.element_bytes();
+    u1* table = new u1[table_length];
 
     uint32_t* keys = new uint32_t[length];
     uint32_t* values = max_value != 0 ? new uint32_t[length] : nullptr;
@@ -81,18 +81,18 @@ static void test(uint32_t max_key, uint32_t max_value, unsigned int length) {
         }
     }
     Supplier sup(keys, values, length);
-    builder.fill(table, table_bytes, sup);
+    builder.fill(table, table_length, sup);
 
     Comparator comparator;
-    PackedTableLookup lookup(max_key, max_value);
+    PackedTableLookup lookup(max_key, max_value, table, table_length);
 #ifdef ASSERT
-    lookup.validate_order(comparator, table, table_bytes);
+    lookup.validate_order(comparator);
 #endif
 
     for (unsigned int i = 0; i < length; ++i) {
         uint32_t key, value;
         comparator.reset(keys[i]);
-        EXPECT_TRUE(lookup.search(comparator, table, table_bytes, &key, &value));
+        EXPECT_TRUE(lookup.search(comparator, &key, &value));
         EXPECT_EQ(key, keys[i]);
         if (values != nullptr) {
             EXPECT_EQ(value, values[i]);
