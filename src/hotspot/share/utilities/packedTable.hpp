@@ -37,14 +37,6 @@ protected:
   uint32_t _value_mask;
 
 public:
-  // The thresholds are inclusive, and in practice the limits are rounded
-  // to the nearest power-of-two - 1.
-  // Based on the max_key and max_value we figure out the number of bits required to store
-  // key and value; imagine that only as bits (not aligned to byte boundary... yet).
-  // Then we concatenate the bits for key and value, and 'add' 1-7 padding zeroes
-  // (high-order bits) to align on bytes.
-  // In the end we have each element in the table consuming 1-8 bytes (case with 0 bits for key
-  // is ruled out).
   PackedTableBase(uint32_t max_key, uint32_t max_value);
 
   // Returns number of bytes each element will occupy.

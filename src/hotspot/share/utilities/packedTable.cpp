@@ -26,6 +26,14 @@
 #include "utilities/count_leading_zeros.hpp"
 #include "utilities/packedTable.hpp"
 
+// The thresholds are inclusive, and in practice the limits are rounded
+// to the nearest power-of-two - 1.
+// Based on the max_key and max_value we figure out the number of bits required to store
+// key and value; imagine that only as bits (not aligned to byte boundary... yet).
+// Then we concatenate the bits for key and value, and 'add' 1-7 padding zeroes
+// (high-order bits) to align on bytes.
+// In the end we have each element in the table consuming 1-8 bytes (case with 0 bits for key
+// is ruled out).
 PackedTableBase::PackedTableBase(uint32_t max_key, uint32_t max_value) {
   unsigned int key_bits = max_key == 0 ? 0 : 32 - count_leading_zeros(max_key);
   unsigned int value_bits = max_value == 0 ? 0 : 32 - count_leading_zeros(max_value);
@@ -75,11 +83,14 @@ bool PackedTableLookup::search(Comparator& comparator, uint32_t* found_key, uint
     unsigned int mid = low + (high - low) / 2;
     assert(mid >= low && mid < high, "integer overflow?");
     uint64_t element = read_element(_element_bytes * mid);
-    uint32_t key = element & _key_mask;
+    // Ignoring high 32 bits in element on purpose
+    uint32_t key = static_cast<uint32_t>(element) & _key_mask;
     int cmp = comparator.compare_to(key);
     if (cmp == 0) {
       *found_key = key;
-      *found_value = (element >> _value_shift) & _value_mask;
+      // Since __builtin_memcpy in read_element does not copy bits outside the element
+      // anything above _value_mask << _value_shift should be zero.
+      *found_value = checked_cast<uint32_t>(element >> _value_shift) & _value_mask;
       return true;
     } else if (cmp < 0) {
       high = mid;
@@ -94,7 +105,8 @@ bool PackedTableLookup::search(Comparator& comparator, uint32_t* found_key, uint
 void PackedTableLookup::validate_order(Comparator &comparator) const {
   for (size_t offset = 0; offset < _table_length; offset += _element_bytes) {
     uint64_t element = read_element(offset);
-    uint32_t key = element & _key_mask;
+    // Ignoring high 32 bits in element on purpose
+    uint32_t key = static_cast<uint32_t>(element) & _key_mask;
 
     if (offset != 0) {
       assert(comparator.compare_to(key) < 0, "not sorted");
