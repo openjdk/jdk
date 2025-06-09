@@ -134,14 +134,14 @@ typedef struct {
   Symbol* _signature;
   int _index;
   int _position;
-} field_pos_t;
+} field_pos;
 
 class FieldInfoSupplier: public PackedTableBuilder::Supplier {
-private:
-  const field_pos_t* _positions;
+  const field_pos* _positions;
   size_t _elements;
+
 public:
-  FieldInfoSupplier(const field_pos_t* positions, size_t elements): _positions(positions), _elements(elements) {}
+  FieldInfoSupplier(const field_pos* positions, size_t elements): _positions(positions), _elements(elements) {}
 
   bool next(uint32_t* key, uint32_t* value) override {
     if (_elements == 0) {
@@ -173,7 +173,7 @@ Array<u1>* FieldInfoStream::create_search_table(ConstantPool* cp, const Array<u1
   }
 
   ResourceMark rm;
-  field_pos_t* positions = NEW_RESOURCE_ARRAY(field_pos_t, java_fields);
+  field_pos* positions = NEW_RESOURCE_ARRAY(field_pos, java_fields);
   for (int i = 0; i < java_fields; ++i) {
     assert(r.has_next(), "number of fields must match");
 
@@ -186,11 +186,11 @@ Array<u1>* FieldInfoStream::create_search_table(ConstantPool* cp, const Array<u1
     positions[i]._index = i;
   }
   auto compare_pair = [](const void* v1, const void* v2) {
-    const field_pos_t* p1 = reinterpret_cast<const field_pos_t*>(v1);
-    const field_pos_t* p2 = reinterpret_cast<const field_pos_t*>(v2);
+    const field_pos* p1 = reinterpret_cast<const field_pos*>(v1);
+    const field_pos* p2 = reinterpret_cast<const field_pos*>(v2);
     return compare_name_and_sig(p1->_name, p1->_signature, p2->_name, p2->_signature);
   };
-  qsort(positions, java_fields, sizeof(field_pos_t), compare_pair);
+  qsort(positions, java_fields, sizeof(field_pos), compare_pair);
 
   PackedTableBuilder builder(fis->length() - 1, java_fields - 1);
   Array<u1>* table = MetadataFactory::new_array<u1>(loader_data, java_fields * builder.element_bytes(), CHECK_NULL);
