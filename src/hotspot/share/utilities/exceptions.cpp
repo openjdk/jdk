@@ -124,7 +124,7 @@ bool Exceptions::special_exception(JavaThread* thread, const char* file, int lin
                         MAX_LEN, message ? message : "",
                         p2i(h_exception()), file, line, p2i(thread),
                         Universe::vm_exception()->print_value_string());
-    maybe_log_call_stack(h_exception);
+    maybe_log_call_stack(h_exception, false);
     // We do not care what kind of exception we get for a thread which
     // is compiling.  We just install a dummy exception object
     thread->set_pending_exception(Universe::vm_exception(), file, line);
@@ -154,7 +154,7 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
                        message ? ": " : "",
                        MAX_LEN, message ? message : "",
                        p2i(h_exception()), file, line, p2i(thread));
-  maybe_log_call_stack(h_exception);
+  maybe_log_call_stack(h_exception, false);
 
   // for AbortVMOnException flag
   Exceptions::debug_check_abort(h_exception, message);
@@ -598,7 +598,7 @@ void Exceptions::debug_check_abort_helper(Handle exception, const char* message)
 }
 
 // for logging exceptions
-void Exceptions::log_exception(Handle exception, const char* message) {
+void Exceptions::log_exception(Handle exception, const char* message, bool is_throw_bytecode) {
   ResourceMark rm;
   const char* detail_message = java_lang_Throwable::message_as_utf8(exception());
   if (detail_message != nullptr) {
@@ -611,7 +611,7 @@ void Exceptions::log_exception(Handle exception, const char* message) {
                          MAX_LEN, exception->print_value_string(),
                          MAX_LEN, message);
   }
-  maybe_log_call_stack(exception);
+  maybe_log_call_stack(exception, !is_throw_bytecode);
 }
 
 // We don't want to use an OopHandle, or else we may prevent this object from being collected.
@@ -619,12 +619,18 @@ void Exceptions::log_exception(Handle exception, const char* message) {
 static oop _last_logged_exception;
 
 // This should be called only from a live Java thread.
-void Exceptions::maybe_log_call_stack(Handle exception) {
+void Exceptions::maybe_log_call_stack(Handle exception, bool omit_if_same) {
   LogStreamHandle(Info, exceptions, stacktrace) st;
   if (st.is_enabled()) {
     oop exception_oop = exception();
     oop old_exception = NativeAccess<MO_SEQ_CST>::oop_atomic_xchg(&_last_logged_exception, exception_oop);
-    if (old_exception != exception_oop) {
+    if (omit_if_same && old_exception == exception_oop) {
+      // This is called again when InterpreterRuntime::exception_handler_for_exception() is looking for
+      // an exception handler. Don't print the stack again to avoid excessive output.
+      //
+      // TODO: we should cache one exception per JavaThread, or else concurrently thrown exceptions
+      // may cause excessive logging (this is probably rare).
+    } else {
       JavaThread* t = JavaThread::current();
       if (t->has_last_Java_frame()) {
         t->print_active_stack_on(&st);

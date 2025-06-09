@@ -56,15 +56,22 @@ public class ExceptionsTest {
                            ".*\n.*" +
                            "info..exceptions,stacktrace.*at ExceptionsTest[$]InternalClass.main[(]ExceptionsTest.java:[0-9]+");
 
-        // To avoid verbosity, we shouldn't print the callstack of main->foo2->bar2 more than once
+        // To avoid verbosity, stack trace for baz2() should be printed only once.
         String stdout = output.getStdout();
-        Pattern p = Pattern.compile("foo2.*main", Pattern.DOTALL);
-        Matcher m = p.matcher(stdout);
-        if (!m.find()) {
+        checkRegexp(stdout, "baz2.*bar2.*baz2.*bar2", false);
+
+        // Two stack traces should include foo2, as an exception is thrown at two different BCIs in this method.
+        checkRegexp(stdout, "foo2.*main.*foo2.*main", true);
+    }
+
+    static void checkRegexp(String text, String pattern, boolean expectMatch) {
+        Pattern p = Pattern.compile(pattern, Pattern.DOTALL);
+        Matcher m = p.matcher(text);
+        if (expectMatch && !m.find()) {
             throw new RuntimeException("Cannot find: " + p);
         }
-        if (m.find()) {
-            throw new RuntimeException("Must not find " + p + " twice");
+        if (!expectMatch && m.find()) {
+            throw new RuntimeException("Found unexpected match: " + p);
         }
     }
 
@@ -124,6 +131,14 @@ public class ExceptionsTest {
         }
 
         static void bar2() {
+            try {
+                baz2();
+            } catch (RuntimeException e) {
+                throw e; // Rethrow -- should print a new callstack.
+            }
+        }
+
+        static void baz2() {
             throw new RuntimeException("Test exception 2 for logging");
         }
     }

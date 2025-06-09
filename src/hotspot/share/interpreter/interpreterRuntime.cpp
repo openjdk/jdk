@@ -495,10 +495,14 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     if (log_is_enabled(Info, exceptions)) {
       ResourceMark rm(current);
       stringStream tempst;
+      bool is_throw_bytecode = false;
+      if (!h_method->is_native()) {
+        is_throw_bytecode = (Bytecodes::Code) *h_method->bcp_from(current_bci) == Bytecodes::_athrow;
+      }
       tempst.print("interpreter method <%s>\n"
                    " at bci %d for thread " INTPTR_FORMAT " (%s)",
                    h_method->print_value_string(), current_bci, p2i(current), current->name());
-      Exceptions::log_exception(h_exception, tempst.as_string());
+      Exceptions::log_exception(h_exception, tempst.as_string(), is_throw_bytecode);
     }
 // Don't go paging in something which won't be used.
 //     else if (extable->length() == 0) {
