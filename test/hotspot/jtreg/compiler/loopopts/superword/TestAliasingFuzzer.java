@@ -266,7 +266,7 @@ public class TestAliasingFuzzer {
                         if (invar0Scale > 0) {
                             // invar0 * invar0Scale >=  range.lo - con - iv.lo * ivScale + err
                             // invar0               >= (range.lo - con - iv.lo * ivScale + err) / invar0Scale
-                            return (rhs + Math.abs(invar0Scale) - 1) / invar0Scale; // round up division
+                            return (rhs + invar0Scale + 1) / invar0Scale; // round up division
                         } else {
                             // invar0 * invar0Scale >=  range.lo - con - iv.lo * ivScale + err
                             // invar0               <= (range.lo - con - iv.lo * ivScale + err) / invar0Scale
@@ -287,7 +287,7 @@ public class TestAliasingFuzzer {
                         } else {
                             // invar0 * invar0Scale <=  range.hi - con - iv.lo * ivScale - err - 1
                             // invar0               >= (range.hi - con - iv.lo * ivScale - err - 1) / invar0Scale
-                            return (rhs + Math.abs(invar0Scale) - 1) / invar0Scale; // round up division
+                            return (rhs + invar0Scale + 1) / invar0Scale; // round up division
                         }
                     }
                 }
