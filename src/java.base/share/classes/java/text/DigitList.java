@@ -194,8 +194,13 @@ final class DigitList implements Cloneable {
             }
             throw new NumberFormatException("Unexpected negative value");
         }
-        long pow10 = Math.powExact(10L, Math.max(0, decimalAt - count));
-        return Math.multiplyExact(v, pow10);
+        try {
+            long pow10 = Math.powExact(10L, Math.max(0, decimalAt - count));
+            return Math.multiplyExact(v, pow10);
+        } catch (ArithmeticException e) {
+            NumberFormatException nfe = new NumberFormatException("Value does not fit into a long");
+            throw nfe;
+        }
     }
 
     /**
