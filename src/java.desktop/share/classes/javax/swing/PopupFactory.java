@@ -25,7 +25,6 @@
 
 package javax.swing;
 
-import java.applet.Applet;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
@@ -288,10 +287,6 @@ public class PopupFactory {
             return getMediumWeightPopup(owner, contents, ownerX, ownerY);
         case HEAVY_WEIGHT_POPUP:
             Popup popup = getHeavyWeightPopup(owner, contents, ownerX, ownerY);
-            if ((OSInfo.getOSType() == OSInfo.OSType.MACOSX) && (owner != null) &&
-                (EmbeddedFrame.getAppletIfAncestorOf(owner) != null)) {
-                ((HeavyWeightPopup)popup).setCacheEnabled(false);
-            }
             return popup;
         }
         return null;
@@ -656,12 +651,6 @@ public class PopupFactory {
                         result = parentBounds
                                 .contains(x, y, popupWidth, popupHeight);
                     }
-                } else if (parent instanceof JApplet) {
-                    Rectangle parentBounds = parent.getBounds();
-                    Point p = parent.getLocationOnScreen();
-                    parentBounds.x = p.x;
-                    parentBounds.y = p.y;
-                    result = parentBounds.contains(x, y, popupWidth, popupHeight);
                 }
             }
             return result;
@@ -817,11 +806,6 @@ public class PopupFactory {
                         parent = p;
                     }
                     break;
-                } else if (p instanceof JApplet) {
-                    // Painting code stops at Applets, we don't want
-                    // to add to a Component above an Applet otherwise
-                    // you'll never see it painted.
-                    break;
                 }
             }
 
@@ -961,7 +945,7 @@ public class PopupFactory {
               if it has a layered pane,
               add to that, otherwise
               add to the window. */
-            while (!(parent instanceof Window || parent instanceof Applet) &&
+            while (!(parent instanceof Window) &&
                    (parent!=null)) {
                 parent = parent.getParent();
             }

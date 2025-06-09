@@ -778,6 +778,8 @@ jdk/jfr/jvm/TestWaste.java                                      8282427 generic-
 
 # jdk_internal
 
+jdk/internal/loader/URLClassPath/ClassnameCharTest.java         8358729 generic-all
+
 ############################################################################
 
 # jdk_jpackage

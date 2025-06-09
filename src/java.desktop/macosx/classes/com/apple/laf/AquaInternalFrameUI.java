@@ -467,9 +467,6 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
                     ((JFrame)frame.getTopLevelAncestor()).getGlassPane().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 
                     ((JFrame)frame.getTopLevelAncestor()).getGlassPane().setVisible(false);
-                } else if (c instanceof JApplet) {
-                    ((JApplet)c).getGlassPane().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                    ((JApplet)c).getGlassPane().setVisible(false);
                 } else if (c instanceof JWindow) {
                     ((JWindow)c).getGlassPane().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                     ((JWindow)c).getGlassPane().setVisible(false);
