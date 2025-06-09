@@ -622,10 +622,10 @@ public class Socket implements java.io.Closeable {
      * </ol>
      *
      * @apiNote Establishing a TCP/IP connection is subject to connection timeout settings
-     * in the operating system. The typical timeout is 60 seconds. If the operating system
-     * timeout expires before the {@code timeout} specified to this method then an
-     * {@code IOException} is thrown. The {@code timeout} specified to this method is typically
-     * a timeout value that is shorter than the operating system timeout.
+     * in the operating system. The typical operating system timeout is 60 seconds. If the
+     * operating system timeout expires before the {@code timeout} specified to this method
+     * then an {@code IOException} is thrown. The {@code timeout} specified to this method
+     * is typically a timeout value that is shorter than the operating system timeout.
      *
      * @param   endpoint the {@code SocketAddress}
      * @param   timeout  the timeout value to be used in milliseconds.
