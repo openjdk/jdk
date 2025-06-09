@@ -432,7 +432,7 @@ final class SocketTube implements FlowTube {
         }
 
         void signalError(Throwable error) {
-            debug.log(() -> "write error: " + error);
+            if (debug.on()) debug.log(() -> "write error: " + error);
             if (Log.channel()) {
                 Log.logChannel("Failed to write to channel ({0}: {1})",
                         channelDescr(), error);
