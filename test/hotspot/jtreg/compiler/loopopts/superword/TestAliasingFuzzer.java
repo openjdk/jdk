@@ -198,10 +198,20 @@ public class TestAliasingFuzzer {
         var template = Template.make(() -> body(
             """
             public static record IntIndexForm(int con, int ivScale, int invar0Scale, int[] invarRestScales) {
-                public int init(int size) { return 0; }
-                public int limit(int size) { return size / ivScale; }
+                public static record Range(int lo, int hi) {
+                    public Range {
+                        if (lo >= hi) { throw new RuntimeException("Bad range: " + lo + " " + hi); }
+                    }
+                }
 
-                public int[] invarValues() { return null; }
+                public int err() {
+                    int sum = 0;
+                    for (int scale : invarRestScales) { sum += Math.abs(scale); }
+                    return sum;
+                }
+
+                public int invar0ForIvLo(Range range, int ivLo) { return 0; }
+                public int ivHiForInvar0(Range range, int invar0) { return 0; }
             }
             """
         ));
@@ -215,55 +225,57 @@ public class TestAliasingFuzzer {
             let("type", type),
             let("T", type.letter()),
             let("aliasing", aliasing),
-            let("aForm", new IntIndexForm(1, 1, 1, new int[] {1, 2, 3}).generate()),
+            let("FORM_A", new IntIndexForm(42, 1, 1, new int[] {1, 2, 3}).generate()),
+            let("FORM_B", new IntIndexForm(42, 1, 1, new int[] {1, 2, 3}).generate()),
             """
             // --- $test start ---
             // size=#size type=#type aliasing=#aliasing
-            private static #type[] $ORIGINAL_A = new #type[#size];
-            private static #type[] $ORIGINAL_B = new #type[#size];
+            private static #type[] $ORIGINAL_1 = new #type[#size];
+            private static #type[] $ORIGINAL_2 = new #type[#size];
 
-            private static #type[] $TEST_A = new #type[#size];
-            private static #type[] $TEST_B = new #type[#size];
+            private static #type[] $TEST_1 = new #type[#size];
+            private static #type[] $TEST_2 = new #type[#size];
 
-            private static #type[] $REFERENCE_A = new #type[#size];
-            private static #type[] $REFERENCE_B = new #type[#size];
+            private static #type[] $REFERENCE_1 = new #type[#size];
+            private static #type[] $REFERENCE_2 = new #type[#size];
 
             private static int $iterations = 0;
 
-            private static IntIndexForm $X = #aForm;
+            private static IntIndexForm $FORM_A = #FORM_A;
+            private static IntIndexForm $FORM_B = #FORM_B;
 
             @Run(test = "$test")
             @Warmup(100)
             public static void $run() {
                 $iterations++;
-                System.arraycopy($ORIGINAL_A, 0, $TEST_A, 0, #size);
-                System.arraycopy($ORIGINAL_B, 0, $TEST_B, 0, #size);
-                System.arraycopy($ORIGINAL_A, 0, $REFERENCE_A, 0, #size);
-                System.arraycopy($ORIGINAL_B, 0, $REFERENCE_B, 0, #size);
+                System.arraycopy($ORIGINAL_1, 0, $TEST_1, 0, #size);
+                System.arraycopy($ORIGINAL_2, 0, $TEST_2, 0, #size);
+                System.arraycopy($ORIGINAL_1, 0, $REFERENCE_1, 0, #size);
+                System.arraycopy($ORIGINAL_2, 0, $REFERENCE_2, 0, #size);
             """,
             switch(aliasing) {
                 case Aliasing.CONTAINER_DIFFERENT  ->
                     """
-                    #type[] $TEST_SECOND      = $TEST_B;
-                    #type[] $REFERENCE_SECOND = $REFERENCE_B;
+                    #type[] $TEST_SECOND      = $TEST_2;
+                    #type[] $REFERENCE_SECOND = $REFERENCE_2;
                     """;
                 case Aliasing.CONTAINER_SAME_ALIASING_NEVER,
                      Aliasing.CONTAINER_SAME_ALIASING_UNKNOWN ->
                     """
-                    #type[] $TEST_SECOND      = $TEST_A;
-                    #type[] $REFERENCE_SECOND = $REFERENCE_A;
+                    #type[] $TEST_SECOND      = $TEST_1;
+                    #type[] $REFERENCE_SECOND = $REFERENCE_1;
                     """;
                 case Aliasing.CONTAINER_UNKNOWN_ALIASING_NEVER,
                      Aliasing.CONTAINER_UNKNOWN_ALIASING_UNKNOWN ->
                     """
                     final boolean isSame = ($iterations % 2 == 0);
-                    #type[] $TEST_SECOND      = isSame ? $TEST_A      : $TEST_B;
-                    #type[] $REFERENCE_SECOND = isSame ? $REFERENCE_A : $REFERENCE_B;
+                    #type[] $TEST_SECOND      = isSame ? $TEST_1      : $TEST_2;
+                    #type[] $REFERENCE_SECOND = isSame ? $REFERENCE_1 : $REFERENCE_2;
                     """;
             },
             """
-                var result   = $test($TEST_A,           $TEST_SECOND);
-                var expected = $reference($REFERENCE_A, $REFERENCE_SECOND);
+                var result   = $test($TEST_1,           $TEST_SECOND);
+                var expected = $reference($REFERENCE_1, $REFERENCE_SECOND);
                 Verify.checkEQ(result, expected);
             }
 
