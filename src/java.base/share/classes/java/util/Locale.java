@@ -385,10 +385,10 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * {@snippet lang = java:
  *     var number = 1000;
  *     NumberFormat.getCurrencyInstance(Locale.US).format(number); // returns "$1,000.00"
- *     NumberFormat.getCurrencyInstance(Locale.JAPAN).format(number); // returns "\u00A51,000""
+ *     NumberFormat.getCurrencyInstance(Locale.JAPAN).format(number); // returns "¥1,000""
  *     var date = LocalDate.of(2024, 1, 1);
  *     DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).localizedBy(Locale.US).format(date); // returns "January 1, 2024"
- *     DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).localizedBy(Locale.JAPAN).format(date); // returns "2024\u5e741\u67081\u65e5"
+ *     DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).localizedBy(Locale.JAPAN).format(date); // returns "2024年1月1日"
  * }
  *
  * <h2><a id="LocaleMatching">Locale Matching</a></h2>
@@ -1310,7 +1310,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * {@return a {@code Set} of ISO3166 country codes for the specified type}
+     * {@return an unmodifiable {@code Set} of ISO3166 country codes for the specified type}
      *
      * @param type {@link Locale.IsoCountryCode} specified ISO code type.
      * @see java.util.Locale.IsoCountryCode
@@ -1800,7 +1800,7 @@ public final class Locale implements Cloneable, Serializable {
      * to {@link Locale.Builder#setLanguageTag(String)} which throws an exception
      * in this case.
      *
-     * <p>The following <b>conversions</b> are performed:<ul>
+     * <p>The following <b id="langtag_conversions">conversions</b> are performed:<ul>
      *
      * <li>The language code "und" is mapped to language "".
      *
@@ -1826,13 +1826,19 @@ public final class Locale implements Cloneable, Serializable {
      *     loc.getExtension('x'); // returns "urp"
      * }
      *
-     * <li>When the languageTag argument contains an extlang subtag,
-     * the first such subtag is used as the language, and the primary
-     * language subtag and other extlang subtags are ignored:
+     * <li> BCP 47 language tags permit up to three extlang subtags. However,
+     * the second and third extlang subtags are always ignored. As such,
+     * the first extlang subtag in {@code languageTag} is used as the language,
+     * and the primary language subtag and other extlang subtags are ignored.
+     * Language tags that exceed three extlang subtags are considered
+     * ill-formed starting at the offending extlang subtag.
      *
      * {@snippet lang=java :
      *     Locale.forLanguageTag("ar-aao").getLanguage(); // returns "aao"
      *     Locale.forLanguageTag("en-abc-def-us").toString(); // returns "abc_US"
+     *     Locale.forLanguageTag("zh-yue-gan-cmn-czh-CN").toString();
+     *     // returns "yue"; "czh" exceeds the extlang limit, and subsequent
+     *     // subtags are considered ill-formed
      * }
      *
      * <li>Case is normalized except for variant tags, which are left
@@ -2786,6 +2792,9 @@ public final class Locale implements Cloneable, Serializable {
          * thrown (unlike {@code Locale.forLanguageTag}, which
          * just discards ill-formed and following portions of the
          * tag).
+         *
+         * <p>See {@link Locale##langtag_conversions converions} for a full list
+         * of conversions that are performed on {@code languageTag}.
          *
          * @param languageTag the language tag
          * @return This builder.
