@@ -190,10 +190,7 @@ public class HelloWorld {
             new Run("none", "台北問候您!")
         }),
         new Paragraph("title", new Run[] {
-            new Run("none", "Αθηναι " // Greek
-            + "ασπαζον"
-            + "ται υμα"
-            + "ς!")
+            new Run("none", "Αθηναι ασπαζονται υμας!") // Greek
         }),
         new Paragraph("title", new Run[] {
             new Run("none", "東京から今日は")
