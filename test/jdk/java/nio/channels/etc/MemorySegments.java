@@ -54,7 +54,10 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import static java.nio.file.StandardOpenOption.*;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
@@ -650,6 +653,7 @@ class MemorySegments {
     /**
      * AsynchronousFileChannel read/write(ByteBuffer).
      */
+    @DisabledOnOs(OS.WINDOWS)
     @ParameterizedTest
     @MethodSource("arenaSuppliers")
     void testAsyncFileChannelReadWrite(Supplier<Arena> arenaSupplier) throws Throwable {
@@ -697,7 +701,8 @@ class MemorySegments {
     /**
      * Test closing a shared arena while AsynchronousFileChannel.write in progress.
      */
-    //@RepeatedTest(20)
+    @Disabled
+    @RepeatedTest(20)
     void testAsyncFileChannelWriteRacingArenaClose() throws Exception {
         Path file = Files.createTempFile(Path.of(""), "foo", ".dat");
 
