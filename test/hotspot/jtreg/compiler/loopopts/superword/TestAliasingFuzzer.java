@@ -77,11 +77,10 @@ public class TestAliasingFuzzer {
     // Do the containers (array, MemorySegment, etc) ever overlap?
     enum Aliasing {
         CONTAINER_DIFFERENT,
-        CONTAINER_SAME_ALIASING_ALWAYS,
         CONTAINER_SAME_ALIASING_NEVER,
-        CONTAINER_SAME_ALIASING_ALTERNATE,
-        CONTAINER_SAME_ALIASING_RANDOM,
-        CONTAINER_ALTERNATE_ALIASING_NEVER
+        CONTAINER_SAME_ALIASING_UNKNOWN,
+        CONTAINER_UNKNOWN_ALIASING_NEVER,
+        CONTAINER_UNKNOWN_ALIASING_UNKNOWN,
     }
 
     public static void main(String[] args) {
@@ -112,7 +111,7 @@ public class TestAliasingFuzzer {
         List<TemplateToken> testTemplateTokens = new ArrayList<>();
 
         // Add some basic functionalities.
-        testTemplateTokens.add(generateArrayIndexForm());
+        testTemplateTokens.add(generateIntIndexForm());
 
         for (Aliasing aliasing : Aliasing.values()) {
             testTemplateTokens.addAll(allTypes.stream().map(t -> generateArray(t, aliasing)).toList());
@@ -123,7 +122,7 @@ public class TestAliasingFuzzer {
         // - various types - do I need them from the library?
         // - various pointer shapes - different summands, count up vs down, strided etc.
         // - aliasing
-        // - conversions on native
+        // - conversions on native / unsafe / MemorySegment
         // Tricky: IR rules. May not vectorize in all cases.. how do we handle that?
         // General strategy: one method compiled, one interpreted -> compare!
         //
@@ -133,8 +132,7 @@ public class TestAliasingFuzzer {
         //   fields/args: determine safe range.
         //   Form determines bounds on init / limit.
         //   Can we just set a form, and then generate field/arg, and then determine bounds?
-        //   tricky!
-        //   TODO: continue work here.
+
 
         // Create the test class, which runs all testTemplateTokens.
         return TestFrameworkClass.render(
@@ -149,22 +147,57 @@ public class TestAliasingFuzzer {
             testTemplateTokens);
     }
 
-    // Idea:
-    //   con + invar -> in range [0..256]
-    public static record ArrayIndexForm(int con, int ivScale, int[] invarScales) {
+    // The IntIndexForm is used to model the int-index. We can use it for arrays, but also by
+    // restricting the MemorySegment index to a simple int-index.
+    //
+    // Form:
+    //   index = con + iv * ivScale + invar0 * invar0Scale + invarRest
+    //                                                       [err]
+    //
+    // The idea is that invarRest is always close to zero, with some small range [-err .. err].
+    // The invar variables for invarRest must be in the range [-1, 1, 1], so that we can
+    // estimate the error range from the invarRestScales.
+    //
+    // At runtime, we will have to generate inputs for the iv.lo/iv.hi, as well as the invar0,
+    // so that the index range lays in some predetermined range [range.lo, range.hi] and the
+    // ivStride:
+    //
+    // for (int iv = iv.lo; iv < iv.hi; iv += ivStride) {
+    //     assert: range.lo <= index(iv) <= range.hi
+    // }
+    //
+    // Since there are multiple memory accesses, we may have multiple indices to compute.
+    // Since they are all in the same loop, the indices share the same iv.lo and iv.hi. Hence,
+    // we fix either iv.lo or iv.hi, and compute the other via the constraints.
+    //
+    // Fix iv.lo, assume ivScale > 0:
+    //   index(iv) is smallest for iv = iv.lo, so we must satisfy
+    //     range.lo <= con + iv.lo * ivScale + invar0 * invar0Scale + invarRest
+    //              <= con + iv.lo * ivScale + invar0 * invar0Scale - err
+    //   It follows:
+    //     invar0 * invar0Scale >= range.lo - con - iv.lo * ivScale + err
+    //   This allows us to pick a invar0.
+    //   Now, we can compute the largest iv.lo possible.
+    //   index(iv) is largest for iv = iv.hi, so we must satisfy:
+    //     range.hi >= con + iv.hi * ivScale + invar0 * invar0Scale + invarRest
+    //              >= con + iv.hi * ivScale + invar0 * invar0Scale + err
+    //   It follows:
+    //     iv.hi * ivScale <= range.hi - con - invar0 * invar0Scale - err
+    //
+    public static record IntIndexForm(int con, int ivScale, int invar0Scale, int[] invarRestScales) {
         public String generate() {
-            return "new ArrayIndexForm(" + con() + ", " + ivScale() + ", new int[] {" +
-                   Arrays.stream(invarScales)
+            return "new IntIndexForm(" + con() + ", " + ivScale() + ", " + invar0Scale() + ", new int[] {" +
+                   Arrays.stream(invarRestScales)
                          .mapToObj(String::valueOf)
                          .collect(Collectors.joining(", ")) +
                    "})";
         }
     }
 
-    public static TemplateToken generateArrayIndexForm() {
+    public static TemplateToken generateIntIndexForm() {
         var template = Template.make(() -> body(
             """
-            public static record ArrayIndexForm(int con, int ivScale, int[] invarScales) {
+            public static record IntIndexForm(int con, int ivScale, int invar0Scale, int[] invarRestScales) {
                 public int init(int size) { return 0; }
                 public int limit(int size) { return size / ivScale; }
 
@@ -182,7 +215,7 @@ public class TestAliasingFuzzer {
             let("type", type),
             let("T", type.letter()),
             let("aliasing", aliasing),
-            let("aForm", new ArrayIndexForm(1, 1, new int[] {1, 2, 3}).generate()),
+            let("aForm", new IntIndexForm(1, 1, 1, new int[] {1, 2, 3}).generate()),
             """
             // --- $test start ---
             // size=#size type=#type aliasing=#aliasing
@@ -197,7 +230,7 @@ public class TestAliasingFuzzer {
 
             private static int $iterations = 0;
 
-            private static ArrayIndexForm $X = #aForm;
+            private static IntIndexForm $X = #aForm;
 
             @Run(test = "$test")
             @Warmup(100)
@@ -214,19 +247,18 @@ public class TestAliasingFuzzer {
                     #type[] $TEST_SECOND      = $TEST_B;
                     #type[] $REFERENCE_SECOND = $REFERENCE_B;
                     """;
-                case Aliasing.CONTAINER_SAME_ALIASING_ALWAYS,
-                     Aliasing.CONTAINER_SAME_ALIASING_NEVER,
-                     Aliasing.CONTAINER_SAME_ALIASING_ALTERNATE,
-                     Aliasing.CONTAINER_SAME_ALIASING_RANDOM ->
+                case Aliasing.CONTAINER_SAME_ALIASING_NEVER,
+                     Aliasing.CONTAINER_SAME_ALIASING_UNKNOWN ->
                     """
                     #type[] $TEST_SECOND      = $TEST_A;
                     #type[] $REFERENCE_SECOND = $REFERENCE_A;
                     """;
-                case Aliasing.CONTAINER_ALTERNATE_ALIASING_NEVER ->
+                case Aliasing.CONTAINER_UNKNOWN_ALIASING_NEVER,
+                     Aliasing.CONTAINER_UNKNOWN_ALIASING_UNKNOWN ->
                     """
-                    final boolean isExact = ($iterations % 2 == 0);
-                    #type[] $TEST_SECOND      = isExact ? $TEST_A      : $TEST_B;
-                    #type[] $REFERENCE_SECOND = isExact ? $REFERENCE_A : $REFERENCE_B;
+                    final boolean isSame = ($iterations % 2 == 0);
+                    #type[] $TEST_SECOND      = isSame ? $TEST_A      : $TEST_B;
+                    #type[] $REFERENCE_SECOND = isSame ? $REFERENCE_A : $REFERENCE_B;
                     """;
             },
             """
