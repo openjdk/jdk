@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4957669 5017871
+ * @bug 4957669 5017871 8358729
  * @summary cannot load class names containing some JSR 202 characters;
  *          plugin does not escape unicode character in http request
  * @modules java.base/sun.net.www
@@ -33,11 +33,7 @@
 
 import java.io.*;
 import java.net.*;
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.security.CodeSource;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.jar.*;
 import com.sun.net.httpserver.*;
 import sun.net.www.ParseUtil;
@@ -99,13 +95,11 @@ public class ClassnameCharTest {
     static class MyURLClassLoader extends URLClassLoader {
         private URL base;   /* code base URL */
         private CodeSource codesource; /* codesource for the base URL */
-        private AccessControlContext acc;
         MyURLClassLoader(URL base) {
             super(new URL[0]);
             this.base = base;
             this.codesource =
                     new CodeSource(base, (java.security.cert.Certificate[]) null);
-            acc = AccessController.getContext();
         }
 
         @Override
@@ -128,35 +122,16 @@ public class ClassnameCharTest {
             String encodedName = ParseUtil.encodePath(name.replace('.', '/'), false);
             final String path = (new StringBuffer(encodedName)).append(".class").append(cookie).toString();
             try {
-                byte[] b = AccessController.doPrivileged(
-                        new PrivilegedExceptionAction<byte[]>() {
-                            public byte[] run() throws IOException {
-                                try {
-                                    URL finalURL = new URL(base, path);
-
-                                    // Make sure the codebase won't be modified
-                                    if (base.getProtocol().equals(finalURL.getProtocol()) &&
-                                            base.getHost().equals(finalURL.getHost()) &&
-                                            base.getPort() == finalURL.getPort()) {
-                                        return getBytes(finalURL);
-                                    }
-                                    else {
-                                        return null;
-                                    }
-                                } catch (Exception e) {
-                                    return null;
-                                }
-                            }
-                        }, acc);
-
-                if (b != null) {
+                URL finalURL = new URL(base, path);
+                // Make sure the codebase won't be modified
+                if (base.getProtocol().equals(finalURL.getProtocol()) &&
+                        base.getHost().equals(finalURL.getHost()) &&
+                        base.getPort() == finalURL.getPort()) {
+                    byte[] b = getBytes(finalURL);
                     return defineClass(name, b, 0, b.length, codesource);
-                } else {
-                    throw new ClassNotFoundException(name);
                 }
-            } catch (PrivilegedActionException e) {
-                throw new ClassNotFoundException(name, e.getException());
-            }
+            } catch (Exception _) {}
+            throw new ClassNotFoundException(name);
         }
 
         /*
