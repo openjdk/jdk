@@ -57,14 +57,12 @@ import sun.security.validator.Validator;
 
 abstract class X509KeyManagerConstraints extends X509ExtendedKeyManager {
 
-    private static final String PROPERTY_KEYMANAGER_DISABLE_CONSTRAINTS =
-            "jdk.tls.keymanager.disableConstraintsChecking";
-
     // Indicates whether we should skip the constraints check.
     private final boolean constraintsDisabled;
 
     protected X509KeyManagerConstraints() {
-        constraintsDisabled = isConstraintsDisabled();
+        constraintsDisabled = "true".equals(System.getProperty(
+                "jdk.tls.keymanager.disableConstraintsChecking"));
     }
 
     // Gets algorithm constraints of the socket.
@@ -165,11 +163,6 @@ abstract class X509KeyManagerConstraints extends X509ExtendedKeyManager {
         }
 
         return true;
-    }
-
-    protected boolean isConstraintsDisabled() {
-        return "true".equals(System.getProperty(
-                PROPERTY_KEYMANAGER_DISABLE_CONSTRAINTS));
     }
 
     // enum for the result of the extension check

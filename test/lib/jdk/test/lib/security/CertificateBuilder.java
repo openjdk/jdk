@@ -237,15 +237,15 @@ public class CertificateBuilder {
     /**
      * Helper method to add IPAddress types for the SAN extension
      *
-     * @param IPAddresses A {@code List} of names to add as IPAddress
+     * @param ipAddresses A {@code List} of names to add as IPAddress
      *         types
      * @throws IOException if an encoding error occurs.
      */
-    public CertificateBuilder addSubjectAltNameIPExt(List<String> IPAddresses)
+    public CertificateBuilder addSubjectAltNameIPExt(List<String> ipAddresses)
             throws IOException {
-        if (!IPAddresses.isEmpty()) {
+        if (!ipAddresses.isEmpty()) {
             GeneralNames gNames = new GeneralNames();
-            for (String name : IPAddresses) {
+            for (String name : ipAddresses) {
                 gNames.add(new GeneralName(new IPAddressName(name)));
             }
             addExtension(new SubjectAlternativeNameExtension(false,

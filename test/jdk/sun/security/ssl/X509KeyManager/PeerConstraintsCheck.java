@@ -68,6 +68,11 @@ import sun.security.x509.X500Name;
  * @run main/othervm PeerConstraintsCheck true PKIX
  */
 
+/**
+ * This class tests against the peer supported certificate signatures sent in
+ * "signature_algorithms_cert" extension.
+ */
+
 public class PeerConstraintsCheck extends SSLSocketTemplate {
 
     private static final String KEY_ALGORITHM = "EC";

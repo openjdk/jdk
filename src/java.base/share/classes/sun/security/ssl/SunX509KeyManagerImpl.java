@@ -214,8 +214,6 @@ final class SunX509KeyManagerImpl extends X509KeyManagerConstraints {
      * <code>SSLEngine</code> connection given the public key type
      * and the list of certificate issuer authorities recognized by
      * the peer (if any).
-     *
-     * @since 1.5
      */
     @Override
     public String chooseEngineClientAlias(String[] keyType,
@@ -260,8 +258,6 @@ final class SunX509KeyManagerImpl extends X509KeyManagerConstraints {
      * <code>SSLEngine</code> connection given the public key type
      * and the list of certificate issuer authorities recognized by
      * the peer (if any).
-     *
-     * @since 1.5
      */
     @Override
     public String chooseEngineServerAlias(String keyType,
@@ -392,7 +388,7 @@ final class SunX509KeyManagerImpl extends X509KeyManagerConstraints {
 
                 if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
                     SSLLogger.fine("Ignore alias " + alias +
-                            ": certificate list does not conform to " +
+                            ": certificate chain does not conform to " +
                             "algorithm constraints");
                 }
 

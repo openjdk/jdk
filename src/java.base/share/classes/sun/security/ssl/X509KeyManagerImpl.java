@@ -559,7 +559,7 @@ final class X509KeyManagerImpl extends X509KeyManagerConstraints {
 
                 if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
                     SSLLogger.fine("Ignore alias " + alias +
-                            ": certificate list does not conform to " +
+                            ": certificate chain does not conform to " +
                             "algorithm constraints");
                 }
                 continue;
