@@ -130,10 +130,10 @@ int FieldInfoStream::compare_name_and_sig(const Symbol* n1, const Symbol* s1, co
 // We use both name and signature during the comparison; while JLS require unique
 // names for fields, JVMS requires only unique name + signature combination.
 typedef struct {
-  Symbol* name;
-  Symbol* signature;
-  int index;
-  int position;
+  Symbol* _name;
+  Symbol* _signature;
+  int _index;
+  int _position;
 } field_pos_t;
 
 class FieldInfoSupplier: public PackedTableBuilder::Supplier {
@@ -147,8 +147,8 @@ public:
     if (_elements == 0) {
       return false;
     }
-    *key = _positions->position;
-    *value = _positions->index;
+    *key = _positions->_position;
+    *value = _positions->_index;
     ++_positions;
     --_elements;
     return true;
@@ -177,18 +177,18 @@ Array<u1>* FieldInfoStream::create_search_table(ConstantPool* cp, const Array<u1
   for (int i = 0; i < java_fields; ++i) {
     assert(r.has_next(), "number of fields must match");
 
-    positions[i].position = r.position();
+    positions[i]._position = r.position();
     FieldInfo fi;
     r.read_field_info(fi);
 
-    positions[i].name = fi.name(cp);
-    positions[i].signature = fi.signature(cp);
-    positions[i].index = i;
+    positions[i]._name = fi.name(cp);
+    positions[i]._signature = fi.signature(cp);
+    positions[i]._index = i;
   }
   auto compare_pair = [](const void* v1, const void* v2) {
     const field_pos_t* p1 = reinterpret_cast<const field_pos_t*>(v1);
     const field_pos_t* p2 = reinterpret_cast<const field_pos_t*>(v2);
-    return compare_name_and_sig(p1->name, p1->signature, p2->name, p2->signature);
+    return compare_name_and_sig(p1->_name, p1->_signature, p2->_name, p2->_signature);
   };
   qsort(positions, java_fields, sizeof(field_pos_t), compare_pair);
 
