@@ -729,7 +729,6 @@ bool ImmutableOopMap::has_any(OopMapValue::oop_types type) const {
   return false;
 }
 
-#ifdef ASSERT
 int ImmutableOopMap::nr_of_bytes() const {
   OopMapStream oms(this);
 
@@ -738,7 +737,6 @@ int ImmutableOopMap::nr_of_bytes() const {
   }
   return sizeof(ImmutableOopMap) + oms.stream_position();
 }
-#endif
 
 ImmutableOopMapBuilder::ImmutableOopMapBuilder(const OopMapSet* set) : _set(set), _empty(nullptr), _last(nullptr), _empty_offset(-1), _last_offset(-1), _offset(0), _required(-1), _new_set(nullptr) {
   _mapping = NEW_RESOURCE_ARRAY(Mapping, _set->size());

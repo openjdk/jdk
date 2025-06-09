@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401 8304671 8310326 8312093 8312204 8315452 8337976 8324859
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401 8304671 8310326 8312093 8312204 8315452 8337976 8324859 8344706
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -1010,7 +1010,7 @@ public class JavacParserTest extends TestCase {
     @Test //JDK-8065753
     void testWrongFirstToken() throws IOException {
         String code = "<";
-        String expectedErrors = "Test.java:1:1: compiler.err.expected4: class, interface, enum, record\n" +
+        String expectedErrors = "Test.java:1:1: compiler.err.class.method.or.field.expected\n" +
                                 "1 error\n";
         StringWriter out = new StringWriter();
         JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(out, fm, null,
@@ -2298,13 +2298,12 @@ public class JavacParserTest extends TestCase {
 
     @Test //JDK-8310326
     void testUnnamedClassPositions() throws IOException {
-        String code = """
-                      void main() {
-                      }
-                      """;
+        //             0         1         2
+        //             012345678901234567890
+        String code = "void main() { }";
         DiagnosticCollector<JavaFileObject> coll =
                 new DiagnosticCollector<>();
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll, List.of("--enable-preview", "--source", System.getProperty("java.specification.version")),
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll, null,
                 null, Arrays.asList(new MyFileObject(code)));
         Trees trees = Trees.instance(ct);
         SourcePositions sp = trees.getSourcePositions();
@@ -2313,7 +2312,7 @@ public class JavacParserTest extends TestCase {
             @Override
             public Void visitClass(ClassTree node, Void p) {
                 assertEquals("Wrong start position", 0, sp.getStartPosition(cut, node));
-                assertEquals("Wrong end position", -1, sp.getEndPosition(cut, node));
+                assertEquals("Wrong end position", 15, sp.getEndPosition(cut, node));
                 assertEquals("Wrong modifiers start position", -1, sp.getStartPosition(cut, node.getModifiers()));
                 assertEquals("Wrong modifiers end position", -1, sp.getEndPosition(cut, node.getModifiers()));
                 return super.visitClass(node, p);

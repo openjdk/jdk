@@ -1559,6 +1559,7 @@ void os::read_image_release_file() {
   fseek(file, 0, SEEK_END);
   long sz = ftell(file);
   if (sz == -1) {
+    fclose(file);
     return;
   }
   fseek(file, 0, SEEK_SET);
