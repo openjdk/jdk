@@ -44,10 +44,12 @@ public class ListDragCursor {
                 3. Drag mouse to the list.
                 4. Release the left mouse button.
 
-                If the mouse cursor starts as a Text Line Cursor and changes
-                to a regular Pointer Cursor, then Hand Cursor when hovering
-                the list, pass the test. This test fails if the cursor does
-                not update at all when pointing over the different components.
+                If the mouse cursor starts as a Text Line Cursor (I-beam),
+                and does not change until you reached the List and
+                released the left mouse button (and becomes a Hand Cursor),
+                pass the test. This test fails if the cursor updates
+                when pointing over the different components before
+                dragging is complete.
                 """;
 
         PassFailJFrame.builder()
