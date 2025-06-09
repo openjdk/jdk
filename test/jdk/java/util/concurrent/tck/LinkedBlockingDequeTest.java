@@ -1962,4 +1962,34 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
         mustEqual(six, it.next());
         mustEqual(3, q.size());
     }
+
+    public void testWeaklyConsistentIterationWithIteratorRemove() {
+        final LinkedBlockingDeque<Item> q = new LinkedBlockingDeque<>(15);
+        q.add(one);
+        q.add(two);
+        q.add(three);
+        q.add(four);
+        q.add(five);
+        final Iterator<Item> it1 = q.iterator();
+        final Iterator<Item> it2 = q.iterator();
+        final Iterator<Item> it3 = q.iterator();
+        mustEqual(one, it1.next());
+        mustEqual(two, it1.next());
+        it1.remove(); // removing "two"
+        mustEqual(one, it2.next());
+        it2.remove(); // removing "one"
+        mustEqual(three, it2.next());
+        mustEqual(four, it2.next());
+        it2.remove(); // removing "four"
+        mustEqual(one, it3.next());
+        mustEqual(three, it3.next());
+        mustEqual(five, it3.next());
+        assertFalse(it3.hasNext());
+        mustEqual(three, it1.next());
+        mustEqual(five, it1.next());
+        assertFalse(it1.hasNext());
+        mustEqual(five, it2.next());
+        assertFalse(it2.hasNext());
+        mustEqual(2, q.size());
+    }
 }
