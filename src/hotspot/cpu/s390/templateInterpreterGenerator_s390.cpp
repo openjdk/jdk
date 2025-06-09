@@ -1217,7 +1217,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
 // Various method entries
 
-// Math function, frame manager must set up an interpreter state, etc.
+// Math function, template interpreter must set up an interpreter state, etc.
 address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
 
   // Decide what to do: Use same platform specific instructions and runtime calls as compilers.
