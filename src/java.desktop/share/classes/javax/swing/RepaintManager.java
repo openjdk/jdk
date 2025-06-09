@@ -51,8 +51,8 @@ import sun.swing.SwingUtilities2.RepaintListener;
  * requests into a single repaint for members of a component tree.
  * <p>
  * As of 1.6 <code>RepaintManager</code> handles repaint requests
- * for Swing's top level components (
- * <code>JWindow</code>, <code>JFrame</code> and <code>JDialog</code>).
+ * for Swing's top level components
+ * (<code>JWindow</code>, <code>JFrame</code> and <code>JDialog</code>).
  * Any calls to <code>repaint</code> on one of these will call into the
  * appropriate <code>addDirtyRegion</code> method.
  *

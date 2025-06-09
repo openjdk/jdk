@@ -48,7 +48,7 @@ import java.io.Serial;
 import java.util.Set;
 
 /**
- * A generic container used for embedding Java components,
+ * A generic container used for embedding Java components.
  * An EmbeddedFrame has two related uses:
  *
  * . Within a Java-based application, an EmbeddedFrame serves as a sort of

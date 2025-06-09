@@ -1558,7 +1558,7 @@ public class Container extends Component {
      * component hierarchy.
      * <p>
      * The {@code Window} class is the validate root in AWT.
-     *  Swing introduces more validate roots.
+     * Swing introduces more validate roots.
      *
      * @return whether this container is a validate root
      * @see #invalidate

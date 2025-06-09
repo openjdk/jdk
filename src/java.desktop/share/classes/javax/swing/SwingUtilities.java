@@ -2193,7 +2193,7 @@ public class SwingUtilities implements SwingConstants
      * CellRendererPane}.
      * <p>
      * The component hierarchy must be displayable up to the toplevel component
-     * (a {@code Frame}) Otherwise this method returns {@code null}.
+     * (a {@code Frame}). Otherwise this method returns {@code null}.
      * <p>
      * If the {@code visibleOnly} argument is {@code true}, the found validate
      * root and all its parents up to the toplevel component must also be

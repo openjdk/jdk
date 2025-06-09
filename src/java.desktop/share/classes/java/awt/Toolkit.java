@@ -1350,16 +1350,16 @@ public abstract class Toolkit {
     }
 
     /**
-     * {@return the EventQueue for this application}
+     * {@return the {@code EventQueue} for this application}
     */
     public final EventQueue getSystemEventQueue() {
         return getSystemEventQueueImpl();
     }
 
     /**
-     * A method used by toolkit subclasses to get the EventQueue.
+     * A method used by toolkit subclasses to get the {@code EventQueue}.
      * This may be more direct or more efficient than calling
-     * {@code getSystemEventQueue()}
+     * {@code getSystemEventQueue()}.
      * @return the {@code EventQueue} object
      */
     protected abstract EventQueue getSystemEventQueueImpl();

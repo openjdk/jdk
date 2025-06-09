@@ -2481,7 +2481,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      * performed normally. There may be some duplication of effort, but
      * that code is already written to be able to perform properly if called
      * to duplicate work. The main difference is that if we detect we are
-     * An AppContext environment these new fonts
+     * in an AppContext environment these new fonts
      * are not placed in the "default" maps but into an AppContext instance.
      * The font lookup mechanism in java.awt.Font.getFont2D() is also updated
      * so that look-up for composite fonts will in that case always

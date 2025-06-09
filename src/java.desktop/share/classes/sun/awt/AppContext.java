@@ -111,7 +111,7 @@ import java.util.function.Supplier;
  * listen to are its own.  A more reasonable request would be to
  * change the Swing default look-and-feel; with that default stored in
  * an AppContext, the look-and-feel will change without
- * disrupting other contexts.<p>
+ * disrupting other contexts.
  *
  * @author  Thomas Ball
  * @author  Fred Ecks

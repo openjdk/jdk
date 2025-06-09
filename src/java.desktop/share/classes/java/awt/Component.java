@@ -3935,7 +3935,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
     /**
      * Inner class for flipping buffers on a component.  That component must
-     * be a {@code Canvas} or {@code Window}
+     * be a {@code Canvas} or {@code Window}.
      * @see Canvas
      * @see Window
      * @see java.awt.image.BufferStrategy
@@ -3985,7 +3985,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
         /**
          * Creates a new flipping buffer strategy for this component.
-         * The component must be a {@code Canvas} or {@code Window}
+         * The component must be a {@code Canvas} or {@code Window}.
          * @see Canvas
          * @see Window
          * @param numBuffers the number of buffers

@@ -1454,7 +1454,7 @@ public class UIManager implements Serializable
     /*
      * This method is called before any code that depends on the
      * <code>AppContext</code> specific LAFState object runs.
-      In some AppContext cases it's possible for this method
+     * In some AppContext cases, it's possible for this method
      * to be re-entered, which is why we grab a lock before calling
      * initialize().
      */
