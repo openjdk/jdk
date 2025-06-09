@@ -275,15 +275,51 @@ public class TestAliasingFuzzer {
 
     public static TemplateToken generateArray(MyType type, Aliasing aliasing) {
         final int size = Generators.G.safeRestrict(Generators.G.ints(), 10_000, 20_000).next();
+        // TODO: random forms
         var form_a = new IntIndexForm(42, 1, 1, new int[] {1, 2, 3});
         var form_b = new IntIndexForm(42, 1, 1, new int[] {1, 2, 3});
+
+        var templateSplitRanges = Template.make(() -> body(
+            let("size", size),
+            """
+            int middle = RANDOM.nextInt(#size / 3, #size * 2 / 3);
+            var r1 = new IntIndexForm.Range(0, middle);
+            var r2 = new IntIndexForm.Range(middle, #size);
+            if (RANDOM.nextBoolean()) {
+                var tmp = r1;
+                r1 = r2;
+                r2 = tmp;
+            }
+            """
+        ));
+
+        var templateWholeRanges = Template.make(() -> body(
+            let("size", size),
+            """
+            // Whole ranges
+            var r1 = new IntIndexForm.Range(0, #size);
+            var r2 = new IntIndexForm.Range(0, #size);
+            """
+        ));
 
         var templateRandomRanges = Template.make(() -> body(
             let("size", size),
             """
-            var r1 = new IntIndexForm.Range(0, #size);
-            var r2 = new IntIndexForm.Range(0, #size);
+            // Random ranges
+            int lo1 = RANDOM.nextInt(0, #size * 3 / 4);
+            int lo2 = RANDOM.nextInt(0, #size * 3 / 4);
+            var r1 = new IntIndexForm.Range(lo1, lo1 + #size / 4);
+            var r2 = new IntIndexForm.Range(lo2, lo2 + #size / 4);
             """
+        ));
+
+        var templateAnyRanges = Template.make(() -> body(
+            switch(RANDOM.nextInt(3)) {
+                case 0 -> templateSplitRanges.asToken();
+                case 1 -> templateWholeRanges.asToken();
+                case 2 -> templateRandomRanges.asToken();
+                default -> throw new RuntimeException("impossible");
+            }
         ));
 
         var template = Template.make(() -> {
@@ -347,18 +383,17 @@ public class TestAliasingFuzzer {
                         #type[] REFERENCE_SECOND = isSame ? $REFERENCE_1 : $REFERENCE_2;
                         """;
                 },
-                // TODO: ranges!
                 switch(aliasing) {
                     case Aliasing.CONTAINER_DIFFERENT ->
-                        templateRandomRanges.asToken();
+                        templateAnyRanges.asToken();
                     case Aliasing.CONTAINER_SAME_ALIASING_NEVER ->
-                        templateRandomRanges.asToken();
+                        templateSplitRanges.asToken();
                     case Aliasing.CONTAINER_SAME_ALIASING_UNKNOWN ->
-                        templateRandomRanges.asToken();
+                        templateAnyRanges.asToken();
                     case Aliasing.CONTAINER_UNKNOWN_ALIASING_NEVER ->
-                        templateRandomRanges.asToken();
+                        templateSplitRanges.asToken(); // TODO: could improve
                     case Aliasing.CONTAINER_UNKNOWN_ALIASING_UNKNOWN ->
-                        templateRandomRanges.asToken();
+                        templateAnyRanges.asToken();
                 },
                 """
                     // Compute loop bounds and loop invariants.
@@ -369,6 +404,8 @@ public class TestAliasingFuzzer {
                     int invar0_B = $form_b.invar0ForIvLo(r2, ivLo);
                     ivHi = Math.min(ivHi, $form_b.ivHiForInvar0(r2, invar0_B));
 
+                    // Let's check that the range is large enough, so that the vectorized
+                    // main loop can even be entered.
                     if (ivLo + 1000 > ivHi) { throw new RuntimeException("iv range too small: " + ivLo + " " + ivHi); }
                 """,
                 Arrays.stream(invarRest).map(invar ->
@@ -382,6 +419,7 @@ public class TestAliasingFuzzer {
                     Verify.checkEQ(result, expected);
                 }
 
+                // TODO: inverted loop, other load/store patterns, better IR rules, eg with flags!
                 @Test
                 @IR(counts = {IRNode.LOAD_VECTOR_#T, "> 0",
                               IRNode.STORE_VECTOR,   "> 0"},
