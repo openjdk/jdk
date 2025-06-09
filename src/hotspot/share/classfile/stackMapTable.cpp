@@ -143,10 +143,10 @@ void StackMapTable::check_jump_target(
 }
 
 void StackMapTable::print_on(outputStream* str) const {
-  str->indent().print_cr("StackMapTable: frame_count = %d", _frame_count);
-  str->indent().print_cr("table = { ");
+  str->print_cr("StackMapTable: frame_count = %d", _frame_count);
+  str->print_cr("table = {");
   {
-    streamIndentor si(str);
+    StreamIndentor si(str, 2);
     for (int32_t i = 0; i < _frame_count; ++i) {
       _frame_array->at(i)->print_on(str);
     }

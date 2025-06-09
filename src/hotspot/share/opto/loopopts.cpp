@@ -3391,7 +3391,7 @@ void PhaseIdealLoop::clone_for_special_use_inside_loop( IdealLoopTree *loop, Nod
   for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
     Node* use = n->fast_out(j);
     if ( not_peel.test(use->_idx) &&
-         (use->is_If() || use->is_CMove() || use->is_Bool()) &&
+         (use->is_If() || use->is_CMove() || use->is_Bool() || use->is_OpaqueInitializedAssertionPredicate()) &&
          use->in(1) == n)  {
       worklist.push(use);
     }
@@ -4271,13 +4271,13 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
       }
       assert(in->Opcode() == Op_AddI, "wrong increment code");
       Node* xphi = nullptr;
-      Node* stride = loop_iv_stride(in, loop, xphi);
+      Node* stride = loop_iv_stride(in, xphi);
 
       if (stride == nullptr) {
         continue;
       }
 
-      PhiNode* phi = loop_iv_phi(xphi, nullptr, head, loop);
+      PhiNode* phi = loop_iv_phi(xphi, nullptr, head);
       if (phi == nullptr ||
           (trunc1 == nullptr && phi->in(LoopNode::LoopBackControl) != incr) ||
           (trunc1 != nullptr && phi->in(LoopNode::LoopBackControl) != trunc1)) {

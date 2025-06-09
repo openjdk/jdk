@@ -59,21 +59,16 @@ public class TestOldGrowthTriggers {
                 int deriveIndex = r.nextInt(ArraySize);
                 switch (i & 0x3) {
                     case 0:
-                        // 50% chance of creating garbage
-                        array[replaceIndex] = array[replaceIndex].max(array[deriveIndex]);
-                        break;
-                    case 1:
-                        // 50% chance of creating garbage
-                        array[replaceIndex] = array[replaceIndex].min(array[deriveIndex]);
-                        break;
-                    case 2:
                         // creates new old BigInteger, releases old BigInteger,
                         // may create ephemeral data while computing gcd
                         array[replaceIndex] = array[replaceIndex].gcd(array[deriveIndex]);
                         break;
-                    case 3:
+                    case 1:
                         // creates new old BigInteger, releases old BigInteger
                         array[replaceIndex] = array[replaceIndex].multiply(array[deriveIndex]);
+                        break;
+                    case 2,3:
+                        // do nothing, let all objects in the array age to increase pressure on old generation
                         break;
                 }
             }
@@ -105,6 +100,18 @@ public class TestOldGrowthTriggers {
                 "-XX:ShenandoahGCMode=generational",
                 "-XX:ShenandoahGuaranteedYoungGCInterval=0",
                 "-XX:ShenandoahGuaranteedOldGCInterval=0"
+        );
+
+        testOld("-Xlog:gc",
+                "-Xms96m",
+                "-Xmx96m",
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:+UseShenandoahGC",
+                "-XX:ShenandoahGCMode=generational",
+                "-XX:ShenandoahGuaranteedYoungGCInterval=0",
+                "-XX:ShenandoahGuaranteedOldGCInterval=0",
+                "-XX:+UseCompactObjectHeaders"
         );
     }
 }

@@ -31,6 +31,7 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLResolver;
 import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkXmlConfig;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.XMLSecurityManager;
 import jdk.xml.internal.XMLSecurityPropertyManager;
@@ -44,7 +45,7 @@ import jdk.xml.internal.XMLSecurityPropertyManager;
  * @author K Venugopal
  * @author Sunitha Reddy
  *
- * @LastModified: Apr 2025
+ * @LastModified: May 2025
  */
 public class PropertyManager {
 
@@ -66,6 +67,7 @@ public class PropertyManager {
 
     HashMap<String, Object> supportedProps = new HashMap<>();
 
+    JdkXmlConfig config = JdkXmlConfig.getInstance(true);
     private XMLSecurityManager fSecurityManager;
     private XMLSecurityPropertyManager fSecurityPropertyMgr;
 
@@ -141,9 +143,9 @@ public class PropertyManager {
         supportedProps.put(Constants.XERCES_FEATURE_PREFIX + Constants.WARN_ON_DUPLICATE_ENTITYDEF_FEATURE, false);
         supportedProps.put(Constants.XERCES_FEATURE_PREFIX + Constants.WARN_ON_UNDECLARED_ELEMDEF_FEATURE, false);
 
-        fSecurityManager = new XMLSecurityManager(true);
+        fSecurityManager = config.getXMLSecurityManager(true);
+        fSecurityPropertyMgr = config.getXMLSecurityPropertyManager(true);
         supportedProps.put(SECURITY_MANAGER, fSecurityManager);
-        fSecurityPropertyMgr = new XMLSecurityPropertyManager();
         supportedProps.put(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
 
         // Initialize Catalog features
@@ -232,7 +234,7 @@ public class PropertyManager {
         }
         if (property.equals(JdkConstants.XML_SECURITY_PROPERTY_MANAGER)) {
             if (value == null) {
-                fSecurityPropertyMgr = new XMLSecurityPropertyManager();
+                fSecurityPropertyMgr = config.getXMLSecurityPropertyManager(true);
             } else {
                 fSecurityPropertyMgr = (XMLSecurityPropertyManager) value;
             }

@@ -25,7 +25,7 @@
  * @test
  * @bug     6413682
  * @summary Compiler confused about implicit type args and arrays
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @modules jdk.compiler
  */
 

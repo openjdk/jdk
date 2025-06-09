@@ -578,11 +578,20 @@ static bool invoke_Agent_OnAttach(JvmtiAgent* agent, outputStream* st) {
   return true;
 }
 
+#if INCLUDE_CDS
 // CDS dumping does not support native JVMTI agent.
 // CDS dumping supports Java agent if the AllowArchivingWithJavaAgent diagnostic option is specified.
 static void check_cds_dump(JvmtiAgent* agent) {
+  if (CDSConfig::new_aot_flags_used()) { // JEP 483
+    // Agents are allowed with -XX:AOTMode=record and -XX:AOTMode=on/auto.
+    // Agents are completely disabled when -XX:AOTMode=create
+    assert(!CDSConfig::is_dumping_final_static_archive(), "agents should have been disabled with -XX:AOTMode=create");
+    return;
+  }
+
+  // This is classic CDS limitations -- we disallow agents by default. They can be used
+  // with -XX:+AllowArchivingWithJavaAgent, but that should be used for diagnostic purposes only.
   assert(agent != nullptr, "invariant");
-  assert(CDSConfig::is_dumping_archive(), "invariant");
   if (!agent->is_instrument_lib()) {
     vm_exit_during_cds_dumping("CDS dumping does not support native JVMTI agent, name", agent->name());
   }
@@ -591,6 +600,7 @@ static void check_cds_dump(JvmtiAgent* agent) {
       "Must enable AllowArchivingWithJavaAgent in order to run Java agent during CDS dumping");
   }
 }
+#endif // INCLUDE_CDS
 
 // Loading the agent by invoking Agent_OnLoad.
 static bool invoke_Agent_OnLoad(JvmtiAgent* agent) {
@@ -598,9 +608,11 @@ static bool invoke_Agent_OnLoad(JvmtiAgent* agent) {
   assert(!agent->is_xrun(), "invariant");
   assert(!agent->is_dynamic(), "invariant");
   assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_ONLOAD, "invariant");
+#if INCLUDE_CDS
   if (CDSConfig::is_dumping_archive()) {
     check_cds_dump(agent);
   }
+#endif
   OnLoadEntry_t on_load_entry = lookup_Agent_OnLoad_entry_point(agent, /* vm exit on error */ true);
   assert(on_load_entry != nullptr, "invariant");
   // Invoke the Agent_OnLoad function

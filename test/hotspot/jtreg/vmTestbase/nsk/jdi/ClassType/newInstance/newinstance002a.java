@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ public class newinstance002a {
 
     //====================================================== test program
 
+    static Threadnewinstance002a test_thread = null;
 //    static TestClass obj = new TestClass();
 
     //----------------------------------------------------   main method
@@ -97,7 +98,7 @@ public class newinstance002a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Threadnewinstance002a test_thread =
+                         test_thread =
                              new Threadnewinstance002a("testedThread");
                          log1("       thread2 is created");
 

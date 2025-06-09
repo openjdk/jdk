@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import org.xml.sax.SAXException;
  * This class contains several utility methods used by XPathImpl and
  * XPathExpressionImpl
  *
- * @LastModified: Jan 2022
+ * @LastModified: Apr 2025
  */
 class XPathImplUtil {
     XPathFunctionResolver functionResolver;
@@ -85,8 +85,7 @@ class XPathImplUtil {
                     new Object[] {}));
         }
         if (functionResolver != null) {
-            JAXPExtensionsProvider jep = new JAXPExtensionsProvider(
-                    functionResolver, featureSecureProcessing, featureManager);
+            JAXPExtensionsProvider jep = new JAXPExtensionsProvider(functionResolver);
             xpathSupport = new com.sun.org.apache.xpath.internal.XPathContext(jep);
         } else {
             xpathSupport = new com.sun.org.apache.xpath.internal.XPathContext();
