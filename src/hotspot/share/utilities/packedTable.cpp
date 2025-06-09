@@ -21,6 +21,12 @@
  * questions.
  *
  */
+#include <cstring>
+
+// MSVC++ does not have an appropriate builtin, use library version
+#ifdef _MSC_VER
+# define __builtin_memcpy memcpy
+#endif
 
 #include "utilities/align.hpp"
 #include "utilities/count_leading_zeros.hpp"
