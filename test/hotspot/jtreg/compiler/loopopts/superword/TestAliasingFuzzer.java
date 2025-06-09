@@ -189,6 +189,25 @@ public class TestAliasingFuzzer {
     //     iv.hi * ivScale <= range.hi - con - invar0 * invar0Scale - err
     //
     public static record IntIndexForm(int con, int ivScale, int invar0Scale, int[] invarRestScales) {
+        public static IntIndexForm random(int numInvarRest) {
+            int con = RANDOM.nextInt(-1000, 1000);
+            int ivScale = randomScale();
+            int invar0Scale = randomScale();
+            int[] invarRestScales = new int[numInvarRest];
+            for (int i = 0; i < invarRestScales.length; i++) {
+                invarRestScales[i] = RANDOM.nextInt(-1, 2);
+            }
+            return new IntIndexForm(con, ivScale, invar0Scale, invarRestScales);
+        }
+
+        public static int randomScale() {
+            int scale = switch(RANDOM.nextInt(10)) {
+                case 0 -> RANDOM.nextInt(2, 5); // strided 2..4
+                default -> 1; // in most cases, we do not want it to be strided
+            };
+            return RANDOM.nextBoolean() ? scale : -scale;
+        }
+
         public String generate() {
             return "new IntIndexForm(" + con() + ", " + ivScale() + ", " + invar0Scale() + ", new int[] {" +
                    Arrays.stream(invarRestScales)
@@ -245,12 +264,31 @@ public class TestAliasingFuzzer {
                         //   invar0 * invar0Scale >= range.lo - con - iv.lo * ivScale + err
                         int rhs = range.lo() - con - ivLo * ivScale + err();
                         if (invar0Scale > 0) {
-                            return (rhs + invar0Scale - 1) / invar0Scale; // round up division
+                            // invar0 * invar0Scale >=  range.lo - con - iv.lo * ivScale + err
+                            // invar0               >= (range.lo - con - iv.lo * ivScale + err) / invar0Scale
+                            return (rhs + Math.abs(invar0Scale) - 1) / invar0Scale; // round up division
                         } else {
-                            throw new RuntimeException("not implemented 1");
+                            // invar0 * invar0Scale >=  range.lo - con - iv.lo * ivScale + err
+                            // invar0               <= (range.lo - con - iv.lo * ivScale + err) / invar0Scale
+                            return rhs / invar0Scale; // round down division
                         }
                     } else {
-                        throw new RuntimeException("not implemented 2");
+                        // index(iv) is largest for iv = ivLo, so we must satisfy:
+                        //   range.hi > con + iv.lo * ivScale + invar0 * invar0Scale + invarRest
+                        //            > con + iv.lo * ivScale + invar0 * invar0Scale + err
+                        // It follows:
+                        //   invar0 * invar0Scale <  range.hi - con - iv.lo * ivScale - err
+                        //   invar0 * invar0Scale <= range.hi - con - iv.lo * ivScale - err - 1
+                        int rhs = range.hi() - con - ivLo * ivScale - err() - 1;
+                        if (invar0Scale > 0) {
+                            // invar0 * invar0Scale <=  range.hi - con - iv.lo * ivScale - err - 1
+                            // invar0               <= (range.hi - con - iv.lo * ivScale - err - 1) / invar0Scale
+                            return rhs / invar0Scale; // round down division
+                        } else {
+                            // invar0 * invar0Scale <=  range.hi - con - iv.lo * ivScale - err - 1
+                            // invar0               >= (range.hi - con - iv.lo * ivScale - err - 1) / invar0Scale
+                            return (rhs + Math.abs(invar0Scale) - 1) / invar0Scale; // round up division
+                        }
                     }
                 }
 
@@ -260,11 +298,20 @@ public class TestAliasingFuzzer {
                         //   range.hi > con + iv.hi * ivScale + invar0 * invar0Scale + invarRest
                         //            > con + iv.hi * ivScale + invar0 * invar0Scale + err
                         // It follows:
-                        //   iv.hi * ivScale < range.hi - con - invar0 * invar0Scale - err
-                        int rhs = range.hi() - con - invar0 * invar0Scale - err();
-                        return (rhs - 1) / ivScale; // round down division
+                        //   iv.hi * ivScale <   range.hi - con - invar0 * invar0Scale - err
+                        //   iv.hi * ivScale <=  range.hi - con - invar0 * invar0Scale - err - 1
+                        //   iv.hi           <= (range.hi - con - invar0 * invar0Scale - err - 1) / ivScale
+                        int rhs = range.hi() - con - invar0 * invar0Scale - err() - 1;
+                        return rhs / ivScale; // round down division
                     } else {
-                        throw new RuntimeException("not implemented 2");
+                        // index(iv) is smallest for iv = ivHi, so we must satisfy:
+                        //   range.lo <= con + iv.hi * ivScale + invar0 * invar0Scale + invarRest
+                        //            <= con + iv.hi * ivScale + invar0 * invar0Scale - err
+                        // It follows:
+                        //   iv.hi * ivScale >=  range.lo - con - invar0 * invar0Scale + err
+                        //   iv.hi           <= (range.lo - con - invar0 * invar0Scale + err) / ivScale
+                        int rhs = range.lo() - con - invar0 * invar0Scale + err();
+                        return rhs / ivScale; // round down division
                     }
                 }
             }
@@ -275,9 +322,10 @@ public class TestAliasingFuzzer {
 
     public static TemplateToken generateArray(MyType type, Aliasing aliasing) {
         final int size = Generators.G.safeRestrict(Generators.G.ints(), 10_000, 20_000).next();
-        // TODO: random forms
-        var form_a = new IntIndexForm(42, 1, 1, new int[] {1, 2, 3});
-        var form_b = new IntIndexForm(42, 1, 1, new int[] {1, 2, 3});
+
+        final int numInvarRest = RANDOM.nextInt(5);
+        var form_a = IntIndexForm.random(numInvarRest);
+        var form_b = IntIndexForm.random(numInvarRest);
 
         var templateSplitRanges = Template.make(() -> body(
             let("size", size),
@@ -323,7 +371,10 @@ public class TestAliasingFuzzer {
         ));
 
         var template = Template.make(() -> {
-            String[] invarRest = new String[] {$("invar1"), $("invar2"), $("invar3")};
+            String[] invarRest = new String[numInvarRest];
+            for (int i = 0; i < invarRest.length; i++) {
+                invarRest[i] = $("invar" + (i+1));
+            }
             return body(
                 let("size", size),
                 let("type", type),
