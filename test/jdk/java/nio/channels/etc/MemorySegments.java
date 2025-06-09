@@ -54,12 +54,9 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import static java.nio.file.StandardOpenOption.*;
 
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
-
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class MemorySegments {
@@ -653,7 +650,6 @@ class MemorySegments {
     /**
      * AsynchronousFileChannel read/write(ByteBuffer).
      */
-    @DisabledOnOs(OS.WINDOWS)
     @ParameterizedTest
     @MethodSource("arenaSuppliers")
     void testAsyncFileChannelReadWrite(Supplier<Arena> arenaSupplier) throws Throwable {
@@ -699,6 +695,53 @@ class MemorySegments {
     }
 
     /**
+     * Test closing a shared arena while AsynchronousFileChannel.write in progress.
+     */
+    //@RepeatedTest(20)
+    void testAsyncFileChannelWriteRacingArenaClose() throws Exception {
+        Path file = Files.createTempFile(Path.of(""), "foo", ".dat");
+
+        // use SYNC option to cause write operation to be slow
+        try (AsynchronousFileChannel ch = AsynchronousFileChannel.open(file, READ, WRITE, SYNC)) {
+            Arena arena = Arena.ofShared();
+            boolean closed = false;
+            try {
+                ByteBuffer src = arena.allocate(SIZE).asByteBuffer();
+                fillRandom(src);
+
+                // need copy of source buffer so that writing can be tested after arena is closed
+                ByteBuffer srcCopy = copyOf(src);
+
+                // async write
+                Future<Integer> writeTask = ch.write(src, 0L);
+
+                // attempt to close arena, races with write operation
+                try {
+                    arena.close();
+                    closed = true;
+                } catch (IllegalStateException e) {
+                    // in use
+                }
+
+                // finish write
+                int nwritten = writeTask.get();
+                assertTrue(nwritten > 0);
+                assertTrue(nwritten <= SIZE);
+
+                // read and check contents
+                ByteBuffer dst = ByteBuffer.allocate(SIZE + 100);
+                int nread = ch.read(dst, 0L).get();
+                dst.flip();
+                assertEquals(srcCopy.slice(0, nread), dst);
+            } finally {
+                if (!closed) {
+                    arena.close();
+                }
+            }
+        }
+    }
+
+    /**
      * CompletionHandler with a join method to wait for operation to complete.
      */
     private static class Handler<V> implements CompletionHandler<V, Void> {
@@ -735,6 +778,18 @@ class MemorySegments {
             bb.put((byte) r.nextInt(256));
         }
         bb.position(pos);
+    }
+
+    /**
+     * Return a copy of a buffer.
+     */
+    private ByteBuffer copyOf(ByteBuffer buf) {
+        ByteBuffer copy = ByteBuffer.allocate(buf.capacity());
+        buf.put(copy);
+        buf.flip();
+        copy.flip();
+        assertEquals(buf, copy);
+        return copy;
     }
 
     /**
