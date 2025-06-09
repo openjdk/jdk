@@ -508,7 +508,7 @@ Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div) {
 template<typename IntegerType>
 static const IntegerType* compute_generic_div_type(const IntegerType* i1, const IntegerType* i2, int widen) {
   typedef typename IntegerType::NativeType NativeType;
-  assert(!i2->is_con() || i2->get_con() != 0, "Can't handle constant zero for divisor");
+  assert(!i2->is_con() || i2->get_con() != 0, "Can't handle zero constant divisor");
 
   // special case: divisor type contains zero
   if (i2->_lo < 0 && i2->_hi > 0) {
@@ -527,16 +527,40 @@ static const IntegerType* compute_generic_div_type(const IntegerType* i1, const 
   NativeType new_hi = min_jint;
   NativeType i2_lo = i2->_lo == 0 ? 1 : i2->_lo;
   NativeType i2_hi = i2->_hi == 0 ? -1 : i2->_hi;
+  NativeType min_val = std::numeric_limits<NativeType>::min();
+  assert(min_val == min_jint || min_val == min_jlong, "min has to be either min_jint or min_jlong");
 
-  // Consider all combinations of bounds
-  NativeType candidates[] = {
-          i1->_lo / i2_lo, i1->_lo / i2_hi,
-          i1->_hi / i2_lo, i1->_hi / i2_hi
-  };
+  if (i1->_lo == min_val && i2_hi == -1) {
+    // special case: min_jint or min_jlong div -1 == min_val
+    new_lo = i1->_lo;
+    if (!i1->is_con()) {
+      new_hi = MAX2(new_hi, i1->_lo + 1 / i2_hi);
+    }
+  } else {
+    // normal case
+    NativeType result = i1->_lo / i2_hi;
+    new_lo = MIN2(new_lo, result);
+    new_hi = MAX2(new_hi, result);
+  }
 
-  for (NativeType c : candidates) {
-    new_lo = MIN2(new_lo, c);
-    new_hi = MAX2(new_hi, c);
+  // cannot use is_con here, as a range of [-1, 0] will also result in i2_lo and i2_hi being -1
+  if (i2_lo != i2_hi) {
+    // special case not possible here, _lo mus
+    assert(i2_lo != -1, "Special case not possible here");
+    NativeType result = i1->_lo / i2_lo;
+    new_lo = MIN2(new_lo, result);
+    new_hi = MAX2(new_hi, result);
+  }
+
+  if (!i1->is_con()) {
+    // Special case not possible here, as i1->_hi has to be > min
+    assert(i2_hi > min_val, "Special case not possible here");
+    NativeType result1 = i1->_hi / i2_lo;
+    NativeType result2 = i1->_hi / i2_hi;
+    new_lo = MIN2(new_lo, result1);
+    new_lo = MIN2(new_lo, result2);
+    new_hi = MAX2(new_hi, result1);
+    new_hi = MAX2(new_hi, result2);
   }
   assert(new_hi >= new_lo, "sanity");
   return IntegerType::make(new_lo, new_hi, widen);
@@ -607,40 +631,12 @@ const Type* DivINode::Value(PhaseGVN* phase) const {
   const TypeInt *i1 = t1->is_int();
   const TypeInt *i2 = t2->is_int();
   int widen = MAX2(i1->_widen, i2->_widen);
-
-  if( i2->is_con() ) {
-    int32_t d = i2->get_con(); // Divisor
+  if (i2->is_con()) {
+    jint d = i2->get_con();    // Divisor
     if (d == 0) {
       // this division will always throw an exception
       return Type::TOP;
     }
-    jint lo, hi;
-    if( d >= 0 ) {
-      lo = i1->_lo/d;
-      hi = i1->_hi/d;
-    } else {
-      if( d == -1 && i1->_lo == min_jint ) {
-        // 'min_jint/-1' throws arithmetic exception during compilation
-        lo = min_jint;
-        // do not support holes, 'hi' must go to either min_jint or max_jint:
-        // [min_jint, -10]/[-1,-1] ==> [min_jint] UNION [10,max_jint]
-        hi = i1->_hi == min_jint ? min_jint : max_jint;
-      } else {
-        lo = i1->_hi/d;
-        hi = i1->_lo/d;
-      }
-    }
-    return TypeInt::make(lo, hi, widen);
-  }
-
-  if (i1->_lo == min_jint && (i2->_lo < 0 && i2->_hi >= -1)) {
-    // special case min_jint / -1 is possible
-    if (i1->is_con()) {
-      //  (-min_jint) == min_jint == (min_jint / -1)
-      return TypeInt::make(min_jint, max_jint/2 + 1, widen);
-    }
-    // give up
-    return TypeInt::INT;
   }
 
   return compute_generic_div_type<TypeInt>(i1, i2, widen);
@@ -712,40 +708,12 @@ const Type* DivLNode::Value(PhaseGVN* phase) const {
   const TypeLong *i1 = t1->is_long();
   const TypeLong *i2 = t2->is_long();
   int widen = MAX2(i1->_widen, i2->_widen);
-
-  if( i2->is_con() ) {
+  if (i2->is_con()) {
     jlong d = i2->get_con();    // Divisor
     if (d == 0) {
       // this division will always throw an exception
       return Type::TOP;
     }
-    jlong lo, hi;
-    if( d >= 0 ) {
-      lo = i1->_lo/d;
-      hi = i1->_hi/d;
-    } else {
-      if( d == CONST64(-1) && i1->_lo == min_jlong ) {
-        // 'min_jlong/-1' throws arithmetic exception during compilation
-        lo = min_jlong;
-        // do not support holes, 'hi' must go to either min_jlong or max_jlong:
-        // [min_jlong, -10]/[-1,-1] ==> [min_jlong] UNION [10,max_jlong]
-        hi = i1->_hi == min_jlong ? min_jlong : max_jlong;
-      } else {
-        lo = i1->_hi/d;
-        hi = i1->_lo/d;
-      }
-    }
-    return TypeLong::make(lo, hi, widen);
-  }
-
-  if (i1->_lo == min_jlong && (i2->_lo < 0 && i2->_hi >= -1)) {
-    // special case min_jlong / -1 is possible
-    if (i1->is_con()) {
-      //  (-min_jlong) == min_jlong == (min_jlong / -1)
-      return TypeLong::make(min_jlong, max_jlong/2 + 1, widen);
-    }
-    // give up
-    return TypeLong::LONG;
   }
 
   return compute_generic_div_type<TypeLong>(i1, i2, widen);
