@@ -196,8 +196,7 @@ public class HelloWorld {
             new Run("none", "東京から今日は")
         }),
         new Paragraph("title", new Run[] {
-            new Run("none", "שלום מירו"
-            + "שלים")
+            new Run("none", "שלום מירושלים")
         }),
         new Paragraph("title", new Run[] {
             new Run("none", "سلام")
