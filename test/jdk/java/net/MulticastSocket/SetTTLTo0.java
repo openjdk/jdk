@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 4148757
- * @summary Make sure TTL can be set to 0
+ * @summary Make sure MulticastSocket.setTimeToLive() can be set to 0
  * @run main SetTTLTo0
  */
 
@@ -40,7 +40,6 @@ public class SetTTLTo0 {
             throw new Exception("Unexpected Exception");
         }
 
-        soc.setTTL((byte)0);
         soc.setTimeToLive(0);
 
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.MulticastSocket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
@@ -126,11 +125,8 @@ public class SendCheck {
 
         List<Sender> senders = List.of(
                 Sender.of(new DatagramSocket(null)),
-                Sender.of(new MulticastSocket(null), (byte) 0),
                 Sender.of(DatagramChannel.open()),
-                Sender.of(DatagramChannel.open().socket()),
-                Sender.of((MulticastSocket)
-                        DatagramChannel.open().socket(), (byte) 0)
+                Sender.of(DatagramChannel.open().socket())
         );
 
         List<Object[]> testcases = new ArrayList<>();
@@ -177,12 +173,6 @@ public class SendCheck {
 
         static Sender<IOException> of(DatagramSocket socket) {
             return new SenderImpl<>(socket, socket::send, socket::close, SE);
-        }
-
-        static Sender<IOException> of(MulticastSocket socket, byte ttl) {
-            SenderImpl.Send<IOException> send =
-                    (pkt) -> socket.send(pkt, ttl);
-            return new SenderImpl<>(socket, send, socket::close, SE);
         }
 
         static Sender<IOException> of(DatagramChannel socket) {
