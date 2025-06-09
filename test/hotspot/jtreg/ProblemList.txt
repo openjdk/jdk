@@ -79,6 +79,8 @@ compiler/ciReplay/TestIncrementalInlining.java 8349191 generic-all
 
 compiler/c2/TestVerifyConstraintCasts.java 8355574 generic-all
 
+compiler/startup/StartupOutput.java 8358129 windows-all
+
 #############################################################################
 
 # :hotspot_gc
@@ -106,7 +108,6 @@ runtime/os/TestTracePageSizes.java#compiler-options 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#G1 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
-runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
 runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
 runtime/NMT/VirtualAllocCommitMerge.java 8309698 linux-s390x
@@ -140,6 +141,11 @@ serviceability/sa/TestJmapCore.java               8318754 macosx-aarch64
 serviceability/sa/TestJmapCoreMetaspace.java      8318754 macosx-aarch64
 
 serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStressTest.java 8315980 linux-all,windows-x64
+
+serviceability/sa/JhsdbThreadInfoTest.java              8344261 generic-all
+serviceability/sa/TestJhsdbJstackLock.java              8344261 generic-all
+serviceability/sa/sadebugd/DebugdConnectTest.java       8344261 generic-all
+serviceability/attach/RemovingUnixDomainSocketTest.java 8344261 generic-all
 
 #############################################################################
 

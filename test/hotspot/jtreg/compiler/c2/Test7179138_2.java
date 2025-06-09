@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012 Skip Balk.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,6 +32,18 @@
  *
  * @author Skip Balk
  */
+
+
+/*
+ * @test id=stringConcatInline
+ * @bug 7179138
+ * @summary The same test with an updated compile directive that produces
+ *          StringBuilder-backed string concatenations.
+ *
+ * @compile -XDstringConcat=inline Test7179138_2.java
+ * @run main/othervm -Xbatch -XX:-TieredCompilation compiler.c2.Test7179138_2
+ */
+
 
 package compiler.c2;
 

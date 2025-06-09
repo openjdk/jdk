@@ -266,7 +266,7 @@ class ZipCoder {
                 return 0;
             }
             int end = off + len;
-            int asciiLen = JLA.uncheckedCountPositives(a, off, len);
+            int asciiLen = JLA.countPositives(a, off, len);
             if (asciiLen != len) {
                 // Non-ASCII, fall back to decoding a String
                 // We avoid using decoder() here since the UTF8ZipCoder is
