@@ -4036,6 +4036,10 @@ ins_attrib ins_field_cbuf_insts_offset(-1);
 ins_attrib ins_field_load_ic_hi_node(0);
 ins_attrib ins_field_load_ic_node(0);
 
+// Whether this node is expanded during code emission into a sequence of
+// instructions and the first instruction can perform an implicit null check.
+ins_attrib ins_is_late_expanded_null_check_candidate(false);
+
 //----------OPERANDS-----------------------------------------------------------
 // Operand definitions must precede instruction definitions for correct
 // parsing in the ADLC because operands constitute user defined types

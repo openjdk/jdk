@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,27 @@
  * questions.
  */
 
+#include "gc/z/zPageAge.hpp"
+#include "unittest.hpp"
 
-/*
- * @test
- *
- * @summary converted from VM Testbase vm/compiler/optimizations/stringconcat/implicit/Implicit01/cs_disabled.
- * VM Testbase keywords: [jit, quick]
- *
- * @library /vmTestbase
- *          /test/lib
- * @run main/othervm -XX:-CompactStrings vm.compiler.optimizations.stringconcat.implicit.Implicit01
- */
+TEST(ZPageAgeRangeTest, test) {
+  ZPageAgeRange rangeEden = ZPageAgeRangeEden;
+  EXPECT_EQ(rangeEden.first(), ZPageAge::eden);
+  EXPECT_EQ(rangeEden.last(), ZPageAge::eden);
 
+  ZPageAgeRange rangeYoung = ZPageAgeRangeYoung;
+  EXPECT_EQ(rangeYoung.first(), ZPageAge::eden);
+  EXPECT_EQ(rangeYoung.last(), ZPageAge::survivor14);
 
-/*
- * @test id=stringConcatInline
- *
- * @summary The same test with an updated compile directive that produces
- *          StringBuilder-backed string concatenations.
- * VM Testbase keywords: [jit, quick]
- *
- * @library /vmTestbase
- *          /test/lib
- * @compile -XDstringConcat=inline ../../Implicit01.java
- * @run main/othervm -XX:-CompactStrings vm.compiler.optimizations.stringconcat.implicit.Implicit01
- */
+  ZPageAgeRange rangeSurvivor = ZPageAgeRangeSurvivor;
+  EXPECT_EQ(rangeSurvivor.first(), ZPageAge::survivor1);
+  EXPECT_EQ(rangeSurvivor.last(), ZPageAge::survivor14);
 
+  ZPageAgeRange rangeRelocation = ZPageAgeRangeRelocation;
+  EXPECT_EQ(rangeRelocation.first(), ZPageAge::survivor1);
+  EXPECT_EQ(rangeRelocation.last(), ZPageAge::old);
+
+  ZPageAgeRange rangeOld = ZPageAgeRangeOld;
+  EXPECT_EQ(rangeOld.first(), ZPageAge::old);
+  EXPECT_EQ(rangeOld.last(), ZPageAge::old);
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,32 @@
  * questions.
  */
 
+#ifndef SHARE_GC_Z_ZPAGEAGE_INLINE_HPP
+#define SHARE_GC_Z_ZPAGEAGE_INLINE_HPP
 
-/*
- * @test
- *
- * @summary converted from VM Testbase vm/compiler/optimizations/stringconcat/implicit/Implicit01/cs_disabled.
- * VM Testbase keywords: [jit, quick]
- *
- * @library /vmTestbase
- *          /test/lib
- * @run main/othervm -XX:-CompactStrings vm.compiler.optimizations.stringconcat.implicit.Implicit01
- */
+#include "gc/z/zPageAge.hpp"
 
+#include "utilities/checkedCast.hpp"
 
-/*
- * @test id=stringConcatInline
- *
- * @summary The same test with an updated compile directive that produces
- *          StringBuilder-backed string concatenations.
- * VM Testbase keywords: [jit, quick]
- *
- * @library /vmTestbase
- *          /test/lib
- * @compile -XDstringConcat=inline ../../Implicit01.java
- * @run main/othervm -XX:-CompactStrings vm.compiler.optimizations.stringconcat.implicit.Implicit01
- */
+#include <type_traits>
 
+inline uint untype(ZPageAge age) {
+  return static_cast<uint>(age);
+}
+
+inline ZPageAge to_zpageage(uint age) {
+  assert(age < ZPageAgeCount, "Invalid age");
+  return static_cast<ZPageAge>(age);
+}
+
+inline ZPageAge operator+(ZPageAge age, size_t size) {
+  const auto size_value = checked_cast<std::underlying_type_t<ZPageAge>>(size);
+  return to_zpageage(untype(age) + size_value);
+}
+
+inline ZPageAge operator-(ZPageAge age, size_t size) {
+  const auto size_value = checked_cast<std::underlying_type_t<ZPageAge>>(size);
+  return to_zpageage(untype(age) - size_value);
+}
+
+#endif // SHARE_GC_Z_ZPAGEAGE_INLINE_HPP
