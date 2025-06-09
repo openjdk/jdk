@@ -772,27 +772,41 @@ void ShenandoahRegionPartitions::assert_bounds(bool old_trash_not_in_bounds) {
                                   ShenandoahFreeSetPartitionId::OldCollector),
           "rightmost region should be free: %zd", rightmost(ShenandoahFreeSetPartitionId::OldCollector));
 
-  // If OldCollector partition is empty, leftmosts will both equal max, rightmosts will both equal zero.
+  // Concurrent recycling of trash first recycles a region (changing its state from is_trash to is_empty without the heap lock),
+  // then it acquires the heap lock, then it adjusts the partition for the newly recycled region and releases the lock.  After
+  // all trashed regions have been recycled, we grab the heap lock again and clear the _old_trash_not_in_bounds flag.
+  //
+  // Bottom line: if _old_trash_not_in_bounds, the ranges of old regions detected by examination of all region states may
+  // be larger than the spans reported by leftmosts(OldColector) and rightmosts(OldCollector) and by the spans represented
+  // by _leftmosts_empty[OldCollector] and _rightmosts_empty[OldCollector]
+  // 
+
+  // If OldCollector partition is empty and !old_trash_not_in_bounds:
+  //    leftmosts will both equal max, rightmosts will both equal zero.
   // Likewise for empty region partitions.
   beg_off = leftmosts[int(ShenandoahFreeSetPartitionId::OldCollector)];
   end_off = rightmosts[int(ShenandoahFreeSetPartitionId::OldCollector)];
-  assert (beg_off >= leftmost(ShenandoahFreeSetPartitionId::OldCollector),
+  assert (old_trash_not_in_bounds || (beg_off >= leftmost(ShenandoahFreeSetPartitionId::OldCollector)),
           "free regions before the leftmost: %zd, bound %zd",
           beg_off, leftmost(ShenandoahFreeSetPartitionId::OldCollector));
-  assert (end_off <= rightmost(ShenandoahFreeSetPartitionId::OldCollector),
+  assert (old_trash_not_in_bounds || (end_off <= rightmost(ShenandoahFreeSetPartitionId::OldCollector)),
           "free regions past the rightmost: %zd, bound %zd",
           end_off, rightmost(ShenandoahFreeSetPartitionId::OldCollector));
 
   beg_off = empty_leftmosts[int(ShenandoahFreeSetPartitionId::OldCollector)];
   end_off = empty_rightmosts[int(ShenandoahFreeSetPartitionId::OldCollector)];
-  assert (beg_off >= _leftmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)],
-          "free empty region (%zd) before the leftmost bound %zd, old_trash_not_in_bounds: %s",
+  assert (old_trash_not_in_bounds || (beg_off >= _leftmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)]),
+          "free empty region (%zd) before the leftmost bound %zd, old_trash_not_in_bounds: no, region %s trash",
           beg_off, _leftmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)],
-          old_trash_not_in_bounds? "yes": "no");
-  assert (end_off <= _rightmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)],
-          "free empty region (%zd) past the rightmost bound %zd, old_trash_not_in_bounds: %s",
+          ((beg_off >= _max)? "out of bounds is not":
+           (ShenandoahHeap::heap()->get_region(_leftmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)])->is_trash()?
+            "is": "is not")));
+  assert (old_trash_not_in_bounds || (end_off <= _rightmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)]),
+          "free empty region (%zd) past the rightmost bound %zd, old_trash_not_in_bounds: no, region %s trash",
           end_off, _rightmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)],
-          old_trash_not_in_bounds? "yes": "no");
+          ((end_off < 0)? "out of bounds is not" :
+           (ShenandoahHeap::heap()->get_region(_rightmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)])->is_trash()?
+            "is": "is not")));
 }
 #endif
 
