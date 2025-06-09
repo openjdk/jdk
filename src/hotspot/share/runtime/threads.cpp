@@ -442,7 +442,7 @@ class ReadReleaseFileTask : public PeriodicTask {
 jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   extern void JDK_Version_init();
 
-  MemoryPointersHashtable::createMemoryPointersHashtable();
+  //MemoryPointersHashtable::createMemoryPointersHashtable();
 
   // Preinitialize version info.
   VM_Version::early_initialize();
