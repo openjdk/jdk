@@ -33,9 +33,9 @@ class ClassLoaderData;
 // It contains the type and size of the elements
 
 class TypeArrayKlass : public ArrayKlass {
-  friend class VMStructs;
-  friend class oopFactory;
   friend class Deoptimization;
+  friend class oopFactory;
+  friend class VMStructs;
 
  public:
   static const KlassKind Kind = TypeArrayKlassKind;
