@@ -31,7 +31,7 @@ package sun.java2d.xr;
  *
  * @author Clemens Eisserer
  */
-public class MaskTile {
+public final class MaskTile {
     GrowableRectArray rects;
     DirtyRegion dirtyArea;
 

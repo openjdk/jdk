@@ -962,6 +962,22 @@
     <Field type="ThreadState" name="state" label="Thread State" />
   </Event>
 
+  <Event name="CPUTimeSample" category="Java Virtual Machine, Profiling" label="CPU Time Method Sample"
+    description="Snapshot of a threads state from the CPU time sampler. The throttle can be either an upper bound for the event emission rate, e.g. 100/s, or the cpu-time period, e.g. 10ms, with s, ms, us and ns supported as time units."
+    throttle="true" thread="false" experimental="true" startTime="false">
+    <Field type="StackTrace" name="stackTrace" label="Stack Trace" />
+    <Field type="Thread" name="eventThread" label="Thread" />
+    <Field type="boolean" name="failed" label="Failed" description="Failed to obtain the stack trace" />
+    <Field type="Tickspan" name="samplingPeriod" label="CPU Time Sampling Period"/>
+    <Field type="boolean" name="biased" label="Biased" description="The sample is safepoint-biased" />
+  </Event>
+
+  <Event name="CPUTimeSamplesLost" category="Java Virtual Machine, Profiling" label="CPU Time Method Profiling Lost Samples" description="Records that the CPU time sampler lost samples"
+    thread="false" stackTrace="false" startTime="false" experimental="true">
+    <Field type="int" name="lostSamples" label="Lost Samples" />
+    <Field type="Thread" name="eventThread" label="Thread" />
+  </Event>
+
   <Event name="ThreadDump" category="Java Virtual Machine, Runtime" label="Thread Dump" period="everyChunk">
     <Field type="string" name="result" label="Thread Dump" />
   </Event>
@@ -1299,7 +1315,9 @@
   <Event name="MethodTiming" category="Java Application" label="Method Timing" thread="false" stackTrace="false" startTime="false" period="everyChunk">
     <Field type="Method" name="method" label="Method" />
     <Field type="long" name="invocations" label="Invocations" description="The number of times the method was invoked" />
-    <Field type="Tickspan" name="average" label="Average" description="An approximation of the wall-clock time it took for the method to execute" />
+    <Field type="Tickspan" name="minimum" label="Minimum" description="An approximation of the minimum wall-clock time it took for the method to execute" />
+    <Field type="Tickspan" name="average" label="Average" description="An approximation of the average wall-clock time it took for the method to execute" />
+    <Field type="Tickspan" name="maximum" label="Maximum" description="An approximation of the maximum wall-clock time it took for the method to execute" />
   </Event>
 
   <Type name="DeoptimizationReason" label="Deoptimization Reason">

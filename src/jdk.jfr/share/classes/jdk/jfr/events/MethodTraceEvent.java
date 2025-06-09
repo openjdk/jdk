@@ -25,6 +25,7 @@
 package jdk.jfr.events;
 
 import jdk.jfr.Category;
+import jdk.jfr.Contextual;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.StackTrace;
@@ -35,6 +36,7 @@ import jdk.jfr.StackTrace;
 @StackTrace(true)
 public final class MethodTraceEvent extends AbstractJDKEvent {
 
+    @Contextual
     @Label("Method")
     private long method;
 
