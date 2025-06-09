@@ -263,7 +263,7 @@ public:
   ZPageAllocatorStats stats(ZGeneration* generation) const;
   ZPageAllocatorStats update_and_stats(ZGeneration* generation);
 
-  ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age);
+  ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age, uint32_t preferred_partition);
   void safe_destroy_page(ZPage* page);
   void free_page(ZPage* page);
   void free_pages(ZGenerationId id, const ZArray<ZPage*>* pages);
