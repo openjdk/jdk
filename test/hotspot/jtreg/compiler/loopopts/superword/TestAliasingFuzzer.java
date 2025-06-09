@@ -220,6 +220,15 @@ public class TestAliasingFuzzer {
 
     public static TemplateToken generateArray(MyType type, Aliasing aliasing) {
         final int size = Generators.G.safeRestrict(Generators.G.ints(), 10_000, 20_000).next();
+
+        var templateRandomRanges = Template.make(() -> body(
+            let("size", size),
+            """
+            var r1 = new IntIndexForm.Range(0, #size);
+            var r2 = new IntIndexForm.Range(0, #size);
+            """
+        ));
+
         var template = Template.make(() -> body(
             let("size", size),
             let("type", type),
@@ -245,7 +254,7 @@ public class TestAliasingFuzzer {
             private static IntIndexForm $FORM_B = #FORM_B;
 
             @Run(test = "$test")
-            @Warmup(100)
+            @Warmup(1000)
             public static void $run() {
                 $iterations++;
                 System.arraycopy($ORIGINAL_1, 0, $TEST_1, 0, #size);
@@ -254,28 +263,52 @@ public class TestAliasingFuzzer {
                 System.arraycopy($ORIGINAL_2, 0, $REFERENCE_2, 0, #size);
             """,
             switch(aliasing) {
-                case Aliasing.CONTAINER_DIFFERENT  ->
+                case Aliasing.CONTAINER_DIFFERENT ->
                     """
-                    #type[] $TEST_SECOND      = $TEST_2;
-                    #type[] $REFERENCE_SECOND = $REFERENCE_2;
+                    #type[] TEST_SECOND      = $TEST_2;
+                    #type[] REFERENCE_SECOND = $REFERENCE_2;
                     """;
                 case Aliasing.CONTAINER_SAME_ALIASING_NEVER,
                      Aliasing.CONTAINER_SAME_ALIASING_UNKNOWN ->
                     """
-                    #type[] $TEST_SECOND      = $TEST_1;
-                    #type[] $REFERENCE_SECOND = $REFERENCE_1;
+                    #type[] TEST_SECOND      = $TEST_1;
+                    #type[] REFERENCE_SECOND = $REFERENCE_1;
                     """;
                 case Aliasing.CONTAINER_UNKNOWN_ALIASING_NEVER,
                      Aliasing.CONTAINER_UNKNOWN_ALIASING_UNKNOWN ->
                     """
                     final boolean isSame = ($iterations % 2 == 0);
-                    #type[] $TEST_SECOND      = isSame ? $TEST_1      : $TEST_2;
-                    #type[] $REFERENCE_SECOND = isSame ? $REFERENCE_1 : $REFERENCE_2;
+                    #type[] TEST_SECOND      = isSame ? $TEST_1      : $TEST_2;
+                    #type[] REFERENCE_SECOND = isSame ? $REFERENCE_1 : $REFERENCE_2;
                     """;
             },
+            // TODO: ranges!
+            switch(aliasing) {
+                case Aliasing.CONTAINER_DIFFERENT ->
+                    templateRandomRanges.asToken();
+                case Aliasing.CONTAINER_SAME_ALIASING_NEVER ->
+                    templateRandomRanges.asToken();
+                case Aliasing.CONTAINER_SAME_ALIASING_UNKNOWN ->
+                    templateRandomRanges.asToken();
+                case Aliasing.CONTAINER_UNKNOWN_ALIASING_NEVER ->
+                    templateRandomRanges.asToken();
+                case Aliasing.CONTAINER_UNKNOWN_ALIASING_UNKNOWN ->
+                    templateRandomRanges.asToken();
+            },
             """
-                var result   = $test($TEST_1,           $TEST_SECOND);
-                var expected = $reference($REFERENCE_1, $REFERENCE_SECOND);
+                // Compute loop bounds and loop invariants.
+                int ivLo = 0;
+                int ivHi = #size;
+                int invar0_A = $FORM_A.invar0ForIvLo(r1, ivLo);
+                ivHi = Math.min(ivHi, $FORM_A.ivHiForInvar0(r1, invar0_A));
+                int invar0_B = $FORM_B.invar0ForIvLo(r2, ivLo);
+                ivHi = Math.min(ivHi, $FORM_B.ivHiForInvar0(r2, invar0_B));
+
+                if (ivLo + 1000 > ivHi) { throw new RuntimeException("iv range too small: " + ivHi + " " + ivLo); }
+
+                // Run test and compare with interpreter results.
+                var result   = $test($TEST_1,           TEST_SECOND,      ivLo, ivHi);
+                var expected = $reference($REFERENCE_1, REFERENCE_SECOND, ivLo, ivHi);
                 Verify.checkEQ(result, expected);
             }
 
@@ -284,16 +317,16 @@ public class TestAliasingFuzzer {
                           IRNode.STORE_VECTOR,   "> 0"},
                 applyIfPlatform = {"64-bit", "true"},
                 applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-            public static Object $test(#type[] a, #type[] b) {
-                for (int i = 0; i < a.length; i++) {
+            public static Object $test(#type[] a, #type[] b, int ivLo, int ivHi) {
+                for (int i = ivLo; i < ivHi; i++) {
                     a[i] = b[i];
                 }
                 return new Object[] {a, b};
             }
 
             @DontCompile
-            public static Object $reference(#type[] a, #type[] b) {
-                for (int i = 0; i < a.length; i++) {
+            public static Object $reference(#type[] a, #type[] b, int ivLo, int ivHi) {
+                for (int i = ivLo; i < ivHi; i++) {
                     a[i] = b[i];
                 }
                 return new Object[] {a, b};
