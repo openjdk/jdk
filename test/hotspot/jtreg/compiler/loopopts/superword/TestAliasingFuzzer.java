@@ -472,10 +472,24 @@ public class TestAliasingFuzzer {
 
                 // TODO: inverted loop, other load/store patterns, better IR rules, eg with flags!
                 @Test
-                @IR(counts = {IRNode.LOAD_VECTOR_#T, "> 0",
-                              IRNode.STORE_VECTOR,   "> 0"},
-                    applyIfPlatform = {"64-bit", "true"},
-                    applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+                """,
+                // Currently, we do not allow strided access or shuffle.
+                ((form_a.ivScale() == form_b.ivScale() && Math.abs(form_a.ivScale()) == 1)
+                ?   """
+                    // Good ivScales, vectorization expected.
+                    @IR(counts = {IRNode.LOAD_VECTOR_#T, "> 0",
+                                  IRNode.STORE_VECTOR,   "> 0"},
+                        applyIfPlatform = {"64-bit", "true"},
+                        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+                    """
+                :   """
+                    // Bad ivScales, no vectorization expected.
+                    @IR(counts = {IRNode.LOAD_VECTOR_#T, "= 0",
+                                  IRNode.STORE_VECTOR,   "= 0"},
+                        applyIfPlatform = {"64-bit", "true"},
+                        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+                    """),
+                """
                 public static Object $test(#type[] a, #type[] b, int ivLo, int ivHi, int invar0_A, int invar0_B) {
                     for (int i = ivLo; i < ivHi; i++) {
                 """,
