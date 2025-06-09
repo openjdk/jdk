@@ -1076,12 +1076,15 @@ void os::jvm_path(char *buf, jint buflen) {
     return;
   }
 
+  char* fname;
 #ifdef AIX
   Dl_info dlinfo;
   int ret = dladdr(CAST_FROM_FN_PTR(void *, os::jvm_path), &dlinfo);
   assert(ret != 0, "cannot locate libjvm");
-  char* rp = os::realpath((char *)dlinfo.dli_fname, buf, buflen);
-  assert(rp != nullptr, "error in realpath(): maybe the 'path' argument is too long?");
+  if (ret == 0) {
+    return;
+  }
+  fname = dlinfo.dli_fname;
 #else
   char dli_fname[MAXPATHLEN];
   dli_fname[0] = '\0';
@@ -1089,14 +1092,18 @@ void os::jvm_path(char *buf, jint buflen) {
                                          CAST_FROM_FN_PTR(address, os::jvm_path),
                                          dli_fname, sizeof(dli_fname), nullptr);
   assert(ret, "cannot locate libjvm");
-  char *rp = nullptr;
-  if (ret && dli_fname[0] != '\0') {
+  if (!ret) {
+    return;
+  }
+  fname = dli_fname;
+#endif // AIX
+  char* rp = nullptr;
+  if (fname[0] != '\0') {
     rp = os::realpath(dli_fname, buf, buflen);
   }
   if (rp == nullptr) {
     return;
   }
-#endif // AIX
 
   // If executing unit tests we require JAVA_HOME to point to the real JDK.
   if (Arguments::executing_unit_tests()) {
