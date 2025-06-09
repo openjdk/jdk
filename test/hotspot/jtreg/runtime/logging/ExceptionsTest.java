@@ -34,6 +34,8 @@
 
 import java.io.File;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -53,6 +55,17 @@ public class ExceptionsTest {
                            "info..exceptions,stacktrace.*at ExceptionsTest[$]InternalClass.foo[(]ExceptionsTest.java:[0-9]+" +
                            ".*\n.*" +
                            "info..exceptions,stacktrace.*at ExceptionsTest[$]InternalClass.main[(]ExceptionsTest.java:[0-9]+");
+
+        // To avoid verbosity, we shouldn't print the callstack of main->foo2->bar2 more than once
+        String stdout = output.getStdout();
+        Pattern p = Pattern.compile("foo2.*main", Pattern.DOTALL);
+        Matcher m = p.matcher(stdout);
+        if (!m.find()) {
+            throw new RuntimeException("Cannot find: " + p);
+        }
+        if (m.find()) {
+            throw new RuntimeException("Must not find " + p + " twice");
+        }
     }
 
     static void analyzeOutputOff(ProcessBuilder pb) throws Exception {
@@ -87,6 +100,7 @@ public class ExceptionsTest {
     public static class InternalClass {
         public static void main(String[] args) {
             foo();
+            foo2();
         }
 
         static void foo() {
@@ -99,6 +113,18 @@ public class ExceptionsTest {
             } catch (Exception e) {
                 System.out.println("Exception 1 caught.");
             }
+        }
+
+        static void foo2() {
+            try {
+                bar2();
+            } catch (Exception e) {
+                System.out.println("Exception 2 caught.");
+            }
+        }
+
+        static void bar2() {
+            throw new RuntimeException("Test exception 2 for logging");
         }
     }
 }

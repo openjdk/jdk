@@ -117,7 +117,7 @@ class Exceptions {
   static volatile int _linkage_errors;
 
   // Logging
-  static void maybe_log_call_stack();
+  static void maybe_log_call_stack(Handle exception);
  public:
   // this enum is defined to indicate whether it is safe to
   // ignore the encoding scheme of the original message string.
@@ -193,6 +193,8 @@ class Exceptions {
 
   // for logging exceptions
   static void log_exception(Handle exception, const char* message);
+
+  static void clear_logging_cache();
 };
 
 

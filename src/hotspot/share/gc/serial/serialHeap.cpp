@@ -75,6 +75,7 @@
 #include "services/memoryManager.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/exceptions.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
@@ -543,6 +544,9 @@ void SerialHeap::process_roots(ScanningOption so,
     // We scan the entire code cache, since CodeCache::do_unloading is not called.
     CodeCache::nmethods_do(code_roots);
   }
+
+  // Whenever a GC happens, clear the exception logging cache to avoid stale oop pointers.
+  Exceptions::clear_logging_cache();
 }
 
 template <typename OopClosureType>
