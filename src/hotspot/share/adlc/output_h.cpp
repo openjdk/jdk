@@ -1949,6 +1949,7 @@ void ArchDesc::declareClasses(FILE *fp) {
       fprintf(fp, " };\n");
     }*/
     else if( instr->is_ideal_copy() &&
+    (instr->_matrule != nullptr && instr->_matrule->_rChild != nullptr) &&
               !strcmp(instr->_matrule->_lChild->_opType,"stackSlotP") ) {
       // !!!!!
       // Special hack for ideal Copy of pointer.  Bottom type is oop or not depending on input.
