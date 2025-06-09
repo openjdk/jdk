@@ -109,33 +109,33 @@ inline FieldInfoReader::FieldInfoReader(const Array<u1>* fi)
     _next_index(0) { }
 
 inline void FieldInfoReader::read_field_counts(int* java_fields, int* injected_fields) {
-  *java_fields = _r.next_uint();
-  *injected_fields = _r.next_uint();
+  *java_fields = next_uint();
+  *injected_fields = next_uint();
 }
 
 inline void FieldInfoReader::read_name_and_signature(u2* name_index, u2* signature_index) {
-  *name_index = checked_cast<u2>(_r.next_uint());
-  *signature_index = checked_cast<u2>(_r.next_uint());
+  *name_index = checked_cast<u2>(next_uint());
+  *signature_index = checked_cast<u2>(next_uint());
 }
 
 inline void FieldInfoReader::read_field_info(FieldInfo& fi) {
   fi._index = _next_index++;
   read_name_and_signature(&fi._name_index, &fi._signature_index);
-  fi._offset = _r.next_uint();
-  fi._access_flags = AccessFlags(checked_cast<u2>(_r.next_uint()));
-  fi._field_flags = FieldInfo::FieldFlags(_r.next_uint());
+  fi._offset = next_uint();
+  fi._access_flags = AccessFlags(checked_cast<u2>(next_uint()));
+  fi._field_flags = FieldInfo::FieldFlags(next_uint());
   if (fi._field_flags.is_initialized()) {
-    fi._initializer_index = checked_cast<u2>(_r.next_uint());
+    fi._initializer_index = checked_cast<u2>(next_uint());
   } else {
     fi._initializer_index = 0;
   }
   if (fi._field_flags.is_generic()) {
-    fi._generic_signature_index = checked_cast<u2>(_r.next_uint());
+    fi._generic_signature_index = checked_cast<u2>(next_uint());
   } else {
     fi._generic_signature_index = 0;
   }
   if (fi._field_flags.is_contended()) {
-    fi._contention_group = checked_cast<u2>(_r.next_uint());
+    fi._contention_group = checked_cast<u2>(next_uint());
   } else {
     fi._contention_group = 0;
   }
@@ -145,7 +145,7 @@ inline FieldInfoReader&  FieldInfoReader::skip_field_info() {
   _next_index++;
   const int name_sig_af_off = 4;  // four items
   skip(name_sig_af_off);
-  FieldInfo::FieldFlags ff(_r.next_uint());
+  FieldInfo::FieldFlags ff(next_uint());
   if (ff.has_any_optionals()) {
     const int init_gen_cont = (ff.is_initialized() +
                                 ff.is_generic() +

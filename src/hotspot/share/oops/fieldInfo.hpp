@@ -229,6 +229,7 @@ public:
   FieldInfoReader(const Array<u1>* fi);
 
 private:
+  inline uint32_t next_uint() { return _r.next_uint(); }
   void skip(int n) { int s = _r.try_skip(n); assert(s == n,""); }
 
 public:
