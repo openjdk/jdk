@@ -654,8 +654,9 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
             // and for triple mouse click (see bugs 4231444, 8354646).
 
             if (map.get(DefaultEditorKit.selectWordAction) != null) {
-                Action a = map.get(DefaultEditorKit.selectLineAction);
                 map.remove(DefaultEditorKit.selectWordAction);
+
+                Action a = map.get(DefaultEditorKit.selectLineAction);
                 if (a != null) {
                     map.put(DefaultEditorKit.selectWordAction, a);
                 }
