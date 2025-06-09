@@ -211,7 +211,8 @@ public class LinkedBlockingDeque<E>
      */
     private boolean linkFirst(Node<E> node) {
         // assert lock.isHeldByCurrentThread();
-        if (count >= capacity) return false;
+        if (count >= capacity)
+            return false;
         Node<E> f = first;
         node.next = f;
         first = node;
@@ -231,7 +232,8 @@ public class LinkedBlockingDeque<E>
      */
     private boolean linkLast(Node<E> node) {
         // assert lock.isHeldByCurrentThread();
-        if (count >= capacity) return false;
+        if (count >= capacity)
+            return false;
         Node<E> l = last;
         node.prev = l;
         last = node;
