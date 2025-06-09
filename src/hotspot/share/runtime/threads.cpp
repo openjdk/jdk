@@ -57,6 +57,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nmt/memTracker.hpp"
+#include "nmt/memoryPointersHashtable.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -441,6 +442,8 @@ class ReadReleaseFileTask : public PeriodicTask {
 jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   extern void JDK_Version_init();
 
+  MemoryPointersHashtable::createMemoryPointersHashtable();
+
   // Preinitialize version info.
   VM_Version::early_initialize();
 
@@ -562,6 +565,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   main_thread->register_thread_stack_with_NMT();
   main_thread->set_active_handles(JNIHandleBlock::allocate_block());
   MACOS_AARCH64_ONLY(main_thread->init_wx());
+
+  // the soonest we can start using our pointer hashtable
+//  MemoryPointersHashtable::createMemoryPointersHashtable();
 
   // Set the _monitor_owner_id now since we will run Java code before the Thread instance
   // is even created. The same value will be assigned to the Thread instance on init.
