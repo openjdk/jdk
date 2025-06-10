@@ -121,6 +121,7 @@ class VM_Version: public Abstract_VM_Version {
 // --- FeatureBitString Bits 193..200 (DW[3]) ---
 // ----------------------------------------------
 #define  BEAREnhFacilityMask            0x4000000000000000UL  // z16, BEAR-enhancement facility, Bit: 193
+#define  ConcurrentFunFacilityMask      0x0040000000000000UL  // z17, Concurrent-functions facility, Bit: 201
 
   enum {
     _max_cache_levels = 8,    // As limited by ECAG instruction.
@@ -189,7 +190,8 @@ class VM_Version: public Abstract_VM_Version {
   static bool is_z13()  { return has_CryptoExt5()             && !has_MiscInstrExt2(); }
   static bool is_z14()  { return has_MiscInstrExt2()          && !has_MiscInstrExt3(); }
   static bool is_z15()  { return has_MiscInstrExt3()          && !has_BEAR_Enh_Facility(); }
-  static bool is_z16()  { return has_BEAR_Enh_Facility(); }
+  static bool is_z16()  { return has_BEAR_Enh_Facility()      && !has_Concurrent_Fun_Facility(); }
+  static bool is_z17()  { return has_Concurrent_Fun_Facility();}
 
   // Need to use nested class with unscoped enum.
   // C++11 declaration "enum class Cipher { ... } is not supported.
@@ -497,6 +499,7 @@ class VM_Version: public Abstract_VM_Version {
 
   static bool has_BEAR_Enh_Facility()         { return  (_features[3] & BEAREnhFacilityMask)           == BEAREnhFacilityMask; }
   static bool has_NNP_Assist_Facility()       { return  (_features[2] & NNPAssistFacilityMask)         == NNPAssistFacilityMask; }
+  static bool has_Concurrent_Fun_Facility()   { return  (_features[3] & ConcurrentFunFacilityMask)     == ConcurrentFunFacilityMask; }
 
   // Crypto features query functions.
   static bool has_Crypto_AES_GCM128()         { return has_Crypto() && test_feature_bit(&_cipher_features_KMA[0], Cipher::_AES128, Cipher::_featureBits); }
@@ -573,6 +576,7 @@ class VM_Version: public Abstract_VM_Version {
   static void set_has_VectorPackedDecimalEnh()    { _features[2] |= VectorPackedDecimalEnhMask; }
   static void set_has_BEAR_Enh_Facility()         { _features[3] |= BEAREnhFacilityMask;}
   static void set_has_NNP_Assist_Facility()       { _features[2] |= NNPAssistFacilityMask;}
+  static void set_has_Concurrent_Fun_Facility()   { _features[3] |= ConcurrentFunFacilityMask;}
 
   static void reset_has_VectorFacility()          { _features[2] &= ~VectorFacilityMask; }
 
