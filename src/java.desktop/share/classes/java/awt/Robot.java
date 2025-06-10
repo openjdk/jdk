@@ -980,7 +980,7 @@ public class Robot {
      * @see     #DEFAULT_DELAY
      * @since   25
      */
-    public void type(char c) {
+    public synchronized void type(char c) {
         type(KeyEvent.getExtendedKeyCodeForChar(c));
     }
 }
