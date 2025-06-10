@@ -1077,7 +1077,7 @@ void os::jvm_path(char *buf, jint buflen) {
     return;
   }
 
-  char* fname;
+  const char* fname;
 #ifdef AIX
   Dl_info dlinfo;
   int ret = dladdr(CAST_FROM_FN_PTR(void *, os::jvm_path), &dlinfo);
@@ -1085,7 +1085,7 @@ void os::jvm_path(char *buf, jint buflen) {
   if (ret == 0) {
     return;
   }
-  fname = (char*)dlinfo.dli_fname;
+  fname = dlinfo.dli_fname;
 #else
   char dli_fname[MAXPATHLEN];
   dli_fname[0] = '\0';
