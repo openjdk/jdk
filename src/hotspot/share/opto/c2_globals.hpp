@@ -681,8 +681,8 @@
           "Verify Iterative Global Value Numbering"                         \
           "=DCBA, with A: verify Def-Use modifications during IGVN"         \
           "            B: verify that type(n) == n->Value() after IGVN"     \
-          "            C: verify all Node::Ideal were applied in IGVN"      \
-          "            D: verify all Node::Identity were applied in IGVN"   \
+          "            C: verify Node::Ideal did not miss opportunities"    \
+          "            D: verify Node::Identity did not miss opportunities" \
           "A, B, C, and D in 0=off; 1=on")                                  \
           constraint(VerifyIterativeGVNConstraintFunc, AtParse)             \
                                                                             \

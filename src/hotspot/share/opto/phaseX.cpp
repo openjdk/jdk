@@ -1186,6 +1186,7 @@ bool PhaseIterGVN::verify_node_Value(Node* n) {
 }
 
 // Check that all Ideal optimizations that could be done were done.
+// Returns true if it found missed optimization opportunities and false otherwise and for exceptions.
 bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
   // First, we check a list of exceptions, which are known cases where Ideal
   // can optimize after IGVN. Some may be expected and cannot be fixed, and
@@ -1805,6 +1806,7 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
 }
 
 // Check that all Identity optimizations that could be done were done.
+// Returns true if it found missed optimization opportunities and false otherwise and for exceptions.
 bool PhaseIterGVN::verify_node_Identity(Node* n) {
   // First, we check a list of exceptions, which are known cases where Ideal
   // can optimize after IGVN. Some may be expected and cannot be fixed, and
@@ -1945,7 +1947,7 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
   }
 
   if (n->is_Load()) {
-    // LoadNode::Identity tries to look for an earier store value via
+    // LoadNode::Identity tries to look for an earlier store value via
     // can_see_stored_value. I found an example where this led to
     // an Allocation, where we could assume the value was still zero.
     // So the LoadN can be replaced with a zerocon.
@@ -1982,7 +1984,7 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
     return false;
   }
 
-  // We just saw a new Identity which was not found during IGVN.
+  // The verificatin just found a new Identity that was not found during IGVN.
   tty->cr();
   tty->print_cr("Missed Identity optimization:");
   tty->print_cr("Old node:");
