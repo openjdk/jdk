@@ -341,7 +341,7 @@ public class ZipFile implements ZipConstants, Closeable {
             if (pos == -1) {
                 return null;
             }
-            in = new ZipFileInputStream(zsrc.cen, pos);
+            in = new ZipFileInputStream(zsrc.cen, pos, entry.locOffset);
             switch (CENHOW(zsrc.cen, pos)) {
                 case STORED:
                     synchronized (istreams) {
@@ -653,6 +653,7 @@ public class ZipFile implements ZipConstants, Closeable {
             // read all bits in this field, including sym link attributes
             e.externalFileAttributes = CENATX_PERMS(cen, pos) & 0xFFFF;
         }
+        e.locOffset = CENOFF(cen, pos);
 
         int nlen = CENNAM(cen, pos);
         int elen = CENEXT(cen, pos);
@@ -847,10 +848,21 @@ public class ZipFile implements ZipConstants, Closeable {
         protected long rem;     // number of remaining bytes within entry
         protected long size;    // uncompressed size of this entry
 
-        ZipFileInputStream(byte[] cen, int cenpos) {
+        /**
+         * @param cen       the ZIP's CEN
+         * @param cenpos    the entry's offset within the CEN
+         * @param locOffset the entry's LOC offset in the ZIP stream. If -1 is passed
+         *                  then the LOC offset for the entry will be read from the
+         *                  entry's central header
+         */
+        ZipFileInputStream(byte[] cen, int cenpos, long locOffset) {
             rem = CENSIZ(cen, cenpos);
             size = CENLEN(cen, cenpos);
-            pos = CENOFF(cen, cenpos);
+            if (locOffset == -1) {
+                pos = CENOFF(cen, cenpos);
+            } else {
+                pos = locOffset;
+            }
             // ZIP64
             if (rem == ZIP64_MAGICVAL || size == ZIP64_MAGICVAL ||
                 pos == ZIP64_MAGICVAL) {

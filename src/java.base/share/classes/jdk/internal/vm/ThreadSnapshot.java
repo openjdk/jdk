@@ -175,7 +175,7 @@ class ThreadSnapshot {
     /**
      * Represents a locking operation of a thread at a specific stack depth.
      */
-    private class ThreadLock {
+    private static class ThreadLock {
         private static final OwnedLockType[] lockTypeValues = OwnedLockType.values(); // cache
 
         // set by the VM
