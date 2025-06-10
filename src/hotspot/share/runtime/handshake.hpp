@@ -35,8 +35,6 @@
 class HandshakeOperation;
 class AsyncHandshakeOperation;
 class JavaThread;
-class SuspendThreadHandshake;
-class ThreadSelfSuspensionHandshake;
 class UnsafeAccessErrorHandshake;
 class ThreadsListHandle;
 
@@ -88,8 +86,6 @@ class JvmtiRawMonitor;
 // operation is only done by either VMThread/Handshaker on behalf of the
 // JavaThread or by the target JavaThread itself.
 class HandshakeState {
-  friend ThreadSelfSuspensionHandshake;
-  friend SuspendThreadHandshake;
   friend UnsafeAccessErrorHandshake;
   friend JavaThread;
   // This a back reference to the JavaThread,

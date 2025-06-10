@@ -25,6 +25,9 @@
 #ifndef SHARE_RUNTIME_SUSPENDRESUMEMANAGER_HPP
 #define SHARE_RUNTIME_SUSPENDRESUMEMANAGER_HPP
 
+class SuspendThreadHandshake;
+class ThreadSelfSuspensionHandshake;
+
 class SuspendResumeManager {
   friend SuspendThreadHandshake;
   friend ThreadSelfSuspensionHandshake;
@@ -33,10 +36,8 @@ class SuspendResumeManager {
   JavaThread* _target;
   Monitor* _state_lock;
 
-public:
   SuspendResumeManager(JavaThread* thread, Monitor* state_lock);
 
-private:
   // This flag is true when the thread owning this
   // SuspendResumeManager (the _target) is suspended.
   volatile bool _suspended;
