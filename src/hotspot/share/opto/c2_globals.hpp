@@ -678,12 +678,12 @@
           "Print progress during Iterative Global Value Numbering")         \
                                                                             \
   develop(uint, VerifyIterativeGVN, 0,                                      \
-          "Verify Iterative Global Value Numbering"                         \
-          "=DCBA, with A: verify Def-Use modifications during IGVN"         \
-          "            B: verify that type(n) == n->Value() after IGVN"     \
-          "            C: verify Node::Ideal did not miss opportunities"    \
-          "            D: verify Node::Identity did not miss opportunities" \
-          "A, B, C, and D in 0=off; 1=on")                                  \
+          "Verify Iterative Global Value Numbering =DCBA, with:"            \
+          "  D: verify Node::Identity did not miss opportunities"           \
+          "  C: verify Node::Ideal did not miss opportunities"              \
+          "  B: verify that type(n) == n->Value() after IGVN"               \
+          "  A: verify Def-Use modifications during IGVN"                   \
+          "Each can be 0=off or 1=on")                                      \
           constraint(VerifyIterativeGVNConstraintFunc, AtParse)             \
                                                                             \
   develop(bool, TraceCISCSpill, false,                                      \
