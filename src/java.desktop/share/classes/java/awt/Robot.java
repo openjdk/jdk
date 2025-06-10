@@ -963,4 +963,24 @@ public class Robot {
         keyRelease(keycode);
         waitForIdle(DEFAULT_DELAY);
     }
+
+    /**
+     * A convenience method that simulates typing a char by calling {@code keyPress}
+     * and {@code keyRelease}. Gets the ExtendedKeyCode for the char and calls
+     * type(int keycode).
+     *
+     * @param   c   Character to be typed (e.g. {@code 'a'})
+     * @throws  IllegalArgumentException if {@code keycode} is not
+     *          a valid key
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
+     * @see     #type(int)
+     * @see     #keyPress(int)
+     * @see     #keyRelease(int)
+     * @see     java.awt.event.KeyEvent
+     * @see     #DEFAULT_DELAY
+     * @since   25
+     */
+    public void type(char c) {
+        type(KeyEvent.getExtendedKeyCodeForChar(c));
+    }
 }
