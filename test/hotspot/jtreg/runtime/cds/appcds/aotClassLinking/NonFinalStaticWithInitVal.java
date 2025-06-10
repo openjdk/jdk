@@ -27,8 +27,6 @@
  * @summary Handling of non-final static string that has an initial value
  * @bug 8356125
  * @requires vm.cds.supports.aot.class.linking
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/lib
  * @build NonFinalStaticWithInitVal_Helper
  * @build NonFinalStaticWithInitVal
