@@ -1123,7 +1123,7 @@ void PhaseIterGVN::verify_empty_worklist(Node* node) {
     tty->print_cr("Previously optimized:");
     node->dump();
   }
-  assert(_worklist.size() == 0, "igvn worklist must still be empty after verify");
+  assert(false, "igvn worklist must still be empty after verify");
 }
 
 // Check that type(n) == n->Value(), return true if we have a failure.
