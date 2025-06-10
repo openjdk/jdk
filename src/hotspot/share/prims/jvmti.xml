@@ -12870,8 +12870,8 @@ myInit() {
       reach this catch clause. If there are native methods on the call stack
       between the throw location and the catch clause, the exception may
       be reset by one of those native methods.
-      Similarly, exceptions that are reported as uncaught (<code>catch_klass</code>
-      et al. set to 0) may in fact be caught by native code.
+      Similarly, exceptions that are reported as uncaught (<code>catch_method</code>
+      and <code>catch_location</code> set to 0) may in fact be caught by native code.
       Agents can check for these occurrences by monitoring
       <eventlink id="ExceptionCatch"></eventlink> events.
       Note that finally clauses are implemented as catch and re-throw. Therefore they
