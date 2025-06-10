@@ -128,8 +128,12 @@ class HttpClientAuthRetryLimitTest implements HttpServerAdapters {
                 IOException exception = assertThrows(IOException.class, () -> client.send(
                         request, HttpResponse.BodyHandlers.discarding()));
                 assertEquals("too many authentication attempts. Limit: " + RETRY_LIMIT, exception.getMessage());
-                assertEquals(RETRY_LIMIT > 0 ? RETRY_LIMIT : 0,
-                        RETRY_LIMIT > 0 ? requestCount.get():requestCount.decrementAndGet());
+                int totalRequestCount = requestCount.get();
+                if (RETRY_LIMIT > 0){
+                    assertEquals(RETRY_LIMIT, totalRequestCount);
+                } else {
+                    assertEquals(0, totalRequestCount - 1);
+                }
             }
         }
     }
