@@ -30,7 +30,7 @@
  *
  * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:+UseShenandoahGC
  *                   TestLostAntiDependencyAtExpansion
- *                   
+ *
  *
  */
 
@@ -58,10 +58,10 @@ public class TestLostAntiDependencyAtExpansion {
 
     private static long test1(long addr) {
         long tmp = UNSAFE.getLong(addr);
-        
+
         UNSAFE.putLong(addr, 0L);
 
         return tmp + a.field;
     }
-        
+
 }
