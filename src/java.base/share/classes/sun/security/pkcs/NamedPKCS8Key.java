@@ -56,13 +56,17 @@ import java.util.Objects;
 ///
 /// 1. If only `privKeyMaterial` is present, it's also the expanded format.
 /// 2. If both `privKeyMaterial` and `expanded` are available, `privKeyMaterial`
-///     is the encoding format, and `expanded` is the expanded format.
+///    is the encoding format, and `expanded` is the expanded format.
 ///
 /// If the two formats are the same, only `privKeyMaterial` is included, and
 /// `expanded` must be `null`. Some implementations might be tempted to put the
 /// same value into `privKeyMaterial` and `expanded`. However, problems can
 /// arise if they happen to be the same object. To avoid ambiguity, always set
 /// `expanded` to `null`.
+///
+/// A `NamedPKCS8Key`, when created, must include `expanded` if required, its
+/// `privKeyMaterial` must have already been validated for internal consistency.
+/// For example, seed and expanded key should match.
 ///
 /// @see sun.security.provider.NamedKeyPairGenerator
 public final class NamedPKCS8Key extends PKCS8Key {
@@ -75,16 +79,13 @@ public final class NamedPKCS8Key extends PKCS8Key {
 
     private transient boolean destroyed = false;
 
-    /// Creates a `NamedPKCS8Key` from raw key bytes.
-    ///
-    /// `encoded` and `expanded` won't be cloned, caller
-    /// must relinquish ownership.
+    /// Creates a `NamedPKCS8Key` from raw components.
     ///
     /// @param fname family name
     /// @param pname parameter set name
     /// @param encoded raw key bytes, not null
     /// @param expanded expanded key format, can be `null`.
-    public NamedPKCS8Key(String fname, String pname, byte[] encoded, byte[] expanded) {
+    private NamedPKCS8Key(String fname, String pname, byte[] encoded, byte[] expanded) {
         this.fname = fname;
         this.paramSpec = new NamedParameterSpec(pname);
         this.expanded = expanded;
@@ -94,6 +95,21 @@ public final class NamedPKCS8Key extends PKCS8Key {
         } catch (NoSuchAlgorithmException e) {
             throw new ProviderException(e);
         }
+    }
+
+    /// Creates a `NamedPKCS8Key` from raw components.
+    ///
+    /// `encoded` and `expanded` won't be cloned, caller must relinquish
+    /// ownership. This caller must ensure `encoded` and `expanded` match
+    /// each other and `encoded` is valid and internally-consistent.
+    ///
+    /// @param fname family name
+    /// @param pname parameter set name
+    /// @param encoded raw key bytes, not null
+    /// @param expanded expanded key format, can be `null`.
+    public static NamedPKCS8Key internalCreate(String fname, String pname,
+            byte[] encoded, byte[] expanded) {
+        return new NamedPKCS8Key(fname, pname, encoded, expanded);
     }
 
     /// Creates a `NamedPKCS8Key` from family name and PKCS #8 encoding.
@@ -175,8 +191,13 @@ public final class NamedPKCS8Key extends PKCS8Key {
 
     /// Expands from encoding format to expanded format.
     public interface Expander {
-        /// The expand method, returns `null` if `input` is already
-        /// in expanded format.
+        /// The expand method
+        ///
+        /// @param pname parameter set name
+        /// @param input input encoding
+        /// @return the expanded key, `null` if `input` is already in expanded
+        /// @throws InvalidKeyException if `input` is invalid, for example,
+        ///         wrong encoding, or internal inconsistency
         byte[] expand(String pname, byte[] input) throws InvalidKeyException;
     }
 }

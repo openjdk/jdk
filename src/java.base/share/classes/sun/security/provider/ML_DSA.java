@@ -576,6 +576,11 @@ public class ML_DSA {
         return clone;
     }
 
+    // This is similar to the generateKeyPairInternal method. Instead of
+    // generating from a seed, it uses stored fields inside the private key
+    // to calculate the public key. It performs several checks during the
+    // calculation to make sure the private key is a valid one. Otherwise,
+    // an IllegalArgumentException is thrown.
     public ML_DSA_PublicKey privKeyToPubKey(ML_DSA_PrivateKey sk) {
         // Sample A
         int[][][] keygenA = generateA(sk.rho); //A is in NTT domain
@@ -607,7 +612,7 @@ public class ML_DSA {
             throw new IllegalArgumentException("tr does not patch");
         }
 
-        //Encode PK and SK
+        //Encode PK
         return new ML_DSA_PublicKey(sk.rho, t1);
     }
 

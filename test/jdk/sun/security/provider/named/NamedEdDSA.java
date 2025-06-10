@@ -70,11 +70,11 @@ public class NamedEdDSA {
 
     public static class EdDSASignature extends NamedSignature {
         public EdDSASignature() {
-            super("EdDSA", new EdDSAKeyFactory(), "Ed25519", "Ed448");
+            super("EdDSA", new EdDSAKeyFactory());
         }
 
         protected EdDSASignature(String pname) {
-            super("EdDSA", new EdDSAKeyFactory(pname), pname);
+            super("EdDSA", new EdDSAKeyFactory(pname));
         }
 
         public static class Ed25519 extends EdDSASignature {

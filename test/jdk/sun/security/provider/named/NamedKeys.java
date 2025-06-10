@@ -43,7 +43,7 @@ public class NamedKeys {
         var raw = r.nBytes(32);
 
         // Create a key using raw bytes
-        var sk = new NamedPKCS8Key("ML-DSA", "ML-DSA-44", raw, null);
+        var sk = NamedPKCS8Key.internalCreate("SHA", "SHA-256", raw, null);
         var enc = sk.getEncoded().clone();
 
         // The raw bytes array is re-used
@@ -58,8 +58,8 @@ public class NamedKeys {
         // No guarantee on getEncoded() output, could be cached
 
         // Create a key using encoding
-        var sk1 = new NamedPKCS8Key("ML-DSA", enc, null);
-        var sk2 = new NamedPKCS8Key("ML-DSA", enc, null);
+        var sk1 = new NamedPKCS8Key("SHA", enc, null);
+        var sk2 = new NamedPKCS8Key("SHA", enc, null);
         var raw1 = sk1.getRawBytes();
         Asserts.assertTrue(raw1 != sk2.getRawBytes());
         Asserts.assertTrue(sk1.getEncoded() != sk2.getEncoded());
@@ -71,7 +71,7 @@ public class NamedKeys {
         // Same with public key
         // Create a key using raw bytes
         raw = r.nBytes(32);
-        var pk = new NamedX509Key("ML-DSA", "ML-DSA-44", raw);
+        var pk = new NamedX509Key("SHA", "SHA-256", raw);
         enc = pk.getEncoded().clone();
 
         // The raw bytes array is re-used
@@ -86,8 +86,8 @@ public class NamedKeys {
         // No guarantee on getEncoded() output, could be cached
 
         // Create a key using encoding
-        var pk1 = new NamedX509Key("ML-DSA", enc);
-        var pk2 = new NamedX509Key("ML-DSA", enc);
+        var pk1 = new NamedX509Key("SHA", enc);
+        var pk2 = new NamedX509Key("SHA", enc);
         raw1 = pk1.getRawBytes();
         Asserts.assertTrue(raw1 != pk2.getRawBytes());
         Asserts.assertTrue(pk1.getEncoded() != pk2.getEncoded());

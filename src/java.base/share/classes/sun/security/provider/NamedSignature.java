@@ -49,7 +49,6 @@ import java.security.spec.AlgorithmParameterSpec;
 public abstract class NamedSignature extends SignatureSpi {
 
     private final String fname; // family name
-    private final String[] pnames; // allowed parameter set name (at least one)
     private final NamedKeyFactory fac;
 
     private final ByteArrayOutputStream bout = new ByteArrayOutputStream();
@@ -67,16 +66,11 @@ public abstract class NamedSignature extends SignatureSpi {
     /// @param fname the family name
     /// @param fac the `KeyFactory` used to translate foreign keys and
     ///         perform key validation
-    /// @param pnames the standard parameter set names, at least one is needed.
-    protected NamedSignature(String fname, NamedKeyFactory fac, String... pnames) {
+    protected NamedSignature(String fname, NamedKeyFactory fac) {
         if (fname == null) {
             throw new AssertionError("fname cannot be null");
         }
-        if (pnames == null || pnames.length == 0) {
-            throw new AssertionError("pnames cannot be null or empty");
-        }
         this.fname = fname;
-        this.pnames = pnames;
         this.fac = fac;
     }
 
@@ -135,14 +129,14 @@ public abstract class NamedSignature extends SignatureSpi {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
+    @Deprecated
     protected void engineSetParameter(String param, Object value)
             throws InvalidParameterException {
         throw new InvalidParameterException("setParameter() not supported");
     }
 
     @Override
-    @SuppressWarnings("deprecation")
+    @Deprecated
     protected Object engineGetParameter(String param) throws InvalidParameterException {
         throw new InvalidParameterException("getParameter() not supported");
     }

@@ -90,68 +90,86 @@ public abstract class NamedKeyFactory extends KeyFactorySpi {
     @Override
     protected PublicKey engineGeneratePublic(KeySpec keySpec)
             throws InvalidKeySpecException {
-        if (keySpec instanceof X509EncodedKeySpec xspec) {
-            try {
-                return fromX509(xspec.getEncoded());
-            } catch (InvalidKeyException e) {
-                throw new InvalidKeySpecException(e);
+        return switch (keySpec) {
+            case X509EncodedKeySpec xspec -> {
+                try {
+                    yield fromX509(xspec.getEncoded());
+                } catch (InvalidKeyException e) {
+                    throw new InvalidKeySpecException(e);
+                }
             }
-        } else if (keySpec instanceof RawKeySpec rks) {
-            if (pnames.length == 1) {
-                return new NamedX509Key(fname, pnames[0], rks.getKeyArr());
-            } else {
-                throw new InvalidKeySpecException("Parameter set name unavailable");
+            case RawKeySpec rks -> {
+                if (pnames.length == 1) {
+                    yield new NamedX509Key(fname, pnames[0], rks.getKeyArr());
+                } else {
+                    throw new InvalidKeySpecException("Parameter set name unavailable");
+                }
             }
-        } else if (keySpec instanceof EncodedKeySpec espec
-                && espec.getFormat().equalsIgnoreCase("RAW")) {
-            if (pnames.length == 1) {
-                return new NamedX509Key(fname, pnames[0], espec.getEncoded());
-            } else {
-                throw new InvalidKeySpecException("Parameter set name unavailable");
+            case EncodedKeySpec espec when espec.getFormat().equalsIgnoreCase("RAW") -> {
+                if (pnames.length == 1) {
+                    yield new NamedX509Key(fname, pnames[0], espec.getEncoded());
+                } else {
+                    throw new InvalidKeySpecException("Parameter set name unavailable");
+                }
             }
-        } else {
-            throw new InvalidKeySpecException("Unsupported keyspec: " + keySpec);
-        }
+            case null -> throw new InvalidKeySpecException(
+                    "keySpec must not be null");
+            default ->
+                    throw new InvalidKeySpecException(keySpec.getClass().getName() +
+                            " not supported.");
+        };
     }
 
     @Override
     protected PrivateKey engineGeneratePrivate(KeySpec keySpec)
             throws InvalidKeySpecException {
-        if (keySpec instanceof PKCS8EncodedKeySpec pspec) {
-            var bytes = pspec.getEncoded();
-            try {
-                return fromPKCS8(bytes);
-            } catch (InvalidKeyException e) {
-                throw new InvalidKeySpecException(e);
-            } finally {
-                Arrays.fill(bytes, (byte) 0);
-            }
-        } else if (keySpec instanceof RawKeySpec rks) {
-            if (pnames.length == 1) {
-                var raw = rks.getKeyArr();
+        return switch (keySpec) {
+            case PKCS8EncodedKeySpec pspec -> {
+                var bytes = pspec.getEncoded();
                 try {
-                    return new NamedPKCS8Key(fname, pnames[0], raw, implExpand(pnames[0], raw));
+                    yield fromPKCS8(bytes);
                 } catch (InvalidKeyException e) {
-                    throw new InvalidKeySpecException("Invalid key input", e);
+                    throw new InvalidKeySpecException(e);
+                } finally {
+                    Arrays.fill(bytes, (byte) 0);
                 }
-            } else {
-                throw new InvalidKeySpecException("Parameter set name unavailable");
             }
-        } else if (keySpec instanceof EncodedKeySpec espec
-                && espec.getFormat().equalsIgnoreCase("RAW")) {
-            if (pnames.length == 1) {
-                var raw = espec.getEncoded();
-                try {
-                    return new NamedPKCS8Key(fname, pnames[0], raw, implExpand(pnames[0], raw));
-                } catch (InvalidKeyException e) {
-                    throw new InvalidKeySpecException("Invalid key input", e);
+            case RawKeySpec rks -> {
+                if (pnames.length == 1) {
+                    var raw = rks.getKeyArr();
+                    try {
+                        yield fromRaw(pnames[0], raw);
+                    } catch (InvalidKeyException e) {
+                        throw new InvalidKeySpecException("Invalid key input", e);
+                    }
+                } else {
+                    throw new InvalidKeySpecException("Parameter set name unavailable");
                 }
-            } else {
-                throw new InvalidKeySpecException("Parameter set name unavailable");
             }
-        } else {
-            throw new InvalidKeySpecException("Unsupported keyspec: " + keySpec);
-        }
+            case EncodedKeySpec espec when espec.getFormat().equalsIgnoreCase("RAW") -> {
+                if (pnames.length == 1) {
+                    var raw = espec.getEncoded();
+                    try {
+                        yield fromRaw(pnames[0], raw);
+                    } catch (InvalidKeyException e) {
+                        throw new InvalidKeySpecException("Invalid key input", e);
+                    }
+                } else {
+                    throw new InvalidKeySpecException("Parameter set name unavailable");
+                }
+            }
+            case null -> throw new InvalidKeySpecException(
+                    "keySpec must not be null");
+            default ->
+                    throw new InvalidKeySpecException(keySpec.getClass().getName() +
+                            " not supported.");
+        };
+    }
+
+    private PrivateKey fromRaw(String pname, byte[] raw)
+            throws InvalidKeyException {
+        return NamedPKCS8Key.internalCreate(
+                fname, pname, raw, implExpand(pname, raw));
     }
 
     private PrivateKey fromPKCS8(byte[] bytes)
@@ -224,6 +242,8 @@ public abstract class NamedKeyFactory extends KeyFactorySpi {
 
     @Override
     protected Key engineTranslateKey(Key key) throws InvalidKeyException {
+        // The base toNamedKey only make sure key is translated into a NamedKey.
+        // the key material is still the same as the input.
         return toNamedKey(key);
     }
 
@@ -265,7 +285,7 @@ public abstract class NamedKeyFactory extends KeyFactorySpi {
                 }
                 var raw = key.getEncoded();
                 return key instanceof PrivateKey
-                        ? new NamedPKCS8Key(fname, pname, raw, implExpand(pname, raw))
+                        ? fromRaw(pname, raw)
                         : new NamedX509Key(fname, pname, raw);
             } else {
                 throw new InvalidKeyException("Unsupported key type: " + key.getClass());

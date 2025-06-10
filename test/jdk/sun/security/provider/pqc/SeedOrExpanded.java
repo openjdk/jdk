@@ -90,9 +90,7 @@ public class SeedOrExpanded {
         Asserts.assertEqualsByteArray(
                 test(alg, pk, kf.translateKey(kBoth)).getEncoded(),
                 kSeed.getEncoded());
-        Asserts.assertEqualsByteArray(
-                test(alg, pk, kf.translateKey(kSeed)).getEncoded(),
-                kSeed.getEncoded());
+        Asserts.assertTrue(kf.translateKey(kSeed) == kSeed);
         Asserts.assertThrows(InvalidKeyException.class, () -> kf.translateKey(kExpanded));
 
         System.setProperty("jdk." + type + ".pkcs8.encoding", "expandedkey");
@@ -102,18 +100,26 @@ public class SeedOrExpanded {
         Asserts.assertEqualsByteArray(
                 test(alg, pk, kf.translateKey(kSeed)).getEncoded(),
                 kExpanded.getEncoded());
-        Asserts.assertEqualsByteArray(
-                test(alg, pk, kf.translateKey(kExpanded)).getEncoded(),
-                kExpanded.getEncoded());
+        Asserts.assertTrue(kf.translateKey(kExpanded) == kExpanded);
 
         System.setProperty("jdk." + type + ".pkcs8.encoding", "both");
-        Asserts.assertEqualsByteArray(
-                test(alg, pk, kf.translateKey(kBoth)).getEncoded(),
-                kBoth.getEncoded());
+        Asserts.assertTrue(kf.translateKey(kBoth) == kBoth);
         Asserts.assertEqualsByteArray(
                 test(alg, pk, kf.translateKey(kSeed)).getEncoded(),
                 kBoth.getEncoded());
         Asserts.assertThrows(InvalidKeyException.class, () -> kf.translateKey(kExpanded));
+
+        // The following makes sure key is not mistakenly cleaned during
+        // translations.
+        var xk = new PrivateKey() {
+            public String getAlgorithm() { return alg; }
+            public String getFormat() { return "PKCS#8"; }
+            public byte[] getEncoded() { return kBoth.getEncoded(); }
+        };
+        test(alg, pk, xk);
+        var xk2 = (PrivateKey) kf.translateKey(xk);
+        test(alg, pk, xk2);
+        test(alg, pk, xk);
     }
 
     static PrivateKey test(String alg, PublicKey pk, Key k) throws Exception {

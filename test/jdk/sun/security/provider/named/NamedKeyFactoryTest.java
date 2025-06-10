@@ -82,7 +82,7 @@ public class NamedKeyFactoryTest {
         checkKeyPair(g.generateKeyPair(), "SHA", "SHA-256");
 
         var pk = new NamedX509Key("sHa", "ShA-256", RAW_PK);
-        var sk = new NamedPKCS8Key("sHa", "SHa-256", RAW_SK, null);
+        var sk = NamedPKCS8Key.internalCreate("sHa", "SHa-256", RAW_SK, null);
         checkKey(pk, "sHa", "ShA-256");
         checkKey(sk, "sHa", "SHa-256");
 

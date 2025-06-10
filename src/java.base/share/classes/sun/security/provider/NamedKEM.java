@@ -49,7 +49,6 @@ import java.util.Arrays;
 public abstract class NamedKEM implements KEMSpi {
 
     private final String fname; // family name
-    private final String[] pnames; // allowed parameter set name (at least one)
     private final NamedKeyFactory fac;
 
     /// Creates a new `NamedKEM` object.
@@ -57,16 +56,11 @@ public abstract class NamedKEM implements KEMSpi {
     /// @param fname the family name
     /// @param fac the `KeyFactory` used to translate foreign keys and
     ///         perform key validation
-    /// @param pnames the standard parameter set names, at least one is needed.
-    protected NamedKEM(String fname, NamedKeyFactory fac, String... pnames) {
+    protected NamedKEM(String fname, NamedKeyFactory fac) {
         if (fname == null) {
             throw new AssertionError("fname cannot be null");
         }
-        if (pnames == null || pnames.length == 0) {
-            throw new AssertionError("pnames cannot be null or empty");
-        }
         this.fname = fname;
-        this.pnames = pnames;
         this.fac = fac;
     }
 

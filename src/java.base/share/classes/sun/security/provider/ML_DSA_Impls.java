@@ -27,7 +27,7 @@ package sun.security.provider;
 
 import sun.security.jca.JCAUtil;
 import sun.security.pkcs.NamedPKCS8Key;
-import sun.security.util.KeyUtil;
+import sun.security.util.KeyChoices;
 import sun.security.x509.NamedX509Key;
 
 import java.security.*;
@@ -104,7 +104,9 @@ public class ML_DSA_Impls {
             try {
                 return new byte[][]{
                         mlDsa.pkEncode(kp.publicKey()),
-                        KeyUtil.writeToChoices(pname, "mldsa", seed, expanded, null),
+                        KeyChoices.writeToChoice(
+                                KeyChoices.getPreferred("mldsa"),
+                                seed, expanded),
                         expanded
                 };
             } finally {
@@ -143,50 +145,29 @@ public class ML_DSA_Impls {
         @Override
         protected byte[] implExpand(String pname, byte[] input)
                 throws InvalidKeyException {
-            var parts = KeyUtil.splitChoices(SEED_LEN, input);
-            if (parts[0] != null && parts[1] != null) {
-                var calculated = seedToExpanded(pname, parts[0]);
-                if (!Arrays.equals(parts[1], calculated)) {
-                    throw new InvalidKeyException("seed and expandedKey do not match");
-                }
-                Arrays.fill(calculated, (byte)0);
-            }
-            try {
-                if (parts[1] != null) {
-                    return parts[1];
-                }
-                return seedToExpanded(pname, parts[0]);
-            } finally {
-                if (parts[0] != null) {
-                    Arrays.fill(parts[0], (byte)0);
-                }
-            }
+            return KeyChoices.choiceToExpanded(pname, SEED_LEN, input,
+                    ML_DSA_Impls::seedToExpanded);
         }
 
         @Override
         protected Key engineTranslateKey(Key key) throws InvalidKeyException {
             var nk = toNamedKey(key);
             if (nk instanceof NamedPKCS8Key npk) {
-                var parts = KeyUtil.splitChoices(SEED_LEN, npk.getRawBytes());
-                var encoding = KeyUtil.writeToChoices(npk.getParams().getName(),
-                        "mldsa", parts[0], parts[1],
-                        ML_DSA_Impls::seedToExpanded);
-                if (parts[0] != null) {
-                    Arrays.fill(parts[0], (byte)0);
-                }
-                if (parts[1] != null) {
-                    Arrays.fill(parts[1], (byte)0);
-                }
-                if (encoding == null) {
-                    throw new InvalidKeyException("key contains not enough info to translate");
-                }
-                nk = new NamedPKCS8Key(
-                        npk.getAlgorithm(),
-                        npk.getParams().getName(),
-                        encoding,
-                        npk.getExpanded().clone());
-                if (npk != key) {
-                    npk.destroy();
+                var type = KeyChoices.getPreferred("mldsa");
+                if (KeyChoices.typeOfChoice(npk.getRawBytes()) != type) {
+                    var encoding = KeyChoices.choiceToChoice(
+                            type,
+                            npk.getParams().getName(),
+                            SEED_LEN, npk.getRawBytes(),
+                            ML_DSA_Impls::seedToExpanded);
+                    nk = NamedPKCS8Key.internalCreate(
+                            npk.getAlgorithm(),
+                            npk.getParams().getName(),
+                            encoding,
+                            npk.getExpanded().clone());
+                    if (npk != key) { // npk is neither input or output
+                        npk.destroy();
+                    }
                 }
             }
             return nk;
@@ -213,10 +194,10 @@ public class ML_DSA_Impls {
 
     public sealed static class SIG extends NamedSignature permits SIG2, SIG3, SIG5 {
         public SIG() {
-            super("ML-DSA", new KF(), "ML-DSA-44", "ML-DSA-65", "ML-DSA-87");
+            super("ML-DSA", new KF());
         }
         public SIG(String pname) {
-            super("ML-DSA", new KF(pname), pname);
+            super("ML-DSA", new KF(pname));
         }
 
         @Override

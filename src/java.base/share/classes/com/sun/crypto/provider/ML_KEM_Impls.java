@@ -30,7 +30,7 @@ import sun.security.pkcs.NamedPKCS8Key;
 import sun.security.provider.NamedKEM;
 import sun.security.provider.NamedKeyFactory;
 import sun.security.provider.NamedKeyPairGenerator;
-import sun.security.util.KeyUtil;
+import sun.security.util.KeyChoices;
 import sun.security.x509.NamedX509Key;
 
 import java.security.*;
@@ -80,7 +80,9 @@ public final class ML_KEM_Impls {
             try {
                 return new byte[][]{
                         kp.encapsulationKey().keyBytes(),
-                        KeyUtil.writeToChoices(pname, "mlkem", seed, expanded, null),
+                        KeyChoices.writeToChoice(
+                                KeyChoices.getPreferred("mlkem"),
+                                seed, expanded),
                         expanded
                 };
             } finally {
@@ -118,50 +120,29 @@ public final class ML_KEM_Impls {
         @Override
         protected byte[] implExpand(String pname, byte[] input)
                 throws InvalidKeyException {
-            var parts = KeyUtil.splitChoices(SEED_LEN, input);
-            if (parts[0] != null && parts[1] != null) {
-                var calculated = seedToExpanded(pname, parts[0]);
-                if (!Arrays.equals(parts[1], calculated)) {
-                    throw new InvalidKeyException("seed and expandedKey do not match");
-                }
-                Arrays.fill(calculated, (byte)0);
-            }
-            try {
-                if (parts[1] != null) {
-                    return parts[1];
-                }
-                return seedToExpanded(pname, parts[0]);
-            } finally {
-                if (parts[0] != null) {
-                    Arrays.fill(parts[0], (byte)0);
-                }
-            }
+            return KeyChoices.choiceToExpanded(pname, SEED_LEN, input,
+                    ML_KEM_Impls::seedToExpanded);
         }
 
         @Override
         protected Key engineTranslateKey(Key key) throws InvalidKeyException {
             var nk = toNamedKey(key);
             if (nk instanceof NamedPKCS8Key npk) {
-                var parts = KeyUtil.splitChoices(SEED_LEN, npk.getRawBytes());
-                var encoding = KeyUtil.writeToChoices(npk.getParams().getName(),
-                        "mlkem", parts[0], parts[1],
-                        ML_KEM_Impls::seedToExpanded);
-                if (parts[0] != null) {
-                    Arrays.fill(parts[0], (byte)0);
-                }
-                if (parts[1] != null) {
-                    Arrays.fill(parts[1], (byte)0);
-                }
-                if (encoding == null) {
-                    throw new InvalidKeyException("key contains not enough info to translate");
-                }
-                nk = new NamedPKCS8Key(
-                        npk.getAlgorithm(),
-                        npk.getParams().getName(),
-                        encoding,
-                        npk.getExpanded().clone());
-                if (npk != key) {
-                    npk.destroy();
+                var type = KeyChoices.getPreferred("mlkem");
+                if (KeyChoices.typeOfChoice(npk.getRawBytes()) != type) {
+                    var encoding = KeyChoices.choiceToChoice(
+                            type,
+                            npk.getParams().getName(),
+                            SEED_LEN, npk.getRawBytes(),
+                            ML_KEM_Impls::seedToExpanded);
+                    nk = NamedPKCS8Key.internalCreate(
+                            npk.getAlgorithm(),
+                            npk.getParams().getName(),
+                            encoding,
+                            npk.getExpanded().clone());
+                    if (npk != key) { // npk is neither input or output
+                        npk.destroy();
+                    }
                 }
             }
             return nk;
@@ -198,7 +179,7 @@ public final class ML_KEM_Impls {
             r.nextBytes(randomBytes);
 
             ML_KEM mlKem = new ML_KEM(pname);
-            ML_KEM.ML_KEM_EncapsulateResult mlKemEncapsulateResult = null;
+            ML_KEM.ML_KEM_EncapsulateResult mlKemEncapsulateResult;
             try {
                 mlKemEncapsulateResult = mlKem.encapsulate(
                         new ML_KEM.ML_KEM_EncapsulationKey(
@@ -252,11 +233,11 @@ public final class ML_KEM_Impls {
         }
 
         public K() {
-            super("ML-KEM", new KF(), "ML-KEM-512", "ML-KEM-768", "ML-KEM-1024");
+            super("ML-KEM", new KF());
         }
 
         public K(String pname) {
-            super("ML-KEM", new KF(pname), pname);
+            super("ML-KEM", new KF(pname));
         }
     }
 

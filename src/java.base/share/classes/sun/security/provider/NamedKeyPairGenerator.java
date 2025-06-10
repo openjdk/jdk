@@ -61,10 +61,10 @@ import java.security.spec.NamedParameterSpec;
 /// is called on a different parameter set.
 ///
 /// A `NamedKEM` or `NamedSignature` implementation must include a zero-argument
-/// public constructor that calls `super(fname, factory, pnames)`, where
-/// `fname` is the family name of the algorithm and `pnames` are its supported
-/// parameter set names. `pnames` must contain at least one element. `factory`
-/// is the `NamedKeyFactory` object that is used to translate foreign keys.
+/// public constructor that calls `super(fname, factory)`, where `fname` is the
+/// family name of the algorithm and `factory` is the `NamedKeyFactory` object
+/// that is used to translate foreign keys. `factory` only recognizes
+/// parameter sets supported by this implementation.
 ///
 /// An implementation must implement all abstract methods. For all these
 /// methods, the implementation must relinquish any "ownership" of any input
@@ -99,19 +99,20 @@ import java.security.spec.NamedParameterSpec;
 /// expanded format. However, in
 /// [draft-ietf-lamps-dilithium-certificates-08](https://datatracker.ietf.org/doc/html/draft-ietf-lamps-dilithium-certificates#name-private-key-format),
 /// a private key can be encoded into a CHOICE of three formats, none in the
-/// same as the FIPS 204 format. A `NamedKeyPairGenerator` implementation
+/// same as the FIPS 204 format. The choices are defined in
+/// [sun.security.util.KeyChoices]. A `NamedKeyPairGenerator` implementation
 /// should return both the expanded key and a preferred encoding in its
 ///  [#implGenerateKeyPair] method.
 ///
-/// A `NamedKeyFactory` that must override the `implExpand` method to derive
+/// A `NamedKeyFactory` must override the `implExpand` method to derive
 /// the expanded format from an encoding format, or return `null` if there
 /// is no difference.
 ///
 /// Implementations may support multiple encoding formats.
 ///
-/// A `NamedKeyFactory` must not modify the [NamedPKCS8Key#privKeyMaterial]
-/// field, ensuring that when re-encoded, the key retains its original encoding
-/// format.
+/// A `NamedKeyFactory` must not modify the encoding when generating a key
+/// from a `KeySpec` object, ensuring that when re-encoded, the key retains
+/// its original encoding format.
 ///
 /// A `NamedKeyFactory` can choose a different encoding format when
 /// `translateKey` is called.
@@ -196,7 +197,7 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
         String tmpName = pname != null ? pname : pnames[0];
         var keys = implGenerateKeyPair(tmpName, secureRandom);
         return new KeyPair(new NamedX509Key(fname, tmpName, keys[0]),
-                new NamedPKCS8Key(fname, tmpName, keys[1],
+                NamedPKCS8Key.internalCreate(fname, tmpName, keys[1],
                         keys.length == 2 ? null : keys[2]));
     }
 
