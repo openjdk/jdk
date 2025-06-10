@@ -36,6 +36,7 @@
 
 package compiler.startup;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
@@ -62,7 +63,7 @@ public class StartupOutput {
 
         Process[] pr = new Process[200];
         for (int i = 0; i < 200; i++) {
-            int initialCodeCacheSizeInKb = 800 + rand.nextInt(400);
+            int initialCodeCacheSizeInKb = 800 + rand.nextInt(400) + (Platform.isS390x() ? 800 : 0);
             int reservedCodeCacheSizeInKb = initialCodeCacheSizeInKb + rand.nextInt(200);
             pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:InitialCodeCacheSize=" + initialCodeCacheSizeInKb + "K", "-XX:ReservedCodeCacheSize=" + reservedCodeCacheSizeInKb + "k", "-version");
             pr[i] = pb.start();
