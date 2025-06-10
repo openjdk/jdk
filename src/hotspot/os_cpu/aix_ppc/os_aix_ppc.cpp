@@ -138,6 +138,13 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
   return frame(sp, lr, frame::kind::unknown);
 }
 
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  assert(ucVoid != nullptr, "invariant");
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  assert(os::Posix::ucontext_is_interpreter(uc), "invariant");
+  return reinterpret_cast<intptr_t*>(uc->uc_mcontext.jmp_context.gpr[14]); // R14_bcp
+}
+
 frame os::get_sender_for_C_frame(frame* fr) {
   if (*fr->sp() == (intptr_t) nullptr) {
     // fr is the last C frame
@@ -447,7 +454,7 @@ void os::print_context(outputStream *st, const void *context) {
 }
 
 void os::print_register_info(outputStream *st, const void *context, int& continuation) {
-  const int register_count = 32 /* r0-r32 */ + 3 /* pc, lr, sp */;
+  const int register_count = 32 /* r0-r31 */ + 3 /* pc, lr, sp */;
   int n = continuation;
   assert(n >= 0 && n <= register_count, "Invalid continuation value");
   if (context == nullptr || n == register_count) {

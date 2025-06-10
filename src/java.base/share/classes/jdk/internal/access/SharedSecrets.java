@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,6 @@ import javax.security.auth.x500.X500Principal;
  */
 
 public class SharedSecrets {
-    private static JavaAWTAccess javaAWTAccess;
     private static JavaAWTFontAccess javaAWTFontAccess;
     private static JavaBeansAccess javaBeansAccess;
     private static JavaLangAccess javaLangAccess;
@@ -69,7 +68,6 @@ public class SharedSecrets {
     private static JavaLangReflectAccess javaLangReflectAccess;
     private static JavaIOAccess javaIOAccess;
     private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
-    private static JavaIOFilePermissionAccess javaIOFilePermissionAccess;
     private static JavaIORandomAccessFileAccess javaIORandomAccessFileAccess;
     private static JavaObjectInputStreamReadString javaObjectInputStreamReadString;
     private static JavaObjectInputStreamAccess javaObjectInputStreamAccess;
@@ -287,19 +285,6 @@ public class SharedSecrets {
         javaIOFileDescriptorAccess = jiofda;
     }
 
-    public static JavaIOFilePermissionAccess getJavaIOFilePermissionAccess() {
-        var access = javaIOFilePermissionAccess;
-        if (access == null) {
-            ensureClassInitialized(FilePermission.class);
-            access = javaIOFilePermissionAccess;
-        }
-        return access;
-    }
-
-    public static void setJavaIOFilePermissionAccess(JavaIOFilePermissionAccess jiofpa) {
-        javaIOFilePermissionAccess = jiofpa;
-    }
-
     public static JavaIOFileDescriptorAccess getJavaIOFileDescriptorAccess() {
         var access = javaIOFileDescriptorAccess;
         if (access == null) {
@@ -333,16 +318,6 @@ public class SharedSecrets {
 
     public static void setJavaUtilZipFileAccess(JavaUtilZipFileAccess access) {
         javaUtilZipFileAccess = access;
-    }
-
-    public static void setJavaAWTAccess(JavaAWTAccess jaa) {
-        javaAWTAccess = jaa;
-    }
-
-    public static JavaAWTAccess getJavaAWTAccess() {
-        // this may return null in which case calling code needs to
-        // provision for.
-        return javaAWTAccess;
     }
 
     public static void setJavaAWTFontAccess(JavaAWTFontAccess jafa) {

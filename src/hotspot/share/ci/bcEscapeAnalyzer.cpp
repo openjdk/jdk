@@ -22,12 +22,12 @@
  *
  */
 
-#include "classfile/vmIntrinsics.hpp"
 #include "ci/bcEscapeAnalyzer.hpp"
 #include "ci/ciConstant.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciMethodBlocks.hpp"
 #include "ci/ciStreams.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "interpreter/bytecode.hpp"
 #include "oops/oop.inline.hpp"

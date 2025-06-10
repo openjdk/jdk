@@ -66,12 +66,12 @@ public class TestSystemGC {
             RecordedEvent event2 = events.get(1);
             Events.assertFrame(event2, Runtime.class, "gc");
             Events.assertEventThread(event2, Thread.currentThread());
-            Events.assertField(event1, "invokedConcurrent").isEqual(concurrent);
+            Events.assertField(event2, "invokedConcurrent").isEqual(concurrent);
 
             RecordedEvent event3 = events.get(2);
             // MemoryMXBean.class is an interface so can't assertFrame on it
             Events.assertEventThread(event3, Thread.currentThread());
-            Events.assertField(event1, "invokedConcurrent").isEqual(concurrent);
+            Events.assertField(event3, "invokedConcurrent").isEqual(concurrent);
         }
      }
 }

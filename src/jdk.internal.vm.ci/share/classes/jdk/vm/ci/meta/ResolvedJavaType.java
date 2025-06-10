@@ -23,6 +23,7 @@
 package jdk.vm.ci.meta;
 
 import java.lang.reflect.AnnotatedElement;
+import java.util.List;
 
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 
@@ -284,24 +285,21 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
     AssumptionResult<ResolvedJavaMethod> findUniqueConcreteMethod(ResolvedJavaMethod method);
 
     /**
-     * Returns the instance fields of this class, including
+     * Returns the non-static fields of this class, including
      * {@linkplain ResolvedJavaField#isInternal() internal} fields. A zero-length array is returned
-     * for array and primitive types. The order of fields returned by this method is stable. That
-     * is, for a single JVM execution the same order is returned each time this method is called. It
-     * is also the "natural" order, which means that the JVM would expect the fields in this order
-     * if no specific order is given.
+     * for array and primitive types. The order of fields declared by a single class returned by
+     * this method is the same as {@link Class#getDeclaredFields}.
      *
-     * @param includeSuperclasses if true, then instance fields for the complete hierarchy of this
-     *            type are included in the result
-     * @return an array of instance fields
+     * @param includeSuperclasses if true, then non-static fields for the complete hierarchy of this
+     *            type are included in the result with superclass fields coming before subclass fields
+     * @return an array of non-static fields
      */
     ResolvedJavaField[] getInstanceFields(boolean includeSuperclasses);
 
     /**
      * Returns the static fields of this class, including {@linkplain ResolvedJavaField#isInternal()
      * internal} fields. A zero-length array is returned for array and primitive types. The order of
-     * fields returned by this method is stable. That is, for a single JVM execution the same order
-     * is returned each time this method is called.
+     * fields returned by this method is the same as {@link Class#getDeclaredFields}.
      */
     ResolvedJavaField[] getStaticFields();
 
@@ -367,6 +365,17 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
     default ResolvedJavaMethod[] getDeclaredMethods(boolean forceLink) {
         throw new UnsupportedOperationException();
     }
+
+    /**
+     * Returns a list containing all methods present within this type. This list can
+     * include methods implicitly created and used by the VM that are not present in
+     * {@link #getDeclaredMethods}. The returned List is unmodifiable; calls to any
+     * mutator method will always cause {@code UnsupportedOperationException} to be
+     * thrown.
+     *
+     * @param forceLink if {@code true}, forces this type to be {@link #link linked}
+     */
+    List<ResolvedJavaMethod> getAllMethods(boolean forceLink);
 
     /**
      * Returns the {@code <clinit>} method for this class if there is one.

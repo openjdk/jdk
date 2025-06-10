@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import org.xml.sax.SAXException;
  * This class manages standard and implementation-specific limitations.
  *
  */
-public final class XMLSecurityManager {
+public final class XMLSecurityManager implements Cloneable {
 
     public static final String DTD_KEY = JdkConstants.DTD_PROPNAME;
 
@@ -232,7 +232,7 @@ public final class XMLSecurityManager {
     /**
      * Values of the properties
      */
-    private final int[] values;
+    private int[] values;
 
     /**
      * States of the settings for each property
@@ -283,29 +283,34 @@ public final class XMLSecurityManager {
                 states[limit.ordinal()] = State.DEFAULT;
             }
         }
-
-        //read system properties or the config file (jaxp.properties by default)
-        readSystemProperties();
-        // prepare the JDK Catalog
-        prepareCatalog();
     }
 
     /**
-     * Flag indicating whether the JDK Catalog has been initialized
+     * Returns a copy of the XMLSecurityManager.
+     * @return a copy of the XMLSecurityManager
      */
-    static volatile boolean jdkcatalogInitialized = false;
-    private final Object lock = new Object();
-
-    private void prepareCatalog() {
-        if (!jdkcatalogInitialized) {
-            synchronized (lock) {
-                if (!jdkcatalogInitialized) {
-                    jdkcatalogInitialized = true;
-                    String resolve = getLimitValueAsString(Limit.JDKCATALOG_RESOLVE);
-                    JdkCatalog.init(resolve);
-                }
-            }
+    public XMLSecurityManager clone() {
+        try {
+            XMLSecurityManager copy = (XMLSecurityManager) super.clone();
+            copy.values = this.values.clone();
+            copy.states = this.states.clone();
+            copy.isSet = this.isSet.clone();
+            return copy;
+        } catch (CloneNotSupportedException e) {
+            // shouldn't happen as this class is Cloneable
+            throw new InternalError(e);
         }
+    }
+
+    /**
+     * Returns a copy of the XMLSecurityManager that is updated with the
+     * current System Properties.
+     * @return a copy of the XMLSecurityManager
+     */
+    public XMLSecurityManager cloneAndUpdate() {
+        XMLSecurityManager copy = clone();
+        copy.readSystemProperties();
+        return copy;
     }
 
     /**
@@ -316,7 +321,8 @@ public final class XMLSecurityManager {
      */
     public CatalogResolver getJDKCatalogResolver() {
         String resolve = getLimitValueAsString(Limit.JDKCATALOG_RESOLVE);
-        return CatalogManager.catalogResolver(JdkCatalog.catalog, toActionType(resolve));
+        return CatalogManager.catalogResolver(
+                JdkXmlConfig.getInstance(false).getJdkCatalog(), toActionType(resolve));
     }
 
     // convert the string value of the RESOLVE property to the corresponding
@@ -361,7 +367,7 @@ public final class XMLSecurityManager {
         for (Limit limit : Limit.values()) {
             if (limit.is(propertyName)) {
                 // current spec: new property name == systemProperty
-                return limit.systemProperty();
+                return (limit.systemProperty != null) ? limit.systemProperty : limit.apiProperty;
             }
         }
         //ENTITYCOUNT's new name is qName

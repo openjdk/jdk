@@ -11,15 +11,7 @@ extern "C" {
 
 #include <stdint.h>
 
-#if !defined(__FreeBSD__) && !defined(__MidnightBSD__) && !defined(AIX)
-#include <endian.h>
-#endif
-
-#if defined(AIX)
-#include <sys/machine.h>
-#define __BIG_ENDIAN      BIG_ENDIAN
-#define __BYTE_ORDER      BIG_ENDIAN
-#endif
+#include <spa/utils/endian.h>
 
 /**
  * \addtogroup spa_param

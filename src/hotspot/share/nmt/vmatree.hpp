@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -96,7 +96,7 @@ private:
   public:
     IntervalState() : type_tag{0,0}, sidx() {}
     IntervalState(const StateType type, const RegionData data) {
-      assert(!(type == StateType::Released) || data.mem_tag == mtNone, "Released type must have memory tag mtNone");
+      assert(!(type == StateType::Released) || data.mem_tag == mtNone, "Released state-type must have memory tag mtNone");
       type_tag[0] = static_cast<uint8_t>(type);
       type_tag[1] = static_cast<uint8_t>(data.mem_tag);
       sidx = data.stack_idx;

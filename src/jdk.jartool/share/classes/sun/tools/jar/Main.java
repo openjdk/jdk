@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,7 +243,6 @@ public class Main {
     /**
      * Starts main program with the specified arguments.
      */
-    @SuppressWarnings({"removal"})
     public synchronized boolean run(String[] args) {
         ok = true;
         if (!parseArgs(args)) {
@@ -448,8 +447,8 @@ public class Main {
     }
 
     private boolean validateJar(File file) throws IOException {
-        try (ZipFile zf = new ZipFile(file)) {
-            return Validator.validate(this, zf);
+        try {
+            return Validator.validate(this, file);
         } catch (IOException e) {
             error(formatMsg("error.validator.jarfile.exception", fname, e.getMessage()));
             return true;
@@ -1364,7 +1363,6 @@ public class Main {
         });
     }
 
-    @SuppressWarnings("serial")
     Set<ZipEntry> newDirSet() {
         return new HashSet<ZipEntry>() {
             public boolean add(ZipEntry e) {

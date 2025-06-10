@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.test.AdditionalLauncher;
 import jdk.jpackage.test.PackageTest;
@@ -47,7 +48,7 @@ import jdk.jpackage.test.TKit;
  * @key jpackagePlatformPackage
  * @requires jpackage.test.SQETest == null
  * @build jdk.jpackage.test.*
- * @compile PerUserCfgTest.java
+ * @compile -Xlint:all -Werror PerUserCfgTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=PerUserCfgTest
  */
@@ -165,6 +166,8 @@ public class PerUserCfgTest {
                 null).getFileName());
         TKit.assertPathExists(targetCfgFile, false);
         try (var dirCleaner = TKit.createDirectories(targetCfgFile.getParent())) {
+            // Suppress "warning: [try] auto-closeable resource dirCleaner is never referenced"
+            Objects.requireNonNull(dirCleaner);
             Files.copy(srcCfgFile, targetCfgFile);
             try {
                 TKit.traceFileContents(targetCfgFile, "cfg file");

@@ -198,10 +198,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Debugging
   void interp_verify_oop(Register reg, TosState state, const char* file, int line);    // only if +VerifyOops && state == atos
 
-  void verify_FPU(int stack_depth, TosState state = ftos) {
-    // No VFP state verification is required for ARM
-  }
-
   // Object locking
   void lock_object  (Register lock_reg);
   void unlock_object(Register lock_reg);

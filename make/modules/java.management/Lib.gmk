@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,22 @@
 # questions.
 #
 
+################################################################################
+
 include LibCommon.gmk
 
 ################################################################################
 ## Build libmanagement
 ################################################################################
 
-LIBMANAGEMENT_OPTIMIZATION := HIGH
-ifeq ($(call isTargetOs, linux)+$(COMPILE_WITH_DEBUG_SYMBOLS), true+true)
-  LIBMANAGEMENT_OPTIMIZATION := LOW
-endif
-
 $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT, \
     NAME := management, \
-    OPTIMIZATION := $(LIBMANAGEMENT_OPTIMIZATION), \
-    DISABLED_WARNINGS_gcc_VMManagementImpl.c := unused-variable, \
-    DISABLED_WARNINGS_clang_VMManagementImpl.c := unused-variable, \
+    OPTIMIZATION := HIGH, \
     JDK_LIBS := java.base:libjava java.base:libjvm, \
     LIBS_aix := -lperfstat, \
     LIBS_windows := advapi32.lib psapi.lib, \
 ))
 
 TARGETS += $(BUILD_LIBMANAGEMENT)
+
+################################################################################

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,6 @@ public class popframes002 extends JDIBase {
 
     //====================================================== test program
 
-    BreakpointRequest bpRequest;
     BreakpointRequest breakpointRequest2;
     BreakpointRequest breakpointRequest3;
 
@@ -259,16 +258,7 @@ public class popframes002 extends JDIBase {
             return;
         }
 
-
-        String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
-
-        log2("......setting BreakpointRequest (bpRequest) in main thread");
-        bpRequest = settingBreakpoint(debuggee.threadByNameOrThrow("main"),
-                                          debuggeeClass,
-                                          bPointMethod, lineForComm, "zero");
-        log2("bpRequest.enable();");
-        bpRequest.enable();
+        setupBreakpointForCommunication(debuggeeClass);
 
     //------------------------------------------------------  testing section
 
@@ -280,10 +270,10 @@ public class popframes002 extends JDIBase {
             breakpointForCommunication();
 
             String thread2Name         = "thread2";
-            ThreadReference thread2Ref = debuggee.threadByNameOrThrow(thread2Name);
+            ThreadReference thread2Ref = debuggee.threadByFieldNameOrThrow(debuggeeClass, thread2Name);
 
             String thread3Name         = "thread3";
-            ThreadReference thread3Ref = debuggee.threadByNameOrThrow(thread3Name);
+            ThreadReference thread3Ref = debuggee.threadByFieldNameOrThrow(debuggeeClass, thread3Name);
 
             String poppedMethod    = "poppedMethod";
             String breakpointLine  = "breakpointLine";

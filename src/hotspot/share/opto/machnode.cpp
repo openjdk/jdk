@@ -46,6 +46,7 @@ intptr_t  MachOper::constant() const { return 0x00; }
 relocInfo::relocType MachOper::constant_reloc() const { return relocInfo::none; }
 jdouble MachOper::constantD() const { ShouldNotReachHere(); }
 jfloat  MachOper::constantF() const { ShouldNotReachHere(); }
+jshort  MachOper::constantH() const { ShouldNotReachHere(); }
 jlong   MachOper::constantL() const { ShouldNotReachHere(); }
 TypeOopPtr *MachOper::oop() const { return nullptr; }
 int MachOper::ccode() const { return 0x00; }

@@ -206,7 +206,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   }
 
   // Finally, we can register the new region [A, B)'s summary data.
-  SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(metadata.mem_tag)];
+  SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(stA.out.mem_tag())];
   if (state == StateType::Reserved) {
     rescom.reserve += B - A;
   } else if (state == StateType::Committed) {

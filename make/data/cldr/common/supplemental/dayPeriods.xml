@@ -7,6 +7,7 @@
  -->
 <supplementalData>
 	<version number="$Revision$"/>
+	<!-- Remember to make parallel changes both dayPeriodRuleSets! -->
 	<dayPeriodRuleSet>
 		<dayPeriodRules locales="root">
 			<dayPeriodRule type="am" from="00:00" before="12:00"/>	<!-- AM -->
@@ -15,10 +16,10 @@
 		<dayPeriodRules locales="en">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- midnight -->
 			<dayPeriodRule type="noon" at="12:00"/>	<!-- noon -->
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- morning -->
+			<dayPeriodRule type="morning1" from="00:00" before="12:00"/>	<!-- morning -->
 			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- afternoon -->
 			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- evening -->
-			<dayPeriodRule type="night1" from="21:00" before="06:00"/>	<!-- night -->
+			<dayPeriodRule type="night1" from="21:00" before="24:00"/>	<!-- night -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="af">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- middernag -->
@@ -693,10 +694,10 @@
 			<dayPeriodRule type="pm" from="12:00" before="24:00"/>	<!-- PM -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="en">
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- morning -->
+			<dayPeriodRule type="morning1" from="00:00" before="12:00"/>	<!-- morning -->
 			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- afternoon -->
 			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- evening -->
-			<dayPeriodRule type="night1" from="21:00" before="06:00"/>	<!-- night -->
+			<dayPeriodRule type="night1" from="21:00" before="24:00"/>	<!-- night -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="af">
 			<dayPeriodRule type="morning1" from="05:00" before="12:00"/>	<!-- oggend -->

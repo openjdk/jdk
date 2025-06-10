@@ -73,6 +73,7 @@ public final class XClipboard extends SunClipboard implements OwnershipListener
      * NOTE: This method may be called by privileged threads.
      *       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
      */
+    @Override
     public void ownershipChanged(final boolean isOwner) {
         if (isOwner) {
             checkChangeHere(contents);
@@ -81,6 +82,7 @@ public final class XClipboard extends SunClipboard implements OwnershipListener
         }
     }
 
+    @Override
     protected synchronized void setContentsNative(Transferable contents) {
         SortedMap<Long,DataFlavor> formatMap =
             DataTransferer.getInstance().getFormatsForTransferable
@@ -94,6 +96,7 @@ public final class XClipboard extends SunClipboard implements OwnershipListener
         }
     }
 
+    @Override
     public long getID() {
         return selection.getSelectionAtom().getAtom();
     }
@@ -107,15 +110,18 @@ public final class XClipboard extends SunClipboard implements OwnershipListener
     }
 
     /* Caller is synchronized on this. */
+    @Override
     protected void clearNativeContext() {
         selection.reset();
     }
 
 
+    @Override
     protected long[] getClipboardFormats() {
         return selection.getTargets(XToolkit.getCurrentServerTime());
     }
 
+    @Override
     protected byte[] getClipboardData(long format) throws IOException {
         return selection.getData(format, XToolkit.getCurrentServerTime());
     }
@@ -148,6 +154,7 @@ public final class XClipboard extends SunClipboard implements OwnershipListener
         return targetsPropertyAtom;
     }
 
+    @Override
     protected void registerClipboardViewerChecked() {
         // for XConvertSelection() to be called for the first time in getTargetsDelayed()
         isSelectionNotifyProcessed = true;
@@ -174,7 +181,8 @@ public final class XClipboard extends SunClipboard implements OwnershipListener
         }
     }
 
-    private static class CheckChangeTimerTask implements Runnable {
+    private static final class CheckChangeTimerTask implements Runnable {
+        @Override
         public void run() {
             for (XClipboard clpbrd : targetsAtom2Clipboard.values()) {
                 clpbrd.getTargetsDelayed();
@@ -188,7 +196,8 @@ public final class XClipboard extends SunClipboard implements OwnershipListener
         }
     }
 
-    private static class SelectionNotifyHandler implements XEventDispatcher {
+    private static final class SelectionNotifyHandler implements XEventDispatcher {
+        @Override
         public void dispatchEvent(XEvent ev) {
             if (ev.get_type() == XConstants.SelectionNotify) {
                 final XSelectionEvent xse = ev.get_xselection();
@@ -209,6 +218,7 @@ public final class XClipboard extends SunClipboard implements OwnershipListener
         }
     }
 
+    @Override
     protected void unregisterClipboardViewerChecked() {
         isSelectionNotifyProcessed = false;
         synchronized (XClipboard.classLock) {

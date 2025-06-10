@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,12 @@
 # questions.
 #
 
+include MakeFileStart.gmk
+
+################################################################################
 # This makefile creates an image of the optional static versions of certain JDK
 # libraries.
-
-default: all
-
-include $(SPEC)
-include MakeBase.gmk
+################################################################################
 
 include CopyFiles.gmk
 include Modules.gmk
@@ -37,8 +36,6 @@ include Modules.gmk
 ALL_MODULES = $(call FindAllModules)
 
 ################################################################################
-
-TARGETS :=
 
 ifneq ($(filter static-libs-image, $(MAKECMDGOALS)), )
   IMAGE_DEST_DIR = $(STATIC_LIBS_IMAGE_DIR)/lib
@@ -72,11 +69,9 @@ ifneq ($(filter static-libs-image, $(MAKECMDGOALS)), )
   )
 endif
 
-################################################################################
-
 static-libs-image: $(HOTSPOT_VARIANT_STATIC_LIBS_TARGETS) $(STATIC_LIBS_TARGETS)
 static-libs-graal-image: $(STATIC_LIBS_TARGETS)
 
-all: $(TARGETS)
+################################################################################
 
-.PHONY: all
+include MakeFileEnd.gmk

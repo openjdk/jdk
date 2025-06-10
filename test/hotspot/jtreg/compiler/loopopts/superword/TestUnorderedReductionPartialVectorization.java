@@ -39,10 +39,10 @@ public class TestUnorderedReductionPartialVectorization {
     static final int ITER  = 10;
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:-AlignVector");
-        TestFramework.runWithFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector");
-        TestFramework.runWithFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:-AlignVector");
-        TestFramework.runWithFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:+AlignVector");
+        TestFramework.runWithFlags("-XX:-UseCompactObjectHeaders", "-XX:-AlignVector");
+        TestFramework.runWithFlags("-XX:-UseCompactObjectHeaders", "-XX:+AlignVector");
+        TestFramework.runWithFlags("-XX:+UseCompactObjectHeaders", "-XX:-AlignVector");
+        TestFramework.runWithFlags("-XX:+UseCompactObjectHeaders", "-XX:+AlignVector");
     }
 
     @Run(test = {"test1"})
@@ -66,7 +66,7 @@ public class TestUnorderedReductionPartialVectorization {
                   IRNode.OR_REDUCTION_V,                                                 "> 0",},
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"avx2", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
     static long test1(int[] data, long sum) {
         for (int i = 0; i < data.length; i+=2) {
             // Mixing int and long ops means we only end up allowing half of the int

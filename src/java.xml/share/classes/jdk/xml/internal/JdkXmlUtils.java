@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,47 @@ public class JdkXmlUtils {
      */
     private static class DefaultSAXFactory {
         private static final SAXParserFactory instance = getSAXFactory(false);
+    }
+
+    /**
+     * Sets the property if it's managed by either XMLSecurityManager or XMLSecurityPropertyManager.
+     * @param xsm the XMLSecurityManager
+     * @param xspm the XMLSecurityPropertyManager
+     * @param property the property
+     * @param value the value
+     * @return true if the property is managed by either XMLSecurityManager or
+     * XMLSecurityPropertyManager, false otherwise
+     */
+    public static boolean setProperty(XMLSecurityManager xsm, XMLSecurityPropertyManager xspm,
+            String property, Object value) {
+        if (xsm != null && xsm.find(property) != null) {
+            return xsm.setLimit(property, JdkProperty.State.APIPROPERTY, value);
+
+        } else if (xspm != null && xspm.find(property) != null) {
+            return xspm.setValue(property, FeaturePropertyBase.State.APIPROPERTY, value);
+        }
+        return false;
+    }
+
+    /**
+     * Returns the value of the property if it's managed by either XMLSecurityManager
+     * or XMLSecurityPropertyManager.
+     * @param xsm the XMLSecurityManager
+     * @param xspm the XMLSecurityPropertyManager
+     * @param property the property
+     * @return the value of the property if it's managed by either XMLSecurityManager
+     * or XMLSecurityPropertyManager, null otherwise
+     */
+    public static String getProperty(XMLSecurityManager xsm, XMLSecurityPropertyManager xspm,
+            String property) {
+        String value = null;
+        if (xsm != null && (value = xsm.getLimitAsString(property)) != null) {
+            return value;
+        }
+        if (xspm != null) {
+            value = xspm.getValue(property);
+        }
+        return value;
     }
 
     /**
