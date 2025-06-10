@@ -1297,6 +1297,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
      * <p>
+     * If the {@linkplain #byteSize()} of this segment is not evenly dividable by the
+     * number of octets used by provided {@code charset}, the reminding bytes of this
+     * segment is not accessed. For multi-octet charset, nulls are only detected on
+     * multi-octet-aligned boundaries.
+     * <p>
      * Getting a string from a segment with a known byte offset and
      * known byte length can be done like so:
      * {@snippet lang=java :
