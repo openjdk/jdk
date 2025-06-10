@@ -36,6 +36,8 @@
 #include "opto/machnode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
+
+#include "graphInvariants.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/rootnode.hpp"
 #include "utilities/macros.hpp"
@@ -804,6 +806,7 @@ PhaseIterGVN::PhaseIterGVN(PhaseIterGVN* igvn) : _delay_transform(igvn->_delay_t
 {
   _iterGVN = true;
   assert(&_worklist == &igvn->_worklist, "sanity");
+  NOT_PRODUCT(_invariant_checker = GraphInvariantChecker::make_default());
 }
 
 //------------------------------PhaseIterGVN-----------------------------------
@@ -840,6 +843,8 @@ PhaseIterGVN::PhaseIterGVN(PhaseGVN* gvn) : _delay_transform(false),
         n->is_Mem() )
       add_users_to_worklist(n);
   }
+
+  NOT_PRODUCT(_invariant_checker = GraphInvariantChecker::make_default());
 }
 
 void PhaseIterGVN::shuffle_worklist() {
@@ -987,6 +992,9 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
 
   verify_optimize();
 #endif
+  if (VerifyIdealStructuralInvariant) {
+    assert(_invariant_checker->run(C), "Ideal graph doesn't verify structural invariants.");
+  }
 }
 #endif /* PRODUCT */
 
