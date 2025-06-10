@@ -183,9 +183,9 @@ class Test_ge_2 {
     public static int test_float_BoolTest_ge(float x, float y) {
         // return 1
         //      when either x or y is NaN
-        //      when neither is NaN, and x > y
+        //      when neither is NaN, and x < y
         // return 0
-        //      when neither is NaN, and x <= y
+        //      when neither is NaN, and x >= y
         return !(x >= y) ? 1 : 0;
     }
 
@@ -194,9 +194,9 @@ class Test_ge_2 {
     public static int test_double_BoolTest_ge(double x, double y) {
         // return 1
         //      when either x or y is NaN
-        //      when neither is NaN, and x > y
+        //      when neither is NaN, and x < y
         // return 0
-        //      when neither is NaN, and x <= y
+        //      when neither is NaN, and x >= y
         return !(x >= y) ? 1 : 0;
     }
 
@@ -305,9 +305,9 @@ class Test_gt_2 {
     public static int test_float_BoolTest_gt(float x, float y) {
         // return 1
         //      when either x or y is NaN
-        //      when neither is NaN, and x >= y
+        //      when neither is NaN, and x <= y
         // return 0
-        //      when neither is NaN, and x < y
+        //      when neither is NaN, and x > y
         return !(x > y) ? 1 : 0;
     }
 
@@ -316,9 +316,9 @@ class Test_gt_2 {
     public static int test_double_BoolTest_gt(double x, double y) {
         // return 1
         //      when either x or y is NaN
-        //      when neither is NaN, and x >= y
+        //      when neither is NaN, and x <= y
         // return 0
-        //      when neither is NaN, and x < y
+        //      when neither is NaN, and x > y
         return !(x > y) ? 1 : 0;
     }
 
