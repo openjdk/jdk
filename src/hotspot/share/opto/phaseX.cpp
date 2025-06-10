@@ -1084,10 +1084,10 @@ void PhaseIterGVN::verify_optimize() {
     worklist.push(C->root());
     for (uint j = 0; j < worklist.size(); ++j) {
       Node* n = worklist.at(j);
-      if (is_verify_Value())    { failure |= verify_node_Value(n); }
-      if (is_verify_Ideal())    { failure |= verify_node_Ideal(n, false); }
-      if (is_verify_Ideal())    { failure |= verify_node_Ideal(n, true); }
-      if (is_verify_Identity()) { failure |= verify_node_Identity(n); }
+      if (is_verify_Value())    { failure |= verify_Value_for(n); }
+      if (is_verify_Ideal())    { failure |= verify_Ideal_for(n, false); }
+      if (is_verify_Ideal())    { failure |= verify_Ideal_for(n, true); }
+      if (is_verify_Identity()) { failure |= verify_Identity_for(n); }
       // traverse all inputs and outputs
       for (uint i = 0; i < n->req(); i++) {
         if (n->in(i) != nullptr) {
@@ -1131,7 +1131,7 @@ void PhaseIterGVN::verify_empty_worklist(Node* node) {
 // (1) Integer "widen" changes, but the range is the same.
 // (2) LoadNode performs deep traversals. Load is not notified for changes far away.
 // (3) CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
-bool PhaseIterGVN::verify_node_Value(Node* n) {
+bool PhaseIterGVN::verify_Value_for(Node* n) {
   // If we assert inside type(n), because the type is still a null, then maybe
   // the node never went through gvn.transform, which would be a bug.
   const Type* told = type(n);
@@ -1193,7 +1193,7 @@ bool PhaseIterGVN::verify_node_Value(Node* n) {
 // Check that all Ideal optimizations that could be done were done.
 // Returns true if it found missed optimization opportunities and
 //         false otherwise (no missed optimization, or skipped verification).
-bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
+bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
   // First, we check a list of exceptions, where we skip verification,
   // because there are known cases where Ideal can optimize after IGVN.
   // Some may be expected and cannot be fixed, and others should be fixed.
@@ -1841,7 +1841,7 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
 // Check that all Identity optimizations that could be done were done.
 // Returns true if it found missed optimization opportunities and
 //         false otherwise (no missed optimization, or skipped verification).
-bool PhaseIterGVN::verify_node_Identity(Node* n) {
+bool PhaseIterGVN::verify_Identity_for(Node* n) {
   // First, we check a list of exceptions, where we skip verification,
   // because there are known cases where Ideal can optimize after IGVN.
   // Some may be expected and cannot be fixed, and others should be fixed.
@@ -2758,12 +2758,12 @@ void PhaseCCP::analyze() {
 
 #ifdef ASSERT
 // For every node n on verify list, check if type(n) == n->Value()
-// We have a list of exceptions, see comments in verify_node_Value.
+// We have a list of exceptions, see comments in verify_Value_for.
 void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
   bool failure = false;
   while (worklist_verify.size()) {
     Node* n = worklist_verify.pop();
-    failure |= verify_node_Value(n);
+    failure |= verify_Value_for(n);
   }
   // If we get this assert, check why the reported nodes were not processed again in CCP.
   // We should either make sure that these nodes are properly added back to the CCP worklist
