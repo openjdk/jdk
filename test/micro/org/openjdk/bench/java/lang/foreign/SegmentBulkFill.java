@@ -25,7 +25,7 @@
 package org.openjdk.bench.java.lang.foreign;
 
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.misc.ScopedMemoryAccess;
+import jdk.internal.misc.Unsafe;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -53,7 +53,7 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3, jvmArgs = {"--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED", "--add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED"})
 public class SegmentBulkFill {
 
-    private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     @Param({"2", "3", "4", "5", "6", "7", "8", "12", "24", "64", "512",
             "4096", "32768", "262144", "2097152", "16777216", "134217728"})
@@ -101,7 +101,7 @@ public class SegmentBulkFill {
 
     @Benchmark
     public void heapSegmentFillUnsafe() {
-        SCOPED_MEMORY_ACCESS.setMemory(heapSegment.sessionImpl(), heapSegment.unsafeGetBase(), heapSegment.unsafeGetOffset(), heapSegment.byteSize(), (byte) 0);
+        UNSAFE.setMemory(heapSegment.heapBase().orElseThrow(), 0L, heapSegment.byteSize(), (byte) 0);
     }
 
     @Benchmark
@@ -119,7 +119,7 @@ public class SegmentBulkFill {
 
     @Benchmark
     public void nativeSegmentFillUnsafe() {
-        SCOPED_MEMORY_ACCESS.setMemory(nativeSegment.sessionImpl(), nativeSegment.unsafeGetBase(), nativeSegment.unsafeGetOffset(), nativeSegment.byteSize(), (byte) 0);
+        UNSAFE.setMemory(nativeSegment.address(), heapSegment.byteSize(), (byte) 0);
     }
 
     @Benchmark
@@ -137,7 +137,7 @@ public class SegmentBulkFill {
 
     @Benchmark
     public void unalignedSegmentFillUnsafe() {
-        SCOPED_MEMORY_ACCESS.setMemory(unalignedSegment.sessionImpl(), unalignedSegment.unsafeGetBase(), unalignedSegment.unsafeGetOffset(), unalignedSegment.byteSize(), (byte) 0);
+        UNSAFE.setMemory(unalignedSegment.address(), heapSegment.byteSize(), (byte) 0);
     }
 
     @Benchmark
