@@ -523,7 +523,7 @@ constexpr FloatRegister F11_ARG11  = F11; // volatile
 constexpr FloatRegister F12_ARG12  = F12; // volatile
 constexpr FloatRegister F13_ARG13  = F13; // volatile
 
-// Register declarations to be used in frame manager assembly code.
+// Register declarations to be used in template interpreter assembly code.
 // Use only non-volatile registers in order to keep values across C-calls.
 constexpr Register R14_bcp       = R14;
 constexpr Register R15_esp       = R15;      // slot below top of expression stack for ld/st with update
@@ -533,7 +533,7 @@ constexpr Register R17_tos       = R17;      // The interpreter's top of (expres
 constexpr Register R18_locals    = R18;      // address of first param slot (receiver).
 constexpr Register R19_method    = R19;      // address of current method
 
-// Temporary registers to be used within frame manager. We can use
+// Temporary registers to be used within template interpreter. We can use
 // the non-volatiles because the call stub has saved them.
 // Use only non-volatile registers in order to keep values across C-calls.
 constexpr Register R21_tmp1 = R21;

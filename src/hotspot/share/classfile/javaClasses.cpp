@@ -1872,7 +1872,7 @@ ByteSize java_lang_Thread::thread_id_offset() {
 }
 
 oop java_lang_Thread::park_blocker(oop java_thread) {
-  return java_thread->obj_field(_park_blocker_offset);
+  return java_thread->obj_field_access<MO_RELAXED>(_park_blocker_offset);
 }
 
 oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
