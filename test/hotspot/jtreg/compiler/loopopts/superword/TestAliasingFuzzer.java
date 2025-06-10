@@ -60,19 +60,25 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
 public class TestAliasingFuzzer {
     private static final Random RANDOM = Utils.getRandomInstance();
 
-    public record MyType(String name, int byteSize) {
+    public record MyType(String name, int byteSize, String con1, String con2) {
         @Override
         public String toString() { return name(); }
 
         public String letter() { return name().substring(0, 1).toUpperCase(); }
     }
-    public static final MyType myByte   = new MyType("byte", 1);
-    public static final MyType myChar   = new MyType("char", 2);
-    public static final MyType myShort  = new MyType("short", 2);
-    public static final MyType myInt    = new MyType("int", 4);
-    public static final MyType myLong   = new MyType("long", 8);
-    public static final MyType myFloat  = new MyType("float", 4);
-    public static final MyType myDouble = new MyType("double", 8);
+    public static final String con1 = "0x0102030405060708L";
+    public static final String con2 = "0x0910111213141516L";
+    public static final String con1F = "Float.intBitsToFloat(0x01020304)";
+    public static final String con2F = "Float.intBitsToFloat(0x09101112)";
+    public static final String con1D = "Double.longBitsToDouble(" + con1 + ")";
+    public static final String con2D = "Double.longBitsToDouble(" + con2 + ")";
+    public static final MyType myByte   = new MyType("byte",   1, con1, con2);
+    public static final MyType myChar   = new MyType("char",   2, con1, con2);
+    public static final MyType myShort  = new MyType("short",  2, con1, con2);
+    public static final MyType myInt    = new MyType("int",    4, con1, con2);
+    public static final MyType myLong   = new MyType("long",   8, con1, con2);
+    public static final MyType myFloat  = new MyType("float",  4, con1F, con2F);
+    public static final MyType myDouble = new MyType("double", 8, con1D, con2D);
     public static final List<MyType> allTypes
         = List.of(myByte, myChar, myShort, myInt, myLong, myFloat, myDouble);
 
@@ -83,6 +89,11 @@ public class TestAliasingFuzzer {
         CONTAINER_SAME_ALIASING_UNKNOWN,
         CONTAINER_UNKNOWN_ALIASING_NEVER,
         CONTAINER_UNKNOWN_ALIASING_UNKNOWN,
+    }
+
+    enum AccessScenario {
+        COPY_LOAD_STORE,  // a[i1] = b[i2];
+        FILL_STORE_STORE, // a[i1] = x; b[i2] = y;
     }
 
     public static void main(String[] args) {
@@ -116,7 +127,9 @@ public class TestAliasingFuzzer {
         testTemplateTokens.add(generateIntIndexForm());
 
         for (Aliasing aliasing : Aliasing.values()) {
-            testTemplateTokens.addAll(allTypes.stream().map(t -> generateArray(t, aliasing)).toList());
+            for (AccessScenario accessScenario : AccessScenario.values()) {
+                testTemplateTokens.addAll(allTypes.stream().map(t -> generateArray(t, aliasing, accessScenario)).toList());
+            }
         }
 
         // TODO:
@@ -190,7 +203,7 @@ public class TestAliasingFuzzer {
     //
     public static record IntIndexForm(int con, int ivScale, int invar0Scale, int[] invarRestScales) {
         public static IntIndexForm random(int numInvarRest) {
-            int con = RANDOM.nextInt(-1000, 1000);
+            int con = RANDOM.nextInt(-100_000, 100_000);
             int ivScale = randomScale();
             int invar0Scale = randomScale();
             int[] invarRestScales = new int[numInvarRest];
@@ -338,7 +351,7 @@ public class TestAliasingFuzzer {
         return template.asToken();
     }
 
-    public static TemplateToken generateArray(MyType type, Aliasing aliasing) {
+    public static TemplateToken generateArray(MyType type, Aliasing aliasing, AccessScenario accessScenario) {
         // size must be large enough for:
         //   - scale = 4
         //   - range with size / 4
@@ -394,7 +407,86 @@ public class TestAliasingFuzzer {
             }
         ));
 
-        var template = Template.make(() -> {
+        var irRuleTemplate = Template.make(() -> body(
+            // TODO: better IR rules, with flags?
+            let("T", type.letter()),
+            switch (accessScenario) {
+                case COPY_LOAD_STORE ->
+                    // Currently, we do not allow strided access or shuffle.
+                    (form_a.ivScale() == form_b.ivScale() && Math.abs(form_a.ivScale()) == 1)
+                    ?   """
+                        // Good ivScales, vectorization expected.
+                        @IR(counts = {IRNode.LOAD_VECTOR_#T, "> 0",
+                                      IRNode.STORE_VECTOR,   "> 0"},
+                            applyIfPlatform = {"64-bit", "true"},
+                            applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+                        """
+                    :   """
+                        // Bad ivScales, no vectorization expected.
+                        @IR(counts = {IRNode.LOAD_VECTOR_#T, "= 0",
+                                      IRNode.STORE_VECTOR,   "= 0"},
+                            applyIfPlatform = {"64-bit", "true"},
+                            applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+                        """;
+                case FILL_STORE_STORE ->
+                    // Currently, we do not allow strided access.
+                    // We vectorize any contiguous pattern. Possibly only one is vectorized.
+                    (Math.abs(form_a.ivScale()) == 1 || Math.abs(form_b.ivScale()) == 1)
+                    ?  ((form_a.ivScale() == form_b.ivScale() && Math.abs(form_a.ivScale()) == 1)
+                        ?   """
+                            // Good ivScales, vectorization expected.
+                            @IR(counts = {IRNode.LOAD_VECTOR_#T, "= 0",
+                                          IRNode.STORE_VECTOR,   "> 0"},
+                                applyIfPlatform = {"64-bit", "true"},
+                                applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+                            """
+                        :   """
+                            // Currently does not vectorize, but might in the future.
+                            // The issue currently is that the limit is not pre-loop
+                            // independent, and so we cannot add a dynamic aliasing check.
+                            @IR(counts = {IRNode.LOAD_VECTOR_#T, "= 0",
+                                          IRNode.STORE_VECTOR,   "= 0"},
+                                applyIfPlatform = {"64-bit", "true"},
+                                applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+                            """
+                        )
+                    :   """
+                        // Bad ivScales, no vectorization expected.
+                        @IR(counts = {IRNode.LOAD_VECTOR_#T, "= 0",
+                                      IRNode.STORE_VECTOR,   "= 0"},
+                            applyIfPlatform = {"64-bit", "true"},
+                            applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+                        """;
+            }
+        ));
+
+        // We will generate the method twice: once as "$test" (compiled) and once as "$reference" (interpreter)
+        var testMethodTemplate = Template.make("methodName", "invarRest", (String methodName, String[] invarRest) -> body(
+            let("size", size),
+            let("type", type),
+            let("con1", type.con1()),
+            let("con2", type.con2()),
+            """
+            public static Object #methodName(#type[] a, #type[] b, int ivLo, int ivHi, int invar0_A, int invar0_B) {
+            """,
+            (forwardLoop
+            ?   "for (int i = ivLo; i < ivHi; i++) {\n"
+            :   "for (int i = ivHi-1; i >= ivLo; i--) {\n"),
+            switch (accessScenario) {
+                case COPY_LOAD_STORE ->
+                    List.of("a[", form_a.index("invar0_A", invarRest), "] = b[", form_b.index("invar0_B", invarRest), "];\n");
+                case FILL_STORE_STORE ->
+                    List.of("a[", form_a.index("invar0_A", invarRest), "] = (#type)#con1;\n",
+                            "b[", form_b.index("invar0_B", invarRest), "] = (#type)#con2;\n");
+            },
+            """
+                }
+                return new Object[] {a, b};
+            }
+            """
+        ));
+
+        var testTemplate = Template.make(() -> {
             String[] invarRest = new String[numInvarRest];
             for (int i = 0; i < invarRest.length; i++) {
                 invarRest[i] = $("invar" + (i+1));
@@ -402,7 +494,6 @@ public class TestAliasingFuzzer {
             return body(
                 let("size", size),
                 let("type", type),
-                let("T", type.letter()),
                 let("aliasing", aliasing),
                 let("form_a", form_a.generate()),
                 let("form_b", form_b.generate()),
@@ -494,53 +585,20 @@ public class TestAliasingFuzzer {
                     Verify.checkEQ(result, expected);
                 }
 
-                // TODO: inverted loop, other load/store patterns, better IR rules, eg with flags!
                 @Test
                 """,
-                // Currently, we do not allow strided access or shuffle.
-                ((form_a.ivScale() == form_b.ivScale() && Math.abs(form_a.ivScale()) == 1)
-                ?   """
-                    // Good ivScales, vectorization expected.
-                    @IR(counts = {IRNode.LOAD_VECTOR_#T, "> 0",
-                                  IRNode.STORE_VECTOR,   "> 0"},
-                        applyIfPlatform = {"64-bit", "true"},
-                        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-                    """
-                :   """
-                    // Bad ivScales, no vectorization expected.
-                    @IR(counts = {IRNode.LOAD_VECTOR_#T, "= 0",
-                                  IRNode.STORE_VECTOR,   "= 0"},
-                        applyIfPlatform = {"64-bit", "true"},
-                        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-                    """),
+                irRuleTemplate.asToken(),
+                testMethodTemplate.asToken($("test"), invarRest),
                 """
-                public static Object $test(#type[] a, #type[] b, int ivLo, int ivHi, int invar0_A, int invar0_B) {
-                """,
-                (forwardLoop
-                ?   "for (int i = ivLo; i < ivHi; i++) {\n"
-                :   "for (int i = ivHi-1; i >= ivLo; i--) {\n"),
-                "a[", form_a.index("invar0_A", invarRest), "] = b[", form_b.index("invar0_B", invarRest), "];\n",
-                """
-                    }
-                    return new Object[] {a, b};
-                }
 
                 @DontCompile
-                public static Object $reference(#type[] a, #type[] b, int ivLo, int ivHi, int invar0_A, int invar0_B) {
                 """,
-                (forwardLoop
-                ?   "for (int i = ivLo; i < ivHi; i++) {\n"
-                :   "for (int i = ivHi-1; i >= ivLo; i--) {\n"),
-                "a[", form_a.index("invar0_A", invarRest), "] = b[", form_b.index("invar0_B", invarRest), "];\n",
+                testMethodTemplate.asToken($("reference"), invarRest),
                 """
-                    }
-                    return new Object[] {a, b};
-                }
                 // --- $test end   ---
                 """
           );
         });
-        return template.asToken();
-
+        return testTemplate.asToken();
     }
 }
