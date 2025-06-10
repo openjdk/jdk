@@ -169,7 +169,7 @@ final class DigitList implements Cloneable {
         if (count == 0) {
             return 0.0;
         }
-        return FloatingDecimal.parseDoubleDigits(decimalAt, digits, count);
+        return FloatingDecimal.parseDoubleSignlessDigits(decimalAt, digits, count);
     }
 
     /**

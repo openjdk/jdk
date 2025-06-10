@@ -22,10 +22,8 @@
  */
 package org.openjdk.bench.java.text;
 
-import java.text.NumberFormat;
 import java.text.DecimalFormat;
 import java.text.ParseException;
-import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -66,7 +64,7 @@ public class DecimalFormatParseBench {
         };
     }
 
-    private NumberFormat dnf = new DecimalFormat();
+    private DecimalFormat dnf = new DecimalFormat();
 
     @Benchmark
     @OperationsPerInvocation(13)

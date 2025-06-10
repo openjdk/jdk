@@ -131,8 +131,8 @@ public class FloatingDecimal{
      * @param length Number of digits to use
      * @return The double-precision value of the conversion
      */
-    public static double parseDoubleDigits(int decExp, char[] digits, int length) throws NumberFormatException {
-        return readDoubleDigits(decExp, digits, length).doubleValue();
+    public static double parseDoubleSignlessDigits(int decExp, char[] digits, int length) {
+        return readDoubleSignlessDigits(decExp, digits, length).doubleValue();
     }
 
     /**
@@ -1837,7 +1837,7 @@ public class FloatingDecimal{
         return buf;
     }
 
-    static ASCIIToBinaryConverter readDoubleDigits(int decExp, char[] digits, int length) {
+    static ASCIIToBinaryConverter readDoubleSignlessDigits(int decExp, char[] digits, int length) {
         if (decExp < MIN_DECIMAL_EXPONENT) {
             return buildZero(BINARY_64_IX, 1);
         }
