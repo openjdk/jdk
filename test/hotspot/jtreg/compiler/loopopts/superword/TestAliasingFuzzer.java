@@ -263,15 +263,19 @@ public class TestAliasingFuzzer {
                         // It follows:
                         //   invar0 * invar0Scale >= range.lo - con - iv.lo * ivScale + err
                         int rhs = range.lo() - con - ivLo * ivScale + err();
-                        if (invar0Scale > 0) {
+                        int invar0 = (invar0Scale > 0)
+                        ?
                             // invar0 * invar0Scale >=  range.lo - con - iv.lo * ivScale + err
                             // invar0               >= (range.lo - con - iv.lo * ivScale + err) / invar0Scale
-                            return (rhs + invar0Scale - 1) / invar0Scale; // round up division
-                        } else {
+                            Math.floorDiv(rhs + invar0Scale - 1, invar0Scale) // round up division
+                        :
                             // invar0 * invar0Scale >=  range.lo - con - iv.lo * ivScale + err
                             // invar0               <= (range.lo - con - iv.lo * ivScale + err) / invar0Scale
-                            return rhs / invar0Scale; // round down division
+                            Math.floorDiv(rhs, invar0Scale); // round down division
+                        if (range.lo() > con + ivLo * ivScale + invar0 * invar0Scale - err()) {
+                            throw new RuntimeException("sanity check failed (1)");
                         }
+                        return invar0;
                     } else {
                         // index(iv) is largest for iv = ivLo, so we must satisfy:
                         //   range.hi > con + iv.lo * ivScale + invar0 * invar0Scale + invarRest
@@ -280,15 +284,20 @@ public class TestAliasingFuzzer {
                         //   invar0 * invar0Scale <  range.hi - con - iv.lo * ivScale - err
                         //   invar0 * invar0Scale <= range.hi - con - iv.lo * ivScale - err - 1
                         int rhs = range.hi() - con - ivLo * ivScale - err() - 1;
-                        if (invar0Scale > 0) {
+                        int invar0 = (invar0Scale > 0)
+                        ?
                             // invar0 * invar0Scale <=  range.hi - con - iv.lo * ivScale - err - 1
                             // invar0               <= (range.hi - con - iv.lo * ivScale - err - 1) / invar0Scale
-                            return rhs / invar0Scale; // round down division
-                        } else {
+                            Math.floorDiv(rhs, invar0Scale) // round down division
+                        :
                             // invar0 * invar0Scale <=  range.hi - con - iv.lo * ivScale - err - 1
                             // invar0               >= (range.hi - con - iv.lo * ivScale - err - 1) / invar0Scale
-                            return (rhs + invar0Scale + 1) / invar0Scale; // round up division
+                            Math.floorDiv(rhs + invar0Scale + 1, invar0Scale); // round up division
+                        if (range.hi() <= con + ivLo * ivScale + invar0 * invar0Scale + err()) {
+                            throw new RuntimeException("sanity check failed (2)");
                         }
+                        return invar0;
+
                     }
                 }
 
@@ -302,7 +311,11 @@ public class TestAliasingFuzzer {
                         //   iv.hi * ivScale <=  range.hi - con - invar0 * invar0Scale - err - 1
                         //   iv.hi           <= (range.hi - con - invar0 * invar0Scale - err - 1) / ivScale
                         int rhs = range.hi() - con - invar0 * invar0Scale - err() - 1;
-                        return rhs / ivScale; // round down division
+                        int ivHi = Math.floorDiv(rhs, ivScale); // round down division
+                        if (range.hi() <= con + ivHi * ivScale + invar0 * invar0Scale + err()) {
+                            throw new RuntimeException("sanity check failed (3)");
+                        }
+                        return ivHi;
                     } else {
                         // index(iv) is smallest for iv = ivHi, so we must satisfy:
                         //   range.lo <= con + iv.hi * ivScale + invar0 * invar0Scale + invarRest
@@ -311,7 +324,12 @@ public class TestAliasingFuzzer {
                         //   iv.hi * ivScale >=  range.lo - con - invar0 * invar0Scale + err
                         //   iv.hi           <= (range.lo - con - invar0 * invar0Scale + err) / ivScale
                         int rhs = range.lo() - con - invar0 * invar0Scale + err();
-                        return rhs / ivScale; // round down division
+                        int ivHi = Math.floorDiv(rhs, ivScale); // round down division
+                        if (range.lo() > con + ivHi * ivScale + invar0 * invar0Scale - err()) {
+                            throw new RuntimeException("sanity check failed (4)");
+                        }
+                        return ivHi;
+
                     }
                 }
             }
