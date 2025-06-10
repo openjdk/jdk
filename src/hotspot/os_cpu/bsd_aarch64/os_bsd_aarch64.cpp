@@ -250,11 +250,19 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
 #ifdef __APPLE__
     if (sig == SIGBUS && pc != info->si_addr
-        && CodeCache::contains(info->si_addr) && thread->wx_enable_write()) {
-      FILE *tty = fopen("/dev/ttys009", "w");
-      fprintf(tty, "PID %ld enable write, returning\n", (long)getpid());
-      fclose(tty);
-      return true;
+        && CodeCache::contains(info->si_addr)) {
+      if (thread->wx_enable_write()) {
+        FILE *tty = fopen("/dev/ttys002", "w");
+        fprintf(tty, "PID %ld enable write, returning\n", (long)getpid());
+        abort();
+        fclose(tty);
+        return true;
+      } else {
+        FILE *tty = fopen("/dev/ttys002", "w");
+        fprintf(tty, "PID %ld FAILING, returning\n", (long)getpid());
+        fclose(tty);
+        return false;;
+      }
     }
 #endif
 
@@ -543,11 +551,14 @@ bool jit_exec_enabled() {
   return _jit_exec_enabled;;
 }
 
+#ifdef DEBUG
 bool *jit_exec_enabled_addr() {
   return &_jit_exec_enabled;;
 }
+#endif
 
 long pthread_jit_write_protect_np_counter;
+long pthread_jit_write_protect_not_counter;
 
 bool aph_do_trace;
 FILE *aph_do_trace_file;
@@ -558,6 +569,7 @@ void poo() {
     fclose(aph_do_trace_file);
     if (getenv("JDK_PRINT_WX_COUNTER")) {
       printf("pthread_jit_write_protect_np_counter == %ld\n", pthread_jit_write_protect_np_counter);
+      printf("pthread_jit_write_protect_not_counter == %ld\n", pthread_jit_write_protect_not_counter);
     }
   });
   aph_do_trace = getenv("APH_DO_TRACE");
@@ -574,16 +586,10 @@ void os::current_thread_enable_wx(WXMode mode) {
   bool exec_enabled = mode != WXWrite;
   if (exec_enabled != jit_exec_enabled()) {
     pthread_jit_write_protect_np_wrapper(exec_enabled);
-  }
-  _jit_exec_enabled = exec_enabled;
-}
-
-bool Thread::wx_enable_write() {
-  if (_wx_state == WXArmedForWrite) {
-    os::current_thread_enable_wx(WXWrite);
-    return true;
+    _jit_exec_enabled = exec_enabled;
+    pthread_jit_write_protect_np_counter++;
   } else {
-    return false;
+    pthread_jit_write_protect_not_counter++;
   }
 }
 

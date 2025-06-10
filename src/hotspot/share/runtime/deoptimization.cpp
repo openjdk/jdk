@@ -134,7 +134,7 @@ void DeoptimizationScope::mark(nmethod* nm, bool inc_recompile_counts) {
     return;
   }
 
-  MACOS_AARCH64_ONLY(thread_wx_enable_write());
+  MACOS_AARCH64_ONLY(Thread::thread_wx_enable_write());
   nmethod::DeoptimizationStatus status =
     inc_recompile_counts ? nmethod::deoptimize : nmethod::deoptimize_noupdate;
   Atomic::store(&nm->_deoptimization_status, status);

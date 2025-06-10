@@ -596,3 +596,14 @@ void Thread::SpinRelease(volatile int * adr) {
   // more than covers this on all platforms.
   *adr = 0;
 }
+
+#if defined(__APPLE__) && defined(AARCH64)
+bool Thread::wx_enable_write() {
+  if (_wx_state == WXArmedForWrite) {
+    os::current_thread_enable_wx(WXWrite);
+    return true;
+  } else {
+    return false;
+  }
+}
+#endif

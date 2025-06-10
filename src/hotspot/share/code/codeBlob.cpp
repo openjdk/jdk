@@ -398,7 +398,7 @@ BufferBlob::BufferBlob(const char* name, CodeBlobKind kind, int size)
 {}
 
 BufferBlob* BufferBlob::create(const char* name, uint buffer_size) {
-  MACOS_AARCH64_ONLY(thread_wx_enable_write());
+  MACOS_AARCH64_ONLY(Thread::thread_wx_enable_write());
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
   BufferBlob* blob = nullptr;

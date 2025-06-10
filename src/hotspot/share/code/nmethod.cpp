@@ -1931,7 +1931,7 @@ void nmethod::verify_clean_inline_caches() {
 }
 
 void nmethod::mark_as_maybe_on_stack() {
-  MACOS_AARCH64_ONLY(thread_wx_enable_write());
+  MACOS_AARCH64_ONLY(Thread::thread_wx_enable_write());
   Atomic::store(&_gc_epoch, CodeCache::gc_epoch());
 }
 
@@ -2009,7 +2009,7 @@ bool nmethod::make_not_entrant(const char* reason) {
   // This can be called while the system is already at a safepoint which is ok
   NoSafepointVerifier nsv;
 
-  os::current_thread_enable_wx(WXWrite);
+  // os::current_thread_enable_wx(WXWrite);
 
   if (is_unloading()) {
     // If the nmethod is unloading, then it is already not entrant through
@@ -2400,7 +2400,7 @@ public:
 };
 
 bool nmethod::is_unloading() {
-  MACOS_AARCH64_ONLY(thread_wx_enable_write());
+  MACOS_AARCH64_ONLY(Thread::thread_wx_enable_write());
 
   uint8_t state = Atomic::load(&_is_unloading_state);
   bool state_is_unloading = IsUnloadingState::is_unloading(state);

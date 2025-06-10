@@ -608,15 +608,14 @@ protected:
 
 #if defined(__APPLE__) && defined(AARCH64)
 
-  
  private:
-  DEBUG_ONeLY(bool _wx_init);
+  DEBUG_ONLY(bool _wx_init);
   WXMode _wx_state;
  public:
   void init_wx();
   WXMode enable_wx(WXMode new_state);
   bool wx_enable_write();
-  static void MACOS_AARCH64_ONLY(thread_wx_enable_write() {
+  static inline void thread_wx_enable_write() {
     Thread::current()->wx_enable_write();
   }
   void assert_wx_state(WXMode expected) {

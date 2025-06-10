@@ -30,6 +30,7 @@
 
 extern bool aph_do_trace;
 extern long pthread_jit_write_protect_np_counter;
+extern long pthread_jit_write_protect_not_counter;
 extern FILE *aph_do_trace_file;
 
 #define BT_BUF_SIZE 10
@@ -61,7 +62,7 @@ do {                                                                    \
          would produce similar output to the following: */              \
                                                                         \
       strings = backtrace_symbols(buffer, nptrs);                       \
-      if (strings == NULL) {                                            \
+      if (strings == nullptr) {                                         \
         perror("backtrace_symbols");                                    \
         os::exit(EXIT_FAILURE);                                         \
       }                                                                 \
@@ -74,7 +75,6 @@ do {                                                                    \
   }                                                                     \
                                                                         \
   pthread_jit_write_protect_np(arg);                                    \
-  pthread_jit_write_protect_np_counter++;                               \
 } while (0)
 
 const int StackAlignmentInBytes  = 16;
