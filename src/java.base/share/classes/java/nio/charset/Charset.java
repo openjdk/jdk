@@ -687,8 +687,8 @@ public abstract class Charset
                 && canonicalName != "US-ASCII"
                 && canonicalName != "UTF-8") {
             checkName(canonicalName);
-            for (String a : as) {
-                checkName(a);
+            for (int i = 0; i < as.length; i++) {
+                checkName(as[i]);
             }
         }
         this.name = canonicalName;
