@@ -28,3 +28,5 @@ provides jdk.jpackage.internal.Bundler with
     jdk.jpackage.internal.LinuxDebBundler,
     jdk.jpackage.internal.LinuxRpmBundler;
 
+provides jdk.jpackage.internal.cli.CliBundlingEnvironment with
+    jdk.jpackage.internal.LinuxBundlingEnvironment;
