@@ -953,7 +953,7 @@ final class SocketTube implements FlowTube {
                 boolean subscribed = false;
                 ReadSubscription current = subscription;
                 ReadSubscription pending = pendingSubscriptions.getAndSet(null);
-                if (pending  != null) {
+                if (pending != null) {
                     subscribed = true;
                     if (debug.on())
                         debug.log("handling pending subscription for %s",
