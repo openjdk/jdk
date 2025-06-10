@@ -19,39 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
+#include "gc/z/zPageAge.hpp"
+#include "unittest.hpp"
 
-/*
- * @test
- * @summary Sanity test for AOTCache
- * @requires vm.cds.supports.aot.class.linking
- * @library /test/lib
- * @build HelloAOTCache
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar HelloAOTCacheApp
- * @run driver HelloAOTCache
- */
+TEST(ZPageAgeRangeTest, test) {
+  ZPageAgeRange rangeEden = ZPageAgeRangeEden;
+  EXPECT_EQ(rangeEden.first(), ZPageAge::eden);
+  EXPECT_EQ(rangeEden.last(), ZPageAge::eden);
 
-import jdk.test.lib.cds.SimpleCDSAppTester;
-import jdk.test.lib.process.OutputAnalyzer;
+  ZPageAgeRange rangeYoung = ZPageAgeRangeYoung;
+  EXPECT_EQ(rangeYoung.first(), ZPageAge::eden);
+  EXPECT_EQ(rangeYoung.last(), ZPageAge::survivor14);
 
-public class HelloAOTCache {
-    public static void main(String... args) throws Exception {
-        SimpleCDSAppTester.of("HelloAOTCache")
-            .addVmArgs("-Xlog:class+load")
-            .classpath("app.jar")
-            .appCommandLine("HelloAOTCacheApp")
-            .setProductionChecker((OutputAnalyzer out) -> {
-                    out.shouldMatch("class,load.*HelloAOTCacheApp.*shared objects");
-                    out.shouldContain("HelloWorld");
-                })
-            .runAOTWorkflow();
-    }
-}
+  ZPageAgeRange rangeSurvivor = ZPageAgeRangeSurvivor;
+  EXPECT_EQ(rangeSurvivor.first(), ZPageAge::survivor1);
+  EXPECT_EQ(rangeSurvivor.last(), ZPageAge::survivor14);
 
-class HelloAOTCacheApp {
-    public static void main(String[] args) {
-        System.out.println("HelloWorld");
-    }
+  ZPageAgeRange rangeRelocation = ZPageAgeRangeRelocation;
+  EXPECT_EQ(rangeRelocation.first(), ZPageAge::survivor1);
+  EXPECT_EQ(rangeRelocation.last(), ZPageAge::old);
+
+  ZPageAgeRange rangeOld = ZPageAgeRangeOld;
+  EXPECT_EQ(rangeOld.first(), ZPageAge::old);
+  EXPECT_EQ(rangeOld.last(), ZPageAge::old);
 }
