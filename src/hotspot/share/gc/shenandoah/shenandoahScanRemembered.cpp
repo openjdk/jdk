@@ -265,29 +265,38 @@ HeapWord* ShenandoahCardCluster::block_start(const size_t card_index) const {
   assert(p < left, "obj should start before left");
   // While it is safe to ask an object its size in the loop that
   // follows, the (ifdef'd out) loop should never be needed.
-  // 1. we ask this question only for regions in the old generation
+  // 1. we ask this question only for regions in the old generation, and those
+  //    that are not humongous regions
   // 2. there is no direct allocation ever by mutators in old generation
-  //    regions. Only GC will ever allocate in old regions, and then
-  //    too only during promotion/evacuation phases. Thus there is no danger
+  //    regions walked by this code. Only GC will ever allocate in old regions,
+  //    and then too only during promotion/evacuation phases. Thus there is no danger
   //    of races between reading from and writing to the object start array,
   //    or of asking partially initialized objects their size (in the loop below).
+  //    Furthermore, humongous regions (and their dirty cards) are never processed
+  //    by this code.
   // 3. only GC asks this question during phases when it is not concurrently
   //    evacuating/promoting, viz. during concurrent root scanning (before
   //    the evacuation phase) and during concurrent update refs (after the
   //    evacuation phase) of young collections. This is never called
-  //    during old or global collections.
+  //    during global collections during marking or update refs..
   // 4. Every allocation under TAMS updates the object start array.
   oop obj = cast_to_oop(p);
   assert(oopDesc::is_oop(obj), "Should be an object");
+#ifdef ASSERT
 #define WALK_FORWARD_IN_BLOCK_START true
+#else
+#define WALK_FORWARD_IN_BLOCK_START true
+#endif // ASSERT
   while (WALK_FORWARD_IN_BLOCK_START && p + obj->size() < left) {
     p += obj->size();
     obj = cast_to_oop(p);
     assert(oopDesc::is_oop(obj), "Should be an object");
+    // Check assumptions in previous block comment if this assert fires
+    guarantee(false, "Should never need forward walk in block start");
   }
-#undef WALK_FORWARD_IN_BLOCK_START // false
-  assert(p <= left, "p should start at or before left end of card");
-  assert(p + obj->size() > left, "obj should end after left end of card");
+#undef WALK_FORWARD_IN_BLOCK_START
+  guarantee(p <= left, "p should start at or before left end of card");
+  guarantee(p + obj->size() > left, "obj should end after left end of card");
   return p;
 }
 
