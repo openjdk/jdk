@@ -41,6 +41,7 @@ jfieldID AwtObject::targetID;
 jclass AwtObject::wObjectPeerClass;
 jmethodID AwtObject::getPeerForTargetMID;
 jfieldID AwtObject::createErrorID;
+CriticalSection AwtObject::g_pDataLock;
 
 
 /************************************************************************
