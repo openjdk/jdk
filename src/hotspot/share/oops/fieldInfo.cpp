@@ -129,12 +129,12 @@ int FieldInfoStream::compare_name_and_sig(const Symbol* n1, const Symbol* s1, co
 
 // We use both name and signature during the comparison; while JLS require unique
 // names for fields, JVMS requires only unique name + signature combination.
-typedef struct {
+struct field_pos {
   Symbol* _name;
   Symbol* _signature;
   int _index;
   int _position;
-} field_pos;
+};
 
 class FieldInfoSupplier: public PackedTableBuilder::Supplier {
   const field_pos* _positions;
@@ -227,7 +227,6 @@ void FieldInfoStream::print_from_fieldinfo_stream(Array<u1>* fis, outputStream* 
 }
 
 class FieldInfoComparator: public PackedTableLookup::Comparator {
-private:
   const FieldInfoReader* _reader;
   ConstantPool* _cp;
   const Symbol* _name;

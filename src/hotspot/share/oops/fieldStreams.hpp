@@ -72,8 +72,8 @@ class FieldStreamBase : public StackObj {
       _reader.read_field_info(_fi_buf);
     }
    }
- public:
 
+ public:
   inline FieldStreamBase(InstanceKlass* klass);
 
   // accessors

@@ -71,7 +71,6 @@ public:
 
 // Helper class for lookup in a packed table.
 class PackedTableLookup: public PackedTableBase {
-private:
   const u1* const _table;
   const size_t _table_length;
 

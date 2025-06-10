@@ -25,134 +25,134 @@
 #include "unittest.hpp"
 
 class Supplier: public PackedTableBuilder::Supplier {
-private:
-    uint32_t* _keys;
-    uint32_t* _values;
-    size_t _num_keys;
-public:
-    Supplier(uint32_t* keys, uint32_t* values, size_t num_keys):
-        _keys(keys), _values(values), _num_keys(num_keys) {}
+  uint32_t* _keys;
+  uint32_t* _values;
+  size_t _num_keys;
 
-    bool next(uint32_t* key, uint32_t* value) override {
-        if (_num_keys == 0) {
-            return false;
-        }
-        *key = *_keys;
-        ++_keys;
-        if (_values != nullptr) {
-            *value = *_values;
-            ++_values;
-        } else {
-            *value = 0;
-        }
-        --_num_keys;
-        return true;
+public:
+  Supplier(uint32_t* keys, uint32_t* values, size_t num_keys):
+    _keys(keys), _values(values), _num_keys(num_keys) {}
+
+  bool next(uint32_t* key, uint32_t* value) override {
+    if (_num_keys == 0) {
+      return false;
     }
+    *key = *_keys;
+    ++_keys;
+    if (_values != nullptr) {
+      *value = *_values;
+      ++_values;
+    } else {
+      *value = 0;
+    }
+    --_num_keys;
+    return true;
+  }
 };
 
 class Comparator: public PackedTableLookup::Comparator {
-private:
-    uint32_t _current;
-public:
-    int compare_to(uint32_t key) override {
-        return _current < key ? -1 : (_current > key ? 1 : 0);
-    }
+  uint32_t _current;
 
-    void reset(uint32_t key) DEBUG_ONLY(override) {
-        _current = key;
-    }
+public:
+  int compare_to(uint32_t key) override {
+    return _current < key ? -1 : (_current > key ? 1 : 0);
+  }
+
+  void reset(uint32_t key) DEBUG_ONLY(override) {
+    _current = key;
+  }
 };
 
 static void test(uint32_t max_key, uint32_t max_value, unsigned int length) {
-    if (length > max_key + 1) {
-        // can't generate more keys, as keys must be unique
-        return;
-    }
-    PackedTableBuilder builder(max_key, max_value);
-    size_t table_length = length * builder.element_bytes();
-    u1* table = new u1[table_length];
+  if (length > max_key + 1) {
+    // can't generate more keys, as keys must be unique
+    return;
+  }
+  PackedTableBuilder builder(max_key, max_value);
+  size_t table_length = length * builder.element_bytes();
+  u1* table = new u1[table_length];
 
-    uint32_t* keys = new uint32_t[length];
-    uint32_t* values = max_value != 0 ? new uint32_t[length] : nullptr;
-    for (unsigned int i = 0; i < length; ++i) {
-        keys[i] = i;
-        if (values != nullptr) {
-            values[i] = i % max_value;
-        }
+  uint32_t* keys = new uint32_t[length];
+  uint32_t* values = max_value != 0 ? new uint32_t[length] : nullptr;
+  for (unsigned int i = 0; i < length; ++i) {
+    keys[i] = i;
+    if (values != nullptr) {
+      values[i] = i % max_value;
     }
-    Supplier sup(keys, values, length);
-    builder.fill(table, table_length, sup);
+  }
+  Supplier sup(keys, values, length);
+  builder.fill(table, table_length, sup);
 
-    Comparator comparator;
-    PackedTableLookup lookup(max_key, max_value, table, table_length);
+  Comparator comparator;
+  PackedTableLookup lookup(max_key, max_value, table, table_length);
 #ifdef ASSERT
-    lookup.validate_order(comparator);
+  lookup.validate_order(comparator);
 #endif
 
-    for (unsigned int i = 0; i < length; ++i) {
-        uint32_t key, value;
-        comparator.reset(keys[i]);
-        EXPECT_TRUE(lookup.search(comparator, &key, &value));
-        EXPECT_EQ(key, keys[i]);
-        if (values != nullptr) {
-            EXPECT_EQ(value, values[i]);
-        } else {
-            EXPECT_EQ(value, 0U);
-        }
+  for (unsigned int i = 0; i < length; ++i) {
+    uint32_t key, value;
+    comparator.reset(keys[i]);
+    EXPECT_TRUE(lookup.search(comparator, &key, &value));
+    EXPECT_EQ(key, keys[i]);
+    if (values != nullptr) {
+      EXPECT_EQ(value, values[i]);
+    } else {
+      EXPECT_EQ(value, 0U);
     }
+  }
 
-    delete[] keys;
-    delete[] values;
+  delete[] keys;
+  delete[] values;
 }
 
 static void test_with_bits(uint32_t max_key, uint32_t max_value) {
-    // Some small sizes
-    for (unsigned int i = 0; i <= 100; ++i) {
-        test(max_key, max_value, i);
-    }
-    test(max_key, max_value, 10000);
+  // Some small sizes
+  for (unsigned int i = 0; i <= 100; ++i) {
+    test(max_key, max_value, i);
+  }
+  test(max_key, max_value, 10000);
 }
 
 TEST(PackedTableLookup, lookup) {
-    for (int key_bits = 1; key_bits <= 32; ++key_bits) {
-        for (int value_bits = 0; value_bits <= 32; ++value_bits) {
-            test_with_bits(static_cast<uint32_t>((1ULL << key_bits) - 1),
-                           static_cast<uint32_t>((1ULL << value_bits) - 1));
-        }
+  for (int key_bits = 1; key_bits <= 32; ++key_bits) {
+    for (int value_bits = 0; value_bits <= 32; ++value_bits) {
+      test_with_bits(static_cast<uint32_t>((1ULL << key_bits) - 1),
+                     static_cast<uint32_t>((1ULL << value_bits) - 1));
     }
+  }
 }
 
 TEST(PackedTableBase, element_bytes) {
-    {
-        PackedTableBuilder builder(1, 0);
-        EXPECT_EQ(builder.element_bytes(), 1U);
-    }
-    {
-        PackedTableBuilder builder(15, 15);
-        EXPECT_EQ(builder.element_bytes(), 1U);
-    }
-    {
-        PackedTableBuilder builder(15, 16);
-        EXPECT_EQ(builder.element_bytes(), 2U);
-    }
-    {
-        PackedTableBuilder builder(31, 7);
-        EXPECT_EQ(builder.element_bytes(), 1U);
-    }
-    {
-        PackedTableBuilder builder(32, 7);
-        EXPECT_EQ(builder.element_bytes(), 2U);
-    }
-    {
-        PackedTableBuilder builder(-1, 0);
-        EXPECT_EQ(builder.element_bytes(), 4U);
-    }
-    {
-        PackedTableBuilder builder(-1, 1);
-        EXPECT_EQ(builder.element_bytes(), 5U);
-    }
-    {
-        PackedTableBuilder builder(-1, -1);
-        EXPECT_EQ(builder.element_bytes(), 8U);
-    }
+  {
+    PackedTableBuilder builder(1, 0);
+    EXPECT_EQ(builder.element_bytes(), 1U);
+  }
+  {
+    PackedTableBuilder builder(15, 15);
+    EXPECT_EQ(builder.element_bytes(), 1U);
+  }
+  {
+    PackedTableBuilder builder(15, 16);
+    EXPECT_EQ(builder.element_bytes(), 2U);
+  }
+  {
+    PackedTableBuilder builder(31, 7);
+    EXPECT_EQ(builder.element_bytes(), 1U);
+  }
+  {
+    PackedTableBuilder builder(32, 7);
+    EXPECT_EQ(builder.element_bytes(), 2U);
+  }
+  {
+    PackedTableBuilder builder(-1, 0);
+    EXPECT_EQ(builder.element_bytes(), 4U);
+  }
+  {
+    PackedTableBuilder builder(-1, 1);
+    EXPECT_EQ(builder.element_bytes(), 5U);
+  }
+  {
+    PackedTableBuilder builder(-1, -1);
+    EXPECT_EQ(builder.element_bytes(), 8U);
+  }
 }
