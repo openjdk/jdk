@@ -32,6 +32,7 @@ module jdk.internal.opt {
     exports jdk.internal.joptsimple to
         jdk.jlink,
         jdk.jshell,
+        jdk.jpackage,
         jdk.jdeps;
     exports jdk.internal.opt to
         jdk.compiler,
