@@ -1113,16 +1113,17 @@ void PhaseIterGVN::verify_empty_worklist(Node* node) {
   // nothing needs to be on the worklist.
   if (_worklist.size() == 0) { return; }
 
-  ttyLocker ttyl;
+  stringStream ss; // Print as a block without tty lock.
   for (uint j = 0; j < _worklist.size(); j++) {
     Node* n = _worklist.at(j);
-    tty->print("igvn.worklist[%d] ", j);
-    n->dump();
+    ss.print("igvn.worklist[%d] ", j);
+    n->dump("\n", false, &ss);
   }
   if (_worklist.size() != 0 && node != nullptr) {
-    tty->print_cr("Previously optimized:");
-    node->dump();
+    ss.print_cr("Previously optimized:");
+    node->dump("\n", false, &ss);
   }
+  tty->print_cr("%s", ss.as_string());
   assert(false, "igvn worklist must still be empty after verify");
 }
 
@@ -1177,16 +1178,17 @@ bool PhaseIterGVN::verify_Value_for(Node* n) {
     return false;
   }
 
-  ttyLocker ttyl;
-  tty->cr();
-  tty->print_cr("Missed Value optimization:");
-  n->dump_bfs(1, nullptr, "");
-  tty->print_cr("Current type:");
-  told->dump_on(tty);
-  tty->cr();
-  tty->print_cr("Optimized type:");
-  tnew->dump_on(tty);
-  tty->cr();
+  stringStream ss; // Print as a block without tty lock.
+  ss.cr();
+  ss.print_cr("Missed Value optimization:");
+  n->dump_bfs(1, nullptr, "", &ss);
+  ss.print_cr("Current type:");
+  told->dump_on(&ss);
+  ss.cr();
+  ss.print_cr("Optimized type:");
+  tnew->dump_on(&ss);
+  ss.cr();
+  tty->print_cr("%s", ss.as_string());
   return true;
 }
 
@@ -1808,11 +1810,12 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
   // If there was no new Idealization, we are probably happy.
   if (i == nullptr) {
     if (old_unique < C->unique()) {
-      ttyLocker ttyl;
-      tty->cr();
-      tty->print_cr("Ideal optimization did not make progress but created new unused nodes.");
-      tty->print_cr("  old_unique = %d, unique = %d", old_unique, C->unique());
-      n->dump_bfs(1, nullptr, "");
+      stringStream ss; // Print as a block without tty lock.
+      ss.cr();
+      ss.print_cr("Ideal optimization did not make progress but created new unused nodes.");
+      ss.print_cr("  old_unique = %d, unique = %d", old_unique, C->unique());
+      n->dump_bfs(1, nullptr, "", &ss);
+      tty->print_cr("%s", ss.as_string());
       return true;
     }
 
@@ -1823,18 +1826,19 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
   }
 
   // We just saw a new Idealization which was not done during IGVN.
-  ttyLocker ttyl;
-  tty->cr();
-  tty->print_cr("Missed Ideal optimization (can_reshape=%s):", can_reshape ? "true": "false");
+  stringStream ss; // Print as a block without tty lock.
+  ss.cr();
+  ss.print_cr("Missed Ideal optimization (can_reshape=%s):", can_reshape ? "true": "false");
   if (i == n) {
-    tty->print_cr("The node was reshaped by Ideal.");
+    ss.print_cr("The node was reshaped by Ideal.");
   } else {
-    tty->print_cr("The node was replaced by Ideal.");
-    tty->print_cr("Old node:");
-    n->dump_bfs(1, nullptr, "");
+    ss.print_cr("The node was replaced by Ideal.");
+    ss.print_cr("Old node:");
+    n->dump_bfs(1, nullptr, "", &ss);
   }
-  tty->print_cr("The result after Ideal:");
-  i->dump_bfs(1, nullptr, "");
+  ss.print_cr("The result after Ideal:");
+  i->dump_bfs(1, nullptr, "", &ss);
+  tty->print_cr("%s", ss.as_string());
   return true;
 }
 
@@ -2019,13 +2023,14 @@ bool PhaseIterGVN::verify_Identity_for(Node* n) {
   }
 
   // The verification just found a new Identity that was not found during IGVN.
-  ttyLocker ttyl;
-  tty->cr();
-  tty->print_cr("Missed Identity optimization:");
-  tty->print_cr("Old node:");
-  n->dump_bfs(1, nullptr, "");
-  tty->print_cr("New node:");
-  i->dump_bfs(1, nullptr, "");
+  stringStream ss; // Print as a block without tty lock.
+  ss.cr();
+  ss.print_cr("Missed Identity optimization:");
+  ss.print_cr("Old node:");
+  n->dump_bfs(1, nullptr, "", &ss);
+  ss.print_cr("New node:");
+  i->dump_bfs(1, nullptr, "", &ss);
+  tty->print_cr("%s", ss.as_string());
   return true;
 }
 #endif
