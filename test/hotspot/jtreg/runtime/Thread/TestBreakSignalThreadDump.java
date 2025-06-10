@@ -39,6 +39,7 @@
  * @comment TODO: Decide libjsig support on static JDK with 8351367
  * @requires !jdk.static
  * @requires !vm.asan
+ * @comment loading of the jsig lib does currently not work well with ASAN lib
  * @library /vmTestbase
  *          /test/lib
  * @run driver TestBreakSignalThreadDump load_libjsig

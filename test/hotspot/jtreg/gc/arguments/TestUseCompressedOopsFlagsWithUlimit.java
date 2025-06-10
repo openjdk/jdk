@@ -32,6 +32,7 @@ package gc.arguments;
  * @library /
  * @requires vm.bits == "64"
  * @requires !vm.asan
+ * @comment ulimit clashes with the memory requirements of ASAN
  * @requires os.family == "linux"
  * @requires vm.gc != "Z"
  * @requires vm.opt.UseCompressedOops == null

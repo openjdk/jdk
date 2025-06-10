@@ -30,6 +30,7 @@
  *          java.management
  * @requires os.family == "linux" | os.family == "mac"
  * @requires !vm.asan
+ * @comment loading of the jsig lib does currently not work well with ASAN lib
  * @comment TODO: Decide libjsig support on static JDK with 8351367
  * @requires !jdk.static
  * @run driver XCheckJSig

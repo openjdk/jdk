@@ -33,6 +33,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @library /test/lib
  * @requires (vm.gc != "Z") & (os.family == "linux" | os.family == "windows" | os.family == "mac")
  * @requires !vm.asan
+ * @comment ASAN changes the memory map dump slightly, but the test has rather strict requirements
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management

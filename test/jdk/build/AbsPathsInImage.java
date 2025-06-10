@@ -41,6 +41,7 @@ import java.util.zip.ZipInputStream;
  * @summary Check all output files for absolute path fragments
  * @requires !vm.debug
  * @requires !vm.asan
+ * @comment ASAN keeps the 'unwanted' paths in the binaries because of its build options
  * @run main/othervm -Xmx900m AbsPathsInImage
  */
 public class AbsPathsInImage {
