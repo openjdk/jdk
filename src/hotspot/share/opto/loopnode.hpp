@@ -1280,8 +1280,8 @@ public:
   Node* loop_exit_control(Node* x, IdealLoopTree* loop);
   Node* loop_exit_test(Node* back_control, IdealLoopTree* loop, Node*& incr, Node*& limit, BoolTest::mask& bt, float& cl_prob);
   Node* loop_iv_incr(Node* incr, Node* x, IdealLoopTree* loop, Node*& phi_incr);
-  Node* loop_iv_stride(Node* incr, IdealLoopTree* loop, Node*& xphi);
-  PhiNode* loop_iv_phi(Node* xphi, Node* phi_incr, Node* x, IdealLoopTree* loop);
+  Node* loop_iv_stride(Node* incr, Node*& xphi);
+  PhiNode* loop_iv_phi(Node* xphi, Node* phi_incr, Node* x);
 
   bool is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_bt);
 
