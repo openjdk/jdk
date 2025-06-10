@@ -47,7 +47,6 @@ public class ExceptionsTest {
 
     static void analyzeOutputOn(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        System.out.println(output.getStdout());
         output.shouldContain("<a 'java/lang/RuntimeException'").shouldContain(": Test exception 1 for logging>");
         output.shouldContain(" thrown in interpreter method ");
         output.shouldMatch("info..exceptions,stacktrace.*at ExceptionsTest[$]InternalClass.bar[(]ExceptionsTest.java:[0-9]+" +
@@ -56,23 +55,15 @@ public class ExceptionsTest {
                            ".*\n.*" +
                            "info..exceptions,stacktrace.*at ExceptionsTest[$]InternalClass.main[(]ExceptionsTest.java:[0-9]+");
 
-        // To avoid verbosity, stack trace for baz2() should be printed only once.
-        String stdout = output.getStdout();
-        checkRegexp(stdout, "baz2.*bar2.*baz2.*bar2", false);
+        // Note: "(?s)" means that the "." in the regexp can match the newline character.
+        // To avoid verbosity, stack trace for bar2()->baz2() should be printed only once:
+        // - It should be printed when the exception is thrown inside bzz2()
+        // - It should not be printed when the interpreter is looking for an exception handler inside bar2()
+        output.shouldMatch("(?s)baz2.*bar2");
+        output.shouldNotMatch("(?s)baz2.*bar2,*baz2.*bar2");
 
-        // Two stack traces should include foo2, as an exception is thrown at two different BCIs in this method.
-        checkRegexp(stdout, "foo2.*main.*foo2.*main", true);
-    }
-
-    static void checkRegexp(String text, String pattern, boolean expectMatch) {
-        Pattern p = Pattern.compile(pattern, Pattern.DOTALL);
-        Matcher m = p.matcher(text);
-        if (expectMatch && !m.find()) {
-            throw new RuntimeException("Cannot find: " + p);
-        }
-        if (!expectMatch && m.find()) {
-            throw new RuntimeException("Found unexpected match: " + p);
-        }
+        // Two stack traces should include main()->foo2(), as an exception is thrown at two different BCIs in bar2().
+        output.shouldMatch("(?s)foo2.*main.*foo2.*main");
     }
 
     static void analyzeOutputOff(ProcessBuilder pb) throws Exception {
@@ -139,6 +130,10 @@ public class ExceptionsTest {
         }
 
         static void baz2() {
+            bzz2();
+        }
+
+        static void bzz2() {
             throw new RuntimeException("Test exception 2 for logging");
         }
     }
