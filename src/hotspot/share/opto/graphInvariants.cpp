@@ -284,7 +284,7 @@ struct ControlSuccessor : LocalGraphInvariant {
       }
     }
 
-    if (center->is_If() || center->is_Start() || center->is_Root() || center->is_Region()) {
+    if (center->is_If() || center->is_Start() || center->is_Root() || center->is_Region() || center->is_NeverBranch()) {
       if (cfg_out != 2) {
         ss.print_cr("%s node must have exactly two control successors. Found %d.", center->Name(), cfg_out);
         for (uint i = 0; i < ctrl_succ.size(); ++i) {
