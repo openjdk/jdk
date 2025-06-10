@@ -54,6 +54,7 @@ enum class C1StubId :int {
 
 class Runtime1: public AllStatic {
   friend class ArrayCopyStub;
+  friend class AOTCodeAddressTable;
 
 public:
   // statistics

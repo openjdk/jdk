@@ -23,8 +23,6 @@
  * questions.
  */
 
-import jdk.internal.javac.ParticipatesInPreview;
-
 /**
  * Provides the implementation of the SunPKCS11 security provider.
  *
@@ -33,7 +31,6 @@ import jdk.internal.javac.ParticipatesInPreview;
  * @moduleGraph
  * @since 9
  */
-@ParticipatesInPreview
 module jdk.crypto.cryptoki {
     provides java.security.Provider with sun.security.pkcs11.SunPKCS11;
 }

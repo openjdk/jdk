@@ -116,6 +116,8 @@
   template(JFROldObject)                          \
   template(JvmtiPostObjectFree)                   \
   template(RendezvousGCThreads)                   \
+  template(JFRInitializeCPUTimeSampler)       \
+  template(JFRTerminateCPUTimeSampler)        \
   template(ReinitializeMDO)
 
 class Thread;

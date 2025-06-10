@@ -72,7 +72,7 @@ private:
 
 public:
   // Initialize data that depends on the heap size being known.
-  void initialize(uint max_reserved_regions);
+  void initialize(uint max_num_regions);
 
   G1RemSet(G1CollectedHeap* g1h);
   ~G1RemSet();

@@ -46,7 +46,7 @@ package java.lang.ref;
  * @since    1.2
  */
 
-public non-sealed class WeakReference<T> extends Reference<T> {
+public non-sealed class WeakReference<@jdk.internal.RequiresIdentity T> extends Reference<T> {
 
     /**
      * Creates a new weak reference that refers to the given object.  The new
@@ -54,7 +54,7 @@ public non-sealed class WeakReference<T> extends Reference<T> {
      *
      * @param referent object the new weak reference will refer to
      */
-    public WeakReference(T referent) {
+    public WeakReference(@jdk.internal.RequiresIdentity T referent) {
         super(referent);
     }
 
@@ -66,7 +66,7 @@ public non-sealed class WeakReference<T> extends Reference<T> {
      * @param q the queue with which the reference is to be registered,
      *          or {@code null} if registration is not required
      */
-    public WeakReference(T referent, ReferenceQueue<? super T> q) {
+    public WeakReference(@jdk.internal.RequiresIdentity T referent, ReferenceQueue<? super T> q) {
         super(referent, q);
     }
 

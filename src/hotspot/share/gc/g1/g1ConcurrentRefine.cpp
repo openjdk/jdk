@@ -402,7 +402,7 @@ G1ConcurrentRefine::G1ConcurrentRefine(G1CollectedHeap* g1h) :
   _heap_was_locked(false),
   _threads_needed(g1h->policy(), adjust_threads_period_ms()),
   _thread_control(G1ConcRefinementThreads),
-  _sweep_state(g1h->max_reserved_regions())
+  _sweep_state(g1h->max_num_regions())
 { }
 
 jint G1ConcurrentRefine::initialize() {

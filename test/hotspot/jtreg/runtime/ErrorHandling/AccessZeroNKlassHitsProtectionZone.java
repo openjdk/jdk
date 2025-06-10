@@ -99,7 +99,6 @@ public class AccessZeroNKlassHitsProtectionZone {
         args.add("-Xlog:metaspace*");
         args.add("-Xlog:cds");
         if (COH) {
-            args.add("-XX:+UnlockExperimentalVMOptions");
             args.add("-XX:+UseCompactObjectHeaders");
         }
         if (CDS) {
