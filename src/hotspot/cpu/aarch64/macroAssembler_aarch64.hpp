@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1221,6 +1222,11 @@ public:
                enum operand_size size,
                bool acquire, bool release, bool weak,
                Register result);
+
+  void cmpxchg_barrier(Register addr, Register expected,
+                       Register new_val, enum operand_size size,
+                       bool acquire, bool release, bool weak,
+                       Register result);
 
 #ifdef ASSERT
   // Template short-hand support to clean-up after a failed call to trampoline

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3478,6 +3479,21 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
     bind(done);
   }
   BLOCK_COMMENT("} cmpxchg");
+}
+
+// helper function which always provides trailing membar semantics.
+void MacroAssembler::cmpxchg_barrier(Register addr, Register expected,
+                             Register new_val,
+                             enum operand_size size,
+                             bool acquire, bool release,
+                             bool weak,
+                             Register result) {
+  cmpxchg(addr, expected, new_val, size, acquire, release, weak, result);
+  if(!UseLSE)
+  {
+    // Prevent a later volatile load from being reordered with the STLXR in cmpxchg.
+    membar(AnyAny);
+  }
 }
 
 // A generic comparison. Only compares for equality, clobbers rscratch1.
