@@ -105,7 +105,7 @@ import static javax.swing.ClientPropertyKey.JComponent_TRANSFER_HANDLER;
  * you must place the component in a containment hierarchy
  * whose root is a top-level Swing container.
  * Top-level Swing containers --
- * such as <code>JFrame</code>, <code>JDialog</code> --
+ * such as <code>JFrame</code> and <code>JDialog</code> --
  * are specialized components
  * that provide a place for other Swing components to paint themselves.
  * For an explanation of containment hierarchies, see
