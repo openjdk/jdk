@@ -232,7 +232,8 @@ public class LinkedBlockingDeque<E>
      */
     private boolean linkLast(Node<E> node) {
         // assert lock.isHeldByCurrentThread();
-        if (count >= capacity)
+        int c;
+        if ((c = count) >= capacity)
             return false;
         Node<E> l = last;
         node.prev = l;
