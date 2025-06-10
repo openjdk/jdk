@@ -211,7 +211,8 @@ public class LinkedBlockingDeque<E>
      */
     private boolean linkFirst(Node<E> node) {
         // assert lock.isHeldByCurrentThread();
-        if (count >= capacity)
+        int c;
+        if ((c = count) >= capacity)
             return false;
         Node<E> f = first;
         node.next = f;
@@ -220,7 +221,7 @@ public class LinkedBlockingDeque<E>
             last = node;
         else
             f.prev = node;
-        ++count;
+        count = c + 1;
         notEmpty.signal();
         return true;
     }
@@ -242,7 +243,7 @@ public class LinkedBlockingDeque<E>
             first = node;
         else
             l.next = node;
-        ++count;
+        count = c + 1;
         notEmpty.signal();
         return true;
     }
@@ -879,14 +880,15 @@ public class LinkedBlockingDeque<E>
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
-            if (count + n <= capacity) {
+            int cnt;
+            if ((cnt = count) + n <= capacity) {
                 beg.prev = last;
                 if (first == null)
                     first = beg;
                 else
                     last.next = beg;
                 last = end;
-                count = (int) (count + n);
+                count = (int) (cnt + n);
                 notEmpty.signalAll();
                 return true;
             }
