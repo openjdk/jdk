@@ -28,3 +28,5 @@ provides jdk.jpackage.internal.Bundler with
     jdk.jpackage.internal.MacDmgBundler,
     jdk.jpackage.internal.MacPkgBundler;
 
+provides jdk.jpackage.internal.cli.CliBundlingEnvironment with
+    jdk.jpackage.internal.MacBundlingEnvironment;

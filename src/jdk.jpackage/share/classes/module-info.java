@@ -59,6 +59,8 @@ module jdk.jpackage {
     uses jdk.jpackage.internal.Bundler;
     uses jdk.jpackage.internal.Bundlers;
 
+    uses jdk.jpackage.internal.cli.CliBundlingEnvironment;
+
     provides jdk.jpackage.internal.Bundlers with
         jdk.jpackage.internal.BasicBundlers;
 
