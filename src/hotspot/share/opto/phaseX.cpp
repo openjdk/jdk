@@ -2018,7 +2018,7 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
     return false;
   }
 
-  // The verificatin just found a new Identity that was not found during IGVN.
+  // The verification just found a new Identity that was not found during IGVN.
   ttyLocker ttyl;
   tty->cr();
   tty->print_cr("Missed Identity optimization:");
