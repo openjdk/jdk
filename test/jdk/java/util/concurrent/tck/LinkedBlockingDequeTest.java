@@ -1946,7 +1946,7 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
     }
 
     public void testWeaklyConsistentIterationWithClear() {
-        final LinkedBlockingDeque<Item> q = new LinkedBlockingDeque<>(3);
+        final LinkedBlockingDeque<Item> q = new LinkedBlockingDeque<>();
         q.add(one);
         q.add(two);
         q.add(three);
@@ -1964,7 +1964,7 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
     }
 
     public void testWeaklyConsistentIterationWithIteratorRemove() {
-        final LinkedBlockingDeque<Item> q = new LinkedBlockingDeque<>(15);
+        final LinkedBlockingDeque<Item> q = new LinkedBlockingDeque<>();
         q.add(one);
         q.add(two);
         q.add(three);
