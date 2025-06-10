@@ -377,6 +377,10 @@ public abstract class Charset
                     return n;
                 }
 
+                public void remove() {
+                    throw new UnsupportedOperationException();
+                }
+
             };
     }
 
