@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test id=vanilla
  * @bug 8324751
  * @summary Test Speculative Aliasing checks in SuperWord
  * @modules java.base/jdk.internal.misc
@@ -30,7 +30,19 @@
  * @compile ../../../compiler/lib/ir_framework/TestFramework.java
  * @compile ../../../compiler/lib/generators/Generators.java
  * @compile ../../../compiler/lib/verify/Verify.java
- * @run driver compiler.loopopts.superword.TestAliasingFuzzer
+ * @run driver compiler.loopopts.superword.TestAliasingFuzzer vanilla
+ */
+
+/*
+ * @test id=random-flags
+ * @bug 8324751
+ * @summary Test Speculative Aliasing checks in SuperWord
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib /
+ * @compile ../../../compiler/lib/ir_framework/TestFramework.java
+ * @compile ../../../compiler/lib/generators/Generators.java
+ * @compile ../../../compiler/lib/verify/Verify.java
+ * @run driver compiler.loopopts.superword.TestAliasingFuzzer random-flags
  */
 
 package compiler.loopopts.superword;
@@ -109,14 +121,42 @@ public class TestAliasingFuzzer {
         comp.compile();
 
         long t2 = System.nanoTime();
+
+        String[] flags = switch(args[0]) {
+            case "vanilla" -> new String[] {};
+            case "random-flags" -> randomFlags();
+            default -> throw new RuntimeException("unknown run id=" + args[0]);
+        };
         // Run the tests without any additional VM flags.
         // p.xyz.InnterTest.main(new String[] {});
-        comp.invoke("p.xyz.InnerTest", "main", new Object[] {new String[] {}});
+        comp.invoke("p.xyz.InnerTest", "main", new Object[] {flags});
         long t3 = System.nanoTime();
 
         System.out.println("Code Generation:  " + (t1-t0) * 1e-9f);
         System.out.println("Code Compilation: " + (t2-t1) * 1e-9f);
         System.out.println("Running Tests:    " + (t3-t2) * 1e-9f);
+    }
+
+    public static String[] randomFlags() {
+        // We don't want to always run with all flags, that is too expensive.
+        // But let's make sure things don't completely, rot by running with some
+        // random flags that are relevant.
+        // We set the odds towards the "default" we are targetting.
+        return new String[] {
+            // Default disabled.
+            "-XX:" + randomPlusMinus(1, 5) + "AlignVector",
+            // Default enabled.
+            "-XX:" + randomPlusMinus(5, 1) + "UseAutoVectorizationSpeculativeAliasingChecks",
+            "-XX:" + randomPlusMinus(5, 1) + "UseAutoVectorizationPredicate",
+            "-XX:" + randomPlusMinus(5, 1) + "LoopMultiversioning",
+            "-XX:" + randomPlusMinus(5, 1) + "LoopMultiversioningOptimizeSlowLoop",
+            // Either way is ok.
+            "-XX:" + randomPlusMinus(1, 1) + "UseCompactObjectHeaders"
+        };
+    }
+
+    public static String randomPlusMinus(int plus, int minus) {
+        return (RANDOM.nextInt(plus + minus) < plus) ? "+" : "-";
     }
 
     public static String generate(CompileFramework comp) {
@@ -413,11 +453,14 @@ public class TestAliasingFuzzer {
             switch (accessScenario) {
                 case COPY_LOAD_STORE ->
                     // Currently, we do not allow strided access or shuffle.
+                    // Since the load and store are connected, we either vectorize both or none.
                     (form_a.ivScale() == form_b.ivScale() && Math.abs(form_a.ivScale()) == 1)
                     ?   """
                         // Good ivScales, vectorization expected.
                         @IR(counts = {IRNode.LOAD_VECTOR_#T, "> 0",
                                       IRNode.STORE_VECTOR,   "> 0"},
+                            applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true",
+                                          "AlignVector", "false"},
                             applyIfPlatform = {"64-bit", "true"},
                             applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
                         """
@@ -436,6 +479,8 @@ public class TestAliasingFuzzer {
                         // Good ivScales, vectorization expected.
                         @IR(counts = {IRNode.LOAD_VECTOR_#T, "= 0",
                                       IRNode.STORE_VECTOR,   "> 0"},
+                            applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true",
+                                          "AlignVector", "false"},
                             applyIfPlatform = {"64-bit", "true"},
                             applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
                         """
