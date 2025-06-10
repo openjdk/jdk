@@ -1070,8 +1070,8 @@ class SocketChannelImpl
     }
 
     /**
-     * Closes the socket if there are no I/O operations in progress and the
-     * channel is not registered with a Selector.
+     * Closes the socket if there are no I/O operations in progress (or no I/O
+     * operations tracked), and the channel is not registered with a Selector.
      */
     private boolean tryClose() throws IOException {
         assert Thread.holdsLock(stateLock) && state == ST_CLOSING;
@@ -1096,13 +1096,21 @@ class SocketChannelImpl
     }
 
     /**
-     * Closes this channel when configured in blocking mode.
+     * Closes this channel when configured in blocking mode. If there are no I/O
+     * operations in progress (or tracked), then the channel's socket is closed. If
+     * there are I/O operations in progress then the behavior is platform specific.
      *
-     * On Unix systems, if there are I/O operations in progress then the channel's
-     * socket is pre-closed and the threads are signalled. The final close is
-     * deferred until all I/O operations complete.
+     * On Unix systems, the channel's socket is pre-closed. This unparks any virtual
+     * threads that are blocked in I/O operations on this channel. If there are
+     * platform threads blocked on the channel's socket then the socket is dup'ed
+     * and the platform threads signalled. The final close is deferred until all I/O
+     * operations complete.
      *
-     * On Windows, the socket is closed after first shutting down output.
+     * On Windows, the channel's socket is pre-closed. This unparks any virtual
+     * threads that are blocked in I/O operations on this channel. If there are no
+     * virtual threads blocked in I/O operations on this channel then the channel's
+     * socket is closed. If there are virtual threads in I/O then the final close is
+     * deferred until all I/O operations on virtual threads complete.
      *
      * Note that a channel configured blocking may be registered with a Selector
      * This arises when a key is canceled and the channel configured to blocking

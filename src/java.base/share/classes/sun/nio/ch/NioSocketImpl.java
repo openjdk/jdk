@@ -870,13 +870,9 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
     }
 
     /**
-     * Closes the socket.
-     *
-     * On Unix systems, if there are I/O operations in progress then the
-     * socket is pre-closed and the threads are signalled. The final close is
-     * deferred until all I/O operations complete.
-     *
-     * On Windows, the socket is closed after first shutting down output.
+     * Closes the socket. If there are I/O operations in progress then the
+     * socket is pre-closed and the threads are signalled. The socket will be
+     * closed when the last I/O operation aborts.
      */
     @Override
     protected void close() throws IOException {
@@ -892,8 +888,8 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             boolean connected = (state == ST_CONNECTED);
             this.state = ST_CLOSING;
 
-            if (connected && Net.shouldShutdownWriteBeforeClose()) {
-                // shutdown output when linger interval not set to 0
+            // shutdown output when linger interval not set to 0
+            if (connected) {
                 try {
                     var SO_LINGER = StandardSocketOptions.SO_LINGER;
                     if ((int) Net.getSocketOption(fd, SO_LINGER) != 0) {
@@ -902,8 +898,9 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                 } catch (IOException ignore) { }
             }
 
-            // Attempt to close the socket. On Unix systems, and there are I/O options
-            // in progress, then the socket is pre-closed and the thread(s) signalled.
+            // attempt to close the socket. If there are I/O operations in progress
+            // then the socket is pre-closed and the thread(s) signalled. The
+            // last thread will close the file descriptor.
             if (!tryClose()) {
                 nd.preClose(fd, readerThread, writerThread);
             }
