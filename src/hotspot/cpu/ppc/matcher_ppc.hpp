@@ -158,11 +158,10 @@
   }
 
   // true means we have fast l2f conversion
-  // false means that conversion is done by runtime call
-  static bool convL2FSupported(void) {
+  static constexpr bool convL2FSupported(void) {
     // fcfids can do the conversion (>= Power7).
     // fcfid + frsp showed rounding problem when result should be 0x3f800001.
-    return VM_Version::has_fcfids();
+    return true;
   }
 
   // Implements a variant of EncodeISOArrayNode that encode ASCII only

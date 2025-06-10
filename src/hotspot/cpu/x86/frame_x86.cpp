@@ -701,7 +701,6 @@ void JavaFrameAnchor::make_walkable() {
   if (last_Java_sp() == nullptr) return;
   // already walkable?
   if (walkable()) return;
-  vmassert(last_Java_pc() == nullptr, "already walkable");
   _last_Java_pc = (address)_last_Java_sp[-1];
   vmassert(walkable(), "something went wrong");
 }

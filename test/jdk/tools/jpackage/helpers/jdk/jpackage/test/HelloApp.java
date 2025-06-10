@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -514,15 +515,24 @@ public final class HelloApp {
         }
     }
 
-    private static Executor configureEnvironment(Executor executor) {
+    static Executor configureEnvironment(Executor executor) {
         if (CLEAR_JAVA_ENV_VARS) {
-            executor.removeEnvVar("JAVA_TOOL_OPTIONS");
-            executor.removeEnvVar("_JAVA_OPTIONS");
+            JAVA_ENV_VARS.forEach(executor::removeEnvVar);
         }
         return executor;
     }
 
+    private static boolean javaEnvVariablesContainsModulePath() {
+        return JAVA_ENV_VARS.stream().map(System::getenv).filter(Objects::nonNull).anyMatch(HelloApp::containsModulePath);
+    }
+
+    private static boolean containsModulePath(String value) {
+        return value.contains("--module-path");
+    }
+
     static final String OUTPUT_FILENAME = "appOutput.txt";
+
+    private static final Set<String> JAVA_ENV_VARS = Set.of("JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS");
 
     private final JavaAppDesc appDesc;
 
@@ -532,6 +542,11 @@ public final class HelloApp {
     private static final String CLASS_NAME = HELLO_JAVA.getFileName().toString().split(
             "\\.", 2)[0];
 
-    private static final boolean CLEAR_JAVA_ENV_VARS = Optional.ofNullable(
-            TKit.getConfigProperty("clear-app-launcher-java-env-vars")).map(Boolean::parseBoolean).orElse(false);
+    //
+    // Runtime in the app image normally doesn't have .jmod files. Because of this `--module-path`
+    // option will cause failure at app launcher startup.
+    // Java environment variables containing this option should be removed from the
+    // environment in which app launchers are started.
+    //
+    static final boolean CLEAR_JAVA_ENV_VARS = javaEnvVariablesContainsModulePath();
 }

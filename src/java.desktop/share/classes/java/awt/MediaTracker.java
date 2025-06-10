@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,14 +67,17 @@ import sun.awt.image.MultiResolutionToolkitImage;
  * <p>
  * Here is an example of using {@code MediaTracker}:
  *
- * <hr><blockquote><pre>{@code
- * import java.applet.Applet;
+ * {@snippet lang='java':
  * import java.awt.Color;
+ * import java.awt.EventQueue;
+ * import java.awt.Frame;
  * import java.awt.Image;
  * import java.awt.Graphics;
  * import java.awt.MediaTracker;
+ * import java.awt.Panel;
+ * import java.awt.Toolkit;
  *
- * public class ImageBlaster extends Applet implements Runnable {
+ * public class MediaTrackerExample extends Panel implements Runnable {
  *      MediaTracker tracker;
  *      Image bg;
  *      Image anim[] = new Image[5];
@@ -84,27 +87,32 @@ import sun.awt.image.MultiResolutionToolkitImage;
  *      // Get the images for the background (id == 0)
  *      // and the animation frames (id == 1)
  *      // and add them to the MediaTracker
- *      public void init() {
+ *      public static void main(String[] args) throws Exception {
+ *          MediaTrackerExample mte = new MediaTrackerExample();
+ *          EventQueue.invokeAndWait(() -> {
+ *              Frame frame = new Frame("MediaTrackerExample");
+ *              frame.setSize(400, 400);
+ *              frame.add(mte);
+ *              frame.setVisible(true);
+ *          });
+ *          mte.startAnimation();
+ *      }
+ *
+ *      public MediaTrackerExample() {
+ *          Toolkit tk = Toolkit.getDefaultToolkit();
  *          tracker = new MediaTracker(this);
- *          bg = getImage(getDocumentBase(),
- *                  "images/background.gif");
+ *          // Note : actual images not provided as part of this code example
+ *          bg = tk.getImage("background.gif");
  *          tracker.addImage(bg, 0);
  *          for (int i = 0; i < 5; i++) {
- *              anim[i] = getImage(getDocumentBase(),
- *                      "images/anim"+i+".gif");
+ *              anim[i] = tk.getImage("anim" + i + ".gif");
  *              tracker.addImage(anim[i], 1);
  *          }
  *      }
  *
- *      // Start the animation thread.
- *      public void start() {
+ *      public void startAnimation() {
  *          animator = new Thread(this);
  *          animator.start();
- *      }
- *
- *      // Stop the animation thread.
- *      public void stop() {
- *          animator = null;
  *      }
  *
  *      // Run the animation thread.
@@ -137,7 +145,7 @@ import sun.awt.image.MultiResolutionToolkitImage;
  *      }
  *
  *      // The background image fills the frame so we
- *      // don't need to clear the applet on repaints.
+ *      // don't need to clear the component background on repaints.
  *      // Just call the paint method.
  *      public void update(Graphics g) {
  *          paint(g);
@@ -152,7 +160,7 @@ import sun.awt.image.MultiResolutionToolkitImage;
  *      public void paint(Graphics g) {
  *          if ((tracker.statusAll(false) & MediaTracker.ERRORED) != 0) {
  *              g.setColor(Color.red);
- *              g.fillRect(0, 0, size().width, size().height);
+ *              g.fillRect(0, 0, getSize().width, getSize().height);
  *              return;
  *          }
  *          g.drawImage(bg, 0, 0, this);
@@ -161,7 +169,7 @@ import sun.awt.image.MultiResolutionToolkitImage;
  *          }
  *      }
  * }
- * } </pre></blockquote><hr>
+ * }
  *
  * @author      Jim Graham
  * @since       1.0

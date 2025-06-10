@@ -35,6 +35,53 @@
 
 // Inline functions for RISCV frames:
 
+#if INCLUDE_JFR
+
+// Static helper routines
+
+inline address frame::interpreter_bcp(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<address>(fp[frame::interpreter_frame_bcp_offset]);
+}
+
+inline address frame::interpreter_return_address(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<address>(fp[frame::return_addr_offset]);
+}
+
+inline intptr_t* frame::interpreter_sender_sp(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<intptr_t*>(fp[frame::interpreter_frame_sender_sp_offset]);
+}
+
+inline bool frame::is_interpreter_frame_setup_at(const intptr_t* fp, const void* sp) {
+  assert(fp != nullptr, "invariant");
+  assert(sp != nullptr, "invariant");
+  return sp <= fp + frame::interpreter_frame_initial_sp_offset;
+}
+
+inline intptr_t* frame::sender_sp(intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return fp + frame::sender_sp_offset;
+}
+
+inline intptr_t* frame::link(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<intptr_t*>(fp[frame::link_offset]);
+}
+
+inline address frame::return_address(const intptr_t* sp) {
+  assert(sp != nullptr, "invariant");
+  return reinterpret_cast<address>(sp[-1]);
+}
+
+inline intptr_t* frame::fp(const intptr_t* sp) {
+  assert(sp != nullptr, "invariant");
+  return reinterpret_cast<intptr_t*>(sp[-2]);
+}
+
+#endif // INCLUDE_JFR
+
 // Constructors:
 
 inline frame::frame() {
