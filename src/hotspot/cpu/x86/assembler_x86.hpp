@@ -1035,9 +1035,9 @@ private:
 
   void push(int32_t imm32);
 
-  void push(Register src, bool is_pair = false);
+  void push(Register src);
 
-  void pop(Register dst, bool is_pair = false);
+  void pop(Register dst);
 
   // These do register sized moves/scans
   void rep_mov();
