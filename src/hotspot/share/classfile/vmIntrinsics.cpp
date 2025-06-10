@@ -317,7 +317,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_dtanh:
   case vmIntrinsics::_dcbrt:
     if (!InlineMathNatives || !InlineIntrinsics) return true;
-#ifdef AMD64
+#if defined(AMD64) && (defined(COMPILER1) || defined(COMPILER2))
     if (!UseLibmIntrinsic) return true;
 #endif
     break;
