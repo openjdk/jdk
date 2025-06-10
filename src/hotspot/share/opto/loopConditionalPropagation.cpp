@@ -1413,7 +1413,7 @@ void PhaseConditionalPropagation::Transformer::transform_when_constant_seen(Node
           for (uint j = 1; j < use->req(); ++j) {
             if (use->in(j) == node && !r->in(j)->is_top() && _conditional_propagation.is_dominator(c, r->in(j)) &&
                 is_safe_for_replacement_at_phi(node, use, r, j)) {
-              if (con == NULL) {
+              if (con == nullptr) {
                 con = _phase->igvn().makecon(t);
                 _phase->set_ctrl(con, _phase->igvn().C->root());
               }
