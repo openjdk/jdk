@@ -559,7 +559,7 @@
 
 /*
  * @test id=sectigotlsrootr46
- * @bug 0000000
+ * @bug 8359170
  * @summary Interoperability tests with Sectigo Public Server Authentication
  * Root R46
  * @library /test/lib
@@ -574,7 +574,7 @@
 
 /*
  * @test id=sectigotlsroote46
- * @bug 0000000
+ * @bug 8359170
  * @summary Interoperability tests with Sectigo Public Server Authentication
  * Root E46
  * @library /test/lib
