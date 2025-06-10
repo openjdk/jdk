@@ -5627,6 +5627,7 @@ void Assembler::evpdpwssd(XMMRegister dst, XMMRegister nds, XMMRegister src, int
   emit_int16(0x52, (0xC0 | encode));
 }
 
+// generic
 void Assembler::pop(Register dst) {
   int encode = prefix_and_encode(dst->encoding());
   emit_int8(0x58 | encode);
