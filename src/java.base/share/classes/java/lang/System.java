@@ -2118,7 +2118,7 @@ public final class System {
                 return ModuleLayer.layers(loader);
             }
 
-            public int uncheckedCountPositives(byte[] bytes, int offset, int length) {
+            public int countPositives(byte[] bytes, int offset, int length) {
                 return StringCoding.countPositives(bytes, offset, length);
             }
             public int countNonZeroAscii(String s) {
@@ -2145,11 +2145,11 @@ public final class System {
                 return String.getBytesUTF8NoRepl(s);
             }
 
-            public void uncheckedInflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+            public void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
                 StringLatin1.inflate(src, srcOff, dst, dstOff, len);
             }
 
-            public int uncheckedDecodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+            public int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
                 return String.decodeASCII(src, srcOff, dst, dstOff, len);
             }
 
