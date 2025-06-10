@@ -231,15 +231,18 @@ public:
       return false;
     }
 
+    // Usually the ctrl of n is already before the pre-loop.
     Node* ctrl = phase()->get_ctrl(n);
-
-    // Quick test: is it in the main-loop?
-    if (lpt()->is_member(phase()->get_loop(ctrl))) {
-      return false;
+    if (is_before_pre_loop(ctrl)) {
+      return true;
     }
 
-    // Is it before the pre-loop?
-    return phase()->is_dominator(ctrl, pre_loop_head());
+    // But in some cases, we ctrl of n is between the pre and
+    // main loop, but the early ctrl is before the pre-loop.
+    // As long as the early ctrl is before the pre-loop, we can
+    // compute n before the pre-loop.
+    Node* early = phase()->compute_early_ctrl(n, ctrl);
+    return is_before_pre_loop(early);
   }
 
   // Check if the loop passes some basic preconditions for vectorization.
@@ -248,6 +251,16 @@ public:
 
 private:
   VStatus check_preconditions_helper();
+
+  bool is_before_pre_loop(Node* ctrl) const {
+    // Quick test: is it in the main-loop?
+    if (lpt()->is_member(phase()->get_loop(ctrl))) {
+      return false;
+    }
+
+    // Is it before the pre-loop?
+    return phase()->is_dominator(ctrl, pre_loop_head());
+  }
 };
 
 // Optimization to keep allocation of large arrays in AutoVectorization low.

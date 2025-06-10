@@ -432,24 +432,13 @@ public class TestAliasingFuzzer {
                     // Currently, we do not allow strided access.
                     // We vectorize any contiguous pattern. Possibly only one is vectorized.
                     (Math.abs(form_a.ivScale()) == 1 || Math.abs(form_b.ivScale()) == 1)
-                    ?  ((form_a.ivScale() == form_b.ivScale() && Math.abs(form_a.ivScale()) == 1)
-                        ?   """
-                            // Good ivScales, vectorization expected.
-                            @IR(counts = {IRNode.LOAD_VECTOR_#T, "= 0",
-                                          IRNode.STORE_VECTOR,   "> 0"},
-                                applyIfPlatform = {"64-bit", "true"},
-                                applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-                            """
-                        :   """
-                            // Currently does not vectorize, but might in the future.
-                            // The issue currently is that the limit is not pre-loop
-                            // independent, and so we cannot add a dynamic aliasing check.
-                            @IR(counts = {IRNode.LOAD_VECTOR_#T, "= 0",
-                                          IRNode.STORE_VECTOR,   "= 0"},
-                                applyIfPlatform = {"64-bit", "true"},
-                                applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-                            """
-                        )
+                    ?   """
+                        // Good ivScales, vectorization expected.
+                        @IR(counts = {IRNode.LOAD_VECTOR_#T, "= 0",
+                                      IRNode.STORE_VECTOR,   "> 0"},
+                            applyIfPlatform = {"64-bit", "true"},
+                            applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+                        """
                     :   """
                         // Bad ivScales, no vectorization expected.
                         @IR(counts = {IRNode.LOAD_VECTOR_#T, "= 0",
