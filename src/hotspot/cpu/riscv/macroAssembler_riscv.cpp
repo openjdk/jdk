@@ -1359,6 +1359,38 @@ void MacroAssembler::cmov_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Regi
   bind(no_set);
 }
 
+// When cmp1 < cmp2 or any of them is NaN then dst = dst, otherwise, dst = src
+// Clarification
+//   scenario 1:
+//     java code      :  !(cmp2 >= cmp1) ? dst : src
+//     transformed to :  CMove dst, (cmp1 ge cmp2), dst, src
+//   scenario 2:
+//     java code      :  !(cmp1 <= cmp2) ? dst : src
+//     transformed to :  CMove dst, (cmp1 ge cmp2), dst, src
+void MacroAssembler::cmov_cmp_fp_ge(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
+  if (UseZicond) {
+    if (is_single) {
+      fle_s(t0, cmp2, cmp1);
+    } else {
+      fle_d(t0, cmp2, cmp1);
+    }
+    czero_nez(dst, dst, t0);
+    czero_eqz(t0 , src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  if (is_single) {
+    // jump if cmp1 < cmp2 or either is NaN
+    // not jump (i.e. move src to dst) if cmp1 >= cmp2
+    float_blt(cmp1, cmp2, no_set, false, true);
+  } else {
+    double_blt(cmp1, cmp2, no_set, false, true);
+  }
+  mv(dst, src);
+  bind(no_set);
+}
+
 // When cmp1 < cmp2 or any of them is NaN then dst = src, otherwise, dst = dst
 // Clarification
 //   scenario 1:
@@ -1386,6 +1418,38 @@ void MacroAssembler::cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Regi
     float_bge(cmp1, cmp2, no_set);
   } else {
     double_bge(cmp1, cmp2, no_set);
+  }
+  mv(dst, src);
+  bind(no_set);
+}
+
+// When cmp1 >= cmp2 or any of them is NaN then dst = dst, otherwise, dst = src
+// Clarification
+//   scenario 1:
+//     java code      :  cmp2 > cmp1 ? dst : src
+//     transformed to :  CMove dst, (cmp1 gt cmp2), dst, src
+//   scenario 2:
+//     java code      :  cmp1 < cmp2 ? dst : src
+//     transformed to :  CMove dst, (cmp1 gt cmp2), dst, src
+void MacroAssembler::cmov_cmp_fp_gt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
+  if (UseZicond) {
+    if (is_single) {
+      flt_s(t0, cmp1, cmp2);
+    } else {
+      flt_d(t0, cmp1, cmp2);
+    }
+    czero_nez(dst, dst, t0);
+    czero_eqz(t0 , src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  if (is_single) {
+    // jump if cmp1 >= cmp2 or either is NaN
+    // not jump (i.e. move src to dst) if cmp1 < cmp2
+    float_bge(cmp1, cmp2, no_set, false, true);
+  } else {
+    double_bge(cmp1, cmp2, no_set, false, true);
   }
   mv(dst, src);
   bind(no_set);

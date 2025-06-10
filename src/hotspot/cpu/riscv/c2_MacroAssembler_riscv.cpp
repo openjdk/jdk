@@ -2170,13 +2170,17 @@ void C2_MacroAssembler::enc_cmove_cmp_fp(int cmpFlag, FloatRegister op1, FloatRe
       cmov_cmp_fp_le(op1, op2, dst, src, is_single);
       break;
     case BoolTest::ge:
-      cmov_cmp_fp_le(op2, op1, dst, src, is_single);
+      // This log is for JDK-8358892
+      log_develop_trace(jit, compilation)("C2_MacroAssembler::enc_cmove_cmp_fp => BoolTest::ge");
+      cmov_cmp_fp_ge(op1, op2, dst, src, is_single);
       break;
     case BoolTest::lt:
       cmov_cmp_fp_lt(op1, op2, dst, src, is_single);
       break;
     case BoolTest::gt:
-      cmov_cmp_fp_lt(op2, op1, dst, src, is_single);
+      // This log is for JDK-8358892
+      log_develop_trace(jit, compilation)("C2_MacroAssembler::enc_cmove_cmp_fp => BoolTest::gt");
+      cmov_cmp_fp_gt(op2, op1, dst, src, is_single);
       break;
     default:
       assert(false, "unsupported compare condition");
