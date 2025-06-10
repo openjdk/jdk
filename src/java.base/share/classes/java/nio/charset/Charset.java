@@ -350,10 +350,10 @@ public abstract class Charset
     //
     private static Iterator<CharsetProvider> providers() {
         return new Iterator<>() {
-                final ClassLoader cl = ClassLoader.getSystemClassLoader();
-                final ServiceLoader<CharsetProvider> sl =
+                ClassLoader cl = ClassLoader.getSystemClassLoader();
+                ServiceLoader<CharsetProvider> sl =
                     ServiceLoader.load(CharsetProvider.class, cl);
-                final Iterator<CharsetProvider> i = sl.iterator();
+                Iterator<CharsetProvider> i = sl.iterator();
                 CharsetProvider next = null;
 
                 private boolean getNext() {
@@ -651,7 +651,10 @@ public abstract class Charset
     @Stable
     private final String name;          // tickles a bug in oldjavac
     @Stable
-    private final Set<String> aliasSet;
+    private final String[] aliases;     // tickles a bug in oldjavac
+    @Stable
+    private final Supplier<Set<String>> aliasSet = StableValue.supplier(
+            new Supplier<>() { public Set<String> get() { return Set.of(aliases); }});
 
     /**
      * Initializes a new charset with the given canonical name and alias
@@ -667,7 +670,12 @@ public abstract class Charset
      *         If the canonical name or any of the aliases are illegal
      */
     protected Charset(String canonicalName, String[] aliases) {
-        final String[] as = Objects.requireNonNullElse(aliases, zeroAliases);
+        String[] as =
+            aliases == null ?
+                zeroAliases :
+                VM.isSystemDomainLoader(getClass().getClassLoader()) ?
+                    aliases :
+                    Arrays.copyOf(aliases, aliases.length);
 
         // Skip checks for the standard, built-in Charsets we always load
         // during initialization.
@@ -680,7 +688,7 @@ public abstract class Charset
             }
         }
         this.name = canonicalName;
-        this.aliasSet = Set.of(as);
+        this.aliases = as;
     }
 
     /**
@@ -698,7 +706,7 @@ public abstract class Charset
      * @return  An immutable set of this charset's aliases
      */
     public final Set<String> aliases() {
-        return aliasSet;
+        return aliasSet.get();
     }
 
     /**
