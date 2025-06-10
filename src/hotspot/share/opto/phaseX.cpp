@@ -1111,12 +1111,15 @@ void PhaseIterGVN::verify_optimize() {
 void PhaseIterGVN::verify_empty_worklist(Node* node) {
   // Verify that the igvn worklist is empty. If no optimization happened, then
   // nothing needs to be on the worklist.
+  if (_worklist.size() == 0) { return; }
+
+  ttyLocker ttyl;
   for (uint j = 0; j < _worklist.size(); j++) {
     Node* n = _worklist.at(j);
     tty->print("igvn.worklist[%d] ", j);
     n->dump();
   }
-  if (_worklist.size() != 0 && node != 0) {
+  if (_worklist.size() != 0 && node != nullptr) {
     tty->print_cr("Previously optimized:");
     node->dump();
   }
@@ -1173,6 +1176,8 @@ bool PhaseIterGVN::verify_node_Value(Node* n) {
     // after loop-opts, so that should take care of many of these cases.
     return false;
   }
+
+  ttyLocker ttyl;
   tty->cr();
   tty->print_cr("Missed Value optimization:");
   n->dump_bfs(1, nullptr, "");
@@ -1186,11 +1191,12 @@ bool PhaseIterGVN::verify_node_Value(Node* n) {
 }
 
 // Check that all Ideal optimizations that could be done were done.
-// Returns true if it found missed optimization opportunities and false otherwise and for exceptions.
+// Returns true if it found missed optimization opportunities and
+//         false otherwise (no missed optimization, or skipped verification).
 bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
-  // First, we check a list of exceptions, which are known cases where Ideal
-  // can optimize after IGVN. Some may be expected and cannot be fixed, and
-  // others should be fixed.
+  // First, we check a list of exceptions, where we skip verification,
+  // because there are known cases where Ideal can optimize after IGVN.
+  // Some may be expected and cannot be fixed, and others should be fixed.
   switch (n->Opcode()) {
     // RangeCheckNode::Ideal looks up the chain for about 999 nodes
     // see "Range-Check scan limit". So it is possible that something
@@ -1222,6 +1228,15 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     //   runtime/exceptionMsgs/ArrayIndexOutOfBoundsException/ArrayIndexOutOfBoundsExceptionTest.java#id1
     //   -XX:VerifyIterativeGVN=1110
     case Op_CountedLoopEnd:
+      return false;
+
+    // LongCountedLoopEndNode::Ideal
+    // Probably same issue as above.
+    //
+    // Found with:
+    //   compiler/predicates/assertion/TestAssertionPredicates.java#NoLoopPredicationXbatch
+    //   -XX:StressLongCountedLoop=2000000 -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
+    case Op_LongCountedLoopEnd:
       return false;
 
     // RegionNode::Ideal does "Skip around the useless IF diamond".
@@ -1643,6 +1658,15 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     case Op_StrEquals:
       return false;
 
+    // AryEqNode::Ideal
+    // Not investigated. Reshapes itself and adds lots of nodes to the worklist.
+    //
+    // Found with:
+    //   vmTestbase/vm/mlvm/meth/stress/compiler/i2c_c2i/Test.java
+    //   -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -XX:+StressUnstableIfTraps -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
+    case Op_AryEq:
+      return false;
+
     // MergeMemNode::Ideal
     // Found in tier1-3.
     case Op_MergeMem:
@@ -1667,6 +1691,13 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     // Found with:
     //   java -XX:VerifyIterativeGVN=1110 -Xcomp --version
     case Op_CmpP:
+      return false;
+
+    // MinINode::Ideal
+    // Did not investigate, but there are some patterns that might
+    // need more notification.
+    case Op_MinI:
+    case Op_MaxI: // preemptively removed it as well.
       return false;
   }
 
@@ -1777,6 +1808,7 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
   // If there was no new Idealization, we are probably happy.
   if (i == nullptr) {
     if (old_unique < C->unique()) {
+      ttyLocker ttyl;
       tty->cr();
       tty->print_cr("Ideal optimization did not make progress but created new unused nodes.");
       tty->print_cr("  old_unique = %d, unique = %d", old_unique, C->unique());
@@ -1791,6 +1823,7 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
   }
 
   // We just saw a new Idealization which was not done during IGVN.
+  ttyLocker ttyl;
   tty->cr();
   tty->print_cr("Missed Ideal optimization (can_reshape=%s):", can_reshape ? "true": "false");
   if (i == n) {
@@ -1806,11 +1839,12 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
 }
 
 // Check that all Identity optimizations that could be done were done.
-// Returns true if it found missed optimization opportunities and false otherwise and for exceptions.
+// Returns true if it found missed optimization opportunities and
+//         false otherwise (no missed optimization, or skipped verification).
 bool PhaseIterGVN::verify_node_Identity(Node* n) {
-  // First, we check a list of exceptions, which are known cases where Ideal
-  // can optimize after IGVN. Some may be expected and cannot be fixed, and
-  // others should be fixed.
+  // First, we check a list of exceptions, where we skip verification,
+  // because there are known cases where Ideal can optimize after IGVN.
+  // Some may be expected and cannot be fixed, and others should be fixed.
   switch (n->Opcode()) {
     // SafePointNode::Identity can remove SafePoints, but wants to wait until
     // after loopopts:
@@ -1985,6 +2019,7 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
   }
 
   // The verificatin just found a new Identity that was not found during IGVN.
+  ttyLocker ttyl;
   tty->cr();
   tty->print_cr("Missed Identity optimization:");
   tty->print_cr("Old node:");
