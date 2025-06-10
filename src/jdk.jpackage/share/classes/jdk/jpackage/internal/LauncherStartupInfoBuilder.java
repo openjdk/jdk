@@ -32,8 +32,8 @@ import jdk.jpackage.internal.model.LauncherJarStartupInfo;
 import jdk.jpackage.internal.model.LauncherJarStartupInfoMixin;
 import jdk.jpackage.internal.model.LauncherModularStartupInfo;
 import jdk.jpackage.internal.model.LauncherModularStartupInfoMixin;
-import jdk.jpackage.internal.model.LauncherStartupInfo.Stub;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
+import jdk.jpackage.internal.model.LauncherStartupInfo.Stub;
 
 final class LauncherStartupInfoBuilder {
 
@@ -47,7 +47,8 @@ final class LauncherStartupInfoBuilder {
 
     LauncherStartupInfoBuilder launcherData(LauncherData launcherData) {
         if (launcherData.isModular()) {
-            decorator = new ModuleStartupInfo(launcherData.moduleName());
+            decorator = new ModuleStartupInfo(launcherData.moduleName(),
+                    Optional.ofNullable(launcherData.getAppVersion()));
         } else {
             decorator = new JarStartupInfo(launcherData.mainJarName(),
                     launcherData.isClassNameFromMainJar());
@@ -67,12 +68,13 @@ final class LauncherStartupInfoBuilder {
         return this;
     }
 
-    private static record ModuleStartupInfo(String moduleName) implements UnaryOperator<LauncherStartupInfo> {
+    private static record ModuleStartupInfo(String moduleName,
+            Optional<String> moduleVersion) implements UnaryOperator<LauncherStartupInfo> {
 
         @Override
         public LauncherStartupInfo apply(LauncherStartupInfo base) {
             return LauncherModularStartupInfo.create(base,
-                    new LauncherModularStartupInfoMixin.Stub(moduleName));
+                    new LauncherModularStartupInfoMixin.Stub(moduleName, moduleVersion));
         }
     }
 
