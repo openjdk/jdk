@@ -31,7 +31,7 @@ import static org.testng.Assert.fail;
 public abstract class AbstractStopExecutionTest extends KullaTesting {
 
     private final Object lock = new Object();
-    private boolean isStopped;
+    private volatile boolean isStopped;
 
     protected void scheduleStop(String src) throws InterruptedException {
         JShell state = getState();
