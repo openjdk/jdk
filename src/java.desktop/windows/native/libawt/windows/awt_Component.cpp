@@ -5459,7 +5459,6 @@ void AwtComponent::LinkObjects(JNIEnv *env, jobject peer)
 void AwtComponent::UnlinkObjects()
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-    CriticalSection::Lock l(AwtObject::GetGlobalLock());
     if (m_peerObject) {
         env->SetLongField(m_peerObject, AwtComponent::hwndID, 0);
         JNI_SET_PDATA(m_peerObject, static_cast<PDATA>(NULL));

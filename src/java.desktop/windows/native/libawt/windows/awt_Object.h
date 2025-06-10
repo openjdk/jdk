@@ -59,8 +59,6 @@ public:
 
     static jfieldID createErrorID;
 
-    static CriticalSection g_pDataLock;
-
     AwtObject();
     virtual ~AwtObject();
 
@@ -75,8 +73,6 @@ public:
     // Static method to be called from JNI methods to dispose AwtObject
     // specified by pData
     static void _Dispose(PDATA pData);
-
-    static CriticalSection& GetGlobalLock() { return g_pDataLock; }
 
     INLINE CriticalSection& GetLock() { return m_Lock; }
 

@@ -2495,7 +2495,6 @@ void AwtWindow::_SetMinSize(void* param)
 jint AwtWindow::_GetScreenImOn(void *param)
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-    CriticalSection::Lock l(AwtObject::GetGlobalLock());
 
     jobject self = (jobject)param;
     jint result = -1;
