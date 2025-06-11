@@ -187,21 +187,59 @@ void RiscvHwprobe::add_features_from_query_result() {
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBS)) {
     VM_Version::ext_Zbs.enable_feature();
   }
+#ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBKB)) {
+    VM_Version::ext_Zbkb.enable_feature();
+  }
+#endif
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZFH)) {
     VM_Version::ext_Zfh.enable_feature();
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZFHMIN)) {
     VM_Version::ext_Zfhmin.enable_feature();
   }
+#ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVBB)) {
+    VM_Version::ext_Zvbb.enable_feature();
+  }
+#endif
+#ifndef PRODUCT
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVBC)) {
     VM_Version::ext_Zvbc.enable_feature();
   }
+#endif
+#ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKNED) &&
+      is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKNHB) &&
+      is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKB)   &&
+      is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKT)) {
+    VM_Version::ext_Zvkn.enable_feature();
+  }
+#endif
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVFH)) {
     VM_Version::ext_Zvfh.enable_feature();
   }
+#ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZFA)) {
+    VM_Version::ext_Zfa.enable_feature();
+  }
+#endif
+#ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZTSO)) {
+    VM_Version::ext_Ztso.enable_feature();
+  }
+#endif
+#ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZACAS)) {
+    VM_Version::ext_Zacas.enable_feature();
+  }
+  // Currently tests shows that cmove using Zicond instructions will bring
+  // performance regression, but to get a test coverage all the time, will
+  // still prefer to enabling it in debug version.
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICOND)) {
     VM_Version::ext_Zicond.enable_feature();
   }
+#endif
   if (is_valid(RISCV_HWPROBE_KEY_CPUPERF_0)) {
     VM_Version::unaligned_access.enable_feature(
        query[RISCV_HWPROBE_KEY_CPUPERF_0].value & RISCV_HWPROBE_MISALIGNED_MASK);

@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1COLLECTIONSET_INLINE_HPP
 
 #include "gc/g1/g1CollectionSet.hpp"
+
 #include "gc/g1/g1HeapRegionRemSet.hpp"
 
 template <class CardOrRangeVisitor>

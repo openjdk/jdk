@@ -97,6 +97,10 @@ ifeq ($(JLINK_PRODUCE_LINKABLE_RUNTIME), true)
   JLINK_JDK_EXTRA_OPTS += --generate-linkable-runtime
 endif
 
+ifneq ($(JLINK_USER_EXTRA_FLAGS), )
+  JLINK_JDK_EXTRA_OPTS += $(JLINK_USER_EXTRA_FLAGS)
+endif
+
 $(eval $(call SetupExecute, jlink_jdk, \
     WARN := Creating jdk image, \
     DEPS := $(JDK_JMODS) $(BASE_RELEASE_FILE) \
@@ -158,7 +162,7 @@ define CreateCDSArchive
   endif
 
   ifeq ($(DEBUG_CDS_ARCHIVE), true)
-    $1_$2_CDS_DUMP_FLAGS += -Xlog:cds+map*=trace:file=$$(JDK_IMAGE_DIR)/$$($1_$2_CDS_ARCHIVE).cdsmap:none:filesize=0
+    $1_$2_CDS_DUMP_FLAGS += -Xlog:aot+map*=trace:file=$$(JDK_IMAGE_DIR)/$$($1_$2_CDS_ARCHIVE).cdsmap:none:filesize=0
   endif
 
   $$(eval $$(call SetupExecute, $1_$2_gen_cds_archive_jdk, \

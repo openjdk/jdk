@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,8 @@
 #
 #############################################################################
 
-# Quiet all SA tests
+# Quiet the majority of SA tests
+# We run serviceability/sa/TestUniverse.java as a sanity check for minimal functionality
 
 resourcehogs/serviceability/sa/TestHeapDumpForLargeArray.java 8307393   generic-all
 serviceability/sa/CDSJMapClstats.java                         8307393   generic-all
@@ -102,7 +103,6 @@ serviceability/sa/TestPrintMdo.java                           8307393   generic-
 serviceability/sa/TestRevPtrsForInvokeDynamic.java            8307393   generic-all
 serviceability/sa/TestSysProps.java                           8307393   generic-all
 serviceability/sa/TestType.java                               8307393   generic-all
-serviceability/sa/TestUniverse.java                           8307393   generic-all
 serviceability/sa/UniqueVtableTest.java                       8307393   generic-all
 serviceability/sa/jmap-hprof/JMapHProfLargeHeapProc.java      8307393   generic-all
 serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java      8307393   generic-all

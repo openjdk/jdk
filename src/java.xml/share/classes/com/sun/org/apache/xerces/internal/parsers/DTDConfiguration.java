@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -37,7 +37,6 @@ import com.sun.org.apache.xerces.internal.impl.validation.ValidationManager;
 import com.sun.org.apache.xerces.internal.util.FeatureState;
 import com.sun.org.apache.xerces.internal.util.PropertyState;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XMLLocator;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarPool;
@@ -51,6 +50,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLPullParserConfiguration;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
 import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkXmlConfig;
 import jdk.xml.internal.JdkXmlUtils;
 
 /**
@@ -89,7 +89,7 @@ import jdk.xml.internal.JdkXmlUtils;
  * @author Arnaud  Le Hors, IBM
  * @author Andy Clark, IBM
  * @author Neil Graham, IBM
- * @LastModified: May 2021
+ * @LastModified: May 2025
  */
 public class DTDConfiguration
     extends BasicParserConfiguration
@@ -427,7 +427,8 @@ public class DTDConfiguration
             // REVISIT: What is the right thing to do? -Ac
         }
 
-        setProperty(XML_SECURITY_PROPERTY_MANAGER, new XMLSecurityPropertyManager());
+        setProperty(XML_SECURITY_PROPERTY_MANAGER,
+                JdkXmlConfig.getInstance(false).getXMLSecurityPropertyManager(false));
 
         // Initialize Catalog features
         for( CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {

@@ -3965,10 +3965,10 @@ void MatchNode::count_commutative_op(int& count) {
   };
 
   static const char *commut_vector_op_list[] = {
-    "AddVB", "AddVS", "AddVI", "AddVL", "AddVF", "AddVD",
-    "MulVB", "MulVS", "MulVI", "MulVL", "MulVF", "MulVD",
+    "AddVB", "AddVS", "AddVI", "AddVL", "AddVHF", "AddVF", "AddVD",
+    "MulVB", "MulVS", "MulVI", "MulVL", "MulVHF", "MulVF", "MulVD",
     "AndV", "OrV", "XorV",
-    "MaxV", "MinV", "UMax","UMin"
+    "MaxVHF", "MinVHF", "MaxV", "MinV", "UMax","UMin"
   };
 
   if (_lChild && _rChild && (_lChild->_lChild || _rChild->_lChild)) {
@@ -4225,9 +4225,7 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"FmaD") == 0 ||
         strcmp(opType,"FmaF") == 0 ||
         strcmp(opType,"FmaHF") == 0 ||
-        strcmp(opType,"RoundDouble")==0 ||
         strcmp(opType,"RoundDoubleMode")==0 ||
-        strcmp(opType,"RoundFloat")==0 ||
         strcmp(opType,"ReverseBytesI")==0 ||
         strcmp(opType,"ReverseBytesL")==0 ||
         strcmp(opType,"ReverseBytesUS")==0 ||
@@ -4337,15 +4335,15 @@ Form::DataType MatchRule::is_ideal_load() const {
 
 bool MatchRule::is_vector() const {
   static const char *vector_list[] = {
-    "AddVB","AddVS","AddVI","AddVL","AddVF","AddVD",
-    "SubVB","SubVS","SubVI","SubVL","SubVF","SubVD",
-    "MulVB","MulVS","MulVI","MulVL","MulVF","MulVD",
-    "DivVF","DivVD",
+    "AddVB","AddVS","AddVI","AddVL","AddVHF","AddVF","AddVD",
+    "SubVB","SubVS","SubVI","SubVL","SubVHF","SubVF","SubVD",
+    "MulVB","MulVS","MulVI","MulVL","MulVHF","MulVF","MulVD",
+    "DivVHF","DivVF","DivVD",
     "AbsVB","AbsVS","AbsVI","AbsVL","AbsVF","AbsVD",
     "NegVF","NegVD","NegVI","NegVL",
-    "SqrtVD","SqrtVF",
+    "SqrtVD","SqrtVF","SqrtVHF",
     "AndV" ,"XorV" ,"OrV",
-    "MaxV", "MinV", "UMinV", "UMaxV",
+    "MaxV", "MinV", "MinVHF", "MaxVHF", "UMinV", "UMaxV",
     "CompressV", "ExpandV", "CompressM", "CompressBitsV", "ExpandBitsV",
     "AddReductionVI", "AddReductionVL",
     "AddReductionVF", "AddReductionVD",
@@ -4367,7 +4365,7 @@ bool MatchRule::is_vector() const {
     "VectorCastL2X", "VectorCastF2X", "VectorCastD2X", "VectorCastF2HF", "VectorCastHF2F",
     "VectorUCastB2X", "VectorUCastS2X", "VectorUCastI2X",
     "VectorMaskWrapper","VectorMaskCmp","VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
-    "FmaVD","FmaVF","PopCountVI","PopCountVL","PopulateIndex","VectorLongToMask",
+    "FmaVD", "FmaVF", "FmaVHF", "PopCountVI", "PopCountVL", "PopulateIndex", "VectorLongToMask",
     "CountLeadingZerosV", "CountTrailingZerosV", "SignumVF", "SignumVD", "SaturatingAddV", "SaturatingSubV",
     // Next are vector mask ops.
     "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast",

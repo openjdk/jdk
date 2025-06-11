@@ -282,9 +282,34 @@ possible, use an SSD. The build process is very disk intensive, and
 having slow disk access will significantly increase build times. If you
 need to use a network share for the source code, see below for
 suggestions on how to keep the build artifacts on a local disk.</p></li>
-<li><p>On Windows, if using <a href="#cygwin">Cygwin</a>, extra care
-must be taken to make sure the environment is consistent. It is
-recommended that you follow this procedure:</p>
+<li><p>UTF-8 support is needed to compile the JDK. On Unix systems, this
+typically means that the <code>C.UTF-8</code> or
+<code>en_US.UTF-8</code> locale needs to be available. For Windows
+users, please see the section on <a href="#locale-requirements">Locale
+Requirements</a> below.</p></li>
+<li><p>On Windows, extra care must be taken to have a smooth building
+experience:</p>
+<ul>
+<li><p>Make sure that all relevant paths have short names. Short names
+are used by the build system to create space-free alternative paths.
+Short name creation is enabled per volume. The default setting can be
+checked with the command: <code>fsutil 8dot3name query</code>. If short
+name creation was turned off when a directory was created, it will not
+have a short name. Whether a short name exists can be checked by running
+<code>dir /X</code> in the containing directory (in cmd.exe). If a short
+path is present you should see something like 'ASDF~1' being displayed
+in one of the columns of the ouput. If a directory is missing a short
+name, the safest way to get one is to enable short names for that
+particular volume with
+<code>fsutil 8dot3name set &lt;drive   letter&gt;: 0</code> (note that
+you need to run as administrator for this), and then re-create the
+particular directory. A short name should be generated automatically
+then. Another option is to manually assign a short name to the directory
+using
+<code>fsutil file setShortName &lt;path&gt; &lt;short name&gt;</code>.</p></li>
+<li><p>If using <a href="#cygwin">Cygwin</a>, you must make sure the
+file permissions and attributes between Windows and Cygwin are
+consistent. It is recommended that you follow this procedure:</p>
 <ul>
 <li><p>Create the directory that is going to contain the top directory
 of the JDK clone by using the <code>mkdir</code> command in the Cygwin
@@ -294,6 +319,9 @@ it's children will inherit those attributes.</p></li>
 <li><p>Do not put the JDK clone in a path under your Cygwin home
 directory. This is especially important if your user name contains
 spaces and/or mixed upper and lower case letters.</p></li>
+</ul>
+<p>Failure to follow these procedures might result in hard-to-debug
+build problems.</p></li>
 <li><p>You need to install a git client. You have two choices, Cygwin
 git or Git for Windows. Unfortunately there are pros and cons with each
 choice.</p>
@@ -311,9 +339,7 @@ It does work well with the Skara CLI tooling, however. To alleviate the
 line ending problems, make sure you set <code>core.autocrlf</code> to
 <code>false</code> (this is asked during installation).</p></li>
 </ul></li>
-</ul>
-<p>Failure to follow this procedure might result in hard-to-debug build
-problems.</p></li>
+</ul></li>
 </ul>
 <h2 id="build-hardware-requirements">Build Hardware Requirements</h2>
 <p>The JDK is a massive project, and require machines ranging from
@@ -376,7 +402,7 @@ to date at the time of writing.</p>
 </tr>
 <tr class="odd">
 <td>macOS</td>
-<td>macOS 13.x (Ventura)</td>
+<td>macOS 14.x</td>
 </tr>
 <tr class="even">
 <td>Windows</td>
@@ -513,8 +539,8 @@ this makes it difficult for a project such as the JDK to keep pace with
 a continuously updated machine running macOS. See the section on <a
 href="#apple-xcode">Apple Xcode</a> on some strategies to deal with
 this.</p>
-<p>It is recommended that you use at least macOS 13 (Ventura) and Xcode
-14, but earlier versions may also work.</p>
+<p>It is recommended that you use at least macOS 14 and Xcode 15.4, but
+earlier versions may also work.</p>
 <p>The standard macOS environment contains the basic tooling needed to
 build, but for external libraries a package manager is recommended. The
 JDK uses <a href="https://brew.sh/">homebrew</a> in the examples, but
@@ -586,15 +612,15 @@ to compile successfully without issues.</p>
 <tbody>
 <tr class="odd">
 <td>Linux</td>
-<td>gcc 13.2.0</td>
+<td>gcc 14.2.0</td>
 </tr>
 <tr class="even">
 <td>macOS</td>
-<td>Apple Xcode 14.3.1 (using clang 14.0.3)</td>
+<td>Apple Xcode 15.4 (using clang 15.0.0)</td>
 </tr>
 <tr class="odd">
 <td>Windows</td>
-<td>Microsoft Visual Studio 2022 version 17.6.5</td>
+<td>Microsoft Visual Studio 2022 version 17.13.2</td>
 </tr>
 </tbody>
 </table>
@@ -604,7 +630,7 @@ standard for C, and C++14 for C++.</p>
 <p>The minimum accepted version of gcc is 10.0. Older versions will not
 be accepted by <code>configure</code>.</p>
 <p>The JDK is currently known to compile successfully with gcc version
-13.2 or newer.</p>
+14.2 or newer.</p>
 <p>In general, any version between these two should be usable.</p>
 <h3 id="clang">clang</h3>
 <p>The minimum accepted version of clang is 13. Older versions will not
@@ -1722,6 +1748,20 @@ packages in the sysroot, configure the build with
 --with-devkit=$DEVKIT \
 --with-sysroot=$SYSROOT</code></pre>
 <p>and run <code>make</code> normally.</p>
+<h4 id="building-for-windows-aarch64">Building for Windows AArch64</h4>
+<p>The Visual Studio Build Tools can be used for building the JDK
+without a full Visual Studio installation. To set up the Visual Studio
+2022 Build Tools on a Windows AArch64 machine for a native build, launch
+the installer as follows in a Windows command prompt:</p>
+<pre><code>vs_buildtools.exe --quiet --wait --norestart --nocache ^
+--installPath &quot;%ProgramFiles(x86)%\Microsoft Visual Studio\2022\BuildTools&quot; ^
+--add Microsoft.VisualStudio.Component.VC.CoreBuildTools ^
+--add Microsoft.VisualStudio.Component.VC.Tools.ARM64 ^
+--add Microsoft.VisualStudio.Component.Windows11SDK.22621</code></pre>
+<p>To generate Windows AArch64 builds using Cygwin on a Windows x64
+machine, you must set the proper target platform by adding
+<code>--openjdk-target=aarch64-unknown-cygwin</code> to your configure
+command line.</p>
 <h2 id="build-performance">Build Performance</h2>
 <p>Building the JDK requires a lot of horsepower. Some of the build
 tools can be adjusted to utilize more or less of resources such as

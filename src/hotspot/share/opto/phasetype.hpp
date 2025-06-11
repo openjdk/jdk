@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@
   flags(ELIMINATE_VBOX_ALLOC,           "Eliminate VectorBoxAllocate") \
   flags(ITER_GVN_BEFORE_EA,             "Iter GVN before EA") \
   flags(ITER_GVN_AFTER_VECTOR,          "Iter GVN after vector box elimination") \
+  flags(BEFORE_LOOP_OPTS,               "Before Loop Optimizations") \
   flags(BEFORE_BEAUTIFY_LOOPS,          "Before beautify loops") \
   flags(AFTER_BEAUTIFY_LOOPS,           "After beautify loops") \
   flags(BEFORE_LOOP_UNROLLING,          "Before Loop Unrolling") \
@@ -88,6 +89,7 @@
   flags(CCP1,                           "PhaseCCP 1") \
   flags(ITER_GVN2,                      "Iter GVN 2") \
   flags(PHASEIDEALLOOP_ITERATIONS,      "PhaseIdealLoop iterations") \
+  flags(AFTER_LOOP_OPTS,                "After Loop Optimizations") \
   flags(AFTER_MERGE_STORES,             "After Merge Stores") \
   flags(BEFORE_MACRO_EXPANSION ,        "Before Macro Expansion") \
   flags(AFTER_MACRO_EXPANSION_STEP,     "After Macro Expansion Step") \
@@ -98,6 +100,7 @@
   flags(MATCHING,                       "After matching") \
   flags(GLOBAL_CODE_MOTION,             "Global code motion") \
   flags(INITIAL_LIVENESS,               "Initial liveness") \
+  flags(LIVE_RANGE_STRETCHING,          "Live range stretching") \
   flags(AGGRESSIVE_COALESCING,          "Aggressive coalescing") \
   flags(INITIAL_SPILLING,               "Initial spilling") \
   flags(CONSERVATIVE_COALESCING,        "Conservative coalescing") \

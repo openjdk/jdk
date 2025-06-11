@@ -30,7 +30,8 @@
 * @requires vm.compiler2.enabled
 * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") |
 *           (os.simpleArch == "aarch64" & vm.cpu.features ~= ".*sve.*") |
-*           (os.simpleArch == "riscv64" & vm.cpu.features ~= ".*zvbb.*")
+*           (os.simpleArch == "riscv64" & vm.cpu.features ~= ".*zvbb.*") |
+*           ((os.arch == "ppc64" | os.arch == "ppc64le") & vm.cpu.features ~= ".*darn.*")
 * @library /test/lib /
 * @modules jdk.incubator.vector
 * @run driver compiler.vectorization.TestNumberOfContinuousZeros
@@ -70,7 +71,8 @@ public class TestNumberOfContinuousZeros {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNT_TRAILING_ZEROS_VL, "> 0"})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        counts = {IRNode.COUNT_TRAILING_ZEROS_VL, "> 0"})
     public void vectorizeNumberOfTrailingZerosLong() {
         for (int i = 0; i < LEN; ++i) {
             outputLong[i] = Long.numberOfTrailingZeros(inputLong[i]);
@@ -78,7 +80,8 @@ public class TestNumberOfContinuousZeros {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNT_LEADING_ZEROS_VL, "> 0"})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        counts = {IRNode.COUNT_LEADING_ZEROS_VL, "> 0"})
     public void vectorizeNumberOfLeadingZerosLong() {
         for (int i = 0; i < LEN; ++i) {
             outputLong[i] = Long.numberOfLeadingZeros(inputLong[i]);

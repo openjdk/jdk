@@ -38,6 +38,7 @@ import java.util.List;
 import static sun.security.pkcs11.TemplateManager.*;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.CKR_KEY_SIZE_RANGE;
 
 final class P11HKDF extends KDFSpi {
     private final Token token;
@@ -157,6 +158,15 @@ final class P11HKDF extends KDFSpi {
                     " instance, instead of " + derivationSpec.getClass());
         }
 
+        P11SecretKeyFactory.KeyInfo ki = P11SecretKeyFactory.getKeyInfo(alg);
+        if (ki == null) {
+            throw new InvalidAlgorithmParameterException("A PKCS #11 key " +
+                    "type (CKK_*) was not found for a key of the algorithm '" +
+                    alg + "'.");
+        }
+        checkDerivedKeyType(ki, alg);
+        P11KeyGenerator.checkKeySize(ki.keyGenMech, outLen * 8, token);
+
         P11Key p11BaseKey = convertKey(baseKey, (isExtract ? "IKM" : "PRK") +
                 " could not be converted to a token key for HKDF derivation.");
 
@@ -174,17 +184,10 @@ final class P11HKDF extends KDFSpi {
                     "token as service.";
         }
 
-        P11SecretKeyFactory.KeyInfo ki = P11SecretKeyFactory.getKeyInfo(alg);
-        if (ki == null) {
-            throw new InvalidAlgorithmParameterException("A PKCS #11 key " +
-                    "type (CKK_*) was not found for a key of the algorithm '" +
-                    alg + "'.");
-        }
-        long derivedKeyType = ki.keyType;
         long derivedKeyClass = isData ? CKO_DATA : CKO_SECRET_KEY;
         CK_ATTRIBUTE[] attrs = new CK_ATTRIBUTE[] {
                 new CK_ATTRIBUTE(CKA_CLASS, derivedKeyClass),
-                new CK_ATTRIBUTE(CKA_KEY_TYPE, derivedKeyType),
+                new CK_ATTRIBUTE(CKA_KEY_TYPE, ki.keyType),
                 new CK_ATTRIBUTE(CKA_VALUE_LEN, outLen)
         };
         Session session = null;
@@ -195,7 +198,7 @@ final class P11HKDF extends KDFSpi {
                     svcKi.hmacMech, saltType, saltBytes, p11SaltKey != null ?
                     p11SaltKey.getKeyID() : 0L, info);
             attrs = token.getAttributes(O_GENERATE, derivedKeyClass,
-                    derivedKeyType, attrs);
+                    ki.keyType, attrs);
             long derivedObjectID = token.p11.C_DeriveKey(session.id(),
                     new CK_MECHANISM(mechanism, params), baseKeyID, attrs);
             Object ret;
@@ -216,6 +219,11 @@ final class P11HKDF extends KDFSpi {
             }
             return retType.cast(ret);
         } catch (PKCS11Exception e) {
+            if (e.match(CKR_KEY_SIZE_RANGE)) {
+                throw new InvalidAlgorithmParameterException("Invalid key " +
+                        "size (" + outLen + " bytes) for algorithm '" + alg +
+                        "'.", e);
+            }
             throw new ProviderException("HKDF derivation for algorithm '" +
                     alg + "' failed.", e);
         } finally {
@@ -224,6 +232,23 @@ final class P11HKDF extends KDFSpi {
             }
             p11BaseKey.releaseKeyID();
             token.releaseSession(session);
+        }
+    }
+
+    private static boolean canDeriveKeyInfoType(long t) {
+        return (t == CKK_DES || t == CKK_DES3 || t == CKK_AES ||
+                t == CKK_RC4 || t == CKK_BLOWFISH || t == CKK_CHACHA20 ||
+                t == CKK_GENERIC_SECRET);
+    }
+
+    private void checkDerivedKeyType(P11SecretKeyFactory.KeyInfo ki, String alg)
+            throws InvalidAlgorithmParameterException {
+        Class<?> kiClass = ki.getClass();
+        if (!kiClass.equals(P11SecretKeyFactory.TLSKeyInfo.class) &&
+                !(kiClass.equals(P11SecretKeyFactory.KeyInfo.class) &&
+                        canDeriveKeyInfoType(ki.keyType))) {
+            throw new InvalidAlgorithmParameterException("A key of algorithm " +
+                    "'" + alg + "' is not valid for derivation.");
         }
     }
 

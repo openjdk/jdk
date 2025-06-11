@@ -2476,7 +2476,7 @@ address StubGenerator::generate_checkcast_copy(StubGenStubId stub_id, address *e
 
 #ifdef ASSERT
     Label L2;
-    __ get_thread(r14);
+    __ get_thread_slow(r14);
     __ cmpptr(r15_thread, r14);
     __ jcc(Assembler::equal, L2);
     __ stop("StubRoutines::call_stub: r15_thread is modified by call");

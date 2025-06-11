@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,16 @@ public:
 
   // Memory
   static void fill(uintptr_t* addr, size_t count, uintptr_t value);
+  template <typename T>
+  static void copy_disjoint(T* dest, const T* src, size_t count);
+  template <typename T>
+  static void copy_disjoint(T* dest, const T* src, int count);
+
+  // Sort
+  template <typename T, typename Comparator>
+  static void sort(T* array, size_t count, Comparator comparator);
+  template <typename T, typename Comparator>
+  static void sort(T* array, int count, Comparator comparator);
 };
 
 #endif // SHARE_GC_Z_ZUTILS_HPP

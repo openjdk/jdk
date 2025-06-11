@@ -56,7 +56,22 @@ public sealed interface StringEntry
     /**
      * {@return the string value for this entry}
      *
+     * @apiNote
+     * A {@code Utf8Entry} can be used directly as a {@link CharSequence} if
+     * {@code String} functionalities are not strictly desired.  If only string
+     * equivalence is desired, {@link #equalsString(String) equalsString} should
+     * be used.  Reduction of string processing can significantly improve {@code
+     * class} file reading performance.
+     *
      * @see ConstantPoolBuilder#stringEntry(String)
      */
     String stringValue();
+
+    /**
+     * {@return whether this entry describes the same string as the provided string}
+     *
+     * @param value the string to compare to
+     * @since 25
+     */
+    boolean equalsString(String value);
 }

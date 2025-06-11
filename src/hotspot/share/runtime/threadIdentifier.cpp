@@ -48,3 +48,10 @@ int64_t ThreadIdentifier::next() {
   } while (Atomic::cmpxchg(&next_thread_id, next_tid, next_tid + 1) != next_tid);
   return next_tid;
 }
+
+#ifdef ASSERT
+void ThreadIdentifier::verify_id(int64_t id) {
+  int64_t current_id = current();
+  assert(id >= initial() && id < current_id, "invalid id, " INT64_FORMAT " and current is " INT64_FORMAT, id, current_id);
+}
+#endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,10 @@ import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCAnnotatedType;
 import com.sun.tools.javac.tree.JCTree.JCCase;
+import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
+import com.sun.tools.javac.tree.JCTree.JCImport;
+import com.sun.tools.javac.tree.JCTree.JCImportBase;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
@@ -87,6 +90,7 @@ import com.sun.tools.javac.tree.TreeScanner;
 
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.util.Position.NOPOS;
+import java.util.stream.Stream;
 
 /**
  * Utility and test program to check validity of tree positions for tree nodes.
@@ -102,7 +106,7 @@ import static com.sun.tools.javac.util.Position.NOPOS;
 
 /*
  * @test
- * @bug 6919889
+ * @bug 6919889 8344706
  * @summary assorted position errors in compiler syntax trees
  * OLD: -q -r -ef ./tools/javac/typeAnnotations -ef ./tools/javap/typeAnnotations -et ANNOTATED_TYPE .
  * @modules java.desktop
@@ -342,10 +346,18 @@ public class TreePosTest {
      * Main class for testing assertions concerning tree positions for tree nodes.
      */
     private class PosTester extends TreeScanner {
+        private boolean compactSourceFile;
         void test(JCCompilationUnit tree) {
             sourcefile = tree.sourcefile;
             endPosTable = tree.endPositions;
             encl = new Info();
+            List<JCTree> nonImports = tree.defs
+                                          .stream()
+                                          .filter(t -> !(t instanceof JCImportBase))
+                                          .toList();
+            compactSourceFile = nonImports.size() == 1 &&
+                                nonImports.get(0) instanceof JCClassDecl classDecl &&
+                                tree.endPositions.getEndPos(classDecl) == NOPOS;
             tree.accept(this);
         }
 
@@ -369,7 +381,12 @@ public class TreePosTest {
                     // For this node, start , pos, and endpos should be all defined
                     check("start != NOPOS", encl, self, self.start != NOPOS);
                     check("pos != NOPOS", encl, self, self.pos != NOPOS);
-                    check("end != NOPOS", encl, self, self.end != NOPOS);
+                    boolean topLevelCompactClass = compactSourceFile &&
+                                                   encl.tree == null &&
+                                                   self.tag == CLASSDEF;
+                    if (!topLevelCompactClass) {
+                        check("end != NOPOS", encl, self, self.end != NOPOS);
+                    }
                     // The following should normally be ordered
                     // encl.start <= start <= pos <= end <= encl.end
                     // In addition, the position of the enclosing node should be
@@ -398,12 +415,14 @@ public class TreePosTest {
                         check("encl.pos <= start || end <= encl.pos",
                                 encl, self, encl.pos <= self.start || self.end <= encl.pos);
                     }
-                    check("pos <= end", encl, self, self.pos <= self.end);
+                    if (!topLevelCompactClass) {
+                        check("pos <= end", encl, self, self.pos <= self.end);
+                    }
                     if (!( (self.tag == TYPEARRAY || isAnnotatedArray(self.tree)) &&
                             (encl.tag == TYPEARRAY || isAnnotatedArray(encl.tree))
                            ||
                             encl.tag == MODIFIERS && self.tag == ANNOTATION
-                         ) ) {
+                         ) && !compactSourceFile) {
                         check("end <= encl.end", encl, self, self.end <= encl.end);
                     }
                 }

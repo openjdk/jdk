@@ -468,24 +468,30 @@ class InvokerBytecodeGenerator {
             case LINK_TO_TARGET_METHOD:     // fall-through
             case GENERIC_INVOKER:           // fall-through
             case GENERIC_LINKER:            return resolveFrom(name, invokerType, Invokers.Holder.class);
-            case GET_REFERENCE:             // fall-through
-            case GET_BOOLEAN:               // fall-through
-            case GET_BYTE:                  // fall-through
-            case GET_CHAR:                  // fall-through
-            case GET_SHORT:                 // fall-through
-            case GET_INT:                   // fall-through
-            case GET_LONG:                  // fall-through
-            case GET_FLOAT:                 // fall-through
-            case GET_DOUBLE:                // fall-through
-            case PUT_REFERENCE:             // fall-through
-            case PUT_BOOLEAN:               // fall-through
-            case PUT_BYTE:                  // fall-through
-            case PUT_CHAR:                  // fall-through
-            case PUT_SHORT:                 // fall-through
-            case PUT_INT:                   // fall-through
-            case PUT_LONG:                  // fall-through
-            case PUT_FLOAT:                 // fall-through
-            case PUT_DOUBLE:                // fall-through
+            case FIELD_ACCESS:              // fall-through
+            case FIELD_ACCESS_INIT:         // fall-through
+            case VOLATILE_FIELD_ACCESS:     // fall-through
+            case VOLATILE_FIELD_ACCESS_INIT:// fall-through
+            case FIELD_ACCESS_B:              // fall-through
+            case FIELD_ACCESS_INIT_B:         // fall-through
+            case VOLATILE_FIELD_ACCESS_B:     // fall-through
+            case VOLATILE_FIELD_ACCESS_INIT_B:// fall-through
+            case FIELD_ACCESS_C:              // fall-through
+            case FIELD_ACCESS_INIT_C:         // fall-through
+            case VOLATILE_FIELD_ACCESS_C:     // fall-through
+            case VOLATILE_FIELD_ACCESS_INIT_C:// fall-through
+            case FIELD_ACCESS_S:              // fall-through
+            case FIELD_ACCESS_INIT_S:         // fall-through
+            case VOLATILE_FIELD_ACCESS_S:     // fall-through
+            case VOLATILE_FIELD_ACCESS_INIT_S:// fall-through
+            case FIELD_ACCESS_Z:              // fall-through
+            case FIELD_ACCESS_INIT_Z:         // fall-through
+            case VOLATILE_FIELD_ACCESS_Z:     // fall-through
+            case VOLATILE_FIELD_ACCESS_INIT_Z:// fall-through
+            case FIELD_ACCESS_CAST:              // fall-through
+            case FIELD_ACCESS_INIT_CAST:         // fall-through
+            case VOLATILE_FIELD_ACCESS_CAST:     // fall-through
+            case VOLATILE_FIELD_ACCESS_INIT_CAST:// fall-through
             case DIRECT_NEW_INVOKE_SPECIAL: // fall-through
             case DIRECT_INVOKE_INTERFACE:   // fall-through
             case DIRECT_INVOKE_SPECIAL:     // fall-through

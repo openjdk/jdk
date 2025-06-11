@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8002387 8014636 8078320 8175200 8186332 8352249
+ * @bug      8002387 8014636 8078320 8175200 8186332 8352249 8352389
  * @summary  Improve rendered HTML formatting for {@code}
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -70,8 +70,7 @@ public class TestLiteralCodeInPre extends JavadocTester {
                 """
                     typical_usage_code</span>()</div>
                     <div class="block">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                    Example:  <pre><code>
-                      line 0 @Override
+                    Example:  <pre><code>  line 0 @Override
                       line 1 &lt;T&gt; void m(T t) {
                       line 2     // do something with T
                       line 3 }
@@ -80,8 +79,7 @@ public class TestLiteralCodeInPre extends JavadocTester {
                 """
                     typical_usage_literal</span>()</div>
                     <div class="block">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                    Example:  <pre>
-                      line 0 @Override
+                    Example:  <pre>  line 0 @Override
                       line 1 &lt;T&gt; void m(T t) {
                       line 2     // do something with T
                       line 3 }
@@ -90,8 +88,7 @@ public class TestLiteralCodeInPre extends JavadocTester {
                 """
                     recommended_usage_literal</span>()</div>
                     <div class="block">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                    Example:  <pre>
-                      line 0 @Override
+                    Example:  <pre>  line 0 @Override
                       line 1 &lt;T&gt; void m(T t) {
                       line 2     // do something with T
                       line 3 } </pre>

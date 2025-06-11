@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="jvmti.xsl"?>
 <!--
  Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
@@ -8292,7 +8292,7 @@ class C2 extends C1 implements I2 {
         <field id="entry_count">
           <jint/>
           <description>
-            The number of times the platform thread owning this monitor has entered it, 
+            The number of times the platform thread owning this monitor has entered it,
             or <code>0</code> if owned by a virtual thread or not owned
           </description>
         </field>

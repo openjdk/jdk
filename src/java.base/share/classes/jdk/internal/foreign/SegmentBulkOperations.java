@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,9 +53,7 @@ public final class SegmentBulkOperations {
 
     // All the threshold values below MUST be a power of two and should preferably be
     // greater or equal to 2^3.
-
-    // Update the FILL value for Aarch64 once 8338975 is fixed.
-    private static final int NATIVE_THRESHOLD_FILL = powerOfPropertyOr("fill", Architecture.isAARCH64() ? 10 : 5);
+    private static final int NATIVE_THRESHOLD_FILL = powerOfPropertyOr("fill", 5);
     private static final int NATIVE_THRESHOLD_MISMATCH = powerOfPropertyOr("mismatch", 6);
     private static final int NATIVE_THRESHOLD_COPY = powerOfPropertyOr("copy", 6);
 

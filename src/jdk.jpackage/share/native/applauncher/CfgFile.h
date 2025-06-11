@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,7 @@
 #ifndef CfgFile_h
 #define CfgFile_h
 
-#include <map>
-#include "tstrings.h"
+#include "StringProcessing.h"
 
 
 class CfgFile {
@@ -90,10 +89,10 @@ public:
         std::swap(empty, other.empty);
     }
 
-    typedef std::map<tstring, tstring> Macros;
+    typedef StringProcessing::VariableValues Macros;
 
     /**
-     * Returns copy of this instance with the given macros expanded.
+     * Returns copy of this instance with the given macros and environment variables expanded.
      */
     CfgFile expandMacros(const Macros& macros) const;
 

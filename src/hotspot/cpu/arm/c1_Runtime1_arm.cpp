@@ -70,11 +70,11 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
 
   if (oop_result1->is_valid()) {
     assert_different_registers(oop_result1, R3, Rtemp);
-    get_vm_result(oop_result1, Rtemp);
+    get_vm_result_oop(oop_result1, Rtemp);
   }
   if (metadata_result->is_valid()) {
     assert_different_registers(metadata_result, R3, Rtemp);
-    get_vm_result_2(metadata_result, Rtemp);
+    get_vm_result_metadata(metadata_result, Rtemp);
   }
 
   // Check for pending exception

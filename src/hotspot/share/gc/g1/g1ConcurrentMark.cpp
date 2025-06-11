@@ -52,8 +52,8 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
-#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "jvm.h"
@@ -475,7 +475,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 
   _heap(_g1h->reserved()),
 
-  _root_regions(_g1h->max_regions()),
+  _root_regions(_g1h->max_num_regions()),
 
   _global_mark_stack(),
 
@@ -513,9 +513,9 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _num_concurrent_workers(0),
   _max_concurrent_workers(0),
 
-  _region_mark_stats(NEW_C_HEAP_ARRAY(G1RegionMarkStats, _g1h->max_reserved_regions(), mtGC)),
-  _top_at_mark_starts(NEW_C_HEAP_ARRAY(HeapWord*, _g1h->max_reserved_regions(), mtGC)),
-  _top_at_rebuild_starts(NEW_C_HEAP_ARRAY(HeapWord*, _g1h->max_reserved_regions(), mtGC)),
+  _region_mark_stats(NEW_C_HEAP_ARRAY(G1RegionMarkStats, _g1h->max_num_regions(), mtGC)),
+  _top_at_mark_starts(NEW_C_HEAP_ARRAY(HeapWord*, _g1h->max_num_regions(), mtGC)),
+  _top_at_rebuild_starts(NEW_C_HEAP_ARRAY(HeapWord*, _g1h->max_num_regions(), mtGC)),
   _needs_remembered_set_rebuild(false)
 {
   assert(CGC_lock != nullptr, "CGC_lock must be initialized");
@@ -570,8 +570,8 @@ void G1ConcurrentMark::reset() {
     _tasks[i]->reset(mark_bitmap());
   }
 
-  uint max_reserved_regions = _g1h->max_reserved_regions();
-  for (uint i = 0; i < max_reserved_regions; i++) {
+  uint max_num_regions = _g1h->max_num_regions();
+  for (uint i = 0; i < max_num_regions; i++) {
     _top_at_rebuild_starts[i] = nullptr;
     _region_mark_stats[i].clear();
   }
@@ -613,8 +613,8 @@ void G1ConcurrentMark::reset_marking_for_restart() {
   if (has_overflown()) {
     _global_mark_stack.expand();
 
-    uint max_reserved_regions = _g1h->max_reserved_regions();
-    for (uint i = 0; i < max_reserved_regions; i++) {
+    uint max_num_regions = _g1h->max_num_regions();
+    for (uint i = 0; i < max_num_regions; i++) {
       _region_mark_stats[i].clear_during_overflow();
     }
   }
@@ -782,7 +782,7 @@ public:
 void G1ConcurrentMark::clear_bitmap(WorkerThreads* workers, bool may_yield) {
   assert(may_yield || SafepointSynchronize::is_at_safepoint(), "Non-yielding bitmap clear only allowed at safepoint.");
 
-  size_t const num_bytes_to_clear = (G1HeapRegion::GrainBytes * _g1h->num_regions()) / G1CMBitMap::heap_map_factor();
+  size_t const num_bytes_to_clear = (G1HeapRegion::GrainBytes * _g1h->num_committed_regions()) / G1CMBitMap::heap_map_factor();
   size_t const num_chunks = align_up(num_bytes_to_clear, G1ClearBitMapTask::chunk_size()) / G1ClearBitMapTask::chunk_size();
 
   uint const num_workers = (uint)MIN2(num_chunks, (size_t)workers->active_workers());
@@ -1273,7 +1273,8 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
         // The liveness of this humongous obj decided by either its allocation
         // time (allocated after conc-mark-start, i.e. live) or conc-marking.
         const bool is_live = _cm->top_at_mark_start(hr) == hr->bottom()
-                             || _cm->contains_live_object(hr->hrm_index());
+                          || _cm->contains_live_object(hr->hrm_index())
+                          || hr->has_pinned_objects();
         if (is_live) {
           const bool selected_for_rebuild = tracker->update_humongous_before_rebuild(hr);
           auto on_humongous_region = [&] (G1HeapRegion* hr) {
@@ -1288,9 +1289,12 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
           reclaim_empty_humongous_region(hr);
         }
       } else if (hr->is_old()) {
-        hr->note_end_of_marking(_cm->top_at_mark_start(hr), _cm->live_bytes(hr->hrm_index()));
+        uint region_idx = hr->hrm_index();
+        hr->note_end_of_marking(_cm->top_at_mark_start(hr), _cm->live_bytes(region_idx), _cm->incoming_refs(region_idx));
 
-        if (hr->live_bytes() != 0) {
+        const bool is_live = hr->live_bytes() != 0
+                          || hr->has_pinned_objects();
+        if (is_live) {
           if (tracker->update_old_before_rebuild(hr)) {
             _num_selected_for_rebuild++;
           }
@@ -1430,20 +1434,20 @@ void G1ConcurrentMark::remark() {
       GCTraceTime(Debug, gc, phases) debug("Select For Rebuild and Reclaim Empty Regions", _gc_timer_cm);
 
       G1UpdateRegionLivenessAndSelectForRebuildTask cl(_g1h, this, _g1h->workers()->active_workers());
-      uint const num_workers = MIN2(G1UpdateRegionLivenessAndSelectForRebuildTask::desired_num_workers(_g1h->num_regions()),
+      uint const num_workers = MIN2(G1UpdateRegionLivenessAndSelectForRebuildTask::desired_num_workers(_g1h->num_committed_regions()),
                                     _g1h->workers()->active_workers());
-      log_debug(gc,ergo)("Running %s using %u workers for %u regions in heap", cl.name(), num_workers, _g1h->num_regions());
+      log_debug(gc,ergo)("Running %s using %u workers for %u regions in heap", cl.name(), num_workers, _g1h->num_committed_regions());
       _g1h->workers()->run_task(&cl, num_workers);
 
       log_debug(gc, remset, tracking)("Remembered Set Tracking update regions total %u, selected %u",
-                                        _g1h->num_regions(), cl.total_selected_for_rebuild());
+                                        _g1h->num_committed_regions(), cl.total_selected_for_rebuild());
 
       _needs_remembered_set_rebuild = (cl.total_selected_for_rebuild() > 0);
 
       if (_needs_remembered_set_rebuild) {
         // Prune rebuild candidates based on G1HeapWastePercent.
         // Improves rebuild time in addition to remembered set memory usage.
-        G1CollectionSetChooser::build(_g1h->workers(), _g1h->num_regions(), _g1h->policy()->candidates());
+        G1CollectionSetChooser::build(_g1h->workers(), _g1h->num_committed_regions(), _g1h->policy()->candidates());
       }
     }
 
@@ -1457,7 +1461,7 @@ void G1ConcurrentMark::remark() {
     // GC pause.
     _g1h->increment_total_collections();
 
-    _g1h->resize_heap_if_necessary();
+    _g1h->resize_heap_if_necessary(size_t(0) /* allocation_word_size */);
     _g1h->uncommit_regions_if_necessary();
 
     compute_new_sizes();
@@ -2122,9 +2126,9 @@ void G1ConcurrentMark::threads_do(ThreadClosure* tc) const {
   _concurrent_workers->threads_do(tc);
 }
 
-void G1ConcurrentMark::print_on_error(outputStream* st) const {
+void G1ConcurrentMark::print_on(outputStream* st) const {
   st->print_cr("Marking Bits: (CMBitMap*) " PTR_FORMAT, p2i(mark_bitmap()));
-  _mark_bitmap.print_on_error(st, " Bits: ");
+  _mark_bitmap.print_on(st, " Bits: ");
 }
 
 static ReferenceProcessor* get_cm_oop_closure_ref_processor(G1CollectedHeap* g1h) {

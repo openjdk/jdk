@@ -24,11 +24,11 @@
  *
  */
 
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahInitLogger.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "logging/log.hpp"
 #include "utilities/globalDefinitions.hpp"
 

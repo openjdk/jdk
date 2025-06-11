@@ -148,6 +148,9 @@ class SystemProperty : public PathString {
 // Helper class for controlling the lifetime of JavaVMInitArgs objects.
 class ScopedVMInitArgs;
 
+struct VMInitArgsGroup;
+template <typename E, MemTag MT> class GrowableArrayCHeap;
+
 class Arguments : AllStatic {
   friend class VMStructs;
   friend class JvmtiExport;
@@ -197,6 +200,10 @@ class Arguments : AllStatic {
   static char* _java_command;
   // number of unique modules specified in the --add-modules option
   static unsigned int _addmods_count;
+#if INCLUDE_JVMCI
+  // was jdk.internal.vm.ci module specified in the --add-modules option?
+  static bool _jvmci_module_added;
+#endif
 
   // Property list
   static SystemProperty* _system_properties;
@@ -238,8 +245,8 @@ class Arguments : AllStatic {
   // java launcher
   static const char* _sun_java_launcher;
 
-  // was this VM created via the -XXaltjvm=<path> option
-  static bool   _sun_java_launcher_is_altjvm;
+  // was this VM created with the -XX:+ExecutingUnitTests option
+  static bool _executing_unit_tests;
 
   // for legacy gc options (-verbose:gc and -Xloggc:)
   static LegacyGCLogging _legacyGCLogging;
@@ -306,6 +313,8 @@ class Arguments : AllStatic {
   static jint parse_options_environment_variable(const char* name, ScopedVMInitArgs* vm_args);
   static jint parse_java_tool_options_environment_variable(ScopedVMInitArgs* vm_args);
   static jint parse_java_options_environment_variable(ScopedVMInitArgs* vm_args);
+  static jint parse_jdk_aot_vm_options_environment_variable(GrowableArrayCHeap<VMInitArgsGroup, mtArguments>* all_args,
+                                                            ScopedVMInitArgs* jdk_aot_vm_options_args);
   static jint parse_vm_options_file(const char* file_name, ScopedVMInitArgs* vm_args);
   static jint parse_options_buffer(const char* name, char* buffer, const size_t buf_len, ScopedVMInitArgs* vm_args);
   static jint parse_xss(const JavaVMOption* option, const char* tail, intx* out_ThreadStackSize);
@@ -323,10 +332,7 @@ class Arguments : AllStatic {
 
   static bool handle_deprecated_print_gc_flags();
 
-  static jint parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
-                                 const JavaVMInitArgs *java_tool_options_args,
-                                 const JavaVMInitArgs *java_options_args,
-                                 const JavaVMInitArgs *cmd_line_args);
+  static jint parse_vm_init_args(GrowableArrayCHeap<VMInitArgsGroup, mtArguments>* all_args);
   static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin origin);
   static jint finalize_vm_init_args();
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore, const char* option_type);
@@ -429,8 +435,8 @@ class Arguments : AllStatic {
   static const char* sun_java_launcher()    { return _sun_java_launcher; }
   // Was VM created by a Java launcher?
   static bool created_by_java_launcher();
-  // -Dsun.java.launcher.is_altjvm
-  static bool sun_java_launcher_is_altjvm();
+  // -XX:+ExecutingUnitTests
+  static bool executing_unit_tests();
 
   // abort, exit, vfprintf hooks
   static abort_hook_t    abort_hook()       { return _abort_hook; }

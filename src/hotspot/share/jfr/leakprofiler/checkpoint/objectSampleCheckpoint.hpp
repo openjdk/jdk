@@ -47,6 +47,7 @@ class ObjectSampleCheckpoint : AllStatic {
   static void add_to_leakp_set(const InstanceKlass* ik, traceid method_id);
   static int save_mark_words(const ObjectSampler* sampler, ObjectSampleMarker& marker, bool emit_all);
   static void write_stacktrace(const JfrStackTrace* trace, JfrCheckpointWriter& writer);
+  static void write_stacktraces(Thread* thread);
   static void write(const ObjectSampler* sampler, EdgeStore* edge_store, bool emit_all, Thread* thread);
   static void clear();
  public:
