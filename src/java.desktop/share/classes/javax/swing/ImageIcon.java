@@ -296,12 +296,6 @@ public class ImageIcon implements Icon, Serializable, Accessible {
         synchronized(mTracker) {
             int id = getNextID();
 
-            if (id < 0) {
-                loadStatus = MediaTracker.ABORTED;
-                width = image.getWidth(imageObserver);
-                height = image.getHeight(imageObserver);
-                return;
-            }
             mTracker.addImage(image, id);
             try {
                 mTracker.waitForID(id, 0);
@@ -327,9 +321,6 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      */
     private int getNextID() {
         synchronized(getTracker()) {
-            if (mediaTrackerID >= Integer.MAX_VALUE) {
-                return -1;
-            }
             return ++mediaTrackerID;
         }
     }
@@ -345,10 +336,13 @@ public class ImageIcon implements Icon, Serializable, Accessible {
         // If null, synchronize, re-check for null, and put new tracker
         synchronized(ac) {
             trackerObj = ac.get(TRACKER_KEY);
-            if (trackerObj == null) {
+            if (trackerObj == null || mediaTrackerID < 0) {
                 Component comp = new Component() {};
                 trackerObj = new MediaTracker(comp);
                 ac.put(TRACKER_KEY, trackerObj);
+                if (mediaTrackerID < 0) {
+                    mediaTrackerID = 0;
+                }
             }
         }
         return (MediaTracker) trackerObj;
