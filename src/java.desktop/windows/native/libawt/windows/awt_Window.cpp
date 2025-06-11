@@ -2501,9 +2501,8 @@ jint AwtWindow::_GetScreenImOn(void *param)
     PDATA pData;
     AwtWindow* w = NULL;
 
-    // It's entirely possible that our native resources have been destroyed
-    // before our java peer - if we're dispose()d, for instance.
-    // Return the default screen.
+    // Our native resources may have been destroyed before the Java peer,
+    // e.g., if dispose() was called. In that case, return the default screen.
     JNI_CHECK_PEER_GOTO(self, ret);
 
     w = (AwtWindow *)pData;
