@@ -100,7 +100,7 @@ class VM_Version: public Abstract_VM_Version {
 #define  CryptoExtension4Mask           0x0004000000000000UL  // z196 (aka message-security assist extension 4, for KMF, KMCTR, KMO)
 #define  DFPPackedConversionMask        0x0000800000000000UL  // z13
 // ----------------------------------------------
-// --- FeatureBitString Bits 128..192 (DW[2]) ---
+// --- FeatureBitString Bits 128..191 (DW[2]) ---
 // ----------------------------------------------
 //                                        11111111111111111
 //                                        23344455666778889
@@ -118,7 +118,7 @@ class VM_Version: public Abstract_VM_Version {
 #define NNPAssistFacilityMask           0x0000000004000000UL  // z16, Neural-network-processing-assist facility, Bit: 165
 
 // ----------------------------------------------
-// --- FeatureBitString Bits 193..200 (DW[3]) ---
+// --- FeatureBitString Bits 192..255 (DW[3]) ---
 // ----------------------------------------------
 #define  BEAREnhFacilityMask            0x4000000000000000UL  // z16, BEAR-enhancement facility, Bit: 193
 #define  ConcurrentFunFacilityMask      0x0040000000000000UL  // z17, Concurrent-functions facility, Bit: 201
