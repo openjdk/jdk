@@ -57,12 +57,10 @@ public class ImmutableDescriptorSerialHashCodeTest {
                     "\nd1: " + d1 +
                     "\nd2: " + d2);
         }
-
         if (d1.hashCode() != d2.hashCode()) {
             throw new Exception(msg + ": Hash code mismatch.  hash1: " + d1.hashCode()
                                 + ", hash2: " + d2.hashCode());
         }
-
     }
 
     private static <T> T serialize(T x) throws Exception {
