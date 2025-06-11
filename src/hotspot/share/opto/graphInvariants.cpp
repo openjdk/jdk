@@ -108,6 +108,15 @@ struct HasExactlyNInputs : Pattern {
     if (center->req() != _expect_req) {
       print_path(center, steps, path, ss);
       ss.print_cr("Unexpected number of input. Expected: %d. Found: %d", _expect_req, center->req());
+      for (uint i = 0; i < center->req(); ++i) {
+        Node* in = center->in(i);
+        ss.print("  %d: ", i);
+        if (in == nullptr) {
+          ss.print_cr("nullptr");
+        } else {
+          in->dump("\n", false, &ss);
+        }
+      }
       return false;
     }
     return true;
@@ -121,6 +130,15 @@ struct HasAtLeastNInputs : Pattern {
     if (center->req() < _expect_req) {
       print_path(center, steps, path, ss);
       ss.print_cr("Too small number of input. Expected: %d. Found: %d", _expect_req, center->req());
+      for (uint i = 0; i < center->req(); ++i) {
+        Node* in = center->in(i);
+        ss.print("  %d: ", i);
+        if (in == nullptr) {
+          ss.print_cr("nullptr");
+        } else {
+          in->dump("\n", false, &ss);
+        }
+      }
       return false;
     }
     return true;
@@ -166,7 +184,12 @@ struct HasNOutputs : Pattern {
   bool check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
     if (center->outcnt() != _expect_outcnt) {
       print_path(center, steps, path, ss);
-      ss.print_cr("Unexpected number of outputs. Expected: %d. Found: %d", _expect_outcnt, center->outcnt());
+      ss.print_cr("Unexpected number of outputs. Expected: %d, found: %d.", _expect_outcnt, center->outcnt());
+      for (DUIterator_Fast imax, i = center->fast_outs(imax); i < imax; i++) {
+        Node* out = center->fast_out(i);
+        ss.print("  ");
+        out->dump("\n", false, &ss);
+      }
       return false;
     }
     return true;
@@ -286,6 +309,7 @@ struct ControlSuccessor : LocalGraphInvariant {
 
     if (center->is_If() || center->is_Start() || center->is_Root() || center->is_Region() || center->is_NeverBranch()) {
       if (cfg_out != 2) {
+        print_path(center, steps, path, ss);
         ss.print_cr("%s node must have exactly two control successors. Found %d.", center->Name(), cfg_out);
         for (uint i = 0; i < ctrl_succ.size(); ++i) {
           ctrl_succ.at(i)->dump("\n", false, &ss);
@@ -294,6 +318,7 @@ struct ControlSuccessor : LocalGraphInvariant {
       }
     } else if (center->Opcode() == Op_SafePoint) {
       if (cfg_out < 1 || cfg_out > 2) {
+        print_path(center, steps, path, ss);
         ss.print_cr("%s node must have one or two control successors. Found %d.", center->Name(), cfg_out);
         for (uint i = 0; i < ctrl_succ.size(); ++i) {
           ctrl_succ.at(i)->dump("\n", false, &ss);
@@ -302,6 +327,7 @@ struct ControlSuccessor : LocalGraphInvariant {
       }
       if (cfg_out == 2) {
         if (!ctrl_succ.at(0)->is_Root() && !ctrl_succ.at(1)->is_Root()) {
+          print_path(center, steps, path, ss);
           ss.print_cr("One of the two control outputs of a %s node must be Root.", center->Name());
           for (uint i = 0; i < ctrl_succ.size(); ++i) {
             ctrl_succ.at(i)->dump("\n", false, &ss);
@@ -311,11 +337,13 @@ struct ControlSuccessor : LocalGraphInvariant {
       }
     } else if (center->is_Catch() || center->is_Jump()) {
       if (cfg_out < 1) {
+        print_path(center, steps, path, ss);
         ss.print_cr("%s node must have at least one control successors. Found %d.", center->Name(), cfg_out);
         return CheckResult::FAILED;
       }
     } else {
       if (cfg_out != 1) {
+        print_path(center, steps, path, ss);
         ss.print_cr("Ordinary CFG nodes must have exactly one successor. Found %d.", cfg_out);
         for (uint i = 0; i < ctrl_succ.size(); ++i) {
           ctrl_succ.at(i)->dump("\n", false, &ss);
@@ -338,6 +366,7 @@ struct RegionSelfLoop : LocalGraphInvariant {
     }
 
     if (center->req() == 0) {
+      print_path(center, steps, path, ss);
       ss.print_cr("%s nodes must have at least one input.", center->Name());
       return CheckResult::FAILED;
     }
@@ -345,6 +374,7 @@ struct RegionSelfLoop : LocalGraphInvariant {
     Node* self = center->in(LoopNode::Self);
 
     if (center != self || (center->is_Region() && self == nullptr)) {
+      print_path(center, steps, path, ss);
       ss.print_cr("%s nodes' 0-th input must be itself or nullptr (for a copy Region).", center->Name());
       return CheckResult::FAILED;
     }
@@ -358,10 +388,12 @@ struct RegionSelfLoop : LocalGraphInvariant {
         }
       }
       if (non_null_inputs.size() != 1) {
+        print_path(center, steps, path, ss);
         ss.print_cr("%s copy nodes must have exactly one non-null input. Found: %d.", center->Name(), non_null_inputs.size());
         for (uint i = 0; i < non_null_inputs.size(); ++i) {
           non_null_inputs.at(i)->dump("\n", false, &ss);
         }
+        return CheckResult::FAILED;
       }
     }
 
@@ -403,11 +435,13 @@ struct CountedLoopInvariants : PatternBasedCheck {
     assert(counted_loop != nullptr, "sanity");
     if (is_long) {
       if (counted_loop->is_CountedLoopEnd()) {
+        print_path(center, steps, path, ss);
         ss.print_cr("A CountedLoopEnd is the backedge of a LongCountedLoop.");
         return CheckResult::FAILED;
       }
     } else {
       if (counted_loop->is_LongCountedLoopEnd()) {
+        print_path(center, steps, path, ss);
         ss.print_cr("A LongCountedLoopEnd is the backedge of a CountedLoop.");
         return CheckResult::FAILED;
       }
@@ -465,6 +499,7 @@ struct MultiBranchNodeOut : LocalGraphInvariant {
 
     MultiBranchNode* mb = center->as_MultiBranch();
     if (mb->required_outcnt() < static_cast<int>(mb->outcnt())) {
+      print_path(center, steps, path, ss);
       ss.print_cr("The required_outcnt of a MultiBranch node must be smaller than or equal to its outcnt. But required_outcnt=%d vs. outcnt=%d", mb->required_outcnt(), mb->outcnt());
       return CheckResult::FAILED;
     }
