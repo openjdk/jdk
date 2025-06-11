@@ -1531,15 +1531,15 @@ const int ObjectAlignmentInBytes = 8;
           "Reserved code cache size (in bytes) - maximum code cache size")  \
           constraint(VMPageSizeConstraintFunc, AtParse)                     \
                                                                             \
-  product_pd(uintx, NonProfiledCodeHeapSize,                                \
+  product_pd(size_t, NonProfiledCodeHeapSize,                               \
           "Size of code heap with non-profiled methods (in bytes)")         \
-          range(0, max_uintx)                                               \
+          range(0, SIZE_MAX)                                                \
                                                                             \
-  product_pd(uintx, ProfiledCodeHeapSize,                                   \
+  product_pd(size_t, ProfiledCodeHeapSize,                                  \
           "Size of code heap with profiled methods (in bytes)")             \
-          range(0, max_uintx)                                               \
+          range(0, SIZE_MAX)                                                \
                                                                             \
-  product_pd(uintx, NonNMethodCodeHeapSize,                                 \
+  product_pd(size_t, NonNMethodCodeHeapSize,                                \
           "Size of code heap with non-nmethods (in bytes)")                 \
           constraint(VMPageSizeConstraintFunc, AtParse)                     \
                                                                             \
