@@ -26,6 +26,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.MulticastSocket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
@@ -44,7 +45,7 @@ import static org.testng.Assert.expectThrows;
  * @bug 8236105
  * @summary Check that DatagramSocket, MulticastSocket,
  *          DatagramSocketAdaptor and DatagramChannel all
- *          throw expected Execption when passed a DatagramPacket
+ *          throw expected Exception when passed a DatagramPacket
  *          with invalid details
  * @run testng SendCheck
  */
@@ -125,6 +126,7 @@ public class SendCheck {
 
         List<Sender> senders = List.of(
                 Sender.of(new DatagramSocket(null)),
+                Sender.of(new MulticastSocket(null)),
                 Sender.of(DatagramChannel.open()),
                 Sender.of(DatagramChannel.open().socket())
         );
