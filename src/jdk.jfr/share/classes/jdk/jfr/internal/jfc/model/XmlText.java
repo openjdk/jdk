@@ -37,7 +37,7 @@ final class XmlText extends XmlInput {
         sb.append(getContentType().orElse("text"));
         sb.append(">");
         sb.append("  (");
-        String content = getContent();
+        String content = getContentOrEmptyQuote();
         if (isTimespan()) {
             // "20 ms" becomes "20ms"
             content = content.replaceAll("\\s", "");
@@ -106,6 +106,6 @@ final class XmlText extends XmlInput {
     }
 
     private boolean isMethodFilter() {
-        return getContentType().orElse("text").equals("methodFilter");
+        return getContentType().orElse("text").equals("method-filter");
     }
 }
