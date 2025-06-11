@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Provides default implementations of {@link ExecutorService}
@@ -119,7 +120,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
      */
     @Override
     public Future<?> submit(Runnable task) {
-        if (task == null) throw new NullPointerException();
+        Objects.requireNonNull(task, "task");
         RunnableFuture<Void> ftask = newTaskFor(task, null);
         execute(ftask);
         return ftask;
@@ -131,7 +132,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
      */
     @Override
     public <T> Future<T> submit(Runnable task, T result) {
-        if (task == null) throw new NullPointerException();
+        Objects.requireNonNull(task, "task");
         RunnableFuture<T> ftask = newTaskFor(task, result);
         execute(ftask);
         return ftask;
@@ -143,7 +144,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
      */
     @Override
     public <T> Future<T> submit(Callable<T> task) {
-        if (task == null) throw new NullPointerException();
+        Objects.requireNonNull(task, "task");
         RunnableFuture<T> ftask = newTaskFor(task);
         execute(ftask);
         return ftask;
@@ -155,11 +156,10 @@ public abstract class AbstractExecutorService implements ExecutorService {
     private <T> T doInvokeAny(Collection<? extends Callable<T>> tasks,
                               boolean timed, long nanos)
         throws InterruptedException, ExecutionException, TimeoutException {
-        if (tasks == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(tasks, "tasks");
         int ntasks = tasks.size();
         if (ntasks == 0)
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("tasks is empty");
         ArrayList<Future<T>> futures = new ArrayList<>(ntasks);
         ExecutorCompletionService<T> ecs =
             new ExecutorCompletionService<T>(this);
@@ -262,8 +262,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
         throws InterruptedException {
-        if (tasks == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(tasks, "tasks");
         ArrayList<Future<T>> futures = new ArrayList<>(tasks.size());
         try {
             for (Callable<T> t : tasks) {
@@ -294,8 +293,8 @@ public abstract class AbstractExecutorService implements ExecutorService {
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,
                                          long timeout, TimeUnit unit)
         throws InterruptedException {
-        if (tasks == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(tasks, "tasks");
+        Objects.requireNonNull(unit, "unit");
         final long nanos = unit.toNanos(timeout);
         final long deadline = System.nanoTime() + nanos;
         ArrayList<Future<T>> futures = new ArrayList<>(tasks.size());
