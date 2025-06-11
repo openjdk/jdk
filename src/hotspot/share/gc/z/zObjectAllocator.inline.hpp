@@ -30,7 +30,7 @@
 #include "gc/z/zPageAge.inline.hpp"
 
 inline ZObjectAllocator* ZObjectAllocator::allocator(ZPageAge age) {
-  return _allocators->at(untype(age));
+  return _allocators->at((int)untype(age));
 }
 
 inline ZObjectAllocator* ZObjectAllocator::eden() {
@@ -44,7 +44,7 @@ inline zaddress ZObjectAllocator::alloc_tlab(size_t size) {
 
 inline void ZObjectAllocator::retire_pages(ZPageAgeRange range) {
   for (ZPageAge age : range) {
-    _allocators->at(untype(age))->retire_pages();
+    _allocators->at((int)untype(age))->retire_pages();
   }
 }
 
