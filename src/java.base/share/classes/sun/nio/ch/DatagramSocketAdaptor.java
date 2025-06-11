@@ -50,7 +50,6 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.MembershipKey;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static jdk.internal.util.Exceptions.formatMsg;
@@ -372,9 +371,6 @@ public class DatagramSocketAdaptor
 
     // -- java.net.MulticastSocket --
 
-    // used to coordinate changing TTL with the deprecated send method
-    private final ReentrantLock sendLock = new ReentrantLock();
-
     // cached outgoing interface (for use by setInterface/getInterface)
     private final Object outgoingInterfaceLock = new Object();
     private NetworkInterface outgoingNetworkInterface;
@@ -382,22 +378,12 @@ public class DatagramSocketAdaptor
 
     @Override
     public void setTimeToLive(int ttl) throws IOException {
-        sendLock.lock();
-        try {
-            setIntOption(StandardSocketOptions.IP_MULTICAST_TTL, ttl);
-        } finally {
-            sendLock.unlock();
-        }
+        setIntOption(StandardSocketOptions.IP_MULTICAST_TTL, ttl);
     }
 
     @Override
     public int getTimeToLive() throws IOException {
-        sendLock.lock();
-        try {
-            return getIntOption(StandardSocketOptions.IP_MULTICAST_TTL);
-        } finally {
-            sendLock.unlock();
-        }
+        return getIntOption(StandardSocketOptions.IP_MULTICAST_TTL);
     }
 
     @Override
