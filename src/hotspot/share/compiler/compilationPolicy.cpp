@@ -36,10 +36,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
-#include "runtime/flags/debug_globals.hpp"
 #include "runtime/frame.hpp"
-#include "runtime/frame.inline.hpp"
-#include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
@@ -581,7 +578,8 @@ void CompilationPolicy::initialize() {
       } else {
         buffer_size = c1_size / 3 + c2_size * 2/3;
       }
-      size_t max_count = (ReservedCodeCacheSize - (CodeCacheMinimumUseSpace DEBUG_ONLY(* 3))) / (int)buffer_size;
+      size_t max_buffer_size = FLAG_IS_CMDLINE(NonNMethodCodeHeapSize) ? NonNMethodCodeHeapSize : ReservedCodeCacheSize;
+      size_t max_count = (max_buffer_size - (CodeCacheMinimumUseSpace DEBUG_ONLY(* 3))) / (int)buffer_size;
       if ((size_t)count > max_count) {
         // Lower the compiler count such that all buffers fit into the code cache
         count = MAX2((int)max_count, min_count);
