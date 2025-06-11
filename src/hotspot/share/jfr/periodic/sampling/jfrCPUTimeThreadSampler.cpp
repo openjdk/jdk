@@ -24,6 +24,7 @@
 
 #include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 #include "logging/log.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 
 #if defined(LINUX)
@@ -541,10 +542,65 @@ void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
   JfrThreadLocal* tl = jt->jfr_thread_local();
   JfrCPUTimeTraceQueue& queue = tl->cpu_time_jfr_queue();
   if (!check_state(jt)) {
+    /*
+    _thread_uninitialized     =  0, // should never happen (missing initialization)
+  _thread_new               =  2, // just starting up, i.e., in process of being initialized
+  _thread_new_trans         =  3, // corresponding transition state (not used, included for completeness)
+  _thread_in_native         =  4, // running in native code
+  _thread_in_native_trans   =  5, // corresponding transition state
+  _thread_in_vm             =  6, // running in VM
+  _thread_in_vm_trans       =  7, // corresponding transition state
+  _thread_in_Java           =  8, // running in Java or in stub code
+  _thread_in_Java_trans     =  9, // corresponding transition state (not used, included for completeness)
+  _thread_blocked           = 10, // blocked in vm
+  _thread_blocked_trans     = 11, // corresponding transition state
+  _thread_max_state         = 12  // maximum thread state+1 - used for statistics allocation
+  */
+    switch (jt->thread_state()) {
+      case _thread_uninitialized:
+        printf("loss: thread_uninitialized\n");
+        break;
+      case _thread_new_trans:
+        printf("loss: thread_new_trans\n");
+        break;
+        case _thread_in_native_trans:
+        printf("loss: thread_in_native_trans\n");
+        break;
+        case _thread_in_vm_trans:
+        printf("loss: thread_in_vm_trans\n");
+        break;
+        case _thread_in_Java_trans:
+        printf("loss: thread_in_Java_trans\n");
+        break;
+        case _thread_blocked_trans:
+        printf("loss: thread_blocked_trans\n");
+        break;
+      case _thread_in_vm:
+        printf("loss: thread_in_vm\n");
+        break;
+      case _thread_in_Java:
+        printf("loss: thread_in_Java\n");
+        break;
+      case _thread_in_native:
+        printf("loss: thread_in_native\n");
+        break;
+      case _thread_blocked:
+        printf("loss: thread_blocked\n");
+        break;
+      case _thread_new:
+        printf("loss: thread_new\n");
+        break;
+
+      default:
+        printf("loss: unknown thread state %d\n", jt->thread_state());
+        break;
+
+    }
     queue.increment_lost_samples();
     return;
   }
   if (!tl->try_acquire_cpu_time_jfr_enqueue_lock()) {
+    printf("loss: enqueue lock not acquired\n");
     queue.increment_lost_samples();
     return;
   }
@@ -562,6 +618,7 @@ void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
       SafepointMechanism::arm_local_poll_release(jt);
     }
   } else {
+    printf("loss: queue full\n");
     queue.increment_lost_samples();
   }
 
