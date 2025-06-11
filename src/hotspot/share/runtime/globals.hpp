@@ -1501,7 +1501,7 @@ const int ObjectAlignmentInBytes = 8;
           "Stack space (bytes) required for JVM_InvokeMethod to complete")  \
                                                                             \
   /* code cache parameters                                    */            \
-  product_pd(uintx, CodeCacheSegmentSize, EXPERIMENTAL,                     \
+  product_pd(size_t, CodeCacheSegmentSize, EXPERIMENTAL,                    \
           "Code cache segment size (in bytes) - smallest unit of "          \
           "allocation")                                                     \
           range(1, 1024)                                                    \

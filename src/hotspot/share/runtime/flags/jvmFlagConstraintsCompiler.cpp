@@ -155,8 +155,8 @@ JVMFlag::Error OnStackReplacePercentageConstraintFunc(intx value, bool verbose) 
   return JVMFlag::SUCCESS;
 }
 
-JVMFlag::Error CodeCacheSegmentSizeConstraintFunc(uintx value, bool verbose) {
-  if (CodeCacheSegmentSize < (uintx)CodeEntryAlignment) {
+JVMFlag::Error CodeCacheSegmentSizeConstraintFunc(size_t value, bool verbose) {
+  if (CodeCacheSegmentSize < (size_t)CodeEntryAlignment) {
     JVMFlag::printError(verbose,
                         "CodeCacheSegmentSize  (%zu) must be "
                         "larger than or equal to CodeEntryAlignment (%zd) "
@@ -174,7 +174,7 @@ JVMFlag::Error CodeCacheSegmentSizeConstraintFunc(uintx value, bool verbose) {
   }
 
 #ifdef COMPILER2
-  if (CodeCacheSegmentSize < (uintx)OptoLoopAlignment) {
+  if (CodeCacheSegmentSize < (size_t)OptoLoopAlignment) {
     JVMFlag::printError(verbose,
                         "CodeCacheSegmentSize  (%zu) must be "
                         "larger than or equal to OptoLoopAlignment (%zd) "
@@ -203,7 +203,7 @@ JVMFlag::Error CodeEntryAlignmentConstraintFunc(intx value, bool verbose) {
       return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
-  if ((uintx)CodeEntryAlignment > CodeCacheSegmentSize) {
+  if ((size_t)CodeEntryAlignment > CodeCacheSegmentSize) {
     JVMFlag::printError(verbose,
                         "CodeEntryAlignment (%zd) must be "
                         "less than or equal to CodeCacheSegmentSize (%zu) "

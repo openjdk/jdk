@@ -38,7 +38,7 @@ define_pd_global(bool,  UncommonNullCast,            true);  // Uncommon-trap nu
 
 define_pd_global(bool,  DelayCompilerStubsGeneration, COMPILER2_OR_JVMCI);
 
-define_pd_global(uintx, CodeCacheSegmentSize,        256);
+define_pd_global(size_t, CodeCacheSegmentSize,       256);
 // This shall be at least 32 for proper branch target alignment.
 // Ideally, this is 256 (cache line size). This keeps code end data
 // on separate lines. But we reduced it to 64 since 256 increased

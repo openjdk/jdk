@@ -40,7 +40,7 @@
   f(int,   AllocatePrefetchStepSizeConstraintFunc)      \
   f(intx,  CompileThresholdConstraintFunc)              \
   f(intx,  OnStackReplacePercentageConstraintFunc)      \
-  f(uintx, CodeCacheSegmentSizeConstraintFunc)          \
+  f(size_t, CodeCacheSegmentSizeConstraintFunc)         \
   f(intx,  CodeEntryAlignmentConstraintFunc)            \
   f(intx,  OptoLoopAlignmentConstraintFunc)             \
   f(uintx, ArraycopyDstPrefetchDistanceConstraintFunc)  \
