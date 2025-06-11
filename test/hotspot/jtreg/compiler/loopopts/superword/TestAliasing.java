@@ -54,7 +54,6 @@ import compiler.lib.generators.Generator;
  */
 public class TestAliasing {
     static int SIZE = 1024*8;
-    static int SIZE_FINAL = 1024*8;
     private static final Random RANDOM = Utils.getRandomInstance();
     private static final Generator INT_GEN = G.ints();
 
@@ -140,6 +139,25 @@ public class TestAliasing {
             test_fill_B_sameArray_alias(AB, AB, invar1, invar2);
             reference_fill_B_sameArray_alias(AB_REFERENCE, AB_REFERENCE, invar1, invar2);
         });
+        referenceTests.put("fill_B_sameArray_noalias", () -> {
+            // The accesses either start at the middle and go out,
+            // or start from opposite sides and meet in the middle.
+            // But they never overlap.
+            //      <------|------>
+            //      ------>|<------
+            //
+            // This tests that the checks we emit are not too relaxed.
+            int middle = SIZE / 2 + RANDOM.nextInt(-64, 64);
+            int limit = SIZE / 3 + RANDOM.nextInt(64);
+            int invar1 = middle;
+            int invar2 = middle;
+            if (RANDOM.nextBoolean()) {
+                invar1 -= limit;
+                invar2 += limit;
+            }
+            test_fill_B_sameArray_noalias(AB, AB, invar1, invar2, limit);
+            reference_fill_B_sameArray_noalias(AB_REFERENCE, AB_REFERENCE, invar1, invar2, limit);
+        });
     }
 
     public static void init() {
@@ -187,7 +205,8 @@ public class TestAliasing {
                  "copy_I_sameIndex_alias",
                  "copy_I_differentIndex_noalias",
                  "copy_I_differentIndex_alias",
-                 "test_fill_B_sameArray_alias"})
+                 "test_fill_B_sameArray_alias",
+                 "test_fill_B_sameArray_noalias"})
     public void runTests() {
         for (Map.Entry<String,TestFunction> entry : goldTests.entrySet()) {
             String name = entry.getKey();
@@ -491,6 +510,36 @@ public class TestAliasing {
         for (int i = 0; i < a.length - 100; i++) {
             a[i + invar1] = (byte)0x0a;
             b[a.length - i - 1 - invar2] = (byte)0x0b;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_VECTOR, "= 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Without speculative runtime check we cannot know that there is no aliasing.
+    @IR(counts = {IRNode.STORE_VECTOR,             "> 0",
+                  ".*multiversion.*",              "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true",
+                      "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // We use speculative runtime checks, and they should not fail, so no multiversioning.
+    static void test_fill_B_sameArray_noalias(byte[] a, byte[] b, int invar1, int invar2, int limit) {
+        for (int i = 0; i < limit; i++) {
+            a[invar1 + i] = (byte)0x0a;
+            b[invar2 - i] = (byte)0x0b;
+        }
+    }
+
+    static void reference_fill_B_sameArray_noalias(byte[] a, byte[] b, int invar1, int invar2, int limit) {
+        for (int i = 0; i < limit; i++) {
+            a[invar1 + i] = (byte)0x0a;
+            b[invar2 - i] = (byte)0x0b;
         }
     }
 }
