@@ -120,6 +120,10 @@ class Test_ge_1 {
         //      when neither is NaN, and x <= y
         return !(x <= y) ? 1 : 0;
     }
+    @DontCompile
+    public static int golden_float_BoolTest_ge(float x, float y) {
+        return !(x <= y) ? 1 : 0;
+    }
 
     @Test
     @IR(counts = {IRNode.CMOVE_I, "1"})
@@ -129,6 +133,10 @@ class Test_ge_1 {
         //      when neither is NaN, and x > y
         // return 0
         //      when neither is NaN, and x <= y
+        return !(x <= y) ? 1 : 0;
+    }
+    @DontCompile
+    public static int golden_double_BoolTest_ge(double x, double y) {
         return !(x <= y) ? 1 : 0;
     }
 
@@ -141,7 +149,7 @@ class Test_ge_1 {
                 float x = TestFPComparison2.FLOATS[i];
                 float y = TestFPComparison2.FLOATS[j];
                 int actual = test_float_BoolTest_ge(x, y);
-                int expected = !(x <= y) ? 1 : 0;
+                int expected = golden_float_BoolTest_ge(x, y);
                 if (actual != expected) {
                     System.out.println("Float failed (ge), x: " + x + ", y: " + y +
                                         ", actual: " + actual + ", expected: " + expected);
@@ -155,7 +163,7 @@ class Test_ge_1 {
                 double x = TestFPComparison2.DOUBLES[i];
                 double y = TestFPComparison2.DOUBLES[j];
                 int actual = test_double_BoolTest_ge(x, y);
-                int expected = !(x <= y) ? 1 : 0;
+                int expected = golden_double_BoolTest_ge(x, y);
                 if (actual != expected) {
                     System.out.println("Double failed (ge), x: " + x + ", y: " + y +
                                         ", actual: " + actual + ", expected: " + expected);
@@ -181,6 +189,10 @@ class Test_ge_2 {
         //      when neither is NaN, and x >= y
         return !(x >= y) ? 1 : 0;
     }
+    @DontCompile
+    public static int golden_float_BoolTest_ge(float x, float y) {
+        return !(x >= y) ? 1 : 0;
+    }
 
     @Test
     @IR(counts = {IRNode.CMOVE_I, "1"})
@@ -190,6 +202,10 @@ class Test_ge_2 {
         //      when neither is NaN, and x < y
         // return 0
         //      when neither is NaN, and x >= y
+        return !(x >= y) ? 1 : 0;
+    }
+    @DontCompile
+    public static int golden_double_BoolTest_ge(double x, double y) {
         return !(x >= y) ? 1 : 0;
     }
 
@@ -202,7 +218,7 @@ class Test_ge_2 {
                 float x = TestFPComparison2.FLOATS[i];
                 float y = TestFPComparison2.FLOATS[j];
                 int actual = test_float_BoolTest_ge(x, y);
-                int expected = !(x >= y) ? 1 : 0;
+                int expected = golden_float_BoolTest_ge(x, y);
                 if (actual != expected) {
                     System.out.println("Float failed (ge), x: " + x + ", y: " + y +
                                         ", actual: " + actual + ", expected: " + expected);
@@ -216,7 +232,7 @@ class Test_ge_2 {
                 double x = TestFPComparison2.DOUBLES[i];
                 double y = TestFPComparison2.DOUBLES[j];
                 int actual = test_double_BoolTest_ge(x, y);
-                int expected = !(x >= y) ? 1 : 0;
+                int expected = golden_double_BoolTest_ge(x, y);
                 if (actual != expected) {
                     System.out.println("Double failed (ge), x: " + x + ", y: " + y +
                                         ", actual: " + actual + ", expected: " + expected);
@@ -242,6 +258,10 @@ class Test_gt_1 {
         //      when neither is NaN, and x < y
         return !(x < y) ? 1 : 0;
     }
+    @DontCompile
+    public static int golden_float_BoolTest_gt(float x, float y) {
+        return !(x < y) ? 1 : 0;
+    }
 
     @Test
     @IR(counts = {IRNode.CMOVE_I, "1"})
@@ -251,6 +271,10 @@ class Test_gt_1 {
         //      when neither is NaN, and x >= y
         // return 0
         //      when neither is NaN, and x < y
+        return !(x < y) ? 1 : 0;
+    }
+    @DontCompile
+    public static int golden_double_BoolTest_gt(double x, double y) {
         return !(x < y) ? 1 : 0;
     }
 
@@ -263,7 +287,7 @@ class Test_gt_1 {
                 float x = TestFPComparison2.FLOATS[i];
                 float y = TestFPComparison2.FLOATS[j];
                 int actual = test_float_BoolTest_gt(x, y);
-                int expected = !(x < y) ? 1 : 0;
+                int expected = golden_float_BoolTest_gt(x, y);
                 if (actual != expected) {
                     System.out.println("Float failed (gt), x: " + x + ", y: " + y +
                                         ", actual: " + actual + ", expected: " + expected);
@@ -277,7 +301,7 @@ class Test_gt_1 {
                 double x = TestFPComparison2.DOUBLES[i];
                 double y = TestFPComparison2.DOUBLES[j];
                 int actual = test_double_BoolTest_gt(x, y);
-                int expected = !(x < y) ? 1 : 0;
+                int expected = golden_double_BoolTest_gt(x, y);
                 if (actual != expected) {
                     System.out.println("Double failed (gt), x: " + x + ", y: " + y +
                                         ", actual: " + actual + ", expected: " + expected);
@@ -303,6 +327,10 @@ class Test_gt_2 {
         //      when neither is NaN, and x > y
         return !(x > y) ? 1 : 0;
     }
+    @DontCompile
+    public static int golden_float_BoolTest_gt(float x, float y) {
+        return !(x > y) ? 1 : 0;
+    }
 
     @Test
     @IR(counts = {IRNode.CMOVE_I, "1"})
@@ -312,6 +340,10 @@ class Test_gt_2 {
         //      when neither is NaN, and x <= y
         // return 0
         //      when neither is NaN, and x > y
+        return !(x > y) ? 1 : 0;
+    }
+    @DontCompile
+    public static int golden_double_BoolTest_gt(double x, double y) {
         return !(x > y) ? 1 : 0;
     }
 
@@ -324,7 +356,7 @@ class Test_gt_2 {
                 float x = TestFPComparison2.FLOATS[i];
                 float y = TestFPComparison2.FLOATS[j];
                 int actual = test_float_BoolTest_gt(x, y);
-                int expected = !(x > y) ? 1 : 0;
+                int expected = golden_float_BoolTest_gt(x, y);
                 if (actual != expected) {
                     System.out.println("Float failed (gt), x: " + x + ", y: " + y +
                                         ", actual: " + actual + ", expected: " + expected);
@@ -338,7 +370,7 @@ class Test_gt_2 {
                 double x = TestFPComparison2.DOUBLES[i];
                 double y = TestFPComparison2.DOUBLES[j];
                 int actual = test_double_BoolTest_gt(x, y);
-                int expected = !(x > y) ? 1 : 0;
+                int expected = golden_double_BoolTest_gt(x, y);
                 if (actual != expected) {
                     System.out.println("Double failed (gt), x: " + x + ", y: " + y +
                                         ", actual: " + actual + ", expected: " + expected);
