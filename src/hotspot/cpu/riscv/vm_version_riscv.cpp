@@ -240,9 +240,15 @@ void VM_Version::common_initialize() {
   }
 
   // UseZvfh (depends on RVV)
-  if (UseZvfh && !UseRVV) {
-    warning("Cannot enable UseZvfh on cpu without RVV support.");
-    FLAG_SET_DEFAULT(UseZvfh, false);
+  if (UseZvfh) {
+    if (!UseRVV) {
+      warning("Cannot enable UseZvfh on cpu without RVV support.");
+      FLAG_SET_DEFAULT(UseZvfh, false);
+    }
+    if (!UseZfh) {
+      warning("Cannot enable UseZvfh on cpu without Zfh support.");
+      FLAG_SET_DEFAULT(UseZvfh, false);
+    }
   }
 }
 
