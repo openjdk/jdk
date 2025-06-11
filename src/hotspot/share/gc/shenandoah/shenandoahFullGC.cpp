@@ -262,6 +262,11 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
       result.print_on("Full GC", &ls);
     }
   }
+#undef KELVIN_IDLE_SPAN
+#ifdef KELVIN_IDLE_SPAN
+  log_info(gc)("start_idle_span() at end of full gc");
+#endif
+  heap->start_idle_span();
 
   // Resize metaspace
   MetaspaceGC::compute_new_size();
@@ -1181,10 +1186,5 @@ ShenandoahGenerationalHeap::TransferResult ShenandoahFullGC::phase5_epilog() {
     result = ShenandoahGenerationalFullGC::balance_generations_after_rebuilding_free_set();
     ShenandoahGenerationalFullGC::rebuild_remembered_set(heap);
   }
-#undef KELVIN_IDLE_SPAN
-#ifdef KELVIN_IDLE_SPAN
-  log_info(gc)("start_idle_span() at end of full gc");
-#endif
-  heap->start_idle_span();
   return result;
 }
