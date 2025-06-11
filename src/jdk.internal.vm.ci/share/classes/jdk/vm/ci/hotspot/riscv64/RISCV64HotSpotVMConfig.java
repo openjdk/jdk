@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,19 +37,5 @@ class RISCV64HotSpotVMConfig extends HotSpotVMConfigAccess {
     }
 
     final boolean useCompressedOops = getFlag("UseCompressedOops", Boolean.class);
-
-    // CPU Capabilities
-
-    /*
-     * These flags are set based on the corresponding command line flags.
-     */
-    final boolean useConservativeFence = getFlag("UseConservativeFence", Boolean.class);
-    final boolean avoidUnalignedAccesses = getFlag("AvoidUnalignedAccesses", Boolean.class);
-    final boolean traceTraps = getFlag("TraceTraps", Boolean.class);
-    final boolean useRVV = getFlag("UseRVV", Boolean.class);
-    final boolean useRVC = getFlag("UseRVC", Boolean.class);
-    final boolean useZba = getFlag("UseZba", Boolean.class);
-    final boolean useZbb = getFlag("UseZbb", Boolean.class);
-
     final long vmVersionFeatures = getFieldValue("Abstract_VM_Version::_features", Long.class, "uint64_t");
 }

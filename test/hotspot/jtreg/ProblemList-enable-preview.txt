@@ -27,5 +27,4 @@
 #
 #############################################################################
 
-vmTestbase/nsk/jdi/ClassType/invokeMethod/invokemethod009/TestDescription.java  8351188 generic-all
 

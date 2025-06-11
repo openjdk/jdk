@@ -328,7 +328,7 @@ releaseBytes(JNIEnv *env, jbyteArray arr, const char* parr)
   "  - Restart JVM, especially after in-place JDK updates\n" \
   "  - Check system logs for JDK-related errors\n" \
   "  - Re-install JDK to fix permission/versioning problems\n" \
-  "  - Switch to legacy launch mechanism with -Djdk.lang.Process.launchMechanism=VFORK\n"
+  "  - Switch to legacy launch mechanism with -Djdk.lang.Process.launchMechanism=FORK\n"
 
 static void
 throwIOExceptionImpl(JNIEnv *env, int errnum, const char *externalDetail, const char *internalDetail)

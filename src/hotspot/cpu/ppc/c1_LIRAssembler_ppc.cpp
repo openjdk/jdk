@@ -538,48 +538,32 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
       __ extsh(dst->as_register(), src->as_register());
       break;
     }
-    case Bytecodes::_i2d:
-    case Bytecodes::_l2d: {
-      bool src_in_memory = !VM_Version::has_mtfprd();
+    case Bytecodes::_i2d:{
       FloatRegister rdst = dst->as_double_reg();
-      FloatRegister rsrc;
-      if (src_in_memory) {
-        rsrc = src->as_double_reg(); // via mem
-      } else {
-        // move src to dst register
-        if (code == Bytecodes::_i2d) {
-          __ mtfprwa(rdst, src->as_register());
-        } else {
-          __ mtfprd(rdst, src->as_register_lo());
-        }
-        rsrc = rdst;
-      }
-      __ fcfid(rdst, rsrc);
+      // move src to dst register
+      __ mtfprwa(rdst, src->as_register());
+      __ fcfid(rdst, rdst);
       break;
     }
-    case Bytecodes::_i2f:
-    case Bytecodes::_l2f: {
-      bool src_in_memory = !VM_Version::has_mtfprd();
+    case Bytecodes::_l2d: {
+      FloatRegister rdst = dst->as_double_reg();
+      // move src to dst register
+      __ mtfprd(rdst, src->as_register_lo());
+      __ fcfid(rdst, rdst);
+      break;
+    }
+    case Bytecodes::_i2f:{
       FloatRegister rdst = dst->as_float_reg();
-      FloatRegister rsrc;
-      if (src_in_memory) {
-        rsrc = src->as_double_reg(); // via mem
-      } else {
-        // move src to dst register
-        if (code == Bytecodes::_i2f) {
-          __ mtfprwa(rdst, src->as_register());
-        } else {
-          __ mtfprd(rdst, src->as_register_lo());
-        }
-        rsrc = rdst;
-      }
-      if (VM_Version::has_fcfids()) {
-        __ fcfids(rdst, rsrc);
-      } else {
-        assert(code == Bytecodes::_i2f, "fcfid+frsp needs fixup code to avoid rounding incompatibility");
-        __ fcfid(rdst, rsrc);
-        __ frsp(rdst, rdst);
-      }
+      // move src to dst register
+      __ mtfprwa(rdst, src->as_register());
+      __ fcfids(rdst, rdst);
+      break;
+    }
+    case Bytecodes::_l2f: {
+      FloatRegister rdst = dst->as_float_reg();
+      // move src to dst register
+      __ mtfprd(rdst, src->as_register_lo());
+      __ fcfids(rdst, rdst);
       break;
     }
     case Bytecodes::_f2d: {
@@ -592,49 +576,27 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
     }
     case Bytecodes::_d2i:
     case Bytecodes::_f2i: {
-      bool dst_in_memory = !VM_Version::has_mtfprd();
       FloatRegister rsrc = (code == Bytecodes::_d2i) ? src->as_double_reg() : src->as_float_reg();
-      Address       addr = dst_in_memory ? frame_map()->address_for_slot(dst->double_stack_ix()) : Address();
       Label L;
       // Result must be 0 if value is NaN; test by comparing value to itself.
       __ fcmpu(CR0, rsrc, rsrc);
-      if (dst_in_memory) {
-        __ li(R0, 0); // 0 in case of NAN
-        __ std(R0, addr);
-      } else {
-        __ li(dst->as_register(), 0);
-      }
+      __ li(dst->as_register(), 0);
       __ bso(CR0, L);
       __ fctiwz(rsrc, rsrc); // USE_KILL
-      if (dst_in_memory) {
-        __ stfd(rsrc, addr.disp(), addr.base());
-      } else {
-        __ mffprd(dst->as_register(), rsrc);
-      }
+      __ mffprd(dst->as_register(), rsrc);
       __ bind(L);
       break;
     }
     case Bytecodes::_d2l:
     case Bytecodes::_f2l: {
-      bool dst_in_memory = !VM_Version::has_mtfprd();
       FloatRegister rsrc = (code == Bytecodes::_d2l) ? src->as_double_reg() : src->as_float_reg();
-      Address       addr = dst_in_memory ? frame_map()->address_for_slot(dst->double_stack_ix()) : Address();
       Label L;
       // Result must be 0 if value is NaN; test by comparing value to itself.
       __ fcmpu(CR0, rsrc, rsrc);
-      if (dst_in_memory) {
-        __ li(R0, 0); // 0 in case of NAN
-        __ std(R0, addr);
-      } else {
-        __ li(dst->as_register_lo(), 0);
-      }
+      __ li(dst->as_register_lo(), 0);
       __ bso(CR0, L);
       __ fctidz(rsrc, rsrc); // USE_KILL
-      if (dst_in_memory) {
-        __ stfd(rsrc, addr.disp(), addr.base());
-      } else {
-        __ mffprd(dst->as_register_lo(), rsrc);
-      }
+      __ mffprd(dst->as_register_lo(), rsrc);
       __ bind(L);
       break;
     }
@@ -1581,8 +1543,7 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
     default:                    ShouldNotReachHere();
   }
 
-  // Try to use isel on >=Power7.
-  if (VM_Version::has_isel() && result->is_cpu_register()) {
+  if (result->is_cpu_register()) {
     bool o1_is_reg = opr1->is_cpu_register(), o2_is_reg = opr2->is_cpu_register();
     const Register result_reg = result->is_single_cpu() ? result->as_register() : result->as_register_lo();
 

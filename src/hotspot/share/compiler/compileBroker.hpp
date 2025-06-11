@@ -254,11 +254,13 @@ class CompileBroker: AllStatic {
 
   enum ThreadType {
     compiler_t,
-    deoptimizer_t
+    deoptimizer_t,
+    training_replay_t
   };
 
   static JavaThread* make_thread(ThreadType type, jobject thread_oop, CompileQueue* queue, AbstractCompiler* comp, JavaThread* THREAD);
   static void init_compiler_threads();
+  static void init_training_replay();
   static void possibly_add_compiler_threads(JavaThread* THREAD);
   static bool compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level, bool excluded);
 
@@ -445,6 +447,18 @@ public:
   // CodeHeap State Analytics.
   static void print_info(outputStream *out);
   static void print_heapinfo(outputStream *out, const char* function, size_t granularity);
+};
+
+// In order to achiveve a maximally fast warmup we attempt to compile important methods as soon as all
+// the classes that they depend on are initialized. TrainingReplayThread processes a queue of InstanceKlass*
+// that have just finished running their static initializers. We find all the methods that depend on the given class
+// and for which the number of remaining dependencies is now zero, and eagerly compile them.
+class TrainingReplayThread : public JavaThread {
+  static void training_replay_thread_entry(JavaThread* thread, TRAPS);
+public:
+  TrainingReplayThread() : JavaThread(&training_replay_thread_entry) { }
+
+  bool is_hidden_from_external_view() const      { return true; }
 };
 
 #endif // SHARE_COMPILER_COMPILEBROKER_HPP

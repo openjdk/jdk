@@ -816,6 +816,7 @@ public class WhiteBox {
                                    String procSelfMountinfo);
   public native void printOsInfo();
   public native long hostPhysicalMemory();
+  public native long hostAvailableMemory();
   public native long hostPhysicalSwap();
   public native int hostCPUs();
 

@@ -52,6 +52,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
+import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
@@ -664,12 +665,16 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return hasArgument(UNPACKED_PATH_ARGNAME);
     }
 
+    public static void useToolProviderByDefault(ToolProvider jpackageToolProvider) {
+        defaultToolProvider = Optional.of(jpackageToolProvider);
+    }
+
     public static void useToolProviderByDefault() {
-        defaultWithToolProvider = true;
+        useToolProviderByDefault(JavaTool.JPACKAGE.asToolProvider());
     }
 
     public static void useExecutableByDefault() {
-        defaultWithToolProvider = false;
+        defaultToolProvider = Optional.empty();
     }
 
     public JPackageCommand useToolProvider(boolean v) {
@@ -778,8 +783,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public boolean isWithToolProvider() {
-        return Optional.ofNullable(withToolProvider).orElse(
-                defaultWithToolProvider);
+        return Optional.ofNullable(withToolProvider).orElseGet(defaultToolProvider::isPresent);
     }
 
     public JPackageCommand executePrerequisiteActions() {
@@ -800,7 +804,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 .addArguments(args);
 
         if (isWithToolProvider()) {
-            exec.setToolProvider(JavaTool.JPACKAGE);
+            exec.setToolProvider(defaultToolProvider.orElseGet(JavaTool.JPACKAGE::asToolProvider));
         } else {
             exec.setExecutable(JavaTool.JPACKAGE);
             if (TKit.isWindows()) {
@@ -851,6 +855,10 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
         }
 
+        if (expectedExitCode == 0 && !isImagePackageType()) {
+            ConfigFilesStasher.INSTANCE.accept(this);
+        }
+
         final var copy = new JPackageCommand(this).adjustArgumentsBeforeExecution();
 
         final var directoriesAssert = new ReadOnlyPathsAssert(copy);
@@ -858,6 +866,10 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         Executor.Result result = copy.createExecutor().execute(expectedExitCode);
 
         directoriesAssert.updateAndAssert();
+
+        if (expectedExitCode == 0 && isImagePackageType()) {
+            ConfigFilesStasher.INSTANCE.accept(this);
+        }
 
         for (final var outputValidator: outputValidators) {
             outputValidator.accept(result.getOutput().iterator());
@@ -965,7 +977,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             return getPaths.apply(cmd).stream().toList();
         }
 
-        private final static class Builder {
+        private static final class Builder {
 
             Builder(String argName) {
                 this.argName = Objects.requireNonNull(argName);
@@ -1464,7 +1476,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     private Set<ReadOnlyPathAssert> readOnlyPathAsserts = Set.of(ReadOnlyPathAssert.values());
     private Set<AppLayoutAssert> appLayoutAsserts = Set.of(AppLayoutAssert.values());
     private List<Consumer<Iterator<String>>> outputValidators = new ArrayList<>();
-    private static boolean defaultWithToolProvider;
+    private static Optional<ToolProvider> defaultToolProvider = Optional.empty();
 
     private static final Map<String, PackageType> PACKAGE_TYPES = Functional.identity(
             () -> {

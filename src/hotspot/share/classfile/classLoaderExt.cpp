@@ -71,16 +71,12 @@ void ClassLoaderExt::record_result_for_builtin_loader(s2 classpath_index, Instan
   assert(CDSConfig::is_dumping_archive(), "sanity");
 
   oop loader = result->class_loader();
-  s2 classloader_type;
   if (SystemDictionary::is_system_class_loader(loader)) {
-    classloader_type = ClassLoader::APP_LOADER;
     AOTClassLocationConfig::dumptime_set_has_app_classes();
   } else if (SystemDictionary::is_platform_class_loader(loader)) {
-    classloader_type = ClassLoader::PLATFORM_LOADER;
     AOTClassLocationConfig::dumptime_set_has_platform_classes();
   } else {
     precond(loader == nullptr);
-    classloader_type = ClassLoader::BOOT_LOADER;
   }
 
   if (CDSConfig::is_dumping_preimage_static_archive() || CDSConfig::is_dumping_dynamic_archive()) {
@@ -91,10 +87,9 @@ void ClassLoaderExt::record_result_for_builtin_loader(s2 classpath_index, Instan
 
   AOTClassLocationConfig::dumptime_update_max_used_index(classpath_index);
   result->set_shared_classpath_index(classpath_index);
-  result->set_shared_class_loader_type(classloader_type);
 
 #if INCLUDE_CDS_JAVA_HEAP
-  if (CDSConfig::is_dumping_heap() && AllowArchivingWithJavaAgent && classloader_type == ClassLoader::BOOT_LOADER &&
+  if (CDSConfig::is_dumping_heap() && AllowArchivingWithJavaAgent && result->defined_by_boot_loader() &&
       classpath_index < 0 && redefined) {
     // When dumping the heap (which happens only during static dump), classes for the built-in
     // loaders are always loaded from known locations (jimage, classpath or modulepath),
@@ -105,7 +100,7 @@ void ClassLoaderExt::record_result_for_builtin_loader(s2 classpath_index, Instan
     // which requires all the boot classes to be from known locations. This is an
     // uncommon scenario (even in test cases). Let's simply disable heap object archiving.
     ResourceMark rm;
-    log_warning(cds)("CDS heap objects cannot be written because class %s maybe modified by ClassFileLoadHook.",
+    log_warning(aot)("heap objects cannot be written because class %s maybe modified by ClassFileLoadHook.",
                      result->external_name());
     CDSConfig::disable_heap_dumping();
   }

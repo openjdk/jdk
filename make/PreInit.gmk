@@ -50,7 +50,8 @@ include $(TOPDIR)/make/Global.gmk
 
 # Targets provided by Init.gmk.
 ALL_INIT_TARGETS := print-modules print-targets print-configuration \
-    print-tests reconfigure pre-compare-build post-compare-build
+    print-tests reconfigure pre-compare-build post-compare-build \
+    create-make-helpers
 
 # CALLED_TARGETS is the list of targets that the user provided,
 # or "default" if unspecified.

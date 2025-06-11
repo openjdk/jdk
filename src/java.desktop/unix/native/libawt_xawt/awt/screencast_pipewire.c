@@ -94,6 +94,7 @@ struct pw_properties * (*fp_pw_properties_new)(const char *key, ...);
 
 #include "gtk_interface.h"
 #include "gtk3_interface.h"
+#include "canvas.h"
 
 int DEBUG_SCREENCAST_ENABLED = FALSE;
 
@@ -108,6 +109,7 @@ static GString *activeSessionToken;
 struct ScreenSpace screenSpace = {0};
 static struct PwLoopData pw = {0};
 volatile bool isGtkMainThread = FALSE;
+gboolean isRemoteDesktop = FALSE;
 
 jclass tokenStorageClass = NULL;
 jmethodID storeTokenMethodID = NULL;
@@ -198,7 +200,7 @@ static void doCleanup() {
 /**
  * @return TRUE on success
  */
-static gboolean initScreencast(const gchar *token,
+static gboolean initPortal(const gchar *token,
                                GdkRectangle *affectedBounds,
                                gint affectedBoundsLength) {
     gboolean isSameToken = !token
@@ -225,8 +227,8 @@ static gboolean initScreencast(const gchar *token,
 
     if (!initScreenSpace()
         || !initXdgDesktopPortal()
-        || (pw.pwFd = getPipewireFd(token,
-                                    affectedBounds,
+        || !initAndStartSession(token, &pw.pwFd)
+        || (pw.pwFd = getPipewireFd(affectedBounds,
                                     affectedBoundsLength)) < 0) {
         doCleanup();
         return FALSE;
@@ -858,9 +860,18 @@ void storeRestoreToken(const gchar* oldToken, const gchar* newToken) {
  * Signature: (IZ)Z
  */
 JNIEXPORT jboolean JNICALL Java_sun_awt_screencast_ScreencastHelper_loadPipewire(
-        JNIEnv *env, jclass cls, jboolean screencastDebug
+        JNIEnv *env, jclass cls, jint method, jboolean screencastDebug
 ) {
     DEBUG_SCREENCAST_ENABLED = screencastDebug;
+
+    if (method != XDG_METHOD_SCREENCAST
+        && method != XDG_METHOD_REMOTE_DESKTOP) {
+        return JNI_FALSE;
+    }
+
+    isRemoteDesktop = method == XDG_METHOD_REMOTE_DESKTOP;
+
+    DEBUG_SCREENCAST("method %d\n", method)
 
     if (!loadSymbols()) {
         return JNI_FALSE;
@@ -934,7 +945,7 @@ static int makeScreencast(
         GdkRectangle *affectedScreenBounds,
         gint affectedBoundsLength
 ) {
-    if (!initScreencast(token, affectedScreenBounds, affectedBoundsLength)) {
+    if (!initPortal(token, affectedScreenBounds, affectedBoundsLength)) {
         return pw.pwFd;
     }
 
@@ -1097,10 +1108,130 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
     releaseToken(env, jtoken, token);
     return 0;
 }
+
+/*
+ * Class:     sun_awt_screencast_ScreencastHelper
+ * Method:    remoteDesktopMouseMove
+ * Signature: (IILjava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_remoteDesktopMouseMoveImpl
+        (JNIEnv *env, jclass cls, jint jx, jint jy, jstring jtoken) {
+
+
+    const gchar *token = jtoken
+                         ? (*env)->GetStringUTFChars(env, jtoken, NULL)
+                         : NULL;
+
+
+    DEBUG_SCREENCAST("moving mouse to\n\t%d %d\n\twith token |%s|\n", jx, jy, token);
+
+    gboolean result = initPortal(token, NULL, 0);
+    DEBUG_SCREENCAST("init result %b, moving to %d %d\n", result, jx, jy)
+
+    if (result) {
+        if (!remoteDesktopMouseMove(jx, jy)) {
+            releaseToken(env, jtoken, token);
+            return RESULT_DENIED;
+        }
+    }
+
+    releaseToken(env, jtoken, token);
+
+    return result ? RESULT_OK : pw.pwFd;
+}
+
+/*
+ * Class:     sun_awt_screencast_ScreencastHelper
+ * Method:    remoteDesktopMouseButtonImpl
+ * Signature: (ZILjava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_remoteDesktopMouseButtonImpl
+        (JNIEnv *env, jclass cls, jboolean isPress, jint buttons, jstring jtoken) {
+
+    const gchar *token = jtoken
+                         ? (*env)->GetStringUTFChars(env, jtoken, NULL)
+                         : NULL;
+
+    gboolean result = initPortal(token, NULL, 0);
+    DEBUG_SCREENCAST("init result %b, mouse pressing %d\n", result, buttons)
+
+    if (result) {
+        if (!remoteDesktopMouse(isPress, buttons)) {
+            releaseToken(env, jtoken, token);
+            return RESULT_DENIED;
+        }
+    }
+
+    releaseToken(env, jtoken, token);
+
+    return result ? RESULT_OK : pw.pwFd;
+}
+
+/*
+ * Class:     sun_awt_screencast_ScreencastHelper
+ * Method:    remoteDesktopMouseWheelImpl
+ * Signature: (ILjava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_remoteDesktopMouseWheelImpl
+        (JNIEnv *env, jclass cls, jint jWheelAmt, jstring jtoken) {
+
+    const gchar *token = jtoken
+                         ? (*env)->GetStringUTFChars(env, jtoken, NULL)
+                         : NULL;
+
+    gboolean result = initPortal(token, NULL, 0);
+    DEBUG_SCREENCAST("init result %b, mouse wheel %d\n", result, jWheelAmt)
+
+    if (result) {
+        if (!remoteDesktopMouseWheel(jWheelAmt)) {
+            releaseToken(env, jtoken, token);
+            return RESULT_DENIED;
+        }
+    }
+
+    releaseToken(env, jtoken, token);
+
+    return result ? RESULT_OK : pw.pwFd;
+}
+
+/*
+ * Class:     sun_awt_screencast_ScreencastHelper
+ * Method:    remoteDesktopKeyImpl
+ * Signature: (ZILjava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_remoteDesktopKeyImpl
+        (JNIEnv *env, jclass cls, jboolean isPress, jint jkey, jstring jtoken) {
+
+    AWT_LOCK();
+    int key = awt_getX11KeySym(jkey);
+    AWT_UNLOCK();
+
+    if (key == NoSymbol) {
+        return RESULT_ERROR;
+    }
+
+    const gchar *token = jtoken
+                         ? (*env)->GetStringUTFChars(env, jtoken, NULL)
+                         : NULL;
+
+    gboolean result = initPortal(token, NULL, 0);
+    DEBUG_SCREENCAST("init result %b, key %d -> %d isPress %b\n", result, jkey, key, isPress)
+
+    if (result) {
+        if (!remoteDesktopKey(isPress, key)) {
+            releaseToken(env, jtoken, token);
+            return RESULT_DENIED;
+        }
+    }
+
+    releaseToken(env, jtoken, token);
+
+    return result ? RESULT_OK : pw.pwFd;
+}
+
 #else
 JNIEXPORT void JNICALL
-Java_sun_awt_screencast_ScreencastHelper_closeSession(JNIEnv *env, jclass cls) {
-}
+Java_sun_awt_screencast_ScreencastHelper_closeSession(JNIEnv *env, jclass cls) {}
 
 JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl(
         JNIEnv *env,
@@ -1117,8 +1248,28 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
 }
 
 JNIEXPORT jboolean JNICALL Java_sun_awt_screencast_ScreencastHelper_loadPipewire(
-        JNIEnv *env, jclass cls, jboolean screencastDebug
+        JNIEnv *env, jclass cls, jint method, jboolean screencastDebug
 ) {
     return JNI_FALSE;
+}
+
+JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_remoteDesktopMouseMoveImpl
+        (JNIEnv *env, jclass cls, jint jx, jint jy, jstring token) {
+    return -1;
+}
+
+JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_remoteDesktopMouseButtonImpl
+        (JNIEnv *env, jclass cls, jboolean isPress, jint buttons, jstring jtoken) {
+    return -1;
+}
+
+JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_remoteDesktopMouseWheelImpl
+        (JNIEnv *env, jclass cls, jint jWheelAmt, jstring jtoken) {
+    return -1;
+}
+
+JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_remoteDesktopKeyImpl
+        (JNIEnv *env, jclass cls, jboolean isPress, jint jkey, jstring jtoken) {
+    return -1;
 }
 #endif

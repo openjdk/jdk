@@ -29,7 +29,24 @@
 keys=randomness
 
 # Minimum jtreg version
-requiredVersion=7.5.1+1
+requiredVersion=7.5.2+1
+
+# Allow querying of various System properties in @requires clauses
+requires.extraPropDefns = ../jtreg-ext/requires/VMProps.java
+requires.extraPropDefns.bootlibs = ../lib/jdk/test/whitebox
+requires.extraPropDefns.libs = \
+    ../lib/jdk/test/lib/Platform.java \
+    ../lib/jdk/test/lib/Container.java
+requires.extraPropDefns.javacOpts = \
+    --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
+    --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
+requires.extraPropDefns.vmOpts = \
+    -XX:+UnlockDiagnosticVMOptions \
+    -XX:+WhiteBoxAPI \
+    --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
+    --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
+requires.properties= \
+    jdk.static
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them

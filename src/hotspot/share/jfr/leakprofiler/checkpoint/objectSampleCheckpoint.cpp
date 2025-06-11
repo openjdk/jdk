@@ -334,10 +334,11 @@ void ObjectSampleCheckpoint::write_stacktrace(const JfrStackTrace* trace, JfrChe
   // JfrStackTrace
   writer.write(trace->id());
   writer.write((u1)!trace->_reached_root);
-  writer.write(trace->_nr_of_frames);
+  const int number_of_frames = trace->number_of_frames();
+  writer.write<u4>(number_of_frames);
   // JfrStackFrames
-  for (u4 i = 0; i < trace->_nr_of_frames; ++i) {
-    const JfrStackFrame& frame = trace->_frames[i];
+  for (int i = 0; i < number_of_frames; ++i) {
+    const JfrStackFrame& frame = trace->_frames->at(i);
     frame.write(writer);
     add_to_leakp_set(frame._klass, frame._methodid);
   }

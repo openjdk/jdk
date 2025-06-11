@@ -26,11 +26,12 @@
 package java.lang;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.Stable;
 
-/** The CharacterData class encapsulates the large tables found in
+/** The CharacterDataLatin1 class encapsulates the large tables found in
     Java.lang.Character. */
 
-class CharacterDataLatin1 extends CharacterData {
+final class CharacterDataLatin1 extends CharacterData {
 
     /* The character properties are currently encoded into 32 bits in the following manner:
         1 bit   mirrored property
@@ -230,6 +231,7 @@ class CharacterDataLatin1 extends CharacterData {
     //
     // Analysis has shown that generating the whole array allows the JIT to generate
     // better code compared to a slimmed down array, such as one cutting off after 'z'
+    @Stable
     private static final byte[] DIGITS = new byte[] {
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -314,6 +316,7 @@ class CharacterDataLatin1 extends CharacterData {
         return mapChar;
     }
 
+    @Stable
     static char[] sharpsMap = new char[] {'S', 'S'};
 
     char[] toUpperCaseCharArray(int ch) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 package jdk.vm.ci.code;
 
 import java.nio.ByteOrder;
+import java.util.List;
 import java.util.Set;
 
 import jdk.vm.ci.code.Register.RegisterCategory;
@@ -50,7 +51,7 @@ public abstract class Architecture {
      * List of all available registers on this architecture. The index of each register in this list
      * is equal to its {@linkplain Register#number number}.
      */
-    private final RegisterArray registers;
+    private final List<Register> registers;
 
     /**
      * The byte ordering can be either little or big endian.
@@ -79,7 +80,7 @@ public abstract class Architecture {
      */
     private final int returnAddressSize;
 
-    protected Architecture(String name, PlatformKind wordKind, ByteOrder byteOrder, boolean unalignedMemoryAccess, RegisterArray registers, int implicitMemoryBarriers,
+    protected Architecture(String name, PlatformKind wordKind, ByteOrder byteOrder, boolean unalignedMemoryAccess, List<Register> registers, int implicitMemoryBarriers,
                     int nativeCallDisplacementOffset,
                     int returnAddressSize) {
         // registers is expected to mention all registers in order of their encoding.
@@ -144,7 +145,7 @@ public abstract class Architecture {
      * this particular architecture instance. The index of each register in this list is equal to
      * its {@linkplain Register#number number}.
      */
-    public RegisterArray getRegisters() {
+    public List<Register> getRegisters() {
         return registers;
     }
 
@@ -152,7 +153,7 @@ public abstract class Architecture {
      * Gets a list of all registers available for storing values on this architecture. This may be a
      * subset of {@link #getRegisters()}, depending on the capabilities of this particular CPU.
      */
-    public RegisterArray getAvailableValueRegisters() {
+    public List<Register> getAvailableValueRegisters() {
         return getRegisters();
     }
 

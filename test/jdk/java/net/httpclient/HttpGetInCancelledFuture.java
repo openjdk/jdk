@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,11 +61,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @test
  * @bug 8316580
  * @library /test/lib
- * @run junit/othervm -Djdk.tracePinnedThreads=full
- *                   -DuseReferenceTracker=false
+ * @run junit/othervm -DuseReferenceTracker=false
  *                   HttpGetInCancelledFuture
- * @run junit/othervm -Djdk.tracePinnedThreads=full
- *                   -DuseReferenceTracker=true
+ * @run junit/othervm -DuseReferenceTracker=true
  *                   HttpGetInCancelledFuture
  * @summary This test verifies that cancelling a future that
  * does an HTTP request using the HttpClient doesn't cause

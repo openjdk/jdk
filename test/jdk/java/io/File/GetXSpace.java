@@ -180,7 +180,7 @@ public class GetXSpace {
         if (fs > ts)
             throw new RuntimeException(f + " free space " + fs + " > total space " + ts);
         if (us > fs)
-            throw new RuntimeException(f + " usable space " + fs + " > free space " + ts);
+            throw new RuntimeException(f + " usable space " + us + " > free space " + fs);
 
         out.format("%s (%d):%n", s.name(), s.size());
         String fmt = "  %-4s total = %12d free = %12d usable = %12d%n";

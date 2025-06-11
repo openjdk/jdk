@@ -39,12 +39,6 @@ enum class ShenandoahFreeSetPartitionId : uint8_t {
   NotFree                       // Region is in no free set: it has no available memory
 };
 
-// We do not maintain counts, capacity, or used for regions that are not free.  Informally, if a region is NotFree, it is
-// in no partition.  NumPartitions represents the size of an array that may be indexed by Mutator or Collector.
-#define NumPartitions           (ShenandoahFreeSetPartitionId::NotFree)
-#define IntNumPartitions     int(ShenandoahFreeSetPartitionId::NotFree)
-#define UIntNumPartitions   uint(ShenandoahFreeSetPartitionId::NotFree)
-
 // ShenandoahRegionPartitions provides an abstraction to help organize the implementation of ShenandoahFreeSet.  This
 // class implements partitioning of regions into distinct sets.  Each ShenandoahHeapRegion is either in the Mutator free set,
 // the Collector free set, or in neither free set (NotFree).  When we speak of a "free partition", we mean partitions that
@@ -52,6 +46,12 @@ enum class ShenandoahFreeSetPartitionId : uint8_t {
 class ShenandoahRegionPartitions {
 
 private:
+  // We do not maintain counts, capacity, or used for regions that are not free.  Informally, if a region is NotFree, it is
+  // in no partition.  NumPartitions represents the size of an array that may be indexed by Mutator or Collector.
+  static constexpr ShenandoahFreeSetPartitionId NumPartitions     =      ShenandoahFreeSetPartitionId::NotFree;
+  static constexpr int                          IntNumPartitions  =  int(ShenandoahFreeSetPartitionId::NotFree);
+  static constexpr uint                         UIntNumPartitions = uint(ShenandoahFreeSetPartitionId::NotFree);
+
   const ssize_t _max;           // The maximum number of heap regions
   const size_t _region_size_bytes;
   const ShenandoahFreeSet* _free_set;

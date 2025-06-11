@@ -304,11 +304,14 @@ public:
   void set_post_loop (CountedLoopNode *main) { assert(is_normal_loop(),""); _loop_flags |= Post; _main_idx = main->_idx; }
   void set_normal_loop(                    ) { _loop_flags &= ~PreMainPostFlagsMask; }
 
-  void set_trip_count(uint tc) { _trip_count = tc; }
+  // We use max_juint for the default value of _trip_count to signal it wasn't set.
+  // We shouldn't set _trip_count to max_juint explicitly.
+  void set_trip_count(uint tc) { assert(tc < max_juint, "Cannot set trip count to max_juint"); _trip_count = tc; }
   uint trip_count()            { return _trip_count; }
 
   bool has_exact_trip_count() const { return (_loop_flags & HasExactTripCount) != 0; }
   void set_exact_trip_count(uint tc) {
+    assert(tc < max_juint, "Cannot set trip count to max_juint");
     _trip_count = tc;
     _loop_flags |= HasExactTripCount;
   }

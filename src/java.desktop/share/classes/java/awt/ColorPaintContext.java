@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,61 +23,46 @@
  * questions.
  */
 
-
-
 package java.awt;
 
 import java.awt.image.ColorModel;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
-import sun.awt.image.IntegerComponentRaster;
 import java.util.Arrays;
 
-class ColorPaintContext implements PaintContext {
-    int color;
-    WritableRaster savedTile;
+import sun.awt.image.IntegerComponentRaster;
 
-    protected ColorPaintContext(int color, ColorModel cm) {
+final class ColorPaintContext implements PaintContext {
+
+    private final int color;
+    private volatile WritableRaster savedTile;
+
+    ColorPaintContext(int color) {
         this.color = color;
     }
 
+    @Override
     public void dispose() {
     }
 
-    /*
-     * Returns the RGB value representing the color in the default sRGB
-     * {@link ColorModel}.
-     * (Bits 24-31 are alpha, 16-23 are red, 8-15 are green, 0-7 are
-     * blue).
-     * @return the RGB value of the color in the default sRGB
-     *         {@code ColorModel}.
-     * @see java.awt.image.ColorModel#getRGBdefault
-     * @see #getRed
-     * @see #getGreen
-     * @see #getBlue
-     */
-    int getRGB() {
-        return color;
-    }
-
+    @Override
     public ColorModel getColorModel() {
         return ColorModel.getRGBdefault();
     }
 
-    public synchronized Raster getRaster(int x, int y, int w, int h) {
+    @Override
+    public Raster getRaster(int x, int y, int w, int h) {
         WritableRaster t = savedTile;
 
         if (t == null || w > t.getWidth() || h > t.getHeight()) {
             t = getColorModel().createCompatibleWritableRaster(w, h);
             IntegerComponentRaster icr = (IntegerComponentRaster) t;
             Arrays.fill(icr.getDataStorage(), color);
-            // Note - markDirty is probably unnecessary since icr is brand new
-            icr.markDirty();
+            // Note - icr.markDirty() is unnecessary since icr is brand new
             if (w <= 64 && h <= 64) {
                 savedTile = t;
             }
         }
-
         return t;
     }
 }

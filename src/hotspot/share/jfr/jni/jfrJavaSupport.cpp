@@ -35,6 +35,7 @@
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
 #include "jfr/support/jfrThreadId.inline.hpp"
 #include "logging/log.hpp"
+#include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klass.inline.hpp"
@@ -177,19 +178,6 @@ static void object_construction(JfrJavaArguments* args, JavaValue* result, Insta
   result->set_oop(h_obj());
 }
 
-static void array_construction(JfrJavaArguments* args, JavaValue* result, InstanceKlass* klass, int array_length, TRAPS) {
-  assert(args != nullptr, "invariant");
-  assert(result != nullptr, "invariant");
-  assert(klass != nullptr, "invariant");
-  assert(klass->is_initialized(), "invariant");
-
-  Klass* const ak = klass->array_klass(THREAD);
-  ObjArrayKlass::cast(ak)->initialize(THREAD);
-  HandleMark hm(THREAD);
-  objArrayOop arr = ObjArrayKlass::cast(ak)->allocate(array_length, CHECK);
-  result->set_oop(arr);
-}
-
 static void create_object(JfrJavaArguments* args, JavaValue* result, TRAPS) {
   assert(args != nullptr, "invariant");
   assert(result != nullptr, "invariant");
@@ -199,13 +187,7 @@ static void create_object(JfrJavaArguments* args, JavaValue* result, TRAPS) {
   InstanceKlass* const klass = static_cast<InstanceKlass*>(args->klass());
   klass->initialize(CHECK);
 
-  const int array_length = args->array_length();
-
-  if (array_length >= 0) {
-    array_construction(args, result, klass, array_length, CHECK);
-  } else {
-    object_construction(args, result, klass, THREAD);
-  }
+  object_construction(args, result, klass, THREAD);
 }
 
 static void handle_result(JavaValue* result, bool global_ref, JavaThread* t) {
@@ -249,15 +231,6 @@ jstring JfrJavaSupport::new_string(const char* c_str, TRAPS) {
   DEBUG_ONLY(check_java_thread_in_vm(THREAD));
   const oop result = java_lang_String::create_oop_from_str(c_str, THREAD);
   return (jstring)local_jni_handle(result, THREAD);
-}
-
-jobjectArray JfrJavaSupport::new_string_array(int length, TRAPS) {
-  DEBUG_ONLY(check_java_thread_in_vm(THREAD));
-  JavaValue result(T_OBJECT);
-  JfrJavaArguments args(&result, "java/lang/String", "<init>", "()V", CHECK_NULL);
-  args.set_array_length(length);
-  new_object_local_ref(&args, THREAD);
-  return (jobjectArray)args.result()->get_jobject();
 }
 
 jobject JfrJavaSupport::new_java_lang_Boolean(bool value, TRAPS) {
@@ -928,4 +901,15 @@ bool JfrJavaSupport::compute_field_offset(int &dest_offset,
   }
   dest_offset = fd.offset();
   return true;
+}
+
+jlongArray JfrJavaSupport::create_long_array(GrowableArray<jlong>* array, TRAPS) {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
+  assert(array != nullptr, "invariant");
+  assert(array->is_nonempty(), "invariant");
+  const int length = array->length();
+  assert(length > 0, "invariant");
+  typeArrayOop obj = oopFactory::new_typeArray(T_LONG, length, CHECK_NULL);
+  ArrayAccess<>::arraycopy_from_native(&array->first(), obj, typeArrayOopDesc::element_offset<jlong>(0), length);
+  return static_cast<jlongArray>(JfrJavaSupport::local_jni_handle(obj, THREAD));
 }

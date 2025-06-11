@@ -306,12 +306,12 @@ class InstanceKlass: public Klass {
   // Sets finalization state
   static void set_finalization_enabled(bool val) { _finalization_enabled = val; }
 
-  // The three BUILTIN class loader types
-  bool is_shared_boot_class() const { return _misc_flags.is_shared_boot_class(); }
-  bool is_shared_platform_class() const { return _misc_flags.is_shared_platform_class(); }
-  bool is_shared_app_class() const {  return _misc_flags.is_shared_app_class(); }
-  // The UNREGISTERED class loader type
-  bool is_shared_unregistered_class() const { return _misc_flags.is_shared_unregistered_class(); }
+  // Quick checks for the loader that defined this class (without switching on this->class_loader())
+  bool defined_by_boot_loader() const      { return _misc_flags.defined_by_boot_loader(); }
+  bool defined_by_platform_loader() const  { return _misc_flags.defined_by_platform_loader(); }
+  bool defined_by_app_loader() const       { return _misc_flags.defined_by_app_loader(); }
+  bool defined_by_other_loaders() const    { return _misc_flags.defined_by_other_loaders(); }
+  void set_class_loader_type()             { _misc_flags.set_class_loader_type(_class_loader_data); }
 
   // Check if the class can be shared in CDS
   bool is_shareable() const;
@@ -319,12 +319,6 @@ class InstanceKlass: public Klass {
   bool shared_loading_failed() const { return _misc_flags.shared_loading_failed(); }
 
   void set_shared_loading_failed() { _misc_flags.set_shared_loading_failed(true); }
-
-#if INCLUDE_CDS
-  int  shared_class_loader_type() const;
-  void set_shared_class_loader_type(s2 loader_type) { _misc_flags.set_shared_class_loader_type(loader_type); }
-  void assign_class_loader_type() { _misc_flags.assign_class_loader_type(_class_loader_data); }
-#endif
 
   bool has_nonstatic_fields() const        { return _misc_flags.has_nonstatic_fields(); }
   void set_has_nonstatic_fields(bool b)    { _misc_flags.set_has_nonstatic_fields(b); }
@@ -355,9 +349,9 @@ class InstanceKlass: public Klass {
   // methods
   Array<Method*>* methods() const          { return _methods; }
   void set_methods(Array<Method*>* a)      { _methods = a; }
-  Method* method_with_idnum(int idnum);
-  Method* method_with_orig_idnum(int idnum);
-  Method* method_with_orig_idnum(int idnum, int version);
+  Method* method_with_idnum(int idnum) const;
+  Method* method_with_orig_idnum(int idnum) const;
+  Method* method_with_orig_idnum(int idnum, int version) const;
 
   // method ordering
   Array<int>* method_ordering() const     { return _method_ordering; }
@@ -694,7 +688,7 @@ public:
   InstanceKlass* previous_versions() const { return nullptr; }
 #endif
 
-  InstanceKlass* get_klass_version(int version);
+  const InstanceKlass* get_klass_version(int version) const;
 
   bool has_been_redefined() const { return _misc_flags.has_been_redefined(); }
   void set_has_been_redefined() { _misc_flags.set_has_been_redefined(true); }
@@ -1124,6 +1118,12 @@ public:
   bool can_be_verified_at_dumptime() const;
   void compute_has_loops_flag_for_methods();
 #endif
+  bool     has_init_deps_processed() const { return _misc_flags.has_init_deps_processed(); }
+  void set_has_init_deps_processed() {
+    assert(is_initialized(), "");
+    assert(!has_init_deps_processed(), "already set"); // one-off action
+    _misc_flags.set_has_init_deps_processed(true);
+  }
 
   u2 compute_modifier_flags() const;
 

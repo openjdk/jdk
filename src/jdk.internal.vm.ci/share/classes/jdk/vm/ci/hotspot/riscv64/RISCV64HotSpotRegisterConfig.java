@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,6 @@ import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CallingConvention.Type;
 import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.RegisterArray;
 import jdk.vm.ci.code.RegisterAttributes;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.StackSlot;
@@ -79,24 +78,24 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
 
     private final TargetDescription target;
 
-    private final RegisterArray allocatable;
+    private final List<Register> allocatable;
 
     /**
      * The caller saved registers always include all parameter registers.
      */
-    private final RegisterArray callerSaved;
+    private final List<Register> callerSaved;
 
     private final boolean allAllocatableAreCallerSaved;
 
-    private final RegisterAttributes[] attributesMap;
+    private final List<RegisterAttributes> attributesMap;
 
     @Override
-    public RegisterArray getAllocatableRegisters() {
+    public List<Register> getAllocatableRegisters() {
         return allocatable;
     }
 
     @Override
-    public RegisterArray filterAllocatableRegisters(PlatformKind kind, RegisterArray registers) {
+    public List<Register> filterAllocatableRegisters(PlatformKind kind, List<Register> registers) {
         ArrayList<Register> list = new ArrayList<>();
         for (Register reg : registers) {
             if (target.arch.canStoreValue(reg.getRegisterCategory(), kind)) {
@@ -104,17 +103,17 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
             }
         }
 
-        return new RegisterArray(list);
+        return List.copyOf(list);
     }
 
     @Override
-    public RegisterAttributes[] getAttributesMap() {
-        return attributesMap.clone();
+    public List<RegisterAttributes> getAttributesMap() {
+        return attributesMap;
     }
 
-    private final RegisterArray javaGeneralParameterRegisters = new RegisterArray(x11, x12, x13, x14, x15, x16, x17, x10);
-    private final RegisterArray nativeGeneralParameterRegisters = new RegisterArray(x10, x11, x12, x13, x14, x15, x16, x17);
-    private final RegisterArray fpParameterRegisters = new RegisterArray(f10, f11, f12, f13, f14, f15, f16, f17);
+    private final List<Register> javaGeneralParameterRegisters = List.of(x11, x12, x13, x14, x15, x16, x17, x10);
+    private final List<Register> nativeGeneralParameterRegisters = List.of(x10, x11, x12, x13, x14, x15, x16, x17);
+    private final List<Register> fpParameterRegisters = List.of(f10, f11, f12, f13, f14, f15, f16, f17);
 
     public static final Register zero = x0;
     public static final Register ra = x1;
@@ -128,16 +127,15 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
     public static final Register threadRegister = x23;
     public static final Register heapBaseRegister = x27;
 
-    private static final RegisterArray reservedRegisters = new RegisterArray(zero, ra, sp, gp, tp, t0, t1, t2, fp);
+    private static final List<Register> reservedRegisters =List.of(zero, ra, sp, gp, tp, t0, t1, t2, fp);
 
-    private static RegisterArray initAllocatable(Architecture arch, boolean reserveForHeapBase) {
-        RegisterArray allRegisters = arch.getAvailableValueRegisters();
+    private static List<Register> initAllocatable(Architecture arch, boolean reserveForHeapBase) {
+        List<Register> allRegisters = arch.getAvailableValueRegisters();
         Register[] registers = new Register[allRegisters.size() - reservedRegisters.size() - (reserveForHeapBase ? 1 : 0)];
-        List<Register> reservedRegistersList = reservedRegisters.asList();
 
         int idx = 0;
         for (Register reg : allRegisters) {
-            if (reservedRegistersList.contains(reg)) {
+            if (reservedRegisters.contains(reg)) {
                 // skip reserved registers
                 continue;
             }
@@ -152,7 +150,7 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
         }
 
         assert idx == registers.length;
-        return new RegisterArray(registers);
+        return List.of(registers);
     }
 
     public RISCV64HotSpotRegisterConfig(TargetDescription target, boolean useCompressedOops, boolean linuxOs) {
@@ -160,28 +158,28 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
         assert callerSaved.size() >= allocatable.size();
     }
 
-    public RISCV64HotSpotRegisterConfig(TargetDescription target, RegisterArray allocatable) {
+    public RISCV64HotSpotRegisterConfig(TargetDescription target, List<Register> allocatable) {
         this.target = target;
         this.allocatable = allocatable;
 
         Set<Register> callerSaveSet = new HashSet<>();
-        allocatable.addTo(callerSaveSet);
-        fpParameterRegisters.addTo(callerSaveSet);
-        javaGeneralParameterRegisters.addTo(callerSaveSet);
-        nativeGeneralParameterRegisters.addTo(callerSaveSet);
-        callerSaved = new RegisterArray(callerSaveSet);
+        callerSaveSet.addAll(allocatable);
+        callerSaveSet.addAll(fpParameterRegisters);
+        callerSaveSet.addAll(javaGeneralParameterRegisters);
+        callerSaveSet.addAll(nativeGeneralParameterRegisters);
+        callerSaved = List.copyOf(callerSaveSet);
 
         allAllocatableAreCallerSaved = true;
         attributesMap = RegisterAttributes.createMap(this, RISCV64.allRegisters);
     }
 
     @Override
-    public RegisterArray getCallerSaveRegisters() {
+    public List<Register> getCallerSaveRegisters() {
         return callerSaved;
     }
 
     @Override
-    public RegisterArray getCalleeSaveRegisters() {
+    public List<Register> getCalleeSaveRegisters() {
         return null;
     }
 
@@ -200,7 +198,7 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
     }
 
     @Override
-    public RegisterArray getCallingConventionRegisters(Type type, JavaKind kind) {
+    public List<Register> getCallingConventionRegisters(Type type, JavaKind kind) {
         HotSpotCallingConventionType hotspotType = (HotSpotCallingConventionType) type;
         switch (kind) {
             case Boolean:
@@ -219,7 +217,7 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
         }
     }
 
-    private CallingConvention callingConvention(RegisterArray generalParameterRegisters, JavaType returnType, JavaType[] parameterTypes, HotSpotCallingConventionType type,
+    private CallingConvention callingConvention(List<Register> generalParameterRegisters, JavaType returnType, JavaType[] parameterTypes, HotSpotCallingConventionType type,
                     ValueKindFactory<?> valueKindFactory) {
         AllocatableValue[] locations = new AllocatableValue[parameterTypes.length];
 

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8337703
+ * @bug 8347377 8358057
  * @summary To verify if ICC_Profile's setData() and getInstance() methods
  *          validate header data and throw IAE for invalid values.
  * @run main ValidateICCHeaderData
@@ -144,9 +144,7 @@ public class ValidateICCHeaderData {
         System.out.println("CASE 10: Passed \n");
 
         System.out.println("CASE 11: Testing INVALID Rendering Intent ...");
-        //valid rendering intent values are 0-3
-        int invalidRenderIntent = 5;
-        testInvalidHeaderData(invalidRenderIntent, RENDER_INTENT_START_INDEX, 4);
+        testInvalidIntent();
         System.out.println("CASE 11: Passed \n");
 
         System.out.println("CASE 12: Testing INVALID Header Size ...");
@@ -184,6 +182,21 @@ public class ValidateICCHeaderData {
             throw new RuntimeException("Test Failed ! Expected IAE NOT thrown");
         } catch (IllegalArgumentException iae) {
             System.out.println("Expected IAE thrown: " + iae.getMessage());
+        }
+    }
+
+    private static void testInvalidIntent() {
+        //valid rendering intent values are 0-3
+        int invalidRenderIntent = 5;
+        try {
+            setTag(invalidRenderIntent, RENDER_INTENT_START_INDEX, 4);
+            throw new RuntimeException("Test Failed ! Expected IAE NOT thrown");
+        } catch (IllegalArgumentException iae) {
+            String message = iae.getMessage();
+            System.out.println("Expected IAE thrown: " + message);
+            if (!message.contains(": " + invalidRenderIntent)) {
+                throw new RuntimeException("Test Failed ! Unexpected text");
+            }
         }
     }
 

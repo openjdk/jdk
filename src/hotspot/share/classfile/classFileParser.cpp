@@ -154,6 +154,8 @@
 
 #define JAVA_25_VERSION                   69
 
+#define JAVA_26_VERSION                   70
+
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||
           bad_constant == JVM_CONSTANT_Package) && _major_version >= JAVA_9_VERSION,
@@ -5015,6 +5017,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
 
   // Set name and CLD before adding to CLD
   ik->set_class_loader_data(_loader_data);
+  ik->set_class_loader_type();
   ik->set_name(_class_name);
 
   // Add all classes to our internal class loader list here,

@@ -35,6 +35,8 @@
 #include "gc/g1/g1CardTable.hpp"
 #endif // INCLUDE_G1GC
 
+#define JVMCI_NOT_ENABLED_ERROR_MESSAGE "JVMCI is not enabled. Must specify '-XX:+EnableJVMCI' or '--add-modules=jdk.internal.vm.ci' to the java launcher."
+
 class JVMCIEnv;
 class JVMCICompiler;
 class JVMCICompileState;
@@ -122,7 +124,7 @@ public:
   void invalidate_nmethod_mirror(nmethod* nm);
 
   // Gets the mirror from nm's oops table.
-  oop get_nmethod_mirror(nmethod* nm, bool phantom_ref);
+  oop get_nmethod_mirror(nmethod* nm);
 
   // Sets the mirror in nm's oops table.
   void set_nmethod_mirror(nmethod* nm, oop mirror);
@@ -372,8 +374,6 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
 
   // Explicitly initialize HotSpotJVMCIRuntime itself
   void initialize_HotSpotJVMCIRuntime(JVMCI_TRAPS);
-
-  void call_getCompiler(TRAPS);
 
   // Shuts down this runtime by calling HotSpotJVMCIRuntime.shutdown().
   // If this is the last thread attached to this runtime, then

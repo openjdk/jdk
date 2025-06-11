@@ -784,12 +784,7 @@ final class DigitList implements Cloneable {
             return "0";
         }
 
-        return getStringBuilder()
-                .append("0.")
-                .append(digits, 0, count)
-                .append("x10^")
-                .append(decimalAt)
-                .toString();
+        return "0." + new String(digits, 0, count) + "x10^" + decimalAt;
     }
 
     private StringBuilder tempBuilder;

@@ -45,7 +45,7 @@ import java.awt.Composite;
  * this type of BlitBg will accelerated double-buffer copies between those
  * two surfaces.
 */
-public class X11PMBlitBgLoops extends BlitBg {
+public final class X11PMBlitBgLoops extends BlitBg {
 
     public static void register()
     {

@@ -22,8 +22,6 @@
  */
 package jdk.jpackage.test;
 
-import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
-
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -33,28 +31,39 @@ import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.TestFactory;
 
 public class JUnitAdapter {
 
-    JUnitAdapter() {
+    static {
         if (System.getProperty("test.src") == null) {
             // Was called by somebody else but not by jtreg
             System.setProperty("test.src", Path.of("@@openJdkDir@@/test/jdk/tools/jpackage").toString());
         }
     }
 
-    @Test
-    void runJPackageTests(@TempDir Path workDir) throws Throwable {
-        if (!getClass().equals(JUnitAdapter.class)) {
-            Main.main(TestBuilder.build().workDirRoot(workDir), new String [] {
-                    "--jpt-before-run=jdk.jpackage.test.JPackageCommand.useToolProviderByDefault",
-                    "--jpt-run=" + getClass().getName()
-                    });
+    public static Stream<DynamicTest> createJPackageTests(ClassLoader testClassLoader, String... args) throws Throwable {
+        final List<TestInstance> tests = new ArrayList<>();
+        try (final var testBuilder = TestBuilder.build().workDirRoot(Path.of("")).testClassLoader(testClassLoader).testConsumer(tests::add).create()) {
+            for (final var arg : args) {
+                testBuilder.processCmdLineArg(arg);
+            }
         }
+        return tests.stream().map(test -> {
+            return DynamicTest.dynamicTest(test.fullName(), () -> {
+                TKit.runAdhocTest(test);
+            });
+        });
+    }
+
+    @TestFactory
+    Stream<DynamicTest> createJPackageTests() throws Throwable {
+        return createJPackageTests(getClass().getClassLoader(), "--jpt-run=" + getClass().getName());
     }
 
     static List<String> captureJPackageTestLog(ThrowingRunnable runnable) {

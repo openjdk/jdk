@@ -42,7 +42,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class AOTCacheWithZGC {
     public static void main(String... args) throws Exception {
         SimpleCDSAppTester.of("AOTCacheWithZGC")
-            .addVmArgs("-XX:+UseZGC", "-Xlog:cds")
+            .addVmArgs("-XX:+UseZGC", "-Xlog:cds", "-Xlog:aot")
             .classpath("app.jar")
             .appCommandLine("AOTCacheWithZGCApp")
             .setProductionChecker((OutputAnalyzer out) -> {

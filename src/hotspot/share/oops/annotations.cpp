@@ -76,7 +76,7 @@ typeArrayOop Annotations::make_java_array(AnnotationArray* annotations, TRAPS) {
 }
 
 void Annotations::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(Annotations): %p", this);
+  log_trace(aot)("Iter(Annotations): %p", this);
   it->push(&_class_annotations);
   it->push(&_fields_annotations);
   it->push(&_class_type_annotations);

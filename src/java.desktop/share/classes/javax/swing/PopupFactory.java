@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -433,10 +433,8 @@ public class PopupFactory {
                 } else {
                     return null;
                 }
-                if (cache.size() > 0) {
-                    HeavyWeightPopup r = cache.get(0);
-                    cache.remove(0);
-                    return r;
+                if (!cache.isEmpty()) {
+                    return cache.removeFirst();
                 }
                 return null;
             }
@@ -776,10 +774,8 @@ public class PopupFactory {
         private static LightWeightPopup getRecycledLightWeightPopup() {
             synchronized (LightWeightPopup.class) {
                 List<LightWeightPopup> lightPopupCache = getLightWeightPopupCache();
-                if (lightPopupCache.size() > 0) {
-                    LightWeightPopup r = lightPopupCache.get(0);
-                    lightPopupCache.remove(0);
-                    return r;
+                if (!lightPopupCache.isEmpty()) {
+                    return lightPopupCache.removeFirst();
                 }
                 return null;
             }
@@ -934,10 +930,8 @@ public class PopupFactory {
         private static MediumWeightPopup getRecycledMediumWeightPopup() {
             synchronized (MediumWeightPopup.class) {
                 List<MediumWeightPopup> mediumPopupCache = getMediumWeightPopupCache();
-                if (mediumPopupCache.size() > 0) {
-                    MediumWeightPopup r = mediumPopupCache.get(0);
-                    mediumPopupCache.remove(0);
-                    return r;
+                if (!mediumPopupCache.isEmpty()) {
+                    return mediumPopupCache.removeFirst();
                 }
                 return null;
             }

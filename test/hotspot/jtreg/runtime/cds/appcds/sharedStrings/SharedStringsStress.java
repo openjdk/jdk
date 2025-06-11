@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ public class SharedStringsStress {
         OutputAnalyzer dumpOutput = TestCommon.dump(appJar, TestCommon.list("HelloString"),
             TestCommon.concat(vmOptionsPrefix,
                 "-XX:SharedArchiveConfigFile=" + sharedArchiveConfigFile,
+                "-Xlog:aot",
                 "-Xlog:gc+region+cds",
                 "-Xlog:gc+region=trace"));
         TestCommon.checkDump(dumpOutput);
@@ -78,7 +79,7 @@ public class SharedStringsStress {
         dumpOutput.shouldContain("string table array (secondary)");
 
         OutputAnalyzer execOutput = TestCommon.exec(appJar,
-            TestCommon.concat(vmOptionsPrefix, "-Xlog:cds", "HelloString"));
+            TestCommon.concat(vmOptionsPrefix, "-Xlog:aot,cds", "HelloString"));
         TestCommon.checkExec(execOutput);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
 
 /*
  * @test
- * @bug 8214031
+ * @bug 8214031 8357361
  * @summary Verify various corner cases with nested switch expressions.
  * @compile ExpressionSwitchBugsInGen.java
  * @run main ExpressionSwitchBugsInGen
  */
+
+import java.util.Objects;
 
 public class ExpressionSwitchBugsInGen {
     public static void main(String... args) {
@@ -43,6 +45,8 @@ public class ExpressionSwitchBugsInGen {
         new ExpressionSwitchBugsInGen().testSwitchExpressionInConditional(1, 1, 1);
         new ExpressionSwitchBugsInGen().testIntBoxing(0, 10, 10);
         new ExpressionSwitchBugsInGen().testIntBoxing(1, 10, -1);
+        new ExpressionSwitchBugsInGen().testSwitchExpressionTypeErased(0);
+        new ExpressionSwitchBugsInGen().testSwitchExpressionTypeErased(1);
     }
 
     private void test(int a, int b, int c, boolean expected) {
@@ -88,6 +92,23 @@ public class ExpressionSwitchBugsInGen {
         };
         if (r != expected) {
             throw new IllegalStateException();
+        }
+    }
+
+    //JDK-8357361:
+    private void testSwitchExpressionTypeErased(int i) {
+        interface Readable<R extends String> {
+            R getReader();
+        }
+        Readable<?> readable = () -> "";
+        var v = switch (i) {
+            case 0 -> readable.getReader();
+            default -> null;
+        };
+        var expected = i == 0 ? "" : null;
+        if (!Objects.equals(v, expected)) {
+            throw new IllegalStateException("Expected: " + expected +
+                                            ", got: " + v);
         }
     }
 

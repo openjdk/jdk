@@ -124,6 +124,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.cds", this::vmCDS);
         map.put("vm.cds.custom.loaders", this::vmCDSForCustomLoaders);
         map.put("vm.cds.supports.aot.class.linking", this::vmCDSSupportsAOTClassLinking);
+        map.put("vm.cds.supports.aot.code.caching", this::vmCDSSupportsAOTCodeCaching);
         map.put("vm.cds.write.archived.java.heap", this::vmCDSCanWriteArchivedJavaHeap);
         map.put("vm.continuations", this::vmContinuations);
         // vm.graal.enabled is true if Graal is used as JIT
@@ -470,6 +471,20 @@ public class VMProps implements Callable<Map<String, String>> {
     protected String vmCDSSupportsAOTClassLinking() {
       // Currently, the VM supports AOTClassLinking as long as it's able to write archived java heap.
       return vmCDSCanWriteArchivedJavaHeap();
+    }
+
+    /**
+     * @return true if this VM can support the AOT Code Caching
+     */
+    protected String vmCDSSupportsAOTCodeCaching() {
+      if ("true".equals(vmCDSSupportsAOTClassLinking()) &&
+          !"zero".equals(vmFlavor()) &&
+          "false".equals(vmJvmciEnabled()) &&
+          (Platform.isX64() || Platform.isAArch64())) {
+        return "true";
+      } else {
+        return "false";
+      }
     }
 
     /**

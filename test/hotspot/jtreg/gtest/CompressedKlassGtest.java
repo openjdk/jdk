@@ -35,7 +35,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
- * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -XX:+UnlockExperimentalVMOptions -XX:-UseCompactObjectHeaders -Xlog:metaspace* -Xmx6g -Xms128m -Xshare:off -XX:CompressedClassSpaceSize=128m
+ * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -XX:-UseCompactObjectHeaders -Xlog:metaspace* -Xmx6g -Xms128m -Xshare:off -XX:CompressedClassSpaceSize=128m
  */
 
 /* @test id=ccp_off
@@ -49,12 +49,12 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
- * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -XX:+UnlockExperimentalVMOptions -XX:+UseCompactObjectHeaders -Xlog:metaspace* -Xmx6g -Xms128m -Xshare:off -XX:CompressedClassSpaceSize=128m
+ * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -XX:+UseCompactObjectHeaders -Xlog:metaspace* -Xmx6g -Xms128m -Xshare:off -XX:CompressedClassSpaceSize=128m
  */
 
 /* @test id=use-zero-based-encoding-coh-large-class-space
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
- * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -XX:+UnlockExperimentalVMOptions -XX:+UseCompactObjectHeaders -Xlog:metaspace* -Xmx6g -Xms128m -Xshare:off -XX:CompressedClassSpaceSize=4g
+ * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -XX:+UseCompactObjectHeaders -Xlog:metaspace* -Xmx6g -Xms128m -Xshare:off -XX:CompressedClassSpaceSize=4g
  */

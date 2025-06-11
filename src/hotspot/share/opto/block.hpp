@@ -447,7 +447,7 @@ class PhaseCFG : public Phase {
   Block* hoist_to_cheaper_block(Block* LCA, Block* early, Node* self);
 
   bool schedule_local(Block* block, GrowableArray<int>& ready_cnt, VectorSet& next_call, intptr_t* recacl_pressure_nodes);
-  void set_next_call(Block* block, Node* n, VectorSet& next_call);
+  void set_next_call(const Block* block, Node* n, VectorSet& next_call) const;
   void needed_for_next_call(Block* block, Node* this_call, VectorSet& next_call);
 
   // Perform basic-block local scheduling

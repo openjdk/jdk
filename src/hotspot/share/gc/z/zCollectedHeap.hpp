@@ -70,7 +70,6 @@ public:
   size_t used() const override;
   size_t unused() const override;
 
-  bool is_maximal_no_gc() const override;
   bool is_in(const void* p) const override;
   bool requires_barriers(stackChunkOop obj) const override;
 

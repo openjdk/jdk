@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ package jdk.vm.ci.code.test.amd64;
 
 import static jdk.vm.ci.amd64.AMD64.xmm0;
 
+import java.util.List;
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.amd64.AMD64Kind;
 import jdk.vm.ci.code.CallingConvention;
@@ -495,11 +496,11 @@ public class AMD64TestAssembler extends TestAssembler {
     @Override
     public void emitCallPrologue(CallingConvention cc, Object... prim) {
         growFrame(cc.getStackSize());
-        AllocatableValue[] args = cc.getArguments();
+        List<AllocatableValue> args = cc.getArguments();
         // Do the emission in reverse, this avoids register collisons of xmm0 - which is used a
         // scratch register when putting arguments on the stack.
-        for (int i = args.length - 1; i >= 0; i--) {
-            emitLoad(args[i], prim[i]);
+        for (int i = args.size() - 1; i >= 0; i--) {
+            emitLoad(args.get(i), prim[i]);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,16 +72,16 @@ public class LambdaWithJavaAgent {
                        "-XX:+UnlockDiagnosticVMOptions",
                        "-XX:+AllowArchivingWithJavaAgent",
                        useJavaAgent,
-                       "-Xlog:class+load,cds+class=debug,cds")
+                       "-Xlog:class+load,cds+class=debug,aot,cds")
             .setArchiveName(archiveName);
         OutputAnalyzer output = CDSTestUtils.createArchiveAndCheck(opts);
-        output.shouldContain("CDS heap objects cannot be written because class jdk.internal.math.FDBigInteger maybe modified by ClassFileLoadHook")
+        output.shouldContain("heap objects cannot be written because class jdk.internal.math.FDBigInteger maybe modified by ClassFileLoadHook")
               .shouldContain("Skipping jdk/internal/math/FDBigInteger: Unsupported location")
               .shouldMatch(".class.load.*jdk.internal.math.FDBigInteger.*source.*modules");
 
         // run with archive
         CDSOptions runOpts = (new CDSOptions())
-            .addPrefix("-cp", appJar, "-Xlog:class+load,cds=debug",
+            .addPrefix("-cp", appJar, "-Xlog:class+load=debug,aot=debug,cds=debug,class+path=debug",
                        "-XX:+UnlockDiagnosticVMOptions",
                        "-XX:+AllowArchivingWithJavaAgent",
                        useJavaAgent)

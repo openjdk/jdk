@@ -43,3 +43,11 @@ gtest/NMTGtests.java#nmt-detail                         8356201 generic-all
 gtest/NMTGtests.java#nmt-off                            8356201 generic-all
 gtest/NMTGtests.java#nmt-summary                        8356201 generic-all
 
+# Need CDS archive
+runtime/cds/NonJVMVariantLocation.java                        8357632 generic-all
+runtime/cds/TestCDSVMCrash.java                               8357632 generic-all
+runtime/cds/TestDefaultArchiveLoading.java#coops_coh          8357632 generic-all
+runtime/cds/TestDefaultArchiveLoading.java#coops_nocoh        8357632 generic-all
+runtime/cds/TestDefaultArchiveLoading.java#nocoops_coh        8357632 generic-all
+runtime/cds/TestDefaultArchiveLoading.java#nocoops_nocoh      8357632 generic-all
+serviceability/jvmti/RedefineClasses/RedefineSharedClass.java 8357632 generic-all

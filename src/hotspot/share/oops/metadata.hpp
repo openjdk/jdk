@@ -44,6 +44,7 @@ class Metadata : public MetaspaceObj {
   virtual bool is_method()             const { return false; }
   virtual bool is_methodData()         const { return false; }
   virtual bool is_constantPool()       const { return false; }
+  virtual bool is_methodCounters()     const { return false; }
   virtual int  size()                  const = 0;
   virtual MetaspaceObj::Type type()    const = 0;
   virtual const char* internal_name()  const = 0;

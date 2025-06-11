@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 8345403
- * @summary FloatingDecimal parsing methods (use -Dseed=X to set seed)
+ * @summary FloatingDecimal parsing methods (use -Dseed=X to set seed,
+ *      use -Dsamples=N to set the number of random samples per test)
  * @modules java.base/jdk.internal.math
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
@@ -34,6 +35,7 @@
 
 import jdk.internal.math.FloatingDecimal;
 import jdk.test.lib.RandomFactory;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -55,24 +57,40 @@ public class TestRandomFloatingDecimal {
      * Hence, the expected values are those computed by BigDecimal,
      * while the actual values are those returned by FloatingDecimal.
      */
-    private static final int COUNT = 10_000;  // random samples per test
+
 
     private static final Random RANDOM = RandomFactory.getRandom();
+    private static int samples;  // random samples per test
 
     static Stream<Args> testRandomDecForFloat() {
-        return Stream.generate(() -> randomDec(false)).limit(COUNT);
+        return Stream.generate(() -> randomDec(false)).limit(samples);
     }
 
     static Stream<Args> testRandomDecForDouble() {
-        return Stream.generate(() -> randomDec(true)).limit(COUNT);
+        return Stream.generate(() -> randomDec(true)).limit(samples);
     }
 
     static Stream<Args> testRandomHexForFloat() {
-        return Stream.generate(() -> randomHex(false)).limit(COUNT);
+        return Stream.generate(() -> randomHex(false)).limit(samples);
     }
 
     static Stream<Args> testRandomHexForDouble() {
-        return Stream.generate(() -> randomHex(true)).limit(COUNT);
+        return Stream.generate(() -> randomHex(true)).limit(samples);
+    }
+
+    private static final String SAMPLES_PROP = "samples";
+
+    @BeforeAll
+    static void setCount() {
+        String prop = System.getProperty(SAMPLES_PROP, "10000");  // 10_000
+        try {
+            samples = Integer.parseInt(prop);
+            if (samples <= 0) {
+                throw new NumberFormatException();
+            }
+        } catch (NumberFormatException _) {
+            throw new IllegalArgumentException("-D" + SAMPLES_PROP + "=" + prop + " must specify a valid positive decimal integer.");
+        }
     }
 
     @ParameterizedTest

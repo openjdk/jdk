@@ -829,9 +829,13 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
 
   // Step 5: Assertion Predicates initialization
   if (counted_loop) {
-    initialize_assertion_predicates_for_peeled_loop(new_head->as_CountedLoop(), head->as_CountedLoop(),
+    CountedLoopNode* cl = head->as_CountedLoop();
+    Node* init = cl->init_trip();
+    Node* init_ctrl = cl->skip_strip_mined()->in(LoopNode::EntryControl);
+    initialize_assertion_predicates_for_peeled_loop(new_head->as_CountedLoop(), cl,
                                                     first_node_index_in_post_loop_body, old_new);
- }
+    cast_incr_before_loop(init, init_ctrl, cl);
+  }
 
   // Now force out all loop-invariant dominating tests.  The optimizer
   // finds some, but we _know_ they are all useless.
@@ -1903,6 +1907,8 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
         "odd trip count for maximally unroll");
     // Don't need to adjust limit for maximally unroll since trip count is even.
   } else if (loop_head->has_exact_trip_count() && init->is_Con()) {
+    // The trip count being exact means it has been set (using CountedLoopNode::set_exact_trip_count in compute_trip_count)
+    assert(old_trip_count < max_juint, "sanity");
     // Loop's limit is constant. Loop's init could be constant when pre-loop
     // become peeled iteration.
     jlong init_con = init->get_int();
@@ -1916,8 +1922,10 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     int stride_m    = new_stride_con - (stride_con > 0 ? 1 : -1);
     jlong trip_count = (limit_con - init_con + stride_m)/new_stride_con;
     // New trip count should satisfy next conditions.
-    assert(trip_count > 0 && (julong)trip_count < (julong)max_juint/2, "sanity");
+    assert(trip_count > 0 && (julong)trip_count <= (julong)max_juint/2, "sanity");
     uint new_trip_count = (uint)trip_count;
+    // Since old_trip_count has been set to < max_juint (that is at most 2^32-2),
+    // new_trip_count is lower than or equal to 2^31-1 and the multiplication cannot overflow.
     adjust_min_trip = (old_trip_count != new_trip_count*2);
   }
 

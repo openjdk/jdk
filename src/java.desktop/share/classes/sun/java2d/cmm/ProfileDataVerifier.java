@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ public class ProfileDataVerifier {
      */
     private static final int MAX_TAG_COUNT = 100;
 
-    private static final int HEADER_SIZE = 128;
+    public static final int HEADER_SIZE = 128;
     private static final int TOC_OFFSET = HEADER_SIZE + 4;
     private static final int TOC_RECORD_SIZE = 12;
 

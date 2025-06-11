@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,6 +19,19 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ */
+
+/**
+ * @test
+ * @bug 8072480 8277106 8331027
+ * @summary Unit test for CreateSymbols
+ * @modules java.compiler
+ *          jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.jvm
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.util
+ * @clean *
+ * @run main/othervm CreateSymbolsTest
  */
 
 import java.io.File;
@@ -906,6 +919,109 @@ public class CreateSymbolsTestImpl {
                        public static class OtherNested {}
                    }
                    """);
+    }
+
+    @Test
+    void testTypeAnnotations() throws Exception {
+        doPrintElementTest("""
+                           package t;
+                           public class T {
+                           }
+                           """,
+                           """
+                           package t;
+                           import java.lang.annotation.*;
+                           import java.util.*;
+                           public class T<@AnnInvisible @AnnVisible E extends @AnnInvisible @AnnVisible ArrayList<@AnnInvisible @AnnVisible ArrayList>> extends @AnnInvisible @AnnVisible ArrayList {
+                               public @AnnInvisible @AnnVisible List<@AnnInvisible @AnnVisible E> field;
+                               public <@AnnInvisible @AnnVisible M extends @AnnInvisible @AnnVisible ArrayList<@AnnInvisible @AnnVisible ArrayList>> @AnnInvisible @AnnVisible List<@AnnInvisible @AnnVisible M> convert(@AnnInvisible @AnnVisible T<E> this, @AnnInvisible @AnnVisible M e1, @AnnInvisible @AnnVisible List<@AnnInvisible @AnnVisible E> e2) throws @AnnInvisible @AnnVisible IllegalStateException, @AnnInvisible @AnnVisible IllegalArgumentException {
+                                   return null;
+                               }
+                           }
+                           @Retention(RetentionPolicy.RUNTIME)
+                           @Target(ElementType.TYPE_USE)
+                           @interface AnnVisible {
+                           }
+                           @Retention(RetentionPolicy.CLASS)
+                           @Target(ElementType.TYPE_USE)
+                           @interface AnnInvisible {
+                           }
+                           """,
+                           "t.T",
+                           """
+                           package t;
+
+                           public class T {
+
+                             public T();
+                           }
+                           """,
+                           "t.T",
+                           """
+                           package t;
+
+                           public class T<@t.AnnInvisible @t.AnnVisible E extends java.util.@t.AnnInvisible @t.AnnVisible ArrayList<java.util.@t.AnnInvisible @t.AnnVisible ArrayList>> extends java.util.@t.AnnInvisible @t.AnnVisible ArrayList {
+                             public java.util.@t.AnnInvisible @t.AnnVisible List<@t.AnnInvisible @t.AnnVisible E> field;
+
+                             public T();
+
+                             public <@t.AnnInvisible @t.AnnVisible M extends java.util.@t.AnnInvisible @t.AnnVisible ArrayList<java.util.@t.AnnInvisible @t.AnnVisible ArrayList>> java.util.@t.AnnInvisible @t.AnnVisible List<@t.AnnInvisible @t.AnnVisible M> convert(@t.AnnInvisible @t.AnnVisible M arg0,
+                               java.util.@t.AnnInvisible @t.AnnVisible List<@t.AnnInvisible @t.AnnVisible E> arg1) throws java.lang.@t.AnnInvisible @t.AnnVisible IllegalStateException,\s
+                               java.lang.@t.AnnInvisible @t.AnnVisible IllegalArgumentException;
+                           }
+                           """);
+    }
+
+    @Test
+    void testParameterAnnotations() throws Exception {
+        doPrintElementTest("""
+                           package t;
+                           public class T {
+                               public void test(int p1, int p2) {
+                               }
+                           }
+                           """,
+                           """
+                           package t;
+                           import java.lang.annotation.*;
+                           import java.util.*;
+                           public class T {
+                               public void test(@AnnVisible int p1, @AnnInvisible int p2) {
+                               }
+                           }
+                           @Retention(RetentionPolicy.RUNTIME)
+                           @Target(ElementType.PARAMETER)
+                           @interface AnnVisible {
+                           }
+                           @Retention(RetentionPolicy.CLASS)
+                           @Target(ElementType.PARAMETER)
+                           @interface AnnInvisible {
+                           }
+                           """,
+                           "t.T",
+                           """
+                           package t;
+
+                           public class T {
+
+                             public T();
+
+                             public void test(int arg0,
+                               int arg1);
+                           }
+                           """,
+                           "t.T",
+                           """
+                           package t;
+
+                           public class T {
+
+                             public T();
+
+                             public void test(@t.AnnVisible int arg0,
+                               @t.AnnInvisible int arg1);
+                           }
+                           """);
     }
 
     void doTestData(String data,

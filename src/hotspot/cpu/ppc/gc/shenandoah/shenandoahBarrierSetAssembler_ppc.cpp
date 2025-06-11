@@ -360,13 +360,8 @@ void ShenandoahBarrierSetAssembler::resolve_forward_pointer_not_null(MacroAssemb
 
   assert(markWord::lock_mask_in_place == markWord::marked_value,
          "marked value must equal the value obtained when all lock bits are being set");
-  if (VM_Version::has_isel()) {
-    __ xori(tmp1, tmp1, markWord::lock_mask_in_place);
-    __ isel(dst, CR0, Assembler::equal, false, tmp1);
-  } else {
-    __ bne(CR0, done);
-    __ xori(dst, tmp1, markWord::lock_mask_in_place);
-  }
+  __ xori(tmp1, tmp1, markWord::lock_mask_in_place);
+  __ isel(dst, CR0, Assembler::equal, false, tmp1);
 
   __ bind(done);
   __ block_comment("} resolve_forward_pointer_not_null (shenandoahgc)");

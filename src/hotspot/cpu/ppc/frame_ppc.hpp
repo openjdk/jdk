@@ -363,7 +363,7 @@
   inline frame(intptr_t* sp, intptr_t* fp, address pc);
   inline frame(intptr_t* sp, address pc, kind knd = kind::nmethod);
   inline frame(intptr_t* sp, address pc, intptr_t* unextended_sp, intptr_t* fp = nullptr, CodeBlob* cb = nullptr);
-  inline frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map);
+  inline frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map = nullptr);
   inline frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map, bool on_heap);
 
  private:

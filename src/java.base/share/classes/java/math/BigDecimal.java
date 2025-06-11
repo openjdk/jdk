@@ -480,16 +480,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     public static final BigDecimal TEN =
         ZERO_THROUGH_TEN[10];
 
-    /**
-     * The value 0.1, with a scale of 1.
-     */
-    private static final BigDecimal ONE_TENTH = valueOf(1L, 1);
-
-    /**
-     * The value 0.5, with a scale of 1.
-     */
-    private static final BigDecimal ONE_HALF = valueOf(5L, 1);
-
     // Constructors
 
     /**
@@ -4146,9 +4136,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             int highInt = (int)intCompact / 100;
             int highIntSize = DecimalDigits.stringSize(highInt);
             byte[] buf = new byte[highIntSize + 3];
-            DecimalDigits.getCharsLatin1(highInt, highIntSize, buf);
+            DecimalDigits.uncheckedGetCharsLatin1(highInt, highIntSize, buf);
             buf[highIntSize] = '.';
-            DecimalDigits.putPairLatin1(buf, highIntSize + 1, lowInt);
+            DecimalDigits.uncheckedPutPairLatin1(buf, highIntSize + 1, lowInt);
             try {
                 return JLA.uncheckedNewStringNoRepl(buf, StandardCharsets.ISO_8859_1);
             } catch (CharacterCodingException cce) {

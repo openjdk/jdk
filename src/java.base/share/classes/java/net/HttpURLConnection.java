@@ -534,7 +534,7 @@ public abstract class HttpURLConnection extends URLConnection {
 
                 try {
                     responseCode = Integer.parseInt
-                            (statusLine.substring(codePos+1, phrasePos));
+                            (statusLine, codePos+1, phrasePos, 10);
                     return responseCode;
                 } catch (NumberFormatException e) { }
             }

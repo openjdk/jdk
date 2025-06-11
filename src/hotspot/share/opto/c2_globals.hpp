@@ -367,6 +367,26 @@
           "loop iterations this detection spans.")                          \
           range(0, 4096)                                                    \
                                                                             \
+  product(uint, SuperWordAutomaticAlignment, 1, DIAGNOSTIC,                 \
+          "0 = Disabled (unless AlignVector is enabled)"                    \
+          "Else: align with a load or store of the largest vector width,"   \
+          "      and if there are loads and stores of the largest width:"   \
+          "1 = Prefer alignment with vector store (default)"                \
+          "2 = Prefer alignment with vector load.")                         \
+          range(0, 2)                                                       \
+                                                                            \
+  product(uint, AutoVectorizationOverrideProfitability, 1, DIAGNOSTIC,      \
+          "Override the auto vectorization profitability heuristics."       \
+          "0 = Run auto vectorizer, but abort just before applying"         \
+          "    vectorization, as though it was not profitable."             \
+          "1 = Run auto vectorizer with the default profitability"          \
+          "    heuristics. This is the default, and hopefully"              \
+          "    delivers the best performance."                              \
+          "2 = Run auto vectorizer, and vectorize even if the"              \
+          "    profitability heuristics predict that vectorization"         \
+          "    is not profitable.")                                         \
+          range(0, 2)                                                       \
+                                                                            \
   product(bool, UseCMoveUnconditionally, false,                             \
           "Use CMove (scalar and vector) ignoring profitability test.")     \
                                                                             \

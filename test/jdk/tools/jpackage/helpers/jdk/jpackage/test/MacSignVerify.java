@@ -83,7 +83,7 @@ public final class MacSignVerify {
             return value;
         }
 
-        final private String value;
+        private final String value;
     }
 
     public static final String ADHOC_SIGN_ORIGIN = "-";

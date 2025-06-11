@@ -169,7 +169,6 @@ protected:
     uint _compressedOopShift;
     uint _compressedKlassShift;
     uint _contendedPaddingWidth;
-    uint _objectAlignment;
     uint _gc;
     enum Flags {
       none                     = 0,
@@ -206,7 +205,7 @@ protected:
     uint   _C2_blobs_count;
     Config _config;
 
-public:
+  public:
     void init(uint cache_size,
               uint strings_count,  uint strings_offset,
               uint entries_count,  uint entries_offset,
@@ -236,8 +235,8 @@ public:
     uint C1_blobs_count() const { return _C1_blobs_count; }
     uint C2_blobs_count() const { return _C2_blobs_count; }
 
-    bool verify_config(uint load_size)  const;
-    bool verify_vm_config() const { // Called after Universe initialized
+    bool verify(uint load_size)  const;
+    bool verify_config() const { // Called after Universe initialized
       return _config.verify();
     }
   };
@@ -298,8 +297,6 @@ public:
   void load_strings();
   int store_strings();
 
-  static void init_extrs_table() NOT_CDS_RETURN;
-  static void init_early_stubs_table() NOT_CDS_RETURN;
   static void init_shared_blobs_table() NOT_CDS_RETURN;
   static void init_early_c1_table() NOT_CDS_RETURN;
 
@@ -352,9 +349,9 @@ private:
   static AOTCodeCache*  _cache;
 
   static bool open_cache(bool is_dumping, bool is_using);
-  static bool verify_vm_config() {
-    if (is_on_for_use()) {
-      return _cache->_load_header->verify_vm_config();
+  bool verify_config() {
+    if (for_use()) {
+      return _load_header->verify_config();
     }
     return true;
   }
