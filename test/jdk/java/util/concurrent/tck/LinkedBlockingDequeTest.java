@@ -1910,6 +1910,7 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
                     fail("Expected InterruptedException in putLast()");
                 } catch (InterruptedException expected) {
                     // good that's what we want
+                    assertFalse(Thread.currentThread().isInterrupted());
                 }
 
                 queue.add(42);
