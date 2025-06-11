@@ -176,27 +176,27 @@ void os::Bsd::print_uptime_info(outputStream* st) {
   }
 }
 
-ptrdiff_t os::total_swap_space() {
+ssize_t os::total_swap_space() {
 #if defined(__APPLE__)
   struct xsw_usage vmusage;
   size_t size = sizeof(vmusage);
   if (sysctlbyname("vm.swapusage", &vmusage, &size, nullptr, 0) != 0) {
     return -1;
   }
-  return static_cast<ptrdiff_t>(vmusage.xsu_total);
+  return static_cast<ssize_t>(vmusage.xsu_total);
 #else
   return -1;
 #endif
 }
 
-ptrdiff_t os::free_swap_space() {
+ssize_t os::free_swap_space() {
 #if defined(__APPLE__)
   struct xsw_usage vmusage;
   size_t size = sizeof(vmusage);
   if (sysctlbyname("vm.swapusage", &vmusage, &size, nullptr, 0) != 0) {
     return -1;
   }
-  return static_cast<ptrdiff_t>(vmusage.xsu_avail);
+  return static_cast<ssize_t>(vmusage.xsu_avail);
 #else
   return -1;
 #endif
