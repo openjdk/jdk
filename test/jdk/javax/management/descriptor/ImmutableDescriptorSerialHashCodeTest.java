@@ -53,12 +53,12 @@ public class ImmutableDescriptorSerialHashCodeTest {
       */
     private static void test(Descriptor d1, Descriptor d2, String msg) throws Exception {
         if (!d1.equals(d2)) {
-            throw new Exception(msg + ": Descriptors not equal: " +
+            throw new RuntimeException(msg + ": Descriptors not equal: " +
                     "\nd1: " + d1 +
                     "\nd2: " + d2);
         }
         if (d1.hashCode() != d2.hashCode()) {
-            throw new Exception(msg + ": Hash code mismatch.  hash1: " + d1.hashCode()
+            throw new RuntimeException(msg + ": Hash code mismatch.  hash1: " + d1.hashCode()
                                 + ", hash2: " + d2.hashCode());
         }
     }
