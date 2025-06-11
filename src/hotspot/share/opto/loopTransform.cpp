@@ -1399,6 +1399,7 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   CountedLoopNode *post_head = nullptr;
   Node* post_incr = incr;
   Node* main_exit = insert_post_loop(loop, old_new, main_head, main_end, post_incr, limit, post_head);
+  C->print_method(PHASE_AFTER_POST_LOOP, 4, main_head);
 
   //------------------------------
   // Step B: Create Pre-Loop.
@@ -1613,8 +1614,10 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old
   Node *limit = main_end->limit();
 
   // In this case we throw away the result as we are not using it to connect anything else.
+  C->print_method(PHASE_BEFORE_POST_LOOP, 4, main_head);
   CountedLoopNode *post_head = nullptr;
   insert_post_loop(loop, old_new, main_head, main_end, incr, limit, post_head);
+  C->print_method(PHASE_AFTER_POST_LOOP, 4, main_head);
 
   // It's difficult to be precise about the trip-counts
   // for post loops.  They are usually very short,
@@ -3077,6 +3080,7 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
       return false;
     }
   }
+  phase->C->print_method(PHASE_BEFORE_REMOVE_EMPTY_LOOP, 4, cl);
   if (cl->is_pre_loop()) {
     // If the loop we are removing is a pre-loop then the main and post loop
     // can be removed as well.
@@ -3179,6 +3183,7 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
   phase->_igvn.replace_input_of(cl->loopexit(), CountedLoopEndNode::TestValue, zero);
 
   phase->C->set_major_progress();
+  phase->C->print_method(PHASE_AFTER_REMOVE_EMPTY_LOOP, 4, cl);
   return true;
 }
 
@@ -3331,6 +3336,7 @@ bool IdealLoopTree::do_one_iteration_loop(PhaseIdealLoop *phase) {
   }
 #endif
 
+  phase->C->print_method(PHASE_BEFORE_ONE_ITERATION_LOOP, 4, cl);
   Node *init_n = cl->init_trip();
   // Loop boundaries should be constant since trip count is exact.
   assert((cl->stride_con() > 0 && init_n->get_int() + cl->stride_con() >= cl->limit()->get_int()) ||
@@ -3340,6 +3346,7 @@ bool IdealLoopTree::do_one_iteration_loop(PhaseIdealLoop *phase) {
   // and all loop-invariant uses of the exit values will be correct.
   phase->_igvn.replace_node(cl->phi(), cl->init_trip());
   phase->C->set_major_progress();
+  phase->C->print_method(PHASE_AFTER_ONE_INTERATION_LOOP, 4, cl);
   return true;
 }
 
