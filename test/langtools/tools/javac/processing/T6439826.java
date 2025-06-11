@@ -55,7 +55,9 @@ public class T6439826 extends AbstractProcessor {
                                                   "-processorpath", testClasses);
             StringWriter out = new StringWriter();
             JavacTask task = tool.getTask(out, fm, dl, opts, null, files);
-            task.call();
+            if (task.call()) {
+                throw new AssertionError("test compilation was expected to fail");
+            }
             String s = out.toString();
             System.err.print(s);
             // Expect the following 2 diagnostics, and no output to log

@@ -33,8 +33,10 @@ class ClassLoaderData;
 // ObjArrayKlass is the klass for objArrays
 
 class ObjArrayKlass : public ArrayKlass {
-  friend class VMStructs;
+  friend class Deoptimization;
   friend class JVMCIVMStructs;
+  friend class oopFactory;
+  friend class VMStructs;
 
  public:
   static const KlassKind Kind = ObjArrayKlassKind;
@@ -47,7 +49,9 @@ class ObjArrayKlass : public ArrayKlass {
 
   // Constructor
   ObjArrayKlass(int n, Klass* element_klass, Symbol* name);
-  static ObjArrayKlass* allocate(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, TRAPS);
+  static ObjArrayKlass* allocate_klass(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, TRAPS);
+
+  objArrayOop allocate_instance(int length, TRAPS);
  public:
   // For dummy objects
   ObjArrayKlass() {}
@@ -78,7 +82,6 @@ class ObjArrayKlass : public ArrayKlass {
   static ObjArrayKlass* allocate_objArray_klass(ClassLoaderData* loader_data,
                                                 int n, Klass* element_klass, TRAPS);
 
-  objArrayOop allocate(int length, TRAPS);
   oop multi_allocate(int rank, jint* sizes, TRAPS);
 
   // Copying

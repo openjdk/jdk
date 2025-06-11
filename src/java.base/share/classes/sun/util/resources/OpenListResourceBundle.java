@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,11 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.function.Supplier;
+
 import sun.util.ResourceBundleEnumeration;
 
 /**
@@ -69,12 +72,9 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
     // Implements java.util.ResourceBundle.handleGetObject; inherits javadoc specification.
     @Override
     protected Object handleGetObject(String key) {
-        if (key == null) {
-            throw new NullPointerException();
-        }
-
-        loadLookupTablesIfNecessary();
-        return lookup.get(key); // this class ignores locales
+        Objects.requireNonNull(key);
+        return lookup.get()
+                .get(key); // this class ignores locales
     }
 
     /**
@@ -93,64 +93,19 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
      */
     @Override
     protected Set<String> handleKeySet() {
-        loadLookupTablesIfNecessary();
-        return lookup.keySet();
+        return lookup.get()
+                .keySet();
     }
 
     @Override
     public Set<String> keySet() {
-        if (keyset != null) {
-            return keyset;
-        }
-        Set<String> ks = createSet();
-        ks.addAll(handleKeySet());
-        if (parent != null) {
-            ks.addAll(parent.keySet());
-        }
-        synchronized (this) {
-            if (keyset == null) {
-                keyset = ks;
-            }
-        }
-        return keyset;
+        return keyset.get();
     }
 
     /**
      * See ListResourceBundle class description.
      */
     protected abstract Object[][] getContents();
-
-    /**
-     * Load lookup tables if they haven't been loaded already.
-     */
-    void loadLookupTablesIfNecessary() {
-        if (lookup == null) {
-            loadLookup();
-        }
-    }
-
-    /**
-     * We lazily load the lookup hashtable.  This function does the
-     * loading.
-     */
-    private void loadLookup() {
-        Object[][] contents = getContents();
-        Map<String, Object> temp = createMap(contents.length);
-        for (int i = 0; i < contents.length; ++i) {
-            // key must be non-null String, value must be non-null
-            String key = (String) contents[i][0];
-            Object value = contents[i][1];
-            if (key == null || value == null) {
-                throw new NullPointerException();
-            }
-            temp.put(key, value);
-        }
-        synchronized (this) {
-            if (lookup == null) {
-                lookup = temp;
-            }
-        }
-    }
 
     /**
      * Lets subclasses provide specialized Map implementations.
@@ -164,6 +119,31 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
         return new HashSet<>();
     }
 
-    private volatile Map<String, Object> lookup;
-    private volatile Set<String> keyset;
+    private final Supplier<Map<String, Object>> lookup = StableValue.supplier(
+            new Supplier<>() { public Map<String, Object> get() { return lookup0(); }});
+
+    private Map<String, Object> lookup0() {
+        final Object[][] contents = getContents();
+        final Map<String, Object> temp = createMap(contents.length);
+        for (Object[] content : contents) {
+            // key must be non-null String, value must be non-null
+            final String key = Objects.requireNonNull((String) content[0]);
+            final Object value = Objects.requireNonNull(content[1]);
+            temp.put(key, value);
+        }
+        return temp;
+    }
+
+    private final Supplier<Set<String>> keyset = StableValue.supplier(
+            new Supplier<>() { public Set<String> get() { return keyset0(); }});
+
+    private Set<String> keyset0() {
+        final Set<String> ks = createSet();
+        ks.addAll(handleKeySet());
+        if (parent != null) {
+            ks.addAll(parent.keySet());
+        }
+        return ks;
+    }
+
 }

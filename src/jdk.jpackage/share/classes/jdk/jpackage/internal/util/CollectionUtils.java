@@ -25,10 +25,6 @@
 package jdk.jpackage.internal.util;
 
 import java.util.Collection;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * This class consists exclusively of static methods that operate on or return collections.
@@ -63,21 +59,5 @@ public final class CollectionUtils {
     public static <T extends B, B, C extends Collection<T>> C toCollectionUBW(Collection<? extends B> v) {
         Collection<?> tmp = v;
         return (C) tmp;
-    }
-
-    /**
-     * Converts the given collection to {@link Set}.
-     *
-     * @param <T> the type of elements in this output collection
-     * @param col the input collection. Null is permitted.
-     * @return the input collection if it is of type {@link Set} or a new
-     *         {@link Set} instance created from the input collection
-     */
-    public static <T> Set<T> toSet(Collection<T> col) {
-        if (col instanceof Set<T> set) {
-            return set;
-        } else {
-            return Optional.ofNullable(col).map(Collection::stream).orElseGet(Stream::of).collect(Collectors.toSet());
-        }
     }
 }

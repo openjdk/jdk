@@ -143,7 +143,7 @@ class VM_GC_Operation: public VM_GC_Sync_Operation {
   virtual void doit_epilogue();
 
   virtual bool allow_nested_vm_operations() const  { return true; }
-  bool prologue_succeeded() const { return _prologue_succeeded; }
+  virtual bool gc_succeeded() const { return _prologue_succeeded; }
 
   static void notify_gc_begin(bool full = false);
   static void notify_gc_end();

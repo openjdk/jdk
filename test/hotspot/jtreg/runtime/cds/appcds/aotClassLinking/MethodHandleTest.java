@@ -27,15 +27,13 @@
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.cds.supports.aot.class.linking
  * @requires vm.debug
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build MethodHandleTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar mh.jar
  *             MethodHandleTestApp MethodHandleTestApp$A MethodHandleTestApp$B
  *             UnsupportedBSMs UnsupportedBSMs$MyEnum
  *             ObjectMethodsTest ObjectMethodsTest$C
- * @run driver MethodHandleTest AOT
+ * @run driver MethodHandleTest AOT --two-step-training
  */
 
 import java.io.Serializable;

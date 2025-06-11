@@ -191,6 +191,7 @@ class NativeStrike extends PhysicalStrike {
       * the metrics and transform them. But currently in such a case it
       * gets the metrics from a different font - its glyph delegate font.
       */
+     @Override
      StrikeMetrics getFontMetrics() {
          if (strikeMetrics == null) {
              if (pScalerContext != 0) {
@@ -210,12 +211,14 @@ class NativeStrike extends PhysicalStrike {
 
      private native long createNullScalerContext();
 
+     @Override
      void getGlyphImagePtrs(int[] glyphCodes, long[] images,int  len) {
          for (int i=0; i<len; i++) {
              images[i] = getGlyphImagePtr(glyphCodes[i]);
          }
      }
 
+     @Override
      long getGlyphImagePtr(int glyphCode) {
          long glyphPtr;
 
@@ -267,27 +270,33 @@ class NativeStrike extends PhysicalStrike {
          return nativeFont.getGlyphImageNoDefault(pScalerContext, glyphCode);
      }
 
+     @Override
      void getGlyphImageBounds(int glyphcode, Point2D.Float pt,
                               Rectangle result) {
      }
 
+     @Override
      Point2D.Float getGlyphMetrics(int glyphCode) {
          Point2D.Float pt = new Point2D.Float(getGlyphAdvance(glyphCode), 0f);
          return pt;
      }
 
+     @Override
      float getGlyphAdvance(int glyphCode) {
          return nativeFont.getGlyphAdvance(pScalerContext, glyphCode);
      }
 
+     @Override
      Rectangle2D.Float getGlyphOutlineBounds(int glyphCode) {
          return nativeFont.getGlyphOutlineBounds(pScalerContext, glyphCode);
      }
 
+     @Override
      GeneralPath getGlyphOutline(int glyphCode, float x, float y) {
          return new GeneralPath();
      }
 
+     @Override
      GeneralPath getGlyphVectorOutline(int[] glyphs, float x, float y) {
          return new GeneralPath();
      }

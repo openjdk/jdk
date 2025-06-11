@@ -66,7 +66,9 @@ public class T6430209 {
                                                   "-processorpath", testClassPath);
             StringWriter out = new StringWriter();
             JavacTask task = tool.getTask(out, fm, null, opts, null, files);
-            task.call();
+            if (task.call()) {
+                throw new AssertionError("test compilation was expected to fail");
+            }
             String s = out.toString();
             System.err.print(s);
             s = s.replace(System.getProperty("line.separator"), "\n");

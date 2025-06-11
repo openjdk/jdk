@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,25 +30,25 @@
  *          java.base/sun.security.util
  *          java.base/sun.security.provider
  *          java.base/sun.security.x509
- * @compile -XDignore.symbol.file PKCS8Test.java
- * @run testng PKCS8Test
+ * @run main PKCS8Test
+ * @run main/othervm -Dtest.provider.name=SunJCE PKCS8Test
  */
 
-import java.io.IOException;
 import java.math.BigInteger;
+import java.security.InvalidKeyException;
+import java.security.Provider;
+import java.security.Security;
 import java.util.Arrays;
 import java.util.HexFormat;
 
 import jdk.test.lib.hexdump.ASN1Formatter;
 import jdk.test.lib.hexdump.HexPrinter;
-import org.testng.Assert;
-import org.testng.annotations.Test;
 import sun.security.pkcs.PKCS8Key;
 import sun.security.provider.DSAPrivateKey;
-import sun.security.util.DerValue;
 
 public class PKCS8Test {
 
+    static Provider provider;
     static final String FORMAT = "PKCS#8";
     static final String EXPECTED_ALG_ID_CHRS = "DSA, \n" +
             "\tp:     02\n\tq:     03\n\tg:     04\n";
@@ -62,43 +62,54 @@ public class PKCS8Test {
                     "3009020102020103020104" +  // p=2, q=3, g=4
                 "0403020101");  // PrivateKey OCTET int x = 1
 
-    @Test
-    public void test() throws IOException {
-
+    public static void main(String[] args) throws Exception {
+        provider = Security.getProvider(System.getProperty("test.provider.name"));
         byte[] encodedKey = new DSAPrivateKey(
                 BigInteger.valueOf(1),
                 BigInteger.valueOf(2),
                 BigInteger.valueOf(3),
                 BigInteger.valueOf(4)).getEncoded();
 
-        Assert.assertTrue(Arrays.equals(encodedKey, EXPECTED),
+        if (!Arrays.equals(encodedKey, EXPECTED)) {
+            throw new AssertionError(
                 HexPrinter.simple()
-                        .formatter(ASN1Formatter.formatter())
-                        .toString(encodedKey));
+                    .formatter(ASN1Formatter.formatter())
+                    .toString(encodedKey));
+        }
 
-        PKCS8Key decodedKey = (PKCS8Key)PKCS8Key.parseKey(encodedKey);
+        PKCS8Key decodedKey = provider == null ? (PKCS8Key)PKCS8Key.parseKey(encodedKey) :
+                (PKCS8Key)PKCS8Key.parseKey(encodedKey, provider);
 
-        Assert.assertEquals(decodedKey.getAlgorithm(), ALGORITHM);
-        Assert.assertEquals(decodedKey.getFormat(), FORMAT);
-        Assert.assertEquals(decodedKey.getAlgorithmId().toString(),
-                EXPECTED_ALG_ID_CHRS);
+        assert(ALGORITHM.equalsIgnoreCase(decodedKey.getAlgorithm()));
+        assert(FORMAT.equalsIgnoreCase(decodedKey.getFormat()));
+        assert(EXPECTED_ALG_ID_CHRS.equalsIgnoreCase(decodedKey.getAlgorithmId().toString()));
 
         byte[] encodedOutput = decodedKey.getEncoded();
-        Assert.assertTrue(Arrays.equals(encodedOutput, EXPECTED),
+        if (!Arrays.equals(encodedOutput, EXPECTED)) {
+
+            throw new AssertionError(
                 HexPrinter.simple()
-                        .formatter(ASN1Formatter.formatter())
-                        .toString(encodedOutput));
+                    .formatter(ASN1Formatter.formatter())
+                    .toString(encodedOutput));
+        }
 
         // Test additional fields
         enlarge(0, "8000");    // attributes
-        enlarge(1, "810100");  // public key for v2
-        enlarge(1, "8000", "810100");  // both
 
-        Assert.assertThrows(() -> enlarge(2));  // bad ver
-        Assert.assertThrows(() -> enlarge(0, "8000", "8000")); // no dup
-        Assert.assertThrows(() -> enlarge(0, "810100")); // no public in v1
-        Assert.assertThrows(() -> enlarge(1, "810100", "8000")); // bad order
-        Assert.assertThrows(() -> enlarge(1, "820100")); // bad tag
+        // PKCSv2 testing done by PEMEncoder/PEMDecoder tests
+
+        assertThrows(() -> enlarge(2));
+        assertThrows(() -> enlarge(0, "8000", "8000")); // no dup
+        assertThrows(() -> enlarge(0, "810100")); // no public in v1
+        assertThrows(() -> enlarge(1, "810100", "8000")); // bad order
+        assertThrows(() -> enlarge(1, "820100")); // bad tag
+    }
+
+    private static void assertThrows(Runnable o) {
+        try {
+            o.run();
+            throw new AssertionError("Test failed");
+        } catch (Exception e) {}
     }
 
     /**
@@ -107,7 +118,7 @@ public class PKCS8Test {
      * @param newVersion new version
      * @param fields extra fields to add, in hex
      */
-    static void enlarge(int newVersion, String... fields) throws IOException {
+    static void enlarge(int newVersion, String... fields) {
         byte[] original = EXPECTED.clone();
         int length = original.length;
         for (String field : fields) {   // append fields
@@ -116,9 +127,17 @@ public class PKCS8Test {
             System.arraycopy(add, 0, original, length, add.length);
             length += add.length;
         }
-        Assert.assertTrue(length < 127);
-        original[1] = (byte)(length - 2);   // the length field inside DER
-        original[4] = (byte)newVersion;     // the version inside DER
-        PKCS8Key.parseKey(original);
+        assert (length < 127);
+        original[1] = (byte) (length - 2);   // the length field inside DER
+        original[4] = (byte) newVersion;     // the version inside DER
+        try {
+            if (provider == null) {
+                PKCS8Key.parseKey(original);
+            } else {
+                PKCS8Key.parseKey(original, provider);
+            }
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

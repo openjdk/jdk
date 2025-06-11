@@ -27,7 +27,7 @@
  * @modules jdk.localedata
  * @summary Checks CLDR time zone names are generated correctly at
  * either build or runtime
- * @run testng/othervm -Djava.locale.providers=CLDR TimeZoneNamesTest
+ * @run testng TimeZoneNamesTest
  */
 
 import java.text.DateFormatSymbols;

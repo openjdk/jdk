@@ -664,7 +664,7 @@ void PSParallelCompact::pre_compact()
 
   CodeCache::on_gc_marking_cycle_start();
 
-  heap->print_heap_before_gc();
+  heap->print_before_gc();
   heap->trace_heap_before_gc(&_gc_tracer);
 
   // Fill in TLABs
@@ -1167,7 +1167,7 @@ bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
     Universe::verify("After GC");
   }
 
-  heap->print_heap_after_gc();
+  heap->print_after_gc();
   heap->trace_heap_after_gc(&_gc_tracer);
 
   AdaptiveSizePolicyOutput::print(size_policy, heap->total_collections());

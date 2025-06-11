@@ -54,7 +54,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * to perform limited operations by using bitmaps from X11 helps here.
  */
 
-public class NativeFont extends PhysicalFont {
+public final class NativeFont extends PhysicalFont {
 
     String encoding;
 
@@ -223,6 +223,7 @@ public class NativeFont extends PhysicalFont {
     private static native boolean haveBitmapFonts(byte[] xlfd);
     private static native boolean fontExists(byte[] xlfd);
 
+    @Override
     public CharToGlyphMapper getMapper() {
         if (mapper == null) {
             if (isBitmapDelegate) {
@@ -238,6 +239,7 @@ public class NativeFont extends PhysicalFont {
         return mapper;
     }
 
+    @Override
     FontStrike createStrike(FontStrikeDesc desc) {
         if (isBitmapDelegate) {
             return new NativeStrike(this, desc);
@@ -261,15 +263,19 @@ public class NativeFont extends PhysicalFont {
             return null;
     }
 
+    @Override
     native StrikeMetrics getFontMetrics(long pScalerContext);
 
+    @Override
     native float getGlyphAdvance(long pContext, int glyphCode);
 
+    @Override
     Rectangle2D.Float getGlyphOutlineBounds(long pScalerContext,
                                             int glyphCode) {
         return new Rectangle2D.Float(0f, 0f, 0f, 0f);
     }
 
+    @Override
     public GeneralPath getGlyphOutline(long pScalerContext,
                                        int glyphCode,
                                        float x,
@@ -277,15 +283,18 @@ public class NativeFont extends PhysicalFont {
         return null;
     }
 
+    @Override
     native long getGlyphImage(long pScalerContext, int glyphCode);
 
     native long getGlyphImageNoDefault(long pScalerContext, int glyphCode);
 
+    @Override
     void getGlyphMetrics(long pScalerContext, int glyphCode,
                         Point2D.Float metrics) {
         throw new RuntimeException("this should be called on the strike");
     }
 
+    @Override
     public  GeneralPath getGlyphVectorOutline(long pScalerContext,
                                               int[] glyphs, int numGlyphs,
                                               float x,  float y) {
@@ -294,6 +303,7 @@ public class NativeFont extends PhysicalFont {
 
     private native int countGlyphs(byte[] platformNameBytes, int ptSize);
 
+    @Override
     public int getNumGlyphs() {
         if (numGlyphs == -1) {
             byte[] bytes = getPlatformNameBytes(8);
@@ -371,6 +381,7 @@ public class NativeFont extends PhysicalFont {
         return xlfd.getBytes(UTF_8);
     }
 
+    @Override
     public String toString() {
         return " ** Native Font: Family="+familyName+ " Name="+fullName+
             " style="+style+" nativeName="+platName;

@@ -28,6 +28,7 @@
 #include "gc/z/zHeuristics.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
+#include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -44,18 +45,22 @@ void ZHeuristics::set_medium_page_size() {
 
   if (size > ZPageSizeSmall) {
     // Enable medium pages
-    ZPageSizeMedium             = size;
-    ZPageSizeMediumShift        = (size_t)log2i_exact(ZPageSizeMedium);
-    ZObjectSizeLimitMedium      = ZPageSizeMedium / 8;
-    ZObjectAlignmentMediumShift = (int)ZPageSizeMediumShift - 13;
+    ZPageSizeMediumMax          = size;
+    ZPageSizeMediumMaxShift     = log2i_exact(ZPageSizeMediumMax);
+    ZObjectSizeLimitMedium      = ZPageSizeMediumMax / 8;
+    ZObjectAlignmentMediumShift = ZPageSizeMediumMaxShift - 13;
     ZObjectAlignmentMedium      = 1 << ZObjectAlignmentMediumShift;
+    ZPageSizeMediumEnabled      = true;
+    ZPageSizeMediumMin          = ZUseMediumPageSizeRange
+                                ? align_up(ZObjectSizeLimitMedium, ZGranuleSize)
+                                : ZPageSizeMediumMax;
   }
 }
 
 size_t ZHeuristics::relocation_headroom() {
   // Calculate headroom needed to avoid in-place relocation. Each worker will try
   // to allocate a small page, and all workers will share a single medium page.
-  return (ConcGCThreads * ZPageSizeSmall) + ZPageSizeMedium;
+  return (ConcGCThreads * ZPageSizeSmall) + ZPageSizeMediumMax;
 }
 
 bool ZHeuristics::use_per_cpu_shared_small_pages() {

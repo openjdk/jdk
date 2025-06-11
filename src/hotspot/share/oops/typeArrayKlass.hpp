@@ -33,6 +33,8 @@ class ClassLoaderData;
 // It contains the type and size of the elements
 
 class TypeArrayKlass : public ArrayKlass {
+  friend class Deoptimization;
+  friend class oopFactory;
   friend class VMStructs;
 
  public:
@@ -43,7 +45,10 @@ class TypeArrayKlass : public ArrayKlass {
 
   // Constructor
   TypeArrayKlass(BasicType type, Symbol* name);
-  static TypeArrayKlass* allocate(ClassLoaderData* loader_data, BasicType type, Symbol* name, TRAPS);
+  static TypeArrayKlass* allocate_klass(ClassLoaderData* loader_data, BasicType type, Symbol* name, TRAPS);
+
+  typeArrayOop allocate_common(int length, bool do_zero, TRAPS);
+  typeArrayOop allocate_instance(int length, TRAPS) { return allocate_common(length, true, THREAD); }
  public:
   TypeArrayKlass() {} // For dummy objects.
 
@@ -66,8 +71,6 @@ class TypeArrayKlass : public ArrayKlass {
   size_t oop_size(oop obj) const;
 
   // Allocation
-  typeArrayOop allocate_common(int length, bool do_zero, TRAPS);
-  typeArrayOop allocate(int length, TRAPS) { return allocate_common(length, true, THREAD); }
   oop multi_allocate(int rank, jint* sizes, TRAPS);
 
   oop protection_domain() const { return nullptr; }

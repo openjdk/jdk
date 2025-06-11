@@ -187,22 +187,18 @@ public class HelloWorld {
             new Run("none", "Hello from Cupertino")
         }),
         new Paragraph("title", new Run[] {
-            new Run("none", "\u53F0\u5317\u554F\u5019\u60A8\u0021")
+            new Run("none", "台北問候您!")
         }),
         new Paragraph("title", new Run[] {
-            new Run("none", "\u0391\u03B8\u03B7\u03BD\u03B1\u03B9\u0020" // Greek
-            + "\u03B1\u03C3\u03C0\u03B1\u03B6\u03BF\u03BD"
-            + "\u03C4\u03B1\u03B9\u0020\u03C5\u03BC\u03B1"
-            + "\u03C2\u0021")
+            new Run("none", "Αθηναι ασπαζονται υμας!") // Greek
         }),
         new Paragraph("title", new Run[] {
-            new Run("none", "\u6771\u4eac\u304b\u3089\u4eca\u65e5\u306f")
+            new Run("none", "東京から今日は")
         }),
         new Paragraph("title", new Run[] {
-            new Run("none", "\u05e9\u05dc\u05d5\u05dd \u05de\u05d9\u05e8\u05d5"
-            + "\u05e9\u05dc\u05d9\u05dd")
+            new Run("none", "שלום מירושלים")
         }),
         new Paragraph("title", new Run[] {
-            new Run("none", "\u0633\u0644\u0627\u0645")
+            new Run("none", "سلام")
         }), };
 }

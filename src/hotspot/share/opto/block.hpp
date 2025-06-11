@@ -447,7 +447,7 @@ class PhaseCFG : public Phase {
   Block* hoist_to_cheaper_block(Block* LCA, Block* early, Node* self);
 
   bool schedule_local(Block* block, GrowableArray<int>& ready_cnt, VectorSet& next_call, intptr_t* recacl_pressure_nodes);
-  void set_next_call(Block* block, Node* n, VectorSet& next_call);
+  void set_next_call(const Block* block, Node* n, VectorSet& next_call) const;
   void needed_for_next_call(Block* block, Node* this_call, VectorSet& next_call);
 
   // Perform basic-block local scheduling
@@ -463,6 +463,14 @@ class PhaseCFG : public Phase {
 
   Node* catch_cleanup_find_cloned_def(Block* use_blk, Node* def, Block* def_blk, int n_clone_idx);
   void  catch_cleanup_inter_block(Node *use, Block *use_blk, Node *def, Block *def_blk, int n_clone_idx);
+
+  // Ensure that n happens at b or above, i.e. at a block that dominates b.
+  // We expect n to be an orphan node without further inputs.
+  void ensure_node_is_at_block_or_above(Node* n, Block* b);
+
+  // Move node n from its current placement into the end of block b.
+  // Move also outgoing Mach projections.
+  void move_node_and_its_projections_to_block(Node* n, Block* b);
 
   // Detect implicit-null-check opportunities.  Basically, find null checks
   // with suitable memory ops nearby.  Use the memory op to do the null check.

@@ -58,10 +58,12 @@ import sun.net.ConnectionResetException;
 import sun.net.NetHooks;
 import sun.net.PlatformSocketImpl;
 import sun.net.ext.ExtendedSocketOptions;
-import sun.net.util.SocketExceptions;
+import jdk.internal.util.Exceptions;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * NIO based SocketImpl.
@@ -286,7 +288,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
      * @throws SocketException if the socket is closed or a socket I/O error occurs
      * @throws SocketTimeoutException if the read timeout elapses
      */
-    private int implRead(byte[] b, int off, int len) throws IOException {
+    private int implRead(byte[] b, int off, int len, long remainingNanos) throws IOException {
         int n = 0;
         FileDescriptor fd = beginRead();
         try {
@@ -294,11 +296,10 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                 throw new SocketException("Connection reset");
             if (isInputClosed)
                 return -1;
-            int timeout = this.timeout;
-            configureNonBlockingIfNeeded(fd, timeout > 0);
-            if (timeout > 0) {
+            configureNonBlockingIfNeeded(fd, remainingNanos > 0);
+            if (remainingNanos > 0) {
                 // read with timeout
-                n = timedRead(fd, b, off, len, MILLISECONDS.toNanos(timeout));
+                n = timedRead(fd, b, off, len, remainingNanos);
             } else {
                 // read, no timeout
                 n = tryRead(fd, b, off, len);
@@ -333,14 +334,24 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         if (len == 0) {
             return 0;
         } else {
-            readLock.lock();
+            long remainingNanos = 0;
+            int timeout = this.timeout;
+            if (timeout > 0) {
+                remainingNanos = tryLock(readLock, timeout, MILLISECONDS);
+                if (remainingNanos <= 0) {
+                    assert !readLock.isHeldByCurrentThread();
+                    throw new SocketTimeoutException("Read timed out");
+                }
+            } else {
+                readLock.lock();
+            }
             try {
                 // emulate legacy behavior to return -1, even if socket is closed
                 if (readEOF)
                     return -1;
                 // read up to MAX_BUFFER_SIZE bytes
                 int size = Math.min(len, MAX_BUFFER_SIZE);
-                int n = implRead(b, off, size);
+                int n = implRead(b, off, size, remainingNanos);
                 if (n == -1)
                     readEOF = true;
                 return n;
@@ -554,7 +565,8 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             throw new IOException("Unsupported address type");
         InetSocketAddress isa = (InetSocketAddress) remote;
         if (isa.isUnresolved()) {
-            throw new UnknownHostException(isa.getHostName());
+            throw new UnknownHostException(
+                formatMsg(filterNonSocketInfo(isa.getHostName())));
         }
 
         InetAddress address = isa.getAddress();
@@ -604,7 +616,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                 assert Thread.currentThread().isVirtual();
                 throw new SocketException("Closed by interrupt");
             } else {
-                throw SocketExceptions.of(ioe, isa);
+                throw Exceptions.ioException(ioe, isa);
             }
         }
     }

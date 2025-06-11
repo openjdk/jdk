@@ -1016,6 +1016,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
     const gchar *token = jtoken
                          ? (*env)->GetStringUTFChars(env, jtoken, NULL)
                          : NULL;
+    JNU_CHECK_EXCEPTION_RETURN(env, RESULT_ERROR);
 
     isGtkMainThread = gtk->g_main_context_is_owner(gtk->g_main_context_default());
     DEBUG_SCREENCAST(
@@ -1121,7 +1122,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_remoteDesktopMou
     const gchar *token = jtoken
                          ? (*env)->GetStringUTFChars(env, jtoken, NULL)
                          : NULL;
-
+    JNU_CHECK_EXCEPTION_RETURN(env, RESULT_ERROR);
 
     DEBUG_SCREENCAST("moving mouse to\n\t%d %d\n\twith token |%s|\n", jx, jy, token);
 
@@ -1151,6 +1152,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_remoteDesktopMou
     const gchar *token = jtoken
                          ? (*env)->GetStringUTFChars(env, jtoken, NULL)
                          : NULL;
+    JNU_CHECK_EXCEPTION_RETURN(env, RESULT_ERROR);
 
     gboolean result = initPortal(token, NULL, 0);
     DEBUG_SCREENCAST("init result %b, mouse pressing %d\n", result, buttons)
@@ -1178,6 +1180,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_remoteDesktopMou
     const gchar *token = jtoken
                          ? (*env)->GetStringUTFChars(env, jtoken, NULL)
                          : NULL;
+    JNU_CHECK_EXCEPTION_RETURN(env, RESULT_ERROR);
 
     gboolean result = initPortal(token, NULL, 0);
     DEBUG_SCREENCAST("init result %b, mouse wheel %d\n", result, jWheelAmt)
@@ -1206,13 +1209,14 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_remoteDesktopKey
     int key = awt_getX11KeySym(jkey);
     AWT_UNLOCK();
 
-    if (key == NoSymbol) {
+    if (key == NoSymbol || (*env)->ExceptionCheck(env)) {
         return RESULT_ERROR;
     }
 
     const gchar *token = jtoken
                          ? (*env)->GetStringUTFChars(env, jtoken, NULL)
                          : NULL;
+    JNU_CHECK_EXCEPTION_RETURN(env, RESULT_ERROR);
 
     gboolean result = initPortal(token, NULL, 0);
     DEBUG_SCREENCAST("init result %b, key %d -> %d isPress %b\n", result, jkey, key, isPress)

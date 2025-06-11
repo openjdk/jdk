@@ -573,6 +573,19 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
         return ((getModifiers() & mask) == Modifier.PUBLIC) && getDeclaringClass().isInterface();
     }
 
+    /*
+     * Currently in hotspot a method can either be a "normal" or an "overpass"
+     * method. Overpass methods are instance methods which are created when
+     * otherwise a valid candidate for method resolution would not be found.
+     */
+    @Override
+    public boolean isDeclared() {
+        if (isConstructor() || isClassInitializer()) {
+            return false;
+        }
+        return (getConstMethodFlags() & config().constMethodFlagsIsOverpass) == 0;
+    }
+
     @Override
     public Type[] getGenericParameterTypes() {
         if (isClassInitializer()) {

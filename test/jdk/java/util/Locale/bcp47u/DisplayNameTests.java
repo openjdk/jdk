@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @bug 8176841 8202537
  * @summary Tests the display names for BCP 47 U extensions
  * @modules jdk.localedata
- * @run testng/othervm -Djava.locale.providers=CLDR DisplayNameTests
+ * @run testng DisplayNameTests
  */
 
 import static org.testng.Assert.assertEquals;

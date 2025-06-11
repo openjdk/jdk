@@ -51,6 +51,7 @@ import jdk.jfr.Name;
 import jdk.jfr.Registered;
 import jdk.jfr.SettingControl;
 import jdk.jfr.SettingDefinition;
+import jdk.jfr.Throttle;
 import jdk.jfr.internal.util.Bytecode;
 import jdk.jfr.internal.util.ImplicitFields;
 import jdk.jfr.internal.util.Bytecode.FieldDesc;
@@ -64,6 +65,7 @@ final class ClassInspector {
     private static final ClassDesc ANNOTATION_NAME = classDesc(Name.class);
     private static final ClassDesc ANNOTATION_ENABLED = classDesc(Enabled.class);
     private static final ClassDesc ANNOTATION_REMOVE_FIELDS = classDesc(RemoveFields.class);
+    private static final ClassDesc ANNOTATION_THROTTLE = classDesc(Throttle.class);
     private static final String[] EMPTY_STRING_ARRAY = {};
 
     private final ClassModel classModel;
@@ -136,6 +138,20 @@ final class ClassInspector {
             }
         }
         return true;
+    }
+
+    boolean isThrottled() {
+        String result = annotationValue(ANNOTATION_THROTTLE, String.class, "off");
+        if (result != null) {
+            return true;
+        }
+        if (superClass != null) {
+            Throttle t = superClass.getAnnotation(Throttle.class);
+            if (t != null) {
+                return true;
+            }
+        }
+        return false;
     }
 
     boolean hasStaticMethod(MethodDesc method) {

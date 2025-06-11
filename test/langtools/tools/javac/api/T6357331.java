@@ -53,7 +53,9 @@ public class T6357331
                     public void finished(TaskEvent e) { }
                 });
 
-            task.call();
+            if (!task.call()) {
+                throw new AssertionError("test failed due to a compilation error");
+            }
 
             // now the compilation is over, we expect IllegalStateException (not NPE)
             try {

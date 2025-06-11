@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8284161 8287008
  * @summary Basic test for jcmd Thread.dump_to_file
+ * @modules jdk.jcmd
  * @library /test/lib
  * @run junit/othervm ThreadDumpToFileTest
  */
@@ -66,7 +67,8 @@ class ThreadDumpToFileTest {
     @Test
     void testJsonThreadDump() throws IOException {
         Path file = genThreadDumpPath(".json");
-        jcmdThreadDumpToFile(file, "-format=json").shouldMatch("Created");
+        jcmdThreadDumpToFile(file, "-format=json")
+                .shouldMatch("Created");
 
         // parse the JSON text
         String jsonText = Files.readString(file);
@@ -89,7 +91,8 @@ class ThreadDumpToFileTest {
         Path file = genThreadDumpPath(".txt");
         Files.writeString(file, "xxx");
 
-        jcmdThreadDumpToFile(file, "").shouldMatch("exists");
+        jcmdThreadDumpToFile(file, "")
+                .shouldMatch("exists");
 
         // file should not be overridden
         assertEquals("xxx", Files.readString(file));
@@ -102,7 +105,23 @@ class ThreadDumpToFileTest {
     void testOverwriteFile() throws IOException {
         Path file = genThreadDumpPath(".txt");
         Files.writeString(file, "xxx");
-        jcmdThreadDumpToFile(file, "-overwrite");
+        jcmdThreadDumpToFile(file, "-overwrite")
+                .shouldMatch("Created");
+    }
+
+    /**
+     * Test output file cannot be created.
+     */
+    @Test
+    void testFileCreateFails() throws IOException {
+        Path badFile = Path.of(".").toAbsolutePath()
+                .resolve("does-not-exist")
+                .resolve("does-not-exist")
+                .resolve("threads.bad");
+        jcmdThreadDumpToFile(badFile, "-format=plain")
+                .shouldMatch("Failed");
+        jcmdThreadDumpToFile(badFile, "-format=json")
+                .shouldMatch("Failed");
     }
 
     /**

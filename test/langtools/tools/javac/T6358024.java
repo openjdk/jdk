@@ -87,7 +87,9 @@ public class T6358024 extends AbstractProcessor {
                                                           Arrays.asList(f));
         MyTaskListener tl = new MyTaskListener();
         task.setTaskListener(tl);
-        task.call();
+        if (!task.call()) {
+            throw new AssertionError("test failed due to a compilation error");
+        }
         if (tl.started != expect)
             throw new AssertionError("Unexpected number of TaskListener events; "
                                      + "expected " + expect + ", found " + tl.started);

@@ -47,7 +47,9 @@ public class T6412656 extends ToolTester {
         task = tool.getTask(null, fm, null, null,
                             Collections.singleton(T6412656.class.getName()), null);
         task.setProcessors(Collections.singleton(new MyProc(this)));
-        task.call();
+        if (!task.call()) {
+            throw new AssertionError("test failed due to a compilation error");
+        }
         if (count == 0)
             throw new AssertionError("Annotation processor not run");
         System.out.println("OK");

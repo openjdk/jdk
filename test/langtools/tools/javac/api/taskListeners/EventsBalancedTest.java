@@ -79,7 +79,9 @@ public class EventsBalancedTest {
 
         task.setTaskListener(listener);
 
-        task.call();
+        if (!task.call()) {
+            throw new AssertionError("test failed due to a compilation error");
+        }
 
         for (Entry<Kind, Integer> e : listener.kind2Count.entrySet()) {
             if (e.getValue() != null && e.getValue() != 0) {

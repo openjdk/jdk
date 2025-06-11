@@ -23,7 +23,7 @@
     /* Base font sizes for body and code elements */
     --body-font-size: 14.2px;
     --block-font-size: 14.4px;
-    --code-font-size: 13.9px;
+    --code-font-size: 14px;
     --nav-font-size: 13.4px;
     /* Line height for continuous text blocks */
     --block-line-height: 1.5;
@@ -606,6 +606,7 @@ ul.tag-list li:not(:last-child):after,
 ul.tag-list-long li:not(:last-child):after
 {
     content: ", ";
+    white-space: pre-wrap;
 }
 ul.preview-feature-list {
     list-style: none;

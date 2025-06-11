@@ -93,7 +93,9 @@ public class T6731573 extends ToolTester {
         if (sourceLine.optValue != null)
             options.add(sourceLine.optValue);
         task = tool.getTask(pw, fm, null, options, null, compilationUnits);
-        task.call();
+        if (task.call()) {
+            throw new AssertionError("test compilation was expected to fail");
+        }
         checkErrorLine(pw.toString(),
                 diagType.shouldDisplaySource(sourceLine),
                 options);

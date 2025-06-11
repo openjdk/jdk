@@ -417,15 +417,18 @@ public sealed interface Signature {
          * {@return a signature for an array type}
          * @param dims the dimension of the array
          * @param componentSignature the component type
-         * @throws IllegalArgumentException if the resulting array type exceeds
-         *         255 dimensions
+         * @throws IllegalArgumentException if {@code dims < 1} or the
+         *         resulting array type exceeds 255 dimensions
          */
         public static ArrayTypeSig of(int dims, Signature componentSignature) {
             requireNonNull(componentSignature);
+            if (componentSignature instanceof SignaturesImpl.ArrayTypeSigImpl arr) {
+                if (dims < 1 || dims > 255 - arr.arrayDepth())
+                    throw new IllegalArgumentException("illegal array depth value");
+                return new SignaturesImpl.ArrayTypeSigImpl(dims + arr.arrayDepth(), arr.elemType());
+            }
             if (dims < 1 || dims > 255)
                 throw new IllegalArgumentException("illegal array depth value");
-            if (componentSignature instanceof SignaturesImpl.ArrayTypeSigImpl arr)
-                return new SignaturesImpl.ArrayTypeSigImpl(dims + arr.arrayDepth(), arr.elemType());
             return new SignaturesImpl.ArrayTypeSigImpl(dims, componentSignature);
         }
     }
