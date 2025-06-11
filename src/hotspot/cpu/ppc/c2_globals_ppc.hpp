@@ -78,8 +78,8 @@ define_pd_global(uint, SuperWordStoreToLoadForwardingFailureDetection, 16);
 define_pd_global(bool,     OptoScheduling,               false);
 define_pd_global(bool,     IdealizeClearArrayNode,       true);
 
-define_pd_global(uintx,    InitialCodeCacheSize,         2048*K); // Integral multiple of CodeCacheExpansionSize
-define_pd_global(uintx,    ReservedCodeCacheSize,        48*M);
+define_pd_global(size_t,   InitialCodeCacheSize,         2048*K); // Integral multiple of CodeCacheExpansionSize
+define_pd_global(size_t,   ReservedCodeCacheSize,        48*M);
 define_pd_global(uintx,    NonProfiledCodeHeapSize,      21*M);
 define_pd_global(uintx,    ProfiledCodeHeapSize,         22*M);
 define_pd_global(uintx,    NonNMethodCodeHeapSize,       5*M  );

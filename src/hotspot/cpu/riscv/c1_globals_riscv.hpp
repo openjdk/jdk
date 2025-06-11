@@ -43,8 +43,8 @@ define_pd_global(intx, CompileThreshold,             1500 );
 
 define_pd_global(intx, OnStackReplacePercentage,     933  );
 define_pd_global(intx, NewSizeThreadIncrease,        4*K  );
-define_pd_global(intx, InitialCodeCacheSize,         160*K);
-define_pd_global(intx, ReservedCodeCacheSize,        32*M );
+define_pd_global(size_t, InitialCodeCacheSize,       160*K);
+define_pd_global(size_t, ReservedCodeCacheSize,      32*M );
 define_pd_global(intx, NonProfiledCodeHeapSize,      13*M );
 define_pd_global(intx, ProfiledCodeHeapSize,         14*M );
 define_pd_global(intx, NonNMethodCodeHeapSize,       5*M  );

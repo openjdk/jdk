@@ -44,7 +44,7 @@ define_pd_global(intx,     CompileThreshold,             1000);
 
 define_pd_global(intx,     OnStackReplacePercentage,     1400);
 define_pd_global(bool,     ProfileInterpreter,           false);
-define_pd_global(uintx,    ReservedCodeCacheSize,        32*M);
+define_pd_global(size_t,   ReservedCodeCacheSize,        32*M);
 define_pd_global(uintx,    NonProfiledCodeHeapSize,      13*M );
 define_pd_global(uintx,    ProfiledCodeHeapSize,         14*M );
 define_pd_global(uintx,    NonNMethodCodeHeapSize,       5*M );
@@ -54,7 +54,7 @@ define_pd_global(uintx,    CodeCacheMinimumUseSpace,     400*K);
 define_pd_global(bool,     NeverActAsServerClassMachine, true);
 define_pd_global(size_t,   NewSizeThreadIncrease,        16*K);
 define_pd_global(uint64_t, MaxRAM,                       1ULL*G);
-define_pd_global(uintx,    InitialCodeCacheSize,         160*K);
+define_pd_global(size_t,   InitialCodeCacheSize,         160*K);
 #endif // !COMPILER2
 
 define_pd_global(bool,     UseTypeProfile,               false);

@@ -1516,7 +1516,7 @@ const int ObjectAlignmentInBytes = 8;
           range(1, 128)                                                     \
           constraint(OptoLoopAlignmentConstraintFunc, AfterErgo)            \
                                                                             \
-  product_pd(uintx, InitialCodeCacheSize,                                   \
+  product_pd(size_t, InitialCodeCacheSize,                                  \
           "Initial code cache size (in bytes)")                             \
           constraint(VMPageSizeConstraintFunc, AtParse)                     \
                                                                             \
@@ -1527,7 +1527,7 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, SegmentedCodeCache, false,                                  \
           "Use a segmented code cache")                                     \
                                                                             \
-  product_pd(uintx, ReservedCodeCacheSize,                                  \
+  product_pd(size_t, ReservedCodeCacheSize,                                 \
           "Reserved code cache size (in bytes) - maximum code cache size")  \
           constraint(VMPageSizeConstraintFunc, AtParse)                     \
                                                                             \

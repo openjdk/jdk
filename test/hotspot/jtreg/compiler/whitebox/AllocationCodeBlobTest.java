@@ -54,7 +54,7 @@ import java.util.EnumSet;
 public class AllocationCodeBlobTest {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final long CODE_CACHE_SIZE
-            = WHITE_BOX.getUintxVMFlag("ReservedCodeCacheSize");
+            = WHITE_BOX.getSizeTVMFlag("ReservedCodeCacheSize");
     private static final int SIZE = 1;
 
     public static void main(String[] args) {
