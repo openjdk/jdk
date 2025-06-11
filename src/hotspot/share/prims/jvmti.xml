@@ -12866,7 +12866,8 @@ myInit() {
       exception object. The <code>catch_method</code>
       and <code>catch_location</code> identify the location of the catch clause,
       if any, that handles the thrown exception. If there is no such catch clause,
-      the <code>catch_method</code> is set to null. There is no guarantee that the thread will ever
+      the <code>catch_method</code> is set to null and the <code>catch_location</code>is set to 0.
+      There is no guarantee that the thread will ever
       reach this catch clause. If there are native methods on the call stack
       between the throw location and the catch clause, the exception may
       be reset by one of those native methods.
