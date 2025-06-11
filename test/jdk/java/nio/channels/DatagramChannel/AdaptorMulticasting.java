@@ -407,13 +407,7 @@ public class AdaptorMulticasting {
         // send message to multicast group
         DatagramPacket p = new DatagramPacket(message, message.length);
         p.setSocketAddress(target);
-        final int oldTTL = s.getTimeToLive();
-        s.setTimeToLive(1);
-        try {
-            s.send(p);
-        } finally {
-            s.setTimeToLive(oldTTL);
-        }
+        s.send(p);
 
         // receive message
         s.setSoTimeout(0);
@@ -457,13 +451,7 @@ public class AdaptorMulticasting {
         // send datagram to multicast group
         DatagramPacket p = new DatagramPacket(message, message.length);
         p.setSocketAddress(target);
-        final int oldTTL = s.getTimeToLive();
-        s.setTimeToLive(1);
-        try {
-            s.send(p);
-        } finally {
-            s.setTimeToLive(oldTTL);
-        }
+        s.send(p);
 
         // datagram should not be received
         s.setSoTimeout(500);
