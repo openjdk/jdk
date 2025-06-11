@@ -80,6 +80,15 @@ public class TestFloat16ScalarOperations {
     private static final float SNAN_FP16 = Float.intBitsToFloat(0x7F8000F0);
     private static final float QNAN_FP16 = Float.intBitsToFloat(0x7FC00000);
 
+    private Float16 GOLDEN_DIV_POT;
+    private Float16 GOLDEN_MUL2;
+    private short GOLDEN_INEXACT;
+    private short GOLDEN_EXACT;
+    private short GOLDEN_RANDOM_PAT1;
+    private short GOLDEN_RANDOM_PAT2;
+    private short GOLDEN_SNAN;
+    private short GOLDEN_QNAN;
+
     public static void main(String args[]) {
         Scenario s0 = new Scenario(0, "--add-modules=jdk.incubator.vector", "-Xint");
         Scenario s1 = new Scenario(1, "--add-modules=jdk.incubator.vector");
@@ -90,8 +99,18 @@ public class TestFloat16ScalarOperations {
         src = new short[count];
         dst = new short[count];
         fl  = new float[count];
+
         G.fill(genF, fl);
         G.fill(genHF, src);
+
+        GOLDEN_DIV_POT = testDivByPOT();
+        GOLDEN_MUL2 = testMulByTWO();
+        GOLDEN_INEXACT = testInexactFP16ConstantPatterns();
+        GOLDEN_EXACT = testExactFP16ConstantPatterns();
+        GOLDEN_RANDOM_PAT1 = testRandomFP16ConstantPatternSet1();
+        GOLDEN_RANDOM_PAT2 = testRandomFP16ConstantPatternSet2();
+        GOLDEN_SNAN = testSNaNFP16ConstantPatterns();
+        GOLDEN_QNAN = testQNaNFP16ConstantPatterns();
     }
 
     static void assertResult(float actual, float expected, String msg) {
@@ -294,10 +313,8 @@ public class TestFloat16ScalarOperations {
     }
 
     @Check(test="testDivByPOT")
-    public void checkDivByPOT(Float16 actual) throws Exception {
-        TestFramework.deoptimize(TestFloat16ScalarOperations.class.getMethod("testDivByPOT"));
-        Float16 expected = testDivByPOT();
-        Verify.checkEQ(Float16.float16ToRawShortBits(expected), Float16.float16ToRawShortBits(actual));
+    public void checkDivByPOT(Float16 actual) {
+        Verify.checkEQ(Float16.float16ToRawShortBits(GOLDEN_DIV_POT), Float16.float16ToRawShortBits(actual));
     }
 
     @Test
@@ -316,10 +333,8 @@ public class TestFloat16ScalarOperations {
     }
 
     @Check(test="testMulByTWO")
-    public void checkMulByTWO(Float16 actual) throws Exception {
-        TestFramework.deoptimize(TestFloat16ScalarOperations.class.getMethod("testMulByTWO"));
-        Float16 expected = testMulByTWO();
-        Verify.checkEQ(Float16.float16ToRawShortBits(expected), Float16.float16ToRawShortBits(actual));
+    public void checkMulByTWO(Float16 actual) {
+        Verify.checkEQ(Float16.float16ToRawShortBits(GOLDEN_MUL2), Float16.float16ToRawShortBits(actual));
     }
 
     @Test
@@ -337,10 +352,8 @@ public class TestFloat16ScalarOperations {
     }
 
     @Check(test="testInexactFP16ConstantPatterns")
-    public void checkInexactFP16ConstantPatterns(short actual) throws Exception {
-        TestFramework.deoptimize(TestFloat16ScalarOperations.class.getMethod("testInexactFP16ConstantPatterns"));
-        short expected = testInexactFP16ConstantPatterns();
-        Verify.checkEQ(expected, actual);
+    public void checkInexactFP16ConstantPatterns(short actual) {
+        Verify.checkEQ(GOLDEN_INEXACT, actual);
     }
 
     @Test
@@ -360,9 +373,7 @@ public class TestFloat16ScalarOperations {
 
     @Check(test="testSNaNFP16ConstantPatterns")
     public void checkSNaNFP16ConstantPatterns(short actual) throws Exception {
-        TestFramework.deoptimize(TestFloat16ScalarOperations.class.getMethod("testSNaNFP16ConstantPatterns"));
-        short expected = testSNaNFP16ConstantPatterns();
-        Verify.checkEQ(expected, actual);
+        Verify.checkEQ(GOLDEN_SNAN, actual);
     }
 
     @Test
@@ -381,10 +392,8 @@ public class TestFloat16ScalarOperations {
     }
 
     @Check(test="testQNaNFP16ConstantPatterns")
-    public void checkQNaNFP16ConstantPatterns(short actual) throws Exception {
-        TestFramework.deoptimize(TestFloat16ScalarOperations.class.getMethod("testQNaNFP16ConstantPatterns"));
-        short expected = testQNaNFP16ConstantPatterns();
-        Verify.checkEQ(expected, actual);
+    public void checkQNaNFP16ConstantPatterns(short actual) {
+        Verify.checkEQ(GOLDEN_QNAN, actual);
     }
 
     @Test
@@ -403,10 +412,8 @@ public class TestFloat16ScalarOperations {
     }
 
     @Check(test="testExactFP16ConstantPatterns")
-    public void checkExactFP16ConstantPatterns(short actual) throws Exception {
-        TestFramework.deoptimize(TestFloat16ScalarOperations.class.getMethod("testExactFP16ConstantPatterns"));
-        short expected = testExactFP16ConstantPatterns();
-        Verify.checkEQ(expected, actual);
+    public void checkExactFP16ConstantPatterns(short actual) {
+        Verify.checkEQ(GOLDEN_EXACT, actual);
     }
 
     @Test
@@ -425,10 +432,8 @@ public class TestFloat16ScalarOperations {
     }
 
     @Check(test="testRandomFP16ConstantPatternSet1")
-    public void checkRandomFP16ConstantPatternSet1(short actual) throws Exception {
-        TestFramework.deoptimize(TestFloat16ScalarOperations.class.getMethod("testRandomFP16ConstantPatternSet1"));
-        short expected = testRandomFP16ConstantPatternSet1();
-        Verify.checkEQ(expected, actual);
+    public void checkRandomFP16ConstantPatternSet1(short actual) {
+        Verify.checkEQ(GOLDEN_RANDOM_PAT1, actual);
     }
 
 
@@ -448,10 +453,8 @@ public class TestFloat16ScalarOperations {
     }
 
     @Check(test="testRandomFP16ConstantPatternSet2")
-    public void checkRandomFP16ConstantPatternSet2(short actual) throws Exception {
-        TestFramework.deoptimize(TestFloat16ScalarOperations.class.getMethod("testRandomFP16ConstantPatternSet2"));
-        short expected = testRandomFP16ConstantPatternSet2();
-        Verify.checkEQ(expected, actual);
+    public void checkRandomFP16ConstantPatternSet2(short actual) {
+        Verify.checkEQ(GOLDEN_RANDOM_PAT2, actual);
     }
 
     //
