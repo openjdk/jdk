@@ -564,11 +564,33 @@
   declare_constant_with_value("LockStack::_end_offset", LockStack::end_offset()) \
   declare_constant_with_value("OMCache::oop_to_oop_difference", OMCache::oop_to_oop_difference()) \
   declare_constant_with_value("OMCache::oop_to_monitor_difference", OMCache::oop_to_monitor_difference()) \
-                                                                          \
-  declare_constant_with_value("nmethod::ChangeReason::GC_unlinking_cold", nmethod::ChangeReason::GC_unlinking_cold) \
-  declare_constant_with_value("nmethod::ChangeReason::JVMCI_new_installation", nmethod::ChangeReason::JVMCI_new_installation) \
-  declare_constant_with_value("nmethod::ChangeReason::JVMCI_invalidate_nmethod", nmethod::ChangeReason::JVMCI_invalidate_nmethod) \
-                                                                          \
+                                                                                                           \
+  declare_constant_with_value("nmethod::ChangeReason::UNKNOWN", nmethod::ChangeReason::unknown)                                                       \
+  declare_constant_with_value("nmethod::ChangeReason::C1_CODEPATCH", nmethod::ChangeReason::C1_codepatch)                                             \
+  declare_constant_with_value("nmethod::ChangeReason::C1_DEOPTIMIZE", nmethod::ChangeReason::C1_deoptimize)                                           \
+  declare_constant_with_value("nmethod::ChangeReason::C1_DEOPTIMIZE_FOR_PATCHING", nmethod::ChangeReason::C1_deoptimize_for_patching)                 \
+  declare_constant_with_value("nmethod::ChangeReason::C1_PREDICATE_FAILED_TRAP", nmethod::ChangeReason::C1_predicate_failed_trap)                     \
+  declare_constant_with_value("nmethod::ChangeReason::CI_REPLAY", nmethod::ChangeReason::CI_replay)                                                   \
+  declare_constant_with_value("nmethod::ChangeReason::GC_UNLINKING", nmethod::ChangeReason::GC_unlinking)                                             \
+  declare_constant_with_value("nmethod::ChangeReason::GC_UNLINKING_COLD", nmethod::ChangeReason::GC_unlinking_cold)                                   \
+  declare_constant_with_value("nmethod::ChangeReason::JVMCI_INVALIDATE_NMETHOD", nmethod::ChangeReason::JVMCI_invalidate_nmethod)                     \
+  declare_constant_with_value("nmethod::ChangeReason::JVMCI_INVALIDATE_NMETHOD_MIRROR", nmethod::ChangeReason::JVMCI_invalidate_nmethod_mirror)       \
+  declare_constant_with_value("nmethod::ChangeReason::JVMCI_MATERIALIZE_VIRTUAL_OBJECT", nmethod::ChangeReason::JVMCI_materialize_virtual_object)     \
+  declare_constant_with_value("nmethod::ChangeReason::JVMCI_NEW_INSTALLATION", nmethod::ChangeReason::JVMCI_new_installation)                         \
+  declare_constant_with_value("nmethod::ChangeReason::JVMCI_REGISTER_METHOD", nmethod::ChangeReason::JVMCI_register_method)                           \
+  declare_constant_with_value("nmethod::ChangeReason::JVMCI_REPLACING_WITH_NEW_CODE", nmethod::ChangeReason::JVMCI_replacing_with_new_code)           \
+  declare_constant_with_value("nmethod::ChangeReason::JVMCI_REPROFILE", nmethod::ChangeReason::JVMCI_reprofile)                                       \
+  declare_constant_with_value("nmethod::ChangeReason::MARKED_FOR_DEOPTIMIZATION", nmethod::ChangeReason::marked_for_deoptimization)                   \
+  declare_constant_with_value("nmethod::ChangeReason::MISSING_EXCEPTION_HANDLER", nmethod::ChangeReason::missing_exception_handler)                   \
+  declare_constant_with_value("nmethod::ChangeReason::NOT_USED", nmethod::ChangeReason::not_used)                                                     \
+  declare_constant_with_value("nmethod::ChangeReason::OSR_INVALIDATION_BACK_BRANCH", nmethod::ChangeReason::OSR_invalidation_back_branch)             \
+  declare_constant_with_value("nmethod::ChangeReason::OSR_INVALIDATION_FOR_COMPILING_WITH_C1", nmethod::ChangeReason::OSR_invalidation_for_compiling_with_C1)   \
+  declare_constant_with_value("nmethod::ChangeReason::OSR_INVALIDATION_OF_LOWER_LEVEL", nmethod::ChangeReason::OSR_invalidation_of_lower_level)                 \
+  declare_constant_with_value("nmethod::ChangeReason::SET_NATIVE_FUNCTION", nmethod::ChangeReason::set_native_function)            \
+  declare_constant_with_value("nmethod::ChangeReason::UNCOMMON_TRAP", nmethod::ChangeReason::uncommon_trap)                        \
+  declare_constant_with_value("nmethod::ChangeReason::WHITEBOX_DEOPTIMIZATION", nmethod::ChangeReason::whitebox_deoptimization)    \
+  declare_constant_with_value("nmethod::ChangeReason::ZOMBIE", nmethod::ChangeReason::zombie)                                      \
+                                                                                    \
   declare_constant(CodeInstaller::VERIFIED_ENTRY)                         \
   declare_constant(CodeInstaller::UNVERIFIED_ENTRY)                       \
   declare_constant(CodeInstaller::OSR_ENTRY)                              \

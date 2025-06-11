@@ -124,10 +124,16 @@ public class InstalledCode {
         return address != 0;
     }
 
+    /**
+     * @return an integer representing the reason why this InstalledCode changed.
+     */
     public int getChangeReason() {
         return changeReason;
     }
 
+    /**
+     * @return a String describing the reason why this InstalledCode changed.
+     */
     public String getChangeReasonDescription() {
         return null;
     }

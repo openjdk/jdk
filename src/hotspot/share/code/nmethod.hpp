@@ -471,6 +471,8 @@ class nmethod : public CodeBlob {
   void oops_do_set_strong_done(nmethod* old_head);
 
 public:
+  // If you change anything in this enum please patch
+  // vmStructs_jvmci.cpp and HotSpotNmethod.java accordingly.
   enum class ChangeReason : u1 {
     unknown,
     C1_codepatch,

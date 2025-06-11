@@ -55,8 +55,8 @@ public class TestHotSpotVMConfig extends HotSpotVMConfigAccess {
     public final int maxOopMapStackOffset = getFieldValue("CompilerToVM::Data::_max_oop_map_stack_offset", Integer.class, "int");
     public final int heapWordSize = getConstant("HeapWordSize", Integer.class);
 
-    public final int JVMCI_new_installation = getConstant("nmethod::ChangeReason::JVMCI_new_installation", Integer.class);
-    public final int JVMCI_invalidate_nmethod = getConstant("nmethod::ChangeReason::JVMCI_invalidate_nmethod", Integer.class);
+    public final int JVMCI_new_installation = getConstant("nmethod::ChangeReason::JVMCI_NEW_INSTALLATION", Integer.class);
+    public final int JVMCI_invalidate_nmethod = getConstant("nmethod::ChangeReason::JVMCI_INVALIDATE_NMETHOD", Integer.class);
 
     public final boolean ropProtection;
 
