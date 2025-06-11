@@ -152,13 +152,7 @@ oop ZCollectedHeap::array_allocate(Klass* klass, size_t size, int length, bool d
 
 HeapWord* ZCollectedHeap::mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded) {
   const size_t size_in_bytes = ZUtils::words_to_bytes(align_object_size(size));
-  const zaddress addr = ZObjectAllocator::eden()->alloc_object(size_in_bytes);
-
-  if (is_null(addr)) {
-    ZHeap::heap()->out_of_memory();
-  }
-
-  return (HeapWord*)addr;
+  return (HeapWord*)ZHeap::heap()->alloc_object(size_in_bytes);
 }
 
 MetaWord* ZCollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,

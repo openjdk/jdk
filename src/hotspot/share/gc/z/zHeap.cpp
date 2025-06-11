@@ -215,7 +215,7 @@ void ZHeap::threads_do(ThreadClosure* tc) const {
   _old.threads_do(tc);
 }
 
-void ZHeap::out_of_memory() {
+void ZHeap::out_of_memory() const {
   ResourceMark rm;
 
   ZStatInc(ZCounterOutOfMemory);

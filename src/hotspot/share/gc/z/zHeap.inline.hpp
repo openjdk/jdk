@@ -30,6 +30,7 @@
 #include "gc/z/zForwardingTable.inline.hpp"
 #include "gc/z/zGenerationId.hpp"
 #include "gc/z/zMark.inline.hpp"
+#include "gc/z/zObjectAllocator.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zRemembered.inline.hpp"
@@ -72,6 +73,16 @@ inline bool ZHeap::is_object_live(zaddress addr) const {
 inline bool ZHeap::is_object_strongly_live(zaddress addr) const {
   const ZPage* const page = _page_table.get(addr);
   return page->is_object_strongly_live(addr);
+}
+
+inline zaddress ZHeap::alloc_object(size_t size_in_bytes) const {
+  const zaddress addr = ZObjectAllocator::eden()->alloc_object(size_in_bytes);
+
+  if (is_null(addr)) {
+    out_of_memory();
+  }
+
+  return addr;
 }
 
 inline bool ZHeap::is_alloc_stalling() const {
