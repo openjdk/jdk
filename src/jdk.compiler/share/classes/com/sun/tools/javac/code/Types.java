@@ -2244,21 +2244,21 @@ public class Types {
      */
     public Type asOuterSuper(Type t, Symbol sym) {
         switch (t.getTag()) {
-            case CLASS:
-                do {
-                    Type s = asSuper(t, sym);
-                    if (s != null) return s;
-                    t = t.getEnclosingType();
-                } while (t.hasTag(CLASS));
-                return null;
-            case ARRAY:
-                return isSubtype(t, sym.type) ? sym.type : null;
-            case TYPEVAR:
-                return asSuper(t, sym);
-            case ERROR:
-                return t;
-            default:
-                return null;
+        case CLASS:
+            do {
+                Type s = asSuper(t, sym);
+                if (s != null) return s;
+                t = t.getEnclosingType();
+            } while (t.hasTag(CLASS));
+            return null;
+        case ARRAY:
+            return isSubtype(t, sym.type) ? sym.type : null;
+        case TYPEVAR:
+            return asSuper(t, sym);
+        case ERROR:
+            return t;
+        default:
+            return null;
         }
     }
 
