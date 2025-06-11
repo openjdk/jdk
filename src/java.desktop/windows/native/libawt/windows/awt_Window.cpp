@@ -2497,18 +2497,18 @@ jint AwtWindow::_GetScreenImOn(void *param)
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     jobject self = (jobject)param;
-    jint result = -1;
-    PDATA pData;
-    AwtWindow* w = NULL;
 
+    jint result = -1;
+    AwtWindow* window = NULL;
+    
     // Our native resources may have been destroyed before the Java peer,
     // e.g., if dispose() was called. In that case, return the default screen.
+     PDATA pData;
     JNI_CHECK_PEER_GOTO(self, ret);
-
-    w = (AwtWindow *)pData;
-    if (::IsWindow(w->GetHWnd()))
+    window = (AwtWindow *)pData;
+    if (::IsWindow(window->GetHWnd()))
     {
-        result = (jint)w->GetScreenImOn();
+        result = (jint)window->GetScreenImOn();
     }
 
   ret:
