@@ -796,13 +796,16 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
     // p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)            (if iv_stride <= 0)
     // ---------------- condition1 ----------------      --------------- condition2 -----------------
     Node* initL = new ConvI2LNode(init);
-    Node* limitL = new ConvI2LNode(limit);
+    Node* limitL_x = new ConvI2LNode(limit);
+    // TODO: add to justification / proof!
+    Node* limitL = new AddLNode(limitL_x, igvn.longcon(_vloop.iv_stride() > 0 ? -1 : 1));
     Node* limit_minus_init = new SubLNode(limitL, initL);
     Node* iv_scale1 = igvn.longcon(vp1.iv_scale());
     Node* iv_scale2 = igvn.longcon(vp2.iv_scale());
     Node* span1 = new MulLNode(limit_minus_init, iv_scale1);
     Node* span2 = new MulLNode(limit_minus_init, iv_scale2);
     phase->register_new_node_with_ctrl_of(initL, init);
+    phase->register_new_node_with_ctrl_of(limitL_x, init);
     phase->register_new_node_with_ctrl_of(limitL, init);
     phase->register_new_node_with_ctrl_of(limit_minus_init, init);
     phase->register_new_node_with_ctrl_of(span1, init);

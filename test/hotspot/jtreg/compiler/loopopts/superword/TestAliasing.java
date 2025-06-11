@@ -147,8 +147,8 @@ public class TestAliasing {
             //      ------>|<------
             //
             // This tests that the checks we emit are not too relaxed.
-            int middle = SIZE / 2 + RANDOM.nextInt(-64, 64);
-            int limit = SIZE / 3 + RANDOM.nextInt(64);
+            int middle = SIZE / 2 + RANDOM.nextInt(-256, 256);
+            int limit = SIZE / 3 + RANDOM.nextInt(256);
             int invar1 = middle;
             int invar2 = middle;
             if (RANDOM.nextBoolean()) {

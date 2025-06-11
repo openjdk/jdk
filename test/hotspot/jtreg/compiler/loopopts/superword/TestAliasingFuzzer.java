@@ -632,6 +632,36 @@ public class TestAliasingFuzzer {
                     List.of(invar, " = RANDOM.nextInt(-1, 2);\n")
                 ).toList(),
                 """
+                    // Verify the bounds we just created, just to be sure there is no unespected aliasing!
+                    int i = ivLo;
+                """,
+                "int aLo = ", form_a.index("invar0_A", invarRest), ";\n",
+                "int bLo = ", form_b.index("invar0_B", invarRest), ";\n",
+                """
+                    i = ivHi-1;
+                """,
+                "int aHi = ", form_a.index("invar0_A", invarRest), ";\n",
+                "int bHi = ", form_b.index("invar0_B", invarRest), ";\n",
+                switch(aliasing) {
+                    case Aliasing.CONTAINER_SAME_ALIASING_NEVER,
+                         Aliasing.CONTAINER_UNKNOWN_ALIASING_NEVER -> // could fail in the future if we make it smarter
+                            """
+                            // Bounds should not overlap.
+                            if ((aLo < bLo && aLo < bHi && aHi < bLo && aHi < bHi) ||
+                                (aLo > bLo && aLo > bHi && aHi > bLo && aHi > bHi)) {
+                                // pass
+                            } else {
+                                throw new RuntimeException("bounds overlap!");
+                            }
+                            """;
+                    case Aliasing.CONTAINER_DIFFERENT,
+                         Aliasing.CONTAINER_SAME_ALIASING_UNKNOWN,
+                         Aliasing.CONTAINER_UNKNOWN_ALIASING_UNKNOWN ->
+                            """
+                            // Aliasing unknown, cannot verify bounds.
+                            """;
+                },
+                """
 
                     // Run test and compare with interpreter results.
                     var result   = $test($TEST_1,           TEST_SECOND,      ivLo, ivHi, invar0_A, invar0_B);
