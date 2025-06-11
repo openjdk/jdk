@@ -1581,6 +1581,9 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
 
       make_not_used();
 
+      post_compiled_method_unload();
+      nm_copy->post_compiled_method_load_event();
+
       return nm_copy;
     }
   }
