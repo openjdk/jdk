@@ -260,11 +260,15 @@ class TestMemorySegmentAliasingImpl {
         };
     }
 
-    // List of tests
-    public static Map<String, TestFunction> tests = new HashMap<>();
+    // Map of goldTests
+    public static Map<String, TestFunction> goldTests = new HashMap<>();
 
-    // List of gold, the results from the first run before compilation
+    // Map of gold for the goldTests, the results from the first run before compilation
     public static Map<String, Object> golds = new HashMap<>();
+
+    // Map of referenceTests, i.e. tests that have a reference implementation that is run with the interpreter.
+    // The TestFunction must run both the test and reference methods.
+    public static Map<String, TestFunction> referenceTests = new HashMap<>();
 
     // Original data.
     public static MemorySegment ORIG_A = fillRandom(newMemorySegment());
@@ -276,25 +280,30 @@ class TestMemorySegmentAliasingImpl {
     public static MemorySegment B = newMemorySegment();
     public static MemorySegment C = newMemorySegment();
 
+    // Parallel to data above, but for use in reference methods.
+    public static MemorySegment A_REFERENCE = newMemorySegment();
+    public static MemorySegment B_REFERENCE = newMemorySegment();
+    public static MemorySegment C_REFERENCE = newMemorySegment();
+
     public TestMemorySegmentAliasingImpl () {
-        // Add all tests to list
-        tests.put("test_byte_incr_noaliasing",     () -> test_byte_incr_noaliasing(A, B));
-        tests.put("test_byte_incr_aliasing",       () -> test_byte_incr_aliasing(A, A));
-        tests.put("test_byte_incr_aliasing_fwd3",  () -> {
+        // Add all goldTests to list
+        goldTests.put("test_byte_incr_noaliasing",     () -> test_byte_incr_noaliasing(A, B));
+        goldTests.put("test_byte_incr_aliasing",       () -> test_byte_incr_aliasing(A, A));
+        goldTests.put("test_byte_incr_aliasing_fwd3",  () -> {
             MemorySegment x = A.asSlice(0, BACKING_SIZE - 3);
             MemorySegment y = A.asSlice(3, BACKING_SIZE - 3);
             test_byte_incr_aliasing_fwd3(x, y);
         });
-        tests.put("test_byte_incr_noaliasing_fwd128",  () -> {
+        goldTests.put("test_byte_incr_noaliasing_fwd128",  () -> {
             MemorySegment x = A.asSlice(0,   BACKING_SIZE - 128);
             MemorySegment y = A.asSlice(120, BACKING_SIZE - 128);
             test_byte_incr_noaliasing_fwd128(x, y);
         });
 
-        tests.put("test_int_to_long_noaliasing",   () -> test_int_to_long_noaliasing(A, B));
+        goldTests.put("test_int_to_long_noaliasing",   () -> test_int_to_long_noaliasing(A, B));
 
         // Compute gold value for all test methods before compilation
-        for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
+        for (Map.Entry<String,TestFunction> entry : goldTests.entrySet()) {
             String name = entry.getKey();
             TestFunction test = entry.getValue();
             init();
@@ -302,6 +311,32 @@ class TestMemorySegmentAliasingImpl {
             Object gold = snapshotCopy();
             golds.put(name, gold);
         }
+
+        referenceTests.put("test_fill_byte_sameMS_alias", () -> {
+            int invar1 = RANDOM.nextInt(64);
+            int invar2 = RANDOM.nextInt(64);
+            test_fill_byte_sameMS_alias(A, A, invar1, invar2);
+            reference_fill_byte_sameMS_alias(A_REFERENCE, A_REFERENCE, invar1, invar2);
+        });
+        referenceTests.put("test_fill_byte_sameMS_noalias", () -> {
+            // The accesses either start at the middle and go out,
+            // or start from opposite sides and meet in the middle.
+            // But they never overlap.
+            //      <------|------>
+            //      ------>|<------
+            //
+            // This tests that the checks we emit are not too relaxed.
+            int middle = BACKING_SIZE / 2 + RANDOM.nextInt(-256, 256);
+            int limit = BACKING_SIZE / 3 + RANDOM.nextInt(256);
+            int invar1 = middle;
+            int invar2 = middle;
+            if (RANDOM.nextBoolean()) {
+                invar1 -= limit;
+                invar2 += limit;
+            }
+            test_fill_byte_sameMS_noalias(A, A, invar1, invar2, limit);
+            reference_fill_byte_sameMS_noalias(A_REFERENCE, A_REFERENCE, invar1, invar2, limit);
+        });
     }
 
     static MemorySegment newMemorySegment() {
@@ -396,6 +431,12 @@ class TestMemorySegmentAliasingImpl {
         C.copyFrom(ORIG_C);
     }
 
+    public static void initReference() {
+        A_REFERENCE.copyFrom(ORIG_A);
+        B_REFERENCE.copyFrom(ORIG_B);
+        C_REFERENCE.copyFrom(ORIG_C);
+    }
+
     public static Object snapshotCopy() {
         return new Object[]{copy(A), copy(B), copy(C)};
     }
@@ -404,13 +445,19 @@ class TestMemorySegmentAliasingImpl {
         return new Object[]{A, B, C};
     }
 
+    public static Object snapshotReference() {
+        return new Object[]{A_REFERENCE, B_REFERENCE, C_REFERENCE};
+    }
+
     @Run(test = {"test_byte_incr_noaliasing",
                  "test_byte_incr_aliasing",
                  "test_byte_incr_aliasing_fwd3",
                  "test_byte_incr_noaliasing_fwd128",
-                 "test_int_to_long_noaliasing"})
+                 "test_int_to_long_noaliasing",
+                 "test_fill_byte_sameMS_alias",
+                 "test_fill_byte_sameMS_noalias"})
     void runTests() {
-        for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
+        for (Map.Entry<String,TestFunction> entry : goldTests.entrySet()) {
             String name = entry.getKey();
             TestFunction test = entry.getValue();
             // Recall gold value from before compilation
@@ -422,6 +469,24 @@ class TestMemorySegmentAliasingImpl {
             // Compare gold and new result
             try {
                 Verify.checkEQ(gold, result);
+            } catch (VerifyException e) {
+                throw new RuntimeException("Verify failed for " + name, e);
+            }
+        }
+        for (Map.Entry<String,TestFunction> entry : referenceTests.entrySet()) {
+            String name = entry.getKey();
+            TestFunction test = entry.getValue();
+            // Init data for test and reference
+            init();
+            initReference();
+            // Run test and reference
+            test.run();
+            // Capture results from test and reference
+            Object result = snapshot();
+            Object expected = snapshotReference();
+            // Compare expected and new result
+            try {
+                Verify.checkEQ(expected, result);
             } catch (VerifyException e) {
                 throw new RuntimeException("Verify failed for " + name, e);
             }
@@ -508,6 +573,50 @@ class TestMemorySegmentAliasingImpl {
         for (long i = 0; i < limit; i++) {
             int v = a.get(ValueLayout.JAVA_INT_UNALIGNED, 4L * i);
             b.set(ValueLayout.JAVA_LONG_UNALIGNED, 8L * i, v);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_VECTOR,  "> 0",
+                  ".*multiversion.*",   "> 0"}, // AutoVectorization Predicate FAILS
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static void test_fill_byte_sameMS_alias(MemorySegment a, MemorySegment b, long invar1, long invar2) {
+        for (long i = 0; i < a.byteSize() - 100; i++) {
+            a.set(ValueLayout.JAVA_BYTE, i + invar1, (byte)0x0a);
+            b.set(ValueLayout.JAVA_BYTE, a.byteSize() - i - 1 - invar2, (byte)0x0b);
+        }
+    }
+
+    @DontCompile
+    static void reference_fill_byte_sameMS_alias(MemorySegment a, MemorySegment b, long invar1, long invar2) {
+        for (long i = 0; i < a.byteSize() - 100; i++) {
+            a.set(ValueLayout.JAVA_BYTE, i + invar1, (byte)0x0a);
+            b.set(ValueLayout.JAVA_BYTE, a.byteSize() - i - 1 - invar2, (byte)0x0b);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_VECTOR,  "> 0",
+                  ".*multiversion.*",   "= 0"}, // AutoVectorization Predicate SUFFICES
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static void test_fill_byte_sameMS_noalias(MemorySegment a, MemorySegment b, long invar1, long invar2, long limit) {
+        for (long i = 0; i < limit; i++) {
+            a.set(ValueLayout.JAVA_BYTE, invar1 + i, (byte)0xa);
+            b.set(ValueLayout.JAVA_BYTE, invar2 - i, (byte)0xb);
+        }
+    }
+
+    @DontCompile
+    static void reference_fill_byte_sameMS_noalias(MemorySegment a, MemorySegment b, long invar1, long invar2, long limit) {
+        for (long i = 0; i < limit; i++) {
+            a.set(ValueLayout.JAVA_BYTE, invar1 + i, (byte)0xa);
+            b.set(ValueLayout.JAVA_BYTE, invar2 - i, (byte)0xb);
         }
     }
 }

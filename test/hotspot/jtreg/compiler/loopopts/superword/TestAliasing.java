@@ -506,6 +506,7 @@ public class TestAliasing {
         }
     }
 
+    @DontCompile
     static void reference_fill_B_sameArray_alias(byte[] a, byte[] b, int invar1, int invar2) {
         for (int i = 0; i < a.length - 100; i++) {
             a[i + invar1] = (byte)0x0a;
@@ -536,6 +537,7 @@ public class TestAliasing {
         }
     }
 
+    @DontCompile
     static void reference_fill_B_sameArray_noalias(byte[] a, byte[] b, int invar1, int invar2, int limit) {
         for (int i = 0; i < limit; i++) {
             a[invar1 + i] = (byte)0x0a;
