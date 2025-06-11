@@ -108,6 +108,13 @@ public class TestAliasingFuzzer {
         FILL_STORE_STORE, // a[i1] = x; b[i2] = y;
     }
 
+    // TODO: MemorySegment. Maybe also do it in AccessScenario?
+    //       Create random form that has stride exact for the type!
+    enum Container {
+        ARRAY,
+        MEMORY_SEGMENT
+    }
+
     public static void main(String[] args) {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
@@ -167,7 +174,7 @@ public class TestAliasingFuzzer {
 
         for (Aliasing aliasing : Aliasing.values()) {
             for (AccessScenario accessScenario : AccessScenario.values()) {
-                testTemplateTokens.addAll(allTypes.stream().map(t -> generateArray(t, aliasing, accessScenario)).toList());
+                testTemplateTokens.addAll(allTypes.stream().map(t -> generateTest(t, aliasing, accessScenario)).toList());
             }
         }
 
@@ -390,7 +397,7 @@ public class TestAliasingFuzzer {
         return template.asToken();
     }
 
-    public static TemplateToken generateArray(MyType type, Aliasing aliasing, AccessScenario accessScenario) {
+    public static TemplateToken generateTest(MyType type, Aliasing aliasing, AccessScenario accessScenario) {
         // size must be large enough for:
         //   - scale = 4
         //   - range with size / 4
@@ -632,7 +639,7 @@ public class TestAliasingFuzzer {
                     List.of(invar, " = RANDOM.nextInt(-1, 2);\n")
                 ).toList(),
                 """
-                    // Verify the bounds we just created, just to be sure there is no unespected aliasing!
+                    // Verify the bounds we just created, just to be sure there is no unexpected aliasing!
                     int i = ivLo;
                 """,
                 "int aLo = ", form_a.index("invar0_A", invarRest), ";\n",
