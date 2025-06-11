@@ -42,9 +42,9 @@ public class ImmutableDescriptorSerialHashCodeTest {
         Descriptor d1 = new ImmutableDescriptor("a=aval", "B=Bval", "cC=cCval");
         Descriptor d2 = new ImmutableDescriptor("a=aval", "B=Bval", "cC=cCval");
 
-		test (d1, d2, "Objects created from same String"); // Sanity check
+        test (d1, d2, "Objects created from same String"); // Sanity check
         Descriptor dSer = serialize(d1);
-		test(d1, dSer, "After serilalization"); // Actual test
+        test(d1, dSer, "After serilalization"); // Actual test
         System.out.println("PASSED");
     }
 
