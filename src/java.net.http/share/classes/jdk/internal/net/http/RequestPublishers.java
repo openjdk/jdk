@@ -257,15 +257,13 @@ public final class RequestPublishers {
             InputStream is = null;
             Throwable t = null;
             try {
-                // The old code was using `FileInputStream::new`, which throws `FNFE` unless passed a file.
-                // Preserving that behaviour after migrating to `Files::newInputStream`:
+                // Throw `FileNotFoundException` to match the specification of `BodyPublishers::ofFile
                 if (!Files.isRegularFile(path)) {
                     throw new FileNotFoundException(path + " (Not a regular file)");
                 }
                 is = Files.newInputStream(path);
             } catch (NoSuchFileException nsfe) {
-                // The old code was using `FileInputStream::new`, which throws `FNFE` if file doesn't exist.
-                // Preserving that behaviour after migrating to `Files::newInputStream`:
+                // Throw `FileNotFoundException` to match the specification of `BodyPublishers::ofFile`
                 t = new FileNotFoundException(path + " (No such file or directory)");
             } catch (UncheckedIOException | UndeclaredThrowableException ue) {
                 t = ue.getCause();
