@@ -2476,8 +2476,9 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
 }
 
 void PhaseMacroExpand::eliminate_opaque_looplimit_macro_nodes() {
-  if (C->macro_count() == 0)
+  if (C->macro_count() == 0) {
     return;
+  }
   refine_strip_mined_loop_macro_nodes();
   // Eliminate Opaque and LoopLimit nodes. Do it after all loop optimizations.
   bool progress = true;
