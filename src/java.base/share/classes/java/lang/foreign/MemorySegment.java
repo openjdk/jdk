@@ -1305,7 +1305,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *     return new String(bytes, charset);
      * }
      * @implNote If the {@linkplain #byteSize()} of this segment is not evenly dividable
-     *           by the number of octets used by provided {@code charset}, the reminding
+     *           by the number of octets used by the provided {@code charset}, the remaining
      *           bytes of this segment are not accessed. For multi-octet charset,
      *           {@code '\0'} terminator characters are only detected on
      *           multi-octet-aligned boundaries.
