@@ -73,7 +73,7 @@ define_pd_global(size_t, ReservedCodeCacheSize,      48*M);
 define_pd_global(size_t, NonProfiledCodeHeapSize,    21*M);
 define_pd_global(size_t, ProfiledCodeHeapSize,       22*M);
 define_pd_global(size_t, NonNMethodCodeHeapSize,     5*M );
-define_pd_global(uintx, CodeCacheMinBlockLength,     6);
+define_pd_global(size_t, CodeCacheMinBlockLength,    6);
 define_pd_global(size_t, CodeCacheMinimumUseSpace,   400*K);
 
 // Ergonomics related flags

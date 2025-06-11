@@ -1547,7 +1547,7 @@ const int ObjectAlignmentInBytes = 8;
           "Code cache expansion size (in bytes)")                           \
           range(32*K, SIZE_MAX)                                             \
                                                                             \
-  product_pd(uintx, CodeCacheMinBlockLength, DIAGNOSTIC,                    \
+  product_pd(size_t, CodeCacheMinBlockLength, DIAGNOSTIC,                   \
           "Minimum number of segments in a code cache block")               \
           range(1, 100)                                                     \
                                                                             \

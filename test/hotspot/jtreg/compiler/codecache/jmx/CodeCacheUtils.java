@@ -43,7 +43,7 @@ public final class CodeCacheUtils {
     public static final long SEGMENT_SIZE
             = WhiteBox.getWhiteBox().getSizeTVMFlag("CodeCacheSegmentSize");
     public static final long MIN_BLOCK_LENGTH
-            = WhiteBox.getWhiteBox().getUintxVMFlag("CodeCacheMinBlockLength");
+            = WhiteBox.getWhiteBox().getSizeTVMFlag("CodeCacheMinBlockLength");
     public static final long MIN_ALLOCATION = SEGMENT_SIZE * MIN_BLOCK_LENGTH;
 
     private CodeCacheUtils() {

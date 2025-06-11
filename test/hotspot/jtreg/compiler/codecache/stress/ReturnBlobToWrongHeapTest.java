@@ -49,7 +49,7 @@ import java.util.ArrayList;
 
 public class ReturnBlobToWrongHeapTest {
     private static final long largeBlobSize = Helper.WHITE_BOX.getSizeTVMFlag("ReservedCodeCacheSize") >> 6;
-    private static final long codeCacheMinBlockLength = Helper.WHITE_BOX.getUintxVMFlag("CodeCacheMinBlockLength");
+    private static final long codeCacheMinBlockLength = Helper.WHITE_BOX.getSizeTVMFlag("CodeCacheMinBlockLength");
     private static final BlobType[] BLOB_TYPES = BlobType.getAvailable().toArray(new BlobType[0]);
 
     // Allocate blob in first code heap (the code heap with index 0).
