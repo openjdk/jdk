@@ -59,6 +59,7 @@
 #ifdef AIX
 #include "loadlib_aix.hpp"
 #include "os_aix.hpp"
+#include "porting_aix.hpp"
 #endif
 #ifdef LINUX
 #include "os_linux.hpp"
@@ -1076,7 +1077,7 @@ void os::jvm_path(char *buf, jint buflen) {
     return;
   }
 
-  char* fname;
+  const char* fname;
 #ifdef AIX
   Dl_info dlinfo;
   int ret = dladdr(CAST_FROM_FN_PTR(void *, os::jvm_path), &dlinfo);
@@ -1099,7 +1100,7 @@ void os::jvm_path(char *buf, jint buflen) {
 #endif // AIX
   char* rp = nullptr;
   if (fname[0] != '\0') {
-    rp = os::realpath(dli_fname, buf, buflen);
+    rp = os::realpath(fname, buf, buflen);
   }
   if (rp == nullptr) {
     return;
@@ -1137,7 +1138,7 @@ void os::jvm_path(char *buf, jint buflen) {
                "buf has been truncated");
       } else {
         // Go back to path of .so
-        rp = os::realpath(dli_fname, buf, buflen);
+        rp = os::realpath(fname, buf, buflen);
         if (rp == nullptr) {
           return;
         }
