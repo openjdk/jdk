@@ -499,7 +499,7 @@ class TestMemorySegmentAliasingImpl {
         phase = CompilePhase.PRINT_IDEAL,
         applyIfPlatform = {"64-bit", "true"},
         applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     // In this case, the limit is pre-loop independent, but its assigned
     // ctrl sits between main and pre loop. Only the early ctrl is before
     // the pre loop.

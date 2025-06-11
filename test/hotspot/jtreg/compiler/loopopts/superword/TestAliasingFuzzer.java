@@ -147,8 +147,6 @@ public class TestAliasingFuzzer {
             "-XX:" + randomPlusMinus(1, 5) + "AlignVector",
             // Default enabled.
             "-XX:" + randomPlusMinus(5, 1) + "UseAutoVectorizationSpeculativeAliasingChecks",
-            "-XX:" + randomPlusMinus(5, 1) + "UseAutoVectorizationPredicate",
-            "-XX:" + randomPlusMinus(5, 1) + "LoopMultiversioning",
             "-XX:" + randomPlusMinus(5, 1) + "LoopMultiversioningOptimizeSlowLoop",
             // Either way is ok.
             "-XX:" + randomPlusMinus(1, 1) + "UseCompactObjectHeaders"
