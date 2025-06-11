@@ -51,7 +51,7 @@ define_pd_global(size_t, NewSizeThreadIncrease,     ScaleForWordSize(4*K));
 define_pd_global(intx,  LoopUnrollLimit,             60);
 // InitialCodeCacheSize derived from specjbb2000 run.
 define_pd_global(size_t, InitialCodeCacheSize,       2496*K); // Integral multiple of CodeCacheExpansionSize
-define_pd_global(uintx, CodeCacheExpansionSize,      64*K);
+define_pd_global(size_t, CodeCacheExpansionSize,     64*K);
 
 // Ergonomics related flags
 define_pd_global(uint64_t, MaxRAM,                   128ULL*G);
@@ -61,7 +61,7 @@ define_pd_global(size_t, NewSizeThreadIncrease,      4*K);
 define_pd_global(intx,  LoopUnrollLimit,             50);     // Design center runs on 1.3.1
 // InitialCodeCacheSize derived from specjbb2000 run.
 define_pd_global(size_t, InitialCodeCacheSize,       2304*K); // Integral multiple of CodeCacheExpansionSize
-define_pd_global(uintx, CodeCacheExpansionSize,      32*K);
+define_pd_global(size_t, CodeCacheExpansionSize,     32*K);
 
 // Ergonomics related flags
 define_pd_global(uint64_t, MaxRAM,                   4ULL*G);

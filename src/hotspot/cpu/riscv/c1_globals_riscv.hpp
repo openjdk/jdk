@@ -49,7 +49,7 @@ define_pd_global(size_t, NonProfiledCodeHeapSize,    13*M );
 define_pd_global(size_t, ProfiledCodeHeapSize,       14*M );
 define_pd_global(size_t, NonNMethodCodeHeapSize,     5*M  );
 define_pd_global(bool, ProfileInterpreter,           false);
-define_pd_global(intx, CodeCacheExpansionSize,       32*K );
+define_pd_global(size_t, CodeCacheExpansionSize,     32*K );
 define_pd_global(uintx, CodeCacheMinBlockLength,     1);
 define_pd_global(size_t, CodeCacheMinimumUseSpace,   400*K);
 define_pd_global(bool, NeverActAsServerClassMachine, true );

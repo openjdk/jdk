@@ -67,7 +67,7 @@ define_pd_global(size_t, NonProfiledCodeHeapSize,    0);
 define_pd_global(size_t, ProfiledCodeHeapSize,       0);
 define_pd_global(size_t, NonNMethodCodeHeapSize,     32*M);
 
-define_pd_global(uintx,  CodeCacheExpansionSize,     32*K);
+define_pd_global(size_t, CodeCacheExpansionSize,     32*K);
 define_pd_global(uintx,  CodeCacheMinBlockLength,    1);
 define_pd_global(size_t, CodeCacheMinimumUseSpace,   200*K);
 #ifndef ZERO
