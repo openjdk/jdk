@@ -64,24 +64,35 @@ public class TestAliasing {
     // Original data.
     public static byte[] ORIG_AB = fillRandom(new byte[SIZE]);
     public static byte[] ORIG_BB = fillRandom(new byte[SIZE]);
-    public static int[] ORIG_AI = fillRandom(new int[SIZE]);
-    public static int[] ORIG_BI = fillRandom(new int[SIZE]);
+    public static int[]  ORIG_AI = fillRandom(new int[SIZE]);
+    public static int[]  ORIG_BI = fillRandom(new int[SIZE]);
 
     // The data we use in the tests. It is initialized from ORIG_* every time.
     public static byte[] AB = new byte[SIZE];
     public static byte[] BB = new byte[SIZE];
-    public static int[] AI = new int[SIZE];
-    public static int[] BI = new int[SIZE];
+    public static int[]  AI = new int[SIZE];
+    public static int[]  BI = new int[SIZE];
 
-    // List of tests
-    Map<String,TestFunction> tests = new HashMap<String,TestFunction>();
-
-    // List of gold, the results from the first run before compilation
-    Map<String,Object> golds = new HashMap<String,Object>();
+    // Parallel to data above, but for use in reference methods.
+    public static byte[] AB_REFERENCE = new byte[SIZE];
+    public static byte[] BB_REFERENCE = new byte[SIZE];
+    public static int[]  AI_REFERENCE = new int[SIZE];
+    public static int[]  BI_REFERENCE = new int[SIZE];
 
     interface TestFunction {
         void run();
     }
+
+    // Map of goldTests, i.e. tests that work with a golds value generated from the same test method,
+    // at the beginning when we are still executing in the interpreter.
+    Map<String,TestFunction> goldTests = new HashMap<String,TestFunction>();
+
+    // Map of gold, the results from the first run before compilation, one per goldTests entry.
+    Map<String,Object> golds = new HashMap<String,Object>();
+
+    // Map of referenceTests, i.e. tests that have a reference implementation that is run with the interpreter.
+    // The TestFunction must run both the test and reference methods.
+    Map<String,TestFunction> referenceTests = new HashMap<String,TestFunction>();
 
     public static void main(String[] args) {
         TestFramework framework = new TestFramework(TestAliasing.class);
@@ -101,20 +112,20 @@ public class TestAliasing {
     }
 
     public TestAliasing() {
-        // Add all tests to list
-        tests.put("copy_B_sameIndex_noalias",         () -> { copy_B_sameIndex_noalias(AB, BB); });
-        tests.put("copy_B_sameIndex_alias",           () -> { copy_B_sameIndex_alias(AB, AB); });
-        tests.put("copy_B_differentIndex_noalias",    () -> { copy_B_differentIndex_noalias(AB, BB); });
-        tests.put("copy_B_differentIndex_noalias_v2", () -> { copy_B_differentIndex_noalias_v2(); });
-        tests.put("copy_B_differentIndex_alias",      () -> { copy_B_differentIndex_alias(AB, AB); });
+        // Add all goldTests to list
+        goldTests.put("copy_B_sameIndex_noalias",         () -> { copy_B_sameIndex_noalias(AB, BB); });
+        goldTests.put("copy_B_sameIndex_alias",           () -> { copy_B_sameIndex_alias(AB, AB); });
+        goldTests.put("copy_B_differentIndex_noalias",    () -> { copy_B_differentIndex_noalias(AB, BB); });
+        goldTests.put("copy_B_differentIndex_noalias_v2", () -> { copy_B_differentIndex_noalias_v2(); });
+        goldTests.put("copy_B_differentIndex_alias",      () -> { copy_B_differentIndex_alias(AB, AB); });
 
-        tests.put("copy_I_sameIndex_noalias",         () -> { copy_I_sameIndex_noalias(AI, BI); });
-        tests.put("copy_I_sameIndex_alias",           () -> { copy_I_sameIndex_alias(AI, AI); });
-        tests.put("copy_I_differentIndex_noalias",    () -> { copy_I_differentIndex_noalias(AI, BI); });
-        tests.put("copy_I_differentIndex_alias",      () -> { copy_I_differentIndex_alias(AI, AI); });
+        goldTests.put("copy_I_sameIndex_noalias",         () -> { copy_I_sameIndex_noalias(AI, BI); });
+        goldTests.put("copy_I_sameIndex_alias",           () -> { copy_I_sameIndex_alias(AI, AI); });
+        goldTests.put("copy_I_differentIndex_noalias",    () -> { copy_I_differentIndex_noalias(AI, BI); });
+        goldTests.put("copy_I_differentIndex_alias",      () -> { copy_I_differentIndex_alias(AI, AI); });
 
         // Compute gold value for all test methods before compilation
-        for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
+        for (Map.Entry<String,TestFunction> entry : goldTests.entrySet()) {
             String name = entry.getKey();
             TestFunction test = entry.getValue();
             init();
@@ -122,6 +133,13 @@ public class TestAliasing {
             Object gold = snapshotCopy();
             golds.put(name, gold);
         }
+
+        referenceTests.put("fill_B_sameArray_alias", () -> {
+            int invar1 = RANDOM.nextInt(64);
+            int invar2 = RANDOM.nextInt(64);
+            test_fill_B_sameArray_alias(AB, AB, invar1, invar2);
+            reference_fill_B_sameArray_alias(AB_REFERENCE, AB_REFERENCE, invar1, invar2);
+        });
     }
 
     public static void init() {
@@ -129,6 +147,13 @@ public class TestAliasing {
         System.arraycopy(ORIG_BB, 0, BB, 0, SIZE);
         System.arraycopy(ORIG_AI, 0, AI, 0, SIZE);
         System.arraycopy(ORIG_BI, 0, BI, 0, SIZE);
+    }
+
+    public static void initReference() {
+        System.arraycopy(ORIG_AB, 0, AB_REFERENCE, 0, SIZE);
+        System.arraycopy(ORIG_BB, 0, BB_REFERENCE, 0, SIZE);
+        System.arraycopy(ORIG_AI, 0, AI_REFERENCE, 0, SIZE);
+        System.arraycopy(ORIG_BI, 0, BI_REFERENCE, 0, SIZE);
     }
 
     public static Object snapshotCopy() {
@@ -145,6 +170,13 @@ public class TestAliasing {
         };
     }
 
+    public static Object snapshotReference() {
+        return new Object[] {
+            AB_REFERENCE, BB_REFERENCE,
+            AI_REFERENCE, BI_REFERENCE
+        };
+    }
+
     @Warmup(100)
     @Run(test = {"copy_B_sameIndex_noalias",
                  "copy_B_sameIndex_alias",
@@ -154,9 +186,10 @@ public class TestAliasing {
                  "copy_I_sameIndex_noalias",
                  "copy_I_sameIndex_alias",
                  "copy_I_differentIndex_noalias",
-                 "copy_I_differentIndex_alias"})
+                 "copy_I_differentIndex_alias",
+                 "test_fill_B_sameArray_alias"})
     public void runTests() {
-        for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
+        for (Map.Entry<String,TestFunction> entry : goldTests.entrySet()) {
             String name = entry.getKey();
             TestFunction test = entry.getValue();
             // Recall gold value from before compilation
@@ -168,6 +201,25 @@ public class TestAliasing {
             // Compare gold and new result
             try {
                 Verify.checkEQ(gold, result);
+            } catch (VerifyException e) {
+                throw new RuntimeException("Verify failed for " + name, e);
+            }
+        }
+
+        for (Map.Entry<String,TestFunction> entry : referenceTests.entrySet()) {
+            String name = entry.getKey();
+            TestFunction test = entry.getValue();
+            // Init data for test and reference
+            init();
+            initReference();
+            // Run test and reference
+            test.run();
+            // Capture results from test and reference
+            Object result = snapshot();
+            Object expected = snapshotReference();
+            // Compare expected and new result
+            try {
+                Verify.checkEQ(expected, result);
             } catch (VerifyException e) {
                 throw new RuntimeException("Verify failed for " + name, e);
             }
@@ -388,7 +440,57 @@ public class TestAliasing {
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void copy_I_differentIndex_alias(int[] a, int[] b) {
         for (int i = 0; i < a.length; i++) {
-          b[i] = a[i + INVAR_ZERO];
+            b[i] = a[i + INVAR_ZERO];
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_VECTOR, "= 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Without speculative runtime check we cannot know that there is no aliasing.
+    @IR(counts = {IRNode.STORE_VECTOR,             "> 0",
+                  ".*pre .* multiversion_fast.*",  "= 1",
+                  ".*main .* multiversion_fast.*", "= 1",
+                  ".*post .* multiversion_fast.*", "= 2", // vectorized and scalar versions
+                  ".*multiversion_slow.*",         "= 2", // main and post (pre-loop only has a single iteration)
+                  ".*multiversion.*",              "= 6"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true",
+                      "LoopMultiversioningOptimizeSlowLoop", "true",
+                      "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // We use speculative runtime checks, it fails and so we do need multiversioning.
+    // With AlignVector we cannot prove that both accesses are alignable.
+    @IR(counts = {IRNode.STORE_VECTOR,             "> 0",
+                  ".*pre .* multiversion_fast.*",  "= 1",
+                  ".*main .* multiversion_fast.*", "= 1",
+                  ".*post .* multiversion_fast.*", "= 2", // vectorized and scalar versions
+                  ".*multiversion_delayed_slow.*", "= 1", // effect from flag -> stays delayed
+                  ".*multiversion.*",              "= 5"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true",
+                      "LoopMultiversioningOptimizeSlowLoop", "false", // slow_loop stays delayed
+                      "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // FYI: invar1 and invar2 are small values, only used to test that everything runs
+    //      correctly with at different offsets / with different alignment.
+    static void test_fill_B_sameArray_alias(byte[] a, byte[] b, int invar1, int invar2) {
+        for (int i = 0; i < a.length - 100; i++) {
+            a[i + invar1] = (byte)0x0a;
+            b[a.length - i - 1 - invar2] = (byte)0x0b;
+        }
+    }
+
+    static void reference_fill_B_sameArray_alias(byte[] a, byte[] b, int invar1, int invar2) {
+        for (int i = 0; i < a.length - 100; i++) {
+            a[i + invar1] = (byte)0x0a;
+            b[a.length - i - 1 - invar2] = (byte)0x0b;
         }
     }
 }
