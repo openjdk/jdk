@@ -23,12 +23,11 @@
  *
  */
 
-#include "asm/macroAssembler.hpp"
+#include "asm/macroAssembler.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "code/nmethod.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
-#include "nativeInst_aarch64.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 
@@ -99,11 +98,7 @@ void CompiledDirectCall::set_to_interpreted(const methodHandle& callee, address 
 
   // Update stub.
   method_holder->set_data((intptr_t)callee());
-  if (MacroAssembler::codestub_branch_needs_far_jump()) {
-    NativeGeneralJump::insert_unconditional(method_holder->next_instruction_address(), entry);
-  } else {
-    NativeJump::insert(method_holder->next_instruction_address(), entry);
-  }
+  MacroAssembler::pd_patch_instruction(method_holder->next_instruction_address(), entry);
   ICache::invalidate_range(stub, to_interp_stub_size());
   // Update jump to call.
   set_destination_mt_safe(stub);
