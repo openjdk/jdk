@@ -40,7 +40,7 @@
   f(int,    ObjectAlignmentInBytesConstraintFunc)     \
   f(int,    ContendedPaddingWidthConstraintFunc)      \
   f(int,    PerfDataSamplingIntervalFunc)             \
-  f(uintx,  VMPageSizeConstraintFunc)                 \
+  f(size_t, VMPageSizeConstraintFunc)                 \
   f(size_t, NUMAInterleaveGranularityConstraintFunc)
 
 RUNTIME_CONSTRAINTS(DECLARE_CONSTRAINT)
