@@ -888,7 +888,7 @@ public class LinkedBlockingDeque<E>
                 else
                     last.next = beg;
                 last = end;
-                count = (int) (cnt + n);
+                count = (int)cnt;
                 notEmpty.signalAll();
                 return true;
             }
