@@ -59,6 +59,7 @@
 #ifdef AIX
 #include "loadlib_aix.hpp"
 #include "os_aix.hpp"
+#include "porting_aix.hpp"
 #endif
 #ifdef LINUX
 #include "os_linux.hpp"
@@ -1058,6 +1059,95 @@ bool os::same_files(const char* file1, const char* file2) {
     is_same = true;
   }
   return is_same;
+}
+
+static char saved_jvm_path[MAXPATHLEN] = {0};
+
+// Find the full path to the current module, libjvm.so
+void os::jvm_path(char *buf, jint buflen) {
+  // Error checking.
+  if (buflen < MAXPATHLEN) {
+    assert(false, "must use a large-enough buffer");
+    buf[0] = '\0';
+    return;
+  }
+  // Lazy resolve the path to current module.
+  if (saved_jvm_path[0] != 0) {
+    strcpy(buf, saved_jvm_path);
+    return;
+  }
+
+  const char* fname;
+#ifdef AIX
+  Dl_info dlinfo;
+  int ret = dladdr(CAST_FROM_FN_PTR(void *, os::jvm_path), &dlinfo);
+  assert(ret != 0, "cannot locate libjvm");
+  if (ret == 0) {
+    return;
+  }
+  fname = dlinfo.dli_fname;
+#else
+  char dli_fname[MAXPATHLEN];
+  dli_fname[0] = '\0';
+  bool ret = dll_address_to_library_name(
+                                         CAST_FROM_FN_PTR(address, os::jvm_path),
+                                         dli_fname, sizeof(dli_fname), nullptr);
+  assert(ret, "cannot locate libjvm");
+  if (!ret) {
+    return;
+  }
+  fname = dli_fname;
+#endif // AIX
+  char* rp = nullptr;
+  if (fname[0] != '\0') {
+    rp = os::realpath(fname, buf, buflen);
+  }
+  if (rp == nullptr) {
+    return;
+  }
+
+  // If executing unit tests we require JAVA_HOME to point to the real JDK.
+  if (Arguments::executing_unit_tests()) {
+    // Look for JAVA_HOME in the environment.
+    char* java_home_var = ::getenv("JAVA_HOME");
+    if (java_home_var != nullptr && java_home_var[0] != 0) {
+
+      // Check the current module name "libjvm.so".
+      const char* p = strrchr(buf, '/');
+      if (p == nullptr) {
+        return;
+      }
+      assert(strstr(p, "/libjvm") == p, "invalid library name");
+
+      stringStream ss(buf, buflen);
+      rp = os::realpath(java_home_var, buf, buflen);
+      if (rp == nullptr) {
+        return;
+      }
+
+      assert((int)strlen(buf) < buflen, "Ran out of buffer room");
+      ss.print("%s/lib", buf);
+
+      // If the path exists within JAVA_HOME, add the VM variant directory and JVM
+      // library name to complete the path to JVM being overridden.  Otherwise fallback
+      // to the path to the current library.
+      if (0 == access(buf, F_OK)) {
+        // Use current module name "libjvm.so"
+        ss.print("/%s/libjvm%s", Abstract_VM_Version::vm_variant(), JNI_LIB_SUFFIX);
+        assert(strcmp(buf + strlen(buf) - strlen(JNI_LIB_SUFFIX), JNI_LIB_SUFFIX) == 0,
+               "buf has been truncated");
+      } else {
+        // Go back to path of .so
+        rp = os::realpath(fname, buf, buflen);
+        if (rp == nullptr) {
+          return;
+        }
+      }
+    }
+  }
+
+  strncpy(saved_jvm_path, buf, MAXPATHLEN);
+  saved_jvm_path[MAXPATHLEN - 1] = '\0';
 }
 
 // Called when creating the thread.  The minimum stack sizes have already been calculated

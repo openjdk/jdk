@@ -47,7 +47,7 @@ PSYoungGen::PSYoungGen(ReservedSpace rs, size_t initial_size, size_t min_size, s
   _from_counters(nullptr),
   _to_counters(nullptr)
 {
-  initialize(rs, initial_size, GenAlignment);
+  initialize(rs, initial_size, SpaceAlignment);
 }
 
 void PSYoungGen::initialize_virtual_space(ReservedSpace rs,
