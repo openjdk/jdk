@@ -163,7 +163,7 @@ public class TestAliasingFuzzer {
         List<TemplateToken> testTemplateTokens = new ArrayList<>();
 
         // Add some basic functionalities.
-        testTemplateTokens.add(generateIntIndexForm());
+        testTemplateTokens.add(generateIndexForm());
 
         for (Aliasing aliasing : Aliasing.values()) {
             for (AccessScenario accessScenario : AccessScenario.values()) {
@@ -203,8 +203,8 @@ public class TestAliasingFuzzer {
             testTemplateTokens);
     }
 
-    // The IntIndexForm is used to model the int-index. We can use it for arrays, but also by
-    // restricting the MemorySegment index to a simple int-index.
+    // The IndexForm is used to model the index. We can use it for arrays, but also by
+    // restricting the MemorySegment index to a simple index.
     //
     // Form:
     //   index = con + iv * ivScale + invar0 * invar0Scale + invarRest
@@ -240,8 +240,8 @@ public class TestAliasingFuzzer {
     //   It follows:
     //     iv.hi * ivScale <= range.hi - con - invar0 * invar0Scale - err
     //
-    public static record IntIndexForm(int con, int ivScale, int invar0Scale, int[] invarRestScales) {
-        public static IntIndexForm random(int numInvarRest) {
+    public static record IndexForm(int con, int ivScale, int invar0Scale, int[] invarRestScales) {
+        public static IndexForm random(int numInvarRest) {
             int con = RANDOM.nextInt(-100_000, 100_000);
             int ivScale = randomScale();
             int invar0Scale = randomScale();
@@ -249,7 +249,7 @@ public class TestAliasingFuzzer {
             for (int i = 0; i < invarRestScales.length; i++) {
                 invarRestScales[i] = RANDOM.nextInt(-1, 2);
             }
-            return new IntIndexForm(con, ivScale, invar0Scale, invarRestScales);
+            return new IndexForm(con, ivScale, invar0Scale, invarRestScales);
         }
 
         public static int randomScale() {
@@ -261,7 +261,7 @@ public class TestAliasingFuzzer {
         }
 
         public String generate() {
-            return "new IntIndexForm(" + con() + ", " + ivScale() + ", " + invar0Scale() + ", new int[] {" +
+            return "new IndexForm(" + con() + ", " + ivScale() + ", " + invar0Scale() + ", new int[] {" +
                    Arrays.stream(invarRestScales)
                          .mapToObj(String::valueOf)
                          .collect(Collectors.joining(", ")) +
@@ -283,13 +283,13 @@ public class TestAliasingFuzzer {
         }
     }
 
-    public static TemplateToken generateIntIndexForm() {
+    public static TemplateToken generateIndexForm() {
         var template = Template.make(() -> body(
             """
             private static final Random RANDOM = Utils.getRandomInstance();
 
-            public static record IntIndexForm(int con, int ivScale, int invar0Scale, int[] invarRestScales) {
-                public IntIndexForm {
+            public static record IndexForm(int con, int ivScale, int invar0Scale, int[] invarRestScales) {
+                public IndexForm {
                     if (ivScale == 0 || invar0Scale == 0) {
                         throw new RuntimeException("Bad scales: " + ivScale + " " + invar0Scale);
                     }
@@ -400,15 +400,15 @@ public class TestAliasingFuzzer {
         final boolean forwardLoop = RANDOM.nextBoolean();
 
         final int numInvarRest = RANDOM.nextInt(5);
-        var form_a = IntIndexForm.random(numInvarRest);
-        var form_b = IntIndexForm.random(numInvarRest);
+        var form_a = IndexForm.random(numInvarRest);
+        var form_b = IndexForm.random(numInvarRest);
 
         var templateSplitRanges = Template.make(() -> body(
             let("size", size),
             """
             int middle = RANDOM.nextInt(#size / 3, #size * 2 / 3);
-            var r1 = new IntIndexForm.Range(0, middle);
-            var r2 = new IntIndexForm.Range(middle, #size);
+            var r1 = new IndexForm.Range(0, middle);
+            var r2 = new IndexForm.Range(middle, #size);
             if (RANDOM.nextBoolean()) {
                 var tmp = r1;
                 r1 = r2;
@@ -421,8 +421,8 @@ public class TestAliasingFuzzer {
             let("size", size),
             """
             // Whole ranges
-            var r1 = new IntIndexForm.Range(0, #size);
-            var r2 = new IntIndexForm.Range(0, #size);
+            var r1 = new IndexForm.Range(0, #size);
+            var r2 = new IndexForm.Range(0, #size);
             """
         ));
 
@@ -432,8 +432,8 @@ public class TestAliasingFuzzer {
             // Random ranges
             int lo1 = RANDOM.nextInt(0, #size * 3 / 4);
             int lo2 = RANDOM.nextInt(0, #size * 3 / 4);
-            var r1 = new IntIndexForm.Range(lo1, lo1 + #size / 4);
-            var r2 = new IntIndexForm.Range(lo2, lo2 + #size / 4);
+            var r1 = new IndexForm.Range(lo1, lo1 + #size / 4);
+            var r2 = new IndexForm.Range(lo2, lo2 + #size / 4);
             """
         ));
 
@@ -565,8 +565,8 @@ public class TestAliasingFuzzer {
 
                 private static int $iterations = 0;
 
-                private static IntIndexForm $form_a = #form_a;
-                private static IntIndexForm $form_b = #form_b;
+                private static IndexForm $form_a = #form_a;
+                private static IndexForm $form_b = #form_b;
 
                 """,
                 Arrays.stream(invarRest).map(invar ->
