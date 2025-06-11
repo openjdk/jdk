@@ -56,7 +56,7 @@ public class PasswordFieldInputMapWordTest {
         try {
             UIManager.setLookAndFeel(laf.getClassName());
             return true;
-        } catch (UnsupportedLookAndFeelException  e) {
+        } catch (UnsupportedLookAndFeelException e) {
             System.err.println("Skipping unsupported look and feel:");
             e.printStackTrace();
             return false;
