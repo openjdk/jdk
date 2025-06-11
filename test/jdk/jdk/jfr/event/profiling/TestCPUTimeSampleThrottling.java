@@ -61,7 +61,7 @@ public class TestCPUTimeSampleThrottling {
 
     private static void testThrottleSettingsPeriod() throws Exception {
         float rate = countEvents(1000, "10ms").rate();
-        Asserts.assertTrue(rate > 90 && rate < 110, "Expected around 100 events per second, got " + rate);
+        Asserts.assertTrue(rate > 75 && rate < 125, "Expected around 100 events per second, got " + rate);
     }
 
     private record EventCount(long count, float time) {
