@@ -25,6 +25,7 @@
  * @bug 4957669 5017871 8358729
  * @summary cannot load class names containing some JSR 202 characters;
  *          plugin does not escape unicode character in http request
+ * @library /test/lib
  * @modules java.base/sun.net.www
  *          jdk.httpserver
  * @compile -XDignore.symbol.file=true ClassnameCharTest.java
@@ -32,15 +33,18 @@
  */
 
 import java.io.*;
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
 import java.net.*;
 import java.security.CodeSource;
 import java.util.jar.*;
 import com.sun.net.httpserver.*;
+import jdk.test.lib.Utils;
 import sun.net.www.ParseUtil;
 
 public class ClassnameCharTest {
-    static String FNPrefix = System.getProperty("test.src", ".") + File.separator;
-    static File classesJar = new File(FNPrefix + "testclasses.jar");
+    private static final String JAR_PATH = Utils.TEST_CLASSES + Utils.FILE_SEPARATOR + "testclasses.jar";
+    static File classesJar = new File(JAR_PATH);
     static HttpServer server;
 
     public static void realMain(String[] args) throws Exception {
@@ -209,8 +213,19 @@ public class ClassnameCharTest {
         }
     }
 
+    // Create the class file and write it to the testable jar
+    static void buildJar() throws IOException {
+        var bytes = ClassFile.of().build(ClassDesc.of("fo o"), _ -> {});
+        try (JarOutputStream jos = new JarOutputStream(new FileOutputStream(JAR_PATH))) {
+            jos.putNextEntry(new JarEntry("fo o.class"));
+            jos.write(bytes, 0, bytes.length);
+            jos.closeEntry();
+        }
+    }
+
     public static void main(String[] args) throws Throwable {
         try {
+            buildJar();
             realMain(args);
         } catch (Throwable t) {
             unexpected(t);
