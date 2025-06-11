@@ -880,8 +880,8 @@ public class LinkedBlockingDeque<E>
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
-            int cnt;
-            if ((cnt = count) + n <= capacity) {
+            long cnt;
+            if ((cnt = count + n) <= capacity) {
                 beg.prev = last;
                 if (first == null)
                     first = beg;
