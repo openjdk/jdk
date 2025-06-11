@@ -43,7 +43,6 @@ import java.util.stream.Stream;
 
 public class T8357653 extends TestRunner {
     private ToolBox tb;
-    private static final String SOURCE_VERSION = System.getProperty("java.specification.version");
 
     public static void main(String... args) throws Exception {
         new T8357653().runTests();
