@@ -69,7 +69,7 @@ define_pd_global(uintx,  NonNMethodCodeHeapSize,     32*M);
 
 define_pd_global(uintx,  CodeCacheExpansionSize,     32*K);
 define_pd_global(uintx,  CodeCacheMinBlockLength,    1);
-define_pd_global(uintx,  CodeCacheMinimumUseSpace,   200*K);
+define_pd_global(size_t, CodeCacheMinimumUseSpace,   200*K);
 #ifndef ZERO
 define_pd_global(bool, NeverActAsServerClassMachine, true);
 define_pd_global(uint64_t,MaxRAM,                    1ULL*G);

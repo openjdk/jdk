@@ -475,7 +475,7 @@ void CompilerConfig::set_jvmci_specific_flags() {
 bool CompilerConfig::check_args_consistency(bool status) {
   // Check lower bounds of the code cache
   // Template Interpreter code is approximately 3X larger in debug builds.
-  uint min_code_cache_size = CodeCacheMinimumUseSpace DEBUG_ONLY(* 3);
+  size_t min_code_cache_size = CodeCacheMinimumUseSpace DEBUG_ONLY(* 3);
   if (ReservedCodeCacheSize < InitialCodeCacheSize) {
     jio_fprintf(defaultStream::error_stream(),
                 "Invalid ReservedCodeCacheSize: %zuK. Must be at least InitialCodeCacheSize=%zuK.\n",
@@ -483,7 +483,7 @@ bool CompilerConfig::check_args_consistency(bool status) {
     status = false;
   } else if (ReservedCodeCacheSize < min_code_cache_size) {
     jio_fprintf(defaultStream::error_stream(),
-                "Invalid ReservedCodeCacheSize=%zuK. Must be at least %uK.\n", ReservedCodeCacheSize/K,
+                "Invalid ReservedCodeCacheSize=%zuK. Must be at least %zuK.\n", ReservedCodeCacheSize/K,
                 min_code_cache_size/K);
     status = false;
   } else if (ReservedCodeCacheSize > CODE_CACHE_SIZE_LIMIT) {
@@ -494,7 +494,7 @@ bool CompilerConfig::check_args_consistency(bool status) {
     status = false;
   } else if (NonNMethodCodeHeapSize < min_code_cache_size) {
     jio_fprintf(defaultStream::error_stream(),
-                "Invalid NonNMethodCodeHeapSize=%dK. Must be at least %uK.\n", NonNMethodCodeHeapSize/K,
+                "Invalid NonNMethodCodeHeapSize=%zuK. Must be at least %zuK.\n", NonNMethodCodeHeapSize/K,
                 min_code_cache_size/K);
     status = false;
   }

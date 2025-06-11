@@ -1520,9 +1520,9 @@ const int ObjectAlignmentInBytes = 8;
           "Initial code cache size (in bytes)")                             \
           constraint(VMPageSizeConstraintFunc, AtParse)                     \
                                                                             \
-  develop_pd(uintx, CodeCacheMinimumUseSpace,                               \
+  develop_pd(size_t, CodeCacheMinimumUseSpace,                              \
           "Minimum code cache size (in bytes) required to start VM.")       \
-          range(0, max_uintx)                                               \
+          range(0, SIZE_MAX)                                                \
                                                                             \
   product(bool, SegmentedCodeCache, false,                                  \
           "Use a segmented code cache")                                     \
