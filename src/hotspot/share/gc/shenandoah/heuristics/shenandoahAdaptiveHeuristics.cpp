@@ -125,7 +125,6 @@ ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* 
   _consecutive_goodness(0) { }
 #else
   _most_recent_headroom_at_start_of_idle((size_t) 0) {
-    _freeset = ShenandoahHeap::heap()->free_set();
   }
 #endif
 
@@ -144,6 +143,11 @@ void ShenandoahAdaptiveHeuristics::initialize() {
 
 void ShenandoahAdaptiveHeuristics::post_initialize() {
   ShenandoahHeuristics::post_initialize();
+#undef KELVIN_VISIBLE
+  _freeset = ShenandoahHeap::heap()->free_set();
+#ifdef KELVIN_VISIBLE
+  log_info(gc)("post_initialize() sets _freeset to " PTR_FORMAT, p2i(_freeset));
+#endif
   if (_is_generational) {
     _regulator_thread = ShenandoahGenerationalHeap::heap()->regulator_thread();
     size_t young_available = ShenandoahGenerationalHeap::heap()->young_generation()->max_capacity() -
@@ -240,7 +244,12 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
 }
 
 void ShenandoahAdaptiveHeuristics::start_idle_span() {
-  size_t mutator_available = _freeset->capacity() - _freeset->used();
+#undef KELVIN_IDLE_SPAN
+#ifdef KELVIN_IDLE_SPAN
+  log_info(gc)("Made it to ShenanoahAdaptiveHeuristics:start_idle_span(), _freeset: " PTR_FORMAT ", _space_info: " PTR_FORMAT,
+               p2i(_freeset), p2i(_space_info));
+#endif
+  size_t mutator_available = _freeset->available();
 
 #ifdef KELVIN_IDLE_SPAN
   log_info(gc)("Made it to ShenanoahAdaptiveHeuristics:%s::start_idle_span() with available %zu",

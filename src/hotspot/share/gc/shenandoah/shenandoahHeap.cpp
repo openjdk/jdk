@@ -246,6 +246,9 @@ jint ShenandoahHeap::initialize() {
 
   BarrierSet::set_barrier_set(new ShenandoahBarrierSet(this, _heap_region));
 
+  // Now we know the number of regions and heap sizes, initialize the heuristics.
+  initialize_heuristics();
+
   assert(_heap_region.byte_size() == heap_rs.size(), "Need to know reserved size for card table");
 
   //
@@ -417,10 +420,15 @@ jint ShenandoahHeap::initialize() {
 
       _affiliations[i] = ShenandoahAffiliation::FREE;
     }
-
-    size_t young_cset_regions, old_cset_regions;
+    if (mode()->is_generational()) {
+      size_t young_reserve = (young_generation()->max_capacity() * ShenandoahEvacReserve) / 100;
+      young_generation()->set_evacuation_reserve(young_reserve);
+      old_generation()->set_evacuation_reserve((size_t) 0);
+      old_generation()->set_promoted_reserve((size_t) 0);
+    }
 
     // We are initializing free set.  We ignore cset region tallies.
+    size_t young_cset_regions, old_cset_regions;
     size_t first_old, last_old, num_old;
     _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
     _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
@@ -472,15 +480,14 @@ jint ShenandoahHeap::initialize() {
     _pacer->setup_for_idle();
   }
 
-  // Now we know the number of regions and heap sizes and have initialized controller, initialize the heuristics.
-  initialize_heuristics();
-
   // Initialization of controller markes use of varaibles esstablished by initialize_heuristics.
   initialize_controller();
 
   // Certain initialization of heuristics must be deferred until after controller is initialized.
   post_initialize_heuristics();
 
+
+#ifdef KELVIN_DEPRECATE
   {
     ShenandoahHeapLocker locker(lock());
     // We are initializing free set.  We ignore cset region tallies.
@@ -498,6 +505,13 @@ jint ShenandoahHeap::initialize() {
 #endif
     start_idle_span();
   }
+#endif
+
+#undef KELVIN_IDLE_SPAN
+#ifdef KELVIN_IDLE_SPAN
+  log_info(gc)("start_idle_span() at post_initialize of heap");
+#endif
+  start_idle_span();
 
   if (ShenandoahUncommit) {
     _uncommit_thread = new ShenandoahUncommitThread(this);
