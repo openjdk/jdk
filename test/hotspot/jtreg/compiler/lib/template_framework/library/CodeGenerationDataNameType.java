@@ -90,7 +90,6 @@ public interface CodeGenerationDataNameType extends DataName.Type {
         ints(),
         longs(),
         floats(),
-        doubles(),
-        booleans()
+        doubles()
     );
 }

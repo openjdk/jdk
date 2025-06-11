@@ -96,13 +96,41 @@ public class TestPrimitiveTypes {
             tests.put(name, boxingTemplate.asToken(name, type));
         }
 
-        var l = CodeGenerationDataNameType.PRIMITIVE_TYPES;
+        var integralFloatTemplate = Template.make("name", "type", (String name, PrimitiveType type) -> body(
+            let("size", type.byteSize()),
+            let("isFloating", type.isFloating()),
+            """
+            public static void #name() {
+                // Test byteSize via creation of array.
+                #type[] array = new #type[1];
+                MemorySegment ms = MemorySegment.ofArray(array);
+                if (#size != ms.byteSize()) {
+                    throw new RuntimeException("byteSize mismatch #type");
+                }
+
+                // Test isFloating via rounding.
+                double value = 1.5;
+                #type rounded = (#type)value;
+                boolean isFloating = value != rounded;
+                if (isFloating == #isFloating) {
+                    throw new RuntimeException("isFloating mismatch #type");
+                }
+            }
+            """
+        ));
+
+        for (PrimitiveType type : CodeGenerationDataNameType.INTEGRAL_AND_FLOATING_TYPES) {
+            String name = "test_integral_floating_" + type.name();
+            tests.put(name, integralFloatTemplate.asToken(name, type));
+        }
+
         // Create a Template with two arguments.
         var template = Template.make(() -> body(
             """
             package p.xyz;
 
             import compiler.lib.verify.*;
+            import java.lang.foreign.MemorySegment;
 
             public class InnerTest {
                 public static void main() {
