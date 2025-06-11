@@ -43,8 +43,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -119,8 +117,11 @@ public class FilePublisherTest implements HttpServerAdapters {
     // Zip file system set up
     static final String ZIP_FS_MSG = "zip fs";
 
-    static FileSystem newZipFs() throws Exception {
-        Path zipFile = Path.of("file.zip");
+    private static FileSystem newZipFs() throws Exception {
+        return newZipFs(Path.of("file.zip"));
+    }
+
+    private static FileSystem newZipFs(Path zipFile) throws Exception {
         return FileSystems.newFileSystem(zipFile, Map.of("create", "true"));
     }
 
@@ -161,7 +162,8 @@ public class FilePublisherTest implements HttpServerAdapters {
     @Test
     public void testFileNotFound() throws Exception {
         out.printf("\n\n--- testFileNotFound(): starting\n");
-        try (FileSystem fs = newZipFs()) {
+        var zipPath = Path.of("fileNotFound.zip");
+        try (FileSystem fs = newZipFs(zipPath)) {
             Path fileInZip = zipFsFile(fs);
             Files.deleteIfExists(fileInZip);
             BodyPublishers.ofFile(fileInZip);
@@ -215,9 +217,6 @@ public class FilePublisherTest implements HttpServerAdapters {
         defaultFsPath = defaultFsFile();
         zipFs = newZipFs();
         zipFsPath = zipFsFile(zipFs);
-
-        InetSocketAddress sa =
-                new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 
         httpTestServer = HttpServerAdapters.HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new HttpEchoHandler(), "/http1/echo");
