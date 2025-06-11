@@ -105,9 +105,6 @@
 #include "jfr/jfrEvents.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
 #endif
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciRuntime.hpp"
-#endif
 
 uint64_t DeoptimizationScope::_committed_deopt_gen = 0;
 uint64_t DeoptimizationScope::_active_deopt_gen    = 1;
@@ -2366,6 +2363,11 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
       ShouldNotReachHere();
     }
 
+#if INCLUDE_JVMCI
+    if (nm->is_jvmci_hosted()) {
+      update_trap_state = false;
+    }
+#endif
     // Setting +ProfileTraps fixes the following, on all platforms:
     // The result is infinite heroic-opt-uncommon-trap/deopt/recompile cycles, since the
     // recompile relies on a MethodData* to record heroic opt failures.
@@ -2476,11 +2478,6 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
         trap_mdo->inc_tenure_traps();
       }
     }
-#if INCLUDE_JVMCI
-    if (nm->jvmci_nmethod_data() != nullptr && !nm->jvmci_nmethod_data()->is_default()) {
-      inc_recompile_count = false;
-    }
-#endif
     if (inc_recompile_count) {
       trap_mdo->inc_overflow_recompile_count();
       if ((uint)trap_mdo->overflow_recompile_count() >

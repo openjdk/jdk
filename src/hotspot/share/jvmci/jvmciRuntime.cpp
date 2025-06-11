@@ -2124,7 +2124,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
     JVMCICompileState* compile_state = JVMCIENV->compile_state();
     bool failing_dep_is_call_site;
     result = validate_compile_task_dependencies(dependencies, compile_state, &failure_detail, failing_dep_is_call_site);
-    if (result != JVMCI::ok) {
+    if (install_default && result != JVMCI::ok) {
       // While not a true deoptimization, it is a preemptive decompile.
       MethodData* mdp = method()->method_data();
       if (mdp != nullptr && !failing_dep_is_call_site) {
