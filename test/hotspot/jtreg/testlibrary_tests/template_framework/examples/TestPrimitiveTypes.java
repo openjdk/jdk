@@ -27,18 +27,26 @@
  * @summary Demonstrate the use of PrimitiveTypes form the Template Library.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
+ * @compile ../../../compiler/lib/verify/Verify.java
  * @run main template_framework.examples.TestPrimitiveTypes
  */
 
 package template_framework.examples;
 
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import compiler.lib.compile_framework.*;
+import compiler.lib.template_framework.Template;
+import compiler.lib.template_framework.TemplateToken;
+import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.let;
+
+import compiler.lib.template_framework.library.CodeGenerationDataNameType;
 import compiler.lib.template_framework.library.PrimitiveType;
 
 public class TestPrimitiveTypes {
-    public static void main(String[] args) {
-        var l = PrimitiveType.PRIMITIVE_TYPES;
-    }
-
     // TODO: write tests
     //
     // - use all functions and lists of types.
@@ -48,4 +56,74 @@ public class TestPrimitiveTypes {
     // - Use byteSize with MemorySegment -> check if correct via strides.
     // - isFloating -> check for rounding or something?
     // - boolean -> no size??
+
+    public static void main(String[] args) {
+        // Create a new CompileFramework instance.
+        CompileFramework comp = new CompileFramework();
+
+        // Add a java source file.
+        comp.addJavaSourceCode("p.xyz.InnerTest", generate());
+
+        // Compile the source file.
+        comp.compile();
+
+        // p.xyz.InnerTest.main();
+        comp.invoke("p.xyz.InnerTest", "main", new Object[] {});
+    }
+
+    // Generate a source Java file as String
+    public static String generate() {
+        Map<String,TemplateToken> tests = new HashMap<>();
+
+        var boxingTemplate = Template.make("name", "type", (String name, PrimitiveType type) -> body(
+            let("CON1", type.con()),
+            let("CON2", type.con()),
+            let("Boxed", type.boxedTypeName()),
+            """
+            public static void #name() {
+                #type c1 = #CON1;
+                #type c2 = #CON2;
+                #Boxed b1 = c1;
+                #Boxed b2 = c2;
+                Verify.checkEQ(c1, b1);
+                Verify.checkEQ(c2, b2);
+            }
+            """
+        ));
+
+        for (PrimitiveType type : CodeGenerationDataNameType.PRIMITIVE_TYPES) {
+            String name = "test_boxing_" + type.name();
+            tests.put(name, boxingTemplate.asToken(name, type));
+        }
+
+        var l = CodeGenerationDataNameType.PRIMITIVE_TYPES;
+        // Create a Template with two arguments.
+        var template = Template.make(() -> body(
+            """
+            package p.xyz;
+
+            import compiler.lib.verify.*;
+
+            public class InnerTest {
+                public static void main() {
+            """,
+            // Call all test methods from main.
+            tests.keySet().stream().map(
+                n -> List.of(n, "();\n")
+            ).toList(),
+            """
+                }
+            """,
+            // Now add all the test methods.
+            tests.values().stream().toList(),
+            """
+            }
+            """
+        ));
+
+        // Render the template to a String.
+        return template.render();
+    }
+
+
 }

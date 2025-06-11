@@ -45,16 +45,16 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
     private static enum Kind { BYTE, SHORT, CHAR, INT, LONG, FLOAT, DOUBLE, BOOLEAN };
 
     // We have one static instance each, so we do not have duplicat instances.
-    static final PrimitiveType BYTES    = new PrimitiveType(BYTE   );
-    static final PrimitiveType SHORTS   = new PrimitiveType(SHORT  );
-    static final PrimitiveType CHARS    = new PrimitiveType(CHAR   );
-    static final PrimitiveType INTS     = new PrimitiveType(INT    );
-    static final PrimitiveType LONGS    = new PrimitiveType(LONG   );
-    static final PrimitiveType FLOATS   = new PrimitiveType(FLOAT  );
-    static final PrimitiveType DOUBLES  = new PrimitiveType(DOUBLE );
-    static final PrimitiveType BOOLEANS = new PrimitiveType(BOOLEAN);
+    static final PrimitiveType BYTES    = new PrimitiveType(Kind.BYTE   );
+    static final PrimitiveType SHORTS   = new PrimitiveType(Kind.SHORT  );
+    static final PrimitiveType CHARS    = new PrimitiveType(Kind.CHAR   );
+    static final PrimitiveType INTS     = new PrimitiveType(Kind.INT    );
+    static final PrimitiveType LONGS    = new PrimitiveType(Kind.LONG   );
+    static final PrimitiveType FLOATS   = new PrimitiveType(Kind.FLOAT  );
+    static final PrimitiveType DOUBLES  = new PrimitiveType(Kind.DOUBLE );
+    static final PrimitiveType BOOLEANS = new PrimitiveType(Kind.BOOLEAN);
 
-    private Kind kind;
+    final Kind kind;
 
     // Private constructor so nobody can create duplicate instances.
     private PrimitiveType(Kind kind) {
@@ -63,7 +63,7 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
 
     @Override
     public boolean isSubtypeOf(DataName.Type other) {
-        return (other instanceof PrimitiveType pt) && pt.kind() == kind();
+        return (other instanceof PrimitiveType pt) && pt.kind == kind;
     }
 
     @Override
@@ -78,6 +78,11 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
             case DOUBLE  -> "double";
             case BOOLEAN -> "boolean";
         };
+    }
+
+    @Override
+    public String toString() {
+        return name();
     }
 
     public Object con() {
@@ -119,7 +124,7 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
         };
     }
 
-    public String isFloating() {
+    public boolean isFloating() {
         return switch(kind) {
             case BYTE    -> false;
             case SHORT   -> false;

@@ -78,13 +78,19 @@ public interface CodeGenerationDataNameType extends DataName.Type {
         shorts()
     );
 
-    public static final List<PrimitiveType> INT_LONG_TYPES = List.of(
-        ints(),
-        longs()
-    );
-
     public static final List<PrimitiveType> FLOATING_TYPES = List.of(
         floats(),
         doubles()
+    );
+
+    public static final List<PrimitiveType> INTEGRAL_AND_FLOATING_TYPES = List.of(
+        bytes(),
+        chars(),
+        shorts(),
+        ints(),
+        longs(),
+        floats(),
+        doubles(),
+        booleans()
     );
 }
