@@ -1304,11 +1304,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *     MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, length);
      *     return new String(bytes, charset);
      * }
-     * @implNote If the {@linkplain #byteSize()} of this segment is not evenly dividable
-     *           by the number of octets used by the provided {@code charset}, the remaining
-     *           bytes of this segment are not accessed. For multi-octet charset,
-     *           {@code '\0'} terminator characters are only detected on
-     *           multi-octet-aligned boundaries.
+     * @implNote If the segment size is not evenly dividable by the number of octets used
+     *           by the provided {@code charset}, the remaining bytes of this segment are
+     *           not accessed. For multi-octet charset, {@code '\0'} terminator characters
+     *           are only detected on multi-octet-aligned boundaries.
      *
      * @param offset  offset in bytes (relative to this segment address) at which this
      *                access operation will occur
