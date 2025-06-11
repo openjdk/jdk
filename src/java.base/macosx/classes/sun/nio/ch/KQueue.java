@@ -41,7 +41,10 @@ import static java.lang.foreign.MemorySegment.NULL;
  * Provides access to the BSD kqueue facility.
  */
 
-class KQueue {
+final class KQueue {
+
+    private static final int KQUEUE_ERROR_VALUE = -1;
+
     private KQueue() { }
 
     /**
@@ -118,7 +121,7 @@ class KQueue {
                     result = kqueue_h.kevent(
                             kqfd, keventMS, 1, NULL,
                             0, NULL);
-                } while ((result == -1));
+                } while ((result == KQUEUE_ERROR_VALUE));
             } catch (Throwable e) {
                 throw new RuntimeException(e);
             }
@@ -144,7 +147,7 @@ class KQueue {
                     kqfd, NULL, 0, pollAddress,
                     nevents, tsp);
             if (result < 0) {
-                if (result == errno_h.EINTR()) {
+                if (result == -errno_h.EINTR()) {
                     return IOStatus.INTERRUPTED;
                 } else {
                     throw new IOException("kqueue_poll failed");

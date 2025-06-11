@@ -192,82 +192,16 @@ public class kqueue_h {
      * }
      */
     public static int kevent(int kq, MemorySegment changelist, int nchanges, MemorySegment eventlist, int nevents, MemorySegment timeout) {
-        var adapted$ = kevent.ADAPTED;
         try {
             if (FFMUtils.TRACE_DOWNCALLS) {
                 FFMUtils.traceDowncall("kevent", kq, changelist, nchanges, eventlist, nevents, timeout);
             }
-             return (int) adapted$.invokeExact(kq, changelist, nchanges, eventlist, nevents, timeout);
+             return (int) kevent.ADAPTED.invokeExact(kq, changelist, nchanges, eventlist, nevents, timeout);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
 
-    private static class kevent64 {
-        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
-                BindingUtils.C_INT,
-                BindingUtils.C_INT,
-                BindingUtils.C_POINTER,
-                BindingUtils.C_INT,
-                BindingUtils.C_POINTER,
-                BindingUtils.C_INT,
-                BindingUtils.C_INT,
-                BindingUtils.C_POINTER
-        );
-
-        public static final MemorySegment ADDR = FFMUtils.findOrThrow("kevent64");
-
-        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
-
-        public static final MethodHandle ADAPTED =  CaptureStateUtil.adaptSystemCall(HANDLE, ERRNO_NAME);
-    }
-
-    /**
-     * Function descriptor for:
-     * {@snippet lang=c :
-     * int kevent64(int kq, const struct kevent64_s *changelist, int nchanges, struct kevent64_s *eventlist, int nevents, unsigned int flags, const struct timespec *timeout)
-     * }
-     */
-    public static FunctionDescriptor kevent64$descriptor() {
-        return kevent64.DESC;
-    }
-
-    /**
-     * Downcall method handle for:
-     * {@snippet lang=c :
-     * int kevent64(int kq, const struct kevent64_s *changelist, int nchanges, struct kevent64_s *eventlist, int nevents, unsigned int flags, const struct timespec *timeout)
-     * }
-     */
-    public static MethodHandle kevent64$handle() {
-        return kevent64.HANDLE;
-    }
-
-    /**
-     * Address for:
-     * {@snippet lang=c :
-     * int kevent64(int kq, const struct kevent64_s *changelist, int nchanges, struct kevent64_s *eventlist, int nevents, unsigned int flags, const struct timespec *timeout)
-     * }
-     */
-    public static MemorySegment kevent64$address() {
-        return kevent64.ADDR;
-    }
-
-    /**
-     * {@snippet lang=c :
-     * int kevent64(int kq, const struct kevent64_s *changelist, int nchanges, struct kevent64_s *eventlist, int nevents, unsigned int flags, const struct timespec *timeout)
-     * }
-     */
-    public static int kevent64(int kq, MemorySegment changelist, int nchanges, MemorySegment eventlist, int nevents, int flags, MemorySegment timeout) {
-        var adapted$ = kevent64.ADAPTED;
-        try {
-            if (FFMUtils.TRACE_DOWNCALLS) {
-                FFMUtils.traceDowncall("kevent64", kq, changelist, nchanges, eventlist, nevents, flags, timeout);
-            }
-            return (int) adapted$.invokeExact(kq, changelist, nchanges, eventlist, nevents, flags, timeout);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
     private static final int EVFILT_READ = (int)-1L;
     /**
      * {@snippet lang=c :
