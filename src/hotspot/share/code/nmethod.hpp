@@ -964,6 +964,7 @@ public:
   // Logging
   void log_identity(xmlStream* log) const;
   void log_new_nmethod() const;
+  void log_relocated_nmethod(nmethod* original) const;
   void log_state_change(const char* reason) const;
 
   // Prints block-level comments, including nmethod specific block labels:

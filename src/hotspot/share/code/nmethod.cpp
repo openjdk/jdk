@@ -1584,6 +1584,8 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
       post_compiled_method_unload();
       nm_copy->post_compiled_method_load_event();
 
+      nm_copy->log_relocated_nmethod(this);
+
       return nm_copy;
     }
   }
@@ -1849,6 +1851,40 @@ void nmethod::log_new_nmethod() const {
     log_identity(xtty);
     xtty->print(" entry='" INTPTR_FORMAT "' size='%d'", p2i(code_begin()), size());
     xtty->print(" address='" INTPTR_FORMAT "'", p2i(this));
+
+    LOG_OFFSET(xtty, relocation);
+    LOG_OFFSET(xtty, consts);
+    LOG_OFFSET(xtty, insts);
+    LOG_OFFSET(xtty, stub);
+    LOG_OFFSET(xtty, scopes_data);
+    LOG_OFFSET(xtty, scopes_pcs);
+    LOG_OFFSET(xtty, dependencies);
+    LOG_OFFSET(xtty, handler_table);
+    LOG_OFFSET(xtty, nul_chk_table);
+    LOG_OFFSET(xtty, oops);
+    LOG_OFFSET(xtty, metadata);
+
+    xtty->method(method());
+    xtty->stamp();
+    xtty->end_elem();
+  }
+}
+
+
+void nmethod::log_relocated_nmethod(nmethod* original) const {
+  if (LogCompilation && xtty != nullptr) {
+    ttyLocker ttyl;
+    xtty->begin_elem("relocated nmethod");
+    log_identity(xtty);
+    xtty->print(" entry='" INTPTR_FORMAT "' size='%d'", p2i(code_begin()), size());
+
+    const char* original_code_heap_name = CodeCache::get_code_heap_name(CodeCache::get_code_blob_type(original));
+    xtty->print(" original_address='" INTPTR_FORMAT "'", p2i(original));
+    xtty->print(" original_code_heap='%s'", original_code_heap_name);
+
+    const char* new_code_heap_name = CodeCache::get_code_heap_name(CodeCache::get_code_blob_type(this));
+    xtty->print(" new_address='" INTPTR_FORMAT "'", p2i(this));
+    xtty->print(" new_code_heap='%s'", new_code_heap_name);
 
     LOG_OFFSET(xtty, relocation);
     LOG_OFFSET(xtty, consts);
