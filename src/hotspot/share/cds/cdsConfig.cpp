@@ -708,7 +708,7 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
 void CDSConfig::setup_compiler_args() {
   // AOT profiles and AOT-compiled code are supported only in the JEP 483 workflow.
   bool can_dump_profile_and_compiled_code = AOTClassLinking && new_aot_flags_used();
-    
+
   if (is_dumping_preimage_static_archive() && can_dump_profile_and_compiled_code) {
     // JEP 483 workflow -- training
     FLAG_SET_ERGO_IF_DEFAULT(AOTRecordTraining, true);
