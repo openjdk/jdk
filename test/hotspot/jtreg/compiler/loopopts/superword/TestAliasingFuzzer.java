@@ -147,6 +147,7 @@ public class TestAliasingFuzzer {
             "-XX:" + randomPlusMinus(1, 5) + "AlignVector",
             // Default enabled.
             "-XX:" + randomPlusMinus(5, 1) + "UseAutoVectorizationSpeculativeAliasingChecks",
+            "-XX:" + randomPlusMinus(5, 1) + "UseAutoVectorizationPredicate",
             "-XX:" + randomPlusMinus(5, 1) + "LoopMultiversioningOptimizeSlowLoop",
             // Either way is ok.
             "-XX:" + randomPlusMinus(1, 1) + "UseCompactObjectHeaders"
@@ -446,7 +447,6 @@ public class TestAliasingFuzzer {
         ));
 
         var irRuleTemplate = Template.make(() -> body(
-            // TODO: better IR rules, with flags?
             let("T", type.letter()),
             switch (accessScenario) {
                 case COPY_LOAD_STORE ->
@@ -488,6 +488,28 @@ public class TestAliasingFuzzer {
                                       IRNode.STORE_VECTOR,   "= 0"},
                             applyIfPlatform = {"64-bit", "true"},
                             applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+                        """;
+            },
+            // In same scnearios, we know that a aliasing runtime check will never fail.
+            // That means if we have UseAutoVectorizationPredicate enabled, that predicate
+            // will never fail, and we will not have to do multiversioning.
+            switch(aliasing) {
+                case Aliasing.CONTAINER_DIFFERENT,
+                     Aliasing.CONTAINER_SAME_ALIASING_NEVER,
+                     Aliasing.CONTAINER_UNKNOWN_ALIASING_NEVER ->
+                        """
+                        // Aliasing check should never fail at runtime, so the predicate
+                        // should never fail, and we do not have to use multiversioning.
+                        @IR(counts = {".*multiversion.*", "= 0"},
+                            phase = CompilePhase.PRINT_IDEAL,
+                            applyIf = {"UseAutoVectorizationPredicate", "true"},
+                            applyIfPlatform = {"64-bit", "true"},
+                            applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+                        """;
+                case Aliasing.CONTAINER_SAME_ALIASING_UNKNOWN,
+                     Aliasing.CONTAINER_UNKNOWN_ALIASING_UNKNOWN ->
+                        """
+                        // Aliasing unknown, we may use the predicate or multiversioning.
                         """;
             }
         ));
