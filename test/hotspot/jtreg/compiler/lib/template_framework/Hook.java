@@ -72,9 +72,9 @@ public record Hook(String name) {
      * {@link #insert}ed back to the location where this {@link Hook} was {@link #anchor}ed.
      *
      * @param tokens A list of tokens, which have the same restrictions as {@link Template#body}.
-     * @return A {@link Token} that captures the anchoring of the scope and the list of validated {@link Token}s.
+     * @return A token that captures the anchoring of the scope and the list of validated tokens.
      */
-    public Token anchor(Object... tokens) {
+    public Object anchor(Object... tokens) {
         return new HookAnchorToken(this, Token.parse(tokens));
     }
 
@@ -83,9 +83,9 @@ public record Hook(String name) {
      * This could be in the same Template, or one nested further out.
      *
      * @param templateToken The Template with applied arguments to be inserted at the {@link Hook}.
-     * @return The {@link Token} which when used inside a {@link Template#body} performs the code insertion into the {@link Hook}.
+     * @return The token which when used inside a {@link Template#body} performs the code insertion into the {@link Hook}.
      */
-    public Token insert(TemplateToken templateToken) {
+    public Object insert(TemplateToken templateToken) {
         return new HookInsertToken(this, templateToken);
     }
 

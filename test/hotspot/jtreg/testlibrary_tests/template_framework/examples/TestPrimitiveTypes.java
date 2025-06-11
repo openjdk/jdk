@@ -35,14 +35,19 @@ package template_framework.examples;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
 import java.util.HashMap;
 
 import compiler.lib.compile_framework.*;
+import compiler.lib.template_framework.DataName;
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateToken;
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
+import static compiler.lib.template_framework.Template.$;
+import static compiler.lib.template_framework.Template.addDataName;
 
+import compiler.lib.template_framework.library.Hooks;
 import compiler.lib.template_framework.library.CodeGenerationDataNameType;
 import compiler.lib.template_framework.library.PrimitiveType;
 
@@ -123,6 +128,31 @@ public class TestPrimitiveTypes {
             String name = "test_integral_floating_" + type.name();
             tests.put(name, integralFloatTemplate.asToken(name, type));
         }
+
+        var variableTemplate = Template.make("type", (PrimitiveType type) -> body(
+            addDataName($("var"), type, DataName.Mutability.MUTABLE)
+        ));
+
+        var namesTemplate = Template.make(() -> body(
+            """
+            public static void test_names() {
+            """,
+            Hooks.METHOD_HOOK.anchor(
+                Collections.nCopies(10,
+                    CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(type ->
+                        Hooks.METHOD_HOOK.insert(variableTemplate.asToken(type))
+                    ).toList()
+                ),
+                """
+                TODO: sample!
+                """
+            ),
+            """
+            }
+            """
+        ));
+
+        tests.put("test_names", namesTemplate.asToken());
 
         // Create a Template with two arguments.
         var template = Template.make(() -> body(

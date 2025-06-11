@@ -662,7 +662,7 @@ public sealed interface Template permits Template.ZeroArgs,
      *         inside a {@link Template#body}.
      * @throws RendererException if there is a duplicate hashtag {@code key}.
      */
-    static Token let(String key, Object value) {
+    static Object let(String key, Object value) {
         Renderer.getCurrent().addHashtagReplacement(key, value);
         return new NothingToken();
     }
@@ -747,7 +747,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param fuelCost The amount of fuel used for the current Template.
      * @return A token for convenient use in {@link Template#body}.
      */
-    static Token setFuelCost(float fuelCost) {
+    static Object setFuelCost(float fuelCost) {
         Renderer.getCurrent().setFuelCost(fuelCost);
         return new NothingToken();
     }
@@ -766,7 +766,7 @@ public sealed interface Template permits Template.ZeroArgs,
      *               Must be a value from 1 to 1000.
      * @return The token that performs the defining action.
      */
-    static Token addDataName(String name, DataName.Type type, DataName.Mutability mutability, int weight) {
+    static Object addDataName(String name, DataName.Type type, DataName.Mutability mutability, int weight) {
         if (mutability != DataName.Mutability.MUTABLE &&
             mutability != DataName.Mutability.IMMUTABLE) {
             throw new IllegalArgumentException("Unexpected mutability: " + mutability);
@@ -789,7 +789,7 @@ public sealed interface Template permits Template.ZeroArgs,
      *                   or if we also allow it to be mutated.
      * @return The token that performs the defining action.
      */
-    static Token addDataName(String name, DataName.Type type, DataName.Mutability mutability) {
+    static Object addDataName(String name, DataName.Type type, DataName.Mutability mutability) {
         return addDataName(name, type, mutability, 1);
     }
 
@@ -814,7 +814,7 @@ public sealed interface Template permits Template.ZeroArgs,
      *               Must be a value from 1 to 1000.
      * @return The token that performs the defining action.
      */
-    static Token addStructuralName(String name, StructuralName.Type type, int weight) {
+    static Object addStructuralName(String name, StructuralName.Type type, int weight) {
         if (weight <= 0 || 1000 < weight) {
             throw new IllegalArgumentException("Unexpected weight: " + weight);
         }
@@ -829,7 +829,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param type The type of the {@link StructuralName}.
      * @return The token that performs the defining action.
      */
-    static Token addStructuralName(String name, StructuralName.Type type) {
+    static Object addStructuralName(String name, StructuralName.Type type) {
         return addStructuralName(name, type, 1);
     }
 
