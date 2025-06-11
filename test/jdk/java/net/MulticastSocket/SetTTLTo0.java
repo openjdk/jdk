@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 4148757
- * @summary Make sure MulticastSocket.setTimeToLive() can be set to 0
+ * @summary Make sure TTL can be set to 0
  * @run main SetTTLTo0
  */
 
