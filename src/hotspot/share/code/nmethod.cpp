@@ -4080,4 +4080,8 @@ const char* nmethod::jvmci_name() {
   }
   return nullptr;
 }
+
+bool nmethod::is_jvmci_hosted() const {
+  return jvmci_nmethod_data() != nullptr && !jvmci_nmethod_data()->is_default();
+}
 #endif

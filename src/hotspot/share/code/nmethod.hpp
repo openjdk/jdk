@@ -919,9 +919,7 @@ public:
 
   // Returns true if a JVMCI compiled method is non-default,
   // i.e., not triggered by CompilerBroker
-  bool is_jvmci_hosted() const {
-    return jvmci_nmethod_data() != nullptr && !jvmci_nmethod_data()->is_default();
-  }
+  bool is_jvmci_hosted() const;
 #endif
 
   void oops_do(OopClosure* f) { oops_do(f, false); }
