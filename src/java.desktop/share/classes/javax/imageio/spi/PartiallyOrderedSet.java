@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * A set of {@code Object}s with pairwise orderings between them.
@@ -58,10 +57,7 @@ class PartiallyOrderedSet<E> extends AbstractSet<E> {
     // p. 315.
 
     // Maps Objects to DigraphNodes that contain them
-    private Map<E, DigraphNode<E>> poNodes = new HashMap<>();
-
-    // The set of Objects
-    private Set<E> nodes = poNodes.keySet();
+    private final Map<E, DigraphNode<E>> poNodes = new HashMap<>();
 
     /**
      * Constructs a {@code PartiallyOrderedSet}.
@@ -69,11 +65,11 @@ class PartiallyOrderedSet<E> extends AbstractSet<E> {
     public PartiallyOrderedSet() {}
 
     public int size() {
-        return nodes.size();
+        return poNodes.size();
     }
 
     public boolean contains(Object o) {
-        return nodes.contains(o);
+        return poNodes.containsKey(o);
     }
 
     /**
@@ -90,7 +86,7 @@ class PartiallyOrderedSet<E> extends AbstractSet<E> {
      * {@code PartiallyOrderedSet}.
      */
     public boolean add(E o) {
-        if (nodes.contains(o)) {
+        if (poNodes.containsKey(o)) {
             return false;
         }
 

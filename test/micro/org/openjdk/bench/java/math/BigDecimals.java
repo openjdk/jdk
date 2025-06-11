@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,6 +225,25 @@ public class BigDecimals {
         BigDecimal c = bigDecimals[0];
         for (BigDecimal s : bigDecimals) {
             bh.consume(c.compareTo(s));
+        }
+    }
+
+
+    /** Invokes the valueOf(double) of BigDecimal with various different values. */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void testValueOfWithDouble(Blackhole bh) {
+        for (double s : doubleInputs) {
+            bh.consume(BigDecimal.valueOf(s));
+        }
+    }
+
+    /** Create BigDecimal from double with Double.toString on different values. */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void testValueOfWithDoubleString(Blackhole bh) {
+        for (double s : doubleInputs) {
+            bh.consume(new BigDecimal(Double.toString(s)));
         }
     }
 }

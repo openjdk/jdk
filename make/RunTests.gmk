@@ -75,9 +75,6 @@ endif
 
 # This is the JDK that we will test
 JDK_UNDER_TEST := $(JDK_IMAGE_DIR)
-# The JDK used to compile jtreg test code. By default it is the same as
-# JDK_UNDER_TEST.
-JDK_FOR_COMPILE := $(JDK_IMAGE_DIR)
 
 TEST_RESULTS_DIR := $(OUTPUTDIR)/test-results
 TEST_SUPPORT_DIR := $(OUTPUTDIR)/test-support
@@ -118,6 +115,7 @@ JTREG_COV_OPTIONS :=
 
 ifeq ($(TEST_OPTS_JCOV), true)
   JCOV_OUTPUT_DIR := $(TEST_RESULTS_DIR)/jcov-output
+  JCOV_SUPPORT_DIR := $(TEST_SUPPORT_DIR)/jcov-support
   JCOV_GRABBER_LOG := $(JCOV_OUTPUT_DIR)/grabber.log
   JCOV_RESULT_FILE := $(JCOV_OUTPUT_DIR)/result.xml
   JCOV_REPORT := $(JCOV_OUTPUT_DIR)/report
@@ -537,22 +535,21 @@ define SetupRunGtestTestBody
 	  $$(eval $1_PASSED := $$(shell $$(AWK) '/\[  PASSED  \] .* tests?./ \
 	      { print $$$$4 }' $$($1_RESULT_FILE))) \
 	  $$(if $$($1_PASSED), , $$(eval $1_PASSED := 0)) \
-	  $$(eval $1_SKIPPED := $$(shell $$(AWK) \
-	      '/YOU HAVE [0-9]+ DISABLED TEST/ { \
-	          if (match($$$$0, /[0-9]+/, arr)) { \
-	            print arr[0]; \
-	            found=1; \
-	          } \
-	       } \
-	       END { if (!found) print 0; }' \
-	      $$($1_RESULT_FILE))) \
+	  $$(eval $1_GTEST_DISABLED := $$(shell $$(AWK) '/YOU HAVE .* DISABLED TEST/ \
+	      { print $$$$3 }' $$($1_RESULT_FILE))) \
+	  $$(if $$($1_GTEST_DISABLED), , $$(eval $1_GTEST_DISABLED := 0)) \
+	  $$(eval $1_GTEST_SKIPPED := $$(shell $$(AWK) '/\[  SKIPPED \] .* tests?.*/ \
+	      { print $$$$4 }' $$($1_RESULT_FILE))) \
+	  $$(if $$($1_GTEST_SKIPPED), , $$(eval $1_GTEST_SKIPPED := 0)) \
+	  $$(eval $1_SKIPPED := $$(shell \
+	      $$(EXPR) $$($1_GTEST_DISABLED) + $$($1_GTEST_SKIPPED))) \
 	  $$(eval $1_FAILED := $$(shell $$(AWK) '/\[  FAILED  \] .* tests?, \
 	      listed below/ { print $$$$4 }' $$($1_RESULT_FILE))) \
 	  $$(if $$($1_FAILED), , $$(eval $1_FAILED := 0)) \
 	  $$(eval $1_ERROR := $$(shell \
-	      $$(EXPR) $$($1_RUN) - $$($1_PASSED) - $$($1_FAILED))) \
+	      $$(EXPR) $$($1_RUN) - $$($1_PASSED) - $$($1_FAILED) - $$($1_GTEST_SKIPPED))) \
 	  $$(eval $1_TOTAL := $$(shell \
-	      $$(EXPR) $$($1_RUN) + $$($1_SKIPPED))) \
+	      $$(EXPR) $$($1_RUN) + $$($1_GTEST_DISABLED))) \
 	, \
 	  $$(eval $1_PASSED := 0) \
 	  $$(eval $1_FAILED := 0) \
@@ -586,6 +583,8 @@ define SetMicroValue
   else
     ifneq ($3, )
       $1_$2 := $3
+    else
+      $1_$2 :=
     endif
   endif
 endef
@@ -712,6 +711,8 @@ define SetJtregValue
     else
       ifneq ($3, )
         $1_$2 := $3
+      else
+        $1_$2 :=
       endif
     endif
   endif
@@ -724,6 +725,7 @@ endef
 # Parameter 1 is the name of the rule.
 #
 # Remaining parameters are named arguments.
+#   TRAINING    The AOT training mode: onestep or twostep
 #   VM_OPTIONS  List of JVM arguments to use when creating AOT cache
 #
 #  After calling this, the following variables are defined
@@ -752,23 +754,39 @@ define SetupAOTBody
   $$($1_AOT_JDK_CACHE): $$(JDK_IMAGE_DIR)/release
 	$$(call MakeDir, $$($1_AOT_JDK_OUTPUT_DIR))
 
-	$$(call LogWarn, AOT: Create cache configuration) \
-	$$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), ( \
-            cd $$($1_AOT_JDK_OUTPUT_DIR); \
-	    $(JAR) --extract --file $(TEST_IMAGE_DIR)/setup_aot/TestSetupAOT.jar; \
-	    $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java $$($1_VM_OPTIONS) \
-	        -Xlog:class+load,cds,cds+class=debug:file=$$($1_AOT_JDK_CONF).log  -Xlog:cds*=error \
-	        -XX:AOTMode=record -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) \
-	        TestSetupAOT $$($1_AOT_JDK_OUTPUT_DIR) > $$($1_AOT_JDK_LOG) \
-	))
+        ifeq ($$($1_TRAINING), onestep)
 
-	$$(call LogWarn, AOT: Generate AOT cache $$($1_AOT_JDK_CACHE) with flags: $$($1_VM_OPTIONS))
-	$$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), ( \
-	    $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java \
-	        $$($1_VM_OPTIONS) -Xlog:cds,cds+class=debug:file=$$($1_AOT_JDK_CACHE).log -Xlog:cds*=error \
-	        -XX:ExtraSharedClassListFile=$(JDK_UNDER_TEST)/lib/classlist \
-	        -XX:AOTMode=create -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) -XX:AOTCache=$$($1_AOT_JDK_CACHE) \
-	))
+	  $$(call LogWarn, AOT: Create AOT cache $$($1_AOT_JDK_CACHE) in one step with flags: $$($1_VM_OPTIONS)) \
+	  $$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), ( \
+	      cd $$($1_AOT_JDK_OUTPUT_DIR); \
+	      $(JAR) --extract --file $(TEST_IMAGE_DIR)/setup_aot/TestSetupAOT.jar; \
+	      $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java $$($1_VM_OPTIONS) \
+	          -Xlog:class+load,aot,aot+class=debug:file=$$($1_AOT_JDK_CACHE).log  -Xlog:cds*=error -Xlog:aot*=error  \
+	          -XX:AOTMode=record -XX:AOTCacheOutput=$$($1_AOT_JDK_CACHE) \
+	          TestSetupAOT $$($1_AOT_JDK_OUTPUT_DIR) > $$($1_AOT_JDK_LOG) \
+	  ))
+
+        else
+
+	  $$(call LogWarn, AOT: Create cache configuration) \
+	  $$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), ( \
+	      cd $$($1_AOT_JDK_OUTPUT_DIR); \
+	      $(JAR) --extract --file $(TEST_IMAGE_DIR)/setup_aot/TestSetupAOT.jar; \
+	      $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java $$($1_VM_OPTIONS) \
+	          -Xlog:class+load,aot,aot+class=debug:file=$$($1_AOT_JDK_CONF).log  -Xlog:cds*=error -Xlog:aot*=error \
+	          -XX:AOTMode=record -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) \
+	          TestSetupAOT $$($1_AOT_JDK_OUTPUT_DIR) > $$($1_AOT_JDK_LOG) \
+	  ))
+
+	  $$(call LogWarn, AOT: Generate AOT cache $$($1_AOT_JDK_CACHE) with flags: $$($1_VM_OPTIONS))
+	  $$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), ( \
+	      $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java \
+	          $$($1_VM_OPTIONS) -Xlog:aot,aot+class=debug:file=$$($1_AOT_JDK_CACHE).log -Xlog:cds*=error -Xlog:aot*=error \
+	          -XX:ExtraSharedClassListFile=$(JDK_UNDER_TEST)/lib/classlist \
+	          -XX:AOTMode=create -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) -XX:AOTCache=$$($1_AOT_JDK_CACHE) \
+	  ))
+
+        endif
 
   $1_AOT_TARGETS += $$($1_AOT_JDK_CACHE)
 
@@ -834,7 +852,7 @@ define SetupRunJtregTestBody
   JTREG_RETRY_COUNT ?= 0
   JTREG_REPEAT_COUNT ?= 0
   JTREG_REPORT ?= files
-  JTREG_AOT_JDK ?= false
+  JTREG_AOT_JDK ?= none
 
   ifneq ($$(JTREG_RETRY_COUNT), 0)
     ifneq ($$(JTREG_REPEAT_COUNT), 0)
@@ -842,6 +860,12 @@ define SetupRunJtregTestBody
       $$(info Please choose one or the other.)
       $$(error Cannot continue)
     endif
+  endif
+
+  ifeq ($$(JTREG_RUN_PROBLEM_LISTS), true)
+    JTREG_PROBLEM_LIST_PREFIX := -match:
+  else
+    JTREG_PROBLEM_LIST_PREFIX := -exclude:
   endif
 
   ifneq ($$(JTREG_TEST_THREAD_FACTORY), )
@@ -872,7 +896,7 @@ define SetupRunJtregTestBody
   # version of the JDK.
   $1_JTREG_BASIC_OPTIONS += -$$($1_JTREG_TEST_MODE) \
       -verbose:$$(JTREG_VERBOSE) -retain:$$(JTREG_RETAIN) \
-      -concurrency:$$($1_JTREG_JOBS) -timeoutFactor:$$(JTREG_TIMEOUT_FACTOR) \
+      -concurrency:$$($1_JTREG_JOBS) \
       -vmoption:-XX:MaxRAMPercentage=$$($1_JTREG_MAX_RAM_PERCENTAGE) \
       -vmoption:-Dtest.boot.jdk="$$(BOOT_JDK)" \
       -vmoption:-Djava.io.tmpdir="$$($1_TEST_TMP_DIR)"
@@ -905,12 +929,6 @@ define SetupRunJtregTestBody
     $1_JTREG_BASIC_OPTIONS += -nativepath:$$($1_JTREG_NATIVEPATH)
   endif
 
-  ifeq ($$(JTREG_RUN_PROBLEM_LISTS), true)
-    JTREG_PROBLEM_LIST_PREFIX := -match:
-  else
-    JTREG_PROBLEM_LIST_PREFIX := -exclude:
-  endif
-
   ifneq ($$($1_JTREG_PROBLEM_LIST), )
     $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$($1_JTREG_PROBLEM_LIST))
   endif
@@ -933,6 +951,11 @@ define SetupRunJtregTestBody
     JTREG_AUTO_PROBLEM_LISTS += ProblemList-shenandoah.txt
   endif
 
+  ifneq ($$(findstring --enable-preview, $$(JTREG_ALL_OPTIONS)), )
+    JTREG_AUTO_PROBLEM_LISTS += ProblemList-enable-preview.txt
+  endif
+
+
   ifneq ($$(JTREG_EXTRA_PROBLEM_LISTS), )
     # Accept both absolute paths as well as relative to the current test root.
     $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
@@ -943,6 +966,11 @@ define SetupRunJtregTestBody
 
   ifneq ($$(JIB_HOME), )
     $1_JTREG_BASIC_OPTIONS += -e:JIB_HOME=$$(JIB_HOME)
+  endif
+
+  ifneq ($$(JDK_FOR_COMPILE), )
+    # Allow overriding the JDK used for compilation from the command line
+    $1_JTREG_BASIC_OPTIONS += -compilejdk:$$(JDK_FOR_COMPILE)
   endif
 
   $1_JTREG_BASIC_OPTIONS += -e:TEST_IMAGE_DIR=$(TEST_IMAGE_DIR)
@@ -964,12 +992,12 @@ define SetupRunJtregTestBody
     endif
   endif
 
-  ifeq ($$(JTREG_AOT_JDK), true)
+  ifneq ($$(filter $$(JTREG_AOT_JDK), onestep twostep), )
     $$(call LogWarn, Add AOT target for $1)
-    $$(eval $$(call SetupAOT, $1, VM_OPTIONS := $$(JTREG_ALL_OPTIONS) ))
-
+    $$(eval $$(call SetupAOT, $1, \
+        TRAINING := $$(JTREG_AOT_JDK), \
+        VM_OPTIONS := $$(JTREG_ALL_OPTIONS) ))
     $$(call LogWarn, AOT_JDK_CACHE=$$($1_AOT_JDK_CACHE))
-
     $1_JTREG_BASIC_OPTIONS += -vmoption:-XX:AOTCache="$$($1_AOT_JDK_CACHE)"
   endif
 
@@ -987,6 +1015,7 @@ define SetupRunJtregTestBody
   endif
 
   JTREG_TIMEOUT_FACTOR ?= $$(JTREG_AUTO_TIMEOUT_FACTOR)
+  $1_JTREG_BASIC_OPTIONS += -timeoutFactor:$$(JTREG_TIMEOUT_FACTOR)
 
   clean-outputdirs-$1:
 	$$(call LogWarn, Clean up dirs for $1)
@@ -997,7 +1026,6 @@ define SetupRunJtregTestBody
       $$(JTREG_JAVA) $$($1_JTREG_LAUNCHER_OPTIONS) \
           -Dprogram=jtreg -jar $$(JT_HOME)/lib/jtreg.jar \
           $$($1_JTREG_BASIC_OPTIONS) \
-          -compilejdk:$$(JDK_FOR_COMPILE) \
           -testjdk:$$(JDK_UNDER_TEST) \
           -dir:$$(JTREG_TOPDIR) \
           -reportDir:$$($1_TEST_RESULTS_DIR) \
@@ -1016,7 +1044,8 @@ define SetupRunJtregTestBody
     $1_COMMAND_LINE := \
         for i in {0..$$(JTREG_RETRY_COUNT)}; do \
           if [ "$$$$i" != 0 ]; then \
-            $$(PRINTF) "\nRetrying Jtreg run. Attempt: $$$$i\n"; \
+            $$(ECHO) ""; \
+            $$(ECHO) "Retrying Jtreg run. Attempt: $$$$i"; \
           fi; \
           $$($1_COMMAND_LINE); \
           if [ "`$$(CAT) $$($1_EXITCODE)`" = "0" ]; then \
@@ -1029,10 +1058,12 @@ define SetupRunJtregTestBody
   ifneq ($$(JTREG_REPEAT_COUNT), 0)
     $1_COMMAND_LINE := \
         for i in {1..$$(JTREG_REPEAT_COUNT)}; do \
-          $$(PRINTF) "\nRepeating Jtreg run: $$$$i out of $$(JTREG_REPEAT_COUNT)\n"; \
+          $$(ECHO) ""; \
+          $$(ECHO) "Repeating Jtreg run: $$$$i out of $$(JTREG_REPEAT_COUNT)"; \
           $$($1_COMMAND_LINE); \
           if [ "`$$(CAT) $$($1_EXITCODE)`" != "0" ]; then \
-            $$(PRINTF) "\nFailures detected, no more repeats.\n"; \
+            $$(ECHO) ""; \
+            $$(ECHO) "Failures detected, no more repeats."; \
             break; \
           fi; \
         done
@@ -1335,12 +1366,14 @@ TARGETS += run-all-tests pre-run-test post-run-test run-test-report run-test
 
 ifeq ($(TEST_OPTS_JCOV), true)
 
+  JCOV_VM_OPTS := -Xmx4g -Djdk.xml.totalEntitySizeLimit=0 -Djdk.xml.maxGeneralEntitySizeLimit=0
+
   jcov-do-start-grabber:
 	$(call MakeDir, $(JCOV_OUTPUT_DIR))
 	if $(JAVA) -jar $(JCOV_HOME)/lib/jcov.jar GrabberManager -status 1>/dev/null 2>&1 ; then \
 	  $(JAVA) -jar $(JCOV_HOME)/lib/jcov.jar GrabberManager -stop -stoptimeout 3600 ; \
 	fi
-	$(JAVA) -Xmx4g -jar $(JCOV_HOME)/lib/jcov.jar Grabber -v -t \
+	$(JAVA) $(JCOV_VM_OPTS) -jar $(JCOV_HOME)/lib/jcov.jar Grabber -v -t \
 	    $(JCOV_IMAGE_DIR)/template.xml -o $(JCOV_RESULT_FILE) \
 	    1>$(JCOV_GRABBER_LOG) 2>&1 &
 
@@ -1353,6 +1386,10 @@ ifeq ($(TEST_OPTS_JCOV), true)
 	$(JAVA) -jar $(JCOV_HOME)/lib/jcov.jar GrabberManager -stop -stoptimeout 3600
 
   JCOV_REPORT_TITLE := JDK code coverage report<br/>
+  ifneq ($(JCOV_MODULES), )
+    JCOV_MODULES_FILTER := $(foreach m, $(JCOV_MODULES), -include_module $m)
+    JCOV_REPORT_TITLE += Included modules: $(JCOV_MODULES)<br>
+  endif
   ifneq ($(JCOV_FILTERS), )
     JCOV_REPORT_TITLE += Code filters: $(JCOV_FILTERS)<br>
   endif
@@ -1360,11 +1397,12 @@ ifeq ($(TEST_OPTS_JCOV), true)
 
   jcov-gen-report: jcov-stop-grabber
 	$(call LogWarn, Generating JCov report ...)
-	$(JAVA) -Xmx4g -jar $(JCOV_HOME)/lib/jcov.jar RepGen -sourcepath \
+	$(call ExecuteWithLog, $(JCOV_SUPPORT_DIR)/run-jcov-repgen, \
+	    $(JAVA) $(JCOV_VM_OPTS) -jar $(JCOV_HOME)/lib/jcov.jar RepGen -sourcepath \
 	    `$(ECHO) $(TOPDIR)/src/*/share/classes/ | $(TR) ' ' ':'` -fmt html \
-	    $(JCOV_FILTERS) \
+	    $(JCOV_MODULES_FILTER) $(JCOV_FILTERS) \
 	    -mainReportTitle "$(JCOV_REPORT_TITLE)" \
-	    -o $(JCOV_REPORT) $(JCOV_RESULT_FILE)
+	    -o $(JCOV_REPORT) $(JCOV_RESULT_FILE))
 
   TARGETS += jcov-do-start-grabber jcov-start-grabber jcov-stop-grabber \
       jcov-gen-report
@@ -1384,7 +1422,7 @@ ifeq ($(TEST_OPTS_JCOV), true)
     jcov-gen-diffcoverage: jcov-stop-grabber
 	$(call LogWarn, Generating diff coverage with changeset $(TEST_OPTS_JCOV_DIFF_CHANGESET) ... )
 	$(DIFF_COMMAND)
-	$(JAVA) -Xmx4g -jar $(JCOV_HOME)/lib/jcov.jar \
+	$(JAVA) $(JCOV_VM_OPTS) -jar $(JCOV_HOME)/lib/jcov.jar \
 	  DiffCoverage -replaceDiff "src/.*/classes/:" -all \
 	    $(JCOV_RESULT_FILE) $(JCOV_SOURCE_DIFF) > \
 	    $(JCOV_DIFF_COVERAGE_REPORT)

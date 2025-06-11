@@ -47,7 +47,7 @@ PSYoungGen::PSYoungGen(ReservedSpace rs, size_t initial_size, size_t min_size, s
   _from_counters(nullptr),
   _to_counters(nullptr)
 {
-  initialize(rs, initial_size, GenAlignment);
+  initialize(rs, initial_size, SpaceAlignment);
 }
 
 void PSYoungGen::initialize_virtual_space(ReservedSpace rs,
@@ -700,13 +700,14 @@ void PSYoungGen::object_iterate(ObjectClosure* blk) {
 
 void PSYoungGen::print() const { print_on(tty); }
 void PSYoungGen::print_on(outputStream* st) const {
-  st->print(" %-15s", "PSYoungGen");
-  st->print(" total %zuK, used %zuK",
-             capacity_in_bytes()/K, used_in_bytes()/K);
+  st->print("%-15s", name());
+  st->print(" total %zuK, used %zuK ", capacity_in_bytes() / K, used_in_bytes() / K);
   virtual_space()->print_space_boundaries_on(st);
-  st->print("  eden"); eden_space()->print_on(st);
-  st->print("  from"); from_space()->print_on(st);
-  st->print("  to  "); to_space()->print_on(st);
+
+  StreamIndentor si(st, 1);
+  eden_space()->print_on(st, "eden ");
+  from_space()->print_on(st, "from ");
+  to_space()->print_on(st, "to   ");
 }
 
 size_t PSYoungGen::available_to_min_gen() {
@@ -745,7 +746,7 @@ size_t PSYoungGen::available_to_live() {
   }
 
   size_t delta_in_bytes = unused_committed + delta_in_survivor;
-  delta_in_bytes = align_down(delta_in_bytes, GenAlignment);
+  delta_in_bytes = align_down(delta_in_bytes, SpaceAlignment);
   return delta_in_bytes;
 }
 

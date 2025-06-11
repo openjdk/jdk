@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,13 +68,6 @@
   product(bool, ZCollectionIntervalOnly, false,                             \
           "Only use timers for GC heuristics")                              \
                                                                             \
-  product(double, ZAsyncUnmappingLimit, 100.0, DIAGNOSTIC,                  \
-          "Specify the max amount (percentage of max heap size) of async "  \
-          "unmapping that can be in-flight before unmapping requests are "  \
-          "temporarily forced to be synchronous instead. "                  \
-          "The default means after an amount of pages proportional to the " \
-          "max capacity is enqueued, we resort to synchronous unmapping.")  \
-                                                                            \
   product(uint, ZStatisticsInterval, 10, DIAGNOSTIC,                        \
           "Time between statistics print outs (in seconds)")                \
           range(1, (uint)-1)                                                \
@@ -111,12 +104,24 @@
   product(bool, ZVerifyRemembered, trueInDebug, DIAGNOSTIC,                 \
           "Verify remembered sets")                                         \
                                                                             \
+  product(bool, ZUseMediumPageSizeRange, true, DIAGNOSTIC,                  \
+          "Allow multiple medium page sizes")                               \
+                                                                            \
+  product(bool, ZStressFastMediumPageAllocation, false, DIAGNOSTIC,         \
+          "Always use the minimum medium page size for fast medium page "   \
+          "allocations")                                                    \
+                                                                            \
   product(int, ZTenuringThreshold, -1, DIAGNOSTIC,                          \
           "Young generation tenuring threshold, -1 for dynamic computation")\
-          range(-1, static_cast<int>(ZPageAgeMax))                          \
+          range(-1, static_cast<int>(ZPageAgeCount) - 1)                    \
                                                                             \
   develop(bool, ZVerifyOops, false,                                         \
           "Verify accessed oops")                                           \
+                                                                            \
+  develop(uint, ZFakeNUMA, 1,                                               \
+          "ZFakeNUMA is used to test the internal NUMA memory support "     \
+          "without the need for UseNUMA")                                   \
+          range(1, 16)                                                      \
                                                                             \
   develop(size_t, ZForceDiscontiguousHeapReservations, 0,                   \
           "The gc will attempt to split the heap reservation into this "    \

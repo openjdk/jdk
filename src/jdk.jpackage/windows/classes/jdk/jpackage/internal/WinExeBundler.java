@@ -24,15 +24,17 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.OverridableResource.createResource;
+import static jdk.jpackage.internal.StandardBundlerParam.ICON;
+import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.MessageFormat;
+import java.nio.file.StandardCopyOption;
 import java.util.Map;
-import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.model.WinExePackage;
 
 @SuppressWarnings("restricted")
 public class WinExeBundler extends AbstractBundler {
@@ -40,25 +42,6 @@ public class WinExeBundler extends AbstractBundler {
     static {
         System.loadLibrary("jpackage");
     }
-
-    public static final BundlerParamInfo<Path> EXE_IMAGE_DIR
-            = new StandardBundlerParam<>(
-                    "win.exe.imageDir",
-                    Path.class,
-                    params -> {
-                        Path imagesRoot = IMAGES_ROOT.fetchFrom(params);
-                        if (!Files.exists(imagesRoot)) {
-                            try {
-                                Files.createDirectories(imagesRoot);
-                            } catch (IOException ioe) {
-                                return null;
-                            }
-                        }
-                        return imagesRoot.resolve("win-exe.image");
-                    },
-                    (s, p) -> null);
-
-    private static final String EXE_WRAPPER_NAME = "msiwrapper.exe";
 
     @Override
     public String getName() {
@@ -73,12 +56,6 @@ public class WinExeBundler extends AbstractBundler {
     @Override
     public String getBundleType() {
         return "INSTALLER";
-    }
-
-    @Override
-    public Path execute(Map<String, ? super Object> params,
-            Path outputParentDir) throws PackagerException {
-        return bundle(params, outputParentDir);
     }
 
     @Override
@@ -97,15 +74,21 @@ public class WinExeBundler extends AbstractBundler {
         return msiBundler.validate(params);
     }
 
-    public Path bundle(Map<String, ? super Object> params, Path outdir)
+    @Override
+    public Path execute(Map<String, ? super Object> params, Path outdir)
             throws PackagerException {
+
+        // Order is important!
+        var pkg = WinFromParams.MSI_PACKAGE.fetchFrom(params);
+        var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
         IOUtils.writableOutputDir(outdir);
 
-        Path exeImageDir = EXE_IMAGE_DIR.fetchFrom(params);
+        Path msiDir = env.buildRoot().resolve("msi");
+        toRunnable(() -> Files.createDirectories(msiDir)).run();
 
         // Write msi to temporary directory.
-        Path msi = msiBundler.execute(params, exeImageDir);
+        Path msi = msiBundler.execute(params, msiDir);
 
         try {
             new ScriptRunner()
@@ -113,45 +96,41 @@ public class WinExeBundler extends AbstractBundler {
             .setResourceCategoryId("resource.post-msi-script")
             .setScriptNameSuffix("post-msi")
             .setEnvironmentVariable("JpMsiFile", msi.toAbsolutePath().toString())
-            .run(params);
+            .run(env, pkg.packageName());
 
-            return buildEXE(params, msi, outdir);
-        } catch (IOException ex) {
+            var exePkg = new WinExePackageBuilder(pkg).icon(ICON.fetchFrom(params)).create();
+            return buildEXE(env, exePkg, msi, outdir);
+        } catch (IOException|ConfigException ex) {
             Log.verbose(ex);
             throw new PackagerException(ex);
         }
     }
 
-    private Path buildEXE(Map<String, ? super Object> params, Path msi,
+    private Path buildEXE(BuildEnv env, WinExePackage pkg, Path msi,
             Path outdir) throws IOException {
 
-        Log.verbose(MessageFormat.format(
-                I18N.getString("message.outputting-to-location"),
-                outdir.toAbsolutePath().toString()));
+        Log.verbose(I18N.format("message.outputting-to-location", outdir.toAbsolutePath()));
 
         // Copy template msi wrapper next to msi file
-        final Path exePath = PathUtils.replaceSuffix(msi, ".exe");
+        final Path exePath = msi.getParent().resolve(pkg.packageFileNameWithSuffix());
 
-        createResource(EXE_WRAPPER_NAME, params)
+        env.createResource("msiwrapper.exe")
                 .setCategory(I18N.getString("resource.installer-exe"))
                 .setPublicName("installer.exe")
                 .saveToFile(exePath);
 
-        new ExecutableRebrander().addAction((resourceLock) -> {
+        new ExecutableRebrander(pkg, env::createResource, resourceLock -> {
             // Embed msi in msi wrapper exe.
             embedMSI(resourceLock, msi.toAbsolutePath().toString());
-        }).rebrandInstaller(params, exePath);
+        }).execute(env, exePath, pkg.icon());
 
-        Path dstExePath = outdir.toAbsolutePath().resolve(exePath.getFileName());
-        Files.deleteIfExists(dstExePath);
+        Path dstExePath = outdir.resolve(exePath.getFileName());
 
-        Files.copy(exePath, dstExePath);
+        Files.copy(exePath, dstExePath, StandardCopyOption.REPLACE_EXISTING);
 
-        dstExePath.toFile().setWritable(true, true);
+        dstExePath.toFile().setExecutable(true);
 
-        Log.verbose(MessageFormat.format(
-                I18N.getString("message.output-location"),
-                outdir.toAbsolutePath().toString()));
+        Log.verbose(I18N.format("message.output-location", outdir.toAbsolutePath()));
 
         return dstExePath;
     }

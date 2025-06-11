@@ -2320,7 +2320,7 @@ struct JNINativeInterface_* jni_functions_check() {
   // make sure the last pointer in the checked table is not null, indicating
   // an addition to the JNINativeInterface_ structure without initializing
   // it in the checked table.
-  debug_only(intptr_t *lastPtr = (intptr_t *)((char *)&checked_jni_NativeInterface + \
+  DEBUG_ONLY(intptr_t *lastPtr = (intptr_t *)((char *)&checked_jni_NativeInterface + \
              sizeof(*unchecked_jni_NativeInterface) - sizeof(char *));)
   assert(*lastPtr != 0,
          "Mismatched JNINativeInterface tables, check for new entries");

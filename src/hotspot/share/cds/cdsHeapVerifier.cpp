@@ -41,7 +41,11 @@
 #if INCLUDE_CDS_JAVA_HEAP
 
 // CDSHeapVerifier is used to check for problems where an archived object references a
-// static field that may be get a different value at runtime. In the following example,
+// static field that may be get a different value at runtime.
+//
+// *Please see comments in aotClassInitializer.cpp for how to avoid such problems*,
+//
+// In the following example,
 //      Foo.get.test()
 // correctly returns true when CDS disabled, but incorrectly returns false when CDS is enabled,
 // because the archived archivedFoo.bar value is different than Bar.bar.
@@ -133,6 +137,11 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
     ADD_EXCL("java/lang/invoke/InvokerBytecodeGenerator", "MEMBERNAME_FACTORY",    // D
                                                           "CD_Object_array",       // E same as <...>ConstantUtils.CD_Object_array::CD_Object
                                                           "INVOKER_SUPER_DESC");   // E same as java.lang.constant.ConstantDescs::CD_Object
+
+    ADD_EXCL("java/lang/runtime/ObjectMethods",           "CLASS_IS_INSTANCE",     // D
+                                                          "FALSE",                 // D
+                                                          "TRUE",                  // D
+                                                          "ZERO");                 // D
   }
 
 # undef ADD_EXCL
@@ -142,9 +151,10 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
 
 CDSHeapVerifier::~CDSHeapVerifier() {
   if (_problems > 0) {
-    log_error(cds, heap)("Scanned %d objects. Found %d case(s) where "
+    log_error(aot, heap)("Scanned %d objects. Found %d case(s) where "
                          "an object points to a static field that "
                          "may hold a different value at runtime.", _archived_objs, _problems);
+    log_error(aot, heap)("Please see cdsHeapVerifier.cpp and aotClassInitializer.cpp for details");
     MetaspaceShared::unrecoverable_writing_error();
   }
 }
@@ -275,7 +285,7 @@ inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& 
     ResourceMark rm;
     char* class_name = info->_holder->name()->as_C_string();
     char* field_name = info->_name->as_C_string();
-    LogStream ls(Log(cds, heap)::warning());
+    LogStream ls(Log(aot, heap)::warning());
     ls.print_cr("Archive heap points to a static field that may hold a different value at runtime:");
     ls.print_cr("Field: %s::%s", class_name, field_name);
     ls.print("Value: ");

@@ -90,13 +90,13 @@ static char* reserve_memory_inner(char* requested_address,
     assert(is_aligned(requested_address, alignment),
            "Requested address " PTR_FORMAT " must be aligned to %zu",
            p2i(requested_address), alignment);
-    return os::attempt_reserve_memory_at(requested_address, size, exec, mem_tag);
+    return os::attempt_reserve_memory_at(requested_address, size, mem_tag, exec);
   }
 
   // Optimistically assume that the OS returns an aligned base pointer.
   // When reserving a large address range, most OSes seem to align to at
   // least 64K.
-  char* base = os::reserve_memory(size, exec, mem_tag);
+  char* base = os::reserve_memory(size, mem_tag, exec);
   if (is_aligned(base, alignment)) {
     return base;
   }
@@ -107,7 +107,7 @@ static char* reserve_memory_inner(char* requested_address,
   }
 
   // Map using the requested alignment.
-  return os::reserve_memory_aligned(size, alignment, exec);
+  return os::reserve_memory_aligned(size, alignment, mem_tag, exec);
 }
 
 ReservedSpace MemoryReserver::reserve_memory(char* requested_address,
@@ -130,9 +130,9 @@ ReservedSpace MemoryReserver::reserve_memory_special(char* requested_address,
                                                      size_t alignment,
                                                      size_t page_size,
                                                      bool exec) {
-  log_trace(pagesize)("Attempt special mapping: size: %zu%s, alignment: %zu%s",
-                      byte_size_in_exact_unit(size), exact_unit_for_byte_size(size),
-                      byte_size_in_exact_unit(alignment), exact_unit_for_byte_size(alignment));
+  log_trace(pagesize)("Attempt special mapping: size: " EXACTFMT ", alignment: " EXACTFMT,
+                      EXACTFMTARGS(size),
+                      EXACTFMTARGS(alignment));
 
   char* base = os::reserve_memory_special(size, alignment, page_size, requested_address, exec);
 
@@ -261,7 +261,7 @@ static char* map_memory_to_file(char* requested_address,
   // Optimistically assume that the OS returns an aligned base pointer.
   // When reserving a large address range, most OSes seem to align to at
   // least 64K.
-  char* base = os::map_memory_to_file(size, fd);
+  char* base = os::map_memory_to_file(size, fd, mem_tag);
   if (is_aligned(base, alignment)) {
     return base;
   }

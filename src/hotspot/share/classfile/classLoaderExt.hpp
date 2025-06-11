@@ -40,7 +40,7 @@ public:
   static void append_boot_classpath(ClassPathEntry* new_entry);
 
   static int compare_module_names(const char** p1, const char** p2);
-  static void record_result(const s2 classpath_index, InstanceKlass* result, bool redefined);
+  static void record_result_for_builtin_loader(s2 classpath_index, InstanceKlass* result, bool redefined);
 #endif // INCLUDE_CDS
 };
 

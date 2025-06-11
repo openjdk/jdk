@@ -124,6 +124,7 @@ public:
 
   void mark_useless(PhaseIterGVN& igvn);
   NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
+  virtual uint size_of() const { return sizeof(OpaqueMultiversioningNode); }
 };
 
 // This node is used in the context of intrinsics. We sometimes implicitly know that an object is non-null even though
@@ -152,6 +153,9 @@ class OpaqueNotNullNode : public Node {
 // OpaqueTemplateAssertionPredicateNode is replaced by true in order to fold the Template Assertion Predicate away.
 class OpaqueTemplateAssertionPredicateNode : public Node {
 
+  // The counted loop this Template Assertion Predicate is associated with.
+  CountedLoopNode* _loop_node;
+
   // When splitting a loop or when the associated loop dies, the Template Assertion Predicate with this
   // OpaqueTemplateAssertionPredicateNode also needs to be removed. We set this flag and then clean this node up in the
   // next IGVN phase by checking this flag in Value().
@@ -164,7 +168,7 @@ class OpaqueTemplateAssertionPredicateNode : public Node {
   }
 
  public:
-  OpaqueTemplateAssertionPredicateNode(BoolNode* bol);
+  OpaqueTemplateAssertionPredicateNode(BoolNode* bol, CountedLoopNode* loop_node);
 
   virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(*this); }
@@ -172,6 +176,15 @@ class OpaqueTemplateAssertionPredicateNode : public Node {
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
 
+  CountedLoopNode* loop_node() const {
+    return _loop_node;
+  }
+
+  // Should only be called during Loop Unrolling when we only update the OpaqueLoopStride input but don't require a full
+  // clone of the Template Assertion Expression.
+  void update_loop_node(CountedLoopNode* loop_node) {
+    _loop_node = loop_node;
+  }
 
   bool is_useless() const {
     return _predicate_state == PredicateState::Useless;
@@ -255,6 +268,7 @@ class ProfileBooleanNode : public Node {
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type *bottom_type() const { return TypeInt::BOOL; }
+  virtual uint size_of() const { return sizeof(ProfileBooleanNode); }
 };
 
 #endif // SHARE_OPTO_OPAQUENODE_HPP

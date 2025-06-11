@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,7 +206,8 @@ public:
   void prepare_for_verify() override;
   void verify(VerifyOption option) override;
 
-  void print_on(outputStream* st) const override;
+  void print_heap_on(outputStream* st) const override;
+  void print_gc_on(outputStream* st) const override;
   void gc_threads_do(ThreadClosure* tc) const override;
   void print_tracing_info() const override;
 
@@ -214,11 +215,6 @@ public:
   bool print_location(outputStream* st, void* addr) const override;
 
   void print_heap_change(const PreGenGCValues& pre_gc_values) const;
-
-  // Return "true" if all generations have reached the
-  // maximal committed limit that they can reach, without a garbage
-  // collection.
-  virtual bool is_maximal_no_gc() const override;
 
   // This function returns the CardTableRS object that allows us to scan
   // generations in a fully generational heap.

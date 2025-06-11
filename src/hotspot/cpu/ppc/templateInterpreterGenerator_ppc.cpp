@@ -119,12 +119,13 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   const FloatRegister floatSlot = F0;
 
   address entry = __ function_entry();
+  int save_nonvolatile_registers_size = __ save_nonvolatile_registers_size(false, false);
 
   __ save_LR(R0);
-  __ save_nonvolatile_gprs(R1_SP, _spill_nonvolatiles_neg(r14));
+  __ save_nonvolatile_registers(R1_SP, -save_nonvolatile_registers_size, false, false);
   // We use target_sp for storing arguments in the C frame.
   __ mr(target_sp, R1_SP);
-  __ push_frame_reg_args_nonvolatiles(0, R11_scratch1);
+  __ push_frame(frame::native_abi_reg_args_size + save_nonvolatile_registers_size, R11_scratch1);
 
   __ mr(arg_java, R3_ARG1);
 
@@ -309,7 +310,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   __ bind(loop_end);
 
   __ pop_frame();
-  __ restore_nonvolatile_gprs(R1_SP, _spill_nonvolatiles_neg(r14));
+  __ restore_nonvolatile_registers(R1_SP, -save_nonvolatile_registers_size, false, false);
   __ restore_LR(R0);
 
   __ blr();
@@ -1077,7 +1078,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 
   // PPC64 specific:
   switch (kind) {
-    case Interpreter::java_lang_math_sqrt: use_instruction = VM_Version::has_fsqrt(); break;
+    case Interpreter::java_lang_math_sqrt: use_instruction = true; break;
     case Interpreter::java_lang_math_abs:  use_instruction = true; break;
     case Interpreter::java_lang_math_fmaF:
     case Interpreter::java_lang_math_fmaD: use_instruction = UseFMA; break;
@@ -1089,8 +1090,9 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_cos  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);   break;
     case Interpreter::java_lang_math_tan  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);   break;
     case Interpreter::java_lang_math_tanh : /* run interpreted */ break;
+    case Interpreter::java_lang_math_cbrt : /* run interpreted */ break;
     case Interpreter::java_lang_math_abs  : /* run interpreted */ break;
-    case Interpreter::java_lang_math_sqrt : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt);  break;
+    case Interpreter::java_lang_math_sqrt : /* run interpreted */  break;
     case Interpreter::java_lang_math_log  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);   break;
     case Interpreter::java_lang_math_log10: runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog10); break;
     case Interpreter::java_lang_math_pow  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dpow); num_args = 2; break;
@@ -1583,6 +1585,24 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ st_ptr(R0, JavaThread::pending_jni_exception_check_fn_offset(), R16_thread);
   }
 
+  #if INCLUDE_JFR
+  __ enter_jfr_critical_section();
+
+  // This poll test is to uphold the invariant that a JFR sampled frame
+  // must not return to its caller without a prior safepoint poll check.
+  // The earlier poll check in this routine is insufficient for this purpose
+  // because the thread has transitioned back to Java.
+
+  Label slow_path, fast_path;
+  __ safepoint_poll(slow_path, R11_scratch1, true /* at_return */, false /* in_nmethod */);
+  __ b(fast_path);
+  __ bind(slow_path);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), R16_thread);
+  __ align(32);
+  __ bind(fast_path);
+
+#endif // INCLUDE_JFR
+
   __ reset_last_Java_frame();
 
   // Jvmdi/jvmpi support. Whether we've got an exception pending or
@@ -1624,11 +1644,12 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ lfd(F1_RET, _ijava_state_neg(fresult), R11_scratch1);
   __ call_stub(result_handler_addr);
 
-  __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ R0, R11_scratch1, R12_scratch2);
+  __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ R12_scratch2, R11_scratch1, R0);
+  JFR_ONLY(__ leave_jfr_critical_section();)
 
   // Must use the return pc which was loaded from the caller's frame
   // as the VM uses return-pc-patching for deoptimization.
-  __ mtlr(R0);
+  __ mtlr(R12_scratch2);
   __ blr();
 
   //-----------------------------------------------------------------------------
@@ -2009,12 +2030,6 @@ address TemplateInterpreterGenerator::generate_currentThread() {
   return entry_point;
 }
 
-// Not supported
-address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
-
 // =============================================================================
 // Exceptions
 
@@ -2166,12 +2181,12 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   {
     __ pop_ptr(Rexception);
     __ verify_oop(Rexception);
-    __ std(Rexception, in_bytes(JavaThread::vm_result_offset()), R16_thread);
+    __ std(Rexception, in_bytes(JavaThread::vm_result_oop_offset()), R16_thread);
 
     __ unlock_if_synchronized_method(vtos, /* throw_monitor_exception */ false, true);
     __ notify_method_exit(false, vtos, InterpreterMacroAssembler::SkipNotifyJVMTI, false);
 
-    __ get_vm_result(Rexception);
+    __ get_vm_result_oop(Rexception);
 
     // We are done with this activation frame; find out where to go next.
     // The continuation point will be an exception handler, which expects

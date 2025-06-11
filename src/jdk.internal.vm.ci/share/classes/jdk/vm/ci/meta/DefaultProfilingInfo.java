@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,11 @@ package jdk.vm.ci.meta;
  */
 public final class DefaultProfilingInfo implements ProfilingInfo {
 
-    private static final ProfilingInfo[] NO_PROFILING_INFO = new ProfilingInfo[]{new DefaultProfilingInfo(TriState.TRUE), new DefaultProfilingInfo(TriState.FALSE),
-                    new DefaultProfilingInfo(TriState.UNKNOWN)};
+    private static final ProfilingInfo[] NO_PROFILING_INFO = {
+        new DefaultProfilingInfo(TriState.TRUE),
+        new DefaultProfilingInfo(TriState.FALSE),
+        new DefaultProfilingInfo(TriState.UNKNOWN)
+    };
 
     private final TriState exceptionSeen;
 

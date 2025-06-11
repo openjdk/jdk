@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,13 +54,14 @@ import java.util.concurrent.ConcurrentHashMap;
  *                            principal.
  * </pre>
  *
- * @apiNote
+ * @deprecated
  * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
  *
  * @since 1.4
  */
 
+@Deprecated(since="25", forRemoval=true)
 public final class ServicePermission extends Permission
     implements java.io.Serializable {
 
@@ -433,6 +434,7 @@ final class KrbServicePermissionCollection extends PermissionCollection
      * the collection, false if not.
      */
     @Override
+    @SuppressWarnings("removal")
     public boolean implies(Permission permission) {
         if (! (permission instanceof ServicePermission np))
             return false;
@@ -480,6 +482,7 @@ final class KrbServicePermissionCollection extends PermissionCollection
      *                                has been marked readonly
      */
     @Override
+    @SuppressWarnings("removal")
     public void add(Permission permission) {
         if (! (permission instanceof ServicePermission sp))
             throw new IllegalArgumentException("invalid permission: "+

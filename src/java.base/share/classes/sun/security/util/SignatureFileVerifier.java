@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -518,6 +518,8 @@ public class SignatureFileVerifier {
         boolean attrsVerified = true;
         // If only weak algorithms are used.
         boolean weakAlgs = true;
+        // If only unsupported algorithms are used.
+        boolean unsupportedAlgs = true;
         // If a ATTR_DIGEST entry is found.
         boolean validEntry = false;
 
@@ -542,6 +544,7 @@ public class SignatureFileVerifier {
 
                 MessageDigest digest = getDigest(algorithm);
                 if (digest != null) {
+                    unsupportedAlgs = false;
                     ManifestDigester.Entry mde = md.getMainAttsEntry(false);
                     if (mde == null) {
                         throw new SignatureException("Manifest Main Attribute check " +
@@ -584,12 +587,22 @@ public class SignatureFileVerifier {
             }
         }
 
-        // If there were only weak algorithms entries used, throw an exception.
-        if (validEntry && weakAlgs) {
-            throw new SignatureException("Manifest Main Attribute check " +
-                    "failed (" + ATTR_DIGEST + ").  " +
-                    "Disabled algorithm(s) used: " +
-                    getWeakAlgorithms(ATTR_DIGEST));
+        if (validEntry) {
+            // If there were only weak algorithms entries used, throw an exception.
+            if (weakAlgs) {
+                throw new SignatureException(
+                        "Manifest Main Attribute check "
+                        + "failed (" + ATTR_DIGEST + ").  "
+                        + "Disabled algorithm(s) used: "
+                        + getWeakAlgorithms(ATTR_DIGEST));
+            }
+
+            // If there were only unsupported algorithms entries used, throw an exception.
+            if (unsupportedAlgs) {
+                throw new SignatureException(
+                        "Manifest Main Attribute check failed ("
+                        + ATTR_DIGEST + "). Unsupported algorithm(s) used");
+            }
         }
 
         // this method returns 'true' if either:

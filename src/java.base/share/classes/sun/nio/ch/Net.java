@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -470,8 +470,8 @@ public class Net {
 
     private static native boolean canUseIPv6OptionsWithIPv4LocalAddress0();
 
-    static FileDescriptor socket(boolean stream) throws IOException {
-        return socket(UNSPEC, stream);
+    static FileDescriptor socket() throws IOException {
+        return socket(UNSPEC, true);
     }
 
     static FileDescriptor socket(ProtocolFamily family, boolean stream) throws IOException {
@@ -480,14 +480,14 @@ public class Net {
         return IOUtil.newFD(socket0(preferIPv6, stream, false, FAST_LOOPBACK));
     }
 
-    static FileDescriptor serverSocket(boolean stream) {
-        return serverSocket(UNSPEC, stream);
+    static FileDescriptor serverSocket() {
+        return serverSocket(UNSPEC);
     }
 
-    static FileDescriptor serverSocket(ProtocolFamily family, boolean stream) {
+    static FileDescriptor serverSocket(ProtocolFamily family) {
         boolean preferIPv6 = isIPv6Available() &&
             (family != StandardProtocolFamily.INET);
-        return IOUtil.newFD(socket0(preferIPv6, stream, true, FAST_LOOPBACK));
+        return IOUtil.newFD(socket0(preferIPv6, true, true, FAST_LOOPBACK));
     }
 
     // Due to oddities SO_REUSEADDR on Windows reuse is ignored

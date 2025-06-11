@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import jdk.test.whitebox.gc.GC;
  * @test
  * @summary Test the 'universe' command of jhsdb clhsdb.
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @bug 8190307
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -79,6 +80,9 @@ public class TestUniverse {
 
         case Z:
             expStrings.add("ZHeap");
+            expStrings.add("used");
+            expStrings.add(" capacity ");
+            expStrings.add("max capacity");
             break;
 
         case Shenandoah:

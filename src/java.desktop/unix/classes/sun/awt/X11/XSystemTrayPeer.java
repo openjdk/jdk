@@ -33,7 +33,7 @@ import sun.awt.AWTAccessor;
 import sun.awt.UNIXToolkit;
 import sun.util.logging.PlatformLogger;
 
-public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
+public final class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XSystemTrayPeer");
 
     SystemTray target;
@@ -70,6 +70,7 @@ public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
         }
     }
 
+    @Override
     public void ownerChanged(int screen, XMSelection sel, long newOwner, long data, long timestamp) {
         if (shouldDisableSystemTray) {
             return;
@@ -87,6 +88,7 @@ public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
         createTrayPeers();
     }
 
+    @Override
     public void ownerDeath(int screen, XMSelection sel, long deadOwner) {
         if (shouldDisableSystemTray) {
             return;
@@ -102,9 +104,11 @@ public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
         }
     }
 
+    @Override
     public void selectionChanged(int screen, XMSelection sel, long owner, XPropertyEvent event) {
     }
 
+    @Override
     public Dimension getTrayIconSize() {
         return new Dimension(XTrayIconPeer.TRAY_ICON_HEIGHT, XTrayIconPeer.TRAY_ICON_WIDTH);
     }

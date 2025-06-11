@@ -87,6 +87,7 @@ class D3DRenderer extends BufferedRenderPipe {
         }
     }
 
+    @Override
     protected native void drawPoly(int[] xPoints, int[] yPoints,
                                    int nPoints, boolean isClosed,
                                    int transX, int transY);
@@ -95,12 +96,13 @@ class D3DRenderer extends BufferedRenderPipe {
         return new Tracer(this);
     }
 
-    private static class Tracer extends D3DRenderer {
+    private static final class Tracer extends D3DRenderer {
         private D3DRenderer d3dr;
         Tracer(D3DRenderer d3dr) {
             super(d3dr.rq);
             this.d3dr = d3dr;
         }
+        @Override
         public ParallelogramPipe getAAParallelogramPipe() {
             final ParallelogramPipe realpipe = d3dr.getAAParallelogramPipe();
             return new ParallelogramPipe() {
@@ -133,19 +135,23 @@ class D3DRenderer extends BufferedRenderPipe {
             };
         }
 
+        @Override
         protected void validateContext(SunGraphics2D sg2d) {
             d3dr.validateContext(sg2d);
         }
+        @Override
         public void drawLine(SunGraphics2D sg2d,
                              int x1, int y1, int x2, int y2)
         {
             GraphicsPrimitive.tracePrimitive("D3DDrawLine");
             d3dr.drawLine(sg2d, x1, y1, x2, y2);
         }
+        @Override
         public void drawRect(SunGraphics2D sg2d, int x, int y, int w, int h) {
             GraphicsPrimitive.tracePrimitive("D3DDrawRect");
             d3dr.drawRect(sg2d, x, y, w, h);
         }
+        @Override
         protected void drawPoly(SunGraphics2D sg2d,
                                 int[] xPoints, int[] yPoints,
                                 int nPoints, boolean isClosed)
@@ -153,28 +159,33 @@ class D3DRenderer extends BufferedRenderPipe {
             GraphicsPrimitive.tracePrimitive("D3DDrawPoly");
             d3dr.drawPoly(sg2d, xPoints, yPoints, nPoints, isClosed);
         }
+        @Override
         public void fillRect(SunGraphics2D sg2d, int x, int y, int w, int h) {
             GraphicsPrimitive.tracePrimitive("D3DFillRect");
             d3dr.fillRect(sg2d, x, y, w, h);
         }
+        @Override
         protected void drawPath(SunGraphics2D sg2d,
                                 Path2D.Float p2df, int transx, int transy)
         {
             GraphicsPrimitive.tracePrimitive("D3DDrawPath");
             d3dr.drawPath(sg2d, p2df, transx, transy);
         }
+        @Override
         protected void fillPath(SunGraphics2D sg2d,
                                 Path2D.Float p2df, int transx, int transy)
         {
             GraphicsPrimitive.tracePrimitive("D3DFillPath");
             d3dr.fillPath(sg2d, p2df, transx, transy);
         }
+        @Override
         protected void fillSpans(SunGraphics2D sg2d, SpanIterator si,
                                  int transx, int transy)
         {
             GraphicsPrimitive.tracePrimitive("D3DFillSpans");
             d3dr.fillSpans(sg2d, si, transx, transy);
         }
+        @Override
         public void fillParallelogram(SunGraphics2D sg2d,
                                       double ux1, double uy1,
                                       double ux2, double uy2,
@@ -187,6 +198,7 @@ class D3DRenderer extends BufferedRenderPipe {
                                    ux1, uy1, ux2, uy2,
                                    x, y, dx1, dy1, dx2, dy2);
         }
+        @Override
         public void drawParallelogram(SunGraphics2D sg2d,
                                       double ux1, double uy1,
                                       double ux2, double uy2,
@@ -200,6 +212,7 @@ class D3DRenderer extends BufferedRenderPipe {
                                    ux1, uy1, ux2, uy2,
                                    x, y, dx1, dy1, dx2, dy2, lw1, lw2);
         }
+        @Override
         public void copyArea(SunGraphics2D sg2d,
                              int x, int y, int w, int h, int dx, int dy)
         {

@@ -50,13 +50,14 @@ import com.sun.java.swing.plaf.windows.TMSchema.State;
 /**
  * Windows rendition of the component.
  */
-public class WindowsMenuUI extends BasicMenuUI {
+public final class WindowsMenuUI extends BasicMenuUI {
     protected Integer menuBarHeight;
     protected boolean hotTrackingOn;
 
     final WindowsMenuItemUIAccessor accessor =
         new WindowsMenuItemUIAccessor() {
 
+            @Override
             public JMenuItem getMenuItem() {
                 return menuItem;
             }
@@ -106,6 +107,7 @@ public class WindowsMenuUI extends BasicMenuUI {
                 return state;
             }
 
+            @Override
             public Part getPart(JMenuItem menuItem) {
                 return ((JMenu) menuItem).isTopLevelMenu() ? Part.MP_BARITEM
                         : Part.MP_POPUPITEM;
@@ -115,6 +117,7 @@ public class WindowsMenuUI extends BasicMenuUI {
         return new WindowsMenuUI();
     }
 
+    @Override
     protected void installDefaults() {
         super.installDefaults();
         if (!WindowsLookAndFeel.isClassicWindows()) {
@@ -131,6 +134,7 @@ public class WindowsMenuUI extends BasicMenuUI {
      * Draws the background of the menu.
      * @since 1.4
      */
+    @Override
     protected void paintBackground(Graphics g, JMenuItem menuItem, Color bgColor) {
         if (WindowsMenuItemUI.isVistaPainting()) {
             WindowsMenuItemUI.paintBackground(accessor, g, menuItem, bgColor);
@@ -210,6 +214,7 @@ public class WindowsMenuUI extends BasicMenuUI {
      * @param text String to render
      * @since 1.4
      */
+    @Override
     protected void paintText(Graphics g, JMenuItem menuItem,
                              Rectangle textRect, String text) {
         if (WindowsMenuItemUI.isVistaPainting()) {
@@ -245,6 +250,7 @@ public class WindowsMenuUI extends BasicMenuUI {
         g.setColor(oldColor);
     }
 
+    @Override
     protected MouseInputListener createMouseInputListener(JComponent c) {
         return new WindowsMouseInputHandler();
     }
@@ -254,7 +260,8 @@ public class WindowsMenuUI extends BasicMenuUI {
      * true when the mouse enters the menu and false when it exits.
      * @since 1.4
      */
-    protected class WindowsMouseInputHandler extends BasicMenuUI.MouseInputHandler {
+    protected final class WindowsMouseInputHandler extends BasicMenuUI.MouseInputHandler {
+        @Override
         public void mouseEntered(MouseEvent evt) {
             super.mouseEntered(evt);
 
@@ -265,6 +272,7 @@ public class WindowsMenuUI extends BasicMenuUI {
             }
         }
 
+        @Override
         public void mouseExited(MouseEvent evt) {
             super.mouseExited(evt);
 
@@ -277,6 +285,7 @@ public class WindowsMenuUI extends BasicMenuUI {
         }
     }
 
+    @Override
     protected Dimension getPreferredMenuItemSize(JComponent c,
                                                      Icon checkIcon,
                                                      Icon arrowIcon,
