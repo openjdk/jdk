@@ -52,6 +52,7 @@ import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.SequentialScheduler;
 import jdk.internal.net.http.common.Utils;
+import jdk.internal.net.http.http3.ConnectionSettings;
 import jdk.internal.net.http.http3.Http3Error;
 import jdk.internal.net.http.http3.frames.DataFrame;
 import jdk.internal.net.http.http3.frames.HeadersFrame;
@@ -402,6 +403,11 @@ public final class Http3ServerExchange implements Http2TestExchange {
     @Override
     public Encoder qpackEncoder() {
         return serverConn.qpackEncoder();
+    }
+
+    @Override
+    public CompletableFuture<ConnectionSettings> clientHttp3Settings() {
+        return serverConn.clientHttp3Settings();
     }
 
     private long sendPushPromiseFrame(long pushId, URI uri, HttpHeaders headers)

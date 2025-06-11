@@ -107,7 +107,7 @@ public class Http3ServerConnection {
     private final AtomicLong goAwayRequestStreamId = new AtomicLong(-1);
 
     private final CompletableFuture<QuicSenderStream> afterSettings = new MinimalFuture<>();
-
+    private final CompletableFuture<ConnectionSettings> clientSettings = new MinimalFuture<>();
 
     private final ConcurrentLinkedQueue<ByteBuffer> lcsWriterQueue =
             new ConcurrentLinkedQueue<>();
@@ -358,8 +358,6 @@ public class Http3ServerConnection {
             } else if (frame instanceof MaxPushIdFrame mpf) {
                 maxPushIdReceived(mpf.getMaxPushId());
             } else if (frame instanceof SettingsFrame sf) {
-                // TODO: we might need client settings, maybe we should save it similar
-                //  to HTTP/2 test server
                 ConnectionSettings clientSettings = ConnectionSettings.createFrom(sf);
                 // Set max and current capacity of the QPack encoder
                 qpackEncoder.configure(clientSettings);
@@ -373,6 +371,7 @@ public class Http3ServerConnection {
                 if (clientMaxTableCapacity != 0) {
                     qpackEncoder.setTableCapacity(capacity);
                 }
+                this.clientSettings.complete(clientSettings);
             }
             if (controlFramesDecoder.eof()) break;
         }
@@ -811,5 +810,9 @@ public class Http3ServerConnection {
 
     public Encoder qpackEncoder() {
         return qpackEncoder;
+    }
+
+    public CompletableFuture<ConnectionSettings> clientHttp3Settings() {
+        return clientSettings;
     }
 }

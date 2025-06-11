@@ -82,13 +82,26 @@ public class H3InsertionsLimitTest implements HttpServerAdapters {
 
     private static void handle(HttpTestExchange exchange) throws IOException {
         String handlerMsg = "Server handler: " + exchange.getRequestURI();
+        long unusedStreamID = 1111;
         System.out.println(handlerMsg);
         System.err.println(handlerMsg);
+
+        try {
+            ConnectionSettings settings = exchange.clientHttp3Settings().get();
+            System.err.println("Received client connection settings: " + settings);
+        } catch (Exception e) {
+            throw new RuntimeException("Test issue: failure awaiting for HTTP/3" +
+                    " connection settings from the client", e);
+        }
+
+        // Set encoder table capacity explicitly
+        // to avoid waiting client's settings frame
+        // that triggers the same DT configuration
         Encoder encoder = exchange.qpackEncoder();
-        long unusedStreamID = 1111;
-        // Mimic entry insertions on server-side
-        try (Encoder.EncodingContext context =
-                     encoder.newEncodingContext(unusedStreamID, 0, encoder.newHeaderFrameWriter())) {
+        encoder.setTableCapacity(MAX_SERVER_DT_CAPACITY);
+        // Mimic entry insertions on the server-side
+        try (Encoder.EncodingContext context = encoder.newEncodingContext(
+                unusedStreamID, 0, encoder.newHeaderFrameWriter())) {
             for (int i = 0; i <= MAX_LITERALS_WITH_INDEXING; i++) {
                 var entry = new TableEntry("n" + i, "v" + i);
                 var insertedEntry = context.tryInsertEntry(entry);

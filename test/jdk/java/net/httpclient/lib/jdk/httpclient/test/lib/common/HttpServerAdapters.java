@@ -36,6 +36,7 @@ import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
+import jdk.internal.net.http.http3.ConnectionSettings;
 import jdk.internal.net.http.qpack.Encoder;
 
 import java.io.File;
@@ -69,6 +70,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
@@ -419,6 +421,10 @@ public interface HttpServerAdapters {
         public Encoder qpackEncoder() {
             throw new UnsupportedOperationException("qpackEncoder with " + getExchangeVersion());
         }
+        public CompletableFuture<ConnectionSettings> clientHttp3Settings() {
+            throw new UnsupportedOperationException("HTTP/3 client connection settings with "
+                    + getExchangeVersion());
+        }
         public static HttpTestExchange of(HttpExchange exchange) {
             return new Http1TestExchange(exchange);
         }
@@ -574,6 +580,12 @@ public interface HttpServerAdapters {
             public Encoder qpackEncoder() {
                 return exchange.qpackEncoder();
             }
+
+            @Override
+            public CompletableFuture<ConnectionSettings> clientHttp3Settings() {
+                return exchange.clientHttp3Settings();
+            }
+
             @Override
             void doFilter(Filter.Chain filter) throws IOException {
                 throw new IOException("cannot use HTTP/1.1 filter with HTTP/2 server");
