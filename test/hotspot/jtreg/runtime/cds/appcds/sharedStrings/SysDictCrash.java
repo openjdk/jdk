@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public class SysDictCrash {
                        "-XX:+UseG1GC", "-XX:MaxRAMPercentage=12.5",
                        "-cp", ".",
                        "-XX:SharedBaseAddress=0",
-                       "-showversion", "-Xlog:cds,cds+hashtables")
+                       "-showversion", "-Xlog:cds,aot+hashtables")
             .setArchiveName("./SysDictCrash.jsa");
         OutputAnalyzer output = CDSTestUtils.createArchive(opts);
         try {

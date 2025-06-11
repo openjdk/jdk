@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2022, Red Hat Inc.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.util.concurrent.StructureViolationException;
 import java.util.function.Supplier;
 import jdk.internal.access.JavaUtilConcurrentTLRAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.ScopedValueContainer;
@@ -157,7 +156,8 @@ import jdk.internal.vm.ScopedValueContainer;
  *     private static final ScopedValue<String> NAME = ScopedValue.newInstance();
 
  *     ScopedValue.where(NAME, "duke").run(() -> {
- *         try (var scope = new StructuredTaskScope<String>()) {
+ *         // @link substring="open" target="StructuredTaskScope#open()" :
+ *         try (var scope = StructuredTaskScope.open()) {
  *
  *              // @link substring="fork" target="StructuredTaskScope#fork(java.util.concurrent.Callable)" :
  *              scope.fork(() -> childTask1());
@@ -236,9 +236,8 @@ import jdk.internal.vm.ScopedValueContainer;
  * have to be regenerated after a blocking operation.
  *
  * @param <T> the type of the value
- * @since 21
+ * @since 25
  */
-@PreviewFeature(feature = PreviewFeature.Feature.SCOPED_VALUES)
 public final class ScopedValue<T> {
     private final int hash;
 
@@ -309,9 +308,8 @@ public final class ScopedValue<T> {
      * <p> Unless otherwise specified, passing a {@code null} argument to a method in
      * this class will cause a {@link NullPointerException} to be thrown.
      *
-     * @since 21
+     * @since 25
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.SCOPED_VALUES)
     public static final class Carrier {
         // Bit masks: a 1 in position n indicates that this set of bound values
         // hits that slot in the cache.
@@ -412,7 +410,6 @@ public final class ScopedValue<T> {
          * @return the result
          * @throws StructureViolationException if a structure violation is detected
          * @throws X if {@code op} completes with an exception
-         * @since 23
          */
         public <R, X extends Throwable> R call(CallableOp<? extends R, X> op) throws X {
             Objects.requireNonNull(op);
@@ -496,9 +493,8 @@ public final class ScopedValue<T> {
      *
      * @param <T> result type of the operation
      * @param <X> type of the exception thrown by the operation
-     * @since 23
+     * @since 25
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.SCOPED_VALUES)
     @FunctionalInterface
     public interface CallableOp<T, X extends Throwable> {
         /**
@@ -611,10 +607,11 @@ public final class ScopedValue<T> {
      * Returns the value of this scoped value if bound in the current thread, otherwise
      * returns {@code other}.
      *
-     * @param other the value to return if not bound, can be {@code null}
+     * @param other the value to return if not bound
      * @return the value of the scoped value if bound, otherwise {@code other}
      */
     public T orElse(T other) {
+        Objects.requireNonNull(other);
         Object obj = findBinding();
         if (obj != Snapshot.NIL) {
             @SuppressWarnings("unchecked")

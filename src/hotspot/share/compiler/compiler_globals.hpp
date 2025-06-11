@@ -269,6 +269,17 @@
           "Maximum rate sampling interval (in milliseconds)")               \
           range(0, max_intx)                                                \
                                                                             \
+  product(double, Tier0ProfileDelayFactor, 100.0, DIAGNOSTIC,               \
+          "Delay profiling/compiling of methods that were "                 \
+          "observed to be lukewarm")                                        \
+                                                                            \
+  product(double, Tier2ProfileDelayFactor, 250.0, DIAGNOSTIC,               \
+          "Delay profiling of methods that were observed to be lukewarm")   \
+                                                                            \
+  product(bool, SkipTier2IfPossible, false, DIAGNOSTIC,                     \
+          "Compile at tier 4 instead of tier 2 in training replay "         \
+          "mode if posssible")                                              \
+                                                                            \
   product(ccstr, CompilationMode, "default",                                \
           "Compilation modes: "                                             \
           "default: normal tiered compilation; "                            \
@@ -382,7 +393,6 @@
           "If compilation is stopped with an error, capture diagnostic "    \
           "information at the bailout point")                               \
                                                                             \
-
 // end of COMPILER_FLAGS
 
 DECLARE_FLAGS(COMPILER_FLAGS)

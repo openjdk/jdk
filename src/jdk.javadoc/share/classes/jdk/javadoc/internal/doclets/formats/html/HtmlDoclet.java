@@ -342,7 +342,7 @@ public class HtmlDoclet extends AbstractDoclet {
             copyResource(DocPaths.JQUERY_DIR.resolve(DocPaths.JQUERY_UI_CSS),
                     DocPaths.RESOURCE_FILES.resolve(DocPaths.JQUERY_UI_CSS), false);        }
 
-        copyLegalFiles(options.createIndex());
+        copyLegalFiles(options.createIndex(), options.syntaxHighlight());
         // Print a notice if the documentation contains diagnostic markers
         if (messages.containsDiagnosticMarkers()) {
             messages.notice("doclet.contains.diagnostic.markers");
@@ -358,7 +358,7 @@ public class HtmlDoclet extends AbstractDoclet {
         }
     }
 
-    private void copyLegalFiles(boolean includeJQuery) throws DocletException {
+    private void copyLegalFiles(boolean includeJQuery, boolean includeHighlightJs) throws DocletException {
         Path legalNoticesDir;
         String legalNotices = configuration.getOptions().legalNotices();
         switch (legalNotices) {
@@ -400,6 +400,9 @@ public class HtmlDoclet extends AbstractDoclet {
                         continue;
                     }
                     if (entry.getFileName().toString().startsWith("jquery") && !includeJQuery) {
+                        continue;
+                    }
+                    if (entry.getFileName().toString().equals("highlightjs.md") && !includeHighlightJs) {
                         continue;
                     }
                     DocPath filePath = DocPaths.LEGAL.resolve(entry.getFileName().toString());

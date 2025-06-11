@@ -1148,13 +1148,23 @@ final class CompilerToVM {
     native ResolvedJavaMethod[] getDeclaredConstructors(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
 
     /**
-     * Gets the {@link ResolvedJavaMethod}s for all the non-constructor methods of {@code klass}.
+     * Gets the {@link ResolvedJavaMethod}s for all non-overpass and non-initializer
+     * methods of {@code klass}.
      */
     ResolvedJavaMethod[] getDeclaredMethods(HotSpotResolvedObjectTypeImpl klass) {
         return getDeclaredMethods(klass, klass.getKlassPointer());
     }
 
     native ResolvedJavaMethod[] getDeclaredMethods(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
+
+    /**
+     * Gets the {@link ResolvedJavaMethod}s for all methods of {@code klass}.
+     */
+    ResolvedJavaMethod[] getAllMethods(HotSpotResolvedObjectTypeImpl klass) {
+        return getAllMethods(klass, klass.getKlassPointer());
+    }
+
+    native ResolvedJavaMethod[] getAllMethods(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
 
     HotSpotResolvedObjectTypeImpl.FieldInfo[] getDeclaredFieldsInfo(HotSpotResolvedObjectTypeImpl klass) {
         return getDeclaredFieldsInfo(klass, klass.getKlassPointer());
@@ -1528,4 +1538,9 @@ final class CompilerToVM {
      * {@code stop_compilation = 0}, {@code run_compilation = 1} or {@code shutdown_compilation = 2}
      */
     native int getCompilationActivityMode();
+
+    /**
+     * Returns whether the current thread is a CompilerThread.
+     */
+    native boolean isCompilerThread();
 }
