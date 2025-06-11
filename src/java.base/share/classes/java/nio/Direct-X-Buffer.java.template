@@ -434,6 +434,9 @@ class Direct$Type$Buffer$RW$$BO$
 
     public $Type$Buffer append(CharSequence csq, int start, int end) {
 #if[rw]
+        if (csq == null)
+            return super.append(csq, start, end);
+
         Objects.checkFromToIndex(start, end, csq.length());
 
         int pos = position();

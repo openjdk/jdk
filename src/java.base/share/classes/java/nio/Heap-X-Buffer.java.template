@@ -292,6 +292,9 @@ class Heap$Type$Buffer$RW$
     //
     public $Type$Buffer append(CharSequence csq, int start, int end) {
 #if[rw]
+        if (csq == null)
+            return super.append(csq, start, end);
+
         checkSession();
 
         Objects.checkFromToIndex(start, end, csq.length());
