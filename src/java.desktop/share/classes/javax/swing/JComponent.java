@@ -4679,7 +4679,7 @@ public abstract class JComponent extends Container implements Serializable,
 
 
     /**
-     * Returns the top-level ancestor of this component (either the
+     * Returns the top-level ancestor of this component (the
      * containing <code>Window</code>)
      * or <code>null</code> if this component has not
      * been added to any container.
