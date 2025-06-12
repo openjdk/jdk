@@ -43,7 +43,6 @@ private:
   };
 
   void deoptimize(nmethod* nm, address* return_addr_ptr);
-  bool is_armed_permanently(nmethod* nm) { return guard_value(nm) < 0; }
   void arm(nmethod* nm) { arm_with(nm, armed); }
 
 protected:
