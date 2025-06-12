@@ -48,7 +48,6 @@ inline VTimeScope::~VTimeScope() {
     }
 
     if (UsePerfData) {
-      assert(_thread == this, "Assumes VM thread");
       CPUTimeCounters::get_instance()->update_counter(CPUTimeGroups::CPUTimeType::vm, end);
     }
   }
