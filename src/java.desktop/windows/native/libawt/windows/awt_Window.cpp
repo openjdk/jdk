@@ -2500,7 +2500,7 @@ jint AwtWindow::_GetScreenImOn(void *param)
 
     jint result = -1;
     AwtWindow* window = NULL;
-    
+
     // Our native resources may have been destroyed before the Java peer,
     // e.g., if dispose() was called. In that case, return the default screen.
      PDATA pData;
