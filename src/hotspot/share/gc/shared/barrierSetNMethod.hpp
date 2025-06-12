@@ -43,7 +43,6 @@ private:
   };
 
   void deoptimize(nmethod* nm, address* return_addr_ptr);
-  void arm(nmethod* nm) { arm_with(nm, armed); }
 
 protected:
   virtual int guard_value(nmethod* nm);
@@ -62,6 +61,7 @@ public:
   static int nmethod_stub_entry_barrier(address* return_address_ptr);
   bool nmethod_osr_entry_barrier(nmethod* nm);
   virtual bool is_armed(nmethod* nm);
+  void arm(nmethod* nm) { arm_with(nm, armed); }
   void disarm(nmethod* nm);
   virtual void make_not_entrant(nmethod* nm);
   virtual bool is_not_entrant(nmethod* nm);
