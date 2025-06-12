@@ -179,7 +179,7 @@ e.g. "2022-02-12T12:30:00-05:00".
     `--hash-modules`.
 
 `--target-platform` *platform*
-:   Specifies the target platform. The value is a string that identifies 
+:   Specifies the target platform. The value is a string that identifies
     the platform this module is intended for, typically in the form `<os>-<arch>`.
 
 `--version`
@@ -225,7 +225,7 @@ The basic manner to create a JMOD file is by including only compiled classes:
 jmod create --class-path build/foo/classes jmods/foo1.jmod
 ```
 
-To ensure reproducible artifacts, the following command creates 
+To ensure reproducible artifacts, the following command creates
 a JMOD file specifying the date for the entries as `2022 March 15 00:00:00`:
 
 ```
@@ -233,7 +233,7 @@ jmod create --class-path build/foo/classes --date 2022-03-15T00:00:00Z
    jmods/foo2.jmod
 ```
 
-The command below creates a platform-specific JMOD file, bundling class files, 
+The command below creates a platform-specific JMOD file, bundling class files,
 user-editable configuration files, header files, native commands and libraries:
 
 ```
