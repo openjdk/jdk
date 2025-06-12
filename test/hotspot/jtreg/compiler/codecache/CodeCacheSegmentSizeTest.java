@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 IBM Corporation. All rights reserved. 
+ * Copyright (c) 2024 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8358694 
+ * @bug 8358694
  * @summary Verifies that setting CodeCacheSegmentSize to a non-power-of-two value does not crash the JVM and shows expected error.
  * @library /test/lib
  * @run driver CodeCacheSegmentSizeTest
