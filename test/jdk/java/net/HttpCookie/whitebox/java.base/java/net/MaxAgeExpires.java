@@ -26,6 +26,7 @@ package java.net;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
 
@@ -82,7 +83,7 @@ public class MaxAgeExpires {
 
 
     @Test(dataProvider = "testData")
-    public void run(long creationInstant, // if -1, then current time is used
+    public void test1(long creationInstant, // if -1, then current time is used
                     long expiryCheckInstant,  // if -1 then current time is used
                     long maxAge, // if -1, then not included in String
                     String expires, // if null, then not included in String
@@ -121,5 +122,16 @@ public class MaxAgeExpires {
             System.out.println("getMaxAge() returned " + cookie.getMaxAge());
             throw new RuntimeException("Test failed: wrong hasExpired");
         }
+    }
+
+    @Test
+    public void test2() {
+        // Miscellaneous tests that setMaxAge() overrides whatever was set already
+        HttpCookie cookie = HttpCookie.parse("Set-Cookie: name=value; max-age=100").get(0);
+        Assert.assertEquals(cookie.getMaxAge(), 100);
+        cookie.setMaxAge(200);
+        Assert.assertEquals(cookie.getMaxAge(), 200);
+        cookie.setMaxAge(-2);
+        Assert.assertEquals(cookie.getMaxAge(), -2);
     }
 }
