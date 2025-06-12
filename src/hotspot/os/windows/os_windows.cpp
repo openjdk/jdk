@@ -861,23 +861,37 @@ size_t os::win32::available_memory() {
   // value if total memory is larger than 4GB
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
-
+  BOOL res = GlobalMemoryStatusEx(&ms);
+  if (!res) {
+    errno = ::GetLastError();
+    log_debug(os)("available_memory() failed to GlobalMemoryStatusEx: GetLastError->%ld.", errno);
+    return static_cast<size_t>(-1);
+  }
   return static_cast<size_t>(ms.ullAvailPhys);
 }
 
-ssize_t os::total_swap_space() {
+size_t os::total_swap_space() {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
-  return static_cast<ssize_t>(ms.ullTotalPageFile);
+  BOOL res = GlobalMemoryStatusEx(&ms);
+  if (!res) {
+    errno = ::GetLastError();
+    log_debug(os)("total_swap_space() failed to GlobalMemoryStatusEx: GetLastError->%ld.", errno);
+    return static_cast<size_t>(-1);
+  }
+  return static_cast<size_t>(ms.ullTotalPageFile);
 }
 
-ssize_t os::free_swap_space() {
+size_t os::free_swap_space() {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
-  return static_cast<ssize_t>(ms.ullAvailPageFile);
+  BOOL res = GlobalMemoryStatusEx(&ms);
+  if (!res) {
+    errno = ::GetLastError();
+    log_debug(os)("free_swap_space() failed to GlobalMemoryStatusEx: GetLastError->%ld.", errno);
+    return static_cast<size_t>(-1);
+  }
+  return static_cast<size_t>(ms.ullAvailPageFile);
 }
 
 size_t os::physical_memory() {

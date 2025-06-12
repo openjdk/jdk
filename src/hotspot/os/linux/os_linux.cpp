@@ -267,47 +267,53 @@ size_t os::free_memory() {
 
 size_t os::Linux::free_memory() {
   // values in struct sysinfo are "unsigned long"
-  struct sysinfo si;
   julong free_mem = available_memory_in_container();
   if (free_mem != static_cast<julong>(-1L)) {
     log_trace(os)("free container memory: " JULONG_FORMAT, free_mem);
     return static_cast<size_t>(free_mem);
   }
 
-  sysinfo(&si);
+  struct sysinfo si;
+  int ret = sysinfo(&si);
+  if (ret != 0) {
+    return static_cast<size_t>(-1);
+  }
+
   free_mem = (julong)si.freeram * si.mem_unit;
   log_trace(os)("free memory: " JULONG_FORMAT, free_mem);
   return static_cast<size_t>(free_mem);
 }
 
-ssize_t os::total_swap_space() {
+size_t os::total_swap_space() {
   if (OSContainer::is_containerized()) {
     if (OSContainer::memory_limit_in_bytes() > 0) {
-      return static_cast<ssize_t>(OSContainer::memory_and_swap_limit_in_bytes() - OSContainer::memory_limit_in_bytes());
+      return static_cast<size_t>(OSContainer::memory_and_swap_limit_in_bytes() - OSContainer::memory_limit_in_bytes());
     }
   }
   struct sysinfo si;
   int ret = sysinfo(&si);
   if (ret != 0) {
-    return -1;
+    return static_cast<size_t>(-1);
   }
-  return static_cast<ssize_t>(si.totalswap * si.mem_unit);
+  return static_cast<size_t>(si.totalswap * si.mem_unit);
 }
 
-static ssize_t host_free_swap() {
+static size_t host_free_swap() {
   struct sysinfo si;
   int ret = sysinfo(&si);
   if (ret != 0) {
-    return -1;
+    return static_cast<size_t>(-1);
   }
-  return static_cast<ssize_t>(si.freeswap * si.mem_unit);
+  return static_cast<size_t>(si.freeswap * si.mem_unit);
 }
 
-ssize_t os::free_swap_space() {
+size_t os::free_swap_space() {
   // os::total_swap_space() might return the containerized limit which might be
   // less than host_free_swap(). The upper bound of free swap needs to be the lower of the two.
-  jlong host_free_swap_val = static_cast<jlong>(MIN2(os::total_swap_space(), host_free_swap()));
-  assert(host_free_swap_val >= 0, "sysinfo failed?");
+  const size_t total_swap_space = os::total_swap_space();
+  const size_t host_free_swap_space = host_free_swap();
+  size_t host_free_swap_val = MIN2(total_swap_space, host_free_swap_space);
+  assert(total_swap_space != static_cast<size_t>(-1) && host_free_swap_space != static_cast<size_t>(-1), "sysinfo failed?");
   if (OSContainer::is_containerized()) {
     jlong mem_swap_limit = OSContainer::memory_and_swap_limit_in_bytes();
     jlong mem_limit = OSContainer::memory_limit_in_bytes();
@@ -322,16 +328,16 @@ ssize_t os::free_swap_space() {
         jlong delta_usage = mem_swap_usage - mem_usage;
         if (delta_usage >= 0) {
           jlong free_swap = delta_limit - delta_usage;
-          return free_swap >= 0 ? static_cast<ssize_t>(free_swap) : 0;
+          return free_swap >= 0 ? static_cast<size_t>(free_swap) : 0;
         }
       }
     }
     // unlimited or not supported. Fall through to return host value
     log_trace(os,container)("os::free_swap_space: container_swap_limit=" JLONG_FORMAT
-                            " container_mem_limit=" JLONG_FORMAT " returning host value: " JLONG_FORMAT,
+                            " container_mem_limit=" JLONG_FORMAT " returning host value: %zu",
                             mem_swap_limit, mem_limit, host_free_swap_val);
   }
-  return static_cast<ssize_t>(host_free_swap_val);
+  return host_free_swap_val;
 }
 
 size_t os::physical_memory() {

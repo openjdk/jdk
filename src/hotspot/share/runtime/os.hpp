@@ -341,8 +341,8 @@ class os: AllStatic {
   static size_t used_memory();
   static size_t free_memory();
 
-  static ssize_t total_swap_space();
-  static ssize_t free_swap_space();
+  static size_t total_swap_space();
+  static size_t free_swap_space();
 
   static size_t physical_memory();
   static bool has_allocatable_memory_limit(size_t* limit);
