@@ -458,7 +458,7 @@ Node* PhaseIdealLoop::loop_iv_incr(Node* incr, Node* x, IdealLoopTree* loop, Nod
   return incr;
 }
 
-Node* PhaseIdealLoop::loop_iv_stride(Node* incr, IdealLoopTree* loop, Node*& xphi) {
+Node* PhaseIdealLoop::loop_iv_stride(Node* incr, Node*& xphi) {
   assert(incr->Opcode() == Op_AddI || incr->Opcode() == Op_AddL, "caller resp.");
   // Get merge point
   xphi = incr->in(1);
@@ -474,7 +474,7 @@ Node* PhaseIdealLoop::loop_iv_stride(Node* incr, IdealLoopTree* loop, Node*& xph
   return stride;
 }
 
-PhiNode* PhaseIdealLoop::loop_iv_phi(Node* xphi, Node* phi_incr, Node* x, IdealLoopTree* loop) {
+PhiNode* PhaseIdealLoop::loop_iv_phi(Node* xphi, Node* phi_incr, Node* x) {
   if (!xphi->is_Phi()) {
     return nullptr; // Too much math on the trip counter
   }
@@ -1481,11 +1481,11 @@ void PhaseIdealLoop::check_counted_loop_shape(IdealLoopTree* loop, Node* x, Basi
   assert(incr != nullptr && incr->Opcode() == Op_Add(bt), "no incr");
 
   Node* xphi = nullptr;
-  Node* stride = loop_iv_stride(incr, loop, xphi);
+  Node* stride = loop_iv_stride(incr, xphi);
 
   assert(stride != nullptr, "no stride");
 
-  PhiNode* phi = loop_iv_phi(xphi, phi_incr, x, loop);
+  PhiNode* phi = loop_iv_phi(xphi, phi_incr, x);
 
   assert(phi != nullptr && phi->in(LoopNode::LoopBackControl) == incr, "No phi");
 
@@ -1650,7 +1650,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   assert(incr->Opcode() == Op_Add(iv_bt), "wrong increment code");
 
   Node* xphi = nullptr;
-  Node* stride = loop_iv_stride(incr, loop, xphi);
+  Node* stride = loop_iv_stride(incr, xphi);
 
   if (stride == nullptr) {
     return false;
@@ -1664,7 +1664,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   jlong stride_con = stride->get_integer_as_long(iv_bt);
   assert(stride_con != 0, "missed some peephole opt");
 
-  PhiNode* phi = loop_iv_phi(xphi, phi_incr, x, loop);
+  PhiNode* phi = loop_iv_phi(xphi, phi_incr, x);
 
   if (phi == nullptr ||
       (trunc1 == nullptr && phi->in(LoopNode::LoopBackControl) != incr) ||
