@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -328,15 +328,7 @@ class NativeJump: public NativeInstruction {
     }
   }
 
-  // MT-safe insertion of native jump at verified method entry
-  static void patch_verified_entry(address entry, address verified_entry, address dest);
-
   void verify() NOT_DEBUG_RETURN;
-
-  static void check_verified_entry_alignment(address entry, address verified_entry) {
-    // We just patch one instruction on ppc64, so the jump doesn't have to
-    // be aligned. Nothing to do here.
-  }
 };
 
 // Instantiates a NativeJump object starting at the given instruction

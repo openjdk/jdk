@@ -1796,7 +1796,6 @@ void MachUEPNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
   // This is the unverified entry point.
   __ ic_check(CodeEntryAlignment);
 
-  // Verified entry point must be properly 4 bytes aligned for patching by NativeJump::patch_verified_entry().
   // ic_check() aligns to CodeEntryAlignment >= InteriorEntryAlignment(min 16) > NativeInstruction::instruction_size(4).
   assert(((__ offset()) % CodeEntryAlignment) == 0, "Misaligned verified entry point");
 }

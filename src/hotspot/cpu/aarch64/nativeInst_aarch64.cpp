@@ -212,11 +212,6 @@ void NativeMovRegMem::verify() {
 
 void NativeJump::verify() { ; }
 
-
-void NativeJump::check_verified_entry_alignment(address entry, address verified_entry) {
-}
-
-
 address NativeJump::jump_destination() const          {
   address dest = MacroAssembler::target_addr_for_insn_or_null(instruction_address());
 
@@ -358,31 +353,6 @@ bool NativeInstruction::is_stop() {
 }
 
 //-------------------------------------------------------------------
-
-// MT-safe inserting of a jump over a jump or a nop (used by
-// nmethod::make_not_entrant)
-
-void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
-
-  assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "expected fixed destination of patch");
-  assert(nativeInstruction_at(verified_entry)->is_jump_or_nop()
-         || nativeInstruction_at(verified_entry)->is_sigill_not_entrant(),
-         "Aarch64 cannot replace non-jump with jump");
-
-  // Patch this nmethod atomically.
-  if (Assembler::reachable_from_branch_at(verified_entry, dest)) {
-    ptrdiff_t disp = dest - verified_entry;
-    guarantee(disp < 1 << 27 && disp > - (1 << 27), "branch overflow");
-
-    unsigned int insn = (0b000101 << 26) | ((disp >> 2) & 0x3ffffff);
-    *(unsigned int*)verified_entry = insn;
-  } else {
-    // We use an illegal instruction for marking a method as not_entrant.
-    NativeIllegalInstruction::insert(verified_entry);
-  }
-
-  ICache::invalidate_range(verified_entry, instruction_size);
-}
 
 void NativeGeneralJump::verify() {  }
 
