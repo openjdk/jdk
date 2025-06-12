@@ -44,12 +44,16 @@ public class ListDragCursor {
                 3. Drag mouse to the list.
                 4. Release the left mouse button.
 
-                If the mouse cursor starts as an I-beam cursor
-                and does not change until you reach the List and
-                release the left mouse button (and becomes a Hand Cursor),
-                pass the test. This test fails if the cursor updates
-                when pointing over the different components before
-                releasing the left mouse button.
+                The mouse cursor should appear as an I-beam cursor
+                and should stay the same while dragging across the
+                components. Once you reach the list, release the
+                left mouse button. Immediately after, the cursor
+                should change to a Hand cursor. If true, this test
+                passes.
+
+                The test fails if the cursor updates while dragging
+                over the components before releasing the left
+                mouse button.
                 """;
 
         PassFailJFrame.builder()
