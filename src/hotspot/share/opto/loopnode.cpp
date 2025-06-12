@@ -3012,6 +3012,8 @@ void OuterStripMinedLoopNode::handle_sunk_stores_at_expansion(PhaseIterGVN* igvn
     DEBUG_ONLY(int stores_in_outer_loop_cnt2 = 0);
     for (MergeMemStream mms(mm); mms.next_non_empty(); ) {
       Node* mem = mms.memory();
+      // Traverse up the chain of stores to find the first store pinned
+      // at the loop exit projection.
       Node* last = mem;
       Node* first = nullptr;
       while (mem->is_Store() && mem->in(0) == cle_exit_proj) {
