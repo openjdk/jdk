@@ -165,7 +165,7 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
 
     @Override
     public void invalidateInstalledCode(InstalledCode installedCode) {
-        invalidateInstalledCode(installedCode, unknownInvalidationReason());
+        invalidateInstalledCode(installedCode, jvmciInvalidationReason());
     }
 
     @Override
@@ -206,7 +206,7 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
         runtime.getCompilerToVM().resetCompilationStatistics();
     }
 
-    private static int unknownInvalidationReason() {
-        return HotSpotJVMCIRuntime.runtime().config.getConstant("nmethod::ChangeReason::Unknown", Integer.class);
+    private static int jvmciInvalidationReason() {
+        return HotSpotJVMCIRuntime.runtime().config.getConstant("nmethod::InvalidationReason::JVMCI_INVALIDATE", Integer.class);
     }
 }

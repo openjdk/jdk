@@ -142,7 +142,7 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
 
     @Override
     public void invalidate(boolean deoptimize) {
-        invalidate(deoptimize, unknownInvalidationReason());
+        invalidate(deoptimize, jvmciInvalidationReason());
     }
 
     @Override
@@ -221,7 +221,7 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
         return compilerToVM().getInvalidationReasonDescription(this.getInvalidationReason());
     }
 
-    private static int unknownInvalidationReason() {
-        return HotSpotJVMCIRuntime.runtime().config.getConstant("nmethod::ChangeReason::Unknown", Integer.class);
+    private static int jvmciInvalidationReason() {
+        return HotSpotJVMCIRuntime.runtime().config.getConstant("nmethod::InvalidationReason::JVMCI_INVALIDATE", Integer.class);
     }
 }
