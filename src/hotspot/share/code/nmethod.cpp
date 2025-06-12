@@ -2028,13 +2028,7 @@ bool nmethod::make_not_entrant(ChangeReason change_reason) {
     } else {
       // The caller can be calling the method statically or through an inline
       // cache call.
-#if 0
-      NativeJump::patch_verified_entry(entry_point(), verified_entry_point(),
-                                       SharedRuntime::get_handle_wrong_method_stub());
-#endif
-#if 1
       BarrierSet::barrier_set()->barrier_set_nmethod()->make_not_entrant(this);
-#endif
     }
 
     if (update_recompile_counts()) {
