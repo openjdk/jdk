@@ -178,6 +178,10 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_oop_arraycopy;
   }
 
+  void generate_preuniverse_stubs() {
+    // preuniverse stubs are not needed for zero
+  }
+
   void generate_initial_stubs() {
     // entry points that exist in all platforms Note: This is code
     // that could be shared among different platforms - however the
@@ -214,6 +218,9 @@ class StubGenerator: public StubCodeGenerator {
  public:
   StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code, blob_id) {
     switch(blob_id) {
+    case preuniverse_id:
+      generate_preuniverse_stubs();
+      break;
     case initial_id:
       generate_initial_stubs();
       break;
