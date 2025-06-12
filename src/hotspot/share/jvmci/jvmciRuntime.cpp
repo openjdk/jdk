@@ -797,7 +797,7 @@ void JVMCINMethodData::set_nmethod_mirror(nmethod* nm, oop new_mirror) {
   Universe::heap()->register_nmethod(nm);
 }
 
-void JVMCINMethodData::invalidate_nmethod_mirror(nmethod* nm, nmethod::ChangeReason invalidation_reason) {
+void JVMCINMethodData::invalidate_nmethod_mirror(nmethod* nm, nmethod::InvalidationReason invalidation_reason) {
   oop nmethod_mirror = get_nmethod_mirror(nm);
   if (nmethod_mirror == nullptr) {
     return;
@@ -2186,7 +2186,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
               tty->print_cr("Replacing method %s", method_name);
             }
             if (old != nullptr) {
-              old->make_not_entrant(nmethod::ChangeReason::JVMCI_replaced_with_new_code);
+              old->make_not_entrant(nmethod::InvalidationReason::JVMCI_REPLACED_WITH_NEW_CODE);
             }
 
             LogTarget(Info, nmethod, install) lt;

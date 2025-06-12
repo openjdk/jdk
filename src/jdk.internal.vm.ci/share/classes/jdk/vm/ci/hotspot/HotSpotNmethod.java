@@ -79,6 +79,7 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
 
     /**
      * Identify the reason that caused this nmethod to be invalidated.
+     * A value of -1 means that the nmethod was not invalidated.
      */
     private int invalidationReason;
 
@@ -88,7 +89,7 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
         this.isDefault = isDefault;
         boolean inOopsTable = !IS_IN_NATIVE_IMAGE && !isDefault;
         this.compileIdSnapshot = inOopsTable ? 0L : compileId;
-        this.invalidationReason = 0;
+        this.invalidationReason = -1;
         assert inOopsTable || compileId != 0L : this;
     }
 
@@ -216,8 +217,8 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
     /**
      * @return a String describing the reason why this nmethod was invalidated.
      */
-    public String getInvalidationReasonString() {
-        return compilerToVM().getInvalidationReasonString(this.getInvalidationReason());
+    public String getInvalidationReasonDescription() {
+        return compilerToVM().getInvalidationReasonDescription(this.getInvalidationReason());
     }
 
     private static int unknownInvalidationReason() {

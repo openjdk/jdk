@@ -69,9 +69,9 @@ public class CodeInvalidationReasonTest extends CodeInstallationTest {
         Method method = getMethod("add", int.class, int.class);
 
         HotSpotNmethod nmethod = test(CodeInvalidationReasonTest::compileAdd, method, 5, 7);
-        Asserts.assertEquals(config.NMETHOD_CHANGE_REASON_UNKNOWN, nmethod.getInvalidationReason());
+        Asserts.assertEquals(-1 /* since it was not invalidated yet. */, nmethod.getInvalidationReason());
 
-        nmethod.invalidate(true, config.NMETHOD_CHANGE_REASON_JVMCI_INVALIDATE);
-        Asserts.assertEquals(config.NMETHOD_CHANGE_REASON_JVMCI_INVALIDATE, nmethod.getInvalidationReason());
+        nmethod.invalidate(true, config.NMETHOD_INVALIDATION_REASON_JVMCI_INVALIDATE);
+        Asserts.assertEquals(config.NMETHOD_INVALIDATION_REASON_JVMCI_INVALIDATE, nmethod.getInvalidationReason());
     }
 }

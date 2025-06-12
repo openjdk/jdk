@@ -654,7 +654,7 @@ final class CompilerToVM {
                     long failedSpeculationsAddress,
                     byte[] speculations);
 
-    native String getInvalidationReasonString(int invalidationReason);
+    native String getInvalidationReasonDescription(int invalidationReason);
 
     /**
      * Gets flags specifying optional parts of code info. Only if a flag is set, will the
