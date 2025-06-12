@@ -38,7 +38,7 @@
 #include "utilities/powerOfTwo.hpp"
 
 void Block_Array::grow(uint i) {
-  assert(i >= Max(), "must be an overflow");
+  assert(i >= Max(), "Should have been checked before, use maybe_grow?");
   DEBUG_ONLY(_limit = i+1);
   if( i < _size )  return;
   if( !_size ) {
