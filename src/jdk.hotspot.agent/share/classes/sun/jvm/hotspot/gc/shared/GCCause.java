@@ -55,7 +55,7 @@ public enum GCCause {
 
   _shenandoah_stop_vm ("Stopping VM"),
   _shenandoah_allocation_failure_evac ("Allocation Failure During Evacuation"),
-  __shenandoah_humongous_allocation_failure("Humongous Allocation Failure"),
+  _shenandoah_humongous_allocation_failure("Humongous Allocation Failure"),
   _shenandoah_concurrent_gc ("Concurrent GC"),
   _shenandoah_upgrade_to_full_gc ("Upgrade To Full GC"),
 
