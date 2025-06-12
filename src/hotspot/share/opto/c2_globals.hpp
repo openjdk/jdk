@@ -27,7 +27,7 @@
 
 #include "runtime/globals_shared.hpp"
 #include "utilities/macros.hpp"
-#include CPU_HEADER(c2_globals) 
+#include CPU_HEADER(c2_globals)
 
 //
 // Defines all globals flags used by the server compiler.
