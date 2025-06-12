@@ -23,10 +23,6 @@
 
 package compiler.lib.template_framework;
 
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * The {@link Template#body} and {@link Hook#anchor} are given a list of tokens, which are either
  * {@link Token}s or {@link String}s or some permitted boxed primitives.

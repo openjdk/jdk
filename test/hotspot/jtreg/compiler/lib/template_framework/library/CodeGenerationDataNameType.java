@@ -42,68 +42,68 @@ public interface CodeGenerationDataNameType extends DataName.Type {
      *
      * @return A random constant value.
      */
-    public Object con();
+    Object con();
 
     /**
      * The byte {@link PrimitiveType}.
      *
      * @return The byte {@link PrimitiveType}.
      */
-    public static PrimitiveType bytes()    { return PrimitiveType.BYTES; }
+    static PrimitiveType bytes()    { return PrimitiveType.BYTES; }
 
     /**
      * The short {@link PrimitiveType}.
      *
      * @return The short {@link PrimitiveType}.
      */
-    public static PrimitiveType shorts()   { return PrimitiveType.SHORTS; }
+    static PrimitiveType shorts()   { return PrimitiveType.SHORTS; }
 
     /**
      * The char {@link PrimitiveType}.
      *
      * @return The char {@link PrimitiveType}.
      */
-    public static PrimitiveType chars()    { return PrimitiveType.CHARS; }
+    static PrimitiveType chars()    { return PrimitiveType.CHARS; }
 
     /**
      * The int {@link PrimitiveType}.
      *
      * @return The int {@link PrimitiveType}.
      */
-    public static PrimitiveType ints()     { return PrimitiveType.INTS; }
+    static PrimitiveType ints()     { return PrimitiveType.INTS; }
 
     /**
      * The long {@link PrimitiveType}.
      *
      * @return The long {@link PrimitiveType}.
      */
-    public static PrimitiveType longs()    { return PrimitiveType.LONGS; }
+    static PrimitiveType longs()    { return PrimitiveType.LONGS; }
 
     /**
      * The float {@link PrimitiveType}.
      *
      * @return The float {@link PrimitiveType}.
      */
-    public static PrimitiveType floats()   { return PrimitiveType.FLOATS; }
+    static PrimitiveType floats()   { return PrimitiveType.FLOATS; }
 
     /**
      * The double {@link PrimitiveType}.
      *
      * @return The double {@link PrimitiveType}.
      */
-    public static PrimitiveType doubles()  { return PrimitiveType.DOUBLES; }
+    static PrimitiveType doubles()  { return PrimitiveType.DOUBLES; }
 
     /**
      * The boolean {@link PrimitiveType}.
      *
      * @return The boolean {@link PrimitiveType}.
      */
-    public static PrimitiveType booleans() { return PrimitiveType.BOOLEANS; }
+    static PrimitiveType booleans() { return PrimitiveType.BOOLEANS; }
 
     /**
      * List of all {@link PrimitiveType}s.
      */
-    public static final List<PrimitiveType> PRIMITIVE_TYPES = List.of(
+    static final List<PrimitiveType> PRIMITIVE_TYPES = List.of(
         bytes(),
         chars(),
         shorts(),
@@ -117,7 +117,7 @@ public interface CodeGenerationDataNameType extends DataName.Type {
     /**
      * List of all integral {@link PrimitiveType}s (byte, char, short, int, long).
      */
-    public static final List<PrimitiveType> INTEGRAL_TYPES = List.of(
+    static final List<PrimitiveType> INTEGRAL_TYPES = List.of(
         bytes(),
         chars(),
         shorts(),
@@ -128,7 +128,7 @@ public interface CodeGenerationDataNameType extends DataName.Type {
     /**
      * List of all subword {@link PrimitiveType}s (byte, char, short).
      */
-    public static final List<PrimitiveType> SUBWORD_TYPES = List.of(
+    static final List<PrimitiveType> SUBWORD_TYPES = List.of(
         bytes(),
         chars(),
         shorts()
@@ -137,7 +137,7 @@ public interface CodeGenerationDataNameType extends DataName.Type {
     /**
      * List of all floating {@link PrimitiveType}s (float, double).
      */
-    public static final List<PrimitiveType> FLOATING_TYPES = List.of(
+    static final List<PrimitiveType> FLOATING_TYPES = List.of(
         floats(),
         doubles()
     );
@@ -145,7 +145,7 @@ public interface CodeGenerationDataNameType extends DataName.Type {
     /**
      * List of all integral and floating {@link PrimitiveType}s.
      */
-    public static final List<PrimitiveType> INTEGRAL_AND_FLOATING_TYPES = List.of(
+    static final List<PrimitiveType> INTEGRAL_AND_FLOATING_TYPES = List.of(
         bytes(),
         chars(),
         shorts(),
