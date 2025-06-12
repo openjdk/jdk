@@ -52,7 +52,7 @@ public class CodeCacheSegmentSizeTest {
         output.shouldContain("Error: Could not create the Java Virtual Machine.");
         output.shouldContain("Error: A fatal exception has occurred. Program will exit.");
 
-        // Graceful exit with error code (usually 1)
+        // Graceful exit with error code 1
         output.shouldHaveExitValue(1);
     }
 }
