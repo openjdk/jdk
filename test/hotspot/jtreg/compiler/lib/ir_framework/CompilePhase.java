@@ -79,9 +79,10 @@ public enum CompilePhase {
     AFTER_RANGE_CHECK_ELIMINATION("After Range Check Elimination"),
     BEFORE_PRE_MAIN_POST("Before Pre/Main/Post Loops"),
     AFTER_PRE_MAIN_POST("After Pre/Main/Post Loops"),
-    SUPERWORD1_BEFORE_SCHEDULE("Superword 1, Before Schedule"),
-    SUPERWORD2_BEFORE_OUTPUT("Superword 2, Before Output"),
-    SUPERWORD3_AFTER_OUTPUT("Superword 3, After Output"),
+    AUTO_VECTORIZATION1_BEFORE_APPLY("AutoVectorization 1, before Apply"),
+    AUTO_VECTORIZATION2_AFTER_REORDER("AutoVectorization 2, after Apply Memop Reordering"),
+    AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT("AutoVectorization 3, after Adjusting Pre-loop Limit"),
+    AUTO_VECTORIZATION4_AFTER_SPECULATIVE_RUNTIME_CHECKS("AutoVectorization 4, after Adding Speculative Runtime Checks"),
     // Match on very first BEFORE_CLOOPS phase (there could be multiple phases for multiple loops in the code).
     BEFORE_CLOOPS("Before CountedLoop", RegexType.IDEAL_INDEPENDENT, ActionOnRepeat.KEEP_FIRST),
     AFTER_CLOOPS("After CountedLoop"),
