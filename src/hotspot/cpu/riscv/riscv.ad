@@ -8190,7 +8190,7 @@ instruct unnecessary_membar_volatile_rvtso() %{
   ins_cost(0);
 
   size(0);
-  
+ 
   format %{ "#@unnecessary_membar_volatile_rvtso (unnecessary so empty encoding)" %}
   ins_encode %{
     __ block_comment("unnecessary_membar_volatile_rvtso");
