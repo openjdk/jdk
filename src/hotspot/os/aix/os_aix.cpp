@@ -254,41 +254,50 @@ static bool is_close_to_brk(address a) {
   return false;
 }
 
-size_t os::free_memory() {
+MemRes os::free_memory() {
   return Aix::available_memory();
 }
 
-size_t os::available_memory() {
+MemRes os::available_memory() {
   return Aix::available_memory();
 }
 
-size_t os::Aix::available_memory() {
+MemRes os::Aix::available_memory() {
   os::Aix::meminfo_t mi;
+  MemRes res;
   if (os::Aix::get_meminfo(&mi)) {
-    return mi.real_free;
+    res.val = mi.real_free;
   } else {
-    return static_cast<size_t>(-1);
+    res.err = -1;
   }
+  return res;
 }
 
-size_t os::total_swap_space() {
+MemRes os::total_swap_space() {
   perfstat_memory_total_t memory_info;
+  MemRes res;
   if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
-    return static_cast<size_t>(-1);
+    res.err = -1;
+    return res;
   }
-  return static_cast<size_t>(memory_info.pgsp_total * 4 * K);
+  res.val = static_cast<size_t>(memory_info.pgsp_total * 4 * K);
+  return res;
 }
 
-size_t os::free_swap_space() {
+MemRes os::free_swap_space() {
   perfstat_memory_total_t memory_info;
+  MemRes res;
   if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
-    return static_cast<size_t>(-1);
+    res.err = -1;
+    return res;
   }
-  return static_cast<size_t>(memory_info.pgsp_free * 4 * K);
+  res.val = static_cast<size_t>(memory_info.pgsp_free * 4 * K);
+  return res;
 }
 
-size_t os::physical_memory() {
-  return Aix::physical_memory();
+MemRes os::physical_memory() {
+  MemRes res(Aix::physical_memory(), 0);
+  return res;
 }
 
 size_t os::rss() { return (size_t)0; }

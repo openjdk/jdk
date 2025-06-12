@@ -848,54 +848,64 @@ jlong os::elapsed_frequency() {
 }
 
 
-size_t os::available_memory() {
+MemRes os::available_memory() {
   return win32::available_memory();
 }
 
-size_t os::free_memory() {
+MemRes os::free_memory() {
   return win32::available_memory();
 }
 
-size_t os::win32::available_memory() {
+MemRes os::win32::available_memory() {
   // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
   // value if total memory is larger than 4GB
+  MemRes memRes;
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
   if (!res) {
     errno = ::GetLastError();
     log_debug(os)("available_memory() failed to GlobalMemoryStatusEx: GetLastError->%ld.", errno);
-    return static_cast<size_t>(-1);
+    memRes.err = -1;
+    return memRes;
   }
-  return static_cast<size_t>(ms.ullAvailPhys);
+  memRes.val = static_cast<size_t>(ms.ullAvailPhys);
+  return memRes;
 }
 
-size_t os::total_swap_space() {
+MemRes os::total_swap_space() {
+  MemRes memRes;
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
   if (!res) {
     errno = ::GetLastError();
     log_debug(os)("total_swap_space() failed to GlobalMemoryStatusEx: GetLastError->%ld.", errno);
-    return static_cast<size_t>(-1);
+    memRes.err = -1;
+    return memRes;
   }
-  return static_cast<size_t>(ms.ullTotalPageFile);
+  memRes.val = static_cast<size_t>(ms.ullTotalPageFile);
+  return memRes;
 }
 
-size_t os::free_swap_space() {
+MemRes os::free_swap_space() {
+  MemRes memRes;
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
   if (!res) {
     errno = ::GetLastError();
     log_debug(os)("free_swap_space() failed to GlobalMemoryStatusEx: GetLastError->%ld.", errno);
-    return static_cast<size_t>(-1);
+    memRes.err = -1;
+    return memRes;
   }
-  return static_cast<size_t>(ms.ullAvailPageFile);
+  memRes.val = static_cast<size_t>(ms.ullAvailPageFile);
+  return memRes;
 }
 
-size_t os::physical_memory() {
-  return win32::physical_memory();
+MemRes os::physical_memory() {
+  MemRes res(win32::physical_memory(), 0);
+  return res;
 }
 
 size_t os::rss() {

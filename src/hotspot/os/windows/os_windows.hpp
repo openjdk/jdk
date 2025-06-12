@@ -102,8 +102,8 @@ class os::win32 {
   static int processor_level() {
     return _processor_level;
   }
-  static size_t available_memory();
-  static size_t free_memory();
+  static MemRes available_memory();
+  static MemRes free_memory();
   static size_t physical_memory() { return _physical_memory; }
 
   // load dll from Windows system directory or Windows directory

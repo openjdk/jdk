@@ -133,19 +133,20 @@ static volatile int processor_id_next = 0;
 ////////////////////////////////////////////////////////////////////////////////
 // utility functions
 
-size_t os::available_memory() {
+MemRes os::available_memory() {
   return Bsd::available_memory();
 }
 
-size_t os::free_memory() {
+MemRes os::free_memory() {
   return Bsd::available_memory();
 }
 
 // Available here means free. Note that this number is of no much use. As an estimate
 // for future memory pressure it is far too conservative, since MacOS will use a lot
 // of unused memory for caches, and return it willingly in case of needs.
-size_t os::Bsd::available_memory() {
+MemRes os::Bsd::available_memory() {
   uint64_t available = physical_memory() >> 2;
+  MemRes res;
 #ifdef __APPLE__
   mach_msg_type_number_t count = HOST_VM_INFO64_COUNT;
   vm_statistics64_data_t vmstat;
@@ -156,10 +157,12 @@ size_t os::Bsd::available_memory() {
   if (kerr == KERN_SUCCESS) {
     available = vmstat.free_count * os::vm_page_size();
   } else {
-    return static_cast<size_t>(-1);
+    res.err = -1;
+    return res;
   }
 #endif
-  return static_cast<size_t>(available);
+  res.val = static_cast<size_t>(available);
+  return res;
 }
 
 // for more info see :
@@ -178,34 +181,43 @@ void os::Bsd::print_uptime_info(outputStream* st) {
   }
 }
 
-size_t os::total_swap_space() {
+MemRes os::total_swap_space() {
+  MemRes res;
 #if defined(__APPLE__)
   struct xsw_usage vmusage;
   size_t size = sizeof(vmusage);
   if (sysctlbyname("vm.swapusage", &vmusage, &size, nullptr, 0) != 0) {
-    return static_cast<size_t>(-1);
+    res.err = -1;
+    return res;
   }
-  return static_cast<size_t>(vmusage.xsu_total);
+  res.val = static_cast<size_t>(vmusage.xsu_total);
+  return res;
 #else
-  return static_cast<size_t>(-1);
+  res.err = -1;
+  return res;
 #endif
 }
 
-size_t os::free_swap_space() {
+MemRes os::free_swap_space() {
+  MemRes res;
 #if defined(__APPLE__)
   struct xsw_usage vmusage;
   size_t size = sizeof(vmusage);
   if (sysctlbyname("vm.swapusage", &vmusage, &size, nullptr, 0) != 0) {
-    return static_cast<size_t>(-1);
+    res.err = -1;
+    return res;
   }
-  return static_cast<size_t>(vmusage.xsu_avail);
+  res.val = static_cast<size_t>(vmusage.xsu_avail);
+  return res;
 #else
-  return static_cast<size_t>(-1);
+  res.err = -1;
+  return res;
 #endif
 }
 
-size_t os::physical_memory() {
-  return Bsd::physical_memory();
+MemRes os::physical_memory() {
+  MemRes res(Bsd::physical_memory(), 0);
+  return res;
 }
 
 size_t os::rss() {
@@ -1468,9 +1480,9 @@ void os::print_memory_info(outputStream* st) {
   st->print(" %zuk page", os::vm_page_size()>>10);
 
   st->print(", physical %zu" "k",
-            os::physical_memory() >> 10);
+            os::physical_memory().val >> 10);
   st->print("(%zu" "k free)",
-            os::available_memory() >> 10);
+            os::available_memory().val >> 10);
 
   if((sysctlbyname("vm.swapusage", &swap_usage, &size, nullptr, 0) == 0) || (errno == ENOMEM)) {
     if (size >= offset_of(xsw_usage, xsu_used)) {

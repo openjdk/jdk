@@ -145,6 +145,14 @@ enum WXMode {
   WXExec
 };
 
+// struct to return from mem-related functions
+struct MemRes {
+  size_t val;
+  int err;
+  MemRes(size_t v, int e) : val(v), err(e) {}
+  MemRes(): val(0), err(0) {}
+};
+
 // Executable parameter flag for os::commit_memory() and
 // os::commit_memory_or_exit().
 const bool ExecMem = true;
@@ -337,14 +345,14 @@ class os: AllStatic {
   // For example, on Linux, "available" memory (`MemAvailable` in `/proc/meminfo`) is greater
   // than "free" memory (`MemFree` in `/proc/meminfo`) because Linux can free memory
   // aggressively (e.g. clear caches) so that it becomes available.
-  static size_t available_memory();
-  static size_t used_memory();
-  static size_t free_memory();
+  static MemRes available_memory();
+  static MemRes used_memory();
+  static MemRes free_memory();
 
-  static size_t total_swap_space();
-  static size_t free_swap_space();
+  static MemRes total_swap_space();
+  static MemRes free_swap_space();
 
-  static size_t physical_memory();
+  static MemRes physical_memory();
   static bool has_allocatable_memory_limit(size_t* limit);
   static bool is_server_class_machine();
   static size_t rss();

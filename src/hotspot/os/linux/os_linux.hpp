@@ -53,8 +53,8 @@ class os::Linux {
   static size_t _physical_memory;
   static pthread_t _main_thread;
 
-  static size_t available_memory();
-  static size_t free_memory();
+  static MemRes available_memory();
+  static MemRes free_memory();
 
 
   static void initialize_system_info();
