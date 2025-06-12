@@ -43,24 +43,21 @@ import compiler.lib.template_framework.DataName;
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateToken;
 import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.dataNames;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.addDataName;
+import static compiler.lib.template_framework.Template.dataNames;
+import static compiler.lib.template_framework.DataName.Mutability.MUTABLE;
 
 import compiler.lib.template_framework.library.Hooks;
 import compiler.lib.template_framework.library.CodeGenerationDataNameType;
 import compiler.lib.template_framework.library.PrimitiveType;
 
+/**
+ * This test shows the use of {@link PrimitiveType}.
+ */
 public class TestPrimitiveTypes {
-    // TODO: write tests
-    //
-    // - use all functions and lists of types.
-    // - use DataNames for sampling
-    // - generate random constants with con
-    // - cast to boxed types and back
-    // - Use byteSize with MemorySegment -> check if correct via strides.
-    // - isFloating -> check for rounding or something?
-    // - boolean -> no size??
 
     public static void main(String[] args) {
         // Create a new CompileFramework instance.
@@ -78,8 +75,10 @@ public class TestPrimitiveTypes {
 
     // Generate a source Java file as String
     public static String generate() {
+        // Generate a list of test methods.
         Map<String,TemplateToken> tests = new HashMap<>();
 
+        // The boxing tests check if we can autobox with "boxedTypeName".
         var boxingTemplate = Template.make("name", "type", (String name, PrimitiveType type) -> body(
             let("CON1", type.con()),
             let("CON2", type.con()),
@@ -101,6 +100,7 @@ public class TestPrimitiveTypes {
             tests.put(name, boxingTemplate.asToken(name, type));
         }
 
+        // Integral and Float types have a size. Also test if "isFloating" is correct.
         var integralFloatTemplate = Template.make("name", "type", (String name, PrimitiveType type) -> body(
             let("size", type.byteSize()),
             let("isFloating", type.isFloating()),
@@ -129,8 +129,22 @@ public class TestPrimitiveTypes {
             tests.put(name, integralFloatTemplate.asToken(name, type));
         }
 
+        // Finally, test the type by creating some DataNames (variables), and sampling
+        // from them. There should be no cross-over between the types.
         var variableTemplate = Template.make("type", (PrimitiveType type) -> body(
-            addDataName($("var"), type, DataName.Mutability.MUTABLE)
+            let("CON", type.con()),
+            addDataName($("var"), type, MUTABLE),
+            """
+            #type $var = #CON;
+            """
+        ));
+
+        var sampleTemplate = Template.make("type", (PrimitiveType type) -> body(
+            let("var", dataNames(MUTABLE).exactOf(type).sample().name()),
+            let("CON", type.con()),
+            """
+            #var = #CON;
+            """
         ));
 
         var namesTemplate = Template.make(() -> body(
@@ -144,8 +158,13 @@ public class TestPrimitiveTypes {
                     ).toList()
                 ),
                 """
-                TODO: sample!
-                """
+                // Now sample:
+                """,
+                Collections.nCopies(10,
+                    CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(type ->
+                        sampleTemplate.asToken(type)
+                    ).toList()
+                )
             ),
             """
             }
@@ -154,7 +173,8 @@ public class TestPrimitiveTypes {
 
         tests.put("test_names", namesTemplate.asToken());
 
-        // Create a Template with two arguments.
+        // Finally, put all the tests together in a class, and invoke all
+        // tests from the main method.
         var template = Template.make(() -> body(
             """
             package p.xyz;
@@ -182,6 +202,4 @@ public class TestPrimitiveTypes {
         // Render the template to a String.
         return template.render();
     }
-
-
 }
