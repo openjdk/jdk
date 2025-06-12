@@ -82,8 +82,7 @@ final class ProcessImpl extends Process {
     private static enum LaunchMechanism {
         // order IS important!
         FORK,
-        POSIX_SPAWN,
-        VFORK
+        POSIX_SPAWN
     }
 
     /**
@@ -98,29 +97,7 @@ final class ProcessImpl extends Process {
 
         try {
             // Should be value of a LaunchMechanism enum
-            LaunchMechanism lm = LaunchMechanism.valueOf(s.toUpperCase(Locale.ROOT));
-            switch (OperatingSystem.current()) {
-                case LINUX: {
-                    // All options are valid for Linux, but VFORK is deprecated and results
-                    // in a warning
-                    if (lm == LaunchMechanism.VFORK) {
-                        System.err.println("VFORK MODE DEPRECATED");
-                        System.err.println("""
-                                          The VFORK launch mechanism has been deprecated for being dangerous.
-                                          It will be removed in a future java version. Either remove the
-                                          jdk.lang.Process.launchMechanism property (preferred) or use FORK mode
-                                          instead (-Djdk.lang.Process.launchMechanism=FORK).
-                                          """);
-                    }
-                    return lm;
-                }
-                case AIX:
-                case MACOS:
-                    if (lm != LaunchMechanism.VFORK) {
-                        return lm; // All but VFORK are valid
-                    }
-                    break;
-            }
+            return LaunchMechanism.valueOf(s.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
         }
 
@@ -266,7 +243,6 @@ final class ProcessImpl extends Process {
      * <pre>
      *   1 - fork(2) and exec(2)
      *   2 - posix_spawn(3P)
-     *   3 - vfork(2) and exec(2)
      * </pre>
      * @param fds an array of three file descriptors.
      *        Indexes 0, 1, and 2 correspond to standard input,
