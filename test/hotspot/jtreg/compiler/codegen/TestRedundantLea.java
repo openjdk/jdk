@@ -94,7 +94,7 @@ import compiler.lib.ir_framework.*;
 
 // The following tests ensure that we do not generate a redundant lea instruction on x86.
 // These get generated on chained dereferences for the rules leaPCompressedOopOffset,
-// leaP8Narow, and leaP32Narrow and stem from a decodeHeapOopNotNull that is not needed
+// leaP8Narrow, and leaP32Narrow and stem from a decodeHeapOopNotNull that is not needed
 // unless the derived oop is added to an oop map. The redundant lea is removed with an
 // opto assembly peephole optimization. Hence, all tests below feature a negative test
 // run with -XX:-OptoPeephole to detect changes that obsolete that peephole.
@@ -138,7 +138,7 @@ public class TestRedundantLea {
         Scenario[] scenarios = new Scenario[4];
         for (boolean negativeTest : new boolean[] {false, true}) {
             for (boolean compressedTest : new boolean[] {false, true}) {
-                //                                             leaPComperssedOopOffset  leaP(8|32)Narrow
+                //                                             leaPCompressedOopOffset  leaP(8|32)Narrow
                 scenarios[i] = new Scenario(i, compressedTest ? "-XX:MaxHeapSize=4g" : "-XX:MaxHeapSize=32m");
                 if (negativeTest) {
                     scenarios[i].addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-OptoPeephole");
