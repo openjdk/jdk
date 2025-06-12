@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (cMemTagFactory::number_of_tags()/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,7 +37,7 @@ const char* VMATree::statetype_strings[3] = {
 VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType state,
                                                const RegionData& metadata, bool use_tag_inplace) {
   assert(!use_tag_inplace || metadata.mem_tag == mtNone,
-         "If using use_tag_inplace, then the supplied tag should be mtNone, was instead: %s", NMTUtil::tag_to_name(metadata.mem_tag));
+         "If using use_tag_inplace, then the supplied tag should be mtNone, was instead: %s", MemTagFactory::human_readable_name_of(metadata.mem_tag));
   if (A == B) {
     // A 0-sized mapping isn't worth recording.
     return SummaryDiff();
@@ -219,7 +219,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
 #ifdef ASSERT
 void VMATree::print_on(outputStream* out) {
   visit_in_order([&](TreapNode* current) {
-    out->print("%zu (%s) - %s - ", current->key(), NMTUtil::tag_to_name(out_state(current).mem_tag()),
+    out->print("%zu (%s) - %s - ", current->key(), MemTagFactory::human_readable_name_of(out_state(current).mem_tag()),
                statetype_to_string(out_state(current).type()));
   });
   out->cr();
@@ -302,11 +302,11 @@ VMATree::SummaryDiff VMATree::set_tag(const position start, const size size, con
 
 #ifdef ASSERT
 void VMATree::SummaryDiff::print_on(outputStream* out) {
-  for (int i = 0; i < mt_number_of_tags; i++) {
+  for (int i = 0; i < MemTagFactory::number_of_tags(); i++) {
     if (tag[i].reserve == 0 && tag[i].commit == 0) {
       continue;
     }
-    out->print_cr("Tag %s R: " INT64_FORMAT " C: " INT64_FORMAT, NMTUtil::tag_to_enum_name((MemTag)i), tag[i].reserve,
+    out->print_cr("Tag %s R: " INT64_FORMAT " C: " INT64_FORMAT, MemTagFactory::name_of((MemTag)i), tag[i].reserve,
                   tag[i].commit);
   }
 }

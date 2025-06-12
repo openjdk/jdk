@@ -717,7 +717,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     // may invalidate the old block, including its header.
     MallocHeader* header = MallocHeader::resolve_checked(memblock);
     assert(mem_tag == header->mem_tag(), "weird NMT type mismatch (new:\"%s\" != old:\"%s\")\n",
-           NMTUtil::tag_to_name(mem_tag), NMTUtil::tag_to_name(header->mem_tag()));
+           MemTagFactory::human_readable_name_of(mem_tag), MemTagFactory::human_readable_name_of(header->mem_tag()));
     const MallocHeader::FreeInfo free_info = header->free_info();
 
     header->mark_block_as_dead();
@@ -2263,7 +2263,7 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
-    MemTracker::NmtVirtualMemoryLocker nvml;
+    NmtVirtualMemoryLocker nvml;
     res = pd_uncommit_memory(addr, bytes, executable);
     if (res) {
       MemTracker::record_virtual_memory_uncommit(addr, bytes);
@@ -2290,7 +2290,7 @@ bool os::release_memory(char* addr, size_t bytes) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
-    MemTracker::NmtVirtualMemoryLocker nvml;
+    NmtVirtualMemoryLocker nvml;
     res = pd_release_memory(addr, bytes);
     if (res) {
       MemTracker::record_virtual_memory_release(addr, bytes);
@@ -2375,7 +2375,7 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
 bool os::unmap_memory(char *addr, size_t bytes) {
   bool result;
   if (MemTracker::enabled()) {
-    MemTracker::NmtVirtualMemoryLocker nvml;
+    NmtVirtualMemoryLocker nvml;
     result = pd_unmap_memory(addr, bytes);
     if (result) {
       MemTracker::record_virtual_memory_release(addr, bytes);
@@ -2414,7 +2414,7 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
 bool os::release_memory_special(char* addr, size_t bytes) {
   bool res;
   if (MemTracker::enabled()) {
-    MemTracker::NmtVirtualMemoryLocker nvml;
+    NmtVirtualMemoryLocker nvml;
     res = pd_release_memory_special(addr, bytes);
     if (res) {
       MemTracker::record_virtual_memory_release(addr, bytes);
