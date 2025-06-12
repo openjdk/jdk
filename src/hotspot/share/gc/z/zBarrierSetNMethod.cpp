@@ -113,7 +113,10 @@ void ZBarrierSetNMethod::arm_with(nmethod* nm, int value) {
   if (is_not_entrant(nm)) {
     value |= not_entrant;
   }
-  set_guard_value(nm, value);
+  if (guard_value(nm) != value) {
+    // Patch the code only if needed.
+    set_guard_value(nm, value);
+  }
 }
 
 bool ZBarrierSetNMethod::is_armed(nmethod* nm) {
