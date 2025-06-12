@@ -37,7 +37,6 @@
 #include "gc/z/zJNICritical.hpp"
 #include "gc/z/zNMethod.hpp"
 #include "gc/z/zObjArrayAllocator.hpp"
-#include "gc/z/zObjectAllocator.inline.hpp"
 #include "gc/z/zServiceability.hpp"
 #include "gc/z/zStackChunkGCData.inline.hpp"
 #include "gc/z/zStat.hpp"
@@ -136,7 +135,7 @@ bool ZCollectedHeap::requires_barriers(stackChunkOop obj) const {
 
 HeapWord* ZCollectedHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) {
   const size_t size_in_bytes = ZUtils::words_to_bytes(align_object_size(requested_size));
-  const zaddress addr = ZObjectAllocator::eden()->alloc_tlab(size_in_bytes);
+  const zaddress addr = ZHeap::heap()->alloc_tlab(size_in_bytes);
 
   if (!is_null(addr)) {
     *actual_size = requested_size;

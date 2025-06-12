@@ -26,25 +26,15 @@
 
 #include "gc/z/zObjectAllocator.hpp"
 
-#include "gc/z/zHeap.hpp"
 #include "gc/z/zPageAge.inline.hpp"
 
-inline ZObjectAllocator* ZObjectAllocator::allocator(ZPageAge age) {
+inline ZObjectAllocator* ZObjectAllocators::allocator(ZPageAge age) {
   return _allocators->at((int)untype(age));
 }
 
-inline ZObjectAllocator* ZObjectAllocator::eden() {
-  return allocator(ZPageAge::eden);
-}
-
-inline zaddress ZObjectAllocator::alloc_tlab(size_t size) {
-  guarantee(size <= ZHeap::heap()->max_tlab_size(), "TLAB too large");
-  return alloc_object(size);
-}
-
-inline void ZObjectAllocator::retire_pages(ZPageAgeRange range) {
+inline void ZObjectAllocators::retire_pages(ZPageAgeRange range) {
   for (ZPageAge age : range) {
-    _allocators->at((int)untype(age))->retire_pages();
+    allocator(age)->retire_pages();
   }
 }
 

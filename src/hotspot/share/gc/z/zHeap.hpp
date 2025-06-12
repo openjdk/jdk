@@ -111,7 +111,8 @@ public:
   size_t free_empty_pages(ZGenerationId id, const ZArray<ZPage*>* pages);
 
   // Object allocation
-  zaddress alloc_object(size_t size_in_bytes) const;
+  zaddress alloc_object(size_t size) const;
+  zaddress alloc_tlab(size_t size) const;
   bool is_alloc_stalling() const;
   bool is_alloc_stalling_for_old() const;
   void handle_alloc_stalling_for_young();

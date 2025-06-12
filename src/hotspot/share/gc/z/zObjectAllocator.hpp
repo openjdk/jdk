@@ -37,15 +37,9 @@ class ZPage;
 class ZPageTable;
 
 class ZObjectAllocator {
-public:
-  static constexpr uint NumAllocators = ZPageAgeCount;
-  static constexpr uint NumRelocationAllocators = NumAllocators - 1;
-
-  typedef Deferred<ValueObjArray<ZObjectAllocator, NumAllocators>> Allocators;
+  friend class ZObjectAllocators;
 
 private:
-  static Allocators  _allocators;
-
   const ZPageAge     _age;
   const bool         _use_per_cpu_shared_small_pages;
   ZPerCPU<ZPage*>    _shared_small_page;
@@ -77,21 +71,30 @@ private:
   void retire_pages();
 
 public:
-  static void initialize();
+  ZObjectAllocator(ZPageAge age);
+};
 
+class ZObjectAllocators : public AllStatic {
+public:
+  static constexpr uint NumAllocators = ZPageAgeCount;
+  static constexpr uint NumRelocationAllocators = NumAllocators - 1;
+
+private:
+  using Allocators = Deferred<ValueObjArray<ZObjectAllocator, NumAllocators>>;
+
+  static Allocators _allocators;
   static ZObjectAllocator* allocator(ZPageAge age);
-  static ZObjectAllocator* eden();
+
+public:
+  static void initialize();
 
   static void retire_pages(ZPageAgeRange range);
 
-  ZObjectAllocator(ZPageAge age);
+  static size_t remaining_in_eden();
 
   // Mutator allocation
-  zaddress alloc_tlab(size_t size);
-  zaddress alloc_object(size_t size);
-  void undo_alloc_object(zaddress addr, size_t size);
-
-  size_t remaining() const;
+  static zaddress alloc_object(size_t size, ZPageAge age);
+  static void undo_alloc_object(zaddress addr, size_t size, ZPageAge age);
 };
 
 #endif // SHARE_GC_Z_ZOBJECTALLOCATOR_HPP

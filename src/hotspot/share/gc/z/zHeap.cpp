@@ -34,7 +34,7 @@
 #include "gc/z/zHeapIterator.hpp"
 #include "gc/z/zHeuristics.hpp"
 #include "gc/z/zInitialize.hpp"
-#include "gc/z/zObjectAllocator.inline.hpp"
+#include "gc/z/zObjectAllocator.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zResurrection.hpp"
@@ -143,7 +143,7 @@ size_t ZHeap::max_tlab_size() const {
 }
 
 size_t ZHeap::unsafe_max_tlab_alloc() const {
-  size_t size = ZObjectAllocator::eden()->remaining();
+  size_t size = ZObjectAllocators::remaining_in_eden();
 
   if (size < MinTLABSize) {
     // The remaining space in the allocator is not enough to

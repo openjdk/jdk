@@ -40,12 +40,7 @@
 static const ZStatCounter ZCounterUndoObjectAllocationSucceeded("Memory", "Undo Object Allocation Succeeded", ZStatUnitOpsPerSecond);
 static const ZStatCounter ZCounterUndoObjectAllocationFailed("Memory", "Undo Object Allocation Failed", ZStatUnitOpsPerSecond);
 
-ZObjectAllocator::Allocators ZObjectAllocator::_allocators;
-
-void ZObjectAllocator::initialize() {
-  ZPageAgeRange::Iterator it = ZPageAgeRange().begin();
-  _allocators.initialize(it);
-}
+ZObjectAllocators::Allocators ZObjectAllocators::_allocators;
 
 ZObjectAllocator::ZObjectAllocator(ZPageAge age)
   : _age(age),
@@ -203,22 +198,47 @@ zaddress ZObjectAllocator::alloc_object(size_t size, ZAllocationFlags flags) {
   }
 }
 
-zaddress ZObjectAllocator::alloc_object(size_t size) {
+void ZObjectAllocator::retire_pages() {
+  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
+
+  // Reset allocation pages
+  _shared_medium_page.set(nullptr);
+  _shared_small_page.set_all(nullptr);
+}
+
+void ZObjectAllocators::initialize() {
+  ZPageAgeRange::Iterator it = ZPageAgeRange().begin();
+  _allocators.initialize(it);
+}
+
+size_t ZObjectAllocators::remaining_in_eden() {
+  assert(Thread::current()->is_Java_thread(), "Should be a Java thread");
+
+  ZPage** const shared_addr = allocator(ZPageAge::eden)->shared_small_page_addr();
+  const ZPage* const page = Atomic::load_acquire(shared_addr);
+  if (page != nullptr) {
+    return page->remaining();
+  }
+
+  return 0;
+}
+
+zaddress ZObjectAllocators::alloc_object(size_t size, ZPageAge age) {
   ZAllocationFlags flags;
 
-  if (_age != ZPageAge::eden) {
+  if (age != ZPageAge::eden) {
     // Object allocation for relocation should not block
     flags.set_non_blocking();
   }
 
-  return alloc_object(size, flags);
+  return allocator(age)->alloc_object(size, flags);
 }
 
-void ZObjectAllocator::undo_alloc_object(zaddress addr, size_t size) {
+void ZObjectAllocators::undo_alloc_object(zaddress addr, size_t size, ZPageAge age) {
   ZPage* const page = ZHeap::heap()->page(addr);
 
   if (page->is_large()) {
-    undo_alloc_page(page);
+    allocator(age)->undo_alloc_page(page);
     ZStatInc(ZCounterUndoObjectAllocationSucceeded);
   } else {
     if (page->undo_alloc_object_atomic(addr, size)) {
@@ -227,23 +247,4 @@ void ZObjectAllocator::undo_alloc_object(zaddress addr, size_t size) {
       ZStatInc(ZCounterUndoObjectAllocationFailed);
     }
   }
-}
-
-size_t ZObjectAllocator::remaining() const {
-  assert(Thread::current()->is_Java_thread(), "Should be a Java thread");
-
-  const ZPage* const page = Atomic::load_acquire(shared_small_page_addr());
-  if (page != nullptr) {
-    return page->remaining();
-  }
-
-  return 0;
-}
-
-void ZObjectAllocator::retire_pages() {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-
-  // Reset allocation pages
-  _shared_medium_page.set(nullptr);
-  _shared_small_page.set_all(nullptr);
 }

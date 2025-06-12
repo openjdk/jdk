@@ -32,9 +32,9 @@
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zIndexDistributor.inline.hpp"
 #include "gc/z/zIterator.inline.hpp"
-#include "gc/z/zObjectAllocator.inline.hpp"
+#include "gc/z/zObjectAllocator.hpp"
 #include "gc/z/zPage.inline.hpp"
-#include "gc/z/zPageAge.hpp"
+#include "gc/z/zPageAge.inline.hpp"
 #include "gc/z/zRelocate.hpp"
 #include "gc/z/zRelocationSet.inline.hpp"
 #include "gc/z/zRootsIterator.hpp"
@@ -325,10 +325,9 @@ static zaddress relocate_object_inner(ZForwarding* forwarding, zaddress from_add
 
   // Allocate object
   const size_t size = ZUtils::object_size(from_addr);
+  const ZPageAge to_age = forwarding->to_age();
 
-  ZObjectAllocator* allocator = ZObjectAllocator::allocator(forwarding->to_age());
-
-  const zaddress to_addr = allocator->alloc_object(size);
+  const zaddress to_addr = ZObjectAllocators::alloc_object(size, to_age);
 
   if (is_null(to_addr)) {
     // Allocation failed
@@ -343,7 +342,7 @@ static zaddress relocate_object_inner(ZForwarding* forwarding, zaddress from_add
 
   if (to_addr_final != to_addr) {
     // Already relocated, try undo allocation
-    allocator->undo_alloc_object(to_addr, size);
+    ZObjectAllocators::undo_alloc_object(to_addr, size, to_age);
   }
 
   return to_addr_final;
@@ -470,7 +469,7 @@ class ZRelocateMediumAllocator {
 private:
   ZGeneration* const _generation;
   ZConditionLock     _lock;
-  ZPage*             _shared[ZObjectAllocator::NumRelocationAllocators];
+  ZPage*             _shared[ZObjectAllocators::NumRelocationAllocators];
   bool               _in_place;
   volatile size_t    _in_place_count;
 
@@ -483,7 +482,7 @@ public:
       _in_place_count(0) {}
 
   ~ZRelocateMediumAllocator() {
-    for (uint i = 0; i < ZObjectAllocator::NumRelocationAllocators; ++i) {
+    for (uint i = 0; i < ZObjectAllocators::NumRelocationAllocators; ++i) {
       if (_shared[i] != nullptr) {
         retire_target_page(_generation, _shared[i]);
       }
@@ -564,7 +563,7 @@ class ZRelocateWork : public StackObj {
 private:
   Allocator* const    _allocator;
   ZForwarding*        _forwarding;
-  ZPage*              _target[ZObjectAllocator::NumRelocationAllocators];
+  ZPage*              _target[ZObjectAllocators::NumRelocationAllocators];
   ZGeneration* const  _generation;
   size_t              _other_promoted;
   size_t              _other_compacted;
@@ -918,7 +917,7 @@ public:
       _other_compacted(0) {}
 
   ~ZRelocateWork() {
-    for (uint i = 0; i < ZObjectAllocator::NumRelocationAllocators; ++i) {
+    for (uint i = 0; i < ZObjectAllocators::NumRelocationAllocators; ++i) {
       _allocator->free_target_page(_target[i]);
     }
     // Report statistics on-behalf of non-worker threads
