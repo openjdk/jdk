@@ -1289,7 +1289,7 @@ void MacroAssembler::cmov_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, Regi
   Label no_set;
   if (is_single) {
     // jump if cmp1 != cmp2, including the case of NaN
-    // not jump (i.e. move src to dst) if cmp1 == cmp2
+    // fallthrough (i.e. move src to dst) if cmp1 == cmp2
     float_bne(cmp1, cmp2, no_set);
   } else {
     double_bne(cmp1, cmp2, no_set);
@@ -1318,7 +1318,7 @@ void MacroAssembler::cmov_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, Regi
   Label no_set;
   if (is_single) {
     // jump if cmp1 == cmp2
-    // not jump (i.e. move src to dst) if cmp1 != cmp2, including the case of NaN
+    // fallthrough (i.e. move src to dst) if cmp1 != cmp2, including the case of NaN
     float_beq(cmp1, cmp2, no_set);
   } else {
     double_beq(cmp1, cmp2, no_set);
@@ -1350,7 +1350,7 @@ void MacroAssembler::cmov_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Regi
   Label no_set;
   if (is_single) {
     // jump if cmp1 > cmp2
-    // not jump (i.e. move src to dst) if cmp1 <= cmp2 or either is NaN
+    // fallthrough (i.e. move src to dst) if cmp1 <= cmp2 or either is NaN
     float_bgt(cmp1, cmp2, no_set);
   } else {
     double_bgt(cmp1, cmp2, no_set);
@@ -1382,7 +1382,7 @@ void MacroAssembler::cmov_cmp_fp_ge(FloatRegister cmp1, FloatRegister cmp2, Regi
   Label no_set;
   if (is_single) {
     // jump if cmp1 < cmp2 or either is NaN
-    // not jump (i.e. move src to dst) if cmp1 >= cmp2
+    // fallthrough (i.e. move src to dst) if cmp1 >= cmp2
     float_blt(cmp1, cmp2, no_set, false, true);
   } else {
     double_blt(cmp1, cmp2, no_set, false, true);
@@ -1414,7 +1414,7 @@ void MacroAssembler::cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Regi
   Label no_set;
   if (is_single) {
     // jump if cmp1 >= cmp2
-    // not jump (i.e. move src to dst) if cmp1 < cmp2 or either is NaN
+    // fallthrough (i.e. move src to dst) if cmp1 < cmp2 or either is NaN
     float_bge(cmp1, cmp2, no_set);
   } else {
     double_bge(cmp1, cmp2, no_set);
@@ -1446,7 +1446,7 @@ void MacroAssembler::cmov_cmp_fp_gt(FloatRegister cmp1, FloatRegister cmp2, Regi
   Label no_set;
   if (is_single) {
     // jump if cmp1 <= cmp2 or either is NaN
-    // not jump (i.e. move src to dst) if cmp1 > cmp2
+    // fallthrough (i.e. move src to dst) if cmp1 > cmp2
     float_ble(cmp1, cmp2, no_set, false, true);
   } else {
     double_ble(cmp1, cmp2, no_set, false, true);
