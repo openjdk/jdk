@@ -37,7 +37,6 @@ class BarrierSetNMethod: public CHeapObj<mtGC> {
 private:
   int _current_phase;
   enum {
-    // negative values are permanent
     not_entrant = 1 << 31, // armed sticky bit, see make_not_entrant
     armed = 0,
     initial = 1,
