@@ -190,7 +190,7 @@ e.g. "2022-02-12T12:30:00-05:00".
     An options file is a text file that contains the options and values that
     you would ordinarily enter in a command prompt. Options may appear on one
     line or on several lines. You may not specify environment variables for
-    path names. You may comment out lines by prefixinga hash symbol (`#`) to
+    path names. You may comment out lines by prefixing a hash symbol (`#`) to
     the beginning of the line.
 
     The following is an example of an options file for the `jmod` command:
