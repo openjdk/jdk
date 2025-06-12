@@ -1229,8 +1229,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label L, Continue;
 
-    // No need for acquire as Java threads always disarm themselves.
-    __ safepoint_poll(L, true /* at_return */, false /* acquire */, false /* in_nmethod */);
+    __ safepoint_poll(L, true /* at_return */, false /* in_nmethod */);
     __ lwu(t1, Address(xthread, JavaThread::suspend_flags_offset()));
     __ beqz(t1, Continue);
     __ bind(L);
@@ -1381,7 +1380,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   Label slow_path;
   Label fast_path;
-  __ safepoint_poll(slow_path, true /* at_return */, false /* acquire */, false /* in_nmethod */);
+  __ safepoint_poll(slow_path, true /* at_return */, false /* in_nmethod */);
   __ j(fast_path);
 
   __ bind(slow_path);
