@@ -3023,7 +3023,7 @@ void OuterStripMinedLoopNode::handle_sunk_stores_at_expansion(PhaseIterGVN* igvn
         // Found a chain of Stores that were sunk
         // Do we already have a memory Phi for that slice on the outer loop? If that is the case, that Phi was created
         // by cloning an inner loop Phi. The inner loop Phi should have mem, the memory state of the first Store out of
-        // the inner loop as input on the backedge. So does the outer loop Phi given it's a clone.
+        // the inner loop, as input on the backedge. So does the outer loop Phi given it's a clone.
         Node* phi = nullptr;
         for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
           Node* u = mem->fast_out(i);
