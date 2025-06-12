@@ -27,9 +27,7 @@
 
 #include "runtime/globals_shared.hpp"
 #include "utilities/macros.hpp"
-
 #include CPU_HEADER(c1_globals)
-
 //
 // Declare all global flags used by the client compiler.
 //
