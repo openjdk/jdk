@@ -29,11 +29,13 @@
 #include "memory/metaspace.hpp" // For MetadataType
 #include "memory/metaspaceStats.hpp"
 #include "nmt/allocationSite.hpp"
+#include "nmt/contiguousAllocator.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/linkedlist.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/deferred.hpp"
 
 /*
  * Virtual memory counter
@@ -91,11 +93,12 @@ class VirtualMemorySummary;
 
 // This class represents a snapshot of virtual memory at a given time.
 // The latest snapshot is saved in a static area.
-class VirtualMemorySnapshot : public ResourceObj {
+class VirtualMemorySnapshot {
   friend class VirtualMemorySummary;
 
  private:
-  VirtualMemory  _virtual_memory[mt_number_of_tags];
+  using VirtualMemoryArray = NMTStaticArray<VirtualMemory, std::underlying_type_t<MemTag>>;
+  VirtualMemoryArray  _virtual_memory;
 
  public:
   inline VirtualMemory* by_tag(MemTag mem_tag) {
@@ -110,7 +113,7 @@ class VirtualMemorySnapshot : public ResourceObj {
 
   inline size_t total_reserved() const {
     size_t amount = 0;
-    for (int index = 0; index < mt_number_of_tags; index ++) {
+    for (int index = 0; index < MemTagFactory::number_of_tags(); index ++) {
       amount += _virtual_memory[index].reserved();
     }
     return amount;
@@ -118,14 +121,14 @@ class VirtualMemorySnapshot : public ResourceObj {
 
   inline size_t total_committed() const {
     size_t amount = 0;
-    for (int index = 0; index < mt_number_of_tags; index ++) {
+    for (int index = 0; index < MemTagFactory::number_of_tags(); index ++) {
       amount += _virtual_memory[index].committed();
     }
     return amount;
   }
 
   void copy_to(VirtualMemorySnapshot* s) {
-    for (int index = 0; index < mt_number_of_tags; index ++) {
+    for (int index = 0; index < MemTagFactory::number_of_tags(); index ++) {
       s->_virtual_memory[index] = _virtual_memory[index];
     }
   }
@@ -133,7 +136,6 @@ class VirtualMemorySnapshot : public ResourceObj {
 
 class VirtualMemorySummary : AllStatic {
  public:
-
   static inline void record_reserved_memory(size_t size, MemTag mem_tag) {
     as_snapshot()->by_tag(mem_tag)->reserve_memory(size);
   }
@@ -167,11 +169,16 @@ class VirtualMemorySummary : AllStatic {
   static void snapshot(VirtualMemorySnapshot* s);
 
   static VirtualMemorySnapshot* as_snapshot() {
-    return &_snapshot;
+    return _snapshot.get();
+  }
+
+  static bool initialize() {
+    _snapshot.initialize();
+    return true;
   }
 
  private:
-  static VirtualMemorySnapshot _snapshot;
+  static Deferred<VirtualMemorySnapshot> _snapshot;
 };
 
 
@@ -350,7 +357,7 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
     return *this;
   }
 
-  const char* mem_tag_name() const { return NMTUtil::tag_to_name(_mem_tag); }
+  const char* mem_tag_name() const { return MemTagFactory::name_of(_mem_tag); }
 
  private:
   // The committed region contains the uncommitted region, subtract the uncommitted

@@ -131,6 +131,8 @@ public:
   inline size_t size()  const { return _size; }
   inline MemTag mem_tag() const { return _mem_tag; }
   inline uint32_t mst_marker() const { return _mst_marker; }
+  // TODO: Don't do this
+  void set_tag(MemTag tag) { const_cast<MemTag&>(this->_mem_tag) = tag; }
 
   // Return the necessary data to deaccount the block with NMT.
   FreeInfo free_info() {
