@@ -33,6 +33,8 @@
 #include "runtime/perfData.hpp"
 #include "runtime/perfDataTypes.hpp"
 
+class VTimeScope;
+
 class CPUTimeGroups : public AllStatic {
 public:
   enum class CPUTimeType {
@@ -51,6 +53,7 @@ public:
 };
 
 class CPUTimeCounters: public CHeapObj<mtServiceability> {
+  friend VTimeScope;
 private:
   // CPUTimeCounters is a singleton instance.
   CPUTimeCounters();
@@ -109,7 +112,6 @@ class ThreadTotalCPUTimeClosure: public ThreadClosure {
   ~ThreadTotalCPUTimeClosure();
 
   virtual void do_thread(Thread* thread);
-  void inc_total(jlong value);
 };
 
 #endif // SHARE_RUNTIME_CPUTIMECOUNTERS_HPP
