@@ -1,4 +1,7 @@
-import jdk.test.lib.Asserts;
+import com.sun.crypto.provider.XWingKeyPairGenerator;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.FieldSource;
 import sun.security.pkcs.NamedPKCS8Key;
 import sun.security.x509.NamedX509Key;
 
@@ -8,17 +11,13 @@ import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.HexFormat;
 
-import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
-
 /*
  * @test
  * @summary Validates correctness of the X-Wing implementation against published test vectors.
- * @library /test/lib
  * @modules java.base/com.sun.crypto.provider
  *          java.base/sun.security.x509
  *          java.base/sun.security.pkcs
- * @run testng/othervm Conformance
+ * @run junit Conformance
  */
 public class Conformance {
 
@@ -265,20 +264,19 @@ public class Conformance {
             HEX.parseHex("953f7f4e8c5b5049bdc771d1dffada0dd961477d1a2ae0988baa7ea6898d893f")
     );
 
-    @DataProvider(name = "testVectors")
-    public TestData[] createTestVectors() {
-        return new TestData[]{ TEST1, TEST2, TEST3 };
-    }
+    private static final TestData[] TEST_VECTORS = {TEST1, TEST2, TEST3};
 
-    @Test(dataProvider = "testVectors")
+    @ParameterizedTest
+    @FieldSource("TEST_VECTORS")
     public static void generateKeyPairDerand(TestData test) {
         // test derivation of pk from sk; see https://datatracker.ietf.org/doc/html/draft-connolly-cfrg-xwing-kem-07#section-5.2.1
 
-        byte[] pk = com.sun.crypto.provider.XWingKeyPairGenerator.derivePublicKey(test.sk);
-        Asserts.assertEqualsByteArray(test.pk, pk);
+        byte[] pk = XWingKeyPairGenerator.derivePublicKey(test.sk);
+        Assertions.assertArrayEquals(test.pk, pk);
     }
 
-    @Test(dataProvider = "testVectors")
+    @ParameterizedTest
+    @FieldSource("TEST_VECTORS")
     public static void encapsulateDerand(TestData test) throws GeneralSecurityException {
         // test encapsulation; see https://datatracker.ietf.org/doc/html/draft-connolly-cfrg-xwing-kem-07#section-5.4.1
         var pk = new NamedX509Key("X-Wing", "X-Wing", test.pk);
@@ -286,22 +284,23 @@ public class Conformance {
         var randomMock = new DerandomizedRandom(test.eseed);
 
         var encapsulator = kem.newEncapsulator(pk, randomMock);
-        Asserts.assertTrue(encapsulator.encapsulationSize() == test.ct.length, "Expected encapsulation size: " + test.ct.length + ", but got: " + encapsulator.encapsulationSize());
-        Asserts.assertTrue(encapsulator.secretSize() == test.ss.length, "Expected secret size: " + test.ss.length + ", but got: " + encapsulator.secretSize());
+        Assertions.assertEquals(test.ct.length, encapsulator.encapsulationSize(), "Invalid encapsulation size");
+        Assertions.assertEquals(test.ss.length, encapsulator.secretSize(), "Invalid secret size");
 
         var encapsulated = encapsulator.encapsulate();
-        Asserts.assertTrue(randomMock.invokeCount == 2, "Expected two invocations of the derandomized random generator, but got: " + randomMock.invokeCount);
-        Asserts.assertEqualsByteArray(test.ct, encapsulated.encapsulation(), "Encapsulation does not match expected value");
-        Asserts.assertEqualsByteArray(test.ss, encapsulated.key().getEncoded(), "Secret does not match expected value");
+        Assertions.assertEquals(2, randomMock.invokeCount, "Expected two invocations of the derandomized random generator");
+        Assertions.assertArrayEquals(test.ct, encapsulated.encapsulation(), "Encapsulation does not match expected value");
+        Assertions.assertArrayEquals(test.ss, encapsulated.key().getEncoded(), "Secret does not match expected value");
     }
 
-    @Test(dataProvider = "testVectors")
+    @ParameterizedTest
+    @FieldSource("TEST_VECTORS")
     public static void decapsulate(TestData test) throws GeneralSecurityException {
         var sk = new NamedPKCS8Key("X-Wing", "X-Wing", test.sk);
         var kem = KEM.getInstance("X-Wing", "SunJCE");
 
         var decapsulated = kem.newDecapsulator(sk).decapsulate(test.ct);
-        Asserts.assertEqualsByteArray(test.ss, decapsulated.getEncoded(), "Decapsulated secret does not match expected value");
+        Assertions.assertArrayEquals(test.ss, decapsulated.getEncoded(), "Decapsulated secret does not match expected value");
     }
 
     // Mock used to inject a derandomized seed into the KEM encapsulator
@@ -319,15 +318,15 @@ public class Conformance {
         public void nextBytes(byte[] bytes) {
             if (invokeCount == 0) {
                 // First call by ML-KEM encapsulator, fill with the first 32 bytes of the eseed
-                Asserts.assertTrue(bytes.length == 32);
+                Assertions.assertEquals(32, bytes.length);
                 System.arraycopy(eseed, 0, bytes, 0, 32);
             } else if (invokeCount == 1) {
                 // Second call by X25519 ephemeral private key generator, fill with the remaining 32 bytes of the eseed
-                Asserts.assertTrue(bytes.length == 32);
+                Assertions.assertEquals(32, bytes.length);
                 System.arraycopy(eseed, 32, bytes, 0, 32);
             } else {
                 // No more calls expected
-                Asserts.fail();
+                Assertions.fail();
             }
             invokeCount++;
         }
