@@ -47,6 +47,7 @@
 
 package compiler.loopopts.superword;
 
+import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Random;
@@ -108,13 +109,6 @@ public class TestAliasingFuzzer {
         FILL_STORE_STORE, // a[i1] = x; b[i2] = y;
     }
 
-    // TODO: MemorySegment. Maybe also do it in AccessScenario?
-    //       Create random form that has stride exact for the type!
-    enum Container {
-        ARRAY,
-        MEMORY_SEGMENT
-    }
-
     public static void main(String[] args) {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
@@ -174,7 +168,9 @@ public class TestAliasingFuzzer {
 
         for (Aliasing aliasing : Aliasing.values()) {
             for (AccessScenario accessScenario : AccessScenario.values()) {
-                testTemplateTokens.addAll(allTypes.stream().map(t -> generateTest(t, aliasing, accessScenario)).toList());
+                testTemplateTokens.addAll(allTypes.stream().map(type ->
+                    TestGenerator.makeArray(type, aliasing, accessScenario).generate()
+                ).toList());
             }
         }
 
@@ -200,10 +196,10 @@ public class TestAliasingFuzzer {
             // package and class name.
             "p.xyz", "InnerTest",
             // List of imports.
-            List.of("compiler.lib.generators.*",
-                    "compiler.lib.verify.*",
-                    "java.util.Random",
-                    "jdk.test.lib.Utils"),
+            Set.of("compiler.lib.generators.*",
+                   "compiler.lib.verify.*",
+                   "java.util.Random",
+                   "jdk.test.lib.Utils"),
             // classpath, so the Test VM has access to the compiled class files.
             comp.getEscapedClassPathOfCompiledClasses(),
             // The list of tests.
@@ -397,14 +393,161 @@ public class TestAliasingFuzzer {
         return template.asToken();
     }
 
+    enum ContainerKind {
+        ARRAY,
+        MEMORY_SEGMENT,
+    }
+
+    public static record TestGenerator(
+        // The containers.
+        int numContainers,
+        int containerByteSize,
+        ContainerKind containerKind,
+        MyType containerElementType, // null means native
+
+        // Do we count up or down, iterate over the containers forward or backward?
+        boolean loopForward,
+
+        // For all index forms: number of invariants in the rest, i.e. the [err] term.
+        int numInvarRest,
+
+        // Each access has an index form and a type.
+        IndexForm[] acessIndexForm,
+        MyType[] accessType,
+
+        // The scenario.
+        Aliasing aliasing,
+        AccessScenario accessScenario) {
+
+        public static TestGenerator makeArray(MyType type, Aliasing aliasing, AccessScenario accessScenario) {
+            // size must be large enough for:
+            //   - scale = 4
+            //   - range with size / 4
+            // -> need at least size 16_000 to ensure we have 1000 iterations
+            // We want there to be a little variation, so alignment is not always the same.
+            final int numElements = Generators.G.safeRestrict(Generators.G.ints(), 18_000, 20_000).next();
+            final int containerByteSize = numElements * type.byteSize();
+            final boolean loopForward = RANDOM.nextBoolean();
+
+            final int numInvarRest = RANDOM.nextInt(5);
+            var form_a = IndexForm.random(numInvarRest);
+            var form_b = IndexForm.random(numInvarRest);
+
+            return new TestGenerator(
+                2,
+                containerByteSize,
+                ContainerKind.ARRAY,
+                type,
+                loopForward,
+                numInvarRest,
+                new IndexForm[] {form_a, form_b},
+                new MyType[]    {type,   type},
+                aliasing,
+                accessScenario);
+        }
+
+        public TemplateToken generate() {
+            var testTemplate = Template.make(() -> {
+                // Let's generate the variable names for the [err] invariants.
+                String[] invarRest = new String[numInvarRest];
+                for (int i = 0; i < invarRest.length; i++) {
+                    invarRest[i] = $("invar" + (i+1));
+                }
+                String[] containerNames = new String[numContainers];
+                for (int i = 0; i < numContainers; i++) {
+                    containerNames[i] = $("container" + (i+1));
+                }
+                String[] indexNames = new String[acessIndexForm.length];
+                for (int i = 0; i < indexNames.length; i++) {
+                    indexNames[i] = $("index" + (i+1));
+                }
+                return body(
+                    """
+                    // --- $test start ---
+                    """,
+                    generateTestFields(invarRest, containerNames, indexNames),
+                    """
+                    // run method
+                    // - data init
+                    // - aliasing containers
+                    // - bounds/ranges
+                    // - invoke test/reference and verify
+                    // ir
+                    // test
+                    // reference
+                    // --- $test end ---
+                    """
+                );
+            });
+            return testTemplate.asToken();
+        }
+
+        private TemplateToken generateArrayField(String name, MyType type) {
+            var template = Template.make(() -> body(
+                let("size", containerByteSize / type.byteSize()),
+                let("name", name),
+                let("type", type),
+                """
+                private static #type[] #name = new #type[#size];
+                """
+            ));
+            return template.asToken();
+        }
+
+        private TemplateToken generateIndex(String name, IndexForm form) {
+            var template = Template.make(() -> body(
+                let("name", name),
+                let("form", form.generate()),
+                """
+                private static IndexForm #name = #form;
+                """
+            ));
+            return template.asToken();
+        }
+
+        private TemplateToken generateTestFields(String[] invarRest, String[] containerNames, String[] indexNames) {
+            var template = Template.make(() -> body(
+                """
+                // invarRest fields:
+                """,
+                Arrays.stream(invarRest).map(invar ->
+                    List.of("private static int ", invar, " = 0;\n")
+                ).toList(),
+                """
+                // Containers fields:
+                """,
+                Arrays.stream(containerNames).map(name ->
+                    switch (containerKind) {
+                        case ContainerKind.ARRAY ->
+                            List.of(generateArrayField("original_" + name, containerElementType),
+                                    generateArrayField("test_" + name, containerElementType),
+                                    generateArrayField("reference_" + name, containerElementType));
+                        case ContainerKind.MEMORY_SEGMENT ->
+                            List.of("// TODO: container MemorySegment\n");
+                    }
+                ).toList(),
+                """
+                // Counter for how many times the run method was executed:
+                private static int $iterations = 0;
+                // Index forms for the accesses:
+                """,
+                IntStream.range(0, indexNames.length).mapToObj(i ->
+                    generateIndex(indexNames[i], acessIndexForm[i])
+                ).toList()
+            ));
+            return template.asToken();
+        }
+    }
+
     public static TemplateToken generateTest(MyType type, Aliasing aliasing, AccessScenario accessScenario) {
+        TestGenerator.makeArray(type, aliasing, accessScenario).generate();
         // size must be large enough for:
         //   - scale = 4
         //   - range with size / 4
         // -> need at least size 16_000 to ensure we have 1000 iterations
         // We want there to be a little variation, so alignment is not always the same.
         final int size = Generators.G.safeRestrict(Generators.G.ints(), 18_000, 20_000).next();
-        final boolean forwardLoop = RANDOM.nextBoolean();
+        final boolean loopForward = RANDOM.nextBoolean();
 
         final int numInvarRest = RANDOM.nextInt(5);
         var form_a = IndexForm.random(numInvarRest);
@@ -530,7 +673,7 @@ public class TestAliasingFuzzer {
             """
             public static Object #methodName(#type[] a, #type[] b, int ivLo, int ivHi, int invar0_A, int invar0_B) {
             """,
-            (forwardLoop
+            (loopForward
             ?   "for (int i = ivLo; i < ivHi; i++) {\n"
             :   "for (int i = ivHi-1; i >= ivLo; i--) {\n"),
             switch (accessScenario) {
@@ -688,7 +831,7 @@ public class TestAliasingFuzzer {
                 """
                 // --- $test end   ---
                 """
-          );
+            );
         });
         return testTemplate.asToken();
     }
