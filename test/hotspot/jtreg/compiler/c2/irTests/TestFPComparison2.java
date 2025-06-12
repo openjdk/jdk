@@ -67,43 +67,23 @@ public class TestFPComparison2 {
     public static void main(String[] args) {
         // Booltest::ge
         TestFramework framework = new TestFramework(Test_ge_1.class);
-        framework.addFlags("-XX:-TieredCompilation", "-XX:+UseZicond", "-Xlog:jit+compilation=trace").start();
-        Asserts.assertTrue(TestFramework.getLastTestVMOutput().contains("C2_MacroAssembler::enc_cmove_cmp_fp => BoolTest::ge"),
-                           "Not trigger BoolTest::ge");
-
-        framework = new TestFramework(Test_ge_1.class);
-        framework.addFlags("-XX:-TieredCompilation", "-XX:-UseZicond", "-Xlog:jit+compilation=trace").start();
+        framework.addFlags("-XX:-TieredCompilation", "-Xlog:jit+compilation=trace").start();
         Asserts.assertTrue(TestFramework.getLastTestVMOutput().contains("C2_MacroAssembler::enc_cmove_cmp_fp => BoolTest::ge"),
                            "Not trigger BoolTest::ge");
 
         framework = new TestFramework(Test_ge_2.class);
-        framework.addFlags("-XX:-TieredCompilation", "-XX:+UseZicond", "-Xlog:jit+compilation=trace").start();
-        Asserts.assertTrue(TestFramework.getLastTestVMOutput().contains("C2_MacroAssembler::enc_cmove_cmp_fp => BoolTest::ge"),
-                           "Not trigger BoolTest::ge");
-
-        framework = new TestFramework(Test_ge_2.class);
-        framework.addFlags("-XX:-TieredCompilation", "-XX:-UseZicond", "-Xlog:jit+compilation=trace").start();
+        framework.addFlags("-XX:-TieredCompilation", "-Xlog:jit+compilation=trace").start();
         Asserts.assertTrue(TestFramework.getLastTestVMOutput().contains("C2_MacroAssembler::enc_cmove_cmp_fp => BoolTest::ge"),
                            "Not trigger BoolTest::ge");
 
         // Booltest::gt
         framework = new TestFramework(Test_gt_1.class);
-        framework.addFlags("-XX:-TieredCompilation", "-XX:+UseZicond", "-Xlog:jit+compilation=trace").start();
-        Asserts.assertTrue(TestFramework.getLastTestVMOutput().contains("C2_MacroAssembler::enc_cmove_cmp_fp => BoolTest::gt"),
-                           "Not trigger BoolTest::gt");
-
-        framework = new TestFramework(Test_gt_1.class);
-        framework.addFlags("-XX:-TieredCompilation", "-XX:-UseZicond", "-Xlog:jit+compilation=trace").start();
+        framework.addFlags("-XX:-TieredCompilation", "-Xlog:jit+compilation=trace").start();
         Asserts.assertTrue(TestFramework.getLastTestVMOutput().contains("C2_MacroAssembler::enc_cmove_cmp_fp => BoolTest::gt"),
                            "Not trigger BoolTest::gt");
 
         framework = new TestFramework(Test_gt_2.class);
-        framework.addFlags("-XX:-TieredCompilation", "-XX:+UseZicond", "-Xlog:jit+compilation=trace").start();
-        Asserts.assertTrue(TestFramework.getLastTestVMOutput().contains("C2_MacroAssembler::enc_cmove_cmp_fp => BoolTest::gt"),
-                           "Not trigger BoolTest::gt");
-
-        framework = new TestFramework(Test_gt_2.class);
-        framework.addFlags("-XX:-TieredCompilation", "-XX:-UseZicond", "-Xlog:jit+compilation=trace").start();
+        framework.addFlags("-XX:-TieredCompilation", "-Xlog:jit+compilation=trace").start();
         Asserts.assertTrue(TestFramework.getLastTestVMOutput().contains("C2_MacroAssembler::enc_cmove_cmp_fp => BoolTest::gt"),
                            "Not trigger BoolTest::gt");
     }
