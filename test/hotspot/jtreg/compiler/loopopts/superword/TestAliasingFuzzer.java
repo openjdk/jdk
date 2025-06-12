@@ -448,7 +448,7 @@ public class TestAliasingFuzzer {
 
         public TemplateToken generate() {
             var testTemplate = Template.make(() -> {
-                // Let's generate the variable names for the [err] invariants.
+                // Let's generate the variable names that are to be shared for the nested Templates.
                 String[] invarRest = new String[numInvarRest];
                 for (int i = 0; i < invarRest.length; i++) {
                     invarRest[i] = $("invar" + (i+1));
@@ -467,14 +467,31 @@ public class TestAliasingFuzzer {
                     """,
                     generateTestFields(invarRest, containerNames, indexNames),
                     """
-                    // run method
-                    // - data init
-                    // - aliasing containers
-                    // - bounds/ranges
-                    // - invoke test/reference and verify
-                    // ir
-                    // test
-                    // reference
+                    // Count the run invocations.
+                    private static int $iterations = 0;
+
+                    @Run(test = "$test")
+                    @Warmup(100)
+                    public static void $run() {
+                        $iterations++;
+                    """,
+                    // TODO: data init
+                    // TODO: aliasing containers
+                    // TODO: bounds / ranges
+                    // TODO: invoke test/reference and verify
+                    """
+                    } // end $run
+
+                    @Test
+                    """,
+                    generateIRRules(),
+                    generateTestMethod($("test"), invarRest),
+                    """
+                    @DontCompile
+                    """,
+                    generateTestMethod($("reference"), invarRest),
+                    """
+
                     // --- $test end ---
                     """
                 );
@@ -527,13 +544,48 @@ public class TestAliasingFuzzer {
                     }
                 ).toList(),
                 """
-                // Counter for how many times the run method was executed:
-                private static int $iterations = 0;
                 // Index forms for the accesses:
                 """,
                 IntStream.range(0, indexNames.length).mapToObj(i ->
                     generateIndex(indexNames[i], acessIndexForm[i])
                 ).toList()
+            ));
+            return template.asToken();
+        }
+
+        private TemplateToken generateIRRules() {
+            var template = Template.make(() -> body(
+                """
+                // TODO: IR rules
+                """
+            ));
+            return template.asToken();
+        }
+
+
+        private TemplateToken generateTestMethod(String methodName, String[] invarRest) {
+            var template = Template.make(() -> body(
+                let("methodName", methodName),
+                let("type", containerElementType),
+                """
+                public static Object #methodName(#type[] a, #type[] b, int ivLo, int ivHi, int invar0_A, int invar0_B) {
+                """,
+                (loopForward
+                ?   "for (int i = ivLo; i < ivHi; i++) {\n"
+                :   "for (int i = ivHi-1; i >= ivLo; i--) {\n"),
+                switch (accessScenario) {
+                    case COPY_LOAD_STORE ->
+                        List.of("a[", acessIndexForm[0].index("invar0_A", invarRest), "] = ",
+                                "b[", acessIndexForm[1].index("invar0_B", invarRest), "];\n");
+                    case FILL_STORE_STORE ->
+                        List.of("a[", acessIndexForm[0].index("invar0_A", invarRest), "] = (#type)0x0a;\n",
+                                "b[", acessIndexForm[1].index("invar0_B", invarRest), "] = (#type)0x0b;\n");
+                },
+                """
+                    }
+                    return new Object[] {a, b};
+                }
+                """
             ));
             return template.asToken();
         }
@@ -666,7 +718,6 @@ public class TestAliasingFuzzer {
 
         // We will generate the method twice: once as "$test" (compiled) and once as "$reference" (interpreter)
         var testMethodTemplate = Template.make("methodName", "invarRest", (String methodName, String[] invarRest) -> body(
-            let("size", size),
             let("type", type),
             let("con1", type.con1()),
             let("con2", type.con2()),
