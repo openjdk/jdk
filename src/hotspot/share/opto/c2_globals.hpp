@@ -703,7 +703,7 @@
   develop(bool, VerifyAliases, false,                                       \
           "perform extra checks on the results of alias analysis")          \
                                                                             \
-  develop(bool, VerifyIdealStructuralInvariant, false,                      \
+  develop(bool, VerifyIdealStructuralInvariants, false,                     \
           "Check structural invariants of the ideal graph")                 \
                                                                             \
   product(uint, VerifyConstraintCasts, 0, DIAGNOSTIC,                       \

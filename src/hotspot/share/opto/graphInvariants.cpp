@@ -312,6 +312,7 @@ struct ControlSuccessor : LocalGraphInvariant {
         print_path(center, steps, path, ss);
         ss.print_cr("%s node must have exactly two control successors. Found %d.", center->Name(), cfg_out);
         for (uint i = 0; i < ctrl_succ.size(); ++i) {
+          ss.print("  ");
           ctrl_succ.at(i)->dump("\n", false, &ss);
         }
         return CheckResult::FAILED;
@@ -321,6 +322,7 @@ struct ControlSuccessor : LocalGraphInvariant {
         print_path(center, steps, path, ss);
         ss.print_cr("%s node must have one or two control successors. Found %d.", center->Name(), cfg_out);
         for (uint i = 0; i < ctrl_succ.size(); ++i) {
+          ss.print("  ");
           ctrl_succ.at(i)->dump("\n", false, &ss);
         }
         return CheckResult::FAILED;
@@ -330,6 +332,7 @@ struct ControlSuccessor : LocalGraphInvariant {
           print_path(center, steps, path, ss);
           ss.print_cr("One of the two control outputs of a %s node must be Root.", center->Name());
           for (uint i = 0; i < ctrl_succ.size(); ++i) {
+            ss.print("  ");
             ctrl_succ.at(i)->dump("\n", false, &ss);
           }
           return CheckResult::FAILED;
@@ -346,6 +349,7 @@ struct ControlSuccessor : LocalGraphInvariant {
         print_path(center, steps, path, ss);
         ss.print_cr("Ordinary CFG nodes must have exactly one successor. Found %d.", cfg_out);
         for (uint i = 0; i < ctrl_succ.size(); ++i) {
+          ss.print("  ");
           ctrl_succ.at(i)->dump("\n", false, &ss);
         }
         return CheckResult::FAILED;
@@ -530,12 +534,13 @@ bool GraphInvariantChecker::run(const Compile* C) const {
 #ifdef PRODUCT
   return true;
 #else
+  ResourceMark rm;
 
   if (_checks.is_empty()) {
     return true;
   }
 
-  VectorSet visited;
+  VectorSet enqueued;
   Node_List worklist;
   worklist.push(C->root());
   Node_List steps;
@@ -544,13 +549,10 @@ bool GraphInvariantChecker::run(const Compile* C) const {
 
   while (worklist.size() > 0) {
     Node* center = worklist.pop();
-    if (visited.test_set(center->_idx)) {
-      continue;
-    }
     stringStream ss;
     for (uint i = 0; i < center->req(); i++) {
       Node* in = center->in(i);
-      if (in != nullptr) {
+      if (in != nullptr && !enqueued.test_set(in->_idx)) {
         worklist.push(in);
       }
     }
