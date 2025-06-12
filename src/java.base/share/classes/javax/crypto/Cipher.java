@@ -114,7 +114,8 @@ import sun.security.util.KnownOIDs;
  * {@code DECRYPT_MODE}) and the algorithm. AEAD algorithms may not reset to prevent
  * forgery attacks due to Key and IV uniqueness requirements.
  * An {@link IllegalStateException} will be thrown when calling {@code update}
- * or {@code doFinal} methods when a reset did not occur.
+ * or {@code doFinal} methods when a reset did not occur. {@code init} may
+ * re-initialize the {@code Cipher} object with new parameters.
  *
  *  @see javax.crypto.Cipher
  *  @see javax.crypto.spec.GCMParameterSpec
@@ -147,8 +148,6 @@ import sun.security.util.KnownOIDs;
  *
  * @spec https://www.rfc-editor.org/info/rfc5116
  *      RFC 5116: An Interface and Algorithms for Authenticated Encryption
- * @spec https://www.rfc-editor.org/info/rfc7539
- *      RFC 7539: ChaCha20 and Poly1305 for IETF Protocols
  * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @author Jan Luehe
  * @see KeyGenerator
