@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,4 +234,28 @@ class Bits {                            // package-private
     // of an element by element copy.  These numbers may change over time.
     static final int JNI_COPY_TO_ARRAY_THRESHOLD   = 6;
     static final int JNI_COPY_FROM_ARRAY_THRESHOLD = 6;
+
+    // Maximum number of bytes to set in one call to {@code Unsafe.setMemory}.
+    // This threshold allows safepoint polling during large memory operations.
+    static final long UNSAFE_SET_THRESHOLD = 1024 * 1024;
+
+    /**
+     * Sets a block of memory starting from a given address to a specified byte value.
+     *
+     * @param srcAddr
+     *        the starting memory address
+     * @param count
+     *        the number of bytes to set
+     * @param value
+     *        the byte value to set
+     */
+    static void setMemory(long srcAddr, long count, byte value) {
+        long offset = 0;
+        while (offset < count) {
+            long len = Math.min(UNSAFE_SET_THRESHOLD, count - offset);
+            UNSAFE.setMemory(srcAddr + offset, len, value);
+            offset += len;
+        }
+    }
+
 }

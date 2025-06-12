@@ -35,8 +35,6 @@ extern size_t MaxOldSize;
 
 extern size_t OldSize;
 
-extern size_t GenAlignment;
-
 class GenArguments : public GCArguments {
   friend class TestGenCollectorPolicy; // Testing
 private:

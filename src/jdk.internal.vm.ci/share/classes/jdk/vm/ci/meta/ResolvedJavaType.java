@@ -23,6 +23,7 @@
 package jdk.vm.ci.meta;
 
 import java.lang.reflect.AnnotatedElement;
+import java.util.List;
 
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 
@@ -364,6 +365,17 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
     default ResolvedJavaMethod[] getDeclaredMethods(boolean forceLink) {
         throw new UnsupportedOperationException();
     }
+
+    /**
+     * Returns a list containing all methods present within this type. This list can
+     * include methods implicitly created and used by the VM that are not present in
+     * {@link #getDeclaredMethods}. The returned List is unmodifiable; calls to any
+     * mutator method will always cause {@code UnsupportedOperationException} to be
+     * thrown.
+     *
+     * @param forceLink if {@code true}, forces this type to be {@link #link linked}
+     */
+    List<ResolvedJavaMethod> getAllMethods(boolean forceLink);
 
     /**
      * Returns the {@code <clinit>} method for this class if there is one.
