@@ -719,10 +719,10 @@ public class TestLoopConditionalPropagation {
     @IR(failOn = {IRNode.COUNTED_LOOP, IRNode.LONG_COUNTED_LOOP}, counts = {IRNode.LOOP, "1"})
     private static float test18(long start, long stop) {
         if (start < 0) {
-
+            throw new RuntimeException("never taken");
         }
         if (stop > 1000) {
-
+            throw new RuntimeException("never taken");
         }
         float v = 0;
         for (long i = start; i < stop; i++) {

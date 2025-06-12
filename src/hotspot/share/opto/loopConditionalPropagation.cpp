@@ -1311,6 +1311,14 @@ bool PhaseConditionalPropagation::Transformer::is_safe_for_replacement(Node* c, 
     // ..
     return false;
   }
+  const Type* node_t = _type_table->find_type_between(node, _phase->ctrl_or_self(use), c);
+  if (node_t == Type::TOP) {
+    // node's type is narrowed further before it's reached and it becomes top. That will be used as an indication that
+    // that branch is dead. Don't remove that use then, otherwise when node becomes top, transform_when_top_seen() may
+    // find no use and won't be able to make the branch dead.
+    assert(_type_table->find_prev_type_between(node, _phase->ctrl_or_self(use), c) != Type::TOP, "old type must be different from new type");
+    return false;
+  }
   return true;
 }
 
@@ -1449,6 +1457,7 @@ void PhaseConditionalPropagation::Transformer::transform_when_constant_seen(Node
             _phase->set_ctrl(con, _phase->igvn().C->root());
           }
           _phase->igvn().rehash_node_delayed(use);
+          _phase->igvn().add_users_of_use_to_worklist(node, use, _phase->igvn()._worklist);
           int nb = use->replace_edge(node, con, &_phase->igvn());
           --i;
 #ifndef PRODUCT
