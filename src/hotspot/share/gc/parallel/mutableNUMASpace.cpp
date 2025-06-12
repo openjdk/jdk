@@ -611,13 +611,13 @@ void MutableNUMASpace::print_short_on(outputStream* st) const {
 void MutableNUMASpace::print_on(outputStream* st, const char* prefix) const {
   MutableSpace::print_on(st, prefix);
 
-  StreamAutoIndentor indentor(st, 1);
+  StreamIndentor si(st, 1);
   for (int i = 0; i < lgrp_spaces()->length(); i++) {
     LGRPSpace *ls = lgrp_spaces()->at(i);
     FormatBuffer<128> lgrp_message("lgrp %u ", ls->lgrp_id());
     ls->space()->print_on(st, lgrp_message);
     if (NUMAStats) {
-      StreamAutoIndentor indentor_numa(st, 1);
+      StreamIndentor si2(st, 1);
       for (int i = 0; i < lgrp_spaces()->length(); i++) {
         lgrp_spaces()->at(i)->accumulate_statistics(page_size());
       }

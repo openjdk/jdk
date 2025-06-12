@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,17 +27,15 @@ import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathFactoryConfigurationException;
 import javax.xml.xpath.XPathFunctionResolver;
 import javax.xml.xpath.XPathVariableResolver;
-import jdk.xml.internal.JdkConstants;
-import jdk.xml.internal.JdkProperty;
-import jdk.xml.internal.JdkXmlFeatures;
-import jdk.xml.internal.XMLSecurityManager;
+
+import jdk.xml.internal.*;
 
 /**
  * The XPathFactory builds XPaths.
  *
  * @author  Ramesh Mandava
  *
- * @LastModified: Nov 2024
+ * @LastModified: May 2025
  */
 public  class XPathFactoryImpl extends XPathFactory {
 
@@ -79,8 +77,9 @@ public  class XPathFactoryImpl extends XPathFactory {
          * javax.xml.xpath.XPathFactory implementation.
          */
         public XPathFactoryImpl() {
-            _featureManager = new JdkXmlFeatures(!_isNotSecureProcessing);
-            _xmlSecMgr = new XMLSecurityManager(true);
+            JdkXmlConfig config = JdkXmlConfig.getInstance(false);
+            _xmlSecMgr = config.getXMLSecurityManager(true);
+            _featureManager = config.getXMLFeatures(true);
         }
 
         /**

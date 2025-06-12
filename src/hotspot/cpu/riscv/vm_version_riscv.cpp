@@ -203,15 +203,15 @@ void VM_Version::common_initialize() {
     }
   }
 
-  // Misc Intrinsics could depend on RVV
+  // Misc Intrinsics that could depend on RVV.
 
-  if (UseZba || UseRVV) {
+  if (!AvoidUnalignedAccesses && (UseZba || UseRVV)) {
     if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
       FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
     }
   } else {
     if (!FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
-      warning("CRC32 intrinsic requires Zba or RVV instructions (not available on this CPU)");
+      warning("CRC32 intrinsic are not available on this CPU.");
     }
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
@@ -240,9 +240,15 @@ void VM_Version::common_initialize() {
   }
 
   // UseZvfh (depends on RVV)
-  if (UseZvfh && !UseRVV) {
-    warning("Cannot enable UseZvfh on cpu without RVV support.");
-    FLAG_SET_DEFAULT(UseZvfh, false);
+  if (UseZvfh) {
+    if (!UseRVV) {
+      warning("Cannot enable UseZvfh on cpu without RVV support.");
+      FLAG_SET_DEFAULT(UseZvfh, false);
+    }
+    if (!UseZfh) {
+      warning("Cannot enable UseZvfh on cpu without Zfh support.");
+      FLAG_SET_DEFAULT(UseZvfh, false);
+    }
   }
 }
 

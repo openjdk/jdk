@@ -254,7 +254,6 @@ var getJibProfilesCommon = function (input, data) {
         configure_args: concat(
             "--with-exclude-translations=es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
             "--disable-jvm-feature-shenandoahgc",
-            "--disable-cds-archive-coh",
             versionArgs(input, common))
     };
 
@@ -862,7 +861,8 @@ var getJibProfilesProfiles = function (input, common, data) {
             profiles[cmpBaselineName].configure_args = concat(
                 profiles[cmpBaselineName].configure_args,
                 "--with-hotspot-build-time=n/a",
-                "--disable-precompiled-headers");
+                "--disable-precompiled-headers",
+                "--with-source-date=version");
             // Do not inherit artifact definitions from base profile
             delete profiles[cmpBaselineName].artifacts;
         });
@@ -1151,10 +1151,7 @@ var getJibProfilesDependencies = function (input, common) {
             organization: common.organization,
             ext: "tar.gz",
             module: "devkit-" + devkit_cross_prefix + devkit_platform,
-            revision: devkit_platform_revisions[devkit_platform],
-            environment: {
-                "DEVKIT_HOME": input.get("devkit", "home_path"),
-            }
+            revision: devkit_platform_revisions[devkit_platform]
         },
 
         build_devkit: {
@@ -1177,9 +1174,9 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "jpg",
             product: "jtreg",
-            version: "7.5.1",
+            version: "7.5.2",
             build_number: "1",
-            file: "bundles/jtreg-7.5.1+1.zip",
+            file: "bundles/jtreg-7.5.2+1.zip",
             environment_name: "JT_HOME",
             environment_path: input.get("jtreg", "home_path") + "/bin",
             configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),
@@ -1195,8 +1192,8 @@ var getJibProfilesDependencies = function (input, common) {
             server: "jpg",
             product: "jcov",
             version: "3.0",
-            build_number: "1",
-            file: "bundles/jcov-3.0+1.zip",
+            build_number: "3",
+            file: "bundles/jcov-3.0+3.zip",
             environment_name: "JCOV_HOME",
         },
 

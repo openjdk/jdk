@@ -109,7 +109,7 @@
                                     do_arch_blob,                       \
                                     do_arch_entry,                      \
                                     do_arch_entry_init)                 \
-  do_arch_blob(final, 20000 ZGC_ONLY(+60000))                           \
+  do_arch_blob(final, 20000 ZGC_ONLY(+85000))                           \
   do_stub(final, copy_byte_f)                                           \
   do_arch_entry(aarch64, final, copy_byte_f, copy_byte_f,               \
                 copy_byte_f)                                            \

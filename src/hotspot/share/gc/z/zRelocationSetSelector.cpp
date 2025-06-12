@@ -25,6 +25,7 @@
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
+#include "gc/z/zPageAge.inline.hpp"
 #include "gc/z/zRelocationSetSelector.inline.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
@@ -42,23 +43,23 @@ ZRelocationSetSelectorGroupStats::ZRelocationSetSelectorGroupStats()
 
 ZRelocationSetSelectorGroup::ZRelocationSetSelectorGroup(const char* name,
                                                          ZPageType page_type,
-                                                         size_t page_size,
+                                                         size_t max_page_size,
                                                          size_t object_size_limit,
                                                          double fragmentation_limit)
   : _name(name),
     _page_type(page_type),
-    _page_size(page_size),
+    _max_page_size(max_page_size),
     _object_size_limit(object_size_limit),
     _fragmentation_limit(fragmentation_limit),
-    _page_fragmentation_limit((size_t)(page_size * (fragmentation_limit / 100))),
+    _page_fragmentation_limit((size_t)(_max_page_size * (_fragmentation_limit / 100))),
     _live_pages(),
     _not_selected_pages(),
     _forwarding_entries(0),
     _stats() {}
 
 bool ZRelocationSetSelectorGroup::is_disabled() {
-  // Medium pages are disabled when their page size is zero
-  return _page_type == ZPageType::medium && _page_size == 0;
+  // Only medium pages can be disabled
+  return _page_type == ZPageType::medium && !ZPageSizeMediumEnabled;
 }
 
 bool ZRelocationSetSelectorGroup::is_selectable() {
@@ -66,26 +67,29 @@ bool ZRelocationSetSelectorGroup::is_selectable() {
   return _page_type != ZPageType::large;
 }
 
-void ZRelocationSetSelectorGroup::semi_sort() {
-  // Semi-sort live pages by number of live bytes in ascending order
-  const size_t npartitions_shift = 11;
-  const size_t npartitions = (size_t)1 << npartitions_shift;
-  const size_t partition_size = _page_size >> npartitions_shift;
+size_t ZRelocationSetSelectorGroup::partition_index(const ZPage* page) const {
+  const size_t partition_size = page->size() >> NumPartitionsShift;
   const int partition_size_shift = log2i_exact(partition_size);
 
+  return page->live_bytes() >> partition_size_shift;
+}
+
+void ZRelocationSetSelectorGroup::semi_sort() {
+  // Semi-sort live pages by number of live bytes in ascending order
+
   // Partition slots/fingers
-  int partitions[npartitions] = { /* zero initialize */ };
+  int partitions[NumPartitions] = { /* zero initialize */ };
 
   // Calculate partition slots
   ZArrayIterator<ZPage*> iter1(&_live_pages);
   for (ZPage* page; iter1.next(&page);) {
-    const size_t index = page->live_bytes() >> partition_size_shift;
+    const size_t index = partition_index(page);
     partitions[index]++;
   }
 
   // Calculate partition fingers
   int finger = 0;
-  for (size_t i = 0; i < npartitions; i++) {
+  for (size_t i = 0; i < NumPartitions; i++) {
     const int slots = partitions[i];
     partitions[i] = finger;
     finger += slots;
@@ -98,7 +102,7 @@ void ZRelocationSetSelectorGroup::semi_sort() {
   // Sort pages into partitions
   ZArrayIterator<ZPage*> iter2(&_live_pages);
   for (ZPage* page; iter2.next(&page);) {
-    const size_t index = page->live_bytes() >> partition_size_shift;
+    const size_t index = partition_index(page);
     const int finger = partitions[index]++;
     assert(sorted_live_pages.at(finger) == nullptr, "Invalid finger");
     sorted_live_pages.at_put(finger, page);
@@ -114,8 +118,8 @@ void ZRelocationSetSelectorGroup::select_inner() {
   const int npages = _live_pages.length();
   int selected_from = 0;
   int selected_to = 0;
-  size_t npages_selected[ZPageAgeMax + 1] = { 0 };
-  size_t selected_live_bytes[ZPageAgeMax + 1] = { 0 };
+  size_t npages_selected[ZPageAgeCount] = { 0 };
+  size_t selected_live_bytes[ZPageAgeCount] = { 0 };
   size_t selected_forwarding_entries = 0;
 
   size_t from_live_bytes = 0;
@@ -134,7 +138,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
     // By subtracting the object size limit from the pages size we get the maximum
     // number of pages that the relocation set is guaranteed to fit in, regardless
     // of in which order the objects are relocated.
-    const int to = (int)ceil(from_live_bytes / (double)(_page_size - _object_size_limit));
+    const int to = (int)ceil(from_live_bytes / (double)(_max_page_size - _object_size_limit));
 
     // Calculate the relative difference in reclaimable space compared to our
     // currently selected final relocation set. If this number is larger than the
@@ -146,8 +150,8 @@ void ZRelocationSetSelectorGroup::select_inner() {
     if (diff_reclaimable > _fragmentation_limit) {
       selected_from = from;
       selected_to = to;
-      selected_live_bytes[static_cast<uint>(page->age())] += page_live_bytes;
-      npages_selected[static_cast<uint>(page->age())] += 1;
+      selected_live_bytes[untype(page->age())] += page_live_bytes;
+      npages_selected[untype(page->age())] += 1;
       selected_forwarding_entries = from_forwarding_entries;
     }
 
@@ -169,7 +173,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
   _forwarding_entries = selected_forwarding_entries;
 
   // Update statistics
-  for (uint i = 0; i <= ZPageAgeMax; ++i) {
+  for (uint i = 0; i < ZPageAgeCount; ++i) {
     _stats[i]._relocate = selected_live_bytes[i];
     _stats[i]._npages_selected = npages_selected[i];
   }
@@ -197,7 +201,7 @@ void ZRelocationSetSelectorGroup::select() {
   }
 
   ZRelocationSetSelectorGroupStats s{};
-  for (uint i = 0; i <= ZPageAgeMax; ++i) {
+  for (uint i = 0; i < ZPageAgeCount; ++i) {
     s._npages_candidates += _stats[i].npages_candidates();
     s._total += _stats[i].total();
     s._empty += _stats[i].empty();
@@ -211,8 +215,8 @@ void ZRelocationSetSelectorGroup::select() {
 
 ZRelocationSetSelector::ZRelocationSetSelector(double fragmentation_limit)
   : _small("Small", ZPageType::small, ZPageSizeSmall, ZObjectSizeLimitSmall, fragmentation_limit),
-    _medium("Medium", ZPageType::medium, ZPageSizeMedium, ZObjectSizeLimitMedium, fragmentation_limit),
-    _large("Large", ZPageType::large, 0 /* page_size */, 0 /* object_size_limit */, fragmentation_limit),
+    _medium("Medium", ZPageType::medium, ZPageSizeMediumMax, ZObjectSizeLimitMedium, fragmentation_limit),
+    _large("Large", ZPageType::large, 0 /* max_page_size */, 0 /* object_size_limit */, fragmentation_limit),
     _empty_pages() {}
 
 void ZRelocationSetSelector::select() {
@@ -236,8 +240,8 @@ void ZRelocationSetSelector::select() {
 ZRelocationSetSelectorStats ZRelocationSetSelector::stats() const {
   ZRelocationSetSelectorStats stats;
 
-  for (uint i = 0; i <= ZPageAgeMax; ++i) {
-    const ZPageAge age = static_cast<ZPageAge>(i);
+  for (ZPageAge age : ZPageAgeRange()) {
+    const uint i = untype(age);
     stats._small[i] = _small.stats(age);
     stats._medium[i] = _medium.stats(age);
     stats._large[i] = _large.stats(age);

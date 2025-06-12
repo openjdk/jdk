@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * BreakIteratorResourceBundle is an abstract class for loading BreakIterator
@@ -49,7 +50,15 @@ public abstract class BreakIteratorResourceBundle extends ResourceBundle {
     // those keys must be added to NON_DATA_KEYS.
     private static final Set<String> NON_DATA_KEYS = Set.of("BreakIteratorClasses");
 
-    private volatile Set<String> keys;
+    private final Supplier<Set<String>> keys = StableValue.supplier(
+            new Supplier<>() { public Set<String> get() { return keys0(); }});
+
+    private Set<String> keys0() {
+        final ResourceBundle info = getBreakIteratorInfo();
+        final Set<String> k = info.keySet();
+        k.removeAll(NON_DATA_KEYS);
+        return k;
+    }
 
     /**
      * Returns an instance of the corresponding {@code BreakIteratorInfo} (basename).
@@ -84,16 +93,6 @@ public abstract class BreakIteratorResourceBundle extends ResourceBundle {
 
     @Override
     protected Set<String> handleKeySet() {
-        if (keys == null) {
-            ResourceBundle info = getBreakIteratorInfo();
-            Set<String> k = info.keySet();
-            k.removeAll(NON_DATA_KEYS);
-            synchronized (this) {
-                if (keys == null) {
-                    keys = k;
-                }
-            }
-        }
-        return keys;
+        return keys.get();
     }
 }

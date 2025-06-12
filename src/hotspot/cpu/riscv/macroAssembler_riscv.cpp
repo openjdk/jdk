@@ -256,7 +256,7 @@ void MacroAssembler::dec_held_monitor_count(Register tmp) {
 }
 
 int MacroAssembler::align(int modulus, int extra_offset) {
-  CompressibleRegion cr(this);
+  CompressibleScope scope(this);
   intptr_t before = offset();
   while ((offset() + extra_offset) % modulus != 0) { nop(); }
   return (int)(offset() - before);
@@ -417,7 +417,7 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
     set_last_Java_frame(last_java_sp, last_java_fp, target(L), tmp);
   } else {
     L.add_patch_at(code(), locator());
-    IncompressibleRegion ir(this);  // the label address will be patched back.
+    IncompressibleScope scope(this); // the label address will be patched back.
     set_last_Java_frame(last_java_sp, last_java_fp, pc() /* Patched later */, tmp);
   }
 }
@@ -564,7 +564,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     // The length of the instruction sequence emitted should not depend
     // on the address of the char buffer so that the size of mach nodes for
     // scratch emit and normal emit matches.
-    IncompressibleRegion ir(this);  // Fixed length
+    IncompressibleScope scope(this); // Fixed length
     movptr(t0, (address) b);
   }
 
@@ -604,7 +604,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     // The length of the instruction sequence emitted should not depend
     // on the address of the char buffer so that the size of mach nodes for
     // scratch emit and normal emit matches.
-    IncompressibleRegion ir(this);  // Fixed length
+    IncompressibleScope scope(this); // Fixed length
     movptr(t0, (address) b);
   }
 
@@ -775,7 +775,7 @@ void MacroAssembler::unimplemented(const char* what) {
 }
 
 void MacroAssembler::emit_static_call_stub() {
-  IncompressibleRegion ir(this);  // Fixed length: see CompiledDirectCall::to_interp_stub_size().
+  IncompressibleScope scope(this); // Fixed length: see CompiledDirectCall::to_interp_stub_size().
   // CompiledDirectCall::set_to_interpreted knows the
   // exact layout of this stub.
 
@@ -907,7 +907,7 @@ void MacroAssembler::la(Register Rd, const Address &adr) {
 }
 
 void MacroAssembler::la(Register Rd, Label &label) {
-  IncompressibleRegion ir(this);   // the label address may be patched back.
+  IncompressibleScope scope(this); // the label address may be patched back.
   wrap_label(Rd, label, &MacroAssembler::la);
 }
 
@@ -971,7 +971,7 @@ void MacroAssembler::j(const address dest, Register temp) {
   int64_t distance = dest - pc();
 
   // We can't patch C, i.e. if Label wasn't bound we need to patch this jump.
-  IncompressibleRegion ir(this);
+  IncompressibleScope scope(this);
   if (is_simm21(distance) && ((distance % 2) == 0)) {
     Assembler::jal(x0, distance);
   } else {
@@ -3739,16 +3739,16 @@ void MacroAssembler::check_klass_subtype(Register sub_klass,
   bind(L_failure);
 }
 
-void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod) {
-  ld(t0, Address(xthread, JavaThread::polling_word_offset()));
+void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp_reg) {
+  ld(tmp_reg, Address(xthread, JavaThread::polling_word_offset()));
   if (acquire) {
     membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   }
   if (at_return) {
-    bgtu(in_nmethod ? sp : fp, t0, slow_path, /* is_far */ true);
+    bgtu(in_nmethod ? sp : fp, tmp_reg, slow_path, /* is_far */ true);
   } else {
-    test_bit(t0, t0, exact_log2(SafepointMechanism::poll_bit()));
-    bnez(t0, slow_path, true /* is_far */);
+    test_bit(tmp_reg, tmp_reg, exact_log2(SafepointMechanism::poll_bit()));
+    bnez(tmp_reg, slow_path, /* is_far */ true);
   }
 }
 
@@ -3798,7 +3798,7 @@ void MacroAssembler::cmpxchg_obj_header(Register oldv, Register newv, Register o
 
 void MacroAssembler::load_reserved(Register dst,
                                    Register addr,
-                                   enum operand_size size,
+                                   Assembler::operand_size size,
                                    Assembler::Aqrl acquire) {
   switch (size) {
     case int64:
@@ -3819,15 +3819,15 @@ void MacroAssembler::load_reserved(Register dst,
 void MacroAssembler::store_conditional(Register dst,
                                        Register new_val,
                                        Register addr,
-                                       enum operand_size size,
+                                       Assembler::operand_size size,
                                        Assembler::Aqrl release) {
   switch (size) {
     case int64:
-      sc_d(dst, new_val, addr, release);
+      sc_d(dst, addr, new_val, release);
       break;
     case int32:
     case uint32:
-      sc_w(dst, new_val, addr, release);
+      sc_w(dst, addr, new_val, release);
       break;
     default:
       ShouldNotReachHere();
@@ -3836,7 +3836,7 @@ void MacroAssembler::store_conditional(Register dst,
 
 
 void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expected, Register new_val,
-                                                 enum operand_size size,
+                                                 Assembler::operand_size size,
                                                  Register shift, Register mask, Register aligned_addr) {
   assert(size == int8 || size == int16, "unsupported operand size");
 
@@ -3866,10 +3866,11 @@ void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expecte
 // which are forced to work with 4-byte aligned address.
 void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
                                           Register new_val,
-                                          enum operand_size size,
+                                          Assembler::operand_size size,
                                           Assembler::Aqrl acquire, Assembler::Aqrl release,
                                           Register result, bool result_as_bool,
                                           Register tmp1, Register tmp2, Register tmp3) {
+  assert(!(UseZacas && UseZabha), "Use amocas");
   assert_different_registers(addr, expected, new_val, result, tmp1, tmp2, tmp3, t0, t1);
 
   Register scratch0 = t0, aligned_addr = t1;
@@ -3902,13 +3903,13 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
     notr(scratch1, mask);
     bind(retry);
 
-    lr_w(result, aligned_addr, acquire);
+    load_reserved(result, aligned_addr, operand_size::int32, acquire);
     andr(scratch0, result, mask);
     bne(scratch0, expected, fail);
 
     andr(scratch0, result, scratch1); // scratch1 is ~mask
     orr(scratch0, scratch0, new_val);
-    sc_w(scratch0, scratch0, aligned_addr, release);
+    store_conditional(scratch0, scratch0, aligned_addr, operand_size::int32, release);
     bnez(scratch0, retry);
   }
 
@@ -3940,10 +3941,11 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
 // failed.
 void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
                                                Register new_val,
-                                               enum operand_size size,
+                                               Assembler::operand_size size,
                                                Assembler::Aqrl acquire, Assembler::Aqrl release,
                                                Register result,
                                                Register tmp1, Register tmp2, Register tmp3) {
+  assert(!(UseZacas && UseZabha), "Use amocas");
   assert_different_registers(addr, expected, new_val, result, tmp1, tmp2, tmp3, t0, t1);
 
   Register scratch0 = t0, aligned_addr = t1;
@@ -3974,13 +3976,13 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
   } else {
     notr(scratch1, mask);
 
-    lr_w(result, aligned_addr, acquire);
+    load_reserved(result, aligned_addr, operand_size::int32, acquire);
     andr(scratch0, result, mask);
     bne(scratch0, expected, fail);
 
     andr(scratch0, result, scratch1); // scratch1 is ~mask
     orr(scratch0, scratch0, new_val);
-    sc_w(scratch0, scratch0, aligned_addr, release);
+    store_conditional(scratch0, scratch0, aligned_addr, operand_size::int32, release);
     bnez(scratch0, fail);
   }
 
@@ -3997,10 +3999,10 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
 
 void MacroAssembler::cmpxchg(Register addr, Register expected,
                              Register new_val,
-                             enum operand_size size,
+                             Assembler::operand_size size,
                              Assembler::Aqrl acquire, Assembler::Aqrl release,
                              Register result, bool result_as_bool) {
-  assert(size != int8 && size != int16, "unsupported operand size");
+  assert((UseZacas && UseZabha) || (size != int8 && size != int16), "unsupported operand size");
   assert_different_registers(addr, t0);
   assert_different_registers(expected, t0);
   assert_different_registers(new_val, t0);
@@ -4058,10 +4060,10 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
 
 void MacroAssembler::weak_cmpxchg(Register addr, Register expected,
                                   Register new_val,
-                                  enum operand_size size,
+                                  Assembler::operand_size size,
                                   Assembler::Aqrl acquire, Assembler::Aqrl release,
                                   Register result) {
-
+  assert((UseZacas && UseZabha) || (size != int8 && size != int16), "unsupported operand size");
   assert_different_registers(addr, t0);
   assert_different_registers(expected, t0);
   assert_different_registers(new_val, t0);
@@ -4134,7 +4136,7 @@ ATOMIC_XCHGU(xchgalwu, xchgalw)
 #undef ATOMIC_XCHGU
 
 void MacroAssembler::atomic_cas(Register prev, Register newv, Register addr,
-                                enum operand_size size, Assembler::Aqrl acquire, Assembler::Aqrl release) {
+                                Assembler::operand_size size, Assembler::Aqrl acquire, Assembler::Aqrl release) {
   switch (size) {
     case int64:
       amocas_d(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
@@ -4145,6 +4147,12 @@ void MacroAssembler::atomic_cas(Register prev, Register newv, Register addr,
     case uint32:
       amocas_w(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
       zext(prev, prev, 32);
+      break;
+    case int16:
+      amocas_h(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
+      break;
+    case int8:
+      amocas_b(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
       break;
     default:
       ShouldNotReachHere();
@@ -4977,7 +4985,7 @@ address MacroAssembler::reloc_call(Address entry, Register tmp) {
 
 address MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
-  IncompressibleRegion ir(this);  // relocations
+  IncompressibleScope scope(this); // relocations
   movptr(t0, (address)Universe::non_oop_word(), t1);
   assert_cond(entry != nullptr);
   return reloc_call(Address(entry, rh));
@@ -4990,7 +4998,7 @@ int MacroAssembler::ic_check_size() {
 }
 
 int MacroAssembler::ic_check(int end_alignment) {
-  IncompressibleRegion ir(this);
+  IncompressibleScope scope(this);
   Register receiver = j_rarg0;
   Register data = t0;
 
@@ -5903,17 +5911,19 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value) {
 
   andi(t0, cnt, unroll - 1);
   sub(cnt, cnt, t0);
-  // align 8, so first sd n % 8 = mod, next loop sd 8 * n.
   shadd(base, t0, base, t1, 3);
   la(t1, entry);
-  slli(t0, t0, 2); // sd_inst_nums * 4; t0 is cnt % 8, so t1 = t1 - sd_inst_nums * 4, 4 is sizeof(inst)
+  slli(t0, t0, 2);
   sub(t1, t1, t0);
   jr(t1);
 
   bind(loop);
   addi(base, base, unroll * wordSize);
-  for (int i = -unroll; i < 0; i++) {
-    sd(value, Address(base, i * 8));
+  {
+    IncompressibleScope scope(this); // Fixed length
+    for (int i = -unroll; i < 0; i++) {
+      sd(value, Address(base, i * 8));
+    }
   }
   bind(entry);
   subi(cnt, cnt, unroll);
@@ -6120,10 +6130,14 @@ void MacroAssembler::zero_memory(Register addr, Register len, Register tmp) {
   slli(t0, t0, 2);
   sub(t1, t1, t0);
   jr(t1);
+
   bind(loop);
   sub(len, len, unroll);
-  for (int i = -unroll; i < 0; i++) {
-    sd(zr, Address(tmp, i * wordSize));
+  {
+    IncompressibleScope scope(this); // Fixed length
+    for (int i = -unroll; i < 0; i++) {
+      sd(zr, Address(tmp, i * wordSize));
+    }
   }
   bind(entry);
   add(tmp, tmp, unroll * wordSize);
