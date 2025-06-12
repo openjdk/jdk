@@ -779,7 +779,6 @@ void ShenandoahRegionPartitions::assert_bounds(bool old_trash_not_in_bounds) {
   // Bottom line: if _old_trash_not_in_bounds, the ranges of old regions detected by examination of all region states may
   // be larger than the spans reported by leftmosts(OldColector) and rightmosts(OldCollector) and by the spans represented
   // by _leftmosts_empty[OldCollector] and _rightmosts_empty[OldCollector]
-  // 
 
   // If OldCollector partition is empty and !old_trash_not_in_bounds:
   //    leftmosts will both equal max, rightmosts will both equal zero.

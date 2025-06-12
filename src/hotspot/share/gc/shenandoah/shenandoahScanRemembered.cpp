@@ -290,7 +290,7 @@ HeapWord* ShenandoahCardCluster::block_start(const size_t card_index) const {
   if (p + obj->size() <= left) {
     const CardValue* const wtbm = _rs->card_table()->write_byte_map();
     const CardValue* const rtbm = _rs->card_table()->read_byte_map();
-    log_info(gc)("Anticipating assert failure, card[%zu] is %s in read table, %s in write table", cur_index, 
+    log_info(gc)("Anticipating assert failure, card[%zu] is %s in read table, %s in write table", cur_index,
                  (rtbm[cur_index] ==CardTable::dirty_card_val())? "dirty": "clean",
                  (wtbm[cur_index] ==CardTable::dirty_card_val())? "dirty": "clean");
   }
