@@ -6580,6 +6580,10 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   memory_phi = _gvn.transform(memory_phi);
   result_phi = _gvn.transform(result_phi);
 
+  record_for_igvn(exit_block);
+  record_for_igvn(memory_phi);
+  record_for_igvn(result_phi);
+
   set_control(exit_block);
   set_all_memory(memory_phi);
   set_result(result_phi);

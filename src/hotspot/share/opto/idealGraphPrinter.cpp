@@ -155,7 +155,6 @@ void IdealGraphPrinter::init(const char* file_name, bool use_multiple_files, boo
   // in the mach where kill projections have no users but should
   // appear in the dump.
   _traverse_outs = true;
-  _should_send_method = true;
   _output = nullptr;
   buffer[0] = 0;
   _depth = 0;
@@ -300,13 +299,11 @@ void IdealGraphPrinter::print_inline_tree(InlineTree *tree) {
 void IdealGraphPrinter::print_inlining() {
 
   // Print inline tree
-  if (_should_send_method) {
-    InlineTree *inlineTree = C->ilt();
-    if (inlineTree != nullptr) {
-      print_inline_tree(inlineTree);
-    } else {
-      // print this method only
-    }
+  InlineTree *inlineTree = C->ilt();
+  if (inlineTree != nullptr) {
+    print_inline_tree(inlineTree);
+  } else {
+    // print this method only
   }
 }
 
@@ -382,7 +379,6 @@ void IdealGraphPrinter::begin_method() {
 
   tail(PROPERTIES_ELEMENT);
 
-  _should_send_method = true;
   this->_current_method = method;
 
   _xml->flush();
@@ -975,7 +971,7 @@ void IdealGraphPrinter::print_graph(const char* name, const frame* fr) {
 // Print current ideal graph
 void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const Node*>& visible_nodes, const frame* fr) {
 
-  if (!_current_method || !_should_send_method || node == nullptr) return;
+  if (!_current_method || node == nullptr) return;
 
   if (name == nullptr) {
     stringStream graph_name;

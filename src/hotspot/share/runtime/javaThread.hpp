@@ -40,6 +40,7 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stackOverflow.hpp"
+#include "runtime/suspendResumeManager.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadHeapSampler.hpp"
 #include "runtime/threadIdentifier.hpp"
@@ -694,9 +695,13 @@ private:
 
   // Suspend/resume support for JavaThread
   // higher-level suspension/resume logic called by the public APIs
+private:
+  SuspendResumeManager _suspend_resume_manager;
+public:
   bool java_suspend(bool register_vthread_SR);
   bool java_resume(bool register_vthread_SR);
-  bool is_suspended()     { return _handshake.is_suspended(); }
+  bool is_suspended()     { return _suspend_resume_manager.is_suspended(); }
+  SuspendResumeManager* suspend_resume_manager() { return &_suspend_resume_manager; }
 
   // Check for async exception in addition to safepoint.
   static void check_special_condition_for_native_trans(JavaThread *thread);

@@ -67,7 +67,10 @@ public class TestImplicitNullChecks {
     }
 
     @Test
-    @IR(applyIfOr = {"UseZGC", "true", "UseG1GC", "true"},
+    // On AIX, implicit null checks are limited because the zero page is
+    // readable (but not writable). See os::zero_page_read_protected().
+    @IR(applyIfPlatform = {"aix", "false"},
+        applyIfOr = {"UseZGC", "true", "UseG1GC", "true"},
         counts = {IRNode.NULL_CHECK, "1"},
         phase = CompilePhase.FINAL_CODE)
     static Object testLoad(Outer o) {

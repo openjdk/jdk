@@ -138,6 +138,8 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("container.support", this::containerSupport);
         map.put("systemd.support", this::systemdSupport);
         map.put("vm.musl", this::isMusl);
+        map.put("vm.asan", this::isAsanEnabled);
+        map.put("vm.ubsan", this::isUbsanEnabled);
         map.put("release.implementor", this::implementor);
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
@@ -726,6 +728,15 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String isMusl() {
         return Boolean.toString(WB.getLibcName().contains("musl"));
+    }
+
+    // Sanitizer support
+    protected String isAsanEnabled() {
+        return "" + WB.isAsanEnabled();
+    }
+
+    protected String isUbsanEnabled() {
+        return "" + WB.isUbsanEnabled();
     }
 
     private String implementor() {

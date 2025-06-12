@@ -41,7 +41,7 @@ PSOldGen::PSOldGen(ReservedSpace rs, size_t initial_size, size_t min_size,
   _min_gen_size(min_size),
   _max_gen_size(max_size)
 {
-  initialize(rs, initial_size, GenAlignment);
+  initialize(rs, initial_size, SpaceAlignment);
 }
 
 void PSOldGen::initialize(ReservedSpace rs, size_t initial_size, size_t alignment) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 
 package sun.text.resources.ext;
 
-import sun.util.resources.ParallelListResourceBundle;
+import sun.util.resources.OpenListResourceBundle;
 
-public class FormatData extends ParallelListResourceBundle {
+public class FormatData extends OpenListResourceBundle {
     /**
      * Exists to keep sun.text.resources.ext package alive
      * with IncludeLocales jlink plugin

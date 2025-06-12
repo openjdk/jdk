@@ -57,7 +57,24 @@ public class BlsmskTestI extends BmiIntrinsicBase.BmiTestCase {
                 (byte) 0x02, // 00010 implied 0F 38 leading opcode bytes
                 (byte) 0x00,
                 (byte) 0xF3,
-                (byte) 0b0001_0000}; // bits 543 == 011 (3)
+                (byte) 0b0001_0000}; // bits 543 == 010 (2)
+
+        // from intel apx specifications EVEX.128.NP.0F38.W1 F3 /2(opcode extension part of ModRM.REG)
+        instrMaskAPX = new byte[]{
+                (byte) 0xFF,
+                (byte) 0x07,
+                (byte) 0x00,
+                (byte) 0x00,
+                (byte) 0xFF,
+                (byte) 0x38};
+
+        instrPatternAPX = new byte[]{
+                (byte) 0x62, // fixed prefix byte 0x62 for extended EVEX instruction
+                (byte) 0x02, // 00010 implied 0F 38 leading opcode bytes
+                (byte) 0x00,
+                (byte) 0x00,
+                (byte) 0xF3,
+                (byte) 0b0001_0000}; // bits 543 == 010 (2)
     }
 
     public static void main(String[] args) throws Exception {
