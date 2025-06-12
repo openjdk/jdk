@@ -283,14 +283,17 @@ bool Peephole::lea_remove_redundant(Block* block, int block_index, PhaseCFG* cfg
     return false;
   }
 
-  bool is_spill = lea_derived_oop->in(AddPNode::Address) != decode->in(1) &&
-                  lea_derived_oop->in(AddPNode::Address)->is_SpillCopy() &&
-                  decode->in(1)->is_SpillCopy();
+  Node* lea_address = lea_derived_oop->in(AddPNode::Address);
+  Node* decode_address = decode->in(1);
+
+  bool is_spill = lea_address != decode->in(1) &&
+                  lea_address->is_SpillCopy() &&
+                  decode_address->is_SpillCopy();
 
   // The leaP* and the decode must have the same parent. If we have a spill, they must have
   // the same grandparent.
-  if ((!is_spill && lea_derived_oop->in(AddPNode::Address) != decode->in(1)) ||
-      (is_spill && lea_derived_oop->in(AddPNode::Address)->in(1) != decode->in(1)->in(1))) {
+  if ((!is_spill && lea_address != decode_address) ||
+      (is_spill && lea_address->in(1) != decode_address->in(1))) {
     return false;
   }
 
@@ -311,8 +314,8 @@ bool Peephole::lea_remove_redundant(Block* block, int block_index, PhaseCFG* cfg
            other_lea->rule() == leaP8Narrow_rule ||
            other_lea->rule() == leaPCompressedOopOffset_rule) &&
            other_lea->in(AddPNode::Base) == decode &&
-          (other_lea->in(AddPNode::Address) == decode->in(1) ||
-          (is_spill && other_lea->in(AddPNode::Address)->in(1) == decode->in(1)->in(1)))) {
+          (other_lea->in(AddPNode::Address) == decode_address ||
+          (is_spill && other_lea->in(AddPNode::Address)->in(1) == decode_address->in(1)))) {
         continue;
       }
     }
@@ -347,8 +350,8 @@ bool Peephole::lea_remove_redundant(Block* block, int block_index, PhaseCFG* cfg
   }
 
   // Remove spill for the decode if it does not have any other uses.
-  if (is_spill && decode->in(1)->is_Mach() && decode->in(1)->outcnt() == 1 && block->contains(decode->in(1))) {
-    MachNode* decode_spill = decode->in(1)->as_Mach();
+  if (is_spill && decode_address->is_Mach() && decode_address->outcnt() == 1 && block->contains(decode_address)) {
+    MachNode* decode_spill = decode_address->as_Mach();
     decode_spill->set_removed();
     block->find_remove(decode_spill);
     cfg_->map_node_to_block(decode_spill, nullptr);
