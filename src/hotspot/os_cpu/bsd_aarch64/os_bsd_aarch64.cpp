@@ -593,6 +593,22 @@ void os::current_thread_enable_wx(WXMode mode) {
   }
 }
 
+#if defined(__APPLE__) && defined(AARCH64)
+bool Thread::wx_enable_write() {
+  if (_wx_state == WXArmedForWrite) {
+    os::current_thread_enable_wx(WXWrite);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+void os::thread_wx_enable_write() {
+  Thread::current()->wx_enable_write();
+}
+
+#endif
+
 static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
   *(jlong *) dst = *(const jlong *) src;
 }

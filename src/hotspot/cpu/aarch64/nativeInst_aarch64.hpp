@@ -96,11 +96,11 @@ protected:
   address ptr_at(int offset) const { return *(address*)addr_at(offset); }
   oop oop_at(int offset) const { return *(oop*)addr_at(offset); }
 
-  void set_char_at(int offset, char c) { MACOS_AARCH64_ONLY(Thread::thread_wx_enable_write()); *addr_at(offset) = (u_char)c; }
-  void set_int_at(int offset, jint i) { MACOS_AARCH64_ONLY(Thread::thread_wx_enable_write()); *(jint*)addr_at(offset) = i; }
-  void set_uint_at(int offset, jint i) { MACOS_AARCH64_ONLY(Thread::thread_wx_enable_write()); *(juint*)addr_at(offset) = i; }
-  void set_ptr_at(int offset, address ptr) { MACOS_AARCH64_ONLY(Thread::thread_wx_enable_write()); *(address*)addr_at(offset) = ptr; }
-  void set_oop_at(int offset, oop o) { MACOS_AARCH64_ONLY(Thread::thread_wx_enable_write()); *(oop*)addr_at(offset) = o; }
+  void set_char_at(int offset, char c) { MACOS_AARCH64_ONLY(os::thread_wx_enable_write()); *addr_at(offset) = (u_char)c; }
+  void set_int_at(int offset, jint i) { MACOS_AARCH64_ONLY(os::thread_wx_enable_write()); *(jint*)addr_at(offset) = i; }
+  void set_uint_at(int offset, jint i) { MACOS_AARCH64_ONLY(os::thread_wx_enable_write()); *(juint*)addr_at(offset) = i; }
+  void set_ptr_at(int offset, address ptr) { MACOS_AARCH64_ONLY(os::thread_wx_enable_write()); *(address*)addr_at(offset) = ptr; }
+  void set_oop_at(int offset, oop o) { MACOS_AARCH64_ONLY(os::thread_wx_enable_write()); *(oop*)addr_at(offset) = o; }
 
   void wrote(int offset);
 

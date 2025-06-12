@@ -28,6 +28,7 @@
 
 #include "asm/register.hpp"
 #include "metaprogramming/enableIf.hpp"
+#include "runtime/os.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -4286,7 +4287,7 @@ public:
 #undef INSN
 
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {
-    MACOS_AARCH64_ONLY(Thread::thread_wx_enable_write());
+    MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   }
 
   // Stack overflow checking
