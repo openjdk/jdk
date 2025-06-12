@@ -56,6 +56,7 @@ public class T6397286 {
                 });
 
             try {
+                // no need to check the result of JavacTask::call, reevaluate if the test is modified
                 task.call();
                 throw new AssertionError("no exception thrown");
             } catch (RuntimeException e) {
