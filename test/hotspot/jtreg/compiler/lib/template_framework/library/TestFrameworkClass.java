@@ -61,6 +61,10 @@ public final class TestFrameworkClass {
      * the tests will be run. Thus, one can generate the test class once, and invoke its
      * {@code main} method multiple times, each time with a different set of VM flags.
      *
+     * <p>
+     * The internal {@link Template} sets the {@link Hooks#CLASS_HOOK} for the scope of
+     * all test methods.
+     *
      * @param packageName The package name of the test class.
      * @param className The name of the test class.
      * @param imports A set of imports.

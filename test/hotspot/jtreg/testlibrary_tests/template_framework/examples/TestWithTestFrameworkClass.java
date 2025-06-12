@@ -46,6 +46,7 @@ import compiler.lib.template_framework.TemplateToken;
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
 
+import compiler.lib.template_framework.library.Hooks;
 import compiler.lib.template_framework.library.TestFrameworkClass;
 
 /**
@@ -80,6 +81,13 @@ public class TestWithTestFrameworkClass {
 
     // Generate a source Java file as String
     public static String generate(CompileFramework comp) {
+        // A simple template that adds a comment.
+        var commentTemplate = Template.make(() -> body(
+            """
+            // Comment inserted from test method to class hook.
+            """
+        ));
+
         // We define a Test-Template:
         // - static fields for inputs: INPUT_A and INPUT_B
         //   - Data generated with Generators and hashtag replacement #con1.
@@ -130,7 +138,10 @@ public class TestWithTestFrameworkClass {
                 Verify.checkEQ(result, $GOLD);
             }
             // --- $test end   ---
-            """
+            """,
+            // Good to know: we can insert to the class hook, which is set for the
+            // TestFrameworkClass scope:
+            Hooks.CLASS_HOOK.insert(commentTemplate.asToken())
         ));
 
         // Create a test for each operator.
