@@ -41,6 +41,7 @@ public class TestStoresSunkInOuterStripMinedLoop {
     public static void main(String[] args) {
         A a1 = new A();
         A a2 = new A();
+        A a3 = new A();
         for (int i = 0; i < 20_000; i++) {
             field = 0;
             test1();
@@ -54,6 +55,11 @@ public class TestStoresSunkInOuterStripMinedLoop {
             }
             a1.field = 0;
             test3(a1, a2);
+            if (a1.field != 1500) {
+                throw new RuntimeException(a1.field + " != 1500");
+            }
+            a1.field = 0;
+            test4(a1, a2, a3);
             if (a1.field != 1500) {
                 throw new RuntimeException(a1.field + " != 1500");
             }
@@ -100,6 +106,24 @@ public class TestStoresSunkInOuterStripMinedLoop {
             a.field = v;
             a = a1;
             a2.field = v;
+        }
+        return f;
+    }
+
+    // Couples stores sunk in outer loop, store in inner loop
+    private static float test4(A a1, A a2, A a3) {
+        field = a1.field + a2.field + a3.field;
+        volatileField = 42;
+        int v = a1.field;
+        float f = 1;
+        A a = a2;
+        for (int i = 0; i < 1500; i++) {
+            f *= 2;
+            v++;
+            a.field = v;
+            a = a1;
+            a2.field = v;
+            a3.field = v;
         }
         return f;
     }

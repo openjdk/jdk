@@ -3007,50 +3007,50 @@ void OuterStripMinedLoopNode::handle_sunk_stores_at_expansion(PhaseIterGVN* igvn
   // Sunk stores are reachable from the memory state of the outer loop safepoint
   Node* safepoint = outer_safepoint();
   Node* safepoint_mem = safepoint->in(TypeFunc::Memory);
-  if (safepoint_mem->is_MergeMem()) {
-    MergeMemNode* mm = safepoint_mem->as_MergeMem();
-    DEBUG_ONLY(int stores_in_outer_loop_cnt2 = 0);
-    for (MergeMemStream mms(mm); mms.next_non_empty(); ) {
-      Node* mem = mms.memory();
-      // Traverse up the chain of stores to find the first store pinned
-      // at the loop exit projection.
-      Node* last = mem;
-      Node* first = nullptr;
-      while (mem->is_Store() && mem->in(0) == cle_exit_proj) {
-        DEBUG_ONLY(stores_in_outer_loop_cnt2++);
-        first = mem;
-        mem = mem->in(MemNode::Memory);
+  if (!safepoint_mem->is_MergeMem()) {
+    assert(stores_in_outer_loop_cnt == 0, "inconsistent");
+    return;
+  }
+  MergeMemNode* mm = safepoint_mem->as_MergeMem();
+  DEBUG_ONLY(int stores_in_outer_loop_cnt2 = 0);
+  for (MergeMemStream mms(mm); mms.next_non_empty();) {
+    Node* mem = mms.memory();
+    // Traverse up the chain of stores to find the first store pinned
+    // at the loop exit projection.
+    Node* last = mem;
+    Node* first = nullptr;
+    while (mem->is_Store() && mem->in(0) == cle_exit_proj) {
+      DEBUG_ONLY(stores_in_outer_loop_cnt2++);
+      first = mem;
+      mem = mem->in(MemNode::Memory);
+    }
+    if (first != nullptr) {
+      // Found a chain of Stores that were sunk
+      // Do we already have a memory Phi for that slice on the outer loop? If that is the case, that Phi was created
+      // by cloning an inner loop Phi. The inner loop Phi should have mem, the memory state of the first Store out of
+      // the inner loop, as input on the backedge. So does the outer loop Phi given it's a clone.
+      Node* phi = nullptr;
+      for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
+        Node* u = mem->fast_out(i);
+        if (u->is_Phi() && u->in(0) == this && u->in(LoopBackControl) == mem) {
+          assert(phi == nullptr, "there should be only one");
+          phi = u;
+          PRODUCT_ONLY(break);
+        }
       }
-      if (first != nullptr) {
-        // Found a chain of Stores that were sunk
-        // Do we already have a memory Phi for that slice on the outer loop? If that is the case, that Phi was created
-        // by cloning an inner loop Phi. The inner loop Phi should have mem, the memory state of the first Store out of
-        // the inner loop, as input on the backedge. So does the outer loop Phi given it's a clone.
-        Node* phi = nullptr;
-        for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
-          Node* u = mem->fast_out(i);
-          if (u->is_Phi() && u->in(0) == this && u->in(LoopBackControl) == mem) {
-            assert(phi == nullptr, "there should be only one");
-            phi = u;
-            PRODUCT_ONLY(break);
-          }
-        }
-        if (phi == nullptr) {
-          // No outer loop Phi? create one
-          phi = PhiNode::make(this, last);
-          phi->set_req(EntryControl, mem);
-          phi = igvn->transform(phi);
-          igvn->replace_input_of(first, MemNode::Memory, phi);
-        } else {
-          // Fix memory state along the backedge: it should be the last sunk Store of the chain
-          igvn->replace_input_of(phi, LoopBackControl, last);
-        }
+      if (phi == nullptr) {
+        // No outer loop Phi? create one
+        phi = PhiNode::make(this, last);
+        phi->set_req(EntryControl, mem);
+        phi = igvn->transform(phi);
+        igvn->replace_input_of(first, MemNode::Memory, phi);
+      } else {
+        // Fix memory state along the backedge: it should be the last sunk Store of the chain
+        igvn->replace_input_of(phi, LoopBackControl, last);
       }
     }
-    assert(stores_in_outer_loop_cnt == stores_in_outer_loop_cnt2, "inconsistent");
-  } else {
-    assert(stores_in_outer_loop_cnt == 0, "inconsistent");
   }
+  assert(stores_in_outer_loop_cnt == stores_in_outer_loop_cnt2, "inconsistent");
 }
 
 void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
