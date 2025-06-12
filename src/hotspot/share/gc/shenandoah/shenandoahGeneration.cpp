@@ -246,6 +246,11 @@ void ShenandoahGeneration::merge_write_table() {
 
 void ShenandoahGeneration::prepare_gc() {
   reset_mark_bitmap<true>();
+
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  if (heap->mode()->is_generational()) {
+    heap->old_generation()->card_scan()->mark_read_table_as_clean();
+  }
 }
 
 void ShenandoahGeneration::parallel_heap_region_iterate_free(ShenandoahHeapRegionClosure* cl) {

@@ -640,10 +640,6 @@ void ShenandoahConcurrentGC::op_reset() {
   } else {
     _generation->prepare_gc();
   }
-
-  if (heap->mode()->is_generational()) {
-    heap->old_generation()->card_scan()->mark_read_table_as_clean();
-  }
 }
 
 class ShenandoahInitMarkUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
