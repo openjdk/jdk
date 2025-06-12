@@ -1077,6 +1077,7 @@ void Compile::Init(bool aliasing) {
   _phase_counter = 0;
   Copy::zero_to_bytes(_igv_phase_iter, sizeof(_igv_phase_iter));
 #endif
+  set_run_loop_conditional_propagation(true);
 
   set_do_freq_based_layout(_directive->BlockLayoutByFrequencyOption);
   _loop_opts_cnt = LoopOptsCount;
