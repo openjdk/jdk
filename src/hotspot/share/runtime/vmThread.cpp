@@ -272,7 +272,6 @@ static void post_vm_operation_event(EventExecuteVMOperation* event, VM_Operation
 
 void VMThread::evaluate_operation(VM_Operation* op) {
   ResourceMark rm;
-  const bool gcLogging = log_is_enabled(Info, gc) || log_is_enabled(Info, gc, cpu);
   {
     PerfTraceTime vm_op_timer(perf_accumulated_vm_operation_time());
     HOTSPOT_VMOPS_BEGIN(
