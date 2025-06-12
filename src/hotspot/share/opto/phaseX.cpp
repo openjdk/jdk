@@ -1201,8 +1201,8 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
   // Some may be expected and cannot be fixed, and others should be fixed.
   switch (n->Opcode()) {
     // RangeCheckNode::Ideal looks up the chain for about 999 nodes
-    // see "Range-Check scan limit". So it is possible that something
-    // optimized in that input subgraph, and the RangeCheck was not
+    // (see "Range-Check scan limit"). So, it is possible that something
+    // is optimized in that input subgraph, and the RangeCheck was not
     // added to the worklist because it would be too expensive to walk
     // down the graph for 1000 nodes and put all on the worklist.
     //
@@ -1253,7 +1253,7 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     //
     // "Useless" means that there is no code in either branch of the If.
     // I found a case where this was not done yet during IGVN.
-    // Why does the Region not get added to IGVN worklist when the If diamond becomes useles?
+    // Why does the Region not get added to IGVN worklist when the If diamond becomes useless?
     //
     // Found with:
     //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
@@ -1312,8 +1312,8 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     //   test/hotspot/jtreg/compiler/loopopts/superword/ReductionPerf.java
     //   -XX:VerifyIterativeGVN=1110
     case Op_AddD:
-    //case Op_AddI: // Also affected for other reasons.
-    //case Op_AddL: // Also affected for other reasons.
+    //case Op_AddI: // Also affected for other reasons, see case further down.
+    //case Op_AddL: // Also affected for other reasons, see case further down.
     case Op_AddF:
     case Op_MulI:
     case Op_MulL:
@@ -1429,7 +1429,7 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     // to
     //   x + (0 - [8424  AddL])
     // but the AddL was not added to the IGVN worklist. Investigate why.
-    // There could be other issues too. For example with "commute", see above.
+    // There could be other issues, too. For example with "commute", see above.
     //
     // Found with:
     //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
