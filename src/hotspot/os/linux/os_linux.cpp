@@ -240,7 +240,7 @@ size_t os::Linux::available_memory() {
   julong avail_mem = available_memory_in_container();
   if (avail_mem != static_cast<julong>(-1L)) {
     log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
-    return avail_mem;
+    return static_cast<size_t>(avail_mem);
   }
 
   FILE *fp = os::fopen("/proc/meminfo", "r");
@@ -255,7 +255,7 @@ size_t os::Linux::available_memory() {
     fclose(fp);
   }
   if (avail_mem == static_cast<julong>(-1L)) {
-    avail_mem = free_memory();
+    avail_mem = static_cast<julong>(free_memory());
   }
   log_trace(os)("available memory: " JULONG_FORMAT, avail_mem);
   return static_cast<size_t>(avail_mem);
