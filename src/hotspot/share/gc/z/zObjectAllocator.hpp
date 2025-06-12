@@ -39,6 +39,9 @@ class ZPageTable;
 class ZObjectAllocator {
   friend class ZObjectAllocators;
 
+  template <typename Type, int Count>
+  friend class ValueObjBlock;
+
 private:
   const ZPageAge     _age;
   const bool         _use_per_cpu_shared_small_pages;
@@ -70,7 +73,6 @@ private:
 
   void retire_pages();
 
-public:
   ZObjectAllocator(ZPageAge age);
 };
 
