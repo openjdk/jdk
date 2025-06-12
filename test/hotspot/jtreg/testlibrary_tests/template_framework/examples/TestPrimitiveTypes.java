@@ -39,7 +39,6 @@ import java.util.Collections;
 import java.util.HashMap;
 
 import compiler.lib.compile_framework.*;
-import compiler.lib.template_framework.DataName;
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateToken;
 import static compiler.lib.template_framework.Template.body;
@@ -47,7 +46,6 @@ import static compiler.lib.template_framework.Template.dataNames;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.addDataName;
-import static compiler.lib.template_framework.Template.dataNames;
 import static compiler.lib.template_framework.DataName.Mutability.MUTABLE;
 
 import compiler.lib.template_framework.library.Hooks;
@@ -73,10 +71,10 @@ public class TestPrimitiveTypes {
         comp.invoke("p.xyz.InnerTest", "main", new Object[] {});
     }
 
-    // Generate a source Java file as String
+    // Generate a Java source file as String
     public static String generate() {
         // Generate a list of test methods.
-        Map<String,TemplateToken> tests = new HashMap<>();
+        Map<String, TemplateToken> tests = new HashMap<>();
 
         // The boxing tests check if we can autobox with "boxedTypeName".
         var boxingTemplate = Template.make("name", "type", (String name, PrimitiveType type) -> body(
@@ -161,9 +159,7 @@ public class TestPrimitiveTypes {
                 // Now sample:
                 """,
                 Collections.nCopies(10,
-                    CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(type ->
-                        sampleTemplate.asToken(type)
-                    ).toList()
+                    CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(sampleTemplate::asToken).toList()
                 )
             ),
             """
