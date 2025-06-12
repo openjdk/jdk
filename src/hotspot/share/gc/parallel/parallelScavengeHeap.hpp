@@ -215,7 +215,6 @@ public:
   void print_tracing_info() const override;
 
   void stop() override;
-  double elapsed_gc_vtime() override;
 
   WorkerThreads* safepoint_workers() override { return &_workers; }
 

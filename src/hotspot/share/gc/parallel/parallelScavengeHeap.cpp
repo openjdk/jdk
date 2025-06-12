@@ -164,23 +164,6 @@ void ParallelScavengeHeap::stop() {
   log_gc_vtime();
 }
 
-class ParallelVCPUThreadClosure : public ThreadClosure {
-private:
-  volatile jlong _vtime = 0;
-
-public:
-  virtual void do_thread(Thread *thread) {
-    Atomic::add(&_vtime, os::thread_cpu_time(thread));
-  }
-  jlong vtime() { return _vtime; };
-};
-
-double ParallelScavengeHeap::elapsed_gc_vtime() {
-  ParallelVCPUThreadClosure cl;
-  workers().threads_do(&cl);
-  return (double)(cl.vtime() + Universe::heap()->vm_vtime()) / NANOSECS_PER_SEC;
-}
-
 void ParallelScavengeHeap::safepoint_synchronize_begin() {
   if (UseStringDeduplication) {
     SuspendibleThreadSet::synchronize();

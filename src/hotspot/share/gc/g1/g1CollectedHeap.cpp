@@ -1479,26 +1479,6 @@ void G1CollectedHeap::stop() {
   _cm_thread->stop();
 }
 
-class G1VCPUThreadClosure : public ThreadClosure {
-private:
-  volatile jlong _vtime = 0;
-
-public:
-  virtual void do_thread(Thread *thread) {
-    Atomic::add(&_vtime, os::thread_cpu_time(thread));
-  }
-  jlong vtime() { return _vtime; };
-};
-
-double G1CollectedHeap::elapsed_gc_vtime() {
-  G1VCPUThreadClosure cl;
-  _cr->threads_do(&cl);
-  _cm->threads_do(&cl);
-  _workers->threads_do(&cl);
-  return ((double) cl.vtime() + os::thread_cpu_time(_service_thread) + os::thread_cpu_time(_cm_thread) + Universe::heap()->vm_vtime()) / NANOSECS_PER_SEC;
-}
-
-
 void G1CollectedHeap::safepoint_synchronize_begin() {
   SuspendibleThreadSet::synchronize();
 }

@@ -201,6 +201,23 @@ void CollectedHeap::print_relative_to_gc(GCWhen::Type when) const {
   }
 }
 
+class VCPUThreadClosure : public ThreadClosure {
+private:
+  volatile jlong _vtime = 0;
+
+public:
+  virtual void do_thread(Thread *thread) {
+    Atomic::add(&_vtime, os::thread_cpu_time(thread));
+  }
+  jlong vtime() { return _vtime; };
+};
+
+double CollectedHeap::elapsed_gc_vtime() {
+  VCPUThreadClosure cl;
+  gc_threads_do(&cl);
+  return (double)(cl.vtime() + Universe::heap()->vm_vtime()) / NANOSECS_PER_SEC;
+}
+
 void CollectedHeap::print_before_gc() const {
   print_relative_to_gc(GCWhen::BeforeGC);
 }
@@ -221,17 +238,15 @@ void CollectedHeap::log_gc_vtime() {
 
     if (process_vtime == -1 || gc_vtime == -1) return;
 
-    log_info(gc, cpu)("Process CPU time: %fs", process_vtime);
-    log_info(gc, cpu)("GC CPU time: %fs", gc_vtime);
-    double cost = -1;
+    double usage = -1;
     if (gc_vtime > process_vtime || process_vtime == 0 || gc_vtime == 0) {
       // This can happen e.g. for short running processes with
       // low CPU utilization
-      cost = 0;
+      usage = 0;
     } else {
-      cost = 100 * gc_vtime / process_vtime;
+      usage = 100 * gc_vtime / process_vtime;
     }
-    log_info(gc)("GC CPU cost: %2.2f%%", cost);
+    log_info(gc)("GC CPU usage: %2.2f%%", usage);
   }
 }
 

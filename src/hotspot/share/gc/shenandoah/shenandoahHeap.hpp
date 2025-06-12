@@ -209,8 +209,6 @@ public:
 
   void stop() override;
 
-  double elapsed_gc_vtime() override;
-
   void prepare_for_verify() override;
   void verify(VerifyOption vo) override;
 
