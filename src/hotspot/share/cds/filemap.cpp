@@ -234,14 +234,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
     _narrow_klass_pointer_bits = _narrow_klass_shift = -1;
   }
   // Which JIT compier is used
-  _compiler_type = (u1)CompilerType::compiler_none; // Interpreter only
-  if (CompilerConfig::is_c2_enabled()) {
-    _compiler_type = (u1)CompilerType::compiler_c2;
-  } else if (CompilerConfig::is_jvmci_compiler_enabled()) {
-    _compiler_type = (u1)CompilerType::compiler_jvmci;
-  } else if (CompilerConfig::is_c1_enabled()) {
-    _compiler_type = (u1)CompilerType::compiler_c1;
-  }
+  _compiler_type = (u1)CompilerConfig::compiler_type();
   _type_profile_level = TypeProfileLevel;
   _type_profile_args_limit = TypeProfileArgsLimit;
   _type_profile_parms_limit = TypeProfileParmsLimit;
@@ -1946,17 +1939,9 @@ bool FileMapHeader::validate() {
     return false;
   }
   bool jvmci_compiler_is_enabled = CompilerConfig::is_jvmci_compiler_enabled();
-  CompilerType compiler_type = CompilerType::compiler_none; // Interpreter only
-  if (CompilerConfig::is_c2_enabled()) {
-    compiler_type = CompilerType::compiler_c2;
-  } else if (jvmci_compiler_is_enabled) {
-    compiler_type = CompilerType::compiler_jvmci;
-  } else if (CompilerConfig::is_c1_enabled()) {
-    compiler_type = CompilerType::compiler_c1;
-  }
+  CompilerType compiler_type = CompilerConfig::compiler_type();
   CompilerType archive_compiler_type = CompilerType(_compiler_type);
-  // JVMCI compiler loads additional jdk.internal.vm.ci module,
-  // does different type profiling settigns and generate
+  // JVMCI compiler does different type profiling settigns and generate
   // different code. We can't use archive which was produced
   // without it and reverse.
   // Only allow mix when JIT compilation is disabled.
