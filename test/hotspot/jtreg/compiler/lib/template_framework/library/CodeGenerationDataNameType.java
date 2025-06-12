@@ -103,7 +103,7 @@ public interface CodeGenerationDataNameType extends DataName.Type {
     /**
      * List of all {@link PrimitiveType}s.
      */
-    static final List<PrimitiveType> PRIMITIVE_TYPES = List.of(
+    List<PrimitiveType> PRIMITIVE_TYPES = List.of(
         bytes(),
         chars(),
         shorts(),
@@ -117,7 +117,7 @@ public interface CodeGenerationDataNameType extends DataName.Type {
     /**
      * List of all integral {@link PrimitiveType}s (byte, char, short, int, long).
      */
-    static final List<PrimitiveType> INTEGRAL_TYPES = List.of(
+    List<PrimitiveType> INTEGRAL_TYPES = List.of(
         bytes(),
         chars(),
         shorts(),
@@ -128,7 +128,7 @@ public interface CodeGenerationDataNameType extends DataName.Type {
     /**
      * List of all subword {@link PrimitiveType}s (byte, char, short).
      */
-    static final List<PrimitiveType> SUBWORD_TYPES = List.of(
+    List<PrimitiveType> SUBWORD_TYPES = List.of(
         bytes(),
         chars(),
         shorts()
@@ -137,7 +137,7 @@ public interface CodeGenerationDataNameType extends DataName.Type {
     /**
      * List of all floating {@link PrimitiveType}s (float, double).
      */
-    static final List<PrimitiveType> FLOATING_TYPES = List.of(
+    List<PrimitiveType> FLOATING_TYPES = List.of(
         floats(),
         doubles()
     );
@@ -145,7 +145,7 @@ public interface CodeGenerationDataNameType extends DataName.Type {
     /**
      * List of all integral and floating {@link PrimitiveType}s.
      */
-    static final List<PrimitiveType> INTEGRAL_AND_FLOATING_TYPES = List.of(
+    List<PrimitiveType> INTEGRAL_AND_FLOATING_TYPES = List.of(
         bytes(),
         chars(),
         shorts(),
