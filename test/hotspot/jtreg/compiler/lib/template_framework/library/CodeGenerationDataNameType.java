@@ -32,7 +32,7 @@ import compiler.lib.template_framework.Template;
  * The {@link CodeGenerationDataNameType} extends the {@link DataName.Type} with
  * additional functionality for code generation. These types with their extended
  * functionality can be used with many other code generation facilities in the
- * lbrary, such as generating random {@code Expression}s.
+ * library, such as generating random {@code Expression}s.
  */
 public interface CodeGenerationDataNameType extends DataName.Type {
 

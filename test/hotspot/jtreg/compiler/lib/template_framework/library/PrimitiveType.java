@@ -49,7 +49,7 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
 
     private static enum Kind { BYTE, SHORT, CHAR, INT, LONG, FLOAT, DOUBLE, BOOLEAN };
 
-    // We have one static instance each, so we do not have duplicat instances.
+    // We have one static instance each, so we do not have duplicated instances.
     static final PrimitiveType BYTES    = new PrimitiveType(Kind.BYTE   );
     static final PrimitiveType SHORTS   = new PrimitiveType(Kind.SHORT  );
     static final PrimitiveType CHARS    = new PrimitiveType(Kind.CHAR   );
@@ -73,7 +73,7 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
 
     @Override
     public String name() {
-        return switch(kind) {
+        return switch (kind) {
             case BYTE    -> "byte";
             case SHORT   -> "short";
             case CHAR    -> "char";
@@ -91,7 +91,7 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
     }
 
     public Object con() {
-        return switch(kind) {
+        return switch (kind) {
             case BYTE    -> "(byte)" + GEN_BYTE.next();
             case SHORT   -> "(short)" + GEN_SHORT.next();
             case CHAR    -> "(char)" + GEN_CHAR.next();
@@ -99,7 +99,7 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
             case LONG    -> GEN_LONG.next();
             case FLOAT   -> GEN_FLOAT.next();
             case DOUBLE  -> GEN_DOUBLE.next();
-            case BOOLEAN -> RANDOM.nextInt() % 2 == 0;
+            case BOOLEAN -> RANDOM.nextBoolean();
         };
     }
 
@@ -110,14 +110,11 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
      * @throws UnsupportedOperationException for boolean which has no defined size.
      */
     public int byteSize() {
-        return switch(kind) {
+        return switch (kind) {
             case BYTE    -> 1;
-            case SHORT   -> 2;
-            case CHAR    -> 2;
-            case INT     -> 4;
-            case LONG    -> 8;
-            case FLOAT   -> 4;
-            case DOUBLE  -> 8;
+            case SHORT, CHAR -> 2;
+            case INT, FLOAT -> 4;
+            case LONG, DOUBLE -> 8;
             case BOOLEAN -> { throw new UnsupportedOperationException("boolean does not have a defined 'size'"); }
         };
     }
@@ -128,7 +125,7 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
      * @return the name of the boxed type.
      */
     public String boxedTypeName() {
-        return switch(kind) {
+        return switch (kind) {
             case BYTE    -> "Byte";
             case SHORT   -> "Short";
             case CHAR    -> "Character";
@@ -141,20 +138,14 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
     }
 
     /**
-     * Indicates if the type is a floating type.
+     * Indicates if the type is a floating point type.
      *
-     * @return true iff the type is a floating type.
+     * @return true iff the type is a floating point type.
      */
     public boolean isFloating() {
-        return switch(kind) {
-            case BYTE    -> false;
-            case SHORT   -> false;
-            case CHAR    -> false;
-            case INT     -> false;
-            case LONG    -> false;
-            case FLOAT   -> true;
-            case DOUBLE  -> true;
-            case BOOLEAN -> false;
+        return switch (kind) {
+            case BYTE, SHORT, CHAR, INT, LONG, BOOLEAN -> false;
+            case FLOAT, DOUBLE -> true;
         };
     }
 }
