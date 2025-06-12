@@ -237,7 +237,7 @@ bool Peephole::test_may_remove(Block* block, int block_index, PhaseCFG* cfg_, Ph
 }
 
 // This function removes redundant lea instructions that result from chained dereferences that
-// match to leaPCompressedOopOffset, leaP8Narow, or leaP32Narrow. This happens for ideal graphs
+// match to leaPCompressedOopOffset, leaP8Narrow, or leaP32Narrow. This happens for ideal graphs
 // of the form LoadN -> DecodeN -> AddP. Matching with any leaP* rule consumes both the AddP and
 // the DecodeN. However, after matching the DecodeN is added back as the base for the leaP*,
 // which is necessary if the oop derived by the leaP* gets added to an OopMap, because OopMaps
@@ -264,7 +264,7 @@ bool Peephole::test_may_remove(Block* block, int block_index, PhaseCFG* cfg_, Ph
 //           | decodeHeapOop_not_null
 //           |   /              \
 //           leaP*          MachProj (leaf)
-// In this case where the common parent of the leaP* and the decode is one MemToRegSpill Copy
+// In this case where the common parent of the leaP* and the decode is one MemToRegSpillCopy
 // away, this peephole can also recognize the decode as redundant and also remove the spill copy
 // if that is only used by the decode.
 bool Peephole::lea_remove_redundant(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
@@ -294,7 +294,7 @@ bool Peephole::lea_remove_redundant(Block* block, int block_index, PhaseCFG* cfg
     return false;
   }
 
-  // Ensure the decode only has the leaP*s with the same (grand)parent and a MachProj leaf as children.
+  // Ensure the decode only has the leaP*s (with the same (grand)parent) and a MachProj leaf as children.
   MachProjNode* proj = nullptr;
   for (DUIterator_Fast imax, i = decode->fast_outs(imax); i < imax; i++) {
     Node* out = decode->fast_out(i);
