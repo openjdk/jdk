@@ -131,7 +131,7 @@ public class ValidateISO4217 {
              */
             {"GS", "GBP", "826", "2"},      // South Georgia And The South Sandwich Islands
             /* Not defined in ISO 4217 list, but defined in .properties file. */
-            {"AX", "EUR", "978", "2"},      // \u00c5LAND ISLANDS
+            {"AX", "EUR", "978", "2"},      // ÅLAND ISLANDS
             {"PS", "ILS", "376", "2"},      // Palestinian Territory, Occupied
             /* Not defined in ISO 4217 list, but added in ISO 3166 country code list */
             {"JE", "GBP", "826", "2"},      // Jersey

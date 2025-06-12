@@ -1632,7 +1632,7 @@ public abstract class Toolkit {
     private int[] calls = new int[LONG_BITS];
     private static volatile long enabledOnToolkitMask;
     private AWTEventListener eventListener = null;
-    private WeakHashMap<AWTEventListener, SelectiveAWTEventListener> listener2SelectiveListener = new WeakHashMap<>();
+    private final WeakHashMap<AWTEventListener, SelectiveAWTEventListener> listener2SelectiveListener = new WeakHashMap<>();
 
     /*
      * Extracts a "pure" AWTEventListener from a AWTEventListenerProxy,
@@ -1735,16 +1735,15 @@ public abstract class Toolkit {
     public void removeAWTEventListener(AWTEventListener listener) {
         AWTEventListener localL = deProxyAWTEventListener(listener);
 
-        if (listener == null) {
+        if (localL == null) {
             return;
         }
 
         synchronized (this) {
             SelectiveAWTEventListener selectiveListener =
-                listener2SelectiveListener.get(localL);
+                listener2SelectiveListener.remove(localL);
 
             if (selectiveListener != null) {
-                listener2SelectiveListener.remove(localL);
                 int[] listenerCalls = selectiveListener.getCalls();
                 for (int i=0; i<LONG_BITS; i++) {
                     calls[i] -= listenerCalls[i];

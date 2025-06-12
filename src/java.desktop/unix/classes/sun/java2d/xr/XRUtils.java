@@ -39,7 +39,7 @@ import static java.awt.AlphaComposite.*;
  * @author Clemens Eisserer
  */
 
-public class XRUtils {
+public final class XRUtils {
     public static final int None = 0;
 
     /* Composition Operators */
