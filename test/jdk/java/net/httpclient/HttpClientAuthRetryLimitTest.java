@@ -129,11 +129,7 @@ class HttpClientAuthRetryLimitTest implements HttpServerAdapters {
                         request, HttpResponse.BodyHandlers.discarding()));
                 assertEquals("too many authentication attempts. Limit: " + RETRY_LIMIT, exception.getMessage());
                 int totalRequestCount = requestCount.get();
-                if (RETRY_LIMIT > 0){
-                    assertEquals(RETRY_LIMIT, totalRequestCount);
-                } else {
-                    assertEquals(0, totalRequestCount - 1);
-                }
+                assertEquals(totalRequestCount, Math.max(RETRY_LIMIT, 0) + 1);
             }
         }
     }
