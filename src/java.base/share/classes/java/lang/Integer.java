@@ -289,7 +289,7 @@ public final class Integer extends Number
      */
     public static String toHexString(int i) {
         int mag = Integer.SIZE - Integer.numberOfLeadingZeros(i);
-        int len = Math.max(((mag + 3) / 4), 1);
+        int len = Math.max(((mag + 3) >> 2), 1);
         long x = HexDigits.hex8(i);
         if (COMPACT_STRINGS) {
             byte[] chars = new byte[len];
