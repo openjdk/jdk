@@ -30,6 +30,7 @@
  *        PromiscuousIPv6
  * @run main PromiscuousIPv6
  * @key randomness
+ * @requires (os.family == "linux") | (os.family == "mac")
  */
 
 import java.nio.ByteBuffer;
@@ -212,15 +213,11 @@ public class PromiscuousIPv6 {
 
         boolean hasIPV6MulticastAll;
 
-        if (!supportedByPlatform()) {
-            throw new SkippedException("This test should not be run on this platform");
-        } else {
-            int major = Platform.getOsVersionMajor();
-            int minor = Platform.getOsVersionMinor();
-            hasIPV6MulticastAll =
-                Platform.isOSX() ||
-                (Platform.isLinux() && ((major > 4) || ((major == 4 && minor >= 20))));
-        }
+        int major = Platform.getOsVersionMajor();
+        int minor = Platform.getOsVersionMinor();
+        hasIPV6MulticastAll =
+            Platform.isOSX() ||
+            (Platform.isLinux() && ((major > 4) || ((major == 4 && minor >= 20))));
 
         NetworkConfiguration.printSystemConfiguration(System.out);
         List<NetworkInterface> nifs = NetworkConfiguration.probe()
