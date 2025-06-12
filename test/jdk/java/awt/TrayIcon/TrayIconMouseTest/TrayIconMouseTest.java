@@ -50,7 +50,6 @@ import java.awt.image.BufferedImage;
  *          java.desktop/java.awt.Helper
  *          jdk.test.lib.Platform
  *          jtreg.SkippedException
- *          ExtendedRobot
  *          SystemTrayIconHelper
  * @run main TrayIconMouseTest
  */
@@ -58,17 +57,10 @@ import java.awt.image.BufferedImage;
 public class TrayIconMouseTest {
 
     TrayIcon icon;
-<<<<<<< HEAD
     Robot robot;
-    boolean actionPerformed = false;
-    Object actionLock = new Object();
-=======
-    ExtendedRobot robot;
-
     volatile boolean actionPerformed = false;
     final Object actionLock = new Object();
 
->>>>>>> 10791477cf0a0a31d2703fc718a7a649d494d534
     static boolean isMacOS = false;
     static boolean isWinOS = false;
     static boolean isOelOS = false;

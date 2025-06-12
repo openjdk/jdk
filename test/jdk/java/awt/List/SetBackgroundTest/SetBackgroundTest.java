@@ -28,8 +28,6 @@
   @requires os.family == "linux"
   @summary List does not honor user specified background, foreground colors on XToolkit
   @author Dmitry Cherepanov  area=awt.list
-  @library /lib/client
-  @build ExtendedRobot
   @run main SetBackgroundTest
 */
 
@@ -46,7 +44,7 @@ public class SetBackgroundTest
 {
 
     private static boolean isXAWT = (Toolkit.getDefaultToolkit().getClass().getName().equals("sun.awt.X11.XToolkit"));
-    private static ExtendedRobot robot = null;
+    private static Robot robot = null;
     private static Frame frame = null;
 
     private static final Color color = Color.red;
@@ -86,7 +84,7 @@ public class SetBackgroundTest
 
 
         try{
-            robot = new ExtendedRobot();
+            robot = new Robot();
         }catch(AWTException e){
             throw new RuntimeException(e.getMessage());
         }

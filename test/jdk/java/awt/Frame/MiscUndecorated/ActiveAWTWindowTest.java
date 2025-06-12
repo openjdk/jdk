@@ -25,7 +25,6 @@
  * @test
  * @key headful
  * @summary To check proper WINDOW_EVENTS are triggered when Frame gains or losses the focus
- * @library /lib/client
  * @run main ActiveAWTWindowTest
  */
 
@@ -35,6 +34,7 @@ import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Frame;
+import java.awt.Robot;
 import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;

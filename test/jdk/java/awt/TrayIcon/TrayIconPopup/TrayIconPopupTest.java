@@ -31,6 +31,7 @@ import java.awt.Frame;
 import java.awt.MenuItem;
 import java.awt.Point;
 import java.awt.PopupMenu;
+import java.awt.Robot;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.event.InputEvent;
@@ -53,7 +54,6 @@ import java.awt.image.BufferedImage;
  *          java.desktop/java.awt.Helper
  *          jdk.test.lib.Platform
  *          jtreg.SkippedException
- *          ExtendedRobot
  *          SystemTrayIconHelper
  * @run main TrayIconPopupTest
  */

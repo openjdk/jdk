@@ -37,12 +37,11 @@ import static jdk.test.lib.Asserts.*;
  * @summary Check whether correct modifiers set when multiple mouse buttons were pressed;
  *          check number of received events.
  *
- * @library /lib/client/ ../../helpers/lwcomponents/
+ * @library ../../helpers/lwcomponents/
  * @library /test/lib
  * @build LWComponent
  * @build LWButton
  * @build LWList
- * @build ExtendedRobot
  * @run main/timeout=600 MultipleMouseButtonsTest
  */
 
@@ -51,7 +50,7 @@ public class MultipleMouseButtonsTest implements MouseListener {
 
     private final static int robotDelay = 1000;
 
-    private final ExtendedRobot robot;
+    private final Robot robot;
     private final Object lock = new Object();
 
     private Frame frame;
@@ -139,7 +138,7 @@ public class MultipleMouseButtonsTest implements MouseListener {
     }
 
     MultipleMouseButtonsTest() throws Exception {
-        this.robot = new ExtendedRobot();
+        this.robot = new Robot();
         EventQueue.invokeAndWait( this::createGUI );
     }
 
@@ -171,7 +170,7 @@ public class MultipleMouseButtonsTest implements MouseListener {
             robot.delay(robotDelay);
             robot.mouseMove(origin);
             robot.delay(robotDelay);
-            robot.glide(origin, center);
+            robot.glide(origin.x, origin.y, center.x, center.y);
             robot.delay(robotDelay);
             robot.click();
             robot.delay(robotDelay);

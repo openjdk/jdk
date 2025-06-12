@@ -27,6 +27,7 @@ import jtreg.SkippedException;
 import java.awt.AWTException;
 import java.awt.EventQueue;
 import java.awt.Point;
+import java.awt.Robot;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.image.BufferedImage;
@@ -47,7 +48,6 @@ import java.awt.image.BufferedImage;
  *          java.desktop/java.awt.Helper
  *          jdk.test.lib.Platform
  *          jtreg.SkippedException
- *          ExtendedRobot
  *          SystemTrayIconHelper
  * @run main ActionCommand
  */
