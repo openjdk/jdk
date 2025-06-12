@@ -34,9 +34,9 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
-  product(uintx, ShenandoahRateAccelerationSampleSize, 10, EXPERIMENTAL,    \
-          "In selected ShenandoahControlIntervals (if 3 ms has passed "     \
-          "since previous allocation rate sample), "                          \
+  product(uintx, ShenandoahRateAccelerationSampleSize, 8, EXPERIMENTAL,     \
+          "In selected ShenandoahControlIntervals (if 5 ms has passed "     \
+          "since previous allocation rate sample), "                        \
           "we compute the allocation rate since the previous rate was "     \
           "sampled.  This many samples are analyzed to determine whether "  \
           "allocation rates are accelerating.  Acceleration may occur "     \
@@ -49,8 +49,8 @@
           "triggering excess collections.")                                 \
                                                                             \
   product(uintx, ShenandoahMomentaryAllocationRateSpikeSampleSize,          \
-          5, EXPERIMENTAL,                                                  \
-          "In selected ShenandoahControlIntervals (if 3 ms has passed "     \
+          3, EXPERIMENTAL,                                                  \
+          "In selected ShenandoahControlIntervals (if 5 ms has passed "     \
           "since previous allocation rate sample), we compute "             \
           "the allocation rate since the previous rate was sampled. "       \
           "The weighted average of this "                                   \
