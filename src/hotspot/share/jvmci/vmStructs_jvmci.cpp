@@ -574,11 +574,8 @@
   declare_constant_with_value("nmethod::ChangeReason::GC_UNLINKING", nmethod::ChangeReason::GC_unlinking)                                             \
   declare_constant_with_value("nmethod::ChangeReason::GC_UNLINKING_COLD", nmethod::ChangeReason::GC_unlinking_cold)                                   \
   declare_constant_with_value("nmethod::ChangeReason::JVMCI_INVALIDATE_NMETHOD", nmethod::ChangeReason::JVMCI_invalidate_nmethod)                     \
-  declare_constant_with_value("nmethod::ChangeReason::JVMCI_INVALIDATE_NMETHOD_MIRROR", nmethod::ChangeReason::JVMCI_invalidate_nmethod_mirror)       \
   declare_constant_with_value("nmethod::ChangeReason::JVMCI_MATERIALIZE_VIRTUAL_OBJECT", nmethod::ChangeReason::JVMCI_materialize_virtual_object)     \
-  declare_constant_with_value("nmethod::ChangeReason::JVMCI_NEW_INSTALLATION", nmethod::ChangeReason::JVMCI_new_installation)                         \
-  declare_constant_with_value("nmethod::ChangeReason::JVMCI_REGISTER_METHOD", nmethod::ChangeReason::JVMCI_register_method)                           \
-  declare_constant_with_value("nmethod::ChangeReason::JVMCI_REPLACING_WITH_NEW_CODE", nmethod::ChangeReason::JVMCI_replacing_with_new_code)           \
+  declare_constant_with_value("nmethod::ChangeReason::JVMCI_REPLACED_WITH_NEW_CODE", nmethod::ChangeReason::JVMCI_replaced_with_new_code)             \
   declare_constant_with_value("nmethod::ChangeReason::JVMCI_REPROFILE", nmethod::ChangeReason::JVMCI_reprofile)                                       \
   declare_constant_with_value("nmethod::ChangeReason::MARKED_FOR_DEOPTIMIZATION", nmethod::ChangeReason::marked_for_deoptimization)                   \
   declare_constant_with_value("nmethod::ChangeReason::MISSING_EXCEPTION_HANDLER", nmethod::ChangeReason::missing_exception_handler)                   \

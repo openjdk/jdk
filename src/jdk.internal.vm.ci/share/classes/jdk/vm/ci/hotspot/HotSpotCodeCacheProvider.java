@@ -154,14 +154,18 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
         return logOrDump(resultInstalledCode, compiledCode);
     }
 
-    @Override
-    public void invalidateInstalledCode(InstalledCode installedCode, int changeReason) {
+    public void invalidateInstalledCode(InstalledCode installedCode, int invalidationReason) {
         if (installedCode instanceof HotSpotNmethod) {
             HotSpotNmethod nmethod = (HotSpotNmethod) installedCode;
-            nmethod.invalidate(true, changeReason);
+            nmethod.invalidate(true, invalidationReason);
         } else {
             throw new IllegalArgumentException("Cannot invalidate a " + Objects.requireNonNull(installedCode).getClass().getName());
         }
+    }
+
+    @Override
+    public void invalidateInstalledCode(InstalledCode installedCode) {
+        invalidateInstalledCode(installedCode, unknownInvalidationReason());
     }
 
     @Override
@@ -200,5 +204,9 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
      */
     public void resetCompilationStatistics() {
         runtime.getCompilerToVM().resetCompilationStatistics();
+    }
+
+    private static int unknownInvalidationReason() {
+        return HotSpotJVMCIRuntime.runtime().config.getConstant("nmethod::ChangeReason::Unknown", Integer.class);
     }
 }

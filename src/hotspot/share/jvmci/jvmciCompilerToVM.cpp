@@ -1207,7 +1207,7 @@ C2V_VMENTRY_0(jint, installCode0, (JNIEnv *env, jobject,
         assert(JVMCIENV->isa_HotSpotNmethod(installed_code_handle), "wrong type");
         // Clear the link to an old nmethod first
         JVMCIObject nmethod_mirror = installed_code_handle;
-        JVMCIENV->invalidate_nmethod_mirror(nmethod_mirror, true, nmethod::ChangeReason::JVMCI_replacing_with_new_code, JVMCI_CHECK_0);
+        JVMCIENV->invalidate_nmethod_mirror(nmethod_mirror, true, nmethod::ChangeReason::JVMCI_replaced_with_new_code, JVMCI_CHECK_0);
       } else {
         assert(JVMCIENV->isa_InstalledCode(installed_code_handle), "wrong type");
       }
@@ -1218,10 +1218,10 @@ C2V_VMENTRY_0(jint, installCode0, (JNIEnv *env, jobject,
   return result;
 C2V_END
 
-C2V_VMENTRY_0(jobject,  getChangeReasonDescription, (JNIEnv *env, jobject, jint change_reason))
+C2V_VMENTRY_0(jobject, getInvalidationReasonString, (JNIEnv *env, jobject, jint invalidation_reason))
   HandleMark hm(THREAD);
   JNIHandleMark jni_hm(thread);
-  nmethod::ChangeReason reason = static_cast<nmethod::ChangeReason>(change_reason);
+  nmethod::ChangeReason reason = static_cast<nmethod::ChangeReason>(invalidation_reason);
   JVMCIObject desc = JVMCIENV->create_string(nmethod::change_reason_to_string(reason), JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(desc);
 C2V_END
@@ -3360,7 +3360,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getResolvedJavaType0",                         CC "(Ljava/lang/Object;JZ)" HS_KLASS,                                                 FN_PTR(getResolvedJavaType0)},
   {CC "readConfiguration",                            CC "()[" OBJECT,                                                                      FN_PTR(readConfiguration)},
   {CC "installCode0",                                 CC "(JJZ" HS_COMPILED_CODE "[" OBJECT INSTALLED_CODE "J[B)I",                         FN_PTR(installCode0)},
-  {CC "getChangeReasonDescription",                   CC "(I)" STRING,                                                                      FN_PTR(getChangeReasonDescription)},
+  {CC "getInvalidationReasonString",                  CC "(I)" STRING,                                                                      FN_PTR(getInvalidationReasonString)},
   {CC "getInstallCodeFlags",                          CC "()I",                                                                             FN_PTR(getInstallCodeFlags)},
   {CC "resetCompilationStatistics",                   CC "()V",                                                                             FN_PTR(resetCompilationStatistics)},
   {CC "disassembleCodeBlob",                          CC "(" INSTALLED_CODE ")" STRING,                                                     FN_PTR(disassembleCodeBlob)},

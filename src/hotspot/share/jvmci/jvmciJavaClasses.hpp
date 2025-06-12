@@ -92,7 +92,6 @@
     long_field(InstalledCode, entryPoint)                                                                     \
     long_field(InstalledCode, version)                                                                        \
     object_field(InstalledCode, name, "Ljava/lang/String;")                                                   \
-    int_field(InstalledCode, changeReason)                                                                    \
   end_class                                                                                                   \
   start_class(HotSpotInstalledCode, jdk_vm_ci_hotspot_HotSpotInstalledCode)                                   \
     int_field(HotSpotInstalledCode, size)                                                                     \
@@ -103,6 +102,7 @@
     boolean_field(HotSpotNmethod, isDefault)                                                                  \
     long_field(HotSpotNmethod, compileIdSnapshot)                                                             \
     object_field(HotSpotNmethod, method, "Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethodImpl;")                 \
+    int_field(HotSpotNmethod, invalidationReason)                                                             \
     jvmci_constructor(HotSpotNmethod, "(Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethodImpl;Ljava/lang/String;ZJ)V") \
   end_class                                                                                                   \
   start_class(HotSpotCompiledCode, jdk_vm_ci_hotspot_HotSpotCompiledCode)                                     \

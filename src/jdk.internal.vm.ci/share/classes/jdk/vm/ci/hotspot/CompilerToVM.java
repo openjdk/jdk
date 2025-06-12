@@ -654,7 +654,7 @@ final class CompilerToVM {
                     long failedSpeculationsAddress,
                     byte[] speculations);
 
-    native String getChangeReasonDescription(int changeReason);
+    native String getInvalidationReasonString(int invalidationReason);
 
     /**
      * Gets flags specifying optional parts of code info. Only if a flag is set, will the
@@ -844,7 +844,7 @@ final class CompilerToVM {
      * {@code nmethod} associated with {@code nmethodMirror} is also made non-entrant and if
      * {@code deoptimize == true} any current activations of the {@code nmethod} are deoptimized.
      */
-    native void invalidateHotSpotNmethod(HotSpotNmethod nmethodMirror, boolean deoptimize, int changeReason);
+    native void invalidateHotSpotNmethod(HotSpotNmethod nmethodMirror, boolean deoptimize, int invalidationReason);
 
     /**
      * Collects the current values of all JVMCI benchmark counters, summed up over all threads.

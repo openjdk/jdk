@@ -472,7 +472,7 @@ class nmethod : public CodeBlob {
 
 public:
   // If you change anything in this enum please patch
-  // vmStructs_jvmci.cpp and HotSpotNmethod.java accordingly.
+  // vmStructs_jvmci.cpp accordingly.
   enum class ChangeReason : u1 {
     unknown,
     C1_codepatch,
@@ -483,11 +483,8 @@ public:
     GC_unlinking,
     GC_unlinking_cold,
     JVMCI_invalidate_nmethod,
-    JVMCI_invalidate_nmethod_mirror,
     JVMCI_materialize_virtual_object,
-    JVMCI_new_installation,
-    JVMCI_register_method,
-    JVMCI_replacing_with_new_code,
+    JVMCI_replaced_with_new_code,
     JVMCI_reprofile,
     marked_for_deoptimization,
     missing_exception_handler,
@@ -516,16 +513,10 @@ public:
         return "CI replay";
       case ChangeReason::JVMCI_invalidate_nmethod:
         return "JVMCI invalidate nmethod";
-      case ChangeReason::JVMCI_invalidate_nmethod_mirror:
-        return "JVMCI invalidate nmethod mirror";
       case ChangeReason::JVMCI_materialize_virtual_object:
         return "JVMCI materialize virtual object";
-      case ChangeReason::JVMCI_new_installation:
-        return "JVMCI new installation";
-      case ChangeReason::JVMCI_register_method:
-        return "JVMCI register method";
-      case ChangeReason::JVMCI_replacing_with_new_code:
-        return "JVMCI replacing with new code";
+      case ChangeReason::JVMCI_replaced_with_new_code:
+        return "JVMCI replaced with new code";
       case ChangeReason::JVMCI_reprofile:
         return "JVMCI reprofile";
       case ChangeReason::marked_for_deoptimization:

@@ -49,7 +49,7 @@ import org.junit.Test;
 import java.lang.reflect.Method;
 
 /**
- * Test if passing InstalledCode changeReason around works.
+ * Test if setting HotSpotNmethod invalidation reason around works.
  */
 public class CodeInvalidationReasonTest extends CodeInstallationTest {
 
@@ -69,9 +69,9 @@ public class CodeInvalidationReasonTest extends CodeInstallationTest {
         Method method = getMethod("add", int.class, int.class);
 
         HotSpotNmethod nmethod = test(CodeInvalidationReasonTest::compileAdd, method, 5, 7);
-        Asserts.assertEquals(config.JVMCI_new_installation, nmethod.getChangeReason());
+        Asserts.assertEquals(config.NMETHOD_CHANGE_REASON_UNKNOWN, nmethod.getInvalidationReason());
 
-        nmethod.invalidate(true, config.JVMCI_invalidate_nmethod);
-        Asserts.assertEquals(config.JVMCI_invalidate_nmethod, nmethod.getChangeReason());
+        nmethod.invalidate(true, config.NMETHOD_CHANGE_REASON_JVMCI_INVALIDATE);
+        Asserts.assertEquals(config.NMETHOD_CHANGE_REASON_JVMCI_INVALIDATE, nmethod.getInvalidationReason());
     }
 }

@@ -78,45 +78,9 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
     private final long compileIdSnapshot;
 
     /**
-     * This is a mirror of the ChangeReason enum defined in nmethod.hpp.
-     * It defines constants representing different reasons why an nmethod
-     * changed or was invalidated.
+     * Identify the reason that caused this nmethod to be invalidated.
      */
-    public enum ChangeReason {
-        UNKNOWN,
-        C1_CODEPATCH,
-        C1_DEOPTIMIZE,
-        C1_DEOPTIMIZE_FOR_PATCHING,
-        C1_PREDICATE_FAILED_TRAP,
-        CI_REPLAY,
-        GC_UNLINKING,
-        GC_UNLINKING_COLD,
-        JVMCI_INVALIDATE_NMETHOD,
-        JVMCI_INVALIDATE_NMETHOD_MIRROR,
-        JVMCI_MATERIALIZE_VIRTUAL_OBJECT,
-        JVMCI_NEW_INSTALLATION,
-        JVMCI_REGISTER_METHOD,
-        JVMCI_REPLACING_WITH_NEW_CODE,
-        JVMCI_REPROFILE,
-        MARKED_FOR_DEOPTIMIZATION,
-        MISSING_EXCEPTION_HANDLER,
-        NOT_USED,
-        OSR_INVALIDATION_BACK_BRANCH,
-        OSR_INVALIDATION_FOR_COMPILING_WITH_C1,
-        OSR_INVALIDATION_OF_LOWER_LEVEL,
-        SET_NATIVE_FUNCTION,
-        UNCOMMON_TRAP,
-        WHITEBOX_DEOPTIMIZATION,
-        ZOMBIE;
-
-        ChangeReason() {
-            int expect = ordinal();
-            int actual = nmethodChangeReasonValue(name());
-            if (expect != actual) {
-                throw new JVMCIError("%s: expected %d, got %d", name(), expect, actual);
-            }
-        }
-    }
+    private int invalidationReason;
 
     HotSpotNmethod(HotSpotResolvedJavaMethodImpl method, String name, boolean isDefault, long compileId) {
         super(name);
@@ -124,6 +88,7 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
         this.isDefault = isDefault;
         boolean inOopsTable = !IS_IN_NATIVE_IMAGE && !isDefault;
         this.compileIdSnapshot = inOopsTable ? 0L : compileId;
+        this.invalidationReason = 0;
         assert inOopsTable || compileId != 0L : this;
     }
 
@@ -164,9 +129,13 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
         return method;
     }
 
+    public void invalidate(boolean deoptimize, int invalidationReason) {
+        compilerToVM().invalidateHotSpotNmethod(this, deoptimize, invalidationReason);
+    }
+
     @Override
-    public void invalidate(boolean deoptimize, int changeReason) {
-        compilerToVM().invalidateHotSpotNmethod(this, deoptimize, changeReason);
+    public void invalidate(boolean deoptimize) {
+        invalidate(deoptimize, unknownInvalidationReason());
     }
 
     @Override
@@ -231,7 +200,21 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
         return isValid() ? super.getStart() : 0;
     }
 
-    private static int nmethodChangeReasonValue(String name) {
-        return HotSpotJVMCIRuntime.runtime().config.getConstant("nmethod::ChangeReason::" + name, Integer.class);
+    /**
+     * @return an integer representing the reason why this nmethod was invalidated.
+     */
+    public int getInvalidationReason() {
+        return invalidationReason;
+    }
+
+    /**
+     * @return a String describing the reason why this nmethod was invalidated.
+     */
+    public String getInvalidationReasonString() {
+        return compilerToVM().getInvalidationReasonString(this.getInvalidationReason());
+    }
+
+    private static int unknownInvalidationReason() {
+        return HotSpotJVMCIRuntime.runtime().config.getConstant("nmethod::ChangeReason::Unknown", Integer.class);
     }
 }
