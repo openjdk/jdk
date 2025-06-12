@@ -62,7 +62,7 @@ const double ShenandoahAdaptiveHeuristics::MINIMUM_CONFIDENCE = 0.319; // 25%
 const double ShenandoahAdaptiveHeuristics::MAXIMUM_CONFIDENCE = 3.291; // 99.9%
 
 
-// To enable detection of GC time acceleration, we keep separate track of the recent history of gc time.  During initialization,
+// To enable detection of GC time trends, we keep separate track of the recent history of gc time.  During initialization,
 // for example, the amount of live memory may be increasing, which is likely to cause the GC times to increase.  This history
 // allows us to predict increasing GC times rather than always assuming average recent GC time is the best predictor.
 const size_t ShenandoahAdaptiveHeuristics::GC_TIME_SAMPLE_SIZE = 3;
@@ -76,9 +76,9 @@ const size_t ShenandoahAdaptiveHeuristics::GC_TIME_SAMPLE_SIZE = 3;
 // Allocation rates are sampled by the regulator thread, which typically runs every ms.  There may be jitter in the scheduling
 // of the regulator thread.  To reduce signal noise and synchronization overhead, we do not sample allocation rate with every
 // iteration of the regulator.  We prefer sample time longer than 1 ms so that there can be a statistically significant number
-// of allocations occuring within each sample period.  The regulator thread samples allocation rate only if at least 3.5 ms has
-// passed since the previous time the regulator thread sampled the allocation rate.  In the default configuration, acceleration
-// is detected if 5 allocation rate samples of 3 ms each manifest an increasing trend (e.g. acceleration trend spans 15 ms).
+// of allocations occuring within each sample period.  The regulator thread samples allocation rate only if at least
+// MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL time has passed since the previous time the regulator thread sampled the allocation rate.  
+//
 // This trigger responds much more quickly than the traditional trigger, which monitors 100 ms spans.  When acceleration is
 // detected, the impact of acceleration on anticipated consumption of available memory is also much more impactful
 // than the assumed constant allocation rate consumption of available memory.
@@ -88,7 +88,7 @@ const size_t ShenandoahAdaptiveHeuristics::GC_TIME_SAMPLE_SIZE = 3;
 #ifdef KELVIN_DEBUG
 const double ShenandoahAdaptiveHeuristics::MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL = 0.010;
 #else
-const double ShenandoahAdaptiveHeuristics::MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL = 0.003;
+const double ShenandoahAdaptiveHeuristics::MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL = 0.0045;
 #endif
 
 ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* space_info) :
