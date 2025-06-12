@@ -190,7 +190,7 @@ class ValueNumberingVisitor: public InstructionVisitor {
   void do_NewInstance    (NewInstance*     x) {
     ciInstanceKlass* c = x->klass();
     if (c != nullptr && !c->is_initialized() &&
-        ((c->is_loaded() && c->has_class_initializer()) || !c->is_loaded())) {
+        (!c->is_loaded() || c->has_class_initializer()) {
       kill_memory();
     }
   }
