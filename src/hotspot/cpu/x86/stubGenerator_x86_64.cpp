@@ -4049,7 +4049,7 @@ void StubGenerator::create_control_words() {
 }
 
 // Initialization
-void generate_preuniverse_stubs() {
+void StubGenerator::generate_preuniverse_stubs() {
   // atomic calls
   StubRoutines::_fence_entry                = generate_orderaccess_fence();
 }
