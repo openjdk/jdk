@@ -39,6 +39,9 @@
 #if defined(LINUX)
 #include "os_linux.hpp"
 #endif
+#if defined(BSD)
+#include "os_bsd.hpp"
+#endif
 
 // put OS-includes here
 # include <sys/types.h>
@@ -127,6 +130,80 @@ static void save_memory_to_file(char* addr, size_t size) {
 // simple file apis.
 //
 
+#ifdef __APPLE__
+
+// macOS has a secure per-user temporary directory.
+// Root can attach to a non-root process, hence it needs
+// to lookup /var/folders for the user specific temporary directory
+// of the form /var/folders/*/*/T, that contains PERFDATA_NAME_user
+// directory.
+//
+static const char VAR_FOLDERS[] = "/var/folders/";
+static int get_user_tmp_dir_macos(const char* user, int vmid, char *output_path /* size = PATH_MAX */) {
+
+  // read the var/folders directory
+  DIR* varfolders_dir = os::opendir(VAR_FOLDERS);
+  if (varfolders_dir != nullptr) {
+
+    // var/folders directory contains 2-characters subdirectories (buckets)
+    struct dirent* bucket_de;
+
+    // loop until the PERFDATA_NAME_user directory has been found
+    while ((bucket_de = os::readdir(varfolders_dir)) != nullptr) {
+
+      // skip over files and special "." and ".."
+      if (bucket_de->d_type != DT_DIR || bucket_de->d_name[0] == '.') {
+        continue;
+      }
+
+      // absolute path to the bucket
+      char bucket[PATH_MAX];
+      int b = snprintf(bucket, PATH_MAX, "%s%s/", VAR_FOLDERS, bucket_de->d_name);
+
+      // the total length of the absolute path must not exceed the buffer size
+      if (b >= PATH_MAX || b < 0) {
+        continue;
+      }
+
+      // each bucket contains next level subdirectories
+      DIR* bucket_dir = os::opendir(bucket);
+      if (bucket_dir == nullptr) {
+        continue;
+      }
+
+      // read each subdirectory, skipping over regular files
+      struct dirent* subbucket_de;
+      while ((subbucket_de = os::readdir(bucket_dir)) != nullptr) {
+        if (subbucket_de->d_type != DT_DIR || subbucket_de->d_name[0] == '.') {
+          continue;
+        }
+
+        // if the PERFDATA_NAME_user directory exists in the T subdirectory,
+        // this means the subdirectory is the temporary directory of the user.
+        //
+        char perfdata_path[PATH_MAX];
+        int p = snprintf(perfdata_path, PATH_MAX, "%s%s/T/%s_%s/", bucket, subbucket_de->d_name, PERFDATA_NAME, user);
+
+        // the total length must not exceed the output buffer size
+        if (p >= PATH_MAX || p < 0) {
+          continue;
+        }
+
+        // check if the subdirectory exists
+        if (os::file_exists(perfdata_path)) {
+
+          // the return value of snprintf is not checked for the second time
+          return snprintf(output_path, PATH_MAX, "%s%s/T", bucket, subbucket_de->d_name);
+        }
+      }
+      os::closedir(bucket_dir);
+    }
+    os::closedir(varfolders_dir);
+  }
+  return -1;
+}
+#endif
+
 // return the user specific temporary directory name.
 // the caller is expected to free the allocated memory.
 //
@@ -143,6 +220,17 @@ static char* get_user_tmp_dir(const char* user, int vmid, int nspid) {
   if (nspid != -1) {
     jio_snprintf(buffer, TMP_BUFFER_LEN, "/proc/%d/root%s", vmid, tmpdir);
     tmpdir = buffer;
+  }
+#endif
+#ifdef __APPLE__
+  char buffer[PATH_MAX] = {0};
+  // Check if the current user is root and the target VM is running as non-root.
+  // Otherwise the output of os::get_temp_directory() is used.
+  //
+  if (os::Posix::is_current_user_root() && !os::Bsd::is_process_root(vmid)) {
+    if (get_user_tmp_dir_macos(user, vmid, buffer) != -1) {
+      tmpdir = buffer;
+    }
   }
 #endif
   const char* perfdir = PERFDATA_NAME;
@@ -1161,7 +1249,8 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
 
   // for linux, determine if vmid is for a containerized process
   int nspid = LINUX_ONLY(os::Linux::get_namespace_pid(vmid)) NOT_LINUX(-1);
-  const char* luser = get_user_name(vmid, &nspid, CHECK);
+  const char* luser = NOT_MACOS(get_user_name(vmid, &nspid, CHECK))
+    MACOS_ONLY(get_user_name(os::Bsd::get_process_uid(vmid)));
 
   if (luser == nullptr) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
