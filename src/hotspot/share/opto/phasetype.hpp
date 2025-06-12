@@ -49,10 +49,13 @@
   flags(ITER_GVN_BEFORE_EA,             "Iter GVN before EA") \
   flags(ITER_GVN_AFTER_VECTOR,          "Iter GVN after Vector Box Elimination") \
   flags(BEFORE_LOOP_OPTS,               "Before Loop Optimizations") \
+  flags(PHASEIDEAL_BEFORE_EA,           "PhaseIdealLoop before EA") \
+  flags(AFTER_EA,                       "After Escape Analysis") \
+  flags(ITER_GVN_AFTER_EA,              "Iter GVN after EA") \
   flags(BEFORE_BEAUTIFY_LOOPS,          "Before Beautify Loops") \
   flags(AFTER_BEAUTIFY_LOOPS,           "After Beautify Loops") \
-  flags(BEFORE_LOOP_UNROLLING,          "Before Loop Unrolling") \
-  flags(AFTER_LOOP_UNROLLING,           "After Loop Unrolling") \
+  flags(BEFORE_CLOOPS,                  "Before CountedLoop") \
+  flags(AFTER_CLOOPS,                   "After CountedLoop") \
   flags(BEFORE_SPLIT_IF,                "Before Split-if") \
   flags(AFTER_SPLIT_IF,                 "After Split-if") \
   flags(BEFORE_LOOP_PREDICATION_IC,     "Before Loop Predication IC") \
@@ -69,22 +72,19 @@
   flags(AFTER_LOOP_MULTIVERSIONING,     "After Loop Multiversioning") \
   flags(BEFORE_RANGE_CHECK_ELIMINATION, "Before Range Check Elimination") \
   flags(AFTER_RANGE_CHECK_ELIMINATION,  "After Range Check Elimination") \
+  flags(ITER_GVN_AFTER_ELIMINATION,     "Iter GVN after Eliminating Allocations and Locks") \
   flags(BEFORE_PRE_MAIN_POST,           "Before Pre/Main/Post Loops") \
   flags(AFTER_PRE_MAIN_POST,            "After Pre/Main/Post Loops") \
+  flags(BEFORE_LOOP_UNROLLING,          "Before Loop Unrolling") \
+  flags(AFTER_LOOP_UNROLLING,           "After Loop Unrolling") \
+  flags(PHASEIDEALLOOP1,                "PhaseIdealLoop 1") \
+  flags(PHASEIDEALLOOP2,                "PhaseIdealLoop 2") \
+  flags(PHASEIDEALLOOP3,                "PhaseIdealLoop 3") \
   flags(AUTO_VECTORIZATION1_BEFORE_APPLY,                     "AutoVectorization 1, before Apply") \
   flags(AUTO_VECTORIZATION2_AFTER_REORDER,                    "AutoVectorization 2, after Apply Memop Reordering") \
   flags(AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT,               "AutoVectorization 3, after Adjusting Pre-loop Limit") \
   flags(AUTO_VECTORIZATION4_AFTER_SPECULATIVE_RUNTIME_CHECKS, "AutoVectorization 4, after Adding Speculative Runtime Checks") \
   flags(AUTO_VECTORIZATION5_AFTER_APPLY,                      "AutoVectorization 5, after Apply") \
-  flags(BEFORE_CLOOPS,                  "Before CountedLoop") \
-  flags(AFTER_CLOOPS,                   "After CountedLoop") \
-  flags(PHASEIDEAL_BEFORE_EA,           "PhaseIdealLoop before EA") \
-  flags(AFTER_EA,                       "After Escape Analysis") \
-  flags(ITER_GVN_AFTER_EA,              "Iter GVN after EA") \
-  flags(ITER_GVN_AFTER_ELIMINATION,     "Iter GVN after Eliminating Allocations and Locks") \
-  flags(PHASEIDEALLOOP1,                "PhaseIdealLoop 1") \
-  flags(PHASEIDEALLOOP2,                "PhaseIdealLoop 2") \
-  flags(PHASEIDEALLOOP3,                "PhaseIdealLoop 3") \
   flags(BEFORE_CCP1,                    "Before PhaseCCP 1") \
   flags(CCP1,                           "PhaseCCP 1") \
   flags(ITER_GVN2,                      "Iter GVN 2") \
