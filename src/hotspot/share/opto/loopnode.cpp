@@ -3040,7 +3040,7 @@ void OuterStripMinedLoopNode::handle_sunk_stores_at_expansion(PhaseIterGVN* igvn
           phi = igvn->transform(phi);
           igvn->replace_input_of(first, MemNode::Memory, phi);
         } else {
-          // Fix memory state along the backedge: it should be the last sunk Stores of the chain
+          // Fix memory state along the backedge: it should be the last sunk Store of the chain
           igvn->replace_input_of(phi, LoopBackControl, last);
         }
       }
