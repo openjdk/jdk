@@ -32,6 +32,11 @@ import compiler.lib.generators.RestrictableGenerator;
 
 import compiler.lib.template_framework.DataName;
 
+/**
+ * The {@link PrimitiveType} models Java's primitive types, and provides a set
+ * of useful methods for code generation, such as the {@link #byteSize} and
+ * {@link #boxedTypeName}.
+ */
 public final class PrimitiveType implements CodeGenerationDataNameType {
     private static final Random RANDOM = Utils.getRandomInstance();
     private static final RestrictableGenerator<Integer> GEN_BYTE = Generators.G.safeRestrict(Generators.G.ints(), Byte.MIN_VALUE, Byte.MAX_VALUE);
@@ -98,19 +103,12 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
         };
     }
 
-    public String boxedTypeName() {
-        return switch(kind) {
-            case BYTE    -> "Byte";
-            case SHORT   -> "Short";
-            case CHAR    -> "Character";
-            case INT     -> "Integer";
-            case LONG    -> "Long";
-            case FLOAT   -> "Float";
-            case DOUBLE  -> "Double";
-            case BOOLEAN -> "Boolean";
-        };
-    }
-
+    /**
+     * Provides the size of the type in bytes.
+     *
+     * @return Size of the type in bytes.
+     * @throws UnsupportedOperationException for boolean which has no defined size.
+     */
     public int byteSize() {
         return switch(kind) {
             case BYTE    -> 1;
@@ -124,6 +122,29 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
         };
     }
 
+    /**
+     * Provides the name of the boxed type.
+     *
+     * @return the name of the boxed type.
+     */
+    public String boxedTypeName() {
+        return switch(kind) {
+            case BYTE    -> "Byte";
+            case SHORT   -> "Short";
+            case CHAR    -> "Character";
+            case INT     -> "Integer";
+            case LONG    -> "Long";
+            case FLOAT   -> "Float";
+            case DOUBLE  -> "Double";
+            case BOOLEAN -> "Boolean";
+        };
+    }
+
+    /**
+     * Indicates if the type is a floating type.
+     *
+     * @return true iff the type is a floating type.
+     */
     public boolean isFloating() {
         return switch(kind) {
             case BYTE    -> false;
