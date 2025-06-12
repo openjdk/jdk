@@ -3943,13 +3943,9 @@ public final class String
     }
 
     /**
-     * Returns {@code true} if the string is {@linkplain #isEmpty empty} or contains
+     * {@return {@code true} if the string is {@linkplain #isEmpty empty} or contains
      * only {@linkplain Character#isWhitespace(int) white space} codepoints,
-     * otherwise {@code false}.
-     *
-     * @return {@code true} if the string is {@linkplain #isEmpty empty} or contains
-     *         only {@linkplain Character#isWhitespace(int) white space} codepoints,
-     *         otherwise {@code false}
+     * otherwise {@code false}}
      *
      * @see Character#isWhitespace(int)
      *
