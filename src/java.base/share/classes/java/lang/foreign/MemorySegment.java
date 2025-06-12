@@ -1297,6 +1297,14 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
      * <p>
+     * All valid {@linkplain Charset Charsets} decode strings using chunks of a fixed
+     * octet length N. For example:
+     * <ul>
+     *     <li>N=1 for {@link StandardCharsets#UTF_8} (A B C D 0)</li>
+     *     <li>N=2 for {@link StandardCharsets#UTF_16} (AA BB CC DD 00)</li>
+     *     <li>N=4 for {@link StandardCharsets#UTF_16} (AAAA BBBB CCCC DDDD 0000)</li>
+     *</ul>
+     * <p>
      * Getting a string from a segment with a known byte offset and
      * known byte length can be done like so:
      * {@snippet lang=java :
