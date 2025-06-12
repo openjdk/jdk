@@ -77,7 +77,7 @@ class JvmtiEnvThreadStateIterator : public StackObj {
 //
 // Virtual Thread Mount State Transition (VTMS transition) mechanism
 //
-class JvmtiVTMSTransitionDisabler {
+class JvmtiVTMSTransitionDisabler : public AnyObj {
  private:
   static volatile int _VTMS_transition_disable_for_one_count; // transitions for one virtual thread are disabled while it is positive
   static volatile int _VTMS_transition_disable_for_all_count; // transitions for all virtual threads are disabled while it is positive
