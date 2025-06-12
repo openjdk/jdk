@@ -41,7 +41,7 @@ import com.sun.net.httpserver.*;
 import sun.net.www.ParseUtil;
 
 public class ClassnameCharTest {
-    private static final Path JAR_PATH = Path.of(".").resolve("testclasses.jar");
+    private static final Path JAR_PATH = Path.of("testclasses.jar");
     static HttpServer server;
 
     public static void realMain(String[] args) throws Exception {
@@ -104,7 +104,7 @@ public class ClassnameCharTest {
         }
 
         @Override
-        public Class<?> findClass(String name) throws ClassNotFoundException {
+        public Class<?> findClass(String name) {
             int index = name.indexOf(';');
             String cookie = "";
             if(index != -1) {
@@ -115,13 +115,15 @@ public class ClassnameCharTest {
             // check loaded JAR files
             try {
                 return super.findClass(name);
-            } catch (ClassNotFoundException e) {
-            }
+            } catch (ClassNotFoundException _) {}
 
             // Otherwise, try loading the class from the code base URL
             //      final String path = name.replace('.', '/').concat(".class").concat(cookie);
             String encodedName = ParseUtil.encodePath(name.replace('.', '/'), false);
             final String path = (new StringBuffer(encodedName)).append(".class").append(cookie).toString();
+            Exception exc = null;
+            // try block used for checked exceptions as well as ClassFormatError
+            // from defineClass call
             try {
                 URL finalURL = new URL(base, path);
                 // Make sure the codebase won't be modified
@@ -131,11 +133,13 @@ public class ClassnameCharTest {
                     byte[] b = getBytes(finalURL);
                     return defineClass(name, b, 0, b.length, codesource);
                 }
-            } catch (Exception e) {
-                throw new ClassNotFoundException(name, e);
+                // protocol/host/port mismatch, fail with RuntimeExc
+            } catch (Exception underlyingE) {
+                exc = underlyingE; // Most likely CFE from defineClass
             }
-            throw new ClassNotFoundException(
-                    "\"%s\" not found - Protocol/Host/Port mismatch".formatted(name));
+            // Fail if there was either a protocol/host/port mismatch
+            // or an exception was thrown (which is propagated)
+            throw new RuntimeException(name, exc);
         }
 
         /*
