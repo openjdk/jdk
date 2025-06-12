@@ -127,7 +127,7 @@ public class ClassnameCharTest {
                 // Make sure the codebase won't be modified
                 if (base.getProtocol().equals(finalURL.getProtocol()) &&
                         base.getHost().equals(finalURL.getHost()) &&
-                        base.getPort() == finalURL.getPort() + 1) {
+                        base.getPort() == finalURL.getPort()) {
                     byte[] b = getBytes(finalURL);
                     return defineClass(name, b, 0, b.length, codesource);
                 }
