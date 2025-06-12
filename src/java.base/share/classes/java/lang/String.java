@@ -3834,8 +3834,8 @@ public final class String
      * {@code this.substring(k, m + 1)}.
      *
      * @apiNote
-     * This method removes the space character and ASCII control characters from the
-     * string. To remove characters using a Unicode-based definition of
+     * This method removes leading and trailing space characters and ASCII control
+     * characters from the string. To remove characters using a Unicode-based definition of
      * {@linkplain Character#isWhitespace(int) white space}, use {@link #strip() strip},
      * {@link #stripIndent() stripIndent}, {@link #stripLeading() stripLeading}, or
      * {@link #stripTrailing() stripTrailing}.
