@@ -88,7 +88,7 @@ const size_t ShenandoahAdaptiveHeuristics::GC_TIME_SAMPLE_SIZE = 3;
 #ifdef KELVIN_DEBUG
 const double ShenandoahAdaptiveHeuristics::MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL = 0.010;
 #else
-const double ShenandoahAdaptiveHeuristics::MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL = 0.0045;
+const double ShenandoahAdaptiveHeuristics::MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL = 0.003;
 #endif
 
 ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* space_info) :
@@ -995,7 +995,6 @@ size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleratio
     double *x2_array = (double *) alloca(ShenandoahRateAccelerationSampleSize * sizeof(double));
     double xy_sum = 0.0;
     double x2_sum = 0.0;
-    uint excess = _spike_acceleration_num_samples - ShenandoahRateAccelerationSampleSize;
     for (uint i = 0; i < ShenandoahRateAccelerationSampleSize; i++) {
 #ifdef KELVIN_NEEDS_TO_SEE
       log_info(gc)("Calculating best-fit acceleration from x_array[%u]: %.3f and y_array[%u]: %.3f MB/s",
