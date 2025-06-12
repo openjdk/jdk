@@ -1439,9 +1439,22 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     // SubTypeCheckNode::Ideal calls SubTypeCheckNode::verify_helper, which does
     //   Node* cmp = phase->transform(new CmpPNode(subklass, in(SuperKlass)));
     //   record_for_cleanup(cmp, phase);
-    // This has the effect that these new nodes end up on the IGVN worklist,
-    // but if we now leave verification and IGVN itself, we have nodes on the
-    // worklist, and that should not be (there are asserts against this).
+    // This verification code in the Ideal code creates new nodes, and checks
+    // if they fold in unexpected ways. This means some nodes are created and
+    // added to the worklist, even if the SubTypeCheck is not optimized. This
+    // goes agains the assumption of the verification here, which assumes that
+    // if the node is not optimized, then no new nodes should be created, and
+    // also no nodes should be added to the worklist.
+    // I see two options:
+    //  1) forbid what verify_helper does, because for each Ideal call it
+    //     uses memory and that is suboptimal. But it is not clear how that
+    //     verification can be done otherwise.
+    //  2) Special case the verification here. Probably the new nodes that
+    //     were just created are dead, i.e. they are not connected down to
+    //     root. We could verify that, and remove those nodes from the graph
+    //     by setting all their inputs to nullptr. And of course we would
+    //     have to remove those nodes from the worklist.
+    // Maybe there are other options too, I did not dig much deeper yet.
     //
     // Found with:
     //   java -XX:VerifyIterativeGVN=0100 -Xbatch --version
@@ -1670,17 +1683,17 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
       return false;
 
     // MergeMemNode::Ideal
-    // Found in tier1-3.
+    // Found in tier1-3. Did not investigate further yet.
     case Op_MergeMem:
       return false;
 
     // URShiftINode::Ideal
-    // Found in tier1-3.
+    // Found in tier1-3. Did not investigate further yet.
     case Op_URShiftI:
       return false;
 
     // CMoveINode::Ideal
-    // Found in tier1-3.
+    // Found in tier1-3. Did not investigate further yet.
     case Op_CMoveI:
       return false;
 
