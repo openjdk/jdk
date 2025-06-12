@@ -414,7 +414,6 @@ public class SwingUtilities implements SwingConstants
      * @param p  a Point object (converted to the new coordinate system)
      * @param c  a Component object
      */
-    @SuppressWarnings("removal")
     public static void convertPointToScreen(Point p,Component c) {
             Rectangle b;
             int x,y;
@@ -453,7 +452,6 @@ public class SwingUtilities implements SwingConstants
      * @param p  a Point object (converted to the new coordinate system)
      * @param c  a Component object
      */
-    @SuppressWarnings("removal")
     public static void convertPointFromScreen(Point p,Component c) {
         Rectangle b;
         int x,y;
@@ -1653,7 +1651,6 @@ public class SwingUtilities implements SwingConstants
      * @param c the component
      * @return the first ancestor of c that's a Window
      */
-    @SuppressWarnings("removal")
     public static Component getRoot(Component c) {
         for(Component p = c; p != null; p = p.getParent()) {
             if (p instanceof Window) {
@@ -1690,7 +1687,6 @@ public class SwingUtilities implements SwingConstants
      * @return true if a binding has found and processed
      * @since 1.4
      */
-    @SuppressWarnings("removal")
     public static boolean processKeyBindings(KeyEvent event) {
         if (event != null) {
             if (event.isConsumed()) {
@@ -2204,7 +2200,6 @@ public class SwingUtilities implements SwingConstants
      * @see java.awt.Component#isVisible()
      * @since 1.7
      */
-    @SuppressWarnings("removal")
     static Container getValidateRoot(Container c, boolean visibleOnly) {
         Container root = null;
 

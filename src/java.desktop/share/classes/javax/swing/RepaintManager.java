@@ -405,7 +405,6 @@ public class RepaintManager
      *
      * @see JComponent#repaint
      */
-    @SuppressWarnings("removal")
     private void addDirtyRegion0(Container c, int x, int y, int w, int h) {
         /* Special cases we don't have to bother with.
          */
@@ -507,7 +506,6 @@ public class RepaintManager
         addDirtyRegion0(window, x, y, w, h);
     }
 
-    @SuppressWarnings("removal")
     void scheduleHeavyWeightPaints() {
         Map<Container,Rectangle> hws;
 

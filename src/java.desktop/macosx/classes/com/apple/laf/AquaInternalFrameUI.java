@@ -431,7 +431,6 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         }
 
         @Override
-        @SuppressWarnings("removal")
         public void mouseReleased(final MouseEvent e) {
             if (didForwardEvent(e)) return;
 

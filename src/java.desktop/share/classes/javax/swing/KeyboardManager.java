@@ -134,7 +134,6 @@ class KeyboardManager {
      /**
        * Find the top focusable Window, or InternalFrame
        */
-     @SuppressWarnings("removal")
      private static Container getTopAncestor(JComponent c) {
         for(Container p = c.getParent(); p != null; p = p.getParent()) {
             if (p instanceof Window && ((Window)p).isFocusableWindow() ||

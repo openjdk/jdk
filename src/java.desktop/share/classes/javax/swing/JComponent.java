@@ -607,7 +607,6 @@ public abstract class JComponent extends Container implements Serializable,
      * @see #setComponentPopupMenu
      * @since 1.5
      */
-    @SuppressWarnings("removal")
     public JPopupMenu getComponentPopupMenu() {
 
         if(!getInheritsPopupMenu()) {
@@ -2966,7 +2965,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @param pressed true if the key is pressed
      * @return true if there is a key binding for <code>e</code>
      */
-    @SuppressWarnings({"deprecation", "removal"})
+    @SuppressWarnings("deprecation")
     boolean processKeyBindings(KeyEvent e, boolean pressed) {
       if (!SwingUtilities.isValidKeyEventForKeyBindings(e)) {
           return false;
@@ -4521,7 +4520,6 @@ public abstract class JComponent extends Container implements Serializable,
      *          return value for this method
      * @see #getVisibleRect
      */
-    @SuppressWarnings("removal")
     static final void computeVisibleRect(Component c, Rectangle visibleRect) {
         Container p = c.getParent();
         Rectangle bounds = c.getBounds();
@@ -4690,7 +4688,6 @@ public abstract class JComponent extends Container implements Serializable,
      *          or <code>null</code> if not in any container
      */
     @BeanProperty(bound = false)
-    @SuppressWarnings("removal")
     public Container getTopLevelAncestor() {
         for(Container p = this; p != null; p = p.getParent()) {
             if(p instanceof Window) {

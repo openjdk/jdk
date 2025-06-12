@@ -91,7 +91,6 @@ public class SwingUtilities3 {
      * @param rootContainer topmost container. Should be {@code Window}
      * @param isRequested the value to set vsyncRequested state to
      */
-    @SuppressWarnings("removal")
     public static void setVsyncRequested(Container rootContainer,
                                          boolean isRequested) {
         assert (rootContainer instanceof Window);
@@ -108,7 +107,6 @@ public class SwingUtilities3 {
      * @param rootContainer topmost container. Should be Window
      * @return {@code true} if vsync painting is requested for {@code rootContainer}
      */
-    @SuppressWarnings("removal")
     public static boolean isVsyncRequested(Container rootContainer) {
         assert (rootContainer instanceof Window);
         return Boolean.TRUE == vsyncedMap.get(rootContainer);

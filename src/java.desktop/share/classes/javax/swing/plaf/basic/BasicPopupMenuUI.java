@@ -914,7 +914,6 @@ public class BasicPopupMenuUI extends PopupMenuUI {
             }
         }
 
-        @SuppressWarnings("removal")
         boolean isInPopup(Component src) {
             for (Component c=src; c!=null; c=c.getParent()) {
                 if (c instanceof Window) {
@@ -1129,7 +1128,6 @@ public class BasicPopupMenuUI extends PopupMenuUI {
             }
         }
 
-        @SuppressWarnings("removal")
         public void stateChanged(ChangeEvent ev) {
             if (!(UIManager.getLookAndFeel() instanceof BasicLookAndFeel)) {
                 uninstall();

@@ -273,7 +273,6 @@ public class PopupFactory {
      * Obtains the appropriate <code>Popup</code> based on
      * <code>popupType</code>.
      */
-    @SuppressWarnings("removal")
     private Popup getPopup(Component owner, Component contents,
                            int ownerX, int ownerY, int popupType) {
         if (GraphicsEnvironment.isHeadless()) {
@@ -621,7 +620,6 @@ public class PopupFactory {
          * Returns true if popup can fit the screen and the owner's top parent.
          * It determines can popup be lightweight or mediumweight.
          */
-        @SuppressWarnings("removal")
         boolean fitsOnScreen() {
             boolean result = false;
             Component component = getComponent();
@@ -784,7 +782,6 @@ public class PopupFactory {
             recycleLightWeightPopup(this);
         }
 
-        @SuppressWarnings("removal")
         public void show() {
             Container parent = null;
 
@@ -932,7 +929,6 @@ public class PopupFactory {
             recycleMediumWeightPopup(this);
         }
 
-        @SuppressWarnings("removal")
         public void show() {
             Component component = getComponent();
             Container parent = null;

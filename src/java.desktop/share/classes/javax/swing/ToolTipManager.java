@@ -794,7 +794,6 @@ public final class ToolTipManager extends MouseAdapter implements MouseMotionLis
   // Returns: 0 no adjust
   //         -1 can't fit
   //         >0 adjust value by amount returned
- @SuppressWarnings("removal")
   private int getPopupFitWidth(Rectangle popupRectInScreen, Component invoker){
     if (invoker != null){
       Container parent;
