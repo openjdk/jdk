@@ -6687,6 +6687,7 @@ instruct reinterpretL(iRegLdst dst) %{
   match(Set dst (VectorReinterpret dst));
   ins_cost(0);
   format %{ "reinterpret $dst" %}
+  size(0);
   ins_encode( /*empty*/ );
   ins_pipe(pipe_class_empty);
 %}
@@ -6695,6 +6696,7 @@ instruct reinterpretX(vecX dst) %{
   match(Set dst (VectorReinterpret dst));
   ins_cost(0);
   format %{ "reinterpret $dst" %}
+  size(0);
   ins_encode( /*empty*/ );
   ins_pipe(pipe_class_empty);
 %}
@@ -6814,7 +6816,6 @@ instruct cond_set_0_oop(iRegNdst dst, flagsRegSrc crx, iRegPsrc src1) %{
   format %{ "CMOVE   $dst, $crx eq, 0, $src1 \t// encode: preserve 0" %}
   size(4);
   ins_encode %{
-    // This is a Power7 instruction for which no machine description exists.
     __ isel_0($dst$$Register, $crx$$CondRegister, Assembler::equal, $src1$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -6946,7 +6947,6 @@ instruct cond_set_0_ptr(iRegPdst dst, flagsRegSrc crx, iRegPsrc src1) %{
   format %{ "CMOVE   $dst, $crx eq, 0, $src1 \t// decode: preserve 0" %}
   size(4);
   ins_encode %{
-    // This is a Power7 instruction for which no machine description exists.
     __ isel_0($dst$$Register, $crx$$CondRegister, Assembler::equal, $src1$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -7423,8 +7423,6 @@ instruct cmovI_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, iRegIsrc src) 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   size(4);
   ins_encode %{
-    // This is a Power7 instruction for which no machine description
-    // exists. Anyways, the scheduler should be off on Power7.
     int cc        = $cmp$$cmpcode;
     __ isel($dst$$Register, $crx$$CondRegister,
             (Assembler::Condition)(cc & 3), /*invert*/((~cc) & 8), $src$$Register);
@@ -7440,8 +7438,6 @@ instruct cmovL_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, iRegLsrc src) 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   size(4);
   ins_encode %{
-    // This is a Power7 instruction for which no machine description
-    // exists. Anyways, the scheduler should be off on Power7.
     int cc        = $cmp$$cmpcode;
     __ isel($dst$$Register, $crx$$CondRegister,
             (Assembler::Condition)(cc & 3), /*invert*/((~cc) & 8), $src$$Register);
@@ -7457,8 +7453,6 @@ instruct cmovN_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, iRegNsrc src) 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   size(4);
   ins_encode %{
-    // This is a Power7 instruction for which no machine description
-    // exists. Anyways, the scheduler should be off on Power7.
     int cc        = $cmp$$cmpcode;
     __ isel($dst$$Register, $crx$$CondRegister,
             (Assembler::Condition)(cc & 3), /*invert*/((~cc) & 8), $src$$Register);
@@ -7474,8 +7468,6 @@ instruct cmovP_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, iRegPsrc src) 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   size(4);
   ins_encode %{
-    // This is a Power7 instruction for which no machine description
-    // exists. Anyways, the scheduler should be off on Power7.
     int cc        = $cmp$$cmpcode;
     __ isel($dst$$Register, $crx$$CondRegister,
             (Assembler::Condition)(cc & 3), /*invert*/((~cc) & 8), $src$$Register);
@@ -9921,13 +9913,6 @@ instruct andcL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
 // of java.lang.Float etc., e.g.
 //   int   floatToIntBits(float value)
 //   float intBitsToFloat(int bits)
-//
-// Notes on the implementation on ppc64:
-// For Power7 and earlier, the rules are limited to those which move between a
-// register and a stack-location, because we always have to go through memory
-// when moving between a float register and an integer register.
-// This restriction is removed in Power8 with the introduction of the mtfprd
-// and mffprd instructions.
 
 instruct moveL2D_reg(regD dst, iRegLsrc src) %{
   match(Set dst (MoveL2D src));
@@ -12434,6 +12419,7 @@ instruct minI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
   effect(KILL cr0);
   ins_cost(DEFAULT_COST*2);
 
+  size(8);
   ins_encode %{
     __ cmpw(CR0, $src1$$Register, $src2$$Register);
     __ isel($dst$$Register, CR0, Assembler::less, /*invert*/false, $src1$$Register, $src2$$Register);
@@ -12447,6 +12433,7 @@ instruct maxI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
   effect(KILL cr0);
   ins_cost(DEFAULT_COST*2);
 
+  size(8);
   ins_encode %{
     __ cmpw(CR0, $src1$$Register, $src2$$Register);
     __ isel($dst$$Register, CR0, Assembler::greater, /*invert*/false, $src1$$Register, $src2$$Register);
@@ -12456,7 +12443,6 @@ instruct maxI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
 
 //---------- Population Count Instructions ------------------------------------
 
-// Popcnt for Power7.
 instruct popCountI(iRegIdst dst, iRegIsrc src) %{
   match(Set dst (PopCountI src));
   predicate(UsePopCountInstruction);
@@ -12470,7 +12456,6 @@ instruct popCountI(iRegIdst dst, iRegIsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Popcnt for Power7.
 instruct popCountL(iRegIdst dst, iRegLsrc src) %{
   predicate(UsePopCountInstruction);
   match(Set dst (PopCountL src));
@@ -13299,6 +13284,7 @@ instruct repl2F_immF0(iRegLdst dst, immF_0 zero) %{
             Matcher::vector_element_basic_type(n) == T_FLOAT);
 
   format %{ "LI      $dst, #0 \t// replicate2F" %}
+  size(4);
   ins_encode %{
     __ li($dst$$Register, 0x0);
   %}
@@ -13927,6 +13913,7 @@ instruct overflowAddL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
   match(Set cr0 (OverflowAddL op1 op2));
 
   format %{ "add_    $op1, $op2\t# overflow check long" %}
+  size(12);
   ins_encode %{
     __ li(R0, 0);
     __ mtxer(R0); // clear XER.SO
@@ -13939,6 +13926,7 @@ instruct overflowSubL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
   match(Set cr0 (OverflowSubL op1 op2));
 
   format %{ "subfo_  R0, $op2, $op1\t# overflow check long" %}
+  size(12);
   ins_encode %{
     __ li(R0, 0);
     __ mtxer(R0); // clear XER.SO
@@ -13951,6 +13939,7 @@ instruct overflowNegL_reg(flagsRegCR0 cr0, immL_0 zero, iRegLsrc op2) %{
   match(Set cr0 (OverflowSubL zero op2));
 
   format %{ "nego_   R0, $op2\t# overflow check long" %}
+  size(12);
   ins_encode %{
     __ li(R0, 0);
     __ mtxer(R0); // clear XER.SO
@@ -13963,6 +13952,7 @@ instruct overflowMulL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
   match(Set cr0 (OverflowMulL op1 op2));
 
   format %{ "mulldo_ R0, $op1, $op2\t# overflow check long" %}
+  size(12);
   ins_encode %{
     __ li(R0, 0);
     __ mtxer(R0); // clear XER.SO
@@ -14001,6 +13991,7 @@ instruct repl4F_immF0(vecX dst, immF_0 zero) %{
             Matcher::vector_element_basic_type(n) == T_FLOAT);
 
   format %{ "XXLXOR      $dst, $zero \t// replicate4F" %}
+  size(4);
   ins_encode %{
     __ xxlxor($dst$$VectorSRegister, $dst$$VectorSRegister, $dst$$VectorSRegister);
   %}
