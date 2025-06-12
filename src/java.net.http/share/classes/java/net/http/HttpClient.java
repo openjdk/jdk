@@ -28,9 +28,11 @@ package java.net.http;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
+import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpResponse.BodySubscriber;
 import java.net.http.HttpResponse.BodySubscribers;
+import java.net.URI;
 import java.nio.channels.Selector;
 import java.net.Authenticator;
 import java.net.CookieHandler;
@@ -59,7 +61,7 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * The {@link #newBuilder() newBuilder} method returns a builder that creates
  * instances of the default {@code HttpClient} implementation.
  * The builder can be used to configure per-client state, like: the preferred
- * protocol version ( HTTP/1.1 or HTTP/2 ), whether to follow redirects, a
+ * protocol version ( HTTP/1.1, HTTP/2 or HTTP/3 ), whether to follow redirects, a
  * proxy, an authenticator, etc. Once built, an {@code HttpClient} is immutable,
  * and can be used to send multiple requests.
  *
@@ -161,6 +163,50 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * may prevent the associated requests from running to completion, and
  * prevent the resources allocated by the associated client from
  * being reclaimed by the garbage collector.
+ *
+ * <p id="ProtocolVersionSelection">
+ * The default implementation of the {@code HttpClient} supports HTTP/1.1,
+ * HTTP/2, and HTTP/3. Which version of the protocol is actually used when sending
+ * a request can depend on multiple factors. In the case of HTTP/2, it may depend
+ * on an initial upgrade to succeed (when using a plain connection), or on HTTP/2
+ * being successfully negotiated during the Transport Layer Security (TLS) handshake.
+ * Other constraints may also affect the selection of protocol version.
+ * For example, if HTTP/2 is requested through a proxy, and if the implementation
+ * does not support this mode, then HTTP/1.1 may be used.
+ * <p>
+ * The HTTP/3 protocol is not selected by default, but can be enabled by setting
+ * the {@linkplain Builder#version(Version) HttpClient preferred version} or the
+ * {@linkplain HttpRequest.Builder#version(Version) HttpRequest preferred version} to
+ * {@linkplain Version#HTTP_3 HTTP/3}. Like for HTTP/2, which protocol version is
+ * actually used when HTTP/3 is enabled may depend on several factors.
+ * {@linkplain HttpOption#H3_DISCOVERY Configuration hints} can
+ * be {@linkplain HttpRequest.Builder#setOption(HttpOption, Object) provided}
+ * to help the {@code HttpClient} implementation decide how to establish
+ * and carry out the HTTP exchange when the HTTP/3 protocol is enabled.
+ * If no configuration hints are provided, the {@code HttpClient} will select
+ * one as explained in the {@link HttpOption#H3_DISCOVERY H3_DISCOVERY}
+ * option API documentation.
+ * <br>Note that a request whose {@linkplain URI#getScheme() URI scheme} is not
+ * {@code "https"} will never be sent over HTTP/3. In this implementation,
+ * HTTP/3 is not used if a proxy is selected.
+ *
+ * <p id="UnsupportedProtocolVersion">
+ * If a concrete instance of {@link HttpClient} doesn't support sending a
+ * request through HTTP/3, an {@link UnsupportedProtocolVersionException} may be
+ * thrown, either when {@linkplain Builder#build() building} the client with
+ * a {@linkplain Builder#version(Version) preferred version} set to HTTP/3,
+ * or when attempting to send a request with {@linkplain HttpRequest.Builder#version(Version)
+ * HTTP/3 enabled} when {@link Http3DiscoveryMode#HTTP_3_URI_ONLY HTTP_3_URI_ONLY}
+ * was {@linkplain HttpRequest.Builder#setOption(HttpOption, Object) specified}.
+ * This may typically happen if the {@link #sslContext() SSLContext}
+ * or {@link #sslParameters() SSLParameters} configured on the client instance cannot
+ * be used with HTTP/3.
+ *
+ * @see UnsupportedProtocolVersionException
+ * @see Builder#version(Version)
+ * @see HttpRequest.Builder#version(Version)
+ * @see HttpRequest.Builder#setOption(HttpOption, Object)
+ * @see HttpOption#H3_DISCOVERY
  *
  * @since 11
  */
@@ -332,11 +378,15 @@ public abstract class HttpClient implements AutoCloseable {
          * and responses to the same
          * <a href="https://tools.ietf.org/html/rfc6454#section-4">origin server</a>
          * will use HTTP/2. If the upgrade fails, then the response will be
-         * handled using HTTP/1.1
+         * handled using HTTP/1.1.
+         * <br>
+         * If set to {@linkplain Version#HTTP_3 HTTP/3}, the version {@linkplain
+         * HttpClient##ProtocolVersionSelection may be downgraded to HTTP/2 or
+         * HTTP/1.1 until it is known to the client that the origin server
+         * supports HTTP/3}.
          *
-         * @implNote Constraints may also affect the selection of protocol version.
-         * For example, if HTTP/2 is requested through a proxy, and if the implementation
-         * does not support this mode, then HTTP/1.1 may be used
+         * @implNote Other constraints may also affect the {@linkplain
+         * HttpClient##ProtocolVersionSelection selection of the actual protocol version}.
          *
          * @param version the requested HTTP protocol version
          * @return this builder
@@ -439,9 +489,14 @@ public abstract class HttpClient implements AutoCloseable {
          * @return a new {@code HttpClient}
          *
          * @throws UncheckedIOException may be thrown if underlying IO resources required
-         * by the implementation cannot be allocated. For instance,
+         * by the implementation cannot be allocated, or if the resulting configuration
+         * does not satisfy the implementation requirements. For instance,
          * if the implementation requires a {@link Selector}, and opening
-         * one fails due to {@linkplain Selector#open() lack of necessary resources}.
+         * one fails due to {@linkplain Selector#open() lack of necessary resources},
+         * or if the {@linkplain #version(Version) preferred protocol version} is not
+         * {@linkplain HttpClient##UnsupportedProtocolVersion supported by
+         * the implementation or cannot be used in this configuration}.
+         *
          */
         public HttpClient build();
     }
@@ -525,9 +580,11 @@ public abstract class HttpClient implements AutoCloseable {
      * Returns the preferred HTTP protocol version for this client. The default
      * value is {@link HttpClient.Version#HTTP_2}
      *
-     * @implNote Constraints may also affect the selection of protocol version.
-     * For example, if HTTP/2 is requested through a proxy, and if the
-     * implementation does not support this mode, then HTTP/1.1 may be used
+     * @implNote
+     * The protocol version that the {@code HttpClient} eventually
+     * decides to use for a request is affected by various factors noted
+     * in {@linkplain ##ProtocolVersionSelection protocol version selection}
+     * section.
      *
      * @return the HTTP protocol version requested
      */
@@ -562,7 +619,13 @@ public abstract class HttpClient implements AutoCloseable {
         /**
          * HTTP version 2
          */
-        HTTP_2
+        HTTP_2,
+
+        /**
+         * HTTP version 3
+         * @since TBD
+         */
+        HTTP_3
     }
 
     /**
