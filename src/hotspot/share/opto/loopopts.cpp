@@ -1676,6 +1676,10 @@ bool PhaseIdealLoop::safe_for_if_replacement(const Node* dom) const {
 // like various versions of induction variable+offset.  Clone the
 // computation per usage to allow it to sink out of the loop.
 void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
+  bool is_raw_to_oop_cast = n->is_ConstraintCast() &&
+                            n->in(1)->bottom_type()->isa_rawptr() &&
+                            !n->bottom_type()->isa_rawptr();
+
   if (has_ctrl(n) &&
       !n->is_Phi() &&
       !n->is_Bool() &&
@@ -1685,7 +1689,9 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
       !n->is_OpaqueNotNull() &&
       !n->is_OpaqueInitializedAssertionPredicate() &&
       !n->is_OpaqueTemplateAssertionPredicate() &&
-      !n->is_Type()) {
+      !is_raw_to_oop_cast && // don't extend live ranges of raw oops
+      (KillPathsReachableByDeadTypeNode || !n->is_Type())
+      ) {
     Node *n_ctrl = get_ctrl(n);
     IdealLoopTree *n_loop = get_loop(n_ctrl);
 

@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,13 +21,32 @@
  * questions.
  */
 
-package sun.text.resources;
+#ifndef SHARE_GC_Z_ZPAGEAGE_INLINE_HPP
+#define SHARE_GC_Z_ZPAGEAGE_INLINE_HPP
 
-import java.util.spi.ResourceBundleProvider;
+#include "gc/z/zPageAge.hpp"
 
-/**
- * An interface for the internal locale data provider for which {@code ResourceBundle}
- * searches.
- */
-public interface JavaTimeSupplementaryProvider extends ResourceBundleProvider {
+#include "utilities/checkedCast.hpp"
+
+#include <type_traits>
+
+inline uint untype(ZPageAge age) {
+  return static_cast<uint>(age);
 }
+
+inline ZPageAge to_zpageage(uint age) {
+  assert(age < ZPageAgeCount, "Invalid age");
+  return static_cast<ZPageAge>(age);
+}
+
+inline ZPageAge operator+(ZPageAge age, size_t size) {
+  const auto size_value = checked_cast<std::underlying_type_t<ZPageAge>>(size);
+  return to_zpageage(untype(age) + size_value);
+}
+
+inline ZPageAge operator-(ZPageAge age, size_t size) {
+  const auto size_value = checked_cast<std::underlying_type_t<ZPageAge>>(size);
+  return to_zpageage(untype(age) - size_value);
+}
+
+#endif // SHARE_GC_Z_ZPAGEAGE_INLINE_HPP
