@@ -180,7 +180,7 @@ e.g. "2022-02-12T12:30:00-05:00".
 
 `--target-platform` *platform*
 :   Specifies the target platform. The value is a string that identifies 
-    the plarform the module is intended for, typically in the form `<os>-<arch>`.
+    the platform this module is intended for, typically in the form `<os>-<arch>`.
 
 `--version`
 :   Prints version information of the `jmod` tool.
