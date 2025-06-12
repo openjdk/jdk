@@ -322,6 +322,8 @@ bool Peephole::lea_remove_redundant(Block* block, int block_index, PhaseCFG* cfg
 
   // Ensure the MachProj is in the same block as the decode and the lea.
   if (proj == nullptr || !block->contains(proj)) {
+    // This should only fail if we are stressing scheduling.
+    assert(StressGCM, "should be scheduled contiguously otherwise");
     return false;
   }
 
