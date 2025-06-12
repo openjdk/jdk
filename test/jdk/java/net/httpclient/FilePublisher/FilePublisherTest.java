@@ -117,11 +117,8 @@ public class FilePublisherTest implements HttpServerAdapters {
     // Zip file system set up
     static final String ZIP_FS_MSG = "zip fs";
 
-    private static FileSystem newZipFs() throws Exception {
-        return newZipFs(Path.of("file.zip"));
-    }
-
-    private static FileSystem newZipFs(Path zipFile) throws Exception {
+    static FileSystem newZipFs() throws Exception {
+        Path zipFile = Path.of("file.zip");
         return FileSystems.newFileSystem(zipFile, Map.of("create", "true"));
     }
 
@@ -162,10 +159,8 @@ public class FilePublisherTest implements HttpServerAdapters {
     @Test
     public void testFileNotFound() throws Exception {
         out.printf("\n\n--- testFileNotFound(): starting\n");
-        var zipPath = Path.of("fileNotFound.zip");
-        try (FileSystem fs = newZipFs(zipPath)) {
-            Path fileInZip = zipFsFile(fs);
-            Files.deleteIfExists(fileInZip);
+        try (FileSystem fs = newZipFs()) {
+            Path fileInZip = fs.getPath("non-existent.txt");
             BodyPublishers.ofFile(fileInZip);
             fail();
         } catch (FileNotFoundException e) {
