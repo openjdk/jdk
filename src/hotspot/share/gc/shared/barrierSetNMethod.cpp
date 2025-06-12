@@ -246,7 +246,10 @@ void BarrierSetNMethod::make_not_entrant(nmethod* nm) {
   // Enter critical section.  Does not block for safepoint.
   ConditionalMutexLocker ml(NMethodEntryBarrier_lock, !NMethodEntryBarrier_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   int value = guard_value(nm) | not_entrant;
-  set_guard_value(nm, value);
+  if (guard_value(nm) != value) {
+    // Patch the code only if needed.
+    set_guard_value(nm, value);
+  }
 }
 
 bool BarrierSetNMethod::is_not_entrant(nmethod* nm) {
