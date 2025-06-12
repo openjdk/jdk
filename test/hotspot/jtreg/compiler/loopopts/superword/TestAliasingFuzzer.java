@@ -480,6 +480,11 @@ public class TestAliasingFuzzer {
                     // TODO: bounds / ranges
                     // TODO: invoke test/reference and verify
                     """
+
+                    // Run test and compare with interpreter results.
+                    var result   = $test(null, null, 0, 0, 0, 0);
+                    var expected = $reference(null, null, 0, 0, 0, 0);
+                    Verify.checkEQ(result, expected);
                     } // end $run
 
                     @Test
@@ -555,13 +560,55 @@ public class TestAliasingFuzzer {
 
         private TemplateToken generateIRRules() {
             var template = Template.make(() -> body(
+                switch (containerKind) {
+                    case ContainerKind.ARRAY ->
+                        generateIRRulesArray();
+                    case ContainerKind.MEMORY_SEGMENT ->
+                        generateIRRulesMemorySegment();
+                },
+                // In same scnearios, we know that a aliasing runtime check will never fail.
+                // That means if we have UseAutoVectorizationPredicate enabled, that predicate
+                // will never fail, and we will not have to do multiversioning.
+                switch(aliasing) {
+                    case Aliasing.CONTAINER_DIFFERENT,
+                         Aliasing.CONTAINER_SAME_ALIASING_NEVER,
+                         Aliasing.CONTAINER_UNKNOWN_ALIASING_NEVER ->
+                            """
+                            // Aliasing check should never fail at runtime, so the predicate
+                            // should never fail, and we do not have to use multiversioning.
+                            @IR(counts = {".*multiversion.*", "= 0"},
+                                phase = CompilePhase.PRINT_IDEAL,
+                                applyIf = {"UseAutoVectorizationPredicate", "true"},
+                                applyIfPlatform = {"64-bit", "true"},
+                                applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+                            """;
+                    case Aliasing.CONTAINER_SAME_ALIASING_UNKNOWN,
+                         Aliasing.CONTAINER_UNKNOWN_ALIASING_UNKNOWN ->
+                            """
+                            // Aliasing unknown, we may use the predicate or multiversioning.
+                            """;
+                }
+            ));
+            return template.asToken();
+        }
+
+        private TemplateToken generateIRRulesArray() {
+            var template = Template.make(() -> body(
                 """
-                // TODO: IR rules
+                // TODO: IR rules array
                 """
             ));
             return template.asToken();
         }
 
+        private TemplateToken generateIRRulesMemorySegment() {
+            var template = Template.make(() -> body(
+                """
+                // TODO: IR rules MemorySegment
+                """
+            ));
+            return template.asToken();
+        }
 
         private TemplateToken generateTestMethod(String methodName, String[] invarRest) {
             var template = Template.make(() -> body(
@@ -592,7 +639,6 @@ public class TestAliasingFuzzer {
     }
 
     public static TemplateToken generateTest(MyType type, Aliasing aliasing, AccessScenario accessScenario) {
-        TestGenerator.makeArray(type, aliasing, accessScenario).generate();
         // size must be large enough for:
         //   - scale = 4
         //   - range with size / 4
