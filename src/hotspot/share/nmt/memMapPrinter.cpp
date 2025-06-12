@@ -70,7 +70,7 @@ static const char* get_shortname_for_mem_tag(MemTag mem_tag) {
 #define DO(t, shortname, text) if (t == mem_tag) return shortname;
   NMT_FLAGS_DO(DO)
 #undef DO
-  return NMTUtil::tag_to_enum_name(mem_tag);
+  return MemTagFactory::name_of(mem_tag);
 }
 
 /// NMT virtual memory
@@ -249,7 +249,7 @@ bool MappingPrintSession::print_nmt_info_for_region(const void* vma_from, const 
     // Correlate vma region (from, to) with NMT region(s) we collected previously.
     const MemTagBitmap flags = _nmt_info.lookup(vma_from, vma_to);
     if (flags.has_any()) {
-      for (int i = 0; i < mt_number_of_tags; i++) {
+      for (int i = 0; i < MemTagFactory::number_of_tags(); i++) {
         const MemTag mem_tag = (MemTag)i;
         if (flags.has_tag(mem_tag)) {
           if (num_printed > 0) {
