@@ -127,7 +127,7 @@ public class InstalledCode {
     }
 
     /**
-     * Equivalent to calling {@link #invalidate(boolean, int)} with {@code true} and {@code 0} as arguments.
+     * Equivalent to calling {@link #invalidate(boolean)} with a {@code true} argument.
      */
     public void invalidate() {
         invalidate(true);
