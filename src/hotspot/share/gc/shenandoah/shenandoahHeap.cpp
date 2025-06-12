@@ -2220,23 +2220,6 @@ void ShenandoahHeap::stop() {
   }
 }
 
-class ShenandoahCPUThreadClosure : public ThreadClosure {
-private:
-  volatile jlong _vtime = 0;
-
-public:
-  virtual void do_thread(Thread *thread) {
-      Atomic::add(&_vtime, os::thread_cpu_time(thread));
-  }
-  jlong vtime() { return _vtime; };
-};
-
-double ShenandoahHeap::elapsed_gc_vtime() {
-  ShenandoahCPUThreadClosure cl;
-  ShenandoahHeap::heap()->gc_threads_do(&cl);
-  return (double)(cl.vtime() + Universe::heap()->vm_vtime()) / NANOSECS_PER_SEC;
-}
-
 void ShenandoahHeap::stw_unload_classes(bool full_gc) {
   if (!unload_classes()) return;
   ClassUnloadingContext ctx(_workers->active_workers(),
