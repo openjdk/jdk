@@ -30,10 +30,10 @@ import jdk.internal.ffi.generated.timespec.timespec;
 import jdk.internal.ffi.generated.kqueue.kevent;
 import jdk.internal.ffi.generated.kqueue.kqueue_h;
 import jdk.internal.ffi.util.FFMUtils;
+import jdk.internal.foreign.*;
 
 import java.io.*;
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemorySegment;
+import java.lang.foreign.*;
 
 import static java.lang.foreign.MemorySegment.NULL;
 
@@ -44,6 +44,7 @@ import static java.lang.foreign.MemorySegment.NULL;
 final class KQueue {
 
     private static final int KQUEUE_ERROR_VALUE = -1;
+    private static final BufferStack POOL = BufferStack.of(timespec.layout());
 
     private KQueue() { }
 
@@ -131,7 +132,7 @@ final class KQueue {
 
     static public int poll(int kqfd, MemorySegment pollAddress, int nevents, long timeout) {
         int result;
-        try (Arena arena = Arena.ofConfined()) {
+        try (var arena = POOL.pushFrame(timespec.layout())) {
             MemorySegment tsMS = arena.allocate(timespec.layout());
             MemorySegment tsp;
 
