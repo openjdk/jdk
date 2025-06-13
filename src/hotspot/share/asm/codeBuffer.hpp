@@ -29,7 +29,6 @@
 #include "code/relocInfo.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"

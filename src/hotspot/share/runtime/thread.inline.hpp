@@ -81,10 +81,7 @@ inline void Thread::init_wx() {
   DEBUG_ONLY(_wx_init = true);
 }
 
-extern long pthread_jit_write_protect_not_counter;
-
 inline WXMode Thread::enable_wx(WXMode new_state) {
-  pthread_jit_write_protect_not_counter++;
   assert(this == Thread::current(), "should only be called for current thread");
   assert(_wx_init, "should be inited");
   WXMode old = _wx_state;

@@ -498,17 +498,6 @@ int os::extra_bang_size_in_bytes() {
 
 #if defined(__APPLE__) && defined(AARCH64)
 
-THREAD_LOCAL bool _jit_exec_enabled;
-bool jit_exec_enabled() {
-  return _jit_exec_enabled;;
-}
-
-#ifdef DEBUG
-bool *jit_exec_enabled_addr() {
-  return &_jit_exec_enabled;;
-}
-#endif
-
 #ifndef PRODUCT
 
 long pthread_jit_write_protect_np_counter;
@@ -538,17 +527,24 @@ void poo() {
 
 #endif // ! PRODUCT
 
+static THREAD_LOCAL bool os_bsd_jit_exec_enabled;
+// This is a wrapper around the standard library function
+// pthread_jit_write_protect_np(3). We keep track of the state of
+// per-thread write protection on the MAP_JIT region in the
+// thread-local variable os_bsd_jit_exec_enabled.
 void os::current_thread_enable_wx(WXMode mode) {
   bool exec_enabled = mode != WXWrite;
-  if (exec_enabled != jit_exec_enabled()) {
+  if (exec_enabled != os_bsd_jit_exec_enabled) {
     permit_forbidden_function::pthread_jit_write_protect_np(exec_enabled);
-    _jit_exec_enabled = exec_enabled;
+    os_bsd_jit_exec_enabled = exec_enabled;
     NOT_PRODUCT(pthread_jit_write_protect_np_counter++);
   } else {
     NOT_PRODUCT(pthread_jit_write_protect_not_counter++);
   }
 }
 
+// If the current thread is in the WX state WXArmedForWrite, change
+// the state to WXWrite.
 bool Thread::wx_enable_write() {
   if (_wx_state == WXArmedForWrite) {
     _wx_state = WXWrite;
@@ -559,6 +555,8 @@ bool Thread::wx_enable_write() {
   }
 }
 
+// A wrapper around wx_enable_write() for when the current thread is
+// not known.
 void os::thread_wx_enable_write() {
   Thread::current()->wx_enable_write();
 }

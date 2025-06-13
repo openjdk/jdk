@@ -146,8 +146,6 @@ enum WXMode {
   WXArmedForWrite = 2,
 };
 
-bool jit_exec_enabled();
-
 // Executable parameter flag for os::commit_memory() and
 // os::commit_memory_or_exit().
 const bool ExecMem = true;

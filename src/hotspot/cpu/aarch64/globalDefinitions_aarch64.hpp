@@ -26,15 +26,6 @@
 #ifndef CPU_AARCH64_GLOBALDEFINITIONS_AARCH64_HPP
 #define CPU_AARCH64_GLOBALDEFINITIONS_AARCH64_HPP
 
-#include <execinfo.h>
-
-#ifndef PRODUCT
-extern bool aph_do_trace;
-extern long pthread_jit_write_protect_np_counter;
-extern long pthread_jit_write_protect_not_counter;
-extern FILE *aph_do_trace_file;
-#endif
-
 const int StackAlignmentInBytes  = 16;
 const size_t pd_segfault_address = 1024;
 

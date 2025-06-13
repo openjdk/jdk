@@ -28,7 +28,6 @@
 
 #include "asm/register.hpp"
 #include "metaprogramming/enableIf.hpp"
-#include "runtime/os.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
