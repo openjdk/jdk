@@ -47,9 +47,11 @@ public final class FormattedFPDecimal {
     public static final char PLAIN      = 'f';
     public static final char GENERAL    = 'g';
 
-    private long f;
+    private boolean exact;  // this decimal is an exact fp
+    private boolean away;  // this decimal has a larger magnitude than fp
     private int e;  // normalized to 0 when f = 0
     private int n;
+    private long f;
     private char[] digits;  // ... and often the decimal separator as well
     private char[] exp;  // [+-][e]ee, that is, sign and minimum 2 digits
 
@@ -119,7 +121,7 @@ public final class FormattedFPDecimal {
 
         // Calculate new e based on updated precision
         final int eNew = expR - prec + 1;  // expR is defined as prec + e - 1
-        fd.set(s, eNew, prec);
+        fd.set(s, eNew, prec, fd.exact, fd.away);
 
         return fd;
     }
@@ -136,11 +138,13 @@ public final class FormattedFPDecimal {
         return e;
     }
 
-    public void set(long f, int e, int n) {
+    public void set(long f, int e, int n, boolean exact, boolean away) {
         /* Initially, n = 0 if f = 0, and 10^{n-1} <= f < 10^n if f != 0 */
         this.f = f;
         this.e = e;
         this.n = n;
+        this.exact = exact;
+        this.away = away;
     }
 
     public char[] getExponent() {

@@ -221,7 +221,7 @@ public final class DoubleToDecimal extends ToDecimal {
                 if (0 < mq & mq < P) {
                     long f = c >> mq;
                     if (f << mq == c) {
-                        return toChars(str, index, f, 0, fd) - start;
+                        return toChars(str, index, f, 0, fd, true, false) - start;
                     }
                 }
                 return toDecimal(str, index, -mq, c, 0, fd) - start;
@@ -299,13 +299,16 @@ public final class DoubleToDecimal extends ToDecimal {
              * upin    iff    u' = sp10 10^k in Rv
              * wpin    iff    w' = tp10 10^k in Rv
              * See section 9.3 of [1].
+             *
+             * Also,
+             * d_v = v      iff     4 sp10 = vb
              */
             long sp10 = 10 * multiplyHigh(s, 115_292_150_460_684_698L << 4);
             long tp10 = sp10 + 10;
             boolean upin = vbl + out <= sp10 << 2;
             boolean wpin = (tp10 << 2) + out <= vbr;
             if (upin != wpin) {
-                return toChars(str, index, upin ? sp10 : tp10, k, fd);
+                return toChars(str, index, upin ? sp10 : tp10, k, fd, sp10 << 2 == vb, wpin);
             }
         }
 
@@ -314,20 +317,23 @@ public final class DoubleToDecimal extends ToDecimal {
          * uin    iff    u = s 10^k in Rv
          * win    iff    w = t 10^k in Rv
          * See section 9.3 of [1].
+         *
+         * Also,
+         * d_v = v      iff     4 s = vb
          */
         long t = s + 1;
         boolean uin = vbl + out <= s << 2;
         boolean win = (t << 2) + out <= vbr;
         if (uin != win) {
-            /* Exactly one of u or w lies in Rv */
-            return toChars(str, index, uin ? s : t, k + dk, fd);
+            return toChars(str, index, uin ? s : t, k + dk, fd, s << 2 == vb, win);
         }
         /*
          * Both u and w lie in Rv: determine the one closest to v.
          * See section 9.3 of [1].
          */
         long cmp = vb - (s + t << 1);
-        return toChars(str, index, cmp < 0 || cmp == 0 && (s & 0x1) == 0 ? s : t, k + dk, fd);
+        boolean away = cmp > 0 || cmp == 0 && (s & 0x1) != 0;
+        return toChars(str, index, away ? t : s, k + dk, fd, s << 2 == vb, away);
     }
 
     /*
@@ -346,7 +352,8 @@ public final class DoubleToDecimal extends ToDecimal {
     /*
      * Formats the decimal f 10^e.
      */
-    private int toChars(byte[] str, int index, long f, int e, FormattedFPDecimal fd) {
+    private int toChars(byte[] str, int index, long f, int e,
+                        FormattedFPDecimal fd, boolean exact, boolean away) {
         /*
          * For details not discussed here see section 10 of [1].
          *
@@ -358,7 +365,7 @@ public final class DoubleToDecimal extends ToDecimal {
             len += 1;
         }
         if (fd != null) {
-            fd.set(f, e, len);
+            fd.set(f, e, len, exact, away);
             return index;
         }
 
