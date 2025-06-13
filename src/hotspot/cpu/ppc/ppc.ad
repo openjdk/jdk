@@ -2399,6 +2399,18 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_SubVL:
     case Op_MulVI:
     case Op_RoundDoubleModeV:
+    case Op_MinV:
+    case Op_MaxV:
+    case Op_AndV:
+    case Op_OrV:
+    case Op_XorV:
+    case Op_AddReductionVI:
+    case Op_MulReductionVI:
+    case Op_AndReductionV:
+    case Op_OrReductionV:
+    case Op_XorReductionV:
+    case Op_MinReductionV:
+    case Op_MaxReductionV:
       return SuperwordUseVSX;
     case Op_PopCountVI:
     case Op_PopCountVL:
@@ -2439,6 +2451,22 @@ bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, Basi
 bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
   if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
     return false;
+  }
+  // Special cases
+  switch (opcode) {
+    // Reductions only support INT at the moment.
+    case Op_AddReductionVI:
+    case Op_MulReductionVI:
+    case Op_AndReductionV:
+    case Op_OrReductionV:
+    case Op_XorReductionV:
+    case Op_MinReductionV:
+    case Op_MaxReductionV:
+      return bt == T_INT;
+    // MaxV, MinV need types == INT || LONG.
+    case Op_MaxV:
+    case Op_MinV:
+      return bt == T_INT || bt == T_LONG;
   }
   return true; // Per default match rules are supported.
 }
@@ -4007,6 +4035,10 @@ ins_attrib ins_field_cbuf_insts_offset(-1);
 // use two nodes.
 ins_attrib ins_field_load_ic_hi_node(0);
 ins_attrib ins_field_load_ic_node(0);
+
+// Whether this node is expanded during code emission into a sequence of
+// instructions and the first instruction can perform an implicit null check.
+ins_attrib ins_is_late_expanded_null_check_candidate(false);
 
 //----------OPERANDS-----------------------------------------------------------
 // Operand definitions must precede instruction definitions for correct
@@ -6655,6 +6687,7 @@ instruct reinterpretL(iRegLdst dst) %{
   match(Set dst (VectorReinterpret dst));
   ins_cost(0);
   format %{ "reinterpret $dst" %}
+  size(0);
   ins_encode( /*empty*/ );
   ins_pipe(pipe_class_empty);
 %}
@@ -6663,6 +6696,7 @@ instruct reinterpretX(vecX dst) %{
   match(Set dst (VectorReinterpret dst));
   ins_cost(0);
   format %{ "reinterpret $dst" %}
+  size(0);
   ins_encode( /*empty*/ );
   ins_pipe(pipe_class_empty);
 %}
@@ -6782,7 +6816,6 @@ instruct cond_set_0_oop(iRegNdst dst, flagsRegSrc crx, iRegPsrc src1) %{
   format %{ "CMOVE   $dst, $crx eq, 0, $src1 \t// encode: preserve 0" %}
   size(4);
   ins_encode %{
-    // This is a Power7 instruction for which no machine description exists.
     __ isel_0($dst$$Register, $crx$$CondRegister, Assembler::equal, $src1$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -6914,7 +6947,6 @@ instruct cond_set_0_ptr(iRegPdst dst, flagsRegSrc crx, iRegPsrc src1) %{
   format %{ "CMOVE   $dst, $crx eq, 0, $src1 \t// decode: preserve 0" %}
   size(4);
   ins_encode %{
-    // This is a Power7 instruction for which no machine description exists.
     __ isel_0($dst$$Register, $crx$$CondRegister, Assembler::equal, $src1$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -7391,8 +7423,6 @@ instruct cmovI_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, iRegIsrc src) 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   size(4);
   ins_encode %{
-    // This is a Power7 instruction for which no machine description
-    // exists. Anyways, the scheduler should be off on Power7.
     int cc        = $cmp$$cmpcode;
     __ isel($dst$$Register, $crx$$CondRegister,
             (Assembler::Condition)(cc & 3), /*invert*/((~cc) & 8), $src$$Register);
@@ -7408,8 +7438,6 @@ instruct cmovL_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, iRegLsrc src) 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   size(4);
   ins_encode %{
-    // This is a Power7 instruction for which no machine description
-    // exists. Anyways, the scheduler should be off on Power7.
     int cc        = $cmp$$cmpcode;
     __ isel($dst$$Register, $crx$$CondRegister,
             (Assembler::Condition)(cc & 3), /*invert*/((~cc) & 8), $src$$Register);
@@ -7425,8 +7453,6 @@ instruct cmovN_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, iRegNsrc src) 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   size(4);
   ins_encode %{
-    // This is a Power7 instruction for which no machine description
-    // exists. Anyways, the scheduler should be off on Power7.
     int cc        = $cmp$$cmpcode;
     __ isel($dst$$Register, $crx$$CondRegister,
             (Assembler::Condition)(cc & 3), /*invert*/((~cc) & 8), $src$$Register);
@@ -7442,8 +7468,6 @@ instruct cmovP_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, iRegPsrc src) 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
   size(4);
   ins_encode %{
-    // This is a Power7 instruction for which no machine description
-    // exists. Anyways, the scheduler should be off on Power7.
     int cc        = $cmp$$cmpcode;
     __ isel($dst$$Register, $crx$$CondRegister,
             (Assembler::Condition)(cc & 3), /*invert*/((~cc) & 8), $src$$Register);
@@ -9889,13 +9913,6 @@ instruct andcL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
 // of java.lang.Float etc., e.g.
 //   int   floatToIntBits(float value)
 //   float intBitsToFloat(int bits)
-//
-// Notes on the implementation on ppc64:
-// For Power7 and earlier, the rules are limited to those which move between a
-// register and a stack-location, because we always have to go through memory
-// when moving between a float register and an integer register.
-// This restriction is removed in Power8 with the introduction of the mtfprd
-// and mffprd instructions.
 
 instruct moveL2D_reg(regD dst, iRegLsrc src) %{
   match(Set dst (MoveL2D src));
@@ -12402,6 +12419,7 @@ instruct minI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
   effect(KILL cr0);
   ins_cost(DEFAULT_COST*2);
 
+  size(8);
   ins_encode %{
     __ cmpw(CR0, $src1$$Register, $src2$$Register);
     __ isel($dst$$Register, CR0, Assembler::less, /*invert*/false, $src1$$Register, $src2$$Register);
@@ -12415,6 +12433,7 @@ instruct maxI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
   effect(KILL cr0);
   ins_cost(DEFAULT_COST*2);
 
+  size(8);
   ins_encode %{
     __ cmpw(CR0, $src1$$Register, $src2$$Register);
     __ isel($dst$$Register, CR0, Assembler::greater, /*invert*/false, $src1$$Register, $src2$$Register);
@@ -12424,7 +12443,6 @@ instruct maxI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
 
 //---------- Population Count Instructions ------------------------------------
 
-// Popcnt for Power7.
 instruct popCountI(iRegIdst dst, iRegIsrc src) %{
   match(Set dst (PopCountI src));
   predicate(UsePopCountInstruction);
@@ -12438,7 +12456,6 @@ instruct popCountI(iRegIdst dst, iRegIsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Popcnt for Power7.
 instruct popCountL(iRegIdst dst, iRegLsrc src) %{
   predicate(UsePopCountInstruction);
   match(Set dst (PopCountL src));
@@ -13267,6 +13284,7 @@ instruct repl2F_immF0(iRegLdst dst, immF_0 zero) %{
             Matcher::vector_element_basic_type(n) == T_FLOAT);
 
   format %{ "LI      $dst, #0 \t// replicate2F" %}
+  size(4);
   ins_encode %{
     __ li($dst$$Register, 0x0);
   %}
@@ -13481,6 +13499,113 @@ instruct vdiv2D_reg(vecX dst, vecX src1, vecX src2) %{
   size(4);
   ins_encode %{
     __ xvdivdp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Vector Min / Max Instructions
+
+instruct vmin_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (MinV src1 src2));
+  format %{ "VMIN  $dst,$src1,$src2\t// vector min" %}
+  size(4);
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    switch (bt) {
+      case T_INT:
+        __ vminsw($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+        break;
+      case T_LONG:
+        __ vminsd($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vmax_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (MaxV src1 src2));
+  format %{ "VMAX  $dst,$src1,$src2\t// vector max" %}
+  size(4);
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    switch (bt) {
+      case T_INT:
+        __ vmaxsw($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+        break;
+      case T_LONG:
+        __ vmaxsd($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vand(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (AndV src1 src2));
+  size(4);
+  format %{ "VAND   $dst,$src1,$src2\t// and vectors" %}
+  ins_encode %{
+    __ vand($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vor(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (OrV src1 src2));
+  size(4);
+  format %{ "VOR   $dst,$src1,$src2\t// or vectors" %}
+  ins_encode %{
+    __ vor($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vxor(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (XorV src1 src2));
+  size(4);
+  format %{ "VXOR   $dst,$src1,$src2\t// xor vectors" %}
+  ins_encode %{
+    __ vxor($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct reductionI_arith_logic(iRegIdst dst, iRegIsrc srcInt, vecX srcVec, vecX tmp1, vecX tmp2) %{
+  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_INT);
+  match(Set dst (AddReductionVI srcInt srcVec));
+  match(Set dst (MulReductionVI srcInt srcVec));
+  match(Set dst (AndReductionV  srcInt srcVec));
+  match(Set dst ( OrReductionV  srcInt srcVec));
+  match(Set dst (XorReductionV  srcInt srcVec));
+  effect(TEMP tmp1, TEMP tmp2);
+  ins_cost(DEFAULT_COST * 6);
+  format %{ "REDUCEI_ARITH_LOGIC // $dst,$srcInt,$srcVec,$tmp1,$tmp2\t// reduce vector int add/mul/and/or/xor" %}
+  size(24);
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    __ reduceI(opcode, $dst$$Register, $srcInt$$Register, $srcVec$$VectorSRegister->to_vr(),
+        $tmp1$$VectorSRegister->to_vr(), $tmp2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct reductionI_min_max(iRegIdst dst, iRegIsrc srcInt, vecX srcVec, vecX tmp1, vecX tmp2, flagsRegCR0 cr0) %{
+  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_INT);
+  match(Set dst (MinReductionV srcInt srcVec));
+  match(Set dst (MaxReductionV srcInt srcVec));
+  effect(TEMP tmp1, TEMP tmp2, KILL cr0);
+  ins_cost(DEFAULT_COST * 7);
+  format %{ "REDUCEI_MINMAX // $dst,$srcInt,$srcVec,$tmp1,$tmp2,cr0\t// reduce vector int min/max" %}
+  size(28);
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    __ reduceI(opcode, $dst$$Register, $srcInt$$Register, $srcVec$$VectorSRegister->to_vr(),
+        $tmp1$$VectorSRegister->to_vr(), $tmp2$$VectorSRegister->to_vr());
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -13788,6 +13913,7 @@ instruct overflowAddL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
   match(Set cr0 (OverflowAddL op1 op2));
 
   format %{ "add_    $op1, $op2\t# overflow check long" %}
+  size(12);
   ins_encode %{
     __ li(R0, 0);
     __ mtxer(R0); // clear XER.SO
@@ -13800,6 +13926,7 @@ instruct overflowSubL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
   match(Set cr0 (OverflowSubL op1 op2));
 
   format %{ "subfo_  R0, $op2, $op1\t# overflow check long" %}
+  size(12);
   ins_encode %{
     __ li(R0, 0);
     __ mtxer(R0); // clear XER.SO
@@ -13812,6 +13939,7 @@ instruct overflowNegL_reg(flagsRegCR0 cr0, immL_0 zero, iRegLsrc op2) %{
   match(Set cr0 (OverflowSubL zero op2));
 
   format %{ "nego_   R0, $op2\t# overflow check long" %}
+  size(12);
   ins_encode %{
     __ li(R0, 0);
     __ mtxer(R0); // clear XER.SO
@@ -13824,6 +13952,7 @@ instruct overflowMulL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
   match(Set cr0 (OverflowMulL op1 op2));
 
   format %{ "mulldo_ R0, $op1, $op2\t# overflow check long" %}
+  size(12);
   ins_encode %{
     __ li(R0, 0);
     __ mtxer(R0); // clear XER.SO
@@ -13862,6 +13991,7 @@ instruct repl4F_immF0(vecX dst, immF_0 zero) %{
             Matcher::vector_element_basic_type(n) == T_FLOAT);
 
   format %{ "XXLXOR      $dst, $zero \t// replicate4F" %}
+  size(4);
   ins_encode %{
     __ xxlxor($dst$$VectorSRegister, $dst$$VectorSRegister, $dst$$VectorSRegister);
   %}

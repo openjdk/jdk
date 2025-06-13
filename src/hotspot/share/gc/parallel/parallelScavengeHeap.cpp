@@ -69,8 +69,8 @@ jint ParallelScavengeHeap::initialize() {
 
   initialize_reserved_region(heap_rs);
   // Layout the reserved space for the generations.
-  ReservedSpace old_rs   = heap_rs.first_part(MaxOldSize, GenAlignment);
-  ReservedSpace young_rs = heap_rs.last_part(MaxOldSize, GenAlignment);
+  ReservedSpace old_rs   = heap_rs.first_part(MaxOldSize, SpaceAlignment);
+  ReservedSpace young_rs = heap_rs.last_part(MaxOldSize, SpaceAlignment);
   assert(young_rs.size() == MaxNewSize, "Didn't reserve all of the heap");
 
   PSCardTable* card_table = new PSCardTable(_reserved);
@@ -107,7 +107,7 @@ jint ParallelScavengeHeap::initialize() {
     new PSAdaptiveSizePolicy(eden_capacity,
                              initial_promo_size,
                              young_gen()->to_space()->capacity_in_bytes(),
-                             GenAlignment,
+                             SpaceAlignment,
                              max_gc_pause_sec,
                              GCTimeRatio
                              );
@@ -206,12 +206,6 @@ size_t ParallelScavengeHeap::used() const {
   size_t value = young_gen()->used_in_bytes() + old_gen()->used_in_bytes();
   return value;
 }
-
-bool ParallelScavengeHeap::is_maximal_no_gc() const {
-  // We don't expand young-gen except at a GC.
-  return old_gen()->is_maximal_no_gc();
-}
-
 
 size_t ParallelScavengeHeap::max_capacity() const {
   size_t estimated = reserved_region().byte_size();
