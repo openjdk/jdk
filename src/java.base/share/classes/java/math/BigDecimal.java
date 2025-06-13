@@ -1378,8 +1378,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * Double#toString(double)}.
      * <p>
      * While a {@code float} argument {@code v} can be passed to this method,
-     * the result usually contains too many trailing digits compared
-     * to the precision of a {@code float}.
+     * the result often contains many more trailing digits than the precision
+     * of a {@code float}.
      * Consider using {@code new BigDecimal(Float.toString(v))} instead.
      *
      * @param  val {@code double} to convert to a {@code BigDecimal}.
