@@ -86,7 +86,163 @@ const char* VMATree::statetype_strings[4] = {
   "released","reserved", "only-committed", "committed",
 };
 
-VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType state,
+VMATree::SIndex VMATree::get_new_reserve_callstack(const SIndex es, const StateType ex, const RequestInfo& req) const {
+  const SIndex ES = NativeCallStackStorage::invalid; // Empty Stack
+  const SIndex rq = req.callstack;
+  const int op = req.op_to_index();
+  const Operation oper = req.op();
+  assert(op >= 0 && op < 4, "should be");
+  assert(op >= 0 && op < 4, "should be");
+                            // existing state
+  SIndex result[4][3] = {// Rl  Rs   C
+                           {ES, ES, ES},   // op == Release
+                           {rq, rq, rq},   // op == Reserve
+                           {es, es, es},   // op == Commit
+                           {es, es, es}    // op == Uncommit
+                           };
+  // When committing a Released region, the reserve-call-stack of the region should also be as what is in the request
+  if (oper == Operation::Commit && ex == StateType::Released) {
+    return rq;
+  } else {
+    return result[op][state_to_index(ex)];
+  }
+}
+
+VMATree::SIndex VMATree::get_new_commit_callstack(const SIndex es, const StateType ex, const RequestInfo& req) const {
+  const SIndex ES = NativeCallStackStorage::invalid; // Empty Stack
+  const SIndex rq = req.callstack;
+  const int op_index = req.op_to_index();
+  const Operation op = req.op();
+  assert(op_index >= 0 && op_index < 4, "should be");
+                         // existing state
+  SIndex result[4][3] = {// Rl  Rs   C
+                           {ES, ES, ES},   // op == Release
+                           {ES, ES, ES},   // op == Reserve
+                           {rq, rq, rq},   // op == Commit
+                           {ES, ES, ES}    // op == Uncommit
+                        };
+  return result[op_index][state_to_index(ex)];
+}
+
+VMATree::StateType VMATree::get_new_state(const StateType ex, const RequestInfo& req) const {
+  const StateType Rl = StateType::Released;
+  const StateType Rs = StateType::Reserved;
+  const StateType C = StateType::Committed;
+  const int op = req.op_to_index();
+  assert(op >= 0 && op < 4, "should be");
+                            // existing state
+  StateType result[4][3] = {// Rl  Rs   C
+                              {Rl, Rl, Rl},   // op == Release
+                              {Rs, Rs, Rs},   // op == Reserve
+                              { C,  C,  C},   // op == Commit
+                              {Rl, Rs, Rs}    // op == Uncommit
+                           };
+  return result[op][state_to_index(ex)];
+}
+
+MemTag VMATree::get_new_tag(const MemTag ex, const RequestInfo& req) const {
+  switch(req.op()) {
+    case Operation::Release:
+      return mtNone;
+    case Operation::Reserve:
+      return req.tag;
+    case Operation::Commit:
+      return req.use_tag_inplace ? ex : req.tag;
+    case Operation::Uncommit:
+      return ex;
+    default:
+      break;
+  }
+  return mtNone;
+}
+
+void VMATree::compute_summary_diff(const SingleDiff::delta region_size,
+                                   const MemTag current_tag,
+                                   const StateType& ex,
+                                   const RequestInfo& req,
+                                   const MemTag operation_tag,
+                                   SummaryDiff& diff) const {
+  const StateType Rl = StateType::Released;
+  const StateType Rs = StateType::Reserved;
+  const StateType C = StateType::Committed;
+  const int op = req.op_to_index();
+  const Operation oper =  req.op();
+  assert(op >= 0 && op < 4, "should be");
+
+  SingleDiff::delta a = region_size;
+  // A region with size `a` has a state as <column> and an operation is requested as in <row>
+  // The region has tag `current_tag` and the operation has tag `operation_tag`.
+  // For each state, we decide how much to be added/subtracted from current_tag to operation_tag. Two tables for reserve and commit.
+  // Each pair of <x,y> in the table means add `x` to current_tag and add `y` to operation_tag. There are 3 pairs in each row for 3 states.
+  // For example, `reserve[1][4,5]` says `-a,a` means:
+  //    - we are reserving with operation_tag a region which is already commited with current_tag
+  //    - since we are reserving, then `a` will be added to operation_tag. (`y` is `a`)
+  //    - since we uncommitting (by reserving) then `a` is to be subtracted from current_tag. (`x` is `-a`).
+  //    - amount of uncommitted size is in table `commit[1][4,5]` which is `-a,0` that means subtract `a` from current_tag.
+                                       // existing state
+  SingleDiff::delta reserve[4][3*2] = {// Rl    Rs     C
+                                         {0,0, -a,0, -a,0 },   // op == Release
+                                         {0,a, -a,a, -a,a },   // op == Reserve
+                                         {0,a, -a,a, -a,a },   // op == Commit
+                                         {0,0,  0,0,  0,0 }    // op == Uncommit
+                                      };
+  SingleDiff::delta commit[4][3*2] = {// Rl    Rs     C
+                                        {0,0,  0,0, -a,0 },    // op == Release
+                                        {0,0,  0,0, -a,0 },    // op == Reserve
+                                        {0,a,  0,a, -a,a },    // op == Commit
+                                        {0,0,  0,0, -a,0 }     // op == Uncommit
+                                     };
+  SingleDiff& from_rescom = diff.tag[NMTUtil::tag_to_index(current_tag)];
+  SingleDiff&   to_rescom = diff.tag[NMTUtil::tag_to_index(operation_tag)];
+  int st = state_to_index(ex);
+  from_rescom.reserve += reserve[op][st * 2    ];
+    to_rescom.reserve += reserve[op][st * 2 + 1];
+  from_rescom.commit  +=  commit[op][st * 2    ];
+    to_rescom.commit  +=  commit[op][st * 2 + 1];
+
+}
+// update the region state between n1 and n2. Since n1 and n2 are pointers, any update of them will be visible from tree.
+// If n1 is noop, it can be removed because its left region (n1->val().in) is already decided and its right state (n1->val().out) is decided here.
+// The state of right of n2 (n2->val().out) cannot be decided here yet.
+void VMATree::update_region(TreapNode* n1, TreapNode* n2, const RequestInfo& req, SummaryDiff& diff) {
+  assert(n1 != nullptr,"sanity");
+  assert(n2 != nullptr,"sanity");
+  //.........n1......n2......
+  //          ^------^
+  //             |
+  IntervalState exSt = n1->val().out; // existing state info
+
+
+  StateType existing_state              = exSt.type();
+  MemTag    existing_tag                = exSt.mem_tag();
+  SIndex    existing_reserve_callstack  = exSt.reserved_stack();
+  SIndex    existing_commit_callstack   = exSt.committed_stack();
+
+  StateType new_state                   = get_new_state(existing_state, req);
+  MemTag    new_tag                     = get_new_tag(n1->val().out.mem_tag(), req);
+  SIndex    new_reserve_callstack       = get_new_reserve_callstack(existing_reserve_callstack, existing_state, req);
+  SIndex    new_commit_callstack        = get_new_commit_callstack(existing_commit_callstack, existing_state, req);
+
+  //  n1........n2
+  // out-->
+  n1->val().out.set_tag(new_tag);
+  n1->val().out.set_type(new_state);
+  n1->val().out.set_reserve_stack(new_reserve_callstack);
+  n1->val().out.set_commit_stack(new_commit_callstack);
+
+  //  n1........n2
+  //         <--in
+  n2->val().in.set_tag(new_tag);
+  n2->val().in.set_type(new_state);
+  n2->val().in.set_reserve_stack(new_reserve_callstack);
+  n2->val().in.set_commit_stack(new_commit_callstack);
+
+  SingleDiff::delta region_size = n2->key() - n1->key();
+  compute_summary_diff(region_size, existing_tag, existing_state, req, new_tag, diff);
+}
+
+
+VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateType state,
                                                const RegionData& metadata, bool use_tag_inplace) {
 
   if (_A == _B) {
@@ -189,7 +345,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     return false;
   };
   GrowableArrayCHeap<position, mtNMT> to_be_removed;
-  // update regions in [Y,W)
+  // update regions in range A to B
   auto update_loop = [&]() {
     TreapNode* prev = nullptr;
     _tree.visit_range_in_order(_A + 1, _B + 1, [&](TreapNode* curr) {
@@ -202,6 +358,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
         }
       }
       prev = curr;
+      return true;
     });
   };
   // update region of [A,T)
@@ -497,6 +654,7 @@ void VMATree::print_on(outputStream* out) {
   visit_in_order([&](TreapNode* current) {
     out->print("%zu (%s) - %s [%d, %d]-> ", current->key(), NMTUtil::tag_to_name(out_state(current).mem_tag()),
               statetype_to_string(out_state(current).type()), current->val().out.reserved_stack(), current->val().out.committed_stack());
+    return true;
   });
   out->cr();
 }

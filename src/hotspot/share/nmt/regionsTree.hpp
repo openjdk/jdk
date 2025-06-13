@@ -64,7 +64,7 @@ class RegionsTree : public VMATree {
         assert (position() > other.position(), "negative distance");
         return position() - other.position();
       }
-      inline NativeCallStackStorage::StackIndex out_stack_index() const { return _node->val().out.stack(); }
+      inline NativeCallStackStorage::StackIndex out_stack_index() const { return _node->val().out.reserved_stack(); }
       inline MemTag in_tag() const { return _node->val().in.mem_tag(); }
       inline MemTag out_tag() const { return _node->val().out.mem_tag(); }
       inline void set_in_tag(MemTag tag) { _node->val().in.set_tag(tag); }

@@ -29,7 +29,6 @@
 #include "nmt/nmtCommon.hpp"
 #include "nmt/nmtUsage.hpp"
 #include "nmt/threadStackTracker.hpp"
-#include "runtime/threadCritical.hpp"
 
 // Enabled all options for snapshot.
 const NMTUsageOptions NMTUsage::OptionsAll = { true, true, true };
