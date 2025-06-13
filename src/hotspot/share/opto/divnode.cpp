@@ -1204,6 +1204,7 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //------------------------------Value------------------------------------------
 static const Type* mod_value(const PhaseGVN* phase, const Node* in1, const Node* in2, const BasicType bt, const Type* bottom) {
+  assert(bt == T_INT || bt == T_LONG, "unexpected basic type");
   // Either input is TOP ==> the result is TOP
   const Type* t1 = phase->type(in1);
   const Type* t2 = phase->type(in2);
@@ -1238,12 +1239,12 @@ static const Type* mod_value(const PhaseGVN* phase, const Node* in1, const Node*
     }
     return TypeInteger::make(i1->get_con_as_long(bt) % i2->get_con_as_long(bt), bt);
   }
-  // The magnitude of the divisor is in range [1, 2^63].
+  // The magnitude of the divisor is in range [1, 2^31] or [1, 2^63], depending on the BasicType.
   // We know it isn't 0 as we handled that above.
   // That means at least one value is nonzero, so its absolute value is bigger than zero.
   julong divisor_magnitude = MAX2(g_uabs(i2->lo_as_long()), g_uabs(i2->hi_as_long()));
   // JVMS lrem bytecode: "the magnitude of the result is always less than the magnitude of the divisor"
-  // "less than" means we can subtract 1 to get an inclusive upper bound in [0, 2^63-1]
+  // "less than" means we can subtract 1 to get an inclusive upper bound in [0, 2^31-1] or [0, 2^63-1], respectively
   jlong hi = static_cast<jlong>(divisor_magnitude - 1);
   jlong lo = -hi;
   // JVMS lrem bytecode: "the result of the remainder operation can be negative only if the dividend
