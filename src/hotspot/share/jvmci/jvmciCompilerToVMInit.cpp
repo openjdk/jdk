@@ -57,8 +57,6 @@
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #endif
 
-#include <type_traits>
-
 int CompilerToVM::Data::oopDesc_klass_offset_in_bytes;
 int CompilerToVM::Data::arrayOopDesc_length_offset_in_bytes;
 
