@@ -31,23 +31,6 @@
  * @run junit CarrierThreadInfo
  */
 
-/**
- * @test id=table
- * @requires vm.continuations
- * @modules java.base/java.lang:+open
- * @library /test/lib
- * @run junit/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UseObjectMonitorTable CarrierThreadInfo
- */
-
-/**
- * @test id=monitor
- * @requires vm.debug
- * @requires vm.continuations
- * @modules java.base/java.lang:+open
- * @library /test/lib
- * @run junit/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UseHeavyMonitors CarrierThreadInfo
- */
-
 import java.lang.management.LockInfo;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;

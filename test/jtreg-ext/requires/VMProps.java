@@ -421,10 +421,11 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmRTMCompiler() {
         boolean isRTMCompiler = false;
+        boolean lightweightLocking = true; // Lightweight locking is currently the only locking mode.
 
         if (Compiler.isC2Enabled() &&
             (Platform.isX86() || Platform.isX64() || Platform.isPPC()) &&
-            vmUseHeavyMonitors().equals("true")) {
+            lightweightLocking == false) {
             isRTMCompiler = true;
         }
         return "" + isRTMCompiler;
@@ -528,13 +529,6 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmPageSize() {
         return "" + WB.getVMPageSize();
-    }
-
-    /**
-     * @return UseHeavyMonitors.
-     */
-    protected String vmUseHeavyMonitors() {
-        return "" + WB.getBooleanVMFlag("UseHeavyMonitors");
     }
 
     /**

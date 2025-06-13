@@ -1838,16 +1838,12 @@ bool Arguments::check_vm_args_consistency() {
 
 #ifndef _LP64
   if (LockingMode == LM_LEGACY) {
-    FLAG_SET_CMDLINE(LockingMode, LM_LIGHTWEIGHT);
+    LockingMode = LM_LIGHTWEIGHT;
     // Self-forwarding in bit 3 of the mark-word conflicts
     // with 4-byte-aligned stack-locks.
     warning("Legacy locking not supported on this platform");
   }
 #endif
-
-  if (UseHeavyMonitors) {
-    LockingMode = LM_MONITOR;
-  }
 
   if (UseObjectMonitorTable && LockingMode != LM_LIGHTWEIGHT) {
     // ObjectMonitorTable requires lightweight locking.
@@ -1858,13 +1854,13 @@ bool Arguments::check_vm_args_consistency() {
 #if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64) && !defined(S390)
   if (LockingMode == LM_MONITOR) {
     jio_fprintf(defaultStream::error_stream(),
-                "-XX:+UseHeavyMonitors is not fully implemented on this architecture\n");
+                "LockingMode == 0 (LM_MONITOR) is not fully implemented on this architecture\n");
     return false;
   }
 #endif
-  if (VerifyHeavyMonitors && !UseHeavyMonitors) {
+  if (VerifyHeavyMonitors && LockingMode != LM_MONITOR) {
     jio_fprintf(defaultStream::error_stream(),
-                "-XX:+VerifyHeavyMonitors requires -XX:+UseHeavyMonitors\n");
+                "-XX:+VerifyHeavyMonitors requires LockingMode == 0 (LM_MONITOR)\n");
     return false;
   }
   return status;

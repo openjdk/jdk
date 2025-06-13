@@ -63,7 +63,7 @@ public:
   } while (false)
 
 TEST_VM_F(LockStackTest, is_recursive) {
-  if (UseHeavyMonitors || !VM_Version::supports_recursive_lightweight_locking()) {
+  if (LockingMode != LM_LIGHTWEIGHT || !VM_Version::supports_recursive_lightweight_locking()) {
     return;
   }
 
@@ -130,7 +130,7 @@ TEST_VM_F(LockStackTest, is_recursive) {
 }
 
 TEST_VM_F(LockStackTest, try_recursive_enter) {
-  if (UseHeavyMonitors || !VM_Version::supports_recursive_lightweight_locking()) {
+  if (LockingMode != LM_LIGHTWEIGHT || !VM_Version::supports_recursive_lightweight_locking()) {
     return;
   }
 
@@ -197,7 +197,7 @@ TEST_VM_F(LockStackTest, try_recursive_enter) {
 }
 
 TEST_VM_F(LockStackTest, contains) {
-  if (UseHeavyMonitors) {
+  if (LockingMode != LM_LIGHTWEIGHT) {
     return;
   }
 
@@ -263,7 +263,7 @@ TEST_VM_F(LockStackTest, contains) {
 }
 
 TEST_VM_F(LockStackTest, remove) {
-  if (UseHeavyMonitors) {
+  if (LockingMode != LM_LIGHTWEIGHT) {
     return;
   }
 

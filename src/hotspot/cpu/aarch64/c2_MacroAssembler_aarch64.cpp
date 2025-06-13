@@ -239,7 +239,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   br(Assembler::NE, no_count);
 
   bind(count);
-  if (LockingMode != LM_LIGHTWEIGHT) {
+  if (LockingMode == LM_LEGACY) {
     inc_held_monitor_count(rscratch1);
   }
 
@@ -346,7 +346,7 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Registe
   br(Assembler::NE, no_count);
 
   bind(count);
-  if (LockingMode != LM_LIGHTWEIGHT) {
+  if (LockingMode == LM_LEGACY) {
     dec_held_monitor_count(rscratch1);
   }
 

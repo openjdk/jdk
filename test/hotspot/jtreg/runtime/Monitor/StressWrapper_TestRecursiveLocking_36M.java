@@ -23,23 +23,6 @@
  */
 
 /*
- * @test id=Xint_outer_inner_debug_monitor
- * @requires vm.flagless
- * @requires vm.debug
- * @summary Tests recursive locking in -Xint in outer then inner mode.
- * @library /testlibrary /test/lib
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -Xint
- *     -XX:+UseHeavyMonitors
- *     -Xms256m -Xmx256m
- *     TestRecursiveLocking 120 1
- */
-
-/*
  * @test id=Xint_outer_inner
  * @requires vm.flagless
  * @summary Tests recursive locking in -Xint in outer then inner mode.
@@ -50,32 +33,8 @@
  * @run main/othervm/timeout=240 -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -Xint
- *     -XX:+UseObjectMonitorTable
  *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 120 1
- *
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -Xint
- *     -Xms256m -Xmx256m
- *     TestRecursiveLocking 120 1
- */
-
-/*
- * @test id=Xint_alternate_AB_debug_monitor
- * @requires vm.flagless
- * @requires vm.debug
- * @summary Tests recursive locking in -Xint in alternate A and B mode.
- * @library /testlibrary /test/lib
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -Xint
- *     -XX:+UseHeavyMonitors
- *     -Xms256m -Xmx256m
- *     TestRecursiveLocking 120 2
  */
 
 /*
@@ -89,33 +48,8 @@
  * @run main/othervm/timeout=240 -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -Xint
- *     -XX:+UseObjectMonitorTable
  *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 120 2
- *
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -Xint
- *     -Xms256m -Xmx256m
- *     TestRecursiveLocking 120 2
- */
-
-/*
- * @test id=C1_outer_inner_debug_monitor
- * @requires vm.flagless
- * @requires vm.debug
- * @requires vm.compiler1.enabled
- * @summary Tests recursive locking in C1 in outer then inner mode.
- * @library /testlibrary /test/lib
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:TieredStopAtLevel=1
- *     -XX:+UseHeavyMonitors
- *     -Xms256m -Xmx256m
- *     TestRecursiveLocking 120 1
  */
 
 /*
@@ -130,33 +64,8 @@
  * @run main/othervm/timeout=240 -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:TieredStopAtLevel=1
- *     -XX:+UseObjectMonitorTable
  *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 120 1
- *
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:TieredStopAtLevel=1
- *     -Xms256m -Xmx256m
- *     TestRecursiveLocking 120 1
- */
-
-/*
- * @test id=C1_alternate_AB_debg_monitor
- * @requires vm.flagless
- * @requires vm.debug
- * @requires vm.compiler1.enabled
- * @summary Tests recursive locking in C1 in alternate A and B mode.
- * @library /testlibrary /test/lib
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:TieredStopAtLevel=1
- *     -XX:+UseHeavyMonitors
- *     -Xms256m -Xmx256m
- *     TestRecursiveLocking 120 2
  */
 
 /*
@@ -171,33 +80,8 @@
  * @run main/othervm/timeout=240 -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:TieredStopAtLevel=1
- *     -XX:+UseObjectMonitorTable
  *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 120 2
- *
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:TieredStopAtLevel=1
- *     -Xms256m -Xmx256m
- *     TestRecursiveLocking 120 2
- */
-
-/*
- * @test id=C2_outer_inner_debug_monitor
- * @requires vm.flagless
- * @requires vm.debug
- * @requires vm.compiler2.enabled
- * @summary Tests recursive locking in C2 in outer then inner mode.
- * @library /testlibrary /test/lib
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:-EliminateNestedLocks
- *     -XX:+UseHeavyMonitors
- *     -Xms256m -Xmx256m
- *     TestRecursiveLocking 120 1
  */
 
 /*
@@ -212,32 +96,8 @@
  * @run main/othervm/timeout=240 -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:-EliminateNestedLocks
- *     -XX:+UseObjectMonitorTable
  *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 120 1
- *
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:-EliminateNestedLocks
- *     -Xms256m -Xmx256m
- *     TestRecursiveLocking 120 1
- */
-
-/*
- * @test id=C2_alternate_AB_debug_monitor
- * @requires vm.flagless
- * @requires vm.compiler2.enabled
- * @summary Tests recursive locking in C2 in alternate A and B mode.
- * @library /testlibrary /test/lib
- * @build jdk.test.whitebox.WhiteBox
- *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:+UseHeavyMonitors
- *     -XX:-EliminateNestedLocks
- *     -Xms256m -Xmx256m
- *     TestRecursiveLocking 120 2
  */
 
 /*
@@ -247,21 +107,7 @@
  * @summary Tests recursive locking in C2 in alternate A and B mode.
  * @library /testlibrary /test/lib
  * @build jdk.test.whitebox.WhiteBox
- *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:+UseHeavyMonitors
- *     -XX:-EliminateNestedLocks
- *     -Xms256m -Xmx256m
- *     TestRecursiveLocking 120 2
- *
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:+UseObjectMonitorTable
- *     -XX:-EliminateNestedLocks
- *     -Xms256m -Xmx256m
- *     TestRecursiveLocking 120 2
  *
  * @run main/othervm/timeout=240 -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI

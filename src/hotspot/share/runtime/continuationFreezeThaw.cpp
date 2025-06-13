@@ -612,7 +612,7 @@ void FreezeBase::unwind_frames() {
   entry->flush_stack_processing(_thread);
   assert_frames_in_continuation_are_safe(_thread);
   JFR_ONLY(Jfr::check_and_process_sample_request(_thread);)
-  assert(LockingMode == LM_LIGHTWEIGHT || !monitors_on_stack(_thread), "unexpected monitors on stack");
+  assert(LockingMode != LM_LEGACY || !monitors_on_stack(_thread), "unexpected monitors on stack");
   set_anchor_to_entry(_thread, entry);
 }
 
@@ -1741,7 +1741,7 @@ static inline freeze_result freeze_internal(JavaThread* current, intptr_t* const
 
   assert(entry->is_virtual_thread() == (entry->scope(current) == java_lang_VirtualThread::vthread_scope()), "");
 
-  assert(LockingMode != LM_LIGHTWEIGHT || (current->held_monitor_count() == 0 && current->jni_monitor_count() == 0),
+  assert(LockingMode == LM_LEGACY || (current->held_monitor_count() == 0 && current->jni_monitor_count() == 0),
          "Held monitor count should only be used for LM_LEGACY: " INT64_FORMAT " JNI: " INT64_FORMAT, (int64_t)current->held_monitor_count(), (int64_t)current->jni_monitor_count());
 
   if (entry->is_pinned() || current->held_monitor_count() > 0) {

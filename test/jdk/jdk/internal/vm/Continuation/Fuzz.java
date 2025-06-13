@@ -473,7 +473,8 @@ public class Fuzz implements Runnable {
     }
 
     boolean shouldPin() {
-        return traceHas(Op.PIN::contains) && legacyLockingMode();
+        // Returns false since we never pin after we removed legacy locking.
+        return traceHas(Op.PIN::contains) && false;
     }
 
     void verifyPin(boolean yieldResult) {
@@ -1031,11 +1032,5 @@ public class Fuzz implements Runnable {
         }
 
         return log((int)res);
-    }
-
-    static boolean legacyLockingMode() {
-        // return ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
-        //             .getVMOption("LockingMode").getValue().equals("1");
-        return false;
     }
 }

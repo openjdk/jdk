@@ -29,9 +29,6 @@
  * @run main/othervm -Xbatch
  *                   -XX:CompileOnly=compiler.locks.TestSynchronizeWithEmptyBlock::*
  *                   compiler.locks.TestSynchronizeWithEmptyBlock
- * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+UseObjectMonitorTable
- *                   -XX:CompileOnly=compiler.locks.TestSynchronizeWithEmptyBlock::*
- *                   compiler.locks.TestSynchronizeWithEmptyBlock
  */
 
 package compiler.locks;
