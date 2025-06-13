@@ -1838,13 +1838,9 @@ public class FloatingDecimal{
     }
 
     static ASCIIToBinaryConverter readDoubleSignlessDigits(int decExp, char[] digits, int length) {
-        if (decExp < 0) {
-            int kDigits = Math.min(length, MAX_DECIMAL_DIGITS + 1);
-            if (decExp - kDigits > 0) {
-                return buildZero(BINARY_64_IX, 1);
-            }
+        if (decExp < MIN_DECIMAL_EXPONENT) {
+            return buildZero(BINARY_64_IX, 1);
         }
-
         byte[] buf = new byte[length];
         for (int i = 0; i < length; i++) {
             buf[i] = (byte) digits[i];
