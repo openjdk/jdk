@@ -475,7 +475,7 @@ public class TestAliasingFuzzer {
                     public static void $run() {
                         $iterations++;
                     """,
-                    // TODO: data init
+                    generateContainerInit(containerNames),
                     // TODO: aliasing containers
                     // TODO: bounds / ranges
                     // TODO: invoke test/reference and verify
@@ -510,13 +510,15 @@ public class TestAliasingFuzzer {
                 let("name", name),
                 let("type", type),
                 """
-                private static #type[] #name = new #type[#size];
+                private static #type[] original_#name = new #type[#size];
+                private static #type[] test_#name = new #type[#size];
+                private static #type[] reference_#name = new #type[#size];
                 """
             ));
             return template.asToken();
         }
 
-        private TemplateToken generateIndex(String name, IndexForm form) {
+        private TemplateToken generateIndexField(String name, IndexForm form) {
             var template = Template.make(() -> body(
                 let("name", name),
                 let("form", form.generate()),
@@ -541,9 +543,7 @@ public class TestAliasingFuzzer {
                 Arrays.stream(containerNames).map(name ->
                     switch (containerKind) {
                         case ContainerKind.ARRAY ->
-                            List.of(generateArrayField("original_" + name, containerElementType),
-                                    generateArrayField("test_" + name, containerElementType),
-                                    generateArrayField("reference_" + name, containerElementType));
+                            generateArrayField(name, containerElementType);
                         case ContainerKind.MEMORY_SEGMENT ->
                             List.of("// TODO: container MemorySegment\n");
                     }
@@ -552,9 +552,38 @@ public class TestAliasingFuzzer {
                 // Index forms for the accesses:
                 """,
                 IntStream.range(0, indexNames.length).mapToObj(i ->
-                    generateIndex(indexNames[i], acessIndexForm[i])
+                    generateIndexField(indexNames[i], acessIndexForm[i])
                 ).toList()
             ));
+            return template.asToken();
+        }
+
+        private TemplateToken generateContainerInitArray(String name) {
+            var template = Template.make(() -> body(
+                let("size", containerByteSize / containerElementType.byteSize()),
+                let("name", name),
+                """
+                System.arraycopy(original_#name, 0, test_#name, 0, #size);
+                System.arraycopy(original_#name, 0, reference_#name, 0, #size);
+                """
+            ));
+            return template.asToken();
+        }
+
+        private TemplateToken generateContainerInit(String[] containerNames) {
+            var template = Template.make(() -> body(
+                """
+                // Init containers from original data:
+                """,
+                Arrays.stream(containerNames).map(name ->
+                    switch (containerKind) {
+                        case ContainerKind.ARRAY ->
+                            generateContainerInitArray(name);
+                        case ContainerKind.MEMORY_SEGMENT ->
+                            List.of("// TODO: container init MemorySegment\n");
+                    }
+                ).toList()
+             ));
             return template.asToken();
         }
 
