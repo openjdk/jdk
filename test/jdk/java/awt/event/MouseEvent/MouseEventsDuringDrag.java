@@ -59,6 +59,7 @@ import java.awt.Label;
 import java.awt.Panel;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Robot;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -68,7 +69,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class MouseEventsDuringDrag {
 
-    private static ExtendedRobot robot;
+    private static Robot robot;
     private static Frame frame;
 
     private static final MouseHandler mouseHandler = new MouseHandler();
@@ -92,7 +93,7 @@ public class MouseEventsDuringDrag {
     }
 
     private static void test() throws Exception {
-        robot = new ExtendedRobot();
+        robot = new Robot();
         robot.waitForIdle();
         robot.delay(500);
 

@@ -168,7 +168,7 @@ public class MultipleMouseButtonsTest implements MouseListener {
             Point center = new Point(xc, yc);
 
             robot.delay(robotDelay);
-            robot.mouseMove(origin);
+            robot.mouseMove(origin.x, origin.y);
             robot.delay(robotDelay);
             robot.glide(origin.x, origin.y, center.x, center.y);
             robot.delay(robotDelay);
