@@ -150,7 +150,7 @@ template<class Callback> bool PhaseConditionalPropagation::TypeTable::apply_betw
 
 const Type* PhaseConditionalPropagation::TypeTable::find_type_between(const Node* n, Node* c, Node* dom) const {
   const Type* res = nullptr;
-  auto find_type = [&, n](NodeTypesList* node_types_list) {
+  auto find_type = [&](NodeTypesList* node_types_list) {
     int l = node_types_list->find(n);
     if (l != -1) {
       res = node_types_list->type_at(l);
@@ -164,7 +164,7 @@ const Type* PhaseConditionalPropagation::TypeTable::find_type_between(const Node
 
 const Type* PhaseConditionalPropagation::TypeTable::find_prev_type_between(const Node* n, Node* c, Node* dom) const {
   const Type* res = nullptr;
-  auto find_type = [&, n](NodeTypesList* node_types_list) {
+  auto find_type = [&](NodeTypesList* node_types_list) {
       int l = node_types_list->find(n);
       if (l != -1) {
         res = node_types_list->prev_type_at(l);
@@ -1688,11 +1688,11 @@ const PhaseConditionalPropagation::TypeTable* PhaseConditionalPropagation::analy
 void PhaseConditionalPropagation::analyze_and_transform(int rounds) {
   const TypeTable* type_table;
   {
-    TraceTime tt("loop conditional propagation analyze", UseNewCode);
+    Compile::TracePhase tp(Phase::_t_conditionalElimAnalysis);
     type_table = analyze(rounds);
   }
   {
-    TraceTime tt("loop conditional propagation transform", UseNewCode);
+    Compile::TracePhase tp(Phase::_t_conditionalElimTransform);
     do_transform(type_table);
   }
 }
@@ -1742,7 +1742,7 @@ void PhaseConditionalPropagation::do_transform(const TypeTable* type_table) {
 
 PhaseConditionalPropagation::DominatorTree::DominatorTree(const Node_List& rpo_list, PhaseIdealLoop* phase):
   _nodes(nullptr) {
-  _nodes = new DomTreeTable(8, rpo_list.size());
+  _nodes = new DomTreeTable(rpo_list.size(), rpo_list.size());
 
   for (int i = rpo_list.size() - 1; i >= 0; i--) {
     Node* n = rpo_list.at(i);
@@ -1797,7 +1797,10 @@ PhaseConditionalPropagation::PhaseConditionalPropagation(PhaseIdealLoop* phase, 
   assert(nstack.is_empty(), "non empty stack as argument");
   assert(_rpo_list.size() == 0, "non empty list as argument");
   phase->rpo(phase->C->root(), nstack, _visited, _rpo_list);
-  _dominator_tree = new DominatorTree(_rpo_list, _phase);
+  // We have to pay a one time overhead to construct this data structure but, it only benefits large graphs
+  if (_rpo_list.size() > 500) {
+    _dominator_tree = new DominatorTree(_rpo_list, _phase);
+  }
   // Remove control nodes at which no type update is possible
   int shift = 0;
   for (uint i = 0; i < _rpo_list.size(); ++i) {
@@ -1816,7 +1819,7 @@ PhaseConditionalPropagation::PhaseConditionalPropagation(PhaseIdealLoop* phase, 
 }
 
 void PhaseIdealLoop::conditional_elimination(VectorSet &visited, Node_Stack &nstack, Node_List &rpo_list, int rounds) {
-  TraceTime tt("loop conditional propagation", UseNewCode);
+  Compile::TracePhase tp(Phase::_t_conditionalElim);
   PhaseConditionalPropagation pcp(this, visited, nstack, rpo_list);
   pcp.analyze_and_transform(rounds);
 }
