@@ -290,8 +290,9 @@ Node* ConvF2HFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         StubRoutines::f2hf_adr() != nullptr) {
       jfloat con = conF->bottom_type()->getf();
       // Conditions under which floating point constant can be considered for a pattern match.
-      // 1. Constant must lie within Float16 value range, this will ensure that
-      // we don't unintentially round off float constant to enforce a pattern match.
+      // 1. conF must lie within Float16 value range, otherwise we would have rounding issues:
+      //    Doing the operation in float32 and then rounding is not the same as
+      //    rounding first and doing the operation in float16.
       // 2. If a constant value is one of the valid IEEE 754 binary32 NaN bit patterns
       // then it's safe to consider it for pattern match because of the following reasons:
       //   a. As per section 2.8 of JVMS, Java Virtual Machine does not support
