@@ -718,8 +718,55 @@ public class TestAliasingFuzzer {
                 """,
                 Arrays.stream(invarRest).map(invar ->
                     List.of(invar, " = RANDOM.nextInt(-1, 2);\n")
-                ).toList()
-                // TODO: verify bounds!
+                ).toList(),
+                """
+                // Verify the bounds we just created, just to be sure there is no unexpected aliasing!
+                int i = ivLo;
+                """,
+                IntStream.range(0, indexFormNames.length).mapToObj(i ->
+                    List.of("int lo_", i, " = ", accessIndexForm[i].index("invar0_" + i, invarRest), ";\n")
+                ).toList(),
+                """
+                i = ivHi;
+                """,
+                IntStream.range(0, indexFormNames.length).mapToObj(i ->
+                    List.of("int hi_", i, " =  ", accessIndexForm[i].index("invar0_" + i, invarRest), ";\n")
+                ).toList(),
+                switch(aliasing) {
+                    case Aliasing.CONTAINER_SAME_ALIASING_NEVER,
+                         Aliasing.CONTAINER_UNKNOWN_ALIASING_NEVER -> // could fail in the future if we make it smarter
+                        List.of(
+                        """
+                        // Bounds should not overlap.
+                        if (false
+                        """,
+                        IntStream.range(0, indexFormNames.length).mapToObj(i1 ->
+                            IntStream.range(0, i1).mapToObj(i2 ->
+                                Template.make(() -> body(
+                                    let("i1", i1),
+                                    let("i2", i2),
+                                    // i1 < i2 or i1 > i2
+                                    """
+                                    || (lo_#i1 < lo_#i2 && lo_#i1 < hi_#i2 && hi_#i1 < lo_#i2 && hi_#i1 < hi_#i2)
+                                    || (lo_#i1 > lo_#i2 && lo_#i1 > hi_#i2 && hi_#i1 > lo_#i2 && hi_#i1 > hi_#i2)
+                                    """
+                                )).asToken()
+                            ).toList()
+                        ).toList(),
+                        """
+                        ) {
+                            // pass
+                        } else {
+                            throw new RuntimeException("bounds overlap!");
+                        }
+                        """);
+                    case Aliasing.CONTAINER_DIFFERENT,
+                         Aliasing.CONTAINER_SAME_ALIASING_UNKNOWN,
+                         Aliasing.CONTAINER_UNKNOWN_ALIASING_UNKNOWN ->
+                        """
+                        // Aliasing unknown, cannot verify bounds.
+                        """;
+                }
             ));
             return template.asToken();
         }
