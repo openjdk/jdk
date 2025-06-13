@@ -462,7 +462,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Initialize memory pools
   Arena::initialize_chunk_pool();
 
-  pthread_jit_write_protect_np_wrapper(0);
   MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXWrite));
 
   // Record VM creation timing statistics

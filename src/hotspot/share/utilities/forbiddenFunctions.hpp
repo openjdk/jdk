@@ -76,4 +76,8 @@ FORBID_IMPORTED_C_FUNCTION(void* realloc(void *ptr, size_t size), "use os::reall
 FORBID_IMPORTED_C_FUNCTION(char* strdup(const char *s), "use os::strdup");
 FORBID_IMPORTED_C_FUNCTION(wchar_t* wcsdup(const wchar_t *s), "don't use");
 
+// Disallow non-wrapped raw library function.
+MACOS_AARCH64_ONLY(FORBID_C_FUNCTION(void pthread_jit_write_protect_np(int enabled), \
+                                     "use os::current_thread_enable_wx");)
+
 #endif // SHARE_UTILITIES_FORBIDDENFUNCTIONS_HPP

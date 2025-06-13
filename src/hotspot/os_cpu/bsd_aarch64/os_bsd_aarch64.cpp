@@ -197,47 +197,6 @@ NOINLINE frame os::current_frame() {
   }
 }
 
-int bruce = 1;
-
-void after_sigreturn() {
-  FILE *tty2 = fopen("/dev/ttys000", "w");
-  dup2(fileno(tty2), fileno(stdout));
-  dup2(fileno(tty2), fileno(stderr));
-
-  printf("Returned from handler\n");
-  {
-    char name[16];
-    auto self = pthread_self();
-    pthread_getname_np(self, name, sizeof name - 1);
-    while (bruce) {
-      fflush(stdout);
-      fprintf(stdout, "PID %ld (Thread %s) stopped, waiting for a debugger!\n",
-              (long)getpid(), name);
-      {
-        fprintf(stdout, "Unblocking signals\n");
-        sigset_t set, oset;
-        sigfillset(&set);
-        sigprocmask(SIG_UNBLOCK, &set, &oset);
-      }
-      fprintf(stdout, "Stopping %ld!\n", (long)getpid());
-      // kill(getpid(), SIGSTOP);
-      {
-        fprintf(stdout, "Unblocking signals\n");
-        sigset_t set, oset;
-        sigfillset(&set);
-        sigprocmask(SIG_UNBLOCK, &set, &oset);
-      }
-      fprintf(stdout, "Unblocking signals again\n");
-      // kill(getpid(), SIGSTOP);
-      // getchar();
-    }
-    // for (;;) {
-    //   printf("sleeping\n");
-    //   sleep(1);
-    // }
-  }
-}
-
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
   // decide if this trap can be handled by a stub
@@ -249,25 +208,16 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     pc = (address) os::Posix::ucontext_get_pc(uc);
 
 #ifdef __APPLE__
-    if (sig == SIGBUS && pc != info->si_addr
-        && CodeCache::contains(info->si_addr)) {
-      if (thread->wx_enable_write()) {
-        FILE *tty = fopen("/dev/ttys002", "w");
-        fprintf(tty, "PID %ld enable write, returning\n", (long)getpid());
-        abort();
-        fclose(tty);
-        return true;
-      } else {
-        FILE *tty = fopen("/dev/ttys002", "w");
-        fprintf(tty, "PID %ld FAILING, returning\n", (long)getpid());
-        fclose(tty);
-        return false;;
-      }
+    // If we got a SIGBUS because we tried to write into the code
+    // cache, try enabling WXWrite mode.
+    if (sig == SIGBUS && pc != info->si_addr && CodeCache::contains(info->si_addr)) {
+      return thread->wx_enable_write();
     }
 #endif
 
-    // Enable WXWrite: this function is called by the signal handler at arbitrary
-    // point of execution.
+    // Enable WXWrite for the duration of this handler: this function
+    // is called by the signal handler at arbitrary point of
+    // execution.
     ThreadWXEnable wx(WXWrite, thread);
 
     // Handle ALL stack overflow variations here
@@ -546,6 +496,8 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
+#if defined(__APPLE__) && defined(AARCH64)
+
 THREAD_LOCAL bool _jit_exec_enabled;
 bool jit_exec_enabled() {
   return _jit_exec_enabled;;
@@ -556,6 +508,8 @@ bool *jit_exec_enabled_addr() {
   return &_jit_exec_enabled;;
 }
 #endif
+
+#ifndef PRODUCT
 
 long pthread_jit_write_protect_np_counter;
 long pthread_jit_write_protect_not_counter;
@@ -582,20 +536,22 @@ void poo() {
   }
 }
 
+#endif // ! PRODUCT
+
 void os::current_thread_enable_wx(WXMode mode) {
   bool exec_enabled = mode != WXWrite;
   if (exec_enabled != jit_exec_enabled()) {
-    pthread_jit_write_protect_np_wrapper(exec_enabled);
+    permit_forbidden_function::pthread_jit_write_protect_np(exec_enabled);
     _jit_exec_enabled = exec_enabled;
-    pthread_jit_write_protect_np_counter++;
+    NOT_PRODUCT(pthread_jit_write_protect_np_counter++);
   } else {
-    pthread_jit_write_protect_not_counter++;
+    NOT_PRODUCT(pthread_jit_write_protect_not_counter++);
   }
 }
 
-#if defined(__APPLE__) && defined(AARCH64)
 bool Thread::wx_enable_write() {
   if (_wx_state == WXArmedForWrite) {
+    _wx_state = WXWrite;
     os::current_thread_enable_wx(WXWrite);
     return true;
   } else {
@@ -607,7 +563,7 @@ void os::thread_wx_enable_write() {
   Thread::current()->wx_enable_write();
 }
 
-#endif
+#endif // defined(__APPLE__) && defined(AARCH64)
 
 static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
   *(jlong *) dst = *(const jlong *) src;

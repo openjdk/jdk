@@ -39,7 +39,7 @@
 
 template <typename T>
 static inline void put_native(address p, T x) {
-  memcpy((void*)p, &x, sizeof x);
+    memcpy((void*)p, &x, sizeof x);
 }
 
 class PhaseCFG;

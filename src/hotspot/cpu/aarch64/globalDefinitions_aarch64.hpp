@@ -28,54 +28,12 @@
 
 #include <execinfo.h>
 
+#ifndef PRODUCT
 extern bool aph_do_trace;
 extern long pthread_jit_write_protect_np_counter;
 extern long pthread_jit_write_protect_not_counter;
 extern FILE *aph_do_trace_file;
-
-#define BT_BUF_SIZE 10
-#define pthread_jit_write_protect_np_wrapper(arg)                       \
-do {                                                                    \
-      {                                                                 \
-        char name[16];                                                  \
-        auto self = pthread_self();                                     \
-        pthread_getname_np(self, name, sizeof name - 1);                \
-        if (strcmp(name, "Java: Thread-1") == 0) {                      \
-          asm("nop");                                                   \
-        }                                                               \
-      }                                                                 \
-  if (aph_do_trace) {                                                   \
-    char name[16];                                                      \
-    auto self = pthread_self();                                         \
-    pthread_getname_np(self, name, sizeof name - 1);                    \
-    fprintf(aph_do_trace_file, "\"%s\": pthread_jit_write_protect_np(%s)\n", name, \
-            arg == WXWrite ? "WXWrite" : "WXExec");                     \
-    {                                                                   \
-      int nptrs;                                                        \
-      void *buffer[BT_BUF_SIZE];                                        \
-      char **strings;                                                   \
-                                                                        \
-      nptrs = backtrace(buffer, BT_BUF_SIZE);                           \
-      fprintf(aph_do_trace_file, "backtrace() returned %d addresses\n", nptrs); \
-                                                                        \
-      /* The call backtrace_symbols_fd(buffer, nptrs, STDOUT_FILENO)    \
-         would produce similar output to the following: */              \
-                                                                        \
-      strings = backtrace_symbols(buffer, nptrs);                       \
-      if (strings == nullptr) {                                         \
-        perror("backtrace_symbols");                                    \
-        os::exit(EXIT_FAILURE);                                         \
-      }                                                                 \
-                                                                        \
-      for (int j = nptrs - 1; j >= 0; j--)                              \
-        fprintf(aph_do_trace_file, "%s\n", strings[j]);                 \
-                                                                        \
-      /* permit_forbidden_function::free(strings); */                   \
-    }                                                                   \
-  }                                                                     \
-                                                                        \
-  pthread_jit_write_protect_np(arg);                                    \
-} while (0)
+#endif
 
 const int StackAlignmentInBytes  = 16;
 const size_t pd_segfault_address = 1024;

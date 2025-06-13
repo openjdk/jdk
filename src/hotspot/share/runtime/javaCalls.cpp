@@ -414,15 +414,6 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
 #endif
         }
       }
-      {
-        char name[16];
-        auto self = pthread_self();
-        pthread_getname_np(self, name, sizeof name - 1);
-        if (strcmp(name, "Java: Thread-1") == 0) {
-          asm("nop");
-        }
-      }
-      MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, thread));
       StubRoutines::call_stub()(
         (address)&link,
         // (intptr_t*)&(result->_value), // see NOTE above (compiler problem)

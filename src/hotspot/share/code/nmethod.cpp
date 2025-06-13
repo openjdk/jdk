@@ -2009,8 +2009,6 @@ bool nmethod::make_not_entrant(const char* reason) {
   // This can be called while the system is already at a safepoint which is ok
   NoSafepointVerifier nsv;
 
-  // os::current_thread_enable_wx(WXWrite);
-
   if (is_unloading()) {
     // If the nmethod is unloading, then it is already not entrant through
     // the nmethod entry barriers. No need to do anything; GC will unload it.
