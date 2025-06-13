@@ -24,6 +24,7 @@
  */
 package jdk.jpackage.internal.model;
 
+import java.lang.module.ModuleFinder;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -46,7 +47,13 @@ public interface RuntimeBuilder {
     void create(AppImageLayout appImageLayout) throws PackagerException;
 
     /**
-     * Gets the default set of paths where to find Java modules.
+     * Gets the default set of paths where jlink should look up for system Java
+     * modules.
+     *
+     * <p>
+     * These paths are for {@code jlink} command. Using them with
+     * {@link ModuleFinder#of(Path...)} may not work as expected: attempt to find
+     * "java.base" module in these paths will fail.
      *
      * @return the default set of paths where to find Java modules
      */
