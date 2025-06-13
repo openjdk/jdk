@@ -58,8 +58,6 @@
 #include "runtime/perfMemory.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/statSampler.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
@@ -73,6 +71,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
@@ -131,8 +130,6 @@ extern "C" int getargs(procsinfo*, int, char*, int);
 
 #define MAX_PATH (2 * K)
 
-// for timer info max values which include all bits
-#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
 // for multipage initialization error analysis (in 'g_multipage_error')
 #define ERROR_MP_OS_TOO_OLD                          100
 #define ERROR_MP_EXTSHM_ACTIVE                       101
@@ -140,12 +137,6 @@ extern "C" int getargs(procsinfo*, int, char*, int);
 #define ERROR_MP_VMGETINFO_CLAIMS_NO_SUPPORT_FOR_64K 103
 
 // excerpts from sys/systemcfg.h that might be missing on older os levels
-#ifndef PV_7
-  #define PV_7 0x200000          /* Power PC 7 */
-#endif
-#ifndef PV_7_Compat
-  #define PV_7_Compat 0x208000   /* Power PC 7 */
-#endif
 #ifndef PV_8
   #define PV_8 0x300000          /* Power PC 8 */
 #endif
@@ -369,9 +360,9 @@ static void query_multipage_support() {
   // or by environment variable LDR_CNTRL (suboption DATAPSIZE). If none is given,
   // default should be 4K.
   {
-    void* p = ::malloc(16*M);
+    void* p = permit_forbidden_function::malloc(16*M);
     g_multipage_support.datapsize = os::Aix::query_pagesize(p);
-    ::free(p);
+    permit_forbidden_function::free(p);
   }
 
   // Query default shm page size (LDR_CNTRL SHMPSIZE).
@@ -762,10 +753,23 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   pthread_t tid = 0;
 
   if (ret == 0) {
-    int limit = 3;
-    do {
+    int trials_remaining = 4;
+    useconds_t next_delay = 1000;
+    while (true) {
       ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
-    } while (ret == EAGAIN && limit-- > 0);
+
+      if (ret != EAGAIN) {
+        break;
+      }
+
+      if (--trials_remaining <= 0) {
+        break;
+      }
+
+      log_debug(os, thread)("Failed to start native thread (%s), retrying after %dus.", os::errno_name(ret), next_delay);
+      ::usleep(next_delay);
+      next_delay *= 2;
+    }
   }
 
   if (ret == 0) {
@@ -905,7 +909,7 @@ jlong os::javaTimeNanos() {
 }
 
 void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;
+  info_ptr->max_value = all_bits_jlong;
   // mread_real_time() is monotonic (see 'os::javaTimeNanos()')
   info_ptr->may_skip_backward = false;
   info_ptr->may_skip_forward = false;
@@ -1236,33 +1240,6 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
   case PV_8:
     strncpy(buf, "Power PC 8", buflen);
     break;
-  case PV_7:
-    strncpy(buf, "Power PC 7", buflen);
-    break;
-  case PV_6_1:
-    strncpy(buf, "Power PC 6 DD1.x", buflen);
-    break;
-  case PV_6:
-    strncpy(buf, "Power PC 6", buflen);
-    break;
-  case PV_5:
-    strncpy(buf, "Power PC 5", buflen);
-    break;
-  case PV_5_2:
-    strncpy(buf, "Power PC 5_2", buflen);
-    break;
-  case PV_5_3:
-    strncpy(buf, "Power PC 5_3", buflen);
-    break;
-  case PV_5_Compat:
-    strncpy(buf, "PV_5_Compat", buflen);
-    break;
-  case PV_6_Compat:
-    strncpy(buf, "PV_6_Compat", buflen);
-    break;
-  case PV_7_Compat:
-    strncpy(buf, "PV_7_Compat", buflen);
-    break;
   case PV_8_Compat:
     strncpy(buf, "PV_8_Compat", buflen);
     break;
@@ -1282,69 +1259,6 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
 
 void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // Nothing to do beyond of what os::print_cpu_info() does.
-}
-
-static char saved_jvm_path[MAXPATHLEN] = {0};
-
-// Find the full path to the current module, libjvm.so.
-void os::jvm_path(char *buf, jint buflen) {
-  // Error checking.
-  if (buflen < MAXPATHLEN) {
-    assert(false, "must use a large-enough buffer");
-    buf[0] = '\0';
-    return;
-  }
-  // Lazy resolve the path to current module.
-  if (saved_jvm_path[0] != 0) {
-    strcpy(buf, saved_jvm_path);
-    return;
-  }
-
-  Dl_info dlinfo;
-  int ret = dladdr(CAST_FROM_FN_PTR(void *, os::jvm_path), &dlinfo);
-  assert(ret != 0, "cannot locate libjvm");
-  char* rp = os::realpath((char *)dlinfo.dli_fname, buf, buflen);
-  assert(rp != nullptr, "error in realpath(): maybe the 'path' argument is too long?");
-
-  // If executing unit tests we require JAVA_HOME to point to the real JDK.
-  if (Arguments::executing_unit_tests()) {
-    // Look for JAVA_HOME in the environment.
-    char* java_home_var = ::getenv("JAVA_HOME");
-    if (java_home_var != nullptr && java_home_var[0] != 0) {
-
-      // Check the current module name "libjvm.so".
-      const char* p = strrchr(buf, '/');
-      if (p == nullptr) {
-        return;
-      }
-      assert(strstr(p, "/libjvm") == p, "invalid library name");
-
-      stringStream ss(buf, buflen);
-      rp = os::realpath(java_home_var, buf, buflen);
-      if (rp == nullptr) {
-        return;
-      }
-
-      assert((int)strlen(buf) < buflen, "Ran out of buffer room");
-      ss.print("%s/lib", buf);
-
-      if (0 == access(buf, F_OK)) {
-        // Use current module name "libjvm.so"
-        ss.print("/%s/libjvm%s", Abstract_VM_Version::vm_variant(), JNI_LIB_SUFFIX);
-        assert(strcmp(buf + strlen(buf) - strlen(JNI_LIB_SUFFIX), JNI_LIB_SUFFIX) == 0,
-               "buf has been truncated");
-      } else {
-        // Go back to path of .so
-        rp = os::realpath((char *)dlinfo.dli_fname, buf, buflen);
-        if (rp == nullptr) {
-          return;
-        }
-      }
-    }
-  }
-
-  strncpy(saved_jvm_path, buf, sizeof(saved_jvm_path));
-  saved_jvm_path[sizeof(saved_jvm_path) - 1] = '\0';
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1398,7 +1312,7 @@ static struct {
 } vmem;
 
 static void vmembk_add(char* addr, size_t size, size_t pagesize, int type) {
-  vmembk_t* p = (vmembk_t*) ::malloc(sizeof(vmembk_t));
+  vmembk_t* p = (vmembk_t*) permit_forbidden_function::malloc(sizeof(vmembk_t));
   assert0(p);
   if (p) {
     MiscUtils::AutoCritSect lck(&vmem.cs);
@@ -1427,7 +1341,7 @@ static void vmembk_remove(vmembk_t* p0) {
   for (vmembk_t** pp = &(vmem.first); *pp; pp = &((*pp)->next)) {
     if (*pp == p0) {
       *pp = p0->next;
-      ::free(p0);
+      permit_forbidden_function::free(p0);
       return;
     }
   }
@@ -2570,14 +2484,14 @@ jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
 }
 
 void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;       // will not wrap in less than 64 bits
+  info_ptr->max_value = all_bits_jlong;    // will not wrap in less than 64 bits
   info_ptr->may_skip_backward = false;     // elapsed time not wall time
   info_ptr->may_skip_forward = false;      // elapsed time not wall time
   info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;  // user+system time is returned
 }
 
 void os::thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;       // will not wrap in less than 64 bits
+  info_ptr->max_value = all_bits_jlong;    // will not wrap in less than 64 bits
   info_ptr->may_skip_backward = false;     // elapsed time not wall time
   info_ptr->may_skip_forward = false;      // elapsed time not wall time
   info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;  // user+system time is returned

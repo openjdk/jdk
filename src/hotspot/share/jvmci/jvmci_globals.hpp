@@ -45,7 +45,16 @@ class fileStream;
                     constraint)                                             \
                                                                             \
   product(bool, EnableJVMCI, false, EXPERIMENTAL,                           \
-          "Enable JVMCI. Defaults to true if UseJVMCICompiler is true.")    \
+          "Enable JVMCI support in the VM. "                                \
+          "Defaults to true if UseJVMCICompiler is true or "                \
+          "--add-modules=jdk.internal.vm.ci was specified. "                \
+          "The behavior of --add-modules=jdk.internal.vm.ci is triggered "  \
+          "if any of the following is true: "                               \
+          "1. -XX:+EnableJVMCI is set to true on the command line. "        \
+          "2. -XX:+EnableJVMCI is set to true by jdk/internal/vm/options "  \
+          "   in the java.base module. "                                    \
+          "3. EnableJVMCI is defaulted to true by UseJVMCICompiler and "    \
+          "   libjvmci is not enabled")                                     \
                                                                             \
   product(bool, UseGraalJIT, false, EXPERIMENTAL,                           \
           "Select the Graal JVMCI compiler. This is an alias for: "         \
@@ -88,7 +97,8 @@ class fileStream;
           "-XX:-TieredCompilation makes JVMCI compile more of itself.")     \
                                                                             \
   product(bool, EagerJVMCI, false, EXPERIMENTAL,                            \
-          "Force eager JVMCI initialization")                               \
+          "Force eager JVMCI initialization. Defaults to true if "          \
+          "UseJVMCICompiler is true.")                                      \
                                                                             \
   product(bool, PrintBootstrap, true, EXPERIMENTAL,                         \
           "Print JVMCI bootstrap progress and summary")                     \
@@ -184,8 +194,8 @@ class fileStream;
   NOT_COMPILER2(product(bool, EnableVectorAggressiveReboxing, false, EXPERIMENTAL, \
           "Enables aggressive reboxing of vectors"))                        \
                                                                             \
-  NOT_COMPILER2(product(bool, UseVectorStubs, false, EXPERIMENTAL,          \
-          "Use stubs for vector transcendental operations"))                \
+  product(bool, UseVectorStubs, false, EXPERIMENTAL,                        \
+          "Use stubs for vector transcendental operations")                 \
 
 // end of JVMCI_FLAGS
 

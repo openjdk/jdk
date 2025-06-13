@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @test
  * @key headful
  * @bug 8043705
- * @summary Can't exit color chooser dialog when running as an applet
+ * @summary Can't exit color chooser dialog when running in non-default AppContext
  * @modules java.desktop/sun.awt
  * @run main CloseDialogTest
  */

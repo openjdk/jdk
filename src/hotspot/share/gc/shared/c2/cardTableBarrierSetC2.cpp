@@ -23,9 +23,9 @@
  */
 
 #include "ci/ciUtilities.hpp"
+#include "gc/shared/c2/cardTableBarrierSetC2.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
-#include "gc/shared/c2/cardTableBarrierSetC2.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/graphKit.hpp"

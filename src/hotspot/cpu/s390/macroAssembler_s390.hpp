@@ -816,8 +816,8 @@ class MacroAssembler: public Assembler {
   void set_thread_state(JavaThreadState new_state);
 
   // Read vm result from thread.
-  void get_vm_result  (Register oop_result);
-  void get_vm_result_2(Register result);
+  void get_vm_result_oop  (Register oop_result);
+  void get_vm_result_metadata(Register result);
 
   // Vm result is currently getting hijacked to for oop preservation.
   void set_vm_result(Register oop_result);

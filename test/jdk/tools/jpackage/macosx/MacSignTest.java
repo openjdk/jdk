@@ -24,12 +24,23 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.MacHelper;
+import jdk.jpackage.test.MacSign;
+import jdk.jpackage.test.MacSign.CertificateRequest;
+import jdk.jpackage.test.MacSignVerify;
+import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
 
 /*
@@ -64,23 +75,173 @@ public class MacSignTest {
             expectedStrings.add(xcodeWarning);
         }
 
-        // --app-content and --type app-image
-        // Expect `message.codesign.failed.reason.app.content` message in the log.
-        // This is not a fatal error, just a warning.
-        // To make jpackage fail, specify bad additional content.
-        final var cmd = JPackageCommand.helloAppImage()
-                .ignoreDefaultVerbose(true)
-                .validateOutput(expectedStrings.toArray(CannedFormattedString[]::new))
-                .addArguments("--app-content", appContent)
-                .addArguments("--mac-sign")
-                .addArguments("--mac-signing-keychain", SigningBase.StandardKeychain.MAIN.spec().keychain().name())
-                .addArguments("--mac-app-image-sign-identity", SigningBase.StandardCertificateRequest.APP_IMAGE.spec().name());
+        final var keychain = SigningBase.StandardKeychain.EXPIRED.spec().keychain();
 
-        if (MacHelper.isXcodeDevToolsInstalled()) {
-            // Check there is no warning about missing xcode command line developer tools.
-            cmd.validateOutput(TKit.assertTextStream(xcodeWarning.getValue()).negate());
+        MacSign.Keychain.withAddedKeychains(List.of(keychain), () -> {
+            // --app-content and --type app-image
+            // Expect `message.codesign.failed.reason.app.content` message in the log.
+            // This is not a fatal error, just a warning.
+            // To make jpackage fail, specify bad additional content.
+            final var cmd = JPackageCommand.helloAppImage()
+                    .ignoreDefaultVerbose(true)
+                    .validateOutput(expectedStrings.toArray(CannedFormattedString[]::new))
+                    .addArguments("--app-content", appContent)
+                    .addArguments("--mac-sign")
+                    .addArguments("--mac-signing-keychain", keychain.name())
+                    .addArguments("--mac-app-image-sign-identity", SigningBase.StandardCertificateRequest.CODESIGN.spec().name());
+
+            if (MacHelper.isXcodeDevToolsInstalled()) {
+                // Check there is no warning about missing xcode command line developer tools.
+                cmd.validateOutput(TKit.assertTextStream(xcodeWarning.getValue()).negate());
+            }
+
+            cmd.execute(1);
+        });
+    }
+
+    @Test
+    @Parameter({"IMAGE", "EXPIRED_SIGNING_KEY_USER_NAME"})
+    @Parameter({"MAC_DMG", "EXPIRED_SIGNING_KEY_USER_NAME"})
+    @Parameter({"MAC_PKG", "EXPIRED_SIGNING_KEY_USER_NAME", "EXPIRED_SIGNING_KEY_USER_NAME_PKG"})
+
+    @Parameter({"IMAGE", "EXPIRED_SIGN_IDENTITY"})
+    @Parameter({"MAC_DMG", "EXPIRED_SIGN_IDENTITY"})
+    @Parameter({"MAC_PKG", "EXPIRED_SIGN_IDENTITY"})
+
+    @Parameter({"IMAGE", "EXPIRED_CODESIGN_SIGN_IDENTITY"})
+    @Parameter({"MAC_DMG", "EXPIRED_CODESIGN_SIGN_IDENTITY"})
+    @Parameter({"MAC_PKG", "EXPIRED_CODESIGN_SIGN_IDENTITY"})
+
+    @Parameter({"MAC_PKG", "GOOD_CODESIGN_SIGN_IDENTITY", "EXPIRED_PKG_SIGN_IDENTITY"})
+    @Parameter({"MAC_PKG", "EXPIRED_CODESIGN_SIGN_IDENTITY", "GOOD_PKG_SIGN_IDENTITY"})
+    public static void testExpiredCertificate(PackageType type, SignOption... options) {
+
+        final var keychain = SigningBase.StandardKeychain.EXPIRED.spec().keychain();
+
+        MacSign.Keychain.withAddedKeychains(List.of(keychain), () -> {
+            final var cmd = JPackageCommand.helloAppImage()
+                    .ignoreDefaultVerbose(true)
+                    .addArguments("--mac-sign")
+                    .addArguments("--mac-signing-keychain", keychain.name())
+                    .addArguments(Stream.of(options).map(SignOption::args).flatMap(List::stream).toList())
+                    .setPackageType(type);
+
+            SignOption.configureOutputValidation(cmd, Stream.of(options).filter(SignOption::expired).toList(), opt -> {
+                return JPackageStringBundle.MAIN.cannedFormattedString("error.certificate.expired", opt.identityName());
+            }).execute(1);
+        });
+    }
+
+    @Test
+    @Parameter({"IMAGE", "GOOD_SIGNING_KEY_USER_NAME"})
+    @Parameter({"MAC_DMG", "GOOD_SIGNING_KEY_USER_NAME"})
+    @Parameter({"MAC_PKG", "GOOD_SIGNING_KEY_USER_NAME_PKG", "GOOD_SIGNING_KEY_USER_NAME"})
+
+    @Parameter({"IMAGE", "GOOD_CODESIGN_SIGN_IDENTITY"})
+    @Parameter({"MAC_PKG", "GOOD_CODESIGN_SIGN_IDENTITY", "GOOD_PKG_SIGN_IDENTITY"})
+    @Parameter({"MAC_PKG", "GOOD_PKG_SIGN_IDENTITY"})
+    public static void testMultipleCertificates(PackageType type, SignOption... options) {
+
+        final var keychain = SigningBase.StandardKeychain.DUPLICATE.spec().keychain();
+
+        MacSign.Keychain.withAddedKeychains(List.of(keychain), () -> {
+            final var cmd = JPackageCommand.helloAppImage()
+                    .ignoreDefaultVerbose(true)
+                    .addArguments("--mac-sign")
+                    .addArguments("--mac-signing-keychain", keychain.name())
+                    .addArguments(Stream.of(options).map(SignOption::args).flatMap(List::stream).toList())
+                    .setPackageType(type);
+
+            SignOption.configureOutputValidation(cmd, List.of(options), opt -> {
+                return JPackageStringBundle.MAIN.cannedFormattedString("error.multiple.certs.found", opt.identityName(), keychain.name());
+            }).execute(1);
+        });
+    }
+
+    @Test
+    @ParameterSupplier
+    public static void testSelectSigningIdentity(String signingKeyUserName, CertificateRequest certRequest) {
+
+        final var keychain = SigningBase.StandardKeychain.MAIN.spec().keychain();
+
+        MacSign.Keychain.withAddedKeychains(List.of(keychain), () -> {
+            final var cmd = JPackageCommand.helloAppImage()
+                    .setFakeRuntime()
+                    .addArguments("--mac-sign")
+                    .addArguments("--mac-signing-keychain", keychain.name())
+                    .addArguments("--mac-signing-key-user-name", signingKeyUserName);
+
+            cmd.executeAndAssertHelloAppImageCreated();
+
+            MacSignVerify.assertSigned(cmd.outputBundle(), certRequest);
+        });
+    }
+
+    public static Collection<Object[]> testSelectSigningIdentity() {
+        return Stream.of(
+                SigningBase.StandardCertificateRequest.CODESIGN,
+                SigningBase.StandardCertificateRequest.CODESIGN_UNICODE
+        ).map(SigningBase.StandardCertificateRequest::spec).<Object[]>mapMulti((certRequest, acc) -> {
+            acc.accept(new Object[] {certRequest.shortName(), certRequest});
+            acc.accept(new Object[] {certRequest.name(), certRequest});
+        }).toList();
+    }
+
+    enum SignOption {
+        EXPIRED_SIGNING_KEY_USER_NAME("--mac-signing-key-user-name", SigningBase.StandardCertificateRequest.CODESIGN_EXPIRED.spec(), true, false),
+        EXPIRED_SIGNING_KEY_USER_NAME_PKG("--mac-signing-key-user-name", SigningBase.StandardCertificateRequest.PKG_EXPIRED.spec(), true, false),
+        EXPIRED_SIGN_IDENTITY("--mac-signing-key-user-name", SigningBase.StandardCertificateRequest.CODESIGN_EXPIRED.spec(), false, false),
+        EXPIRED_CODESIGN_SIGN_IDENTITY("--mac-app-image-sign-identity", SigningBase.StandardCertificateRequest.CODESIGN_EXPIRED.spec(), false, true),
+        EXPIRED_PKG_SIGN_IDENTITY("--mac-installer-sign-identity", SigningBase.StandardCertificateRequest.PKG_EXPIRED.spec(), false, true),
+        GOOD_SIGNING_KEY_USER_NAME("--mac-signing-key-user-name", SigningBase.StandardCertificateRequest.CODESIGN.spec(), true, false),
+        GOOD_SIGNING_KEY_USER_NAME_PKG("--mac-signing-key-user-name", SigningBase.StandardCertificateRequest.PKG.spec(), true, false),
+        GOOD_CODESIGN_SIGN_IDENTITY("--mac-app-image-sign-identity", SigningBase.StandardCertificateRequest.CODESIGN.spec(), false, true),
+        GOOD_PKG_SIGN_IDENTITY("--mac-app-image-sign-identity", SigningBase.StandardCertificateRequest.PKG.spec(), false, true);
+
+        SignOption(String option, MacSign.CertificateRequest cert, boolean shortName, boolean passThrough) {
+            this.option = Objects.requireNonNull(option);
+            this.cert = Objects.requireNonNull(cert);
+            this.shortName = shortName;
+            this.passThrough = passThrough;
         }
 
-        cmd.execute(1);
+        boolean passThrough() {
+            return passThrough;
+        }
+
+        boolean expired() {
+            return cert.expired();
+        }
+
+        String identityName() {
+            return cert.name();
+        }
+
+        List<String> args() {
+            return List.of(option, shortName ? cert.shortName() : cert.name());
+        }
+
+        static JPackageCommand configureOutputValidation(JPackageCommand cmd, List<SignOption> options,
+                Function<SignOption, CannedFormattedString> conv) {
+            options.stream().filter(SignOption::passThrough)
+                    .map(conv)
+                    .map(CannedFormattedString::getValue)
+                    .map(TKit::assertTextStream)
+                    .map(TKit.TextStreamVerifier::negate)
+                    .forEach(cmd::validateOutput);
+
+            options.stream().filter(Predicate.not(SignOption::passThrough))
+                    .map(conv)
+                    .map(CannedFormattedString::getValue)
+                    .map(TKit::assertTextStream)
+                    .forEach(cmd::validateOutput);
+
+            return cmd;
+        }
+
+        private final String option;
+        private final MacSign.CertificateRequest cert;
+        private final boolean shortName;
+        private final boolean passThrough;
     }
 }

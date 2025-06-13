@@ -23,6 +23,7 @@
  * questions.
  */
 
+#include <assert.h>
 #include <string.h>
 
 #include "jni.h"
@@ -147,18 +148,13 @@ Java_jdk_internal_util_SystemProps_00024Raw_platformProperties(JNIEnv *env, jcla
     PUTPROP(propArray, _line_separator_NDX, sprops->line_separator);
 
     /* basic encoding properties, always non-NULL */
-#ifdef MACOSX
-    /*
-     * Since sun_jnu_encoding is now hard-coded to UTF-8 on Mac, we don't
-     * want to use it to overwrite native.encoding
-     */
+    assert(sprops->encoding != NULL);
+    assert(sprops->sun_jnu_encoding != NULL);
     PUTPROP(propArray, _native_encoding_NDX, sprops->encoding);
-#else
-    PUTPROP(propArray, _native_encoding_NDX, sprops->sun_jnu_encoding);
-#endif
     PUTPROP(propArray, _sun_jnu_encoding_NDX, sprops->sun_jnu_encoding);
 
     /* encodings for standard streams, may be NULL */
+    PUTPROP(propArray, _stdin_encoding_NDX, sprops->stdin_encoding);
     PUTPROP(propArray, _stdout_encoding_NDX, sprops->stdout_encoding);
     PUTPROP(propArray, _stderr_encoding_NDX, sprops->stderr_encoding);
 

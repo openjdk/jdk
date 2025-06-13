@@ -23,9 +23,9 @@
  */
 
 #include "gc/g1/g1EvacInfo.hpp"
+#include "gc/g1/g1GCPauseType.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "gc/g1/g1Trace.hpp"
-#include "gc/g1/g1GCPauseType.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "jfr/jfrEvents.hpp"
 #if INCLUDE_JFR

@@ -57,6 +57,7 @@ class ZWorkers;
 class ZPartition {
   friend class VMStructs;
   friend class ZPageAllocator;
+  friend class ZUncommitter;
 
 private:
   ZPageAllocator* const _page_allocator;
@@ -68,9 +69,6 @@ private:
   volatile size_t       _capacity;
   volatile size_t       _claimed;
   size_t                _used;
-  double                _last_commit;
-  double                _last_uncommit;
-  size_t                _to_uncommit;
   const uint32_t        _numa_id;
 
   const ZVirtualMemoryManager& virtual_memory_manager() const;
@@ -101,8 +99,7 @@ public:
 
   void claim_from_cache_or_increase_capacity(ZMemoryAllocation* allocation);
   bool claim_capacity(ZMemoryAllocation* allocation);
-
-  size_t uncommit(uint64_t* timeout);
+  bool claim_capacity_fast_medium(ZMemoryAllocation* allocation);
 
   void sort_segments_physical(const ZVirtualMemory& vmem);
 
@@ -140,7 +137,7 @@ public:
 
   void print_on(outputStream* st) const;
   void print_cache_on(outputStream* st) const;
-  void print_extended_on_error(outputStream* st) const;
+  void print_cache_extended_on(outputStream* st) const;
 };
 
 using ZPartitionIterator = ZPerNUMAIterator<ZPartition>;
@@ -174,6 +171,7 @@ private:
 
   bool claim_capacity_or_stall(ZPageAllocation* allocation);
   bool claim_capacity(ZPageAllocation* allocation);
+  bool claim_capacity_fast_medium(ZPageAllocation* allocation);
   bool claim_capacity_single_partition(ZSinglePartitionAllocation* single_partition_allocation, uint32_t partition_id);
   void claim_capacity_multi_partition(ZMultiPartitionAllocation* multi_partition_allocation, uint32_t start_partition);
 
@@ -235,7 +233,8 @@ private:
   void notify_out_of_memory();
   void restart_gc() const;
 
-  void print_on_inner(outputStream* st) const;
+  void update_collection_stats(ZGenerationId id);
+  ZPageAllocatorStats stats_inner(ZGeneration* generation) const;
 
 public:
   ZPageAllocator(size_t min_capacity,
@@ -262,8 +261,7 @@ public:
   void promote_used(const ZPage* from, const ZPage* to);
 
   ZPageAllocatorStats stats(ZGeneration* generation) const;
-
-  void reset_statistics(ZGenerationId id);
+  ZPageAllocatorStats update_and_stats(ZGeneration* generation);
 
   ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age);
   void safe_destroy_page(ZPage* page);
@@ -283,9 +281,10 @@ public:
 
   void threads_do(ThreadClosure* tc) const;
 
-  void print_on(outputStream* st) const;
-  void print_extended_on_error(outputStream* st) const;
-  void print_on_error(outputStream* st) const;
+  void print_usage_on(outputStream* st) const;
+  void print_total_usage_on(outputStream* st) const;
+  void print_partition_usage_on(outputStream* st) const;
+  void print_cache_extended_on(outputStream* st) const;
 };
 
 class ZPageAllocatorStats {

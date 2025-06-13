@@ -68,9 +68,9 @@ public:
     _flags(0) {}
 
   // Bit shift to get flags
-  // Note: Only two flags exists at the moment but more could be added
   enum {
-      has_appendix_shift        = 1,
+    resolution_failed_shift = 0,
+    has_appendix_shift      = 1,
   };
 
   // Getters
@@ -107,22 +107,22 @@ public:
   void fill_in(Method* m, u2 num_params, u1 return_type, bool has_appendix) {
     set_num_parameters(num_params);
     _return_type = return_type;
-    set_flags(has_appendix);
+    set_has_appendix(has_appendix);
     // Set the method last since it is read lock free.
     // Resolution is indicated by whether or not the method is set.
     Atomic::release_store(&_method, m);
   }
 
-  // has_appendix is currently the only other flag besides resolution_failed
-  void set_flags(bool has_appendix) {
-    u1 new_flags = (has_appendix << has_appendix_shift);
-    assert((new_flags & 1) == 0, "New flags should not change resolution flag");
-    // Preserve the resolution_failed bit
-    _flags = (_flags & 1) | new_flags;
+  void set_has_appendix(bool has_appendix) {
+    u1 new_flags = (has_appendix ? 1 : 0) << has_appendix_shift;
+    u1 old_flags = _flags & ~(1 << has_appendix_shift);
+    // Preserve the unaffected bits
+    _flags = old_flags | new_flags;
   }
 
+
   void set_resolution_failed() {
-    _flags = _flags | 1;
+    _flags = _flags | (1 << resolution_failed_shift);
   }
 
   void adjust_method_entry(Method* new_method) { _method = new_method; }

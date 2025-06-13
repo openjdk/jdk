@@ -29,7 +29,7 @@
  * @modules java.base/jdk.internal.module
  *          jdk.jlink
  *          jdk.jartool
- * @run junit ClassFileInMetaInfo
+ * @run junit/othervm ClassFileInMetaInfo
  */
 
 import java.lang.module.ModuleDescriptor;

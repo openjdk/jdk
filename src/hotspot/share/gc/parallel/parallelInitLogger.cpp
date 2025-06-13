@@ -23,16 +23,14 @@
  */
 
 #include "gc/parallel/parallelInitLogger.hpp"
-#include "gc/shared/genArguments.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
+#include "gc/shared/genArguments.hpp"
 
 void ParallelInitLogger::print_heap() {
   log_info_p(gc, init)("Alignments:"
                        " Space " EXACTFMT ","
-                       " Generation " EXACTFMT ","
                        " Heap " EXACTFMT,
                        EXACTFMTARGS(SpaceAlignment),
-                       EXACTFMTARGS(GenAlignment),
                        EXACTFMTARGS(HeapAlignment));
   GCInitLogger::print_heap();
 }

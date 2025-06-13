@@ -27,6 +27,7 @@
 
 #include "memory/reservedSpace.hpp"
 #include "nmt/mallocTracker.hpp"
+#include "nmt/memBaseline.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/memoryFileTracker.hpp"
 #include "nmt/threadStackTracker.hpp"
@@ -34,13 +35,12 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/nativeCallStack.hpp"
+#include "utilities/deferred.hpp"
 
 #define CURRENT_PC ((MemTracker::tracking_level() == NMT_detail) ? \
                     NativeCallStack(0) : FAKE_CALLSTACK)
 #define CALLER_PC  ((MemTracker::tracking_level() == NMT_detail) ?  \
                     NativeCallStack(1) : FAKE_CALLSTACK)
-
-class MemBaseline;
 
 class MemTracker : AllStatic {
   friend class VirtualMemoryTrackerTest;
@@ -127,7 +127,7 @@ class MemTracker : AllStatic {
   //  (we do not do any reservations before that).
 
   static inline void record_virtual_memory_reserve(void* addr, size_t size, const NativeCallStack& stack,
-    MemTag mem_tag = mtNone) {
+    MemTag mem_tag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
@@ -153,7 +153,7 @@ class MemTracker : AllStatic {
   }
 
   static inline void record_virtual_memory_reserve_and_commit(void* addr, size_t size,
-    const NativeCallStack& stack, MemTag mem_tag = mtNone) {
+    const NativeCallStack& stack, MemTag mem_tag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
@@ -266,7 +266,7 @@ class MemTracker : AllStatic {
 
   // Stored baseline
   static inline MemBaseline& get_baseline() {
-    return _baseline;
+    return *_baseline;
   }
 
   static void tuning_statistics(outputStream* out);
@@ -319,7 +319,7 @@ class MemTracker : AllStatic {
   // Tracking level
   static NMT_TrackingLevel   _tracking_level;
   // Stored baseline
-  static MemBaseline      _baseline;
+  static Deferred<MemBaseline>      _baseline;
 };
 
 #endif // SHARE_NMT_MEMTRACKER_HPP

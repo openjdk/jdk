@@ -155,7 +155,7 @@ void CompactHashtableWriter::dump(SimpleCompactHashtable *cht, const char* table
   cht->init(base_address,  _num_entries_written, _num_buckets,
             _compact_buckets->data(), _compact_entries->data());
 
-  LogMessage(cds, hashtables) msg;
+  LogMessage(aot, hashtables) msg;
   if (msg.is_info()) {
     double avg_cost = 0.0;
     if (_num_entries_written > 0) {
@@ -226,7 +226,7 @@ HashtableTextDump::HashtableTextDump(const char* filename) : _fd(-1) {
   if (_fd < 0) {
     quit("Unable to open hashtable dump file", filename);
   }
-  _base = os::map_memory(_fd, filename, 0, nullptr, _size, true, false);
+  _base = os::map_memory(_fd, filename, 0, nullptr, _size, mtNone, true, false);
   if (_base == nullptr) {
     quit("Unable to map hashtable dump file", filename);
   }

@@ -24,7 +24,6 @@
  */
 
 
-#include "jfr/jfrEvents.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcWhen.hpp"
@@ -36,6 +35,7 @@
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "utilities/debug.hpp"
 
 ShenandoahPhaseTimings::Phase ShenandoahTimingsTracker::_current_phase = ShenandoahPhaseTimings::_invalid_phase;

@@ -113,6 +113,11 @@ void ZPhysicalMemoryManager::try_enable_uncommit(size_t min_capacity, size_t max
     return;
   }
 
+  const size_t max_delay_without_overflow = std::numeric_limits<uint64_t>::max() / MILLIUNITS;
+  if (ZUncommitDelay > max_delay_without_overflow) {
+    FLAG_SET_ERGO(ZUncommitDelay, max_delay_without_overflow);
+  }
+
   log_info_p(gc, init)("Uncommit: Enabled");
   log_info_p(gc, init)("Uncommit Delay: %zus", ZUncommitDelay);
 }

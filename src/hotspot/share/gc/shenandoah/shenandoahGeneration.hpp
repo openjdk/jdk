@@ -25,12 +25,12 @@
 #ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
 #define SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
 
-#include "memory/allocation.hpp"
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
+#include "memory/allocation.hpp"
 
 class ShenandoahCollectionSet;
 class ShenandoahHeap;

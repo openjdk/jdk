@@ -77,7 +77,6 @@ public class URIListToFileListBetweenJVMsTest {
         processResults.printProcessStandartOutput(System.out);
     }
 
-    //We cannot make an instance of the applet without the default constructor
     public URIListToFileListBetweenJVMsTest() {
         super();
     }

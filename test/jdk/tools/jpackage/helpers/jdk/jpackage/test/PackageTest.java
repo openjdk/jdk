@@ -42,7 +42,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -54,6 +53,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
@@ -127,8 +127,8 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
-    public PackageTest setExpectedInstallExitCode(int v) {
-        expectedInstallExitCode = v;
+    public PackageTest setExpectedInstallExitCode(int... v) {
+        expectedInstallExitCodes = IntStream.of(v).mapToObj(Integer::valueOf).collect(Collectors.toSet());
         return this;
     }
 
@@ -365,27 +365,37 @@ public final class PackageTest extends RunnablePackageTest {
 
     public static class Group extends RunnablePackageTest {
         public Group(PackageTest... tests) {
-            handlers = Stream.of(tests)
-                    .map(PackageTest::createPackageTypeHandlers)
-                    .flatMap(List<Consumer<Action>>::stream)
-                    .collect(Collectors.toUnmodifiableList());
+            typeHandlers = Stream.of(PackageType.values()).map(type -> {
+                return Map.entry(type, Stream.of(tests).map(test -> {
+                    return test.createPackageTypeHandler(type);
+                }).filter(Optional::isPresent).map(Optional::orElseThrow).toList());
+            }).filter(e -> {
+                return !e.getValue().isEmpty();
+            }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
 
         @Override
         protected void runAction(Action... action) {
-            if (Set.of(action).contains(Action.UNINSTALL)) {
-                ListIterator<Consumer<Action>> listIterator = handlers.listIterator(
-                        handlers.size());
+            typeHandlers.entrySet().stream()
+                    .sorted(Comparator.comparing(Map.Entry::getKey))
+                    .map(Map.Entry::getValue).forEachOrdered(handlers -> {
+                        runAction(handlers, List.of(action));
+                    });
+        }
+
+        private static void runAction(List<Consumer<Action>> handlers, List<Action> actions) {
+            if (actions.contains(Action.UNINSTALL)) {
+                final var listIterator = handlers.listIterator(handlers.size());
                 while (listIterator.hasPrevious()) {
-                    var handler = listIterator.previous();
-                    List.of(action).forEach(handler::accept);
+                    final var handler = listIterator.previous();
+                    actions.forEach(handler::accept);
                 }
             } else {
-                handlers.forEach(handler -> List.of(action).forEach(handler::accept));
+                handlers.forEach(handler -> actions.forEach(handler::accept));
             }
         }
 
-        private final List<Consumer<Action>> handlers;
+        private final Map<PackageType, List<Consumer<Action>>> typeHandlers;
     }
 
     PackageTest packageHandlers(PackageHandlers v) {
@@ -455,24 +465,34 @@ public final class PackageTest extends RunnablePackageTest {
         throw new UnsupportedOperationException();
     }
 
+    private Optional<Consumer<Action>> createPackageTypeHandler(PackageType type) {
+        Objects.requireNonNull(type);
+        return Optional.ofNullable(handlers.get(type)).filter(Predicate.not(Handler::isVoid)).map(h -> {
+            return createPackageTypeHandler(type, h);
+        });
+    }
+
     private List<Consumer<Action>> createPackageTypeHandlers() {
         if (handlers.keySet().stream().noneMatch(isPackageTypeEnabled)) {
             PackageType.throwSkippedExceptionIfNativePackagingUnavailable();
         }
-        return handlers.entrySet().stream()
-                .filter(entry -> !entry.getValue().isVoid())
-                .sorted(Comparator.comparing(Map.Entry::getKey))
-                .map(entry -> {
-                    return  createPackageTypeHandler(entry.getKey(), entry.getValue());
-                }).toList();
+        return Stream.of(PackageType.values()).sorted()
+                .map(this::createPackageTypeHandler)
+                .filter(Optional::isPresent)
+                .map(Optional::orElseThrow)
+                .toList();
     }
 
     private record PackageTypePipeline(PackageType type, int expectedJPackageExitCode,
-            int expectedInstallExitCode, PackageHandlers packageHandlers, Handler handler,
+            Set<Integer> expectedInstallExitCodes, PackageHandlers packageHandlers, Handler handler,
             JPackageCommand cmd, State state) implements Consumer<Action> {
 
         PackageTypePipeline {
             Objects.requireNonNull(type);
+            Objects.requireNonNull(expectedInstallExitCodes);
+            if (expectedInstallExitCodes.isEmpty()) {
+                throw new IllegalArgumentException();
+            }
             Objects.requireNonNull(packageHandlers);
             Objects.requireNonNull(handler);
             Objects.requireNonNull(cmd);
@@ -480,9 +500,9 @@ public final class PackageTest extends RunnablePackageTest {
         }
 
         PackageTypePipeline(PackageType type, int expectedJPackageExitCode,
-                int expectedInstallExitCode, PackageHandlers packageHandlers,
+                Set<Integer> expectedInstallExitCodes, PackageHandlers packageHandlers,
                 Handler handler, JPackageCommand cmd) {
-            this(type, expectedJPackageExitCode, expectedInstallExitCode,
+            this(type, expectedJPackageExitCode, expectedInstallExitCodes,
                     packageHandlers, handler, cmd, new State());
         }
 
@@ -517,9 +537,10 @@ public final class PackageTest extends RunnablePackageTest {
 
                 case INSTALL -> {
                     cmd.setUnpackedPackageLocation(null);
-                    final int installExitCode = packageHandlers.install(cmd);
-                    TKit.assertEquals(expectedInstallExitCode, installExitCode,
-                            String.format("Check installer exited with %d code", expectedInstallExitCode));
+                    final int actualInstallExitCode = packageHandlers.install(cmd);
+                    state.actualInstallExitCode = Optional.of(actualInstallExitCode);
+                    TKit.assertTrue(expectedInstallExitCodes.contains(actualInstallExitCode),
+                            String.format("Check installer exit code %d is one of %s", actualInstallExitCode, expectedInstallExitCodes));
                 }
 
                 case UNINSTALL -> {
@@ -609,7 +630,7 @@ public final class PackageTest extends RunnablePackageTest {
         }
 
         private boolean installFailed() {
-            return processed(Action.INSTALL) && expectedInstallExitCode != 0;
+            return processed(Action.INSTALL) && state.actualInstallExitCode.orElseThrow() != 0;
         }
 
         private boolean jpackageFailed() {
@@ -621,6 +642,7 @@ public final class PackageTest extends RunnablePackageTest {
         }
 
         private static final class State {
+            private Optional<Integer> actualInstallExitCode = Optional.empty();
             private final Set<Action> packageActions = new HashSet<>();
             private final List<Path> deleteUnpackDirs = new ArrayList<>();
         }
@@ -634,7 +656,7 @@ public final class PackageTest extends RunnablePackageTest {
         }
         type.applyTo(cmd);
         return new PackageTypePipeline(type, expectedJPackageExitCode,
-                expectedInstallExitCode, getPackageHandlers(type), handler.copy(), cmd);
+                expectedInstallExitCodes, getPackageHandlers(type), handler.copy(), cmd);
     }
 
     private record Handler(List<Consumer<JPackageCommand>> initializers,
@@ -914,7 +936,7 @@ public final class PackageTest extends RunnablePackageTest {
     private Collection<PackageType> currentTypes;
     private Set<PackageType> excludeTypes;
     private int expectedJPackageExitCode;
-    private int expectedInstallExitCode;
+    private Set<Integer> expectedInstallExitCodes;
     private final Map<PackageType, Handler> handlers;
     private final Set<String> namedInitializers;
     private final Map<PackageType, PackageHandlers> packageHandlers;

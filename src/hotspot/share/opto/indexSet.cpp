@@ -121,7 +121,7 @@ IndexSet::BitBlock *IndexSet::alloc_block_containing(uint element) {
 // Add a BitBlock to the free list.
 
 void IndexSet::free_block(uint i) {
-  debug_only(check_watch("free block", i));
+  DEBUG_ONLY(check_watch("free block", i));
   assert(i < _max_blocks, "block index too large");
   BitBlock *block = _blocks[i];
   assert(block != &_empty_block, "cannot free the empty block");

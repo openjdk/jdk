@@ -46,6 +46,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 
 JVMCICompileState::JVMCICompileState(CompileTask* task, JVMCICompiler* compiler):
   _task(task),
@@ -250,12 +251,9 @@ void JVMCIEnv::check_init(TRAPS) {
   if (_init_error == JNI_OK) {
     return;
   }
-  if (_init_error == JNI_ENOMEM) {
-    THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), "JNI_ENOMEM creating or attaching to libjvmci");
-  }
   stringStream st;
   st.print("Error creating or attaching to libjvmci (err: %d, description: %s)",
-           _init_error, _init_error_msg == nullptr ? "unknown" : _init_error_msg);
+            _init_error, _init_error_msg != nullptr ? _init_error_msg : (_init_error == JNI_ENOMEM ? "JNI_ENOMEM" : "none"));
   THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), st.freeze());
 }
 
@@ -612,7 +610,7 @@ JVMCIEnv::~JVMCIEnv() {
   if (_init_error_msg != nullptr) {
     // The memory allocated in libjvmci was not allocated with os::malloc
     // so must not be freed with os::free.
-    ALLOW_C_FUNCTION(::free, ::free((void*) _init_error_msg);)
+    permit_forbidden_function::free((void*)_init_error_msg);
   }
   if (_init_error != JNI_OK) {
     return;
@@ -1465,8 +1463,7 @@ JVMCIPrimitiveArray JVMCIEnv::new_byteArray(int length, JVMCI_TRAPS) {
 JVMCIObjectArray JVMCIEnv::new_byte_array_array(int length, JVMCI_TRAPS) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
   if (is_hotspot()) {
-    Klass* byteArrayArrayKlass = TypeArrayKlass::cast(Universe::byteArrayKlass())->array_klass(CHECK_(JVMCIObject()));
-    objArrayOop result = ObjArrayKlass::cast(byteArrayArrayKlass) ->allocate(length, CHECK_(JVMCIObject()));
+    objArrayOop result = oopFactory::new_objArray(Universe::byteArrayKlass(), length, CHECK_(JVMCIObject()));
     return wrap(result);
   } else {
     JNIAccessMark jni(this, THREAD);
@@ -1752,7 +1749,7 @@ void JVMCIEnv::initialize_installed_code(JVMCIObject installed_code, CodeBlob* c
 }
 
 
-void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JVMCI_TRAPS) {
+void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, nmethod::ChangeReason change_reason, JVMCI_TRAPS) {
   if (mirror.is_null()) {
     JVMCI_THROW(NullPointerException);
   }
@@ -1775,7 +1772,7 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JV
 
   if (!deoptimize) {
     // Prevent future executions of the nmethod but let current executions complete.
-    nm->make_not_entrant("JVMCI invalidate nmethod mirror");
+    nm->make_not_entrant(change_reason);
 
     // Do not clear the address field here as the Java code may still
     // want to later call this method with deoptimize == true. That requires
@@ -1784,7 +1781,7 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JV
     // Deoptimize the nmethod immediately.
     DeoptimizationScope deopt_scope;
     deopt_scope.mark(nm);
-    nm->make_not_entrant("JVMCI invalidate nmethod mirror");
+    nm->make_not_entrant(change_reason);
     nm->make_deoptimized();
     deopt_scope.deoptimize_marked();
 

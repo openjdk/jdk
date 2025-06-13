@@ -126,12 +126,6 @@ size_t ZCollectedHeap::unused() const {
   return _heap.unused();
 }
 
-bool ZCollectedHeap::is_maximal_no_gc() const {
-  // Not supported
-  ShouldNotReachHere();
-  return false;
-}
-
 bool ZCollectedHeap::is_in(const void* p) const {
   return _heap.is_in((uintptr_t)p);
 }
@@ -238,7 +232,7 @@ size_t ZCollectedHeap::tlab_used(Thread* ignored) const {
 }
 
 size_t ZCollectedHeap::max_tlab_size() const {
-  return _heap.max_tlab_size();
+  return _heap.max_tlab_size() / HeapWordSize;
 }
 
 size_t ZCollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
@@ -355,16 +349,12 @@ void ZCollectedHeap::prepare_for_verify() {
   // Does nothing
 }
 
-void ZCollectedHeap::print_on(outputStream* st) const {
-  StreamAutoIndentor auto_indentor(st);
-
-  _heap.print_on(st);
+void ZCollectedHeap::print_heap_on(outputStream* st) const {
+  _heap.print_usage_on(st);
 }
 
-void ZCollectedHeap::print_on_error(outputStream* st) const {
-  StreamAutoIndentor auto_indentor(st);
-
-  _heap.print_on_error(st);
+void ZCollectedHeap::print_gc_on(outputStream* st) const {
+  _heap.print_gc_on(st);
 }
 
 void ZCollectedHeap::print_tracing_info() const {

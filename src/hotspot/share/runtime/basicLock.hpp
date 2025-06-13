@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,12 +61,12 @@ class BasicLock {
   static int displaced_header_offset_in_bytes() { return metadata_offset_in_bytes(); }
 
   // LM_LIGHTWEIGHT
-  inline ObjectMonitor* object_monitor_cache();
+  inline ObjectMonitor* object_monitor_cache() const;
   inline void clear_object_monitor_cache();
   inline void set_object_monitor_cache(ObjectMonitor* mon);
   static int object_monitor_cache_offset_in_bytes() { return metadata_offset_in_bytes(); }
 
-  void print_on(outputStream* st, oop owner);
+  void print_on(outputStream* st, oop owner) const;
 
   // move a basic lock (used during deoptimization)
   void move_to(oop obj, BasicLock* dest);

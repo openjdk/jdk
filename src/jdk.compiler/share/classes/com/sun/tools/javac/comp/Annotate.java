@@ -187,17 +187,22 @@ public class Annotate {
 
         startFlushing();
         try {
-            while (q.nonEmpty()) {
-                q.next().run();
-            }
-            while (typesQ.nonEmpty()) {
-                typesQ.next().run();
-            }
-            while (afterTypesQ.nonEmpty()) {
-                afterTypesQ.next().run();
-            }
-            while (validateQ.nonEmpty()) {
-                validateQ.next().run();
+            while (q.nonEmpty() ||
+                   typesQ.nonEmpty() ||
+                   afterTypesQ.nonEmpty() ||
+                   validateQ.nonEmpty()) {
+                while (q.nonEmpty()) {
+                    q.next().run();
+                }
+                while (typesQ.nonEmpty()) {
+                    typesQ.next().run();
+                }
+                while (afterTypesQ.nonEmpty()) {
+                    afterTypesQ.next().run();
+                }
+                while (validateQ.nonEmpty()) {
+                    validateQ.next().run();
+                }
             }
         } finally {
             doneFlushing();
@@ -378,6 +383,12 @@ public class Annotate {
             if (!c.type.isErroneous()
                     && types.isSameType(c.type, syms.restrictedType)) {
                 toAnnotate.flags_field |= Flags.RESTRICTED;
+            }
+
+            if (!c.type.isErroneous()
+                    && toAnnotate.kind == VAR
+                    && types.isSameType(c.type, syms.requiresIdentityType)) {
+                toAnnotate.flags_field |= Flags.REQUIRES_IDENTITY;
             }
         }
 
