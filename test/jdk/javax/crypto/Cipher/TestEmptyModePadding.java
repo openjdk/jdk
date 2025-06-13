@@ -24,9 +24,9 @@
 
 /*
  * @test
- * @bug 8358159
- * @summary test that the Cipher.getInstance() handles
- * transformations with empty mode and/or padding
+ * @bug 8358159 8359388
+ * @summary test that the Cipher.getInstance() would reject improper
+ *     transformations with empty mode and/or padding.
  * @run main TestEmptyModePadding
  */
 
@@ -37,20 +37,44 @@ import javax.crypto.*;
 public class TestEmptyModePadding {
 
     public static void main(String[] args) throws Exception {
-        Provider provider = Security.getProvider(System.getProperty("test.provider.name", "SunJCE"));
+        Provider provider = Security.getProvider(
+                System.getProperty("test.provider.name", "SunJCE"));
 
-        test("AES", provider);
-        test("AES/ECB/PKCS5Padding", provider);
-        test("AES//PKCS5Padding", provider);        // Empty mode
-        test("AES/CBC/", provider);                 // Empty padding
-        test("AES/ /NoPadding", provider);          // Mode is a space
-        test("AES/CBC/ ", provider);                // Padding is a space
-        test("AES/ / ", provider);                  // Both mode and padding are spaces
-        test("AES//", provider);                    // Both mode and padding are missing
+        // transformations w/ only 2 components
+        test("AES/", provider);
+        test("AES/ ", provider);
+        test("AES/CBC", provider);
+        test("PBEWithHmacSHA512/224AndAES_128/", provider);
+        test("PBEWithHmacSHA512/256AndAES_128/ ", provider);
+        test("PBEWithHmacSHA512/224AndAES_128/CBC", provider);
 
+        // 3-component transformations w/ empty component(s)
+        test("AES//", provider);
+        test("AES/ /", provider);
+        test("AES// ", provider);
+        test("AES/ / ", provider);
+        test("AES/CBC/", provider);
+        test("AES/CBC/ ", provider);
+        test("AES//PKCS5Padding", provider);
+        test("AES/ /NoPadding", provider);
+        test("PBEWithHmacSHA512/224AndAES_128//", provider);
+        test("PBEWithHmacSHA512/224AndAES_128/ /", provider);
+        test("PBEWithHmacSHA512/224AndAES_128// ", provider);
+        test("PBEWithHmacSHA512/224AndAES_128/ / ", provider);
+        test("PBEWithHmacSHA512/256AndAES_128/CBC/", provider);
+        test("PBEWithHmacSHA512/256AndAES_128/CBC/ ", provider);
+        test("PBEWithHmacSHA512/256AndAES_128//PKCS5Padding", provider);
+        test("PBEWithHmacSHA512/256AndAES_128/ /PKCS5Padding", provider);
     }
 
-    private static void test(String transformation, Provider provider) throws Exception {
-        Cipher c = Cipher.getInstance(transformation, provider);
+    private static void test(String transformation, Provider provider)
+            throws Exception {
+        System.out.println("Testing " + transformation);
+        try {
+            Cipher c = Cipher.getInstance(transformation, provider);
+            throw new RuntimeException("Expected NSAE not thrown");
+        } catch (NoSuchAlgorithmException nsae) {
+            System.out.println("Expected NSAE thrown: " + nsae.getMessage());
+        }
     }
 }
