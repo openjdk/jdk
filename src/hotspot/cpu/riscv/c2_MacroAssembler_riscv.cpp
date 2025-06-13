@@ -2161,29 +2161,21 @@ void C2_MacroAssembler::enc_cmove_cmp_fp(int cmpFlag, FloatRegister op1, FloatRe
 
   switch (op_select) {
     case BoolTest::eq:
-      log_develop_trace(jit, compilation)("C2_MacroAssembler::enc_cmove_cmp_fp => BoolTest::eq");
       cmov_cmp_fp_eq(op1, op2, dst, src, is_single);
       break;
     case BoolTest::ne:
-      log_develop_trace(jit, compilation)("C2_MacroAssembler::enc_cmove_cmp_fp => BoolTest::ne");
       cmov_cmp_fp_ne(op1, op2, dst, src, is_single);
       break;
     case BoolTest::le:
-      log_develop_trace(jit, compilation)("C2_MacroAssembler::enc_cmove_cmp_fp => BoolTest::le");
       cmov_cmp_fp_le(op1, op2, dst, src, is_single);
       break;
     case BoolTest::ge:
-      // This log is for JDK-8358892
-      log_develop_trace(jit, compilation)("C2_MacroAssembler::enc_cmove_cmp_fp => BoolTest::ge");
       cmov_cmp_fp_ge(op1, op2, dst, src, is_single);
       break;
     case BoolTest::lt:
-      log_develop_trace(jit, compilation)("C2_MacroAssembler::enc_cmove_cmp_fp => BoolTest::lt");
       cmov_cmp_fp_lt(op1, op2, dst, src, is_single);
       break;
     case BoolTest::gt:
-      // This log is for JDK-8358892
-      log_develop_trace(jit, compilation)("C2_MacroAssembler::enc_cmove_cmp_fp => BoolTest::gt");
       cmov_cmp_fp_gt(op1, op2, dst, src, is_single);
       break;
     default:
