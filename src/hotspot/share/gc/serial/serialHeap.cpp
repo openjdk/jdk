@@ -146,7 +146,7 @@ GrowableArray<MemoryPool*> SerialHeap::memory_pools() {
 }
 
 void SerialHeap::stop() {
-  log_gc_vtime();
+  CollectedHeap::stop();
 }
 
 void SerialHeap::safepoint_synchronize_begin() {
