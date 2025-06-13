@@ -42,4 +42,3 @@ gtest/MetaspaceGtests.java#no-ccs                       8356201 generic-all
 gtest/NMTGtests.java#nmt-detail                         8356201 generic-all
 gtest/NMTGtests.java#nmt-off                            8356201 generic-all
 gtest/NMTGtests.java#nmt-summary                        8356201 generic-all
-

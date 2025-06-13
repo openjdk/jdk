@@ -81,7 +81,8 @@ public class ResolvedConstants {
 
         SimpleCDSAppTester.of("ResolvedConstantsApp" + (aotClassLinking ? "1" : "0"))
             .addVmArgs(aotClassLinking ? "-XX:+AOTClassLinking" : "-XX:-AOTClassLinking",
-                       "-Xlog:cds+resolve=trace",
+                       "-Xlog:aot+resolve=trace",
+                       "-Xlog:aot+class=debug",
                        "-Xlog:cds+class=debug")
             .classpath(appJar)
             .appCommandLine(mainClass)
@@ -183,14 +184,14 @@ public class ResolvedConstants {
     }
 
     static String ALWAYS(String s) {
-        return "cds,resolve.*archived " + s;
+        return ",resolve.*archived " + s;
     }
 
     static String AOTLINK_ONLY(String s) {
         if (aotClassLinking) {
             return ALWAYS(s);
         } else {
-            return "cds,resolve.*reverted " + s;
+            return ",resolve.*reverted " + s;
         }
     }
 

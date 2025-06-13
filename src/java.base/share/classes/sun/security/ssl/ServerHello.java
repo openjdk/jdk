@@ -356,6 +356,9 @@ final class ServerHello {
                     clientHello);
             shc.serverHelloRandom = shm.serverRandom;
 
+            shc.handshakeSession.setRandoms(shc.clientHelloRandom,
+                    shc.serverHelloRandom);
+
             // Produce extensions for ServerHello handshake message.
             SSLExtension[] serverHelloExtensions =
                 shc.sslConfig.getEnabledExtensions(
@@ -1128,6 +1131,9 @@ final class ServerHello {
                 chc.handshakeSession.setMaximumPacketSize(
                         chc.sslConfig.maximumPacketSize);
             }
+
+            chc.handshakeSession.setRandoms(chc.clientHelloRandom,
+                    chc.serverHelloRandom);
 
             //
             // update

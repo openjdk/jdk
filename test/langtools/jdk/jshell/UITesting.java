@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -62,6 +63,10 @@ public class UITesting {
     }
 
     protected void doRunTest(Test test) throws Exception {
+        doRunTest(test, true);
+    }
+
+    protected void doRunTest(Test test, boolean setUserInput) throws Exception {
         // turn on logging of launch failures
         Logger.getLogger("jdk.jshell.execution").setLevel(Level.ALL);
 
@@ -87,7 +92,7 @@ public class UITesting {
         Thread runner = new Thread(() -> {
             try {
                 JavaShellToolBuilder.builder()
-                        .in(input, input)
+                        .in(input, setUserInput ? input : null)
                         .out(outS)
                         .err(outS)
                         .promptCapture(true)
