@@ -179,12 +179,19 @@
 
   void neon_reverse_bytes(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ);
 
+  void neon_rearrange_hsd(FloatRegister dst, FloatRegister src, FloatRegister shuffle,
+                          FloatRegister tmp, BasicType bt, bool isQ);
   // java.lang.Math::signum intrinsics
   void vector_signum_neon(FloatRegister dst, FloatRegister src, FloatRegister zero,
                           FloatRegister one, SIMD_Arrangement T);
 
   void vector_signum_sve(FloatRegister dst, FloatRegister src, FloatRegister zero,
                          FloatRegister one, FloatRegister vtmp, PRegister pgtmp, SIMD_RegVariant T);
+
+void verify_int_in_range(uint idx, const TypeInt* t, Register val, Register tmp);
+  void verify_long_in_range(uint idx, const TypeLong* t, Register val, Register tmp);
+
+  void reconstruct_frame_pointer(Register rtmp);
 
   // Select from a table of two vectors
   void select_from_two_vectors_SIFNeon(FloatRegister dst, FloatRegister src1, FloatRegister src2,

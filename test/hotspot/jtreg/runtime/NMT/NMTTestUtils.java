@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023 Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,9 +22,9 @@
  * questions.
  */
 
-import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.StringArrayUtils;
+import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 public class NMTTestUtils {
 
@@ -32,13 +32,9 @@ public class NMTTestUtils {
         if (additional_args == null) {
             additional_args = new String[] {};
         }
-        String fullargs[] = new String[3 + additional_args.length];
-        fullargs[0] = JDKToolFinder.getJDKTool("jcmd");
-        fullargs[1] = Long.toString(ProcessTools.getProcessId());
-        fullargs[2] = "VM.native_memory";
-        System.arraycopy(additional_args, 0, fullargs, 3, additional_args.length);
+        String fullargs[] = StringArrayUtils.concat("VM.native_memory", additional_args);
         ProcessBuilder pb = new ProcessBuilder();
-        pb.command(fullargs);
+        pb.command(new PidJcmdExecutor().getCommandLine(fullargs));
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         return output;
     }

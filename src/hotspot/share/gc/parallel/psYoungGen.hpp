@@ -27,7 +27,6 @@
 
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/parallel/objectStartArray.hpp"
-#include "gc/parallel/psGenerationCounters.hpp"
 #include "gc/parallel/psVirtualspace.hpp"
 #include "gc/parallel/spaceCounters.hpp"
 
@@ -51,7 +50,7 @@ class PSYoungGen : public CHeapObj<mtGC> {
   const size_t _max_gen_size;
 
   // Performance counters
-  PSGenerationCounters* _gen_counters;
+  GenerationCounters*   _gen_counters;
   SpaceCounters*        _eden_counters;
   SpaceCounters*        _from_counters;
   SpaceCounters*        _to_counters;

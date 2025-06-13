@@ -26,14 +26,13 @@
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
-#include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 
 #define __ masm->masm()->
 
 void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler* masm) {
-  NOT_LP64(assert(_addr->is_single_cpu(), "must be single");)
   Register addr = _addr->is_single_cpu() ? _addr->as_register() : _addr->as_register_lo();
   Register newval = _new_value->as_register();
   Register cmpval = _cmp_value->as_register();
@@ -46,14 +45,12 @@ void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler* masm) {
   assert(cmpval != addr, "cmp and addr must be in different registers");
   assert(newval != addr, "new value and addr must be in different registers");
 
-#ifdef _LP64
   if (UseCompressedOops) {
     __ encode_heap_oop(cmpval);
     __ mov(rscratch1, newval);
     __ encode_heap_oop(rscratch1);
     newval = rscratch1;
   }
-#endif
 
   ShenandoahBarrierSet::assembler()->cmpxchg_oop(masm->masm(), result, Address(addr, 0), cmpval, newval, false, tmp1, tmp2);
 }
@@ -105,7 +102,7 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRIt
   // Because we want a 2-arg form of xchg and xadd
   __ move(value_opr, result);
 
-  assert(type == T_INT || is_reference_type(type) LP64_ONLY( || type == T_LONG ), "unexpected type");
+  assert(type == T_INT || is_reference_type(type) || type == T_LONG, "unexpected type");
   __ xchg(access.resolved_addr(), result, result, LIR_OprFact::illegalOpr);
 
   if (access.is_oop()) {

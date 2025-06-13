@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/**
- * @test
- * @bug 8072480 8277106 8331027
- * @summary Unit test for CreateSymbols
- * @modules java.compiler
- *          jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.jvm
- *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.compiler/com.sun.tools.javac.util
- *          jdk.jdeps/com.sun.tools.classfile
- * @clean *
- * @run main/othervm CreateSymbolsTest
  */
 
 import java.io.IOException;
@@ -107,8 +93,7 @@ public class CreateSymbolsTest {
                                               "--add-exports", "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
                                               "--add-exports", "jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED",
                                               "--add-exports", "jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
-                                              "--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
-                                              "--add-exports", "jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED"),
+                                              "--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"),
                                       null,
                                       fm.getJavaFileObjectsFromPaths(files)
                                     ).call();

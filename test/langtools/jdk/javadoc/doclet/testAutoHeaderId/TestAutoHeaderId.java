@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8289332 8286470 8309471
+ * @bug 8289332 8286470 8309471 8345555
  * @summary Auto-generate ids for user-defined headings
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -133,33 +133,33 @@ public class TestAutoHeaderId extends JavadocTester {
                     """,
                 """
                     <h2 id="3-0-multi-line-heading-with-extra-whitespace-heading"> 3.0 Multi-line
-                           heading   with extra
-                                     whitespace</h2>""");
+                          heading   with extra
+                                    whitespace</h2>""");
     }
 
     private void checkSearchIndex() {
         checkOutput("tag-search-index.js", true,
                 """
-                    {"l":"Duplicate Text","h":"class p.C","d":"Section","u":"p/C.html#duplicate-text-heading"}""",
+                    {"l":"Duplicate Text","h":"class p.C","k":"16","u":"p/C.html#duplicate-text-heading"}""",
                 """
-                    {"l":"Duplicate Text","h":"class p.C","d":"Section","u":"p/C.html#duplicate-text-heading1"}""",
+                    {"l":"Duplicate Text","h":"class p.C","k":"16","u":"p/C.html#duplicate-text-heading1"}""",
                 """
-                    {"l":"Embedded A-Tag with ID","h":"class p.C","d":"Section","u":"p/C.html#fixed-id-2"}""",
+                    {"l":"Embedded A-Tag with ID","h":"class p.C","k":"16","u":"p/C.html#fixed-id-2"}""",
                 """
-                    {"l":"Embedded Code Tag","h":"class p.C","d":"Section","u":"p/C.html#embedded-code-tag-heading"}""",
+                    {"l":"Embedded Code Tag","h":"class p.C","k":"16","u":"p/C.html#embedded-code-tag-heading"}""",
                 """
-                    {"l":"Embedded Link Tag","h":"class p.C","d":"Section","u":"p/C.html#embedded-link-tag-heading"}""",
+                    {"l":"Embedded Link Tag","h":"class p.C","k":"16","u":"p/C.html#embedded-link-tag-heading"}""",
                 """
-                    {"l":"2.0 Extra (#*!. chars","h":"class p.C","d":"Section","u":"p/C.html#2-0-extra-chars-heading"}""",
+                    {"l":"2.0 Extra (#*!. chars","h":"class p.C","k":"16","u":"p/C.html#2-0-extra-chars-heading"}""",
                 """
-                    {"l":"1.0 First Header","h":"class p.C","d":"Section","u":"p/C.html#1-0-first-header-heading"}""",
+                    {"l":"1.0 First Header","h":"class p.C","k":"16","u":"p/C.html#1-0-first-header-heading"}""",
                 """
-                    {"l":"1.1 Header with ID","h":"class p.C","d":"Section","u":"p/C.html#fixed-id-1"}""",
+                    {"l":"1.1 Header with ID","h":"class p.C","k":"16","u":"p/C.html#fixed-id-1"}""",
                 """
-                    {"l":"3.0 Multi-line heading with extra whitespace","h":"class p.C","d":"Section","u":"p/C.html\
+                    {"l":"3.0 Multi-line heading with extra whitespace","h":"class p.C","k":"16","u":"p/C.html\
                     #3-0-multi-line-heading-with-extra-whitespace-heading"}""",
                 """
-                    {"l":"Other attributes","h":"class p.C","d":"Section","u":"p/C.html#other-attributes-heading"}""");
+                    {"l":"Other attributes","h":"class p.C","k":"16","u":"p/C.html#other-attributes-heading"}""");
     }
 
     private void checkHtmlIndex() {
@@ -182,50 +182,50 @@ public class TestAutoHeaderId extends JavadocTester {
                     <h2 class="title" id="I:D">D</h2>
                     <dl class="index">
                     <dt><a href="p/C.html#duplicate-text-heading" class="search-tag-link">Duplicate Text</a> \
-                    - Search tag in class p.C</dt>
-                    <dd>Section</dd>
+                    - Section in class p.C</dt>
+                    <dd>&nbsp;</dd>
                     <dt><a href="p/C.html#duplicate-text-heading1" class="search-tag-link">Duplicate Text</a>\
-                     - Search tag in class p.C</dt>
-                    <dd>Section</dd>
+                     - Section in class p.C</dt>
+                    <dd>&nbsp;</dd>
                     </dl>
                     <h2 class="title" id="I:E">E</h2>
                     <dl class="index">
                     <dt><a href="p/C.html#2-0-extra-chars-heading" class="search-tag-link">2.0 Extra (#*!. ch\
-                    ars</a> - Search tag in class p.C</dt>
-                    <dd>Section</dd>
+                    ars</a> - Section in class p.C</dt>
+                    <dd>&nbsp;</dd>
                     <dt><a href="p/C.html#fixed-id-2" class="search-tag-link">Embedded A-Tag with ID</a> - Se\
-                    arch tag in class p.C</dt>
-                    <dd>Section</dd>
+                    ction in class p.C</dt>
+                    <dd>&nbsp;</dd>
                     <dt><a href="p/C.html#embedded-code-tag-heading" class="search-tag-link">Embedded Code Ta\
-                    g</a> - Search tag in class p.C</dt>
-                    <dd>Section</dd>
+                    g</a> - Section in class p.C</dt>
+                    <dd>&nbsp;</dd>
                     <dt><a href="p/C.html#embedded-link-tag-heading" class="search-tag-link">Embedded Link Ta\
-                    g</a> - Search tag in class p.C</dt>
-                    <dd>Section</dd>
+                    g</a> - Section in class p.C</dt>
+                    <dd>&nbsp;</dd>
                     </dl>
                     <h2 class="title" id="I:F">F</h2>
                     <dl class="index">
                     <dt><a href="p/C.html#1-0-first-header-heading" class="search-tag-link">1.0 First Header<\
-                    /a> - Search tag in class p.C</dt>
-                    <dd>Section</dd>
+                    /a> - Section in class p.C</dt>
+                    <dd>&nbsp;</dd>
                     </dl>
                     <h2 class="title" id="I:H">H</h2>
                     <dl class="index">
-                    <dt><a href="p/C.html#fixed-id-1" class="search-tag-link">1.1 Header with ID</a> - Search\
-                     tag in class p.C</dt>
-                    <dd>Section</dd>
+                    <dt><a href="p/C.html#fixed-id-1" class="search-tag-link">1.1 Header with ID</a> - Sectio\
+                    n in class p.C</dt>
+                    <dd>&nbsp;</dd>
                     </dl>
                     <h2 class="title" id="I:M">M</h2>
                     <dl class="index">
                     <dt><a href="p/C.html#3-0-multi-line-heading-with-extra-whitespace-heading" class="search\
-                    -tag-link">3.0 Multi-line heading with extra whitespace</a> - Search tag in class p.C</dt>
-                    <dd>Section</dd>
+                    -tag-link">3.0 Multi-line heading with extra whitespace</a> - Section in class p.C</dt>
+                    <dd>&nbsp;</dd>
                     </dl>
                     <h2 class="title" id="I:O">O</h2>
                     <dl class="index">
                     <dt><a href="p/C.html#other-attributes-heading" class="search-tag-link">Other attributes<\
-                    /a> - Search tag in class p.C</dt>
-                    <dd>Section</dd>
+                    /a> - Section in class p.C</dt>
+                    <dd>&nbsp;</dd>
                     </dl>
                     <h2 class="title" id="I:P">P</h2>
                     <dl class="index">

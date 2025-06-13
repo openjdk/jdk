@@ -53,7 +53,6 @@ private:
   static uint NOT_FOUND;
 
   ShenandoahGenerationalHeap* _heap;
-  ShenandoahOldGeneration* _old_gen;
 
   // After final marking of the old generation, this heuristic will select
   // a set of candidate regions to be included in subsequent mixed collections.
@@ -185,6 +184,9 @@ public:
   void record_cycle_end() override;
 
   bool should_start_gc() override;
+
+  // Returns true if the old generation needs to prepare for marking, or continue marking.
+  bool should_resume_old_cycle();
 
   void record_success_concurrent() override;
 

@@ -68,8 +68,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageVariable key="%currency40" value="(BRL|CNY|EUR|GBP|INR|JPY|RUB|USD)"/>
 		<coverageVariable key="%currency60" value="(AUD|CAD|CHF|DKK|HKD|IDR|KRW|MXN|NOK|PLN|SAR|SEK|THB|TRY|TWD|ZAR)"/>
 		<coverageVariable key="%currency60_EU" value="(CZK|HUF)"/>
+		<!-- Restore ZWG to currency80 in next submission cycle https://unicode-org.atlassian.net/browse/CLDR-18258 -->
 		<coverageVariable key="%currency80" value="(AED|AFN|ALL|AMD|ANG|AOA|ARS|AWG|AZN|BAM|BBD|BDT|BGN|BHD|BIF|BMD|BND|BOB|BSD|BTN|BWP|BYN|BZD|CDF|CLP|CNH|COP|CRC|CUC|CUP|CVE|CZK|DJF|DOP|DZD|EGP|ERN|ETB|FJD|FKP|GEL|GHS|GIP|GMD|GNF|GTQ|GYD|HNL|HRK|HTG|HUF|ILS|IQD|IRR|ISK|JMD|JOD|KES|KGS|KHR|KMF|KPW|KWD|KYD|KZT|LAK|LBP|LKR|LRD|LSL|LYD|MAD|MDL|MGA|MKD|MMK|MNT|MOP|MRU|MUR|MVR|MWK|MYR|MZN|NAD|NGN|NIO|NPR|NZD|OMR|PAB|PEN|PGK|PHP|PKR|PYG|QAR|RON|RSD|RWF|SBD|SCR|SDG|SGD|SHP|SL[EL]|SOS|SRD|SSP|STN|SYP|SZL|TJS|TMT|TND|TOP|TTD|TZS|UAH|UGX|UYU|UZS|VES|VND|VUV|WST|XCD|XAF|XOF|XPF|YER|ZMW)"/>
-		<coverageVariable key="%currency100" value="(AFA|ADP|ALK|AO[KNR]|AR[ALMP]|ATS|AZM|BA[DN]|BE[CFL]|BG[LM]|BGO|BO[LPV]|BR[BCENRZ]|BUK|BY[BR]|CH[EW]|CL[EF]|CNX|COU|CS[DK]|CYP|DDM|DEM|EC[SV]|EEK|ES[ABP]|FIM|FRF|GEK|GHC|GNS|GQE|GRD|GW[EP]|HRD|IEP|IL[PR]|ISJ|ITL|KR[HO]|LT[LT]|LU[CFL]|LV[LR]|MAF|MCF|MDC|MGF|MKN|MLF|MRO|MT[LP]|MVP|MX[PV]|MZ[EM]|NIC|NLG|PE[IS]|PLZ|PTE|RHD|ROL|RUR|SD[DP]|SIT|SKK|SRG|STD|SUR|SVC|TJR|TMM|TPE|TRL|UAK|UGS|US[NS]|UY[IPW]|VE[BF]|VNN|XA[GU]|XB[ABCD]|XDR|XEU|XF[OU]|XP[DT]|XRE|XSU|XTS|XUA|YDD|YU[DMNR]|ZAL|ZMK|ZR[NZ]|ZW[DLR])"/>
+		<coverageVariable key="%currency100" value="(AFA|ADP|ALK|AO[KNR]|AR[ALMP]|ATS|AZM|BA[DN]|BE[CFL]|BG[LM]|BGO|BO[LPV]|BR[BCENRZ]|BUK|BY[BR]|CH[EW]|CL[EF]|CNX|COU|CS[DK]|CYP|DDM|DEM|EC[SV]|EEK|ES[ABP]|FIM|FRF|GEK|GHC|GNS|GQE|GRD|GW[EP]|HRD|IEP|IL[PR]|ISJ|ITL|KR[HO]|LT[LT]|LU[CFL]|LV[LR]|MAF|MCF|MDC|MGF|MKN|MLF|MRO|MT[LP]|MVP|MX[PV]|MZ[EM]|NIC|NLG|PE[IS]|PLZ|PTE|RHD|ROL|RUR|SD[DP]|SIT|SKK|SRG|STD|SUR|SVC|TJR|TMM|TPE|TRL|UAK|UGS|US[NS]|UY[IPW]|VE[BF]|VNN|XA[GU]|XB[ABCD]|XDR|XEU|XF[OU]|XP[DT]|XRE|XSU|XTS|XUA|YDD|YU[DMNR]|ZAL|ZMK|ZR[NZ]|ZW[DLRG])"/>
 		<coverageVariable key="%cyclicNameTypes" value="([1-9]?[0-9])"/>
 		<coverageVariable key="%d0Types80" value="(ascii|fwidth|hwidth|lower|title|upper)"/>
 		<coverageVariable key="%dateFormatItems" value="((E|d|Ed|EEEEd)|((Gy|y|yyyy|U)?(M|Md|MEd|MEEEEd|MMM|MMMd|MMMEd|MMMEEEEd|MMMM|MMMMd|MMMMEd|MMMMEEEEd))|((Gy|y|yyyy)(QQQ|QQQQ)?))"/>
@@ -107,7 +108,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageVariable key="%language60_TD" value="(shu|dzg|kbl|mde|mua|sba)"/>
 		<!-- See CLDR-16673: All basic+ locales (per coverageLevels.txt) MUST have their language's name at least at level 80 (modern), except for those on exception list -->
 		<!-- Can use MinimizeRegex.java to "unpack" the compressed lists that are painful to edit -->
-		<coverageVariable key="%language80" value="(af|am|ar|as|az|be|bg|bgc|bho|bn|brx|bs|ca|ceb|cs|cv|cy|da|de|doi|el|en|es|et|eu|fa|fi|fil|fr|ga|gd|gl|gu|ha|he|hi|hr|hu|hy|id|ig|is|it|ja|jv|ka|kk|km|kn|ko|kok|ks|ky|lo|lt|lv|mai|mi|mk|ml|mn|mni|mr|ms|my|ne|nl|nn|no|or|pa|pcm|pl|ps|pt|raj|ro|ru|sa|sat|sd|si|sk|sl|so|sq|sr|su|sv|sw|ta|te|tg|th|ti|tk|tr|tt|uk|ur|uz|vi|wo|xh|yo|yue|zh|zu|ast|blo|br|chr|csw|dsb|eo|ff|fo|fy|hsb|ia|ie|kea|kgp|ku|kxv|lb|lij|lmo|mt|nds|nqo|oc|prg|qu|rm|sah|sc|syr|szl|to|ug|vec|vmw|xnr|yrl|za|mul|root|zxx|und)"/>
+		<coverageVariable key="%language80" value="(af|ak|am|ar|as|az|be|bg|bgc|bho|bn|brx|bs|ca|ceb|cs|cv|cy|da|de|doi|ee|el|en|es|et|eu|fa|fi|fil|fr|ga|gaa|gd|gl|gu|ha|he|hi|hr|hu|hy|id|ig|ii|is|it|ja|jv|ka|kk|km|kn|ko|kok|ks|ky|lo|lt|lv|mai|mi|mk|ml|mn|mni|mr|ms|my|ne|nl|nn|no|nso|om|or|pa|pcm|pl|ps|pt|raj|ro|ru|rw|sa|sat|sd|si|sk|sl|so|sq|sr|st|su|sv|sw|ta|te|tg|th|ti|tk|tn|tr|tt|uk|ur|uz|vi|wo|xh|yo|yue|zh|zu|ast|blo|br|chr|csw|dsb|eo|ff|fo|fy|hsb|ia|ie|kea|kgp|ku|kxv|lb|lij|lmo|mt|nds|nqo|oc|prg|qu|rm|sah|sc|syr|szl|to|ug|vec|vmw|xnr|yrl|za|mul|root|zxx|und)"/>
 		<coverageVariable key="%lbTypes80" value="(strict|normal|loose)"/>
 		<coverageVariable key="%lwTypes" value="(normal|breakall|keepall|phrase)"/>
 		<coverageVariable key="%m0Types80" value="(bgn|prprname|ungegn)"/>
@@ -171,6 +172,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageVariable key="%unitsCommonUS" value="(length-(inch|foot|yard|mile)|mass-(ounce|pound)|temperature-fahrenheit|speed-mile-per-hour)"/>
 		<coverageVariable key="%unitsEnglish" value="(length-fathom|length-furlong|mass-stone|volume-bushel|energy-british-thermal-unit)"/>
 		<coverageVariable key="%unitsNonEnglish" value="[a-z]++-(?!(furlong|fathom|stone|bushel|mile-nautical))([a-z]++([-a-z]++)?)"/>
+		<coverageVariable key="%unitsNonLightSpeed" value="[a-z]++-(?!(light-speed))"/>
 		<coverageVariable key="%unitsOther" value="(length-(picometer|light-year)|pressure-(hectopascal|inch-ofhg|millibar)|acceleration-g-force|angle-(degree|minute|second)|area-(acre|hectare|square-(foot|kilometer|meter|mile))|power-(horsepower|kilowatt|watt)|speed-meter-per-second|volume-cubic-(mile|kilometer))"/>
 		<coverageVariable key="%unitBeaufortRegions" value="(CN|DE|GB|GR|HK|MO|MT|NL|TW|US)"/>
 		<coverageVariable key="%variantTypes" value="([A-Z0-9]++)"/>
@@ -228,6 +230,38 @@ For terms of use, see http://www.unicode.org/copyright.html
 
 		<coverageLevel value="moderate" match="characters/exemplarCharacters[@type='%anyAlphaNum']"/>
 
+
+		<!-- *********************
+		Temporary overrides for https://unicode-org.atlassian.net/browse/CLDR-18258
+
+		These overrides help us ignore values that were added not during a submission cycle. If interpreted normally, it
+		would cause many supported locales to drop in coverage. During the next regular submission cycle, please remove these rules
+		and encourage linguists to fix these values.
+		********************* -->
+		<!-- <coverageLevel	value="modern" inLanguage="de"	match="units/unitLength[@type='%unitLengths']/unit[@type='speed-light-speed']/unitPattern[@count='%anyAttribute']/[@case='%anyAttribute']"/>
+		<coverageLevel	value="modern"	match="units/unitLength[@type='%unitLengths']/unit[@type='speed-light-speed']/unitPattern[@count='%anyAttribute']"/>
+		<coverageLevel	value="modern"	match="units/unitLength[@type='%unitLengths']/unit[@type='speed-light-speed']/displayName"/> -->
+		<coverageLevel	value="comprehensive"	match="units/unitLength[@type='%unitLengths']/unit[@type='speed-light-speed']/unitPattern[@count='%anyAttribute'][@case='%anyAttribute']"/>
+
+		<!-- <coverageLevel inTerritory="%unitBeaufortRegions" value="modern" match="units/unitLength[@type='%unitLengths']/unit[@type='speed-beaufort']/unitPattern[@count='%anyAttribute'][@case='%anyAttribute']"/>
+		<coverageLevel inTerritory="%unitBeaufortRegions" value="modern" match="units/unitLength[@type='%unitLengths']/unit[@type='speed-beaufort']/unitPattern[@count='%anyAttribute']"/>
+		//ldml/units/unitLength[@type="long"]/unit[@type="speed-light-speed"]/unitPattern[@count="one"]
+modern //ldml/units/unitLength[@type="long"]/unit[@type="speed-light-speed"]/unitPattern[@count="one"][@case="accusative"]
+//ldml/units/unitLength[@type="long"]/unit[@type="speed-light-speed"]/unitPattern[@count="other"][@case="accusative"] -->
+		<coverageLevel	value="comprehensive"	match="units/unitLength[@type='%unitLengths']/unit[@type='speed-light-speed']/unitPattern[@count='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	match="units/unitLength[@type='%unitLengths']/unit[@type='speed-light-speed']/displayName"/>
+
+    <!-- TestCoverageCompleteness {
+      Error: (TestCoverageLevel.java:729) Comprehensive & no exception for path =>      //ldml/units/unitLength[@type="long"]/unit[@type="speed-light-speed"]/unitPattern[@count="one"]
+      Error: (TestCoverageLevel.java:729) Comprehensive & no exception for path =>      //ldml/units/unitLength[@type="short"]/unit[@type="speed-light-speed"]/displayName
+      Error: (TestCoverageLevel.java:729) Comprehensive & no exception for path =>      //ldml/units/unitLength[@type="short"]/unit[@type="speed-light-speed"]/unitPattern[@count="one"]
+      Error: (TestCoverageLevel.java:729) Comprehensive & no exception for path =>      //ldml/units/unitLength[@type="short"]/unit[@type="speed-light-speed"]/unitPattern[@count="other"]
+      Error: (TestCoverageLevel.java:729) Comprehensive & no exception for path =>      //ldml/units/unitLength[@type="long"]/unit[@type="speed-light-speed"]/displayName
+      Error: (TestCoverageLevel.java:729) Comprehensive & no exception for path =>      //ldml/units/unitLength[@type="long"]/unit[@type="speed-light-speed"]/unitPattern[@count="other"]
+	   Error: (TestCoverageLevel.java:849) de (0) Broken Logical Grouping: comprehensive => [//ldml/units/unitLength[@type="long"]/unit[@type="speed-light-speed"]/unitPattern[@count="one"], //ldml/units/unitLength[@type="long"]/unit[@type="speed-light-speed"]/unitPattern[@count="other"]]
+      Error: (TestCoverageLevel.java:849) pl (0) Broken Logical Grouping: modern => [//ldml/units/unitLength[@type="long"]/unit[@type="speed-light-speed"]/unitPattern[@count="few"][@case="accusative"], //ldml/units/unitLength[@type="long"]/unit[@type="speed-light-speed"]/unitPattern[@count="few"][@case="genitive"], //ldml/units/unitLength[@type="long"]/unit[@type="speed-light-speed"]/unitPattern[@count="many"][@case="accusative"], //ldml/units/unitLength[@type="long"]/unit[@type="speed-light-speed"]/unitPattern[@count="many"][@case="genitive"], //ldml/units/unitLength[@type="long"]/unit[@type="speed-light-speed"]/unitPattern[@count="one"][@case="accusative"], //ldml/units/unitLength[@type="long"]/unit[@type="speed-light-speed"]/unitPattern[@count="one"][@case="genitive"], //ldml/units/unitLength[@type="long"]/unit[@type="speed-light-speed"]/unitPattern[@count="other"][@case="accusative"], //ldml/units/unitLength[@type="long"]/unit[@type="speed-light-speed"]/unitPattern[@count="other"][@case="genitive"]]
+      Error: (TestCoverageLevel.java:849) pl (0) Broken Logical Grouping: comprehensive => [//ldml/units/unitLength[@type="long"]/unit[@type="speed-light-speed"]/unitPattern[@count="few"], //ldml/units/unitLength[@type="long"]/unit[@type="speed-light-speed"]/unitPattern[@count="many"], //ldml/units/unitLength[@type="long"]/unit[@type="speed-light-speed"]/unitPattern[@count="one"], //ldml/units/unitLength[@type="long"]/unit[@type="speed-light-speed"]/unitPattern[@count="other"]]
+    } (1.309s) FAILED (4 failure(s)) -->
 		<!-- *********************
 		Modified Basic rules (v41)
 		These contain a mixture of basic and moderate.
@@ -510,6 +544,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageLevel	value="basic"	 	match="numbers/decimalFormats[@numberSystem='latn']/decimalFormatLength/decimalFormat%stdPattern"/>
 		<coverageLevel	value="basic"	 	match="numbers/percentFormats[@numberSystem='latn']/percentFormatLength/percentFormat%stdPattern"/>
 		<coverageLevel	value="basic"	 	match="numbers/scientificFormats[@numberSystem='latn']/scientificFormatLength/scientificFormat%stdPattern"/>
+		<coverageLevel	value="moderate"	match="numbers/currencyFormats[@numberSystem='latn']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
 		<coverageLevel	value="basic"	 	match="numbers/currencyFormats[@numberSystem='latn']/currencyFormatLength/currencyFormat%stdPattern"/>
 		<coverageLevel	value="moderate"	match="numbers/currencyFormats[@numberSystem='latn']/unitPattern[@count='%anyAttribute']"/>
 
@@ -519,42 +554,73 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageLevel	value="moderate"	match="numbers/decimalFormats[@numberSystem='latn']/decimalFormatLength[@type='%shortLong']/decimalFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute']"/>
 
 		<!-- non-latn default number systems, standard formats for decimal/currency/percent/etc also at basic per TC 2024-05-08 -->
-		<coverageLevel	value="moderate"	inScript="%adlmDefaultScripts" match="numbers/currencyFormats[@numberSystem='adlm']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
+
+		<!-- *********************
+		Most comprehensive levels are temporary overrides for https://unicode-org.atlassian.net/browse/CLDR-18258
+
+		These overrides help us ignore values that were added not during a submission cycle. If interpreted normally, it
+		would cause many supported locales to drop in coverage. During the next regular submission cycle, please remove these rules
+		and encourage linguists to fix these values. The 4 values should be moderate / basic / modern / moderate.
+		********************* -->
+		<coverageLevel	value="comprehensive"	inScript="%adlmDefaultScripts" match="numbers/currencyFormats[@numberSystem='adlm']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
 		<coverageLevel	value="basic"		inScript="%adlmDefaultScripts" match="numbers/currencyFormats[@numberSystem='adlm']/currencyFormatLength/currencyFormat%stdPattern"/>
-		<coverageLevel	value="moderate"	inScript="%adlmDefaultScripts" match="numbers/currencyFormats[@numberSystem='adlm']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
-		<coverageLevel	value="moderate"	inLanguage="%arabDefaultLanguages" inScript="Arab" match="numbers/currencyFormats[@numberSystem='arab']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	    inScript="%adlmDefaultScripts" match="numbers/currencyFormats[@numberSystem='adlm']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute'][@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	inScript="%adlmDefaultScripts" match="numbers/currencyFormats[@numberSystem='adlm']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute']"/>
+
+		<coverageLevel	value="comprehensive"	inLanguage="%arabDefaultLanguages" inScript="Arab" match="numbers/currencyFormats[@numberSystem='arab']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
 		<coverageLevel	value="basic"		inLanguage="%arabDefaultLanguages" inScript="Arab" match="numbers/currencyFormats[@numberSystem='arab']/currencyFormatLength/currencyFormat%stdPattern"/>
-		<coverageLevel	value="moderate"	inLanguage="%arabDefaultLanguages" inScript="Arab" match="numbers/currencyFormats[@numberSystem='arab']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
-		<coverageLevel	value="moderate"	inLanguage="%arabextDefaultLanguages" inScript="Arab" match="numbers/currencyFormats[@numberSystem='arabext']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	    inLanguage="%arabDefaultLanguages" inScript="Arab" match="numbers/currencyFormats[@numberSystem='arab']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute'][@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	inLanguage="%arabDefaultLanguages" inScript="Arab" match="numbers/currencyFormats[@numberSystem='arab']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute']"/>
+
+		<coverageLevel	value="comprehensive"	inLanguage="%arabextDefaultLanguages" inScript="Arab" match="numbers/currencyFormats[@numberSystem='arabext']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
 		<coverageLevel	value="basic"		inLanguage="%arabextDefaultLanguages" inScript="Arab" match="numbers/currencyFormats[@numberSystem='arabext']/currencyFormatLength/currencyFormat%stdPattern"/>
-		<coverageLevel	value="moderate"	inLanguage="%arabextDefaultLanguages" inScript="Arab" match="numbers/currencyFormats[@numberSystem='arabext']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
-		<coverageLevel	value="moderate"	inScript="%bengDefaultScripts"	match="numbers/currencyFormats[@numberSystem='beng']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	    inLanguage="%arabextDefaultLanguages" inScript="Arab" match="numbers/currencyFormats[@numberSystem='arabext']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute'][@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	inLanguage="%arabextDefaultLanguages" inScript="Arab" match="numbers/currencyFormats[@numberSystem='arabext']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute']"/>
+
+		<coverageLevel	value="comprehensive"	inScript="%bengDefaultScripts"	match="numbers/currencyFormats[@numberSystem='beng']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
 		<coverageLevel	value="basic"		inScript="%bengDefaultScripts"	match="numbers/currencyFormats[@numberSystem='beng']/currencyFormatLength/currencyFormat%stdPattern"/>
-		<coverageLevel	value="moderate"	inScript="%bengDefaultScripts"	match="numbers/currencyFormats[@numberSystem='beng']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
-		<coverageLevel	value="moderate"	inScript="%cakmDefaultScripts"	match="numbers/currencyFormats[@numberSystem='cakm']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	    inScript="%bengDefaultScripts"	match="numbers/currencyFormats[@numberSystem='beng']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute'][@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	inScript="%bengDefaultScripts"	match="numbers/currencyFormats[@numberSystem='beng']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute']"/>
+
+		<coverageLevel	value="comprehensive"	inScript="%cakmDefaultScripts"	match="numbers/currencyFormats[@numberSystem='cakm']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
 		<coverageLevel	value="basic"		inScript="%cakmDefaultScripts"	match="numbers/currencyFormats[@numberSystem='cakm']/currencyFormatLength/currencyFormat%stdPattern"/>
-		<coverageLevel	value="moderate"	inScript="%cakmDefaultScripts"	match="numbers/currencyFormats[@numberSystem='cakm']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
-		<coverageLevel	value="moderate"	inLanguage="%devaDefaultLanguages" inScript="Deva" match="numbers/currencyFormats[@numberSystem='deva']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	    inScript="%cakmDefaultScripts"	match="numbers/currencyFormats[@numberSystem='cakm']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute'][@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	inScript="%cakmDefaultScripts"	match="numbers/currencyFormats[@numberSystem='cakm']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute']"/>
+
+		<coverageLevel	value="comprehensive"	inLanguage="%devaDefaultLanguages" inScript="Deva" match="numbers/currencyFormats[@numberSystem='deva']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
 		<coverageLevel	value="basic"		inLanguage="%devaDefaultLanguages" inScript="Deva" match="numbers/currencyFormats[@numberSystem='deva']/currencyFormatLength/currencyFormat%stdPattern"/>
-		<coverageLevel	value="moderate"	inLanguage="%devaDefaultLanguages" inScript="Deva" match="numbers/currencyFormats[@numberSystem='deva']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
-		<coverageLevel	value="moderate"	inScript="%hmnpDefaultScripts"	match="numbers/currencyFormats[@numberSystem='hmnp']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	    inLanguage="%devaDefaultLanguages" inScript="Deva" match="numbers/currencyFormats[@numberSystem='deva']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute'][@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	inLanguage="%devaDefaultLanguages" inScript="Deva" match="numbers/currencyFormats[@numberSystem='deva']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute']"/>
+
+		<coverageLevel	value="comprehensive"	inScript="%hmnpDefaultScripts"	match="numbers/currencyFormats[@numberSystem='hmnp']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
 		<coverageLevel	value="basic"		inScript="%hmnpDefaultScripts"	match="numbers/currencyFormats[@numberSystem='hmnp']/currencyFormatLength/currencyFormat%stdPattern"/>
-		<coverageLevel	value="moderate"	inScript="%hmnpDefaultScripts"	match="numbers/currencyFormats[@numberSystem='hmnp']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
-		<coverageLevel	value="moderate"	inScript="%mteiDefaultScripts"	match="numbers/currencyFormats[@numberSystem='mtei']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	    inScript="%hmnpDefaultScripts"	match="numbers/currencyFormats[@numberSystem='hmnp']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute'][@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	inScript="%hmnpDefaultScripts"	match="numbers/currencyFormats[@numberSystem='hmnp']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute']"/>
+
+		<coverageLevel	value="comprehensive"	inScript="%mteiDefaultScripts"	match="numbers/currencyFormats[@numberSystem='mtei']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
 		<coverageLevel	value="basic"		inScript="%mteiDefaultScripts"	match="numbers/currencyFormats[@numberSystem='mtei']/currencyFormatLength/currencyFormat%stdPattern"/>
-		<coverageLevel	value="moderate"	inScript="%mteiDefaultScripts"	match="numbers/currencyFormats[@numberSystem='mtei']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
-		<coverageLevel	value="moderate"	inLanguage="%mymrDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='mymr']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	    inScript="%mteiDefaultScripts"	match="numbers/currencyFormats[@numberSystem='mtei']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute'][@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	inScript="%mteiDefaultScripts"	match="numbers/currencyFormats[@numberSystem='mtei']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute']"/>
+
+		<coverageLevel	value="comprehensive"	inLanguage="%mymrDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='mymr']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
 		<coverageLevel	value="basic"		inLanguage="%mymrDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='mymr']/currencyFormatLength/currencyFormat%stdPattern"/>
-		<coverageLevel	value="moderate"	inLanguage="%mymrDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='mymr']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
-		<coverageLevel	value="moderate"	inLanguage="%nkooDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='nkoo']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	    inLanguage="%mymrDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='mymr']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute'][@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	inLanguage="%mymrDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='mymr']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute']"/>
+
+		<coverageLevel	value="comprehensive"	inLanguage="%nkooDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='nkoo']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
 		<coverageLevel	value="basic"		inLanguage="%nkooDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='nkoo']/currencyFormatLength/currencyFormat%stdPattern"/>
-		<coverageLevel	value="moderate"	inLanguage="%nkooDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='nkoo']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
-		<coverageLevel	value="moderate"	inScript="%olckDefaultScripts"	match="numbers/currencyFormats[@numberSystem='olck']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	    inLanguage="%nkooDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='nkoo']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute'][@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	inLanguage="%nkooDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='nkoo']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute']"/>
+
+		<coverageLevel	value="comprehensive"	inScript="%olckDefaultScripts"	match="numbers/currencyFormats[@numberSystem='olck']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
 		<coverageLevel	value="basic"		inScript="%olckDefaultScripts"	match="numbers/currencyFormats[@numberSystem='olck']/currencyFormatLength/currencyFormat%stdPattern"/>
-		<coverageLevel	value="moderate"	inScript="%olckDefaultScripts"	match="numbers/currencyFormats[@numberSystem='olck']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
-		<coverageLevel	value="moderate"	inLanguage="%tibtDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='tibt']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	    inScript="%olckDefaultScripts"	match="numbers/currencyFormats[@numberSystem='olck']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute'][@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	inScript="%olckDefaultScripts"	match="numbers/currencyFormats[@numberSystem='olck']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute']"/>
+
+		<coverageLevel	value="comprehensive"	inLanguage="%tibtDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='tibt']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
 		<coverageLevel	value="basic"		inLanguage="%tibtDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='tibt']/currencyFormatLength/currencyFormat%stdPattern"/>
-		<coverageLevel	value="moderate"	inLanguage="%tibtDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='tibt']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
+		<coverageLevel	value="comprehensive"	    inLanguage="%tibtDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='tibt']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute'][@alt='%anyAttribute']"/>
+		<coverageLevel	value="comprehensive"	inLanguage="%tibtDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='tibt']/currencyFormatLength[@type='short']/currencyFormat[@type='standard']/pattern[@type='%compactDecimalTypes'][@count='%anyAttribute']"/>
 	
 		<coverageLevel	value="moderate"	inScript="%adlmDefaultScripts"	match="numbers/decimalFormats[@numberSystem='adlm']/decimalFormatLength[@type='%shortLong']/decimalFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
 		<coverageLevel	value="basic"		inScript="%adlmDefaultScripts"	match="numbers/decimalFormats[@numberSystem='adlm']/decimalFormatLength/decimalFormat%stdPattern"/>

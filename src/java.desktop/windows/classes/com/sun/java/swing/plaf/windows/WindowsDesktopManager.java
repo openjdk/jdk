@@ -52,7 +52,7 @@ import java.lang.ref.WeakReference;
  * @author Thomas Ball
  */
 @SuppressWarnings("serial") // JDK-implementation class
-public class WindowsDesktopManager extends DefaultDesktopManager
+public final class WindowsDesktopManager extends DefaultDesktopManager
         implements java.io.Serializable, javax.swing.plaf.UIResource {
 
     /* The frame which is currently selected/activated.
@@ -60,6 +60,7 @@ public class WindowsDesktopManager extends DefaultDesktopManager
      */
     private WeakReference<JInternalFrame> currentFrameRef;
 
+    @Override
     public void activateFrame(JInternalFrame f) {
         JInternalFrame currentFrame = currentFrameRef != null ?
             currentFrameRef.get() : null;

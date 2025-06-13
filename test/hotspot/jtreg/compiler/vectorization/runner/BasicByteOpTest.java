@@ -66,7 +66,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     // ---------------- Arithmetic ----------------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.SUB_VB, ">0"})
     public byte[] vectorNeg() {
         byte[] res = new byte[SIZE];
@@ -77,7 +77,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "ssse3", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "ssse3", "true", "rvv", "true"},
         counts = {IRNode.ABS_VB, ">0"})
     public byte[] vectorAbs() {
         byte[] res = new byte[SIZE];
@@ -88,7 +88,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.ADD_VB, ">0"})
     public byte[] vectorAdd() {
         byte[] res = new byte[SIZE];
@@ -99,7 +99,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.SUB_VB, ">0"})
     public byte[] vectorSub() {
         byte[] res = new byte[SIZE];
@@ -110,7 +110,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true", "rvv", "true"},
         counts = {IRNode.MUL_VB, ">0"})
     public byte[] vectorMul() {
         byte[] res = new byte[SIZE];
@@ -121,7 +121,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true", "rvv", "true"},
         counts = {IRNode.MUL_VB, ">0", IRNode.ADD_VB, ">0"})
     public byte[] vectorMulAdd() {
         byte[] res = new byte[SIZE];
@@ -132,7 +132,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true", "rvv", "true"},
         counts = {IRNode.MUL_VB, ">0", IRNode.SUB_VB, ">0"})
     public byte[] vectorMulSub() {
         byte[] res = new byte[SIZE];
@@ -144,7 +144,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     // ---------------- Logic ----------------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.XOR_VB, ">0"})
     public byte[] vectorNot() {
         byte[] res = new byte[SIZE];
@@ -155,7 +155,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.AND_VB, ">0"})
     public byte[] vectorAnd() {
         byte[] res = new byte[SIZE];
@@ -166,7 +166,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.OR_VB, ">0"})
     public byte[] vectorOr() {
         byte[] res = new byte[SIZE];
@@ -177,7 +177,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.XOR_VB, ">0"})
     public byte[] vectorXor() {
         byte[] res = new byte[SIZE];

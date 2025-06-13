@@ -25,12 +25,12 @@
 #ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
 #define SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
 
-#include "memory/allocation.hpp"
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
+#include "memory/allocation.hpp"
 
 class ShenandoahCollectionSet;
 class ShenandoahHeap;
@@ -159,10 +159,11 @@ private:
   void log_status(const char* msg) const;
 
   // Used directly by FullGC
+  template <bool FOR_CURRENT_CYCLE, bool FULL_GC = false>
   void reset_mark_bitmap();
 
   // Used by concurrent and degenerated GC to reset remembered set.
-  void swap_remembered_set();
+  void swap_card_tables();
 
   // Update the read cards with the state of the write table (write table is not cleared).
   void merge_write_table();
@@ -200,7 +201,7 @@ private:
   bool is_bitmap_clear();
 
   // We need to track the status of marking for different generations.
-  bool is_mark_complete();
+  bool is_mark_complete() { return _is_marking_complete.is_set(); }
   virtual void set_mark_complete();
   virtual void set_mark_incomplete();
 

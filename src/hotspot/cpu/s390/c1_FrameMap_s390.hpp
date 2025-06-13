@@ -107,7 +107,7 @@
   static int fpu_reg2rnr (FloatRegister reg) {
     assert(_init_done, "tables not initialized");
     int c1rnr = _fpu_reg2rnr[reg->encoding()];
-    debug_only(fpu_range_check(c1rnr);)
+    DEBUG_ONLY(fpu_range_check(c1rnr);)
     return c1rnr;
   }
 

@@ -129,10 +129,10 @@ class BytecodePrinter {
       int bci = (int)(bcp - method->code_base());
       st->print("[%zu] ", Thread::current()->osthread()->thread_id_for_printing());
       if (Verbose) {
-        st->print("%8d  %4d  " INTPTR_FORMAT " " INTPTR_FORMAT " %s",
+        st->print("%8zu  %4d  " INTPTR_FORMAT " " INTPTR_FORMAT " %s",
             BytecodeCounter::counter_value(), bci, tos, tos2, Bytecodes::name(code));
       } else {
-        st->print("%8d  %4d  %s",
+        st->print("%8zu  %4d  %s",
             BytecodeCounter::counter_value(), bci, Bytecodes::name(code));
       }
       print_attributes(bci, st);
@@ -178,6 +178,7 @@ class BytecodePrinter {
   }
 };
 
+#ifndef PRODUCT
 // We need a global instance to keep track of the states when the bytecodes
 // are executed. Access by multiple threads are controlled by ttyLocker.
 static BytecodePrinter _interpreter_printer;
@@ -193,6 +194,7 @@ void BytecodeTracer::trace_interpreter(const methodHandle& method, address bcp, 
     _interpreter_printer.trace(method, bcp, tos, tos2, st);
   }
 }
+#endif
 
 void BytecodeTracer::print_method_codes(const methodHandle& method, int from, int to, outputStream* st, int flags) {
   BytecodePrinter method_printer(flags);

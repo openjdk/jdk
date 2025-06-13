@@ -175,6 +175,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   case Interpreter::java_lang_math_fmaD:
   case Interpreter::java_lang_math_fmaF:
   case Interpreter::java_lang_math_tanh:
+  case Interpreter::java_lang_math_cbrt:
     // TODO: Implement intrinsic
     break;
   default:
@@ -794,10 +795,6 @@ address TemplateInterpreterGenerator::generate_currentThread() { return nullptr;
 address TemplateInterpreterGenerator::generate_CRC32_update_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return nullptr; }
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
 
@@ -1471,11 +1468,11 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   // preserve exception over this code sequence
   __ pop_ptr(R0_tos);
-  __ str(R0_tos, Address(Rthread, JavaThread::vm_result_offset()));
+  __ str(R0_tos, Address(Rthread, JavaThread::vm_result_oop_offset()));
   // remove the activation (without doing throws on illegalMonitorExceptions)
   __ remove_activation(vtos, Rexception_pc, false, true, false);
   // restore exception
-  __ get_vm_result(Rexception_obj, Rtemp);
+  __ get_vm_result_oop(Rexception_obj, Rtemp);
 
   // In between activations - previous activation type unknown yet
   // compute continuation point - the continuation point expects

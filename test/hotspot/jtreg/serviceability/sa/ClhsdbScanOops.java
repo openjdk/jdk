@@ -27,6 +27,7 @@
  * @summary Test the clhsdb 'scanoops' command
  * @requires vm.gc.Parallel
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm/timeout=1200 ClhsdbScanOops UseParallelGC
  */
@@ -37,6 +38,7 @@
  * @summary Test the clhsdb 'scanoops' command
  * @requires vm.gc.Serial
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm/timeout=1200 ClhsdbScanOops UseSerialGC
  */

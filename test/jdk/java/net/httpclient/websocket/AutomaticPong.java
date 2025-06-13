@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  *      -Djdk.internal.httpclient.websocket.debug=true
  *       AutomaticPong
  */
+import jdk.internal.net.http.websocket.Frame;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -186,12 +187,12 @@ public class AutomaticPong {
 
                     @Override
                     public void maskingKey(int value) {
-                        masker.mask(value);
+                        masker.setMask(value);
                     }
 
                     @Override
                     public void payloadData(ByteBuffer src) {
-                        masker.transferMasking(src, number);
+                        masker.applyMask(src, number);
                         if (closed) {
                             return;
                         }

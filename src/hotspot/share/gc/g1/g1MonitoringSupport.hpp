@@ -27,12 +27,14 @@
 
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/generationCounters.hpp"
+#include "runtime/mutex.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memoryService.hpp"
-#include "runtime/mutex.hpp"
 
 class CollectorCounters;
 class G1CollectedHeap;
+class G1OldGenerationCounters;
+class G1YoungGenerationCounters;
 class HSpaceCounters;
 class MemoryPool;
 
@@ -146,10 +148,10 @@ class G1MonitoringSupport : public CHeapObj<mtGC> {
   //  young collection set counters.  The _eden_counters,
   // _from_counters, and _to_counters are associated with
   // this "generational" counter.
-  GenerationCounters*  _young_gen_counters;
+  G1YoungGenerationCounters*  _young_gen_counters;
   //  old collection set counters. The _old_space_counters
   // below are associated with this "generational" counter.
-  GenerationCounters*  _old_gen_counters;
+  G1OldGenerationCounters*  _old_gen_counters;
   // Counters for the capacity and used for
   //   the whole heap
   HSpaceCounters*      _old_space_counters;

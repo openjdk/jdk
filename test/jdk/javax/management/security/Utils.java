@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import java.util.StringTokenizer;
 import java.lang.reflect.Method;
 import javax.management.remote.JMXConnectorServerMBean;
 
-// utility class for MXBean* tests coming from JMX Tonga test suite
 class Utils {
 
     private static final String SERVER_SIDE_NAME = "-server";
@@ -64,9 +63,6 @@ class Utils {
     }
 
     /**
-     * Reproduces the original parsing and collection of test parameters
-     * from the DTonga JMX test suite.
-     *
      * Collects passed args and returns them in a map(argname, value) structure,
      * which will be then propagated as necessary to various called methods.
      */

@@ -67,6 +67,8 @@ public class ServerCompilerScheduler implements Scheduler {
         public boolean isBlockProjection;
         public boolean isBlockStart;
         public boolean isCFG;
+        public boolean isParm;
+        public boolean isProj;
         public int rank; // Rank for local scheduling priority.
 
         // Empty constructor for creating dummy CFG nodes without associated
@@ -79,6 +81,8 @@ public class ServerCompilerScheduler implements Scheduler {
             isBlockProjection = (p != null && p.equals("true"));
             p = n.getProperties().get("is_block_start");
             isBlockStart = (p != null && p.equals("true"));
+            isParm = isParm(this);
+            isProj = isProj(this);
             computeRank();
         }
 
@@ -464,7 +468,20 @@ public class ServerCompilerScheduler implements Scheduler {
         Set<Node> unscheduled = new HashSet<>();
         for (Node n : this.nodes) {
             if (n.block == null && reachable.contains(n) && !n.isCFG) {
-                unscheduled.add(n);
+                if (!n.isParm && !n.isProj) {
+                    unscheduled.add(n);
+                } else {
+                    // Schedule Parm and Proj nodes in same block as parent
+                    Node prev = n.preds.get(0);
+                    InputBlock blk = prev.block;
+                    if (blk != null) {
+                        n.block = blk;
+                        blk.addNode(n.inputNode.getId());
+                    } else {
+                        // Fallback in the case parent has no block
+                        unscheduled.add(n);
+                    }
+                }
             }
         }
 
@@ -779,12 +796,15 @@ public class ServerCompilerScheduler implements Scheduler {
             if (category.equals("control") || category.equals("mixed")) {
                 // Example: If, IfTrue, CallStaticJava.
                 n.isCFG = true;
-            } else if (n.inputNode.getProperties().get("type").equals("bottom")
-                       && n.preds.size() > 0 &&
+            } else if (n.inputNode.getProperties().get("type").equals("bottom") &&
+                       n.preds.size() > 0 &&
+                       n.succs.size() > 0 &&
+                       n.succs.stream().findFirst().get().inputNode.getProperties().get("name") == "Root" &&
                        n.preds.get(0) != null &&
                        n.preds.get(0).inputNode.getProperties()
                        .get("category").equals("control")) {
                 // Example: Halt, Return, Rethrow.
+                // The root-as-successor check disallows machine nodes such as prefetchAlloc and rep_stos.
                 n.isCFG = true;
             } else if (n.isBlockStart || n.isBlockProjection) {
                 // Example: Root.

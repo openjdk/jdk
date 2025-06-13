@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -47,8 +48,16 @@ import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
 final class TestInstance implements ThrowingRunnable {
 
-    static class TestDesc {
-        private TestDesc() {
+    static final class TestDesc {
+        private TestDesc(Class<?> clazz, String functionName, String functionArgs, String instanceArgs) {
+            this.clazz = Objects.requireNonNull(clazz);
+            this.functionName = functionName;
+            this.functionArgs = functionArgs;
+            this.instanceArgs = instanceArgs;
+        }
+
+        private TestDesc(Class<?> clazz) {
+            this(clazz, null, null, null);
         }
 
         String testFullName() {
@@ -92,16 +101,11 @@ final class TestInstance implements ThrowingRunnable {
 
             @Override
             public TestDesc get() {
-                TestDesc desc = new TestDesc();
                 if (method == null) {
-                    desc.clazz = enclosingMainMethodClass();
+                    return new TestDesc(enclosingMainMethodClass());
                 } else {
-                    desc.clazz = method.getDeclaringClass();
-                    desc.functionName = method.getName();
-                    desc.functionArgs = formatArgs(methodArgs);
-                    desc.instanceArgs = formatArgs(ctorArgs);
+                    return new TestDesc(method.getDeclaringClass(), method.getName(), formatArgs(methodArgs), formatArgs(ctorArgs));
                 }
-                return desc;
             }
 
             private static String formatArgs(List<Object> values) {
@@ -119,38 +123,33 @@ final class TestInstance implements ThrowingRunnable {
                         return String.format("%s(length=%d)", asString, Array.getLength(v));
                     }
                     return String.format("%s", v);
-                }).collect(Collectors.joining(", "));
+                }).collect(Collectors.joining(", ")).transform(str -> {
+                    final var sb = new StringBuilder();
+                    for (var chr : str.toCharArray()) {
+                        if (chr != ' ' && (Character.isWhitespace(chr) || Character.isISOControl(chr))) {
+                            sb.append("\\u").append(ARGS_CHAR_FORMATTER.toHexDigits(chr));
+                        } else {
+                            sb.append(chr);
+                        }
+                    }
+                    return sb.toString();
+                });
             }
 
             private List<Object> ctorArgs;
             private List<Object> methodArgs;
             private Method method;
+
+            private static final HexFormat ARGS_CHAR_FORMATTER = HexFormat.of().withUpperCase();
         }
 
-        static TestDesc create(Method m, Object... args) {
-            TestDesc desc = new TestDesc();
-            desc.clazz = m.getDeclaringClass();
-            desc.functionName = m.getName();
-            if (args.length != 0) {
-                desc.functionArgs = Stream.of(args).map(v -> {
-                    if (v.getClass().isArray()) {
-                        return String.format("%s(length=%d)",
-                                Arrays.deepToString((Object[]) v),
-                                Array.getLength(v));
-                    }
-                    return String.format("%s", v);
-                }).collect(Collectors.joining(", "));
-            }
-            return desc;
-        }
-
-        private Class clazz;
-        private String functionName;
-        private String functionArgs;
-        private String instanceArgs;
+        private final Class<?> clazz;
+        private final String functionName;
+        private final String functionArgs;
+        private final String instanceArgs;
     }
 
-    TestInstance(ThrowingRunnable testBody) {
+    TestInstance(ThrowingRunnable testBody, Path workDirRoot) {
         assertCount = 0;
         this.testConstructor = (unused) -> null;
         this.testBody = (unused) -> testBody.run();
@@ -158,11 +157,11 @@ final class TestInstance implements ThrowingRunnable {
         this.afterActions = Collections.emptyList();
         this.testDesc = TestDesc.createBuilder().get();
         this.dryRun = false;
-        this.workDir = createWorkDirName(testDesc);
+        this.workDir = workDirRoot.resolve(createWorkDirPath(testDesc));
     }
 
-    TestInstance(MethodCall testBody, List<ThrowingConsumer> beforeActions,
-            List<ThrowingConsumer> afterActions, boolean dryRun) {
+    TestInstance(MethodCall testBody, List<ThrowingConsumer<Object>> beforeActions,
+            List<ThrowingConsumer<Object>> afterActions, boolean dryRun, Path workDirRoot) {
         assertCount = 0;
         this.testConstructor = v -> ((MethodCall)v).newInstance();
         this.testBody = testBody;
@@ -170,7 +169,18 @@ final class TestInstance implements ThrowingRunnable {
         this.afterActions = afterActions;
         this.testDesc = testBody.createDescription();
         this.dryRun = dryRun;
-        this.workDir = createWorkDirName(testDesc);
+        this.workDir = workDirRoot.resolve(createWorkDirPath(testDesc));
+    }
+
+    TestInstance(TestInstance other, Path workDirRoot) {
+        assertCount = 0;
+        this.testConstructor = other.testConstructor;
+        this.testBody = other.testBody;
+        this.beforeActions = other.beforeActions;
+        this.afterActions = other.afterActions;
+        this.testDesc = other.testDesc;
+        this.dryRun = other.dryRun;
+        this.workDir = workDirRoot.resolve(createWorkDirPath(other.testDesc));
     }
 
     void notifyAssert() {
@@ -240,7 +250,7 @@ final class TestInstance implements ThrowingRunnable {
                 status = Status.Failed;
             }
 
-            if (!KEEP_WORK_DIR.contains(status)) {
+            if (!KEEP_WORK_DIR.contains(status) && Files.isDirectory(workDir)) {
                 if (Files.isSameFile(workDir, Path.of("."))) {
                     // 1. If the work directory is the current directory, don't
                     // delete it, just clean as deleting it would be confusing.
@@ -255,7 +265,7 @@ final class TestInstance implements ThrowingRunnable {
         }
     }
 
-    private static Class enclosingMainMethodClass() {
+    private static Class<?> enclosingMainMethodClass() {
         StackTraceElement st[] = Thread.currentThread().getStackTrace();
         for (StackTraceElement ste : st) {
             if ("main".equals(ste.getMethodName())) {
@@ -276,8 +286,8 @@ final class TestInstance implements ThrowingRunnable {
         return false;
     }
 
-    private static Path createWorkDirName(TestDesc testDesc) {
-        Path result = Path.of(".");
+    private static Path createWorkDirPath(TestDesc testDesc) {
+        Path result = Path.of("");
         if (!isCalledByJavatest()) {
             result = result.resolve(testDesc.clazz.getSimpleName());
         }
@@ -323,10 +333,10 @@ final class TestInstance implements ThrowingRunnable {
     private Status status;
     private RuntimeException skippedTestException;
     private final TestDesc testDesc;
-    private final ThrowingFunction testConstructor;
-    private final ThrowingConsumer testBody;
-    private final List<ThrowingConsumer> beforeActions;
-    private final List<ThrowingConsumer> afterActions;
+    private final ThrowingFunction<ThrowingConsumer<Object>, Object> testConstructor;
+    private final ThrowingConsumer<Object> testBody;
+    private final List<ThrowingConsumer<Object>> beforeActions;
+    private final List<ThrowingConsumer<Object>> afterActions;
     private final boolean dryRun;
     private final Path workDir;
 

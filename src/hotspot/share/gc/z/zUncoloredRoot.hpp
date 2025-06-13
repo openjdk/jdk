@@ -51,7 +51,7 @@
 // The zaddress_unsafe type is used to hold uncolored oops that the GC needs
 // to process before it is safe to use. E.g. the original object might have
 // been relocated and the address needs to be updated. The zaddress type
-// denotes that this pointer refers the the correct address of the object.
+// denotes that this pointer refers to the correct address of the object.
 
 class ZUncoloredRoot : public AllStatic {
 private:

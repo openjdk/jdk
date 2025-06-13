@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545
  * 8000961 8030610 8028546 8188870 8173382 8173382 8193290 8205619 8028563
  * 8245147 8245586 8257453 8286035 8306586 8320806 8306586 8319414 8330183
- * 8342982
+ * 8342982 8355748 8356108
  * @summary Check interpretation of -target and -source options
  * @modules java.compiler
  *          jdk.compiler
@@ -73,9 +73,9 @@ public class Versions {
     public static final Set<String> VALID_SOURCES =
         Set.of("1.8", "1.9", "1.10", "11", "12", "13", "14",
                "15", "16", "17", "18", "19", "20", "21", "22",
-               "23", "24", "25");
+               "23", "24", "25", "26");
 
-    public static final String LATEST_MAJOR_VERSION = "69.0";
+    public static final String LATEST_MAJOR_VERSION = "70.0";
 
     static enum SourceTarget {
         EIGHT(true,      "52.0",  "8"),
@@ -96,6 +96,7 @@ public class Versions {
         TWENTY_THREE(false,"67.0", "23"),
         TWENTY_FOUR(false,"68.0", "24"),
         TWENTY_FIVE(false,"69.0", "25"),
+        TWENTY_SIX(false, "70.0", "26"),
         ; // Reduce code churn when appending new constants
 
         private final boolean dotOne;
@@ -403,6 +404,14 @@ public class Versions {
                  }
              }
              """),
+
+         SOURCE_25(25, "New25.java",
+             // New feature in 25: module import declarations
+             """
+             import module java.base;
+             public class New25 {
+             }
+             """),
             ; // Reduce code churn when appending new constants
 
         private int sourceLevel;
@@ -558,4 +567,3 @@ public class Versions {
         return false;
     }
 }
-

@@ -36,6 +36,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.ProtectionDomain;
 
 import jdk.internal.misc.Unsafe;
 
@@ -147,7 +148,7 @@ public class ModuleSetAccessibleTest {
 
         // non-public constructor
         Constructor<?> ctor
-            = Class.class.getDeclaredConstructor(ClassLoader.class, Class.class, int.class);
+            = Class.class.getDeclaredConstructor(ClassLoader.class, Class.class, char.class, ProtectionDomain.class, boolean.class);
         AccessibleObject[] ctors = { ctor };
 
         try {

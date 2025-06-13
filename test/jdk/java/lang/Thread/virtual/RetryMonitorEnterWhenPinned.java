@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * @modules java.base/java.lang:+open
  * @library /test/lib
  * @requires vm.opt.LockingMode != 1
- * @run main/othervm --enable-native-access=ALL-UNNAMED RetryMonitorEnterWhenPinned
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED RetryMonitorEnterWhenPinned
  */
 
 import java.time.Duration;

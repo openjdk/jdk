@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 /**
@@ -46,15 +47,18 @@ import java.util.stream.IntStream;
  * org.freedesktop.portal.ScreenCast API</a>
  */
 
-public class ScreencastHelper {
+public final class ScreencastHelper {
 
     static final boolean SCREENCAST_DEBUG;
     private static final boolean IS_NATIVE_LOADED;
 
-
     private static final int ERROR = -1;
     private static final int DENIED = -11;
     private static final int OUT_OF_BOUNDS = -12;
+    private static final int NO_STREAMS = -13;
+
+    private static final int XDG_METHOD_SCREENCAST = 0;
+    private static final int XDG_METHOD_REMOTE_DESKTOP = 1;
 
     private static final int DELAY_BEFORE_SESSION_CLOSE = 2000;
 
@@ -63,17 +67,23 @@ public class ScreencastHelper {
             = new Timer("auto-close screencast session", true);
 
 
-    private ScreencastHelper() {
-    }
+    private ScreencastHelper() {}
 
     static {
         SCREENCAST_DEBUG = Boolean.getBoolean("awt.robot.screenshotDebug");
 
         boolean loadFailed = false;
 
+        boolean shouldLoadNative = XdgDesktopPortal.isRemoteDesktop()
+                || XdgDesktopPortal.isScreencast();
+
+        int methodId = XdgDesktopPortal.isScreencast()
+                ? XDG_METHOD_SCREENCAST
+                : XDG_METHOD_REMOTE_DESKTOP;
+
         if (!(Toolkit.getDefaultToolkit() instanceof UNIXToolkit tk
               && tk.loadGTK())
-              || !loadPipewire(SCREENCAST_DEBUG)) {
+              || !(shouldLoadNative && loadPipewire(methodId, SCREENCAST_DEBUG))) {
 
             System.err.println(
                     "Could not load native libraries for ScreencastHelper"
@@ -89,7 +99,7 @@ public class ScreencastHelper {
         return IS_NATIVE_LOADED;
     }
 
-    private static native boolean loadPipewire(boolean screencastDebug);
+    private static native boolean loadPipewire(int method, boolean isDebug);
 
     private static native int getRGBPixelsImpl(
             int x, int y, int width, int height,
@@ -186,7 +196,7 @@ public class ScreencastHelper {
 
             if (retVal >= 0) { // we have received a screen data
                 return;
-            } else if (!checkReturnValue(retVal)) {
+            } else if (!checkReturnValue(retVal, true)) {
                 return;
             } // else, try other tokens
         }
@@ -200,25 +210,72 @@ public class ScreencastHelper {
                 null
         );
 
-        checkReturnValue(retVal);
+        checkReturnValue(retVal, true);
     }
 
-    private static boolean checkReturnValue(int retVal) {
+    private static boolean checkReturnValue(int retVal,
+                                            boolean throwException) {
         if (retVal == DENIED) {
-            // user explicitly denied the capture, no more tries.
-            throw new SecurityException(
-                    "Screen Capture in the selected area was not allowed"
-            );
+            if (SCREENCAST_DEBUG) {
+                System.err.println("robot action: access denied by user.");
+            }
+            if (throwException) {
+                // user explicitly denied the capture, no more tries.
+                throw new SecurityException(
+                        "Screen Capture in the selected area was not allowed"
+                );
+            }
         } else if (retVal == ERROR) {
             if (SCREENCAST_DEBUG) {
-                System.err.println("Screen capture failed.");
+                System.err.println("robot action: failed.");
             }
         } else if (retVal == OUT_OF_BOUNDS) {
             if (SCREENCAST_DEBUG) {
                 System.err.println(
                         "Token does not provide access to requested area.");
             }
+        } else if (retVal == NO_STREAMS) {
+            if (SCREENCAST_DEBUG) {
+                System.err.println("robot action: no streams available");
+            }
         }
         return retVal != ERROR;
     }
+
+    private static void performWithToken(Function<String, Integer> func) {
+        if (!XdgDesktopPortal.isRemoteDesktop() || !IS_NATIVE_LOADED) return;
+
+        timerCloseSessionRestart();
+
+        for (TokenItem tokenItem : TokenStorage.getTokens(getSystemScreensBounds())) {
+            int retVal = func.apply(tokenItem.token);
+
+            if (retVal >= 0 || !checkReturnValue(retVal, false)) {
+                return;
+            }
+        }
+
+        checkReturnValue(func.apply(null), false);
+    }
+
+    public static synchronized void remoteDesktopMouseMove(int x, int y) {
+        performWithToken((token) -> remoteDesktopMouseMoveImpl(x, y, token));
+    }
+
+    public static synchronized void remoteDesktopMouseButton(boolean isPress, int buttons) {
+        performWithToken((token) -> remoteDesktopMouseButtonImpl(isPress, buttons, token));
+    }
+
+    public static synchronized void remoteDesktopMouseWheel(int wheel) {
+        performWithToken((token) -> remoteDesktopMouseWheelImpl(wheel, token));
+    }
+
+    public static synchronized void remoteDesktopKey(boolean isPress, int key) {
+        performWithToken((token) -> remoteDesktopKeyImpl(isPress, key, token));
+    }
+
+    private static synchronized native int remoteDesktopMouseMoveImpl(int x, int y, String token);
+    private static synchronized native int remoteDesktopMouseButtonImpl(boolean isPress, int buttons, String token);
+    private static synchronized native int remoteDesktopMouseWheelImpl(int wheelAmt, String token);
+    private static synchronized native int remoteDesktopKeyImpl(boolean isPress, int key, String token);
 }

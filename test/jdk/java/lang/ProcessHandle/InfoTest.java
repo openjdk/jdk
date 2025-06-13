@@ -49,6 +49,7 @@ import jdk.test.lib.Utils;
 /*
  * @test
  * @bug 8077350 8081566 8081567 8098852 8136597
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.management
