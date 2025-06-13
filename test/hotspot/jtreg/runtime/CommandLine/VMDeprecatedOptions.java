@@ -63,20 +63,6 @@ public class VMDeprecatedOptions {
             {"CreateMinidumpOnCrash", "false"}
           }
         ));
-        if (Platform.is64bit()) {
-          deprecated.addAll(
-            Arrays.asList(new String[][] {
-              {"UseCompressedClassPointers", "false"},
-            })
-          );
-        }
-        if (Platform.isLinux()) {
-          deprecated.addAll(
-            Arrays.asList(new String[][] {
-              {"UseOprofile", "false"}
-            })
-          );
-        }
         if (Platform.isX86() || Platform.isX64()) {
           deprecated.addAll(
             Arrays.asList(new String[][] {

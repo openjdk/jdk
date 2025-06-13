@@ -154,7 +154,8 @@ julong os::Bsd::available_memory() {
   assert(kerr == KERN_SUCCESS,
          "host_statistics64 failed - check mach_host_self() and count");
   if (kerr == KERN_SUCCESS) {
-    available = vmstat.free_count * os::vm_page_size();
+    // free_count is just a lowerbound, other page categories can be freed too and make memory available
+    available = (vmstat.free_count + vmstat.inactive_count + vmstat.purgeable_count) * os::vm_page_size();
   }
 #endif
   return available;
@@ -1480,83 +1481,6 @@ void os::print_memory_info(outputStream* st) {
   }
 
   st->cr();
-}
-
-static char saved_jvm_path[MAXPATHLEN] = {0};
-
-// Find the full path to the current module, libjvm
-void os::jvm_path(char *buf, jint buflen) {
-  // Error checking.
-  if (buflen < MAXPATHLEN) {
-    assert(false, "must use a large-enough buffer");
-    buf[0] = '\0';
-    return;
-  }
-  // Lazy resolve the path to current module.
-  if (saved_jvm_path[0] != 0) {
-    strcpy(buf, saved_jvm_path);
-    return;
-  }
-
-  char dli_fname[MAXPATHLEN];
-  dli_fname[0] = '\0';
-  bool ret = dll_address_to_library_name(
-                                         CAST_FROM_FN_PTR(address, os::jvm_path),
-                                         dli_fname, sizeof(dli_fname), nullptr);
-  assert(ret, "cannot locate libjvm");
-  char *rp = nullptr;
-  if (ret && dli_fname[0] != '\0') {
-    rp = os::realpath(dli_fname, buf, buflen);
-  }
-  if (rp == nullptr) {
-    return;
-  }
-
-  // If executing unit tests we require JAVA_HOME to point to the real JDK.
-  if (Arguments::executing_unit_tests()) {
-    // Look for JAVA_HOME in the environment.
-    char* java_home_var = ::getenv("JAVA_HOME");
-    if (java_home_var != nullptr && java_home_var[0] != 0) {
-
-      // Check the current module name "libjvm"
-      const char* p = strrchr(buf, '/');
-      assert(strstr(p, "/libjvm") == p, "invalid library name");
-
-      stringStream ss(buf, buflen);
-      rp = os::realpath(java_home_var, buf, buflen);
-      if (rp == nullptr) {
-        return;
-      }
-
-      assert((int)strlen(buf) < buflen, "Ran out of buffer space");
-      // Add the appropriate library and JVM variant subdirs
-      ss.print("%s/lib/%s", buf, Abstract_VM_Version::vm_variant());
-
-      if (0 != access(buf, F_OK)) {
-        ss.reset();
-        ss.print("%s/lib", buf);
-      }
-
-      // If the path exists within JAVA_HOME, add the JVM library name
-      // to complete the path to JVM being overridden.  Otherwise fallback
-      // to the path to the current library.
-      if (0 == access(buf, F_OK)) {
-        // Use current module name "libjvm"
-        ss.print("/libjvm%s", JNI_LIB_SUFFIX);
-        assert(strcmp(buf + strlen(buf) - strlen(JNI_LIB_SUFFIX), JNI_LIB_SUFFIX) == 0,
-               "buf has been truncated");
-      } else {
-        // Fall back to path of current library
-        rp = os::realpath(dli_fname, buf, buflen);
-        if (rp == nullptr) {
-          return;
-        }
-      }
-    }
-  }
-
-  strncpy(saved_jvm_path, buf, MAXPATHLEN);
-  saved_jvm_path[MAXPATHLEN - 1] = '\0';
 }
 
 ////////////////////////////////////////////////////////////////////////////////
