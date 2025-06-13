@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,11 @@
  * @run main/manual ListDragCursor
  */
 
+import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Cursor;
-import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Frame;
-import java.awt.GridBagLayout;
 import java.awt.List;
 import java.awt.Panel;
 import java.awt.TextArea;
@@ -44,12 +43,8 @@ public class ListDragCursor {
     static Frame instructionsFrame;
     static CountDownLatch countDownLatch;
 
-    public static CountDownLatch createCountDownLatch() {
-        return new CountDownLatch(1);
-    }
-
     public static void main(String[] args) throws Exception {
-        countDownLatch = createCountDownLatch();
+        countDownLatch = new CountDownLatch(1);
         EventQueue.invokeAndWait(() -> {
             createTestFrame();
             createInstructionsFrame();
@@ -77,12 +72,12 @@ public class ListDragCursor {
 
         frame.add(panel);
         frame.setSize(300, 150);
-        frame.setLocation(450, 400);
+        frame.setLocation(450, 500);
         frame.setVisible(true);
     }
 
     static void createInstructionsFrame() {
-        String INSTRUCTIONS = """
+        String instructions = """
                 1. Move mouse to the TextArea.
                 2. Press the left mouse button.
                 3. Drag mouse to the list.
@@ -100,25 +95,27 @@ public class ListDragCursor {
                 mouse button.
                 """;
 
-        TextArea textArea = new TextArea(INSTRUCTIONS,
+        instructionsFrame = new Frame("Test Instructions");
+        Panel mainPanel = new Panel(new BorderLayout());
+        TextArea textArea = new TextArea(instructions,
                 15, 60, TextArea.SCROLLBARS_NONE);
+
+        Panel btnPanel = new Panel();
         Button passBtn = new Button("PASS");
         Button failBtn = new Button("FAIL");
-        Panel btnPanel = new Panel(new GridBagLayout());
-        Panel panel = new Panel(new GridBagLayout());
-        instructionsFrame = new Frame("Test Instructions");
-        passBtn.setMaximumSize(new Dimension(100, 30));
-        failBtn.setMaximumSize(new Dimension(100, 30));
         btnPanel.add(passBtn);
         btnPanel.add(failBtn);
+
         passBtn.addActionListener(e -> disposeFrames());
         failBtn.addActionListener(e -> {
             disposeFrames();
             throw new RuntimeException("Test Failed");
         });
-        panel.add(textArea);
-        panel.add(btnPanel);
-        instructionsFrame.add(panel);
+
+        mainPanel.add(textArea, BorderLayout.CENTER);
+        mainPanel.add(btnPanel, BorderLayout.SOUTH);
+
+        instructionsFrame.add(mainPanel);
         instructionsFrame.pack();
         instructionsFrame.setLocation(300, 100);
         instructionsFrame.setVisible(true);
