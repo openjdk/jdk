@@ -26,6 +26,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -417,6 +418,13 @@ childProcess(void *arg)
     /* change to the new working directory */
     if (p->pdir != NULL && chdir(p->pdir) < 0)
         goto WhyCantJohnnyExec;
+
+    // Reset any mask signals from parent, but not in VFORK mode
+    if (p->mode != MODE_VFORK) {
+        sigset_t unblock_signals;
+        sigemptyset(&unblock_signals);
+        sigprocmask(SIG_SETMASK, &unblock_signals, NULL);
+    }
 
     JDK_execvpe(p->mode, p->argv[0], p->argv, p->envv);
 
