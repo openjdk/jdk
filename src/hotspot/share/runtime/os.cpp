@@ -2222,7 +2222,7 @@ MemRes os::used_memory() {
     return MemRes(0, -1);
   }
 
-  return MemRes(phys_mem.value - avail_mem.value, 0);
+  return MemRes(phys_mem.value - avail_mem.value);
 }
 
 

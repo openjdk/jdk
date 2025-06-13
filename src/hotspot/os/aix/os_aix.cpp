@@ -265,7 +265,7 @@ MemRes os::available_memory() {
 MemRes os::Aix::available_memory() {
   os::Aix::meminfo_t mi;
   if (os::Aix::get_meminfo(&mi)) {
-    return MemRes(mi.real_free, 0);
+    return MemRes(mi.real_free);
   } else {
     return MemRes(0, -1);
   }
@@ -276,7 +276,7 @@ MemRes os::total_swap_space() {
   if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
     return MemRes(0, -1);
   }
-  return MemRes(static_cast<size_t>(memory_info.pgsp_total * 4 * K), 0);
+  return MemRes(static_cast<size_t>(memory_info.pgsp_total * 4 * K));
 }
 
 MemRes os::free_swap_space() {
@@ -284,11 +284,11 @@ MemRes os::free_swap_space() {
   if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
     return MemRes(0, -1);
   }
-  return MemRes(static_cast<size_t>(memory_info.pgsp_free * 4 * K), 0);
+  return MemRes(static_cast<size_t>(memory_info.pgsp_free * 4 * K));
 }
 
 MemRes os::physical_memory() {
-  return MemRes(Aix::physical_memory(), 0);
+  return MemRes(Aix::physical_memory());
 }
 
 size_t os::rss() { return (size_t)0; }

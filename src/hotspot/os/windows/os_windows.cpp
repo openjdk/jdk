@@ -867,7 +867,7 @@ MemRes os::win32::available_memory() {
     log_debug(os)("available_memory() failed to GlobalMemoryStatusEx: GetLastError->%ld.", errno);
     return MemRes(0,-1);
   }
-  return MemRes(static_cast<size_t>(ms.ullAvailPhys), 0);
+  return MemRes(static_cast<size_t>(ms.ullAvailPhys));
 }
 
 MemRes os::total_swap_space() {
@@ -879,7 +879,7 @@ MemRes os::total_swap_space() {
     log_debug(os)("total_swap_space() failed to GlobalMemoryStatusEx: GetLastError->%ld.", errno);
     return MemRes(0, -1);
   }
-  return MemRes(static_cast<size_t>(ms.ullTotalPageFile), 0);
+  return MemRes(static_cast<size_t>(ms.ullTotalPageFile));
 }
 
 MemRes os::free_swap_space() {
@@ -891,11 +891,11 @@ MemRes os::free_swap_space() {
     log_debug(os)("free_swap_space() failed to GlobalMemoryStatusEx: GetLastError->%ld.", errno);
     return MemRes(0, -1);
   }
-  return MemRes(static_cast<size_t>(ms.ullAvailPageFile), 0);
+  return MemRes(static_cast<size_t>(ms.ullAvailPageFile));
 }
 
 MemRes os::physical_memory() {
-  return MemRes(win32::physical_memory(), 0);
+  return MemRes(win32::physical_memory());
 }
 
 size_t os::rss() {

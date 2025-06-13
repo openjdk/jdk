@@ -149,7 +149,7 @@ enum WXMode {
 struct MemRes {
   size_t value;
   int error;
-  MemRes(size_t v, int e) : value(v), error(e) {}
+  MemRes(size_t v, int e = 0) : value(v), error(e) {}
 };
 
 // Executable parameter flag for os::commit_memory() and

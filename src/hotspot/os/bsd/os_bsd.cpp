@@ -160,7 +160,7 @@ MemRes os::Bsd::available_memory() {
     return MemRes(0, -1);
   }
 #endif
-  return MemRes(static_cast<size_t>(available), 0);
+  return MemRes(static_cast<size_t>(available));
 }
 
 // for more info see :
@@ -186,7 +186,7 @@ MemRes os::total_swap_space() {
   if (sysctlbyname("vm.swapusage", &vmusage, &size, nullptr, 0) != 0) {
     return MemRes(0, -1);
   }
-  return MemRes(static_cast<size_t>(vmusage.xsu_total), 0);
+  return MemRes(static_cast<size_t>(vmusage.xsu_total));
 #else
   return MemRes(0, -1);
 #endif
@@ -199,14 +199,14 @@ MemRes os::free_swap_space() {
   if (sysctlbyname("vm.swapusage", &vmusage, &size, nullptr, 0) != 0) {
     return MemRes(0, -1);
   }
-  return MemRes(static_cast<size_t>(vmusage.xsu_avail), 0);
+  return MemRes(static_cast<size_t>(vmusage.xsu_avail));
 #else
   return MemRes(0, -1);
 #endif
 }
 
 MemRes os::physical_memory() {
-  return MemRes(Bsd::physical_memory(), 0);
+  return MemRes(Bsd::physical_memory());
 }
 
 size_t os::rss() {
