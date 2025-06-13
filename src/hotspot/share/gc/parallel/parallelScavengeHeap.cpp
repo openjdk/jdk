@@ -161,7 +161,7 @@ void ParallelScavengeHeap::initialize_serviceability() {
 }
 
 void ParallelScavengeHeap::stop() {
-  log_gc_vtime();
+  CollectedHeap::stop();
 }
 
 void ParallelScavengeHeap::safepoint_synchronize_begin() {
