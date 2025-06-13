@@ -276,6 +276,7 @@ class InstanceKlass: public Klass {
 
   // Fields information is stored in an UNSIGNED5 encoded stream (see fieldInfo.hpp)
   Array<u1>*          _fieldinfo_stream;
+  Array<u1>*          _fieldinfo_search_table;
   Array<FieldStatus>* _fields_status;
 
   // embedded Java vtable follows here
@@ -349,9 +350,9 @@ class InstanceKlass: public Klass {
   // methods
   Array<Method*>* methods() const          { return _methods; }
   void set_methods(Array<Method*>* a)      { _methods = a; }
-  Method* method_with_idnum(int idnum);
-  Method* method_with_orig_idnum(int idnum);
-  Method* method_with_orig_idnum(int idnum, int version);
+  Method* method_with_idnum(int idnum) const;
+  Method* method_with_orig_idnum(int idnum) const;
+  Method* method_with_orig_idnum(int idnum, int version) const;
 
   // method ordering
   Array<int>* method_ordering() const     { return _method_ordering; }
@@ -397,6 +398,9 @@ class InstanceKlass: public Klass {
 
   Array<u1>* fieldinfo_stream() const { return _fieldinfo_stream; }
   void set_fieldinfo_stream(Array<u1>* fis) { _fieldinfo_stream = fis; }
+
+  Array<u1>* fieldinfo_search_table() const { return _fieldinfo_search_table; }
+  void set_fieldinfo_search_table(Array<u1>* table) { _fieldinfo_search_table = table; }
 
   Array<FieldStatus>* fields_status() const {return _fields_status; }
   void set_fields_status(Array<FieldStatus>* array) { _fields_status = array; }
@@ -688,7 +692,7 @@ public:
   InstanceKlass* previous_versions() const { return nullptr; }
 #endif
 
-  InstanceKlass* get_klass_version(int version);
+  const InstanceKlass* get_klass_version(int version) const;
 
   bool has_been_redefined() const { return _misc_flags.has_been_redefined(); }
   void set_has_been_redefined() { _misc_flags.set_has_been_redefined(true); }
@@ -1118,6 +1122,12 @@ public:
   bool can_be_verified_at_dumptime() const;
   void compute_has_loops_flag_for_methods();
 #endif
+  bool     has_init_deps_processed() const { return _misc_flags.has_init_deps_processed(); }
+  void set_has_init_deps_processed() {
+    assert(is_initialized(), "");
+    assert(!has_init_deps_processed(), "already set"); // one-off action
+    _misc_flags.set_has_init_deps_processed(true);
+  }
 
   u2 compute_modifier_flags() const;
 

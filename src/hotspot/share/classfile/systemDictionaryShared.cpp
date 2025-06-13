@@ -309,7 +309,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
       return warn_excluded(k, "Unlinked class not supported by AOTClassLinking");
     } else if (CDSConfig::is_dumping_preimage_static_archive()) {
       // When dumping the final static archive, we will unconditionally load and link all
-      // classes from tje preimage. We don't want to get a VerifyError when linking this class.
+      // classes from the preimage. We don't want to get a VerifyError when linking this class.
       return warn_excluded(k, "Unlinked class not supported by AOTConfiguration");
     }
   } else {
@@ -659,6 +659,11 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
   } else {
     InstanceKlass* ik = InstanceKlass::cast(k);
 
+    if (CDSConfig::is_dumping_dynamic_archive() && ik->is_shared()) {
+      // ik is already part of the static archive, so it will never be considered as excluded.
+      return false;
+    }
+
     if (!SafepointSynchronize::is_at_safepoint()) {
       if (!ik->is_linked()) {
         // check_for_exclusion() below doesn't link unlinked classes. We come
@@ -1003,7 +1008,7 @@ void SystemDictionaryShared::copy_linking_constraints_from_preimage(InstanceKlas
 }
 
 unsigned int SystemDictionaryShared::hash_for_shared_dictionary(address ptr) {
-  if (ArchiveBuilder::is_active()) {
+  if (ArchiveBuilder::is_active() && ArchiveBuilder::current()->is_in_buffer_space(ptr)) {
     uintx offset = ArchiveBuilder::current()->any_to_offset(ptr);
     unsigned int hash = primitive_hash<uintx>(offset);
     DEBUG_ONLY({

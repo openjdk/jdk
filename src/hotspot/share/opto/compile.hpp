@@ -928,8 +928,8 @@ public:
   bool copy_node_notes_to(Node* dest, Node* source);
 
   // Workhorse function to sort out the blocked Node_Notes array:
-  inline Node_Notes* locate_node_notes(GrowableArray<Node_Notes*>* arr,
-                                       int idx, bool can_grow = false);
+  Node_Notes* locate_node_notes(GrowableArray<Node_Notes*>* arr,
+                                int idx, bool can_grow = false);
 
   void grow_node_notes(GrowableArray<Node_Notes*>* arr, int grow_by);
 
