@@ -130,6 +130,7 @@ public class TestLog
             log.error(tree.pos(), Errors.NotStmt);
             log.error(nil, Errors.NotStmt);
 
+            // some warnings that will be emitted during parsing
             log.warning(Warnings.ExtraneousSemicolon);
             log.warning(tree.pos, Warnings.ExtraneousSemicolon);
             log.warning(tree.pos(), Warnings.ExtraneousSemicolon);
