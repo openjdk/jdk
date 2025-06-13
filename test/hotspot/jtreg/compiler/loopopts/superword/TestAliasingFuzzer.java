@@ -412,7 +412,7 @@ public class TestAliasingFuzzer {
         int numInvarRest,
 
         // Each access has an index form and a type.
-        IndexForm[] acessIndexForm,
+        IndexForm[] accessIndexForm,
         MyType[] accessType,
 
         // The scenario.
@@ -457,15 +457,15 @@ public class TestAliasingFuzzer {
                 for (int i = 0; i < numContainers; i++) {
                     containerNames[i] = $("container" + i);
                 }
-                String[] indexNames = new String[acessIndexForm.length];
-                for (int i = 0; i < indexNames.length; i++) {
-                    indexNames[i] = $("index" + i);
+                String[] indexFormNames = new String[accessIndexForm.length];
+                for (int i = 0; i < indexFormNames.length; i++) {
+                    indexFormNames[i] = $("index" + i);
                 }
                 return body(
                     """
                     // --- $test start ---
                     """,
-                    generateTestFields(invarRest, containerNames, indexNames),
+                    generateTestFields(invarRest, containerNames, indexFormNames),
                     """
                     // Count the run invocations.
                     private static int $iterations = 0;
@@ -478,6 +478,7 @@ public class TestAliasingFuzzer {
                     generateContainerInit(containerNames),
                     generateContainerAliasing(containerNames, $("iterations")),
                     generateRanges(),
+                    generateBoundsAndInvariants(indexFormNames, invarRest),
                     // TODO: bounds / ranges
                     // TODO: invoke test/reference and verify
                     """
@@ -530,7 +531,7 @@ public class TestAliasingFuzzer {
             return template.asToken();
         }
 
-        private TemplateToken generateTestFields(String[] invarRest, String[] containerNames, String[] indexNames) {
+        private TemplateToken generateTestFields(String[] invarRest, String[] containerNames, String[] indexFormNames) {
             var template = Template.make(() -> body(
                 """
                 // invarRest fields:
@@ -552,8 +553,8 @@ public class TestAliasingFuzzer {
                 """
                 // Index forms for the accesses:
                 """,
-                IntStream.range(0, indexNames.length).mapToObj(i ->
-                    generateIndexField(indexNames[i], acessIndexForm[i])
+                IntStream.range(0, indexFormNames.length).mapToObj(i ->
+                    generateIndexField(indexFormNames[i], accessIndexForm[i])
                 ).toList()
             ));
             return template.asToken();
@@ -629,16 +630,18 @@ public class TestAliasingFuzzer {
             // TODO: handle MemorySegment case, index vs byte addressing?
             int size = containerByteSize / containerElementType.byteSize();
 
+            if (accessIndexForm.length != 2) { throw new RuntimeException("not yet implemented"); }
+
             var templateSplitRanges = Template.make(() -> body(
                 let("size", size),
                 """
                 int middle = RANDOM.nextInt(#size / 3, #size * 2 / 3);
-                var r1 = new IndexForm.Range(0, middle);
-                var r2 = new IndexForm.Range(middle, #size);
+                var r0 = new IndexForm.Range(0, middle);
+                var r1 = new IndexForm.Range(middle, #size);
                 if (RANDOM.nextBoolean()) {
-                    var tmp = r1;
-                    r1 = r2;
-                    r2 = tmp;
+                    var tmp = r0;
+                    r0 = r1;
+                    r1 = tmp;
                 }
                 """
             ));
@@ -646,18 +649,18 @@ public class TestAliasingFuzzer {
             var templateWholeRanges = Template.make(() -> body(
                 let("size", size),
                 """
+                var r0 = new IndexForm.Range(0, #size);
                 var r1 = new IndexForm.Range(0, #size);
-                var r2 = new IndexForm.Range(0, #size);
                 """
             ));
 
             var templateRandomRanges = Template.make(() -> body(
                 let("size", size),
                 """
+                int lo0 = RANDOM.nextInt(0, #size * 3 / 4);
                 int lo1 = RANDOM.nextInt(0, #size * 3 / 4);
-                int lo2 = RANDOM.nextInt(0, #size * 3 / 4);
+                var r0 = new IndexForm.Range(lo0, lo0 + #size / 4);
                 var r1 = new IndexForm.Range(lo1, lo1 + #size / 4);
-                var r2 = new IndexForm.Range(lo2, lo2 + #size / 4);
                 """
             ));
 
@@ -686,7 +689,38 @@ public class TestAliasingFuzzer {
                     case Aliasing.CONTAINER_UNKNOWN_ALIASING_UNKNOWN ->
                         templateAnyRanges.asToken();
                 }
-             ));
+            ));
+            return template.asToken();
+        }
+
+        private TemplateToken generateBoundsAndInvariants(String[] indexFormNames, String[] invarRest) {
+            var template = Template.make(() -> body(
+                let("containerByteSize", containerByteSize),
+                """
+                // Compute loop bounds and loop invariants.
+                int ivLo = RANDOM.nextInt(-1000, 1000);
+                int ivHi = ivLo + #containerByteSize;
+                """,
+                IntStream.range(0, indexFormNames.length).mapToObj(i ->
+                    Template.make(() -> body(
+                        let("i", i),
+                        let("form", indexFormNames[i]),
+                        """
+                        int invar0_#i = #form.invar0ForIvLo(r#i, ivLo);
+                        ivHi = Math.min(ivHi, #form.ivHiForInvar0(r#i, invar0_#i));
+                        """
+                    )).asToken()
+                ).toList(),
+                """
+                // Let's check that the range is large enough, so that the vectorized
+                // main loop can even be entered.
+                if (ivLo + 1000 > ivHi) { throw new RuntimeException("iv range too small: " + ivLo + " " + ivHi); }
+                """,
+                Arrays.stream(invarRest).map(invar ->
+                    List.of(invar, " = RANDOM.nextInt(-1, 2);\n")
+                ).toList()
+                // TODO: verify bounds!
+            ));
             return template.asToken();
         }
 
@@ -754,11 +788,11 @@ public class TestAliasingFuzzer {
                 :   "for (int i = ivHi-1; i >= ivLo; i--) {\n"),
                 switch (accessScenario) {
                     case COPY_LOAD_STORE ->
-                        List.of("a[", acessIndexForm[0].index("invar0_A", invarRest), "] = ",
-                                "b[", acessIndexForm[1].index("invar0_B", invarRest), "];\n");
+                        List.of("a[", accessIndexForm[0].index("invar0_A", invarRest), "] = ",
+                                "b[", accessIndexForm[1].index("invar0_B", invarRest), "];\n");
                     case FILL_STORE_STORE ->
-                        List.of("a[", acessIndexForm[0].index("invar0_A", invarRest), "] = (#type)0x0a;\n",
-                                "b[", acessIndexForm[1].index("invar0_B", invarRest), "] = (#type)0x0b;\n");
+                        List.of("a[", accessIndexForm[0].index("invar0_A", invarRest), "] = (#type)0x0a;\n",
+                                "b[", accessIndexForm[1].index("invar0_B", invarRest), "] = (#type)0x0b;\n");
                 },
                 """
                     }
