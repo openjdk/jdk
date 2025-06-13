@@ -44,7 +44,7 @@ public class Properties {
     private static final String DOM_SIGNATURE_PROVIDER
             = "org.jcp.xml.dsig.internal.dom.SignatureProvider";
     private static final String DOM_SIGNATURE_RANDOM
-            = "org.jcp.xml.dsig.internal.dom.SecureRandom";
+            = "jdk.xmldsig.SecureRandom";
 
     public static void main(String[] args) throws Exception {
         // Do not test on RSA. It's always deterministic.

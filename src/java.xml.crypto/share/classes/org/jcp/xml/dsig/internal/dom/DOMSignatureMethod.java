@@ -65,7 +65,7 @@ import sun.security.util.KeyUtil;
 public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
 
     private static final String DOM_SIGNATURE_PROVIDER = "org.jcp.xml.dsig.internal.dom.SignatureProvider";
-    private static final String DOM_SIGNATURE_RANDOM = "org.jcp.xml.dsig.internal.dom.SecureRandom";
+    private static final String DOM_SIGNATURE_RANDOM = "jdk.xmldsig.SecureRandom";
 
     private static final com.sun.org.slf4j.internal.Logger LOG =
         com.sun.org.slf4j.internal.LoggerFactory.getLogger(DOMSignatureMethod.class);
