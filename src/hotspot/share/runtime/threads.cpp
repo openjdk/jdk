@@ -596,7 +596,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     return status;
   }
 
-  os::current_thread_enable_wx(WXWrite);
+  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXWrite));
 
   // Have the WatcherThread read the release file in the background.
   ReadReleaseFileTask* read_task = new ReadReleaseFileTask();
