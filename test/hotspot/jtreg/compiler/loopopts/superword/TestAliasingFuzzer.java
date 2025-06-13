@@ -477,7 +477,7 @@ public class TestAliasingFuzzer {
                     """,
                     generateContainerInit(containerNames),
                     generateContainerAliasing(containerNames, $("iterations")),
-                    // TODO: aliasing containers
+                    generateRanges(),
                     // TODO: bounds / ranges
                     // TODO: invoke test/reference and verify
                     """
@@ -617,8 +617,75 @@ public class TestAliasingFuzzer {
                         case Aliasing.CONTAINER_UNKNOWN_ALIASING_NEVER,
                              Aliasing.CONTAINER_UNKNOWN_ALIASING_UNKNOWN ->
                             generateContainerAliasingAssignment(i, containerNames[i], containerNames[0], iterations);
+                        // TODO: consider MemorySegment on same backing, but split into different sections.
+                        //       could also be done in allocation!
                     }
                 ).toList()
+             ));
+            return template.asToken();
+        }
+
+        private TemplateToken generateRanges() {
+            // TODO: handle MemorySegment case, index vs byte addressing?
+            int size = containerByteSize / containerElementType.byteSize();
+
+            var templateSplitRanges = Template.make(() -> body(
+                let("size", size),
+                """
+                int middle = RANDOM.nextInt(#size / 3, #size * 2 / 3);
+                var r1 = new IndexForm.Range(0, middle);
+                var r2 = new IndexForm.Range(middle, #size);
+                if (RANDOM.nextBoolean()) {
+                    var tmp = r1;
+                    r1 = r2;
+                    r2 = tmp;
+                }
+                """
+            ));
+
+            var templateWholeRanges = Template.make(() -> body(
+                let("size", size),
+                """
+                var r1 = new IndexForm.Range(0, #size);
+                var r2 = new IndexForm.Range(0, #size);
+                """
+            ));
+
+            var templateRandomRanges = Template.make(() -> body(
+                let("size", size),
+                """
+                int lo1 = RANDOM.nextInt(0, #size * 3 / 4);
+                int lo2 = RANDOM.nextInt(0, #size * 3 / 4);
+                var r1 = new IndexForm.Range(lo1, lo1 + #size / 4);
+                var r2 = new IndexForm.Range(lo2, lo2 + #size / 4);
+                """
+            ));
+
+            var templateAnyRanges = Template.make(() -> body(
+                switch(RANDOM.nextInt(3)) {
+                    case 0 -> templateSplitRanges.asToken();
+                    case 1 -> templateWholeRanges.asToken();
+                    case 2 -> templateRandomRanges.asToken();
+                    default -> throw new RuntimeException("impossible");
+                }
+            ));
+
+            var template = Template.make(() -> body(
+                """
+                // Generate ranges:
+                """,
+                switch(aliasing) {
+                    case Aliasing.CONTAINER_DIFFERENT ->
+                        templateAnyRanges.asToken();
+                    case Aliasing.CONTAINER_SAME_ALIASING_NEVER ->
+                        templateSplitRanges.asToken();
+                    case Aliasing.CONTAINER_SAME_ALIASING_UNKNOWN ->
+                        templateAnyRanges.asToken();
+                    case Aliasing.CONTAINER_UNKNOWN_ALIASING_NEVER ->
+                        templateSplitRanges.asToken(); // TODO: could improve
+                    case Aliasing.CONTAINER_UNKNOWN_ALIASING_UNKNOWN ->
+                        templateAnyRanges.asToken();
+                }
              ));
             return template.asToken();
         }
