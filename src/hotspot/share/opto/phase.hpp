@@ -85,6 +85,7 @@ public:
     f(         _t_vector_pru,        "vector_pru")               \
     f(     _t_renumberLive,          "")                         \
     f(     _t_idealLoop,             "idealLoop")                \
+    f(       _t_reachability,        "reachabilityFence")        \
     f(       _t_autoVectorize,       "autoVectorize")            \
     f(     _t_idealLoopVerify,       "idealLoopVerify")          \
     f(     _t_ccp,                   "ccp")                      \
