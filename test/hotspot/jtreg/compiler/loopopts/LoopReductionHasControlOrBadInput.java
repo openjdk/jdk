@@ -26,7 +26,9 @@
  * @bug 8350576
  * @summary Optimization bails out and hits an assert:
  *          assert(false) failed: reduction has ctrl or bad vector_input
- * @run main/othervm -XX:CompileCommand=compileonly,compiler.loopopts.LoopReductionHasControlOrBadInput::* -Xbatch -XX:-TieredCompilation compiler.loopopts.LoopReductionHasControlOrBadInput
+ * @run main/othervm -Xbatch -XX:-TieredCompilation
+ *      -XX:CompileCommand=compileonly,compiler.loopopts.LoopReductionHasControlOrBadInput::*
+ *      compiler.loopopts.LoopReductionHasControlOrBadInput
  * @run main compiler.loopopts.LoopReductionHasControlOrBadInput
  *
  */
