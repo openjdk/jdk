@@ -86,6 +86,9 @@ final class ApplicationBuilder {
 
     ApplicationBuilder initFromExternalApplication(ExternalApplication app,
             Function<LauncherInfo, Launcher> mapper) {
+
+        externalApp = Objects.requireNonNull(app);
+
         if (version == null) {
             version = app.getAppVersion();
         }
@@ -110,6 +113,19 @@ final class ApplicationBuilder {
 
     Optional<ApplicationLaunchers> launchers() {
         return Optional.ofNullable(launchers);
+    }
+
+    Optional<ExternalApplication> externalApplication() {
+        return Optional.ofNullable(externalApp);
+    }
+
+    Optional<String> mainLauncherClassName() {
+        return launchers()
+                .map(ApplicationLaunchers::mainLauncher)
+                .flatMap(Launcher::startupInfo)
+                .map(LauncherStartupInfo::qualifiedClassName).or(() -> {
+                    return externalApplication().map(ExternalApplication::getMainClass);
+                });
     }
 
     ApplicationBuilder appImageLayout(AppImageLayout v) {
@@ -208,6 +224,7 @@ final class ApplicationBuilder {
     private String vendor;
     private String copyright;
     private Path srcDir;
+    private ExternalApplication externalApp;
     private List<Path> contentDirs;
     private AppImageLayout appImageLayout;
     private RuntimeBuilder runtimeBuilder;
