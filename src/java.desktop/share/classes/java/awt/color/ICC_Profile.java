@@ -983,8 +983,8 @@ public sealed class ICC_Profile implements Serializable
         return getProfileClass(theHeader);
     }
 
-    private static int getProfileClass(byte[] theHeader) {
-        int theClassSig = intFromBigEndian(theHeader, icHdrDeviceClass);
+    private static int getProfileClass(byte[] data) {
+        int theClassSig = intFromBigEndian(data, icHdrDeviceClass);
         return switch (theClassSig) {
             case icSigInputClass -> CLASS_INPUT;
             case icSigDisplayClass -> CLASS_DISPLAY;
@@ -1020,8 +1020,8 @@ public sealed class ICC_Profile implements Serializable
         return getColorSpaceType(theHeader);
     }
 
-    private static int getColorSpaceType(byte[] theHeader) {
-        int theColorSpaceSig = intFromBigEndian(theHeader, icHdrColorSpace);
+    private static int getColorSpaceType(byte[] data) {
+        int theColorSpaceSig = intFromBigEndian(data, icHdrColorSpace);
         return iccCStoJCS(theColorSpaceSig);
     }
 
@@ -1043,9 +1043,9 @@ public sealed class ICC_Profile implements Serializable
         return getPCSType(theHeader);
     }
 
-    private static int getPCSType(byte[] theHeader) {
-        int thePCSSig = intFromBigEndian(theHeader, icHdrPcs);
-        int theDeviceClass = intFromBigEndian(theHeader, icHdrDeviceClass);
+    private static int getPCSType(byte[] data) {
+        int thePCSSig = intFromBigEndian(data, icHdrPcs);
+        int theDeviceClass = intFromBigEndian(data, icHdrDeviceClass);
 
         if (theDeviceClass == icSigLinkClass) {
             return iccCStoJCS(thePCSSig);
@@ -1180,7 +1180,7 @@ public sealed class ICC_Profile implements Serializable
         checkRenderingIntent(data);
     }
 
-    private static void checkRenderingIntent(byte[] header) {
+    private static void checkRenderingIntent(byte[] data) {
         int index = ICC_Profile.icHdrRenderingIntent;
         /*
          * ICC spec: only the least-significant 16 bits encode the rendering
@@ -1188,7 +1188,7 @@ public sealed class ICC_Profile implements Serializable
          * https://www.color.org/specification/ICC.1-2022-05.pdf, section 7.2.15
          */
         // Extract 16-bit unsigned rendering intent (0–65535)
-        int intent = (header[index + 2] & 0xff) << 8 | header[index + 3] & 0xff;
+        int intent = (data[index + 2] & 0xff) << 8 | data[index + 3] & 0xff;
         // Only check upper bound since intent can't be negative
         if (intent > icICCAbsoluteColorimetric) {
             throw new IllegalArgumentException(
