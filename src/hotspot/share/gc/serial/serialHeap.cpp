@@ -149,10 +149,6 @@ void SerialHeap::stop() {
   log_gc_vtime();
 }
 
-double SerialHeap::elapsed_gc_vtime() {
-  return (double) Universe::heap()->vm_vtime() / NANOSECS_PER_SEC;
-}
-
 void SerialHeap::safepoint_synchronize_begin() {
   if (UseStringDeduplication) {
     SuspendibleThreadSet::synchronize();
