@@ -37,10 +37,8 @@ class ZPage;
 class ZPageTable;
 
 class ZObjectAllocator {
+  template <typename Type, int Count> friend class ValueObjBlock;
   friend class ZObjectAllocators;
-
-  template <typename Type, int Count>
-  friend class ValueObjBlock;
 
 private:
   const ZPageAge     _age;
