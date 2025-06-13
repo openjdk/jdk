@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -597,8 +597,7 @@ public class TestDependencyOffsets {
             case "byte"   -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 4 )};
             case "char"   -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4,       4 ),
                                                      new CPUMinVectorWidth(ASIMD,      8 )};
-            case "short"  -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4,       4 ),
-                                                     new CPUMinVectorWidth(ASIMD,      8 )};
+            case "short"  -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 4 )};
             case "int"    -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 8 )};
             case "long"   -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 16)};
             case "float"  -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 8 )};
