@@ -342,6 +342,12 @@ public class TestFloat16ScalarOperations {
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
     @IR(counts = {IRNode.ADD_HF, " 0 ", IRNode.SUB_HF, " 0 ", IRNode.MUL_HF, " 0 ", IRNode.DIV_HF, " 0 "},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+    // Test point checks various floating point operations with exactly one floating
+    // point constant value passed as left or right argument, it then downcasts the
+    // result of computation to a float16 value. This pattern is used to infer a
+    // float16 IR during idealization. Floating point constant input is not-representable
+    // in float16 value range and is an inexact float16 value thereby preventing
+    // float16 IR inference.
     public short testInexactFP16ConstantPatterns() {
         short res = 0;
         res += Float.floatToFloat16(POSITIVE_ZERO_VAR.floatValue() + INEXACT_FP16);
@@ -402,6 +408,11 @@ public class TestFloat16ScalarOperations {
     @IR(counts = {IRNode.ADD_HF, " >0 ", IRNode.SUB_HF, " >0 ", IRNode.MUL_HF, " >0 ", IRNode.DIV_HF, " >0 "},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     @Warmup(10000)
+    // Test point checks various floating point operations with exactly one floating
+    // point constant value passed as left or right argument, it then downcasts the
+    // result of computation to a float16 value. This pattern is used to infer a
+    // Float16 IR during idealization. Floating point constant input is representable
+    // in Float16 value range thereby leading to a successful Float16 IR inference.
     public short testExactFP16ConstantPatterns() {
         short res = 0;
         res += Float.floatToFloat16(EXACT_FP16 + POSITIVE_ZERO_VAR.floatValue());
