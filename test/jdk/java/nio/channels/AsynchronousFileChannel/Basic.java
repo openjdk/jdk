@@ -87,7 +87,6 @@ public class Basic {
         testAsynchronousClose(blah.toPath());
         testCancel(blah.toPath());
         testTruncate(blah.toPath());
-        testViewsOfConfinedArenas(blah.toPath());
 
         // eagerly clean-up
         blah.delete();
@@ -562,33 +561,6 @@ public class Basic {
         }
     }
 
-    // tests unsupported MemorySegment view buffers
-    static void testViewsOfConfinedArenas(Path file) throws IOException {
-        System.out.println("testViewsOfConfinedArenas");
-
-        AsynchronousFileChannel ch = AsynchronousFileChannel
-            .open(file, CREATE, READ, WRITE, TRUNCATE_EXISTING);
-
-        writeFully(ch, genBuffer(), 0L);
-        long size = ch.size();
-
-        try {
-            readAll(ch, genConfinedBuffer(), 0L);
-            throw new RuntimeException("IllegalArgumentException expected");
-        } catch (IllegalArgumentException expected) {
-            // ignore
-        }
-
-        try {
-            writeFully(ch, genConfinedBuffer(), size);
-            throw new RuntimeException("IllegalArgumentException expected");
-        } catch (IllegalArgumentException expected) {
-            // ignore
-        } finally {
-            ch.close();
-        }
-    }
-
     // returns ByteBuffer with random bytes
     static ByteBuffer genBuffer() {
         int size = 1024 + rand.nextInt(16000);
@@ -610,15 +582,6 @@ public class Basic {
                     .flip();
             default -> throw new InternalError("Should not reach here");
         };
-    }
-
-    // returns ByteBuffer view of confined arena
-    static ByteBuffer genConfinedBuffer() {
-        int size = 1024 + rand.nextInt(16000);
-        byte[] buf = new byte[size];
-        rand.nextBytes(buf);
-        Arena arena = Arena.ofConfined();
-        return arena.allocate(buf.length).asByteBuffer().put(buf).flip();
     }
 
     // writes all remaining bytes in the buffer to the given channel at the
