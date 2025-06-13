@@ -1273,12 +1273,13 @@ void MacroAssembler::cmov_gtu(Register cmp1, Register cmp2, Register dst, Regist
 // so, just list behaviour of unordered ones as follow.
 //
 // Set dst (CMoveI (Binary cop (CmpF/D op1 op2)) (Binary dst src))
-//    1. (op1 lt NaN) => true  => CMove: dst = src
-//    2. (op1 le NaN) => true  => CMove: dst = src
-//    3. (op1 gt NaN) => false => CMove: dst = dst
-//    4. (op1 ge NaN) => false => CMove: dst = dst
-//    5. (op1 eq NaN) => false => CMove: dst = dst
-//    6. (op1 ne NaN) => true  => CMove: dst = src
+// (If one or both inputs to the compare are NaN, then)
+//    1. (op1 lt op2) => true  => CMove: dst = src
+//    2. (op1 le op2) => true  => CMove: dst = src
+//    3. (op1 gt op2) => false => CMove: dst = dst
+//    4. (op1 ge op2) => false => CMove: dst = dst
+//    5. (op1 eq op2) => false => CMove: dst = dst
+//    6. (op1 ne op2) => true  => CMove: dst = src
 
 void MacroAssembler::cmov_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
   if (UseZicond) {
