@@ -408,12 +408,6 @@ bool NativeInstruction::is_safepoint_poll() {
   return MacroAssembler::is_lwu_to_zr(address(this));
 }
 
-// A 16-bit instruction with all bits ones is permanently reserved as an illegal instruction.
-bool NativeInstruction::is_sigill_not_entrant() {
-  // jvmci
-  return uint_at(0) == 0xffffffff;
-}
-
 void NativeIllegalInstruction::insert(address code_pos) {
   assert_cond(code_pos != nullptr);
   Assembler::sd_instr(code_pos, 0xffffffff);   // all bits ones is permanently reserved as an illegal instruction

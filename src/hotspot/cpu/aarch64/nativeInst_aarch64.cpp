@@ -340,10 +340,6 @@ bool NativeInstruction::is_movk() {
   return Instruction_aarch64::extract(int_at(0), 30, 23) == 0b11100101;
 }
 
-bool NativeInstruction::is_sigill_not_entrant() {
-  return uint_at(0) == 0xd4bbd5a1; // dcps1 #0xdead
-}
-
 void NativeIllegalInstruction::insert(address code_pos) {
   *(juint*)code_pos = 0xd4bbd5a1; // dcps1 #0xdead
 }

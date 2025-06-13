@@ -85,9 +85,6 @@ class NativeInstruction {
   // Bcrl is currently the only accepted instruction here.
   bool is_jump();
 
-  // We use an illtrap for marking a method as not_entrant.
-  bool is_sigill_not_entrant();
-
   bool is_safepoint_poll() {
     // Is the current instruction a POTENTIAL read access to the polling page?
     // The instruction's current arguments are not checked!

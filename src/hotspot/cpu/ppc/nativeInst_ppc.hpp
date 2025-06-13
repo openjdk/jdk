@@ -69,13 +69,6 @@ class NativeInstruction {
     return MacroAssembler::tdi_get_si16(long_at(0), Assembler::traptoUnconditional, 0);
   }
 
-  // We use an illtrap for marking a method as not_entrant.
-  bool is_sigill_not_entrant() {
-    // Work around a C++ compiler bug which changes 'this'.
-    return NativeInstruction::is_sigill_not_entrant_at(addr_at(0));
-  }
-  static bool is_sigill_not_entrant_at(address addr);
-
 #ifdef COMPILER2
   // SIGTRAP-based implicit range checks
   bool is_sigtrap_range_check() {
