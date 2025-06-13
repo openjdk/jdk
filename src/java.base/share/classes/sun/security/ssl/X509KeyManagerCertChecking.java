@@ -27,14 +27,18 @@ package sun.security.ssl;
 
 import java.net.Socket;
 import java.security.AlgorithmConstraints;
+import java.security.Principal;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import javax.net.ssl.ExtendedSSLSession;
 import javax.net.ssl.SNIHostName;
@@ -48,27 +52,27 @@ import sun.security.provider.certpath.AlgorithmChecker;
 import sun.security.util.KnownOIDs;
 import sun.security.validator.Validator;
 
-/**
- * Layer that adds algorithm constraints functionality and certificate
- * key usage check to a key manager. Algorithm constraints check can be
- * disabled by setting "jdk.tls.keymanager.disableConstraintsChecking"
- * system property to "true".
+/*
+ * Layer that adds algorithm constraints and certificate
+ * checking to a key manager. Checks can be disabled by setting
+ * "jdk.tls.keymanager.disableCertChecking" system property to "true"
+ * before creating a KeyManager object.
  */
 
-abstract class X509KeyManagerConstraints extends X509ExtendedKeyManager {
+abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
 
-    // Indicates whether we should skip the constraints check.
-    private final boolean constraintsDisabled;
+    // Indicates whether we should skip the certificate checks.
+    private final boolean checksDisabled;
 
-    protected X509KeyManagerConstraints() {
-        constraintsDisabled = "true".equals(System.getProperty(
-                "jdk.tls.keymanager.disableConstraintsChecking"));
+    protected X509KeyManagerCertChecking() {
+        checksDisabled = "true".equals(System.getProperty(
+                "jdk.tls.keymanager.disableCertChecking"));
     }
 
     // Gets algorithm constraints of the socket.
     protected AlgorithmConstraints getAlgorithmConstraints(Socket socket) {
 
-        if (constraintsDisabled) {
+        if (checksDisabled) {
             return null;
         }
 
@@ -100,7 +104,7 @@ abstract class X509KeyManagerConstraints extends X509ExtendedKeyManager {
     // Gets algorithm constraints of the engine.
     protected AlgorithmConstraints getAlgorithmConstraints(SSLEngine engine) {
 
-        if (constraintsDisabled) {
+        if (checksDisabled) {
             return null;
         }
 
@@ -124,11 +128,12 @@ abstract class X509KeyManagerConstraints extends X509ExtendedKeyManager {
         return SSLAlgorithmConstraints.forEngine(engine, true);
     }
 
+    // Algorithm constraints check.
     protected boolean conformsToAlgorithmConstraints(
             AlgorithmConstraints constraints, Certificate[] chain,
             String variant) {
 
-        if (constraintsDisabled) {
+        if (checksDisabled) {
             return true;
         }
 
@@ -163,6 +168,13 @@ abstract class X509KeyManagerConstraints extends X509ExtendedKeyManager {
         }
 
         return true;
+    }
+
+    protected CheckResult certificateCheck(
+            CheckType checkType, X509Certificate cert, Date date,
+            List<SNIServerName> serverNames, String idAlgorithm) {
+        return checksDisabled ? CheckResult.OK
+                : checkType.check(cert, date, serverNames, idAlgorithm);
     }
 
     // enum for the result of the extension check
@@ -212,9 +224,8 @@ abstract class X509KeyManagerConstraints extends X509ExtendedKeyManager {
 
         // Check if this certificate is appropriate for this type of use
         // first check extensions, if they match, check expiration.
-        //
-        // Note: we may want to move this code into the sun.security.validator
-        // package
+        // NOTE: `conformsToAlgorithmConstraints` call above also does some
+        // basic keyUsage checks.
         CheckResult check(X509Certificate cert, Date date,
                 List<SNIServerName> serverNames, String idAlgorithm) {
 
@@ -260,7 +271,7 @@ abstract class X509KeyManagerConstraints extends X509ExtendedKeyManager {
                             }
                             break;
                         case "DH":
-                            // require keyagreement bit
+                            // require key agreement bit
                             if (!getBit(ku, 4)) {
                                 return CheckResult.EXTENSION_MISMATCH;
                             }
@@ -299,21 +310,21 @@ abstract class X509KeyManagerConstraints extends X509ExtendedKeyManager {
                             StandardConstants.SNI_HOST_NAME) {
                         if (!(serverName instanceof SNIHostName)) {
                             try {
-                                serverName =
-                                        new SNIHostName(serverName.getEncoded());
+                                serverName = new SNIHostName(
+                                        serverName.getEncoded());
                             } catch (IllegalArgumentException iae) {
                                 // unlikely to happen, just in case ...
                                 if (SSLLogger.isOn &&
                                         SSLLogger.isOn("keymanager")) {
-                                    SSLLogger.fine(
-                                            "Illegal server name: " + serverName);
+                                    SSLLogger.fine("Illegal server name: "
+                                            + serverName);
                                 }
 
                                 return CheckResult.INSENSITIVE;
                             }
                         }
                         String hostname =
-                                ((SNIHostName)serverName).getAsciiName();
+                                ((SNIHostName) serverName).getAsciiName();
 
                         try {
                             X509TrustManagerImpl.checkIdentity(hostname,
@@ -322,9 +333,9 @@ abstract class X509KeyManagerConstraints extends X509ExtendedKeyManager {
                             if (SSLLogger.isOn &&
                                     SSLLogger.isOn("keymanager")) {
                                 SSLLogger.fine(
-                                        "Certificate identity does not match " +
-                                                "Server Name Indication (SNI): " +
-                                                hostname);
+                                        "Certificate identity does not match "
+                                                + "Server Name Indication (SNI): "
+                                                + hostname);
                             }
                             return CheckResult.INSENSITIVE;
                         }
@@ -337,7 +348,7 @@ abstract class X509KeyManagerConstraints extends X509ExtendedKeyManager {
             return CheckResult.OK;
         }
 
-        public String getValidator() {
+        String getValidator() {
             if (this == CLIENT) {
                 return Validator.VAR_TLS_CLIENT;
             } else if (this == SERVER) {
@@ -345,5 +356,196 @@ abstract class X509KeyManagerConstraints extends X509ExtendedKeyManager {
             }
             return Validator.VAR_GENERIC;
         }
+    }
+
+    // A candidate match
+    // identifies the entry by builder and alias
+    // and includes the result of the certificate check
+    protected static class EntryStatus implements Comparable<EntryStatus> {
+
+        final int keyStoreIndex;
+        final int keyIndex;
+        final String alias;
+        final CheckResult checkResult;
+
+        EntryStatus(int keyStoreIndex, int keyIndex, String alias,
+                Certificate[] chain, CheckResult checkResult) {
+            this.keyStoreIndex = keyStoreIndex;
+            this.keyIndex = keyIndex;
+            this.alias = alias;
+            this.checkResult = checkResult;
+        }
+
+        @Override
+        public int compareTo(EntryStatus other) {
+            int result = this.checkResult.compareTo(other.checkResult);
+            return (result == 0) ? (this.keyIndex - other.keyIndex) : result;
+        }
+
+        @Override
+        public String toString() {
+            String s = alias + " (verified: " + checkResult + ")";
+            if (keyStoreIndex == 0) {
+                return s;
+            } else {
+                return "KeyStore #" + keyStoreIndex + ", alias: " + s;
+            }
+        }
+    }
+
+    // Class to help verify that the public key algorithm (and optionally
+    // the signature algorithm) of a certificate matches what we need.
+    protected static class KeyType {
+
+        final String keyAlgorithm;
+
+        // In TLS 1.2, the signature algorithm  has been obsoleted by the
+        // supported_signature_algorithms, and the certificate type no longer
+        // restricts the algorithm used to sign the certificate.
+        //
+        // However, because we don't support certificate type checking other
+        // than rsa_sign, dss_sign and ecdsa_sign, we don't have to check the
+        // protocol version here.
+        final String sigKeyAlgorithm;
+
+        KeyType(String algorithm) {
+            int k = algorithm.indexOf('_');
+            if (k == -1) {
+                keyAlgorithm = algorithm;
+                sigKeyAlgorithm = null;
+            } else {
+                keyAlgorithm = algorithm.substring(0, k);
+                sigKeyAlgorithm = algorithm.substring(k + 1);
+            }
+        }
+
+        boolean matches(Certificate[] chain) {
+            if (!chain[0].getPublicKey().getAlgorithm().equals(keyAlgorithm)) {
+                return false;
+            }
+            if (sigKeyAlgorithm == null) {
+                return true;
+            }
+            if (chain.length > 1) {
+                // if possible, check the public key in the issuer cert
+                return sigKeyAlgorithm.equals(
+                        chain[1].getPublicKey().getAlgorithm());
+            } else {
+                // Check the signature algorithm of the certificate itself.
+                // Look for the "withRSA" in "SHA1withRSA", etc.
+                X509Certificate issuer = (X509Certificate) chain[0];
+                String sigAlgName =
+                        issuer.getSigAlgName().toUpperCase(Locale.ENGLISH);
+                String pattern =
+                        "WITH" + sigKeyAlgorithm.toUpperCase(Locale.ENGLISH);
+                return sigAlgName.contains(pattern);
+            }
+        }
+    }
+
+    protected static List<KeyType> getKeyTypes(String... keyTypes) {
+        if ((keyTypes == null) ||
+                (keyTypes.length == 0) || (keyTypes[0] == null)) {
+            return null;
+        }
+        List<KeyType> list = new ArrayList<>(keyTypes.length);
+        for (String keyType : keyTypes) {
+            list.add(new KeyType(keyType));
+        }
+        return list;
+    }
+
+    // Make a Set out of the array
+    protected Set<Principal> getIssuerSet(Principal[] issuers) {
+        if ((issuers != null) && (issuers.length != 0)) {
+            return new HashSet<>(Arrays.asList(issuers));
+        } else {
+            return null;
+        }
+    }
+
+    protected EntryStatus checkAlias(int keyStoreIndex, String alias,
+            Certificate[] chain, Date verificationDate, List<KeyType> keyTypes,
+            Set<Principal> issuerSet, CheckType checkType,
+            AlgorithmConstraints constraints,
+            List<SNIServerName> requestedServerNames, String idAlgorithm) {
+
+        // --- Mandatory checks ---
+
+        if ((chain == null) || (chain.length == 0)) {
+            // Must be secret key entry, ignore
+            return null;
+        }
+
+        for (Certificate cert : chain) {
+            if (!(cert instanceof X509Certificate)) {
+                // Not an X509Certificate, ignore this alias
+                return null;
+            }
+        }
+
+        // Check keytype
+        int keyIndex = -1;
+        int j = 0;
+
+        for (KeyType keyType : keyTypes) {
+            if (keyType.matches(chain)) {
+                keyIndex = j;
+                break;
+            }
+            j++;
+        }
+
+        if (keyIndex == -1) {
+            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                SSLLogger.fine("Ignore alias " + alias
+                        + ": key algorithm does not match");
+            }
+            return null;
+        }
+
+        // Check issuers
+        if (issuerSet != null) {
+            boolean found = false;
+            for (Certificate cert : chain) {
+                X509Certificate xcert = (X509Certificate) cert;
+                if (issuerSet.contains(xcert.getIssuerX500Principal())) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                    SSLLogger.fine(
+                            "Ignore alias " + alias
+                                    + ": issuers do not match");
+                }
+                return null;
+            }
+        }
+
+        // --- Optional checks, depending on "checksDisabled" toggle ---
+
+        // Check the algorithm constraints
+        if (constraints != null &&
+                !conformsToAlgorithmConstraints(constraints, chain,
+                        checkType.getValidator())) {
+
+            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                SSLLogger.fine("Ignore alias " + alias +
+                        ": certificate chain does not conform to " +
+                        "algorithm constraints");
+            }
+            return null;
+        }
+
+        // Endpoint certificate check
+        CheckResult checkResult = certificateCheck(checkType,
+                (X509Certificate) chain[0],
+                verificationDate == null ? new Date() : verificationDate,
+                requestedServerNames, idAlgorithm);
+
+        return new EntryStatus(
+                keyStoreIndex, keyIndex, alias, chain, checkResult);
     }
 }

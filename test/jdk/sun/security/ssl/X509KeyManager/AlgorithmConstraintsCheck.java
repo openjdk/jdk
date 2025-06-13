@@ -76,7 +76,7 @@ public class AlgorithmConstraintsCheck {
         String certSignatureAlg = args[2];
 
         System.setProperty(
-                "jdk.tls.keymanager.disableConstraintsChecking", disabled);
+                "jdk.tls.keymanager.disableCertChecking", disabled);
         SecurityUtils.addToDisabledTlsAlgs(certSignatureAlg);
 
         X509KeyManager km = getKeyManager(kmAlg, certSignatureAlg);
@@ -167,7 +167,7 @@ public class AlgorithmConstraintsCheck {
         CertificateBuilder builder = new CertificateBuilder()
                 .setSubjectName(subjectName)
                 .setPublicKey(publicKey)
-                .setNotAfter(
+                .setNotBefore(
                         Date.from(Instant.now().minus(1, ChronoUnit.HOURS)))
                 .setNotAfter(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
                 .setSerialNumber(
@@ -179,5 +179,4 @@ public class AlgorithmConstraintsCheck {
 
         return builder;
     }
-
 }

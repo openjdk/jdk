@@ -34,9 +34,9 @@ import java.security.KeyStore.Entry;
 import java.security.KeyStore.PrivateKeyEntry;
 import java.security.Principal;
 import java.security.PrivateKey;
-import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.net.ssl.*;
 
@@ -58,7 +58,7 @@ import javax.net.ssl.*;
  * @author  Andreas Sterbenz
  */
 
-final class X509KeyManagerImpl extends X509KeyManagerConstraints {
+final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
 
     // for unit testing only, set via privileged reflection
     private static Date verificationDate;
@@ -79,8 +79,7 @@ final class X509KeyManagerImpl extends X509KeyManagerConstraints {
     X509KeyManagerImpl(List<Builder> builders) {
         this.builders = builders;
         uidCounter = new AtomicLong();
-        entryCacheMap = Collections.synchronizedMap
-                        (new SizedMap<>());
+        entryCacheMap = new ConcurrentHashMap<>();
     }
 
     // LinkedHashMap with a max size of 10
@@ -115,14 +114,14 @@ final class X509KeyManagerImpl extends X509KeyManagerConstraints {
     public String chooseClientAlias(String[] keyTypes, Principal[] issuers,
             Socket socket) {
         return chooseAlias(getKeyTypes(keyTypes), issuers, CheckType.CLIENT,
-                        getAlgorithmConstraints(socket));
+                getAlgorithmConstraints(socket), null, null);
     }
 
     @Override
     public String chooseEngineClientAlias(String[] keyTypes,
             Principal[] issuers, SSLEngine engine) {
         return chooseAlias(getKeyTypes(keyTypes), issuers, CheckType.CLIENT,
-                        getAlgorithmConstraints(engine));
+                getAlgorithmConstraints(engine), null, null);
     }
 
     @Override
@@ -163,12 +162,12 @@ final class X509KeyManagerImpl extends X509KeyManagerConstraints {
 
     @Override
     public String[] getClientAliases(String keyType, Principal[] issuers) {
-        return getAliases(keyType, issuers, CheckType.CLIENT, null);
+        return getAliases(keyType, issuers, CheckType.CLIENT);
     }
 
     @Override
     public String[] getServerAliases(String keyType, Principal[] issuers) {
-        return getAliases(keyType, issuers, CheckType.SERVER, null);
+        return getAliases(keyType, issuers, CheckType.SERVER);
     }
 
     //
@@ -180,7 +179,7 @@ final class X509KeyManagerImpl extends X509KeyManagerConstraints {
     // between the calls to getCertificateChain() and getPrivateKey()
     // even if tokens are inserted or removed
     private String makeAlias(EntryStatus entry) {
-        return uidCounter.incrementAndGet() + "." + entry.builderIndex + "."
+        return uidCounter.incrementAndGet() + "." + entry.keyStoreIndex + "."
                 + entry.alias;
     }
 
@@ -225,68 +224,6 @@ final class X509KeyManagerImpl extends X509KeyManagerConstraints {
         }
     }
 
-    // Class to help verify that the public key algorithm (and optionally
-    // the signature algorithm) of a certificate matches what we need.
-    private static class KeyType {
-
-        final String keyAlgorithm;
-
-        // In TLS 1.2, the signature algorithm  has been obsoleted by the
-        // supported_signature_algorithms, and the certificate type no longer
-        // restricts the algorithm used to sign the certificate.
-        //
-        // However, because we don't support certificate type checking other
-        // than rsa_sign, dss_sign and ecdsa_sign, we don't have to check the
-        // protocol version here.
-        final String sigKeyAlgorithm;
-
-        KeyType(String algorithm) {
-            int k = algorithm.indexOf('_');
-            if (k == -1) {
-                keyAlgorithm = algorithm;
-                sigKeyAlgorithm = null;
-            } else {
-                keyAlgorithm = algorithm.substring(0, k);
-                sigKeyAlgorithm = algorithm.substring(k + 1);
-            }
-        }
-
-        boolean matches(Certificate[] chain) {
-            if (!chain[0].getPublicKey().getAlgorithm().equals(keyAlgorithm)) {
-                return false;
-            }
-            if (sigKeyAlgorithm == null) {
-                return true;
-            }
-            if (chain.length > 1) {
-                // if possible, check the public key in the issuer cert
-                return sigKeyAlgorithm.equals(
-                        chain[1].getPublicKey().getAlgorithm());
-            } else {
-                // Check the signature algorithm of the certificate itself.
-                // Look for the "withRSA" in "SHA1withRSA", etc.
-                X509Certificate issuer = (X509Certificate)chain[0];
-                String sigAlgName =
-                        issuer.getSigAlgName().toUpperCase(Locale.ENGLISH);
-                String pattern =
-                        "WITH" + sigKeyAlgorithm.toUpperCase(Locale.ENGLISH);
-                return sigAlgName.contains(pattern);
-            }
-        }
-    }
-
-    private static List<KeyType> getKeyTypes(String ... keyTypes) {
-        if ((keyTypes == null) ||
-                (keyTypes.length == 0) || (keyTypes[0] == null)) {
-            return null;
-        }
-        List<KeyType> list = new ArrayList<>(keyTypes.length);
-        for (String keyType : keyTypes) {
-            list.add(new KeyType(keyType));
-        }
-        return list;
-    }
-
     /*
      * Return the best alias that fits the given parameters.
      * The algorithm we use is:
@@ -300,13 +237,6 @@ final class X509KeyManagerImpl extends X509KeyManagerConstraints {
      *     with appropriate key usage to certs with the wrong key usage.
      *     return the first one of them.
      */
-    private String chooseAlias(List<KeyType> keyTypeList, Principal[] issuers,
-            CheckType checkType, AlgorithmConstraints constraints) {
-
-        return chooseAlias(keyTypeList, issuers,
-                                    checkType, constraints, null, null);
-    }
-
     private String chooseAlias(List<KeyType> keyTypeList, Principal[] issuers,
             CheckType checkType, AlgorithmConstraints constraints,
             List<SNIServerName> requestedServerNames, String idAlgorithm) {
@@ -361,8 +291,8 @@ final class X509KeyManagerImpl extends X509KeyManagerConstraints {
      * and certificates with the wrong extensions).
      * The perfect matches will be first in the array.
      */
-    public String[] getAliases(String keyType, Principal[] issuers,
-            CheckType checkType, AlgorithmConstraints constraints) {
+    private String[] getAliases(
+            String keyType, Principal[] issuers, CheckType checkType) {
         if (keyType == null) {
             return null;
         }
@@ -373,8 +303,7 @@ final class X509KeyManagerImpl extends X509KeyManagerConstraints {
         for (int i = 0, n = builders.size(); i < n; i++) {
             try {
                 List<EntryStatus> results = getAliases(i, keyTypeList,
-                                    issuerSet, true, checkType, constraints,
-                                    null, null);
+                        issuerSet, true, checkType, null, null, null);
                 if (results != null) {
                     if (allResults == null) {
                         allResults = new ArrayList<>();
@@ -406,50 +335,6 @@ final class X509KeyManagerImpl extends X509KeyManagerConstraints {
             s[i++] = makeAlias(result);
         }
         return s;
-    }
-
-    // make a Set out of the array
-    private Set<Principal> getIssuerSet(Principal[] issuers) {
-        if ((issuers != null) && (issuers.length != 0)) {
-            return new HashSet<>(Arrays.asList(issuers));
-        } else {
-            return null;
-        }
-    }
-
-    // a candidate match
-    // identifies the entry by builder and alias
-    // and includes the result of the certificate check
-    private static class EntryStatus implements Comparable<EntryStatus> {
-
-        final int builderIndex;
-        final int keyIndex;
-        final String alias;
-        final CheckResult checkResult;
-
-        EntryStatus(int builderIndex, int keyIndex, String alias,
-                Certificate[] chain, CheckResult checkResult) {
-            this.builderIndex = builderIndex;
-            this.keyIndex = keyIndex;
-            this.alias = alias;
-            this.checkResult = checkResult;
-        }
-
-        @Override
-        public int compareTo(EntryStatus other) {
-            int result = this.checkResult.compareTo(other.checkResult);
-            return (result == 0) ? (this.keyIndex - other.keyIndex) : result;
-        }
-
-        @Override
-        public String toString() {
-            String s = alias + " (verified: " + checkResult + ")";
-            if (builderIndex == 0) {
-                return s;
-            } else {
-                return "Builder #" + builderIndex + ", alias: " + s;
-            }
-        }
     }
 
     /*
@@ -488,97 +373,33 @@ final class X509KeyManagerImpl extends X509KeyManagerConstraints {
         Builder builder = builders.get(builderIndex);
         KeyStore ks = builder.getKeyStore();
         List<EntryStatus> results = null;
-        Date date = verificationDate;
         boolean preferred = false;
+
         for (Enumeration<String> e = ks.aliases(); e.hasMoreElements(); ) {
+
             String alias = e.nextElement();
+
             // check if it is a key entry (private key or secret key)
             if (!ks.isKeyEntry(alias)) {
                 continue;
             }
 
-            Certificate[] chain = ks.getCertificateChain(alias);
-            if ((chain == null) || (chain.length == 0)) {
-                // must be secret key entry, ignore
+            EntryStatus status = checkAlias(builderIndex, alias,
+                    ks.getCertificateChain(alias),
+                    verificationDate, keyTypes, issuerSet, checkType,
+                    constraints, requestedServerNames, idAlgorithm);
+
+            if (status == null) {
                 continue;
             }
 
-            boolean incompatible = false;
-            for (Certificate cert : chain) {
-                if (!(cert instanceof X509Certificate)) {
-                    // not an X509Certificate, ignore this alias
-                    incompatible = true;
-                    break;
-                }
-            }
-            if (incompatible) {
-                continue;
-            }
-
-            // check keytype
-            int keyIndex = -1;
-            int j = 0;
-            for (KeyType keyType : keyTypes) {
-                if (keyType.matches(chain)) {
-                    keyIndex = j;
-                    break;
-                }
-                j++;
-            }
-            if (keyIndex == -1) {
-                if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
-                    SSLLogger.fine("Ignore alias " + alias
-                                + ": key algorithm does not match");
-                }
-                continue;
-            }
-            // check issuers
-            if (issuerSet != null) {
-                boolean found = false;
-                for (Certificate cert : chain) {
-                    X509Certificate xcert = (X509Certificate)cert;
-                    if (issuerSet.contains(xcert.getIssuerX500Principal())) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
-                        SSLLogger.fine(
-                                "Ignore alias " + alias
-                                + ": issuers do not match");
-                    }
-                    continue;
-                }
-            }
-
-            // check the algorithm constraints
-            if (constraints != null &&
-                    !conformsToAlgorithmConstraints(constraints, chain,
-                            checkType.getValidator())) {
-
-                if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
-                    SSLLogger.fine("Ignore alias " + alias +
-                            ": certificate chain does not conform to " +
-                            "algorithm constraints");
-                }
-                continue;
-            }
-
-            if (date == null) {
-                date = new Date();
-            }
-            CheckResult checkResult =
-                    checkType.check((X509Certificate)chain[0], date,
-                                    requestedServerNames, idAlgorithm);
-            EntryStatus status =
-                    new EntryStatus(builderIndex, keyIndex,
-                                        alias, chain, checkResult);
-            if (!preferred && checkResult == CheckResult.OK && keyIndex == 0) {
+            if (!preferred && status.checkResult == CheckResult.OK
+                    && status.keyIndex == 0) {
                 preferred = true;
             }
+
             if (preferred && !findAll) {
-                // if we have a good match and do not need all matches,
+                // If we have a good match and do not need all matches,
                 // return immediately
                 return Collections.singletonList(status);
             } else {
@@ -588,6 +409,7 @@ final class X509KeyManagerImpl extends X509KeyManagerConstraints {
                 results.add(status);
             }
         }
+
         return results;
     }
 }

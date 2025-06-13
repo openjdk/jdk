@@ -68,7 +68,7 @@ import sun.security.x509.X500Name;
  * @run main/othervm PeerConstraintsCheck true PKIX
  */
 
-/**
+/*
  * This class tests against the peer supported certificate signatures sent in
  * "signature_algorithms_cert" extension.
  */
@@ -107,7 +107,7 @@ public class PeerConstraintsCheck extends SSLSocketTemplate {
         String kmAlg = args[1];
 
         System.setProperty(
-                "jdk.tls.keymanager.disableConstraintsChecking", disabled);
+                "jdk.tls.keymanager.disableCertChecking", disabled);
 
         if ("true".equals(disabled)) {
             new PeerConstraintsCheck(kmAlg).run();
@@ -259,7 +259,7 @@ public class PeerConstraintsCheck extends SSLSocketTemplate {
         CertificateBuilder builder = new CertificateBuilder()
                 .setSubjectName(subjectName)
                 .setPublicKey(publicKey)
-                .setNotAfter(
+                .setNotBefore(
                         Date.from(Instant.now().minus(1, ChronoUnit.HOURS)))
                 .setNotAfter(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
                 .setSerialNumber(

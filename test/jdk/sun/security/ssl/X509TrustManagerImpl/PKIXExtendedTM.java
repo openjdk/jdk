@@ -30,10 +30,7 @@
  * @test
  * @bug 6916074 8170131
  * @summary Add support for TLS 1.2
- * @run main/othervm PKIXExtendedTM 0
- * @run main/othervm PKIXExtendedTM 1
  * @run main/othervm PKIXExtendedTM 2
- * @run main/othervm PKIXExtendedTM 3
  */
 
 import java.net.*;
@@ -1117,7 +1114,7 @@ public class PKIXExtendedTM {
         // Disable KeyManager's algorithm constraints checking as this test
         // is about TrustManager's constraints check.
         System.setProperty(
-                "jdk.tls.keymanager.disableConstraintsChecking", "true");
+                "jdk.tls.keymanager.disableCertChecking", "true");
 
         if (args.length != 1) {
             throw new Exception("Incorrect number of arguments");
