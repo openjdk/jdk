@@ -859,53 +859,43 @@ MemRes os::free_memory() {
 MemRes os::win32::available_memory() {
   // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
   // value if total memory is larger than 4GB
-  MemRes memRes;
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
   if (!res) {
     errno = ::GetLastError();
     log_debug(os)("available_memory() failed to GlobalMemoryStatusEx: GetLastError->%ld.", errno);
-    memRes.err = -1;
-    return memRes;
+    return MemRes(0,-1);
   }
-  memRes.val = static_cast<size_t>(ms.ullAvailPhys);
-  return memRes;
+  return MemRes(static_cast<size_t>(ms.ullAvailPhys), 0);
 }
 
 MemRes os::total_swap_space() {
-  MemRes memRes;
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
   if (!res) {
     errno = ::GetLastError();
     log_debug(os)("total_swap_space() failed to GlobalMemoryStatusEx: GetLastError->%ld.", errno);
-    memRes.err = -1;
-    return memRes;
+    return MemRes(0, -1);
   }
-  memRes.val = static_cast<size_t>(ms.ullTotalPageFile);
-  return memRes;
+  return MemRes(static_cast<size_t>(ms.ullTotalPageFile), 0);
 }
 
 MemRes os::free_swap_space() {
-  MemRes memRes;
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
   if (!res) {
     errno = ::GetLastError();
     log_debug(os)("free_swap_space() failed to GlobalMemoryStatusEx: GetLastError->%ld.", errno);
-    memRes.err = -1;
-    return memRes;
+    return MemRes(0, -1);
   }
-  memRes.val = static_cast<size_t>(ms.ullAvailPageFile);
-  return memRes;
+  return MemRes(static_cast<size_t>(ms.ullAvailPageFile), 0);
 }
 
 MemRes os::physical_memory() {
-  MemRes res(win32::physical_memory(), 0);
-  return res;
+  return MemRes(win32::physical_memory(), 0);
 }
 
 size_t os::rss() {

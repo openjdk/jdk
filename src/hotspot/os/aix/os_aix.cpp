@@ -264,40 +264,31 @@ MemRes os::available_memory() {
 
 MemRes os::Aix::available_memory() {
   os::Aix::meminfo_t mi;
-  MemRes res;
   if (os::Aix::get_meminfo(&mi)) {
-    res.val = mi.real_free;
+    return MemRes(mi.real_free, 0);
   } else {
-    res.err = -1;
+    return MemRes(0, -1);
   }
-  return res;
 }
 
 MemRes os::total_swap_space() {
   perfstat_memory_total_t memory_info;
-  MemRes res;
   if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
-    res.err = -1;
-    return res;
+    return MemRes(0, -1);
   }
-  res.val = static_cast<size_t>(memory_info.pgsp_total * 4 * K);
-  return res;
+  return MemRes(static_cast<size_t>(memory_info.pgsp_total * 4 * K), 0);
 }
 
 MemRes os::free_swap_space() {
   perfstat_memory_total_t memory_info;
-  MemRes res;
   if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
-    res.err = -1;
-    return res;
+    return MemRes(0, -1);
   }
-  res.val = static_cast<size_t>(memory_info.pgsp_free * 4 * K);
-  return res;
+  return MemRes(static_cast<size_t>(memory_info.pgsp_free * 4 * K), 0);
 }
 
 MemRes os::physical_memory() {
-  MemRes res(Aix::physical_memory(), 0);
-  return res;
+  return MemRes(Aix::physical_memory(), 0);
 }
 
 size_t os::rss() { return (size_t)0; }

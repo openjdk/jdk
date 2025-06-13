@@ -1183,9 +1183,9 @@ void os::print_summary_info(outputStream* st, char* buf, size_t buflen) {
 #endif // PRODUCT
   get_summary_cpu_info(buf, buflen);
   st->print("%s, ", buf);
-  size_t mem = physical_memory().val/G;
+  size_t mem = physical_memory().value/G;
   if (mem == 0) {  // for low memory systems
-    mem = physical_memory().val/M;
+    mem = physical_memory().value/M;
     st->print("%d cores, %zuM, ", processor_count(), mem);
   } else {
     st->print("%d cores, %zuG, ", processor_count(), mem);
@@ -1943,7 +1943,7 @@ bool os::is_server_class_machine() {
 
   /* Is this a server class machine? */
   if ((os::active_processor_count() >= (int)server_processors) &&
-      (os::physical_memory().val >= (server_memory - missing_memory))) {
+      (os::physical_memory().value >= (server_memory - missing_memory))) {
     const unsigned int logical_processors =
       VM_Version::logical_processors_per_package();
     if (logical_processors > 1) {
@@ -2203,19 +2203,26 @@ static void assert_nonempty_range(const char* addr, size_t bytes) {
 }
 
 MemRes os::used_memory() {
-  MemRes res;
 #ifdef LINUX
   if (OSContainer::is_containerized()) {
     jlong mem_usage = OSContainer::memory_usage_in_bytes();
     if (mem_usage > 0) {
-      res.val = static_cast<size_t>(mem_usage);
-      return res;
+      return MemRes(static_cast<size_t>(mem_usage), 0);
     }
   }
 #endif
-  res.val = os::physical_memory().val - os::available_memory().val;
-  res.err = MIN2(os::physical_memory().err, os::available_memory().err);
-  return res;
+  auto phys_mem = os::physical_memory();
+  auto avail_mem = os::available_memory();
+
+  if (phys_mem.error < 0) {
+    return MemRes(0, -1);
+  }
+
+  if (avail_mem.error < 0) {
+    return MemRes(0, -1);
+  }
+
+  return MemRes(phys_mem.value - avail_mem.value, 0);
 }
 
 

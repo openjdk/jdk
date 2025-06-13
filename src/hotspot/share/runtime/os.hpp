@@ -147,10 +147,9 @@ enum WXMode {
 
 // struct to return from mem-related functions
 struct MemRes {
-  size_t val;
-  int err;
-  MemRes(size_t v, int e) : val(v), err(e) {}
-  MemRes(): val(0), err(0) {}
+  size_t value;
+  int error;
+  MemRes(size_t v, int e) : value(v), error(e) {}
 };
 
 // Executable parameter flag for os::commit_memory() and

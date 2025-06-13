@@ -238,11 +238,9 @@ MemRes os::available_memory() {
 
 MemRes os::Linux::available_memory() {
   julong avail_mem = available_memory_in_container();
-  MemRes res;
   if (avail_mem != static_cast<julong>(-1L)) {
     log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
-    res.val = static_cast<size_t>(avail_mem);
-    return res;
+    return MemRes(static_cast<size_t>(avail_mem), 0);
   }
 
   FILE *fp = os::fopen("/proc/meminfo", "r");
@@ -258,12 +256,13 @@ MemRes os::Linux::available_memory() {
   }
   if (avail_mem == static_cast<julong>(-1L)) {
     auto free_mem = free_memory();
-    res.err = free_mem.err < 0 ? -1 : 0;
-    avail_mem = static_cast<julong>(free_memory().val);
+    if (free_mem.error < 0) {
+      return MemRes(0, -1);
+    }
+    avail_mem = static_cast<julong>(free_memory().value);
   }
   log_trace(os)("available memory: " JULONG_FORMAT, avail_mem);
-  res.val = static_cast<size_t>(avail_mem);
-  return res;
+  return MemRes(static_cast<size_t>(avail_mem), 0);
 }
 
 MemRes os::free_memory() {
@@ -272,55 +271,44 @@ MemRes os::free_memory() {
 
 MemRes os::Linux::free_memory() {
   // values in struct sysinfo are "unsigned long"
-  MemRes res;
   julong free_mem = available_memory_in_container();
   if (free_mem != static_cast<julong>(-1L)) {
     log_trace(os)("free container memory: " JULONG_FORMAT, free_mem);
-    res.val = static_cast<size_t>(free_mem);
-    return res;
+    return MemRes(static_cast<size_t>(free_mem), 0);
   }
 
   struct sysinfo si;
   int ret = sysinfo(&si);
   if (ret != 0) {
-    res.err = -1;
-    return res;
+    return MemRes(0, -1);
   }
 
   free_mem = (julong)si.freeram * si.mem_unit;
   log_trace(os)("free memory: " JULONG_FORMAT, free_mem);
-  res.val = static_cast<size_t>(free_mem);
-  return res;
+  return MemRes(static_cast<size_t>(free_mem), 0);
 }
 
 MemRes os::total_swap_space() {
-  MemRes res;
   if (OSContainer::is_containerized()) {
     if (OSContainer::memory_limit_in_bytes() > 0) {
-      res.val = static_cast<size_t>(OSContainer::memory_and_swap_limit_in_bytes() - OSContainer::memory_limit_in_bytes());
-      return res;
+      return MemRes(static_cast<size_t>(OSContainer::memory_and_swap_limit_in_bytes() - OSContainer::memory_limit_in_bytes()), 0);
     }
   }
   struct sysinfo si;
   int ret = sysinfo(&si);
   if (ret != 0) {
-    res.err = -1;
-    return res;
+    return MemRes(0, -1);
   }
-  res.val = static_cast<size_t>(si.totalswap * si.mem_unit);
-  return res;
+  return MemRes(static_cast<size_t>(si.totalswap * si.mem_unit), 0);
 }
 
 static MemRes host_free_swap() {
-  MemRes res;
   struct sysinfo si;
   int ret = sysinfo(&si);
   if (ret != 0) {
-    res.err = -1;
-    return res;
+    MemRes(0, -1);
   }
-  res.val = static_cast<size_t>(si.freeswap * si.mem_unit);
-  return res;
+  return MemRes(static_cast<size_t>(si.freeswap * si.mem_unit), 0);
 }
 
 MemRes os::free_swap_space() {
@@ -328,16 +316,15 @@ MemRes os::free_swap_space() {
   // less than host_free_swap(). The upper bound of free swap needs to be the lower of the two.
   const MemRes total_swap_space = os::total_swap_space();
   const MemRes host_free_swap_space = host_free_swap();
-  assert(total_swap_space.err != -1 && host_free_swap_space.err != -1, "sysinfo failed?");
-  size_t host_free_swap_val = MIN2(total_swap_space.val, host_free_swap_space.val);
-  MemRes res;
+  assert(total_swap_space.error != -1 && host_free_swap_space.error != -1, "sysinfo failed?");
+  size_t host_free_swap_val = MIN2(total_swap_space.value, host_free_swap_space.value);
   if (OSContainer::is_containerized()) {
     jlong mem_swap_limit = OSContainer::memory_and_swap_limit_in_bytes();
     jlong mem_limit = OSContainer::memory_limit_in_bytes();
     if (mem_swap_limit >= 0 && mem_limit >= 0) {
       jlong delta_limit = mem_swap_limit - mem_limit;
       if (delta_limit <= 0) {
-        return res;
+        return MemRes(0, 0);
       }
       jlong mem_swap_usage = OSContainer::memory_and_swap_usage_in_bytes();
       jlong mem_usage = OSContainer::memory_usage_in_bytes();
@@ -345,8 +332,7 @@ MemRes os::free_swap_space() {
         jlong delta_usage = mem_swap_usage - mem_usage;
         if (delta_usage >= 0) {
           jlong free_swap = delta_limit - delta_usage;
-          res.val = free_swap >= 0 ? static_cast<size_t>(free_swap) : 0;
-          return res;
+          return MemRes(free_swap >= 0 ? static_cast<size_t>(free_swap) : 0, 0);
         }
       }
     }
@@ -355,26 +341,22 @@ MemRes os::free_swap_space() {
                             " container_mem_limit=" JLONG_FORMAT " returning host value: %zu",
                             mem_swap_limit, mem_limit, host_free_swap_val);
   }
-  res.val = host_free_swap_val;
-  return res;
+  return MemRes(host_free_swap_val, 0);
 }
 
 MemRes os::physical_memory() {
   size_t phys_mem = 0;
-  MemRes res;
   if (OSContainer::is_containerized()) {
     jlong mem_limit;
     if ((mem_limit = OSContainer::memory_limit_in_bytes()) > 0) {
       log_trace(os)("total container memory: " JLONG_FORMAT, mem_limit);
-      res.val = static_cast<size_t>(mem_limit);
-      return res;
+      return MemRes(static_cast<size_t>(mem_limit), 0);
     }
   }
 
   phys_mem = Linux::physical_memory();
   log_trace(os)("total system memory: %zu", phys_mem);
-  res.val = phys_mem;
-  return res;
+  return MemRes(phys_mem, 0);
 }
 
 size_t os::rss() {
@@ -2574,9 +2556,9 @@ void os::print_memory_info(outputStream* st) {
   sysinfo(&si);
 
   st->print(", physical %zu" "k",
-            os::physical_memory().val >> 10);
+            os::physical_memory().value >> 10);
   st->print("(%zu" "k free)",
-            os::available_memory().val >> 10);
+            os::available_memory().value >> 10);
   st->print(", swap " UINT64_FORMAT "k",
             ((jlong)si.totalswap * si.mem_unit) >> 10);
   st->print("(" UINT64_FORMAT "k free)",
