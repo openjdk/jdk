@@ -91,6 +91,8 @@
   flags(PHASEIDEALLOOP_ITERATIONS,      "PhaseIdealLoop iterations") \
   flags(AFTER_LOOP_OPTS,                "After Loop Optimizations") \
   flags(AFTER_MERGE_STORES,             "After Merge Stores") \
+  flags(AFTER_MACRO_ELIMINATION_STEP,   "After Macro Elimination Step") \
+  flags(AFTER_MACRO_ELIMINATION,        "After Macro Elimination") \
   flags(BEFORE_MACRO_EXPANSION ,        "Before Macro Expansion") \
   flags(AFTER_MACRO_EXPANSION_STEP,     "After Macro Expansion Step") \
   flags(AFTER_MACRO_EXPANSION,          "After Macro Expansion") \
