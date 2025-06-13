@@ -1268,12 +1268,18 @@ void MacroAssembler::cmov_gtu(Register cmp1, Register cmp2, Register dst, Regist
 }
 
 // ----------- cmove, compare float -----------
+//
+// For CmpF/D + CMoveI/L, ordered ones are quite straight and simple,
+// so, just list behaviour of unordered ones as follow.
+//
+// Set dst (CMoveI (Binary cop (CmpF/D op1 op2)) (Binary dst src))
+//    1. (op1 lt NaN) => true  => CMove: dst = src
+//    2. (op1 le NaN) => true  => CMove: dst = src
+//    3. (op1 gt NaN) => false => CMove: dst = dst
+//    4. (op1 ge NaN) => false => CMove: dst = dst
+//    5. (op1 eq NaN) => false => CMove: dst = dst
+//    6. (op1 ne NaN) => true  => CMove: dst = src
 
-// Move src to dst only if cmp1 == cmp2,
-// otherwise leave dst unchanged, including the case where one of them is NaN.
-// Clarification:
-//   java code      :  cmp1 != cmp2 ? dst : src
-//   transformed to :  CMove dst, (cmp1 eq cmp2), dst, src
 void MacroAssembler::cmov_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
   if (UseZicond) {
     if (is_single) {
@@ -1298,11 +1304,6 @@ void MacroAssembler::cmov_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, Regi
   bind(no_set);
 }
 
-// Keep dst unchanged only if cmp1 == cmp2,
-// otherwise move src to dst, including the case where one of them is NaN.
-// Clarification:
-//   java code      :  cmp1 == cmp2 ? dst : src
-//   transformed to :  CMove dst, (cmp1 ne cmp2), dst, src
 void MacroAssembler::cmov_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
   if (UseZicond) {
     if (is_single) {
@@ -1327,14 +1328,6 @@ void MacroAssembler::cmov_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, Regi
   bind(no_set);
 }
 
-// When cmp1 <= cmp2 or any of them is NaN then dst = src, otherwise, dst = dst
-// Clarification
-//   scenario 1:
-//     java code      :  cmp2 < cmp1 ? dst : src
-//     transformed to :  CMove dst, (cmp1 le cmp2), dst, src
-//   scenario 2:
-//     java code      :  cmp1 > cmp2 ? dst : src
-//     transformed to :  CMove dst, (cmp1 le cmp2), dst, src
 void MacroAssembler::cmov_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
   if (UseZicond) {
     if (is_single) {
@@ -1359,14 +1352,6 @@ void MacroAssembler::cmov_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Regi
   bind(no_set);
 }
 
-// When cmp1 < cmp2 or any of them is NaN then dst = dst, otherwise, dst = src
-// Clarification
-//   scenario 1:
-//     java code      :  !(cmp2 >= cmp1) ? dst : src
-//     transformed to :  CMove dst, (cmp1 ge cmp2), dst, src
-//   scenario 2:
-//     java code      :  !(cmp1 <= cmp2) ? dst : src
-//     transformed to :  CMove dst, (cmp1 ge cmp2), dst, src
 void MacroAssembler::cmov_cmp_fp_ge(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
   if (UseZicond) {
     if (is_single) {
@@ -1391,14 +1376,6 @@ void MacroAssembler::cmov_cmp_fp_ge(FloatRegister cmp1, FloatRegister cmp2, Regi
   bind(no_set);
 }
 
-// When cmp1 < cmp2 or any of them is NaN then dst = src, otherwise, dst = dst
-// Clarification
-//   scenario 1:
-//     java code      :  cmp2 <= cmp1 ? dst : src
-//     transformed to :  CMove dst, (cmp1 lt cmp2), dst, src
-//   scenario 2:
-//     java code      :  cmp1 >= cmp2 ? dst : src
-//     transformed to :  CMove dst, (cmp1 lt cmp2), dst, src
 void MacroAssembler::cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
   if (UseZicond) {
     if (is_single) {
@@ -1423,14 +1400,6 @@ void MacroAssembler::cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Regi
   bind(no_set);
 }
 
-// When cmp1 <= cmp2 or any of them is NaN then dst = dst, otherwise, dst = src
-// Clarification
-//   scenario 1:
-//     java code      :  !(cmp2 > cmp1) ? dst : src
-//     transformed to :  CMove dst, (cmp1 gt cmp2), dst, src
-//   scenario 2:
-//     java code      :  !(cmp1 < cmp2) ? dst : src
-//     transformed to :  CMove dst, (cmp1 gt cmp2), dst, src
 void MacroAssembler::cmov_cmp_fp_gt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
   if (UseZicond) {
     if (is_single) {
