@@ -92,6 +92,32 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
                 options, startupInfos));
     }
 
+    /**
+     * Returns a list of paths that includes the location where the "java.base"
+     * module can be found.
+     * <p>
+     * Returns the specified path list if "java.base" module is found in one of the
+     * paths from the specified path list. Returns a new path list created from the
+     * specified path list with the path of "java.base" module in the current
+     * runtime appended otherwise.
+     *
+     * @param modulePath the path list where to look up for "java.base" module
+     * @return the path list that includes location of "java.base" module
+     */
+    static List<Path> ensureBaseModuleInModulePath(List<Path> modulePath) {
+
+        if (modulePath.stream().filter(path -> {
+            return ModuleFinder.of(path).find("java.base").isPresent();
+        }).findFirst().isPresent()) {
+            return modulePath;
+        }
+
+        modulePath = new ArrayList<>(modulePath);
+        modulePath.addAll(RuntimeBuilder.getDefaultModulePath());
+
+        return modulePath;
+    }
+
     private static List<String> createJLinkCmdline(List<Path> modulePath, Set<String> addModules,
             Set<String> limitModules, List<String> options, List<LauncherStartupInfo> startupInfos) throws ConfigException {
         List<String> launcherModules = startupInfos.stream().map(si -> {
@@ -228,5 +254,5 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
 
         static final ToolProvider JLINK_TOOL = ToolProvider.findFirst(
                 "jlink").orElseThrow();
-    };
+    }
 }
