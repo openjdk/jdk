@@ -236,7 +236,9 @@ void CollectedHeap::log_gc_vtime() {
     double process_vtime = os::elapsed_process_vtime();
     double gc_vtime = elapsed_gc_vtime();
 
-    if (process_vtime == -1 || gc_vtime == -1) return;
+    if (process_vtime == -1 || gc_vtime == -1) {
+      return;
+    }
 
     double usage = -1;
     if (gc_vtime > process_vtime || process_vtime == 0 || gc_vtime == 0) {

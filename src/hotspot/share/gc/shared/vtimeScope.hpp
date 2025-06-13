@@ -29,13 +29,13 @@
 class VMThread;
 class VTimeScope : public StackObj {
 private:
-  jlong _start;
-  bool _enabled;
-  bool _gcLogging;
-  Thread *_thread;
+  jlong         _start;
+  bool          _enabled;
+  bool          _gcLogging;
+  Thread*       _thread;
 
 public:
-  VTimeScope(VMThread *thread);
+  VTimeScope(VMThread *thread, bool operation_is_gc);
   ~VTimeScope();
 };
 

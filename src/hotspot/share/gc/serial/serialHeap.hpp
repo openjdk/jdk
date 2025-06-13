@@ -275,7 +275,6 @@ public:
   GrowableArray<MemoryPool*> memory_pools() override;
 
   void stop() override;
-  double elapsed_gc_vtime() override;
 
   DefNewGeneration* young_gen() const {
     return _young_gen;
