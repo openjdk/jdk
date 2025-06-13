@@ -451,15 +451,15 @@ public class TestAliasingFuzzer {
                 // Let's generate the variable names that are to be shared for the nested Templates.
                 String[] invarRest = new String[numInvarRest];
                 for (int i = 0; i < invarRest.length; i++) {
-                    invarRest[i] = $("invar" + (i+1));
+                    invarRest[i] = $("invar" + i);
                 }
                 String[] containerNames = new String[numContainers];
                 for (int i = 0; i < numContainers; i++) {
-                    containerNames[i] = $("container" + (i+1));
+                    containerNames[i] = $("container" + i);
                 }
                 String[] indexNames = new String[acessIndexForm.length];
                 for (int i = 0; i < indexNames.length; i++) {
-                    indexNames[i] = $("index" + (i+1));
+                    indexNames[i] = $("index" + i);
                 }
                 return body(
                     """
@@ -476,6 +476,7 @@ public class TestAliasingFuzzer {
                         $iterations++;
                     """,
                     generateContainerInit(containerNames),
+                    generateContainerAliasing(containerNames, $("iterations")),
                     // TODO: aliasing containers
                     // TODO: bounds / ranges
                     // TODO: invoke test/reference and verify
@@ -581,6 +582,41 @@ public class TestAliasingFuzzer {
                             generateContainerInitArray(name);
                         case ContainerKind.MEMORY_SEGMENT ->
                             List.of("// TODO: container init MemorySegment\n");
+                    }
+                ).toList()
+             ));
+            return template.asToken();
+        }
+
+        private TemplateToken generateContainerAliasingAssignment(int i, String name1, String name2, String iterations) {
+            var template = Template.make(() -> body(
+                let("i", i),
+                let("name1", name1),
+                let("name2", name2),
+                let("iterations", iterations),
+                """
+                var test_#i      = (#iterations % 2 == 0) ? test_#name1      : test_#name2;
+                var reference_#i = (#iterations % 2 == 0) ? reference_#name1 : reference_#name2;
+                """
+            ));
+            return template.asToken();
+        }
+
+        private TemplateToken generateContainerAliasing(String[] containerNames, String iterations) {
+            var template = Template.make(() -> body(
+                """
+                // Container aliasing:
+                """,
+                IntStream.range(0, containerNames.length).mapToObj(i ->
+                    switch(aliasing) {
+                        case Aliasing.CONTAINER_DIFFERENT ->
+                            generateContainerAliasingAssignment(i, containerNames[i], containerNames[i], iterations);
+                        case Aliasing.CONTAINER_SAME_ALIASING_NEVER,
+                             Aliasing.CONTAINER_SAME_ALIASING_UNKNOWN ->
+                            generateContainerAliasingAssignment(i, containerNames[0], containerNames[0], iterations);
+                        case Aliasing.CONTAINER_UNKNOWN_ALIASING_NEVER,
+                             Aliasing.CONTAINER_UNKNOWN_ALIASING_UNKNOWN ->
+                            generateContainerAliasingAssignment(i, containerNames[i], containerNames[0], iterations);
                     }
                 ).toList()
              ));
@@ -819,7 +855,7 @@ public class TestAliasingFuzzer {
         var testTemplate = Template.make(() -> {
             String[] invarRest = new String[numInvarRest];
             for (int i = 0; i < invarRest.length; i++) {
-                invarRest[i] = $("invar" + (i+1));
+                invarRest[i] = $("invar" + i);
             }
             return body(
                 let("size", size),
