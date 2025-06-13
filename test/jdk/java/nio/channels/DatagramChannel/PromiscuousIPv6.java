@@ -202,13 +202,6 @@ public class PromiscuousIPv6 {
         }
     }
 
-    /*
-     * returns true if platform allows an IPv6 socket join an IPv4 multicast group
-     */
-    private static boolean supportedByPlatform() {
-        return Platform.isOSX() || Platform.isLinux();
-    }
-
     public static void main(String[] args) throws IOException {
 
         boolean hasIPV6MulticastAll;
