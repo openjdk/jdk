@@ -35,7 +35,7 @@
                             constraint)                                     \
                                                                             \
   product(uintx, ShenandoahRateAccelerationSampleSize, 12, EXPERIMENTAL,    \
-          "In selected ShenandoahControlIntervals (if 5 ms has passed "     \
+          "In selected ShenandoahControlIntervals (if 8 ms has passed "     \
           "since previous allocation rate sample), "                        \
           "we compute the allocation rate since the previous rate was "     \
           "sampled.  This many samples are analyzed to determine whether "  \
@@ -46,11 +46,17 @@
           "larger value may also cause the heuristic to miss detection "    \
           "of very quick accelerations.  Smaller values may cause random "  \
           "noise to be perceived as acceleration of allocation rate, "      \
-          "triggering excess collections.")                                 \
+          "triggering excess collections.  Note that the acceleration "     \
+          "need not last the entire span of the sampled duration to be "    \
+          "detected.  If the last several of all samples are signficantly " \
+          "larger than the other samples, the best fit line through all "   \
+          "sampled values will have an upward slope, manifesting as "       \
+          "acceleration")                                                   \
+          range(0,32)                                                       \
                                                                             \
   product(uintx, ShenandoahMomentaryAllocationRateSpikeSampleSize,          \
           4, EXPERIMENTAL,                                                  \
-          "In selected ShenandoahControlIntervals (if 5 ms has passed "     \
+          "In selected ShenandoahControlIntervals (if 8 ms has passed "     \
           "since previous allocation rate sample), we compute "             \
           "the allocation rate since the previous rate was sampled. "       \
           "The weighted average of this "                                   \
@@ -67,6 +73,7 @@
           "ShenandoahRateAccelerationSampleSize.  A larger value makes "    \
           "momentary spike detection less sensitive.  A smaller value "     \
           "may result in excessive GC triggers.")                           \
+          range(0,32)                                                       \
                                                                             \
   product(uintx, ShenandoahGenerationalHumongousReserve, 0, EXPERIMENTAL,   \
           "(Generational mode only) What percent of the heap should be "    \
