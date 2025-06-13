@@ -371,10 +371,10 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * @param image the image
      */
     public void setImage(Image image) {
+        this.image = image;
         if (image == null) {
             return;
         }
-        this.image = image;
         loadImage(image);
     }
 
