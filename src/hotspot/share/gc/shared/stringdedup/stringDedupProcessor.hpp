@@ -25,12 +25,14 @@
 #ifndef SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPPROCESSOR_HPP
 #define SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPPROCESSOR_HPP
 
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/macros.hpp"
 
 class JavaThread;
 class OopStorage;
+class CollectedHeap;
 
 // This class performs string deduplication.  There is only one instance of
 // this class.  It processes deduplication requests.  It also manages the
@@ -42,6 +44,7 @@ class OopStorage;
 // incremental operations for resizing and for removing dead entries, so
 // safepoint checks can be performed between steps in those operations.
 class StringDedup::Processor : public CHeapObj<mtGC> {
+  friend class CollectedHeap;
   Processor();
   ~Processor() = default;
 

@@ -38,6 +38,7 @@
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
+#include "gc/shared/stringdedup/stringDedupProcessor.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -235,8 +236,8 @@ void CollectedHeap::log_gc_vtime() {
   if (os::is_thread_cpu_time_supported()) {
     double process_vtime = os::elapsed_process_vtime();
     double gc_vtime = elapsed_gc_vtime();
-
-    if (process_vtime == -1 || gc_vtime == -1) {
+    double string_dedup_vtime = UseStringDeduplication ? os::thread_cpu_time((Thread*)StringDedup::_processor->_thread) / NANOSECS_PER_SEC : 0;
+    if (process_vtime == -1 || gc_vtime == -1 || string_dedup_vtime == -1) {
       return;
     }
 
@@ -246,7 +247,7 @@ void CollectedHeap::log_gc_vtime() {
       // low CPU utilization
       usage = 0;
     } else {
-      usage = 100 * gc_vtime / process_vtime;
+      usage = 100 * (gc_vtime + string_dedup_vtime) / process_vtime;
     }
     log_info(gc)("GC CPU usage: %2.2f%%", usage);
   }

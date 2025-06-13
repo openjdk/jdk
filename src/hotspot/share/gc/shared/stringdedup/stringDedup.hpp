@@ -100,6 +100,7 @@
 // For additional information on string deduplication, please see JEP 192,
 // https://openjdk.org/jeps/192
 
+#include "gc/shared/collectedHeap.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -108,6 +109,7 @@
 class Klass;
 class StringDedupThread;
 class ThreadClosure;
+class CollectedHeap;
 
 // The StringDedup class provides the API for the deduplication mechanism.
 // StringDedup::Requests and the StringDedup functions for candidate testing
@@ -116,6 +118,7 @@ class ThreadClosure;
 // needed, without requiring GC-specific code.
 class StringDedup : public AllStatic {
   friend class StringDedupThread;
+  friend class CollectedHeap;
 
   class Config;
   class Processor;
