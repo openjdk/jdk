@@ -27,7 +27,7 @@
  *          plugin does not escape unicode character in http request
  * @modules java.base/sun.net.www
  *          jdk.httpserver
- * @run main ClassnameCharTest
+ * @run junit ClassnameCharTest
  */
 
 import java.io.*;
@@ -40,41 +40,57 @@ import java.util.jar.*;
 import com.sun.net.httpserver.*;
 import sun.net.www.ParseUtil;
 
-public class ClassnameCharTest {
-    private static final Path JAR_PATH = Path.of("testclasses.jar");
-    static HttpServer server;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-    public static void realMain(String[] args) throws Exception {
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class ClassnameCharTest {
+
+    private static final Path JAR_PATH = Path.of("testclasses.jar");
+    private static HttpServer server;
+
+    // Create the class file and write it to the testable jar
+    @BeforeAll
+    static void setup() throws IOException {
+        var bytes = ClassFile.of().build(ClassDesc.of("fo o"), _ -> {});
+        try (JarOutputStream jos = new JarOutputStream(new FileOutputStream(JAR_PATH.toFile()))) {
+            jos.putNextEntry(new JarEntry("fo o.class"));
+            jos.write(bytes, 0, bytes.length);
+            jos.closeEntry();
+        }
+    }
+
+    @Test
+    void testClassName() throws Exception {
+        // Build the server and set the context
         server = HttpServer.create(new InetSocketAddress(0), 0);
-        server.createContext("/", new HttpHandler() {
-            @Override
-            public void handle(HttpExchange exchange) {
-                try {
-                    String filename = exchange.getRequestURI().getPath();
-                    System.out.println("getRequestURI = " + exchange.getRequestURI());
-                    System.out.println("filename = " + filename);
-                    try (FileInputStream fis = new FileInputStream(JAR_PATH.toFile());
-                         JarInputStream jis = new JarInputStream(fis)) {
-                        JarEntry entry;
-                        while ((entry = jis.getNextJarEntry()) != null) {
-                            if (filename.endsWith(entry.getName())) {
-                                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                                byte[] buf = new byte[8092];
-                                int count = 0;
-                                while ((count = jis.read(buf)) != -1)
-                                    baos.write(buf, 0, count);
-                                exchange.sendResponseHeaders(200, baos.size());
-                                try (OutputStream os = exchange.getResponseBody()) {
-                                    baos.writeTo(os);
-                                }
-                                return;
+        server.createContext("/", exchange -> {
+            try {
+                String filename = exchange.getRequestURI().getPath();
+                System.out.println("getRequestURI = " + exchange.getRequestURI());
+                System.out.println("filename = " + filename);
+                try (FileInputStream fis = new FileInputStream(JAR_PATH.toFile());
+                     JarInputStream jis = new JarInputStream(fis)) {
+                    JarEntry entry;
+                    while ((entry = jis.getNextJarEntry()) != null) {
+                        if (filename.endsWith(entry.getName())) {
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            byte[] buf = new byte[8092];
+                            int count = 0;
+                            while ((count = jis.read(buf)) != -1)
+                                baos.write(buf, 0, count);
+                            exchange.sendResponseHeaders(200, baos.size());
+                            try (OutputStream os = exchange.getResponseBody()) {
+                                baos.writeTo(os);
                             }
+                            return; // success
                         }
-                        fail("Failed to find " + filename);
                     }
-                } catch (IOException e) {
-                    unexpected(e);
+                    contextFail("Failed to find " + filename);
                 }
+            } catch (IOException e) {
+                unexpectedFail(e);
             }
         });
         server.start();
@@ -84,7 +100,6 @@ public class ClassnameCharTest {
             MyURLClassLoader acl = new MyURLClassLoader(base);
             Class<?> class1 = acl.findClass("fo o");
             System.out.println("class1 = " + class1);
-            pass();
             // can't test the following class unless platform in unicode locale
             // Class class2 = acl.findClass("\u624b\u518c");
             // System.out.println("class2 = "+class2);
@@ -133,7 +148,7 @@ public class ClassnameCharTest {
                     byte[] b = getBytes(finalURL);
                     return defineClass(name, b, 0, b.length, codesource);
                 }
-                // protocol/host/port mismatch, fail with RuntimeExc
+                // protocol/host/port mismatch, fail with RuntimeException
             } catch (Exception underlyingE) {
                 exc = underlyingE; // Most likely CFE from defineClass
             }
@@ -170,73 +185,19 @@ public class ClassnameCharTest {
         }
     }
 
-    //--------------------- Infrastructure ---------------------------
-    static volatile int passed = 0, failed = 0;
-
-    static boolean pass() {
-        passed++;
-        return true;
-    }
-
-    static boolean fail() {
-        failed++;
+    static void contextFail(String msg) {
         if (server != null) {
             server.stop(0);
         }
         Thread.dumpStack();
-        return false;
+        fail(msg);
     }
 
-    static boolean fail(String msg) {
-        System.out.println(msg);
-        return fail();
-    }
-
-    static void unexpected(Throwable t) {
-        failed++;
+    static void unexpectedFail(Throwable t) {
         if (server != null) {
             server.stop(0);
         }
         t.printStackTrace();
-    }
-
-    static boolean check(boolean cond) {
-        if (cond) {
-            pass();
-        } else {
-            fail();
-        }
-        return cond;
-    }
-
-    static boolean equal(Object x, Object y) {
-        if (x == null ? y == null : x.equals(y)) {
-            return pass();
-        } else {
-            return fail(x + " not equal to " + y);
-        }
-    }
-
-    // Create the class file and write it to the testable jar
-    static void buildJar() throws IOException {
-        var bytes = ClassFile.of().build(ClassDesc.of("fo o"), _ -> {});
-        try (JarOutputStream jos = new JarOutputStream(new FileOutputStream(JAR_PATH.toFile()))) {
-            jos.putNextEntry(new JarEntry("fo o.class"));
-            jos.write(bytes, 0, bytes.length);
-            jos.closeEntry();
-        }
-    }
-
-    public static void main(String[] args) throws Throwable {
-        try {
-            buildJar();
-            realMain(args);
-        } catch (Throwable t) {
-            unexpected(t);
-        }
-        System.out.println("\nPassed = " + passed + " failed = " + failed);
-        if (failed > 0) {
-            throw new AssertionError("Some tests failed");
-        }
+        fail("Handler threw an unexpected IO Exception");
     }
 }
