@@ -449,7 +449,7 @@ public class WindowsAsynchronousFileChannelImpl
             if (dst.isDirect()) {
                 buf = dst;
                 IOUtil.acquireScope(dst, true);
-                address = ((DirectBuffer)dst).address() + pos;
+                address = IOUtil.bufferAddress(dst) + pos;
             } else {
                 buf = Util.getTemporaryDirectBuffer(rem);
                 address = IOUtil.bufferAddress(buf) + pos;
@@ -632,7 +632,7 @@ public class WindowsAsynchronousFileChannelImpl
             if (src.isDirect()) {
                 buf = src;
                 IOUtil.acquireScope(src, true);
-                address = ((DirectBuffer)src).address() + pos;
+                address = IOUtil.bufferAddress(src) + pos;
             } else {
                 buf = Util.getTemporaryDirectBuffer(rem);
                 buf.put(src);

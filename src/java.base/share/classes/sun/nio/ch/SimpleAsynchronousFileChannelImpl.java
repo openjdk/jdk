@@ -329,7 +329,6 @@ public class SimpleAsynchronousFileChannelImpl
 
         if (dst.isDirect()) {
             IOUtil.acquireScope(dst, true);
-            ((DirectBuffer)dst).address();
         }
 
         final PendingFuture<Integer,A> result = (handler == null) ?
@@ -390,7 +389,6 @@ public class SimpleAsynchronousFileChannelImpl
 
         if (src.isDirect()) {
             IOUtil.acquireScope(src, true);
-            ((DirectBuffer)src).address();
         }
 
         final PendingFuture<Integer,A> result = (handler == null) ?

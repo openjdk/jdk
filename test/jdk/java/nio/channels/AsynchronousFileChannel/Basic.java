@@ -87,7 +87,7 @@ public class Basic {
         testAsynchronousClose(blah.toPath());
         testCancel(blah.toPath());
         testTruncate(blah.toPath());
-        testViewsOfUnsupportedArenas(blah.toPath());
+        testViewsOfConfinedArenas(blah.toPath());
 
         // eagerly clean-up
         blah.delete();
@@ -563,8 +563,8 @@ public class Basic {
     }
 
     // tests unsupported MemorySegment view buffers
-    static void testViewsOfUnsupportedArenas(Path file) throws IOException {
-        System.out.println("testViewsOfUnsupportedArenas");
+    static void testViewsOfConfinedArenas(Path file) throws IOException {
+        System.out.println("testViewsOfConfinedArenas");
 
         AsynchronousFileChannel ch = AsynchronousFileChannel
             .open(file, CREATE, READ, WRITE, TRUNCATE_EXISTING);
@@ -573,30 +573,16 @@ public class Basic {
         long size = ch.size();
 
         try {
-            readAll(ch, genUnsupportedBuffer(true), 0L);
-            throw new RuntimeException("IllegalStateException expected");
-        } catch (IllegalStateException expected) {
+            readAll(ch, genConfinedBuffer(), 0L);
+            throw new RuntimeException("IllegalArgumentException expected");
+        } catch (IllegalArgumentException expected) {
             // ignore
         }
 
         try {
-            readAll(ch, genUnsupportedBuffer(false), 0L);
-            throw new RuntimeException("UnsupportedOperationException expected");
-        } catch (UnsupportedOperationException expected) {
-            // ignore
-        }
-
-        try {
-            writeFully(ch, genUnsupportedBuffer(true), size);
-            throw new RuntimeException("IllegalStateException expected");
-        } catch (IllegalStateException expected) {
-            // ignore
-        }
-
-        try {
-            writeFully(ch, genUnsupportedBuffer(false), size);
-            throw new RuntimeException("UnsupportedOperationException expected");
-        } catch (UnsupportedOperationException expected) {
+            writeFully(ch, genConfinedBuffer(), size);
+            throw new RuntimeException("IllegalArgumentException expected");
+        } catch (IllegalArgumentException expected) {
             // ignore
         } finally {
             ch.close();
@@ -608,7 +594,7 @@ public class Basic {
         int size = 1024 + rand.nextInt(16000);
         byte[] buf = new byte[size];
         rand.nextBytes(buf);
-        return switch (rand.nextInt(4)) {
+        return switch (rand.nextInt(5)) {
             case 0 -> ByteBuffer.allocateDirect(buf.length)
                     .put(buf)
                     .flip();
@@ -619,16 +605,19 @@ public class Basic {
             case 3 -> Arena.ofAuto().allocate(buf.length).asByteBuffer()
                     .put(buf)
                     .flip();
+            case 4 -> Arena.ofShared().allocate(buf.length).asByteBuffer()
+                    .put(buf)
+                    .flip();
             default -> throw new InternalError("Should not reach here");
         };
     }
 
-    // returns ByteBuffer view of confined or shared arena
-    static ByteBuffer genUnsupportedBuffer(boolean isConfined) {
+    // returns ByteBuffer view of confined arena
+    static ByteBuffer genConfinedBuffer() {
         int size = 1024 + rand.nextInt(16000);
         byte[] buf = new byte[size];
         rand.nextBytes(buf);
-        Arena arena = isConfined ? Arena.ofConfined() : Arena.ofShared();
+        Arena arena = Arena.ofConfined();
         return arena.allocate(buf.length).asByteBuffer().put(buf).flip();
     }
 
