@@ -496,6 +496,7 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
+// DEBUG CODE: REMOVE BEFORE SHIPPING
 #if defined(__APPLE__) && defined(AARCH64)
 
 #ifndef PRODUCT
