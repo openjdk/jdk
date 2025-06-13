@@ -301,7 +301,7 @@ Node* ConvF2HFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       //   results in a quiet NaN but preserves the significand bits of signaling NaN.
       //   c. The pattern being matched includes a Float to Float16 conversion after binary
       //   expression, this downcast will still preserve the significand bits of binary32 NaN.
-      bool isnan =  g_isnan((jdouble)con);
+      bool isnan = g_isnan((jdouble)con);
       if (StubRoutines::hf2f(StubRoutines::f2hf(con)) == con || isnan) {
         Node* newVarHF = phase->transform(new ReinterpretS2HFNode(varS));
         Node* conHF = phase->makecon(TypeH::make(con));
