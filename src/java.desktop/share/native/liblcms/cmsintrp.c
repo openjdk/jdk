@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2023 Marti Maria Saguer
+//  Copyright (c) 1998-2024 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -524,7 +524,7 @@ void TrilinearInterpFloat(const cmsFloat32Number Input[],
     py = fclamp(Input[1]) * p->Domain[1];
     pz = fclamp(Input[2]) * p->Domain[2];
 
-    x0 = (int) floor(px); fx = px - (cmsFloat32Number) x0;  // We need full floor funcionality here
+    x0 = (int) floor(px); fx = px - (cmsFloat32Number) x0;  // We need full floor functionality here
     y0 = (int) floor(py); fy = py - (cmsFloat32Number) y0;
     z0 = (int) floor(pz); fz = pz - (cmsFloat32Number) z0;
 

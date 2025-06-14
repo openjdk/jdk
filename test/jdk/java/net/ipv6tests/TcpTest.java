@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 
 import java.net.*;
 import java.io.*;
+import java.util.concurrent.TimeUnit;
 
 public class TcpTest extends Tests {
     static ServerSocket server, server1, server2;
@@ -193,13 +194,14 @@ public class TcpTest extends Tests {
         server = new ServerSocket (0);
         server.setSoTimeout (5000);
         int port = server.getLocalPort();
-        long t1 = System.currentTimeMillis();
+        long t1 = System.nanoTime();
         try {
             server.accept ();
             throw new RuntimeException ("accept should not have returned");
         } catch (SocketTimeoutException e) {}
-        t1 = System.currentTimeMillis() - t1;
-        checkTime (t1, 5000);
+        t1 = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - t1);
+        final long expectedTime = TimeUnit.SECONDS.toMillis(5);
+        checkIfTimeOut(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - t1), expectedTime);
 
         c1 = new Socket ();
         c1.connect (new InetSocketAddress (ia4addr, port), 1000);

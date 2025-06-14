@@ -384,7 +384,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
     MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current_thread));
     ThreadInVMfromNative __tiv(current_thread);
     VM_ENTRY_BASE(jvmtiEnv*, JvmtiExport::get_jvmti_interface, current_thread)
-    debug_only(VMNativeEntryWrapper __vew;)
+    DEBUG_ONLY(VMNativeEntryWrapper __vew;)
 
     JvmtiEnv *jvmti_env = JvmtiEnv::create_a_jvmti(version);
     *penv = jvmti_env->jvmti_external();  // actual type is jvmtiEnv* -- not to be confused with JvmtiEnv*
@@ -418,10 +418,16 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
 }
 
 JvmtiThreadState*
-JvmtiExport::get_jvmti_thread_state(JavaThread *thread) {
+JvmtiExport::get_jvmti_thread_state(JavaThread *thread, bool allow_suspend) {
   assert(thread == JavaThread::current(), "must be current thread");
   if (thread->is_vthread_mounted() && thread->jvmti_thread_state() == nullptr) {
     JvmtiEventController::thread_started(thread);
+    if (allow_suspend && thread->is_suspended()) {
+      // Suspend here if thread_started got a suspend request during its execution.
+      // Within thread_started we could block on a VM mutex and pick up a suspend
+      // request from debug agent which we need to honor before proceeding.
+      ThreadBlockInVM tbivm(thread, true /* allow suspend */);
+    }
   }
   return thread->jvmti_thread_state();
 }
@@ -1376,6 +1382,10 @@ void JvmtiExport::post_class_load(JavaThread *thread, Klass* klass) {
     return;
   }
   if (thread->should_hide_jvmti_events()) {
+    // All events can be disabled if current thread is doing a Java upcall originated by JVMTI.
+    // ClassLoad events are important for JDWP agent but not expected during such upcalls.
+    // Catch if this invariant is broken.
+    assert(!thread->is_in_java_upcall(), "unexpected ClassLoad event during JVMTI upcall");
     return;
   }
 
@@ -1413,6 +1423,10 @@ void JvmtiExport::post_class_prepare(JavaThread *thread, Klass* klass) {
     return;
   }
   if (thread->should_hide_jvmti_events()) {
+    // All events can be disabled if current thread is doing a Java upcall originated by JVMTI.
+    // ClassPrepare events are important for JDWP agent but not expected during such upcalls.
+    // Catch if this invariant is broken.
+    assert(!thread->is_in_java_upcall(), "unexpected ClassPrepare event during JVMTI upcall");
     return;
   }
 
@@ -2628,7 +2642,7 @@ void JvmtiExport::post_dynamic_code_generated_while_holding_locks(const char* na
   // jvmti thread state.
   // The collector and/or state might be null if JvmtiDynamicCodeEventCollector
   // has been initialized while JVMTI_EVENT_DYNAMIC_CODE_GENERATED was disabled.
-  JvmtiThreadState *state = get_jvmti_thread_state(thread);
+  JvmtiThreadState *state = get_jvmti_thread_state(thread, false /* allow_suspend */);
   if (state != nullptr) {
     JvmtiDynamicCodeEventCollector *collector = state->get_dynamic_code_event_collector();
     if (collector != nullptr) {

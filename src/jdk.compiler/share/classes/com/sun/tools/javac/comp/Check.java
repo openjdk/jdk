@@ -28,6 +28,7 @@ package com.sun.tools.javac.comp;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.ToIntBiFunction;
@@ -46,6 +47,7 @@ import com.sun.tools.javac.code.Directive.RequiresDirective;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.comp.Annotate.AnnotationTypeMetadata;
 import com.sun.tools.javac.jvm.*;
+import com.sun.tools.javac.resources.CompilerProperties;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
@@ -168,13 +170,11 @@ public class Check {
         boolean enforceMandatoryWarnings = true;
 
         deprecationHandler = new MandatoryWarningHandler(log, null, verboseDeprecated,
-                enforceMandatoryWarnings, "deprecated", LintCategory.DEPRECATION);
+                enforceMandatoryWarnings, LintCategory.DEPRECATION, "deprecated");
         removalHandler = new MandatoryWarningHandler(log, null, verboseRemoval,
-                enforceMandatoryWarnings, "removal", LintCategory.REMOVAL);
+                enforceMandatoryWarnings, LintCategory.REMOVAL);
         uncheckedHandler = new MandatoryWarningHandler(log, null, verboseUnchecked,
-                enforceMandatoryWarnings, "unchecked", LintCategory.UNCHECKED);
-        sunApiHandler = new MandatoryWarningHandler(log, null, false,
-                enforceMandatoryWarnings, "sunapi", null);
+                enforceMandatoryWarnings, LintCategory.UNCHECKED);
 
         deferredLintHandler = DeferredLintHandler.instance(context);
 
@@ -204,10 +204,6 @@ public class Check {
      */
     private MandatoryWarningHandler uncheckedHandler;
 
-    /** A handler for messages about using proprietary API.
-     */
-    private MandatoryWarningHandler sunApiHandler;
-
     /** A handler for deferred lint warnings.
      */
     private DeferredLintHandler deferredLintHandler;
@@ -224,6 +220,12 @@ public class Check {
      */
     private final boolean allowSealed;
 
+    /** Whether to force suppression of deprecation and preview warnings.
+     *  This happens when attributing import statements for JDK 9+.
+     *  @see Feature#DEPRECATION_ON_IMPORT
+     */
+    private boolean importSuppression;
+
 /* *************************************************************************
  * Errors and Warnings
  **************************************************************************/
@@ -231,6 +233,12 @@ public class Check {
     Lint setLint(Lint newLint) {
         Lint prev = lint;
         lint = newLint;
+        return prev;
+    }
+
+    boolean setImportSuppression(boolean newImportSuppression) {
+        boolean prev = importSuppression;
+        importSuppression = newImportSuppression;
         return prev;
     }
 
@@ -267,7 +275,7 @@ public class Check {
      *  @param msg        A Warning describing the problem.
      */
     public void warnPreviewAPI(DiagnosticPosition pos, LintWarning warnKey) {
-        if (!lint.isSuppressed(LintCategory.PREVIEW))
+        if (!importSuppression && !lint.isSuppressed(LintCategory.PREVIEW))
             preview.reportPreviewWarning(pos, warnKey);
     }
 
@@ -275,17 +283,8 @@ public class Check {
      *  @param pos        Position to be used for error reporting.
      *  @param msg        A Warning describing the problem.
      */
-    public void warnDeclaredUsingPreview(DiagnosticPosition pos, Symbol sym) {
-        if (!lint.isSuppressed(LintCategory.PREVIEW))
-            preview.reportPreviewWarning(pos, LintWarnings.DeclaredUsingPreview(kindName(sym), sym));
-    }
-
-    /** Log a preview warning.
-     *  @param pos        Position to be used for error reporting.
-     *  @param msg        A Warning describing the problem.
-     */
     public void warnRestrictedAPI(DiagnosticPosition pos, Symbol sym) {
-        lint.logIfEnabled(log, pos, LintWarnings.RestrictedMethod(sym.enclClass(), sym));
+        lint.logIfEnabled(pos, LintWarnings.RestrictedMethod(sym.enclClass(), sym));
     }
 
     /** Warn about unchecked operation.
@@ -304,7 +303,6 @@ public class Check {
         deprecationHandler.reportDeferredDiagnostic();
         removalHandler.reportDeferredDiagnostic();
         uncheckedHandler.reportDeferredDiagnostic();
-        sunApiHandler.reportDeferredDiagnostic();
     }
 
 
@@ -480,7 +478,6 @@ public class Check {
         deprecationHandler.clear();
         removalHandler.clear();
         uncheckedHandler.clear();
-        sunApiHandler.clear();
     }
 
     public void putCompiled(ClassSymbol csym) {
@@ -649,7 +646,7 @@ public class Check {
                 && !(ignoreAnnotatedCasts && TreeInfo.containsTypeAnnotation(tree.clazz))
                 && !is292targetTypeCast(tree)) {
             deferredLintHandler.report(_l -> {
-                lint.logIfEnabled(log, tree.pos(), LintWarnings.RedundantCast(tree.clazz.type));
+                lint.logIfEnabled(tree.pos(), LintWarnings.RedundantCast(tree.clazz.type));
             });
         }
     }
@@ -954,7 +951,7 @@ public class Check {
             }
         } else if (hasTrustMeAnno && varargElemType != null &&
                             types.isReifiable(varargElemType)) {
-            lint.logIfEnabled(log, tree, LintWarnings.VarargsRedundantTrustmeAnno(
+            lint.logIfEnabled(tree, LintWarnings.VarargsRedundantTrustmeAnno(
                                 syms.trustMeType.tsym,
                                 diags.fragment(Fragments.VarargsTrustmeOnReifiableVarargs(varargElemType))));
         }
@@ -1164,11 +1161,12 @@ public class Check {
      *  Warning: we can't use flags() here since this method
      *  is called during class enter, when flags() would cause a premature
      *  completion.
-     *  @param pos           Position to be used for error reporting.
      *  @param flags         The set of modifiers given in a definition.
      *  @param sym           The defined symbol.
+     *  @param tree          The declaration
      */
-    long checkFlags(DiagnosticPosition pos, long flags, Symbol sym, JCTree tree) {
+    long checkFlags(long flags, Symbol sym, JCTree tree) {
+        final DiagnosticPosition pos = tree.pos();
         long mask;
         long implicit = 0;
 
@@ -1212,7 +1210,7 @@ public class Check {
                 mask = MethodFlags;
             }
             if ((flags & STRICTFP) != 0) {
-                warnOnExplicitStrictfp(pos);
+                warnOnExplicitStrictfp(tree);
             }
             // Imply STRICTFP if owner has STRICTFP set.
             if (((flags|implicit) & Flags.ABSTRACT) == 0 ||
@@ -1256,7 +1254,7 @@ public class Check {
                 implicit |= FINAL;
             }
             if ((flags & STRICTFP) != 0) {
-                warnOnExplicitStrictfp(pos);
+                warnOnExplicitStrictfp(tree);
             }
             // Imply STRICTFP if owner has STRICTFP set.
             implicit |= sym.owner.flags_field & STRICTFP;
@@ -1320,12 +1318,12 @@ public class Check {
         return flags & (mask | ~ExtendedStandardFlags) | implicit;
     }
 
-    private void warnOnExplicitStrictfp(DiagnosticPosition pos) {
-        DiagnosticPosition prevLintPos = deferredLintHandler.setPos(pos);
+    private void warnOnExplicitStrictfp(JCTree tree) {
+        deferredLintHandler.push(tree);
         try {
-            deferredLintHandler.report(_ -> lint.logIfEnabled(log, pos, LintWarnings.Strictfp));
+            deferredLintHandler.report(_ -> lint.logIfEnabled(tree.pos(), LintWarnings.Strictfp));
         } finally {
-            deferredLintHandler.setPos(prevLintPos);
+            deferredLintHandler.pop();
         }
     }
 
@@ -1542,7 +1540,7 @@ public class Check {
             !TreeInfo.isDiamond(tree) &&
             !withinAnonConstr(env) &&
             tree.type.isRaw()) {
-            lint.logIfEnabled(log, tree.pos(), LintWarnings.RawClassUse(tree.type, tree.type.tsym.type));
+            lint.logIfEnabled(tree.pos(), LintWarnings.RawClassUse(tree.type, tree.type.tsym.type));
         }
     }
     //where
@@ -1866,7 +1864,7 @@ public class Check {
 
         // Optional warning if varargs don't agree
         if ((((m.flags() ^ other.flags()) & Flags.VARARGS) != 0)) {
-            lint.logIfEnabled(log, TreeInfo.diagnosticPositionFor(m, tree),
+            lint.logIfEnabled(TreeInfo.diagnosticPositionFor(m, tree),
                         ((m.flags() & Flags.VARARGS) != 0)
                         ? LintWarnings.OverrideVarargsMissing(varargsOverrides(m, other))
                         : LintWarnings.OverrideVarargsExtra(varargsOverrides(m, other)));
@@ -2381,7 +2379,12 @@ public class Check {
                 return;
             if (seenClasses.contains(c)) {
                 errorFound = true;
-                noteCyclic(pos, (ClassSymbol)c);
+                log.error(pos, Errors.CyclicInheritance(c));
+                seenClasses.stream()
+                  .filter(s -> !s.type.isErroneous())
+                  .filter(ClassSymbol.class::isInstance)
+                  .map(ClassSymbol.class::cast)
+                  .forEach(Check.this::handleCyclic);
             } else if (!c.type.isErroneous()) {
                 try {
                     seenClasses.add(c);
@@ -2458,7 +2461,8 @@ public class Check {
         if ((c.flags_field & ACYCLIC) != 0) return true;
 
         if ((c.flags_field & LOCKED) != 0) {
-            noteCyclic(pos, (ClassSymbol)c);
+            log.error(pos, Errors.CyclicInheritance(c));
+            handleCyclic((ClassSymbol)c);
         } else if (!c.type.isErroneous()) {
             try {
                 c.flags_field |= LOCKED;
@@ -2485,9 +2489,10 @@ public class Check {
         return complete;
     }
 
-    /** Note that we found an inheritance cycle. */
-    private void noteCyclic(DiagnosticPosition pos, ClassSymbol c) {
-        log.error(pos, Errors.CyclicInheritance(c));
+    /** Handle finding an inheritance cycle on a class by setting
+     *  the class' and its supertypes' types to the error type.
+     **/
+    private void handleCyclic(ClassSymbol c) {
         for (List<Type> l=types.interfaces(c.type); l.nonEmpty(); l=l.tail)
             l.head = types.createErrorType((ClassSymbol)l.head.tsym, Type.noType);
         Type st = types.supertype(c.type);
@@ -3682,7 +3687,7 @@ public class Check {
      */
     public boolean validateAnnotationDeferErrors(JCAnnotation a) {
         boolean res = false;
-        final Log.DiagnosticHandler diagHandler = new Log.DiscardDiagnosticHandler(log);
+        final Log.DiagnosticHandler diagHandler = log.new DiscardDiagnosticHandler();
         try {
             res = validateAnnotation(a);
         } finally {
@@ -3780,8 +3785,8 @@ public class Check {
     }
 
     void checkDeprecated(Supplier<DiagnosticPosition> pos, final Symbol other, final Symbol s) {
-        if ( (s.isDeprecatedForRemoval()
-                || s.isDeprecated() && !other.isDeprecated())
+        if (!importSuppression
+                && (s.isDeprecatedForRemoval() || s.isDeprecated() && !other.isDeprecated())
                 && (s.outermostClass() != other.outermostClass() || s.outermostClass() == null)
                 && s.kind != Kind.PCK) {
             deferredLintHandler.report(_l -> warnDeprecated(pos.get(), s));
@@ -3830,10 +3835,10 @@ public class Check {
                     log.error(pos, Errors.IsPreview(s));
                 } else {
                     preview.markUsesPreview(pos);
-                    deferredLintHandler.report(_l -> warnPreviewAPI(pos, LintWarnings.IsPreview(s)));
+                    warnPreviewAPI(pos, LintWarnings.IsPreview(s));
                 }
             } else {
-                    deferredLintHandler.report(_l -> warnPreviewAPI(pos, LintWarnings.IsPreviewReflective(s)));
+                warnPreviewAPI(pos, LintWarnings.IsPreviewReflective(s));
             }
         }
         if (preview.declaredUsingPreviewFeature(s)) {
@@ -3842,7 +3847,7 @@ public class Check {
                 //If "s" is compiled from source, then there was an error for it already;
                 //if "s" is from classfile, there already was an error for the classfile.
                 preview.markUsesPreview(pos);
-                deferredLintHandler.report(_l -> warnDeclaredUsingPreview(pos, s));
+                warnPreviewAPI(pos, LintWarnings.DeclaredUsingPreview(kindName(s), s));
             }
         }
     }
@@ -4121,7 +4126,7 @@ public class Check {
             int opc = ((OperatorSymbol)operator).opcode;
             if (opc == ByteCodes.idiv || opc == ByteCodes.imod
                 || opc == ByteCodes.ldiv || opc == ByteCodes.lmod) {
-                deferredLintHandler.report(_ -> lint.logIfEnabled(log, pos, LintWarnings.DivZero));
+                deferredLintHandler.report(_ -> lint.logIfEnabled(pos, LintWarnings.DivZero));
             }
         }
     }
@@ -4135,7 +4140,7 @@ public class Check {
     void checkLossOfPrecision(final DiagnosticPosition pos, Type found, Type req) {
         if (found.isNumeric() && req.isNumeric() && !types.isAssignable(found, req)) {
             deferredLintHandler.report(_ ->
-                lint.logIfEnabled(log, pos, LintWarnings.PossibleLossOfPrecision(found, req)));
+                lint.logIfEnabled(pos, LintWarnings.PossibleLossOfPrecision(found, req)));
         }
     }
 
@@ -4144,7 +4149,7 @@ public class Check {
      */
     void checkEmptyIf(JCIf tree) {
         if (tree.thenpart.hasTag(SKIP) && tree.elsepart == null) {
-            lint.logIfEnabled(log, tree.thenpart.pos(), LintWarnings.EmptyIf);
+            lint.logIfEnabled(tree.thenpart.pos(), LintWarnings.EmptyIf);
         }
     }
 
@@ -4291,7 +4296,7 @@ public class Check {
             rs.isAccessible(env, c) &&
             !fileManager.isSameFile(c.sourcefile, env.toplevel.sourcefile))
         {
-            lint.logIfEnabled(log, pos,
+            lint.logIfEnabled(pos,
                         LintWarnings.AuxiliaryClassAccessedFromOutsideOfItsSourceFile(c, c.sourcefile));
         }
     }
@@ -4335,7 +4340,7 @@ public class Check {
                             // annotations; check again for being
                             // enabled in the deferred context.
                             deferredLintHandler.report(_ ->
-                                lint.logIfEnabled(log, pos, LintWarnings.MissingExplicitCtor(c, pkg, modle)));
+                                lint.logIfEnabled(pos, LintWarnings.MissingExplicitCtor(c, pkg, modle)));
                         } else {
                             return;
                         }
@@ -4371,7 +4376,7 @@ public class Check {
                             method.attribute(syms.trustMeType.tsym) != null &&
                             isTrustMeAllowedOnMethod(method) &&
                             !types.isReifiable(method.type.getParameterTypes().last())) {
-                        Check.this.lint.logIfEnabled(log, pos(), LintWarnings.VarargsUnsafeUseVarargsParam(method.params.last()));
+                        Check.this.lint.logIfEnabled(pos(), LintWarnings.VarargsUnsafeUseVarargsParam(method.params.last()));
                     }
                     break;
                 default:
@@ -4670,7 +4675,7 @@ public class Check {
     void checkModuleExists(final DiagnosticPosition pos, ModuleSymbol msym) {
         if (msym.kind != MDL) {
             deferredLintHandler.report(_ ->
-                lint.logIfEnabled(log, pos, LintWarnings.ModuleNotFound(msym)));
+                lint.logIfEnabled(pos, LintWarnings.ModuleNotFound(msym)));
         }
     }
 
@@ -4678,7 +4683,7 @@ public class Check {
         if (packge.members().isEmpty() &&
             ((packge.flags() & Flags.HAS_RESOURCE) == 0)) {
             deferredLintHandler.report(_ ->
-                lint.logIfEnabled(log, pos, LintWarnings.PackageEmptyOrNotFound(packge)));
+                lint.logIfEnabled(pos, LintWarnings.PackageEmptyOrNotFound(packge)));
         }
     }
 
@@ -4688,7 +4693,7 @@ public class Check {
                 if (rd.isTransitive() && lint.isEnabled(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC)) {
                     log.warning(pos, LintWarnings.RequiresTransitiveAutomatic);
                 } else {
-                    lint.logIfEnabled(log, pos, LintWarnings.RequiresAutomatic);
+                    lint.logIfEnabled(pos, LintWarnings.RequiresAutomatic);
                 }
             });
         }
@@ -4774,7 +4779,7 @@ public class Check {
         new TreeScanner() {
             @Override
             public void visitBindingPattern(JCBindingPattern tree) {
-                bindings[0] = !tree.var.sym.isUnnamedVariable();
+                bindings[0] |= !tree.var.sym.isUnnamedVariable();
                 super.visitBindingPattern(tree);
             }
         }.scan(p);
@@ -5664,4 +5669,185 @@ public class Check {
 
     }
 
+    void checkRequiresIdentity(JCTree tree, Lint lint) {
+        switch (tree) {
+            case JCClassDecl classDecl -> {
+                Type st = types.supertype(classDecl.sym.type);
+                if (st != null &&
+                        // no need to recheck j.l.Object, shortcut,
+                        st.tsym != syms.objectType.tsym &&
+                        // this one could be null, no explicit extends
+                        classDecl.extending != null) {
+                    checkIfIdentityIsExpected(classDecl.extending.pos(), st, lint);
+                }
+                for (JCExpression intrface: classDecl.implementing) {
+                    checkIfIdentityIsExpected(intrface.pos(), intrface.type, lint);
+                }
+                for (JCTypeParameter tp : classDecl.typarams) {
+                    checkIfIdentityIsExpected(tp.pos(), tp.type, lint);
+                }
+            }
+            case JCVariableDecl variableDecl -> {
+                if (variableDecl.vartype != null &&
+                        (variableDecl.sym.flags_field & RECORD) == 0 ||
+                        (variableDecl.sym.flags_field & ~(Flags.PARAMETER | RECORD | GENERATED_MEMBER)) != 0) {
+                    /* we don't want to warn twice so if this variable is a compiler generated parameter of
+                     * a canonical record constructor, we don't want to issue a warning as we will warn the
+                     * corresponding compiler generated private record field anyways
+                     */
+                    checkIfIdentityIsExpected(variableDecl.vartype.pos(), variableDecl.vartype.type, lint);
+                }
+            }
+            case JCTypeCast typeCast -> checkIfIdentityIsExpected(typeCast.clazz.pos(), typeCast.clazz.type, lint);
+            case JCBindingPattern bindingPattern -> {
+                if (bindingPattern.var.vartype != null) {
+                    checkIfIdentityIsExpected(bindingPattern.var.vartype.pos(), bindingPattern.var.vartype.type, lint);
+                }
+            }
+            case JCMethodDecl methodDecl -> {
+                for (JCTypeParameter tp : methodDecl.typarams) {
+                    checkIfIdentityIsExpected(tp.pos(), tp.type, lint);
+                }
+                if (methodDecl.restype != null && !methodDecl.restype.type.hasTag(VOID)) {
+                    checkIfIdentityIsExpected(methodDecl.restype.pos(), methodDecl.restype.type, lint);
+                }
+            }
+            case JCMemberReference mref -> {
+                checkIfIdentityIsExpected(mref.expr.pos(), mref.target, lint);
+                checkIfTypeParamsRequiresIdentity(mref.sym.getMetadata(), mref.typeargs, lint);
+            }
+            case JCPolyExpression poly
+                when (poly instanceof JCNewClass || poly instanceof JCMethodInvocation) -> {
+                if (poly instanceof JCNewClass newClass) {
+                    checkIfIdentityIsExpected(newClass.clazz.pos(), newClass.clazz.type, lint);
+                }
+                List<JCExpression> argExps = poly instanceof JCNewClass ?
+                        ((JCNewClass)poly).args :
+                        ((JCMethodInvocation)poly).args;
+                Symbol msym = TreeInfo.symbolFor(poly);
+                if (msym != null) {
+                    if (!argExps.isEmpty() && msym instanceof MethodSymbol ms && ms.params != null) {
+                        VarSymbol lastParam = ms.params.head;
+                        for (VarSymbol param: ms.params) {
+                            if ((param.flags_field & REQUIRES_IDENTITY) != 0 && argExps.head.type.isValueBased()) {
+                                lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
+                            }
+                            lastParam = param;
+                            argExps = argExps.tail;
+                        }
+                        while (argExps != null && !argExps.isEmpty() && lastParam != null) {
+                            if ((lastParam.flags_field & REQUIRES_IDENTITY) != 0 && argExps.head.type.isValueBased()) {
+                                lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
+                            }
+                            argExps = argExps.tail;
+                        }
+                    }
+                    checkIfTypeParamsRequiresIdentity(
+                            msym.getMetadata(),
+                            poly instanceof JCNewClass ?
+                                ((JCNewClass)poly).typeargs :
+                                ((JCMethodInvocation)poly).typeargs,
+                            lint);
+                }
+            }
+            default -> throw new AssertionError("unexpected tree " + tree);
+        }
+    }
+
+    /** Check if a type required an identity class
+     */
+    private boolean checkIfIdentityIsExpected(DiagnosticPosition pos, Type t, Lint lint) {
+        if (t != null &&
+                lint != null &&
+                lint.isEnabled(LintCategory.IDENTITY)) {
+            RequiresIdentityVisitor requiresIdentityVisitor = new RequiresIdentityVisitor();
+            // we need to avoid recursion due to self referencing type vars or captures, this is why we need a set
+            requiresIdentityVisitor.visit(t, new HashSet<>());
+            if (requiresIdentityVisitor.requiresWarning) {
+                lint.logIfEnabled(pos, LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // where
+    private class RequiresIdentityVisitor extends Types.SimpleVisitor<Void, Set<Type>> {
+        boolean requiresWarning = false;
+
+        @Override
+        public Void visitType(Type t, Set<Type> seen) {
+            return null;
+        }
+
+        @Override
+        public Void visitWildcardType(WildcardType t, Set<Type> seen) {
+            return visit(t.type, seen);
+        }
+
+        @Override
+        public Void visitTypeVar(TypeVar t, Set<Type> seen) {
+            if (seen.add(t)) {
+                visit(t.getUpperBound(), seen);
+            }
+            return null;
+        }
+
+        @Override
+        public Void visitCapturedType(CapturedType t, Set<Type> seen) {
+            if (seen.add(t)) {
+                visit(t.getUpperBound(), seen);
+                visit(t.getLowerBound(), seen);
+            }
+            return null;
+        }
+
+        @Override
+        public Void visitArrayType(ArrayType t, Set<Type> seen) {
+            return visit(t.elemtype, seen);
+        }
+
+        @Override
+        public Void visitClassType(ClassType t, Set<Type> seen) {
+            if (t != null && t.tsym != null) {
+                SymbolMetadata sm = t.tsym.getMetadata();
+                if (sm != null && !t.getTypeArguments().isEmpty()) {
+                    if (sm.getTypeAttributes().stream()
+                            .filter(ta -> isRequiresIdentityAnnotation(ta.type.tsym) &&
+                                    t.getTypeArguments().get(ta.position.parameter_index) != null &&
+                                    t.getTypeArguments().get(ta.position.parameter_index).isValueBased()).findAny().isPresent()) {
+                        requiresWarning = true;
+                        return null;
+                    }
+                }
+            }
+            visit(t.getEnclosingType(), seen);
+            for (Type targ : t.getTypeArguments()) {
+                visit(targ, seen);
+            }
+            return null;
+        }
+    } // RequiresIdentityVisitor
+
+    private void checkIfTypeParamsRequiresIdentity(SymbolMetadata sm,
+                                                     List<JCExpression> typeParamTrees,
+                                                     Lint lint) {
+        if (typeParamTrees != null && !typeParamTrees.isEmpty()) {
+            for (JCExpression targ : typeParamTrees) {
+                checkIfIdentityIsExpected(targ.pos(), targ.type, lint);
+            }
+            if (sm != null)
+                sm.getTypeAttributes().stream()
+                        .filter(ta -> isRequiresIdentityAnnotation(ta.type.tsym) &&
+                                typeParamTrees.get(ta.position.parameter_index).type != null &&
+                                typeParamTrees.get(ta.position.parameter_index).type.isValueBased())
+                        .forEach(ta -> lint.logIfEnabled(typeParamTrees.get(ta.position.parameter_index).pos(),
+                                CompilerProperties.LintWarnings.AttemptToUseValueBasedWhereIdentityExpected));
+        }
+    }
+
+    private boolean isRequiresIdentityAnnotation(TypeSymbol annoType) {
+        return annoType == syms.requiresIdentityType.tsym ||
+               annoType.flatName() == syms.requiresIdentityInternalType.tsym.flatName();
+    }
 }

@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @requires vm.continuations
  * @bug 8347997
  * @summary Test that Continuation.pin() and unpin() intrinsics work with EA.
  * @modules java.base/jdk.internal.vm

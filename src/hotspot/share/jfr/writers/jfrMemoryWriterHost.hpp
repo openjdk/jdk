@@ -45,7 +45,7 @@ class ExclusiveAccessAssert {
 
 template <typename Adapter, typename AP, typename AccessAssert = ExclusiveAccessAssert>
 class MemoryWriterHost : public StorageHost<Adapter, AP> {
-  debug_only(AccessAssert _access;)
+  DEBUG_ONLY(AccessAssert _access;)
  public:
   typedef typename Adapter::StorageType StorageType;
  protected:
@@ -53,7 +53,7 @@ class MemoryWriterHost : public StorageHost<Adapter, AP> {
   MemoryWriterHost(StorageType* storage, Thread* thread);
   MemoryWriterHost(StorageType* storage, size_t size);
   MemoryWriterHost(Thread* thread);
-  debug_only(bool is_acquired() const;)
+  DEBUG_ONLY(bool is_acquired() const;)
  public:
   void acquire();
   void release();

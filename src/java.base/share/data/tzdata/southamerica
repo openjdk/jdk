@@ -1269,35 +1269,45 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # dates to 2014.
 # DST End: last Saturday of April 2014 (Sun 27 Apr 2014 03:00 UTC)
 # DST Start: first Saturday of September 2014 (Sun 07 Sep 2014 04:00 UTC)
-# http://www.diariooficial.interior.gob.cl//media/2014/02/19/do-20140219.pdf
+# From Tim Parenti (2025-03-22):
+# Decreto 307 of 2014 of the Ministry of the Interior and Public Security,
+# promulgated 2014-01-30 and published 2014-02-19:
+# https://www.diariooficial.interior.gob.cl/media/2014/02/19/do-20140219.pdf#page=1
+# https://www.bcn.cl/leychile/navegar?idNorma=1059557
 
 # From Eduardo Romero Urra (2015-03-03):
 # Today has been published officially that Chile will use the DST time
 # permanently until March 25 of 2017
-# http://www.diariooficial.interior.gob.cl/media/2015/03/03/1-large.jpg
-#
-# From Paul Eggert (2015-03-03):
-# For now, assume that the extension will persist indefinitely.
+# From Tim Parenti (2025-03-22):
+# Decreto 106 of 2015 of the Ministry of the Interior and Public Security,
+# promulgated 2015-01-27 and published 2015-03-03:
+# https://www.diariooficial.interior.gob.cl/media/2015/03/03/do-20150303.pdf#page=1
+# https://www.bcn.cl/leychile/navegar?idNorma=1075157
 
 # From Juan Correa (2016-03-18):
-# The decree regarding DST has been published in today's Official Gazette:
-# http://www.diariooficial.interior.gob.cl/versiones-anteriores/do/20160318/
-# http://www.leychile.cl/Navegar?idNorma=1088502
+# The decree regarding DST has been published in today's Official Gazette...
 # It does consider the second Saturday of May and August as the dates
 # for the transition; and it lists DST dates until 2019, but I think
 # this scheme will stick.
-#
 # From Paul Eggert (2016-03-18):
-# For now, assume the pattern holds for the indefinite future.
 # The decree says transitions occur at 24:00; in practice this appears
 # to mean 24:00 mainland time, not 24:00 local time, so that Easter
 # Island is always two hours behind the mainland.
+# From Tim Parenti (2025-03-22):
+# Decreto 253 of 2016 of the Ministry of the Interior and Public Security,
+# promulgated 2016-03-16 and published 2016-03-18.
+# https://www.diariooficial.interior.gob.cl/media/2016/03/18/do-20160318.pdf#page=1
+# https://www.bcn.cl/leychile/navegar?idNorma=1088502
 
 # From Juan Correa (2016-12-04):
 # Magallanes region ... will keep DST (UTC -3) all year round....
 # http://www.soychile.cl/Santiago/Sociedad/2016/12/04/433428/Bachelet-firmo-el-decreto-para-establecer-un-horario-unico-para-la-Region-de-Magallanes.aspx
-# From Deborah Goldsmith (2017-01-19):
-# http://www.diariooficial.interior.gob.cl/publicaciones/2017/01/17/41660/01/1169626.pdf
+# From Tim Parenti (2025-03-22), via Deborah Goldsmith (2017-01-19):
+# Decreto 1820 of 2016 of the Ministry of the Interior and Public Security,
+# promulgated 2016-12-02 and published 2017-01-17:
+# https://www.diariooficial.interior.gob.cl/publicaciones/2017/01/17/41660/01/1169626.pdf
+# https://www.bcn.cl/leychile/Navegar?idNorma=1099217
+# Model this as a change to standard offset effective 2016-12-04.
 
 # From Juan Correa (2018-08-13):
 # As of moments ago, the Ministry of Energy in Chile has announced the new
@@ -1316,13 +1326,20 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # https://twitter.com/MinEnergia/status/1029009354001973248
 # "We will keep the new time policy unchanged for at least the next 4 years."
 # So we extend the new rules on Saturdays at 24:00 mainland time indefinitely.
-# From Juan Correa (2019-02-04):
-# http://www.diariooficial.interior.gob.cl/publicaciones/2018/11/23/42212/01/1498738.pdf
+# From Tim Parenti (2025-03-22), via Juan Correa (2019-02-04):
+# Decreto 1286 of 2018 of the Ministry of the Interior and Public Security,
+# promulgated 2018-09-21 and published 2018-11-23:
+# https://www.diariooficial.interior.gob.cl/publicaciones/2018/11/23/42212/01/1498738.pdf
+# https://www.bcn.cl/leychile/Navegar?idNorma=1125760
 
 # From Juan Correa (2022-04-02):
 # I found there was a decree published last Thursday that will keep
-# Magallanes region to UTC -3 "indefinitely". The decree is available at
+# Magallanes region to UTC -3 "indefinitely".
+# From Tim Parenti (2025-03-22):
+# Decreto 143 of 2022 of the Ministry of the Interior and Public Security,
+# promulgated 2022-03-29 and published 2022-03-31:
 # https://www.diariooficial.interior.gob.cl/publicaciones/2022/03/31/43217-B/01/2108910.pdf
+# https://www.bcn.cl/leychile/Navegar?idNorma=1174342
 
 # From Juan Correa (2022-08-09):
 # the Internal Affairs Ministry (Ministerio del Interior) informed DST
@@ -1331,12 +1348,35 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # will keep UTC -3 "indefinitely"...  This is because on September 4th
 # we will have a voting whether to approve a new Constitution.
 #
-# From Eduardo Romero Urra (2022-08-17):
+# From Tim Parenti (2025-03-22), via Eduardo Romero Urra (2022-08-17):
+# Decreto 224 of 2022 of the Ministry of the Interior and Public Security,
+# promulgated 2022-07-14 and published 2022-08-13:
 # https://www.diariooficial.interior.gob.cl/publicaciones/2022/08/13/43327/01/2172567.pdf
+# https://www.bcn.cl/leychile/navegar?idNorma=1179983
 #
 # From Paul Eggert (2022-08-17):
 # Although the presidential decree stops at fall 2026, assume that
 # similar DST rules will continue thereafter.
+
+# From Paul Eggert (2025-01-15):
+# Diario Regional Aysén's Sebastián Martel reports that 94% of Aysén
+# citizens polled in November favored changing the rules from
+# -04/-03-with-DST to -03 all year...
+# https://www.diarioregionalaysen.cl/noticia/actualidad/2024/12/presentan-decision-que-gano-la-votacion-sobre-el-cambio-del-huso-horario-en-aysen
+#
+# From Yonathan Dossow (2025-03-20):
+# [T]oday we have more confirmation of the change.  [Aysén] region will keep
+# UTC-3 all year...
+# https://www.cnnchile.com/pais/region-de-aysen-mantendra-horario-de-verano-todo-el-ano_20250320/
+# https://www.latercera.com/nacional/noticia/tras-consulta-ciudadana-region-de-aysen-mantendra-el-horario-de-verano-durante-todo-el-ano/
+# https://x.com/min_interior/status/1902692504270672098
+#
+# From Tim Parenti (2025-03-22), via Eduardo Romero Urra (2025-03-20):
+# Decreto 93 of 2025 of the Ministry of the Interior and Public Security,
+# promulgated 2025-03-11 and published 2025-03-20:
+# https://www.diariooficial.interior.gob.cl/publicaciones/2025/03/20/44104/01/2624263.pdf
+# https://www.bcn.cl/leychile/Navegar?idNorma=1211955
+# Model this as a change to standard offset effective 2025-03-20.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Chile	1927	1931	-	Sep	 1	0:00	1:00	-
@@ -1394,6 +1434,20 @@ Zone America/Santiago	-4:42:45 -	LMT	1890
 			-5:00	1:00	%z	1947 Mar 31 24:00
 			-5:00	-	%z	1947 May 21 23:00
 			-4:00	Chile	%z
+Zone America/Coyhaique	-4:48:16 -	LMT	1890
+			-4:42:45 -	SMT	1910 Jan 10
+			-5:00	-	%z	1916 Jul  1
+			-4:42:45 -	SMT	1918 Sep 10
+			-4:00	-	%z	1919 Jul  1
+			-4:42:45 -	SMT	1927 Sep  1
+			-5:00	Chile	%z	1932 Sep  1
+			-4:00	-	%z	1942 Jun  1
+			-5:00	-	%z	1942 Aug  1
+			-4:00	-	%z	1946 Aug 28 24:00
+			-5:00	1:00	%z	1947 Mar 31 24:00
+			-5:00	-	%z	1947 May 21 23:00
+			-4:00	Chile	%z	2025 Mar 20
+			-3:00	-	%z
 Zone America/Punta_Arenas -4:43:40 -	LMT	1890
 			-4:42:45 -	SMT	1910 Jan 10
 			-5:00	-	%z	1916 Jul  1

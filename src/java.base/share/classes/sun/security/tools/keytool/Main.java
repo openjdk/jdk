@@ -388,7 +388,7 @@ public final class Main {
     // for i18n
     private static final java.util.ResourceBundle rb =
         java.util.ResourceBundle.getBundle(
-            "sun.security.tools.keytool.Resources");
+            "sun.security.tools.keytool.resources.keytool");
     private static final Collator collator = Collator.getInstance();
     static {
         // this is for case-insensitive string comparisons
@@ -2069,7 +2069,7 @@ public final class Main {
      * - plain algorithm name, otherwise
      *
      * Note: the same method appears in keytool and jarsigner which uses
-     * same resource string defined in their own Resources.java.
+     * same resource string defined in their own properties file.
      *
      * @param key the key object, cannot be null
      * @return the full name

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,64 +24,51 @@
  */
 package jdk.jpackage.internal;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.ListResourceBundle;
 import java.util.Map;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.util.LocalizedExceptionBuilder;
+import jdk.jpackage.internal.util.MultiResourceBundle;
+import jdk.jpackage.internal.util.StringBundle;
 
-import java.util.ResourceBundle;
-import static java.util.stream.Collectors.toMap;
-import java.util.stream.Stream;
-
-class I18N {
+final class I18N {
 
     static String getString(String key) {
         return BUNDLE.getString(key);
     }
 
-    private static class MultiResourceBundle extends ListResourceBundle {
-
-        MultiResourceBundle(ResourceBundle... bundles) {
-            contents = Stream.of(bundles).map(bundle -> {
-                return bundle.keySet().stream().map(key -> {
-                    return Map.entry(key, bundle.getObject(key));
-                });
-            }).flatMap(x -> x).collect(toMap(Map.Entry::getKey, Map.Entry::getValue, (o, n) -> {
-                // Override old value with the new one
-                return n;
-            })).entrySet().stream().map(e -> {
-                return new Object[]{e.getKey(), e.getValue()};
-            }).toArray(Object[][]::new);
-        }
-
-        @Override
-        protected Object[][] getContents() {
-            return contents;
-        }
-
-        private final Object[][] contents;
+    static String format(String key, Object ... args) {
+        return BUNDLE.format(key, args);
     }
 
-    private static final MultiResourceBundle BUNDLE;
+    static LocalizedExceptionBuilder<?> buildException() {
+        return LocalizedExceptionBuilder.buildLocalizedException(BUNDLE);
+    }
+
+    static ConfigException.Builder buildConfigException() {
+        return ConfigException.build(BUNDLE);
+    }
+
+    static ConfigException.Builder buildConfigException(String msgId, Object ... args) {
+        return ConfigException.build(BUNDLE, msgId, args);
+    }
+
+    static ConfigException.Builder buildConfigException(Throwable t) {
+        return ConfigException.build(BUNDLE, t);
+    }
+
+    private static final StringBundle BUNDLE;
 
     static {
-        List<String> bundleNames = new ArrayList<>();
-
-        bundleNames.add("jdk.jpackage.internal.resources.MainResources");
-
-        if (OperatingSystem.isLinux()) {
-            bundleNames.add("jdk.jpackage.internal.resources.LinuxResources");
-        } else if (OperatingSystem.isWindows()) {
-            bundleNames.add("jdk.jpackage.internal.resources.WinResources");
-            bundleNames.add("jdk.jpackage.internal.resources.WinResourcesNoL10N");
-        } else if (OperatingSystem.isMacOS()) {
-            bundleNames.add("jdk.jpackage.internal.resources.MacResources");
-        } else {
-            throw new IllegalStateException("Unknown platform");
-        }
-
-        BUNDLE = new MultiResourceBundle(bundleNames.stream().map(ResourceBundle::getBundle)
-                .toArray(ResourceBundle[]::new));
+        var prefix = "jdk.jpackage.internal.resources.";
+        BUNDLE = StringBundle.fromResourceBundle(MultiResourceBundle.create(
+                prefix + "MainResources",
+                Map.of(
+                        OperatingSystem.LINUX, List.of(prefix + "LinuxResources"),
+                        OperatingSystem.MACOS, List.of(prefix + "MacResources"),
+                        OperatingSystem.WINDOWS, List.of(prefix + "WinResources", prefix + "WinResourcesNoL10N")
+                )
+        ));
     }
 }

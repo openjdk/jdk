@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,8 +96,7 @@ class JfrCheckpointManager : public JfrCHeapObj {
   void clear_type_set();
   void write_type_set();
 
-  void begin_epoch_shift();
-  void end_epoch_shift();
+  void shift_epoch();
 
   static void on_unloading_classes();
   void on_rotation();
@@ -108,6 +107,7 @@ class JfrCheckpointManager : public JfrCHeapObj {
  public:
   static JfrBlobHandle create_thread_blob(JavaThread* jt, traceid tid = 0, oop vthread = nullptr);
   static void write_checkpoint(Thread* t, traceid tid = 0, oop vthread = nullptr);
+  static void write_simplified_vthread_checkpoint(traceid vtid);
   size_t flush_type_set();
 
   friend class Jfr;

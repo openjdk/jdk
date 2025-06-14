@@ -454,19 +454,25 @@ public class Cipher {
         String[] parts = tokenizeTransformation(transformation);
 
         String alg = parts[0];
-        String mode = parts[1];
-        String pad = parts[2];
+        String mode = (parts[1].length() == 0 ? null : parts[1]);
+        String pad = (parts[2].length() == 0 ? null : parts[2]);
 
-        if ((mode.length() == 0) && (pad.length() == 0)) {
+        if ((mode == null) && (pad == null)) {
             // Algorithm only
             Transform tr = new Transform(alg, "", null, null);
             return Collections.singletonList(tr);
         } else {
             // Algorithm w/ at least mode or padding or both
             List<Transform> list = new ArrayList<>(4);
-            list.add(new Transform(alg, "/" + mode + "/" + pad, null, null));
-            list.add(new Transform(alg, "/" + mode, null, pad));
-            list.add(new Transform(alg, "//" + pad, mode, null));
+            if ((mode != null) && (pad != null)) {
+                list.add(new Transform(alg, "/" + mode + "/" + pad, null, null));
+            }
+            if (mode != null) {
+                list.add(new Transform(alg, "/" + mode, null, pad));
+            }
+            if (pad != null) {
+                list.add(new Transform(alg, "//" + pad, mode, null));
+            }
             list.add(new Transform(alg, "", mode, pad));
             return list;
         }

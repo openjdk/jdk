@@ -43,7 +43,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
  * @author Rich Schiavi
  */
 
-public class WindowsBorders {
+public final class WindowsBorders {
 
     /**
      * Returns a  border instance for a Windows Progress Bar
@@ -115,7 +115,7 @@ public class WindowsBorders {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    public static class ProgressBarBorder extends AbstractBorder implements UIResource {
+    public static final class ProgressBarBorder extends AbstractBorder implements UIResource {
         protected Color shadow;
         protected Color highlight;
 
@@ -124,6 +124,7 @@ public class WindowsBorders {
             this.shadow = shadow;
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int width, int height) {
             g.setColor(shadow);
@@ -134,6 +135,7 @@ public class WindowsBorders {
             g.drawLine(width-1,y, width-1,height-1); // draw right
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets) {
             insets.set(1,1,1,1);
             return insets;
@@ -146,7 +148,7 @@ public class WindowsBorders {
      * @since 1.4
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    public static class ToolBarBorder extends AbstractBorder implements UIResource, SwingConstants {
+    public static final class ToolBarBorder extends AbstractBorder implements UIResource, SwingConstants {
         protected Color shadow;
         protected Color highlight;
 
@@ -155,6 +157,7 @@ public class WindowsBorders {
             this.shadow = shadow;
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int width, int height) {
             if (!(c instanceof JToolBar)) {
@@ -224,6 +227,7 @@ public class WindowsBorders {
             g.translate(-x, -y);
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets) {
             insets.set(1,1,1,1);
             if (!(c instanceof JToolBar)) {
@@ -259,6 +263,7 @@ public class WindowsBorders {
             super(color, thickness);
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
             Color oldColor = g.getColor();
             int i;
@@ -276,7 +281,7 @@ public class WindowsBorders {
      * of the component's background color.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class ComplementDashedBorder extends LineBorder implements UIResource {
+    static final class ComplementDashedBorder extends LineBorder implements UIResource {
         private Color origColor;
         private Color paintColor;
 
@@ -284,6 +289,7 @@ public class WindowsBorders {
             super(null);
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
             Color color = c.getBackground();
 
@@ -302,7 +308,7 @@ public class WindowsBorders {
      * @since 1.4
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    public static class InternalFrameLineBorder extends LineBorder implements
+    public static final class InternalFrameLineBorder extends LineBorder implements
             UIResource {
         protected Color activeColor;
         protected Color inactiveColor;
@@ -315,6 +321,7 @@ public class WindowsBorders {
             inactiveColor = inactiveBorderColor;
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y,
                 int width, int height) {
 

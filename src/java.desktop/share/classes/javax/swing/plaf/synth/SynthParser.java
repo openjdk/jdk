@@ -34,9 +34,7 @@ import java.awt.Toolkit;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -166,11 +164,6 @@ class SynthParser extends DefaultHandler {
     private Map<String,Object> _mapping;
 
     /**
-     * Based URL used to resolve paths.
-     */
-    private URL _urlResourceBase;
-
-    /**
      * Based class used to resolve paths.
      */
     private Class<?> _classResourceBase;
@@ -207,32 +200,24 @@ class SynthParser extends DefaultHandler {
     /**
      * Parses a set of styles from <code>inputStream</code>, adding the
      * resulting styles to the passed in DefaultSynthStyleFactory.
-     * Resources are resolved either from a URL or from a Class. When calling
-     * this method, one of the URL or the Class must be null but not both at
-     * the same time.
      *
      * @param inputStream XML document containing the styles to read
      * @param factory DefaultSynthStyleFactory that new styles are added to
-     * @param urlResourceBase the URL used to resolve any resources, such as Images
      * @param classResourceBase the Class used to resolve any resources, such as Images
      * @param defaultsMap Map that UIDefaults properties are placed in
      */
     public void parse(InputStream inputStream,
                       DefaultSynthStyleFactory factory,
-                      URL urlResourceBase, Class<?> classResourceBase,
+                      Class<?> classResourceBase,
                       Map<String, Object> defaultsMap)
                       throws ParseException, IllegalArgumentException {
-        if (inputStream == null || factory == null ||
-            (urlResourceBase == null && classResourceBase == null)) {
+        if (inputStream == null || factory == null || classResourceBase == null) {
             throw new IllegalArgumentException(
-                "You must supply an InputStream, StyleFactory and Class or URL");
+                "You must supply an InputStream, StyleFactory and Class");
         }
-
-        assert(!(urlResourceBase != null && classResourceBase != null));
 
         _factory = factory;
         _classResourceBase = classResourceBase;
-        _urlResourceBase = urlResourceBase;
         _defaultsMap = defaultsMap;
         try {
             try {
@@ -255,17 +240,7 @@ class SynthParser extends DefaultHandler {
      * Returns the path to a resource.
      */
     private URL getResource(String path) {
-        if (_classResourceBase != null) {
-            return _classResourceBase.getResource(path);
-        } else {
-            try {
-                @SuppressWarnings("deprecation")
-                var result = new URL(_urlResourceBase, path);
-                return result;
-            } catch (MalformedURLException mue) {
-                return null;
-            }
-        }
+        return _classResourceBase.getResource(path);
     }
 
     /**
@@ -294,20 +269,7 @@ class SynthParser extends DefaultHandler {
     private DocumentHandler getHandler() {
         if (_handler == null) {
             _handler = new DocumentHandler();
-            if (_urlResourceBase != null) {
-                // getHandler() is never called before parse() so it is safe
-                // to create a URLClassLoader with _resourceBase.
-                //
-                // getResource(".") is called to ensure we have the directory
-                // containing the resources in the case the resource base is a
-                // .class file.
-                URL[] urls = new URL[] { getResource(".") };
-                ClassLoader parent = Thread.currentThread().getContextClassLoader();
-                ClassLoader urlLoader = new URLClassLoader(urls, parent);
-                _handler.setClassLoader(urlLoader);
-            } else {
-                _handler.setClassLoader(_classResourceBase.getClassLoader());
-            }
+            _handler.setClassLoader(_classResourceBase.getClassLoader());
 
             for (String key : _mapping.keySet()) {
                 _handler.setVariable(key, _mapping.get(key));

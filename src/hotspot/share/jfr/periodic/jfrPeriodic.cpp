@@ -321,6 +321,10 @@ TRACE_REQUEST_FUNC(JavaAgent)   {}
 TRACE_REQUEST_FUNC(NativeAgent) {}
 #endif // INCLUDE_JVMTI
 
+TRACE_REQUEST_FUNC(MethodTiming) {
+  // Emitted in Java, but defined in native to have Method type field.
+}
+
 TRACE_REQUEST_FUNC(ThreadContextSwitchRate) {
   double rate = 0.0;
   int ret_val = OS_ERR;
@@ -738,4 +742,10 @@ TRACE_REQUEST_FUNC(NativeMemoryUsage) {
 
 TRACE_REQUEST_FUNC(NativeMemoryUsageTotal) {
   JfrNativeMemoryEvent::send_total_event(timestamp());
+}
+
+TRACE_REQUEST_FUNC(JavaMonitorStatistics) {
+  EventJavaMonitorStatistics event;
+  event.set_count(ObjectSynchronizer::in_use_list_count());
+  event.commit();
 }

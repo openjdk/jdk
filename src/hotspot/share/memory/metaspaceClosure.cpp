@@ -91,7 +91,7 @@ bool UniqueMetaspaceClosure::do_ref(MetaspaceClosure::Ref* ref, bool read_only) 
     return false; // Already visited: no need to iterate embedded pointers.
   } else {
     if (_has_been_visited.maybe_grow()) {
-      log_info(cds, hashtables)("Expanded _has_been_visited table to %d", _has_been_visited.table_size());
+      log_info(aot, hashtables)("Expanded _has_been_visited table to %d", _has_been_visited.table_size());
     }
     return do_unique_ref(ref, read_only);
   }

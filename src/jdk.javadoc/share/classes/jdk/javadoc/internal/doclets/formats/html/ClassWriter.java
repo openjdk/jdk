@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -516,13 +516,12 @@ public class ClassWriter extends SubWriterHolderWriter {
 
     protected void addClassDescription(Content classInfo) {
         addPreviewInfo(classInfo);
-        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, contents.descriptionLabel);
+        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, contents.descriptionLabel,
+                TableOfContents.Level.FIRST);
         if (!options.noComment()) {
             // generate documentation for the class.
             if (!utils.getFullBody(typeElement).isEmpty()) {
-                tableOfContents.pushNestedList();
                 addInlineComment(typeElement, classInfo);
-                tableOfContents.popNestedList();
             }
         }
     }
@@ -534,9 +533,7 @@ public class ClassWriter extends SubWriterHolderWriter {
     protected void addClassTagInfo(Content classInfo) {
         if (!options.noComment()) {
             // Print Information about all the tags here
-            tableOfContents.pushNestedList();
             addTagsInfo(typeElement, classInfo);
-            tableOfContents.popNestedList();
         }
     }
 

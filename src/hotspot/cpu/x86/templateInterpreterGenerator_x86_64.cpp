@@ -190,7 +190,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   // c_rarg1: scratch (rsi on non-Win64, rdx on Win64)
 
   Label slow_path;
-  __ safepoint_poll(slow_path, r15_thread, true /* at_return */, false /* in_nmethod */);
+  __ safepoint_poll(slow_path, true /* at_return */, false /* in_nmethod */);
 
   // We don't generate local frame and don't align stack because
   // we call stub code and there is no safepoint on this path.
@@ -234,7 +234,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
   // r13: senderSP must preserved for slow path, set SP to it on fast path
 
   Label slow_path;
-  __ safepoint_poll(slow_path, r15_thread, false /* at_return */, false /* in_nmethod */);
+  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
 
   // We don't generate local frame and don't align stack because
   // we call stub code and there is no safepoint on this path.
@@ -465,9 +465,19 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dtan));
     }
   } else if (kind == Interpreter::java_lang_math_tanh) {
-      assert(StubRoutines::dtanh() != nullptr, "not initialized");
+    if (StubRoutines::dtanh() != nullptr) {
       __ movdbl(xmm0, Address(rsp, wordSize));
       __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dtanh())));
+    } else {
+      return nullptr; // Fallback to default implementation
+    }
+  } else if (kind == Interpreter::java_lang_math_cbrt) {
+    if (StubRoutines::dcbrt() != nullptr) {
+      __ movdbl(xmm0, Address(rsp, wordSize));
+      __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dcbrt())));
+    } else {
+      return nullptr; // Fallback to default implementation
+    }
   } else if (kind == Interpreter::java_lang_math_abs) {
     assert(StubRoutines::x86::double_sign_mask() != nullptr, "not initialized");
     __ movdbl(xmm0, Address(rsp, wordSize));
@@ -497,10 +507,3 @@ address TemplateInterpreterGenerator::generate_currentThread() {
 
   return entry_point;
 }
-
-// Not supported
-address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
-

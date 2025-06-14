@@ -143,26 +143,6 @@ class HeapShared: AllStatic {
   friend class VerifySharedOopClosure;
 
 public:
-  // Can this VM write a heap region into the CDS archive?
-  static bool can_write() {
-    CDS_JAVA_HEAP_ONLY(
-      if (_disable_writing) {
-        return false;
-      }
-      // Need compressed class pointers for heap region dump.
-      if (!UseCompressedClassPointers) {
-        return false;
-      }
-      // Almost all GCs support heap region dump, except ZGC (so far).
-      return !UseZGC;
-    )
-    NOT_CDS_JAVA_HEAP(return false;)
-  }
-
-  static void disable_writing() {
-    CDS_JAVA_HEAP_ONLY(_disable_writing = true;)
-  }
-
   static bool is_subgraph_root_class(InstanceKlass* ik);
 
   // Scratch objects for archiving Klass::java_mirror()
@@ -173,7 +153,6 @@ public:
 
 private:
 #if INCLUDE_CDS_JAVA_HEAP
-  static bool _disable_writing;
   static DumpedInternedStrings *_dumped_interned_strings;
 
   // statistics
@@ -185,8 +164,8 @@ private:
 
   static void count_allocation(size_t size);
   static void print_stats();
-  static void debug_trace();
 public:
+  static void debug_trace();
   static unsigned oop_hash(oop const& p);
   static unsigned string_oop_hash(oop const& string) {
     return java_lang_String::hash_code(string);
@@ -255,7 +234,7 @@ private:
   static DumpTimeKlassSubGraphInfoTable* _dump_time_subgraph_info_table;
   static RunTimeKlassSubGraphInfoTable _run_time_subgraph_info_table;
 
-  static CachedOopInfo make_cached_oop_info(oop obj);
+  static CachedOopInfo make_cached_oop_info(oop obj, oop referrer);
   static ArchivedKlassSubGraphInfoRecord* archive_subgraph_info(KlassSubGraphInfo* info);
   static void archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
                                        bool is_full_module_graph);
@@ -305,8 +284,7 @@ private:
   static GrowableArrayCHeap<OopHandle, mtClassShared>* _root_segments;
   static int _root_segment_max_size_elems;
   static OopHandle _scratch_basic_type_mirrors[T_VOID+1];
-  static MetaspaceObjToOopHandleTable* _scratch_java_mirror_table;
-  static MetaspaceObjToOopHandleTable* _scratch_references_table;
+  static MetaspaceObjToOopHandleTable* _scratch_objects_table;
 
   static void init_seen_objects_table() {
     assert(_seen_objects_table == nullptr, "must be");
@@ -336,7 +314,7 @@ private:
 
   static bool has_been_seen_during_subgraph_recording(oop obj);
   static void set_has_been_seen_during_subgraph_recording(oop obj);
-  static bool archive_object(oop obj, KlassSubGraphInfo* subgraph_info);
+  static bool archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgraph_info);
 
   static void resolve_classes_for_subgraphs(JavaThread* current, ArchivableStaticFieldInfo fields[]);
   static void resolve_classes_for_subgraph_of(JavaThread* current, Klass* k);
@@ -362,6 +340,30 @@ private:
   static void archive_strings();
   static void archive_subgraphs();
 
+  // PendingOop and PendingOopStack are used for recursively discovering all cacheable
+  // heap objects. The recursion is done using PendingOopStack so we won't overflow the
+  // C stack with deep reference chains.
+  class PendingOop {
+    oop _obj;
+    oop _referrer;
+    int _level;
+
+  public:
+    PendingOop() : _obj(nullptr), _referrer(nullptr), _level(-1) {}
+    PendingOop(oop obj, oop referrer, int level) : _obj(obj), _referrer(referrer), _level(level) {}
+
+    oop obj()      const { return _obj; }
+    oop referrer() const { return _referrer; }
+    int level()    const { return _level; }
+  };
+
+  class OopFieldPusher;
+  using PendingOopStack = GrowableArrayCHeap<PendingOop, mtClassShared>;
+
+  static PendingOop _object_being_archived;
+  static bool walk_one_object(PendingOopStack* stack, int level, KlassSubGraphInfo* subgraph_info,
+                              oop orig_obj, oop referrer);
+
  public:
   static void reset_archived_object_states(TRAPS);
   static void create_archived_object_cache() {
@@ -377,7 +379,6 @@ private:
   }
 
   static int archive_exception_instance(oop exception);
-  static void write_heap(ArchiveHeapInfo* heap_info);
 
   static bool archive_reachable_objects_from(int level,
                                              KlassSubGraphInfo* subgraph_info,
@@ -424,9 +425,11 @@ private:
 #endif // INCLUDE_CDS_JAVA_HEAP
 
  public:
+  static void write_heap(ArchiveHeapInfo* heap_info) NOT_CDS_JAVA_HEAP_RETURN;
   static objArrayOop scratch_resolved_references(ConstantPool* src);
   static void add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) NOT_CDS_JAVA_HEAP_RETURN;
-  static void init_scratch_objects(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+  static void init_dumping() NOT_CDS_JAVA_HEAP_RETURN;
+  static void init_scratch_objects_for_basic_type_mirrors(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_box_classes(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static bool is_heap_region(int idx) {
     CDS_JAVA_HEAP_ONLY(return (idx == MetaspaceShared::hp);)

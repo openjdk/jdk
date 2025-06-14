@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -493,10 +493,9 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     --start;
     while (width >= -epsilon && ++start < length) {
       int cidx = l2v(start) * numvals + advx;
-      if (cidx >= charinfo.length) {
-          break; // layout bailed for some reason
-      }
-      float adv = charinfo[cidx];
+      float adv = cidx < charinfo.length ?
+                  charinfo[cidx] : // layout provided info for this glyph
+                  0; // glyph info omitted, assume no advance
       if (adv != 0) {
           width -= adv + advTracking;
       }
@@ -876,7 +875,14 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
   }
 
   public TextLineComponent getSubset(int start, int limit, int dir) {
-    return new ExtendedTextSourceLabel(source.getSubSource(start, limit-start, dir), decorator);
+    if (start == 0 &&
+        limit == source.getLength() &&
+        (dir == source.getBidiLevel() || dir == TextLineComponent.UNCHANGED)) {
+      return this; // avoid unnecessary object creation and text shaping
+    } else {
+      TextSource subSource = source.getSubSource(start, limit-start, dir);
+      return new ExtendedTextSourceLabel(subSource, decorator);
+    }
   }
 
   public String toString() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class StackTrace extends Tool {
             Threads threads = VM.getVM().getThreads();
             for (int i = 0; i < threads.getNumberOfThreads(); i++) {
                 JavaThread cur = threads.getJavaThreadAt(i);
-                if (cur.isJavaThread()) {
+                if (!cur.isHiddenFromExternalView()) {
                     cur.printThreadInfoOn(tty);
                     try {
                         int count = 0;
@@ -126,20 +126,19 @@ public class StackTrace extends Tool {
                         concLocksPrinter.print(cur);
                         tty.println();
                     }
-              }
-          }
-      }
-      catch (AddressException e) {
-        System.err.println("Error accessing address 0x" + Long.toHexString(e.getAddress()));
-        e.printStackTrace();
-      }
-   }
+                }
+            }
+        } catch (AddressException e) {
+            System.err.println("Error accessing address 0x" + Long.toHexString(e.getAddress()));
+            e.printStackTrace();
+        }
+    }
 
-   public static void main(String[] args) {
-      StackTrace st = new StackTrace();
-      st.execute(args);
-   }
+    public static void main(String[] args) {
+        StackTrace st = new StackTrace();
+        st.execute(args);
+    }
 
-   private boolean verbose;
-   private boolean concurrentLocks;
+    private boolean verbose;
+    private boolean concurrentLocks;
 }

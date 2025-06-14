@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2023 Marti Maria Saguer
+//  Copyright (c) 1998-2024 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -217,7 +217,7 @@ cmsUInt8Number* UnrollPlanarBytes(CMSREGISTER _cmsTRANSFORM* info,
     else
     {
         if (Premul && Extra)
-            alpha_factor = _cmsToFixedDomain(FROM_8_TO_16(accum[(nChan) * Stride]));
+            alpha_factor = _cmsToFixedDomain(FROM_8_TO_16(accum[nChan * Stride]));
     }
 
     for (i=0; i < nChan; i++) {
@@ -606,8 +606,8 @@ cmsUInt8Number* UnrollAnyWordsPremul(CMSREGISTER _cmsTRANSFORM* info,
    cmsUInt32Number ExtraFirst  = DoSwap ^ SwapFirst;
    cmsUInt32Number i;
 
-   cmsUInt16Number alpha = (ExtraFirst ? accum[0] : accum[nChan - 1]);
-   cmsUInt32Number alpha_factor = _cmsToFixedDomain(FROM_8_TO_16(alpha));
+   cmsUInt16Number alpha = (ExtraFirst ? ((cmsUInt16Number*)accum)[0] : ((cmsUInt16Number*)accum)[nChan]);
+   cmsUInt32Number alpha_factor = _cmsToFixedDomain(alpha);
 
     if (ExtraFirst) {
         accum += sizeof(cmsUInt16Number);
@@ -691,8 +691,8 @@ cmsUInt8Number* UnrollPlanarWordsPremul(CMSREGISTER _cmsTRANSFORM* info,
     cmsUInt32Number ExtraFirst = DoSwap ^ SwapFirst;
     cmsUInt8Number* Init = accum;
 
-    cmsUInt16Number  alpha = (ExtraFirst ? accum[0] : accum[(nChan - 1) * Stride]);
-    cmsUInt32Number alpha_factor = _cmsToFixedDomain(FROM_8_TO_16(alpha));
+    cmsUInt16Number alpha = (ExtraFirst ? ((cmsUInt16Number*)accum)[0] : ((cmsUInt16Number*)accum)[nChan * Stride / 2]);
+    cmsUInt32Number alpha_factor = _cmsToFixedDomain(alpha);
 
     if (ExtraFirst) {
         accum += Stride;
@@ -1107,8 +1107,7 @@ cmsINLINE cmsBool IsInkSpace(cmsUInt32Number Type)
 }
 
 // Return the size in bytes of a given formatter
-static
-cmsUInt32Number PixelSize(cmsUInt32Number Format)
+cmsINLINE cmsUInt32Number PixelSize(cmsUInt32Number Format)
 {
     cmsUInt32Number fmt_bytes = T_BYTES(Format);
 
@@ -1454,7 +1453,7 @@ cmsUInt8Number* UnrollDoublesToFloat(_cmsTRANSFORM* info,
     if (Premul && Extra)
     {
         if (Planar)
-            alpha_factor = (ExtraFirst ? ptr[0] : ptr[(nChan) * Stride]) / maximum;
+            alpha_factor = (ExtraFirst ? ptr[0] : ptr[nChan * Stride]) / maximum;
         else
             alpha_factor = (ExtraFirst ? ptr[0] : ptr[nChan]) / maximum;
     }
@@ -3052,6 +3051,7 @@ cmsUInt8Number* PackWordsFromFloat(_cmsTRANSFORM* info,
     if (ExtraFirst)
         start = Extra;
 
+    Stride /= 2;
     for (i = 0; i < nChan; i++) {
 
         cmsUInt32Number index = DoSwap ? (nChan - i - 1) : i;
@@ -3115,7 +3115,7 @@ cmsUInt8Number* PackFloatsFromFloat(_cmsTRANSFORM* info,
                      v = maximum - v;
 
               if (Planar)
-                     ((cmsFloat32Number*)output)[(i + start)* Stride] = (cmsFloat32Number)v;
+                     ((cmsFloat32Number*)output)[(i + start) * Stride] = (cmsFloat32Number)v;
               else
                      ((cmsFloat32Number*)output)[i + start] = (cmsFloat32Number)v;
        }
@@ -3455,7 +3455,7 @@ cmsUInt8Number* UnrollHalfToFloat(_cmsTRANSFORM* info,
     cmsUInt32Number i, start = 0;
     cmsFloat32Number maximum = IsInkSpace(info ->InputFormat) ? 100.0F : 1.0F;
 
-    Stride /= PixelSize(info->OutputFormat);
+    Stride /= PixelSize(info->InputFormat);
 
     if (ExtraFirst)
             start = Extra;
@@ -4062,6 +4062,9 @@ cmsUInt32Number CMSEXPORT cmsFormatterForColorspaceOfProfile(cmsHPROFILE hProfil
     // Unsupported color space?
     if (nOutputChans < 0) return 0;
 
+    // Fix float spaces
+    nBytes &= 7;
+
     // Create a fake formatter for result
     return FLOAT_SH(Float) | COLORSPACE_SH(ColorSpaceBits) | BYTES_SH(nBytes) | CHANNELS_SH(nOutputChans);
 }
@@ -4078,6 +4081,9 @@ cmsUInt32Number CMSEXPORT cmsFormatterForPCSOfProfile(cmsHPROFILE hProfile, cmsU
 
     // Unsupported color space?
     if (nOutputChans < 0) return 0;
+
+    // Fix float spaces
+    nBytes &= 7;
 
     // Create a fake formatter for result
     return FLOAT_SH(Float) | COLORSPACE_SH(ColorSpaceBits) | BYTES_SH(nBytes) | CHANNELS_SH(nOutputChans);

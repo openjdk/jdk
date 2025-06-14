@@ -99,9 +99,8 @@ STUBGEN_ENTRIES_DO(DEFINE_ENTRY_FIELD, DEFINE_ENTRY_FIELD_INIT, DEFINE_ENTRY_FIE
 
 jint    StubRoutines::_verify_oop_count                         = 0;
 
+
 address StubRoutines::_string_indexof_array[4]   =    { nullptr };
-address StubRoutines::_vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH] = {{nullptr}, {nullptr}};
-address StubRoutines::_vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH] = {{nullptr}, {nullptr}};
 
 const char* StubRoutines::get_blob_name(StubGenBlobId id) {
   assert(0 <= id && id < StubGenBlobId::NUM_BLOBIDS, "invalid blob id");
@@ -221,6 +220,14 @@ static BufferBlob* initialize_stubs(StubGenBlobId blob_id,
                                     const char* buffer_name,
                                     const char* assert_msg) {
   ResourceMark rm;
+  if (code_size == 0) {
+    LogTarget(Info, stubs) lt;
+    if (lt.is_enabled()) {
+      LogStream ls(lt);
+      ls.print_cr("%s\t not generated", buffer_name);
+      return nullptr;
+    }
+  }
   TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
   // Add extra space for large CodeEntryAlignment
   int size = code_size + CodeEntryAlignment * max_aligned_stubs;

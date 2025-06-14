@@ -35,6 +35,7 @@ import jtreg.SkippedException;
  * @test
  * @bug 8263342
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @requires os.family != "windows"
  * @library /test/lib
  * @run driver ClhsdbTestConnectArgument

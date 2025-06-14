@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ package compiler.lib.ir_framework.driver.irmatching.report;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.shared.TestFrameworkException;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeType;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
@@ -95,6 +96,10 @@ public class FailureMessageBuilder implements MatchResultVisitor {
                    "sure to always trigger a C2 compilation by invoking the test enough times.")
            .append(System.lineSeparator());
         indentation.sub();
+    }
+
+    public void visitMethodNotCompilable(Method method, int failedIRRules) {
+        throw new TestFrameworkException("Sould not reach here");
     }
 
     @Override

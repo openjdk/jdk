@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,13 +42,13 @@ public class ImmutableDescriptor implements Descriptor {
     private static final long serialVersionUID = 8853308591080540165L;
 
     /**
-     * The names of the fields in this ImmutableDescriptor with their
+     * @serial The names of the fields in this ImmutableDescriptor with their
      * original case.  The names must be in alphabetical order as determined
      * by {@link String#CASE_INSENSITIVE_ORDER}.
      */
     private final String[] names;
     /**
-     * The values of the fields in this ImmutableDescriptor.  The
+     * @serial The values of the fields in this ImmutableDescriptor.  The
      * elements in this array match the corresponding elements in the
      * {@code names} array.
      */

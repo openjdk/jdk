@@ -33,7 +33,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.plaf.basic.*;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingConstants;
-public class XButtonPeer extends XComponentPeer implements ButtonPeer {
+public final class XButtonPeer extends XComponentPeer implements ButtonPeer {
     private boolean pressed;
     private boolean armed;
     private Insets focusInsets;
@@ -51,6 +51,7 @@ public class XButtonPeer extends XComponentPeer implements ButtonPeer {
         return propertyPrefix;
     }
 
+    @Override
     void preInit(XCreateWindowParams params) {
         super.preInit(params);
         borderInsets = new Insets(2,2,2,2);
@@ -67,6 +68,7 @@ public class XButtonPeer extends XComponentPeer implements ButtonPeer {
         updateMotifColors(getPeerBackground());
     }
 
+    @Override
     public  void dispose() {
         synchronized (target)
         {
@@ -75,6 +77,7 @@ public class XButtonPeer extends XComponentPeer implements ButtonPeer {
         super.dispose();
     }
 
+    @Override
     public boolean isFocusable() {
         return true;
     }
@@ -90,11 +93,13 @@ public class XButtonPeer extends XComponentPeer implements ButtonPeer {
         }
     }
 
+    @Override
     public void setBackground(Color c) {
         updateMotifColors(c);
         super.setBackground(c);
     }
 
+    @Override
     void handleJavaMouseEvent(MouseEvent e) {
         super.handleJavaMouseEvent(e);
         int id = e.getID();
@@ -151,16 +156,19 @@ public class XButtonPeer extends XComponentPeer implements ButtonPeer {
     }
 
 
+    @Override
     public void focusGained(FocusEvent e) {
         super.focusGained(e);
         repaint();
     }
 
+    @Override
     public void focusLost(FocusEvent e) {
         super.focusLost(e);
         repaint();
     }
 
+    @Override
     void handleJavaKeyEvent(KeyEvent e) {
         int id = e.getID();
         switch (id) {
@@ -191,6 +199,7 @@ public class XButtonPeer extends XComponentPeer implements ButtonPeer {
         }
     }
 
+    @Override
     public Dimension getMinimumSize() {
         FontMetrics fm = getFontMetrics(getPeerFont());
         if ( label == null ) {

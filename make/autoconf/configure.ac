@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -174,9 +174,6 @@ SRCDIRS_SETUP_IMPORT_MODULES
 #
 ################################################################################
 
-# See if we are doing a complete static build or not
-JDKOPT_SETUP_STATIC_BUILD
-
 # First determine the toolchain type (compiler family)
 TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE
 
@@ -259,11 +256,12 @@ LIB_TESTS_ENABLE_DISABLE_JTREG_TEST_THREAD_FACTORY
 
 JDKOPT_ENABLE_DISABLE_GENERATE_CLASSLIST
 JDKOPT_EXCLUDE_TRANSLATIONS
-JDKOPT_ENABLE_DISABLE_MANPAGES
 JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE
 JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_COH
 JDKOPT_ENABLE_DISABLE_COMPATIBLE_CDS_ALIGNMENT
 JDKOPT_SETUP_MACOSX_SIGNING
+JDKOPT_SETUP_SIGNING_HOOK
+JDKOPT_SETUP_JAVA_WARNINGS
 
 ################################################################################
 #

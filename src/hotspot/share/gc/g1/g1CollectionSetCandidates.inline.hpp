@@ -29,54 +29,21 @@
 
 #include "utilities/growableArray.hpp"
 
-inline G1CollectionCandidateListIterator::G1CollectionCandidateListIterator(G1CollectionCandidateList* which, uint position) :
-  _which(which), _position(position) { }
-
-inline G1CollectionCandidateListIterator& G1CollectionCandidateListIterator::operator++() {
-  assert(_position < _which->length(), "must be");
-  _position++;
-  return *this;
-}
-
-inline G1CollectionSetCandidateInfo* G1CollectionCandidateListIterator::operator*() {
-  return &_which->_candidates.at(_position);
-}
-
-inline bool G1CollectionCandidateListIterator::operator==(const G1CollectionCandidateListIterator& rhs) {
-  assert(_which == rhs._which, "iterator belongs to different array");
-  return _position == rhs._position;
-}
-
-inline bool G1CollectionCandidateListIterator::operator!=(const G1CollectionCandidateListIterator& rhs) {
-  return !(*this == rhs);
-}
-
-inline G1CollectionSetCandidatesIterator::G1CollectionSetCandidatesIterator(G1CollectionSetCandidates* which, uint position) :
-  _which(which), _position(position) {
-}
-
-inline G1CollectionSetCandidatesIterator& G1CollectionSetCandidatesIterator::operator++() {
-  assert(_position < _which->length(), "must not be at end already");
-  _position++;
-  return *this;
-}
-
-inline G1HeapRegion* G1CollectionSetCandidatesIterator::operator*() {
-  uint length = _which->marking_regions_length();
-  if (_position < length) {
-    return _which->_marking_regions.at(_position)._r;
-  } else {
-    return _which->_retained_regions.at(_position - length)._r;
+template<typename Func>
+void G1CSetCandidateGroupList::iterate(Func&& f) const {
+  for (G1CSetCandidateGroup* group : _groups) {
+    for (G1CollectionSetCandidateInfo ci : *group) {
+      G1HeapRegion* r = ci._r;
+      f(r);
+    }
   }
 }
 
-inline bool G1CollectionSetCandidatesIterator::operator==(const G1CollectionSetCandidatesIterator& rhs)  {
-  assert(_which == rhs._which, "iterator belongs to different array");
-  return _position == rhs._position;
-}
+template<typename Func>
+void G1CollectionSetCandidates::iterate_regions(Func&& f) const {
+  _from_marking_groups.iterate(f);
 
-inline bool G1CollectionSetCandidatesIterator::operator!=(const G1CollectionSetCandidatesIterator& rhs)  {
-  return !(*this == rhs);
+  _retained_groups.iterate(f);
 }
 
 #endif /* SHARE_GC_G1_G1COLLECTIONSETCANDIDATES_INLINE_HPP */

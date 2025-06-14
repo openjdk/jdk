@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,9 @@ import java.util.Formatter;
 import java.util.Locale;
 import sun.net.util.IPAddressUtil;
 
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
+import static jdk.internal.util.Exceptions.formatMsg;
+
 /**
  * Parses a string containing a host/domain name and port range
  */
@@ -56,7 +59,7 @@ class HostPortrange {
         return hostname.hashCode() + portrange[0] + portrange[1];
     }
 
-    HostPortrange(String scheme, String str) {
+    HostPortrange(String scheme, String host) {
         // Parse the host name.  A name has up to three components, the
         // hostname, a port number, or two numbers representing a port
         // range.   "www.example.com:8080-9090" is a valid host name.
@@ -67,21 +70,23 @@ class HostPortrange {
         // Refer to RFC 2732 for more information.
 
         // first separate string into two fields: hoststr, portstr
-        String hoststr, portstr = null;
+        String hoststr = null, portstr = null;
         this.scheme = scheme;
 
         // check for IPv6 address
-        if (str.charAt(0) == '[') {
+        if (host.charAt(0) == '[') {
             ipv6 = literal = true;
-            int rb = str.indexOf(']');
+            int rb = host.indexOf(']');
             if (rb != -1) {
-                hoststr = str.substring(1, rb);
+                hoststr = host.substring(1, rb);
             } else {
-                throw new IllegalArgumentException("invalid IPv6 address: " + str);
+                throw new IllegalArgumentException(
+                       formatMsg("invalid IPv6 address%s",
+                                 filterNonSocketInfo(host).prefixWith(": ")));
             }
-            int sep = str.indexOf(':', rb + 1);
-            if (sep != -1 && str.length() > sep) {
-                portstr = str.substring(sep + 1);
+            int sep = host.indexOf(':', rb + 1);
+            if (sep != -1 && host.length() > sep) {
+                portstr = host.substring(sep + 1);
             }
             // need to normalize hoststr now
             byte[] ip = IPAddressUtil.textToNumericFormatV6(hoststr);
@@ -94,16 +99,16 @@ class HostPortrange {
                     + "%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
                     ip[0], ip[1], ip[2], ip[3], ip[4], ip[5], ip[6], ip[7], ip[8],
                     ip[9], ip[10], ip[11], ip[12], ip[13], ip[14], ip[15]);
-            hostname = sb.toString();
+            this.hostname = sb.toString();
         } else {
             // not IPv6 therefore ':' is the port separator
 
-            int sep = str.indexOf(':');
-            if (sep != -1 && str.length() > sep) {
-                hoststr = str.substring(0, sep);
-                portstr = str.substring(sep + 1);
+            int sep = host.indexOf(':');
+            if (sep != -1 && host.length() > sep) {
+                hoststr = host.substring(0, sep);
+                portstr = host.substring(sep + 1);
             } else {
-                hoststr = sep == -1 ? str : str.substring(0, sep);
+                hoststr = sep == -1 ? host : host.substring(0, sep);
             }
             // is this a domain wildcard specification?
             if (hoststr.lastIndexOf('*') > 0) {
@@ -150,13 +155,14 @@ class HostPortrange {
                     }
                 }
             }
-            hostname = hoststr;
+            this.hostname = hoststr;
         }
 
         try {
             portrange = parsePort(portstr);
         } catch (Exception e) {
-            throw new IllegalArgumentException("invalid port range: " + portstr);
+            throw new IllegalArgumentException(
+                formatMsg("invalid port range%s", filterNonSocketInfo(portstr).prefixWith(": ")));
         }
     }
 

@@ -37,4 +37,19 @@ inline void* Array<T>::operator new(size_t size, ClassLoaderData* loader_data, i
                                      MetaspaceObj::array_type(sizeof(T)), false, THREAD);
 }
 
+template <typename T>
+inline void* Array<T>::operator new(size_t size, ClassLoaderData* loader_data, int length) throw() {
+  size_t word_size = Array::size(length);
+  return (void*) Metaspace::allocate(loader_data, word_size,
+                                     MetaspaceObj::array_type(sizeof(T)), false);
+}
+
+template <typename T>
+inline void* Array<T>::operator new(size_t size, int length, MemTag flags) throw() {
+  size = Array::size(length) * BytesPerWord;
+  void* p = AllocateHeap(size * BytesPerWord, flags);
+  memset(p, 0, size);
+  return p;
+}
+
 #endif // SHARE_OOPS_ARRAY_INLINE_HPP

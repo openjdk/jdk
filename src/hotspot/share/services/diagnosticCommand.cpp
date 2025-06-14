@@ -37,6 +37,7 @@
 #include "compiler/directivesParser.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "jvm.h"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/metaspace/metaspaceDCmd.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -126,7 +127,9 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIDataDumpDCmd>(full_export, true, false));
 #endif // INCLUDE_JVMTI
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export, true, false));
+#if INCLUDE_JVMTI
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpToFileDCmd>(full_export, true, false));
+#endif // INCLUDE_JVMTI
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VThreadSchedulerDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VThreadPollersDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderStatsDCmd>(full_export, true, false));
@@ -411,7 +414,7 @@ void RunFinalizationDCmd::execute(DCmdSource source, TRAPS) {
 
 void HeapInfoDCmd::execute(DCmdSource source, TRAPS) {
   MutexLocker hl(THREAD, Heap_lock);
-  Universe::heap()->print_on(output());
+  Universe::heap()->print_heap_on(output());
 }
 
 void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
@@ -1145,16 +1148,17 @@ void VThreadPollersDCmd::execute(DCmdSource source, TRAPS) {
 
 CompilationMemoryStatisticDCmd::CompilationMemoryStatisticDCmd(outputStream* output, bool heap) :
     DCmdWithParser(output, heap),
-  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false"),
-  _minsize("-s", "Minimum memory size", "MEMORY SIZE", false, "0") {
-  _dcmdparser.add_dcmd_option(&_human_readable);
+  _verbose("verbose", "Print detailed information", "BOOLEAN", false, "false"),
+  _legend("legend", "Table mode: print legend", "BOOLEAN", false, "false"),
+  _minsize("minsize", "Minimum memory size", "MEMORY SIZE", false, "0") {
+  _dcmdparser.add_dcmd_option(&_verbose);
   _dcmdparser.add_dcmd_option(&_minsize);
+  _dcmdparser.add_dcmd_option(&_legend);
 }
 
 void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
-  const bool human_readable = _human_readable.value();
   const size_t minsize = _minsize.has_value() ? _minsize.value()._size : 0;
-  CompilationMemoryStatistic::print_all_by_size(output(), human_readable, minsize);
+  CompilationMemoryStatistic::print_jcmd_report(output(), _verbose.value(), _legend.value(), minsize);
 }
 
 #if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
