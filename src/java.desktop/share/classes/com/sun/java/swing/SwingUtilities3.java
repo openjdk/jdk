@@ -25,7 +25,6 @@
 
 package com.sun.java.swing;
 
-import java.applet.Applet;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Graphics;
@@ -53,9 +52,7 @@ import static sun.java2d.pipe.Region.clipRound;
  * releases and even patch releases. You should not rely on this class even
  * existing.
  *
- * This is a second part of sun.swing.SwingUtilities2. It is required
- * to provide services for JavaFX applets.
- *
+ * This is a second part of sun.swing.SwingUtilities2.
  */
 public class SwingUtilities3 {
     /**
@@ -91,14 +88,12 @@ public class SwingUtilities3 {
      * depends on current RepaintManager's RepaintManager.PaintManager
      * and on the capabilities of the graphics hardware/software and what not.
      *
-     * @param rootContainer topmost container. Should be either {@code Window}
-     *  or {@code Applet}
+     * @param rootContainer topmost container. Should be {@code Window}
      * @param isRequested the value to set vsyncRequested state to
      */
-    @SuppressWarnings("removal")
     public static void setVsyncRequested(Container rootContainer,
                                          boolean isRequested) {
-        assert (rootContainer instanceof Applet) || (rootContainer instanceof Window);
+        assert (rootContainer instanceof Window);
         if (isRequested) {
             vsyncedMap.put(rootContainer, Boolean.TRUE);
         } else {
@@ -109,12 +104,11 @@ public class SwingUtilities3 {
     /**
      * Checks if vsync painting is requested for {@code rootContainer}
      *
-     * @param rootContainer topmost container. Should be either Window or Applet
+     * @param rootContainer topmost container. Should be Window
      * @return {@code true} if vsync painting is requested for {@code rootContainer}
      */
-    @SuppressWarnings("removal")
     public static boolean isVsyncRequested(Container rootContainer) {
-        assert (rootContainer instanceof Applet) || (rootContainer instanceof Window);
+        assert (rootContainer instanceof Window);
         return Boolean.TRUE == vsyncedMap.get(rootContainer);
     }
 

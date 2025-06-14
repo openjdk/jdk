@@ -433,7 +433,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         // If the target is a dialog, popup or tooltip we want it to ignore the brushed metal look.
         if (isPopup) {
             styleBits = SET(styleBits, TEXTURED, false);
-            // Popups in applets don't activate applet's process
             styleBits = SET(styleBits, NONACTIVATING, true);
             styleBits = SET(styleBits, IS_POPUP, true);
         }
@@ -714,7 +713,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 boolean isPopup = (target.getType() == Window.Type.POPUP);
                 execute(ptr -> {
                     if (isPopup) {
-                        // Popups in applets don't activate applet's process
                         CWrapper.NSWindow.orderFrontRegardless(ptr);
                     } else {
                         CWrapper.NSWindow.orderFront(ptr);

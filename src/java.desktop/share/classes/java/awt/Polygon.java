@@ -160,7 +160,7 @@ public class Polygon implements Shape, java.io.Serializable {
         if (npoints < 0) {
             throw new NegativeArraySizeException("npoints < 0");
         }
-        // Fix 6343431: Applet compatibility problems if arrays are not
+        // Fix 6343431: compatibility problems if arrays are not
         // exactly npoints in length
         this.npoints = npoints;
         this.xpoints = Arrays.copyOf(xpoints, npoints);

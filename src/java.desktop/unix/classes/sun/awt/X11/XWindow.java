@@ -1441,7 +1441,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
                 comp = AWTAccessor.getComponentAccessor().getParent(comp);
             }
 
-            // applets, embedded, etc - translate directly
+            // embedded, etc - translate directly
             // XXX: override in subclass?
             if (comp == null || comp instanceof sun.awt.EmbeddedFrame) {
                 return toGlobal(0, 0);

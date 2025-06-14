@@ -49,7 +49,6 @@
  * Set our limit much lower than that to allow a buffer for objects
  * created beyond the per-thread HDC/Brush/Pen objects we are
  * counting here, including objects created by the overall process
- * (which could include the browser, in the case of applets)
  */
 #define MAX_GDI_OBJECTS 9000
 

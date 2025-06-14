@@ -110,9 +110,7 @@ public final class IIORegistry extends ServiceRegistry {
      * the Image I/O API.  This instance should be used for all
      * registry functions.
      *
-     * <p> Each {@code ThreadGroup} will receive its own
-     * instance; this allows different {@code Applet}s in the
-     * same browser (for example) to each have their own registry.
+     * <p> Each {@code ThreadGroup} will receive its own instance.
      *
      * @return the default registry for the current
      * {@code ThreadGroup}.
