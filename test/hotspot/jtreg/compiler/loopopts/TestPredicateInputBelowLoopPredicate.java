@@ -25,7 +25,7 @@
  * @test
  * bug 8280799
  * @summary C2: assert(false) failed: cyclic dependency prevents range check elimination
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseCountedLoopSafepoints TestPredicateInputBelowLoopPredicate
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-BackgroundCompilation -XX:-UseCountedLoopSafepoints TestPredicateInputBelowLoopPredicate
  */
 
 public class TestPredicateInputBelowLoopPredicate {

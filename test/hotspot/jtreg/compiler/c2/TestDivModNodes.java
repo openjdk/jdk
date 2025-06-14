@@ -44,8 +44,8 @@ public class TestDivModNodes {
     private static long longRemainder;
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:-UseDivMod");
-        TestFramework.runWithFlags("-XX:+UseDivMod");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UseDivMod");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:+UseDivMod");
     }
 
     private static int nextNonZeroInt() {

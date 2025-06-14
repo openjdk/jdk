@@ -25,9 +25,9 @@
  * @test
  * @bug 8323274
  * @summary loop unswitching can cause an array load to become dependent on a test other than its range check
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:CompileOnly=TestArrayAccessAboveRCAfterUnswitching::test
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:CompileOnly=TestArrayAccessAboveRCAfterUnswitching::test
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=148059521 TestArrayAccessAboveRCAfterUnswitching
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:CompileOnly=TestArrayAccessAboveRCAfterUnswitching::test
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:CompileOnly=TestArrayAccessAboveRCAfterUnswitching::test
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM TestArrayAccessAboveRCAfterUnswitching
  */
 
