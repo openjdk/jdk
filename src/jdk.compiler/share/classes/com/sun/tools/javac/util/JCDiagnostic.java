@@ -116,33 +116,6 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         }
 
         /**
-         * Create a warning diagnostic that will not be hidden by the -nowarn or -Xlint:none options.
-         *  @param lc     The lint category for the diagnostic
-         *  @param source The source of the compilation unit, if any, in which to report the warning.
-         *  @param pos    The source position at which to report the warning.
-         *  @param key    The key for the localized warning message.
-         *  @param args   Fields of the warning message.
-         *  @see MandatoryWarningHandler
-         */
-        public JCDiagnostic mandatoryWarning(
-                LintCategory lc,
-                DiagnosticSource source, DiagnosticPosition pos, String key, Object... args) {
-            return mandatoryWarning(source, pos, warningKey(lc, key, args));
-        }
-
-        /**
-         * Create a warning diagnostic that will not be hidden by the -nowarn or -Xlint:none options.
-         *  @param source The source of the compilation unit, if any, in which to report the warning.
-         *  @param pos    The source position at which to report the warning.
-         *  @param warningKey    The key for the localized warning message.
-         *  @see MandatoryWarningHandler
-         */
-        public JCDiagnostic mandatoryWarning(
-                DiagnosticSource source, DiagnosticPosition pos, Warning warningKey) {
-            return create(EnumSet.of(DiagnosticFlag.MANDATORY), source, pos, warningKey);
-        }
-
-        /**
          * Create a warning diagnostic.
          *  @param lc     The lint category for the diagnostic
          *  @param source The source of the compilation unit, if any, in which to report the warning.
@@ -447,6 +420,9 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         RECOVERABLE,
         NON_DEFERRABLE,
         COMPRESSED,
+        /** Flags mandatory warnings that should pass through a mandatory warning aggregator.
+         */
+        AGGREGATE,
         /** Flag for diagnostics that were reported through API methods.
          */
         API,
