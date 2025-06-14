@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,8 +235,7 @@ public class StringBuilders {
 
     @Benchmark
     public int appendWithIntLatin1() {
-        StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        StringBuilder buf = new StringBuilder();
         for (int i : intArray) {
             buf.append(i);
         }
@@ -245,8 +244,7 @@ public class StringBuilders {
 
     @Benchmark
     public int appendWithIntUtf16() {
-        StringBuilder buf = sbUtf16;
-        buf.setLength(0);
+        StringBuilder buf = new StringBuilder("\uFF11");
         for (int i : intArray) {
             buf.append(i);
         }
@@ -255,8 +253,7 @@ public class StringBuilders {
 
     @Benchmark
     public int appendWithLongLatin1() {
-        StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        StringBuilder buf = new StringBuilder();
         for (long l : longArray) {
             buf.append(l);
         }
@@ -265,8 +262,7 @@ public class StringBuilders {
 
     @Benchmark
     public int appendWithLongUtf16() {
-        StringBuilder buf = sbUtf16;
-        buf.setLength(0);
+        StringBuilder buf = new StringBuilder("\uFF11");
         for (long l : longArray) {
             buf.append(l);
         }
@@ -290,8 +286,7 @@ public class StringBuilders {
 
     @Benchmark
     public int appendWithFloat8Latin1() {
-        StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        StringBuilder buf = new StringBuilder();
         buf.append(113.110F);
         buf.append(156456.36435637F);
         buf.append(65436434.64632F);
@@ -306,8 +301,7 @@ public class StringBuilders {
 
     @Benchmark
     public int appendWithFloat8Utf16() {
-        StringBuilder buf = sbUtf16;
-        buf.setLength(0);
+        StringBuilder buf = new StringBuilder("\uFF11");
         buf.append(113.110F);
         buf.append(156456.36435637F);
         buf.append(65436434.64632F);
@@ -322,8 +316,7 @@ public class StringBuilders {
 
     @Benchmark
     public int appendWithDouble8Latin1() {
-        StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        StringBuilder buf = new StringBuilder();
         buf.append(0.3005216476500575D);
         buf.append(0.39727691577802204D);
         buf.append(0.9869700323149287D);
@@ -338,8 +331,7 @@ public class StringBuilders {
 
     @Benchmark
     public int appendWithDouble8Utf16() {
-        StringBuilder buf = sbUtf16;
-        buf.setLength(0);
+        StringBuilder buf = new StringBuilder("\uFF11");
         buf.append(0.3005216476500575D);
         buf.append(0.39727691577802204D);
         buf.append(0.9869700323149287D);
