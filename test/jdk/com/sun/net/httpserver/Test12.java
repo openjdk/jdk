@@ -21,23 +21,12 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 6270015
- * @library /test/lib
- * @build jdk.test.lib.Asserts
- *        jdk.test.lib.Utils
- *        jdk.test.lib.net.SimpleSSLContext
- *        jdk.test.lib.net.URIBuilder
- * @run main/othervm Test12
- * @run main/othervm -Djava.net.preferIPv6Addresses=true Test12
- * @summary Light weight HTTP server
- */
-
 import com.sun.net.httpserver.*;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.*;
 import java.io.*;
 import java.net.*;
@@ -49,19 +38,25 @@ import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertFileContentsEqual;
 import static jdk.test.lib.Utils.createTempFileOfSize;
 
-/* basic http/s connectivity test
- * Tests:
- *      - same as Test1, but in parallel
+/*
+ * @test
+ * @bug 6270015 8359477
+ * @summary Light weight HTTP server - basic http/s connectivity test, same as Test1,
+ *          but in parallel
+ * @library /test/lib
+ * @build jdk.test.lib.Asserts
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.net.SimpleSSLContext
+ *        jdk.test.lib.net.URIBuilder
+ * @run main/othervm Test12
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true Test12
  */
-
 public class Test12 extends Test {
 
     private static final String TEMP_FILE_PREFIX =
             HttpServer.class.getPackageName() + '-' + Test12.class.getSimpleName() + '-';
 
     static SSLContext ctx;
-
-    static boolean fail = false;
 
     public static void main (String[] args) throws Exception {
         HttpServer s1 = null;
@@ -90,7 +85,7 @@ public class Test12 extends Test {
 
             int port = s1.getAddress().getPort();
             int httpsport = s2.getAddress().getPort();
-            Runner r[] = new Runner[8];
+            final Runner[] r = new Runner[8];
             r[0] = new Runner (true, "http", port, smallFilePath);
             r[1] = new Runner (true, "http", port, largeFilePath);
             r[2] = new Runner (true, "https", httpsport, smallFilePath);
@@ -99,95 +94,77 @@ public class Test12 extends Test {
             r[5] = new Runner (false, "http", port, largeFilePath);
             r[6] = new Runner (false, "https", httpsport, smallFilePath);
             r[7] = new Runner (false, "https", httpsport, largeFilePath);
-            start (r);
-            join (r);
-            System.out.println ("OK");
+            // submit the tasks
+            final List<Future<Void>> futures = new ArrayList<>();
+            for (Runner runner : r) {
+                futures.add(executor.submit(runner));
+            }
+            // wait for the tasks' completion
+            for (Future<Void> f : futures) {
+                f.get();
+            }
+            System.out.println ("All " + futures.size() + " tasks completed successfully");
         } finally {
             if (s1 != null)
                 s1.stop(0);
             if (s2 != null)
                 s2.stop(0);
             if (executor != null)
-                executor.shutdown ();
+                executor.shutdown();
             Files.delete(smallFilePath);
             Files.delete(largeFilePath);
         }
     }
 
-    static void start (Runner[] x) {
-        for (int i=0; i<x.length; i++) {
-            x[i].start();
-        }
-    }
-
-    static void join (Runner[] x) {
-        for (int i=0; i<x.length; i++) {
-            try {
-                x[i].join();
-            } catch (InterruptedException e) {}
-        }
-    }
-
-
-    static class Runner extends Thread {
+    static class Runner implements Callable<Void> {
 
         boolean fixedLen;
         String protocol;
         int port;
         private final Path filePath;
 
-        Runner (boolean fixedLen, String protocol, int port, Path filePath) {
+        Runner(boolean fixedLen, String protocol, int port, Path filePath) {
             this.fixedLen=fixedLen;
             this.protocol=protocol;
             this.port=port;
             this.filePath = filePath;
         }
 
-        public void run () {
-            try {
-                URL url = URIBuilder.newBuilder()
-                          .scheme(protocol)
-                          .loopback()
-                          .port(port)
-                          .path("/" + filePath.getFileName())
-                          .toURL();
-                HttpURLConnection urlc = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
-                if (urlc instanceof HttpsURLConnection) {
-                    HttpsURLConnection urlcs = (HttpsURLConnection) urlc;
-                    urlcs.setHostnameVerifier (new HostnameVerifier () {
-                        public boolean verify (String s, SSLSession s1) {
-                            return true;
-                        }
-                    });
-                    urlcs.setSSLSocketFactory (ctx.getSocketFactory());
-                }
-                byte [] buf = new byte [4096];
-
-                if (fixedLen) {
-                    urlc.setRequestProperty ("XFixed", "yes");
-                }
-                InputStream is = urlc.getInputStream();
-                File temp = File.createTempFile ("Test1", null);
-                temp.deleteOnExit();
-                OutputStream fout = new BufferedOutputStream (new FileOutputStream(temp));
-                int c, count = 0;
-                while ((c=is.read(buf)) != -1) {
-                    count += c;
-                    fout.write (buf, 0, c);
-                }
-                is.close();
-                fout.close();
-
-                if (count != filePath.toFile().length()) {
-                    throw new RuntimeException ("wrong amount of data returned");
-                }
-                assertFileContentsEqual(filePath, temp.toPath());
-                temp.delete();
-            } catch (Exception e) {
-                e.printStackTrace();
-                fail = true;
+        @Override
+        public Void call() throws Exception {
+            final URL url = URIBuilder.newBuilder()
+                      .scheme(protocol)
+                      .loopback()
+                      .port(port)
+                      .path("/" + filePath.getFileName())
+                      .toURL();
+            final HttpURLConnection urlc = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
+            if (urlc instanceof HttpsURLConnection) {
+                HttpsURLConnection urlcs = (HttpsURLConnection) urlc;
+                urlcs.setHostnameVerifier (new HostnameVerifier () {
+                    public boolean verify (String s, SSLSession s1) {
+                        return true;
+                    }
+                });
+                urlcs.setSSLSocketFactory (ctx.getSocketFactory());
             }
+            if (fixedLen) {
+                urlc.setRequestProperty ("XFixed", "yes");
+            }
+            final Path temp = Files.createTempFile(Path.of("."), "Test12", null);
+            final long numReceived;
+            try (InputStream is = urlc.getInputStream();
+                 OutputStream fout = new BufferedOutputStream(new FileOutputStream(temp.toFile()))) {
+                numReceived = is.transferTo(fout);
+            }
+            final long expected = filePath.toFile().length();
+            if (numReceived != expected) {
+                throw new RuntimeException ("expected " + expected + " bytes, but received "
+                        + numReceived);
+            }
+            assertFileContentsEqual(filePath, temp);
+            Files.delete(temp);
+            return null;
         }
     }
-
 }
