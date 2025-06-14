@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,18 @@
 #include "gc/z/zPageAge.hpp"
 #include "gc/z/zPageType.hpp"
 #include "gc/z/zValue.hpp"
+#include "utilities/deferred.hpp"
+#include "utilities/valueObjArray.hpp"
 
 class ZPage;
 class ZPageTable;
 
 class ZObjectAllocator {
+  template <typename Type, int Count> friend class ValueObjBlock;
+  friend class ZObjectAllocators;
+
 private:
-  ZPageAge           _age;
+  const ZPageAge     _age;
   const bool         _use_per_cpu_shared_small_pages;
   ZPerCPU<ZPage*>    _shared_small_page;
   ZContended<ZPage*> _shared_medium_page;
@@ -64,23 +69,32 @@ private:
   zaddress alloc_small_object(size_t size, ZAllocationFlags flags);
   zaddress alloc_object(size_t size, ZAllocationFlags flags);
 
-public:
+  void retire_pages();
+
   ZObjectAllocator(ZPageAge age);
+};
+
+class ZObjectAllocators : public AllStatic {
+public:
+  static constexpr uint NumAllocators = ZPageAgeCount;
+  static constexpr uint NumRelocationAllocators = NumAllocators - 1;
+
+private:
+  using Allocators = Deferred<ValueObjArray<ZObjectAllocator, NumAllocators>>;
+
+  static Allocators _allocators;
+  static ZObjectAllocator* allocator(ZPageAge age);
+
+public:
+  static void initialize();
+
+  static void retire_pages(ZPageAgeRange range);
+
+  static size_t remaining_in_eden();
 
   // Mutator allocation
-  zaddress alloc_object(size_t size);
-
-  // Relocation
-  zaddress alloc_object_for_relocation(size_t size);
-  void undo_alloc_object_for_relocation(zaddress addr, size_t size);
-
-  ZPage* alloc_page_for_relocation(ZPageType type, size_t size, ZAllocationFlags flags);
-
-  ZPageAge age() const;
-
-  size_t remaining() const;
-
-  void retire_pages();
+  static zaddress alloc_object(size_t size, ZPageAge age);
+  static void undo_alloc_object(zaddress addr, size_t size, ZPageAge age);
 };
 
 #endif // SHARE_GC_Z_ZOBJECTALLOCATOR_HPP
