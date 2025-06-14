@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,42 +25,35 @@
  * @test
  * @bug 4313052
  * @summary Test cursor changes after mouse dragging ends
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
  * @run main/manual ListDragCursor
  */
 
+import java.awt.BorderLayout;
+import java.awt.Button;
 import java.awt.Cursor;
+import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.List;
 import java.awt.Panel;
 import java.awt.TextArea;
+import java.util.concurrent.CountDownLatch;
 
 public class ListDragCursor {
+    static Frame testFrame;
+    static Frame instructionsFrame;
+    static CountDownLatch countDownLatch;
+
     public static void main(String[] args) throws Exception {
-        String INSTRUCTIONS = """
-                1. Move mouse to the TextArea.
-                2. Press the left mouse button.
-                3. Drag mouse to the list.
-                4. Release the left mouse button.
-
-                If the mouse cursor starts as a Text Line Cursor and changes
-                to a regular Pointer Cursor, then Hand Cursor when hovering
-                the list, pass the test. This test fails if the cursor does
-                not update at all when pointing over the different components.
-                """;
-
-        PassFailJFrame.builder()
-                .title("Test Instructions")
-                .instructions(INSTRUCTIONS)
-                .rows((int) INSTRUCTIONS.lines().count() + 2)
-                .columns(35)
-                .testUI(ListDragCursor::createUI)
-                .build()
-                .awaitAndCheck();
+        countDownLatch = new CountDownLatch(1);
+        EventQueue.invokeAndWait(() -> {
+            createTestFrame();
+            createInstructionsFrame();
+        });
+        countDownLatch.await();
+        System.out.println("Test Passed");
     }
 
-    public static Frame createUI() {
+    static void createTestFrame() {
         Frame frame = new Frame("Cursor change after drag");
         Panel panel = new Panel();
 
@@ -78,7 +71,63 @@ public class ListDragCursor {
         panel.add(list);
 
         frame.add(panel);
-        frame.setBounds(300, 100, 300, 150);
-        return frame;
+        frame.setSize(300, 150);
+        frame.setLocation(450, 500);
+        frame.setVisible(true);
+    }
+
+    static void createInstructionsFrame() {
+        String instructions = """
+                1. Move mouse to the TextArea.
+                2. Press the left mouse button.
+                3. Drag mouse to the list.
+                4. Release the left mouse button.
+
+                The mouse cursor should appear as an I-beam cursor
+                and should stay the same while dragging across the
+                components. Once you reach the list, release the
+                left mouse button. Immediately after, the cursor
+                should change to a Hand cursor. If true, this test
+                passes.
+
+                The test fails if the cursor updates while dragging
+                over the components before releasing the left
+                mouse button.
+                """;
+
+        instructionsFrame = new Frame("Test Instructions");
+        Panel mainPanel = new Panel(new BorderLayout());
+        TextArea textArea = new TextArea(instructions,
+                15, 60, TextArea.SCROLLBARS_NONE);
+
+        Panel btnPanel = new Panel();
+        Button passBtn = new Button("PASS");
+        Button failBtn = new Button("FAIL");
+        btnPanel.add(passBtn);
+        btnPanel.add(failBtn);
+
+        passBtn.addActionListener(e -> disposeFrames());
+        failBtn.addActionListener(e -> {
+            disposeFrames();
+            throw new RuntimeException("Test Failed");
+        });
+
+        mainPanel.add(textArea, BorderLayout.CENTER);
+        mainPanel.add(btnPanel, BorderLayout.SOUTH);
+
+        instructionsFrame.add(mainPanel);
+        instructionsFrame.pack();
+        instructionsFrame.setLocation(300, 100);
+        instructionsFrame.setVisible(true);
+    }
+
+    static void disposeFrames() {
+        countDownLatch.countDown();
+        if (testFrame != null) {
+            testFrame.dispose();
+        }
+        if (instructionsFrame != null) {
+            instructionsFrame.dispose();
+        }
     }
 }
