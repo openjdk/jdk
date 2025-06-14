@@ -135,7 +135,7 @@ Node* CompressBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* src = in(1);
   Node* mask = in(2);
   if (bottom_type()->isa_int()) {
-    if (mask->Opcode() == Op_LShiftI && phase->type(mask->in(1))->is_int()->is_con()) {
+    if (mask->Opcode() == Op_LShiftI && phase->type(mask->in(1))->isa_int() && phase->type(mask->in(1))->is_int()->is_con()) {
       // compress(x, 1 << n) == (x >> n & 1)
       if (phase->type(mask->in(1))->higher_equal(TypeInt::ONE)) {
         Node* rshift = phase->transform(new RShiftINode(in(1), mask->in(2)));
@@ -153,7 +153,7 @@ Node* CompressBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     }
   } else {
     assert(bottom_type()->isa_long(), "");
-    if (mask->Opcode() == Op_LShiftL && phase->type(mask->in(1))->is_long()->is_con()) {
+    if (mask->Opcode() == Op_LShiftL && phase->type(mask->in(1))->isa_long() && phase->type(mask->in(1))->is_long()->is_con()) {
       // compress(x, 1 << n) == (x >> n & 1)
       if (phase->type(mask->in(1))->higher_equal(TypeLong::ONE)) {
         Node* rshift = phase->transform(new RShiftLNode(in(1), mask->in(2)));
@@ -193,7 +193,7 @@ Node* ExpandBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* src = in(1);
   Node* mask = in(2);
   if (bottom_type()->isa_int()) {
-    if (mask->Opcode() == Op_LShiftI && phase->type(mask->in(1))->is_int()->is_con()) {
+    if (mask->Opcode() == Op_LShiftI && phase->type(mask->in(1))->isa_int() && phase->type(mask->in(1))->is_int()->is_con()) {
       // expand(x, 1 << n) == (x & 1) << n
       if (phase->type(mask->in(1))->higher_equal(TypeInt::ONE)) {
         Node* andnode = phase->transform(new AndINode(in(1), phase->makecon(TypeInt::ONE)));
@@ -210,7 +210,7 @@ Node* ExpandBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     }
   } else {
     assert(bottom_type()->isa_long(), "");
-    if (mask->Opcode() == Op_LShiftL && phase->type(mask->in(1))->is_long()->is_con()) {
+    if (mask->Opcode() == Op_LShiftL && phase->type(mask->in(1))->isa_long() && phase->type(mask->in(1))->is_long()->is_con()) {
       // expand(x, 1 << n) == (x & 1) << n
       if (phase->type(mask->in(1))->higher_equal(TypeLong::ONE)) {
         Node* andnode = phase->transform(new AndLNode(in(1), phase->makecon(TypeLong::ONE)));
