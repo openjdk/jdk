@@ -1138,17 +1138,10 @@ public final class Http3Connection implements AutoCloseable {
                 if (debug.on()) {
                     debug.log("Received peer settings %s for connection %s", this.peerSettings, this);
                 }
-                // We can only initialize encoder's DT only when we get Settings frame with all parameters
-                qpackEncoder().configure(peerSettings);
                 peerSettingsCF.completeAsync(() -> peerSettings,
                         client.client().theExecutor().safeDelegate());
-                // Send DT capacity update instruction if the peer negotiated non-zero
-                // max table capacity
-                long maxCapacity = peerSettings.qpackMaxTableCapacity();
-                if (QPACK.ENCODER_TABLE_CAPACITY_LIMIT > 0 && maxCapacity > 0) {
-                    long encoderCapacity = Math.min(maxCapacity, QPACK.ENCODER_TABLE_CAPACITY_LIMIT);
-                    qpackEncoder().setTableCapacity(encoderCapacity);
-                }
+                // We can only initialize encoder's DT only when we get Settings frame with all parameters
+                qpackEncoder().configure(peerSettings);
             }
             if (frame instanceof CancelPushFrame cancelPush) {
                 pushManager.cancelPushPromise(cancelPush.getPushId(), null, CancelPushReason.CANCEL_RECEIVED);

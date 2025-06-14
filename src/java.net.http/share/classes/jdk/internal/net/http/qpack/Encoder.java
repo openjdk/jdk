@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,6 @@ public class Encoder {
     private final DynamicTable dynamicTable;
     private final QueuingStreamPair encoderStreams;
     private final DecoderInstructionsReader decoderInstructionsReader;
-    private final EncoderInstructionsWriter encoderInstructionsWriter;
     // RFC-9204: 2.1.4. Known Received Count
     private long knownReceivedCount;
 
@@ -156,7 +155,6 @@ public class Encoder {
         encoderStreams = streamPairs.create(this::processDecoderAcks);
         decoderInstructionsReader = new DecoderInstructionsReader(new TableUpdatesCallback(),
                 logger);
-        encoderInstructionsWriter = new EncoderInstructionsWriter(logger);
         qpackErrorHandler = codingError;
     }
 
@@ -176,7 +174,16 @@ public class Encoder {
         } finally {
             blockedStreamsCounterLock.unlock();
         }
-        dynamicTable.setMaxTableCapacity(peerSettings.qpackMaxTableCapacity());
+        // Set max dynamic table capacity
+        long maxCapacity = peerSettings.qpackMaxTableCapacity();
+        dynamicTable.setMaxTableCapacity(maxCapacity);
+        // Send DT capacity update instruction if the peer negotiated non-zero
+        // max table capacity, and limit the value with encoder's table capacity
+        // limit system property value
+        if (QPACK.ENCODER_TABLE_CAPACITY_LIMIT > 0 && maxCapacity > 0) {
+            long encoderCapacity = Math.min(maxCapacity, QPACK.ENCODER_TABLE_CAPACITY_LIMIT);
+            setTableCapacity(encoderCapacity);
+        }
     }
 
     public QueuingStreamPair encoderStreams() {
@@ -271,10 +278,10 @@ public class Encoder {
      * 4.3.1. Set Dynamic Table Capacity</a>).
      *
      * @param capacity a non-negative long
-     * @throws IllegalArgumentException if capacity is negative, or exceeds the negotiated max capacity HTTP/3 setting
+     * @throws IllegalArgumentException if capacity is negative or exceeds the negotiated max capacity HTTP/3 setting
      */
     public void setTableCapacity(long capacity) {
-        dynamicTable.setCapacityWithEncoderStreamUpdate(encoderInstructionsWriter,
+        dynamicTable.setCapacityWithEncoderStreamUpdate(new EncoderInstructionsWriter(logger),
                 capacity, encoderStreams);
     }
 
@@ -479,9 +486,11 @@ public class Encoder {
         long minIndex;
         boolean blockedDecoderExpected;
         final HeaderFrameWriter writer;
+        final EncoderInstructionsWriter encoderInstructionsWriter;
 
         public EncodingContext(long streamId, long base, HeaderFrameWriter writer) {
             this.base = base;
+            this.encoderInstructionsWriter = new EncoderInstructionsWriter(logger);
             this.writer = writer;
             this.maxIndex = -1L;
             this.minIndex = Long.MAX_VALUE;

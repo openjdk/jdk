@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,8 +70,8 @@ public class EncoderDecoderConnectionTest {
         SettingsFrame settingsFrame = SettingsFrame.defaultRFCSettings();
         settingsFrame.setParameter(SettingsFrame.SETTINGS_QPACK_MAX_TABLE_CAPACITY, 2048L);
         ConnectionSettings settings = ConnectionSettings.createFrom(settingsFrame);
-        encoder.configure(settings);
         decoder.configure(settings);
+        encoder.configure(settings);
 
         // Encoder - update DT capacity
         final long capacityToSet = 1024L;
@@ -108,8 +108,8 @@ public class EncoderDecoderConnectionTest {
         SettingsFrame settingsFrame = SettingsFrame.defaultRFCSettings();
         settingsFrame.setParameter(SettingsFrame.SETTINGS_QPACK_MAX_TABLE_CAPACITY, 2048L);
         ConnectionSettings settings = ConnectionSettings.createFrom(settingsFrame);
-        encoder.configure(settings);
         decoder.configure(settings);
+        encoder.configure(settings);
 
         // Update encoder and decoder DTs capacity - note that "Set Dynamic Table Capacity"
         // is issued by the encoder that updates capacity on the decoder side
