@@ -415,10 +415,6 @@ void ShenandoahConcurrentGC::entry_reset() {
                                 msg);
     op_reset();
   }
-
-  if (heap->mode()->is_generational()) {
-    heap->old_generation()->card_scan()->mark_read_table_as_clean();
-  }
 }
 
 void ShenandoahConcurrentGC::entry_scan_remembered_set() {
@@ -643,6 +639,10 @@ void ShenandoahConcurrentGC::op_reset() {
     heap->global_generation()->prepare_gc();
   } else {
     _generation->prepare_gc();
+  }
+
+  if (heap->mode()->is_generational()) {
+    heap->old_generation()->card_scan()->mark_read_table_as_clean();
   }
 }
 
