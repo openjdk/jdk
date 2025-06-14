@@ -4231,10 +4231,7 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
 }
 
 void MemBarNode::remove(PhaseIterGVN *igvn) {
-  if (outcnt() != 2) {
-    assert(Opcode() == Op_Initialize, "Only seen when there are no use of init memory");
-    assert(outcnt() == 1, "Only control then");
-  }
+  assert(outcnt() == 2 || Opcode() == Op_Initialize, "Only seen when there are no or multiple uses of init memory");
   if (trailing_store() || trailing_load_store()) {
     MemBarNode* leading = leading_membar();
     if (leading != nullptr) {
@@ -4242,11 +4239,15 @@ void MemBarNode::remove(PhaseIterGVN *igvn) {
       leading->remove(igvn);
     }
   }
-  if (proj_out_or_null(TypeFunc::Memory) != nullptr) {
-    igvn->replace_node(proj_out(TypeFunc::Memory), in(TypeFunc::Memory));
-  }
   if (proj_out_or_null(TypeFunc::Control) != nullptr) {
     igvn->replace_node(proj_out(TypeFunc::Control), in(TypeFunc::Control));
+  }
+  if (is_Initialize()) {
+    as_Initialize()->replace_mem_projs_by(in(TypeFunc::Memory), igvn);
+  } else {
+    if (proj_out_or_null(TypeFunc::Memory) != nullptr) {
+      igvn->replace_node(proj_out(TypeFunc::Memory), in(TypeFunc::Memory));
+    }
   }
 }
 
@@ -4619,6 +4620,28 @@ bool AllocateNode::maybe_set_complete(PhaseGVN* phase) {
   if (init->is_non_zero())  return false;
   init->set_complete(phase);
   return true;
+}
+
+void InitializeNode::remove_narrow_mem_projs(PhaseIterGVN &igvn) {
+  // Remove NarrowMemProjs and only keep a single Proj: NarrowMemProjs are only useful as long as the Allocate node
+  // exists and can be removed.
+  auto find_raw_mem_proj = [&](ProjNode* proj) {
+    if (proj->Opcode() == Op_Proj) {
+      assert(proj->adr_type() == TypeRawPtr::BOTTOM, "one mem Proj with raw memory tpe");
+      return BREAK_AND_RETURN_CURRENT_PROJ;
+    }
+    assert(proj->adr_type() != TypeRawPtr::BOTTOM && proj->is_NarrowMemProj(), "other projs are NarrowMemProjs for fields/array elements");
+    return CONTINUE;
+  };
+  Node* raw_mem_proj = apply_to_projs(find_raw_mem_proj, TypeFunc::Memory);
+  DUIterator_Fast imax, i = fast_outs(imax);
+  auto remove_narrow_mem_projs = [&](NarrowMemProjNode* proj) {
+    igvn.replace_node(proj, raw_mem_proj);
+    --i; --imax;
+    return CONTINUE;
+  };
+
+  apply_to_narrow_mem_projs(imax, i, remove_narrow_mem_projs);
 }
 
 void InitializeNode::remove_extra_zeroes() {
@@ -5450,6 +5473,46 @@ Node* InitializeNode::complete_stores(Node* rawctl, Node* rawmem, Node* rawptr,
   return rawmem;
 }
 
+void InitializeNode::replace_mem_projs_by(Node* mem, Compile* C) {
+  auto replace_proj = [&](ProjNode* proj) {
+    C->gvn_replace_by(proj, mem);
+    return CONTINUE;
+  };
+  apply_to_projs(replace_proj, TypeFunc::Memory);
+}
+
+void InitializeNode::replace_mem_projs_by(Node* mem, PhaseIterGVN* igvn) {
+  DUIterator_Fast imax, i = fast_outs(imax);
+  auto replace_proj = [&](ProjNode* proj) {
+    igvn->replace_node(proj, mem);
+    --i; --imax;
+    return CONTINUE;
+  };
+  apply_to_projs(imax, i, replace_proj, TypeFunc::Memory);
+}
+
+template <class Callback> ProjNode* InitializeNode::apply_to_narrow_mem_projs(Callback callback) const {
+  DUIterator_Fast imax, i = fast_outs(imax);
+  return apply_to_narrow_mem_projs_any_iterator(UsesIteratorFast(imax, i, this), callback);
+}
+
+
+template<class Callback> ProjNode* InitializeNode::apply_to_narrow_mem_projs(Callback callback, const TypePtr* adr_type) const {
+  auto filter = [&](NarrowMemProjNode* proj) {
+    if (proj->adr_type() == adr_type && callback(proj->as_NarrowMemProj())) {
+      return BREAK_AND_RETURN_CURRENT_PROJ;
+    }
+    return CONTINUE;
+  };
+  return apply_to_narrow_mem_projs(filter);
+}
+
+bool InitializeNode::already_has_narrow_mem_proj_with_adr_type(const TypePtr* adr_type) const {
+  auto find_proj = [](ProjNode* proj) {
+    return BREAK_AND_RETURN_CURRENT_PROJ;
+  };
+  return apply_to_narrow_mem_projs(find_proj, adr_type) != nullptr;
+}
 
 #ifdef ASSERT
 bool InitializeNode::stores_are_sane(PhaseValues* phase) {
@@ -5872,6 +5935,7 @@ Node* MergeMemNode::memory_at(uint alias_idx) const {
            || n->adr_type() == nullptr // address is TOP
            || n->adr_type() == TypePtr::BOTTOM
            || n->adr_type() == TypeRawPtr::BOTTOM
+           || n->is_NarrowMemProj()
            || !Compile::current()->do_aliasing(),
            "must be a wide memory");
     // do_aliasing == false if we are organizing the memory states manually.

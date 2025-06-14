@@ -133,6 +133,7 @@ class MoveNode;
 class MulNode;
 class MultiNode;
 class MultiBranchNode;
+class NarrowMemProjNode;
 class NegNode;
 class NegVNode;
 class NeverBranchNode;
@@ -762,6 +763,7 @@ public:
         DEFINE_CLASS_ID(IfFalse,   IfProj, 1)
       DEFINE_CLASS_ID(Parm,      Proj, 4)
       DEFINE_CLASS_ID(MachProj,  Proj, 5)
+      DEFINE_CLASS_ID(NarrowMemProj, Proj, 6)
 
     DEFINE_CLASS_ID(Mem, Node, 4)
       DEFINE_CLASS_ID(Load, Mem, 0)
@@ -979,6 +981,7 @@ public:
   DEFINE_CLASS_QUERY(Multi)
   DEFINE_CLASS_QUERY(MultiBranch)
   DEFINE_CLASS_QUERY(MulVL)
+  DEFINE_CLASS_QUERY(NarrowMemProj)
   DEFINE_CLASS_QUERY(Neg)
   DEFINE_CLASS_QUERY(NegV)
   DEFINE_CLASS_QUERY(NeverBranch)
