@@ -121,7 +121,7 @@ public:
 
   // Clears the HotSpotNmethod.address field in the  mirror. If nm
   // is dead, the HotSpotNmethod.entryPoint field is also cleared.
-  void invalidate_nmethod_mirror(nmethod* nm);
+  void invalidate_nmethod_mirror(nmethod* nm, nmethod::InvalidationReason invalidation_reason);
 
   // Gets the mirror from nm's oops table.
   oop get_nmethod_mirror(nmethod* nm);

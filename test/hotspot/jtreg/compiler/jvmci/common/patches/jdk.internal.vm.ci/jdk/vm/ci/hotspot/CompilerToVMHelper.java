@@ -229,8 +229,8 @@ public class CompilerToVMHelper {
         CTVM.reprofile((HotSpotResolvedJavaMethodImpl)method);
     }
 
-    public static void invalidateHotSpotNmethod(HotSpotNmethod nmethodMirror, boolean deoptimize) {
-        CTVM.invalidateHotSpotNmethod(nmethodMirror, deoptimize);
+    public static void invalidateHotSpotNmethod(HotSpotNmethod nmethodMirror, boolean deoptimize, int invalidationReason) {
+        CTVM.invalidateHotSpotNmethod(nmethodMirror, deoptimize, invalidationReason);
     }
 
     public static long[] collectCounters() {
