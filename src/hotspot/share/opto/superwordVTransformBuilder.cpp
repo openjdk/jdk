@@ -158,6 +158,9 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
     //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b1
     assert(p0->req() == 5, "MulAddS2I should have 4 operands");
     vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, 3, pack_size);
+  } else if (opc == Op_CopySignD) {
+    assert(p0->req() == 4, "CopySignD should have 3 operands");
+    vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, 3, pack_size);
   } else {
     assert(p0->req() == 3 ||
            p0->is_CMove() ||
@@ -165,9 +168,10 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
            VectorNode::is_convert_opcode(opc) ||
            VectorNode::is_reinterpret_opcode(opc) ||
            VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(opc) ||
-           opc == Op_FmaD  ||
-           opc == Op_FmaF  ||
+           opc == Op_FmaD ||
+           opc == Op_FmaF ||
            opc == Op_FmaHF ||
+           opc == Op_CopySignF ||
            opc == Op_SignumF ||
            opc == Op_SignumD,
            "pack type must be in this list");
