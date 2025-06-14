@@ -39,7 +39,6 @@
   f(ccstr,  AOTModeConstraintFunc)                    \
   f(int,    ObjectAlignmentInBytesConstraintFunc)     \
   f(int,    ContendedPaddingWidthConstraintFunc)      \
-  f(int,    PerfDataSamplingIntervalFunc)             \
   f(uintx,  VMPageSizeConstraintFunc)                 \
   f(size_t, NUMAInterleaveGranularityConstraintFunc)
 
