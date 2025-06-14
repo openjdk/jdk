@@ -179,7 +179,7 @@ e.g. "2022-02-12T12:30:00-05:00".
     `--hash-modules`.
 
 `--target-platform` *platform*
-:   Specifies the target platform. The value is a string identifying 
+:   Specifies the target platform. The value is a string identifying
     the module's intended platform, typically in the form `<os>-<arch>`.
 
 `--version`
@@ -233,7 +233,7 @@ jmod create --class-path build/foo/classes --date 2022-03-15T00:00:00Z
 ```
 
 Create a platform-specific JMOD file bundling compiled classes, configuration files,
-native commands and libraries, header files, man pages, and metadata including the 
+native commands and libraries, header files, man pages, and metadata including the
 main class, module version, and target platform details:
 
 ```
