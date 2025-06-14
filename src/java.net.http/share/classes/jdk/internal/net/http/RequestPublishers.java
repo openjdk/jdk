@@ -25,7 +25,6 @@
 
 package jdk.internal.net.http;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,6 +34,7 @@ import java.net.http.HttpRequest.BodyPublisher;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,7 +48,6 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import jdk.internal.net.http.common.Demand;
@@ -228,29 +227,15 @@ public final class RequestPublishers {
 
         private final Path path;
         private final long length;
-        private final Function<Path, InputStream> inputStreamSupplier;
 
         /**
          * Factory for creating FilePublisher.
          */
         public static FilePublisher create(Path path)
                 throws FileNotFoundException {
-            boolean defaultFS = true;
 
-            try {
-                path.toFile().getPath();
-            } catch (UnsupportedOperationException uoe) {
-                // path not associated with the default file system provider
-                defaultFS = false;
-            }
-
-            // existence check must be after FS checks
             if (Files.notExists(path))
                 throw new FileNotFoundException(path + " not found");
-
-            boolean finalDefaultFS = defaultFS;
-            Function<Path, InputStream> inputStreamSupplier = (p) ->
-                    createInputStream(p, finalDefaultFS);
 
             long length;
             try {
@@ -259,26 +244,12 @@ public final class RequestPublishers {
                 length = -1;
             }
 
-            return new FilePublisher(path, length, inputStreamSupplier);
+            return new FilePublisher(path, length);
         }
 
-        private static InputStream createInputStream(Path path,
-                                                     boolean defaultFS) {
-            try {
-                return defaultFS
-                            ? new FileInputStream(path.toFile())
-                            : Files.newInputStream(path);
-            } catch (IOException io) {
-                throw new UncheckedIOException(io);
-            }
-        }
-
-        private FilePublisher(Path name,
-                              long length,
-                              Function<Path, InputStream> inputStreamSupplier) {
+        private FilePublisher(Path name, long length) {
             path = name;
             this.length = length;
-            this.inputStreamSupplier = inputStreamSupplier;
         }
 
         @Override
@@ -286,7 +257,14 @@ public final class RequestPublishers {
             InputStream is = null;
             Throwable t = null;
             try {
-                is = inputStreamSupplier.apply(path);
+                // Throw `FileNotFoundException` to match the specification of `BodyPublishers::ofFile
+                if (!Files.isRegularFile(path)) {
+                    throw new FileNotFoundException(path + " (Not a regular file)");
+                }
+                is = Files.newInputStream(path);
+            } catch (NoSuchFileException nsfe) {
+                // Throw `FileNotFoundException` to match the specification of `BodyPublishers::ofFile`
+                t = new FileNotFoundException(path + " (No such file or directory)");
             } catch (UncheckedIOException | UndeclaredThrowableException ue) {
                 t = ue.getCause();
             } catch (Throwable th) {

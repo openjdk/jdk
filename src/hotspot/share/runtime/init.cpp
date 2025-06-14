@@ -68,9 +68,10 @@ void compilationPolicy_init();
 void codeCache_init();
 void VM_Version_init();
 void icache_init2();
+void preuniverse_stubs_init();
 void initial_stubs_init();
 
-jint universe_init();           // depends on codeCache_init
+jint universe_init();           // depends on codeCache_init and preuniverse_stubs_init
 // depends on universe_init, must be before interpreter_init (currently only on SPARC)
 void gc_barrier_stubs_init();
 void continuations_init();      // depends on flags (UseCompressedOops) and barrier sets
@@ -129,7 +130,9 @@ jint init_globals() {
   codeCache_init();
   VM_Version_init();              // depends on codeCache_init for emitting code
   icache_init2();                 // depends on VM_Version for choosing the mechanism
-  jint status = universe_init();  // dependent on codeCache_init
+  // initialize stubs needed before we can init the universe
+  preuniverse_stubs_init();
+  jint status = universe_init();  // dependent on codeCache_init and preuniverse_stubs_init
   if (status != JNI_OK) {
     return status;
   }
