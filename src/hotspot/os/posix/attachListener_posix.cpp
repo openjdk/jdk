@@ -22,6 +22,7 @@
  *
  */
 
+#include "attachListener_posix.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -35,15 +36,10 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/un.h>
 #include <sys/stat.h>
 
 #if INCLUDE_SERVICES
 #ifndef AIX
-
-#ifndef UNIX_PATH_MAX
-#define UNIX_PATH_MAX   sizeof(sockaddr_un::sun_path)
-#endif
 
 // The attach mechanism on Linux and BSD uses a UNIX domain socket. An attach
 // listener thread is created at startup or is created on-demand via a signal
@@ -60,102 +56,6 @@
 // 2. When a client connect, the SO_PEERCRED socket option is used to
 //    obtain the credentials of client. We check that the effective uid
 //    of the client matches this process.
-
-// forward reference
-class PosixAttachOperation;
-
-class PosixAttachListener: AllStatic {
- private:
-  // the path to which we bind the UNIX domain socket
-  static char _path[UNIX_PATH_MAX];
-  static bool _has_path;
-
-  // the file descriptor for the listening socket
-  static volatile int _listener;
-
-  static bool _atexit_registered;
-
- public:
-  static void set_path(char* path) {
-    if (path == nullptr) {
-      _path[0] = '\0';
-      _has_path = false;
-    } else {
-      strncpy(_path, path, UNIX_PATH_MAX);
-      _path[UNIX_PATH_MAX-1] = '\0';
-      _has_path = true;
-    }
-  }
-
-  static void set_listener(int s)               { _listener = s; }
-
-  // initialize the listener, returns 0 if okay
-  static int init();
-
-  static char* path()                   { return _path; }
-  static bool has_path()                { return _has_path; }
-  static int listener()                 { return _listener; }
-
-  static PosixAttachOperation* dequeue();
-};
-
-class SocketChannel : public AttachOperation::RequestReader, public AttachOperation::ReplyWriter {
-private:
-  int _socket;
-public:
-  SocketChannel(int socket) : _socket(socket) {}
-  ~SocketChannel() {
-    close();
-  }
-
-  bool opened() const {
-    return _socket != -1;
-  }
-
-  void close() {
-    if (opened()) {
-      ::shutdown(_socket, SHUT_RDWR);
-      ::close(_socket);
-      _socket = -1;
-    }
-  }
-
-  // RequestReader
-  int read(void* buffer, int size) override {
-    ssize_t n;
-    RESTARTABLE(::read(_socket, buffer, (size_t)size), n);
-    return checked_cast<int>(n);
-  }
-
-  // ReplyWriter
-  int write(const void* buffer, int size) override {
-    ssize_t n;
-    RESTARTABLE(::write(_socket, buffer, size), n);
-    return checked_cast<int>(n);
-  }
-
-  void flush() override {
-  }
-};
-
-class PosixAttachOperation: public AttachOperation {
- private:
-  // the connection to the client
-  SocketChannel _socket_channel;
-
- public:
-  PosixAttachOperation(int socket) : AttachOperation(), _socket_channel(socket) {}
-
-  void complete(jint res, bufferedStream* st) override;
-
-  ReplyWriter* get_reply_writer() override {
-    return &_socket_channel;
-  }
-
-  bool read_request() {
-    return _socket_channel.read_request(this, &_socket_channel);
-  }
-};
 
 // statics
 char PosixAttachListener::_path[UNIX_PATH_MAX];
