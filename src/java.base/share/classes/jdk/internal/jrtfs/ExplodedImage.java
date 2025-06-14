@@ -58,16 +58,16 @@ class ExplodedImage extends SystemImage {
     private static final String PACKAGES = "/packages/";
     private static final int PACKAGES_LEN = PACKAGES.length();
 
-    private final FileSystem defaultFS;
     private final String separator;
     private final Map<String, PathNode> nodes = Collections.synchronizedMap(new HashMap<>());
+    private final Path modulesDir;
     private final BasicFileAttributes modulesDirAttrs;
 
     ExplodedImage(Path modulesDir) throws IOException {
-        defaultFS = FileSystems.getDefault();
-        String str = defaultFS.getSeparator();
-        separator = str.equals("/") ? null : str;
-        modulesDirAttrs = Files.readAttributes(modulesDir, BasicFileAttributes.class);
+        this.modulesDir = modulesDir;
+        String str = modulesDir.getFileSystem().getSeparator();
+        this.separator = str.equals("/") ? null : str;
+        this.modulesDirAttrs = Files.readAttributes(modulesDir, BasicFileAttributes.class);
         initNodes();
     }
 
@@ -126,7 +126,7 @@ class ExplodedImage extends SystemImage {
                 List<Node> list = new ArrayList<>();
                 try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
                     for (Path p : stream) {
-                        p = explodedModulesDir.relativize(p);
+                        p = modulesDir.relativize(p);
                         String pName = MODULES + nativeSlashToFrontSlash(p.toString());
                         Node node = findNode(pName);
                         if (node != null) {  // findNode may choose to hide certain files!
@@ -224,7 +224,7 @@ class ExplodedImage extends SystemImage {
     Path underlyingPath(String str) {
         if (str.startsWith(MODULES)) {
             str = frontSlashToNativeSlash(str.substring("/modules".length()));
-            return defaultFS.getPath(explodedModulesDir.toString(), str);
+            return modulesDir.getFileSystem().getPath(modulesDir.toString(), str);
         }
         return null;
     }
@@ -249,7 +249,7 @@ class ExplodedImage extends SystemImage {
         // same package prefix may exist in multiple modules. This Map
         // is filled by walking "jdk modules" directory recursively!
         Map<String, List<String>> packageToModules = new HashMap<>();
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(explodedModulesDir)) {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(modulesDir)) {
             for (Path module : stream) {
                 if (Files.isDirectory(module)) {
                     String moduleName = module.getFileName().toString();
