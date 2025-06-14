@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,8 +25,6 @@
  */
 
 package jdk.internal.math;
-
-import java.io.IOException;
 
 import static java.lang.Float.*;
 import static java.lang.Integer.*;
@@ -66,44 +64,72 @@ public final class FloatToDecimal extends ToDecimal {
      * This is discussed in section 10 of [1].
      */
 
-    /* The precision in bits */
     static final int P = PRECISION;
 
-    /* Exponent width in bits */
-    private static final int W = (Float.SIZE - 1) - (P - 1);
+    /* Exponent width in bits. */
+    static final int W = (Float.SIZE - 1) - (P - 1);
 
-    /* Minimum value of the exponent: -(2^(W-1)) - P + 3 */
+    /* Minimum value of the exponent: -(2^(W-1)) - P + 3. */
     static final int Q_MIN = (-1 << (W - 1)) - P + 3;
 
-    /* Maximum value of the exponent: 2^(W-1) - P */
+    /* Maximum value of the exponent: 2^(W-1) - P. */
     static final int Q_MAX = (1 << (W - 1)) - P;
 
-    /* 10^(E_MIN - 1) <= MIN_VALUE < 10^E_MIN */
+    /* Minimum value of the significand of a normal value: 2^(P-1). */
+    static final int C_MIN = 1 << (P - 1);
+
+    /* Maximum value of the significand of a normal value: 2^P - 1. */
+    static final int C_MAX = (1 << P) - 1;
+
+    /* E_MIN = max{e : 10^(e-1) <= MIN_VALUE}. */
     static final int E_MIN = -44;
 
-    /* 10^(E_MAX - 1) <= MAX_VALUE < 10^E_MAX */
+    /* E_MAX = max{e : 10^(e-1) <= MAX_VALUE}. */
     static final int E_MAX = 39;
 
-    /* Threshold to detect tiny values, as in section 8.2.1 of [1] */
-    static final int C_TINY = 8;
+    /*
+     * Let THR_Z = ulp(0.0) / 2 = MIN_VALUE / 2 = 2^(Q_MIN-1).
+     * THR_Z is the zero threshold.
+     * x is rounded to 0 by roundTiesToEven iff |x| <= THR_Z.
+     *
+     * E_THR_Z = max{e : 10^e <= THR_Z}.
+     */
+    static final int E_THR_Z = -46;
 
-    /* The minimum and maximum k, as in section 8 of [1] */
+    /*
+     * Let THR_I = MAX_VALUE + ulp(MAX_VALUE) / 2 = (2 C_MAX + 1) 2^(Q_MAX-1).
+     * THR_I is the infinity threshold.
+     * x is rounded to infinity by roundTiesToEven iff |x| >= THR_I.
+     *
+     * E_THR_I = min{e : THR_I <= 10^(e-1)}.
+     */
+    static final int E_THR_I = 40;
+
+    /* K_MIN = max{k : 10^k <= 2^Q_MIN}. */
     static final int K_MIN = -45;
+
+    /* K_MAX = max{k : 10^k <= 2^Q_MAX}. */
     static final int K_MAX = 31;
 
-    /* H is as in section 8.1 of [1] */
+    /*
+     * Threshold to detect tiny values, as in section 8.2.1 of [1].
+     *      C_TINY = ceil(2^(-Q_MIN) 10^(K_MIN+1))
+     */
+    static final int C_TINY = 8;
+
+    /*
+     * H is as in section 8.1 of [1].
+     *      H = max{e : 10^(e-2) <= 2^P}
+     */
     static final int H = 9;
 
-    /* Minimum value of the significand of a normal value: 2^(P-1) */
-    private static final int C_MIN = 1 << (P - 1);
-
-    /* Mask to extract the biased exponent */
+    /* Mask to extract the biased exponent. */
     private static final int BQ_MASK = (1 << W) - 1;
 
-    /* Mask to extract the fraction bits */
+    /* Mask to extract the fraction bits. */
     private static final int T_MASK = (1 << (P - 1)) - 1;
 
-    /* Used in rop() */
+    /* Used in rop(). */
     private static final long MASK_32 = (1L << 32) - 1;
 
     /*
@@ -142,12 +168,11 @@ public final class FloatToDecimal extends ToDecimal {
      * Appends the rendering of the {@code v} to {@code str}.
      *
      * <p>The outcome is the same as if {@code v} were first
-     * {@link #toString(double) rendered} and the resulting string were then
+     * {@link #toString(float) rendered} and the resulting string were then
      *
      * @param str the String byte array to append to
      * @param index the index into str
      * @param v the {@code float} whose rendering is into str.
-     * @throws IOException If an I/O error occurs
      */
     public int putDecimal(byte[] str, int index, float v) {
         assert 0 <= index && index <= length(str) - MAX_CHARS : "Trusted caller missed bounds check";
@@ -256,7 +281,7 @@ public final class FloatToDecimal extends ToDecimal {
         int h = q + flog2pow10(-k) + 33;
 
         /* g is as in the appendix */
-        long g = g1(k) + 1;
+        long g = g1(-k) + 1;
 
         int vb = rop(g, cb << h);
         int vbl = rop(g, cbl << h);
