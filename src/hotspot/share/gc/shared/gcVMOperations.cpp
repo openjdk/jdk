@@ -99,8 +99,7 @@ static bool should_use_gclocker() {
 }
 
 bool VM_GC_Operation::doit_prologue() {
-  assert(((_gc_cause != GCCause::_no_gc) &&
-          (_gc_cause != GCCause::_no_cause_specified)), "Illegal GCCause");
+  assert(_gc_cause != GCCause::_no_gc, "Illegal GCCause");
 
   // To be able to handle a GC the VM initialization needs to be completed.
   if (!is_init_completed()) {
