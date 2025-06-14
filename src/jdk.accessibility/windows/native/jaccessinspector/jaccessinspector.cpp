@@ -1209,6 +1209,7 @@ INT_PTR CALLBACK jaccessinspectorDialogProc( HWND hWnd, UINT message,
         return TRUE;
     }
 
+    static_cast<void>(lastError);
     return FALSE;
 }
 
