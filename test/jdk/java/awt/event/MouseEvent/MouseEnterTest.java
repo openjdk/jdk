@@ -26,8 +26,8 @@
  * @bug 4095172
  * @summary Test for no proper mouse coordinates on MOUSE_ENTER/MOUSE_EXIT events for Win boxes.
  * @key headful
- * @library /lib/client /java/awt/regtesthelpers
- * @build ExtendedRobot Util
+ * @library /java/awt/regtesthelpers
+ * @build Util
  * @run main MouseEnterTest
  */
 
@@ -35,6 +35,7 @@ import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Robot;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -68,7 +69,7 @@ public class MouseEnterTest {
     }
 
     private static void test() throws Exception {
-        ExtendedRobot robot = new ExtendedRobot();
+        Robot robot = new Robot();
         robot.waitForIdle();
         robot.delay(500);
 
@@ -82,9 +83,9 @@ public class MouseEnterTest {
             System.out.println("\n------------------\n");
 
             System.out.printf("%s > %s > %s\n", p1, p2, p1);
-            robot.glide(p1, p2);
+            robot.glide(p1.x, p1.y, p2.x, p2.y);
             robot.waitForIdle();
-            robot.glide(p2, p1);
+            robot.glide(p2.x, p2.y, p1.x, p1.y);
             robot.waitForIdle();
             robot.delay(200);
             mouseAdapter.testEvents();
@@ -92,9 +93,9 @@ public class MouseEnterTest {
             System.out.println("\n------------------\n");
 
             System.out.printf("%s > %s > %s\n", p2, p1, p2);
-            robot.glide(p2, p1);
+            robot.glide(p2.x, p2.y, p1.x, p1.y);
             robot.waitForIdle();
-            robot.glide(p1, p2);
+            robot.glide(p1.x, p1.y, p2.x, p2.y);
             robot.waitForIdle();
             robot.delay(200);
             mouseAdapter.testEvents();

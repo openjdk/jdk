@@ -34,7 +34,7 @@ public class ToBackFDFTest {
     private volatile TestFrame leftFrame, rightFrame;
 
     private static final int delay = 500;
-    private final ExtendedRobot robot;
+    private final Robot robot;
 
     private Dialog hiddenDialog;
     private Frame  hiddenFrame;
@@ -53,7 +53,7 @@ public class ToBackFDFTest {
         setModal = modal;
         owner = o;
 
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeLater(this::createGUI);
     }
 

@@ -28,8 +28,8 @@
  * Checkbox, Choice, Label, List, Scrollbar, TextArea, TextField
  * for Left, Middle and Right mouse buttons
  * @key headful
- * @library /lib/client /java/awt/regtesthelpers
- * @build ExtendedRobot Util
+ * @library /java/awt/regtesthelpers
+ * @build Util
  * @run main/othervm -Dsun.java2d.uiScale=1 DragMouseEventTest
 */
 
@@ -47,6 +47,7 @@ import java.awt.List;
 import java.awt.Panel;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Robot;
 import java.awt.Scrollbar;
 import java.awt.TextArea;
 import java.awt.TextField;
@@ -64,7 +65,7 @@ import java.util.Arrays;
 import test.java.awt.regtesthelpers.Util;
 
 public class DragMouseEventTest {
-    private static ExtendedRobot robot;
+    private static Robot robot;
     private static DragMouseEventFrame dmef;
     private static final int DELAY = 200;
 
@@ -87,7 +88,7 @@ public class DragMouseEventTest {
     }
 
     private static void test() throws Exception {
-        robot = new ExtendedRobot();
+        robot = new Robot();
         robot.waitForIdle();
         robot.delay(500);
 
@@ -224,7 +225,7 @@ public class DragMouseEventTest {
 
         System.out.printf("> gliding from (%d,%d) to (%d,%d)\n",
                 start.x, start.y, mid.x, mid.y);
-        robot.glide(start, mid);
+        robot.glide(start.x, start.y, mid.x, mid.y);
         robot.waitForIdle();
         robot.delay(DELAY);
 
@@ -234,7 +235,7 @@ public class DragMouseEventTest {
 
         System.out.printf("> gliding after crossing the border (%d,%d) to (%d,%d)\n",
                 mid.x, mid.y, end.x, end.y);
-        robot.glide(mid, end);
+        robot.glide(mid.x, mid.y, end.x, end.y);
 
         robot.mouseRelease(button);
         robot.waitForIdle();

@@ -25,8 +25,6 @@
  * @test
  * @key headful
  * @summary To check proper WINDOW_EVENTS are triggered when Frame gains or losses the focus
- * @library /lib/client
- * @build ExtendedRobot
  * @run main ActiveAWTWindowTest
  */
 
@@ -36,6 +34,7 @@ import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Frame;
+import java.awt.Robot;
 import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -165,9 +164,9 @@ public class ActiveAWTWindowTest {
     }
 
     public void doTest() {
-        ExtendedRobot robot;
+        Robot robot;
         try {
-            robot = new ExtendedRobot();
+            robot = new Robot();
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Cannot create robot");

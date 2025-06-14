@@ -27,6 +27,7 @@ import jtreg.SkippedException;
 import java.awt.AWTException;
 import java.awt.EventQueue;
 import java.awt.Point;
+import java.awt.Robot;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.image.BufferedImage;
@@ -47,7 +48,6 @@ import java.awt.image.BufferedImage;
  *          java.desktop/java.awt.Helper
  *          jdk.test.lib.Platform
  *          jtreg.SkippedException
- *          ExtendedRobot
  *          SystemTrayIconHelper
  * @run main ActionCommand
  */
@@ -55,7 +55,7 @@ import java.awt.image.BufferedImage;
 public class ActionCommand {
 
     TrayIcon icon;
-    ExtendedRobot robot;
+    Robot robot;
 
     volatile boolean actionPerformed = false;
     volatile String actionCommand = null;
@@ -92,7 +92,7 @@ public class ActionCommand {
     }
 
     void doTest() throws Exception {
-        robot = new ExtendedRobot();
+        robot = new Robot();
 
         EventQueue.invokeAndWait(() -> {
             SystemTray tray = SystemTray.getSystemTray();
