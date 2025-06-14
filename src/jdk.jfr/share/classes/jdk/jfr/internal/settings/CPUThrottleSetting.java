@@ -40,7 +40,7 @@ import jdk.jfr.MetadataDefinition;
 import jdk.jfr.Name;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.util.TimespanRate;
+import jdk.jfr.internal.util.TimespanRateOrPeriod;
 import jdk.jfr.internal.util.Utils;
 
 @MetadataDefinition
@@ -58,14 +58,15 @@ public final class CPUThrottleSetting extends SettingControl {
 
     @Override
     public String combine(Set<String> values) {
-        TimespanRate max = null;
+        TimespanRateOrPeriod max = null;
         for (String value : values) {
-            TimespanRate rate = TimespanRate.of(value);
+            TimespanRateOrPeriod rate = TimespanRateOrPeriod.of(value);
             if (rate != null) {
-                if (max == null || rate.isHigher(max)) {
+                if (max == null) {
                     max = rate;
+                } else {
+                    max = TimespanRateOrPeriod.max(max, rate);
                 }
-                max = new TimespanRate(max.rate(), max.autoAdapt() || rate.autoAdapt());
             }
         }
         // "off" is not supported
@@ -74,7 +75,7 @@ public final class CPUThrottleSetting extends SettingControl {
 
     @Override
     public void setValue(String value) {
-        TimespanRate rate = TimespanRate.of(value);
+        TimespanRateOrPeriod rate = TimespanRateOrPeriod.of(value);
         if (rate != null) {
             eventType.setCPUThrottle(rate);
             this.value = value;
