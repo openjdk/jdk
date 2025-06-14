@@ -81,6 +81,7 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
     }
 
     // We have to overload this method just to be able to grab the drag image and its offset as shared code doesn't store it:
+    @Override
     public void startDrag(DragSourceContext dsc, Cursor cursor, Image dragImage, Point dragImageOffset) throws InvalidDnDOperationException {
         fDragImage = dragImage;
         fDragImageOffset = dragImageOffset;
@@ -88,6 +89,7 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
         super.startDrag(dsc, cursor, dragImage, dragImageOffset);
     }
 
+    @Override
     protected void startDrag(Transferable transferable, long[] formats, Map<Long, DataFlavor> formatMap) {
         DragGestureEvent trigger = getTrigger();
         InputEvent         triggerEvent = trigger.getTriggerEvent();

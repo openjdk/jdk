@@ -55,6 +55,7 @@ final class ScreenMenuItem extends MenuItem
     }
     }
 
+    @Override
     public void addNotify() {
         super.addNotify();
 
@@ -92,6 +93,7 @@ final class ScreenMenuItem extends MenuItem
         }
     }
 
+    @Override
     public void removeNotify() {
         super.removeNotify();
         removeActionListener(this);
@@ -125,6 +127,7 @@ final class ScreenMenuItem extends MenuItem
         syncLabelAndKS(this, fMenuItem.getText(), ks);
     }
 
+    @Override
     public void actionPerformed(final ActionEvent e) {
         fMenuItem.doClick(0); // This takes care of all the different events
     }
@@ -132,11 +135,13 @@ final class ScreenMenuItem extends MenuItem
     /**
      * Invoked when the component's size changes.
      */
+    @Override
     public void componentResized(final ComponentEvent e) {}
 
     /**
      * Invoked when the component's position changes.
      */
+    @Override
     public void componentMoved(final ComponentEvent e) {}
 
     /**
@@ -144,6 +149,7 @@ final class ScreenMenuItem extends MenuItem
      * See componentHidden - we should still have a MenuItem
      * it just isn't inserted
      */
+    @Override
     public void componentShown(final ComponentEvent e) {
         setVisible(true);
     }
@@ -154,6 +160,7 @@ final class ScreenMenuItem extends MenuItem
      * so we remove the ScreenMenuItem from the ScreenMenu
      * but leave it in fItems
      */
+    @Override
     public void componentHidden(final ComponentEvent e) {
         setVisible(false);
     }
@@ -168,6 +175,7 @@ final class ScreenMenuItem extends MenuItem
         }
     }
 
+    @Override
     public void setToolTipText(final String text) {
         Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(this);
         if (!(peer instanceof CMenuItem)) return;
@@ -176,6 +184,7 @@ final class ScreenMenuItem extends MenuItem
         cmi.setToolTipText(text);
     }
 
+    @Override
     public void setIcon(final Icon i) {
         Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(this);
         if (!(peer instanceof CMenuItem)) return;
@@ -192,8 +201,10 @@ final class ScreenMenuItem extends MenuItem
         }
 
     // we have no children
+    @Override
     public void setChildVisible(final JMenuItem child, final boolean b) {}
 
     // only check and radio items can be indeterminate
+    @Override
     public void setIndeterminate(boolean indeterminate) { }
 }

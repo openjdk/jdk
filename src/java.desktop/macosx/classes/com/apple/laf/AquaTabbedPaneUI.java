@@ -66,6 +66,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
 
     public AquaTabbedPaneUI() { }
 
+    @Override
     protected void installListeners() {
         super.installListeners();
 
@@ -75,6 +76,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         }
     }
 
+    @Override
     protected void installDefaults() {
         super.installDefaults();
 
@@ -90,6 +92,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         tabPane.setOpaque(false);
     }
 
+    @Override
     protected void assureRectsCreated(final int tabCount) {
         visibleTabState.init(tabCount);
         super.assureRectsCreated(tabCount);
@@ -106,22 +109,27 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         super.uninstallListeners();
     }
 
+    @Override
     protected void uninstallDefaults() {
         contentDrawingInsets.set(0, 0, 0, 0);
     }
 
+    @Override
     protected MouseListener createMouseListener() {
         return new MouseHandler();
     }
 
+    @Override
     protected FocusListener createFocusListener() {
         return new FocusHandler();
     }
 
+    @Override
     protected PropertyChangeListener createPropertyChangeListener() {
         return new TabbedPanePropertyChangeHandler();
     }
 
+    @Override
     protected LayoutManager createLayoutManager() {
         return new AquaTruncatingTabbedPaneLayout();
     }
@@ -137,6 +145,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
     final Rectangle fTextRect = new Rectangle();
 
     // UI Rendering
+    @Override
     public void paint(final Graphics g, final JComponent c) {
         painter.state.set(getDirection());
 
@@ -229,6 +238,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         r.height = temp;
     }
 
+    @Override
     protected int getTabLabelShiftX(final int tabPlacement, final int tabIndex, final boolean isSelected) {
         final Rectangle tabRect = (tabIndex >= 0 ? rects[tabIndex] : visibleTabState.getRightScrollTabRect());
         int nudge = 0;
@@ -245,6 +255,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         return nudge;
     }
 
+    @Override
     protected int getTabLabelShiftY(final int tabPlacement, final int tabIndex, final boolean isSelected) {
         switch (tabPlacement) {
             case RIGHT:
@@ -546,7 +557,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
      * whether we're talking about a first tab or last tab.  NOTE that this code is very much
      * Aqua 2 dependent!
      */
-    static class AlterRects {
+    static final class AlterRects {
         Rectangle standard, first, last;
         AlterRects(final int x, final int y, final int w, final int h) { standard = new Rectangle(x, y, w, h); }
         AlterRects start(final int x, final int y, final int w, final int h) { first = new Rectangle(x, y, w, h); return this; }
@@ -588,6 +599,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         g.fillRoundRect(fillRect.x, fillRect.y, fillRect.width, fillRect.height, 3, 1);
     }
 
+    @Override
     protected Insets getContentBorderInsets(final int tabPlacement) {
         final Insets draw = getContentDrawingInsets(tabPlacement); // will be rotated
 
@@ -635,6 +647,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         return currentContentDrawingInsets;
     }
 
+    @Override
     protected Icon getIconForTab(final int tabIndex) {
         final Icon mainIcon = super.getIconForTab(tabIndex);
         if (mainIcon == null) return null;
@@ -652,6 +665,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
     }
 
     private static final int TAB_BORDER_INSET = 9;
+    @Override
     protected void paintContentBorder(final Graphics g, final int tabPlacement, final int selectedIndex) {
         final int width = tabPane.getWidth();
         final int height = tabPane.getHeight();
@@ -745,6 +759,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
      * Returns the tab index which intersects the specified point
      * in the JTabbedPane's coordinate space.
      */
+    @Override
     public int tabForCoordinate(final JTabbedPane pane, final int x, final int y) {
         ensureCurrentLayout();
         final Point p = new Point(x, y);
@@ -764,6 +779,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         return -1;
     }
 
+    @Override
     protected Insets getTabInsets(final int tabPlacement, final int tabIndex) {
         switch (tabPlacement) {
             case LEFT: return UIManager.getInsets("TabbedPane.leftTabInsets");
@@ -773,6 +789,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
     }
 
     // This is the preferred size - the layout manager will ignore if it has to
+    @Override
     protected int calculateTabHeight(final int tabPlacement, final int tabIndex, final int fontHeight) {
         // Constrain to what the Mac allows
         final int result = super.calculateTabHeight(tabPlacement, tabIndex, fontHeight);
@@ -783,11 +800,13 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
     }
 
     // JBuilder requested this - it's against HI, but then so are multiple rows
+    @Override
     protected boolean shouldRotateTabRuns(final int tabPlacement) {
         return false;
     }
 
-    protected class TabbedPanePropertyChangeHandler extends PropertyChangeHandler {
+    protected final class TabbedPanePropertyChangeHandler extends PropertyChangeHandler {
+        @Override
         public void propertyChange(final PropertyChangeEvent e) {
             final String prop = e.getPropertyName();
 
@@ -807,6 +826,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         }
     }
 
+    @Override
     protected ChangeListener createChangeListener() {
         return new ChangeListener() {
             public void stateChanged(final ChangeEvent e) {
@@ -818,9 +838,10 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         };
     }
 
-    protected class FocusHandler extends FocusAdapter {
+    protected final class FocusHandler extends FocusAdapter {
         Rectangle sWorkingRect = new Rectangle();
 
+        @Override
         public void focusGained(final FocusEvent e) {
             if (isDefaultFocusReceiver(tabPane) && !hasAvoidedFirstFocus) {
                 KeyboardFocusManager.getCurrentKeyboardFocusManager().focusNextComponent();
@@ -829,6 +850,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
             adjustPaintingRectForFocusRing(e);
         }
 
+        @Override
         public void focusLost(final FocusEvent e) {
             adjustPaintingRectForFocusRing(e);
         }
@@ -862,7 +884,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         }
     }
 
-    class MouseHandler extends MouseInputAdapter implements ActionListener {
+    final class MouseHandler extends MouseInputAdapter implements ActionListener {
 
         int trackingTab = -3;
         private final Timer popupTimer = new Timer(500, this);
@@ -876,6 +898,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
             popupTimer.stop();
         }
 
+        @Override
         public void mousePressed(final MouseEvent e) {
             final JTabbedPane pane = (JTabbedPane)e.getSource();
             if (!pane.isEnabled()) {
@@ -898,6 +921,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
             repaint(pane, pressedTab);
         }
 
+        @Override
         public void mouseDragged(final MouseEvent e) {
             if (trackingTab < -2) return;
 
@@ -917,6 +941,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
             repaint(pane, trackingTab);
         }
 
+        @Override
         public void mouseReleased(final MouseEvent e) {
             if (trackingTab < -2) return;
 
@@ -944,6 +969,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
             trackingTab = -3;
         }
 
+        @Override
         public void actionPerformed(final ActionEvent e) {
             if (trackingTab != pressedTab) {
                 return;
@@ -1063,8 +1089,9 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         }
     }
 
-    protected class AquaTruncatingTabbedPaneLayout extends AquaTabbedPaneCopyFromBasicUI.TabbedPaneLayout {
+    protected final class AquaTruncatingTabbedPaneLayout extends AquaTabbedPaneCopyFromBasicUI.TabbedPaneLayout {
         // fix for Radar #3346131
+        @Override
         protected int preferredTabAreaWidth(final int tabPlacement, final int height) {
             // Our superclass wants to stack tabs, but we rotate them,
             // so when tabs are on the left or right we know that
@@ -1077,6 +1104,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
             return super.preferredTabAreaWidth(tabPlacement, height);
         }
 
+        @Override
         protected int preferredTabAreaHeight(final int tabPlacement, final int width) {
             if (tabPlacement == SwingConstants.LEFT || tabPlacement == SwingConstants.RIGHT) {
                 return super.preferredTabAreaWidth(tabPlacement, width);
@@ -1085,6 +1113,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
             return super.preferredTabAreaHeight(tabPlacement, width);
         }
 
+        @Override
         protected void calculateTabRects(final int tabPlacement, final int tabCount) {
             if (tabCount <= 0) return;
 
@@ -1096,6 +1125,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
             visibleTabState.alignRectsRunFor(rects, tabPane.getSize(), tabPlacement, AquaUtils.isLeftToRight(tabPane));
         }
 
+        @Override
         protected void padTabRun(final int tabPlacement, final int start, final int end, final int max) {
             if (tabPlacement == SwingConstants.TOP || tabPlacement == SwingConstants.BOTTOM) {
                 super.padTabRun(tabPlacement, start, end, max);
@@ -1247,6 +1277,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
             rect.width = maxTabWidth;
         }
 
+        @Override
         protected void layoutTabComponents() {
             final Container tabContainer = getTabContainer();
             if (tabContainer == null) return;

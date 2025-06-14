@@ -33,7 +33,7 @@ import java.nio.ByteBuffer;
 import sun.java2d.*;
 import sun.java2d.loops.SurfaceType;
 
-public class CPrinterSurfaceData extends OSXSurfaceData{
+public final class CPrinterSurfaceData extends OSXSurfaceData{
     public static final String DESC_INT_RGB_PQ = "Integer RGB Printer Quartz";
 //    public static final String DESC_INT_ARGB_PQ = "Integer ARGB Printer Quartz";
 
@@ -49,6 +49,7 @@ public class CPrinterSurfaceData extends OSXSurfaceData{
         initOps(context, this.fGraphicsStates, this.fGraphicsStatesObject, gc.getBounds().width, gc.getBounds().height);
     }
 
+    @Override
     public SurfaceData getReplacement() {
         return this;
     }
@@ -60,16 +61,19 @@ public class CPrinterSurfaceData extends OSXSurfaceData{
     }
     native void _flush();
 
+    @Override
     public Object getDestination() {
         // this should never get called for the printer surface (see BufferStrategyPaintManager for one case of usage)
         return null;
     }
 
+    @Override
     public Raster getRaster(int x, int y, int w, int h) {
         BufferedImage dstImage = new BufferedImage(x + w, y + h, BufferedImage.TYPE_INT_ARGB_PRE);
         return dstImage.getRaster();
     }
 
+    @Override
     public BufferedImage copyArea(SunGraphics2D sg2d, int x, int y, int w, int h, BufferedImage dstImage) {
         // create the destination image if needed
         if (dstImage == null) {
@@ -85,6 +89,7 @@ public class CPrinterSurfaceData extends OSXSurfaceData{
         return dstImage;
     }
 
+    @Override
     public boolean xorSurfacePixels(SunGraphics2D sg2d, BufferedImage srcPixels, int x, int y, int w, int h, int colorXOR) {
         throw new InternalError("not implemented yet");
     }

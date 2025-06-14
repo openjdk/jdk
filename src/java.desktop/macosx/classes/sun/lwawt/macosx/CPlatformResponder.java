@@ -276,7 +276,7 @@ final class CPlatformResponder {
         eventNotifier.notifyActivation(gained, opposite);
     }
 
-    static class DeltaAccumulator {
+    static final class DeltaAccumulator {
 
         double accumulatedDelta;
         boolean accumulate;

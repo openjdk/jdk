@@ -39,7 +39,7 @@ import static sun.java2d.loops.CompositeType.SrcNoEa;
 import static sun.java2d.loops.CompositeType.SrcOver;
 import static sun.java2d.loops.SurfaceType.*;
 
-class MTLMaskBlit extends BufferedMaskBlit {
+final class MTLMaskBlit extends BufferedMaskBlit {
 
     static void register() {
         GraphicsPrimitive[] primitives = {

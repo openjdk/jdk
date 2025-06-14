@@ -37,7 +37,7 @@ import apple.laf.JRSUIConstants.*;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
-public class AquaTableHeaderBorder extends AbstractBorder {
+public final class AquaTableHeaderBorder extends AbstractBorder {
     protected static final int SORT_NONE = 0;
     protected static final int SORT_ASCENDING = 1;
     protected static final int SORT_DECENDING = -1;
@@ -67,6 +67,7 @@ public class AquaTableHeaderBorder extends AbstractBorder {
      * @param height the height of the painted border
      */
     protected boolean doPaint = true;
+    @Override
     public void paintBorder(final Component c, final Graphics g, final int x, final int y, final int width, final int height) {
         if (!doPaint) return;
         final JComponent jc = (JComponent)c;
@@ -140,11 +141,13 @@ public class AquaTableHeaderBorder extends AbstractBorder {
      * Returns the insets of the border.
      * @param c the component for which this border insets value applies
      */
+    @Override
     public Insets getBorderInsets(final Component c) {
         // bad to create new one each time. For debugging only.
         return editorBorderInsets;
     }
 
+    @Override
     public Insets getBorderInsets(final Component c, final Insets insets) {
         insets.left = editorBorderInsets.left;
         insets.top = editorBorderInsets.top;
@@ -158,6 +161,7 @@ public class AquaTableHeaderBorder extends AbstractBorder {
      * is opaque, it is responsible for filling in it's own
      * background when painting.
      */
+    @Override
     public boolean isBorderOpaque() {
         return false;
     }

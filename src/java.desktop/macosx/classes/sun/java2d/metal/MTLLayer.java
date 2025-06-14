@@ -32,7 +32,7 @@ import sun.lwawt.macosx.CFLayer;
 import java.awt.GraphicsConfiguration;
 import java.awt.Insets;
 
-public class MTLLayer extends CFLayer {
+public final class MTLLayer extends CFLayer {
 
     private native long nativeCreateLayer();
     private static native void nativeSetScale(long layerPtr, double scale);
@@ -52,6 +52,7 @@ public class MTLLayer extends CFLayer {
         this.peer = peer;
     }
 
+    @Override
     public SurfaceData replaceSurfaceData() {
         if (getBounds().isEmpty()) {
             surfaceData = NullSurfaceData.theInstance;
