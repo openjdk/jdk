@@ -1041,6 +1041,8 @@ class ConsoleIOContext extends IOContext {
             return in.readLine(prompt.replace("%", "%%"), mask);
         } catch (UserInterruptException ex) {
             throw new InterruptedIOException();
+        } catch (EndOfFileException ex) {
+            return null; // Signal that Ctrl+D or similar happened
         } finally {
             in.setParser(prevParser);
             in.setHistory(prevHistory);
@@ -1051,7 +1053,11 @@ class ConsoleIOContext extends IOContext {
 
     public char[] readPassword(String prompt) throws IOException {
         //TODO: correct behavior w.r.t. pre-read stuff?
-        return doReadUserLine(prompt, '\0').toCharArray();
+        String line = doReadUserLine(prompt, '\0');
+        if (line == null) {
+            throw new UserInterruptException("");
+        }
+        return line.toCharArray();
     }
 
     @Override
