@@ -350,6 +350,9 @@ void AbstractDisassembler::decode_abstract(address start, address end, outputStr
 
   outputStream* st = (ost == nullptr) ? tty : ost;
 
+  st->bol();
+  st->cr();
+  st->print_cr("Loading hsdis library failed, so undisassembled code is printed in the below [MachCode] section");
   //---<  Open the output (Marker for post-mortem disassembler)  >---
   st->bol();
   st->print_cr("[MachCode]");
