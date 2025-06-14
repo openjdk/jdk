@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -179,7 +179,8 @@ e.g. "2022-02-12T12:30:00-05:00".
     `--hash-modules`.
 
 `--target-platform` *platform*
-:   Specifies the target platform.
+:   Specifies the target platform. The value is a string identifying
+    the module's intended platform, typically in the form `<os>-<arch>`.
 
 `--version`
 :   Prints version information of the `jmod` tool.
@@ -190,7 +191,7 @@ e.g. "2022-02-12T12:30:00-05:00".
     An options file is a text file that contains the options and values that
     you would ordinarily enter in a command prompt. Options may appear on one
     line or on several lines. You may not specify environment variables for
-    path names. You may comment out lines by prefixinga hash symbol (`#`) to
+    path names. You may comment out lines by prefixing a hash symbol (`#`) to
     the beginning of the line.
 
     The following is an example of an options file for the `jmod` command:
@@ -201,8 +202,7 @@ e.g. "2022-02-12T12:30:00-05:00".
       --cmds commands --config configfiles --header-files src/h
       --libs lib --main-class com.greetings.Main
       --man-pages man --module-version 1.0
-      --os-arch "x86_x64" --os-name "macOS"
-      --os-version "10.10.5" greetingsmod
+      --target-platform "macOS-aarch64" greetingsmod
     ```
 
 ## Extra Options for jmod
@@ -217,23 +217,32 @@ extra options that can be used with the command.
 :   Hint for a tool to issue a warning if the module is resolved. One of
     deprecated, deprecated-for-removal, or incubating.
 
-## jmod Create Example
+## jmod Create Examples
 
-The following is an example of creating a JMOD file:
+Create a JMOD file containing only compiled classes:
+
+```
+jmod create --class-path build/foo/classes jmods/foo1.jmod
+```
+
+Create a JMOD file specifying the date for the entries as `2022 March 15 00:00:00`:
+
+```
+jmod create --class-path build/foo/classes --date 2022-03-15T00:00:00Z
+   jmods/foo2.jmod
+```
+
+Create a platform-specific JMOD file bundling compiled classes, configuration files,
+native commands and libraries, header files, man pages, and metadata including the
+main class, module version, and target platform details:
 
 ```
 jmod create --class-path mods/com.greetings --cmds commands
   --config configfiles --header-files src/h --libs lib
   --main-class com.greetings.Main --man-pages man --module-version 1.0
-  --os-arch "x86_x64" --os-name "macOS"
-  --os-version "10.10.5" greetingsmod
+  --target-platform "macOS-aarch64" greetingsmod
 ```
-Create a JMOD file specifying the date for the entries as `2022 March 15 00:00:00`:
 
-```
-jmod create --class-path build/foo/classes --date 2022-03-15T00:00:00Z
-   jmods/foo1.jmod
-```
 ## jmod Hash Example
 
 The following example demonstrates what happens when you try to link a leaf
