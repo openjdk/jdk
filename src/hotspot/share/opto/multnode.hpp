@@ -82,6 +82,7 @@ public:
   virtual const Type *bottom_type() const;
   virtual const TypePtr *adr_type() const;
   virtual bool pinned() const;
+  virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual uint ideal_reg() const;
   virtual const RegMask &out_RegMask() const;
@@ -103,6 +104,32 @@ public:
 
   // Return other proj node when this is a If proj node
   ProjNode* other_if_proj() const;
+};
+
+//------------------------------TupleNode---------------------------------------
+class TupleNode : public MultiNode {
+  const TypeTuple* _tf;
+
+  template <typename... NN>
+  static void make_helper(TupleNode* tn, uint i, Node* node, NN... nn) {
+    tn->set_req(i, node);
+    make_helper(tn, i + 1, nn...);
+  }
+
+  static void make_helper(TupleNode*, uint) {}
+
+public:
+  TupleNode(const TypeTuple* tf) : MultiNode(tf->cnt()), _tf(tf) {}
+
+  int Opcode() const override;
+  const Type* bottom_type() const override { return _tf; }
+
+  template <typename... NN>
+  static TupleNode* make(const TypeTuple* tf, NN... nn) {
+    TupleNode* tn = new TupleNode(tf);
+    make_helper(tn, 0, nn...);
+    return tn;
+  }
 };
 
 #endif // SHARE_OPTO_MULTNODE_HPP

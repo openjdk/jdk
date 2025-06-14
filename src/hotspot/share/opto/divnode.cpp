@@ -42,19 +42,19 @@
 
 #include <math.h>
 
-ModFloatingNode::ModFloatingNode(Compile* C, const TypeFunc* tf, const char* name) : CallLeafNode(tf, nullptr, name, TypeRawPtr::BOTTOM) {
+ModFloatingNode::ModFloatingNode(Compile* C, const TypeFunc* tf, address addr, const char* name) : CallLeafPureNode(tf, addr, name, TypeRawPtr::BOTTOM) {
   add_flag(Flag_is_macro);
   C->add_macro_node(this);
 }
 
-ModDNode::ModDNode(Compile* C, Node* a, Node* b) : ModFloatingNode(C, OptoRuntime::Math_DD_D_Type(), "drem") {
+ModDNode::ModDNode(Compile* C, Node* a, Node* b) : ModFloatingNode(C, OptoRuntime::Math_DD_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::drem), "drem") {
   init_req(TypeFunc::Parms + 0, a);
   init_req(TypeFunc::Parms + 1, C->top());
   init_req(TypeFunc::Parms + 2, b);
   init_req(TypeFunc::Parms + 3, C->top());
 }
 
-ModFNode::ModFNode(Compile* C, Node* a, Node* b) : ModFloatingNode(C, OptoRuntime::modf_Type(), "frem") {
+ModFNode::ModFNode(Compile* C, Node* a, Node* b) : ModFloatingNode(C, OptoRuntime::modf_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::frem), "frem") {
   init_req(TypeFunc::Parms + 0, a);
   init_req(TypeFunc::Parms + 1, b);
 }
@@ -1520,12 +1520,14 @@ Node* ModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (!can_reshape) {
     return nullptr;
   }
+  if (proj_out_or_null(TypeFunc::Control) == nullptr) { // dead node
+    return nullptr;
+  }
+
   PhaseIterGVN* igvn = phase->is_IterGVN();
 
-  bool result_is_unused = proj_out_or_null(TypeFunc::Parms) == nullptr;
-  bool not_dead = proj_out_or_null(TypeFunc::Control) != nullptr;
-  if (result_is_unused && not_dead) {
-    return replace_with_con(igvn, TypeF::make(0.));
+  if (is_unused()) {
+    return make_tuple_of_input_state_and_top_return_values(igvn->C);
   }
 
   // Either input is TOP ==> the result is TOP
@@ -1572,12 +1574,14 @@ Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (!can_reshape) {
     return nullptr;
   }
+  if (proj_out_or_null(TypeFunc::Control) == nullptr) { // dead node
+    return nullptr;
+  }
+
   PhaseIterGVN* igvn = phase->is_IterGVN();
 
-  bool result_is_unused = proj_out_or_null(TypeFunc::Parms) == nullptr;
-  bool not_dead = proj_out_or_null(TypeFunc::Control) != nullptr;
-  if (result_is_unused && not_dead) {
-    return replace_with_con(igvn, TypeD::make(0.));
+  if (is_unused()) {
+    return make_tuple_of_input_state_and_top_return_values(igvn->C);
   }
 
   // Either input is TOP ==> the result is TOP
@@ -1626,20 +1630,6 @@ Node* ModFloatingNode::replace_with_con(PhaseIterGVN* phase, const Type* con) {
   CallProjections projs;
   extract_projections(&projs, false, false);
   phase->replace_node(projs.fallthrough_proj, in(TypeFunc::Control));
-  if (projs.fallthrough_catchproj != nullptr) {
-    phase->replace_node(projs.fallthrough_catchproj, in(TypeFunc::Control));
-  }
-  if (projs.fallthrough_memproj != nullptr) {
-    phase->replace_node(projs.fallthrough_memproj, in(TypeFunc::Memory));
-  }
-  if (projs.catchall_memproj != nullptr) {
-    phase->replace_node(projs.catchall_memproj, C->top());
-  }
-  if (projs.fallthrough_ioproj != nullptr) {
-    phase->replace_node(projs.fallthrough_ioproj, in(TypeFunc::I_O));
-  }
-  assert(projs.catchall_ioproj == nullptr, "no exceptions from floating mod");
-  assert(projs.catchall_catchproj == nullptr, "no exceptions from floating mod");
   if (projs.resproj != nullptr) {
     phase->replace_node(projs.resproj, con_node);
   }

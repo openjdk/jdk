@@ -918,7 +918,7 @@ Node *CallNode::result_cast() {
 }
 
 
-void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts) {
+void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts) const {
   projs->fallthrough_proj      = nullptr;
   projs->fallthrough_catchproj = nullptr;
   projs->fallthrough_ioproj    = nullptr;
@@ -1303,6 +1303,40 @@ void CallLeafVectorNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_
 
 
 //=============================================================================
+bool CallLeafPureNode::is_unused() const {
+  return proj_out_or_null(TypeFunc::Parms) == nullptr;
+}
+// We make a tuple of the global input state + TOP for the output values.
+TupleNode* CallLeafPureNode::make_tuple_of_input_state_and_top_return_values(const Compile* C) const {
+  // Transparently propagate input state but parameters
+  TupleNode* tuple = TupleNode::make(
+      tf()->range(),
+      in(TypeFunc::Control),
+      in(TypeFunc::I_O),
+      in(TypeFunc::Memory),
+      in(TypeFunc::FramePtr),
+      in(TypeFunc::ReturnAdr));
+
+  // And add TOPs for the return values
+  for (uint i = TypeFunc::Parms; i < tf()->range()->cnt(); i++) {
+    tuple->set_req(i, C->top());
+  }
+
+  return tuple;
+}
+
+Node* CallLeafPureNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (proj_out_or_null(TypeFunc::Control) == nullptr) { // dead node
+    return nullptr;
+  }
+
+  if (can_reshape && is_unused()) {
+    return make_tuple_of_input_state_and_top_return_values(phase->C);
+  }
+
+  return CallRuntimeNode::Ideal(phase, can_reshape);
+}
+
 #ifndef PRODUCT
 void CallLeafNode::dump_spec(outputStream *st) const {
   st->print("# ");
