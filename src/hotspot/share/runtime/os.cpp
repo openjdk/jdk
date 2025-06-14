@@ -1183,9 +1183,9 @@ void os::print_summary_info(outputStream* st, char* buf, size_t buflen) {
 #endif // PRODUCT
   get_summary_cpu_info(buf, buflen);
   st->print("%s, ", buf);
-  size_t mem = physical_memory()/G;
+  size_t mem = physical_memory().value/G;
   if (mem == 0) {  // for low memory systems
-    mem = physical_memory()/M;
+    mem = physical_memory().value/M;
     st->print("%d cores, %zuM, ", processor_count(), mem);
   } else {
     st->print("%d cores, %zuG, ", processor_count(), mem);
@@ -1935,15 +1935,15 @@ bool os::is_server_class_machine() {
   // Then actually look at the machine
   bool         result            = false;
   const unsigned int    server_processors = 2;
-  const julong server_memory     = 2UL * G;
+  const size_t server_memory     = 2UL * G;
   // We seem not to get our full complement of memory.
   //     We allow some part (1/8?) of the memory to be "missing",
   //     based on the sizes of DIMMs, and maybe graphics cards.
-  const julong missing_memory   = 256UL * M;
+  const size_t missing_memory   = 256UL * M;
 
   /* Is this a server class machine? */
   if ((os::active_processor_count() >= (int)server_processors) &&
-      (os::physical_memory() >= (server_memory - missing_memory))) {
+      (os::physical_memory().value >= (server_memory - missing_memory))) {
     const unsigned int logical_processors =
       VM_Version::logical_processors_per_package();
     if (logical_processors > 1) {
@@ -2202,16 +2202,27 @@ static void assert_nonempty_range(const char* addr, size_t bytes) {
          p2i(addr), p2i(addr) + bytes);
 }
 
-julong os::used_memory() {
+MemRes os::used_memory() {
 #ifdef LINUX
   if (OSContainer::is_containerized()) {
     jlong mem_usage = OSContainer::memory_usage_in_bytes();
     if (mem_usage > 0) {
-      return mem_usage;
+      return MemRes(static_cast<size_t>(mem_usage), 0);
     }
   }
 #endif
-  return os::physical_memory() - os::available_memory();
+  auto phys_mem = os::physical_memory();
+  auto avail_mem = os::available_memory();
+
+  if (phys_mem.error < 0) {
+    return MemRes(0, -1);
+  }
+
+  if (avail_mem.error < 0) {
+    return MemRes(0, -1);
+  }
+
+  return MemRes(phys_mem.value - avail_mem.value);
 }
 
 

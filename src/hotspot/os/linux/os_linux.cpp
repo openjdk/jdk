@@ -157,7 +157,7 @@ enum CoredumpFilterBit {
 
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
-julong os::Linux::_physical_memory = 0;
+size_t os::Linux::_physical_memory = 0;
 
 address   os::Linux::_initial_thread_stack_bottom = nullptr;
 uintptr_t os::Linux::_initial_thread_stack_size   = 0;
@@ -232,15 +232,15 @@ julong os::Linux::available_memory_in_container() {
   return avail_mem;
 }
 
-julong os::available_memory() {
+MemRes os::available_memory() {
   return Linux::available_memory();
 }
 
-julong os::Linux::available_memory() {
+MemRes os::Linux::available_memory() {
   julong avail_mem = available_memory_in_container();
   if (avail_mem != static_cast<julong>(-1L)) {
     log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
-    return avail_mem;
+    return MemRes(static_cast<size_t>(avail_mem));
   }
 
   FILE *fp = os::fopen("/proc/meminfo", "r");
@@ -255,66 +255,76 @@ julong os::Linux::available_memory() {
     fclose(fp);
   }
   if (avail_mem == static_cast<julong>(-1L)) {
-    avail_mem = free_memory();
+    auto free_mem = free_memory();
+    if (free_mem.error < 0) {
+      return MemRes(0, -1);
+    }
+    avail_mem = static_cast<julong>(free_memory().value);
   }
   log_trace(os)("available memory: " JULONG_FORMAT, avail_mem);
-  return avail_mem;
+  return MemRes(static_cast<size_t>(avail_mem));
 }
 
-julong os::free_memory() {
+MemRes os::free_memory() {
   return Linux::free_memory();
 }
 
-julong os::Linux::free_memory() {
+MemRes os::Linux::free_memory() {
   // values in struct sysinfo are "unsigned long"
-  struct sysinfo si;
   julong free_mem = available_memory_in_container();
   if (free_mem != static_cast<julong>(-1L)) {
     log_trace(os)("free container memory: " JULONG_FORMAT, free_mem);
-    return free_mem;
+    return MemRes(static_cast<size_t>(free_mem));
   }
 
-  sysinfo(&si);
+  struct sysinfo si;
+  int ret = sysinfo(&si);
+  if (ret != 0) {
+    return MemRes(0, -1);
+  }
+
   free_mem = (julong)si.freeram * si.mem_unit;
   log_trace(os)("free memory: " JULONG_FORMAT, free_mem);
-  return free_mem;
+  return MemRes(static_cast<size_t>(free_mem));
 }
 
-jlong os::total_swap_space() {
+MemRes os::total_swap_space() {
   if (OSContainer::is_containerized()) {
     if (OSContainer::memory_limit_in_bytes() > 0) {
-      return (jlong)(OSContainer::memory_and_swap_limit_in_bytes() - OSContainer::memory_limit_in_bytes());
+      return MemRes(static_cast<size_t>(OSContainer::memory_and_swap_limit_in_bytes() - OSContainer::memory_limit_in_bytes()));
     }
   }
   struct sysinfo si;
   int ret = sysinfo(&si);
   if (ret != 0) {
-    return -1;
+    return MemRes(0, -1);
   }
-  return  (jlong)(si.totalswap * si.mem_unit);
+  return MemRes(static_cast<size_t>(si.totalswap * si.mem_unit));
 }
 
-static jlong host_free_swap() {
+static MemRes host_free_swap() {
   struct sysinfo si;
   int ret = sysinfo(&si);
   if (ret != 0) {
-    return -1;
+    MemRes(0, -1);
   }
-  return (jlong)(si.freeswap * si.mem_unit);
+  return MemRes(static_cast<size_t>(si.freeswap * si.mem_unit));
 }
 
-jlong os::free_swap_space() {
+MemRes os::free_swap_space() {
   // os::total_swap_space() might return the containerized limit which might be
   // less than host_free_swap(). The upper bound of free swap needs to be the lower of the two.
-  jlong host_free_swap_val = MIN2(os::total_swap_space(), host_free_swap());
-  assert(host_free_swap_val >= 0, "sysinfo failed?");
+  const MemRes total_swap_space = os::total_swap_space();
+  const MemRes host_free_swap_space = host_free_swap();
+  assert(total_swap_space.error != -1 && host_free_swap_space.error != -1, "sysinfo failed?");
+  size_t host_free_swap_val = MIN2(total_swap_space.value, host_free_swap_space.value);
   if (OSContainer::is_containerized()) {
     jlong mem_swap_limit = OSContainer::memory_and_swap_limit_in_bytes();
     jlong mem_limit = OSContainer::memory_limit_in_bytes();
     if (mem_swap_limit >= 0 && mem_limit >= 0) {
       jlong delta_limit = mem_swap_limit - mem_limit;
       if (delta_limit <= 0) {
-        return 0;
+        return MemRes(0, 0);
       }
       jlong mem_swap_usage = OSContainer::memory_and_swap_usage_in_bytes();
       jlong mem_usage = OSContainer::memory_usage_in_bytes();
@@ -322,31 +332,31 @@ jlong os::free_swap_space() {
         jlong delta_usage = mem_swap_usage - mem_usage;
         if (delta_usage >= 0) {
           jlong free_swap = delta_limit - delta_usage;
-          return free_swap >= 0 ? free_swap : 0;
+          return MemRes(free_swap >= 0 ? static_cast<size_t>(free_swap) : 0);
         }
       }
     }
     // unlimited or not supported. Fall through to return host value
     log_trace(os,container)("os::free_swap_space: container_swap_limit=" JLONG_FORMAT
-                            " container_mem_limit=" JLONG_FORMAT " returning host value: " JLONG_FORMAT,
+                            " container_mem_limit=" JLONG_FORMAT " returning host value: %zu",
                             mem_swap_limit, mem_limit, host_free_swap_val);
   }
-  return host_free_swap_val;
+  return MemRes(host_free_swap_val);
 }
 
-julong os::physical_memory() {
-  jlong phys_mem = 0;
+MemRes os::physical_memory() {
+  size_t phys_mem = 0;
   if (OSContainer::is_containerized()) {
     jlong mem_limit;
     if ((mem_limit = OSContainer::memory_limit_in_bytes()) > 0) {
       log_trace(os)("total container memory: " JLONG_FORMAT, mem_limit);
-      return mem_limit;
+      return MemRes(static_cast<size_t>(mem_limit));
     }
   }
 
   phys_mem = Linux::physical_memory();
-  log_trace(os)("total system memory: " JLONG_FORMAT, phys_mem);
-  return phys_mem;
+  log_trace(os)("total system memory: %zu", phys_mem);
+  return MemRes(phys_mem);
 }
 
 size_t os::rss() {
@@ -493,10 +503,10 @@ pid_t os::Linux::gettid() {
 
 // Returns the amount of swap currently configured, in bytes.
 // This can change at any time.
-julong os::Linux::host_swap() {
+size_t os::Linux::host_swap() {
   struct sysinfo si;
   sysinfo(&si);
-  return (julong)(si.totalswap * si.mem_unit);
+  return static_cast<size_t>(si.totalswap * si.mem_unit);
 }
 
 // Most versions of linux have a bug where the number of processors are
@@ -520,7 +530,7 @@ void os::Linux::initialize_system_info() {
       fclose(fp);
     }
   }
-  _physical_memory = (julong)sysconf(_SC_PHYS_PAGES) * (julong)sysconf(_SC_PAGESIZE);
+  _physical_memory = static_cast<size_t>(sysconf(_SC_PHYS_PAGES)) * static_cast<size_t>(sysconf(_SC_PAGESIZE));
   assert(processor_count() > 0, "linux error");
 }
 
@@ -2545,10 +2555,10 @@ void os::print_memory_info(outputStream* st) {
   struct sysinfo si;
   sysinfo(&si);
 
-  st->print(", physical " UINT64_FORMAT "k",
-            os::physical_memory() >> 10);
-  st->print("(" UINT64_FORMAT "k free)",
-            os::available_memory() >> 10);
+  st->print(", physical %zu" "k",
+            os::physical_memory().value >> 10);
+  st->print("(%zu" "k free)",
+            os::available_memory().value >> 10);
   st->print(", swap " UINT64_FORMAT "k",
             ((jlong)si.totalswap * si.mem_unit) >> 10);
   st->print("(" UINT64_FORMAT "k free)",
