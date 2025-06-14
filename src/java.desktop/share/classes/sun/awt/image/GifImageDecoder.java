@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -339,8 +339,8 @@ public class GifImageDecoder extends ImageDecoder {
         ImageConsumer.RANDOMPIXELORDER | ImageConsumer.COMPLETESCANLINES |
         ImageConsumer.SINGLEPASS | ImageConsumer.SINGLEFRAME;
 
-    private short[] prefix  = new short[4096];
-    private byte[]  suffix  = new byte[4096];
+    private short[] prefix  = new short[4097];
+    private byte[]  suffix  = new byte[4097];
     private byte[]  outCode = new byte[4097];
 
     private static native void initIDs();
