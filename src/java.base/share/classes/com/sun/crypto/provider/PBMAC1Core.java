@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
+import javax.crypto.spec.PBMAC1ParameterSpec;
 import java.security.*;
 import java.security.spec.*;
 
@@ -44,8 +45,7 @@ abstract class PBMAC1Core extends HmacCore {
 
     // NOTE: this class inherits the Cloneable interface from HmacCore
     // Need to override clone() if mutable fields are added.
-    private final String kdfAlgo;
-    private final String hashAlgo;
+    private String kdfAlgo;
     private final int blockLength; // in octets
 
     /**
@@ -56,7 +56,6 @@ abstract class PBMAC1Core extends HmacCore {
         throws NoSuchAlgorithmException {
         super(hashAlgo, blockLength);
         this.kdfAlgo = kdfAlgo;
-        this.hashAlgo = hashAlgo;
         this.blockLength = blockLength;
     }
 
@@ -107,9 +106,8 @@ abstract class PBMAC1Core extends HmacCore {
         char[] passwdChars;
         byte[] salt = null;
         int iCount = 0;
-        if (key instanceof javax.crypto.interfaces.PBEKey) {
-            javax.crypto.interfaces.PBEKey pbeKey =
-                (javax.crypto.interfaces.PBEKey) key;
+        int keyLength = blockLength;
+        if (key instanceof javax.crypto.interfaces.PBEKey pbeKey) {
             passwdChars = pbeKey.getPassword();
             salt = pbeKey.getSalt(); // maybe null if unspecified
             iCount = pbeKey.getIterationCount(); // maybe 0 if unspecified
@@ -138,11 +136,7 @@ abstract class PBMAC1Core extends HmacCore {
                     throw new InvalidAlgorithmParameterException
                             ("PBEParameterSpec required for salt and iteration count");
                 }
-            } else if (!(params instanceof PBEParameterSpec)) {
-                throw new InvalidAlgorithmParameterException
-                        ("PBEParameterSpec type required");
-            } else {
-                PBEParameterSpec pbeParams = (PBEParameterSpec) params;
+            } else if ((params instanceof PBEParameterSpec pbeParams)) {
                 // make sure the parameter values are consistent
                 if (salt != null) {
                     if (!Arrays.equals(salt, pbeParams.getSalt())) {
@@ -160,7 +154,31 @@ abstract class PBMAC1Core extends HmacCore {
                 } else {
                     iCount = pbeParams.getIterationCount();
                 }
+            } else if ((params instanceof PBMAC1ParameterSpec pbmac1Params)) {
+                if (salt != null) {
+                    if (!Arrays.equals(salt, pbmac1Params.getSalt())) {
+                        throw new InvalidAlgorithmParameterException
+                                ("Inconsistent value of salt between key and params");
+                    }
+                } else {
+                    salt = pbmac1Params.getSalt();
+                }
+                if (iCount != 0) {
+                    if (iCount != pbmac1Params.getIterationCount()) {
+                        throw new InvalidAlgorithmParameterException
+                                ("Different iteration count between key and params");
+                    }
+                } else {
+                    iCount = pbmac1Params.getIterationCount();
+                }
+                // Key length SHOULD be same as the HMAC function output size.
+                keyLength = pbmac1Params.getKeyLength();
+                kdfAlgo = pbmac1Params.getkdfHmac();
+            } else {
+                throw new InvalidAlgorithmParameterException
+                        ("PBEParameterSpec or PBMAC1ParameterSpec required");
             }
+
             // For security purpose, we need to enforce a minimum length
             // for salt; just require the minimum salt length to be 8-byte
             // which is what PKCS#5 recommends and openssl does.
@@ -173,7 +191,7 @@ abstract class PBMAC1Core extends HmacCore {
                         ("IterationCount must be a positive number");
             }
 
-            pbeSpec = new PBEKeySpec(passwdChars, salt, iCount, blockLength);
+            pbeSpec = new PBEKeySpec(passwdChars, salt, iCount, keyLength);
             // password char[] was cloned in PBEKeySpec constructor,
             // so we can zero it out here
         } finally {
