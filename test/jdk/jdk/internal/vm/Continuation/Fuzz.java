@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -473,7 +473,8 @@ public class Fuzz implements Runnable {
     }
 
     boolean shouldPin() {
-        return traceHas(Op.PIN::contains) && legacyLockingMode();
+        // Returns false since we never pin after we removed legacy locking.
+        return traceHas(Op.PIN::contains) && false;
     }
 
     void verifyPin(boolean yieldResult) {
@@ -1031,10 +1032,5 @@ public class Fuzz implements Runnable {
         }
 
         return log((int)res);
-    }
-
-    static boolean legacyLockingMode() {
-        return ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
-                    .getVMOption("LockingMode").getValue().equals("1");
     }
 }
