@@ -79,8 +79,6 @@ compiler/ciReplay/TestIncrementalInlining.java 8349191 generic-all
 
 compiler/c2/TestVerifyConstraintCasts.java 8355574 generic-all
 
-compiler/startup/StartupOutput.java 8358129 windows-all
-
 #############################################################################
 
 # :hotspot_gc
