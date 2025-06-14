@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,15 @@
 #include "java_lang_reflect_Executable.h"
 
 JNIEXPORT jobject JNICALL
-Java_java_lang_reflect_Executable_getParameters0(JNIEnv *env,
+Java_java_lang_reflect_Executable_getParameterNames0(JNIEnv *env,
                                                  jobject method) {
-  return JVM_GetMethodParameters(env, method);
+  return JVM_GetMethodParameterNames(env, method);
+}
+
+JNIEXPORT jcharArray JNICALL
+Java_java_lang_reflect_Executable_getParameterFlags0(JNIEnv *env,
+                                                     jobject method) {
+  return JVM_GetMethodParameterFlags(env, method);
 }
 
 JNIEXPORT jbyteArray JNICALL
