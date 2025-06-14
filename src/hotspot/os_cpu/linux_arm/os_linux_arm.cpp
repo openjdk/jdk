@@ -359,11 +359,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           stub = SharedRuntime::continuation_for_implicit_exception(
               thread, pc, SharedRuntime::IMPLICIT_NULL);
         }
-      } else if (sig == SIGILL &&
-                 *(int*)pc ==
-                     NativeInstruction::not_entrant_illegal_instruction) {
-        // Not entrant
-        stub = SharedRuntime::get_handle_wrong_method_stub();
       }
     } else if ((thread->thread_state() == _thread_in_vm ||
                 thread->thread_state() == _thread_in_native) &&
