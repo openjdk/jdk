@@ -4687,7 +4687,9 @@ void C2_MacroAssembler::convertF2I(BasicType dst_bt, BasicType src_bt, Register 
     }
   }
 
-  auto stub = C2CodeStub::make<Register, XMMRegister, address>(dst, src, slowpath_target, 23, convertF2I_slowpath);
+  // Using the APX extended general purpose registers increases the instruction encoding size by 4 bytes.
+  int max_size = dst->encoding() <= 15 ? 23 : 27;
+  auto stub = C2CodeStub::make<Register, XMMRegister, address>(dst, src, slowpath_target, max_size, convertF2I_slowpath);
   jcc(Assembler::equal, stub->entry());
   bind(stub->continuation());
 }
