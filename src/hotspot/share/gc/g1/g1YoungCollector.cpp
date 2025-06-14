@@ -553,12 +553,10 @@ class G1ParEvacuateFollowersClosure : public VoidClosure {
   TaskTerminator*         terminator()     { return _terminator; }
 
   inline bool offer_termination() {
-    EventGCPhaseParallel event;
     G1ParScanThreadState* const pss = par_scan_state();
     start_term_time();
     const bool res = (terminator() == nullptr) ? true : terminator()->offer_termination();
     end_term_time();
-    event.commit(GCId::current(), pss->worker_id(), G1GCPhaseTimes::phase_name(G1GCPhaseTimes::Termination));
     return res;
   }
 
@@ -667,7 +665,7 @@ public:
     _g1h(G1CollectedHeap::heap()),
     _per_thread_states(per_thread_states),
     _task_queues(task_queues),
-    _terminator(num_workers, _task_queues),
+    _terminator(num_workers, _task_queues, G1GCPhaseTimes::phase_name(G1GCPhaseTimes::Termination)),
     _pinned_regions_recorded(false)
   { }
 
@@ -940,7 +938,7 @@ public:
     : RefProcProxyTask("G1STWRefProcProxyTask", max_workers),
       _g1h(g1h),
       _pss(pss),
-      _terminator(max_workers, &task_queues),
+      _terminator(max_workers, &task_queues, G1GCPhaseTimes::phase_name(G1GCPhaseTimes::Termination)),
       _task_queues(task_queues) {}
 
   void work(uint worker_id) override {
