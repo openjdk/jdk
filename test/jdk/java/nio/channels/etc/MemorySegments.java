@@ -653,7 +653,6 @@ class MemorySegments {
     /**
      * AsynchronousFileChannel read/write(ByteBuffer).
      */
-    @DisabledOnOs(OS.WINDOWS)
     @ParameterizedTest
     @MethodSource("arenaSuppliers")
     void testAsyncFileChannelReadWrite(Supplier<Arena> arenaSupplier) throws Throwable {
@@ -701,7 +700,6 @@ class MemorySegments {
     /**
      * Test closing a shared arena while AsynchronousFileChannel.write in progress.
      */
-    @Disabled
     @RepeatedTest(20)
     void testAsyncFileChannelWriteRacingArenaClose() throws Exception {
         Path file = Files.createTempFile(Path.of(""), "foo", ".dat");
