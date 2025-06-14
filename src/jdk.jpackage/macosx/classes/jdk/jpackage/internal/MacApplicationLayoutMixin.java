@@ -26,12 +26,15 @@ package jdk.jpackage.internal;
 
 import java.nio.file.Path;
 
-// Must be publc to allow access from AppImageLayout.toPathGroup()
+// Must be public to allow access from AppImageLayout.toPathGroup()
 public interface MacApplicationLayoutMixin {
 
     /**
-     * Path to the root Java runtime directory in the application image.
+     * Returns path to the root Java runtime directory in the application image.
+     * <p>
      * The root Java runtime directory should have "Contents/Home" subdirectory.
+     *
+     * @return the path to the root Java runtime directory in the application image
      */
     Path runtimeRootDirectory();
 

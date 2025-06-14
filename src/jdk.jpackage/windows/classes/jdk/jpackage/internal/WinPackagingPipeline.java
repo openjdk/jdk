@@ -34,7 +34,6 @@ import jdk.jpackage.internal.PackagingPipeline.CopyAppImageTaskID;
 import jdk.jpackage.internal.PackagingPipeline.PrimaryTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.ApplicationLayout;
-import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.model.WinApplication;
 import jdk.jpackage.internal.model.WinLauncher;
@@ -47,7 +46,6 @@ final class WinPackagingPipeline {
 
     static PackagingPipeline.Builder build() {
         return PackagingPipeline.buildStandard()
-                .appImageLayoutForPackaging(Package::appImageLayout)
                 .task(CopyAppImageTaskID.COPY).noaction().add()
                 .task(WinAppImageTaskID.REBRAND_LAUNCHERS)
                         .addDependency(BuildApplicationTaskID.LAUNCHERS)

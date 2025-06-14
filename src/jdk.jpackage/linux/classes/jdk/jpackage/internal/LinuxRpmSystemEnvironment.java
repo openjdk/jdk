@@ -22,35 +22,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.jpackage.internal;
 
-import java.nio.file.Path;
-import java.util.Objects;
-import java.util.Optional;
-import jdk.jpackage.internal.model.AppImageLayout;
-import jdk.jpackage.internal.model.ApplicationLayout;
+import static jdk.jpackage.internal.LinuxSystemEnvironment.mixin;
+import static jdk.jpackage.internal.LinuxSystemEnvironment.createWithMixin;
 
-record AppImageDesc(AppImageLayout appImageLayout, Path path) {
+import jdk.jpackage.internal.util.Result;
 
-    AppImageDesc {
-        Objects.requireNonNull(appImageLayout);
-        Objects.requireNonNull(path);
+public interface LinuxRpmSystemEnvironment extends LinuxSystemEnvironment, LinuxRpmSystemEnvironmentMixin {
+
+    static LinuxRpmSystemEnvironment create(LinuxSystemEnvironment base, LinuxRpmSystemEnvironmentMixin mixin) {
+        return createWithMixin(LinuxRpmSystemEnvironment.class, base, mixin);
     }
 
-    AppImageLayout resolvedAppImagelayout() {
-        return appImageLayout.resolveAt(path);
-    }
-
-    Optional<ApplicationLayout> asResolvedApplicationLayout() {
-        return asApplicationLayout().map(v -> v.resolveAt(path));
-    }
-
-    Optional<ApplicationLayout> asApplicationLayout() {
-        if (appImageLayout instanceof ApplicationLayout layout) {
-            return Optional.of(layout);
-        } else {
-            return Optional.empty();
-        }
+    static Result<LinuxRpmSystemEnvironment> create(Result<LinuxSystemEnvironment> base) {
+        return mixin(LinuxRpmSystemEnvironment.class, base, LinuxRpmSystemEnvironmentMixin::create);
     }
 }

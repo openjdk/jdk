@@ -470,5 +470,22 @@ public final class PathGroup {
         }
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(entries);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        PathGroup other = (PathGroup) obj;
+        return Objects.equals(entries, other.entries);
+    }
+
     private final Map<Object, Path> entries;
 }
