@@ -1189,6 +1189,25 @@ WRAPPER_GetField(jlong,    Long,    T_LONG)
 WRAPPER_GetField(jfloat,   Float,   T_FLOAT)
 WRAPPER_GetField(jdouble,  Double,  T_DOUBLE)
 
+static void checkCanSetInstanceField(JavaThread* thr, jfieldID fid, jobject obj) {
+  oop o = JNIHandles::resolve_non_null(obj);
+  Klass* k = o->klass();
+  int offset = jfieldIDWorkaround::from_instance_jfieldID(k, fid);
+
+  fieldDescriptor fd;
+  bool found = InstanceKlass::cast(k)->find_field_from_offset(offset, false, &fd);
+  assert(found, "bad field offset");
+  assert(!fd.is_static(), "static/instance mismatch");
+  if (!fd.is_final()) {
+    return;
+  }
+
+  ResourceMark rm(thr);
+  stringStream ss;
+  ss.print("Set<Type>Field attempting to mutate final instance field %s.%s", k->external_name(), fd.name()->as_C_string());
+  ReportJNIFatalError(thr, ss.as_string());
+}
+
 #define WRAPPER_SetField(ValueType,Result,FieldType) \
 JNI_ENTRY_CHECKED(void,  \
   checked_jni_Set##Result##Field(JNIEnv *env, \
@@ -1198,6 +1217,7 @@ JNI_ENTRY_CHECKED(void,  \
     functionEnter(thr); \
     IN_VM( \
       checkInstanceFieldID(thr, fieldID, obj, FieldType); \
+      checkCanSetInstanceField(thr, fieldID, obj); \
     ) \
     UNCHECKED()->Set##Result##Field(env,obj,fieldID,val); \
     functionExit(thr); \
@@ -1382,6 +1402,26 @@ WRAPPER_GetStaticField(jlong,    Long,    T_LONG)
 WRAPPER_GetStaticField(jfloat,   Float,   T_FLOAT)
 WRAPPER_GetStaticField(jdouble,  Double,  T_DOUBLE)
 
+static void checkCanSetStaticField(JavaThread* thr, jfieldID fid, jclass cls) {
+  JNIid* id = jfieldIDWorkaround::from_static_jfieldID(fid);
+  assert(id->is_static_field_id(), "invalid static field id");
+  Klass* k = id->holder();
+  int offset = id->offset();
+
+  fieldDescriptor fd;
+  bool found = InstanceKlass::cast(k)->find_field_from_offset(offset, true, &fd);
+  assert(found, "bad field offset");
+  assert(fd.is_static(), "static/instance mismatch");
+  if (!fd.is_final() || fd.is_mutable_static_final()) {
+     return;
+  }
+
+  ResourceMark rm(thr);
+  stringStream ss;
+  ss.print("SetStatic<Type>Field attempting to mutate final static field %s.%s", k->external_name(), fd.name()->as_C_string());
+  ReportJNIFatalError(thr, ss.as_string());
+}
+
 #define WRAPPER_SetStaticField(ValueType,Result,FieldType) \
 JNI_ENTRY_CHECKED(void,  \
   checked_jni_SetStatic##Result##Field(JNIEnv *env, \
@@ -1392,6 +1432,7 @@ JNI_ENTRY_CHECKED(void,  \
     IN_VM( \
       jniCheck::validate_class(thr, clazz, false); \
       checkStaticFieldID(thr, fieldID, clazz, FieldType); \
+      checkCanSetStaticField(thr, fieldID, clazz); \
     ) \
     UNCHECKED()->SetStatic##Result##Field(env,clazz,fieldID,value); \
     functionExit(thr); \

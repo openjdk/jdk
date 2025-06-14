@@ -3427,12 +3427,15 @@ return mh1;
          *         or if the field is {@code final} and write access
          *         is not enabled on the {@code Field} object
          * @throws NullPointerException if the argument is null
+         * @see <a href="{@docRoot}/java.base/java/lang/reflect/doc-files/MutationMethods.html">Mutation methods</a>
          */
         public MethodHandle unreflectSetter(Field f) throws IllegalAccessException {
             return unreflectField(f, true);
         }
 
         private MethodHandle unreflectField(Field f, boolean isSetter) throws IllegalAccessException {
+            @SuppressWarnings("deprecation")
+            boolean isAccessible = f.isAccessible();
             MemberName field = new MemberName(f, isSetter);
             if (isSetter && field.isFinal()) {
                 if (field.isTrustedFinalField()) {
@@ -3440,12 +3443,15 @@ return mh1;
                                                   : "final field has no write access";
                     throw field.makeAccessException(msg, this);
                 }
+                // check if write access to final field allowed
+                if (!field.isStatic() && isAccessible && allowedModes != TRUSTED) {
+                    SharedSecrets.getJavaLangReflectAccess().checkAllowedToUnreflectFinalSetter(lookupClass, f);
+                }
             }
             assert(isSetter
                     ? MethodHandleNatives.refKindIsSetter(field.getReferenceKind())
                     : MethodHandleNatives.refKindIsGetter(field.getReferenceKind()));
-            @SuppressWarnings("deprecation")
-            Lookup lookup = f.isAccessible() ? IMPL_LOOKUP : this;
+            Lookup lookup = isAccessible ? IMPL_LOOKUP : this;
             return lookup.getDirectField(field.getReferenceKind(), f.getDeclaringClass(), field);
         }
 
