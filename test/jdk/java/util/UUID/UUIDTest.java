@@ -47,6 +47,9 @@ public class UUIDTest {
         randomUUIDTest();
         randomUUIDTest_Multi();
         nameUUIDFromBytesTest();
+        unixEpochTimeMillisTest();
+        unixEpochTimeMillisTest_Multi();
+        unixEpochTimeMillis_userInputTest();
         stringTest();
         versionTest();
         variantTest();
@@ -146,6 +149,81 @@ public class UUIDTest {
         }
     }
 
+    private static void unixEpochTimeMillisTest() throws Exception {
+        List<UUID> collisions = new ArrayList<>();
+
+        Set<UUID> set = new HashSet<>();
+        for (int i = 0; i < COUNT; i++) {
+            UUID u = UUID.unixEpochTimeMillis();
+            if (u.version() != 7) {
+                throw new Exception("Bad version: " + u);
+            }
+            if (u.variant() != 2) {
+                throw new Exception("Bad variant: " + u);
+            }
+            if (!set.add(u)) {
+                collisions.add(u);
+            }
+        }
+
+        if (!collisions.isEmpty()) {
+            // This is extremely unlikely to happen. If you see this failure,
+            // this highly likely points to the implementation bug, rather than
+            // the odd chance.
+            throw new Exception("UUID collisions detected: " + collisions);
+        }
+    }
+
+    private static void unixEpochTimeMillisTest_Multi() throws Exception {
+        List<UUID> uuids = IntStream.range(0, COUNT).parallel()
+                .mapToObj(i -> UUID.unixEpochTimeMillis())
+                .toList();
+
+        List<UUID> collisions = new ArrayList<>();
+
+        Set<UUID> set = new HashSet<>();
+        for (UUID u : uuids) {
+            if (u.version() != 7) {
+                throw new Exception("Bad version: " + u);
+            }
+            if (u.variant() != 2) {
+                throw new Exception("Bad variant: " + u);
+            }
+            if (!set.add(u)) {
+                collisions.add(u);
+            }
+        }
+
+        if (!collisions.isEmpty()) {
+            // This is extremely unlikely to happen. If you see this failure,
+            // this highly likely points to the implementation bug, rather than
+            // the odd chance.
+            throw new Exception("UUID collisions detected: " + collisions);
+        }
+    }
+
+    private static void unixEpochTimeMillis_userInputTest() {
+        // Should not throw for valid timestamp
+        try {
+            long now = System.currentTimeMillis();
+            UUID u = UUID.unixEpochTimeMillis(now);
+        } catch (Exception e) {
+            throw new AssertionError("Unexpected exception with valid timestamp: " + e);
+        }
+
+        // Should throw for negative timestamp
+        try {
+            UUID.unixEpochTimeMillis(-1);
+            throw new AssertionError("Expected IllegalArgumentException with negative timestamp");
+        } catch (IllegalArgumentException expected) {}
+
+        // Should throw for timestamp > 48 bits
+        try {
+            UUID.unixEpochTimeMillis(1L << 48);
+            throw new AssertionError("Expected IllegalArgumentException with timestamp > 48 bits");
+        } catch (IllegalArgumentException expected) {}
+    }
+
     private static void stringTest() throws Exception {
         for (int i = 0; i < COUNT; i++) {
             UUID u1 = UUID.randomUUID();
@@ -185,6 +263,11 @@ public class UUIDTest {
         test = UUID.nameUUIDFromBytes(someBytes);
         if (test.version() != 3) {
             throw new Exception("nameUUIDFromBytes not type 3: " + test);
+        }
+
+        test = UUID.unixEpochTimeMillis();
+        if (test.version() != 7) {
+            throw new Exception("timestampUUID not type 7: " + test);
         }
 
         test = UUID.fromString("9835451d-e2e0-1e41-8a5a-be785f17dcda");
@@ -239,6 +322,11 @@ public class UUIDTest {
         test = UUID.nameUUIDFromBytes(someBytes);
         if (test.variant() != 2) {
             throw new Exception("nameUUIDFromBytes not variant 2");
+        }
+
+        test = UUID.unixEpochTimeMillis();
+        if (test.variant() != 2) {
+            throw new Exception("timestampUUID not variant 2");
         }
 
         test = new UUID(55L, 0x0000000000001000L);
