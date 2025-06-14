@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,94 +28,78 @@ package jdk.internal.vm.annotation;
 import java.lang.annotation.*;
 
 /**
- * The {@code @IntrinsicCandidate} annotation is specific to the
- * HotSpot Virtual Machine. It indicates that an annotated method
- * may be (but is not guaranteed to be) intrinsified by the HotSpot VM. A method
- * is intrinsified if the HotSpot VM replaces the annotated method with hand-written
- * assembly and/or hand-written compiler IR -- a compiler intrinsic -- to improve
- * performance. The {@code @IntrinsicCandidate} annotation is internal to the
- * Java libraries and is therefore not supposed to have any relevance for application
- * code.
+ * The {@code @IntrinsicCandidate} indicates that an annotated method is
+ * recognized by {@code vmIntrinsics.hpp} for special treatment by the HotSpot
+ * VM.  When a class is loading, the HotSpot VM checks the consistency of
+ * recognized methods and {@code @IntrinsicCandidate} annotations, unless the
+ * {@code CheckIntrinsics} VM flag is disabled.
  *
- * Maintainers of the Java libraries must consider the following when
- * modifying methods annotated with {@code @IntrinsicCandidate}.
- *
- * <ul>
- * <li>When modifying a method annotated with {@code @IntrinsicCandidate},
- * the corresponding intrinsic code in the HotSpot VM implementation must be
- * updated to match the semantics of the annotated method.</li>
- * <li>For some annotated methods, the corresponding intrinsic may omit some low-level
- * checks that would be performed as a matter of course if the intrinsic is implemented
- * using Java bytecodes. This is because individual Java bytecodes implicitly check
- * for exceptions like {@code NullPointerException} and {@code ArrayStoreException}.
- * If such a method is replaced by an intrinsic coded in assembly language, any
- * checks performed as a matter of normal bytecode operation must be performed
- * before entry into the assembly code. These checks must be performed, as
- * appropriate, on all arguments to the intrinsic, and on other values (if any) obtained
- * by the intrinsic through those arguments. The checks may be deduced by inspecting
- * the non-intrinsic Java code for the method, and determining exactly which exceptions
- * may be thrown by the code, including undeclared implicit {@code RuntimeException}s.
- * Therefore, depending on the data accesses performed by the intrinsic,
- * the checks may include:
- *
- *  <ul>
- *  <li>null checks on references</li>
- *  <li>range checks on primitive values used as array indexes</li>
- *  <li>other validity checks on primitive values (e.g., for divide-by-zero conditions)</li>
- *  <li>store checks on reference values stored into arrays</li>
- *  <li>array length checks on arrays indexed from within the intrinsic</li>
- *  <li>reference casts (when formal parameters are {@code Object} or some other weak type)</li>
- *  </ul>
- *
- * </li>
- *
- * <li>Note that the receiver value ({@code this}) is passed as a extra argument
- * to all non-static methods. If a non-static method is an intrinsic, the receiver
- * value does not need a null check, but (as stated above) any values loaded by the
- * intrinsic from object fields must also be checked. As a matter of clarity, it is
- * better to make intrinisics be static methods, to make the dependency on {@code this}
- * clear. Also, it is better to explicitly load all required values from object
- * fields before entering the intrinsic code, and pass those values as explicit arguments.
- * First, this may be necessary for null checks (or other checks). Second, if the
- * intrinsic reloads the values from fields and operates on those without checks,
- * race conditions may be able to introduce unchecked invalid values into the intrinsic.
- * If the intrinsic needs to store a value back to an object field, that value should be
- * returned explicitly from the intrinsic; if there are multiple return values, coders
- * should consider buffering them in an array. Removing field access from intrinsics
- * not only clarifies the interface with between the JVM and JDK; it also helps decouple
- * the HotSpot and JDK implementations, since if JDK code before and after the intrinsic
- * manages all field accesses, then intrinsics can be coded to be agnostic of object
- * layouts.</li>
- *
- * Maintainers of the HotSpot VM must consider the following when modifying
- * intrinsics.
- *
- * <ul>
- * <li>When adding a new intrinsic, make sure that the corresponding method
- * in the Java libraries is annotated with {@code @IntrinsicCandidate}
- * and that all possible call sequences that result in calling the intrinsic contain
- * the checks omitted by the intrinsic (if any).</li>
- * <li>When modifying an existing intrinsic, the Java libraries must be updated
- * to match the semantics of the intrinsic and to execute all checks omitted
- * by the intrinsic (if any).</li>
- * </ul>
- *
- * Persons not directly involved with maintaining the Java libraries or the
- * HotSpot VM can safely ignore the fact that a method is annotated with
- * {@code @IntrinsicCandidate}.
- *
- * The HotSpot VM defines (internally) a list of intrinsics. Not all intrinsic
- * are available on all platforms supported by the HotSpot VM. Furthermore,
- * the availability of an intrinsic on a given platform depends on the
- * configuration of the HotSpot VM (e.g., the set of VM flags enabled).
- * Therefore, annotating a method with {@code @IntrinsicCandidate} does
- * not guarantee that the marked method is intrinsified by the HotSpot VM.
- *
- * If the {@code CheckIntrinsics} VM flag is enabled, the HotSpot VM checks
- * (when loading a class) that (1) all methods of that class that are also on
- * the VM's list of intrinsics are annotated with {@code @IntrinsicCandidate}
- * and that (2) for all methods of that class annotated with
- * {@code @IntrinsicCandidate} there is an intrinsic in the list.
+ * <h2 id="intrinsification">Intrinsification</h2>
+ * Most frequently, the special treatment of an intrinsic is
+ * <em>intrinsification</em>, which replaces a candidate method's body, bytecode
+ * or native, with handwritten platform assembly and/or compiler IR.  (See
+ * {@code LibraryCallKit::try_to_inline} in {@code library_call.cpp} for logic
+ * that checks if an intrinsic is available and applicable at a given call site.)
+ * Many Java library methods have properties that cannot be deduced by the
+ * compiler for optimization, or can utilize specific hardware instructions not
+ * modeled by the compiler IR, making intrinsics necessary.
+ * <p>
+ * During execution, intrinsification may happen and may be rolled back at any
+ * moment; this loading and unloading process may happen zero to many times.
+ * For example, the bytecode of a candidate method may be executed by lower
+ * compilation tiers of VM execution, while higher compilation tiers may replace
+ * the bytecode with specialized assembly code and/or compiler IR.  Therefore,
+ * intrinsic implementors must ensure that non-bytecode execution has the same
+ * results as execution of the actual Java code in all application contexts
+ * (given that the assumptions on the arguments hold).
+ * <p>
+ * A candidate method should contain a minimal piece of Java code that should be
+ * replaced by an intrinsic wholesale.  The backing intrinsic is (in the common
+ * case) <strong>unsafe</strong> - it may not perform checks, but instead makes
+ * assumptions on its arguments that type safety is ensured by callers.  These
+ * assumptions must be clearly documented on the candidate methods, and the
+ * callers are fully responsible for preventing any kind of type safety
+ * violation.  As long as these assumptions hold, readers can simply refer to
+ * the candidate method's Java code body for program behaviors.
+ * <blockquote style="font-size:smaller;"><p id="unsafe-details">
+ * Examples of type safety violations include: dereferencing a null pointer;
+ * accessing a field or method on an object which does not possess that field or
+ * method; accessing an element of an array not actually present in the array;
+ * and manipulating object references in a way that prevents the GC from
+ * managing them.
+ * </blockquote>
+ * <p id="validation">
+ * To ensure type safety, candidate methods are typically private, and access to
+ * them are encapsulated by more accessible methods that perform argument
+ * validations.  Any validation must be done on values that are exclusively
+ * accessed by the current thread: shared fields must be read into local
+ * variables, and shared arrays must be copied to an exclusive copy, to ensure
+ * each shared location (a field or an array component) is accessed at most once.
+ * If a shared location is read multiple times for check and for use, race
+ * conditions may cause two reads to produce distinct values, known as TOCTOU
+ * (time of check and time of use), and the read for use may produce an illegal
+ * value.  Finally, the thread-exclusive validated values are passed to the
+ * candidate method.
+ * <blockquote style="font-size:smaller;"><p id="racy-array">
+ * For some highly optimized algorithms, it may be impractical to ensure that
+ * array data is read or written only once by the intrinsic.  If the caller of
+ * the intrinsic cannot guarantee that such array data is unshared, then the
+ * caller must also document the effects of any race condition.  (Such a race
+ * occurs when another thread writes the array data during the execution of the
+ * intrinsic.)  For example, the documentation can simply say that the result is
+ * undefined if a race happens.  However, race conditions must not lead to
+ * program failures or type safety breaches, as listed above.
+ * <p>
+ * Reasoning about such race conditions is difficult, but it is a necessary
+ * skill when working with intrinsics that can observe racing shared variables.
+ * One example of a tolerable race is a repeated read of a shared reference.
+ * This only works if the algorithm takes no action based on the first read,
+ * other than deciding to perform the second read; it must "forget what it saw"
+ * in the first read.  This is why the array-mismatch intrinsics can sometimes
+ * report a tentative search hit (maybe using vectorized code), which can then
+ * be confirmed (by scalar code) as the caller makes a fresh and independent
+ * observation.
+ * </blockquote>
  *
  * @since 16
  */
