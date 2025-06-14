@@ -1473,9 +1473,14 @@ void PhaseStringOpts::arraycopy(GraphKit& kit, IdealKit& ideal, Node* src_array,
 
   Node* src_ptr = __ array_element_address(src_array, __ intcon(0), T_BYTE);
   Node* dst_ptr = __ array_element_address(dst_array, start, T_BYTE);
-  // Check if destination address is aligned to HeapWordSize
-  const TypeInt* tdst = __ gvn().type(start)->is_int();
-  bool aligned = tdst->is_con() && ((tdst->get_con() * type2aelembytes(T_BYTE)) % HeapWordSize == 0);
+  // Check if src array address is aligned to HeapWordSize
+  bool aligned = (arrayOopDesc::base_offset_in_bytes(T_BYTE) % HeapWordSize == 0);
+  // If true, then check if dst array address is aligned to HeapWordSize
+  if (aligned) {
+    const TypeInt* tdst = __ gvn().type(start)->is_int();
+    aligned = tdst->is_con() && ((arrayOopDesc::base_offset_in_bytes(T_BYTE) +
+                                  tdst->get_con() * type2aelembytes(T_BYTE)) % HeapWordSize == 0);
+  }
   // Figure out which arraycopy runtime method to call (disjoint, uninitialized).
   const char* copyfunc_name = "arraycopy";
   address     copyfunc_addr = StubRoutines::select_arraycopy_function(elembt, aligned, true, copyfunc_name, true);
