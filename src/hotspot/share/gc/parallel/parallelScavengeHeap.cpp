@@ -160,6 +160,10 @@ void ParallelScavengeHeap::initialize_serviceability() {
 
 }
 
+void ParallelScavengeHeap::stop() {
+  CollectedHeap::stop();
+}
+
 void ParallelScavengeHeap::safepoint_synchronize_begin() {
   if (UseStringDeduplication) {
     SuspendibleThreadSet::synchronize();

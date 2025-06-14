@@ -299,6 +299,7 @@ class os: AllStatic {
   // returns the elapsed virtual time for the current thread.
   static bool supports_vtime();
   static double elapsedVTime();
+  static double elapsed_process_vtime();
 
   // Return current local time in a string (YYYY-MM-DD HH:MM:SS).
   // It is MT safe, but not async-safe, as reading time zone
