@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +36,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
+import java.lang.invoke.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Random;
@@ -45,7 +47,7 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
-@Fork(value = 3)
+@Fork(value = 3, jvmArgs = {"--add-opens", "java.base/java.math=ALL-UNNAMED"})
 public class BigDecimals {
 
     /** Make sure TEST_SIZE is used to size the arrays. We need this constant to parametrize the operations count. */
@@ -60,7 +62,9 @@ public class BigDecimals {
     private BigDecimal[] bigDecimals;
     private String[] stringInputs;
     private double[] doubleInputs;
-    private BigDecimal[] hugeArray, largeArray, smallArray;
+    private BigDecimal[] hugeArray;
+    private BigDecimal[] large2Array, small2Array;
+    private BigDecimal[] large3Array, small3Array;
 
     @Setup
     public void setup() {
@@ -96,22 +100,28 @@ public class BigDecimals {
         hugeArray = new BigDecimal[TEST_SIZE];
 
         /*
-        * Large numbers less than MAX_LONG but larger than MAX_INT
-        */
-        largeArray = new BigDecimal[TEST_SIZE];
+         * Large numbers less than MAX_LONG but larger than MAX_INT
+         */
+        large2Array = new BigDecimal[TEST_SIZE];
+        large3Array = new BigDecimal[TEST_SIZE];
 
         /*
-        * Small number less than MAX_INT
-        */
-        smallArray = new BigDecimal[TEST_SIZE];
+         * Small number less than MAX_INT
+         */
+        small2Array = new BigDecimal[TEST_SIZE];
+        small3Array = new BigDecimal[TEST_SIZE];
 
         dummyStringArray = new String[TEST_SIZE];
         for (int i = 0; i < TEST_SIZE; i++) {
             int value = Math.abs(r.nextInt());
             hugeArray[i] = new BigDecimal("" + ((long) value + (long) Integer.MAX_VALUE)
                     + ((long) value + (long) Integer.MAX_VALUE) + ".55");
-            largeArray[i] = new BigDecimal("" + ((long) value + (long) Integer.MAX_VALUE) + ".55");
-            smallArray[i] = new BigDecimal("" + ((long) value / 1000) + ".55");
+
+            large2Array[i] = new BigDecimal("" + ((long) value + (long) Integer.MAX_VALUE) + ".55");
+            large3Array[i] = new BigDecimal("" + ((long) value + (long) Integer.MAX_VALUE) + ".555");
+
+            small2Array[i] = new BigDecimal("" + ((long) value / 1000) + ".55");
+            small3Array[i] = new BigDecimal("" + ((long) value / 1000) + ".555");
         }
     }
 
@@ -185,39 +195,6 @@ public class BigDecimals {
         bh.consume(tmp);
     }
 
-    /** Test divide with huge/small numbers */
-    @Benchmark
-    @OperationsPerInvocation(TEST_SIZE * TEST_SIZE)
-    public void testHugeSmallDivide(Blackhole bh) {
-        for (BigDecimal s : hugeArray) {
-            for (BigDecimal t : smallArray) {
-                bh.consume(s.divide(t, RoundingMode.DOWN));
-            }
-        }
-    }
-
-    /** Test divide with large/small numbers */
-    @Benchmark
-    @OperationsPerInvocation(TEST_SIZE * TEST_SIZE)
-    public void testLargeSmallDivide(Blackhole bh) {
-        for (BigDecimal s : largeArray) {
-            for (BigDecimal t : smallArray) {
-                bh.consume(s.divide(t, RoundingMode.DOWN));
-            }
-        }
-    }
-
-    /** Test divide with huge/large numbers */
-    @Benchmark
-    @OperationsPerInvocation(TEST_SIZE * TEST_SIZE)
-    public void testHugeLargeDivide(Blackhole bh) {
-        for (BigDecimal s : hugeArray) {
-            for (BigDecimal t : largeArray) {
-                bh.consume(s.divide(t, RoundingMode.DOWN));
-            }
-        }
-    }
-
     /** Invokes the compareTo method of BigDecimal with various different values. */
     @Benchmark
     @OperationsPerInvocation(TEST_SIZE - 1)
@@ -227,7 +204,6 @@ public class BigDecimals {
             bh.consume(c.compareTo(s));
         }
     }
-
 
     /** Invokes the valueOf(double) of BigDecimal with various different values. */
     @Benchmark
@@ -244,6 +220,154 @@ public class BigDecimals {
     public void testValueOfWithDoubleString(Blackhole bh) {
         for (double s : doubleInputs) {
             bh.consume(new BigDecimal(Double.toString(s)));
+        }
+    }
+
+    /** Test BigDecimal.toString() with large numbers (scale 2) less than MAX_LONG but larger than MAX_INT */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void hugeLayoutCharsToString(Blackhole bh) throws Throwable {
+        for (BigDecimal s : hugeArray) {
+            bh.consume((String) BigDecimalAccess.layoutChars.invokeExact(s, true));
+        }
+    }
+
+    /** Test BigDecimal.toEngineeringString() with huge numbers larger than MAX_LONG */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void hugeEngineeringToString(Blackhole bh) {
+        for (BigDecimal s : hugeArray) {
+            bh.consume(s.toEngineeringString());
+        }
+    }
+
+    /** Test BigDecimal.toEngineeringString() with huge numbers larger than MAX_LONG */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void hugePlainToString(Blackhole bh) {
+        for (BigDecimal s : hugeArray) {
+            bh.consume(s.toPlainString());
+        }
+    }
+
+    /** Test BigDecimal.toString() with large numbers (scale 2) less than MAX_LONG but larger than MAX_INT */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void largeScale2LayoutCharsToString(Blackhole bh) throws Throwable {
+        for (BigDecimal s : large2Array) {
+            bh.consume((String) BigDecimalAccess.layoutChars.invokeExact(s, true));
+        }
+    }
+
+    /** Test BigDecimal.toEngineeringString() with large numbers (scale 2) less than MAX_LONG but larger than MAX_INT */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void largeScale2EngineeringToString(Blackhole bh) {
+        for (BigDecimal s : large2Array) {
+            bh.consume(s.toEngineeringString());
+        }
+    }
+
+    /** Test BigDecimal.toPlainString() with large numbers (scale 2) less than MAX_LONG but larger than MAX_INT */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void largeScale2PlainToString(Blackhole bh) {
+        for (BigDecimal s : large2Array) {
+            bh.consume(s.toPlainString());
+        }
+    }
+
+    /** Test BigDecimal.toString() with large numbers (scale 3) less than MAX_LONG but larger than MAX_INT */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void largeScale3LayoutCharsToString(Blackhole bh) throws Throwable {
+        for (BigDecimal s : large3Array) {
+            bh.consume((String) BigDecimalAccess.layoutChars.invokeExact(s, true));
+        }
+    }
+
+    /** Test BigDecimal.toEngineeringString() with large numbers (scale 3) less than MAX_LONG but larger than MAX_INT */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void largeScale3EngineeringToString(Blackhole bh) {
+        for (BigDecimal s : large3Array) {
+            bh.consume(s.toEngineeringString());
+        }
+    }
+
+
+    /** Test BigDecimal.toPlainString() with large numbers (scale 3) less than MAX_LONG but larger than MAX_INT */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void largeScale3PlainToString(Blackhole bh) {
+        for (BigDecimal s : large3Array) {
+            bh.consume(s.toPlainString());
+        }
+    }
+
+    /** Test BigDecimal.toString() with small numbers (scale 2) less than MAX_INT */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void smallScale2LayoutCharsToString(Blackhole bh) throws Throwable {
+        for (BigDecimal s : small2Array) {
+            bh.consume((String) BigDecimalAccess.layoutChars.invokeExact(s, true));
+        }
+    }
+
+    /** Test BigDecimal.toEngineeringString() with small numbers (scale 2) less than MAX_INT */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void smallScale2EngineeringToString(Blackhole bh) {
+        for (BigDecimal s : small2Array) {
+            bh.consume(s.toEngineeringString());
+        }
+    }
+
+    /** Test BigDecimal.toPlainString() with small numbers (scale 3) less than MAX_INT */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void smallScale2PlainToString(Blackhole bh) {
+        for (BigDecimal s : small2Array) {
+            bh.consume(s.toPlainString());
+        }
+    }
+
+    /** Test BigDecimal.toString() with small numbers (scale 3) less than MAX_INT */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void smallScale3LayoutCharsToString(Blackhole bh) throws Throwable {
+        for (BigDecimal s : small3Array) {
+            bh.consume((String) BigDecimalAccess.layoutChars.invokeExact(s, true));
+        }
+    }
+
+    /** Test BigDecimal.toEngineeringString() with small numbers (scale 3) less than MAX_INT */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void smallScale3EngineeringToString(Blackhole bh) {
+        for (BigDecimal s : small3Array) {
+            bh.consume(s.toEngineeringString());
+        }
+    }
+
+    /** Test BigDecimal.toPlainString() with small numbers (scale 3) less than MAX_INT */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void smallScale3PlainToString(Blackhole bh) {
+        for (BigDecimal s : small3Array) {
+            bh.consume(s.toPlainString());
+        }
+    }
+
+    static class BigDecimalAccess {
+        final static MethodHandle layoutChars;
+        static {
+            try {
+                MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(BigDecimal.class, MethodHandles.lookup());
+                layoutChars = lookup.findVirtual(BigDecimal.class, "layoutChars", MethodType.methodType(String.class, boolean.class));
+            } catch (Throwable e) {
+                throw new AssertionError(e);
+            }
         }
     }
 }
