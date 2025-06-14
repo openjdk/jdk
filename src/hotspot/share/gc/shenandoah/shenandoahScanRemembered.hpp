@@ -228,6 +228,12 @@ public:
   inline const CardValue* get_card_table_byte_map(bool use_write_table) const {
     return use_write_table ? _card_table->write_byte_map() : _card_table->read_byte_map();
   }
+#define KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+  inline ShenandoahCardTable* card_table() {
+    return _card_table;
+  }
+#endif
 
   inline bool is_card_dirty(size_t card_index) const;
   inline bool is_write_card_dirty(size_t card_index) const;

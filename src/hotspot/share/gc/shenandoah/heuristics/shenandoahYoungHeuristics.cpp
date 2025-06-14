@@ -33,7 +33,7 @@
 #include "utilities/quickSort.hpp"
 
 ShenandoahYoungHeuristics::ShenandoahYoungHeuristics(ShenandoahYoungGeneration* generation)
-        : ShenandoahGenerationalHeuristics(generation) {
+    : ShenandoahGenerationalHeuristics(generation) {
 }
 
 
