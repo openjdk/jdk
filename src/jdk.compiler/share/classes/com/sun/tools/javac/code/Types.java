@@ -2275,10 +2275,9 @@ public class Types {
             do {
                 Type s = asSuper(t, sym);
                 if (s != null) return s;
-                Type outer = t.getEnclosingType();
-                t = (outer.hasTag(CLASS)) ? outer :
-                    (t.tsym.owner.enclClass() != null) ? t.tsym.owner.enclClass().type :
-                    Type.noType;
+                t = (t.tsym.owner.enclClass() != null)
+                  ? t.tsym.owner.enclClass().type
+                  : Type.noType;
             } while (t.hasTag(CLASS));
             return null;
         case ARRAY:
