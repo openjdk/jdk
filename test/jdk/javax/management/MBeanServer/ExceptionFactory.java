@@ -46,7 +46,6 @@ import javax.management.RuntimeOperationsException;
 import javax.management.ServiceNotFoundException;
 import javax.management.StringValueExp;
 import javax.management.modelmbean.InvalidTargetObjectTypeException;
-import javax.management.modelmbean.XMLParseException;
 import javax.management.monitor.MonitorSettingException;
 import javax.management.openmbean.InvalidKeyException;
 import javax.management.openmbean.InvalidOpenTypeException;
@@ -100,7 +99,6 @@ public class ExceptionFactory {
         exceptions.add(new RuntimeOperationsException(new RuntimeException(mes), mes));
         exceptions.add(new ServiceNotFoundException());
         exceptions.add(new InvalidTargetObjectTypeException());
-        exceptions.add(new XMLParseException());
         exceptions.add(new MonitorSettingException());
         exceptions.add(new InvalidKeyException());
         exceptions.add(new InvalidOpenTypeException());
