@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,9 +100,9 @@ public class ConstantPool extends Metadata implements ClassConstants {
     headerSize  = type.getSize();
     elementSize = 0;
     // fetch constants:
-    INDY_BSM_OFFSET = db.lookupIntConstant("ConstantPool::_indy_bsm_offset").intValue();
-    INDY_ARGC_OFFSET = db.lookupIntConstant("ConstantPool::_indy_argc_offset").intValue();
-    INDY_ARGV_OFFSET = db.lookupIntConstant("ConstantPool::_indy_argv_offset").intValue();
+    INDY_BSM_OFFSET = db.lookupIntConstant("BSMAttributeEntry::_bsmi_offset").intValue();
+    INDY_ARGC_OFFSET = db.lookupIntConstant("BSMAttributeEntry::_argc_offset").intValue();
+    INDY_ARGV_OFFSET = db.lookupIntConstant("BSMAttributeEntry::_argv_offset").intValue();
   }
 
   public ConstantPool(Address addr) {
