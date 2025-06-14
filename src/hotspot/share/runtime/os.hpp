@@ -256,6 +256,7 @@ class os: AllStatic {
   static void initialize_initial_active_processor_count();
 
   LINUX_ONLY(static void pd_init_container_support();)
+  LINUX_ONLY(static void initialize_max_ram_percentage();)
 
  public:
   static void init(void);                      // Called before command line parsing
