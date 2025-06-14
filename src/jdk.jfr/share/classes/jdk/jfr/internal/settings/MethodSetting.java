@@ -33,6 +33,7 @@ import jdk.jfr.Name;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.tracing.Modification;
+import jdk.jfr.internal.tracing.Filter;
 import jdk.jfr.internal.tracing.PlatformTracer;
 
 @MetadataDefinition
@@ -47,8 +48,9 @@ public final class MethodSetting extends FilterSetting {
         this.modification = modification;
     }
 
+    @Override
     public boolean isValid(String text) {
-        return PlatformTracer.isValidFilter(text);
+        return Filter.isValid(text);
     }
 
     @Override
