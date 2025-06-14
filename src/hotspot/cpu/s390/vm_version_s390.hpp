@@ -100,7 +100,7 @@ class VM_Version: public Abstract_VM_Version {
 #define  CryptoExtension4Mask           0x0004000000000000UL  // z196 (aka message-security assist extension 4, for KMF, KMCTR, KMO)
 #define  DFPPackedConversionMask        0x0000800000000000UL  // z13
 // ----------------------------------------------
-// --- FeatureBitString Bits 128..192 (DW[2]) ---
+// --- FeatureBitString Bits 128..191 (DW[2]) ---
 // ----------------------------------------------
 //                                        11111111111111111
 //                                        23344455666778889
@@ -118,9 +118,10 @@ class VM_Version: public Abstract_VM_Version {
 #define NNPAssistFacilityMask           0x0000000004000000UL  // z16, Neural-network-processing-assist facility, Bit: 165
 
 // ----------------------------------------------
-// --- FeatureBitString Bits 193..200 (DW[3]) ---
+// --- FeatureBitString Bits 192..255 (DW[3]) ---
 // ----------------------------------------------
 #define  BEAREnhFacilityMask            0x4000000000000000UL  // z16, BEAR-enhancement facility, Bit: 193
+#define  ConcurrentFunFacilityMask      0x0040000000000000UL  // z17, Concurrent-functions facility, Bit: 201
 
   enum {
     _max_cache_levels = 8,    // As limited by ECAG instruction.
@@ -189,7 +190,8 @@ class VM_Version: public Abstract_VM_Version {
   static bool is_z13()  { return has_CryptoExt5()             && !has_MiscInstrExt2(); }
   static bool is_z14()  { return has_MiscInstrExt2()          && !has_MiscInstrExt3(); }
   static bool is_z15()  { return has_MiscInstrExt3()          && !has_BEAR_Enh_Facility(); }
-  static bool is_z16()  { return has_BEAR_Enh_Facility(); }
+  static bool is_z16()  { return has_BEAR_Enh_Facility()      && !has_Concurrent_Fun_Facility(); }
+  static bool is_z17()  { return has_Concurrent_Fun_Facility();}
 
   // Need to use nested class with unscoped enum.
   // C++11 declaration "enum class Cipher { ... } is not supported.
@@ -497,6 +499,7 @@ class VM_Version: public Abstract_VM_Version {
 
   static bool has_BEAR_Enh_Facility()         { return  (_features[3] & BEAREnhFacilityMask)           == BEAREnhFacilityMask; }
   static bool has_NNP_Assist_Facility()       { return  (_features[2] & NNPAssistFacilityMask)         == NNPAssistFacilityMask; }
+  static bool has_Concurrent_Fun_Facility()   { return  (_features[3] & ConcurrentFunFacilityMask)     == ConcurrentFunFacilityMask; }
 
   // Crypto features query functions.
   static bool has_Crypto_AES_GCM128()         { return has_Crypto() && test_feature_bit(&_cipher_features_KMA[0], Cipher::_AES128, Cipher::_featureBits); }
@@ -573,6 +576,7 @@ class VM_Version: public Abstract_VM_Version {
   static void set_has_VectorPackedDecimalEnh()    { _features[2] |= VectorPackedDecimalEnhMask; }
   static void set_has_BEAR_Enh_Facility()         { _features[3] |= BEAREnhFacilityMask;}
   static void set_has_NNP_Assist_Facility()       { _features[2] |= NNPAssistFacilityMask;}
+  static void set_has_Concurrent_Fun_Facility()   { _features[3] |= ConcurrentFunFacilityMask;}
 
   static void reset_has_VectorFacility()          { _features[2] &= ~VectorFacilityMask; }
 
