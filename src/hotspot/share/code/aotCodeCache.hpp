@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -297,6 +297,7 @@ public:
   void load_strings();
   int store_strings();
 
+  static void init_early_stubs_table() NOT_CDS_RETURN;
   static void init_shared_blobs_table() NOT_CDS_RETURN;
   static void init_early_c1_table() NOT_CDS_RETURN;
 
@@ -346,7 +347,8 @@ public:
 // Static access
 
 private:
-  static AOTCodeCache*  _cache;
+  static AOTCodeCache* _cache;
+  DEBUG_ONLY( static bool _passed_init2; )
 
   static bool open_cache(bool is_dumping, bool is_using);
   bool verify_config() {
@@ -356,19 +358,20 @@ private:
     return true;
   }
 public:
-  static AOTCodeCache* cache() { return _cache; }
+  static AOTCodeCache* cache() { assert(_passed_init2, "Too early to ask"); return _cache; }
   static void initialize() NOT_CDS_RETURN;
   static void init2() NOT_CDS_RETURN;
   static void close() NOT_CDS_RETURN;
-  static bool is_on() CDS_ONLY({ return _cache != nullptr && !_cache->closing(); }) NOT_CDS_RETURN_(false);
+  static bool is_on() CDS_ONLY({ return cache() != nullptr && !_cache->closing(); }) NOT_CDS_RETURN_(false);
   static bool is_on_for_use()  { return is_on() && _cache->for_use(); }
   static bool is_on_for_dump() { return is_on() && _cache->for_dump(); }
-
-  static bool is_dumping_adapter() NOT_CDS_RETURN_(false);
-  static bool is_using_adapter() NOT_CDS_RETURN_(false);
-
   static bool is_dumping_stub() NOT_CDS_RETURN_(false);
+  static bool is_dumping_adapter() NOT_CDS_RETURN_(false);
   static bool is_using_stub() NOT_CDS_RETURN_(false);
+  static bool is_using_adapter() NOT_CDS_RETURN_(false);
+  static void enable_caching() NOT_CDS_RETURN;
+  static void disable_caching() NOT_CDS_RETURN;
+  static bool is_caching_enabled() NOT_CDS_RETURN_(false);
 
   static const char* add_C_string(const char* str) NOT_CDS_RETURN_(str);
 
