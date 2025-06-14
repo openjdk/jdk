@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.Vector;
 import javax.naming.*;
 import javax.naming.directory.*;
 import javax.naming.ldap.Control;
+import java.lang.ref.Reference;
 
 import com.sun.jndi.toolkit.ctx.Continuation;
 import com.sun.naming.internal.NamingManagerHelper;
@@ -47,52 +48,62 @@ final class LdapBindingEnumeration
     protected Binding
       createItem(String dn, Attributes attrs, Vector<Control> respCtls)
         throws NamingException {
-
-        Object obj = null;
-        String atom = getAtom(dn);
-
-        if (attrs.get(Obj.JAVA_ATTRIBUTES[Obj.CLASSNAME]) != null) {
-            // serialized object or object reference
-            obj = Obj.decodeObject(attrs);
-        }
-        if (obj == null) {
-            // DirContext object
-            obj = new LdapCtx(homeCtx, dn);
-        }
-
-        CompositeName cn = new CompositeName();
-        cn.add(atom);
-
         try {
-            obj = NamingManagerHelper.getDirObjectInstance(obj, cn, homeCtx,
-                    homeCtx.envprops, attrs, ObjectFactoriesFilter::checkLdapFilter);
+            Object obj = null;
+            String atom = getAtom(dn);
+            LdapCtx homeCtx = getHomeCtx();
 
-        } catch (NamingException e) {
-            throw e;
+            if (attrs.get(Obj.JAVA_ATTRIBUTES[Obj.CLASSNAME]) != null) {
+                // serialized object or object reference
+                obj = Obj.decodeObject(attrs);
+            }
+            if (obj == null) {
+                // DirContext object
+                obj = new LdapCtx(homeCtx, dn);
+            }
 
-        } catch (Exception e) {
-            NamingException ne =
-                new NamingException(
-                        "problem generating object using object factory");
-            ne.setRootCause(e);
-            throw ne;
+            CompositeName cn = new CompositeName();
+            cn.add(atom);
+
+            try {
+                obj = NamingManagerHelper.getDirObjectInstance(obj, cn, homeCtx,
+                        homeCtx.envprops, attrs, ObjectFactoriesFilter::checkLdapFilter);
+
+            } catch (NamingException e) {
+                throw e;
+
+            } catch (Exception e) {
+                NamingException ne =
+                    new NamingException(
+                            "problem generating object using object factory");
+                ne.setRootCause(e);
+                throw ne;
+            }
+
+            Binding binding;
+            if (respCtls != null) {
+                binding = new BindingWithControls(cn.toString(), obj,
+                                     homeCtx.convertControls(respCtls));
+            } else {
+                binding = new Binding(cn.toString(), obj);
+            }
+            binding.setNameInNamespace(dn);
+            return binding;
+        } finally {
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(this);
         }
-
-        Binding binding;
-        if (respCtls != null) {
-           binding = new BindingWithControls(cn.toString(), obj,
-                                homeCtx.convertControls(respCtls));
-        } else {
-            binding = new Binding(cn.toString(), obj);
-        }
-        binding.setNameInNamespace(dn);
-        return binding;
     }
 
     @Override
     protected AbstractLdapNamingEnumeration<? extends NameClassPair> getReferredResults(
             LdapReferralContext refCtx) throws NamingException{
-        // repeat the original operation at the new context
-        return (AbstractLdapNamingEnumeration<? extends NameClassPair>)refCtx.listBindings(listArg);
+        try {
+            // repeat the original operation at the new context
+            return (AbstractLdapNamingEnumeration<? extends NameClassPair>) refCtx.listBindings(listArg);
+        } finally {
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(this);
+        }
     }
 }
