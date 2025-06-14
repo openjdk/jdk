@@ -23,28 +23,22 @@
 
 package compiler.jvmci.common;
 
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.ClassNode;
-import jdk.test.lib.Utils;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotNmethod;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 
 import java.io.IOException;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -73,74 +67,40 @@ public class CTVMUtilities {
     public static Map<Integer, Integer> getBciToLineNumber(Executable method) {
         Map<Integer, Integer> lineNumbers = new TreeMap<>();
         Class<?> aClass = method.getDeclaringClass();
-        ClassReader cr;
+        ClassModel cm;
         try {
             Module aModule = aClass.getModule();
             String name = aClass.getName();
-            cr = new ClassReader(aModule.getResourceAsStream(
-                    name.replace('.', '/') + ".class"));
+            cm = ClassFile.of().parse(aModule.getResourceAsStream(
+                    name.replace('.', '/') + ".class").readAllBytes());
         } catch (IOException e) {
                         throw new Error("TEST BUG: can read " + aClass.getName() + " : " + e, e);
         }
-        ClassNode cn = new ClassNode();
-        cr.accept(cn, ClassReader.EXPAND_FRAMES);
 
-        Map<Label, Integer> labels = new HashMap<>();
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-        ClassVisitor cv = new ClassVisitorForLabels(cw, labels, method);
-        cr.accept(cv, ClassReader.EXPAND_FRAMES);
-        labels.forEach((k, v) -> lineNumbers.put(k.getOffset(), v));
-        boolean isEmptyMethod = Modifier.isAbstract(method.getModifiers())
-                || Modifier.isNative(method.getModifiers());
-        if (lineNumbers.isEmpty() && !isEmptyMethod) {
-            throw new Error(method + " doesn't contains the line numbers table "
-                    +"(the method marked neither abstract nor native)");
+        var params = Arrays.stream(method.getParameterTypes())
+                .map(cl -> cl.describeConstable().orElseThrow())
+                .toList();
+        var ret = method instanceof Method m ? m.getReturnType().describeConstable().orElseThrow()
+                                             : ConstantDescs.CD_void;
+        var mt = MethodTypeDesc.of(ret, params);
+        var name = method instanceof Method m ? m.getName() : ConstantDescs.INIT_NAME;
+
+        for (var m : cm.methods()) {
+            if (m.methodName().equalsString(name) && m.methodType().isMethodType(mt)) {
+                var optLnt = m.code().flatMap(code -> code.findAttribute(Attributes.lineNumberTable()));
+                if (optLnt.isEmpty()) {
+                    boolean isEmptyMethod = Modifier.isAbstract(method.getModifiers())
+                            || Modifier.isNative(method.getModifiers());
+                    if (!isEmptyMethod) {
+                        throw new Error(method + " doesn't contains the line numbers table "
+                                + "(the method marked neither abstract nor native)");
+                    }
+                    break;
+                }
+                optLnt.get().lineNumbers().forEach(ln -> lineNumbers.put(ln.startPc(), ln.lineNumber()));
+                break;
+            }
         }
         return lineNumbers;
-    }
-
-    private static class ClassVisitorForLabels extends ClassVisitor {
-        private final Map<Label, Integer> lineNumbers;
-        private final String targetName;
-        private final String targetDesc;
-
-        public ClassVisitorForLabels(ClassWriter cw, Map<Label, Integer> lines,
-                                     Executable target) {
-            super(Opcodes.ASM7, cw);
-            this.lineNumbers = lines;
-
-            StringBuilder builder = new StringBuilder("(");
-            for (Parameter parameter : target.getParameters()) {
-                builder.append(Utils.toJVMTypeSignature(parameter.getType()));
-            }
-            builder.append(")");
-            if (target instanceof Constructor) {
-                targetName = "<init>";
-                builder.append("V");
-            } else {
-                targetName = target.getName();
-                builder.append(Utils.toJVMTypeSignature(
-                        ((Method) target).getReturnType()));
-            }
-            targetDesc = builder.toString();
-        }
-
-        @Override
-        public final MethodVisitor visitMethod(int access, String name,
-                                               String desc, String signature,
-                                               String[] exceptions) {
-            MethodVisitor mv = cv.visitMethod(access, name, desc, signature,
-                    exceptions);
-            if (targetDesc.equals(desc) && targetName.equals(name)) {
-                return new MethodVisitor(Opcodes.ASM7, mv) {
-                    @Override
-                    public void visitLineNumber(int i, Label label) {
-                        super.visitLineNumber(i, label);
-                        lineNumbers.put(label, i);
-                    }
-                };
-            }
-            return  mv;
-        }
     }
 }
