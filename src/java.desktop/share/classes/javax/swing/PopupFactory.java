@@ -447,17 +447,15 @@ public class PopupFactory {
          */
         @SuppressWarnings("unchecked")
         private static Map<Window, List<HeavyWeightPopup>> getHeavyWeightPopupCache() {
-            synchronized (HeavyWeightPopup.class) {
-                Map<Window, List<HeavyWeightPopup>> cache = (Map<Window, List<HeavyWeightPopup>>)SwingUtilities.appContextGet(
-                                  heavyWeightPopupCacheKey);
+            Map<Window, List<HeavyWeightPopup>> cache = (Map<Window, List<HeavyWeightPopup>>)SwingUtilities.appContextGet(
+                              heavyWeightPopupCacheKey);
 
-                if (cache == null) {
-                    cache = new HashMap<>(2);
-                    SwingUtilities.appContextPut(heavyWeightPopupCacheKey,
-                                                 cache);
-                }
-                return cache;
+            if (cache == null) {
+                cache = new HashMap<>(2);
+                SwingUtilities.appContextPut(heavyWeightPopupCacheKey,
+                                             cache);
             }
+            return cache;
         }
 
         /**
