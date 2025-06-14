@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import jdk.test.lib.Platform;
 
 public class UintxTest {
     private static final String FLAG_NAME = "VerifyGCStartAt";
-    private static final String FLAG_DEBUG_NAME = "CodeCacheMinimumUseSpace";
+    private static final String FLAG_DEBUG_NAME = "StopInterpreterAt";
     private static final Long[] TESTS = {0L, 100L, (long) Integer.MAX_VALUE,
         (1L << 32L) - 1L, 1L << 32L};
     private static final Long[] EXPECTED_64 = TESTS;
