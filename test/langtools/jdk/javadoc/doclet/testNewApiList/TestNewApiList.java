@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8263468 8269401 8268422 8287524 8325874 8331873 8345555
+ * @bug      8263468 8269401 8268422 8287524 8325874 8331873 8345555 8359024
  * @summary  New page for "recent" new API
  * @library  ../../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
@@ -126,7 +126,7 @@ public class TestNewApiList extends JavadocTester {
         checkOutput("new-list.html", true,
             """
                 <div id="module">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>New Modules</span></div>
                 </div>
                 <div id="module.tabpanel" role="tabpanel" aria-labelledby="module-tab0">
@@ -142,7 +142,7 @@ public class TestNewApiList extends JavadocTester {
                 </div>""",
             """
                 <div id="package">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>New Packages</span></div>
                 </div>
                 <div id="package.tabpanel" role="tabpanel" aria-labelledby="package-tab0">
@@ -158,7 +158,7 @@ public class TestNewApiList extends JavadocTester {
                 </div>""",
             """
                 <div id="interface">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>New Interfaces</span></div>
                 </div>
                 <div id="interface.tabpanel" role="tabpanel" aria-labelledby="interface-tab0">
@@ -174,7 +174,7 @@ public class TestNewApiList extends JavadocTester {
                 </div>""",
             """
                 <div id="class">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>New Classes</span></div>
                 </div>
                 <div id="class.tabpanel" role="tabpanel" aria-labelledby="class-tab0">
@@ -190,7 +190,7 @@ public class TestNewApiList extends JavadocTester {
                 </div>""",
             """
                 <div id="enum-class">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>New Enum Classes</span></div>
                 </div>
                 <div id="enum-class.tabpanel" role="tabpanel" aria-labelledby="enum-class-tab0">
@@ -206,7 +206,7 @@ public class TestNewApiList extends JavadocTester {
                 </div>""",
             """
                 <div id="exception-class">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>New Exception Classes</span></div>
                 </div>
                 <div id="exception-class.tabpanel" role="tabpanel" aria-labelledby="exception-class-tab0">
@@ -228,7 +228,7 @@ public class TestNewApiList extends JavadocTester {
                 </div>""",
             """
                 <div id="record-class">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>New Record Classes</span></div>
                 </div>
                 <div id="record-class.tabpanel" role="tabpanel" aria-labelledby="record-class-tab0">
@@ -244,7 +244,7 @@ public class TestNewApiList extends JavadocTester {
                 </div>""",
             """
                 <div id="annotation-interface">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>New Annotation Interfaces</span></div>
                 </div>
                 <div id="annotation-interface.tabpanel" role="tabpanel" aria-labelledby="annotation-interface-tab0">
@@ -259,7 +259,7 @@ public class TestNewApiList extends JavadocTester {
                 </div>""",
             """
                 <div id="field">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>New Fields</span></div>
                 </div>
                 <div id="field.tabpanel" role="tabpanel" aria-labelledby="field-tab0">
@@ -293,7 +293,7 @@ public class TestNewApiList extends JavadocTester {
                 </div>""",
             """
                 <div id="method">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>New Methods</span></div>
                 </div>
                 <div id="method.tabpanel" role="tabpanel" aria-labelledby="method-tab0">
@@ -359,7 +359,7 @@ public class TestNewApiList extends JavadocTester {
                 </div>""",
             """
                 <div id="constructor">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>New Constructors</span></div>
                 </div>
                 <div id="constructor.tabpanel" role="tabpanel" aria-labelledby="constructor-tab0">
@@ -394,7 +394,7 @@ public class TestNewApiList extends JavadocTester {
                 </div>""",
             """
                 <div id="enum-constant">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>New Enum Constants</span></div>
                 </div>
                 <div id="enum-constant.tabpanel" role="tabpanel" aria-labelledby="enum-constant-tab0">
@@ -428,7 +428,7 @@ public class TestNewApiList extends JavadocTester {
                 </div>""",
             """
                 <div id="annotation-interface-member">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>New Annotation Interface Elements</span></div>
                 </div>
                 <div id="annotation-interface-member.tabpanel" role="tabpanel" aria-labelledby="annotation-interface-member-tab0">
@@ -456,7 +456,7 @@ public class TestNewApiList extends JavadocTester {
         checkOutput("deprecated-list.html", true,
             """
                 <div id="for-removal">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>Terminally Deprecated Elements</span></div>
                 </div>
                 <div id="for-removal.tabpanel" role="tabpanel" aria-labelledby="for-removal-tab0">
@@ -471,7 +471,7 @@ public class TestNewApiList extends JavadocTester {
                 </div>""",
             """
                 <div id="method">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>Deprecated Methods</span></div>
                 </div>
                 <div id="method.tabpanel" role="tabpanel" aria-labelledby="method-tab0">
@@ -486,7 +486,7 @@ public class TestNewApiList extends JavadocTester {
                 </div>""",
             """
                 <div id="constructor">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>Deprecated Constructors</span></div>
                 </div>
                 <div id="constructor.tabpanel" role="tabpanel" aria-labelledby="constructor-tab0">
@@ -501,7 +501,7 @@ public class TestNewApiList extends JavadocTester {
                 </div>""",
             """
                 <div id="enum-constant">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>Deprecated Enum Constants</span></div>
                 </div>
                 <div id="enum-constant.tabpanel" role="tabpanel" aria-labelledby="enum-constant-tab0">
@@ -516,7 +516,7 @@ public class TestNewApiList extends JavadocTester {
                 </div>""",
             """
                 <div id="annotation-interface-member">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>Deprecated Annotation Interface Elements</span></div>
                 </div>
                 <div id="annotation-interface-member.tabpanel" role="tabpanel" aria-labelledby="annotation-interface-member-tab0">
@@ -606,7 +606,7 @@ public class TestNewApiList extends JavadocTester {
                 </ul>""",
             """
                 <div id="for-removal">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>Terminally Deprecated Elements</span></div>
                 </div>
                 <div id="for-removal.tabpanel" role="tabpanel" aria-labelledby="for-removal-tab0">
@@ -621,7 +621,7 @@ public class TestNewApiList extends JavadocTester {
                 </div>""",
             """
                 <div id="method">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>Deprecated Methods</span></div>
                 </div>
                 <div id="method.tabpanel" role="tabpanel" aria-labelledby="method-tab0">
@@ -636,7 +636,7 @@ public class TestNewApiList extends JavadocTester {
                 </div>""",
             """
                 <div id="constructor">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>Deprecated Constructors</span></div>
                 </div>
                 <div id="constructor.tabpanel" role="tabpanel" aria-labelledby="constructor-tab0">
@@ -680,7 +680,7 @@ public class TestNewApiList extends JavadocTester {
         checkOutput("new-list.html", true,
             """
                 <div id="class">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>New Classes</span></div>
                 </div>
                 <div id="class.tabpanel" role="tabpanel" aria-labelledby="class-tab0">
@@ -696,7 +696,7 @@ public class TestNewApiList extends JavadocTester {
                 </div>""",
             """
                 <div id="field">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>New Fields</span></div>
                 </div>
                 <div id="field.tabpanel" role="tabpanel" aria-labelledby="field-tab0">
@@ -712,7 +712,7 @@ public class TestNewApiList extends JavadocTester {
                 </div>""",
             """
                 <div id="method">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>New Methods</span></div>
                 </div>
                 <div id="method.tabpanel" role="tabpanel" aria-labelledby="method-tab0">
@@ -741,7 +741,7 @@ public class TestNewApiList extends JavadocTester {
                 </div>""",
             """
                 <div id="constructor">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="table-tabs">
                 <div class="caption"><span>New Constructors</span></div>
                 </div>
                 <div id="constructor.tabpanel" role="tabpanel" aria-labelledby="constructor-tab0">
