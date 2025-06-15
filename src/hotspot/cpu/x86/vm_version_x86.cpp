@@ -2111,7 +2111,7 @@ bool VM_Version::is_intel_cascade_lake() {
 // has improved implementation of 64-byte load/stores and so the default
 // threshold is set to 0 for these platforms.
 int VM_Version::avx3_threshold() {
-  return (is_intel_family_core() &&
+  return (is_intel_server_family() &&
           supports_serialize() &&
           FLAG_IS_DEFAULT(AVX3Threshold)) ? 0 : AVX3Threshold;
 }
