@@ -25,10 +25,14 @@
 
 /**
  * @test
+ * @library /test/lib
+ * @modules java.base/sun.security.util
  * @bug 8298420
  * @summary Testing encryptKey
  * @enablePreview
  */
+
+import sun.security.util.Pem;
 
 import javax.crypto.EncryptedPrivateKeyInfo;
 import javax.crypto.SecretKey;
@@ -37,7 +41,12 @@ import javax.crypto.spec.SecretKeySpec;
 import java.security.AlgorithmParameters;
 import java.security.PEMDecoder;
 import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.SecureRandom;
+import java.security.Security;
 import java.util.Arrays;
+
+import static jdk.test.lib.Asserts.assertEquals;
 
 public class EncryptKey {
 
@@ -56,6 +65,8 @@ public class EncryptKey {
         passwdText.getBytes(), "PBE");
 
     public static void main(String[] args) throws Exception {
+        Provider p = Security.getProvider(System.getProperty("test.provider.name", "SunJCE"));
+
         EncryptedPrivateKeyInfo ekpi = PEMDecoder.of().decode(encEdECKey,
             EncryptedPrivateKeyInfo.class);
         PrivateKey priKey = PEMDecoder.of().withDecryption(password).
@@ -71,6 +82,19 @@ public class EncryptKey {
                 " with expected.");
         }
 
+        // Test encryptKey(PrivateKey, char[], String, ...) with provider
+        e = EncryptedPrivateKeyInfo.encryptKey(priKey, password, ekpi.getAlgName(),
+                ap.getParameterSpec(PBEParameterSpec.class), p);
+        if (!Arrays.equals(ekpi.getEncryptedData(), e.getEncryptedData())) {
+            throw new AssertionError("encryptKey() didn't match" +
+                    " with expected.");
+        }
+
+        // Test encryptKey(PrivateKey, char[], String, ...) with provider and null algorithm
+        e = EncryptedPrivateKeyInfo.encryptKey(priKey, password, null, null,
+                p);
+        assertEquals(e.getAlgName(), Pem.DEFAULT_ALGO);
+
         // Test encryptKey(PrivateKey, Key, String, ...)
         e = EncryptedPrivateKeyInfo.encryptKey(priKey, key, ekpi.getAlgName(),
             ap.getParameterSpec(PBEParameterSpec.class),null, null);
@@ -78,5 +102,26 @@ public class EncryptKey {
             throw new AssertionError("encryptKey() didn't match" +
                 " with expected.");
         }
+
+        // Test encryptKey(PrivateKey, Key, String, ...) with provider and null random
+        e = EncryptedPrivateKeyInfo.encryptKey(priKey, key, ekpi.getAlgName(),
+                ap.getParameterSpec(PBEParameterSpec.class), p, null);
+        if (!Arrays.equals(ekpi.getEncryptedData(), e.getEncryptedData())) {
+            throw new AssertionError("encryptKey() didn't match" +
+                    " with expected.");
+        }
+
+        // Test encryptKey(PrivateKey, Key, String, ...) with provider and SecureRandom
+        e = EncryptedPrivateKeyInfo.encryptKey(priKey, key, ekpi.getAlgName(),
+                ap.getParameterSpec(PBEParameterSpec.class), p, new SecureRandom());
+        if (!Arrays.equals(ekpi.getEncryptedData(), e.getEncryptedData())) {
+            throw new AssertionError("encryptKey() didn't match" +
+                    " with expected.");
+        }
+
+        // Test encryptKey(PrivateKey, Key, String, ...) with provider and null algorithm
+        e = EncryptedPrivateKeyInfo.encryptKey(priKey, key, null, null,
+                p, new SecureRandom());
+        assertEquals(e.getAlgName(), Pem.DEFAULT_ALGO);
     }
 }
