@@ -422,7 +422,7 @@ class SerializeClosure;
   template(sp_name,                                   "sp")                                       \
   template(pc_name,                                   "pc")                                       \
   template(cs_name,                                   "cs")                                       \
-  template(get_name,                                  "get")                                      \
+  template(get0_name,                                 "get0")                                     \
   template(refersTo0_name,                            "refersTo0")                                \
   template(clear0_name,                               "clear0")                                   \
   template(put_name,                                  "put")                                      \
