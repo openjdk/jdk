@@ -770,6 +770,23 @@ ordering, which may differ from (may be stronger than) sequentially
 consistent.  There are algorithms in HotSpot that are believed to rely
 on that ordering.
 
+### Initializing variables with static storage duration
+
+Avoid variables with static storage duration and non-constant initialization,
+or with non-trivial destruction.  Such variables can lead to the so-called
+"static initialization order fiasco", or its dual on the destruction size.
+Some of the alternatives used in HotSpot include:
+
+* Use the `Deferred<T>` class template. Add a call to its initialization
+function at an appropriate place during VM initialization. The underlying
+object is never destroyed.
+
+* For objects of class type, use a variable whose value is a pointer to the
+class, initialized to `nullptr`. Provide an initialization function that sets
+the variable to a dynamically allocated object. Add a call to that function at
+an appropriate place during VM initialization. Such objects are usually never
+destroyed.
+
 ### Uniform Initialization
 
 The use of _uniform initialization_

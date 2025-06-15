@@ -77,6 +77,9 @@ SFINAE</a></li>
 <li><a href="#thread_local" id="toc-thread_local">thread_local</a></li>
 <li><a href="#nullptr" id="toc-nullptr">nullptr</a></li>
 <li><a href="#atomic" id="toc-atomic">&lt;atomic&gt;</a></li>
+<li><a href="#initializing-variables-with-static-storage-duration"
+id="toc-initializing-variables-with-static-storage-duration">Initializing
+variables with static storage duration</a></li>
 <li><a href="#uniform-initialization"
 id="toc-uniform-initialization">Uniform Initialization</a></li>
 <li><a href="#local-function-objects"
@@ -791,6 +794,25 @@ differ from what the Java compilers implement.</p>
 "conservative" memory ordering, which may differ from (may be stronger
 than) sequentially consistent. There are algorithms in HotSpot that are
 believed to rely on that ordering.</p>
+<h3
+id="initializing-variables-with-static-storage-duration">Initializing
+variables with static storage duration</h3>
+<p>Avoid variables with static storage duration and non-constant
+initialization, or with non-trivial destruction. Such variables can lead
+to the so-called "static initialization order fiasco", or its dual on
+the destruction size. Some of the alternatives used in HotSpot
+include:</p>
+<ul>
+<li><p>Use the <code>Deferred&lt;T&gt;</code> class template. Add a call
+to its initialization function at an appropriate place during VM
+initialization. The underlying object is never destroyed.</p></li>
+<li><p>For objects of class type, use a variable whose value is a
+pointer to the class, initialized to <code>nullptr</code>. Provide an
+initialization function that sets the variable to a dynamically
+allocated object. Add a call to that function at an appropriate place
+during VM initialization. Such objects are usually never
+destroyed.</p></li>
+</ul>
 <h3 id="uniform-initialization">Uniform Initialization</h3>
 <p>The use of <em>uniform initialization</em> (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2672.htm">n2672</a>),
