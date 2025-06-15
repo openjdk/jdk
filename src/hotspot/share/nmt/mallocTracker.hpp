@@ -29,10 +29,16 @@
 #include "nmt/mallocHeader.hpp"
 #include "nmt/memTag.hpp"
 #include "nmt/nmtCommon.hpp"
+#include "nmt/contiguousAllocator.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/deferred.hpp"
 #include "utilities/nativeCallStack.hpp"
 
+#include <limits>
+#include <cstdint>
+
 class outputStream;
+class VirtualMemoryTracker;
 struct malloclimit;
 
 /*
@@ -144,24 +150,55 @@ class MallocMemory {
 class MallocMemorySummary;
 
 // A snapshot of malloc'd memory, includes malloc memory
-// usage by tags and memory used by tracking itself.
-class MallocMemorySnapshot {
+// usage by types and memory used by tracking itself.
+class MallocMemorySnapshot : public CHeapObj<mtNMT> {
   friend class MallocMemorySummary;
 
- private:
-  MallocMemory      _malloc[mt_number_of_tags];
-  MemoryCounter     _all_mallocs;
+public:
+  class MemTagArray : public NMTStaticArray<MallocMemory, std::underlying_type_t<MemTag>> {
+    using ThisArray = NMTStaticArray<MallocMemory, std::underlying_type_t<MemTag>>;
 
+  public:
+    void register_virtual_memory_usage(VirtualMemoryTracker& tracker);
 
- public:
+    MallocMemory& at(MemTag mem_tag) {
+      return *this->adr_at((ThisArray::IndexType)mem_tag);
+    }
+
+    const MallocMemory& at(MemTag mem_tag) const {
+      return *this->adr_at((ThisArray::IndexType)mem_tag);
+    }
+
+    // Do not hide the operator[] overloads from the base class, extend them.
+    using ThisArray::operator[];
+
+    MallocMemory& operator[](MemTag mem_tag) {
+      return at(mem_tag);
+    }
+    const MallocMemory& operator[](MemTag mem_tag) const {
+      return at(mem_tag);
+    }
+  };
+
+private:
+  MemTagArray _malloc;
+  MemoryCounter _all_mallocs;
+
+public:
+  MallocMemorySnapshot()
+  : _malloc(), _all_mallocs() {}
+
+  MallocMemorySnapshot(MallocMemorySnapshot& snap)
+  : _malloc(snap._malloc), _all_mallocs() {}
+
+  bool is_valid() { return _malloc.is_valid(); }
+
   inline MallocMemory* by_tag(MemTag mem_tag) {
-    int index = NMTUtil::tag_to_index(mem_tag);
-    return &_malloc[index];
+    return &_malloc[mem_tag];
   }
 
   inline const MallocMemory* by_tag(MemTag mem_tag) const {
-    int index = NMTUtil::tag_to_index(mem_tag);
-    return &_malloc[index];
+    return &_malloc[mem_tag];
   }
 
   inline size_t malloc_overhead() const {
@@ -196,6 +233,10 @@ class MallocMemorySnapshot {
   // Make adjustment by subtracting chunks used by arenas
   // from total chunks to get total free chunk size
   void make_adjustment();
+
+  // The MallocTracker may allocate before the VirtualMemoryTracker has been instantiated.
+  // Because of this, the malloc tracker registers its virtual memory usage to a VMT when requested.
+  void register_virtual_memory_usage(VirtualMemoryTracker& tracker);
 };
 
 /*
@@ -204,7 +245,7 @@ class MallocMemorySnapshot {
 class MallocMemorySummary : AllStatic {
  private:
   // Reserve memory for placement of MallocMemorySnapshot object
-  static MallocMemorySnapshot _snapshot;
+  static Deferred<MallocMemorySnapshot> _snapshot;
   static bool _have_limits;
 
   // Called when a total limit break was detected.
@@ -216,7 +257,7 @@ class MallocMemorySummary : AllStatic {
   static bool category_limit_reached(MemTag mem_tag, size_t s, size_t so_far, const malloclimit* limit);
 
  public:
-   static void initialize();
+   static bool initialize();
 
    static inline void record_malloc(size_t size, MemTag mem_tag) {
      as_snapshot()->by_tag(mem_tag)->record_malloc(size);
@@ -240,9 +281,10 @@ class MallocMemorySummary : AllStatic {
      as_snapshot()->by_tag(mem_tag)->record_arena_size_change(size);
    }
 
-   static void snapshot(MallocMemorySnapshot* s) {
-     as_snapshot()->copy_to(s);
-     s->make_adjustment();
+   static void snapshot(MallocMemorySnapshot** s) {
+     *s = new MallocMemorySnapshot(*as_snapshot());
+     as_snapshot()->copy_to(*s);
+     (*s)->make_adjustment();
    }
 
    // The memory used by malloc tracking headers
@@ -251,7 +293,7 @@ class MallocMemorySummary : AllStatic {
    }
 
   static MallocMemorySnapshot* as_snapshot() {
-    return &_snapshot;
+    return _snapshot.get();
   }
 
   // MallocLimit: returns true if allocating s bytes on f would trigger
