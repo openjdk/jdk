@@ -621,7 +621,7 @@ public class Socket implements java.io.Closeable {
      *        {@code SocketException} with the interrupt status set.
      * </ol>
      *
-     * @apiNote Establishing a TCP/IP connection is subject to connection timeout settings
+     * @apiNote Establishing a TCP/IP connection is subject to connect timeout settings
      * in the operating system. The typical operating system timeout ranges within tens of
      * seconds to minutes. If the operating system timeout expires before the
      * {@code timeout} specified to this method then an {@code IOException} is thrown.
