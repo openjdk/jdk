@@ -849,10 +849,6 @@ private:
         }
       }
 
-      if (region_progress && ShenandoahPacing) {
-        _heap->pacer()->report_update_refs(pointer_delta(update_watermark, r->bottom()));
-      }
-
       if (_heap->check_cancelled_gc_and_yield(CONCURRENT)) {
         return;
       }
@@ -907,10 +903,6 @@ private:
           size_t clusters = assignment._chunk_size / cluster_size;
           assert(clusters * cluster_size == assignment._chunk_size, "Chunk assignment must align on cluster boundaries");
           scanner->process_region_slice(r, assignment._chunk_offset, clusters, end_of_range, &cl, true, worker_id);
-        }
-
-        if (ShenandoahPacing) {
-          _heap->pacer()->report_update_refs(pointer_delta(end_of_range, start_of_range));
         }
       }
     }
