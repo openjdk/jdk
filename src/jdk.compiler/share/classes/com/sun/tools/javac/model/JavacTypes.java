@@ -124,9 +124,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
     public List<Type> directSupertypes(TypeMirror t) {
         validateTypeNotIn(t, EXEC_OR_PKG_OR_MOD);
         Type ty = (Type)t;
-        return types.directSupertypes(ty).stream()
-                .map(Type::stripMetadataIfNeeded)
-                .toList();
+        return List.copyOf(types.directSupertypes(ty));
     }
 
     @DefinedBy(Api.LANGUAGE_MODEL)
