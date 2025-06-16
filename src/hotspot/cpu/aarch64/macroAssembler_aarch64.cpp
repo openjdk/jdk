@@ -556,7 +556,7 @@ address MacroAssembler::target_addr_for_insn_or_null(address insn_addr, unsigned
 void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool in_nmethod, Register tmp) {
 
   // No need for acquire fence as java threads disarm themselves, ldar not needed.
-  ldr(tmp, Address(rthread, JavaThread::polling_word_offset()));  
+  ldr(tmp, Address(rthread, JavaThread::polling_word_offset()));
   if (at_return) {
     // Note that when in_nmethod is set, the stack pointer is incremented before the poll. Therefore,
     // we may safely use the sp instead to perform the stack watermark check.
