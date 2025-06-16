@@ -46,7 +46,7 @@ class LargeBacklogTest {
     void testServerSocket() throws Exception {
         final int backlog = 242;
         // Create a ServerSocket configured with the given backlog.
-        // The channel never accept()s a connection so each connect() attempt
+        // The ServerSocket never accept()s a connection so each connect() attempt
         // will be backlogged.
         try (var server = new ServerSocket(0, backlog, InetAddress.getLoopbackAddress())) {
             final int serverPort = server.getLocalPort();
