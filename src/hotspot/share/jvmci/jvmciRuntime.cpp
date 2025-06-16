@@ -815,15 +815,21 @@ void JVMCINMethodData::invalidate_nmethod_mirror(nmethod* nm, nmethod::Invalidat
       // an InvalidInstalledCodeException.
       HotSpotJVMCI::InstalledCode::set_address(jvmciEnv, nmethod_mirror, 0);
       HotSpotJVMCI::InstalledCode::set_entryPoint(jvmciEnv, nmethod_mirror, 0);
-      HotSpotJVMCI::HotSpotNmethod::set_invalidationReason(jvmciEnv, nmethod_mirror, static_cast<int>(invalidation_reason));
       HotSpotJVMCI::HotSpotInstalledCode::set_codeStart(jvmciEnv, nmethod_mirror, 0);
+      if (HotSpotJVMCI::HotSpotNmethod::invalidationReason(jvmciEnv, nmethod_mirror) ==
+        static_cast<int>(nmethod::InvalidationReason::NOT_INVALIDATED)) {
+        HotSpotJVMCI::HotSpotNmethod::set_invalidationReason(jvmciEnv, nmethod_mirror, static_cast<int>(invalidation_reason));
+      }
     } else if (nm->is_not_entrant()) {
       // Zero the entry point so any new invocation will fail but keep
       // the address link around that so that existing activations can
       // be deoptimized via the mirror (i.e. JVMCIEnv::invalidate_installed_code).
       HotSpotJVMCI::InstalledCode::set_entryPoint(jvmciEnv, nmethod_mirror, 0);
-      HotSpotJVMCI::HotSpotNmethod::set_invalidationReason(jvmciEnv, nmethod_mirror, static_cast<int>(invalidation_reason));
       HotSpotJVMCI::HotSpotInstalledCode::set_codeStart(jvmciEnv, nmethod_mirror, 0);
+      if (HotSpotJVMCI::HotSpotNmethod::invalidationReason(jvmciEnv, nmethod_mirror) ==
+        static_cast<int>(nmethod::InvalidationReason::NOT_INVALIDATED)) {
+        HotSpotJVMCI::HotSpotNmethod::set_invalidationReason(jvmciEnv, nmethod_mirror, static_cast<int>(invalidation_reason));
+      }
     }
   }
 

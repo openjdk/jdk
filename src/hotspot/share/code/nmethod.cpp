@@ -2122,7 +2122,9 @@ void nmethod::unlink() {
   // Clear the link between this nmethod and a HotSpotNmethod mirror
   JVMCINMethodData* nmethod_data = jvmci_nmethod_data();
   if (nmethod_data != nullptr) {
-    nmethod_data->invalidate_nmethod_mirror(this, is_cold() ? nmethod::InvalidationReason::GC_UNLINKING_COLD : nmethod::InvalidationReason::GC_UNLINKING);
+    nmethod_data->invalidate_nmethod_mirror(this, is_cold() ? 
+            nmethod::InvalidationReason::UNLOADING_COLD : 
+            nmethod::InvalidationReason::UNLOADING);
   }
 #endif
 

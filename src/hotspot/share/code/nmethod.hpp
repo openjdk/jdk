@@ -473,15 +473,16 @@ class nmethod : public CodeBlob {
 public:
   // If you change anything in this enum please patch
   // vmStructs_jvmci.cpp accordingly.
-  enum class InvalidationReason : u1 {
+  enum class InvalidationReason : s1 {
+    NOT_INVALIDATED = -1,
     UNKNOWN,
     C1_CODEPATCH,
     C1_DEOPTIMIZE,
     C1_DEOPTIMIZE_FOR_PATCHING,
     C1_PREDICATE_FAILED_TRAP,
     CI_REPLAY,
-    GC_UNLINKING,
-    GC_UNLINKING_COLD,
+    UNLOADING,
+    UNLOADING_COLD,
     JVMCI_INVALIDATE,
     JVMCI_MATERIALIZE_VIRTUAL_OBJECT,
     JVMCI_REPLACED_WITH_NEW_CODE,
@@ -496,6 +497,7 @@ public:
     UNCOMMON_TRAP,
     WHITEBOX_DEOPTIMIZATION,
     ZOMBIE,
+    LAST_REASON
   };
 
 

@@ -1405,6 +1405,13 @@ C2V_END
 
 
 C2V_VMENTRY(void, invalidateHotSpotNmethod, (JNIEnv* env, jobject, jobject hs_nmethod, jboolean deoptimize, jint invalidation_reason))
+#ifdef ASSERT
+  int first = static_cast<int>(nmethod::InvalidationReason::UNKNOWN);
+  int last = static_cast<int>(nmethod::InvalidationReason::LAST_REASON);
+  assert(invalidation_reason >= first && invalidation_reason < last,
+          "invalidation_reason (%d) outside valid range [%d, %d)",
+          invalidation_reason, first, last);
+#endif
   JVMCIObject nmethod_mirror = JVMCIENV->wrap(hs_nmethod);
   JVMCIENV->invalidate_nmethod_mirror(nmethod_mirror, deoptimize, static_cast<nmethod::InvalidationReason>(invalidation_reason), JVMCI_CHECK);
 C2V_END

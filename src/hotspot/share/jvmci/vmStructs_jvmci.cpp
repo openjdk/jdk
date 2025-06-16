@@ -565,14 +565,15 @@
   declare_constant_with_value("OMCache::oop_to_oop_difference", OMCache::oop_to_oop_difference()) \
   declare_constant_with_value("OMCache::oop_to_monitor_difference", OMCache::oop_to_monitor_difference()) \
                                                                                           \
+  declare_constant(nmethod::InvalidationReason::NOT_INVALIDATED)                          \
   declare_constant(nmethod::InvalidationReason::UNKNOWN)                                  \
   declare_constant(nmethod::InvalidationReason::C1_CODEPATCH)                             \
   declare_constant(nmethod::InvalidationReason::C1_DEOPTIMIZE)                            \
   declare_constant(nmethod::InvalidationReason::C1_DEOPTIMIZE_FOR_PATCHING)               \
   declare_constant(nmethod::InvalidationReason::C1_PREDICATE_FAILED_TRAP)                 \
   declare_constant(nmethod::InvalidationReason::CI_REPLAY)                                \
-  declare_constant(nmethod::InvalidationReason::GC_UNLINKING)                             \
-  declare_constant(nmethod::InvalidationReason::GC_UNLINKING_COLD)                        \
+  declare_constant(nmethod::InvalidationReason::UNLOADING)                                \
+  declare_constant(nmethod::InvalidationReason::UNLOADING_COLD)                           \
   declare_constant(nmethod::InvalidationReason::JVMCI_INVALIDATE)                         \
   declare_constant(nmethod::InvalidationReason::JVMCI_MATERIALIZE_VIRTUAL_OBJECT)         \
   declare_constant(nmethod::InvalidationReason::JVMCI_REPLACED_WITH_NEW_CODE)             \
