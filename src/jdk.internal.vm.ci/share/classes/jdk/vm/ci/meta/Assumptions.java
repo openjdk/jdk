@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,8 +118,7 @@ public final class Assumptions implements Iterable<Assumptions.Assumption> {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof NoFinalizableSubclass) {
-                NoFinalizableSubclass other = (NoFinalizableSubclass) obj;
+            if (obj instanceof NoFinalizableSubclass other) {
                 return other.receiverType.equals(receiverType);
             }
             return false;
@@ -167,8 +166,7 @@ public final class Assumptions implements Iterable<Assumptions.Assumption> {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof ConcreteSubtype) {
-                ConcreteSubtype other = (ConcreteSubtype) obj;
+            if (obj instanceof ConcreteSubtype other) {
                 return other.context.equals(context) && other.subtype.equals(subtype);
             }
             return false;
@@ -205,8 +203,7 @@ public final class Assumptions implements Iterable<Assumptions.Assumption> {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof LeafType) {
-                LeafType other = (LeafType) obj;
+            if (obj instanceof LeafType other) {
                 return other.context.equals(context);
             }
             return false;
@@ -257,8 +254,7 @@ public final class Assumptions implements Iterable<Assumptions.Assumption> {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof ConcreteMethod) {
-                ConcreteMethod other = (ConcreteMethod) obj;
+            if (obj instanceof ConcreteMethod other) {
                 return other.method.equals(method) && other.context.equals(context) && other.impl.equals(impl);
             }
             return false;
@@ -294,8 +290,7 @@ public final class Assumptions implements Iterable<Assumptions.Assumption> {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof CallSiteTargetValue) {
-                CallSiteTargetValue other = (CallSiteTargetValue) obj;
+            if (obj instanceof CallSiteTargetValue other) {
                 return callSite.equals(other.callSite) && methodHandle.equals(other.methodHandle);
             }
             return false;
@@ -328,12 +323,8 @@ public final class Assumptions implements Iterable<Assumptions.Assumption> {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof Assumptions) {
-            Assumptions that = (Assumptions) obj;
-            if (!this.assumptions.equals(that.assumptions)) {
-                return false;
-            }
-            return true;
+        if (obj instanceof Assumptions that) {
+            return this.assumptions.equals(that.assumptions);
         }
         return false;
     }
@@ -383,7 +374,7 @@ public final class Assumptions implements Iterable<Assumptions.Assumption> {
      * Gets a copy of the assumptions recorded in this object as an array.
      */
     public Assumption[] toArray() {
-        return assumptions.toArray(new Assumption[assumptions.size()]);
+        return assumptions.toArray(new Assumption[0]);
     }
 
     /**

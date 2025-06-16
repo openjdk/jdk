@@ -92,9 +92,7 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
                 list.add(reg);
             }
         }
-
-        List<Register> ret = List.copyOf(list);
-        return ret;
+        return List.copyOf(list);
     }
 
     @Override
@@ -201,21 +199,13 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
     @Override
     public List<Register> getCallingConventionRegisters(Type type, JavaKind kind) {
         HotSpotCallingConventionType hotspotType = (HotSpotCallingConventionType) type;
-        switch (kind) {
-            case Boolean:
-            case Byte:
-            case Short:
-            case Char:
-            case Int:
-            case Long:
-            case Object:
-                return hotspotType == HotSpotCallingConventionType.NativeCall ? nativeGeneralParameterRegisters : javaGeneralParameterRegisters;
-            case Float:
-            case Double:
-                return hotspotType == HotSpotCallingConventionType.NativeCall ? nativeXMMParameterRegisters : javaXMMParameterRegisters;
-            default:
-                throw JVMCIError.shouldNotReachHere();
-        }
+        return switch (kind) {
+            case Boolean, Byte, Short, Char, Int, Long, Object ->
+                    hotspotType == HotSpotCallingConventionType.NativeCall ? nativeGeneralParameterRegisters : javaGeneralParameterRegisters;
+            case Float, Double ->
+                    hotspotType == HotSpotCallingConventionType.NativeCall ? nativeXMMParameterRegisters : javaXMMParameterRegisters;
+            default -> throw JVMCIError.shouldNotReachHere();
+        };
     }
 
     /**
@@ -226,13 +216,6 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
      * support the Windows calling convention which only ever passes 4 arguments in registers, no
      * matter their types.
      *
-     * @param generalParameterRegisters
-     * @param xmmParameterRegisters
-     * @param unified
-     * @param returnType
-     * @param parameterTypes
-     * @param type
-     * @param valueKindFactory
      * @return the resulting calling convention
      */
     private CallingConvention callingConvention(List<Register> generalParameterRegisters, List<Register> xmmParameterRegisters, boolean unified, JavaType returnType, JavaType[] parameterTypes,
@@ -287,24 +270,11 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
 
     @Override
     public Register getReturnRegister(JavaKind kind) {
-        switch (kind) {
-            case Boolean:
-            case Byte:
-            case Char:
-            case Short:
-            case Int:
-            case Long:
-            case Object:
-                return rax;
-            case Float:
-            case Double:
-                return xmm0;
-            case Void:
-            case Illegal:
-                return null;
-            default:
-                throw new UnsupportedOperationException("no return register for type " + kind);
-        }
+        return switch (kind) {
+            case Boolean, Byte, Char, Short, Int, Long, Object -> rax;
+            case Float, Double -> xmm0;
+            case Void, Illegal -> null;
+        };
     }
 
     @Override

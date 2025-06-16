@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,8 +157,8 @@ public interface ProfilingInfo {
             double[] switchProbabilities = getSwitchProbabilities(i);
             if (switchProbabilities != null) {
                 buf.append(String.format("switchProbabilities@%d:", i));
-                for (int j = 0; j < switchProbabilities.length; j++) {
-                    buf.append(String.format(" %.6f", switchProbabilities[j]));
+                for (double switchProbability : switchProbabilities) {
+                    buf.append(String.format(" %.6f", switchProbability));
                 }
                 buf.append(sep);
             }
@@ -189,7 +189,7 @@ public interface ProfilingInfo {
                 buf.append(String.format(" %s: %d%s", reason.name(), count, sep));
             }
         }
-        if (buf.length() == 0) {
+        if (buf.isEmpty()) {
             return "";
         }
         String s = buf.toString();

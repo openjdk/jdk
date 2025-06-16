@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,67 +87,32 @@ public enum AArch64Kind implements PlatformKind {
     }
 
     public boolean isInteger() {
-        switch (this) {
-            case BYTE:
-            case WORD:
-            case DWORD:
-            case QWORD:
-                return true;
-            default:
-                return false;
-        }
+        return switch (this) {
+            case BYTE, WORD, DWORD, QWORD -> true;
+            default -> false;
+        };
     }
 
     public boolean isSIMD() {
-        switch (this) {
-            case SINGLE:
-            case DOUBLE:
-            case V32_BYTE:
-            case V32_WORD:
-            case V64_BYTE:
-            case V64_WORD:
-            case V64_DWORD:
-            case V128_BYTE:
-            case V128_WORD:
-            case V128_DWORD:
-            case V128_QWORD:
-            case V128_SINGLE:
-            case V128_DOUBLE:
-                return true;
-            default:
-                return false;
-        }
+        return switch (this) {
+            case SINGLE, DOUBLE, V32_BYTE, V32_WORD, V64_BYTE, V64_WORD, V64_DWORD, V128_BYTE, V128_WORD, V128_DWORD,
+                 V128_QWORD, V128_SINGLE, V128_DOUBLE -> true;
+            default -> false;
+        };
     }
 
     @Override
     public char getTypeChar() {
-        switch (this) {
-            case BYTE:
-                return 'b';
-            case WORD:
-                return 'w';
-            case DWORD:
-                return 'd';
-            case QWORD:
-                return 'q';
-            case SINGLE:
-                return 'S';
-            case DOUBLE:
-                return 'D';
-            case V32_BYTE:
-            case V32_WORD:
-            case V64_BYTE:
-            case V64_WORD:
-            case V64_DWORD:
-            case V128_BYTE:
-            case V128_WORD:
-            case V128_DWORD:
-            case V128_QWORD:
-            case V128_SINGLE:
-            case V128_DOUBLE:
-                return 'v';
-            default:
-                return '-';
-        }
+        return switch (this) {
+            case BYTE -> 'b';
+            case WORD -> 'w';
+            case DWORD -> 'd';
+            case QWORD -> 'q';
+            case SINGLE -> 'S';
+            case DOUBLE -> 'D';
+            case V32_BYTE, V32_WORD, V64_BYTE, V64_WORD, V64_DWORD, V128_BYTE, V128_WORD, V128_DWORD, V128_QWORD,
+                 V128_SINGLE, V128_DOUBLE -> 'v';
+            default -> '-';
+        };
     }
 }

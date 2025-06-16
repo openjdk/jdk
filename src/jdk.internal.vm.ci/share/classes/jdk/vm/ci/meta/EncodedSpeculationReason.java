@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,8 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-
 package jdk.vm.ci.meta;
 
 import java.util.Arrays;
@@ -46,12 +44,8 @@ public class EncodedSpeculationReason implements SpeculationReason {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof EncodedSpeculationReason) {
-            if (obj instanceof EncodedSpeculationReason) {
-                EncodedSpeculationReason that = (EncodedSpeculationReason) obj;
-                return this.groupId == that.groupId && Arrays.equals(this.context, that.context);
-            }
-            return false;
+        if (obj instanceof EncodedSpeculationReason that) {
+            return this.groupId == that.groupId && Arrays.equals(this.context, that.context);
         }
         return false;
     }
@@ -74,7 +68,7 @@ public class EncodedSpeculationReason implements SpeculationReason {
     }
 
     static void addNonNullObject(SpeculationLog.SpeculationReasonEncoding encoding, Object o) {
-        Class<? extends Object> c = o.getClass();
+        Class<?> c = o.getClass();
         if (c == String.class) {
             encoding.addString((String) o);
         } else if (c == Byte.class) {

@@ -200,21 +200,12 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
     @Override
     public List<Register> getCallingConventionRegisters(Type type, JavaKind kind) {
         HotSpotCallingConventionType hotspotType = (HotSpotCallingConventionType) type;
-        switch (kind) {
-            case Boolean:
-            case Byte:
-            case Short:
-            case Char:
-            case Int:
-            case Long:
-            case Object:
-                return hotspotType == HotSpotCallingConventionType.NativeCall ? nativeGeneralParameterRegisters : javaGeneralParameterRegisters;
-            case Float:
-            case Double:
-                return fpParameterRegisters;
-            default:
-                throw JVMCIError.shouldNotReachHere();
-        }
+        return switch (kind) {
+            case Boolean, Byte, Short, Char, Int, Long, Object ->
+                    hotspotType == HotSpotCallingConventionType.NativeCall ? nativeGeneralParameterRegisters : javaGeneralParameterRegisters;
+            case Float, Double -> fpParameterRegisters;
+            default -> throw JVMCIError.shouldNotReachHere();
+        };
     }
 
     private CallingConvention callingConvention(List<Register> generalParameterRegisters, JavaType returnType, JavaType[] parameterTypes, HotSpotCallingConventionType type,
@@ -269,24 +260,11 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
 
     @Override
     public Register getReturnRegister(JavaKind kind) {
-        switch (kind) {
-            case Boolean:
-            case Byte:
-            case Char:
-            case Short:
-            case Int:
-            case Long:
-            case Object:
-                return x10;
-            case Float:
-            case Double:
-                return f10;
-            case Void:
-            case Illegal:
-                return null;
-            default:
-                throw new UnsupportedOperationException("no return register for type " + kind);
-        }
+        return switch (kind) {
+            case Boolean, Byte, Char, Short, Int, Long, Object -> x10;
+            case Float, Double -> f10;
+            case Void, Illegal -> null;
+        };
     }
 
     @Override

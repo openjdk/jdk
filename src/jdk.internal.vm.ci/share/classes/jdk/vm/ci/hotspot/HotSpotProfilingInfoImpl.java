@@ -27,7 +27,6 @@ import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
 import jdk.vm.ci.meta.DeoptimizationReason;
 import jdk.vm.ci.meta.JavaMethodProfile;
 import jdk.vm.ci.meta.JavaTypeProfile;
-import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.TriState;
 
 final class HotSpotProfilingInfoImpl implements HotSpotProfilingInfo {
@@ -41,8 +40,8 @@ final class HotSpotProfilingInfoImpl implements HotSpotProfilingInfo {
     private int hintBCI;
     private HotSpotMethodDataAccessor dataAccessor;
 
-    private boolean includeNormal;
-    private boolean includeOSR;
+    private final boolean includeNormal;
+    private final boolean includeOSR;
 
     HotSpotProfilingInfoImpl(HotSpotMethodData methodData, HotSpotResolvedJavaMethod method, boolean includeNormal, boolean includeOSR) {
         this.methodData = methodData;

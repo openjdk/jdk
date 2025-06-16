@@ -22,15 +22,15 @@
  */
 package jdk.vm.ci.hotspot;
 
+import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
+
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.runtime.JVMCIBackend;
-import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 public interface HotSpotJVMCIBackendFactory {
 

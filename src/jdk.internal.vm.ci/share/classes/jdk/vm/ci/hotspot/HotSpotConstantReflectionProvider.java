@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ package jdk.vm.ci.hotspot;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 
 import java.util.Objects;
-
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
@@ -99,23 +98,14 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
      * @return true if the box is cached
      */
     private static boolean isBoxCached(JavaConstant source) {
-        switch (source.getJavaKind()) {
-            case Boolean:
-                return true;
-            case Char:
-                return source.asInt() <= 127;
-            case Byte:
-            case Short:
-            case Int:
-                return source.asInt() >= -128 && source.asInt() <= 127;
-            case Long:
-                return source.asLong() >= -128 && source.asLong() <= 127;
-            case Float:
-            case Double:
-                return false;
-            default:
-                throw new IllegalArgumentException("unexpected kind " + source.getJavaKind());
-        }
+        return switch (source.getJavaKind()) {
+            case Boolean -> true;
+            case Char -> source.asInt() <= 127;
+            case Byte, Short, Int -> source.asInt() >= -128 && source.asInt() <= 127;
+            case Long -> source.asLong() >= -128 && source.asLong() <= 127;
+            case Float, Double -> false;
+            default -> throw new IllegalArgumentException("unexpected kind " + source.getJavaKind());
+        };
     }
 
     @Override

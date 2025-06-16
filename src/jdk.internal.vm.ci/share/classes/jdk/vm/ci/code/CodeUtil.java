@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,14 +248,11 @@ public class CodeUtil {
             }
         }
         StringBuilder sb = new StringBuilder();
-        String nl = NEW_LINE;
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < cols; col++) {
                 int index = col + (row * cols);
                 if (index < cells.length) {
-                    for (int i = 0; i < lpad; i++) {
-                        sb.append(' ');
-                    }
+                    sb.append(" ".repeat(Math.max(0, lpad)));
                     Object cell = cells[index];
                     String s = String.valueOf(cell);
                     int w = s.length();
@@ -264,12 +261,10 @@ public class CodeUtil {
                         sb.append(' ');
                         w++;
                     }
-                    for (int i = 0; i < rpad; i++) {
-                        sb.append(' ');
-                    }
+                    sb.append(" ".repeat(Math.max(0, rpad)));
                 }
             }
-            sb.append(nl);
+            sb.append(NEW_LINE);
         }
         return sb.toString();
     }

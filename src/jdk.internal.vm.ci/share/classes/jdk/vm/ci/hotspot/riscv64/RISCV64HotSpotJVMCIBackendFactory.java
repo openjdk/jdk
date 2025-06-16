@@ -22,14 +22,10 @@
  */
 package jdk.vm.ci.hotspot.riscv64;
 
-import static java.util.Collections.emptyMap;
 import static jdk.vm.ci.common.InitTimer.timer;
 
 import java.util.EnumSet;
 import java.util.Map;
-
-import jdk.vm.ci.riscv64.RISCV64;
-import jdk.vm.ci.riscv64.RISCV64.CPUFeature;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.TargetDescription;
@@ -42,6 +38,8 @@ import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.hotspot.HotSpotStackIntrospection;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.riscv64.RISCV64;
+import jdk.vm.ci.riscv64.RISCV64.CPUFeature;
 import jdk.vm.ci.runtime.JVMCIBackend;
 
 public class RISCV64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFactory {
@@ -49,7 +47,7 @@ public class RISCV64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
     private static EnumSet<RISCV64.CPUFeature> computeFeatures(RISCV64HotSpotVMConfig config) {
         // Configure the feature set using the HotSpot flag settings.
         Map<String, Long> constants = config.getStore().getConstants();
-        return HotSpotJVMCIBackendFactory.convertFeatures(CPUFeature.class, constants, config.vmVersionFeatures, emptyMap());
+        return HotSpotJVMCIBackendFactory.convertFeatures(CPUFeature.class, constants, config.vmVersionFeatures, Collections.emptyMap());
     }
 
     private static TargetDescription createTarget(RISCV64HotSpotVMConfig config) {

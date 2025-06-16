@@ -222,8 +222,7 @@ public abstract class Architecture {
         if (obj == this) {
             return true;
         }
-        if (obj instanceof Architecture) {
-            Architecture that = (Architecture) obj;
+        if (obj instanceof Architecture that) {
             if (this.name.equals(that.name)) {
                 assert this.byteOrder.equals(that.byteOrder);
                 assert this.implicitMemoryBarriers == that.implicitMemoryBarriers;

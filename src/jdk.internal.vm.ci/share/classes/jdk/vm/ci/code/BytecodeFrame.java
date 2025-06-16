@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -286,7 +286,7 @@ public final class BytecodeFrame extends BytecodePosition {
      *
      * @param i the local variable to query
      * @return the kind of local variable {@code i}
-     * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numLocals}
+     * @throws IndexOutOfBoundsException if {@code i < 0 || i >= this.numLocals}
      */
     public JavaKind getLocalValueKind(int i) {
         Objects.checkIndex(i, numLocals);
@@ -298,7 +298,7 @@ public final class BytecodeFrame extends BytecodePosition {
      *
      * @param i the local variable to query
      * @return the kind of stack slot {@code i}
-     * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numStack}
+     * @throws IndexOutOfBoundsException if {@code i < 0 || i >= this.numStack}
      */
     public JavaKind getStackValueKind(int i) {
         Objects.checkIndex(i, numStack);
@@ -310,7 +310,7 @@ public final class BytecodeFrame extends BytecodePosition {
      *
      * @param i the local variable index
      * @return the value that can be used to reconstruct the local's current value
-     * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numLocals}
+     * @throws IndexOutOfBoundsException if {@code i < 0 || i >= this.numLocals}
      */
     public JavaValue getLocalValue(int i) {
         Objects.checkIndex(i, numLocals);
@@ -322,7 +322,7 @@ public final class BytecodeFrame extends BytecodePosition {
      *
      * @param i the stack index
      * @return the value that can be used to reconstruct the stack slot's current value
-     * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numStack}
+     * @throws IndexOutOfBoundsException if {@code i < 0 || i >= this.numStack}
      */
     public JavaValue getStackValue(int i) {
         Objects.checkIndex(i, numStack);
@@ -334,7 +334,7 @@ public final class BytecodeFrame extends BytecodePosition {
      *
      * @param i the lock index
      * @return the value that can be used to reconstruct the lock's current value
-     * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numLocks}
+     * @throws IndexOutOfBoundsException if {@code i < 0 || i >= this.numLocks}
      */
     public JavaValue getLockValue(int i) {
         Objects.checkIndex(i, numLocks);

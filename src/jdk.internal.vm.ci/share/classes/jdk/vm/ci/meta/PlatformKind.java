@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,7 @@ public interface PlatformKind {
             if (obj == this) {
                 return true;
             }
-            if (obj instanceof EnumKey) {
-                EnumKey<?> that = (EnumKey<?>) obj;
+            if (obj instanceof EnumKey<?> that) {
                 return this.e == that.e;
             }
             return false;

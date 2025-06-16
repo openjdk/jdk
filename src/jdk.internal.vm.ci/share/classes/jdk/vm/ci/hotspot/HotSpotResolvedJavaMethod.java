@@ -82,7 +82,6 @@ public interface HotSpotResolvedJavaMethod extends ResolvedJavaMethod {
     boolean hasCompiledCode();
 
     /**
-     * @param level
      * @return true if the currently installed code was generated at {@code level}.
      */
     boolean hasCompiledCodeAtLevel(int level);

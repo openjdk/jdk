@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,8 +73,7 @@ public final class StackLockValue implements JavaValue {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof StackLockValue) {
-            StackLockValue other = (StackLockValue) obj;
+        if (obj instanceof StackLockValue other) {
             return super.equals(obj) && eliminated == other.eliminated && owner.equals(other.owner) && slot.equals(other.slot);
         }
         return false;

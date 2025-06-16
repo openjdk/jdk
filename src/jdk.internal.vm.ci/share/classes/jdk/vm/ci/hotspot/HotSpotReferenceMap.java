@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,12 +38,11 @@ public final class HotSpotReferenceMap extends ReferenceMap {
     final int maxRegisterSize;
 
     /**
-     *
-     * @param objects This array is now owned by this object and must not be mutated by the caller.
+     * @param objects     This array is now owned by this object and must not be mutated by the caller.
      * @param derivedBase This array is now owned by this object and must not be mutated by the
-     *            caller.
+     *                    caller.
      * @param sizeInBytes This array is now owned by this object and must not be mutated by the
-     *            caller.
+     *                    caller.
      */
     @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `objects`, `derivedBase` and `sizeInBytes`")
     public HotSpotReferenceMap(Location[] objects, Location[] derivedBase, int[] sizeInBytes, int maxRegisterSize) {
@@ -63,11 +62,10 @@ public final class HotSpotReferenceMap extends ReferenceMap {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof HotSpotReferenceMap) {
-            HotSpotReferenceMap that = (HotSpotReferenceMap) obj;
-            if (sizeInBytes == that.sizeInBytes && maxRegisterSize == that.maxRegisterSize && Arrays.equals(objects, that.objects) && Arrays.equals(derivedBase, that.derivedBase)) {
-                return true;
-            }
+        if (obj instanceof HotSpotReferenceMap that) {
+            return sizeInBytes == that.sizeInBytes && maxRegisterSize == that.maxRegisterSize
+                    && Arrays.equals(objects, that.objects)
+                    && Arrays.equals(derivedBase, that.derivedBase);
         }
         return false;
     }
