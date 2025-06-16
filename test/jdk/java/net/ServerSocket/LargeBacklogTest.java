@@ -26,6 +26,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.ServerSocketChannel;
 
 import org.junit.jupiter.api.Test;
@@ -34,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /*
  * @test
  * @bug 8330940
- * @summary verify that java.net.ServerSocket and java.nio.channels.ServerSocketChannel,
+ * @summary verify that java.net.ServerSocket and the server socket channels in java.nio.channels
  *          when configured with a backlog of >=200 on Windows, will allow for those many
  *          backlogged Socket connections
  * @requires os.family == "windows"
@@ -61,6 +62,19 @@ class LargeBacklogTest {
         // The channel never accept()s a connection so each connect() attempt
         // will be backlogged.
         try (var serverChannel = ServerSocketChannel.open()) {
+            serverChannel.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), backlog);
+            final int serverPort = ((InetSocketAddress) serverChannel.getLocalAddress()).getPort();
+            testBackloggedConnects(backlog, serverPort);
+        }
+    }
+
+    @Test
+    void testAsynchronousServerSocketChannel() throws Exception {
+        final int backlog = 209;
+        // Create a AsynchronousServerSocketChannel configured with the given backlog.
+        // The channel never accept()s a connection so each connect() attempt
+        // will be backlogged.
+        try (var serverChannel = AsynchronousServerSocketChannel.open()) {
             serverChannel.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), backlog);
             final int serverPort = ((InetSocketAddress) serverChannel.getLocalAddress()).getPort();
             testBackloggedConnects(backlog, serverPort);
