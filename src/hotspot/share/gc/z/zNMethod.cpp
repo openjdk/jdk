@@ -241,7 +241,7 @@ void ZNMethod::disarm(nmethod* nm) {
 
 void ZNMethod::set_guard_value(nmethod* nm, int value) {
   BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  bs->arm_with(nm, value);
+  bs->guard_with(nm, value);
 }
 
 void ZNMethod::nmethod_patch_barriers(nmethod* nm) {

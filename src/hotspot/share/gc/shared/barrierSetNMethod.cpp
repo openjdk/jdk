@@ -72,10 +72,10 @@ bool BarrierSetNMethod::supports_entry_barrier(nmethod* nm) {
 }
 
 void BarrierSetNMethod::disarm(nmethod* nm) {
-  arm_with(nm, disarmed_guard_value());
+  guard_with(nm, disarmed_guard_value());
 }
 
-void BarrierSetNMethod::arm_with(nmethod* nm, int value) {
+void BarrierSetNMethod::guard_with(nmethod* nm, int value) {
   assert((value & not_entrant) == 0, "not_entrant bit is reserved");
   // Enter critical section.  Does not block for safepoint.
   ConditionalMutexLocker ml(NMethodEntryBarrier_lock, !NMethodEntryBarrier_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);

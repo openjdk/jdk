@@ -106,7 +106,7 @@ oop ZBarrierSetNMethod::oop_load_phantom(const nmethod* nm, int index) {
   return ZNMethod::oop_load_phantom(nm, index);
 }
 
-void ZBarrierSetNMethod::arm_with(nmethod* nm, int value) {
+void ZBarrierSetNMethod::guard_with(nmethod* nm, int value) {
   assert((value & not_entrant) == 0, "not_entrant bit is reserved");
   ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
   // Preserve the sticky bit

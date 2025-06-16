@@ -48,7 +48,7 @@ public:
 
   virtual void make_not_entrant(nmethod* nm);
   virtual bool is_not_entrant(nmethod* nm);
-  virtual void arm_with(nmethod* nm, int value);
+  virtual void guard_with(nmethod* nm, int value);
   virtual bool is_armed(nmethod* nm);
   virtual void arm_all_nmethods() { ShouldNotCallThis(); }
 };

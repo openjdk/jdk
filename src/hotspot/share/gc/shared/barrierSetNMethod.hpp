@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,12 +61,12 @@ public:
   static int nmethod_stub_entry_barrier(address* return_address_ptr);
   bool nmethod_osr_entry_barrier(nmethod* nm);
   virtual bool is_armed(nmethod* nm);
-  void arm(nmethod* nm) { arm_with(nm, armed); }
+  void arm(nmethod* nm) { guard_with(nm, armed); }
   void disarm(nmethod* nm);
   virtual void make_not_entrant(nmethod* nm);
   virtual bool is_not_entrant(nmethod* nm);
 
-  virtual void arm_with(nmethod* nm, int value);
+  virtual void guard_with(nmethod* nm, int value);
 
   virtual void arm_all_nmethods();
 
