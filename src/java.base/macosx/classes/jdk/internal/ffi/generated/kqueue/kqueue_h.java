@@ -190,6 +190,9 @@ public class kqueue_h {
      */
     public static int kevent(int kq, MemorySegment changelist, int nchanges, MemorySegment eventlist, int nevents, MemorySegment timeout) {
         try {
+            if (FFMUtils.TRACE_DOWNCALLS) {
+                FFMUtils.traceDowncall("kevent", kq, changelist, nchanges, eventlist, nevents, timeout);
+            }
              return (int) kevent.ADAPTED.invokeExact(kq, changelist, nchanges, eventlist, nevents, timeout);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);

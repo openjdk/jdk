@@ -109,30 +109,28 @@ final class KQueue {
 
     static public int register(int kqfd, int fd, int filter, int flags) {
         int result;
-        try (var arena = Arena.ofConfined()) {
-            try {
-                MemorySegment keventMS = arena.allocate(kevent.layout());
-                kevent.ident(keventMS, fd);
-                kevent.filter(keventMS, (short) filter);
-                kevent.flags(keventMS, (short) flags);
-                // rest default to zero
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment keventMS = arena.allocate(kevent.layout());
+            kevent.ident(keventMS, fd);
+            kevent.filter(keventMS, (short) filter);
+            kevent.flags(keventMS, (short) flags);
+            // rest default to zero
 
-                // this do-while replaces restartable
-                do {
-                    result = kqueue_h.kevent(
-                            kqfd, keventMS, 1, NULL,
-                            0, NULL);
-                } while ((result == KQUEUE_ERROR_VALUE));
-            } catch (Throwable e) {
-                throw new RuntimeException(e);
-            }
+            // this do-while replaces restartable
+            do {
+                result = kqueue_h.kevent(
+                        kqfd, keventMS, 1, NULL,
+                        0, NULL);
+            } while ((result == KQUEUE_ERROR_VALUE));
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
         }
         return result;
     }
 
     static public int poll(int kqfd, MemorySegment pollAddress, int nevents, long timeout) {
         int result;
-        try (var arena = POOL.pushFrame(timespec.layout())) {
+        try (Arena arena = POOL.pushFrame(timespec.layout())) {
             MemorySegment tsMS = arena.allocate(timespec.layout());
             MemorySegment tsp;
 
