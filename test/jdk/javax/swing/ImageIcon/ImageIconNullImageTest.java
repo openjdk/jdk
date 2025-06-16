@@ -28,11 +28,22 @@
  * @run main ImageIconNullImageTest
  */
 
+import java.awt.Image;
 import javax.swing.ImageIcon;
 
 public class ImageIconNullImageTest {
 
     public static void main(String[] args) throws Exception {
+        testImageIconNULL();
+        testSetImageNULL();
+    }
+
+    private static void testImageIconNULL() {
+        // Setting null image shouldn't cause NPE
+        new ImageIcon((Image) null);
+    }
+
+    private static void testSetImageNULL() {
         ImageIcon icon = new ImageIcon();
 
         // Setting null image shouldn't cause NPE
