@@ -45,13 +45,14 @@ static const ZStatCounter ZCounterUndoObjectAllocationSucceeded("Memory", "Undo 
 static const ZStatCounter ZCounterUndoObjectAllocationFailed("Memory", "Undo Object Allocation Failed", ZStatUnitOpsPerSecond);
 
 class ZObjectAllocatorImpl {
-public:
+private:
   const ZPageAge     _age;
   const bool         _use_per_cpu_shared_small_pages;
   ZPerCPU<ZPage*>    _shared_small_page;
   ZContended<ZPage*> _shared_medium_page;
   ZLock              _medium_page_alloc_lock;
 
+public:
   ZObjectAllocatorImpl(ZPageAge age);
 
   ZPage** shared_small_page_addr();
