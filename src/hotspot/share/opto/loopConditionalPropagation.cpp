@@ -1213,7 +1213,9 @@ void PhaseConditionalPropagation::Transformer::do_transform() {
 
     assert(c->_idx >= _unique || _type_table->find_type_between(c, c, _phase->C->root()) != Type::TOP,
            "for If we don't follow dead projections");
-    transform_helper(c);
+    if (!c->is_MultiBranch()) {
+      transform_helper(c);
+    }
 
     if (c->is_If()) {
       IfNode* iff = c->as_If();
@@ -1599,6 +1601,10 @@ void PhaseConditionalPropagation::Transformer::transform_helper(Node* c) {
     transform_when_top_seen(c, node, t);
   };
   _type_table->apply_at_control(c, transform_top);
+  if (c->unique_ctrl_out()->Opcode() == Op_Halt) {
+    // dead end
+    return;
+  }
   auto transform_constant = [&](Node* node, const Type* t, const Type* prev_t) {
     transform_when_constant_seen(c, node, t, prev_t);
   };
