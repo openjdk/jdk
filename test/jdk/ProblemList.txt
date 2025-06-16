@@ -764,7 +764,6 @@ sun/tools/jstat/jstatLineCounts4.sh                             8248691,8268211 
 
 jdk/incubator/vector/ShortMaxVectorTests.java                   8306592 generic-i586
 jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-x64
-jdk/incubator/vector/PreferredSpeciesTest.java#id0              8358217 generic-all
 
 ############################################################################
 
@@ -774,7 +773,6 @@ jdk/jfr/event/compiler/TestCodeSweeper.java                     8338127 generic-
 jdk/jfr/event/oldobject/TestShenandoah.java                     8342951 generic-all
 jdk/jfr/event/runtime/TestResidentSetSizeEvent.java             8309846 aix-ppc64
 jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all
-jdk/jfr/api/consumer/TestRecordingFileWrite.java                8358536 generic-all
 
 ############################################################################
 
@@ -836,3 +834,9 @@ java/awt/Checkbox/CheckboxNullLabelTest.java 8340870 windows-all
 java/awt/dnd/WinMoveFileToShellTest.java 8341665 windows-all
 java/awt/Menu/MenuVisibilityTest.java 8161110 macosx-all
 java/awt/Modal/NativeDialogToFrontBackTest.java 7188049 windows-all,linux-all
+
+############################################################################
+
+# jdk_since_checks
+
+tools/sincechecker/modules/java.base/JavaBaseCheckSince.java 8358627 generic-all

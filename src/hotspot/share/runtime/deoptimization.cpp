@@ -1274,11 +1274,11 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
       assert(sv->field_size() % type2size[ak->element_type()] == 0, "non-integral array length");
       int len = sv->field_size() / type2size[ak->element_type()];
       InternalOOMEMark iom(THREAD);
-      obj = ak->allocate(len, THREAD);
+      obj = ak->allocate_instance(len, THREAD);
     } else if (k->is_objArray_klass()) {
       ObjArrayKlass* ak = ObjArrayKlass::cast(k);
       InternalOOMEMark iom(THREAD);
-      obj = ak->allocate(sv->field_size(), THREAD);
+      obj = ak->allocate_instance(sv->field_size(), THREAD);
     }
 
     if (obj == nullptr) {
@@ -1826,7 +1826,7 @@ void Deoptimization::deoptimize(JavaThread* thread, frame fr, DeoptReason reason
 #if INCLUDE_JVMCI
 address Deoptimization::deoptimize_for_missing_exception_handler(nmethod* nm) {
   // there is no exception handler for this pc => deoptimize
-  nm->make_not_entrant("missing exception handler");
+  nm->make_not_entrant(nmethod::ChangeReason::missing_exception_handler);
 
   // Use Deoptimization::deoptimize for all of its side-effects:
   // gathering traps statistics, logging...
@@ -2455,7 +2455,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
 
     // Recompile
     if (make_not_entrant) {
-      if (!nm->make_not_entrant("uncommon trap")) {
+      if (!nm->make_not_entrant(nmethod::ChangeReason::uncommon_trap)) {
         return; // the call did not change nmethod's state
       }
 

@@ -460,18 +460,9 @@ AOTCodeCache* AOTCodeCache::open_for_dump() {
 }
 
 void copy_bytes(const char* from, address to, uint size) {
-  assert(size > 0, "sanity");
-  bool by_words = true;
-  if ((size > 2 * HeapWordSize) && (((intptr_t)from | (intptr_t)to) & (HeapWordSize - 1)) == 0) {
-    // Use wordwise copies if possible:
-    Copy::disjoint_words((HeapWord*)from,
-                         (HeapWord*)to,
-                         ((size_t)size + HeapWordSize-1) / HeapWordSize);
-  } else {
-    by_words = false;
-    Copy::conjoint_jbytes(from, to, (size_t)size);
-  }
-  log_trace(aot, codecache)("Copied %d bytes as %s from " INTPTR_FORMAT " to " INTPTR_FORMAT, size, (by_words ? "HeapWord" : "bytes"), p2i(from), p2i(to));
+  assert((int)size > 0, "sanity");
+  memcpy(to, from, size);
+  log_trace(aot, codecache)("Copied %d bytes from " INTPTR_FORMAT " to " INTPTR_FORMAT, size, p2i(from), p2i(to));
 }
 
 AOTCodeReader::AOTCodeReader(AOTCodeCache* cache, AOTCodeEntry* entry) {
@@ -915,25 +906,21 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name, int entry_offset_co
     oop_maps = read_oop_map_set();
   }
 
-#ifndef PRODUCT
-  AsmRemarks asm_remarks;
-  read_asm_remarks(asm_remarks);
-  DbgStrings dbg_strings;
-  read_dbg_strings(dbg_strings);
-#endif // PRODUCT
-
   CodeBlob* code_blob = CodeBlob::create(archived_blob,
                                          stored_name,
                                          reloc_data,
                                          oop_maps
-#ifndef PRODUCT
-                                         , asm_remarks
-                                         , dbg_strings
-#endif
                                         );
   if (code_blob == nullptr) { // no space left in CodeCache
     return nullptr;
   }
+
+#ifndef PRODUCT
+  code_blob->asm_remarks().init();
+  read_asm_remarks(code_blob->asm_remarks());
+  code_blob->dbg_strings().init();
+  read_dbg_strings(code_blob->dbg_strings());
+#endif // PRODUCT
 
   fix_relocations(code_blob);
 
