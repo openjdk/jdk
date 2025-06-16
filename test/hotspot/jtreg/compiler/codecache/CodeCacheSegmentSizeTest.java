@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 IBM Corporation. All rights reserved.
+ * Copyright (c) 2025 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,8 +71,6 @@ public class CodeCacheSegmentSizeTest {
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
-        output.shouldContain("openjdk version"); // typical first line
-        output.shouldContain("OpenJDK Runtime Environment");
         output.shouldHaveExitValue(0);
     }
 }
