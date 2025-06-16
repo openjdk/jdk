@@ -23,6 +23,7 @@
 package jdk.vm.ci.code;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 import jdk.vm.ci.common.JVMCIError;
@@ -30,6 +31,8 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaValue;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Value;
+
+import static jdk.vm.ci.code.CodeUtil.listFromTrustedArray;
 
 /**
  * Represents the Java bytecode frame state(s) at a given position including {@link Value locations}
@@ -75,10 +78,10 @@ public final class BytecodeFrame extends BytecodePosition {
     public final JavaValue[] values;
 
     /**
-     * An array describing the Java kinds in {@link #values}. It records a kind for the locals and
+     * A list describing the Java kinds in {@link #values}. It records a kind for the locals and
      * the operand stack.
      */
-    private final JavaKind[] slotKinds;
+    private final List<JavaKind> slotKinds;
 
     /**
      * The number of locals in the values array.
@@ -221,7 +224,7 @@ public final class BytecodeFrame extends BytecodePosition {
         this.rethrowException = rethrowException;
         this.duringCall = duringCall;
         this.values = values;
-        this.slotKinds = slotKinds;
+        this.slotKinds = listFromTrustedArray(slotKinds);
         this.numLocals = numLocals;
         this.numStack = numStack;
         this.numLocks = numLocks;
@@ -239,19 +242,19 @@ public final class BytecodeFrame extends BytecodePosition {
         if (values.length != numLocals + numStack + numLocks) {
             throw new JVMCIError("unexpected values length %d in frame (%d locals, %d stack slots, %d locks)", values.length, numLocals, numStack, numLocks);
         }
-        if (slotKinds.length != numLocals + numStack) {
+        if (slotKinds.size() != numLocals + numStack) {
             throw new JVMCIError("unexpected slotKinds length %d in frame (%d locals, %d stack slots)", values.length, numLocals, numStack);
         }
-        for (int i = 0; i < slotKinds.length; i++) {
+        for (int i = 0; i < slotKinds.size(); i++) {
             Objects.requireNonNull(values[i]);
-            JavaKind kind = slotKinds[i];
+            JavaKind kind = slotKinds.get(i);
             if (kind.needsTwoSlots()) {
                 if (i + 1 >= values.length || values[i + 1] != Value.ILLEGAL) {
                     throw new JVMCIError("2 slot value at index %d not followed by Value.ILLEGAL", i);
                 }
             }
         }
-        for (int i = slotKinds.length; i < values.length; i++) {
+        for (int i = slotKinds.size(); i < values.length; i++) {
             JavaValue lock = values[i];
             Objects.requireNonNull(lock);
             if (!(lock instanceof StackLockValue)) {
@@ -271,10 +274,10 @@ public final class BytecodeFrame extends BytecodePosition {
         }
         for (int i = 0; i < numLocals + numStack; i++) {
             if (values[i] != null) {
-                JavaKind kind = slotKinds[i];
+                JavaKind kind = slotKinds.get(i);
                 if (kind.needsTwoSlots()) {
-                    assert slotKinds.length > i + 1 : String.format("missing second word %s", this);
-                    assert slotKinds[i + 1] == JavaKind.Illegal : this;
+                    assert slotKinds.size() > i + 1 : String.format("missing second word %s", this);
+                    assert slotKinds.get(i + 1) == JavaKind.Illegal : this;
                 }
             }
         }
@@ -290,7 +293,7 @@ public final class BytecodeFrame extends BytecodePosition {
      */
     public JavaKind getLocalValueKind(int i) {
         Objects.checkIndex(i, numLocals);
-        return slotKinds[i];
+        return slotKinds.get(i);
     }
 
     /**
@@ -302,7 +305,7 @@ public final class BytecodeFrame extends BytecodePosition {
      */
     public JavaKind getStackValueKind(int i) {
         Objects.checkIndex(i, numStack);
-        return slotKinds[i + numLocals];
+        return slotKinds.get(i + numLocals);
     }
 
     /**
@@ -358,7 +361,7 @@ public final class BytecodeFrame extends BytecodePosition {
                         numLocks,
                         numStack,
                         rethrowException,
-                        Arrays.hashCode(slotKinds),
+                        slotKinds,
                         Arrays.hashCode(values));
     }
 
@@ -379,7 +382,7 @@ public final class BytecodeFrame extends BytecodePosition {
                         numLocks == that.numLocks &&
                         numStack == that.numStack &&
                         rethrowException == that.rethrowException &&
-                        Arrays.equals(slotKinds, that.slotKinds) &&
+                        slotKinds.equals(that.slotKinds) &&
                         Arrays.equals(values, that.values);
     }
 
@@ -389,12 +392,9 @@ public final class BytecodeFrame extends BytecodePosition {
     }
 
     /**
-     * Returns a copy of the array describing the Java kinds in {@link #values}.
-     * The returned array represents the kinds for the locals and the operand stack.
-     *
-     * @return a copy of the slot kinds array
+     * Returns the list describing the Java kinds in {@link #values}.
      */
-    public JavaKind[] getSlotKinds() {
-        return (slotKinds == null) ? null : Arrays.copyOf(slotKinds, slotKinds.length);
+    public List<JavaKind> getSlotKinds() {
+        return slotKinds;
     }
 }

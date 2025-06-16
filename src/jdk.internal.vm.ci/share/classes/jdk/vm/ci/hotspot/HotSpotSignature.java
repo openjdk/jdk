@@ -69,21 +69,6 @@ public class HotSpotSignature implements Signature {
         }
     }
 
-    public HotSpotSignature(HotSpotJVMCIRuntime runtime, ResolvedJavaType returnType, ResolvedJavaType... parameterTypes) {
-        this.runtime = runtime;
-        this.parameterTypes = parameterTypes.clone();
-        this.returnTypeCache = returnType;
-        this.returnType = returnType.getName();
-        StringBuilder sb = new StringBuilder("(");
-        for (JavaType type : parameterTypes) {
-            parameters.add(type.getName());
-            sb.append(type.getName());
-        }
-        sb.append(")").append(returnType.getName());
-        this.originalString = sb.toString();
-        assert new HotSpotSignature(runtime, originalString).equals(this);
-    }
-
     private static int parseSignature(String signature, int start) {
         try {
             int cur = start;

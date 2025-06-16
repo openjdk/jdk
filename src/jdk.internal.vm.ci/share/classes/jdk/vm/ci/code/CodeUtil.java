@@ -25,8 +25,10 @@ package jdk.vm.ci.code;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
+import jdk.internal.access.SharedSecrets;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MetaUtil;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -431,5 +433,12 @@ public class CodeUtil {
 
         RegisterConfig registerConfig = codeCache.getRegisterConfig();
         return registerConfig.getCallingConvention(type, retType, argTypes, valueKindFactory);
+    }
+
+    /**
+     * Creates an immutable list from a trusted array that has no references retained by the caller.
+     */
+    static <T> List<T> listFromTrustedArray(Object[] array) {
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(array);
     }
 }

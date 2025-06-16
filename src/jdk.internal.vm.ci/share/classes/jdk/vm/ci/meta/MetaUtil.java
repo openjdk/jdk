@@ -23,6 +23,7 @@
 package jdk.vm.ci.meta;
 
 import java.util.List;
+
 import jdk.internal.access.SharedSecrets;
 
 /**
@@ -39,10 +40,10 @@ public class MetaUtil {
      * Extends the functionality of {@link Class#getSimpleName()} to include a non-empty string for
      * anonymous and local classes.
      *
-     * @param clazz the class for which the simple name is being requested
+     * @param clazz              the class for which the simple name is being requested
      * @param withEnclosingClass specifies if the returned name should be qualified with the name(s)
-     *            of the enclosing class/classes of {@code clazz} (if any). This option is ignored
-     *            if {@code clazz} denotes an anonymous or local class.
+     *                           of the enclosing class/classes of {@code clazz} (if any). This option is ignored
+     *                           if {@code clazz} denotes an anonymous or local class.
      * @return the simple name
      */
     public static String getSimpleName(Class<?> clazz, boolean withEnclosingClass) {
@@ -101,9 +102,9 @@ public class MetaUtil {
      * {@link Character#isJavaIdentifierStart(char)} (e.g.,
      * "jdk.vm.ci.runtime.test.TypeUniverse$$Lambda/869601985").
      *
-     * @param name the name to perform the replacements on
+     * @param name             the name to perform the replacements on
      * @param packageSeparator the {@link Character} used as the package separator, e.g. {@code /} in internal form
-     * @param hiddenSeparator the {@link Character} used as the hidden class separator, e.g. {@code .} in internal form
+     * @param hiddenSeparator  the {@link Character} used as the hidden class separator, e.g. {@code .} in internal form
      */
     private static String replacePackageAndHiddenSeparators(String name, Character packageSeparator, Character hiddenSeparator) {
         int index = name.indexOf(hiddenSeparator);   // check if it's a hidden class
@@ -122,12 +123,12 @@ public class MetaUtil {
     /**
      * Converts a type name in internal form to an external form.
      *
-     * @param name the internal name to convert
-     * @param qualified whether the returned name should be qualified with the package name
+     * @param name                   the internal name to convert
+     * @param qualified              whether the returned name should be qualified with the package name
      * @param classForNameCompatible specifies if the returned name for array types should be in
-     *            {@link Class#forName(String)} format (e.g., {@code "[Ljava.lang.Object;"},
-     *            {@code "[[I"}) or in Java source code format (e.g., {@code "java.lang.Object[]"},
-     *            {@code "int[][]"} ).
+     *                               {@link Class#forName(String)} format (e.g., {@code "[Ljava.lang.Object;"},
+     *                               {@code "[[I"}) or in Java source code format (e.g., {@code "java.lang.Object[]"},
+     *                               {@code "int[][]"} ).
      */
     public static String internalNameToJava(String name, boolean qualified, boolean classForNameCompatible) {
         switch (name.charAt(0)) {
@@ -175,7 +176,7 @@ public class MetaUtil {
      * <pre>
      *     java.lang.String.valueOf(String.java:2930) [bci: 12]
      * </pre>
-     *
+     * <p>
      * Otherwise, the string returned is the value of applying {@link JavaMethod#format(String)}
      * with the format string {@code "%H.%n(%p)"}, suffixed by the bci location. For example:
      *
@@ -283,7 +284,7 @@ public class MetaUtil {
     }
 
     /**
-     * Creates an immutable list from a trusted array.
+     * Creates an immutable list from a trusted array that has no references retained by the caller.
      */
     static <T> List<T> listFromTrustedArray(Object[] array) {
         return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(array);

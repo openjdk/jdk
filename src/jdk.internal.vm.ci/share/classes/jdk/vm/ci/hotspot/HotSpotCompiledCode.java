@@ -22,6 +22,8 @@
  */
 package jdk.vm.ci.hotspot;
 
+import static jdk.vm.ci.hotspot.CompilerToVM.listFromTrustedArray;
+
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.StackSlot;
@@ -34,6 +36,7 @@ import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * A {@link CompiledCode} with additional HotSpot-specific information required for installing the
@@ -59,24 +62,24 @@ public class HotSpotCompiledCode implements CompiledCode {
     /**
      * A list of code annotations describing special sites in {@link #targetCode}.
      */
-    protected final Site[] sites;
+    protected final List<Site> sites;
 
     /**
      * A list of {@link Assumption} this code relies on.
      */
-    protected final Assumption[] assumptions;
+    protected final List<Assumption> assumptions;
 
     /**
      * The list of the methods whose bytecodes were used as input to the compilation. If
-     * {@code null}, then the compilation did not record method dependencies. Otherwise, the first
+     * empty, then the compilation did not record method dependencies. Otherwise, the first
      * element of this array is the root method of the compilation.
      */
-    protected final ResolvedJavaMethod[] methods;
+    protected final List<ResolvedJavaMethod> methods;
 
     /**
      * A list of comments that will be included in code dumps.
      */
-    protected final Comment[] comments;
+    protected final List<Comment> comments;
 
     /**
      * The data section containing serialized constants for the emitted machine code.
@@ -91,7 +94,7 @@ public class HotSpotCompiledCode implements CompiledCode {
     /**
      * A list of relocations in the {@link #dataSection}.
      */
-    protected final DataPatch[] dataSectionPatches;
+    protected final List<DataPatch> dataSectionPatches;
 
     /**
      * A flag determining whether this code is immutable and position independent.
@@ -119,34 +122,50 @@ public class HotSpotCompiledCode implements CompiledCode {
         }
     }
 
+    /**
+     * @param name                 the name of this compilation unit.
+     * @param targetCode           the buffer containing the emitted machine code. This array is now owned by this object and should not be mutated by the caller.
+     * @param targetCodeSize       the leading number of bytes in {@link #targetCode} containing the emitted machine code.
+     * @param sites                an array of code annotations describing special sites in {@link #targetCode}. This array is now owned by this object and should not be mutated by the caller.
+     * @param assumptions          an array of {@link Assumption} this code relies on. This array is now owned by this object and should not be mutated by the caller.
+     * @param methods              an array of the methods whose bytecodes were used as input to the compilation. This array is now owned by this object and should not be mutated by the caller.
+     * @param comments             an array of comments that will be included in code dumps. This array is now owned by this object and should not be mutated by the caller.
+     * @param dataSection          the data section containing serialized constants for the emitted machine code. This array is now owned by this object and should not be mutated by the caller.
+     * @param dataSectionAlignment the minimum alignment of the data section.
+     * @param dataSectionPatches   an array of relocations in the {@link #dataSection}. This array is now owned by this object and should not be mutated by the caller.
+     * @param isImmutablePIC       the flag determining whether this code is immutable and position independent.
+     * @param totalFrameSize       the total size of the stack frame of this compiled method.
+     * @param deoptRescueSlot      the deopt rescue slot. Must be non-null if there is a safepoint in the method.
+     */
     public HotSpotCompiledCode(String name,
-                    byte[] targetCode,
-                    int targetCodeSize,
-                    Site[] sites,
-                    Assumption[] assumptions,
-                    ResolvedJavaMethod[] methods,
-                    Comment[] comments,
-                    byte[] dataSection,
-                    int dataSectionAlignment,
-                    DataPatch[] dataSectionPatches,
-                    boolean isImmutablePIC,
-                    int totalFrameSize,
-                    StackSlot deoptRescueSlot) {
+                               byte[] targetCode,
+                               int targetCodeSize,
+                               Site[] sites,
+                               Assumption[] assumptions,
+                               ResolvedJavaMethod[] methods,
+                               Comment[] comments,
+                               byte[] dataSection,
+                               int dataSectionAlignment,
+                               DataPatch[] dataSectionPatches,
+                               boolean isImmutablePIC,
+                               int totalFrameSize,
+                               StackSlot deoptRescueSlot) {
         this.name = name;
-        this.targetCode = targetCode.clone();
+        this.targetCode = targetCode;
         this.targetCodeSize = targetCodeSize;
-        this.sites = sites;
-        this.assumptions = assumptions;
-        this.methods = methods;
+        this.sites = sites == null ? List.of() : listFromTrustedArray(sites);
+        this.assumptions = assumptions == null ? List.of() : listFromTrustedArray(assumptions);
+        this.methods = methods == null ? List.of() : listFromTrustedArray(methods);
 
-        this.comments = comments;
-        this.dataSection = dataSection.clone();
+        this.comments = comments == null ? List.of() : listFromTrustedArray(comments);
+        this.dataSection = dataSection;
         this.dataSectionAlignment = dataSectionAlignment;
-        this.dataSectionPatches = dataSectionPatches;
+        this.dataSectionPatches = dataSectionPatches == null ? List.of() : listFromTrustedArray(dataSectionPatches);
         this.isImmutablePIC = isImmutablePIC;
         this.totalFrameSize = totalFrameSize;
         this.deoptRescueSlot = deoptRescueSlot;
 
+        assert targetCode != null && dataSection != null;
         assert validateFrames();
     }
 
@@ -193,7 +212,7 @@ public class HotSpotCompiledCode implements CompiledCode {
      * Returns a copy of the compiled machine code.
      */
     public byte[] getTargetCode() {
-        return (targetCode == null) ? null : Arrays.copyOf(targetCode, targetCode.length);
+        return targetCode.clone();
     }
 
     /**
@@ -204,44 +223,38 @@ public class HotSpotCompiledCode implements CompiledCode {
     }
 
     /**
-     * Returns a copy of the array of {@link Site} objects associated with this compiled code.
+     * Returns the list of code annotations describing special sites in {@link #targetCode}.
      */
-    public Site[] getSites() {
-        return (sites == null) ? null : Arrays.copyOf(sites, sites.length);
+    public List<Site> getSites() {
+        return sites;
     }
 
     /**
-     * Returns a copy of the array of {@link Assumption} objects associated with this compiled code.
+     * Returns list of {@link Assumption} this code relies on.
      */
-    public Assumption[] getAssumptions() {
-        return (assumptions == null) ? null : Arrays.copyOf(assumptions, assumptions.length);
+    public List<Assumption> getAssumptions() {
+        return assumptions;
     }
 
     /**
-     * Returns a copy of the array of {@link ResolvedJavaMethod} objects representing the methods
-     * whose bytecodes were used as input to the compilation. If the compilation did not record
-     * method dependencies, this method returns {@code null}. Otherwise, the first element of the
-     * returned array is the root method of the compilation.
-     *
-     * @return a copy of the array of methods associated with this compiled code or {@code null}
-     * if no methods were recorded
+     * Returns the list of the methods whose bytecodes were used as input to the compilation
      */
-    public ResolvedJavaMethod[] getMethods() {
-        return (methods == null) ? null : Arrays.copyOf(methods, methods.length);
+    public List<ResolvedJavaMethod> getMethods() {
+        return methods;
     }
 
     /**
-     * Returns a copy of the array of {@link Comment} objects associated with this compiled code.
+     * Returns the list of comments that will be included in code dumps.
      */
-    public Comment[] getComments() {
-        return Arrays.copyOf(comments, comments.length);
+    public List<Comment> getComments() {
+        return comments;
     }
 
     /**
      * Returns a copy of the data section containing serialized constants for the emitted machine code.
      */
     public byte[] getDataSection() {
-        return (dataSection == null) ? null : Arrays.copyOf(dataSection, dataSection.length);
+        return dataSection.clone();
     }
 
     /**
@@ -252,13 +265,10 @@ public class HotSpotCompiledCode implements CompiledCode {
     }
 
     /**
-     * Returns a copy of the array of {@link DataPatch} objects representing the relocations in the
-     * {@linkplain #getDataSection() data section}.
-     *
-     * @return a copy of the array of data section patches or {@code null} if there are no patches
+     * Gets the list of relocations in the {@link #dataSection}.
      */
-    public DataPatch[] getDataSectionPatches() {
-        return (dataSectionPatches == null) ? null : Arrays.copyOf(dataSectionPatches, dataSectionPatches.length);
+    public List<DataPatch> getDataSectionPatches() {
+        return dataSectionPatches;
     }
 
     /**

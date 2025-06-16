@@ -22,7 +22,6 @@
  */
 package jdk.vm.ci.code;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -34,6 +33,8 @@ import jdk.vm.ci.meta.JavaValue;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
+import static jdk.vm.ci.code.CodeUtil.listFromTrustedArray;
+
 /**
  * An instance of this class represents an object whose allocation was removed by escape analysis.
  * The information stored in the {@link VirtualObject} is used during deoptimization to recreate the
@@ -43,7 +44,7 @@ public final class VirtualObject implements JavaValue {
 
     private final ResolvedJavaType type;
     private JavaValue[] values;
-    private JavaKind[] slotKinds;
+    private List<JavaKind> slotKinds;
     private final int id;
     private final boolean isAutoBox;
 
@@ -119,7 +120,7 @@ public final class VirtualObject implements JavaValue {
                             } else {
                                 ResolvedJavaField field = fields.get(fieldIndex);
                                 buf.append(field.getName());
-                                if (vo.slotKinds[i].getSlotCount() == 2 && field.getType().getJavaKind().getSlotCount() == 1) {
+                                if (vo.slotKinds.get(i).getSlotCount() == 2 && field.getType().getJavaKind().getSlotCount() == 1) {
                                     if (fieldIndex + 1 >= fields.size()) {
                                         buf.append("/<missing field>");
                                     } else {
@@ -158,7 +159,7 @@ public final class VirtualObject implements JavaValue {
             List<ResolvedJavaField> fields = type.getInstanceFields(true);
             int fieldIndex = 0;
             for (int i = 0; i < values.length; i++, fieldIndex++) {
-                JavaKind slotKind = slotKinds[i];
+                JavaKind slotKind = slotKinds.get(i);
                 if (fieldIndex >= fields.size()) {
                     throw new JVMCIError("Not enough fields for the values provided for %s", toString());
                 } else {
@@ -193,13 +194,13 @@ public final class VirtualObject implements JavaValue {
             }
         } else if (type.getComponentType().getJavaKind() == JavaKind.Byte) {
             for (int i = 0; i < values.length;) {
-                JavaKind slotkind = slotKinds[i];
+                JavaKind slotkind = slotKinds.get(i);
                 if (slotkind != JavaKind.Byte) {
                     if (!slotkind.isPrimitive()) {
                         throw new JVMCIError("Storing a non-primitive in a byte array: %s %s", slotkind, toString());
                     }
                     int byteCount = 1;
-                    while (++i < values.length && slotKinds[i] == JavaKind.Illegal) {
+                    while (++i < values.length && slotKinds.get(i) == JavaKind.Illegal) {
                         byteCount++;
                     }
                     /*
@@ -245,7 +246,7 @@ public final class VirtualObject implements JavaValue {
      * Returns the kind of the value at {@code index}.
      */
     public JavaKind getSlotKind(int index) {
-        return slotKinds[index];
+        return slotKinds.get(index);
     }
 
     /**
@@ -277,7 +278,7 @@ public final class VirtualObject implements JavaValue {
     public void setValues(JavaValue[] values, JavaKind[] slotKinds) {
         assert values.length == slotKinds.length;
         this.values = values;
-        this.slotKinds = slotKinds;
+        this.slotKinds = listFromTrustedArray(slotKinds);
     }
 
     @Override
@@ -315,13 +316,9 @@ public final class VirtualObject implements JavaValue {
     }
 
     /**
-     * Returns a copy of the array containing the Java kinds of the values stored in this
-     * virtual object.
-     *
-     * @return a copy of the array containing the Java kinds of the values or {@code null} if the
-     *         values have not been initialized.
+     * Returns the list containing the Java kinds of the values stored in this virtual object.
      */
-    public JavaKind[] getSlotKinds() {
-        return (slotKinds == null) ? null : Arrays.copyOf(slotKinds, slotKinds.length);
+    public List<JavaKind> getSlotKinds() {
+        return slotKinds;
     }
 }

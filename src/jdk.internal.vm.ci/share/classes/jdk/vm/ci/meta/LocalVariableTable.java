@@ -41,7 +41,7 @@ public class LocalVariableTable {
      *               object and must not be mutated by the caller.
      */
     public LocalVariableTable(Local[] locals) {
-        this.locals = List.of(locals);
+        this.locals = MetaUtil.listFromTrustedArray(locals);
     }
 
     /**
