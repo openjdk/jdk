@@ -239,7 +239,7 @@
                                     do_arch_blob,                       \
                                     do_arch_entry,                      \
                                     do_arch_entry_init)                 \
-  do_arch_blob(final, 31000                                             \
+  do_arch_blob(final, 33000                                             \
                WINDOWS_ONLY(+22000) ZGC_ONLY(+20000))                   \
 
 #endif // CPU_X86_STUBDECLARATIONS_HPP
