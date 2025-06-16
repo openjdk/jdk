@@ -923,7 +923,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
                    " crc 0x%08x",
                    region_name(region), region, size, p2i(requested_base), _file_offset, crc);
   } else {
-     aot_log_info(aot)("Shared file region (%s) %d: %8zu"
+    aot_log_info(aot)("Shared file region (%s) %d: %8zu"
                    " bytes", region_name(region), region, size);
   }
 
