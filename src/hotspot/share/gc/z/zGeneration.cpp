@@ -442,7 +442,7 @@ public:
     OopMapCache::try_trigger_cleanup();
   }
 
-  bool operation_is_gc() const { return true; }
+  bool is_gc_operation() const { return true; }
 
   bool success() const {
     return _success;

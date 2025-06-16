@@ -56,7 +56,7 @@ public:
   bool doit_prologue() override;
   void doit_epilogue() override;
 
-  bool operation_is_gc() const override { return true; }
+  bool is_gc_operation() const override { return true; }
 };
 
 class VM_ShenandoahReferenceOperation : public VM_ShenandoahOperation {

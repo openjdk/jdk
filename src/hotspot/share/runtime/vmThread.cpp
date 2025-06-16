@@ -279,7 +279,7 @@ void VMThread::evaluate_operation(VM_Operation* op) {
                      op->evaluate_at_safepoint() ? 0 : 1);
 
     EventExecuteVMOperation event;
-    VTimeScope vTimeScope(this, op->operation_is_gc());
+    VTimeScope vTimeScope(this, op->is_gc_operation());
     op->evaluate();
     if (event.should_commit()) {
       post_vm_operation_event(&event, op);
