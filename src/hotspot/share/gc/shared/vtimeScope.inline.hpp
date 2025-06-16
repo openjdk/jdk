@@ -23,16 +23,17 @@
  */
 
 #include "gc/shared/vtimeScope.hpp"
-#include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
+#include "runtime/vmThread.hpp"
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/os.hpp"
 
-inline VTimeScope::VTimeScope(VMThread *thread, bool operation_is_gc)
+inline VTimeScope::VTimeScope(VMThread* thread, bool operation_is_gc)
     : _start(0), _enabled(os::is_thread_cpu_time_supported()),
-      _gcLogging(operation_is_gc && (log_is_enabled(Info, gc) || log_is_enabled(Info, gc, cpu))),
-      _thread((Thread*)thread) {
+      _gcLogging(operation_is_gc && log_is_enabled(Info, gc)),
+      _thread(thread) {
   if (_gcLogging && _enabled) {
     _start = os::thread_cpu_time(_thread);
   }

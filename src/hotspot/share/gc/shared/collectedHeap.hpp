@@ -242,19 +242,14 @@ protected:
   virtual void post_initialize();
 
   // Stop any onging concurrent work and prepare for exit.
-  virtual void stop() { log_gc_vtime(); }
+  virtual void stop();
 
   // Stop and resume concurrent GC threads interfering with safepoint operations
   virtual void safepoint_synchronize_begin() {}
   virtual void safepoint_synchronize_end() {}
 
-  static jlong vm_vtime() {
-    return _vm_vtime;
-  }
-
-  static void add_vm_vtime(jlong time) {
-    _vm_vtime += time;
-  }
+  static jlong vm_vtime();
+  static void add_vm_vtime(jlong time);
 
   void initialize_reserved_region(const ReservedHeapSpace& rs);
 
