@@ -88,3 +88,12 @@ Java_sun_nio_ch_NativeThread_signal0(JNIEnv *env, jclass cl, jlong thread)
 #endif
         JNU_ThrowIOExceptionWithLastError(env, "Thread signal failed");
 }
+
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_NativeThread_supportPendingSignals0(JNIEnv *env, jclass cl) {
+#if defined(_AIX)
+    return JNI_TRUE;
+#else
+    return JNI_FALSE;
+#endif
+}
