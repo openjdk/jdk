@@ -32,6 +32,7 @@
 #include "logging/logAsyncWriter.hpp"
 #include "memory/universe.hpp"
 #include "nmt/memTracker.hpp"
+#include "oops/trainingData.hpp"
 #include "prims/downcallLinker.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
@@ -67,6 +68,7 @@ void compilationPolicy_init();
 void codeCache_init();
 void VM_Version_init();
 void icache_init2();
+void preuniverse_stubs_init();
 void initial_stubs_init();
 
 jint universe_init();           // depends on codeCache_init and initial_stubs_init
@@ -128,6 +130,8 @@ jint init_globals() {
   codeCache_init();
   VM_Version_init();              // depends on codeCache_init for emitting code
   icache_init2();                 // depends on VM_Version for choosing the mechanism
+  // initialize stubs needed before we can init the universe
+  preuniverse_stubs_init();
   // stub routines in initial blob are referenced by later generated code
   initial_stubs_init();
   // stack overflow exception blob is referenced by the interpreter
@@ -187,6 +191,11 @@ jint init_globals2() {
     JVMCI::initialize_globals();
   }
 #endif
+
+  // Initialize TrainingData only we're recording/replaying
+  if (TrainingData::have_data() || TrainingData::need_data()) {
+   TrainingData::initialize();
+  }
 
   if (!universe_post_init()) {
     return JNI_ERR;

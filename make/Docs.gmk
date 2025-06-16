@@ -540,7 +540,9 @@ $(eval $(call SetupApiDocsGeneration, REFERENCE_API, \
 # Format: space-delimited list of names, including at most one '%' as a
 # wildcard. Spec source files match if their filename or any enclosing folder
 # name matches one of the items in SPEC_FILTER.
-SPEC_FILTER := %
+ifeq ($(SPEC_FILTER), )
+  SPEC_FILTER := %
+endif
 
 ApplySpecFilter = \
     $(strip $(foreach file, $(1), \
