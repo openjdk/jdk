@@ -233,7 +233,7 @@ void CollectedHeap::print() const {
 }
 
 void CollectedHeap::log_gc_vtime() {
-  if (os::is_thread_cpu_time_supported()) {
+  if (os::is_thread_cpu_time_supported() && log_is_enabled(Info, gc)) {
     double process_vtime = os::elapsed_process_vtime();
     double gc_vtime = elapsed_gc_vtime();
     double string_dedup_vtime = UseStringDeduplication ? os::thread_cpu_time((Thread*)StringDedup::_processor->_thread) / NANOSECS_PER_SEC : 0;
