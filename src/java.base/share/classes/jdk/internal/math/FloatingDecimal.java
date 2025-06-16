@@ -1838,8 +1838,11 @@ public class FloatingDecimal{
     }
 
     static ASCIIToBinaryConverter readDoubleSignlessDigits(int decExp, char[] digits, int length) {
+
+        // Prevent an extreme negative exponent from causing overflow issues in doubleValue().
+        // Large positive values are handled within doubleValue();
         if (decExp < MIN_DECIMAL_EXPONENT) {
-            return buildZero(BINARY_64_IX, 1);
+            return A2BC_POSITIVE_ZERO;
         }
         byte[] buf = new byte[length];
         for (int i = 0; i < length; i++) {
