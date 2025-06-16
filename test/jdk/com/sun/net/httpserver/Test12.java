@@ -155,6 +155,7 @@ public class Test12 extends Test {
                  OutputStream fout = new BufferedOutputStream(new FileOutputStream(temp.toFile()))) {
                 numReceived = is.transferTo(fout);
             }
+            System.out.println("received a total of " + numReceived + " bytes of response for " + url);
             final long expected = filePath.toFile().length();
             if (numReceived != expected) {
                 throw new RuntimeException ("expected " + expected + " bytes, but received "
