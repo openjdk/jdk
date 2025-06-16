@@ -21,13 +21,15 @@
  * questions.
  */
 
+#include "gc/z/zAllocationFlags.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zHeuristics.hpp"
 #include "gc/z/zLock.inline.hpp"
-#include "gc/z/zObjectAllocator.inline.hpp"
+#include "gc/z/zObjectAllocator.hpp"
 #include "gc/z/zPage.inline.hpp"
-#include "gc/z/zPageTable.inline.hpp"
+#include "gc/z/zPageAge.inline.hpp"
+#include "gc/z/zPageType.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zValue.inline.hpp"
 #include "logging/log.hpp"
@@ -36,40 +38,81 @@
 #include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/deferred.hpp"
+#include "utilities/valueObjArray.hpp"
 
 static const ZStatCounter ZCounterUndoObjectAllocationSucceeded("Memory", "Undo Object Allocation Succeeded", ZStatUnitOpsPerSecond);
 static const ZStatCounter ZCounterUndoObjectAllocationFailed("Memory", "Undo Object Allocation Failed", ZStatUnitOpsPerSecond);
 
-ZObjectAllocators::Allocators ZObjectAllocators::_allocators;
+class ZObjectAllocatorImpl {
+public:
+  const ZPageAge     _age;
+  const bool         _use_per_cpu_shared_small_pages;
+  ZPerCPU<ZPage*>    _shared_small_page;
+  ZContended<ZPage*> _shared_medium_page;
+  ZLock              _medium_page_alloc_lock;
 
-ZObjectAllocator::ZObjectAllocator(ZPageAge age)
+  ZObjectAllocatorImpl(ZPageAge age);
+
+  ZPage** shared_small_page_addr();
+  ZPage* const* shared_small_page_addr() const;
+
+  ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags);
+  void undo_alloc_page(ZPage* page);
+
+  // Allocate an object in a shared page. Allocate and
+  // atomically install a new page if necessary.
+  zaddress alloc_object_in_shared_page(ZPage** shared_page,
+                                       ZPageType page_type,
+                                       size_t page_size,
+                                       size_t size,
+                                       ZAllocationFlags flags);
+
+  zaddress alloc_object_in_medium_page(size_t size,
+                                       ZAllocationFlags flags);
+
+  zaddress alloc_large_object(size_t size, ZAllocationFlags flags);
+  zaddress alloc_medium_object(size_t size, ZAllocationFlags flags);
+  zaddress alloc_small_object(size_t size, ZAllocationFlags flags);
+  zaddress alloc_object(size_t size, ZAllocationFlags flags);
+
+  void retire_pages();
+};
+
+static Deferred<ValueObjArray<ZObjectAllocatorImpl, ZObjectAllocator::NumAllocators>> ZObjectAllocators;
+
+static ZObjectAllocatorImpl* allocator(ZPageAge age) {
+  return ZObjectAllocators->at((int)untype(age));
+}
+
+ZObjectAllocatorImpl::ZObjectAllocatorImpl(ZPageAge age)
   : _age(age),
     _use_per_cpu_shared_small_pages(ZHeuristics::use_per_cpu_shared_small_pages()),
     _shared_small_page(nullptr),
     _shared_medium_page(nullptr),
     _medium_page_alloc_lock() {}
 
-ZPage** ZObjectAllocator::shared_small_page_addr() {
+ZPage** ZObjectAllocatorImpl::shared_small_page_addr() {
   return _use_per_cpu_shared_small_pages ? _shared_small_page.addr() : _shared_small_page.addr(0);
 }
 
-ZPage* const* ZObjectAllocator::shared_small_page_addr() const {
+ZPage* const* ZObjectAllocatorImpl::shared_small_page_addr() const {
   return _use_per_cpu_shared_small_pages ? _shared_small_page.addr() : _shared_small_page.addr(0);
 }
 
-ZPage* ZObjectAllocator::alloc_page(ZPageType type, size_t size, ZAllocationFlags flags) {
+ZPage* ZObjectAllocatorImpl::alloc_page(ZPageType type, size_t size, ZAllocationFlags flags) {
   return ZHeap::heap()->alloc_page(type, size, flags, _age);
 }
 
-void ZObjectAllocator::undo_alloc_page(ZPage* page) {
+void ZObjectAllocatorImpl::undo_alloc_page(ZPage* page) {
   ZHeap::heap()->undo_alloc_page(page);
 }
 
-zaddress ZObjectAllocator::alloc_object_in_shared_page(ZPage** shared_page,
-                                                       ZPageType page_type,
-                                                       size_t page_size,
-                                                       size_t size,
-                                                       ZAllocationFlags flags) {
+zaddress ZObjectAllocatorImpl::alloc_object_in_shared_page(ZPage** shared_page,
+                                                           ZPageType page_type,
+                                                           size_t page_size,
+                                                           size_t size,
+                                                           ZAllocationFlags flags) {
   zaddress addr = zaddress::null;
   ZPage* page = Atomic::load_acquire(shared_page);
 
@@ -114,8 +157,8 @@ zaddress ZObjectAllocator::alloc_object_in_shared_page(ZPage** shared_page,
   return addr;
 }
 
-zaddress ZObjectAllocator::alloc_object_in_medium_page(size_t size,
-                                                       ZAllocationFlags flags) {
+zaddress ZObjectAllocatorImpl::alloc_object_in_medium_page(size_t size,
+                                                           ZAllocationFlags flags) {
   zaddress addr = zaddress::null;
   ZPage** shared_medium_page = _shared_medium_page.addr();
   ZPage* page = Atomic::load_acquire(shared_medium_page);
@@ -163,7 +206,7 @@ zaddress ZObjectAllocator::alloc_object_in_medium_page(size_t size,
   return addr;
 }
 
-zaddress ZObjectAllocator::alloc_large_object(size_t size, ZAllocationFlags flags) {
+zaddress ZObjectAllocatorImpl::alloc_large_object(size_t size, ZAllocationFlags flags) {
   zaddress addr = zaddress::null;
 
   // Allocate new large page
@@ -177,15 +220,15 @@ zaddress ZObjectAllocator::alloc_large_object(size_t size, ZAllocationFlags flag
   return addr;
 }
 
-zaddress ZObjectAllocator::alloc_medium_object(size_t size, ZAllocationFlags flags) {
+zaddress ZObjectAllocatorImpl::alloc_medium_object(size_t size, ZAllocationFlags flags) {
   return alloc_object_in_medium_page(size, flags);
 }
 
-zaddress ZObjectAllocator::alloc_small_object(size_t size, ZAllocationFlags flags) {
+zaddress ZObjectAllocatorImpl::alloc_small_object(size_t size, ZAllocationFlags flags) {
   return alloc_object_in_shared_page(shared_small_page_addr(), ZPageType::small, ZPageSizeSmall, size, flags);
 }
 
-zaddress ZObjectAllocator::alloc_object(size_t size, ZAllocationFlags flags) {
+zaddress ZObjectAllocatorImpl::alloc_object(size_t size, ZAllocationFlags flags) {
   if (size <= ZObjectSizeLimitSmall) {
     // Small
     return alloc_small_object(size, flags);
@@ -198,7 +241,7 @@ zaddress ZObjectAllocator::alloc_object(size_t size, ZAllocationFlags flags) {
   }
 }
 
-void ZObjectAllocator::retire_pages() {
+void ZObjectAllocatorImpl::retire_pages() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
   // Reset allocation pages
@@ -206,12 +249,18 @@ void ZObjectAllocator::retire_pages() {
   _shared_small_page.set_all(nullptr);
 }
 
-void ZObjectAllocators::initialize() {
+void ZObjectAllocator::initialize() {
   ZPageAgeRange::Iterator it = ZPageAgeRange().begin();
-  _allocators.initialize(it);
+  ZObjectAllocators.initialize(it);
 }
 
-size_t ZObjectAllocators::remaining_in_eden() {
+void ZObjectAllocator::retire_pages(ZPageAgeRange range) {
+  for (ZPageAge age : range) {
+    allocator(age)->retire_pages();
+  }
+}
+
+size_t ZObjectAllocator::remaining_in_eden() {
   assert(Thread::current()->is_Java_thread(), "Should be a Java thread");
 
   ZPage** const shared_addr = allocator(ZPageAge::eden)->shared_small_page_addr();
@@ -223,7 +272,7 @@ size_t ZObjectAllocators::remaining_in_eden() {
   return 0;
 }
 
-zaddress ZObjectAllocators::alloc_object(size_t size, ZPageAge age) {
+zaddress ZObjectAllocator::alloc_object(size_t size, ZPageAge age) {
   ZAllocationFlags flags;
 
   if (age != ZPageAge::eden) {
@@ -234,7 +283,7 @@ zaddress ZObjectAllocators::alloc_object(size_t size, ZPageAge age) {
   return allocator(age)->alloc_object(size, flags);
 }
 
-void ZObjectAllocators::undo_alloc_object(zaddress addr, size_t size, ZPageAge age) {
+void ZObjectAllocator::undo_alloc_object(zaddress addr, size_t size, ZPageAge age) {
   ZPage* const page = ZHeap::heap()->page(addr);
 
   if (page->is_large()) {

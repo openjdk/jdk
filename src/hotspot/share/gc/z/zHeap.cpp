@@ -143,7 +143,7 @@ size_t ZHeap::max_tlab_size() const {
 }
 
 size_t ZHeap::unsafe_max_tlab_alloc() const {
-  size_t size = ZObjectAllocators::remaining_in_eden();
+  size_t size = ZObjectAllocator::remaining_in_eden();
 
   if (size < MinTLABSize) {
     // The remaining space in the allocator is not enough to

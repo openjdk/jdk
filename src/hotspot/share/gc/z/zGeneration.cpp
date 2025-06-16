@@ -40,7 +40,7 @@
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zJNICritical.hpp"
 #include "gc/z/zMark.inline.hpp"
-#include "gc/z/zObjectAllocator.inline.hpp"
+#include "gc/z/zObjectAllocator.hpp"
 #include "gc/z/zPageAge.inline.hpp"
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zRelocationSet.inline.hpp"
@@ -841,7 +841,7 @@ void ZGenerationYoung::mark_start() {
   ZHeap::heap()->reset_tlab_used();
 
   // Retire allocating pages
-  ZObjectAllocators::retire_pages(ZPageAgeRangeYoung);
+  ZObjectAllocator::retire_pages(ZPageAgeRangeYoung);
 
   // Reset allocated/reclaimed/used statistics
   reset_statistics();
@@ -1198,7 +1198,7 @@ void ZGenerationOld::mark_start() {
   flip_mark_start();
 
   // Retire allocating pages
-  ZObjectAllocators::retire_pages(ZPageAgeRangeOld);
+  ZObjectAllocator::retire_pages(ZPageAgeRangeOld);
 
   // Reset allocated/reclaimed/used statistics
   reset_statistics();

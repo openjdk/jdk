@@ -69,7 +69,7 @@ void ZInitialize::initialize(ZBarrierSet* barrier_set) {
   ZJNICritical::initialize();
   ZDriver::initialize();
   ZGCIdPrinter::initialize();
-  ZObjectAllocators::initialize();
+  ZObjectAllocator::initialize();
 
   pd_initialize();
 }

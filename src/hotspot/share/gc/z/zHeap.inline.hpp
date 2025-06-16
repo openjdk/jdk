@@ -76,7 +76,7 @@ inline bool ZHeap::is_object_strongly_live(zaddress addr) const {
 }
 
 inline zaddress ZHeap::alloc_object(size_t size) const {
-  const zaddress addr = ZObjectAllocators::alloc_object(size, ZPageAge::eden);
+  const zaddress addr = ZObjectAllocator::alloc_object(size, ZPageAge::eden);
 
   if (is_null(addr)) {
     out_of_memory();
@@ -87,7 +87,7 @@ inline zaddress ZHeap::alloc_object(size_t size) const {
 
 inline zaddress ZHeap::alloc_tlab(size_t size) const {
   guarantee(size <= max_tlab_size(), "TLAB too large");
-  return ZObjectAllocators::alloc_object(size, ZPageAge::eden);
+  return ZObjectAllocator::alloc_object(size, ZPageAge::eden);
 }
 
 inline bool ZHeap::is_alloc_stalling() const {
