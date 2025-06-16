@@ -74,7 +74,9 @@ public class HTMLFileName {
                   <li>Verify that the first file name displays as <em>HTML</em>,
                       that is <code><font face="Serif"
                       color=#ff00ff>Swing Rocks!</code> in large font
-                      and magenta color.
+                      and magenta color.<br>
+                      <b>Note:</b> On macOS in Aqua L&amp;F, the file name with
+                      HTML displays as an empty file name. It is not an error.
                   <li>If the file name in the file pane and
                       in the navigation combo box above is displayed
                       as HTML, then press <b>Pass</b>.<br>
