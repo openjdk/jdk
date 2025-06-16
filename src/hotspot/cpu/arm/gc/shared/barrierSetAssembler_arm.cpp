@@ -196,7 +196,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   //
   // Put a debug value to make any offsets skew
   // clearly visible in coredump
-  __ emit_int32(0xDEADBEAF);
+  __ emit_int32(0xBEAFDEAD); // high "sticky" bit should not be set
 
   __ bind(skip);
   __ block_comment("nmethod_barrier end");
