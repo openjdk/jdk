@@ -26,7 +26,7 @@ import java.awt.Frame;
 /**
  * @test
  * @bug 8346952
- * @summary Floods the EDT with updateGC() events then brutally disposes the frame.
+ * @summary dispose the frame while flooding the EDT with Notify events.
  * @key headful
  */
 
@@ -36,24 +36,34 @@ public final class NotifyStressTest {
     public static void main(final String[] args) throws Exception {
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> failed = e);
 
-        Frame frame = new Frame();
-        frame.setSize(100, 100);
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
-
-        for (int i = 0; i < 256; i++) {
-            frame.removeNotify();
-            frame.addNotify();
+        for (int i = 0; i < 100; i++) {
+            test();
         }
 
-        frame.dispose();
+        // let the system recover.
+        Thread.sleep(5000);
+    }
+
+    private static void test() throws Exception {
+        Frame f = new Frame();
+        f.setSize(100, 100);
+        f.setLocationRelativeTo(null);
+        f.setVisible(true);
+        f.dispose();
+
+        Thread thread1 = new Thread(() -> {
+            for (int i = 0; i < 10; i++) {
+                f.removeNotify();
+                f.addNotify();
+            }
+        });
+        thread1.start();
+        thread1.join();
+
         if (failed != null) {
             System.err.println("Test failed");
             failed.printStackTrace();
             throw new RuntimeException(failed);
         }
-
-        // let the system recover from the notify flood
-        Thread.sleep(5000);
     }
 }
