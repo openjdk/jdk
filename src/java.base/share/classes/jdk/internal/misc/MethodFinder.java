@@ -51,7 +51,6 @@ public class MethodFinder {
      * <li>have a single argument of type {@code String[]}, {@code String...} or no argument</li>
      * <li>have the return type of void</li>
      * <li>be public, protected or package private</li>
-     * <li>not be abstract</li>
      *</ul>
      *
      * The method returned would be used by a launcher to initiate the execution of an
@@ -89,23 +88,21 @@ public class MethodFinder {
             mainMethod = JLA.findMethod(cls, false, "main", String[].class);
         }
 
-        if (mainMethod == null) {
+        if (mainMethod == null || !isValidMainMethod(mainMethod)) {
             mainMethod = JLA.findMethod(cls, false, "main");
         }
 
-        if (mainMethod == null) {
-            return null;
-        }
-
-        int mods = mainMethod.getModifiers();
-
-        if (Modifier.isAbstract(mods) ||
-                mainMethod.getReturnType() != void.class ||
-                Modifier.isPrivate(mods)) {
+        if (mainMethod == null || !isValidMainMethod(mainMethod)) {
             return null;
         }
 
         return mainMethod;
+    }
+
+    private static boolean isValidMainMethod(Method mainMethodCandidate) {
+        return mainMethodCandidate.getReturnType() == void.class &&
+               !Modifier.isPrivate(mainMethodCandidate.getModifiers());
+
     }
 
 }

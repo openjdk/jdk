@@ -150,6 +150,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
      */
     private static final int MAXIMUM_BUFFER_LENGTH_NET_WM_ICON = (2<<15) - 1;
 
+    @Override
     void preInit(XCreateWindowParams params) {
         target = (Component)params.get(TARGET);
         windowType = ((Window)target).getType();
@@ -203,6 +204,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         ((X11GraphicsDevice)gc.getDevice()).addDisplayChangedListener(this);
     }
 
+    @Override
     protected String getWMName() {
         String name = target.getName();
         if (name == null || name.trim().isEmpty()) {
@@ -214,6 +216,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     private static native String getLocalHostname();
     private static native int getJvmPID();
 
+    @Override
     void postInit(XCreateWindowParams params) {
         super.postInit(params);
 
@@ -284,6 +287,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         // no need in updateOpaque() as it is no-op
     }
 
+    @Override
     public void updateIconImages() {
         Window target = (Window)this.target;
         java.util.List<Image> iconImages = target.getIconImages();
@@ -453,6 +457,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
     }
 
+    @Override
     public void updateMinimumSize() {
         //This function only saves minimumSize value in XWindowPeer
         //Setting WMSizeHints is implemented in XDecoratedPeer
@@ -475,6 +480,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     //Since events are not posted from Component.setBounds we need to send them here.
     //Note that this function is overridden in XDecoratedPeer so event
     //posting is not changing for decorated peers
+    @Override
     public void setBounds(int x, int y, int width, int height, int op) {
         XToolkit.awtLock();
         try {
@@ -516,6 +522,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
     }
 
+    @Override
     public Insets getInsets() {
         return new Insets(0, 0, 0, 0);
     }
@@ -717,6 +724,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
      * From the DisplayChangedListener interface; called from
      * X11GraphicsDevice when the display mode has been changed.
      */
+    @Override
     public void displayChanged() {
         executeDisplayChangedOnEDT(getGraphicsConfiguration());
     }
@@ -725,6 +733,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
      * From the DisplayChangedListener interface; top-levels do not need
      * to react to this event.
      */
+    @Override
     public void paletteChanged() {
     }
 
@@ -897,6 +906,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
     void setSaveUnder(boolean state) {}
 
+    @Override
     public void toFront() {
         if (isOverrideRedirect() && mustControlStackPosition) {
             mustControlStackPosition = false;
@@ -914,6 +924,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
     }
 
+    @Override
     public void toBack() {
         XToolkit.awtLock();
         try {
@@ -1034,6 +1045,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                         XLayerProtocol.LAYER_NORMAL);
     }
 
+    @Override
     public void updateAlwaysOnTopState() {
         this.alwaysOnTop = ((Window) this.target).isAlwaysOnTop();
         if (ownerPeer != null) {
@@ -1049,6 +1061,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         updateAlwaysOnTop();
     }
 
+    @Override
     boolean isLocationByPlatform() {
         return locationByPlatform;
     }
@@ -1068,6 +1081,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
     }
 
+    @Override
     public void setVisible(boolean vis) {
         if (!isVisible() && vis) {
             isBeforeFirstMapNotify = true;
@@ -1174,6 +1188,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             winAttr.nativeDecor == false;
     }
 
+    @Override
     public void dispose() {
         if (isGrabbed()) {
             if (grabLog.isLoggable(PlatformLogger.Level.FINE)) {
@@ -1208,10 +1223,12 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
     }
 
+    @Override
     boolean isResizable() {
         return winAttr.isResizable;
     }
 
+    @Override
     public void handleVisibilityEvent(XEvent xev) {
         super.handleVisibilityEvent(xev);
         XVisibilityEvent ve = xev.get_xvisibility();
@@ -1293,6 +1310,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
     }
 
+    @Override
     public void handleMapNotifyEvent(XEvent xev) {
         removeStartupNotification();
 
@@ -1329,6 +1347,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
     }
 
+    @Override
     public void handleUnmapNotifyEvent(XEvent xev) {
         super.handleUnmapNotifyEvent(xev);
 
@@ -1414,6 +1433,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
     }
 
+    @Override
     void setReparented(boolean newValue) {
         super.setReparented(newValue);
         XToolkit.awtLock();
@@ -1493,6 +1513,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         return javaToplevels;
     }
 
+    @Override
     public void setModalBlocked(Dialog d, boolean blocked) {
         setModalBlocked(d, blocked, null);
     }
@@ -1980,6 +2001,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             rootPropertyEventDispatcher = null;
         }
     }
+    @Override
     public void updateFocusableWindowState() {
         cachedFocusableWindow = isFocusableWindow();
     }
@@ -2000,6 +2022,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
     }
 
+    @Override
     public PropMwmHints getMWMHints() {
         if (mwm_hints == null) {
             mwm_hints = new PropMwmHints();
@@ -2010,6 +2033,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         return mwm_hints;
     }
 
+    @Override
     public void setMWMHints(PropMwmHints hints) {
         mwm_hints = hints;
         if (hints != null) {
@@ -2046,6 +2070,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         return grab && XAwtState.getGrabWindow() == this;
     }
 
+    @Override
     public void handleXCrossingEvent(XEvent xev) {
         XCrossingEvent xce = xev.get_xcrossing();
         if (grabLog.isLoggable(PlatformLogger.Level.FINE)) {
@@ -2074,6 +2099,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         super.handleXCrossingEvent(xev);
     }
 
+    @Override
     public void handleMotionNotify(XEvent xev) {
         XMotionEvent xme = xev.get_xmotion();
         if (grabLog.isLoggable(PlatformLogger.Level.FINER)) {
@@ -2135,6 +2161,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     // we use it to retarget mouse drag and mouse release during grab.
     private XBaseWindow pressTarget = this;
 
+    @Override
     public void handleButtonPressRelease(XEvent xev) {
         XButtonEvent xbe = xev.get_xbutton();
         /*
@@ -2269,6 +2296,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         super.handleButtonPressRelease(xev);
     }
 
+    @Override
     public void print(Graphics g) {
         // We assume we print the whole frame,
         // so we expect no clip was set previously
