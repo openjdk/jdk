@@ -811,10 +811,10 @@ void DefNewGeneration::gc_epilogue(bool full) {
 
 void DefNewGeneration::update_counters() {
   if (UsePerfData) {
-    _eden_counters->update_all();
-    _from_counters->update_all();
-    _to_counters->update_all();
-    _gen_counters->update_all(_virtual_space.committed_size());
+    _eden_counters->update_memory_state();
+    _from_counters->update_memory_state();
+    _to_counters->update_memory_state();
+    _gen_counters->update_memory_state(_virtual_space.committed_size());
   }
 }
 

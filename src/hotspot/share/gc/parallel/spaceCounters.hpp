@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ class SpaceCounters: public CHeapObj<mtGC> {
 
   void update_used();
 
-  inline void update_all() {
+  inline void update_memory_state() {
     update_used();
     update_capacity();
   }

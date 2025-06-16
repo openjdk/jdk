@@ -67,7 +67,7 @@ GenerationCounters::~GenerationCounters() {
   FREE_C_HEAP_ARRAY(char, _name_space);
 }
 
-void GenerationCounters::update_all(size_t curr_capacity) {
+void GenerationCounters::update_memory_state(size_t curr_capacity) {
   _current_size->set_value(curr_capacity);
 }
 
