@@ -807,10 +807,10 @@ void PSYoungGen::post_resize() {
 
 void PSYoungGen::update_counters() {
   if (UsePerfData) {
-    _eden_counters->update_all();
-    _from_counters->update_all();
-    _to_counters->update_all();
-    _gen_counters->update_all(_virtual_space->committed_size());
+    _eden_counters->update_capacity();
+    _from_counters->update_capacity();
+    _to_counters->update_capacity();
+    _gen_counters->update_capacity(_virtual_space->committed_size());
   }
 }
 

@@ -59,7 +59,7 @@ class CSpaceCounters: public CHeapObj<mtGC> {
 
   void update_capacity();
   void update_used();
-  void update_all();
+  void update_capacity();
 
   const char* name_space() const        { return _name_space; }
 };

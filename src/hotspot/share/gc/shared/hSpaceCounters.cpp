@@ -77,7 +77,7 @@ void HSpaceCounters::update_used(size_t v) {
   _used->set_value(v);
 }
 
-void HSpaceCounters::update_all(size_t capacity, size_t used) {
+void HSpaceCounters::update_capacity(size_t capacity, size_t used) {
   update_capacity(capacity);
   update_used(used);
 }

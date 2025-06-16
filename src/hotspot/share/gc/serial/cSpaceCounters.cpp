@@ -80,7 +80,7 @@ void CSpaceCounters::update_used() {
   _used->set_value(new_used);
 }
 
-void CSpaceCounters::update_all() {
+void CSpaceCounters::update_capacity() {
   update_used();
   update_capacity();
 }

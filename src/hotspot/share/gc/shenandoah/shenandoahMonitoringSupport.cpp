@@ -36,7 +36,7 @@ public:
   ShenandoahYoungGenerationCounters() :
           GenerationCounters("Young", 0, 0, 0, (size_t)0, (size_t)0) {};
 
-  void update_all() {
+  void update_capacity() {
     // no update
   }
 };
@@ -50,8 +50,8 @@ public:
           _heap(heap)
   {};
 
-  void update_all() {
-    GenerationCounters::update_all(_heap->capacity());
+  void update_capacity() {
+    GenerationCounters::update_capacity(_heap->capacity());
   }
 };
 
@@ -98,8 +98,8 @@ void ShenandoahMonitoringSupport::update_counters() {
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     size_t used = heap->used();
     size_t capacity = heap->max_capacity();
-    _heap_counters->update_all();
-    _space_counters->update_all(capacity, used);
+    _heap_counters->update_capacity();
+    _space_counters->update_capacity(capacity, used);
     _heap_region_counters->update();
 
     MetaspaceCounters::update_performance_counters();

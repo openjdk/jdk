@@ -54,7 +54,7 @@ class HSpaceCounters: public CHeapObj<mtGC> {
   void update_capacity(size_t v);
   void update_used(size_t v);
 
-  void update_all(size_t capacity, size_t used);
+  void update_capacity(size_t capacity, size_t used);
 
   DEBUG_ONLY(
     // for security reasons, we do not allow arbitrary reads from

@@ -56,13 +56,13 @@ public:
                          max_size,
                          0 /* curr_capacity */) {
     if (UsePerfData) {
-      update_all();
+      update_capacity();
     }
   }
 
-  void update_all() {
+  void update_capacity() {
     size_t committed = _monitoring_support->young_gen_committed();
-    GenerationCounters::update_all(committed);
+    GenerationCounters::update_capacity(committed);
   }
 };
 
@@ -77,13 +77,13 @@ public:
                          max_size,
                          0 /* curr_capacity */) {
     if (UsePerfData) {
-      update_all();
+      update_capacity();
     }
   }
 
-  void update_all() {
+  void update_capacity() {
     size_t committed = _monitoring_support->old_gen_committed();
-    GenerationCounters::update_all(committed);
+    GenerationCounters::update_capacity(committed);
   }
 };
 
@@ -305,8 +305,8 @@ void G1MonitoringSupport::update_sizes() {
     _old_space_counters->update_capacity(_old_gen_committed);
     _old_space_counters->update_used(_old_gen_used);
 
-    _young_gen_counters->update_all();
-    _old_gen_counters->update_all();
+    _young_gen_counters->update_capacity();
+    _old_gen_counters->update_capacity();
 
     MetaspaceCounters::update_performance_counters();
   }

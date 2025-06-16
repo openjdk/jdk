@@ -52,7 +52,7 @@ class GenerationCounters: public CHeapObj<mtGC> {
 
   ~GenerationCounters();
 
-  void update_all(size_t curr_capacity);
+  void update_capacity(size_t curr_capacity);
 
   const char* name_space() const        { return _name_space; }
 };

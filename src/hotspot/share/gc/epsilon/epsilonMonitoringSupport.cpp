@@ -75,7 +75,7 @@ public:
     FREE_C_HEAP_ARRAY(char, _name_space);
   }
 
-  inline void update_all(size_t capacity, size_t used) {
+  inline void update_capacity(size_t capacity, size_t used) {
     _capacity->set_value(capacity);
     _used->set_value(used);
   }
@@ -90,8 +90,8 @@ public:
           _heap(heap)
   {};
 
-  void update_all() {
-    GenerationCounters::update_all(_heap->capacity());
+  void update_capacity() {
+    GenerationCounters::update_capacity(_heap->capacity());
   }
 };
 
@@ -107,8 +107,8 @@ void EpsilonMonitoringSupport::update_counters() {
     EpsilonHeap* heap = EpsilonHeap::heap();
     size_t used = heap->used();
     size_t capacity = heap->capacity();
-    _heap_counters->update_all();
-    _space_counters->update_all(capacity, used);
+    _heap_counters->update_capacity();
+    _space_counters->update_capacity(capacity, used);
     MetaspaceCounters::update_performance_counters();
   }
 }

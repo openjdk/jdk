@@ -63,7 +63,7 @@ class SpaceCounters: public CHeapObj<mtGC> {
 
   void update_used();
 
-  inline void update_all() {
+  inline void update_capacity() {
     update_used();
     update_capacity();
   }
