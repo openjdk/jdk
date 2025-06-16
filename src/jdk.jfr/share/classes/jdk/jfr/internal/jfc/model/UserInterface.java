@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 
+import jdk.internal.util.StaticProperty;
+
 public final class UserInterface {
 
     public void println() {
@@ -41,7 +43,7 @@ public final class UserInterface {
 
     public String readLine() throws AbortException {
         try {
-            Charset charset = Charset.forName(System.getProperty("stdin.encoding"), Charset.defaultCharset());
+            Charset charset = Charset.forName(StaticProperty.stdinEncoding(), Charset.defaultCharset());
             BufferedReader br = new BufferedReader(new InputStreamReader(System.in, charset));
             String line = br.readLine();
             if (line == null || line.equalsIgnoreCase("Q")) {

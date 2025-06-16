@@ -25,6 +25,7 @@
 
 package jdk.internal.jshell.tool;
 
+import jdk.internal.util.StaticProperty;
 import jdk.jshell.SourceCodeAnalysis.Documentation;
 import jdk.jshell.SourceCodeAnalysis.QualifiedNames;
 import jdk.jshell.SourceCodeAnalysis.Suggestion;
@@ -167,7 +168,7 @@ class ConsoleIOContext extends IOContext {
                                           return nonBlockingInput;
                                       })
                                       .nativeSignals(false)
-                                      .encoding(System.getProperty("stdin.encoding"))
+                                      .encoding(StaticProperty.stdinEncoding())
                                       .build();
             useComplexDeprecationHighlight = !OSUtils.IS_WINDOWS;
         }

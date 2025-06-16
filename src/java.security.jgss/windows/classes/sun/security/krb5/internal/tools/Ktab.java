@@ -41,6 +41,7 @@ import java.text.DateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
+import jdk.internal.util.StaticProperty;
 import sun.security.krb5.internal.crypto.EType;
 /**
  * This class can execute as a command-line tool to help the user manage
@@ -405,7 +406,7 @@ public class Ktab {
     }
 
     private static BufferedReader stdinReader() {
-        Charset charset = Charset.forName(System.getProperty("stdin.encoding"), Charset.defaultCharset());
+        Charset charset = Charset.forName(StaticProperty.stdinEncoding(), Charset.defaultCharset());
         Reader reader = new InputStreamReader(System.in, charset);
         return new BufferedReader(reader);
     }
