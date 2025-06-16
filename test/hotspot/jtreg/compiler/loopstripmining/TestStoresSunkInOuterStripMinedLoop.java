@@ -78,7 +78,7 @@ public class TestStoresSunkInOuterStripMinedLoop {
         return f;
     }
 
-    // Couple stores sunk in outer loop, no store in inner loop
+    // Multiple stores sunk in outer loop, no store in inner loop
     private static float test2(A a1, A a2) {
         field = a1.field + a2.field;
         volatileField = 42;
