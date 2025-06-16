@@ -215,7 +215,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
 
     /**
      * Creates an ImageIcon from an image object.
-     * Setting null image will not render any image icon.
+     * Setting a {@code null} image will not render any image icon.
      * If the image has a "comment" property that is a string,
      * then the string is used as the description of this icon.
      * @param image the image
