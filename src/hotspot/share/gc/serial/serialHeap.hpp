@@ -274,8 +274,6 @@ public:
   GrowableArray<GCMemoryManager*> memory_managers() override;
   GrowableArray<MemoryPool*> memory_pools() override;
 
-  void stop() override;
-
   DefNewGeneration* young_gen() const {
     return _young_gen;
   }

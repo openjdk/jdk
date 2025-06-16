@@ -22,6 +22,7 @@
  */
 
 #include "classfile/classLoaderData.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
@@ -115,7 +116,7 @@ class ZVCPUThreadClosure : public ThreadClosure {
 private:
   volatile jlong _vtime = 0;
 public:
-  virtual void do_thread(Thread *thread) {
+  virtual void do_thread(Thread* thread) {
     if (thread->is_ConcurrentGC_thread() ||
         strstr(thread->name(), "ZWorker") != nullptr) {
       Atomic::add(&_vtime, os::thread_cpu_time(thread));

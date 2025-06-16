@@ -207,7 +207,7 @@ private:
   volatile jlong _vtime = 0;
 
 public:
-  virtual void do_thread(Thread *thread) {
+  virtual void do_thread(Thread* thread) {
     Atomic::add(&_vtime, os::thread_cpu_time(thread));
   }
   jlong vtime() { return _vtime; };
@@ -641,6 +641,10 @@ void CollectedHeap::initialize_reserved_region(const ReservedHeapSpace& rs) {
 void CollectedHeap::post_initialize() {
   StringDedup::initialize();
   initialize_serviceability();
+}
+
+void CollectedHeap::stop() {
+  log_gc_vtime();
 }
 
 #ifndef PRODUCT
