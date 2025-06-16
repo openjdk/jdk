@@ -820,9 +820,51 @@ public class TestAliasingFuzzer {
 
         private TemplateToken generateIRRulesArray() {
             var template = Template.make(() -> body(
-                """
-                // TODO: IR rules array
-                """
+                let("T", containerElementType.letter()),
+                switch (accessScenario) {
+                    case COPY_LOAD_STORE ->
+                        // Currently, we do not allow strided access or shuffle.
+                        // Since the load and store are connected, we either vectorize both or none.
+                        (accessIndexForm[0].ivScale() == accessIndexForm[1].ivScale() &&
+                         Math.abs(accessIndexForm[0].ivScale()) == 1)
+                        ?   """
+                            // Good ivScales, vectorization expected.
+                            @IR(counts = {IRNode.LOAD_VECTOR_#T, "> 0",
+                                          IRNode.STORE_VECTOR,   "> 0"},
+                                applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true",
+                                              "AlignVector", "false"},
+                                applyIfPlatform = {"64-bit", "true"},
+                                applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+                            """
+                        :   """
+                            // Bad ivScales, no vectorization expected.
+                            @IR(counts = {IRNode.LOAD_VECTOR_#T, "= 0",
+                                          IRNode.STORE_VECTOR,   "= 0"},
+                                applyIfPlatform = {"64-bit", "true"},
+                                applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+                            """;
+                    case FILL_STORE_STORE ->
+                        // Currently, we do not allow strided access.
+                        // We vectorize any contiguous pattern. Possibly only one is vectorized.
+                        (Math.abs(accessIndexForm[0].ivScale()) == 1 ||
+                         Math.abs(accessIndexForm[1].ivScale()) == 1)
+                        ?   """
+                            // Good ivScales, vectorization expected.
+                            @IR(counts = {IRNode.LOAD_VECTOR_#T, "= 0",
+                                          IRNode.STORE_VECTOR,   "> 0"},
+                                applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true",
+                                              "AlignVector", "false"},
+                                applyIfPlatform = {"64-bit", "true"},
+                                applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+                            """
+                        :   """
+                            // Bad ivScales, no vectorization expected.
+                            @IR(counts = {IRNode.LOAD_VECTOR_#T, "= 0",
+                                          IRNode.STORE_VECTOR,   "= 0"},
+                                applyIfPlatform = {"64-bit", "true"},
+                                applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+                            """;
+                }
             ));
             return template.asToken();
         }
