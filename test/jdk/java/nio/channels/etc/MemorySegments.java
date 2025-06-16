@@ -26,7 +26,7 @@
  * @bug 8333849 8358958
  * @summary Test ByteChannel and AsycnhronousByteChannel implementations with ByteBuffers
  *    that are views of a MemorySegment
- * @run junit MemorySegments
+ * @run junit/othervm MemorySegments
  */
 
 import java.io.IOException;
@@ -54,10 +54,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import static java.nio.file.StandardOpenOption.*;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;

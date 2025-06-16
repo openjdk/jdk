@@ -25,6 +25,7 @@
  * @bug 4607272 5041655 6822643 6830721 6842687
  * @summary Unit test for AsynchronousFileChannel
  * @key randomness
+ * @run main/othervm Basic
  */
 
 import java.io.File;
