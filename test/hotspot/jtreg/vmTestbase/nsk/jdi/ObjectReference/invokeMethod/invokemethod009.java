@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class invokemethod009 {
     static final String DEBUGGEE_THRNAME = "invokemethod009tThr";
 
     // debuggee source line where it should be stopped
-    static final int DEBUGGEE_STOPATLINE = 69;
+    static final int DEBUGGEE_STOPATLINE = 71;
 
     // debuggee local var used to find needed stack frame
     static final String DEBUGGEE_LOCALVAR =
@@ -120,21 +120,22 @@ public class invokemethod009 {
             return quitDebuggee();
         }
 
-        if ((thrRef =
-                debuggee.threadByName(DEBUGGEE_THRNAME)) == null) {
-            log.complain("TEST FAILURE: Method Debugee.threadByName() returned null for debuggee thread "
-                + DEBUGGEE_THRNAME);
-            tot_res = Consts.TEST_FAILED;
-            return quitDebuggee();
-        }
-        ReferenceType[] rType = new ReferenceType[3];
-        // reference types of debuggee main & dummy classes
-        rType[0] = debuggee.classByName(DEBUGGEE_CLASSES[0]);
-        rType[1] = debuggee.classByName(DEBUGGEE_CLASSES[1]);
-        rType[2] = debuggee.classByName(DEBUGGEE_CLASSES[2]);
+        try {
+            ReferenceType[] rType = new ReferenceType[3];
+            // reference types of debuggee main & dummy classes
+            rType[0] = debuggee.classByName(DEBUGGEE_CLASSES[0]);
+            rType[1] = debuggee.classByName(DEBUGGEE_CLASSES[1]);
+            rType[2] = debuggee.classByName(DEBUGGEE_CLASSES[2]);
+
+            thrRef = debuggee.threadByFieldName(rType[0], "testThread", DEBUGGEE_THRNAME);
+            if (thrRef == null) {
+                log.complain("TEST FAILURE: Method Debugee.threadByFieldName() returned null for debuggee thread "
+                             + DEBUGGEE_THRNAME);
+                tot_res = Consts.TEST_FAILED;
+                return quitDebuggee();
+            }
 
 // Check the tested assersion
-        try {
             suspendAtBP(rType[0], DEBUGGEE_STOPATLINE);
             ObjectReference objRef = findObjRef(DEBUGGEE_LOCALVAR);
             LinkedList<Value> argList = new LinkedList<Value>();

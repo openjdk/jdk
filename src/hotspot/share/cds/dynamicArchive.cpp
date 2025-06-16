@@ -25,6 +25,7 @@
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotLogging.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.inline.hpp"
@@ -101,7 +102,7 @@ public:
   // is caused by dynamic dumping.
   void verify_universe(const char* info) {
     if (VerifyBeforeExit) {
-      log_info(cds)("Verify %s", info);
+      log_info(aot)("Verify %s", info);
       // Among other things, this ensures that Eden top is correct.
       Universe::heap()->prepare_for_verify();
       Universe::verify(info);
@@ -120,8 +121,8 @@ public:
       return;
     }
 
-    log_info(cds,dynamic)("CDS dynamic dump: clinit = " JLONG_FORMAT "ms)",
-                          ClassLoader::class_init_time_ms());
+    log_info(cds, dynamic)("CDS dynamic dump: clinit = " JLONG_FORMAT "ms)",
+                           ClassLoader::class_init_time_ms());
 
     init_header();
     gather_source_objs();
@@ -136,7 +137,7 @@ public:
 
     sort_methods();
 
-    log_info(cds)("Make classes shareable");
+    log_info(aot)("Make classes shareable");
     make_klasses_shareable();
 
     char* serialized_data;
@@ -161,7 +162,7 @@ public:
     }
 
     if (CDSConfig::is_dumping_lambdas_in_legacy_mode()) {
-      log_info(cds)("Adjust lambda proxy class dictionary");
+      log_info(aot)("Adjust lambda proxy class dictionary");
       LambdaProxyClassDictionary::adjust_dumptime_table();
     }
 
@@ -378,7 +379,7 @@ void DynamicArchiveBuilder::gather_array_klasses() {
       }
     }
   }
-  log_debug(cds)("Total array klasses gathered for dynamic archive: %d", DynamicArchive::num_array_klasses());
+  log_debug(aot)("Total array klasses gathered for dynamic archive: %d", DynamicArchive::num_array_klasses());
 }
 
 class VM_PopulateDynamicDumpSharedSpace: public VM_GC_Sync_Operation {
@@ -390,7 +391,7 @@ public:
   void doit() {
     ResourceMark rm;
     if (AllowArchivingWithJavaAgent) {
-      log_warning(cds)("This %s was created with AllowArchivingWithJavaAgent. It should be used "
+      aot_log_warning(aot)("This %s was created with AllowArchivingWithJavaAgent. It should be used "
                        "for testing purposes only and should not be used in a production environment",
                        CDSConfig::type_of_archive_being_loaded());
     }
@@ -445,7 +446,7 @@ void DynamicArchive::setup_array_klasses() {
         ArrayKlass::cast(elm)->set_higher_dimension(oak);
       }
     }
-    log_debug(cds)("Total array klasses read from dynamic archive: %d", _dynamic_archive_array_klasses->length());
+    log_debug(aot)("Total array klasses read from dynamic archive: %d", _dynamic_archive_array_klasses->length());
   }
 }
 
@@ -501,8 +502,8 @@ void DynamicArchive::dump_at_exit(JavaThread* current) {
   if (HAS_PENDING_EXCEPTION) {
     // One of the prepatory steps failed
     oop ex = current->pending_exception();
-    log_error(cds)("Dynamic dump has failed");
-    log_error(cds)("%s: %s", ex->klass()->external_name(),
+    aot_log_error(aot)("Dynamic dump has failed");
+    aot_log_error(aot)("%s: %s", ex->klass()->external_name(),
                    java_lang_String::as_utf8_string(java_lang_Throwable::message(ex)));
     CLEAR_PENDING_EXCEPTION;
     CDSConfig::disable_dumping_dynamic_archive();  // Just for good measure
@@ -526,14 +527,14 @@ bool DynamicArchive::validate(FileMapInfo* dynamic_info) {
 
   // Check the header crc
   if (dynamic_header->base_header_crc() != base_info->crc()) {
-    log_warning(cds)("Dynamic archive cannot be used: static archive header checksum verification failed.");
+    aot_log_warning(aot)("Dynamic archive cannot be used: static archive header checksum verification failed.");
     return false;
   }
 
   // Check each space's crc
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
     if (dynamic_header->base_region_crc(i) != base_info->region_crc(i)) {
-      log_warning(cds)("Dynamic archive cannot be used: static archive region #%d checksum verification failed.", i);
+      aot_log_warning(aot)("Dynamic archive cannot be used: static archive region #%d checksum verification failed.", i);
       return false;
     }
   }
