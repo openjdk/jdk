@@ -367,7 +367,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
 
     /**
      * Sets the image displayed by this icon.
-     * A null image is ignored.
+     * Setting null image will not render any image icon.
      * @param image the image
      */
     public void setImage(Image image) {
