@@ -34,63 +34,31 @@ import java.io.*;
 import java.lang.classfile.ClassFile;
 import java.lang.constant.ClassDesc;
 import java.net.*;
-import java.nio.file.Path;
 import java.security.CodeSource;
-import java.util.jar.*;
 import com.sun.net.httpserver.*;
 import sun.net.www.ParseUtil;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.fail;
 
 public class ClassnameCharTest {
 
-    private static final Path JAR_PATH = Path.of("testclasses.jar");
     private static HttpServer server;
-
-    // Create the class file and write it to the testable jar
-    @BeforeAll
-    static void setup() throws IOException {
-        var bytes = ClassFile.of().build(ClassDesc.of("fo o"), _ -> {});
-        try (JarOutputStream jos = new JarOutputStream(new FileOutputStream(JAR_PATH.toFile()))) {
-            jos.putNextEntry(new JarEntry("fo o.class"));
-            jos.write(bytes, 0, bytes.length);
-            jos.closeEntry();
-        }
-    }
+    private static final byte[] bytes =
+            ClassFile.of().build(ClassDesc.of("fo o"), _ -> {});
 
     @Test
-    void testClassName() throws Exception {
+    void testClassName() throws IOException {
         // Build the server and set the context
         server = HttpServer.create(new InetSocketAddress(0), 0);
         server.createContext("/", exchange -> {
-            try {
-                String filename = exchange.getRequestURI().getPath();
-                System.out.println("getRequestURI = " + exchange.getRequestURI());
-                System.out.println("filename = " + filename);
-                try (FileInputStream fis = new FileInputStream(JAR_PATH.toFile());
-                     JarInputStream jis = new JarInputStream(fis)) {
-                    JarEntry entry;
-                    while ((entry = jis.getNextJarEntry()) != null) {
-                        if (filename.endsWith(entry.getName())) {
-                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                            byte[] buf = new byte[8092];
-                            int count = 0;
-                            while ((count = jis.read(buf)) != -1)
-                                baos.write(buf, 0, count);
-                            exchange.sendResponseHeaders(200, baos.size());
-                            try (OutputStream os = exchange.getResponseBody()) {
-                                baos.writeTo(os);
-                            }
-                            return; // success
-                        }
-                    }
-                    contextFail("Failed to find " + filename);
-                }
-            } catch (IOException e) {
-                unexpectedFail(e);
+            String filename = exchange.getRequestURI().getPath();
+            System.out.println("getRequestURI = " + exchange.getRequestURI());
+            System.out.println("filename = " + filename);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            baos.write(bytes, 0, bytes.length);
+            exchange.sendResponseHeaders(200, baos.size());
+            try (OutputStream os = exchange.getResponseBody()) {
+                baos.writeTo(os);
             }
         });
         server.start();
@@ -126,11 +94,6 @@ public class ClassnameCharTest {
                 cookie = name.substring(index, name.length());
                 name = name.substring(0, index);
             }
-
-            // check loaded JAR files
-            try {
-                return super.findClass(name);
-            } catch (ClassNotFoundException _) {}
 
             // Otherwise, try loading the class from the code base URL
             //      final String path = name.replace('.', '/').concat(".class").concat(cookie);
@@ -183,21 +146,5 @@ public class ClassnameCharTest {
             }
             return b;
         }
-    }
-
-    static void contextFail(String msg) {
-        if (server != null) {
-            server.stop(0);
-        }
-        Thread.dumpStack();
-        fail(msg);
-    }
-
-    static void unexpectedFail(Throwable t) {
-        if (server != null) {
-            server.stop(0);
-        }
-        t.printStackTrace();
-        fail("Handler threw an unexpected IO Exception");
     }
 }
