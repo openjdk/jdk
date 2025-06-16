@@ -926,6 +926,10 @@ void ShenandoahHeap::notify_heap_changed() {
 }
 
 void ShenandoahHeap::start_idle_span() {
+#undef KELVIN_IDLE
+#ifdef KELVIN_IDLE
+  log_info(gc)("Doing ShenandoahHeap::start_idle_span()");
+#endif
   heuristics()->start_idle_span();
 }
 

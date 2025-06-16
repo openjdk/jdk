@@ -157,16 +157,18 @@ public:
   void adjust_margin_of_error(double amount);
   void adjust_spike_threshold(double amount);
 
-  // We recalculate the trigger threshold at the end of update refs and following the end of concurrent marking.  These two events
-  // represents points at which the allocation pool was established (or replenished).  Trigger threshold is only meaningful during
-  // times that GC is idle.  A similar approach might be used to throttle allocations between GC cycles and during GC cycles.
+  // _trigger_threshold, represented in words, is the amount of memory that we allow ourselves to allocate while concurrent
+  // GC is running.  If anticipated consumption of mutator memory during GC (e.g. average alloc rate * average GC time)
+  // exceeds _trigger_threshold, we need to start GC now.  Note that we intend NOT to allocate the headroom reserve,
+  // so this is not included in the _trigger_threshold.
   void recalculate_trigger_threshold(size_t mutator_available);
 
   // Returns number of words that can be allocated before we need to trigger next GC.
   inline size_t allocatable() const {
     size_t allocated_words = _freeset->get_mutator_allocations_since_rebuild();
     size_t result = (allocated_words < _trigger_threshold)? _trigger_threshold - allocated_words: 0;
-#ifdef KELVIN_DEBUG
+#undef KELVIN_ALLOCATABLE
+#ifdef KELVIN_ALLOCATABLE
     log_info(gc)("allocatable returns %zu words from allocated %zu, trigger_threshold: %zu",
                  result, allocated_words, _trigger_threshold);
 #endif

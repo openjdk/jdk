@@ -334,6 +334,7 @@ void ShenandoahDegenGC::op_degenerated() {
 #ifdef KELVIN_IDLE_SPAN
     log_info(gc)("start_idle_span() at end of degen gc");
 #endif
+#undef KELVIN_IDLE_SPAN
     heap->start_idle_span();
   }
 }
