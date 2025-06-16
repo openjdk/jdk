@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,19 @@ import jdk.vm.ci.meta.JavaConstant;
 
 final class DirectHotSpotObjectConstantImpl extends HotSpotObjectConstantImpl {
 
-    static JavaConstant forObject(Object object, boolean compressed) {
+    static JavaConstant forObject(Object object) {
         if (object == null) {
-            return compressed ? HotSpotCompressedNullConstant.COMPRESSED_NULL : JavaConstant.NULL_POINTER;
+            return JavaConstant.NULL_POINTER;
         } else {
-            return new DirectHotSpotObjectConstantImpl(object, compressed);
+            return new DirectHotSpotObjectConstantImpl(object, false);
         }
     }
 
-    static HotSpotObjectConstantImpl forNonNullObject(Object object, boolean compressed) {
+    static HotSpotObjectConstantImpl forNonNullObject(Object object) {
         if (object == null) {
             throw new NullPointerException();
         }
-        return new DirectHotSpotObjectConstantImpl(object, compressed);
+        return new DirectHotSpotObjectConstantImpl(object, false);
     }
 
     private DirectHotSpotObjectConstantImpl(Object object, boolean compressed) {
