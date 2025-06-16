@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ private:
   void init(double alpha);
 
 protected:
-  int    _num; // the number of elements in the sequence
+  uint    _num; // the number of elements in the sequence
   double _sum; // the sum of the elements in the sequence
   double _sum_of_squares; // the sum of squares of the elements in the sequence
 
@@ -62,6 +62,7 @@ protected:
 public:
   AbsSeq(double alpha = DEFAULT_ALPHA_VALUE);
 
+  virtual void reset();
   virtual void add(double val); // adds a new element to the sequence
   void add(unsigned val) { add((double) val); }
   virtual double maximum() const = 0; // maximum element in the sequence
@@ -106,18 +107,18 @@ public:
 
 class TruncatedSeq: public AbsSeq {
 private:
-  enum PrivateConstants {
+  enum PrivateConstants : uint {
     DefaultSeqLength = 10
   };
   void init();
 protected:
   double *_sequence; // buffers the last L elements in the sequence
-  int     _length; // this is L
+  uint    _length; // this is L
   int     _next;   // oldest slot in the array, i.e. next to be overwritten
 
 public:
   // accepts a value for L
-  TruncatedSeq(int length = DefaultSeqLength,
+  TruncatedSeq(uint length = DefaultSeqLength,
                double alpha = DEFAULT_ALPHA_VALUE);
   ~TruncatedSeq();
   virtual void add(double val);
@@ -127,6 +128,8 @@ public:
   double oldest() const; // the oldest valid value in the sequence
   double predict_next() const; // prediction based on linear regression
 
+  virtual void reset();
+  bool is_full() const { return _length == _num; }
   // Debugging/Printing
   virtual void dump_on(outputStream* s);
 };

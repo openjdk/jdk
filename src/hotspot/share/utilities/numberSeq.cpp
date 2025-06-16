@@ -32,6 +32,14 @@ AbsSeq::AbsSeq(double alpha) :
   _davg(0.0), _dvariance(0.0), _alpha(alpha) {
 }
 
+void AbsSeq::reset() {
+  _num = 0;
+  _sum = 0.0;
+  _sum_of_squares = 0.0;
+  _davg = 0.0;
+  _dvariance = 0.0;
+}
+
 void AbsSeq::add(double val) {
   if (_num == 0) {
     // if the sequence is empty, the davg is the same as the value
@@ -137,11 +145,10 @@ void NumberSeq::add(double val) {
 }
 
 
-TruncatedSeq::TruncatedSeq(int length, double alpha):
+TruncatedSeq::TruncatedSeq(uint length, double alpha):
   AbsSeq(alpha), _length(length), _next(0) {
   _sequence = NEW_C_HEAP_ARRAY(double, _length, mtInternal);
-  for (int i = 0; i < _length; ++i)
-    _sequence[i] = 0.0;
+  TruncatedSeq::reset();
 }
 
 TruncatedSeq::~TruncatedSeq() {
@@ -177,7 +184,7 @@ double TruncatedSeq::maximum() const {
   if (_num == 0)
     return 0.0;
   double ret = _sequence[0];
-  for (int i = 1; i < _num; ++i) {
+  for (uint i = 1; i < _num; ++i) {
     double val = _sequence[i];
     if (val > ret)
       ret = val;
@@ -224,7 +231,7 @@ double TruncatedSeq::predict_next() const {
   double y_avg         = 0.0;
 
   int first = (_next + _length - _num) % _length;
-  for (int i = 0; i < _num; ++i) {
+  for (uint i = 0; i < _num; ++i) {
     double x = (double) i;
     double y =  _sequence[(first + i) % _length];
 
@@ -244,6 +251,13 @@ double TruncatedSeq::predict_next() const {
   return b0 + b1 * num;
 }
 
+void TruncatedSeq::reset() {
+  AbsSeq::reset();
+  for (uint i = 0; i < _length; ++i) {
+    _sequence[i] = 0.0;
+  }
+  _next = 0;
+}
 
 // Printing/Debugging Support
 
@@ -264,7 +278,7 @@ void NumberSeq::dump_on(outputStream* s) {
 void TruncatedSeq::dump_on(outputStream* s) {
   AbsSeq::dump_on(s);
   s->print_cr("\t\t _length = %d, _next = %d", _length, _next);
-  for (int i = 0; i < _length; i++) {
+  for (uint i = 0; i < _length; i++) {
     if (i%5 == 0) {
       s->cr();
       s->print("\t");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,6 +160,19 @@
   product(uint, G1ExpandByPercentOfAvailable, 20, EXPERIMENTAL,             \
           "When expanding, % of uncommitted space to claim.")               \
           range(0, 100)                                                     \
+                                                                            \
+  product(size_t, G1ShrinkByPercentOfAvailable, 50, EXPERIMENTAL,           \
+          "When shrinking, maximum % of free space to claim.")              \
+          range(0, 100)                                                     \
+                                                                            \
+  product(size_t, G1MinimumPercentOfGCTimeRatio, 25, EXPERIMENTAL,          \
+          "Percentage of GCTimeRatio G1 will try to avoid going below.")    \
+          range(0, 100)                                                     \
+                                                                            \
+  product(uint, G1ShortTermShrinkThreshold, 8, EXPERIMENTAL,                \
+          "Number of consecutive GCs with the short term gc time ratio"     \
+          "below the threshold before we attempt to shrink.")               \
+          range(0, 10)                                                      \
                                                                             \
   product(size_t, G1UpdateBufferSize, 256,                                  \
           "Size of an update buffer")                                       \
