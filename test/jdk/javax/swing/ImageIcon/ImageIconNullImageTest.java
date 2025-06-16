@@ -34,16 +34,16 @@ import javax.swing.ImageIcon;
 public class ImageIconNullImageTest {
 
     public static void main(String[] args) throws Exception {
-        testImageIconNULL();
-        testSetImageNULL();
+        testImageIconNull();
+        testSetImageNull();
     }
 
-    private static void testImageIconNULL() {
+    private static void testImageIconNull() {
         // Setting null image shouldn't cause NPE
         new ImageIcon((Image) null);
     }
 
-    private static void testSetImageNULL() {
+    private static void testSetImageNull() {
         ImageIcon icon = new ImageIcon();
 
         // Setting null image shouldn't cause NPE
