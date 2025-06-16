@@ -250,7 +250,8 @@ public class TestAliasingFuzzer {
     // ivStride:
     //
     // for (int iv = iv.lo; iv < iv.hi; iv += ivStride) {
-    //     assert: range.lo <= index(iv) <= range.hi
+    //     assert: range.lo <= index(iv)
+    //                         index(iv) + size <= range.hi
     // }
     //
     // Since there are multiple memory accesses, we may have multiple indices to compute.
@@ -266,28 +267,28 @@ public class TestAliasingFuzzer {
     //   This allows us to pick a invar0.
     //   Now, we can compute the largest iv.lo possible.
     //   index(iv) is largest for iv = iv.hi, so we must satisfy:
-    //     range.hi >= con + iv.hi * ivScale + invar0 * invar0Scale + invarRest
-    //              >= con + iv.hi * ivScale + invar0 * invar0Scale + err
+    //     range.hi >= con + iv.hi * ivScale + invar0 * invar0Scale + invarRest + size
+    //              >= con + iv.hi * ivScale + invar0 * invar0Scale + err       + size
     //   It follows:
     //     iv.hi * ivScale <= range.hi - con - invar0 * invar0Scale - err
     //
-    // TODO: size for the index!
-    public static record IndexForm(int con, int ivScale, int invar0Scale, int[] invarRestScales) {
-        public static IndexForm random(int numInvarRest) {
+    public static record IndexForm(int con, int ivScale, int invar0Scale, int[] invarRestScales, int size) {
+        public static IndexForm random(int numInvarRest, int size) {
             int con = RANDOM.nextInt(-100_000, 100_000);
-            int ivScale = randomScale();
-            int invar0Scale = randomScale();
+            int ivScale = randomScale(size);
+            int invar0Scale = randomScale(size);
             int[] invarRestScales = new int[numInvarRest];
+            // Sample values [-1, 0, 1]
             for (int i = 0; i < invarRestScales.length; i++) {
                 invarRestScales[i] = RANDOM.nextInt(-1, 2);
             }
-            return new IndexForm(con, ivScale, invar0Scale, invarRestScales);
+            return new IndexForm(con, ivScale, invar0Scale, invarRestScales, size);
         }
 
-        public static int randomScale() {
+        public static int randomScale(int size) {
             int scale = switch(RANDOM.nextInt(10)) {
-                case 0 -> RANDOM.nextInt(2, 5); // strided 2..4
-                default -> 1; // in most cases, we do not want it to be strided
+                case 0 -> RANDOM.nextInt(1, 5 * size); // any strided access
+                default -> size; // in most cases, we do not want it to be strided
             };
             return RANDOM.nextBoolean() ? scale : -scale;
         }
@@ -470,8 +471,8 @@ public class TestAliasingFuzzer {
             final boolean loopForward = RANDOM.nextBoolean();
 
             final int numInvarRest = RANDOM.nextInt(5);
-            var form_a = IndexForm.random(numInvarRest);
-            var form_b = IndexForm.random(numInvarRest);
+            var form_a = IndexForm.random(numInvarRest, 1);
+            var form_b = IndexForm.random(numInvarRest, 1);
 
             return new TestGenerator(
                 2,
@@ -503,9 +504,9 @@ public class TestAliasingFuzzer {
             final boolean loopForward = RANDOM.nextBoolean();
 
             final int numInvarRest = RANDOM.nextInt(5);
-            // TODO: bias the scale towards byteSize of accessType
-            var form_a = IndexForm.random(numInvarRest);
-            var form_b = IndexForm.random(numInvarRest);
+            int indexSize = useAtIndex ? 1 : accessType.byteSize();
+            var form_a = IndexForm.random(numInvarRest, indexSize);
+            var form_b = IndexForm.random(numInvarRest, indexSize);
 
             return new TestGenerator(
                 2,
