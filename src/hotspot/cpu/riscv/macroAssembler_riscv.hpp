@@ -199,6 +199,8 @@ class MacroAssembler: public Assembler {
   void store_klass(Register dst, Register src, Register tmp = t0);
   void cmp_klass_compressed(Register oop, Register trial_klass, Register tmp, Label &L, bool equal);
 
+  void decode_klass_not_null_for_aot(Register dst, Register src);
+  void encode_klass_not_null_for_aot(Register dst, Register src);
   void encode_klass_not_null(Register r, Register tmp = t0);
   void decode_klass_not_null(Register r, Register tmp = t0);
   void encode_klass_not_null(Register dst, Register src, Register tmp);
@@ -1237,6 +1239,7 @@ public:
   void far_call(const Address &entry, Register tmp = t1);
   void far_jump(const Address &entry, Register tmp = t1);
 
+  // TODO, check codestub_branch_needs_far_jump() in hotspot/cpu/aarch64/macroAssembler_aarch64.hpp
   static int far_branch_size() {
       return 2 * 4;  // auipc + jalr, see far_call() & far_jump()
   }

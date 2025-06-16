@@ -26,6 +26,7 @@
 #ifdef COMPILER2
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/vmreg.hpp"
 #include "interpreter/interpreter.hpp"
 #include "opto/runtime.hpp"
@@ -62,6 +63,11 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   ResourceMark rm;
   // Setup code generation tools
   const char* name = OptoRuntime::stub_name(OptoStubId::uncommon_trap_id);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, (uint)OptoStubId::uncommon_trap_id, name);
+  if (blob != nullptr) {
+    return blob->as_uncommon_trap_blob();
+  }
+
   CodeBuffer buffer(name, 2048, 1024);
   if (buffer.blob() == nullptr) {
     return nullptr;
@@ -243,8 +249,10 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Make sure all code is generated
   masm->flush();
 
-  return UncommonTrapBlob::create(&buffer, oop_maps,
-                                                  SimpleRuntimeFrame::framesize >> 1);
+  UncommonTrapBlob *ut_blob = UncommonTrapBlob::create(&buffer, oop_maps,
+                                                       SimpleRuntimeFrame::framesize >> 1);
+  AOTCodeCache::store_code_blob(*ut_blob, AOTCodeEntry::C2Blob, (uint)OptoStubId::uncommon_trap_id, name);
+  return ut_blob;
 }
 
 //------------------------------generate_exception_blob---------------------------
@@ -284,6 +292,11 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   ResourceMark rm;
   // Setup code generation tools
   const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, (uint)OptoStubId::exception_id, name);
+  if (blob != nullptr) {
+    return blob->as_exception_blob();
+  }
+
   CodeBuffer buffer(name, 2048, 1024);
   if (buffer.blob() == nullptr) {
     return nullptr;
@@ -382,6 +395,8 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   masm->flush();
 
   // Set exception blob
-  return ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
+  ExceptionBlob* ex_blob = ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
+  AOTCodeCache::store_code_blob(*ex_blob, AOTCodeEntry::C2Blob, (uint)OptoStubId::exception_id, name);
+  return ex_blob;
 }
 #endif // COMPILER2

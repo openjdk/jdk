@@ -128,7 +128,7 @@ uint AOTCodeCache::max_aot_code_size() {
 // This method is called during universe_init()
 // and does final AOT state and flags settings.
 void AOTCodeCache::initialize() {
-#if defined(ZERO) || !(defined(AMD64) || defined(AARCH64))
+#if defined(ZERO) || !(defined(AMD64) || defined(AARCH64) || defined(RISCV64))
   log_info(aot, codecache, init)("AOT Code Cache is not supported on this platform.");
   AOTAdapterCaching = false;
   AOTStubCaching = false;
