@@ -44,6 +44,7 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
@@ -232,6 +233,8 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   } else {
     _narrow_klass_pointer_bits = _narrow_klass_shift = -1;
   }
+  // Which JIT compier is used
+  _compiler_type = (u1)CompilerConfig::compiler_type();
   _type_profile_level = TypeProfileLevel;
   _type_profile_args_limit = TypeProfileArgsLimit;
   _type_profile_parms_limit = TypeProfileParmsLimit;
@@ -325,7 +328,7 @@ bool FileMapInfo::validate_class_location() {
 
   AOTClassLocationConfig* config = header()->class_location_config();
   bool has_extra_module_paths = false;
-  if (!config->validate(header()->has_aot_linked_classes(), &has_extra_module_paths)) {
+  if (!config->validate(full_path(), header()->has_aot_linked_classes(), &has_extra_module_paths)) {
     if (PrintSharedArchiveAndExit) {
       MetaspaceShared::set_archive_loading_failed();
       return true;
@@ -1666,10 +1669,13 @@ bool FileMapInfo::map_heap_region_impl() {
   char* addr = (char*)_mapped_heap_memregion.start();
   char* base;
 
-  if (MetaspaceShared::use_windows_memory_mapping()) {
+  if (MetaspaceShared::use_windows_memory_mapping() || UseLargePages) {
+    // With UseLargePages, memory mapping may fail on some OSes if the size is not
+    // large page aligned, so let's use read() instead. In this case, the memory region
+    // is already commited by G1 so we don't need to commit it again.
     if (!read_region(MetaspaceShared::hp, addr,
                      align_up(_mapped_heap_memregion.byte_size(), os::vm_page_size()),
-                     /* do_commit = */ true)) {
+                     /* do_commit = */ !UseLargePages)) {
       dealloc_heap_region();
       aot_log_error(aot)("Failed to read archived heap region into " INTPTR_FORMAT, p2i(addr));
       return false;
@@ -1930,6 +1936,23 @@ bool FileMapHeader::validate() {
                   " does not equal the current CompactStrings setting (%s).", file_type,
                   _compact_strings ? "enabled" : "disabled",
                   CompactStrings   ? "enabled" : "disabled");
+    return false;
+  }
+  bool jvmci_compiler_is_enabled = CompilerConfig::is_jvmci_compiler_enabled();
+  CompilerType compiler_type = CompilerConfig::compiler_type();
+  CompilerType archive_compiler_type = CompilerType(_compiler_type);
+  // JVMCI compiler does different type profiling settigns and generate
+  // different code. We can't use archive which was produced
+  // without it and reverse.
+  // Only allow mix when JIT compilation is disabled.
+  // Interpreter is used by default when dumping archive.
+  bool intepreter_is_used = (archive_compiler_type == CompilerType::compiler_none) ||
+                            (compiler_type == CompilerType::compiler_none);
+  if (!intepreter_is_used &&
+      jvmci_compiler_is_enabled != (archive_compiler_type == CompilerType::compiler_jvmci)) {
+    MetaspaceShared::report_loading_error("The %s's JIT compiler setting (%s)"
+                                          " does not equal the current setting (%s).", file_type,
+                                          compilertype2name(archive_compiler_type), compilertype2name(compiler_type));
     return false;
   }
   if (TrainingData::have_data()) {

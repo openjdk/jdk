@@ -57,11 +57,7 @@ ciMethodData::ciMethodData(MethodData* md)
 
 
 static bool is_klass_loaded(Klass* k) {
-  if (TrainingData::have_data()) {
-    // If we're running in AOT mode some classes may not be loaded yet
-    return !k->is_instance_klass() || InstanceKlass::cast(k)->is_loaded();
-  }
-  return true;
+  return TrainingData::is_klass_loaded(k);
 }
 
 // Check for entries that reference an unloaded method

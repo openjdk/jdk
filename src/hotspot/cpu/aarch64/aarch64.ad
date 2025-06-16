@@ -3921,6 +3921,10 @@ ins_attrib ins_alignment(4);    // Required alignment attribute (must
                                 // compute_padding() function must be
                                 // provided for the instruction
 
+// Whether this node is expanded during code emission into a sequence of
+// instructions and the first instruction can perform an implicit null check.
+ins_attrib ins_is_late_expanded_null_check_candidate(false);
+
 //----------OPERANDS-----------------------------------------------------------
 // Operand definitions must precede instruction definitions for correct parsing
 // in the ADLC because operands constitute user defined types which are used in
@@ -7761,14 +7765,12 @@ instruct popCountI(iRegINoSp dst, iRegIorL2I src, vRegF tmp) %{
   effect(TEMP tmp);
   ins_cost(INSN_COST * 13);
 
-  format %{ "movw   $src, $src\n\t"
-            "mov    $tmp, $src\t# vector (1D)\n\t"
+  format %{ "fmovs  $tmp, $src\t# vector (1S)\n\t"
             "cnt    $tmp, $tmp\t# vector (8B)\n\t"
             "addv   $tmp, $tmp\t# vector (8B)\n\t"
             "mov    $dst, $tmp\t# vector (1D)" %}
   ins_encode %{
-    __ movw($src$$Register, $src$$Register); // ensure top 32 bits 0
-    __ mov($tmp$$FloatRegister, __ D, 0, $src$$Register);
+    __ fmovs($tmp$$FloatRegister, $src$$Register);
     __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ mov($dst$$Register, $tmp$$FloatRegister, __ D, 0);

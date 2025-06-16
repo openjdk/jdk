@@ -2935,7 +2935,7 @@ static void push_skeleton_frames(MacroAssembler* masm, bool deopt,
   __ cmpdi(CR0, number_of_frames_reg, 0);
   __ bne(CR0, loop);
 
-  // Get the return address pointing into the frame manager.
+  // Get the return address pointing into the template interpreter.
   __ ld(R0, 0, pcs_reg);
   // Store it in the top interpreter frame.
   __ std(R0, _abi0(lr), R1_SP);

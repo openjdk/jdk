@@ -347,6 +347,10 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
   _verifier->verify_region_sets_optional();
 
   uint obj_regions = (uint) humongous_obj_size_in_regions(word_size);
+  if (obj_regions > num_available_regions()) {
+    // Can't satisfy this allocation; early-return.
+    return nullptr;
+  }
 
   // Policy: First try to allocate a humongous object in the free list.
   G1HeapRegion* humongous_start = _hrm.allocate_humongous(obj_regions);
@@ -495,7 +499,7 @@ HeapWord* G1CollectedHeap::alloc_archive_region(size_t word_size, HeapWord* pref
 
   if (reserved.word_size() <= word_size) {
     log_info(gc, heap)("Unable to allocate regions as archive heap is too large; size requested = %zu"
-                       " bytes, heap = %zu bytes", word_size, reserved.word_size());
+                       " bytes, heap = %zu bytes", word_size * HeapWordSize, reserved.byte_size());
     return nullptr;
   }
 
@@ -1004,7 +1008,7 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
   log_debug(gc, ergo, heap)("Expand the heap. requested expansion amount: %zuB expansion amount: %zuB",
                             expand_bytes, aligned_expand_bytes);
 
-  if (is_maximal_no_gc()) {
+  if (num_inactive_regions() == 0) {
     log_debug(gc, ergo, heap)("Did not expand the heap (heap already fully expanded)");
     return false;
   }
@@ -1031,7 +1035,7 @@ bool G1CollectedHeap::expand_single_region(uint node_index) {
   uint expanded_by = _hrm.expand_on_preferred_node(node_index);
 
   if (expanded_by == 0) {
-    assert(is_maximal_no_gc(), "Should be no regions left, available: %u", _hrm.num_inactive_regions());
+    assert(num_inactive_regions() == 0, "Should be no regions left, available: %u", num_inactive_regions());
     log_debug(gc, ergo, heap)("Did not expand the heap (heap already fully expanded)");
     return false;
   }
