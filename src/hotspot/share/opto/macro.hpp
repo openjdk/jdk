@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,9 +82,6 @@ public:
 private:
   // projections extracted from a call node
   CallProjections _callprojs;
-
-  // Additional data collected during macro expansion
-  bool _has_locks;
 
   void expand_allocate(AllocateNode *alloc);
   void expand_allocate_array(AllocateArrayNode *alloc);
@@ -199,7 +196,7 @@ private:
   Node* make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type *ftype, AllocateNode *alloc);
 
 public:
-  PhaseMacroExpand(PhaseIterGVN &igvn) : Phase(Macro_Expand), _igvn(igvn), _has_locks(false) {
+  PhaseMacroExpand(PhaseIterGVN &igvn) : Phase(Macro_Expand), _igvn(igvn) {
     _igvn.set_delay_transform(true);
   }
 

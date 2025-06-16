@@ -25,9 +25,9 @@
 #ifndef SHARE_OPTO_C2_GLOBALS_HPP
 #define SHARE_OPTO_C2_GLOBALS_HPP
 
-#include "opto/c2_globals_pd.hpp"
 #include "runtime/globals_shared.hpp"
 #include "utilities/macros.hpp"
+#include CPU_HEADER(c2_globals)
 
 //
 // Defines all globals flags used by the server compiler.
@@ -375,6 +375,18 @@
           "2 = Prefer alignment with vector load.")                         \
           range(0, 2)                                                       \
                                                                             \
+  product(uint, AutoVectorizationOverrideProfitability, 1, DIAGNOSTIC,      \
+          "Override the auto vectorization profitability heuristics."       \
+          "0 = Run auto vectorizer, but abort just before applying"         \
+          "    vectorization, as though it was not profitable."             \
+          "1 = Run auto vectorizer with the default profitability"          \
+          "    heuristics. This is the default, and hopefully"              \
+          "    delivers the best performance."                              \
+          "2 = Run auto vectorizer, and vectorize even if the"              \
+          "    profitability heuristics predict that vectorization"         \
+          "    is not profitable.")                                         \
+          range(0, 2)                                                       \
+                                                                            \
   product(bool, UseCMoveUnconditionally, false,                             \
           "Use CMove (scalar and vector) ignoring profitability test.")     \
                                                                             \
@@ -666,10 +678,12 @@
           "Print progress during Iterative Global Value Numbering")         \
                                                                             \
   develop(uint, VerifyIterativeGVN, 0,                                      \
-          "Verify Iterative Global Value Numbering"                         \
-          "=XY, with Y: verify Def-Use modifications during IGVN"           \
-          "          X: verify that type(n) == n->Value() after IGVN"       \
-          "X and Y in 0=off; 1=on")                                         \
+          "Verify Iterative Global Value Numbering =DCBA, with:"            \
+          "  D: verify Node::Identity did not miss opportunities"           \
+          "  C: verify Node::Ideal did not miss opportunities"              \
+          "  B: verify that type(n) == n->Value() after IGVN"               \
+          "  A: verify Def-Use modifications during IGVN"                   \
+          "Each can be 0=off or 1=on")                                      \
           constraint(VerifyIterativeGVNConstraintFunc, AtParse)             \
                                                                             \
   develop(bool, TraceCISCSpill, false,                                      \
