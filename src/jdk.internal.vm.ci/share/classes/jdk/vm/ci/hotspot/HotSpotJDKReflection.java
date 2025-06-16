@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 package jdk.vm.ci.hotspot;
 
 import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
+import static jdk.vm.ci.hotspot.CompilerToVM.listFromTrustedArray;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 
 import java.lang.annotation.Annotation;
@@ -32,7 +33,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.HashMap;
-
+import java.util.List;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
@@ -109,7 +110,7 @@ final class HotSpotJDKReflection extends HotSpotJVMCIReflection {
     }
 
     @Override
-    ResolvedJavaMethod.Parameter[] getParameters(HotSpotResolvedJavaMethodImpl javaMethod) {
+    List<ResolvedJavaMethod.Parameter> getParameters(HotSpotResolvedJavaMethodImpl javaMethod) {
         java.lang.reflect.Parameter[] javaParameters = getMethod(javaMethod).getParameters();
         ResolvedJavaMethod.Parameter[] res = new ResolvedJavaMethod.Parameter[javaParameters.length];
         for (int i = 0; i < res.length; i++) {
@@ -117,7 +118,7 @@ final class HotSpotJDKReflection extends HotSpotJVMCIReflection {
             String paramName = src.isNamePresent() ? src.getName() : null;
             res[i] = new ResolvedJavaMethod.Parameter(paramName, src.getModifiers(), javaMethod, i);
         }
-        return res;
+        return listFromTrustedArray(res);
     }
 
     @Override
@@ -126,8 +127,8 @@ final class HotSpotJDKReflection extends HotSpotJVMCIReflection {
     }
 
     @Override
-    Type[] getGenericParameterTypes(HotSpotResolvedJavaMethodImpl javaMethod) {
-        return getMethod(javaMethod).getGenericParameterTypes();
+    List<Type> getGenericParameterTypes(HotSpotResolvedJavaMethodImpl javaMethod) {
+        return listFromTrustedArray(getMethod(javaMethod).getGenericParameterTypes());
     }
 
     @Override
@@ -179,8 +180,7 @@ final class HotSpotJDKReflection extends HotSpotJVMCIReflection {
     @Override
     ResolvedJavaType asJavaType(HotSpotObjectConstantImpl object) {
         Object value = resolveObject(object);
-        if (value instanceof Class) {
-            Class<?> javaClass = (Class<?>) value;
+        if (value instanceof Class<?> javaClass) {
             return runtime().fromClass(javaClass);
         }
         if (value instanceof ResolvedJavaType) {
@@ -232,25 +232,17 @@ final class HotSpotJDKReflection extends HotSpotJVMCIReflection {
             Object element = ((Object[]) a)[index];
             return forObject(element);
         } else {
-            if (a instanceof int[]) {
-                return JavaConstant.forInt(((int[]) a)[index]);
-            } else if (a instanceof char[]) {
-                return JavaConstant.forChar(((char[]) a)[index]);
-            } else if (a instanceof byte[]) {
-                return JavaConstant.forByte(((byte[]) a)[index]);
-            } else if (a instanceof long[]) {
-                return JavaConstant.forLong(((long[]) a)[index]);
-            } else if (a instanceof short[]) {
-                return JavaConstant.forShort(((short[]) a)[index]);
-            } else if (a instanceof float[]) {
-                return JavaConstant.forFloat(((float[]) a)[index]);
-            } else if (a instanceof double[]) {
-                return JavaConstant.forDouble(((double[]) a)[index]);
-            } else if (a instanceof boolean[]) {
-                return JavaConstant.forBoolean(((boolean[]) a)[index]);
-            } else {
-                throw new JVMCIError("Should not reach here");
-            }
+            return switch (a) {
+                case int[] ints -> JavaConstant.forInt(ints[index]);
+                case char[] chars -> JavaConstant.forChar(chars[index]);
+                case byte[] bytes -> JavaConstant.forByte(bytes[index]);
+                case long[] longs -> JavaConstant.forLong(longs[index]);
+                case short[] shorts -> JavaConstant.forShort(shorts[index]);
+                case float[] floats -> JavaConstant.forFloat(floats[index]);
+                case double[] doubles -> JavaConstant.forDouble(doubles[index]);
+                case boolean[] booleans -> JavaConstant.forBoolean(booleans[index]);
+                default -> throw new JVMCIError("Should not reach here");
+            };
         }
     }
 
@@ -268,7 +260,7 @@ final class HotSpotJDKReflection extends HotSpotJVMCIReflection {
     }
 
     private static HotSpotObjectConstantImpl forNonNullObject(Object value) {
-        return DirectHotSpotObjectConstantImpl.forNonNullObject(value, false);
+        return DirectHotSpotObjectConstantImpl.forNonNullObject(value);
     }
 
     @Override

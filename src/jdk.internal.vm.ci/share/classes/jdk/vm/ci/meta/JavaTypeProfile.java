@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,9 @@ package jdk.vm.ci.meta;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.List;
 
+import jdk.internal.access.SharedSecrets;
 import jdk.vm.ci.meta.JavaTypeProfile.ProfiledType;
 
 /**
@@ -34,11 +36,13 @@ import jdk.vm.ci.meta.JavaTypeProfile.ProfiledType;
  */
 public final class JavaTypeProfile extends AbstractJavaProfile<ProfiledType, ResolvedJavaType> {
 
-    private static final ProfiledType[] EMPTY_ARRAY = new ProfiledType[0];
-
     private final TriState nullSeen;
 
     public JavaTypeProfile(TriState nullSeen, double notRecordedProbability, ProfiledType[] pitems) {
+        this(nullSeen, notRecordedProbability, List.of(pitems));
+    }
+
+    private JavaTypeProfile(TriState nullSeen, double notRecordedProbability, List<ProfiledType> pitems) {
         super(notRecordedProbability, pitems);
         this.nullSeen = nullSeen;
     }
@@ -55,7 +59,7 @@ public final class JavaTypeProfile extends AbstractJavaProfile<ProfiledType, Res
      * includes both positive and negative types where a positive type is a subtype of the checked
      * type and a negative type is not.
      */
-    public ProfiledType[] getTypes() {
+    public List<ProfiledType> getTypes() {
         return getItems();
     }
 
@@ -71,8 +75,7 @@ public final class JavaTypeProfile extends AbstractJavaProfile<ProfiledType, Res
         }
 
         ArrayList<ProfiledType> result = new ArrayList<>();
-        for (int i = 0; i < getItems().length; i++) {
-            ProfiledType ptype = getItems()[i];
+        for (ProfiledType ptype : getItems()) {
             ResolvedJavaType type = ptype.getItem();
             if (otherProfile.isIncluded(type)) {
                 result.add(ptype);
@@ -86,8 +89,7 @@ public final class JavaTypeProfile extends AbstractJavaProfile<ProfiledType, Res
 
     public JavaTypeProfile restrict(ResolvedJavaType declaredType, boolean nonNull) {
         ArrayList<ProfiledType> result = new ArrayList<>();
-        for (int i = 0; i < getItems().length; i++) {
-            ProfiledType ptype = getItems()[i];
+        for (ProfiledType ptype : getItems()) {
             ResolvedJavaType type = ptype.getItem();
             if (declaredType.isAssignableFrom(type)) {
                 result.add(ptype);
@@ -97,25 +99,25 @@ public final class JavaTypeProfile extends AbstractJavaProfile<ProfiledType, Res
         TriState newNullSeen = (nonNull) ? TriState.FALSE : getNullSeen();
         double newNotRecorded = this.getNotRecordedProbability();
         // Assume for the types not recorded, the incompatibility rate is the same.
-        if (getItems().length != 0) {
-            newNotRecorded *= ((double) result.size() / (double) getItems().length);
+        if (!getItems().isEmpty()) {
+            newNotRecorded *= ((double) result.size() / (double) getItems().size());
         }
         return createAdjustedProfile(result, newNullSeen, newNotRecorded);
     }
 
     private JavaTypeProfile createAdjustedProfile(ArrayList<ProfiledType> result, TriState newNullSeen, double newNotRecorded) {
-        if (result.size() != this.getItems().length || newNotRecorded != getNotRecordedProbability() || newNullSeen != getNullSeen()) {
-            if (result.size() == 0) {
-                return new JavaTypeProfile(newNullSeen, 1.0, EMPTY_ARRAY);
+        if (result.size() != this.getItems().size() || newNotRecorded != getNotRecordedProbability() || newNullSeen != getNullSeen()) {
+            if (result.isEmpty()) {
+                return new JavaTypeProfile(newNullSeen, 1.0, List.of());
             }
             double factor;
-            if (result.size() == this.getItems().length) {
+            if (result.size() == this.getItems().size()) {
                 /* List of types did not change, no need to recompute probabilities. */
                 factor = 1.0;
             } else {
                 double probabilitySum = 0.0;
-                for (int i = 0; i < result.size(); i++) {
-                    probabilitySum += result.get(i).getProbability();
+                for (ProfiledType profiledType : result) {
+                    probabilitySum += profiledType.getProbability();
                 }
                 probabilitySum += newNotRecorded;
 
@@ -128,7 +130,7 @@ public final class JavaTypeProfile extends AbstractJavaProfile<ProfiledType, Res
                 newResult[i] = new ProfiledType(curType.getItem(), Math.min(1.0, curType.getProbability() * factor));
             }
             double newNotRecordedTypeProbability = Math.min(1.0, newNotRecorded * factor);
-            return new JavaTypeProfile(newNullSeen, newNotRecordedTypeProbability, newResult);
+            return new JavaTypeProfile(newNullSeen, newNotRecordedTypeProbability, MetaUtil.listFromTrustedArray(newResult));
         }
         return this;
     }
@@ -166,11 +168,11 @@ public final class JavaTypeProfile extends AbstractJavaProfile<ProfiledType, Res
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder("JavaTypeProfile<nullSeen=").append(getNullSeen()).append(", types=[");
-        for (int j = 0; j < getTypes().length; j++) {
+        for (int j = 0; j < getTypes().size(); j++) {
             if (j != 0) {
                 buf.append(", ");
             }
-            ProfiledType ptype = getTypes()[j];
+            ProfiledType ptype = getTypes().get(j);
             buf.append(String.format("%.6f:%s", ptype.getProbability(), ptype.getType()));
         }
         return buf.append(String.format("], notRecorded:%.6f>", getNotRecordedProbability())).toString();
@@ -184,12 +186,12 @@ public final class JavaTypeProfile extends AbstractJavaProfile<ProfiledType, Res
     }
 
     /**
-     * Returns the single monormorphic type representing this profile or {@code null} if no such
+     * Returns the single monomorphic type representing this profile or {@code null} if no such
      * type exists.
      */
     public ResolvedJavaType asSingleType() {
-        if (allTypesRecorded() && this.getTypes().length == 1) {
-            return getTypes()[0].getType();
+        if (allTypesRecorded() && this.getTypes().size() == 1) {
+            return getTypes().getFirst().getType();
         }
         return null;
     }

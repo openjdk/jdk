@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import jdk.vm.ci.code.site.Site;
 import jdk.vm.ci.meta.Assumptions.Assumption;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+
+import java.util.List;
 
 /**
  * A {@link CompiledCode} with additional HotSpot-specific information required for installing the
@@ -117,7 +119,6 @@ public class HotSpotCompiledCode implements CompiledCode {
         }
     }
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `sites`, `targetCode`, `comments`, `methods`, `dataSection`, `dataSectionPatches` and `assumptions`")
     public HotSpotCompiledCode(String name,
                     byte[] targetCode,
                     int targetCodeSize,
@@ -132,14 +133,14 @@ public class HotSpotCompiledCode implements CompiledCode {
                     int totalFrameSize,
                     StackSlot deoptRescueSlot) {
         this.name = name;
-        this.targetCode = targetCode;
+        this.targetCode = targetCode.clone();
         this.targetCodeSize = targetCodeSize;
         this.sites = sites;
         this.assumptions = assumptions;
         this.methods = methods;
 
         this.comments = comments;
-        this.dataSection = dataSection;
+        this.dataSection = dataSection.clone();
         this.dataSectionAlignment = dataSectionAlignment;
         this.dataSectionPatches = dataSectionPatches;
         this.isImmutablePIC = isImmutablePIC;
@@ -164,8 +165,7 @@ public class HotSpotCompiledCode implements CompiledCode {
      */
     private boolean validateFrames() {
         for (Site site : sites) {
-            if (site instanceof Infopoint) {
-                Infopoint info = (Infopoint) site;
+            if (site instanceof Infopoint info) {
                 if (info.debugInfo != null) {
                     BytecodeFrame frame = info.debugInfo.frame();
                     assert frame == null || frame.validateFormat();

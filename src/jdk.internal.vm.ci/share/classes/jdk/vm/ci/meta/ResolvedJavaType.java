@@ -140,15 +140,6 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
     boolean isAssignableFrom(ResolvedJavaType other);
 
     /**
-     * Returns {@code null} since support for VM anonymous class was removed by JDK-8243287. This
-     * method is preserved for JVMCI backwards compatibility.
-     */
-    @Deprecated
-    default ResolvedJavaType getHostClass() {
-        return null;
-    }
-
-    /**
      * Returns true if this type is exactly the type {@link java.lang.Object}.
      */
     default boolean isJavaLangObject() {
@@ -176,7 +167,7 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
      * {@link Class#getInterfaces()} and as such, only returns the interfaces directly implemented
      * or extended by this type.
      */
-    ResolvedJavaType[] getInterfaces();
+    List<ResolvedJavaType> getInterfaces();
 
     /**
      * Gets the single implementor of this type. Calling this method on a non-interface type causes
@@ -292,16 +283,16 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
      *
      * @param includeSuperclasses if true, then non-static fields for the complete hierarchy of this
      *            type are included in the result with superclass fields coming before subclass fields
-     * @return an array of non-static fields
+     * @return a list of non-static fields
      */
-    ResolvedJavaField[] getInstanceFields(boolean includeSuperclasses);
+    List<ResolvedJavaField> getInstanceFields(boolean includeSuperclasses);
 
     /**
      * Returns the static fields of this class, including {@linkplain ResolvedJavaField#isInternal()
      * internal} fields. A zero-length array is returned for array and primitive types. The order of
      * fields returned by this method is the same as {@link Class#getDeclaredFields}.
      */
-    ResolvedJavaField[] getStaticFields();
+    List<ResolvedJavaField> getStaticFields();
 
     /**
      * Returns the instance field of this class (or one of its super classes) at the given offset,
@@ -333,36 +324,36 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
     ResolvedJavaType getEnclosingType();
 
     /**
-     * Returns an array reflecting all the constructors declared by this type. This method is
+     * Returns a list reflecting all the constructors declared by this type. This method is
      * similar to {@link Class#getDeclaredConstructors()} in terms of returned constructors. Calling
      * this method forces this type to be {@link #link linked}.
      */
-    ResolvedJavaMethod[] getDeclaredConstructors();
+    List<ResolvedJavaMethod> getDeclaredConstructors();
 
     /**
-     * Returns an array reflecting all the constructors declared by this type. This method is
+     * Returns a list reflecting all the constructors declared by this type. This method is
      * similar to {@link Class#getDeclaredConstructors()} in terms of returned constructors.
      *
      * @param forceLink if {@code true}, forces this type to be {@link #link linked}
      */
-    default ResolvedJavaMethod[] getDeclaredConstructors(boolean forceLink) {
+    default List<ResolvedJavaMethod> getDeclaredConstructors(boolean forceLink) {
         throw new UnsupportedOperationException();
     }
 
     /**
-     * Returns an array reflecting all the methods declared by this type. This method is similar to
+     * Returns a list reflecting all the methods declared by this type. This method is similar to
      * {@link Class#getDeclaredMethods()} in terms of returned methods. Calling this method forces
      * this type to be {@link #link linked}.
      */
-    ResolvedJavaMethod[] getDeclaredMethods();
+    List<ResolvedJavaMethod> getDeclaredMethods();
 
     /**
-     * Returns an array reflecting all the methods declared by this type. This method is similar to
+     * Returns a list reflecting all the methods declared by this type. This method is similar to
      * {@link Class#getDeclaredMethods()} in terms of returned methods.
      *
      * @param forceLink if {@code true}, forces this type to be {@link #link linked}
      */
-    default ResolvedJavaMethod[] getDeclaredMethods(boolean forceLink) {
+    default List<ResolvedJavaMethod> getDeclaredMethods(boolean forceLink) {
         throw new UnsupportedOperationException();
     }
 

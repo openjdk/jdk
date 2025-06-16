@@ -27,7 +27,6 @@ import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
-import java.util.Collections;
 import java.util.List;
 
 import jdk.vm.ci.common.JVMCIError;
@@ -47,7 +46,7 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
 
     static HotSpotResolvedPrimitiveType[] primitives;
 
-    private JavaKind kind;
+    private final JavaKind kind;
     HotSpotObjectConstantImpl mirror;
 
     /**
@@ -107,8 +106,8 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
-    public ResolvedJavaType[] getInterfaces() {
-        return new ResolvedJavaType[0];
+    public List<ResolvedJavaType> getInterfaces() {
+        return List.of();
     }
 
     @Override
@@ -213,13 +212,13 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
-    public ResolvedJavaField[] getInstanceFields(boolean includeSuperclasses) {
-        return new ResolvedJavaField[0];
+    public List<ResolvedJavaField> getInstanceFields(boolean includeSuperclasses) {
+        return List.of();
     }
 
     @Override
-    public ResolvedJavaField[] getStaticFields() {
-        return new ResolvedJavaField[0];
+    public List<ResolvedJavaField> getStaticFields() {
+        return List.of();
     }
 
     @Override
@@ -287,13 +286,13 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
-    public ResolvedJavaMethod[] getDeclaredConstructors() {
-        return new ResolvedJavaMethod[0];
+    public List<ResolvedJavaMethod> getDeclaredConstructors() {
+        return List.of();
     }
 
     @Override
-    public ResolvedJavaMethod[] getDeclaredMethods() {
-        return new ResolvedJavaMethod[0];
+    public List<ResolvedJavaMethod> getDeclaredMethods() {
+        return List.of();
     }
 
     @Override
@@ -313,10 +312,9 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof HotSpotResolvedPrimitiveType)) {
+        if (!(obj instanceof HotSpotResolvedPrimitiveType that)) {
             return false;
         }
-        HotSpotResolvedPrimitiveType that = (HotSpotResolvedPrimitiveType) obj;
         return that.kind == kind;
     }
 
@@ -332,7 +330,7 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
 
     @Override
     public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
-        return Collections.emptyList();
+        return List.of();
     }
 
 }

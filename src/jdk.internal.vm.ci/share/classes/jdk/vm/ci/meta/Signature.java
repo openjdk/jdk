@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 package jdk.vm.ci.meta;
+
+import java.util.List;
 
 /**
  * Represents a method signature provided by the runtime.
@@ -100,7 +102,7 @@ public interface Signature {
         return sb.toString();
     }
 
-    default JavaType[] toParameterTypes(JavaType receiverType) {
+    default List<JavaType> toParameterTypes(JavaType receiverType) {
         int args = getParameterCount(false);
         JavaType[] result;
         int i = 0;
@@ -114,10 +116,10 @@ public interface Signature {
         for (int j = 0; j < args; j++) {
             result[i + j] = getParameterType(j, null);
         }
-        return result;
+        return MetaUtil.listFromTrustedArray(result);
     }
 
-    default JavaKind[] toParameterKinds(boolean receiver) {
+    default List<JavaKind> toParameterKinds(boolean receiver) {
         int args = getParameterCount(false);
         JavaKind[] result;
         int i = 0;
@@ -131,6 +133,6 @@ public interface Signature {
         for (int j = 0; j < args; j++) {
             result[i + j] = getParameterKind(j);
         }
-        return result;
+        return MetaUtil.listFromTrustedArray(result);
     }
 }

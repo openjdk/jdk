@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  */
 package jdk.vm.ci.meta;
+
+import java.util.List;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * Miscellaneous collection of utility methods used by {@code jdk.vm.ci.meta} and its clients.
@@ -44,7 +47,7 @@ public class MetaUtil {
      */
     public static String getSimpleName(Class<?> clazz, boolean withEnclosingClass) {
         final String simpleName = safeSimpleName(clazz);
-        if (simpleName.length() != 0) {
+        if (!simpleName.isEmpty()) {
             if (withEnclosingClass) {
                 String prefix = "";
                 Class<?> enclosingClass = clazz;
@@ -179,10 +182,6 @@ public class MetaUtil {
      * <pre>
      *     java.lang.String.valueOf(int) [bci: 12]
      * </pre>
-     *
-     * @param sb
-     * @param method
-     * @param bci
      */
     public static StringBuilder appendLocation(StringBuilder sb, ResolvedJavaMethod method, int bci) {
         if (method != null) {
@@ -200,11 +199,10 @@ public class MetaUtil {
 
     static void appendProfile(StringBuilder buf, AbstractJavaProfile<?, ?> profile, int bci, String type, String sep) {
         if (profile != null) {
-            AbstractProfiledItem<?>[] pitems = profile.getItems();
+            var pitems = profile.getItems();
             if (pitems != null) {
                 buf.append(String.format("%s@%d:", type, bci));
-                for (int j = 0; j < pitems.length; j++) {
-                    AbstractProfiledItem<?> pitem = pitems[j];
+                for (AbstractProfiledItem<?> pitem : pitems) {
                     buf.append(String.format(" %.6f (%s)%s", pitem.getProbability(), pitem.getItem(), sep));
                 }
                 if (profile.getNotRecordedProbability() != 0) {
@@ -282,5 +280,12 @@ public class MetaUtil {
             return "null";
         }
         return obj.getClass().getName() + "@" + System.identityHashCode(obj);
+    }
+
+    /**
+     * Creates an immutable list from a trusted array.
+     */
+    static <T> List<T> listFromTrustedArray(Object[] array) {
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(array);
     }
 }

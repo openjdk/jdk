@@ -24,7 +24,7 @@ package jdk.vm.ci.hotspot;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
-
+import java.util.List;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -52,11 +52,11 @@ abstract class HotSpotJVMCIReflection {
 
     abstract boolean equals(HotSpotObjectConstantImpl hotSpotResolvedJavaType, HotSpotObjectConstantImpl that);
 
-    abstract ResolvedJavaMethod.Parameter[] getParameters(HotSpotResolvedJavaMethodImpl javaMethod);
+    abstract List<ResolvedJavaMethod.Parameter> getParameters(HotSpotResolvedJavaMethodImpl javaMethod);
 
     abstract Annotation[][] getParameterAnnotations(HotSpotResolvedJavaMethodImpl javaMethod);
 
-    abstract Type[] getGenericParameterTypes(HotSpotResolvedJavaMethodImpl javaMethod);
+    abstract List<Type> getGenericParameterTypes(HotSpotResolvedJavaMethodImpl javaMethod);
 
     abstract Annotation[] getFieldAnnotations(HotSpotResolvedJavaFieldImpl javaMethod);
 

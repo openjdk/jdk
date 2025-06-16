@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
-import java.util.BitSet;
+import java.util.List;
 
 /**
  * Represents a resolved Java method. Methods, like fields and types, are resolved through
@@ -145,7 +145,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
     /**
      * Returns the list of exception handlers for this method.
      */
-    ExceptionHandler[] getExceptionHandlers();
+    List<ExceptionHandler> getExceptionHandlers();
 
     /**
      * Returns a stack trace element for this method and a given bytecode index.
@@ -255,7 +255,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
          * Gets the formal type of the parameter.
          */
         public Type getParameterizedType() {
-            return method.getGenericParameterTypes()[index];
+            return method.getGenericParameterTypes().get(index);
         }
 
         /**
@@ -284,7 +284,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
 
         @Override
         public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-            return method.getParameterAnnotations(annotationClass)[index];
+            return method.getParameterAnnotations(annotationClass).get(index);
         }
 
         @Override
@@ -306,7 +306,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
             }
 
             final StringBuilder sb = new StringBuilder(Modifier.toString(getModifiers()));
-            if (sb.length() != 0) {
+            if (!sb.isEmpty()) {
                 sb.append(' ');
             }
             return sb.append(typename).append(' ').append(getName()).toString();
@@ -314,8 +314,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof Parameter) {
-                Parameter other = (Parameter) obj;
+            if (obj instanceof Parameter other) {
                 return (other.method.equals(method) && other.index == index);
             }
             return false;
@@ -332,7 +331,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      * method. Returns an array of length 0 if this method has no parameters. Returns {@code null}
      * if the parameter information is unavailable.
      */
-    default Parameter[] getParameters() {
+    default List<Parameter> getParameters() {
         return null;
     }
 
@@ -342,15 +341,16 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      *
      * @see Method#getParameterAnnotations()
      */
+    // TODO libgraal does not support this, shall we deprecate/remove this?
     Annotation[][] getParameterAnnotations();
 
     /**
-     * Returns an array of {@link Type} objects that represent the formal parameter types, in
+     * Returns a list of {@link Type} objects that represent the formal parameter types, in
      * declaration order, of this method.
      *
      * @see Method#getGenericParameterTypes()
      */
-    Type[] getGenericParameterTypes();
+    List<Type> getGenericParameterTypes();
 
     /**
      * Returns {@code true} if this method is not excluded from inlining and has associated Java
@@ -419,7 +419,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
         return null;
     }
 
-    default JavaType[] toParameterTypes() {
+    default List<JavaType> toParameterTypes() {
         JavaType receiver = isStatic() || isConstructor() ? null : getDeclaringClass();
         return getSignature().toParameterTypes(receiver);
     }
@@ -432,7 +432,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      *         present
      */
     @SuppressWarnings("unchecked")
-    default <T extends Annotation> T[] getParameterAnnotations(Class<T> annotationClass) {
+    default <T extends Annotation> List<T> getParameterAnnotations(Class<T> annotationClass) {
         Annotation[][] parameterAnnotations = getParameterAnnotations();
         T[] result = (T[]) Array.newInstance(annotationClass, parameterAnnotations.length);
         for (int i = 0; i < parameterAnnotations.length; i++) {
@@ -442,7 +442,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
                 }
             }
         }
-        return result;
+        return MetaUtil.listFromTrustedArray(result);
     }
 
     /**

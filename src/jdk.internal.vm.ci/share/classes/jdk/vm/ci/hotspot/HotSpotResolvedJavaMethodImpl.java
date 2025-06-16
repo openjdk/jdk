@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 package jdk.vm.ci.hotspot;
 
 import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
+import static jdk.vm.ci.hotspot.CompilerToVM.listFromTrustedArray;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.HotSpotModifiers.BRIDGE;
 import static jdk.vm.ci.hotspot.HotSpotModifiers.SYNTHETIC;
@@ -38,7 +39,6 @@ import java.lang.reflect.Type;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.common.JVMCIError;
@@ -152,8 +152,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
         if (this == obj) {
             return true;
         }
-        if (obj instanceof HotSpotResolvedJavaMethodImpl) {
-            HotSpotResolvedJavaMethodImpl that = (HotSpotResolvedJavaMethodImpl) obj;
+        if (obj instanceof HotSpotResolvedJavaMethodImpl that) {
             return that.getMethodPointer() == getMethodPointer();
         }
         return false;
@@ -252,10 +251,10 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     }
 
     @Override
-    public ExceptionHandler[] getExceptionHandlers() {
+    public List<ExceptionHandler> getExceptionHandlers() {
         final boolean hasExceptionTable = (getConstMethodFlags() & config().constMethodHasExceptionTable) != 0;
         if (!hasExceptionTable) {
-            return new ExceptionHandler[0];
+            return List.of();
         }
 
         HotSpotVMConfig config = config();
@@ -277,8 +276,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
                 catchType = constantPool.lookupType(catchTypeIndex, opcode);
 
                 // Check for Throwable which catches everything.
-                if (catchType instanceof HotSpotResolvedObjectTypeImpl) {
-                    HotSpotResolvedObjectTypeImpl resolvedType = (HotSpotResolvedObjectTypeImpl) catchType;
+                if (catchType instanceof HotSpotResolvedObjectTypeImpl resolvedType) {
                     if (resolvedType.equals(runtime().getJavaLangThrowable())) {
                         catchTypeIndex = 0;
                         catchType = null;
@@ -291,7 +289,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
             exceptionTableElement += config.exceptionTableElementSize;
         }
 
-        return handlers;
+        return listFromTrustedArray(handlers);
     }
 
     /**
@@ -455,7 +453,6 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     }
 
     /**
-     * @param level
      * @return true if the currently installed code was generated at {@code level}.
      */
     @Override
@@ -505,9 +502,9 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     }
 
     @Override
-    public Parameter[] getParameters() {
+    public List<Parameter> getParameters() {
         if (signature.getParameterCount(false) == 0) {
-            return new ResolvedJavaMethod.Parameter[0];
+            return List.of();
         }
         return runtime().reflection.getParameters(this);
     }
@@ -587,9 +584,9 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     }
 
     @Override
-    public Type[] getGenericParameterTypes() {
+    public List<Type> getGenericParameterTypes() {
         if (isClassInitializer()) {
-            return new Type[0];
+            return List.of();
         }
         return runtime().reflection.getGenericParameterTypes(this);
     }
@@ -692,8 +689,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public boolean isInVirtualMethodTable(ResolvedJavaType resolved) {
-        if (resolved instanceof HotSpotResolvedObjectTypeImpl) {
-            HotSpotResolvedObjectTypeImpl hotspotResolved = (HotSpotResolvedObjectTypeImpl) resolved;
+        if (resolved instanceof HotSpotResolvedObjectTypeImpl hotspotResolved) {
             int vtableIndex = getVtableIndex(hotspotResolved);
             return vtableIndex >= 0 && vtableIndex < hotspotResolved.getVtableLength();
         }
@@ -777,7 +773,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
         if (!hasAnnotations()) {
             return null;
         }
-        return getAnnotationData0(type).get(0);
+        return getAnnotationData0(type).getFirst();
     }
 
     @Override

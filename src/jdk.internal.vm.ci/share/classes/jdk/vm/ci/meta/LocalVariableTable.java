@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,17 +32,16 @@ import java.util.List;
  */
 public class LocalVariableTable {
 
-    private final Local[] locals;
+    private final List<Local> locals;
 
     /**
      * Creates an object describing the {@link Local}s for a Java method.
      *
      * @param locals array of objects describing local variables. This array is now owned by this
-     *            object and must not be mutated by the caller.
+     *               object and must not be mutated by the caller.
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `locals`")
     public LocalVariableTable(Local[] locals) {
-        this.locals = locals;
+        this.locals = List.of(locals);
     }
 
     /**
@@ -50,7 +49,7 @@ public class LocalVariableTable {
      * {@code slot} and is live at the bytecode index {@code bci}.
      *
      * @return a description of the requested local variable or null if no such variable matches
-     *         {@code slot} and {@code bci}
+     * {@code slot} and {@code bci}
      */
     public Local getLocal(int slot, int bci) {
         Local result = null;
@@ -67,22 +66,22 @@ public class LocalVariableTable {
     }
 
     /**
-     * Gets a copy of the array of {@link Local}s that was passed to this object's constructor.
+     * Gets the local variables
      */
-    public Local[] getLocals() {
-        return locals.clone();
+    public List<Local> getLocals() {
+        return locals;
     }
 
     /**
      * Gets a description of all the local variables live at the bytecode index {@code bci}.
      */
-    public Local[] getLocalsAt(int bci) {
+    public List<Local> getLocalsAt(int bci) {
         List<Local> result = new ArrayList<>();
         for (Local l : locals) {
             if (l.getStartBCI() <= bci && bci <= l.getEndBCI()) {
                 result.add(l);
             }
         }
-        return result.toArray(new Local[result.size()]);
+        return MetaUtil.listFromTrustedArray(result.toArray());
     }
 }

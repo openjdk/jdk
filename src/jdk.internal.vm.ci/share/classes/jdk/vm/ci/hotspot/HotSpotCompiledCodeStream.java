@@ -74,6 +74,7 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 
 import jdk.internal.misc.Unsafe;
@@ -390,9 +391,6 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
 
     /**
      * Emits the name and size in bytes of a data element if type info is enabled.
-     *
-     * @param name
-     * @param sizeInBytes
      */
     private void emitType(String name, int sizeInBytes) {
         if (withTypeInfo) {
@@ -503,8 +501,7 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
         currentChunkOffset += 4;
 
         // body
-        for (int i = 0; i < utf.length; i++) {
-            byte b = utf[i];
+        for (byte b : utf) {
             unsafe.putByte(currentChunk + currentChunkOffset, b);
             currentChunkOffset++;
         }
@@ -704,13 +701,7 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
             if (col % 2 == 0) {
                 out.print(' ');
             }
-            if (pos < data.length) {
-                byte b = data[pos];
-                char ch = (char) ((char) b & 0xff);
-                out.printf("%02X", (int) ch);
-            } else {
-                out.print("  ");
-            }
+            out.printf("%02X", (int) (char) ((char) data[pos] & 0xff));
             if ((col + 1) % 16 == 0) {
                 out.print("  ");
                 for (int j = pos - 15; j <= pos; ++j) {
@@ -738,68 +729,64 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
         Site[] sites = code.sites;
         for (Site site : sites) {
             writeInt("site:pcOffset", site.pcOffset);
-            if (site instanceof Call) {
-                Call call = (Call) site;
-                DebugInfo debugInfo = call.debugInfo;
-                InvokeTarget target = call.target;
-                if (target instanceof HotSpotForeignCallTarget) {
-                    HotSpotForeignCallTarget foreignCall = (HotSpotForeignCallTarget) target;
-                    writeTag(debugInfo == null ? SITE_FOREIGN_CALL_NO_DEBUG_INFO : SITE_FOREIGN_CALL);
-                    writeLong("target", foreignCall.address);
-                    if (debugInfo != null) {
+            switch (site) {
+                case Call call -> {
+                    DebugInfo debugInfo = call.debugInfo;
+                    InvokeTarget target = call.target;
+                    if (target instanceof HotSpotForeignCallTarget foreignCall) {
+                        writeTag(debugInfo == null ? SITE_FOREIGN_CALL_NO_DEBUG_INFO : SITE_FOREIGN_CALL);
+                        writeLong("target", foreignCall.address);
+                        if (debugInfo != null) {
+                            writeDebugInfo(debugInfo, true);
+                        }
+                    } else {
+                        if (debugInfo == null) {
+                            throw error("debug info expected at call %s", call);
+                        }
+                        writeTag(SITE_CALL);
+                        ResolvedJavaMethod method = (ResolvedJavaMethod) target;
+                        writeMethod("target", method);
+                        writeBoolean("direct", call.direct);
                         writeDebugInfo(debugInfo, true);
                     }
-                } else {
+                }
+                case Infopoint info -> {
+                    InfopointReason reason = info.reason;
+                    DebugInfo debugInfo = info.debugInfo;
                     if (debugInfo == null) {
-                        throw error("debug info expected at call %s", call);
+                        throw error("debug info expected at infopoint %s", info);
                     }
-                    writeTag(SITE_CALL);
-                    ResolvedJavaMethod method = (ResolvedJavaMethod) target;
-                    writeMethod("target", method);
-                    writeBoolean("direct", call.direct);
-                    writeDebugInfo(debugInfo, true);
-                }
-            } else if (site instanceof Infopoint) {
-                Infopoint info = (Infopoint) site;
-                InfopointReason reason = info.reason;
-                DebugInfo debugInfo = info.debugInfo;
-                if (debugInfo == null) {
-                    throw error("debug info expected at infopoint %s", info);
-                }
-                Tag tag;
-                switch (reason) {
-                    case SAFEPOINT:
-                        tag = SITE_SAFEPOINT;
-                        break;
-                    case IMPLICIT_EXCEPTION:
-                        tag = info instanceof ImplicitExceptionDispatch ? SITE_IMPLICIT_EXCEPTION_DISPATCH : SITE_IMPLICIT_EXCEPTION;
-                        break;
-                    case CALL:
-                        throw error("only %s objects expected to have CALL reason: %s", Call.class.getName(), info);
-                    default:
-                        tag = SITE_INFOPOINT;
-                        break;
-                }
-                writeTag(tag);
-                boolean fullInfo = reason == InfopointReason.SAFEPOINT || reason == InfopointReason.IMPLICIT_EXCEPTION;
-                writeDebugInfo(debugInfo, fullInfo);
-                if (tag == SITE_IMPLICIT_EXCEPTION_DISPATCH) {
-                    int dispatchOffset = ((ImplicitExceptionDispatch) info).dispatchOffset;
-                    writeInt("dispatchOffset", dispatchOffset);
-                }
+                    Tag tag = switch (reason) {
+                        case SAFEPOINT -> SITE_SAFEPOINT;
+                        case IMPLICIT_EXCEPTION ->
+                                info instanceof ImplicitExceptionDispatch ? SITE_IMPLICIT_EXCEPTION_DISPATCH : SITE_IMPLICIT_EXCEPTION;
+                        case CALL ->
+                                throw error("only %s objects expected to have CALL reason: %s", Call.class.getName(), info);
+                        default -> SITE_INFOPOINT;
+                    };
+                    writeTag(tag);
+                    boolean fullInfo = reason == InfopointReason.SAFEPOINT || reason == InfopointReason.IMPLICIT_EXCEPTION;
+                    writeDebugInfo(debugInfo, fullInfo);
+                    if (tag == SITE_IMPLICIT_EXCEPTION_DISPATCH) {
+                        int dispatchOffset = ((ImplicitExceptionDispatch) info).dispatchOffset;
+                        writeInt("dispatchOffset", dispatchOffset);
+                    }
 
-            } else if (site instanceof DataPatch) {
-                writeTag(SITE_DATA_PATCH);
-                DataPatch patch = (DataPatch) site;
-                writeDataPatch(patch, code);
-            } else if (site instanceof Mark) {
-                Mark mark = (Mark) site;
-                writeTag(SITE_MARK);
-                writeU1("mark:id", (int) mark.id);
-            } else if (site instanceof ExceptionHandler) {
-                ExceptionHandler handler = (ExceptionHandler) site;
-                writeTag(SITE_EXCEPTION_HANDLER);
-                writeInt("site:handlerPos", handler.handlerPos);
+                }
+                case DataPatch patch -> {
+                    writeTag(SITE_DATA_PATCH);
+                    writeDataPatch(patch, code);
+                }
+                case Mark mark -> {
+                    writeTag(SITE_MARK);
+                    writeU1("mark:id", (int) mark.id);
+                }
+                case ExceptionHandler handler -> {
+                    writeTag(SITE_EXCEPTION_HANDLER);
+                    writeInt("site:handlerPos", handler.handlerPos);
+                }
+                default -> {
+                }
             }
         }
     }
@@ -808,11 +795,10 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
         writeU2("dataSectionPatches:length", dataSectionPatches.length);
         for (DataPatch dp : dataSectionPatches) {
             Reference ref = dp.reference;
-            if (!(ref instanceof ConstantReference)) {
+            if (!(ref instanceof ConstantReference cref)) {
                 throw error("invalid patch in data section: %s", dp);
             }
             writeInt("patch:pcOffset", dp.pcOffset);
-            ConstantReference cref = (ConstantReference) ref;
             VMConstant con = cref.getConstant();
             if (con instanceof HotSpotMetaspaceConstantImpl) {
                 writeMetaspaceConstantPatch((HotSpotMetaspaceConstantImpl) con);
@@ -827,8 +813,7 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
 
     private void writeDataPatch(DataPatch patch, HotSpotCompiledCode code) {
         Reference ref = patch.reference;
-        if (ref instanceof ConstantReference) {
-            ConstantReference cref = (ConstantReference) ref;
+        if (ref instanceof ConstantReference cref) {
             VMConstant con = cref.getConstant();
             if (con instanceof HotSpotObjectConstantImpl) {
                 writeOopConstantPatch((HotSpotObjectConstantImpl) con);
@@ -837,8 +822,7 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
             } else {
                 throw error("unexpected constant patch: %s", con);
             }
-        } else if (ref instanceof DataSectionReference) {
-            DataSectionReference dsref = (DataSectionReference) ref;
+        } else if (ref instanceof DataSectionReference dsref) {
             int dataOffset = dsref.getOffset();
             if (dataOffset < 0 || dataOffset >= code.dataSection.length) {
                 throw error("data offset 0x%X points outside data section (size 0x%X)", dataOffset, code.dataSection.length);
@@ -851,11 +835,10 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
     }
 
     private void writeOopConstantPatch(HotSpotObjectConstantImpl con) {
-        if (con instanceof DirectHotSpotObjectConstantImpl) {
+        if (con instanceof DirectHotSpotObjectConstantImpl obj) {
             if (Services.IS_IN_NATIVE_IMAGE) {
                 throw error("Direct object constant reached the backend: %s", con);
             }
-            DirectHotSpotObjectConstantImpl obj = (DirectHotSpotObjectConstantImpl) con;
             if (!obj.isCompressed()) {
                 writeObjectID(obj, PATCH_OBJECT_ID, PATCH_OBJECT_ID2);
             } else {
@@ -909,10 +892,9 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
         int numStaticCallStubs = 0;
         int numTrampolineStubs = 0;
         for (Site site : code.sites) {
-            if (site instanceof Mark) {
-                Mark mark = (Mark) site;
+            if (site instanceof Mark mark) {
                 if (!(mark.id instanceof Integer)) {
-                    error("Mark id must be Integer, not %s", mark.id.getClass().getName());
+                    throw error("Mark id must be Integer, not %s", mark.id.getClass().getName());
                 }
                 int id = (Integer) mark.id;
                 if (id == MARK_INVOKEINTERFACE || id == MARK_INVOKEVIRTUAL) {
@@ -930,29 +912,31 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
     private void writeAssumptions(Assumption[] assumptions) {
         writeU2("assumptions:length", assumptions.length);
         for (Assumption a : assumptions) {
-            if (a instanceof NoFinalizableSubclass) {
-                writeTag(NO_FINALIZABLE_SUBCLASS);
-                writeObjectType("receiverType", ((NoFinalizableSubclass) a).receiverType);
-            } else if (a instanceof ConcreteSubtype) {
-                writeTag(CONCRETE_SUBTYPE);
-                ConcreteSubtype cs = (ConcreteSubtype) a;
-                writeObjectType("context", cs.context);
-                writeObjectType("subtype", cs.subtype);
-            } else if (a instanceof LeafType) {
-                writeTag(LEAF_TYPE);
-                writeObjectType("context", ((LeafType) a).context);
-            } else if (a instanceof ConcreteMethod) {
-                writeTag(CONCRETE_METHOD);
-                ConcreteMethod cm = (ConcreteMethod) a;
-                writeObjectType("context", cm.context);
-                writeMethod("impl", cm.impl);
-            } else if (a instanceof CallSiteTargetValue) {
-                writeTag(CALLSITE_TARGET_VALUE);
-                CallSiteTargetValue cs = (CallSiteTargetValue) a;
-                writeJavaValue(cs.callSite, JavaKind.Object);
-                writeJavaValue(cs.methodHandle, JavaKind.Object);
-            } else {
-                throw error("unexpected assumption %s", a);
+            switch (a) {
+                case NoFinalizableSubclass noFinalizableSubclass -> {
+                    writeTag(NO_FINALIZABLE_SUBCLASS);
+                    writeObjectType("receiverType", noFinalizableSubclass.receiverType);
+                }
+                case ConcreteSubtype cs -> {
+                    writeTag(CONCRETE_SUBTYPE);
+                    writeObjectType("context", cs.context);
+                    writeObjectType("subtype", cs.subtype);
+                }
+                case LeafType leafType -> {
+                    writeTag(LEAF_TYPE);
+                    writeObjectType("context", leafType.context);
+                }
+                case ConcreteMethod cm -> {
+                    writeTag(CONCRETE_METHOD);
+                    writeObjectType("context", cm.context);
+                    writeMethod("impl", cm.impl);
+                }
+                case CallSiteTargetValue cs -> {
+                    writeTag(CALLSITE_TARGET_VALUE);
+                    writeJavaValue(cs.callSite, JavaKind.Object);
+                    writeJavaValue(cs.methodHandle, JavaKind.Object);
+                }
+                case null, default -> throw error("unexpected assumption %s", a);
             }
         }
     }
@@ -989,16 +973,18 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
         }
     }
 
-    private void writeVirtualObjects(VirtualObject[] virtualObjects) {
-        int length = virtualObjects != null ? virtualObjects.length : 0;
+    private void writeVirtualObjects(List<VirtualObject> virtualObjects) {
+        if (virtualObjects == null) {
+            return;
+        }
+        int length = virtualObjects.size();
         writeU2("virtualObjects:length", length);
-        for (int i = 0; i < length; i++) {
-            VirtualObject vo = virtualObjects[i];
+        for (VirtualObject vo : virtualObjects) {
             writeObjectType("type", vo.getType());
             writeBoolean("isAutoBox", vo.isAutoBox());
         }
         for (int i = 0; i < length; i++) {
-            VirtualObject vo = virtualObjects[i];
+            VirtualObject vo = virtualObjects.get(i);
             int id = vo.getId();
             if (id != i) {
                 throw error("duplicate virtual object id %d", id);
@@ -1059,8 +1045,7 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
                 throw error("object constant (%s) kind expected to be Object, got %s", value, kind);
             }
             writeTag(NULL_CONSTANT);
-        } else if (value instanceof RegisterValue) {
-            RegisterValue reg = (RegisterValue) value;
+        } else if (value instanceof RegisterValue reg) {
             Tag tag;
             if (kind == JavaKind.Object) {
                 if (isVector(reg)) {
@@ -1073,8 +1058,7 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
             }
             writeTag(tag);
             writeRegister(reg.getRegister());
-        } else if (value instanceof StackSlot) {
-            StackSlot slot = (StackSlot) value;
+        } else if (value instanceof StackSlot slot) {
             Tag tag;
             int offset = slot.getRawOffset();
             boolean s2 = isS2(offset);
@@ -1096,8 +1080,7 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
                 writeInt("offset4", slot.getRawOffset());
             }
             writeBoolean("addRawFrameSize", slot.getRawAddFrameSize());
-        } else if (value instanceof VirtualObject) {
-            VirtualObject vo = (VirtualObject) value;
+        } else if (value instanceof VirtualObject vo) {
             if (kind != JavaKind.Object) {
                 throw error("virtual object kind must be Object, not %s", kind);
             }
@@ -1109,12 +1092,10 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
                 writeTag(VIRTUAL_OBJECT_ID2);
                 writeU2("id:2", id);
             }
-        } else if (value instanceof RawConstant) {
-            RawConstant prim = (RawConstant) value;
+        } else if (value instanceof RawConstant prim) {
             writeTag(RAW_CONSTANT);
             writeLong("primitive", prim.getRawValue());
-        } else if (value instanceof PrimitiveConstant) {
-            PrimitiveConstant prim = (PrimitiveConstant) value;
+        } else if (value instanceof PrimitiveConstant prim) {
             if (prim.getJavaKind() != kind) {
                 throw error("primitive constant (%s) kind expected to be %s, got %s", prim, kind, prim.getJavaKind());
             }
@@ -1129,11 +1110,10 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
                 writeTag(PRIMITIVE8);
                 writeLong("primitive8", raw);
             }
-        } else if (value instanceof IndirectHotSpotObjectConstantImpl) {
+        } else if (value instanceof IndirectHotSpotObjectConstantImpl obj) {
             if (JavaKind.Object != kind) {
                 throw error("object constant (%s) kind expected to be Object, got %s", value, kind);
             }
-            IndirectHotSpotObjectConstantImpl obj = (IndirectHotSpotObjectConstantImpl) value;
             writeTag(JOBJECT);
             writeLong("jobject", obj.getHandle());
         } else if (value instanceof DirectHotSpotObjectConstantImpl) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  */
 package jdk.vm.ci.meta;
 
+import java.util.List;
+
 /**
  * This object holds probability information for a set of items that were profiled at a specific
  * BCI. The precision of the supplied values may vary, but a runtime that provides this information
@@ -35,15 +37,9 @@ package jdk.vm.ci.meta;
 public abstract class AbstractJavaProfile<T extends AbstractProfiledItem<U>, U> {
 
     private final double notRecordedProbability;
-    private final T[] pitems;
+    private final List<T> pitems;
 
-    /**
-     *
-     * @param notRecordedProbability
-     * @param pitems
-     */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of the `pitems` array parameter")
-    public AbstractJavaProfile(double notRecordedProbability, T[] pitems) {
+    public AbstractJavaProfile(double notRecordedProbability, List<T> pitems) {
         this.pitems = pitems;
         assert !Double.isNaN(notRecordedProbability);
         this.notRecordedProbability = notRecordedProbability;
@@ -64,8 +60,8 @@ public abstract class AbstractJavaProfile<T extends AbstractProfiledItem<U>, U> 
      * probabilities.
      */
     private boolean isSorted() {
-        for (int i = 1; i < pitems.length; i++) {
-            if (pitems[i - 1].getProbability() < pitems[i].getProbability()) {
+        for (int i = 1; i < pitems.size(); i++) {
+            if (pitems.get(i - 1).getProbability() < pitems.get(i).getProbability()) {
                 return false;
             }
         }
@@ -82,7 +78,7 @@ public abstract class AbstractJavaProfile<T extends AbstractProfiledItem<U>, U> 
         return notRecordedProbability;
     }
 
-    protected T[] getItems() {
+    protected List<T> getItems() {
         return pitems;
     }
 
@@ -123,8 +119,7 @@ public abstract class AbstractJavaProfile<T extends AbstractProfiledItem<U>, U> 
         if (this.getNotRecordedProbability() > 0.0) {
             return true;
         } else {
-            for (int i = 0; i < getItems().length; i++) {
-                T pitem = getItems()[i];
+            for (T pitem : getItems()) {
                 U curType = pitem.getItem();
                 if (curType == item) {
                     return true;
@@ -139,18 +134,17 @@ public abstract class AbstractJavaProfile<T extends AbstractProfiledItem<U>, U> 
         if (obj == this) {
             return true;
         }
-        if (!(obj instanceof AbstractJavaProfile)) {
+        if (!(obj instanceof AbstractJavaProfile<?, ?> that)) {
             return false;
         }
-        AbstractJavaProfile<?, ?> that = (AbstractJavaProfile<?, ?>) obj;
         if (that.notRecordedProbability != notRecordedProbability) {
             return false;
         }
-        if (that.pitems.length != pitems.length) {
+        if (that.pitems.size() != pitems.size()) {
             return false;
         }
-        for (int i = 0; i < pitems.length; ++i) {
-            if (!pitems[i].equals(that.pitems[i])) {
+        for (int i = 0; i < pitems.size(); ++i) {
+            if (!pitems.get(i).equals(that.pitems.get(i))) {
                 return false;
             }
         }
@@ -159,6 +153,6 @@ public abstract class AbstractJavaProfile<T extends AbstractProfiledItem<U>, U> 
 
     @Override
     public int hashCode() {
-        return (int) Double.doubleToLongBits(notRecordedProbability) + pitems.length * 13;
+        return (int) Double.doubleToLongBits(notRecordedProbability) + pitems.size() * 13;
     }
 }

@@ -25,6 +25,7 @@ package jdk.vm.ci.hotspot;
 import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
 import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 
+import java.util.List;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import jdk.vm.ci.common.JVMCIError;
@@ -168,14 +169,15 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
     }
 
     private boolean checkArgs(Object... args) {
-        JavaType[] sig = method.toParameterTypes();
-        assert args.length == sig.length : method.format("%H.%n(%p): expected ") + sig.length + " args, got " + args.length;
-        for (int i = 0; i < sig.length; i++) {
+        List<JavaType> sig = method.toParameterTypes();
+        assert args.length == sig.size() : method.format("%H.%n(%p): expected ") + sig.size() + " args, got " + args.length;
+        for (int i = 0; i < sig.size(); i++) {
             Object arg = args[i];
+            JavaType type = sig.get(i);
             if (arg == null) {
-                assert sig[i].getJavaKind() == JavaKind.Object : method.format("%H.%n(%p): expected arg ") + i + " to be Object, not " + sig[i];
-            } else if (sig[i].getJavaKind() != JavaKind.Object) {
-                assert sig[i].getJavaKind().toBoxedJavaClass() == arg.getClass() : method.format("%H.%n(%p): expected arg ") + i + " to be " + sig[i] + ", not " + arg.getClass();
+                assert type.getJavaKind() == JavaKind.Object : method.format("%H.%n(%p): expected arg ") + i + " to be Object, not " + type;
+            } else if (type.getJavaKind() != JavaKind.Object) {
+                assert type.getJavaKind().toBoxedJavaClass() == arg.getClass() : method.format("%H.%n(%p): expected arg ") + i + " to be " + type + ", not " + arg.getClass();
             }
         }
         return true;

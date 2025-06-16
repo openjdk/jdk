@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.List;
 
 import jdk.vm.ci.meta.SpeculationLog.Speculation;
 
@@ -48,12 +49,12 @@ public interface MetaAccessProvider {
      * @param classes the Java class objects
      * @return the resolved Java type objects
      */
-    default ResolvedJavaType[] lookupJavaTypes(Class<?>[] classes) {
+    default List<ResolvedJavaType> lookupJavaTypes(Class<?>[] classes) {
         ResolvedJavaType[] result = new ResolvedJavaType[classes.length];
         for (int i = 0; i < result.length; i++) {
             result[i] = lookupJavaType(classes[i]);
         }
-        return result;
+        return List.of(result);
     }
 
     /**
