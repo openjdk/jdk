@@ -4295,8 +4295,8 @@ public:
   }
 
   // SVE2 programmable table lookup in two vector table
-  void sve2_tbl(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn1,
-                FloatRegister Zn2, FloatRegister Zm) {
+  void sve_tbl(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn1,
+               FloatRegister Zn2, FloatRegister Zm) {
     starti;
     assert(T != Q, "invalid size");
     assert(Zn1->successor() == Zn2, "invalid order of registers");

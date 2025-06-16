@@ -886,7 +886,7 @@ reg_class v17_veca_reg(
     V17, V17_H, V17_J, V17_K
 );
 
-// Class for vector register v18
+// Class for vector register V18
 reg_class v18_veca_reg(
     V18, V18_H, V18_J, V18_K
 );

@@ -194,10 +194,11 @@ void verify_int_in_range(uint idx, const TypeInt* t, Register val, Register tmp)
   void reconstruct_frame_pointer(Register rtmp);
 
   // Select from a table of two vectors
-  void select_from_two_vectors_SIFNeon(FloatRegister dst, FloatRegister src1, FloatRegister src2,
-                                       FloatRegister index, FloatRegister tmp1, FloatRegister tmp2,
-                                       BasicType bt, unsigned length_in_bytes);
+  void select_from_two_vectors_HS_Neon(FloatRegister dst, FloatRegister src1, FloatRegister src2,
+                                       FloatRegister index, FloatRegister tmp1, BasicType bt,
+                                       bool isQ);
 
   void select_from_two_vectors(FloatRegister dst, FloatRegister src1, FloatRegister src2,
-                               FloatRegister index, BasicType bt, unsigned length_in_bytes);
+                               FloatRegister index, FloatRegister tmp1, BasicType bt,
+                               unsigned length_in_bytes);
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP
