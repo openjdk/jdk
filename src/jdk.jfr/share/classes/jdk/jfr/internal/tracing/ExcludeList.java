@@ -35,7 +35,7 @@ public final class ExcludeList {
         "sun/misc/Unsafe",
         "jdk/internal/misc/Unsafe",
         "java/lang/StringLatin1",
-        "java/lang/StringUTF16"
+        "java/lang/StringUTF16",
     };
 
     private static final String[] EXCLUDED_PREFIX = {
