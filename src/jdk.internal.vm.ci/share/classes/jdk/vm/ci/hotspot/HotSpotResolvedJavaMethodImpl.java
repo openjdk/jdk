@@ -22,6 +22,9 @@
  */
 package jdk.vm.ci.hotspot;
 
+import static java.util.FormattableFlags.ALTERNATE;
+import static java.util.FormattableFlags.LEFT_JUSTIFY;
+import static java.util.FormattableFlags.UPPERCASE;
 import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
 import static jdk.vm.ci.hotspot.CompilerToVM.listFromTrustedArray;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
@@ -38,6 +41,8 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.BitSet;
 import java.util.Collections;
+import java.util.Formattable;
+import java.util.Formatter;
 import java.util.List;
 
 import jdk.internal.vm.VMSupport;
@@ -62,7 +67,7 @@ import jdk.vm.ci.meta.TriState;
 /**
  * Implementation of {@link JavaMethod} for resolved HotSpot methods.
  */
-final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSpotResolvedJavaMethod, MetaspaceHandleObject {
+final class HotSpotResolvedJavaMethodImpl implements JavaMethod, Formattable, HotSpotResolvedJavaMethod, MetaspaceHandleObject {
 
     /**
      * A {@code jmetadata} value that is a handle to {@code Method*} value.
@@ -798,5 +803,49 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
         long[] oopMap = new long[nwords];
         compilerToVM().getOopMapAt(this, bci, oopMap);
         return BitSet.valueOf(oopMap);
+    }
+
+    private static String applyFormattingFlagsAndWidth(String s, int flags, int width) {
+        if (flags == 0 && width < 0) {
+            return s;
+        }
+        StringBuilder sb = new StringBuilder(s);
+
+        // apply width and justification
+        int len = sb.length();
+        if (len < width) {
+            for (int i = 0; i < width - len; i++) {
+                if ((flags & LEFT_JUSTIFY) == LEFT_JUSTIFY) {
+                    sb.append(' ');
+                } else {
+                    sb.insert(0, ' ');
+                }
+            }
+        }
+
+        String res = sb.toString();
+        if ((flags & UPPERCASE) == UPPERCASE) {
+            res = res.toUpperCase();
+        }
+        return res;
+    }
+
+    /**
+     * Controls whether {@link #toString()} includes the qualified or simple name of the class in
+     * which the method is declared.
+     */
+    private static final boolean FULLY_QUALIFIED_METHOD_NAME = false;
+
+    @Override
+    public final String toString() {
+        char h = FULLY_QUALIFIED_METHOD_NAME ? 'H' : 'h';
+        String fmt = String.format("HotSpotMethod<%%%c.%%n(%%p)>", h);
+        return format(fmt);
+    }
+
+    @Override
+    public void formatTo(Formatter formatter, int flags, int width, int precision) {
+        String base = (flags & ALTERNATE) == ALTERNATE ? getName() : toString();
+        formatter.format(applyFormattingFlagsAndWidth(base, flags & ~ALTERNATE, width));
     }
 }
