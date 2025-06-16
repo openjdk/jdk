@@ -187,7 +187,7 @@ public class TestAliasingFuzzer {
 
         // MemorySegment with getAtIndex / setAtIndex
         // There are too many combinations, so we sample some random cases.
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 20; i++) {
             Aliasing aliasing = sample(Arrays.asList(Aliasing.values()));
             AccessScenario accessScenario = sample(Arrays.asList(AccessScenario.values()));
             MyType containerElementType = sample(allTypes);
@@ -306,6 +306,22 @@ public class TestAliasingFuzzer {
                 "#con + #ivScale * i + #invar0Scale * #invar0",
                 IntStream.range(0, invarRestScales.length).mapToObj(
                     i -> List.of(" + ", invarRestScales[i], " * ", invarRest[i])
+                ).toList()
+            ));
+            return template.asToken();
+        }
+
+        // MemorySegment need to be long-addressed, otherwise there can be int-overflow
+        // in the index, and that prevents RangeCheck Elimination and Vectorization.
+        public TemplateToken indexLong(String invar0, String[] invarRest) {
+            var template = Template.make(() -> body(
+                let("con", con),
+                let("ivScale", ivScale),
+                let("invar0Scale", invar0Scale),
+                let("invar0", invar0),
+                "#{con}L + #{ivScale}L * i + #{invar0Scale}L * #invar0",
+                IntStream.range(0, invarRestScales.length).mapToObj(
+                    i -> List.of(" + ", invarRestScales[i], "L * ", invarRest[i])
                 ).toList()
             ));
             return template.asToken();
@@ -467,6 +483,10 @@ public class TestAliasingFuzzer {
                 accessScenario);
         }
 
+        public static int alignUp(int value, int align) {
+            return Math.ceilDiv(value, align) * align;
+        }
+
         public static TestGenerator makeMemorySegmentAtIndex(MyType containerElementType, MyType accessType, Aliasing aliasing, AccessScenario accessScenario) {
             // size must be large enough for:
             //   - scale = 4
@@ -474,8 +494,9 @@ public class TestAliasingFuzzer {
             // -> need at least size 16_000 to ensure we have 1000 iterations
             // We want there to be a little variation, so alignment is not always the same.
             final int numAccessElements = Generators.G.safeRestrict(Generators.G.ints(), 18_000, 20_000).next();
-            final int containerByteSize = numAccessElements * accessType.byteSize();
-            final int numContainerElements = containerByteSize / containerElementType.byteSize();
+            final int align = Math.max(accessType.byteSize(), containerElementType.byteSize());
+            // We need to align up, so the size is divisible exactly by all involved type sizes.
+            final int containerByteSize = alignUp(numAccessElements * accessType.byteSize(), align);
             final boolean loopForward = RANDOM.nextBoolean();
 
             final int numInvarRest = RANDOM.nextInt(5);
@@ -634,6 +655,18 @@ public class TestAliasingFuzzer {
             return template.asToken();
         }
 
+        private TemplateToken generateContainerInitMemorySegment(String name) {
+            var template = Template.make(() -> body(
+                let("size", containerByteSize / containerElementType.byteSize()),
+                let("name", name),
+                """
+                test_#name.copyFrom(original_#name);
+                reference_#name.copyFrom(original_#name);
+                """
+            ));
+            return template.asToken();
+        }
+
         private TemplateToken generateContainerInit(String[] containerNames) {
             var template = Template.make(() -> body(
                 """
@@ -644,7 +677,7 @@ public class TestAliasingFuzzer {
                         case ContainerKind.ARRAY ->
                             generateContainerInitArray(name);
                         case ContainerKind.MEMORY_SEGMENT_AT_INDEX ->
-                            List.of("// TODO: container init MemorySegment\n");
+                            generateContainerInitMemorySegment(name);
                     }
                 ).toList()
              ));
@@ -690,7 +723,7 @@ public class TestAliasingFuzzer {
 
         private TemplateToken generateRanges() {
             // TODO: handle MemorySegment case, index vs byte addressing?
-            int size = containerByteSize / containerElementType.byteSize();
+            int size = containerByteSize / accessType[0].byteSize();
 
             if (accessIndexForm.length != 2) { throw new RuntimeException("not yet implemented"); }
 
@@ -888,6 +921,9 @@ public class TestAliasingFuzzer {
                     case COPY_LOAD_STORE ->
                         // Currently, we do not allow strided access or shuffle.
                         // Since the load and store are connected, we either vectorize both or none.
+                        //
+                        // JDK-8359688: it seems we only vectorize with ivScale=1, and not ivScale=-1
+                        //              The issue seems to be RangeCheck elimination
                         (accessIndexForm[0].ivScale() == accessIndexForm[1].ivScale() &&
                          Math.abs(accessIndexForm[0].ivScale()) == 1)
                         ?   """
@@ -933,10 +969,14 @@ public class TestAliasingFuzzer {
         }
 
         private TemplateToken generateIRRulesMemorySegment() {
-            var template = Template.make(() -> body(
+           var template = Template.make(() -> body(
                 """
-                // TODO: IR rules MemorySegment
+                // Unfortunately, there are some issues that prevent RangeCheck elimination.
+                // The cases are currently quite unpredictable, so we cannot create any IR
+                // rules.
                 """
+                // JDK-8359688: it seems we only vectorize with ivScale=1, and not ivScale=-1
+                //              The issue seems to be RangeCheck elimination
             ));
             return template.asToken();
         }
@@ -1006,12 +1046,12 @@ public class TestAliasingFuzzer {
                 switch (accessScenario) {
                     case COPY_LOAD_STORE ->
                         List.of("var v = ",
-                                "container_0.getAtIndex(#type0Layout, ", accessIndexForm[0].index("invar0_0", invarRest), ");\n",
-                                "container_1.setAtIndex(#type0Layout, ", accessIndexForm[1].index("invar0_1", invarRest), ", v);\n");
+                                "container_0.getAtIndex(#type0Layout, ", accessIndexForm[0].indexLong("invar0_0", invarRest), ");\n",
+                                "container_1.setAtIndex(#type0Layout, ", accessIndexForm[1].indexLong("invar0_1", invarRest), ", v);\n");
                     case FILL_STORE_STORE ->
                         // TODO: improve input for misaligned cases!
-                        List.of("container_0.setAtIndex(#type0Layout, ", accessIndexForm[0].index("invar0_0", invarRest), ", (#type0)0x0a);\n",
-                                "container_1.setAtIndex(#type0Layout, ", accessIndexForm[1].index("invar0_1", invarRest), ", (#type1)0x0b);\n");
+                        List.of("container_0.setAtIndex(#type0Layout, ", accessIndexForm[0].indexLong("invar0_0", invarRest), ", (#type0)0x0a);\n",
+                                "container_1.setAtIndex(#type0Layout, ", accessIndexForm[1].indexLong("invar0_1", invarRest), ", (#type1)0x0b);\n");
                 }
             ));
             return template.asToken();
