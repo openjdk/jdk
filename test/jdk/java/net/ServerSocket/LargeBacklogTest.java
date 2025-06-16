@@ -69,19 +69,19 @@ class LargeBacklogTest {
 
     private static void testBackloggedConnects(final int backlog, final int serverPort) {
         int numSuccessfulConnects = 0;
-        System.out.println("attempting " + backlog + " connections to port " + serverPort);
+        System.err.println("attempting " + backlog + " connections to port " + serverPort);
         // attempt the Socket connections
         for (int i = 1; i <= backlog; i++) {
             try (final Socket sock = new Socket(InetAddress.getLoopbackAddress(), serverPort)) {
                 numSuccessfulConnects++;
-                System.out.println("connection " + i + " established " + sock);
+                System.err.println("connection " + i + " established " + sock);
             } catch (IOException ioe) {
                 System.err.println("connection attempt " + i + " failed: " + ioe);
                 // do not attempt any more connections
                 break;
             }
         }
-        System.out.println(numSuccessfulConnects + " connections successfully established");
+        System.err.println(numSuccessfulConnects + " connections successfully established");
         // ideally we expect the number of successful connections to be equal to the backlog value.
         // however in certain environments, it's possible that some other process attempts a
         // connection to the server's port. so we allow for a small number of connection attempts
