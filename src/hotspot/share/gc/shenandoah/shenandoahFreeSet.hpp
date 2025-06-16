@@ -72,16 +72,47 @@ private:
   ssize_t _leftmosts_empty[UIntNumPartitions];
   ssize_t _rightmosts_empty[UIntNumPartitions];
 
-  // For each partition p, _capacity[p] represents the total amount of memory within the partition at the time
-  // of the most recent rebuild, _used[p] represents the total amount of memory that has been allocated within this
-  // partition (either already allocated as of the rebuild, or allocated since the rebuild).  _capacity[p] and _used[p]
-  // are denoted in bytes.  Note that some regions that had been assigned to a particular partition at rebuild time
-  // may have been retired following the rebuild.  The tallies for these regions are still reflected in _capacity[p]
-  // and _used[p], even though the region may have been removed from the free set.
+  // For each partition p:
+  //  _capacity[p] represents the total amount of memory within the partition at the time of the most recent rebuild
+  //  _retired_capacity[p] represents the amount of memory that would be associated with p if it had not already been
+  //                       retired at the time of the most recent rebuild
+  //  _total_capacity[p] is the sum of _capacity[p] and _retired_capacity[p]
+  //                       (The values are added under heap lock to assure coherency)
+  //  _used[p] represents the total amount of memory that has been allocated within this partition (either already
+  //                       allocated as of the rebuild, or allocated since the rebuild).
+  //  _available[p] represents the total amount of memory that can be allocated within partition p, calculated from
+  //                       _capacity[p] minus _used[p], where the difference is computed and assigned under heap lock
+  //
+  //  Unlike capacity, which represents the total amount of memory representing each partition as of the moment
+  //  the freeset was most recently constructed:
+  // 
+  //  _region_counts[p] represents the number of regions associated with the partition which currently have available memory.
+  //                       When a region is retired from partition p, _region_counts[p] is decremented.
+  //  _total_region_counts[p] is _total_capacity[p] / RegionSizeBytes.  probably do not need to keep separate field for this.
+  //  _empty_region_counts[p] is number of regions associated with p which are entirely empty
+  //
+  // capacity and used values are expressed in bytes.
+  //
+  // When a region is retired, the used[p] is increased to account for alignment waste.  capacity is unaffected.
+  //
+  // When a region is "flipped", we adjust capacities and region counts for original and destination partitions.  We also
+  // adjust used values when flipping from mutator to collector.  Flip to old collector does not need to adjust used because
+  // only empty regions can be flipped to old collector.
+
+  size_t _retired_capacity[UIntNumPartitions];
   size_t _capacity[UIntNumPartitions];
+
   size_t _used[UIntNumPartitions];
   size_t _available[UIntNumPartitions];
+
+  // Some notes:
+  //  _retired_regions[p] is _total_region_counts[p] - _region_counts[p]
+  //  _empty_region_counts[p] <= _region_counts[p] <= _total_region_counts[p]
+  //  _total_capacity[p] is _total_region_counts[p] * _region_size_bytes
   size_t _region_counts[UIntNumPartitions];
+  size_t _total_region_counts[UIntNumPartitions];
+  size_t _empty_region_counts[UIntNumPartitions];
+
 
   // For each partition p, _left_to_right_bias is true iff allocations are normally made from lower indexed regions
   // before higher indexed regions.
@@ -119,19 +150,25 @@ public:
     _membership[int(p)].set_bit(idx);
   }
 
+  inline void one_region_is_no_longer_empty(ShenandoahFreeSetPartitionId partition) {
+    _empty_region_counts[int(partition)] -= 1;
+  }
+
   // Set the Mutator intervals, usage, and capacity according to arguments.  Reset the Collector intervals, used, capacity
   // to represent empty Collector free set.  We use this at the end of rebuild_free_set() to avoid the overhead of making
   // many redundant incremental adjustments to the mutator intervals as the free set is being rebuilt.
-  void establish_mutator_intervals(ssize_t mutator_leftmost, ssize_t mutator_rightmost,
-                                   ssize_t mutator_leftmost_empty, ssize_t mutator_rightmost_empty,
+  void establish_mutator_intervals(idx_t mutator_leftmost, idx_t mutator_rightmost,
+                                   idx_t mutator_leftmost_empty, idx_t mutator_rightmost_empty,
+                                   size_t total_mutator_regions, size_t empty_mutator_regions,
                                    size_t mutator_region_count, size_t mutator_used);
 
   // Set the OldCollector intervals, usage, and capacity according to arguments.  We use this at the end of rebuild_free_set()
   // to avoid the overhead of making many redundant incremental adjustments to the mutator intervals as the free set is being
   // rebuilt.
-  void establish_old_collector_intervals(ssize_t old_collector_leftmost, ssize_t old_collector_rightmost,
-                                         ssize_t old_collector_leftmost_empty, ssize_t old_collector_rightmost_empty,
-                                         size_t old_collector_region_count, size_t old_collector_used);
+  void establish_old_collector_intervals(idx_t old_collector_leftmost, idx_t old_collector_rightmost,
+                                         idx_t old_collector_leftmost_empty, idx_t old_collector_rightmost_empty,
+                                         size_t total_old_collector_region_count, size_t old_collector_empty,
+                                         size_t old_collector_regions, size_t old_collector_used);
 
   // Retire region idx from within partition, , leaving its capacity and used as part of the original free partition's totals.
   // Requires that region idx is in in the Mutator or Collector partitions.  Hereafter, identifies this region as NotFree.
