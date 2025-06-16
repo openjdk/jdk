@@ -29,14 +29,13 @@
  */
 
 import javax.swing.ImageIcon;
-import javax.swing.SwingUtilities;
 
 public class ImageIconNullImageTest {
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            ImageIcon icon = new ImageIcon();
-            icon.setImage(null);
-        });
+        ImageIcon icon = new ImageIcon();
+
+        // Setting null image shouldn't cause NPE
+        icon.setImage(null);
     }
 }

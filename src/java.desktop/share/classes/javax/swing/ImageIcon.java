@@ -223,6 +223,9 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      */
     public ImageIcon (Image image) {
         this.image = image;
+        if (image == null) {
+            return;
+        }
         Object o = image.getProperty("comment", imageObserver);
         if (o instanceof String) {
             description = (String) o;
