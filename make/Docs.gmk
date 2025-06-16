@@ -79,8 +79,6 @@ JAVADOC_TAGS := \
     -tag see \
     -taglet build.tools.taglet.ExtLink \
     -taglet build.tools.taglet.Incubating \
-    -taglet build.tools.taglet.PreviewNote \
-    --preview-note-tag previewNote \
     -tagletpath $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     $(CUSTOM_JAVADOC_TAGS) \
     #
@@ -542,7 +540,9 @@ $(eval $(call SetupApiDocsGeneration, REFERENCE_API, \
 # Format: space-delimited list of names, including at most one '%' as a
 # wildcard. Spec source files match if their filename or any enclosing folder
 # name matches one of the items in SPEC_FILTER.
-SPEC_FILTER := %
+ifeq ($(SPEC_FILTER), )
+  SPEC_FILTER := %
+endif
 
 ApplySpecFilter = \
     $(strip $(foreach file, $(1), \

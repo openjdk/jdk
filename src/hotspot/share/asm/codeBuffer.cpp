@@ -29,6 +29,7 @@
 #include "compiler/disassembler.hpp"
 #include "logging/log.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/icache.hpp"
@@ -537,6 +538,9 @@ void CodeBuffer::finalize_oop_references(const methodHandle& mh) {
             if (m->is_methodData()) {
               m = ((MethodData*)m)->method();
             }
+            if (m->is_methodCounters()) {
+              m = ((MethodCounters*)m)->method();
+            }
             if (m->is_method()) {
               m = ((Method*)m)->method_holder();
             }
@@ -560,6 +564,9 @@ void CodeBuffer::finalize_oop_references(const methodHandle& mh) {
       if (oop_recorder()->is_real(m)) {
         if (m->is_methodData()) {
           m = ((MethodData*)m)->method();
+        }
+        if (m->is_methodCounters()) {
+          m = ((MethodCounters*)m)->method();
         }
         if (m->is_method()) {
           m = ((Method*)m)->method_holder();
@@ -1099,12 +1106,17 @@ CHeapString::~CHeapString() {
 // offset is a byte offset into an instruction stream (CodeBuffer, CodeBlob or
 // other memory buffer) and remark is a string (comment).
 //
-AsmRemarks::AsmRemarks() : _remarks(new AsmRemarkCollection()) {
+AsmRemarks::AsmRemarks() {
+  init();
   assert(_remarks != nullptr, "Allocation failure!");
 }
 
 AsmRemarks::~AsmRemarks() {
   assert(_remarks == nullptr, "Must 'clear()' before deleting!");
+}
+
+void AsmRemarks::init() {
+  _remarks = new AsmRemarkCollection();
 }
 
 const char* AsmRemarks::insert(uint offset, const char* remstr) {
@@ -1151,12 +1163,17 @@ uint AsmRemarks::print(uint offset, outputStream* strm) const {
 // Acting as interface to reference counted collection of (debug) strings used
 // in the code generated, and thus requiring a fixed address.
 //
-DbgStrings::DbgStrings() : _strings(new DbgStringCollection()) {
+DbgStrings::DbgStrings() {
+  init();
   assert(_strings != nullptr, "Allocation failure!");
 }
 
 DbgStrings::~DbgStrings() {
   assert(_strings == nullptr, "Must 'clear()' before deleting!");
+}
+
+void DbgStrings::init() {
+  _strings = new DbgStringCollection();
 }
 
 const char* DbgStrings::insert(const char* dbgstr) {

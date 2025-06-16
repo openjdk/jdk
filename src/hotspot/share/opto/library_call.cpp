@@ -245,6 +245,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
   case vmIntrinsics::_dtanh:
+  case vmIntrinsics::_dcbrt:
   case vmIntrinsics::_dabs:
   case vmIntrinsics::_fabs:
   case vmIntrinsics::_iabs:
@@ -1886,6 +1887,9 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
   case vmIntrinsics::_dtanh:
     return StubRoutines::dtanh() != nullptr ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dtanh(), "dtanh") : false;
+  case vmIntrinsics::_dcbrt:
+    return StubRoutines::dcbrt() != nullptr ?
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dcbrt(), "dcbrt") : false;
   case vmIntrinsics::_dexp:
     return StubRoutines::dexp() != nullptr ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dexp(),  "dexp") :
@@ -6575,6 +6579,10 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   exit_block = _gvn.transform(exit_block);
   memory_phi = _gvn.transform(memory_phi);
   result_phi = _gvn.transform(result_phi);
+
+  record_for_igvn(exit_block);
+  record_for_igvn(memory_phi);
+  record_for_igvn(result_phi);
 
   set_control(exit_block);
   set_all_memory(memory_phi);
