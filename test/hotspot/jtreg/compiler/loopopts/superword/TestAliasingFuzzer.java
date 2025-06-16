@@ -73,7 +73,7 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
 public class TestAliasingFuzzer {
     private static final Random RANDOM = Utils.getRandomInstance();
 
-    public record MyType(String name, int byteSize, String con1, String con2) {
+    public record MyType(String name, int byteSize, String con1, String con2, String layout) {
         @Override
         public String toString() { return name(); }
 
@@ -85,13 +85,13 @@ public class TestAliasingFuzzer {
     public static final String con2F = "Float.intBitsToFloat(0x09101112)";
     public static final String con1D = "Double.longBitsToDouble(" + con1 + ")";
     public static final String con2D = "Double.longBitsToDouble(" + con2 + ")";
-    public static final MyType myByte   = new MyType("byte",   1, con1, con2);
-    public static final MyType myChar   = new MyType("char",   2, con1, con2);
-    public static final MyType myShort  = new MyType("short",  2, con1, con2);
-    public static final MyType myInt    = new MyType("int",    4, con1, con2);
-    public static final MyType myLong   = new MyType("long",   8, con1, con2);
-    public static final MyType myFloat  = new MyType("float",  4, con1F, con2F);
-    public static final MyType myDouble = new MyType("double", 8, con1D, con2D);
+    public static final MyType myByte   = new MyType("byte",   1, con1, con2,   "ValueLayout.JAVA_BYTE");
+    public static final MyType myChar   = new MyType("char",   2, con1, con2,   "ValueLayout.JAVA_CHAR_UNALIGNED");
+    public static final MyType myShort  = new MyType("short",  2, con1, con2,   "ValueLayout.JAVA_SHORT_UNALIGNED");
+    public static final MyType myInt    = new MyType("int",    4, con1, con2,   "ValueLayout.JAVA_INT_UNALIGNED");
+    public static final MyType myLong   = new MyType("long",   8, con1, con2,   "ValueLayout.JAVA_LONG_UNALIGNED");
+    public static final MyType myFloat  = new MyType("float",  4, con1F, con2F, "ValueLayout.JAVA_FLOAT_UNALIGNED");
+    public static final MyType myDouble = new MyType("double", 8, con1D, con2D, "ValueLayout.JAVA_DOUBLE_UNALIGNED");
     public static final List<MyType> allTypes
         = List.of(myByte, myChar, myShort, myInt, myLong, myFloat, myDouble);
 
@@ -107,6 +107,11 @@ public class TestAliasingFuzzer {
     enum AccessScenario {
         COPY_LOAD_STORE,  // a[i1] = b[i2];
         FILL_STORE_STORE, // a[i1] = x; b[i2] = y;
+    }
+
+    enum ContainerKind {
+        ARRAY,
+        MEMORY_SEGMENT_AT_INDEX,
     }
 
     public static void main(String[] args) {
@@ -159,6 +164,11 @@ public class TestAliasingFuzzer {
         return (RANDOM.nextInt(plus + minus) < plus) ? "+" : "-";
     }
 
+    public static <T> T sample(List<T> list) {
+        int r = RANDOM.nextInt(list.size());
+        return list.get(r);
+    }
+
     public static String generate(CompileFramework comp) {
         // Create a list to collect all tests.
         List<TemplateToken> testTemplateTokens = new ArrayList<>();
@@ -166,12 +176,27 @@ public class TestAliasingFuzzer {
         // Add some basic functionalities.
         testTemplateTokens.add(generateIndexForm());
 
+        // Array tests
         for (Aliasing aliasing : Aliasing.values()) {
             for (AccessScenario accessScenario : AccessScenario.values()) {
                 testTemplateTokens.addAll(allTypes.stream().map(type ->
                     TestGenerator.makeArray(type, aliasing, accessScenario).generate()
                 ).toList());
             }
+        }
+
+        // MemorySegment with getAtIndex / setAtIndex
+        // There are too many combinations, so we sample some random cases.
+        for (int i = 0; i < 10; i++) {
+            Aliasing aliasing = sample(Arrays.asList(Aliasing.values()));
+            AccessScenario accessScenario = sample(Arrays.asList(AccessScenario.values()));
+            MyType containerElementType = sample(allTypes);
+            MyType accessType = sample(allTypes);
+            testTemplateTokens.add(
+                TestGenerator.makeMemorySegmentAtIndex(
+                    containerElementType, accessType, aliasing, accessScenario
+                ).generate()
+            );
         }
 
         // TODO:
@@ -198,6 +223,7 @@ public class TestAliasingFuzzer {
             // List of imports.
             Set.of("compiler.lib.generators.*",
                    "compiler.lib.verify.*",
+                   "java.lang.foreign.*",
                    "java.util.Random",
                    "jdk.test.lib.Utils"),
             // classpath, so the Test VM has access to the compiled class files.
@@ -393,11 +419,6 @@ public class TestAliasingFuzzer {
         return template.asToken();
     }
 
-    enum ContainerKind {
-        ARRAY,
-        MEMORY_SEGMENT,
-    }
-
     public static record TestGenerator(
         // The containers.
         int numContainers,
@@ -442,6 +463,34 @@ public class TestAliasingFuzzer {
                 numInvarRest,
                 new IndexForm[] {form_a, form_b},
                 new MyType[]    {type,   type},
+                aliasing,
+                accessScenario);
+        }
+
+        public static TestGenerator makeMemorySegmentAtIndex(MyType containerElementType, MyType accessType, Aliasing aliasing, AccessScenario accessScenario) {
+            // size must be large enough for:
+            //   - scale = 4
+            //   - range with size / 4
+            // -> need at least size 16_000 to ensure we have 1000 iterations
+            // We want there to be a little variation, so alignment is not always the same.
+            final int numAccessElements = Generators.G.safeRestrict(Generators.G.ints(), 18_000, 20_000).next();
+            final int containerByteSize = numAccessElements * accessType.byteSize();
+            final int numContainerElements = containerByteSize / containerElementType.byteSize();
+            final boolean loopForward = RANDOM.nextBoolean();
+
+            final int numInvarRest = RANDOM.nextInt(5);
+            var form_a = IndexForm.random(numInvarRest);
+            var form_b = IndexForm.random(numInvarRest);
+
+            return new TestGenerator(
+                2,
+                containerByteSize,
+                ContainerKind.MEMORY_SEGMENT_AT_INDEX,
+                containerElementType,
+                loopForward,
+                numInvarRest,
+                new IndexForm[] {form_a, form_b},
+                new MyType[]    {accessType, accessType},
                 aliasing,
                 accessScenario);
         }
@@ -511,9 +560,23 @@ public class TestAliasingFuzzer {
                 let("name", name),
                 let("type", type),
                 """
-                private static #type[] original_#name = new #type[#size];
-                private static #type[] test_#name = new #type[#size];
+                private static #type[] original_#name  = new #type[#size];
+                private static #type[] test_#name      = new #type[#size];
                 private static #type[] reference_#name = new #type[#size];
+                """
+            ));
+            return template.asToken();
+        }
+
+        private TemplateToken generateMemorySegmentField(String name, MyType type) {
+            var template = Template.make(() -> body(
+                let("size", containerByteSize / type.byteSize()),
+                let("name", name),
+                let("type", type),
+                """
+                private static MemorySegment original_#name  = MemorySegment.ofArray(new #type[#size]);
+                private static MemorySegment test_#name      = MemorySegment.ofArray(new #type[#size]);
+                private static MemorySegment reference_#name = MemorySegment.ofArray(new #type[#size]);
                 """
             ));
             return template.asToken();
@@ -545,8 +608,8 @@ public class TestAliasingFuzzer {
                     switch (containerKind) {
                         case ContainerKind.ARRAY ->
                             generateArrayField(name, containerElementType);
-                        case ContainerKind.MEMORY_SEGMENT ->
-                            List.of("// TODO: container MemorySegment\n");
+                        case ContainerKind.MEMORY_SEGMENT_AT_INDEX ->
+                            generateMemorySegmentField(name, containerElementType);
                     }
                 ).toList(),
                 """
@@ -580,7 +643,7 @@ public class TestAliasingFuzzer {
                     switch (containerKind) {
                         case ContainerKind.ARRAY ->
                             generateContainerInitArray(name);
-                        case ContainerKind.MEMORY_SEGMENT ->
+                        case ContainerKind.MEMORY_SEGMENT_AT_INDEX ->
                             List.of("// TODO: container init MemorySegment\n");
                     }
                 ).toList()
@@ -789,7 +852,7 @@ public class TestAliasingFuzzer {
                 switch (containerKind) {
                     case ContainerKind.ARRAY ->
                         generateIRRulesArray();
-                    case ContainerKind.MEMORY_SEGMENT ->
+                    case ContainerKind.MEMORY_SEGMENT_AT_INDEX ->
                         generateIRRulesMemorySegment();
                 },
                 // In same scnearios, we know that a aliasing runtime check will never fail.
@@ -881,24 +944,28 @@ public class TestAliasingFuzzer {
         private TemplateToken generateTestMethod(String methodName, String[] invarRest) {
             var template = Template.make(() -> body(
                 let("methodName", methodName),
-                let("type", containerElementType),
+                let("containerElementType", containerElementType),
                 // Method head / signature.
                 "public static Object #methodName(",
                 IntStream.range(0, numContainers).mapToObj(i ->
-                    List.of("#type[] container_", i, ", int invar0_", i, ", ")
+                    switch (containerKind) {
+                        case ContainerKind.ARRAY ->
+                            List.of("#containerElementType[] container_", i, ", int invar0_", i, ", ");
+                        case ContainerKind.MEMORY_SEGMENT_AT_INDEX ->
+                            List.of("MemorySegment container_", i, ", int invar0_", i, ", ");
+                    }
                 ).toList(),
                 "int ivLo, int ivHi) {\n",
                 // Method loop body.
                 (loopForward
                  ?  "for (int i = ivLo; i < ivHi; i++) {\n"
                  :  "for (int i = ivHi-1; i >= ivLo; i--) {\n"),
-                switch (accessScenario) {
-                    case COPY_LOAD_STORE ->
-                        List.of("container_0[", accessIndexForm[0].index("invar0_0", invarRest), "] = ",
-                                "container_1[", accessIndexForm[1].index("invar0_1", invarRest), "];\n");
-                    case FILL_STORE_STORE ->
-                        List.of("container_0[", accessIndexForm[0].index("invar0_0", invarRest), "] = (#type)0x0a;\n",
-                                "container_1[", accessIndexForm[1].index("invar0_1", invarRest), "] = (#type)0x0b;\n");
+                // Loop iteration.
+                switch (containerKind) {
+                    case ContainerKind.ARRAY ->
+                        generateTestLoopIterationArray(invarRest);
+                    case ContainerKind.MEMORY_SEGMENT_AT_INDEX ->
+                        generateTestLoopIterationMemorySegmentAtIndex(invarRest);
                 },
                 """
                     }
@@ -911,6 +978,41 @@ public class TestAliasingFuzzer {
                     };
                 }
                 """
+            ));
+            return template.asToken();
+        }
+
+        private TemplateToken generateTestLoopIterationArray(String[] invarRest) {
+            var template = Template.make(() -> body(
+                let("type", containerElementType),
+                switch (accessScenario) {
+                    case COPY_LOAD_STORE ->
+                        List.of("container_0[", accessIndexForm[0].index("invar0_0", invarRest), "] = ",
+                                "container_1[", accessIndexForm[1].index("invar0_1", invarRest), "];\n");
+                    case FILL_STORE_STORE ->
+                        List.of("container_0[", accessIndexForm[0].index("invar0_0", invarRest), "] = (#type)0x0a;\n",
+                                "container_1[", accessIndexForm[1].index("invar0_1", invarRest), "] = (#type)0x0b;\n");
+                }
+            ));
+            return template.asToken();
+        }
+
+        private TemplateToken generateTestLoopIterationMemorySegmentAtIndex(String[] invarRest) {
+            var template = Template.make(() -> body(
+                let("type0", accessType[0]),
+                let("type1", accessType[1]),
+                let("type0Layout", accessType[0].layout()),
+                let("type1Layout", accessType[1].layout()),
+                switch (accessScenario) {
+                    case COPY_LOAD_STORE ->
+                        List.of("var v = ",
+                                "container_0.getAtIndex(#type0Layout, ", accessIndexForm[0].index("invar0_0", invarRest), ");\n",
+                                "container_1.setAtIndex(#type0Layout, ", accessIndexForm[1].index("invar0_1", invarRest), ", v);\n");
+                    case FILL_STORE_STORE ->
+                        // TODO: improve input for misaligned cases!
+                        List.of("container_0.setAtIndex(#type0Layout, ", accessIndexForm[0].index("invar0_0", invarRest), ", (#type0)0x0a);\n",
+                                "container_1.setAtIndex(#type0Layout, ", accessIndexForm[1].index("invar0_1", invarRest), ", (#type1)0x0b);\n");
+                }
             ));
             return template.asToken();
         }
