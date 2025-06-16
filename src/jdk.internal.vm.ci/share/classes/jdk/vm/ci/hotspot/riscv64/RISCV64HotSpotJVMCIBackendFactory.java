@@ -24,6 +24,7 @@ package jdk.vm.ci.hotspot.riscv64;
 
 import static jdk.vm.ci.common.InitTimer.timer;
 
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Map;
 import jdk.vm.ci.code.Architecture;

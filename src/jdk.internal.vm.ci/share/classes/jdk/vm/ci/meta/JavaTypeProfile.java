@@ -26,7 +26,6 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
-import jdk.internal.access.SharedSecrets;
 import jdk.vm.ci.meta.JavaTypeProfile.ProfiledType;
 
 /**
