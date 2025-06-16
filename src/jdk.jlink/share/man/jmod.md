@@ -179,8 +179,11 @@ e.g. "2022-02-12T12:30:00-05:00".
     `--hash-modules`.
 
 `--target-platform` *platform*
-:   Specifies the target platform. The value is a string identifying
-    the module's intended platform, typically in the form `<os>-<arch>`.
+:   Specifies the target platform when creating a JMOD file intended
+    for a specific operating system and architecture. The value should follow
+    the format `<os>-<arch>`, where `<os>` is the operating system
+    and `<arch>` is the hardware architecture. Example values include
+    `linux-x64`, `windows-x64`, and `macos-aarch64`.
 
 `--version`
 :   Prints version information of the `jmod` tool.
@@ -202,7 +205,7 @@ e.g. "2022-02-12T12:30:00-05:00".
       --cmds commands --config configfiles --header-files src/h
       --libs lib --main-class com.greetings.Main
       --man-pages man --module-version 1.0
-      --target-platform "macOS-aarch64" greetingsmod
+      --target-platform "macos-aarch64" greetingsmod
     ```
 
 ## Extra Options for jmod
@@ -240,7 +243,7 @@ main class, module version, and target platform details:
 jmod create --class-path mods/com.greetings --cmds commands
   --config configfiles --header-files src/h --libs lib
   --main-class com.greetings.Main --man-pages man --module-version 1.0
-  --target-platform "macOS-aarch64" greetingsmod
+  --target-platform "macos-aarch64" greetingsmod
 ```
 
 ## jmod Hash Example
