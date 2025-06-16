@@ -921,9 +921,6 @@ public class TestAliasingFuzzer {
                     case COPY_LOAD_STORE ->
                         // Currently, we do not allow strided access or shuffle.
                         // Since the load and store are connected, we either vectorize both or none.
-                        //
-                        // JDK-8359688: it seems we only vectorize with ivScale=1, and not ivScale=-1
-                        //              The issue seems to be RangeCheck elimination
                         (accessIndexForm[0].ivScale() == accessIndexForm[1].ivScale() &&
                          Math.abs(accessIndexForm[0].ivScale()) == 1)
                         ?   """
@@ -1030,8 +1027,8 @@ public class TestAliasingFuzzer {
                         List.of("container_0[", accessIndexForm[0].index("invar0_0", invarRest), "] = ",
                                 "container_1[", accessIndexForm[1].index("invar0_1", invarRest), "];\n");
                     case FILL_STORE_STORE ->
-                        List.of("container_0[", accessIndexForm[0].index("invar0_0", invarRest), "] = (#type)0x0a;\n",
-                                "container_1[", accessIndexForm[1].index("invar0_1", invarRest), "] = (#type)0x0b;\n");
+                        List.of("container_0[", accessIndexForm[0].index("invar0_0", invarRest), "] = (#type)0x0102030405060708L;\n",
+                                "container_1[", accessIndexForm[1].index("invar0_1", invarRest), "] = (#type)0x1112131415161718L;\n");
                 }
             ));
             return template.asToken();
@@ -1049,9 +1046,8 @@ public class TestAliasingFuzzer {
                                 "container_0.getAtIndex(#type0Layout, ", accessIndexForm[0].indexLong("invar0_0", invarRest), ");\n",
                                 "container_1.setAtIndex(#type0Layout, ", accessIndexForm[1].indexLong("invar0_1", invarRest), ", v);\n");
                     case FILL_STORE_STORE ->
-                        // TODO: improve input for misaligned cases!
-                        List.of("container_0.setAtIndex(#type0Layout, ", accessIndexForm[0].indexLong("invar0_0", invarRest), ", (#type0)0x0a);\n",
-                                "container_1.setAtIndex(#type0Layout, ", accessIndexForm[1].indexLong("invar0_1", invarRest), ", (#type1)0x0b);\n");
+                        List.of("container_0.setAtIndex(#type0Layout, ", accessIndexForm[0].indexLong("invar0_0", invarRest), ", (#type0)0x0102030405060708L);\n",
+                                "container_1.setAtIndex(#type0Layout, ", accessIndexForm[1].indexLong("invar0_1", invarRest), ", (#type1)0x1112131415161718L);\n");
                 }
             ));
             return template.asToken();
