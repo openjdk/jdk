@@ -111,6 +111,7 @@ public class TestAliasingFuzzer {
 
     enum ContainerKind {
         ARRAY,
+        MEMORY_SEGMENT_LONG_ADR,
         MEMORY_SEGMENT_AT_INDEX,
     }
 
@@ -192,9 +193,10 @@ public class TestAliasingFuzzer {
             AccessScenario accessScenario = sample(Arrays.asList(AccessScenario.values()));
             MyType containerElementType = sample(allTypes);
             MyType accessType = sample(allTypes);
+            boolean useAtIndex = RANDOM.nextBoolean();
             testTemplateTokens.add(
-                TestGenerator.makeMemorySegmentAtIndex(
-                    containerElementType, accessType, aliasing, accessScenario
+                TestGenerator.makeMemorySegment(
+                    containerElementType, accessType, aliasing, accessScenario, useAtIndex
                 ).generate()
             );
         }
@@ -269,6 +271,7 @@ public class TestAliasingFuzzer {
     //   It follows:
     //     iv.hi * ivScale <= range.hi - con - invar0 * invar0Scale - err
     //
+    // TODO: size for the index!
     public static record IndexForm(int con, int ivScale, int invar0Scale, int[] invarRestScales) {
         public static IndexForm random(int numInvarRest) {
             int con = RANDOM.nextInt(-100_000, 100_000);
@@ -487,7 +490,7 @@ public class TestAliasingFuzzer {
             return Math.ceilDiv(value, align) * align;
         }
 
-        public static TestGenerator makeMemorySegmentAtIndex(MyType containerElementType, MyType accessType, Aliasing aliasing, AccessScenario accessScenario) {
+        public static TestGenerator makeMemorySegment(MyType containerElementType, MyType accessType, Aliasing aliasing, AccessScenario accessScenario, boolean useAtIndex) {
             // size must be large enough for:
             //   - scale = 4
             //   - range with size / 4
@@ -500,13 +503,15 @@ public class TestAliasingFuzzer {
             final boolean loopForward = RANDOM.nextBoolean();
 
             final int numInvarRest = RANDOM.nextInt(5);
+            // TODO: bias the scale towards byteSize of accessType
             var form_a = IndexForm.random(numInvarRest);
             var form_b = IndexForm.random(numInvarRest);
 
             return new TestGenerator(
                 2,
                 containerByteSize,
-                ContainerKind.MEMORY_SEGMENT_AT_INDEX,
+                useAtIndex ? ContainerKind.MEMORY_SEGMENT_AT_INDEX
+                           : ContainerKind.MEMORY_SEGMENT_LONG_ADR,
                 containerElementType,
                 loopForward,
                 numInvarRest,
@@ -629,7 +634,8 @@ public class TestAliasingFuzzer {
                     switch (containerKind) {
                         case ContainerKind.ARRAY ->
                             generateArrayField(name, containerElementType);
-                        case ContainerKind.MEMORY_SEGMENT_AT_INDEX ->
+                        case ContainerKind.MEMORY_SEGMENT_AT_INDEX,
+                             ContainerKind.MEMORY_SEGMENT_LONG_ADR ->
                             generateMemorySegmentField(name, containerElementType);
                     }
                 ).toList(),
@@ -676,7 +682,8 @@ public class TestAliasingFuzzer {
                     switch (containerKind) {
                         case ContainerKind.ARRAY ->
                             generateContainerInitArray(name);
-                        case ContainerKind.MEMORY_SEGMENT_AT_INDEX ->
+                        case ContainerKind.MEMORY_SEGMENT_AT_INDEX,
+                             ContainerKind.MEMORY_SEGMENT_LONG_ADR ->
                             generateContainerInitMemorySegment(name);
                     }
                 ).toList()
@@ -886,7 +893,9 @@ public class TestAliasingFuzzer {
                     case ContainerKind.ARRAY ->
                         generateIRRulesArray();
                     case ContainerKind.MEMORY_SEGMENT_AT_INDEX ->
-                        generateIRRulesMemorySegment();
+                        generateIRRulesMemorySegmentAtIndex();
+                    case ContainerKind.MEMORY_SEGMENT_LONG_ADR ->
+                        generateIRRulesMemorySegmentLongAdr();
                 },
                 // In same scnearios, we know that a aliasing runtime check will never fail.
                 // That means if we have UseAutoVectorizationPredicate enabled, that predicate
@@ -965,7 +974,7 @@ public class TestAliasingFuzzer {
             return template.asToken();
         }
 
-        private TemplateToken generateIRRulesMemorySegment() {
+        private TemplateToken generateIRRulesMemorySegmentAtIndex() {
            var template = Template.make(() -> body(
                 """
                 // Unfortunately, there are some issues that prevent RangeCheck elimination.
@@ -974,6 +983,15 @@ public class TestAliasingFuzzer {
                 """
                 // JDK-8359688: it seems we only vectorize with ivScale=1, and not ivScale=-1
                 //              The issue seems to be RangeCheck elimination
+            ));
+            return template.asToken();
+        }
+
+        private TemplateToken generateIRRulesMemorySegmentLongAdr() {
+           var template = Template.make(() -> body(
+                """
+                // TODO: implement
+                """
             ));
             return template.asToken();
         }
@@ -988,7 +1006,8 @@ public class TestAliasingFuzzer {
                     switch (containerKind) {
                         case ContainerKind.ARRAY ->
                             List.of("#containerElementType[] container_", i, ", int invar0_", i, ", ");
-                        case ContainerKind.MEMORY_SEGMENT_AT_INDEX ->
+                        case ContainerKind.MEMORY_SEGMENT_AT_INDEX,
+                             ContainerKind.MEMORY_SEGMENT_LONG_ADR ->
                             List.of("MemorySegment container_", i, ", int invar0_", i, ", ");
                     }
                 ).toList(),
@@ -1003,6 +1022,8 @@ public class TestAliasingFuzzer {
                         generateTestLoopIterationArray(invarRest);
                     case ContainerKind.MEMORY_SEGMENT_AT_INDEX ->
                         generateTestLoopIterationMemorySegmentAtIndex(invarRest);
+                    case ContainerKind.MEMORY_SEGMENT_LONG_ADR ->
+                        generateTestLoopIterationMemorySegmentLongAdr(invarRest);
                 },
                 """
                     }
@@ -1048,6 +1069,25 @@ public class TestAliasingFuzzer {
                     case FILL_STORE_STORE ->
                         List.of("container_0.setAtIndex(#type0Layout, ", accessIndexForm[0].indexLong("invar0_0", invarRest), ", (#type0)0x0102030405060708L);\n",
                                 "container_1.setAtIndex(#type0Layout, ", accessIndexForm[1].indexLong("invar0_1", invarRest), ", (#type1)0x1112131415161718L);\n");
+                }
+            ));
+            return template.asToken();
+        }
+
+        private TemplateToken generateTestLoopIterationMemorySegmentLongAdr(String[] invarRest) {
+            var template = Template.make(() -> body(
+                let("type0", accessType[0]),
+                let("type1", accessType[1]),
+                let("type0Layout", accessType[0].layout()),
+                let("type1Layout", accessType[1].layout()),
+                switch (accessScenario) {
+                    case COPY_LOAD_STORE ->
+                        List.of("var v = ",
+                                "container_0.get(#type0Layout, ", accessIndexForm[0].indexLong("invar0_0", invarRest), ");\n",
+                                "container_1.set(#type0Layout, ", accessIndexForm[1].indexLong("invar0_1", invarRest), ", v);\n");
+                    case FILL_STORE_STORE ->
+                        List.of("container_0.set(#type0Layout, ", accessIndexForm[0].indexLong("invar0_0", invarRest), ", (#type0)0x0102030405060708L);\n",
+                                "container_1.set(#type0Layout, ", accessIndexForm[1].indexLong("invar0_1", invarRest), ", (#type1)0x1112131415161718L);\n");
                 }
             ));
             return template.asToken();
