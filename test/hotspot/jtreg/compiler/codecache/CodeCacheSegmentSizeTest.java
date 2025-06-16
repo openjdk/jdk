@@ -24,7 +24,9 @@
 /*
  * @test
  * @bug 8358694
- * @summary Verifies that setting CodeCacheSegmentSize to a non-power-of-two value does not crash the JVM and shows expected error.
+ * @summary Verifies that CodeCacheSegmentSize enforces power-of-two constraint:
+ *          - fails gracefully for invalid value
+ *          - succeeds for valid value
  * @library /test/lib
  * @run driver CodeCacheSegmentSizeTest
  */
@@ -35,10 +37,14 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class CodeCacheSegmentSizeTest {
     public static void main(String[] args) throws Exception {
-        String codeCacheSegmentSize = (Platform.isS390x() ? "67" : "36"); // invalid value (not power of two)
+        testInvalidValue();
+        testValidValue();
+    }
+
+    private static void testInvalidValue() throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockExperimentalVMOptions",
-            "-XX:CodeCacheSegmentSize=" + codeCacheSegmentSize,
+            "-XX:CodeCacheSegmentSize=65", // invalid value (not power of two)
             "-version"
         );
 
@@ -48,12 +54,26 @@ public class CodeCacheSegmentSizeTest {
         output.shouldNotContain("assert");
 
         // Expected graceful error output
-        output.shouldContain("CodeCacheSegmentSize (" + codeCacheSegmentSize + ") must be a power of two");
+        output.shouldContain("CodeCacheSegmentSize (65) must be a power of two");
         output.shouldContain("Error: Could not create the Java Virtual Machine.");
         output.shouldContain("Error: A fatal exception has occurred. Program will exit.");
 
         // Graceful exit with error code 1
         output.shouldHaveExitValue(1);
+    }
+
+    private static void testValidValue() throws Exception {
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:CodeCacheSegmentSize=64", // a valid power of 2
+            "-version"
+        );
+
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+
+        output.shouldContain("openjdk version"); // typical first line
+        output.shouldContain("OpenJDK Runtime Environment");
+        output.shouldHaveExitValue(0);
     }
 }
 
