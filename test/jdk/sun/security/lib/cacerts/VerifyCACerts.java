@@ -28,7 +28,7 @@
  *      8223499 8225392 8232019 8234245 8233223 8225068 8225069 8243321 8243320
  *      8243559 8225072 8258630 8259312 8256421 8225081 8225082 8225083 8245654
  *      8305975 8304760 8307134 8295894 8314960 8317373 8317374 8318759 8319187
- *      8321408 8316138 8341057 8303770
+ *      8321408 8316138 8341057 8303770 8350498 8359170
  * @summary Check root CA entries in cacerts file
  */
 import java.io.ByteArrayInputStream;
@@ -47,12 +47,12 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 111;
+    private static final int COUNT = 113;
 
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
-            = "F1:A9:C7:FE:48:ED:D7:AF:84:C8:9D:C3:88:8D:A3:C8:45:E5:37:4D:B9:18:86:97:AE:CF:6D:41:E6:0E:FB:1B";
+            = "18:36:49:15:B6:71:85:FF:F1:8E:C0:10:BE:0A:41:52:5B:DC:F7:B3:1F:51:7A:45:7D:7A:14:10:3A:59:42:4C";
 
     // Hex formatter to upper case with ":" delimiter
     private static final HexFormat HEX = HexFormat.ofDelimiter(":").withUpperCase();
@@ -69,10 +69,6 @@ public class VerifyCACerts {
                     "ED:F7:EB:BC:A2:7A:2A:38:4D:38:7B:7D:40:10:C6:66:E2:ED:B4:84:3E:4C:29:B4:AE:1D:5B:93:32:E6:B2:4D");
             put("camerfirmachambersca [jdk]",
                     "06:3E:4A:FA:C4:91:DF:D3:32:F3:08:9B:85:42:E9:46:17:D8:93:D7:FE:94:4E:10:A7:93:7E:E2:9D:96:93:C0");
-            put("camerfirmachambersignca [jdk]",
-                    "13:63:35:43:93:34:A7:69:80:16:A0:D3:24:DE:72:28:4E:07:9D:7B:52:20:BB:8F:BD:74:78:16:EE:BE:BA:CA");
-            put("camerfirmachamberscommerceca [jdk]",
-                    "0C:25:8A:12:A5:67:4A:EF:25:F2:8B:A7:DC:FA:EC:EE:A3:48:E5:41:E6:F5:CC:4E:E6:3B:71:B3:61:60:6A:C3");
             put("certumca [jdk]",
                     "D8:E0:FE:BC:1D:B2:E3:8D:00:94:0F:37:D2:7D:41:34:4D:99:3E:73:4B:99:D5:65:6D:97:78:D4:D8:14:36:24");
             put("certumtrustednetworkca [jdk]",
@@ -283,6 +279,14 @@ public class VerifyCACerts {
                     "C3:2F:FD:9F:46:F9:36:D1:6C:36:73:99:09:59:43:4B:9A:D6:0A:AF:BB:9E:7C:F3:36:54:F1:44:CC:1B:A1:43");
             put("ssltlsrootrsa2022 [jdk]",
                     "8F:AF:7D:2E:2C:B4:70:9B:B8:E0:B3:36:66:BF:75:A5:DD:45:B5:DE:48:0F:8E:A8:D4:BF:E6:BE:BC:17:F2:ED");
+            put("sectigotlsrootr46 [jdk]",
+                    "7B:B6:47:A6:2A:EE:AC:88:BF:25:7A:A5:22:D0:1F:FE:A3:95:E0:AB:45:C7:3F:93:F6:56:54:EC:38:F2:5A:06");
+            put("sectigotlsroote46 [jdk]",
+                    "C9:0F:26:F0:FB:1B:40:18:B2:22:27:51:9B:5C:A2:B5:3E:2C:A5:B3:BE:5C:F1:8E:FE:1B:EF:47:38:0C:53:83");
+            put("sectigocodesignrootr46 [jdk]",
+                    "7E:76:26:0A:E6:9A:55:D3:F0:60:B0:FD:18:B2:A8:C0:14:43:C8:7B:60:79:10:30:C9:FA:0B:05:85:10:1A:38");
+            put("sectigocodesignroote46 [jdk]",
+                    "8F:63:71:D8:CC:5A:A7:CA:14:96:67:A9:8B:54:96:39:89:51:E4:31:9F:7A:FB:CC:6A:66:0D:67:3E:43:8D:0B");
         }
     };
 

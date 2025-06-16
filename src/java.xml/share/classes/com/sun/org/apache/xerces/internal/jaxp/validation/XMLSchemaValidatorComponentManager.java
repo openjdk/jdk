@@ -48,6 +48,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 import javax.xml.catalog.CatalogFeatures;
 import jdk.xml.internal.FeaturePropertyBase;
 import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkXmlConfig;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.XMLSecurityManager;
 import jdk.xml.internal.XMLSecurityPropertyManager;
@@ -58,7 +59,7 @@ import org.xml.sax.ErrorHandler;
  * <p>An implementation of XMLComponentManager for a schema validator.</p>
  *
  * @author Michael Glavassevich, IBM
- * @LastModified: Apr 2025
+ * @LastModified: May 2025
  */
 final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettings implements
         XMLComponentManager {
@@ -298,7 +299,7 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
         if (fInitSecurityManager != null ) {
             fInitSecurityManager.setSecureProcessing(secureProcessing);
         } else {
-            fInitSecurityManager = new XMLSecurityManager(secureProcessing);
+            fInitSecurityManager = JdkXmlConfig.getInstance(false).getXMLSecurityManager(false);
         }
 
         setProperty(SECURITY_MANAGER, fInitSecurityManager);

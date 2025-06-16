@@ -244,11 +244,9 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
      * Method to provide a gross level of synchronization with the
      * target monitored jvm.
      *
-     * gross synchronization works by polling for the hotspot.rt.hrt.ticks
-     * counter, which is the last counter created by the StatSampler
-     * initialization code. The counter is updated when the watcher thread
-     * starts scheduling tasks, which is the last thing done in vm
-     * initialization.
+     * gross synchronization works by polling for the hotspot.rt.hrt.frequency
+     * constant, which is created by the PerfData initialization code. The
+     * creation of constants is one of the last things done in vm initialization.
      */
     protected void synchWithTarget(Map<String, Monitor> map) throws MonitorException {
         /*
@@ -258,7 +256,7 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
          */
         long timeLimit = System.currentTimeMillis() + syncWaitMs;
 
-        String name = "hotspot.rt.hrt.ticks";
+        String name = "hotspot.rt.hrt.frequency";
         LongMonitor ticks = (LongMonitor)pollFor(map, name, timeLimit);
 
         /*

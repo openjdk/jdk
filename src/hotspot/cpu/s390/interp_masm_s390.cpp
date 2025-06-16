@@ -104,7 +104,15 @@ void InterpreterMacroAssembler::dispatch_base(TosState state, address* table, bo
   }
   { Label OK;
     // check if the locals pointer in Z_locals is correct
-    z_cg(Z_locals, _z_ijava_state_neg(locals), Z_fp);
+
+    // _z_ijava_state_neg(locals)) is fp relativized, so we need to
+    // extract the pointer.
+
+    z_lg(Z_R1_scratch, Address(Z_fp, _z_ijava_state_neg(locals)));
+    z_sllg(Z_R1_scratch, Z_R1_scratch, Interpreter::logStackElementSize);
+    z_agr(Z_R1_scratch, Z_fp);
+
+    z_cgr(Z_locals, Z_R1_scratch);
     z_bre(OK);
     reentry = stop_chain_static(reentry, "invalid locals pointer Z_locals: " FILE_AND_LINE);
     bind(OK);
@@ -568,7 +576,10 @@ void InterpreterMacroAssembler::prepare_to_jump_from_interpreted(Register method
   // Satisfy interpreter calling convention (see generate_normal_entry()).
   z_lgr(Z_R10, Z_SP); // Set sender sp (aka initial caller sp, aka unextended sp).
   // Record top_frame_sp, because the callee might modify it, if it's compiled.
-  z_stg(Z_SP, _z_ijava_state_neg(top_frame_sp), Z_fp);
+  assert_different_registers(Z_R1, method);
+  z_sgrk(Z_R1, Z_SP, Z_fp);
+  z_srag(Z_R1, Z_R1, Interpreter::logStackElementSize);
+  z_stg(Z_R1, _z_ijava_state_neg(top_frame_sp), Z_fp);
   save_bcp();
   save_esp();
   z_lgr(Z_method, method); // Set Z_method (kills Z_fp!).
@@ -616,7 +627,7 @@ void InterpreterMacroAssembler::verify_esp(Register Resp, Register Rtemp) {
     // i.e. IJAVA_STATE.monitors > Resp.
     NearLabel OK;
     Register Rmonitors = Rtemp;
-    z_lg(Rmonitors, _z_ijava_state_neg(monitors), Z_fp);
+    get_monitors(Rmonitors);
     compareU64_and_branch(Rmonitors, Resp, bcondHigh, OK);
     reentry = stop_chain_static(reentry, "too many pops: Z_esp points into monitor area");
     bind(OK);
@@ -654,21 +665,46 @@ void InterpreterMacroAssembler::restore_bcp() {
   z_lg(Z_bcp, Address(Z_fp, _z_ijava_state_neg(bcp)));
 }
 
-void InterpreterMacroAssembler::save_esp() {
-  z_stg(Z_esp, Address(Z_fp, _z_ijava_state_neg(esp)));
+void InterpreterMacroAssembler::save_esp(Register fp) {
+  if (fp == noreg) {
+    fp = Z_fp;
+  }
+  z_sgrk(Z_R0, Z_esp, fp);
+  z_srag(Z_R0, Z_R0, Interpreter::logStackElementSize);
+  z_stg(Z_R0, Address(fp, _z_ijava_state_neg(esp)));
 }
 
 void InterpreterMacroAssembler::restore_esp() {
   asm_assert_ijava_state_magic(Z_esp);
   z_lg(Z_esp, Address(Z_fp, _z_ijava_state_neg(esp)));
+  z_slag(Z_esp, Z_esp, Interpreter::logStackElementSize);
+  z_agr(Z_esp, Z_fp);
 }
 
 void InterpreterMacroAssembler::get_monitors(Register reg) {
   asm_assert_ijava_state_magic(reg);
+#ifdef ASSERT
+  NearLabel ok;
+  z_cg(Z_fp, 0, Z_SP);
+  z_bre(ok);
+  stop("Z_fp is corrupted");
+  bind(ok);
+#endif // ASSERT
   mem2reg_opt(reg, Address(Z_fp, _z_ijava_state_neg(monitors)));
+  z_slag(reg, reg, Interpreter::logStackElementSize);
+  z_agr(reg, Z_fp);
 }
 
 void InterpreterMacroAssembler::save_monitors(Register reg) {
+#ifdef ASSERT
+  NearLabel ok;
+  z_cg(Z_fp, 0, Z_SP);
+  z_bre(ok);
+  stop("Z_fp is corrupted");
+  bind(ok);
+#endif // ASSERT
+  z_sgr(reg, Z_fp);
+  z_srag(reg, reg, Interpreter::logStackElementSize);
   reg2mem_opt(reg, Address(Z_fp, _z_ijava_state_neg(monitors)));
 }
 
@@ -684,6 +720,8 @@ void InterpreterMacroAssembler::save_mdp(Register mdp) {
 void InterpreterMacroAssembler::restore_locals() {
   asm_assert_ijava_state_magic(Z_locals);
   z_lg(Z_locals, Address(Z_fp, _z_ijava_state_neg(locals)));
+  z_sllg(Z_locals, Z_locals, Interpreter::logStackElementSize);
+  z_agr(Z_locals, Z_fp);
 }
 
 void InterpreterMacroAssembler::get_method(Register reg) {
@@ -827,12 +865,11 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
     // register for unlock_object to pass to VM directly.
     Register R_current_monitor = Z_ARG2;
     Register R_monitor_block_bot = Z_ARG1;
-    const Address monitor_block_top(Z_fp, _z_ijava_state_neg(monitors));
     const Address monitor_block_bot(Z_fp, -frame::z_ijava_state_size);
 
     bind(restart);
     // Starting with top-most entry.
-    z_lg(R_current_monitor, monitor_block_top);
+    get_monitors(R_current_monitor);
     // Points to word before bottom of monitor block.
     load_address(R_monitor_block_bot, monitor_block_bot);
     z_bru(entry);

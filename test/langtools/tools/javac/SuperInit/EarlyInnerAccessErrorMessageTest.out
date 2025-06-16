@@ -1,4 +1,2 @@
-EarlyInnerAccessErrorMessageTest.java:12:34: compiler.err.cant.ref.before.ctor.called: x
-- compiler.note.preview.filename: EarlyInnerAccessErrorMessageTest.java, DEFAULT
-- compiler.note.preview.recompile
+EarlyInnerAccessErrorMessageTest.java:11:34: compiler.err.cant.ref.before.ctor.called: x
 1 error

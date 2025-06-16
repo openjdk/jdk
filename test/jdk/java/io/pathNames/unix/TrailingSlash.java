@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /* @test
  * @bug 4427862
  * @summary Ensure that trailing slashes are ignored when opening files
+ * @requires (os.family != "windows")
  */
 
 import java.io.*;
@@ -107,11 +108,6 @@ public class TrailingSlash {
     }
 
     public static void main(String[] args) throws Exception {
-        if (File.separatorChar != '/') {
-            // This test is only valid on Unix systems
-            return;
-        }
-
         go("xyzzy", "xyzzy");
         go("xyzzy", "xyzzy/");
         go("xyzzy", "xyzzy//");

@@ -2285,9 +2285,11 @@ JNI_ENTRY(jobjectArray, jni_NewObjectArray(JNIEnv *env, jsize length, jclass ele
   jobjectArray ret = nullptr;
   DT_RETURN_MARK(NewObjectArray, jobjectArray, (const jobjectArray&)ret);
   Klass* ek = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(elementClass));
-  Klass* ak = ek->array_klass(CHECK_NULL);
-  ObjArrayKlass::cast(ak)->initialize(CHECK_NULL);
-  objArrayOop result = ObjArrayKlass::cast(ak)->allocate(length, CHECK_NULL);
+
+  // Make sure bottom_klass is initialized.
+  ek->initialize(CHECK_NULL);
+  objArrayOop result = oopFactory::new_objArray(ek, length, CHECK_NULL);
+
   oop initial_value = JNIHandles::resolve(initialElement);
   if (initial_value != nullptr) {  // array already initialized with null
     for (int index = 0; index < length; index++) {
@@ -2400,7 +2402,7 @@ static char* get_bad_address() {
   static char* bad_address = nullptr;
   if (bad_address == nullptr) {
     size_t size = os::vm_allocation_granularity();
-    bad_address = os::reserve_memory(size, false, mtInternal);
+    bad_address = os::reserve_memory(size, mtInternal);
     if (bad_address != nullptr) {
       os::protect_memory(bad_address, size, os::MEM_PROT_READ,
                          /*is_committed*/false);

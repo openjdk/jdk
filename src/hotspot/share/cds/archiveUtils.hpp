@@ -136,12 +136,12 @@ class SharedDataRelocator: public BitMapClosure {
     _valid_old_base(valid_old_base), _valid_old_end(valid_old_end),
     _valid_new_base(valid_new_base), _valid_new_end(valid_new_end),
     _delta(delta) {
-    log_debug(cds, reloc)("SharedDataRelocator::_patch_base     = " PTR_FORMAT, p2i(_patch_base));
-    log_debug(cds, reloc)("SharedDataRelocator::_patch_end      = " PTR_FORMAT, p2i(_patch_end));
-    log_debug(cds, reloc)("SharedDataRelocator::_valid_old_base = " PTR_FORMAT, p2i(_valid_old_base));
-    log_debug(cds, reloc)("SharedDataRelocator::_valid_old_end  = " PTR_FORMAT, p2i(_valid_old_end));
-    log_debug(cds, reloc)("SharedDataRelocator::_valid_new_base = " PTR_FORMAT, p2i(_valid_new_base));
-    log_debug(cds, reloc)("SharedDataRelocator::_valid_new_end  = " PTR_FORMAT, p2i(_valid_new_end));
+    log_debug(aot, reloc)("SharedDataRelocator::_patch_base     = " PTR_FORMAT, p2i(_patch_base));
+    log_debug(aot, reloc)("SharedDataRelocator::_patch_end      = " PTR_FORMAT, p2i(_patch_end));
+    log_debug(aot, reloc)("SharedDataRelocator::_valid_old_base = " PTR_FORMAT, p2i(_valid_old_base));
+    log_debug(aot, reloc)("SharedDataRelocator::_valid_old_end  = " PTR_FORMAT, p2i(_valid_old_end));
+    log_debug(aot, reloc)("SharedDataRelocator::_valid_new_base = " PTR_FORMAT, p2i(_valid_new_base));
+    log_debug(aot, reloc)("SharedDataRelocator::_valid_new_end  = " PTR_FORMAT, p2i(_valid_new_end));
   }
 
   bool do_bit(size_t offset);
@@ -180,6 +180,7 @@ public:
   bool is_allocatable() const {
     return !is_packed() && _base != nullptr;
   }
+  bool is_empty()   const { return _base == _top; }
 
   void print(size_t total_bytes) const;
   void print_out_of_space_msg(const char* failing_region, size_t needed_bytes);

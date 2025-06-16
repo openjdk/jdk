@@ -28,6 +28,11 @@
  * @run testng ToolEnablePreviewTest
  */
 
+import java.io.IOException;
+import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertTrue;
@@ -70,8 +75,14 @@ public class ToolEnablePreviewTest extends ReplToolTesting {
     }
 
     @Test
-    public void testCompilerTestFlagEnv() {
-        test(new String[] {"-C", "-XDforcePreview"},
+    public void testCompilerTestFlagEnv() throws IOException {
+        Path startupFile = Paths.get("startup.repl");
+        try (Writer w = Files.newBufferedWriter(startupFile)) {
+            w.write("""
+                    import java.util.function.*;
+                    """);
+        }
+        test(new String[] {"-C", "-XDforcePreview", "-startup", startupFile.toString()},
                 (a) -> assertCommandOutputContains(a, "Function<Integer,Integer> f = (var i) -> i + i",
                         "Error", "preview feature"),
                 (a) -> assertCommand(a, "/env --enable-preview",
