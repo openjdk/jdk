@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ public:
     FREE_C_HEAP_ARRAY(char, _name_space);
   }
 
-  inline void update_memory_state(size_t capacity, size_t used) {
+  inline void update_all(size_t capacity, size_t used) {
     _capacity->set_value(capacity);
     _used->set_value(used);
   }
@@ -90,8 +90,8 @@ public:
           _heap(heap)
   {};
 
-  void update_memory_state() {
-    GenerationCounters::update_memory_state(_heap->capacity());
+  void update_all() {
+    GenerationCounters::update_all(_heap->capacity());
   }
 };
 
@@ -107,8 +107,8 @@ void EpsilonMonitoringSupport::update_counters() {
     EpsilonHeap* heap = EpsilonHeap::heap();
     size_t used = heap->used();
     size_t capacity = heap->capacity();
-    _heap_counters->update_memory_state();
-    _space_counters->update_memory_state(capacity, used);
+    _heap_counters->update_all();
+    _space_counters->update_all(capacity, used);
     MetaspaceCounters::update_performance_counters();
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2019, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ public:
   ShenandoahYoungGenerationCounters() :
           GenerationCounters("Young", 0, 0, 0, (size_t)0, (size_t)0) {};
 
-  void update_memory_state() {
+  void update_all() {
     // no update
   }
 };
@@ -50,8 +50,8 @@ public:
           _heap(heap)
   {};
 
-  void update_memory_state() {
-    GenerationCounters::update_memory_state(_heap->capacity());
+  void update_all() {
+    GenerationCounters::update_all(_heap->capacity());
   }
 };
 
@@ -98,8 +98,8 @@ void ShenandoahMonitoringSupport::update_counters() {
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     size_t used = heap->used();
     size_t capacity = heap->max_capacity();
-    _heap_counters->update_memory_state();
-    _space_counters->update_memory_state(capacity, used);
+    _heap_counters->update_all();
+    _space_counters->update_all(capacity, used);
     _heap_region_counters->update();
 
     MetaspaceCounters::update_performance_counters();

@@ -66,7 +66,7 @@ public:
                          curr_capacity) {}
 
   void update_capacity(size_t capacity) {
-    update_memory_state(capacity);
+    update_all(capacity);
   }
 };
 

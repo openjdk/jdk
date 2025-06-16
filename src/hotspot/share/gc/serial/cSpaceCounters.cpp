@@ -77,7 +77,7 @@ void CSpaceCounters::update_used() {
   _used->set_value(_space->used());
 }
 
-void CSpaceCounters::update_memory_state() {
+void CSpaceCounters::update_all() {
   update_used();
   update_capacity();
 }
