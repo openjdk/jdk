@@ -65,13 +65,8 @@ public:
       Node_Stack::push(n, (uint)ns);
     }
     void push(Node *n, Node_State ns, Node *parent, int indx) {
-      ++_inode_top;
-      if ((_inode_top + 1) >= _inode_max) grow();
-      _inode_top->node = parent;
-      _inode_top->indx = (uint)indx;
-      ++_inode_top;
-      _inode_top->node = n;
-      _inode_top->indx = (uint)ns;
+      Node_Stack::push(parent, (uint)indx);
+      Node_Stack::push(n, (uint)ns);
     }
     Node *parent() {
       pop();
