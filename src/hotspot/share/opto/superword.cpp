@@ -2515,6 +2515,30 @@ static bool can_subword_truncate(Node* in, const Type* type) {
     return true;
   }
 
+#ifdef ASSERT
+  if (VectorNode::is_shift_opcode(opc)) {
+    return false;
+  }
+
+  switch (opc) {
+  case Op_AbsI:
+  case Op_DivI:
+  case Op_MinI:
+  case Op_MaxI:
+  case Op_CMoveI:
+  case Op_RotateRight:
+  case Op_RotateLeft:
+  case Op_PopCountI:
+  case Op_ReverseBytesI:
+  case Op_ReverseI:
+  case Op_CountLeadingZerosI:
+  case Op_CountTrailingZerosI:
+    break;
+  default:
+    assert(false, "Unexpected node: %s", NodeClassNames[in->Opcode()]);
+  }
+#endif
+
   // Default to disallowing vector truncation
   return false;
 }
