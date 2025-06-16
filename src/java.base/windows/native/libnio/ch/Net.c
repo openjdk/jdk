@@ -222,7 +222,7 @@ Java_sun_nio_ch_Net_listen(JNIEnv *env, jclass cl, jobject fdo, jint backlog)
      * (where N is a number).
      * SOMAXCONN_HINT will adjust the value N to be within the range (200, 65535).
      */
-    if (backlog >= 200) {
+    if (backlog > 200) {
         backlog = SOMAXCONN_HINT(backlog);
     }
     if (listen(fdval(env,fdo), backlog) == SOCKET_ERROR) {
