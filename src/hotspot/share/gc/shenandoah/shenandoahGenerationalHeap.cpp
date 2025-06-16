@@ -190,6 +190,10 @@ void ShenandoahGenerationalHeap::stop() {
 }
 
 void ShenandoahGenerationalHeap::start_idle_span() {
+#undef KELVIN_IDLE
+#ifdef KELVIN_IDLE
+  log_info(gc)("Doing ShenandoahGenerationalHeap::start_idle_span()");
+#endif
   young_generation()->heuristics()->start_idle_span();
 }
 
