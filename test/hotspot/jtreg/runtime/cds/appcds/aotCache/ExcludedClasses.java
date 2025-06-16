@@ -26,8 +26,6 @@
  * @test
  * @summary Test how various AOT optimizations handle classes that are excluded from the AOT cache.
  * @requires vm.cds.write.archived.java.heap
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/jdk/lib/testlibrary /test/lib
  *          /test/hotspot/jtreg/runtime/cds/appcds/aotCache/test-classes
  * @build ExcludedClasses CustyWithLoop

@@ -556,6 +556,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_libmCos();
   address generate_libmTan();
   address generate_libmTanh();
+  address generate_libmCbrt();
   address generate_libmExp();
   address generate_libmPow();
   address generate_libmLog();
@@ -633,6 +634,7 @@ class StubGenerator: public StubCodeGenerator {
   void create_control_words();
 
   // Initialization
+  void generate_preuniverse_stubs();
   void generate_initial_stubs();
   void generate_continuation_stubs();
   void generate_compiler_stubs();
