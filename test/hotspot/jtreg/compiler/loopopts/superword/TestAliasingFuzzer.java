@@ -479,13 +479,12 @@ public class TestAliasingFuzzer {
                     generateContainerAliasing(containerNames, $("iterations")),
                     generateRanges(),
                     generateBoundsAndInvariants(indexFormNames, invarRest),
-                    // TODO: bounds / ranges
-                    // TODO: invoke test/reference and verify
                     """
-
                     // Run test and compare with interpreter results.
-                    var result   = $test(null, null, 0, 0, 0, 0);
-                    var expected = $reference(null, null, 0, 0, 0, 0);
+                    """,
+                    generateCallMethod("result", $("test"), "test"),
+                    generateCallMethod("expected", $("reference"), "reference"),
+                    """
                     Verify.checkEQ(result, expected);
                     } // end $run
 
@@ -771,6 +770,20 @@ public class TestAliasingFuzzer {
             return template.asToken();
         }
 
+
+        private TemplateToken generateCallMethod(String output, String methodName, String containerPrefix) {
+            var template = Template.make(() -> body(
+                let("output", output),
+                let("methodName", methodName),
+                "var #output = #methodName(",
+                IntStream.range(0, numContainers).mapToObj(i ->
+                    List.of(containerPrefix, "_", i, ", invar0_", i, ", ")
+                ).toList(),
+                "ivLo, ivHi);\n"
+            ));
+            return template.asToken();
+        }
+
         private TemplateToken generateIRRules() {
             var template = Template.make(() -> body(
                 switch (containerKind) {
@@ -827,23 +840,33 @@ public class TestAliasingFuzzer {
             var template = Template.make(() -> body(
                 let("methodName", methodName),
                 let("type", containerElementType),
-                """
-                public static Object #methodName(#type[] a, #type[] b, int ivLo, int ivHi, int invar0_A, int invar0_B) {
-                """,
+                // Method head / signature.
+                "public static Object #methodName(",
+                IntStream.range(0, numContainers).mapToObj(i ->
+                    List.of("#type[] container_", i, ", int invar0_", i, ", ")
+                ).toList(),
+                "int ivLo, int ivHi) {\n",
+                // Method loop body.
                 (loopForward
-                ?   "for (int i = ivLo; i < ivHi; i++) {\n"
-                :   "for (int i = ivHi-1; i >= ivLo; i--) {\n"),
+                 ?  "for (int i = ivLo; i < ivHi; i++) {\n"
+                 :  "for (int i = ivHi-1; i >= ivLo; i--) {\n"),
                 switch (accessScenario) {
                     case COPY_LOAD_STORE ->
-                        List.of("a[", accessIndexForm[0].index("invar0_A", invarRest), "] = ",
-                                "b[", accessIndexForm[1].index("invar0_B", invarRest), "];\n");
+                        List.of("container_0[", accessIndexForm[0].index("invar0_0", invarRest), "] = ",
+                                "container_1[", accessIndexForm[1].index("invar0_1", invarRest), "];\n");
                     case FILL_STORE_STORE ->
-                        List.of("a[", accessIndexForm[0].index("invar0_A", invarRest), "] = (#type)0x0a;\n",
-                                "b[", accessIndexForm[1].index("invar0_B", invarRest), "] = (#type)0x0b;\n");
+                        List.of("container_0[", accessIndexForm[0].index("invar0_0", invarRest), "] = (#type)0x0a;\n",
+                                "container_1[", accessIndexForm[1].index("invar0_1", invarRest), "] = (#type)0x0b;\n");
                 },
                 """
                     }
-                    return new Object[] {a, b};
+                    return new Object[] {
+                """,
+                IntStream.range(0, numContainers).mapToObj(i ->
+                    "container_" + i
+                ).collect(Collectors.joining(", ")), "\n",
+                """
+                    };
                 }
                 """
             ));
