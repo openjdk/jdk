@@ -893,6 +893,12 @@ public class IRNode {
         machOnly(LEA_P_32_NARROW, "leaP32Narrow");
     }
 
+    // Only supported on x86.
+    public static final String LEA_P = PREFIX + "LEA_P" + POSTFIX;
+    static {
+        machOnly(LEA_P, "leaP(CompressedOopOffset|(8|32)Narrow)");
+    }
+
     public static final String LOAD = PREFIX + "LOAD" + POSTFIX;
     static {
         beforeMatchingNameRegex(LOAD, "Load(B|UB|S|US|I|L|F|D|P|N)");
