@@ -135,16 +135,14 @@ public class TestRedundantLea {
         }
 
         int i = 0;
-        Scenario[] scenarios = new Scenario[4];
+        Scenario[] scenarios = new Scenario[2];
         for (boolean negativeTest : new boolean[] {false, true}) {
-            for (boolean compressedTest : new boolean[] {false, true}) {
-                //                                             leaPCompressedOopOffset  leaP(8|32)Narrow
-                scenarios[i] = new Scenario(i, compressedTest ? "-XX:MaxHeapSize=4g" : "-XX:MaxHeapSize=32m");
-                if (negativeTest) {
-                    scenarios[i].addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-OptoPeephole");
-                }
-                i += 1;
+            if (negativeTest) {
+                scenarios[i] = new Scenario(i, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-OptoPeephole");
+            } else {
+                scenarios[i] = new Scenario(i, "-XX:+OptoPeephole");
             }
+            i += 1;
         }
 
         framework.addScenarios(scenarios).start();
@@ -158,13 +156,8 @@ class GetAndSetTest {
     private final AtomicReference<Object> obj = new AtomicReference<Object>();
 
     @Test
-    @IR(counts = {IRNode.LEA_P_8_NARROW, "=1"},
+    @IR(counts = {IRNode.LEA_P, "=1"},
         phase = {CompilePhase.FINAL_CODE},
-        applyIf = {"MaxHeapSize", "<1073741824"},
-        applyIfPlatform = {"mac", "false"})
-    @IR(counts = {IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=1"},
-        phase = {CompilePhase.FINAL_CODE},
-        applyIf = {"MaxHeapSize", ">1073741824"},
         applyIfPlatform = {"mac", "false"})
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1"},
@@ -190,13 +183,8 @@ class StringEqualsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.LEA_P_8_NARROW, "=2"},
+    @IR(counts = {IRNode.LEA_P, "=2"},
         phase = {CompilePhase.FINAL_CODE},
-        applyIf = {"MaxHeapSize", "<1073741824"},
-        applyIfPlatform = {"mac", "false"})
-    @IR(counts = {IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
-        phase = {CompilePhase.FINAL_CODE},
-        applyIf = {"MaxHeapSize", ">1073741824"},
         applyIfPlatform = {"mac", "false"})
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=3"},
@@ -242,13 +230,8 @@ class StringInflateTest {
     }
 
     @Test
-    @IR(counts = {IRNode.LEA_P_8_NARROW, "=2"},
+    @IR(counts = {IRNode.LEA_P, "=2"},
         phase = {CompilePhase.FINAL_CODE},
-        applyIf = {"MaxHeapSize", "<1073741824"},
-        applyIfPlatform = {"mac", "false"})
-    @IR(counts = {IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
-        phase = {CompilePhase.FINAL_CODE},
-        applyIf = {"MaxHeapSize", ">1073741824"},
         applyIfPlatform = {"mac", "false"})
     // Negative
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=5"},
@@ -323,14 +306,8 @@ class StoreNTest {
     private Object[] objArr32bit = new Object[SOME_SIZE];
 
     @Test
-    @IR(counts = {IRNode.LEA_P_8_NARROW, "=1",
-                  IRNode.LEA_P_32_NARROW, "=1"},
+    @IR(counts = {IRNode.LEA_P, "=2"},
         phase = {CompilePhase.FINAL_CODE},
-        applyIf = {"MaxHeapSize", "<1073741824"},
-        applyIfPlatform = {"mac", "false"})
-    @IR(counts = {IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
-        phase  = {CompilePhase.FINAL_CODE},
-        applyIf = {"MaxHeapSize", ">=1073741824"},
         applyIfPlatform = {"mac", "false"})
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=2"},
@@ -356,14 +333,8 @@ class StoreNTest {
     // Due to the complicated graph structure with the phis, the peephole
     // cannot remove the redundant decode shared by both leaP*s.
     @Test
-    @IR(counts = {IRNode.LEA_P_8_NARROW, "=1",
-                  IRNode.LEA_P_32_NARROW, "=1"},
+    @IR(counts = {IRNode.LEA_P, "=2"},
         phase = {CompilePhase.FINAL_CODE},
-        applyIf = {"MaxHeapSize", "<1073741824"},
-        applyIfPlatform = {"mac", "false"})
-    @IR(counts = {IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
-        phase = {CompilePhase.FINAL_CODE},
-        applyIf = {"MaxHeapSize", ">=1073741824"},
         applyIfPlatform = {"mac", "false"})
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1"},
         phase = {CompilePhase.FINAL_CODE},
@@ -377,14 +348,8 @@ class StoreNTest {
     }
 
     @Test
-    @IR(counts = {IRNode.LEA_P_8_NARROW, "=1",
-                  IRNode.LEA_P_32_NARROW, "=1"},
+    @IR(counts = {IRNode.LEA_P, "=2"},
         phase = {CompilePhase.FINAL_CODE},
-        applyIf = {"MaxHeapSize", "<1073741824"},
-        applyIfPlatform = {"mac", "false"})
-    @IR(counts = {IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
-        phase = {CompilePhase.FINAL_CODE},
-        applyIf = {"MaxHeapSize", ">=1073741824"},
         applyIfPlatform = {"mac", "false"})
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=2"},
@@ -400,14 +365,8 @@ class StoreNTest {
     }
 
     @Test
-    @IR(counts = {IRNode.LEA_P_8_NARROW, "=1",
-                  IRNode.LEA_P_32_NARROW, "=1"},
+    @IR(counts = {IRNode.LEA_P, "=2"},
         phase = {CompilePhase.FINAL_CODE},
-        applyIf = {"MaxHeapSize", "<1073741824"},
-        applyIfPlatform = {"mac", "false"})
-    @IR(counts = {IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
-        phase = {CompilePhase.FINAL_CODE},
-        applyIf = {"MaxHeapSize", ">=1073741824"},
         applyIfPlatform = {"mac", "false"})
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1"},
