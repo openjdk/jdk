@@ -498,6 +498,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _pending_interrupted_exception(false),
 
   _handshake(this),
+  _suspend_resume_manager(this, &_handshake._lock),
 
   _popframe_preserved_args(nullptr),
   _popframe_preserved_args_size(0),
@@ -1200,13 +1201,13 @@ bool JavaThread::java_suspend(bool register_vthread_SR) {
 
   guarantee(Thread::is_JavaThread_protected(/* target */ this),
             "target JavaThread is not protected in calling context.");
-  return this->handshake_state()->suspend(register_vthread_SR);
+  return this->suspend_resume_manager()->suspend(register_vthread_SR);
 }
 
 bool JavaThread::java_resume(bool register_vthread_SR) {
   guarantee(Thread::is_JavaThread_protected_by_TLH(/* target */ this),
             "missing ThreadsListHandle in calling context.");
-  return this->handshake_state()->resume(register_vthread_SR);
+  return this->suspend_resume_manager()->resume(register_vthread_SR);
 }
 
 // Wait for another thread to perform object reallocation and relocking on behalf of
@@ -1337,7 +1338,7 @@ void JavaThread::make_zombies() {
       // it is a Java nmethod
       nmethod* nm = CodeCache::find_nmethod(fst.current()->pc());
       assert(nm != nullptr, "did not find nmethod");
-      nm->make_not_entrant("zombie");
+      nm->make_not_entrant(nmethod::ChangeReason::zombie);
     }
   }
 }

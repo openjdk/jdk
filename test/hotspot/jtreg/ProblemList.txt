@@ -142,6 +142,11 @@ serviceability/sa/TestJmapCoreMetaspace.java      8318754 macosx-aarch64
 
 serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStressTest.java 8315980 linux-all,windows-x64
 
+serviceability/sa/JhsdbThreadInfoTest.java              8344261 generic-all
+serviceability/sa/TestJhsdbJstackLock.java              8344261 generic-all
+serviceability/sa/sadebugd/DebugdConnectTest.java       8344261 generic-all
+serviceability/attach/RemovingUnixDomainSocketTest.java 8344261 generic-all
+
 #############################################################################
 
 # :hotspot_misc
@@ -163,7 +168,6 @@ vmTestbase/metaspace/gc/firstGC_50m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_99m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_default/TestDescription.java 8208250 generic-all
 
-vmTestbase/nsk/jvmti/AttachOnDemand/attach045/TestDescription.java 8358094 generic-all
 vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8073470 linux-all
 vmTestbase/nsk/jvmti/InterruptThread/intrpthrd003/TestDescription.java 8288911 macosx-all
 

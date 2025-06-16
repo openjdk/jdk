@@ -550,6 +550,7 @@ void CompilationPolicy::initialize() {
     int count = CICompilerCount;
     bool c1_only = CompilerConfig::is_c1_only();
     bool c2_only = CompilerConfig::is_c2_or_jvmci_compiler_only();
+    int min_count = (c1_only || c2_only) ? 1 : 2;
 
 #ifdef _LP64
     // Turn on ergonomic compiler count selection
@@ -560,7 +561,7 @@ void CompilationPolicy::initialize() {
       // Simple log n seems to grow too slowly for tiered, try something faster: log n * log log n
       int log_cpu = log2i(os::active_processor_count());
       int loglog_cpu = log2i(MAX2(log_cpu, 1));
-      count = MAX2(log_cpu * loglog_cpu * 3 / 2, 2);
+      count = MAX2(log_cpu * loglog_cpu * 3 / 2, min_count);
       // Make sure there is enough space in the code cache to hold all the compiler buffers
       size_t c1_size = 0;
 #ifdef COMPILER1
@@ -574,7 +575,7 @@ void CompilationPolicy::initialize() {
       int max_count = (ReservedCodeCacheSize - (CodeCacheMinimumUseSpace DEBUG_ONLY(* 3))) / (int)buffer_size;
       if (count > max_count) {
         // Lower the compiler count such that all buffers fit into the code cache
-        count = MAX2(max_count, c1_only ? 1 : 2);
+        count = MAX2(max_count, min_count);
       }
       FLAG_SET_ERGO(CICompilerCount, count);
     }
@@ -593,9 +594,10 @@ void CompilationPolicy::initialize() {
 #endif
 
     if (c1_only) {
-      // No C2 compiler thread required
+      // No C2 compiler threads are needed
       set_c1_count(count);
     } else if (c2_only) {
+      // No C1 compiler threads are needed
       set_c2_count(count);
     } else {
 #if INCLUDE_JVMCI
@@ -613,6 +615,9 @@ void CompilationPolicy::initialize() {
     }
     assert(count == c1_count() + c2_count(), "inconsistent compiler thread count");
     set_increase_threshold_at_ratio();
+  } else {
+    // Interpreter mode creates no compilers
+    FLAG_SET_ERGO(CICompilerCount, 0);
   }
   set_start_time(nanos_to_millis(os::javaTimeNanos()));
 }
@@ -919,7 +924,7 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
         nmethod* osr_nm = mh->lookup_osr_nmethod_for(bci, CompLevel_simple, false);
         if (osr_nm != nullptr && osr_nm->comp_level() > CompLevel_simple) {
           // Invalidate the existing OSR nmethod so that a compile at CompLevel_simple is permitted.
-          osr_nm->make_not_entrant("OSR invalidation for compiling with C1");
+          osr_nm->make_not_entrant(nmethod::ChangeReason::OSR_invalidation_for_compiling_with_C1);
         }
         compile(mh, bci, CompLevel_simple, THREAD);
       }
@@ -1511,7 +1516,7 @@ void CompilationPolicy::method_back_branch_event(const methodHandle& mh, const m
               int osr_bci = nm->is_osr_method() ? nm->osr_entry_bci() : InvocationEntryBci;
               print_event(MAKE_NOT_ENTRANT, mh(), mh(), osr_bci, level);
             }
-            nm->make_not_entrant("OSR invalidation, back branch");
+            nm->make_not_entrant(nmethod::ChangeReason::OSR_invalidation_back_branch);
           }
         }
         // Fix up next_level if necessary to avoid deopts

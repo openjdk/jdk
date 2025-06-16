@@ -60,7 +60,14 @@ import jdk.jfr.internal.util.ImplicitFields;
  * Class responsible for adding instrumentation to a subclass of {@link Event}.
  *
  */
-final class EventInstrumentation {
+public final class EventInstrumentation {
+    public static final long MASK_THROTTLE               = 1 << 62;
+    public static final long MASK_THROTTLE_CHECK         = 1 << 63;
+    public static final long MASK_THROTTLE_BITS          = MASK_THROTTLE | MASK_THROTTLE_CHECK;
+    public static final long MASK_THROTTLE_CHECK_SUCCESS = MASK_THROTTLE_CHECK | MASK_THROTTLE;
+    public static final long MASK_THROTTLE_CHECK_FAIL    = MASK_THROTTLE_CHECK | 0;
+    public static final long MASK_NON_THROTTLE_BITS      = ~MASK_THROTTLE_BITS;
+
     private static final FieldDesc FIELD_EVENT_CONFIGURATION = FieldDesc.of(Object.class, "eventConfiguration");
 
     private static final ClassDesc TYPE_EVENT_CONFIGURATION = classDesc(EventConfiguration.class);
@@ -71,11 +78,17 @@ final class EventInstrumentation {
     private static final MethodDesc METHOD_BEGIN = MethodDesc.of("begin", "()V");
     private static final MethodDesc METHOD_COMMIT = MethodDesc.of("commit", "()V");
     private static final MethodDesc METHOD_DURATION = MethodDesc.of("duration", "(J)J");
+    private static final MethodDesc METHOD_THROTTLE = MethodDesc.of("throttle", "(JJ)J");
     private static final MethodDesc METHOD_ENABLED = MethodDesc.of("enabled", "()Z");
     private static final MethodDesc METHOD_END = MethodDesc.of("end", "()V");
-    private static final MethodDesc METHOD_EVENT_CONFIGURATION_SHOULD_COMMIT = MethodDesc.of("shouldCommit", "(J)Z");
+    private static final MethodDesc METHOD_EVENT_CONFIGURATION_SHOULD_COMMIT_LONG = MethodDesc.of("shouldCommit", "(J)Z");
+    private static final MethodDesc METHOD_EVENT_CONFIGURATION_SHOULD_THROTTLE_COMMIT_LONG_LONG = MethodDesc.of("shouldThrottleCommit", "(JJ)Z");
+    private static final MethodDesc METHOD_EVENT_CONFIGURATION_SHOULD_THROTTLE_COMMIT_LONG = MethodDesc.of("shouldThrottleCommit", "(J)Z");
+
     private static final MethodDesc METHOD_EVENT_CONFIGURATION_GET_SETTING = MethodDesc.of("getSetting", SettingControl.class, int.class);
     private static final MethodDesc METHOD_EVENT_SHOULD_COMMIT = MethodDesc.of("shouldCommit", "()Z");
+    private static final MethodDesc METHOD_EVENT_SHOULD_THROTTLE_COMMIT_LONG_LONG = MethodDesc.of("shouldThrottleCommit", "(JJ)Z");
+    private static final MethodDesc METHOD_EVENT_SHOULD_THROTTLE_COMMIT_LONG = MethodDesc.of("shouldThrottleCommit", "(J)Z");
     private static final MethodDesc METHOD_GET_EVENT_WRITER = MethodDesc.of("getEventWriter", "()" + TYPE_EVENT_WRITER.descriptorString());
     private static final MethodDesc METHOD_IS_ENABLED = MethodDesc.of("isEnabled", "()Z");
     private static final MethodDesc METHOD_RESET = MethodDesc.of("reset", "()V");
@@ -88,6 +101,7 @@ final class EventInstrumentation {
     private final MethodDesc staticCommitMethod;
     private final boolean untypedEventConfiguration;
     private final boolean guardEventConfiguration;
+    private final boolean throttled;
 
     /**
      * Creates an EventInstrumentation object.
@@ -110,6 +124,11 @@ final class EventInstrumentation {
         this.eventClassDesc = inspector.getClassDesc();
         this.staticCommitMethod = inspector.findStaticCommitMethod();
         this.untypedEventConfiguration = hasUntypedConfiguration();
+        if (inspector.isJDK()) {
+            this.throttled = inspector.hasStaticMethod(METHOD_EVENT_SHOULD_THROTTLE_COMMIT_LONG_LONG);
+        } else {
+            this.throttled = inspector.isThrottled();
+        }
     }
 
     byte[] buildInstrumented() {
@@ -146,6 +165,12 @@ final class EventInstrumentation {
             }
             if (isMethod(method, METHOD_SHOULD_COMMIT_LONG)) {
                 return this::methodShouldCommitStatic;
+            }
+            if (isMethod(method, METHOD_EVENT_SHOULD_THROTTLE_COMMIT_LONG_LONG)) {
+                return this::methodShouldCommitThrottleStaticLongLong;
+            }
+            if (isMethod(method, METHOD_EVENT_SHOULD_THROTTLE_COMMIT_LONG)) {
+                return this::methodShouldCommitThrottleStaticLong;
             }
             if (isMethod(method, METHOD_TIME_STAMP)) {
                 return this::methodTimestamp;
@@ -188,11 +213,11 @@ final class EventInstrumentation {
         if (!inspector.hasDuration()) {
             throwMissingDuration(codeBuilder, "end");
         } else {
-            codeBuilder.aload(0);
-            codeBuilder.aload(0);
-            getfield(codeBuilder, eventClassDesc, ImplicitFields.FIELD_START_TIME);
-            invokestatic(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_DURATION);
-            putfield(codeBuilder, eventClassDesc, ImplicitFields.FIELD_DURATION);
+            setDuration(codeBuilder, cb -> {
+                codeBuilder.aload(0);
+                getfield(codeBuilder, eventClassDesc, ImplicitFields.FIELD_START_TIME);
+                invokestatic(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_DURATION);
+            });
             codeBuilder.return_();
         }
     }
@@ -205,9 +230,8 @@ final class EventInstrumentation {
         }
         // if (!eventConfiguration.shouldCommit(duration) goto fail;
         getEventConfiguration(codeBuilder);
-        codeBuilder.aload(0);
-        getfield(codeBuilder, eventClassDesc, ImplicitFields.FIELD_DURATION);
-        invokevirtual(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_EVENT_CONFIGURATION_SHOULD_COMMIT);
+        getDuration(codeBuilder);
+        invokevirtual(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_EVENT_CONFIGURATION_SHOULD_COMMIT_LONG);
         codeBuilder.ifeq(fail);
         List<SettingDesc> settingDescs = inspector.getSettings();
         for (int index = 0; index < settingDescs.size(); index++) {
@@ -222,6 +246,30 @@ final class EventInstrumentation {
             codeBuilder.invokevirtual(eventClassDesc, sd.methodName(), mdesc);
             codeBuilder.ifeq(fail);
         }
+        if (throttled) {
+            // long d =  eventConfiguration.throttle(this.duration);
+            // this.duration = d;
+            // if (d & MASK_THROTTLE_BIT == 0) {
+            //   goto fail;
+            // }
+            getEventConfiguration(codeBuilder);
+            codeBuilder.aload(0);
+            getfield(codeBuilder, eventClassDesc, ImplicitFields.FIELD_START_TIME);
+            codeBuilder.aload(0);
+            getfield(codeBuilder, eventClassDesc, ImplicitFields.FIELD_DURATION);
+            Bytecode.invokevirtual(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_THROTTLE);
+            int result = codeBuilder.allocateLocal(TypeKind.LONG);
+            codeBuilder.lstore(result);
+            codeBuilder.aload(0);
+            codeBuilder.lload(result);
+            putfield(codeBuilder, eventClassDesc, ImplicitFields.FIELD_DURATION);
+            codeBuilder.lload(result);
+            codeBuilder.ldc(MASK_THROTTLE);
+            codeBuilder.land();
+            codeBuilder.lconst_0();
+            codeBuilder.lcmp();
+            codeBuilder.ifeq(fail);
+         }
         // return true
         codeBuilder.iconst_1();
         codeBuilder.ireturn();
@@ -294,6 +342,17 @@ final class EventInstrumentation {
     }
 
     private void methodShouldCommitStatic(CodeBuilder codeBuilder) {
+        methodShouldCommitStatic(codeBuilder, METHOD_EVENT_CONFIGURATION_SHOULD_COMMIT_LONG);
+    }
+
+    private void methodShouldCommitThrottleStaticLongLong(CodeBuilder codeBuilder) {
+        methodShouldCommitStatic(codeBuilder, METHOD_EVENT_CONFIGURATION_SHOULD_THROTTLE_COMMIT_LONG_LONG);
+    }
+    private void methodShouldCommitThrottleStaticLong(CodeBuilder codeBuilder) {
+        methodShouldCommitStatic(codeBuilder, METHOD_EVENT_CONFIGURATION_SHOULD_THROTTLE_COMMIT_LONG);
+    }
+
+    private void methodShouldCommitStatic(CodeBuilder codeBuilder, MethodDesc method) {
         Label fail = codeBuilder.newLabel();
         if (guardEventConfiguration) {
             // if (eventConfiguration == null) goto fail;
@@ -302,8 +361,10 @@ final class EventInstrumentation {
         }
         // return eventConfiguration.shouldCommit(duration);
         getEventConfiguration(codeBuilder);
-        codeBuilder.lload(0);
-        codeBuilder.invokevirtual(TYPE_EVENT_CONFIGURATION, METHOD_EVENT_CONFIGURATION_SHOULD_COMMIT.name(), METHOD_EVENT_CONFIGURATION_SHOULD_COMMIT.descriptor());
+        for (int i = 0 ; i < method.descriptor().parameterCount(); i++) {
+            codeBuilder.lload(2 * i);
+        }
+        codeBuilder.invokevirtual(TYPE_EVENT_CONFIGURATION, method.name(), method.descriptor());
         codeBuilder.ireturn();
         // fail:
         codeBuilder.labelBinding(fail);
@@ -513,6 +574,28 @@ final class EventInstrumentation {
 
     private static boolean isMethod(MethodModel m, MethodDesc desc) {
         return desc.matches(m);
+    }
+
+    private void getDuration(CodeBuilder codeBuilder) {
+        codeBuilder.aload(0);
+        getfield(codeBuilder, eventClassDesc, ImplicitFields.FIELD_DURATION);
+        if (throttled) {
+            codeBuilder.loadConstant(MASK_NON_THROTTLE_BITS);
+            codeBuilder.land();
+        }
+    }
+
+    private void setDuration(CodeBuilder codeBuilder, Consumer<CodeBuilder> expression) {
+        codeBuilder.aload(0);
+        expression.accept(codeBuilder);
+        if (throttled) {
+            codeBuilder.aload(0);
+            getfield(codeBuilder, eventClassDesc, ImplicitFields.FIELD_DURATION);
+            codeBuilder.loadConstant(MASK_THROTTLE_BITS);
+            codeBuilder.land();
+            codeBuilder.lor();
+        }
+        putfield(codeBuilder, eventClassDesc, ImplicitFields.FIELD_DURATION);
     }
 
     private static void getEventWriter(CodeBuilder codeBuilder) {

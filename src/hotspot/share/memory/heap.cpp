@@ -189,14 +189,6 @@ static size_t align_to_page_size(size_t size) {
 }
 
 
-void CodeHeap::on_code_mapping(char* base, size_t size) {
-#ifdef LINUX
-  extern void linux_wrap_code(char* base, size_t size);
-  linux_wrap_code(base, size);
-#endif
-}
-
-
 bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_size) {
   assert(rs.size() >= committed_size, "reserved < committed");
   assert(is_aligned(committed_size, rs.page_size()), "must be page aligned");
@@ -213,7 +205,6 @@ bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_s
     return false;
   }
 
-  on_code_mapping(_memory.low(), _memory.committed_size());
   _number_of_committed_segments = size_to_segments(_memory.committed_size());
   _number_of_reserved_segments  = size_to_segments(_memory.reserved_size());
   assert(_number_of_reserved_segments >= _number_of_committed_segments, "just checking");
@@ -250,7 +241,6 @@ bool CodeHeap::expand_by(size_t size) {
     }
     char* base = _memory.low() + _memory.committed_size();
     if (!_memory.expand_by(dm)) return false;
-    on_code_mapping(base, dm);
     size_t i = _number_of_committed_segments;
     _number_of_committed_segments = size_to_segments(_memory.committed_size());
     assert(_number_of_reserved_segments == size_to_segments(_memory.reserved_size()), "number of reserved segments should not change");
