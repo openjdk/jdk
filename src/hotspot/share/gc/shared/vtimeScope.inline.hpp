@@ -30,9 +30,9 @@
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/os.hpp"
 
-inline VTimeScope::VTimeScope(VMThread* thread, bool operation_is_gc)
+inline VTimeScope::VTimeScope(VMThread* thread, bool is_gc_operation)
     : _start(0), _enabled(os::is_thread_cpu_time_supported()),
-      _gcLogging(operation_is_gc && log_is_enabled(Info, gc)),
+      _gcLogging(is_gc_operation && log_is_enabled(Info, gc)),
       _thread(thread) {
   if (_gcLogging && _enabled) {
     _start = os::thread_cpu_time(_thread);

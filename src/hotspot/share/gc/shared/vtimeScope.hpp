@@ -35,7 +35,7 @@ private:
   Thread*       _thread;
 
 public:
-  VTimeScope(VMThread* thread, bool operation_is_gc);
+  VTimeScope(VMThread* thread, bool is_gc_operation);
   ~VTimeScope();
 };
 
