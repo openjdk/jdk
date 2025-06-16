@@ -286,14 +286,23 @@ bool Peephole::lea_remove_redundant(Block* block, int block_index, PhaseCFG* cfg
   Node* lea_address = lea_derived_oop->in(AddPNode::Address);
   Node* decode_address = decode->in(1);
 
-  bool is_spill = lea_address != decode->in(1) &&
+  bool is_spill = lea_address != decode_address &&
                   lea_address->is_SpillCopy() &&
                   decode_address->is_SpillCopy();
 
+  // If this is a spill, move lea_address and decode_address one node further up to the
+  // grandparents of lea_derived_oop and decode respectively. This lets us look through
+  // the indirection of the spill.
+  MachNode* decode_spill;
+  if (is_spill) {
+    decode_spill = decode_address->as_Mach();
+    decode_address = decode_address->in(1);
+    lea_address = lea_address->in(1);
+  }
+
   // The leaP* and the decode must have the same parent. If we have a spill, they must have
   // the same grandparent.
-  if ((!is_spill && lea_address != decode_address) ||
-      (is_spill && lea_address->in(1) != decode_address->in(1))) {
+  if (lea_address != decode_address) {
     return false;
   }
 
@@ -314,8 +323,8 @@ bool Peephole::lea_remove_redundant(Block* block, int block_index, PhaseCFG* cfg
            other_lea->rule() == leaP8Narrow_rule ||
            other_lea->rule() == leaPCompressedOopOffset_rule) &&
            other_lea->in(AddPNode::Base) == decode &&
-          (other_lea->in(AddPNode::Address) == decode_address ||
-          (is_spill && other_lea->in(AddPNode::Address)->in(1) == decode_address->in(1)))) {
+          (is_spill ? other_lea->in(AddPNode::Address)->in(1)
+                    : other_lea->in(AddPNode::Address)) == decode_address) {
         continue;
       }
     }
@@ -339,19 +348,16 @@ bool Peephole::lea_remove_redundant(Block* block, int block_index, PhaseCFG* cfg
   for (DUIterator_Fast imax, i = decode->fast_outs(imax); i < imax; i++) {
     Node* dependant_lea = decode->fast_out(i);
     if (dependant_lea->is_Mach() && dependant_lea->as_Mach()->ideal_Opcode() == Op_AddP) {
-      dependant_lea->set_req(
-        AddPNode::Base,
-        is_spill ? dependant_lea->in(AddPNode::Address)->in(1) : dependant_lea->in(AddPNode::Address)
-      );
+
+      dependant_lea->set_req(AddPNode::Base, decode_address);
       // This deleted something in the out array, hence adjust i, imax.
       --i;
       --imax;
     }
   }
 
-  // Remove spill for the decode if it does not have any other uses.
-  if (is_spill && decode_address->is_Mach() && decode_address->outcnt() == 1 && block->contains(decode_address)) {
-    MachNode* decode_spill = decode_address->as_Mach();
+  // Remove spill for the decode if the spill node does not have any other uses.
+  if (is_spill && decode_spill->outcnt() == 1 && block->contains(decode_spill)) {
     decode_spill->set_removed();
     block->find_remove(decode_spill);
     cfg_->map_node_to_block(decode_spill, nullptr);
