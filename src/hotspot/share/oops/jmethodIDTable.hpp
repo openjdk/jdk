@@ -35,14 +35,14 @@ class JmethodIDTable : public AllStatic {
  public:
   static void initialize();
 
-  // Given a Method return a jmethodID
+  // Given a Method return a jmethodID.
   static jmethodID make_jmethod_id(Method* m);
 
-  // Given a jmethodID, return a Method
+  // Given a jmethodID, return a Method.
   static Method* resolve_jmethod_id(jmethodID mid);
 
   // Class unloading support, remove the associations from the tables.  Stale jmethodID will
-  // not be found and return null
+  // not be found and return null.
   static void remove(jmethodID mid);
 
   // RedefineClasses support

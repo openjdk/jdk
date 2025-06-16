@@ -587,9 +587,9 @@ void ClassLoaderData::add_jmethod_id(jmethodID mid) {
   _jmethod_ids->push(mid);
 }
 
-// Method::clear_jmethod_ids removes jmethodID entries from the table which
+// Method::remove_jmethod_ids removes jmethodID entries from the table which
 // releases memory.
-// Because native code (e.g. JVMTI agent) holding jmethod_ids may access them
+// Because native code (e.g., JVMTI agent) holding jmethod_ids may access them
 // after the associated classes and class loader are unloaded, subsequent lookups
 // for these ids will return null since they are no longer found in the table.
 // The Java Native Interface Specification says "method ID

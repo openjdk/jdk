@@ -2062,7 +2062,7 @@ void BreakpointInfo::clear(Method* method) {
 // jmethodID handling
 // jmethodIDs are 64-bit integers that will never run out and are mapped in a table
 // to their Method and vice versa.  If JNI code has access to stale jmethodID, this
-// wastes no memory but the Method* returned is null
+// wastes no memory but the Method* returned is null.
 
 // Add a method id to the jmethod_ids
 jmethodID Method::make_jmethod_id(ClassLoaderData* cld, Method* m) {
@@ -2073,7 +2073,7 @@ jmethodID Method::make_jmethod_id(ClassLoaderData* cld, Method* m) {
   jmethodID jmid = JmethodIDTable::make_jmethod_id(m);
   assert(jmid != nullptr, "must be created");
 
-  // Add to growable array in CLD
+  // Add to growable array in CLD.
   cld->add_jmethod_id(jmid);
   return jmid;
 }

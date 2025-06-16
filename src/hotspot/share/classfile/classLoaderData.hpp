@@ -316,7 +316,7 @@ private:
 
   void add_jmethod_id(jmethodID id);
   void remove_jmethod_ids();
-  GrowableArray<jmethodID>* jmethod_ids() { return _jmethod_ids; }
+  GrowableArray<jmethodID>* jmethod_ids() const { return _jmethod_ids; }
 
   void print() const;
   void print_on(outputStream* out) const PRODUCT_RETURN;

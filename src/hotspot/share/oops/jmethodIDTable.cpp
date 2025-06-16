@@ -25,15 +25,15 @@
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/method.hpp"
 #include "oops/jmethodIDTable.hpp"
+#include "oops/method.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "utilities/macros.hpp"
 
-// Save (jmethod, Method*) in a hashtable to lookup Method
-// The CHT is for performance because it is has lock free lookup.
+// Save (jmethod, Method*) in a hashtable to lookup Method.
+// The CHT is for performance because it has lock free lookup.
 
 static uint64_t _jmethodID_counter = 0;
 
@@ -70,7 +70,7 @@ void JmethodIDTable::initialize() {
   const size_t start_size = 10;
   // 2^24 is max size
   const size_t end_size = 24;
-  // If a chain gets to 32 something might be wrong
+  // If a chain gets to 32 something might be wrong.
   const size_t grow_hint = 32;
 
   _jmethod_id_table  = new MethodIdTable(start_size, end_size, grow_hint);
@@ -106,7 +106,7 @@ static JmethodEntry* get_jmethod_entry(jmethodID mid) {
   };
   bool needs_rehashing = false;
   _jmethod_id_table->get(current, lookup, get, &needs_rehashing);
-  assert (!needs_rehashing, "should never need rehashing");
+  assert(!needs_rehashing, "should never need rehashing");
   return result;
 }
 
@@ -126,22 +126,23 @@ static bool needs_resize(Thread* current) {
          !_jmethod_id_table->is_max_size_reached());
 }
 
-// Add a method id to the jmethod_ids
+// Add a method id to the jmethod_ids.
 jmethodID JmethodIDTable::make_jmethod_id(Method* m) {
-  bool grow_hint, clean_hint, created;
+  bool grow_hint, clean_hint;
 
   assert_locked_or_safepoint(JmethodIdCreation_lock);
-  // Update jmethodID global counter
+  // Update jmethodID global counter.
   _jmethodID_counter++;
+  guarantee(_jmethodID_counter != 0, "must never go back to zero");
 
   JmethodEntry new_entry(_jmethodID_counter, m);
   Thread* current = Thread::current();
   JmethodIDLookup lookup(_jmethodID_counter);
-  created = _jmethod_id_table->insert(current, lookup, new_entry, &grow_hint, &clean_hint);
+  bool created = _jmethod_id_table->insert(current, lookup, new_entry, &grow_hint, &clean_hint);
   assert(created, "must be");
   log_debug(jmethod)("Inserted jmethod id " UINT64_FORMAT_X, _jmethodID_counter);
 
-  // Resize table if it needs to grow.  The _jmethod_id_table has a good distribution
+  // Resize table if it needs to grow.  The _jmethod_id_table has a good distribution.
   if (needs_resize(current)) {
     _jmethod_id_table->grow(current);
     log_info(jmethod)("Growing table to %d for " UINT64_FORMAT " entries", table_size(current), _jmethodID_counter);
@@ -155,18 +156,18 @@ void JmethodIDTable::remove(jmethodID jmid) {
   Thread* current = Thread::current();
   JmethodEntry* result;
   auto get = [&] (JmethodEntry* value) {
-    // function called if value is found so is never null
+    // The function that is called if value is found, so is never null.
     result = value;
   };
   bool removed = _jmethod_id_table->remove(current, lookup, get);
-  assert(removed, "should be");
+  assert(removed, "must be");
   log_debug(jmethod)("Removed jmethod id " UINT64_FORMAT_X, (uint64_t)jmid);
 }
 
 void JmethodIDTable::change_method_associated_with_jmethod_id(jmethodID jmid, Method* new_method) {
   assert_locked_or_safepoint(JmethodIdCreation_lock);
   JmethodEntry* result = get_jmethod_entry(jmid);
-  // change to table to point to the new method
+  // Change table entry to point to the new method.
   log_debug(jmethod)("Changed jmethod id " UINT64_FORMAT_X " from " PTR_FORMAT " to " PTR_FORMAT, (uint64_t)jmid,
                      p2i(result->_method), p2i(new_method));
   result->_method = new_method;
@@ -177,7 +178,7 @@ void JmethodIDTable::clear_jmethod_id(jmethodID jmid, Method* obsolete_method) {
   JmethodEntry* result = get_jmethod_entry(jmid);
   // We need to make sure that jmethodID actually resolves to this method
   // - multiple redefined versions may share jmethodID slots and if a method
-  //   has already been rewired to a newer version we could be removing reference
+  //   has already been rewired to a newer version we could be clearing reference
   //   to a still existing method instance.
   if (result->_method == obsolete_method) {
     result->_method = nullptr;

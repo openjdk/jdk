@@ -2770,7 +2770,7 @@ JvmtiEnv::GetClassMethods(oop k_mirror, jint* method_count_ptr, jmethodID** meth
   int index;
   int skipped = 0;  // skip overpass methods
 
-  // Make jmethodIDs for all non-overpass methods
+  // Make jmethodIDs for all non-overpass methods.
   ik->make_methods_jmethod_ids();
 
   for (index = 0; index < result_length; index++) {
@@ -2786,7 +2786,7 @@ JvmtiEnv::GetClassMethods(oop k_mirror, jint* method_count_ptr, jmethodID** meth
       continue;
     }
     jmethodID id = m->find_jmethod_id_or_null();
-    assert (id != nullptr, "should be created above");
+    assert(id != nullptr, "should be created above");
     result_list[result_index] = id;
   }
 

@@ -2391,16 +2391,16 @@ jmethodID InstanceKlass::update_jmethod_id(jmethodID* jmeths, Method* method, in
   return new_id;
 }
 
-// Lookup or create a jmethodID.
+// Allocate the jmethodID cache.
 static jmethodID* create_jmethod_id_cache(size_t size) {
-  jmethodID* jmeths = NEW_C_HEAP_ARRAY(jmethodID, size+1, mtClass);
-  memset(jmeths, 0, (size+1)*sizeof(jmethodID));
+  jmethodID* jmeths = NEW_C_HEAP_ARRAY(jmethodID, size + 1, mtClass);
+  memset(jmeths, 0, (size + 1) * sizeof(jmethodID));
   // cache size is stored in element[0], other elements offset by one
   jmeths[0] = (jmethodID)size;
   return jmeths;
 }
 
-
+// Lookup or create a jmethodID
 jmethodID InstanceKlass::get_jmethod_id(Method* method) {
   int idnum = method->method_idnum();
   jmethodID* jmeths = methods_jmethod_ids_acquire();
@@ -2457,9 +2457,9 @@ void InstanceKlass::update_methods_jmethod_cache() {
   if (cache != nullptr) {
     size_t size = idnum_allocated_count();
     size_t old_size = (size_t)cache[0];
-    if (old_size < size+1) {
-      // allocate a larger one and copy entries to the new one.
-      // They've already been updated to point to new methods where applicable (ie. not obsolete)
+    if (old_size < size + 1) {
+      // Allocate a larger one and copy entries to the new one.
+      // They've already been updated to point to new methods where applicable (i.e., not obsolete).
       jmethodID* new_cache = create_jmethod_id_cache(size);
 
       for (int i = 1; i <= (int)old_size; i++) {
@@ -2488,11 +2488,11 @@ void InstanceKlass::make_methods_jmethod_ids() {
     Method* m = methods()->at(index);
     int idnum = m->method_idnum();
     assert(!m->is_old(), "should not have old methods or I'm confused");
-    jmethodID id = Atomic::load_acquire(&jmeths[idnum+1]);
+    jmethodID id = Atomic::load_acquire(&jmeths[idnum + 1]);
     if (!m->is_overpass() &&  // skip overpasses
         id == nullptr) {
       id = Method::make_jmethod_id(class_loader_data(), m);
-      Atomic::release_store(&jmeths[idnum+1], id);
+      Atomic::release_store(&jmeths[idnum + 1], id);
     }
   }
 }
