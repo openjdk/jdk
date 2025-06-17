@@ -179,8 +179,8 @@ e.g. "2022-02-12T12:30:00-05:00".
     `--hash-modules`.
 
 `--target-platform` *platform*
-:   Specifies the target platform when creating a JMOD file intended
-    for a specific operating system and architecture. The value should follow
+:   Specifies the target platform of a JMOD file intended for a specific
+    operating system and architecture. The value should follow
     the format `<os>-<arch>`, where `<os>` is the operating system
     and `<arch>` is the hardware architecture. Example values include
     `linux-x64`, `windows-x64`, and `macos-aarch64`.
@@ -235,14 +235,14 @@ jmod create --class-path build/foo/classes --date 2022-03-15T00:00:00Z
    jmods/foo2.jmod
 ```
 
-Create a platform-specific JMOD file bundling compiled classes, configuration files,
-native commands and libraries, header files, man pages, and metadata including the
+Create a JMOD file bundling compiled classes, native commands, configuration files,
+header files, native libraries, man pages, and metadata including the
 main class, module version, and target platform details:
 
 ```
 jmod create --class-path mods/com.greetings --cmds commands
   --config configfiles --header-files src/h --libs lib
-  --main-class com.greetings.Main --man-pages man --module-version 1.0
+  --man-pages man --main-class com.greetings.Main --module-version 1.0
   --target-platform "macos-aarch64" greetingsmod
 ```
 
