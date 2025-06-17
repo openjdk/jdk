@@ -718,16 +718,17 @@ HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
   // Fix NUMA node association for the duration of this allocation
   const uint node_index = _allocator->current_node_index();
 
-  HeapWord* result = nullptr;
   if (!is_humongous(word_size)) {
-    result = _allocator->attempt_allocation_locked(node_index, word_size);
+    return _allocator->attempt_allocation_locked(node_index, word_size);
   } else {
-    result = humongous_obj_allocate(word_size);
+    HeapWord* result = humongous_obj_allocate(word_size);
     if (result != nullptr && policy()->need_to_start_conc_mark("STW humongous allocation")) {
       collector_state()->set_initiate_conc_mark_if_possible(true);
     }
+    return result;
   }
-  return result;
+
+  ShouldNotReachHere();
 }
 
 class PostCompactionPrinterClosure: public G1HeapRegionClosure {
@@ -1010,14 +1011,13 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
                             word_size * HeapWordSize);
 
 
-  HeapWord* result = nullptr;
   if (expand(expand_bytes, _workers)) {
     _hrm.verify_optional();
     _verifier->verify_region_sets_optional();
-    result = attempt_allocation_at_safepoint(word_size,
-                                             false /* expect_null_mutator_alloc_region */);
+    return attempt_allocation_at_safepoint(word_size,
+                                           false /* expect_null_mutator_alloc_region */);
   }
-  return result;
+  return nullptr;
 }
 
 bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_workers) {
@@ -1027,8 +1027,8 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
   uint num_regions_to_expand = (uint)(aligned_expand_bytes / G1HeapRegion::GrainBytes);
   assert(num_regions_to_expand > 0, "Must expand by at least one region");
 
-  log_debug(gc, ergo, heap)("Heap resize. Requested expansion amount: %zuM aligned expansion amount: %zuM (%u regions)",
-                            expand_bytes / M, aligned_expand_bytes / M, num_regions_to_expand);
+  log_debug(gc, ergo, heap)("Heap resize. Requested expansion amount: %zuB aligned expansion amount: %zuB (%u regions)",
+                            expand_bytes, aligned_expand_bytes, num_regions_to_expand);
 
   if (num_inactive_regions() == 0) {
     log_debug(gc, ergo, heap)("Heap resize. Did not expand the heap (heap already fully expanded)");
@@ -1063,16 +1063,16 @@ bool G1CollectedHeap::expand_single_region(uint node_index) {
 void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
   assert(shrink_bytes > 0, "must be");
   assert(is_aligned(shrink_bytes, G1HeapRegion::GrainBytes),
-         "Shrink request for %zuM not aligned to heap region size %zuM",
-         shrink_bytes / M, G1HeapRegion::GrainBytes / M);
+         "Shrink request for %zuB not aligned to heap region size %zuB",
+         shrink_bytes, G1HeapRegion::GrainBytes);
 
   uint num_regions_to_remove = (uint)(shrink_bytes / G1HeapRegion::GrainBytes);
 
   uint num_regions_removed = _hrm.shrink_by(num_regions_to_remove);
   size_t shrunk_bytes = num_regions_removed * G1HeapRegion::GrainBytes;
 
-  log_debug(gc, ergo, heap)("Heap resize. Requested shrinking amount: %zuM actual shrinking amount: %zuM (%u regions)",
-                            shrink_bytes / M, shrunk_bytes / M, num_regions_removed);
+  log_debug(gc, ergo, heap)("Heap resize. Requested shrinking amount: %zuB actual shrinking amount: %zuB (%u regions)",
+                            shrink_bytes, shrunk_bytes, num_regions_removed);
   if (num_regions_removed > 0) {
     policy()->record_new_heap_size(num_committed_regions());
   } else {

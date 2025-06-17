@@ -124,14 +124,14 @@ static void log_resize(double short_term_pause_time_ratio,
   log_debug(gc, ergo, heap)("Heap resize: "
                             "short term pause time ratio %1.2f%% long term pause time ratio %1.2f%% "
                             "lower threshold %1.2f%% upper threshold %1.2f%% pause time ratio %1.2f%% "
-                            "at limit %s resize by %zuM expand %s",
+                            "at limit %s resize by %zuB expand %s",
                             short_term_pause_time_ratio * 100.0,
                             long_term_pause_time_ratio * 100.0,
                             lower_threshold * 100.0,
                             upper_threshold * 100.0,
                             pause_time_ratio * 100.0,
                             BOOL_TO_STR(at_limit),
-                            resize_bytes / M,
+                            resize_bytes,
                             BOOL_TO_STR(expand));
 }
 
@@ -414,9 +414,9 @@ size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand, size_t al
     size_t expand_bytes = minimum_desired_capacity - capacity_after_gc;
 
     log_debug(gc, ergo, heap)("Heap resize. Attempt heap expansion (capacity lower than min desired capacity). "
-                              "Capacity: %zuMB occupancy: %zuMB live: %zuMB "
-                              "min_desired_capacity: %zuMB (%zu %%)",
-                              capacity_after_gc / M, used_after_gc / M, _g1h->used() / M, minimum_desired_capacity / M, MinHeapFreeRatio);
+                              "Capacity: %zuB occupancy: %zuB live: %zuB "
+                              "min_desired_capacity: %zuB (%zu %%)",
+                              capacity_after_gc, used_after_gc, _g1h->used(), minimum_desired_capacity, MinHeapFreeRatio);
 
     expand = true;
     return expand_bytes;
@@ -426,9 +426,9 @@ size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand, size_t al
     size_t shrink_bytes = capacity_after_gc - maximum_desired_capacity;
 
     log_debug(gc, ergo, heap)("Heap resize. Attempt heap shrinking (capacity higher than max desired capacity). "
-                              "Capacity: %zuMB occupancy: %zuMB live: %zuMB "
-                              "maximum_desired_capacity: %zuMB (%zu %%)",
-                              capacity_after_gc / M, used_after_gc / M, _g1h->used() / M, maximum_desired_capacity / M, MaxHeapFreeRatio);
+                              "Capacity: %zuB occupancy: %zuB live: %zuB "
+                              "maximum_desired_capacity: %zuB (%zu %%)",
+                              capacity_after_gc, used_after_gc, _g1h->used(), maximum_desired_capacity, MaxHeapFreeRatio);
 
     expand = false;
     return shrink_bytes;
