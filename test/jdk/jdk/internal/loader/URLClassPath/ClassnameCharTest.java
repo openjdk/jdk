@@ -98,7 +98,7 @@ public class ClassnameCharTest {
             // Otherwise, try loading the class from the code base URL
             //      final String path = name.replace('.', '/').concat(".class").concat(cookie);
             String encodedName = ParseUtil.encodePath(name.replace('.', '/'), false);
-            final String path = (new StringBuffer(encodedName)).append(".class").append(cookie).toString();
+            final String path = encodedName + ".class" + cookie;
             Exception exc = null;
             // try block used for checked exceptions as well as ClassFormatError
             // from defineClass call
