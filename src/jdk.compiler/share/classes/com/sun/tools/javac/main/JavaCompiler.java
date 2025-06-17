@@ -597,6 +597,13 @@ public class JavaCompiler {
         return log.nerrors;
     }
 
+    /**
+     * Should warnings in the given lint category be treated as errors due to a {@code -Werror} flag?
+     */
+    public boolean isWerror(LintCategory lc) {
+        return werrorAny || werrorLint.contains(lc);
+    }
+
     protected final <T> Queue<T> stopIfError(CompileState cs, Queue<T> queue) {
         return shouldStop(cs) ? new ListBuffer<T>() : queue;
     }

@@ -213,7 +213,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         }
         fatalErrors = options.isSet("fatalEnterError");
         showResolveErrors = options.isSet("showResolveErrors");
-        werror = options.isSet(Option.WERROR, PROCESSING, false);
+        werror = compiler.isWerror(PROCESSING);
         fileManager = context.get(JavaFileManager.class);
         platformAnnotations = initPlatformAnnotations();
 
