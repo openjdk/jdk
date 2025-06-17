@@ -2392,9 +2392,9 @@ void G1CollectedHeap::expand_heap_after_young_collection(){
   if (expand_bytes > 0) {
     // No need for an ergo logging here,
     // expansion_amount() does this when it returns a value > 0.
-    Ticks expand_start_instant = Ticks::now();
+    Ticks expand_start = Ticks::now();
     if (expand(expand_bytes, _workers)) {
-      double expand_ms = (Ticks::now() - expand_start_instant).seconds() * MILLIUNITS;
+      double expand_ms = (Ticks::now() - expand_start).seconds() * MILLIUNITS;
       phase_times()->record_expand_heap_time(expand_ms);
     }
   }
