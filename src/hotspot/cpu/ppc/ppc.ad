@@ -1715,9 +1715,9 @@ const Pipeline * MachEpilogNode::pipeline() const {
 
 // =============================================================================
 
-// Figure out which register class each belongs in: rc_int, rc_float, rc_vs or
+// Figure out which register class each belongs in: rc_int, rc_float, rc_vec or
 // rc_stack.
-enum RC { rc_bad, rc_int, rc_float, rc_vs, rc_stack };
+enum RC { rc_bad, rc_int, rc_float, rc_vec, rc_stack };
 
 static enum RC rc_class(OptoReg::Name reg) {
   // Return the register class for the given register. The given register
@@ -1736,7 +1736,7 @@ static enum RC rc_class(OptoReg::Name reg) {
 
   // We have 64 vector-scalar registers, starting at index 128.
   STATIC_ASSERT((int)ConcreteRegisterImpl::max_vr == (int)MachRegisterNumbers::CR0_num);
-  if (reg < ConcreteRegisterImpl::max_vr) return rc_vs;
+  if (reg < ConcreteRegisterImpl::max_vr) return rc_vec;
 
   // Condition and special purpose registers are not allocated. We only accept stack from here.
   assert(OptoReg::is_stack(reg), "what else is it?");
@@ -1813,13 +1813,13 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
       size += 16;
     }
     // VectorRegister->Memory Spill.
-    else if (src_lo_rc == rc_vs && dst_lo_rc == rc_stack) {
-      VectorRegister Rsrc = as_VectorRegister(Matcher::_regEncode[src_lo]);
+    else if (src_lo_rc == rc_vec && dst_lo_rc == rc_stack) {
+      VectorSRegister Rsrc = as_VectorRegister(Matcher::_regEncode[src_lo]).to_vsr();
       int dst_offset = ra_->reg2offset(dst_lo);
       if (PowerArchitecturePPC64 >= 9) {
         if (is_aligned(dst_offset, 16)) {
           if (masm) {
-            __ stxv(Rsrc.to_vsr(), dst_offset, R1_SP); // matches storeV16_Power9
+            __ stxv(Rsrc, dst_offset, R1_SP); // matches storeV16_Power9
           }
           size += 4;
         } else {
@@ -1827,49 +1827,49 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
           // observed with VectorRearrangeTest.java on Power9).
           if (masm) {
             __ addi(R0, R1_SP, dst_offset);
-            __ stxvx(Rsrc.to_vsr(), R0); // matches storeV16_Power9 (regarding element ordering)
+            __ stxvx(Rsrc, R0); // matches storeV16_Power9 (regarding element ordering)
           }
           size += 8;
         }
       } else {
         if (masm) {
           __ addi(R0, R1_SP, dst_offset);
-          __ stxvd2x(Rsrc.to_vsr(), R0); // matches storeV16_Power8
+          __ stxvd2x(Rsrc, R0); // matches storeV16_Power8
         }
         size += 8;
       }
     }
     // Memory->VectorRegister Spill.
-    else if (src_lo_rc == rc_stack && dst_lo_rc == rc_vs) {
-      VectorRegister Rdst = as_VectorRegister(Matcher::_regEncode[dst_lo]);
+    else if (src_lo_rc == rc_stack && dst_lo_rc == rc_vec) {
+      VectorSRegister Rdst = as_VectorRegister(Matcher::_regEncode[dst_lo]).to_vsr();
       int src_offset = ra_->reg2offset(src_lo);
       if (PowerArchitecturePPC64 >= 9) {
         if (is_aligned(src_offset, 16)) {
           if (masm) {
-            __ lxv(Rdst.to_vsr(), src_offset, R1_SP);
+            __ lxv(Rdst, src_offset, R1_SP);
           }
           size += 4;
         } else {
           if (masm) {
             __ addi(R0, R1_SP, src_offset);
-            __ lxvx(Rdst.to_vsr(), R0);
+            __ lxvx(Rdst, R0);
           }
           size += 8;
         }
       } else {
         if (masm) {
           __ addi(R0, R1_SP, src_offset);
-          __ lxvd2x(Rdst.to_vsr(), R0);
+          __ lxvd2x(Rdst, R0);
         }
         size += 8;
       }
     }
     // VectorRegister->VectorRegister.
-    else if (src_lo_rc == rc_vs && dst_lo_rc == rc_vs) {
-      VectorRegister Rsrc = as_VectorRegister(Matcher::_regEncode[src_lo]);
-      VectorRegister Rdst = as_VectorRegister(Matcher::_regEncode[dst_lo]);
+    else if (src_lo_rc == rc_vec && dst_lo_rc == rc_vec) {
+      VectorSRegister Rsrc = as_VectorRegister(Matcher::_regEncode[src_lo]).to_vsr();
+      VectorSRegister Rdst = as_VectorRegister(Matcher::_regEncode[dst_lo]).to_vsr();
       if (masm) {
-        __ xxlor(Rdst.to_vsr(), Rsrc.to_vsr(), Rsrc.to_vsr());
+        __ xxlor(Rdst, Rsrc, Rsrc);
       }
       size += 4;
     }
