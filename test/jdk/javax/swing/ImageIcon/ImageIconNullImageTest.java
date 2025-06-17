@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8159055
- * @summary Verifies ImageIcon.setImage handles null parameter
+ * @summary Verifies ImageIcon setImage and constructor handles null parameter
  * @run main ImageIconNullImageTest
  */
 
