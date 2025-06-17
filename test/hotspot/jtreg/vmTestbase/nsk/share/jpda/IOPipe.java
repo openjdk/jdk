@@ -29,7 +29,7 @@ import nsk.share.jdi.Binder;
 /**
  * This class implements communicational channel between
  * debugger and debugee used for synchronization and data exchange.
- * This channel is based on TCP/IP socketss.
+ * This channel is based on TCP/IP sockets.
  *
  * @see jpda.DebugeeArgumentHandler
  * @see jpda.DebugeeProcess
