@@ -1036,6 +1036,7 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
   }
 
 
+
   uint expanded_by = _hrm.expand_by(num_regions_to_expand, pretouch_workers);
 
   assert(expanded_by > 0, "must have failed during commit.");
