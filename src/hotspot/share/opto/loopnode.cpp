@@ -2873,7 +2873,7 @@ BaseCountedLoopNode* BaseCountedLoopNode::make(Node* entry, Node* backedge, Basi
 void OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(PhaseIterGVN* igvn,
                                                                         PhaseIdealLoop* iloop) const {
   CountedLoopNode* inner_cl = inner_counted_loop();
-  Node* cle_out = inner_loop_exit();
+  IfFalseNode* cle_out = inner_loop_exit();
 
   if (cle_out->outcnt() > 1) {
     // Look for chains of stores that were sunk
