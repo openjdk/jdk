@@ -178,17 +178,19 @@ public class TestAliasingFuzzer {
         testTemplateTokens.add(generateIndexForm());
 
         // Array tests
-        for (Aliasing aliasing : Aliasing.values()) {
-            for (AccessScenario accessScenario : AccessScenario.values()) {
-                testTemplateTokens.addAll(allTypes.stream().map(type ->
-                    TestGenerator.makeArray(type, aliasing, accessScenario).generate()
-                ).toList());
-            }
+        // There are too many combinations, so we sample some random cases.
+        for (int i = 0; i < 20; i++) {
+            Aliasing aliasing = sample(Arrays.asList(Aliasing.values()));
+            AccessScenario accessScenario = sample(Arrays.asList(AccessScenario.values()));
+            MyType type = sample(allTypes);
+            testTemplateTokens.add(
+                TestGenerator.makeArray(type, aliasing, accessScenario).generate()
+            );
         }
 
         // MemorySegment with getAtIndex / setAtIndex
         // There are too many combinations, so we sample some random cases.
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 40; i++) {
             Aliasing aliasing = sample(Arrays.asList(Aliasing.values()));
             AccessScenario accessScenario = sample(Arrays.asList(AccessScenario.values()));
             MyType containerElementType = sample(allTypes);
@@ -241,6 +243,9 @@ public class TestAliasingFuzzer {
     //   index = con + iv * ivScale + invar0 * invar0Scale + invarRest
     //                                                       [err]
     //
+    // The index has a size >= 1, so that the index refers to a region:
+    //   [index, index + size]
+    //
     // The idea is that invarRest is always close to zero, with some small range [-err .. err].
     // The invar variables for invarRest must be in the range [-1, 1, 1], so that we can
     // estimate the error range from the invarRestScales.
@@ -270,7 +275,8 @@ public class TestAliasingFuzzer {
     //     range.hi >= con + iv.hi * ivScale + invar0 * invar0Scale + invarRest + size
     //              >= con + iv.hi * ivScale + invar0 * invar0Scale + err       + size
     //   It follows:
-    //     iv.hi * ivScale <= range.hi - con - invar0 * invar0Scale - err
+    //     iv.hi * ivScale <= range.hi - con - invar0 * invar0Scale - err - size
+    //   This allows us to pick a iv.hi.
     //
     public static record IndexForm(int con, int ivScale, int invar0Scale, int[] invarRestScales, int size) {
         public static IndexForm random(int numInvarRest, int size) {
@@ -287,7 +293,7 @@ public class TestAliasingFuzzer {
 
         public static int randomScale(int size) {
             int scale = switch(RANDOM.nextInt(10)) {
-                case 0 -> RANDOM.nextInt(1, 5 * size); // any strided access
+                case 0 -> RANDOM.nextInt(1, 4 * size + 1); // any strided access
                 default -> size; // in most cases, we do not want it to be strided
             };
             return RANDOM.nextBoolean() ? scale : -scale;
@@ -298,7 +304,7 @@ public class TestAliasingFuzzer {
                    Arrays.stream(invarRestScales)
                          .mapToObj(String::valueOf)
                          .collect(Collectors.joining(", ")) +
-                   "})";
+                   "}, " + size() + ")";
         }
 
         public TemplateToken index(String invar0, String[] invarRest) {
@@ -337,7 +343,7 @@ public class TestAliasingFuzzer {
             """
             private static final Random RANDOM = Utils.getRandomInstance();
 
-            public static record IndexForm(int con, int ivScale, int invar0Scale, int[] invarRestScales) {
+            public static record IndexForm(int con, int ivScale, int invar0Scale, int[] invarRestScales, int size) {
                 public IndexForm {
                     if (ivScale == 0 || invar0Scale == 0) {
                         throw new RuntimeException("Bad scales: " + ivScale + " " + invar0Scale);
@@ -379,22 +385,21 @@ public class TestAliasingFuzzer {
                         return invar0;
                     } else {
                         // index(iv) is largest for iv = ivLo, so we must satisfy:
-                        //   range.hi > con + iv.lo * ivScale + invar0 * invar0Scale + invarRest
-                        //            > con + iv.lo * ivScale + invar0 * invar0Scale + err
+                        //   range.hi >= con + iv.lo * ivScale + invar0 * invar0Scale + invarRest + size
+                        //            >= con + iv.lo * ivScale + invar0 * invar0Scale + err       + size
                         // It follows:
-                        //   invar0 * invar0Scale <  range.hi - con - iv.lo * ivScale - err
-                        //   invar0 * invar0Scale <= range.hi - con - iv.lo * ivScale - err - 1
-                        int rhs = range.hi() - con - ivLo * ivScale - err() - 1;
+                        //   invar0 * invar0Scale <= range.hi - con - iv.lo * ivScale - err - size
+                        int rhs = range.hi() - con - ivLo * ivScale - err() - size();
                         int invar0 = (invar0Scale > 0)
                         ?
-                            // invar0 * invar0Scale <=  range.hi - con - iv.lo * ivScale - err - 1
-                            // invar0               <= (range.hi - con - iv.lo * ivScale - err - 1) / invar0Scale
+                            // invar0 * invar0Scale <= rhs
+                            // invar0               <= rhs / invar0Scale
                             Math.floorDiv(rhs, invar0Scale) // round down division
                         :
-                            // invar0 * invar0Scale <=  range.hi - con - iv.lo * ivScale - err - 1
-                            // invar0               >= (range.hi - con - iv.lo * ivScale - err - 1) / invar0Scale
+                            // invar0 * invar0Scale <= rhs
+                            // invar0               >= rhs / invar0Scale
                             Math.floorDiv(rhs + invar0Scale + 1, invar0Scale); // round up division
-                        if (range.hi() <= con + ivLo * ivScale + invar0 * invar0Scale + err()) {
+                        if (range.hi() < con + ivLo * ivScale + invar0 * invar0Scale + err() + size()) {
                             throw new RuntimeException("sanity check failed (2)");
                         }
                         return invar0;
@@ -405,15 +410,14 @@ public class TestAliasingFuzzer {
                 public int ivHiForInvar0(Range range, int invar0) {
                     if (ivScale > 0) {
                         // index(iv) is largest for iv = ivHi, so we must satisfy:
-                        //   range.hi > con + iv.hi * ivScale + invar0 * invar0Scale + invarRest
-                        //            > con + iv.hi * ivScale + invar0 * invar0Scale + err
+                        //   range.hi >= con + iv.hi * ivScale + invar0 * invar0Scale + invarRest + size
+                        //            >= con + iv.hi * ivScale + invar0 * invar0Scale + err       + size
                         // It follows:
-                        //   iv.hi * ivScale <   range.hi - con - invar0 * invar0Scale - err
-                        //   iv.hi * ivScale <=  range.hi - con - invar0 * invar0Scale - err - 1
-                        //   iv.hi           <= (range.hi - con - invar0 * invar0Scale - err - 1) / ivScale
-                        int rhs = range.hi() - con - invar0 * invar0Scale - err() - 1;
+                        //   iv.hi * ivScale <=  range.hi - con - invar0 * invar0Scale - err - size
+                        //   iv.hi           <= (range.hi - con - invar0 * invar0Scale - err - size) / ivScale
+                        int rhs = range.hi() - con - invar0 * invar0Scale - err() - size();
                         int ivHi = Math.floorDiv(rhs, ivScale); // round down division
-                        if (range.hi() <= con + ivHi * ivScale + invar0 * invar0Scale + err()) {
+                        if (range.hi() < con + ivHi * ivScale + invar0 * invar0Scale + err() + size()) {
                             throw new RuntimeException("sanity check failed (3)");
                         }
                         return ivHi;
@@ -730,8 +734,15 @@ public class TestAliasingFuzzer {
         }
 
         private TemplateToken generateRanges() {
-            // TODO: handle MemorySegment case, index vs byte addressing?
-            int size = containerByteSize / accessType[0].byteSize();
+            int size = switch (containerKind) {
+                case ContainerKind.ARRAY,
+                     ContainerKind.MEMORY_SEGMENT_AT_INDEX ->
+                    // Access with element index
+                    containerByteSize / accessType[0].byteSize();
+                case ContainerKind.MEMORY_SEGMENT_LONG_ADR ->
+                    // Access with byte offset
+                    containerByteSize;
+            };
 
             if (accessIndexForm.length != 2) { throw new RuntimeException("not yet implemented"); }
 
