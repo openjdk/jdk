@@ -32,7 +32,7 @@ import java.awt.dnd.DnDConstants;
  *
  * @since 1.5
  */
-class XDnDConstants {
+final class XDnDConstants {
     static final XAtom XA_XdndActionCopy = XAtom.get("XdndActionCopy");
     static final XAtom XA_XdndActionMove = XAtom.get("XdndActionMove");
     static final XAtom XA_XdndActionLink = XAtom.get("XdndActionLink");

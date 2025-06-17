@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,27 +27,20 @@
 
 /* @test
  * @bug 7163874 8133015
+ * @summary InetAddress.isReachable is returning false for InetAdress 0.0.0.0 and ::0
+ * @requires os.family != "windows"
  * @library /test/lib
- * @summary InetAddress.isReachable is returning false
- *          for InetAdress 0.0.0.0 and ::0
  * @run main PingThis
  * @run main/othervm -Djava.net.preferIPv4Stack=true PingThis
  */
 
-import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import jdk.test.lib.net.IPSupport;
 
 public class PingThis {
     public static void main(String args[]) throws Exception {
-        if (System.getProperty("os.name").startsWith("Windows")) {
-            return;
-        }
         IPSupport.throwSkippedExceptionIfNonOperational();
 
         List<String> addrs = new ArrayList<String>();

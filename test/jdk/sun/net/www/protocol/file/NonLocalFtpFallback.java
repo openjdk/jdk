@@ -40,14 +40,16 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @test
- * @bug 8353662
- * @summary Verify long-standing behavior of resolving non-local file URLs using FTP.
- * @run junit NonLocalFtpFallback
+ * @bug 8353662 8202708
+ * @summary Verify long-standing, disabled by default behavior of resolving non-local
+ *          file URLs using FTP.
+ * @run junit/othervm -Djdk.net.file.ftpfallback=true NonLocalFtpFallback
  */
 
 public class NonLocalFtpFallback {
@@ -112,9 +114,8 @@ public class NonLocalFtpFallback {
      * Verifies the long-standing and unspecified FTP fallback feature where the file
      * URL scheme handler attempts an FTP connection for non-local files.
      *
-     * The non-local file URL used here is of the form file://127.0.0.1/path. Since the
-     * host component here is not equal to "localhost", this is considered a non-local
-     * URL.
+     * The non-local file URL used here is of the form 'file://remotehost/path'. Since the
+     * host component is not equal to 'localhost', this is considered a non-local URL.
      *
      * @throws Exception
      */
@@ -141,5 +142,46 @@ public class NonLocalFtpFallback {
         assertEquals(1, uris.size());
         URL ftpURL = new URL("ftp", hostname, localURL.getFile());
         assertEquals(ftpURL.toURI(), uris.iterator().next());
+    }
+
+    /**
+     * Sanity check that a local file URL (with a host component equal to 'localhost')
+     * does not open any FtpURLConnection when the FTP fallback feature is enabled.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void verifyLocalFileURL() throws Exception {
+        URL localURL = file.toUri().toURL();
+        URL nonLocalURL = new URL("file", "localhost", localURL.getFile());
+
+        // Open the local file: URL connection supplying a proxy
+        Proxy proxy = new Proxy(Proxy.Type.HTTP,
+                new InetSocketAddress(proxyServer.getAddress().getAddress(),
+                        proxyServer.getAddress().getPort()));
+        URLConnection con = nonLocalURL.openConnection(proxy);
+
+        // Assert that the expected file content is read
+        try (InputStream in = con.getInputStream()) {
+            byte[] retrived = in.readAllBytes();
+            assertArrayEquals(Files.readAllBytes(file), retrived);
+        }
+
+        // Assert that no FTP URIs were requested in the HTTP proxy
+        assertEquals(0, uris.size());
+    }
+
+    /**
+     * Verify that opening a stream on a non-proxy URLConnection for a non-local
+     * file URL with an unknown host fails with UnknownHostException
+     * when the fallback FtpURLConnection attempts to connect to the non-existing
+     * FTP server.
+     */
+    @Test
+    public void verifyFtpUnknownHost() throws IOException {
+        URL url = new URL("file://nonexistinghost/not-exist.txt");
+        assertThrows(UnknownHostException.class, () -> {
+            InputStream in = url.openConnection(Proxy.NO_PROXY).getInputStream();
+        });
     }
 }

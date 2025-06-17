@@ -25,10 +25,11 @@
 package jdk.jfr.internal;
 
 import java.lang.reflect.Modifier;
-
 import jdk.jfr.internal.event.EventConfiguration;
 import jdk.jfr.internal.util.Bytecode;
 import jdk.jfr.internal.util.Utils;
+import jdk.jfr.internal.tracing.PlatformTracer;
+
 /**
  * All upcalls from the JVM should go through this class.
  *
@@ -158,5 +159,36 @@ final class JVMUpcalls {
         Thread thread = new Thread(systemThreadGroup, "JFR Recorder Thread");
         thread.setContextClassLoader(contextClassLoader);
         return thread;
+    }
+
+    /**
+     * Called by the JVM to update method tracing instrumentation.
+     * <p>
+     * @param module the module the class belongs to
+     * @param classLoader the class loader the class is being loaded for
+     * @param className the internal class name, i.e. java/lang/String.
+     * @param bytecode the bytecode to modify
+     * @param methodIds the method IDs
+     * @param names constant pool indices of method names
+     * @param signatures constant pool indices of method signatures
+     * @param modifications integer mask describing the modification
+     *
+     * @return the instrumented bytecode, or null if the class can't or shouldn't be modified.
+     */
+    public static byte[] onMethodTrace(Module module, ClassLoader classLoader, String className,
+                                       byte[] bytecode, long[] methodIds, String[] names, String[] signatures,
+                                       int[] modifications) {
+        return PlatformTracer.onMethodTrace(module, classLoader, className,
+                                            bytecode, methodIds, names, signatures,
+                                            modifications);
+    }
+
+    /**
+     * Called by the JVM to publish a class ID that can safely be used by the Method Timing event.
+     * <p>
+     * @param classId the methods to be published
+     */
+    public static void publishMethodTimersForClass(long classId) {
+        PlatformTracer.publishClass(classId);
     }
 }

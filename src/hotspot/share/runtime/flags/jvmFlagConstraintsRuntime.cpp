@@ -31,7 +31,27 @@
 #include "runtime/task.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+JVMFlag::Error AOTCacheConstraintFunc(ccstr value, bool verbose) {
+  if (value == nullptr) {
+    JVMFlag::printError(verbose, "AOTCache cannot be empty\n");
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+  return JVMFlag::SUCCESS;
+}
+
+JVMFlag::Error AOTConfigurationConstraintFunc(ccstr value, bool verbose) {
+  if (value == nullptr) {
+    JVMFlag::printError(verbose, "AOTConfiguration cannot be empty\n");
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+  return JVMFlag::SUCCESS;
+}
+
 JVMFlag::Error AOTModeConstraintFunc(ccstr value, bool verbose) {
+  if (value == nullptr) {
+    JVMFlag::printError(verbose, "AOTMode cannot be empty\n");
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
   if (strcmp(value, "off") != 0 &&
       strcmp(value, "record") != 0 &&
       strcmp(value, "create") != 0 &&
@@ -43,9 +63,9 @@ JVMFlag::Error AOTModeConstraintFunc(ccstr value, bool verbose) {
                         value);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
-
   return JVMFlag::SUCCESS;
 }
+
 JVMFlag::Error ObjectAlignmentInBytesConstraintFunc(int value, bool verbose) {
   if (!is_power_of_2(value)) {
     JVMFlag::printError(verbose,
