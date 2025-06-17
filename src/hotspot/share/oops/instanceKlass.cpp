@@ -2400,6 +2400,15 @@ static jmethodID* create_jmethod_id_cache(size_t size) {
   return jmeths;
 }
 
+// When reading outside a lock, use this.
+jmethodID* InstanceKlass::methods_jmethod_ids_acquire() const {
+  return Atomic::load_acquire(&_methods_jmethod_ids);
+}
+
+void InstanceKlass::release_set_methods_jmethod_ids(jmethodID* jmeths) {
+  Atomic::release_store(&_methods_jmethod_ids, jmeths);
+}
+
 // Lookup or create a jmethodID
 jmethodID InstanceKlass::get_jmethod_id(Method* method) {
   int idnum = method->method_idnum();
@@ -2422,7 +2431,7 @@ jmethodID InstanceKlass::get_jmethod_id(Method* method) {
 
   if (jmeths == nullptr) {
     MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
-    jmeths = methods_jmethod_ids_acquire();
+    jmeths = _methods_jmethod_ids;
     // Still null?
     if (jmeths == nullptr) {
       size_t size = idnum_allocated_count();
@@ -2477,7 +2486,7 @@ void InstanceKlass::update_methods_jmethod_cache() {
 // code that loads all jmethodIDs for all classes.
 void InstanceKlass::make_methods_jmethod_ids() {
   MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
-  jmethodID* jmeths = methods_jmethod_ids_acquire();
+  jmethodID* jmeths = _methods_jmethod_ids;
   if (jmeths == nullptr) {
     jmeths = create_jmethod_id_cache(idnum_allocated_count());
     release_set_methods_jmethod_ids(jmeths);
@@ -2921,7 +2930,7 @@ void InstanceKlass::release_C_heap_structures(bool release_sub_metadata) {
   JNIid::deallocate(jni_ids());
   set_jni_ids(nullptr);
 
-  jmethodID* jmeths = methods_jmethod_ids_acquire();
+  jmethodID* jmeths = _methods_jmethod_ids;
   if (jmeths != nullptr) {
     release_set_methods_jmethod_ids(nullptr);
     FreeHeap(jmeths);
