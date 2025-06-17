@@ -32,6 +32,7 @@ import java.io.UncheckedIOException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -418,6 +419,92 @@ public final class RequestPublishers {
         }
     }
 
+    public static final class FileChannelPublisher implements BodyPublisher {
+
+        private final FileChannel channel;
+
+        private final long position;
+
+        private final long limit;
+
+        public FileChannelPublisher(FileChannel channel, long offset, long length) {
+            this.channel = Objects.requireNonNull(channel, "channel");
+            long fileSize = fileSize(channel);
+            Objects.checkFromIndexSize(offset, length, fileSize);
+            this.position = offset;
+            this.limit = offset + length;
+        }
+
+        private static long fileSize(FileChannel channel) {
+            try {
+                return channel.size();
+            } catch (IOException ioe) {
+                throw new UncheckedIOException(ioe);
+            }
+        }
+
+        @Override
+        public long contentLength() {
+            return limit - position;
+        }
+
+        @Override
+        public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
+            Iterable<ByteBuffer> iterable = () -> new FileChannelIterator(channel, position, limit);
+            new PullPublisher<>(iterable).subscribe(subscriber);
+        }
+
+    }
+
+    private static final class FileChannelIterator implements Iterator<ByteBuffer> {
+
+        private final FileChannel channel;
+
+        private final long limit;
+
+        private long position;
+
+        private boolean terminated;
+
+        private FileChannelIterator(FileChannel channel, long position, long limit) {
+            this.channel = channel;
+            this.position = position;
+            this.limit = limit;
+        }
+
+        @Override
+        public synchronized boolean hasNext() {
+            return position < limit && !terminated;
+        }
+
+        @Override
+        public synchronized ByteBuffer next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            long remaining = limit - position;
+            ByteBuffer buffer = Utils.BUFSIZE > remaining
+                    ? Utils.getBufferWithAtMost((int) remaining)
+                    : Utils.getBuffer();
+            try {
+                int readLength = channel.read(buffer, position);
+                // Short-circuit if `read()` has failed, e.g., due to file content being changed in the meantime
+                if (readLength < 0) {
+                    // We *must* throw to signal that the request needs to be cancelled.
+                    // Otherwise, the server will continue waiting data.
+                    throw new IOException("Unexpected EOF (position=%s)".formatted(position));
+                } else {
+                    position += readLength;
+                }
+            } catch (IOException ioe) {
+                terminated = true;
+                throw new UncheckedIOException(ioe);
+            }
+            return buffer.flip();
+        }
+
+    }
+
     public static final class PublisherAdapter implements BodyPublisher {
 
         private final Publisher<? extends ByteBuffer> publisher;
@@ -430,12 +517,12 @@ public final class RequestPublishers {
         }
 
         @Override
-        public final long contentLength() {
+        public long contentLength() {
             return contentLength;
         }
 
         @Override
-        public final void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
+        public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
             publisher.subscribe(subscriber);
         }
     }

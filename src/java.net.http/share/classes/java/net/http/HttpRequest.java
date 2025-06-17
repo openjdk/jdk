@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,9 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Iterator;
@@ -718,6 +717,34 @@ public abstract class HttpRequest {
         public static BodyPublisher ofFile(Path path) throws FileNotFoundException {
             Objects.requireNonNull(path);
             return RequestPublishers.FilePublisher.create(path);
+        }
+
+        /**
+         * {@return a request body publisher whose body is the {@code length}
+         * content bytes read from the provided file {@code channel} starting
+         * from the specified {@code offset}}
+         * <p>
+         * The {@linkplain FileChannel file channel} will be read using
+         * {@link FileChannel#read(ByteBuffer, long) FileChannel.read(ByteBuffer buffer, long position)},
+         * which does not modify the channel's position. Thus, the same file
+         * channel may be shared between several publishers passed to
+         * concurrent requests.
+         * <p>
+         * The file channel will not be closed upon completion. The caller is
+         * expected to manage the life cycle of the channel, and close it
+         * appropriately when not needed anymore.
+         *
+         * @param channel a file channel
+         * @param offset the offset of the first byte
+         * @param length the number of bytes to use
+         *
+         * @throws IndexOutOfBoundsException if the specified byte range is
+         * found to be out of bounds compared with the size of the file
+         * referred by the channel
+         */
+        public static BodyPublisher ofFileChannel(FileChannel channel, long offset, long length) {
+            Objects.requireNonNull(channel, "channel");
+            return new RequestPublishers.FileChannelPublisher(channel, offset, length);
         }
 
         /**
