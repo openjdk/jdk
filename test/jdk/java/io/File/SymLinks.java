@@ -280,7 +280,7 @@ public class SymLinks {
         assertTrue(dir.isDirectory());
         assertTrue(link2dir.isDirectory());
         assertTrue(link2link2dir.isDirectory());
-        
+
         testDOSHiddenAttributes();
 
         header("length");
@@ -346,7 +346,7 @@ public class SymLinks {
             assertTrue(link2link2file.canWrite());
         }
     }
-    
+
      static void testDOSHiddenAttributes() throws IOException {
         // on Windows we test with the DOS hidden attribute set
         if (System.getProperty("os.name").startsWith("Windows")) {
