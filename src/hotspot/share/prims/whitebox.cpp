@@ -1558,12 +1558,14 @@ struct CodeBlobStub {
       size(blob->size()),
       blob_type(static_cast<jint>(WhiteBox::get_blob_type(blob))),
       address((jlong) blob),
+      code_begin((jlong) blob->code_begin()),
       is_nmethod((jboolean) blob->is_nmethod()) { }
   ~CodeBlobStub() { os::free((void*) name); }
   const char* const name;
   const jint        size;
   const jint        blob_type;
   const jlong       address;
+  const jlong       code_begin;
   const jboolean    is_nmethod;
 };
 
@@ -1571,7 +1573,7 @@ static jobjectArray codeBlob2objectArray(JavaThread* thread, JNIEnv* env, CodeBl
   ResourceMark rm;
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
   CHECK_JNI_EXCEPTION_(env, nullptr);
-  jobjectArray result = env->NewObjectArray(5, clazz, nullptr);
+  jobjectArray result = env->NewObjectArray(6, clazz, nullptr);
 
   jstring name = env->NewStringUTF(cb->name);
   CHECK_JNI_EXCEPTION_(env, nullptr);
@@ -1589,9 +1591,13 @@ static jobjectArray codeBlob2objectArray(JavaThread* thread, JNIEnv* env, CodeBl
   CHECK_JNI_EXCEPTION_(env, nullptr);
   env->SetObjectArrayElement(result, 3, obj);
 
-  obj = booleanBox(thread, env, cb->is_nmethod);
+  obj = longBox(thread, env, cb->code_begin);
   CHECK_JNI_EXCEPTION_(env, nullptr);
   env->SetObjectArrayElement(result, 4, obj);
+
+  obj = booleanBox(thread, env, cb->is_nmethod);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
+  env->SetObjectArrayElement(result, 5, obj);
 
   return result;
 }
