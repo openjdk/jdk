@@ -225,7 +225,7 @@ public class Options {
      * @param defaults populates the default set, or null for an empty default set
      * @return the specified set of categories
      */
-    public EnumSet<LintCategory> getLintCategories(Option option, Supplier<? extends EnumSet<LintCategory>> defaults) {
+    public EnumSet<LintCategory> getLintCategoriesOf(Option option, Supplier<? extends EnumSet<LintCategory>> defaults) {
 
         // Create the initial set
         EnumSet<LintCategory> categories;

@@ -148,7 +148,7 @@ public class Lint {
     // Process command line options on demand to allow use of root Lint early during startup
     private void initializeRootIfNeeded() {
         if (values == null) {
-            values = options.getLintCategories(Option.XLINT, this::getDefaults);
+            values = options.getLintCategoriesOf(Option.XLINT, this::getDefaults);
             suppressedValues = LintCategory.newEmptySet();
         }
     }

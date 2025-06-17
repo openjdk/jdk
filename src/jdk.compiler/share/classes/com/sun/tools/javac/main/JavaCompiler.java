@@ -446,7 +446,7 @@ public class JavaCompiler {
         devVerbose    = options.isSet("dev");
         processPcks   = options.isSet("process.packages");
         werrorAny     = options.isSet(WERROR) || options.isSet(WERROR_CUSTOM, Option.LINT_CUSTOM_ALL);
-        werrorLint    = options.getLintCategories(WERROR, LintCategory::newEmptySet);
+        werrorLint    = options.getLintCategoriesOf(WERROR, LintCategory::newEmptySet);
 
         verboseCompilePolicy = options.isSet("verboseCompilePolicy");
 
@@ -519,7 +519,7 @@ public class JavaCompiler {
      */
     protected boolean processPcks;
 
-    /** Switch: treat any kind of warning (including non-lint warnings) as an error.
+    /** Switch: treat any kind of warning (lint or non-lint) as an error.
      */
     protected boolean werrorAny;
 
