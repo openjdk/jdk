@@ -113,6 +113,9 @@ private:
   size_t _total_region_counts[UIntNumPartitions];
   size_t _empty_region_counts[UIntNumPartitions];
 
+  // Humongous waste, in words, can exist in Mutator partition for recently allocated humongous objects
+  // and in OldCollector partition for humongous objects that have been promoted in place.
+  size_t _humongous_waste[UIntNumPartitions];
 
   // For each partition p, _left_to_right_bias is true iff allocations are normally made from lower indexed regions
   // before higher indexed regions.
@@ -160,7 +163,7 @@ public:
   void establish_mutator_intervals(idx_t mutator_leftmost, idx_t mutator_rightmost,
                                    idx_t mutator_leftmost_empty, idx_t mutator_rightmost_empty,
                                    size_t total_mutator_regions, size_t empty_mutator_regions,
-                                   size_t mutator_region_count, size_t mutator_used);
+                                   size_t mutator_region_count, size_t mutator_used, size_t mutator_humongous_words_waste);
 
   // Set the OldCollector intervals, usage, and capacity according to arguments.  We use this at the end of rebuild_free_set()
   // to avoid the overhead of making many redundant incremental adjustments to the mutator intervals as the free set is being
@@ -168,7 +171,8 @@ public:
   void establish_old_collector_intervals(idx_t old_collector_leftmost, idx_t old_collector_rightmost,
                                          idx_t old_collector_leftmost_empty, idx_t old_collector_rightmost_empty,
                                          size_t total_old_collector_region_count, size_t old_collector_empty,
-                                         size_t old_collector_regions, size_t old_collector_used);
+                                         size_t old_collector_regions, size_t old_collector_used,
+                                         size_t old_collector_humongous_words_waste);
 
   // Retire region idx from within partition, , leaving its capacity and used as part of the original free partition's totals.
   // Requires that region idx is in in the Mutator or Collector partitions.  Hereafter, identifies this region as NotFree.
@@ -236,7 +240,25 @@ public:
 
   inline bool is_empty(ShenandoahFreeSetPartitionId which_partition) const;
 
+  inline void increase_total_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
+    _total_region_counts[int(which_partition)] += regions;
+  }
+
+  inline void decrease_total_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
+    assert(_total_region_counts[int(which_partition)] >= regions, "Cannot remove more regions than are present");
+    _total_region_counts[int(which_partition)] -= regions;
+  }
+
   inline void increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
+
+  inline void increase_humongous_waste(ShenandoahFreeSetPartitionId which_partition, size_t words) {
+    _humongous_waste[int(which_partition)] += words;
+  }
+
+  inline void decrease_humongous_waste(ShenandoahFreeSetPartitionId which_partition, size_t words) {
+    assert(_humongous_waste[int(which_partition)] >= words, "Cannot decrease waste beyond what is there");
+    _humongous_waste[int(which_partition)] -= words;
+  }
 
   inline void set_bias_from_left_to_right(ShenandoahFreeSetPartitionId which_partition, bool value) {
     assert (which_partition < NumPartitions, "selected free set must be valid");
@@ -436,7 +458,6 @@ private:
                                                                       size_t max_xfer_regions,
                                                                       size_t& bytes_transferred);
 
-
   // Determine whether we prefer to allocate from left to right or from right to left within the OldCollector free-set.
   void establish_old_collector_alloc_bias();
 
@@ -500,6 +521,8 @@ public:
   // Typical usage: At the end of evacuation, when the collector no longer needs the regions that had been reserved
   // for evacuation, invoke this to make regions available for mutator allocations.
   void move_regions_from_collector_to_mutator(size_t cset_regions);
+
+  void transfer_humongous_regions_from_mutator_to_old_collector(size_t xfer_regions, size_t humongous_waste_words);
 
   void recycle_trash();
 

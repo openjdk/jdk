@@ -229,6 +229,7 @@ void ShenandoahRegionPartitions::make_all_regions_unavailable() {
     _rightmosts_empty[partition_id] = -1;;
     _capacity[partition_id] = 0;
     _used[partition_id] = 0;
+    _humongous_waste[partition_id] = 0;
     _available[partition_id] = FreeSetUnderConstruction;
   }
   _total_region_counts[int(ShenandoahFreeSetPartitionId::Mutator)] =
@@ -241,7 +242,8 @@ void ShenandoahRegionPartitions::make_all_regions_unavailable() {
 void ShenandoahRegionPartitions::establish_mutator_intervals(idx_t mutator_leftmost, idx_t mutator_rightmost,
                                                              idx_t mutator_leftmost_empty, idx_t mutator_rightmost_empty,
                                                              size_t total_mutator_regions, size_t empty_mutator_regions,
-                                                             size_t mutator_region_count, size_t mutator_used) {
+                                                             size_t mutator_region_count, size_t mutator_used,
+                                                             size_t mutator_humongous_waste_words) {
   shenandoah_assert_heaplocked();
 
   _leftmosts[int(ShenandoahFreeSetPartitionId::Mutator)] = mutator_leftmost;
@@ -252,6 +254,7 @@ void ShenandoahRegionPartitions::establish_mutator_intervals(idx_t mutator_leftm
   _region_counts[int(ShenandoahFreeSetPartitionId::Mutator)] = mutator_region_count;
   _used[int(ShenandoahFreeSetPartitionId::Mutator)] = mutator_used;
   _capacity[int(ShenandoahFreeSetPartitionId::Mutator)] = mutator_region_count * _region_size_bytes;
+  _humongous_waste[int(ShenandoahFreeSetPartitionId::Mutator)] = mutator_humongous_waste_words;
   _available[int(ShenandoahFreeSetPartitionId::Mutator)] =
     _capacity[int(ShenandoahFreeSetPartitionId::Mutator)] - _used[int(ShenandoahFreeSetPartitionId::Mutator)];
 
@@ -277,7 +280,8 @@ void ShenandoahRegionPartitions::establish_old_collector_intervals(idx_t old_col
                                                                    idx_t old_collector_rightmost_empty,
                                                                    size_t total_old_collector_region_count,
                                                                    size_t old_collector_empty, size_t old_collector_regions,
-                                                                   size_t old_collector_used) {
+                                                                   size_t old_collector_used,
+                                                                   size_t old_collector_humongous_waste_words) {
   shenandoah_assert_heaplocked();
 
   _leftmosts[int(ShenandoahFreeSetPartitionId::OldCollector)] = old_collector_leftmost;
@@ -288,6 +292,7 @@ void ShenandoahRegionPartitions::establish_old_collector_intervals(idx_t old_col
   _region_counts[int(ShenandoahFreeSetPartitionId::OldCollector)] = old_collector_regions;
   _used[int(ShenandoahFreeSetPartitionId::OldCollector)] = old_collector_used;
   _capacity[int(ShenandoahFreeSetPartitionId::OldCollector)] = old_collector_regions * _region_size_bytes;
+  _humongous_waste[int(ShenandoahFreeSetPartitionId::OldCollector)] = old_collector_humongous_waste_words;
   _available[int(ShenandoahFreeSetPartitionId::OldCollector)] =
     _capacity[int(ShenandoahFreeSetPartitionId::OldCollector)] - _used[int(ShenandoahFreeSetPartitionId::OldCollector)];
 
@@ -1309,7 +1314,9 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
   _partitions.assert_bounds();
   req.set_actual_size(words_size);
   if (remainder != 0) {
-    req.set_waste(ShenandoahHeapRegion::region_size_words() - remainder);
+    size_t waste = ShenandoahHeapRegion::region_size_words() - remainder;
+    req.set_waste(waste);
+    _partitions.increase_humongous_waste(ShenandoahFreeSetPartitionId::Mutator, waste);
   }
   return _heap->get_region(beg)->bottom();
 }
@@ -1448,6 +1455,7 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_cset_regi
   size_t mutator_rightmost_empty = 0;
   size_t mutator_regions = 0;
   size_t mutator_used = 0;
+  size_t mutator_humongous_waste = 0;
 
   size_t old_collector_leftmost = max_regions;
   size_t old_collector_rightmost = 0;
@@ -1455,6 +1463,7 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_cset_regi
   size_t old_collector_rightmost_empty = 0;
   size_t old_collector_regions = 0;
   size_t old_collector_used = 0;
+  size_t old_collector_humongous_waste = 0;
 
   size_t mutator_empty = 0;
   size_t old_collector_empty = 0;
@@ -1462,6 +1471,7 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_cset_regi
   size_t total_mutator_regions = 0;
   size_t total_old_collector_regions = 0;
 
+  bool is_generational = _heap->mode()->is_generational();
   size_t num_regions = _heap->num_regions();
   for (size_t idx = 0; idx < num_regions; idx++) {
     ShenandoahHeapRegion* region = _heap->get_region(idx);
@@ -1535,6 +1545,22 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_cset_regi
       } else {
         total_old_collector_regions++;
       }
+    } else {
+      if (region->is_humongous_start()) {
+        oop obj = cast_to_oop(region->bottom());
+        size_t word_size = obj->size();
+        size_t region_span = ShenandoahHeapRegion::required_regions(word_size * HeapWordSize);
+        size_t humongous_waste_words = region_span * ShenandoahHeapRegion::region_size_words() - word_size;
+        if (is_generational) {
+          if (region->is_young()) {
+            mutator_humongous_waste += word_size;
+          } else {
+            old_collector_humongous_waste += word_size;
+          }
+        } else {
+          mutator_humongous_waste += word_size;
+        }
+      }
     }
   }
 #ifdef KELVIN_ENHANCEMENTS
@@ -1587,18 +1613,33 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_cset_regi
   idx_t rightmost_empty_idx = (mutator_leftmost_empty == max_regions)? -1: (idx_t) mutator_rightmost_empty;
 
   _partitions.establish_mutator_intervals(mutator_leftmost, rightmost_idx, mutator_leftmost_empty, rightmost_empty_idx,
-                                          total_mutator_regions, mutator_empty, mutator_regions, mutator_used);
+                                          total_mutator_regions, mutator_empty, mutator_regions, mutator_used,
+                                          mutator_humongous_waste);
   rightmost_idx = (old_collector_leftmost == max_regions)? -1: (idx_t) old_collector_rightmost;
   rightmost_empty_idx = (old_collector_leftmost_empty == max_regions)? -1: (idx_t) old_collector_rightmost_empty;
   _partitions.establish_old_collector_intervals(old_collector_leftmost, rightmost_idx,
                                                 old_collector_leftmost_empty, rightmost_empty_idx, total_old_collector_regions,
-                                                old_collector_empty, old_collector_regions, old_collector_used);
+                                                old_collector_empty, old_collector_regions, old_collector_used,
+                                                old_collector_humongous_waste);
   log_debug(gc, free)("  After find_regions_with_alloc_capacity(), Mutator range [%zd, %zd],"
                       "  Old Collector range [%zd, %zd]",
                       _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator),
                       _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator),
                       _partitions.leftmost(ShenandoahFreeSetPartitionId::OldCollector),
                       _partitions.rightmost(ShenandoahFreeSetPartitionId::OldCollector));
+}
+
+void ShenandoahFreeSet::transfer_humongous_regions_from_mutator_to_old_collector(size_t xfer_regions,
+                                                                                   size_t humongous_waste_words) {
+  shenandoah_assert_heaplocked();
+
+  _partitions.decrease_total_region_counts(ShenandoahFreeSetPartitionId::Mutator, xfer_regions);
+  _partitions.decrease_humongous_waste(ShenandoahFreeSetPartitionId::Mutator, humongous_waste_words);
+
+  _partitions.increase_total_region_counts(ShenandoahFreeSetPartitionId::OldCollector, xfer_regions);
+  _partitions.increase_humongous_waste(ShenandoahFreeSetPartitionId::OldCollector, humongous_waste_words);
+
+  // No need to adjust ranges because humongous regions are not allocatable
 }
 
 // Returns number of regions transferred, adds transferred bytes to var argument bytes_transferred

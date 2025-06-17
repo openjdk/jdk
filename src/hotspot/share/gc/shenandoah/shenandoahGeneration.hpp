@@ -100,6 +100,7 @@ private:
   // to false.
   size_t select_aged_regions(size_t old_available);
 
+  // Return available assuming that we can allocate no more than capacity bytes within this generation.
   size_t available(size_t capacity) const;
 
  public:
