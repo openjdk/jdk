@@ -61,23 +61,18 @@ public class StartupOutput {
             throw new Exception("VM crashed with exit code " + exitCode);
         }
 
-        Process[] pr = new Process[200];
         int minInitialSize = 800 + (Platform.isS390x() ? 800 : 0);
-
         for (int i = 0; i < 200; i++) {
             int initialCodeCacheSizeInKb = minInitialSize + rand.nextInt(400);
             int reservedCodeCacheSizeInKb = initialCodeCacheSizeInKb + rand.nextInt(200);
             pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:InitialCodeCacheSize=" + initialCodeCacheSizeInKb + "K", "-XX:ReservedCodeCacheSize=" + reservedCodeCacheSizeInKb + "k", "-version");
-            pr[i] = pb.start();
-        }
-        for (int i = 0; i < 200; i++) {
-            out = new OutputAnalyzer(pr[i]);
-            // The VM should not crash but will probably fail with a "CodeCache is full. Compiler has been disabled." message
-            out.stdoutShouldNotContain("# A fatal error");
+            out = new OutputAnalyzer(pb.start());
             exitCode = out.getExitValue();
             if (exitCode != 1 && exitCode != 0) {
                 throw new Exception("VM crashed with exit code " + exitCode);
             }
+            // The VM should not crash but will probably fail with a "CodeCache is full. Compiler has been disabled." message
+            out.stdoutShouldNotContain("# A fatal error");
         }
     }
 }
