@@ -337,6 +337,31 @@ class TestMemorySegmentAliasingImpl {
             test_fill_byte_sameMS_noalias(A, A, invar1, invar2, limit);
             reference_fill_byte_sameMS_noalias(A_REFERENCE, A_REFERENCE, invar1, invar2, limit);
         });
+        referenceTests.put("test_fill_int_sameMS_alias", () -> {
+            int invar1 = RANDOM.nextInt(64);
+            int invar2 = RANDOM.nextInt(64);
+            test_fill_int_sameMS_alias(A, A, invar1, invar2);
+            reference_fill_int_sameMS_alias(A_REFERENCE, A_REFERENCE, invar1, invar2);
+        });
+        referenceTests.put("test_fill_int_sameMS_noalias", () -> {
+            // The accesses either start at the middle and go out,
+            // or start from opposite sides and meet in the middle.
+            // But they never overlap.
+            //      <------|------>
+            //      ------>|<------
+            //
+            // This tests that the checks we emit are not too relaxed.
+            int middle = BACKING_SIZE / 2 + RANDOM.nextInt(-256, 256);
+            int limit = BACKING_SIZE / 3 + RANDOM.nextInt(256);
+            int invar1 = middle;
+            int invar2 = middle;
+            if (RANDOM.nextBoolean()) {
+                invar1 -= limit;
+                invar2 += limit;
+            }
+            test_fill_int_sameMS_noalias(A, A, invar1, invar2, limit);
+            reference_fill_int_sameMS_noalias(A_REFERENCE, A_REFERENCE, invar1, invar2, limit);
+        });
     }
 
     static MemorySegment newMemorySegment() {
@@ -455,7 +480,9 @@ class TestMemorySegmentAliasingImpl {
                  "test_byte_incr_noaliasing_fwd128",
                  "test_int_to_long_noaliasing",
                  "test_fill_byte_sameMS_alias",
-                 "test_fill_byte_sameMS_noalias"})
+                 "test_fill_byte_sameMS_noalias",
+                 "test_fill_int_sameMS_alias",
+                 "test_fill_int_sameMS_noalias"})
     void runTests() {
         for (Map.Entry<String,TestFunction> entry : goldTests.entrySet()) {
             String name = entry.getKey();
@@ -630,6 +657,63 @@ class TestMemorySegmentAliasingImpl {
         for (long i = 0; i < limit; i++) {
             a.set(ValueLayout.JAVA_BYTE, invar1 + i, (byte)0xa);
             b.set(ValueLayout.JAVA_BYTE, invar2 - i, (byte)0xb);
+        }
+    }
+
+    @Test
+    // @IR(counts = {IRNode.STORE_VECTOR,  "> 0",
+    //               ".*multiversion.*",   "> 0"}, // AutoVectorization Predicate FAILS
+    //     phase = CompilePhase.PRINT_IDEAL,
+    //     applyIfPlatform = {"64-bit", "true"},
+    //     applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+    //     applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    //
+    // FAILS: but only on "native" and "byte-buffer-direct"
+    //        The issue is that one of the VPointers is invalid.
+    static void test_fill_int_sameMS_alias(MemorySegment a, MemorySegment b, long invar1, long invar2) {
+        for (long i = 0; i < a.byteSize() - 100; i+=4) {
+            a.set(ValueLayout.JAVA_INT_UNALIGNED, i + invar1, 0x01020304);
+            b.set(ValueLayout.JAVA_INT_UNALIGNED, a.byteSize() - i - 4 - invar2, 0x11121314);
+        }
+    }
+
+    @DontCompile
+    static void reference_fill_int_sameMS_alias(MemorySegment a, MemorySegment b, long invar1, long invar2) {
+        for (long i = 0; i < a.byteSize() - 100; i+=4) {
+            a.set(ValueLayout.JAVA_INT_UNALIGNED, i + invar1, 0x01020304);
+            b.set(ValueLayout.JAVA_INT_UNALIGNED, a.byteSize() - i - 4 - invar2, 0x11121314);
+        }
+    }
+
+    @Test
+    // @IR(counts = {IRNode.STORE_VECTOR,  "> 0",
+    //               ".*multiversion.*",   "= 0"}, // AutoVectorization Predicate SUFFICES
+    //     phase = CompilePhase.PRINT_IDEAL,
+    //     applyIfPlatform = {"64-bit", "true"},
+    //     applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+    //     applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    //
+    // FAILS: but only on "native" and "byte-buffer-direct"
+    //        The issue is that one of the VPointers is invalid.
+    //
+    // For now, we just assert that there is never multiversioning, which holds with or without vectorization:
+    @IR(counts = {".*multiversion.*",   "= 0"}, // AutoVectorization Predicate SUFFICES
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static void test_fill_int_sameMS_noalias(MemorySegment a, MemorySegment b, long invar1, long invar2, long limit) {
+        for (long i = 0; i < limit; i+=4) {
+            a.set(ValueLayout.JAVA_INT_UNALIGNED, invar1 + i, 0x01020304);
+            b.set(ValueLayout.JAVA_INT_UNALIGNED, invar2 - i, 0x11121314);
+        }
+    }
+
+    @DontCompile
+    static void reference_fill_int_sameMS_noalias(MemorySegment a, MemorySegment b, long invar1, long invar2, long limit) {
+        for (long i = 0; i < limit; i+=4) {
+            a.set(ValueLayout.JAVA_INT_UNALIGNED, invar1 + i, 0x01020304);
+            b.set(ValueLayout.JAVA_INT_UNALIGNED, invar2 - i, 0x11121314);
         }
     }
 }
