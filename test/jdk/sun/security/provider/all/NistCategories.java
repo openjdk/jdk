@@ -46,8 +46,8 @@ public class NistCategories {
         // Test all asymmetric keys we can generate
         for (var p : Security.getProviders()) {
             for (var s : p.getServices()) {
-                switch (s.getType()) {
-                    case "KeyPairGenerator" -> test(s);
+                if (s.getType().equals("KeyPairGenerator")) {
+                    test(s);
                 }
             }
         }
