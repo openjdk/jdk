@@ -71,8 +71,12 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  * Simpler test cases can be found in {@link TestAliasing}.
  *
  * We randomly generate tests to verify the behavior of the aliasing runtime checks. We feature:
- * - Different primitive types: for access type and backing type (additionally we have native memory)
- * - Different AccessScenarios: copy (load and store), fill (using two stores)
+ * - Different primitive types:
+ *   - for access type (primitive, we can have multiple types in a single loop)
+ *   - for backing type (primitive and additionally we have native memory)
+ * - Different AccessScenarios:
+ *   - copy (load and store)
+ *   - fill (using two stores)
  * - Different Aliasing: in some cases we never alias at runtime, in other cases we might
  *   -> Should exercise both the predicate and the multiversioning approach with the
  *      aliasing runtime checks.
@@ -112,10 +116,6 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  * We could just pretend that the scale is 1, so that the ivLo and ivHi are ok.
  * And then pick a stride with the randomScale method. Currently only works
  * if all accesses have the same type, I guess.
- *
- * TODO: fill pattern with different types
- *
- * TODO: Unsafe access?
  */
 public class TestAliasingFuzzer {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -249,11 +249,12 @@ public class TestAliasingFuzzer {
             AccessScenario accessScenario = sample(Arrays.asList(AccessScenario.values()));
             // Backing memory can be native, access must be primitive.
             MyType containerElementType = sample(primitiveTypesAndNative);
-            MyType accessType = sample(primitiveTypes);
+            MyType accessType0 = sample(primitiveTypes);
+            MyType accessType1 = sample(primitiveTypes);
             boolean useAtIndex = RANDOM.nextBoolean();
             testTemplateTokens.add(
                 TestGenerator.makeMemorySegment(
-                    containerElementType, accessType, aliasing, accessScenario, useAtIndex
+                    containerElementType, accessType0, accessType1, aliasing, accessScenario, useAtIndex
                 ).generate()
             );
         }
@@ -516,8 +517,8 @@ public class TestAliasingFuzzer {
             final boolean loopForward = RANDOM.nextBoolean();
 
             final int numInvarRest = RANDOM.nextInt(5);
-            var form_a = IndexForm.random(numInvarRest, 1);
-            var form_b = IndexForm.random(numInvarRest, 1);
+            var form0 = IndexForm.random(numInvarRest, 1);
+            var form1 = IndexForm.random(numInvarRest, 1);
 
             return new TestGenerator(
                 2,
@@ -526,7 +527,7 @@ public class TestAliasingFuzzer {
                 type,
                 loopForward,
                 numInvarRest,
-                new IndexForm[] {form_a, form_b},
+                new IndexForm[] {form0, form1},
                 new MyType[]    {type,   type},
                 aliasing,
                 accessScenario);
@@ -536,22 +537,36 @@ public class TestAliasingFuzzer {
             return Math.ceilDiv(value, align) * align;
         }
 
-        public static TestGenerator makeMemorySegment(MyType containerElementType, MyType accessType, Aliasing aliasing, AccessScenario accessScenario, boolean useAtIndex) {
+        public static TestGenerator makeMemorySegment(
+                MyType containerElementType,
+                MyType accessType0,
+                MyType accessType1,
+                Aliasing aliasing,
+                AccessScenario accessScenario,
+                boolean useAtIndex
+        ) {
+            if (useAtIndex) {
+                // The access types must be the same, it is a limitation of the index computation.
+                accessType1 = accessType0;
+            }
+
             // size must be large enough for:
             //   - scale = 4
             //   - range with size / 4
             // -> need at least size 16_000 to ensure we have 1000 iterations
             // We want there to be a little variation, so alignment is not always the same.
             final int numAccessElements = Generators.G.safeRestrict(Generators.G.ints(), 18_000, 20_000).next();
-            final int align = Math.max(accessType.byteSize(), containerElementType.byteSize());
+            final int maxAccessSize = Math.max(accessType0.byteSize(), accessType1.byteSize());
+            final int align = Math.max(maxAccessSize, containerElementType.byteSize());
             // We need to align up, so the size is divisible exactly by all involved type sizes.
-            final int containerByteSize = alignUp(numAccessElements * accessType.byteSize(), align);
+            final int containerByteSize = alignUp(numAccessElements * maxAccessSize, align);
             final boolean loopForward = RANDOM.nextBoolean();
 
             final int numInvarRest = RANDOM.nextInt(5);
-            int indexSize = useAtIndex ? 1 : accessType.byteSize();
-            var form_a = IndexForm.random(numInvarRest, indexSize);
-            var form_b = IndexForm.random(numInvarRest, indexSize);
+            int indexSize0 = useAtIndex ? 1 : accessType0.byteSize();
+            int indexSize1 = useAtIndex ? 1 : accessType1.byteSize();
+            var form0 = IndexForm.random(numInvarRest, indexSize0);
+            var form1 = IndexForm.random(numInvarRest, indexSize1);
 
             return new TestGenerator(
                 2,
@@ -561,8 +576,8 @@ public class TestAliasingFuzzer {
                 containerElementType,
                 loopForward,
                 numInvarRest,
-                new IndexForm[] {form_a, form_b},
-                new MyType[]    {accessType, accessType},
+                new IndexForm[] {form0, form1},
+                new MyType[]    {accessType0, accessType1},
                 aliasing,
                 accessScenario);
         }
@@ -1126,10 +1141,10 @@ public class TestAliasingFuzzer {
                     case COPY_LOAD_STORE ->
                         List.of("var v = ",
                                 "container_0.getAtIndex(#type0Layout, ", accessIndexForm[0].indexLong("invar0_0", invarRest), ");\n",
-                                "container_1.setAtIndex(#type0Layout, ", accessIndexForm[1].indexLong("invar0_1", invarRest), ", v);\n");
+                                "container_1.setAtIndex(#type1Layout, ", accessIndexForm[1].indexLong("invar0_1", invarRest), ", v);\n");
                     case FILL_STORE_STORE ->
                         List.of("container_0.setAtIndex(#type0Layout, ", accessIndexForm[0].indexLong("invar0_0", invarRest), ", (#type0)0x0102030405060708L);\n",
-                                "container_1.setAtIndex(#type0Layout, ", accessIndexForm[1].indexLong("invar0_1", invarRest), ", (#type1)0x1112131415161718L);\n");
+                                "container_1.setAtIndex(#type1Layout, ", accessIndexForm[1].indexLong("invar0_1", invarRest), ", (#type1)0x1112131415161718L);\n");
                 }
             ));
             return template.asToken();
@@ -1143,12 +1158,13 @@ public class TestAliasingFuzzer {
                 let("type1Layout", accessType[1].layout()),
                 switch (accessScenario) {
                     case COPY_LOAD_STORE ->
-                        List.of("var v = ",
+                        // We allow conversions here.
+                        List.of("#type1 v = (#type1)",
                                 "container_0.get(#type0Layout, ", accessIndexForm[0].indexLong("invar0_0", invarRest), ");\n",
-                                "container_1.set(#type0Layout, ", accessIndexForm[1].indexLong("invar0_1", invarRest), ", v);\n");
+                                "container_1.set(#type1Layout, ", accessIndexForm[1].indexLong("invar0_1", invarRest), ", v);\n");
                     case FILL_STORE_STORE ->
                         List.of("container_0.set(#type0Layout, ", accessIndexForm[0].indexLong("invar0_0", invarRest), ", (#type0)0x0102030405060708L);\n",
-                                "container_1.set(#type0Layout, ", accessIndexForm[1].indexLong("invar0_1", invarRest), ", (#type1)0x1112131415161718L);\n");
+                                "container_1.set(#type1Layout, ", accessIndexForm[1].indexLong("invar0_1", invarRest), ", (#type1)0x1112131415161718L);\n");
                 }
             ));
             return template.asToken();
