@@ -162,6 +162,7 @@ public class TestAliasingFuzzer {
     enum ContainerKind {
         ARRAY,
         MEMORY_SEGMENT_LONG_ADR_SCALE,  // for (..; i++)  { access(i * 4); }
+        // TODO:
         //MEMORY_SEGMENT_LONG_ADR_STRIDE, // for (..; i+=4) { access(i); }
         MEMORY_SEGMENT_AT_INDEX,
     }
@@ -529,9 +530,12 @@ public class TestAliasingFuzzer {
             MyType containerElementType = sample(primitiveTypesAndNative);
             MyType accessType0 = sample(primitiveTypes);
             MyType accessType1 = sample(primitiveTypes);
-            boolean useAtIndex = RANDOM.nextBoolean();
+            ContainerKind containerKind = sample(List.of(
+                ContainerKind.MEMORY_SEGMENT_AT_INDEX,
+                ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE
+            ));
 
-            if (useAtIndex) {
+            if (containerKind == ContainerKind.MEMORY_SEGMENT_AT_INDEX) {
                 // The access types must be the same, it is a limitation of the index computation.
                 accessType1 = accessType0;
             }
@@ -549,16 +553,20 @@ public class TestAliasingFuzzer {
             final boolean loopForward = RANDOM.nextBoolean();
 
             final int numInvarRest = RANDOM.nextInt(5);
-            int indexSize0 = useAtIndex ? 1 : accessType0.byteSize();
-            int indexSize1 = useAtIndex ? 1 : accessType1.byteSize();
+            int indexSize0 = accessType0.byteSize();
+            int indexSize1 = accessType1.byteSize();
+            if (containerKind == ContainerKind.MEMORY_SEGMENT_AT_INDEX) {
+                // These are int-indeces for getAtIndex, so we index by element and not bytes.
+                indexSize0 = 1;
+                indexSize1 = 1;
+            }
             var form0 = IndexForm.random(numInvarRest, indexSize0);
             var form1 = IndexForm.random(numInvarRest, indexSize1);
 
             return new TestGenerator(
                 2,
                 containerByteSize,
-                useAtIndex ? ContainerKind.MEMORY_SEGMENT_AT_INDEX
-                           : ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE,
+                containerKind,
                 containerElementType,
                 loopForward,
                 numInvarRest,
