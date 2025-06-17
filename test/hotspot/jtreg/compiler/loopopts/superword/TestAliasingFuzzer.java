@@ -112,10 +112,6 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  *     and split ranges, and then different memory but overlapping ranges.
  *     This would also be never aliasing.
  *
- * TODO: pointer using stride instead of scale
- * We could just pretend that the scale is 1, so that the ivLo and ivHi are ok.
- * And then pick a stride with the randomScale method. Currently only works
- * if all accesses have the same type, I guess.
  */
 public class TestAliasingFuzzer {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -165,7 +161,8 @@ public class TestAliasingFuzzer {
 
     enum ContainerKind {
         ARRAY,
-        MEMORY_SEGMENT_LONG_ADR,
+        MEMORY_SEGMENT_LONG_ADR_SCALE,  // for (..; i++)  { access(i * 4); }
+        //MEMORY_SEGMENT_LONG_ADR_STRIDE, // for (..; i+=4) { access(i); }
         MEMORY_SEGMENT_AT_INDEX,
     }
 
@@ -232,31 +229,13 @@ public class TestAliasingFuzzer {
         testTemplateTokens.add(generateIndexForm());
 
         // Array tests
-        // There are too many combinations, so we sample some random cases.
         for (int i = 0; i < 20; i++) {
-            Aliasing aliasing = sample(Arrays.asList(Aliasing.values()));
-            AccessScenario accessScenario = sample(Arrays.asList(AccessScenario.values()));
-            MyType type = sample(primitiveTypes);
-            testTemplateTokens.add(
-                TestGenerator.makeArray(type, aliasing, accessScenario).generate()
-            );
+            testTemplateTokens.add(TestGenerator.makeArray().generate());
         }
 
         // MemorySegment with getAtIndex / setAtIndex
-        // There are too many combinations, so we sample some random cases.
         for (int i = 0; i < 40; i++) {
-            Aliasing aliasing = sample(Arrays.asList(Aliasing.values()));
-            AccessScenario accessScenario = sample(Arrays.asList(AccessScenario.values()));
-            // Backing memory can be native, access must be primitive.
-            MyType containerElementType = sample(primitiveTypesAndNative);
-            MyType accessType0 = sample(primitiveTypes);
-            MyType accessType1 = sample(primitiveTypes);
-            boolean useAtIndex = RANDOM.nextBoolean();
-            testTemplateTokens.add(
-                TestGenerator.makeMemorySegment(
-                    containerElementType, accessType0, accessType1, aliasing, accessScenario, useAtIndex
-                ).generate()
-            );
+            testTemplateTokens.add(TestGenerator.makeMemorySegment().generate());
         }
 
         // Create the test class, which runs all testTemplateTokens.
@@ -506,17 +485,22 @@ public class TestAliasingFuzzer {
         Aliasing aliasing,
         AccessScenario accessScenario) {
 
-        public static TestGenerator makeArray(MyType type, Aliasing aliasing, AccessScenario accessScenario) {
+        public static TestGenerator makeArray() {
+            // Sample some random parameters:
+            Aliasing aliasing = sample(Arrays.asList(Aliasing.values()));
+            AccessScenario accessScenario = sample(Arrays.asList(AccessScenario.values()));
+            MyType type = sample(primitiveTypes);
+
             // size must be large enough for:
             //   - scale = 4
             //   - range with size / 4
             // -> need at least size 16_000 to ensure we have 1000 iterations
             // We want there to be a little variation, so alignment is not always the same.
-            final int numElements = Generators.G.safeRestrict(Generators.G.ints(), 18_000, 20_000).next();
-            final int containerByteSize = numElements * type.byteSize();
-            final boolean loopForward = RANDOM.nextBoolean();
+            int numElements = Generators.G.safeRestrict(Generators.G.ints(), 18_000, 20_000).next();
+            int containerByteSize = numElements * type.byteSize();
+            boolean loopForward = RANDOM.nextBoolean();
 
-            final int numInvarRest = RANDOM.nextInt(5);
+            int numInvarRest = RANDOM.nextInt(5);
             var form0 = IndexForm.random(numInvarRest, 1);
             var form1 = IndexForm.random(numInvarRest, 1);
 
@@ -537,14 +521,16 @@ public class TestAliasingFuzzer {
             return Math.ceilDiv(value, align) * align;
         }
 
-        public static TestGenerator makeMemorySegment(
-                MyType containerElementType,
-                MyType accessType0,
-                MyType accessType1,
-                Aliasing aliasing,
-                AccessScenario accessScenario,
-                boolean useAtIndex
-        ) {
+        public static TestGenerator makeMemorySegment() {
+            // Sample some random parameters:
+            Aliasing aliasing = sample(Arrays.asList(Aliasing.values()));
+            AccessScenario accessScenario = sample(Arrays.asList(AccessScenario.values()));
+            // Backing memory can be native, access must be primitive.
+            MyType containerElementType = sample(primitiveTypesAndNative);
+            MyType accessType0 = sample(primitiveTypes);
+            MyType accessType1 = sample(primitiveTypes);
+            boolean useAtIndex = RANDOM.nextBoolean();
+
             if (useAtIndex) {
                 // The access types must be the same, it is a limitation of the index computation.
                 accessType1 = accessType0;
@@ -572,7 +558,7 @@ public class TestAliasingFuzzer {
                 2,
                 containerByteSize,
                 useAtIndex ? ContainerKind.MEMORY_SEGMENT_AT_INDEX
-                           : ContainerKind.MEMORY_SEGMENT_LONG_ADR,
+                           : ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE,
                 containerElementType,
                 loopForward,
                 numInvarRest,
@@ -704,7 +690,7 @@ public class TestAliasingFuzzer {
                         case ContainerKind.ARRAY ->
                             generateArrayField(name, containerElementType);
                         case ContainerKind.MEMORY_SEGMENT_AT_INDEX,
-                             ContainerKind.MEMORY_SEGMENT_LONG_ADR ->
+                             ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE ->
                             generateMemorySegmentField(name, containerElementType);
                     }
                 ).toList(),
@@ -752,7 +738,7 @@ public class TestAliasingFuzzer {
                         case ContainerKind.ARRAY ->
                             generateContainerInitArray(name);
                         case ContainerKind.MEMORY_SEGMENT_AT_INDEX,
-                             ContainerKind.MEMORY_SEGMENT_LONG_ADR ->
+                             ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE ->
                             generateContainerInitMemorySegment(name);
                     }
                 ).toList()
@@ -801,7 +787,7 @@ public class TestAliasingFuzzer {
                      ContainerKind.MEMORY_SEGMENT_AT_INDEX ->
                     // Access with element index
                     containerByteSize / accessType[0].byteSize();
-                case ContainerKind.MEMORY_SEGMENT_LONG_ADR ->
+                case ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE ->
                     // Access with byte offset
                     containerByteSize;
             };
@@ -968,7 +954,7 @@ public class TestAliasingFuzzer {
                         generateIRRulesArray();
                     case ContainerKind.MEMORY_SEGMENT_AT_INDEX ->
                         generateIRRulesMemorySegmentAtIndex();
-                    case ContainerKind.MEMORY_SEGMENT_LONG_ADR ->
+                    case ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE ->
                         generateIRRulesMemorySegmentLongAdr();
                 },
                 // In same scnearios, we know that a aliasing runtime check will never fail.
@@ -1083,7 +1069,7 @@ public class TestAliasingFuzzer {
                         case ContainerKind.ARRAY ->
                             List.of("#containerElementType[] container_", i, ", int invar0_", i, ", ");
                         case ContainerKind.MEMORY_SEGMENT_AT_INDEX,
-                             ContainerKind.MEMORY_SEGMENT_LONG_ADR ->
+                             ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE ->
                             List.of("MemorySegment container_", i, ", int invar0_", i, ", ");
                     }
                 ).toList(),
@@ -1098,7 +1084,7 @@ public class TestAliasingFuzzer {
                         generateTestLoopIterationArray(invarRest);
                     case ContainerKind.MEMORY_SEGMENT_AT_INDEX ->
                         generateTestLoopIterationMemorySegmentAtIndex(invarRest);
-                    case ContainerKind.MEMORY_SEGMENT_LONG_ADR ->
+                    case ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE ->
                         generateTestLoopIterationMemorySegmentLongAdr(invarRest);
                 },
                 """
