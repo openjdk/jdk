@@ -31,18 +31,22 @@
 
 #define BUILD_MARKER(c1, c2) ( ((unsigned)c1 << 8) | c2 )
 
+#ifndef PRODUCT
+
 struct MetadataToken {
 
   static constexpr unsigned common_prefix      = BUILD_MARKER('m', 'e') << 16;
-  static constexpr unsigned common_prefix_mask = BUILD_MARKER(0xFF, 0xFF) << 16;
+  static constexpr unsigned common_prefix_mask = 0xFFFF0000;
 
-  static constexpr unsigned metadata_token_instance_klass   = common_prefix | BUILD_MARKER('I', 'K');
-  static constexpr unsigned metadata_token_type_array_klass = common_prefix | BUILD_MARKER('T', 'K');
-  static constexpr unsigned metadata_token_obj_array_klass  = common_prefix | BUILD_MARKER('O', 'K');
+  static constexpr unsigned klass_any          = common_prefix | BUILD_MARKER(0, 'K');          // "me.K"
+  static constexpr unsigned klass_any_mask     = 0xFFFF00FF;
+
+  static constexpr unsigned metadata_token_instance_klass   = klass_any | ((unsigned)'I' << 8); // 0x6D65494B, "meIK"
+  static constexpr unsigned metadata_token_array_klass      = klass_any | ((unsigned)'A' << 8); // 0x6D65414B, "meAK"
   // ... define more when needed
 
-  // default for other metadata:
-  static constexpr unsigned metadata_token_other            = common_prefix | BUILD_MARKER('?', '?');
+  // default for any other metadata:
+  static constexpr unsigned metadata_token_other            = common_prefix | BUILD_MARKER('X', 'X'); // 0x6D655858, "meXX"
 
 
   unsigned _token;
@@ -50,16 +54,17 @@ struct MetadataToken {
 public:
   MetadataToken() : _token(metadata_token_other) {}
 
-  bool is_valid() const             { return (_token | common_prefix_mask) == common_prefix; }
-  bool is_instance_klass() const    { return _token == metadata_token_instance_klass; }
-  bool is_type_array_klass() const  { return _token == metadata_token_type_array_klass; }
-  bool is_obj_array_klass() const   { return _token == metadata_token_obj_array_klass; }
+  bool is_valid() const                   { return (_token & common_prefix_mask) == common_prefix; }
+  bool is_valid_klass() const             { return (_token & klass_any_mask) == klass_any; }
+  bool is_valid_instance_klass() const    { return _token == metadata_token_instance_klass; }
+  bool is_valid_array_klass() const       { return _token == metadata_token_array_klass; }
 
-  void set_as_instance_klass()      { _token = metadata_token_instance_klass; }
-  void set_as_type_array_klass()    { _token = metadata_token_type_array_klass; }
-  void set_as_obj_array_klass()     { _token = metadata_token_obj_array_klass; }
+  void set_as_instance_klass()            { _token = metadata_token_instance_klass; }
+  void set_as_array_klass()               { _token = metadata_token_array_klass; }
 
 };
+
+#endif // !PRODUCT
 
 // This is the base class for an internal Class related metadata
 class Metadata : public MetaspaceObj {
@@ -70,10 +75,9 @@ protected:
 public:
 
 #ifndef PRODUCT
-  bool is_valid() const                            { return _token.is_valid(); }
-  bool metadata_token_is_instance_klass() const    { return _token.is_instance_klass(); }
-  bool metadata_token_is_type_array_klass() const  { return _token.is_type_array_klass(); }
-  bool metadata_token_is_obj_array_klass() const   { return _token.is_obj_array_klass(); }
+  bool metadata_token_is_valid() const                    { return _token.is_valid(); }
+  bool metadata_token_is_valid_klass() const              { return _token.is_valid_klass(); }
+  bool is_valid() const                                   { return metadata_token_is_valid(); }
 #endif // !PRODUCT
 
   int identity_hash()                { return (int)(uintptr_t)this; }

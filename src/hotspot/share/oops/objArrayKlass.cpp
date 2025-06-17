@@ -139,7 +139,6 @@ ObjArrayKlass::ObjArrayKlass(int n, Klass* element_klass, Symbol* name) : ArrayK
   set_layout_helper(array_layout_helper(T_OBJECT));
   assert(is_array_klass(), "sanity");
   assert(is_objArray_klass(), "sanity");
-  DEBUG_ONLY(_token.set_as_obj_array_klass();)
 }
 
 size_t ObjArrayKlass::oop_size(oop obj) const {
