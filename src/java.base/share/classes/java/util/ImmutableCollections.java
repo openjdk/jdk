@@ -45,6 +45,7 @@ import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.lang.stable.StableUtil;
 import jdk.internal.lang.stable.StableValueImpl;
+import jdk.internal.lang.stable.UnderlyingHolder;
 import jdk.internal.misc.CDS;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
@@ -792,15 +793,15 @@ class ImmutableCollections {
     @jdk.internal.ValueBased
     static final class StableList<E>
             extends AbstractImmutableList<E>
-            implements HasStableDelegates<E> {
+            implements HasStableDelegates<E>, UnderlyingHolder.Has {
 
-        @Stable
-        private final IntFunction<? extends E> mapper;
         @Stable
         final StableValueImpl<E>[] delegates;
+        @Stable
+        private final UnderlyingHolder<IntFunction<? extends E>> underlyingHolder;
 
         StableList(int size, IntFunction<? extends E> mapper) {
-            this.mapper = mapper;
+            this.underlyingHolder = new UnderlyingHolder<>(mapper, size);
             this.delegates = StableUtil.array(size);
         }
 
@@ -818,7 +819,8 @@ class ImmutableCollections {
                 throw new IndexOutOfBoundsException(i);
             }
             return delegate.orElseSet(new Supplier<E>() {
-                        @Override  public E get() { return mapper.apply(i); }});
+                        @Override  public E get() { return underlyingHolder.underlying().apply(i); }},
+                        this);
         }
 
         @Override
@@ -886,6 +888,11 @@ class ImmutableCollections {
         @Override
         public StableValueImpl<E>[] delegates() {
             return delegates;
+        }
+
+        @Override
+        public UnderlyingHolder<IntFunction<? extends E>> underlyingHolder() {
+            return underlyingHolder;
         }
 
         private static final class StableSubList<E> extends SubList<E>
@@ -1604,16 +1611,17 @@ class ImmutableCollections {
     }
 
     static final class StableMap<K, V>
-            extends AbstractImmutableMap<K, V> {
+            extends AbstractImmutableMap<K, V>
+            implements UnderlyingHolder.Has {
 
-        @Stable
-        private final Function<? super K, ? extends V> mapper;
         @Stable
         private final Map<K, StableValueImpl<V>> delegate;
+        @Stable
+        private final UnderlyingHolder<Function<? super K, ? extends V>> underlyingHolder;
 
         StableMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
-            this.mapper = mapper;
             this.delegate = StableUtil.map(keys);
+            this.underlyingHolder = new UnderlyingHolder<>(mapper, keys.size());
         }
 
         @Override public boolean              containsKey(Object o) { return delegate.containsKey(o); }
@@ -1636,7 +1644,12 @@ class ImmutableCollections {
             @SuppressWarnings("unchecked")
             final K k = (K) key;
             return stable.orElseSet(new Supplier<V>() {
-                @Override public V get() { return mapper.apply(k); }});
+                @Override public V get() { return underlyingHolder.underlying().apply(k); }}, this);
+        }
+
+        @Override
+        public UnderlyingHolder<Function<? super K, ? extends V>> underlyingHolder() {
+            return underlyingHolder;
         }
 
         @jdk.internal.ValueBased
@@ -1692,7 +1705,7 @@ class ImmutableCollections {
                     final Map.Entry<K, StableValueImpl<V>> inner = delegateIterator.next();
                     final K k = inner.getKey();
                     return new StableEntry<>(k, inner.getValue(), new Supplier<V>() {
-                        @Override public V get() { return outer.outer.mapper.apply(k); }});
+                        @Override public V get() { return outer.outer.underlyingHolder().underlying().apply(k); }}, outer.outer);
                 }
 
                 @Override
@@ -1703,7 +1716,7 @@ class ImmutableCollections {
                                 public void accept(Entry<K, StableValueImpl<V>> inner) {
                                     final K k = inner.getKey();
                                     action.accept(new StableEntry<>(k, inner.getValue(), new Supplier<V>() {
-                                        @Override public V get() { return outer.outer.mapper.apply(k); }}));
+                                        @Override public V get() { return outer.outer.underlyingHolder().underlying().apply(k); }}, outer.outer));
                                 }
                             };
                     delegateIterator.forEachRemaining(innerAction);
@@ -1719,10 +1732,11 @@ class ImmutableCollections {
 
         private record StableEntry<K, V>(K getKey, // trick
                                          StableValueImpl<V> stableValue,
-                                         Supplier<? extends V> supplier) implements Map.Entry<K, V> {
+                                         Supplier<? extends V> supplier,
+                                         UnderlyingHolder.Has underlyingHolder) implements Map.Entry<K, V> {
 
             @Override public V setValue(V value) { throw uoe(); }
-            @Override public V getValue() { return stableValue.orElseSet(supplier); }
+            @Override public V getValue() { return stableValue.orElseSet(supplier, underlyingHolder); }
             @Override public int hashCode() { return hash(getKey()) ^ hash(getValue()); }
             @Override public String toString() { return getKey() + "=" + stableValue.toString(); }
             @Override public boolean equals(Object o) {

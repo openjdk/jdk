@@ -33,7 +33,6 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -44,22 +43,44 @@ import java.util.function.Supplier;
  * Optimized implementation of a stable Function with enums as keys.
  *
  * @implNote This implementation can be used early in the boot sequence as it does not
- *           rely on reflection, MethodHandles, Streams etc.
+ * rely on reflection, MethodHandles, Streams etc.
  *
- * @param enumType     the class type of the Enum
- * @param firstOrdinal the lowest ordinal used
- * @param member       an int predicate that can be used to test if an enum is a member
- *                     of the valid inputs (as there might be "holes")
- * @param delegates    a delegate array of inputs to StableValue mappings
- * @param original     the original Function
  * @param <E>          the type of the input to the function
  * @param <R>          the type of the result of the function
  */
-public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
-                                                       int firstOrdinal,
-                                                       IntPredicate member,
-                                                       @Stable StableValueImpl<R>[] delegates,
-                                                       Function<? super E, ? extends R> original) implements Function<E, R> {
+public final class StableEnumFunction<E extends Enum<E>, R> implements Function<E, R>, UnderlyingHolder.Has {
+
+    @Stable
+    private final Class<E> enumType;
+    @Stable
+    private final int firstOrdinal;
+    @Stable
+    private final IntPredicate member;
+    @Stable
+    private final StableValueImpl<R>[] delegates;
+    @Stable
+    private final UnderlyingHolder<Function<? super E, ? extends R>> underlyingHolder;
+    /**
+     * @param enumType     the class type of the Enum
+     * @param firstOrdinal the lowest ordinal used
+     * @param member       an int predicate that can be used to test if an enum is a
+     *                     member of the valid inputs (as there might be "holes")
+     * @param delegates    a delegate array of inputs to StableValue mappings
+     * @param underlying   the original underlying Function
+     */
+    public StableEnumFunction(Class<E> enumType,
+                              int firstOrdinal,
+                              IntPredicate member,
+                              StableValueImpl<R>[] delegates,
+                              int initialCounter,
+                              Function<? super E, ? extends R> underlying) {
+        this.enumType = enumType;
+        this.firstOrdinal = firstOrdinal;
+        this.member = member;
+        this.delegates = delegates;
+        this.underlyingHolder = new UnderlyingHolder<>(underlying, initialCounter);
+    }
+
     @ForceInline
     @Override
     public R apply(E value) {
@@ -69,18 +90,12 @@ public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
         final int index = value.ordinal() - firstOrdinal;
         // Since we did the member.test above, we know the index is in bounds
         return delegates[index].orElseSet(new Supplier<R>() {
-                    @Override public R get() { return original.apply(value); }});
+            @Override
+            public R get() {
+                return underlyingHolder.underlying().apply(value);
+            }
+        },this);
 
-    }
-
-    @Override
-    public int hashCode() {
-        return System.identityHashCode(this);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return obj == this;
     }
 
     @Override
@@ -94,6 +109,11 @@ public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
             }
         }
         return StableUtil.renderMappings(this, "StableFunction", entries, true);
+    }
+
+    @Override
+    public UnderlyingHolder<?> underlyingHolder() {
+        return underlyingHolder;
     }
 
     @SuppressWarnings("unchecked")
@@ -112,7 +132,7 @@ public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
         }
         final int size = max - min + 1;
         final IntPredicate member = ImmutableBitSetPredicate.of(bitSet);
-        return (Function<T, R>) new StableEnumFunction<E, R>(enumType, min, member, StableUtil.array(size), (Function<E, R>) original);
+        return (Function<T, R>) new StableEnumFunction<E, R>(enumType, min, member, StableUtil.array(size), bitSet.cardinality(), (Function<E, R>) original);
     }
 
 }

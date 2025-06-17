@@ -24,9 +24,11 @@
 /* @test
  * @summary Basic tests for StableFunction methods
  * @enablePreview
+ * @modules java.base/jdk.internal.lang.stable
  * @run junit StableFunctionTest
  */
 
+import jdk.internal.lang.stable.UnderlyingHolder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -207,6 +209,26 @@ final class StableFunctionTest {
         final var overridden = Value.THIRTEEN;
         Function<Value, Integer> enumFunction = StableValue.function(EnumSet.of(overridden), Value::asInt);
         assertEquals(MAPPER.apply(overridden), enumFunction.apply(overridden));
+    }
+
+    @ParameterizedTest
+    @MethodSource("nonEmptySets")
+    void underlyingRef(Set<Value> inputs) {
+        StableTestUtil.CountingFunction<Value, Integer> cif = new StableTestUtil.CountingFunction<>(MAPPER);
+        Function<Value, Integer> f1 = StableValue.function(inputs, cif);
+
+        UnderlyingHolder<?> holder = ((UnderlyingHolder.Has) f1).underlyingHolder();
+
+        int i = 0;
+        for (Value input : inputs) {
+            assertEquals(inputs.size() - i, holder.counter());
+            assertSame(cif, holder.underlying());
+            int v = f1.apply(input);
+            int v2 = f1.apply(input);
+            i++;
+        }
+        assertEquals(0, holder.counter());
+        assertNull(holder.underlying());
     }
 
     private static Stream<Set<Value>> nonEmptySets() {

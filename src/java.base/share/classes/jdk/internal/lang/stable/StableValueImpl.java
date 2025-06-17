@@ -125,13 +125,20 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public T orElseSet(Supplier<? extends T> supplier) {
+        return orElseSet(supplier, null);
+    }
+
+    @ForceInline
+    public T orElseSet(Supplier<? extends T> supplier,
+                       Object carrier) {
         Objects.requireNonNull(supplier);
         final Object t = wrappedContentsAcquire();
-        return (t == null) ? orElseSetSlowPath(supplier) : unwrap(t);
+        return (t == null) ? orElseSetSlowPath(supplier, carrier) : unwrap(t);
     }
 
     @DontInline
-    private T orElseSetSlowPath(Supplier<? extends T> supplier) {
+    private T orElseSetSlowPath(Supplier<? extends T> supplier,
+                                Object carrier) {
         preventReentry();
         synchronized (this) {
             final Object t = contents;  // Plain semantics suffice here
@@ -139,6 +146,11 @@ public final class StableValueImpl<T> implements StableValue<T> {
                 final T newValue = supplier.get();
                 // The mutex is not reentrant so we know newValue should be returned
                 wrapAndSet(newValue);
+                if (carrier instanceof UnderlyingHolder.Has uh) {
+                    // Reduce the counter and if it reaches zero, clear the reference
+                    // to the underlying holder.
+                    uh.underlyingHolder().countDown();
+                }
                 return newValue;
             }
             return unwrap(t);

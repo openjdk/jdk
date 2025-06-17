@@ -23,10 +23,12 @@
 
 /* @test
  * @summary Basic tests for StableIntFunction methods
+ * @modules java.base/jdk.internal.lang.stable
  * @enablePreview
  * @run junit StableIntFunctionTest
  */
 
+import jdk.internal.lang.stable.UnderlyingHolder;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -104,6 +106,22 @@ final class StableIntFunctionTest {
         assertEquals(System.identityHashCode(f0), f0.hashCode());
         f0.apply(4);
         assertEquals(System.identityHashCode(f0), f0.hashCode());
+    }
+
+    @Test
+    void underlyingRef() {
+        StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(MAPPER);
+        IntFunction<Integer> f1 = StableValue.intFunction(SIZE, cif);
+
+        UnderlyingHolder<?> holder = ((UnderlyingHolder.Has) f1).underlyingHolder();
+        for (int i = 0; i < SIZE; i++) {
+            assertEquals(SIZE - i, holder.counter());
+            assertSame(cif, holder.underlying());
+            int v = f1.apply(i);
+            int v2 = f1.apply(i);
+        }
+        assertEquals(0, holder.counter());
+        assertNull(holder.underlying());
     }
 
 }

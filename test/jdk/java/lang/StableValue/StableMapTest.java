@@ -30,6 +30,7 @@
 
 import jdk.internal.lang.stable.StableUtil;
 import jdk.internal.lang.stable.StableValueImpl;
+import jdk.internal.lang.stable.UnderlyingHolder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -40,6 +41,7 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -338,6 +340,63 @@ final class StableMapTest {
         inputs.add(0);
         inputs.add(null);
         assertThrows(NullPointerException.class, () -> StableValue.map(inputs, IDENTITY));
+    }
+
+    @Test
+    void underlyingRef() {
+        StableTestUtil.CountingFunction<Integer, Integer> cif = new StableTestUtil.CountingFunction<>(IDENTITY);
+        Map<Integer, Integer> f1 = StableValue.map(KEYS, cif);
+
+        UnderlyingHolder<?> holder = ((UnderlyingHolder.Has) f1).underlyingHolder();
+
+        int i = 0;
+        for (Integer input : KEYS) {
+            assertEquals(KEYS.size() - i, holder.counter());
+            assertSame(cif, holder.underlying());
+            int v = f1.get(input);
+            int v2 = f1.get(input);
+            i++;
+        }
+        assertEquals(0, holder.counter());
+        assertNull(holder.underlying());
+    }
+
+    @Test
+    void underlyingRefViaEntrySet() {
+        StableTestUtil.CountingFunction<Integer, Integer> cif = new StableTestUtil.CountingFunction<>(IDENTITY);
+        Map<Integer, Integer> f1 = StableValue.map(KEYS, cif);
+
+        UnderlyingHolder<?> holder = ((UnderlyingHolder.Has) f1).underlyingHolder();
+
+        int i = 0;
+        for (Map.Entry<Integer, Integer> e : f1.entrySet()) {
+            assertEquals(KEYS.size() - i, holder.counter());
+            assertSame(cif, holder.underlying());
+            int v = e.getValue();
+            int v2 = e.getValue();
+            i++;
+        }
+        assertEquals(0, holder.counter());
+        assertNull(holder.underlying());
+    }
+
+    @Test
+    void underlyingRefViaEntrySetForEach() {
+        StableTestUtil.CountingFunction<Integer, Integer> cif = new StableTestUtil.CountingFunction<>(IDENTITY);
+        Map<Integer, Integer> f1 = StableValue.map(KEYS, cif);
+
+        UnderlyingHolder<?> holder = ((UnderlyingHolder.Has) f1).underlyingHolder();
+
+        final AtomicInteger i = new AtomicInteger();
+        f1.entrySet().forEach(e -> {
+            assertEquals(KEYS.size() - i.get(), holder.counter());
+            assertSame(cif, holder.underlying());
+            Integer val = e.getValue();
+            Integer val2 = e.getValue();
+            i.incrementAndGet();
+        });
+        assertEquals(0, holder.counter());
+        assertNull(holder.underlying());
     }
 
     // Support constructs

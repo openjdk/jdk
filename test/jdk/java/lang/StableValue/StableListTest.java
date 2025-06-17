@@ -30,6 +30,7 @@
 
 import jdk.internal.lang.stable.StableUtil;
 import jdk.internal.lang.stable.StableValueImpl;
+import jdk.internal.lang.stable.UnderlyingHolder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -431,6 +432,22 @@ final class StableListTest {
                 });
             });
         });
+    }
+
+    @Test
+    void underlyingRef() {
+        StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(IDENTITY);
+        List<Integer> f1 = StableValue.list(SIZE, cif);
+
+        UnderlyingHolder<?> holder = ((UnderlyingHolder.Has) f1).underlyingHolder();
+        for (int i = 0; i < SIZE; i++) {
+            assertEquals(SIZE - i, holder.counter());
+            assertSame(cif, holder.underlying());
+            int v = f1.get(i);
+            int v2 = f1.get(i);
+        }
+        assertEquals(0, holder.counter());
+        assertNull(holder.underlying());
     }
 
     // Support constructs
