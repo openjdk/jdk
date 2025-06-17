@@ -556,6 +556,7 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, Refe
   assert(nullptr == _methods, "underlying memory not zeroed?");
   assert(is_instance_klass(), "is layout incorrect?");
   assert(size_helper() == parser.layout_size(), "incorrect size_helper?");
+  NOT_PRODUCT(_token.set_as_instance_klass();)
 }
 
 void InstanceKlass::deallocate_methods(ClassLoaderData* loader_data,

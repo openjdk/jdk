@@ -87,6 +87,7 @@ TypeArrayKlass::TypeArrayKlass(BasicType type, Symbol* name) : ArrayKlass(name, 
   assert(size() >= TypeArrayKlass::header_size(), "bad size");
 
   set_class_loader_data(ClassLoaderData::the_null_class_loader_data());
+  NOT_PRODUCT(_token.set_as_type_array_klass();)
 }
 
 typeArrayOop TypeArrayKlass::allocate_common(int length, bool do_zero, TRAPS) {
