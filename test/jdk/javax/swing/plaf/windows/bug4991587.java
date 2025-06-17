@@ -41,8 +41,7 @@ import javax.swing.AbstractButton;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.UIManager;
-
-import com.sun.java.swing.plaf.windows.WindowsButtonUI;
+import javax.swing.plaf.basic.BasicButtonUI;
 
 public class bug4991587 {
     static final String INSTRUCTIONS = """
@@ -80,7 +79,7 @@ public class bug4991587 {
         return f;
     }
 
-    static class MyButtonUI extends WindowsButtonUI {
+    static class MyButtonUI extends BasicButtonUI {
         protected void paintText(Graphics g, AbstractButton b,
                                  Rectangle textRect, String text) {
             g.setColor(Color.blue);
