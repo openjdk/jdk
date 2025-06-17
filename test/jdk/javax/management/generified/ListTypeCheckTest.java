@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 6250772
- * @summary Test that *List objects are checked after asList is called.
+ * @bug 6250772 8359809
+ * @summary Test that *List objects are checked
  * @author Eamonn McManus
  *
  * @run clean ListTypeCheckTest
@@ -60,7 +60,7 @@ public class ListTypeCheckTest {
     }
 
     private static void test(ArrayList al) throws Exception {
-        test(al, true);
+        test(al, false);
         al.clear();
         Method m = al.getClass().getMethod("asList");
         m.invoke(al);
@@ -90,7 +90,7 @@ public class ListTypeCheckTest {
                         throw new Exception("test wrong");
                 }
                 if (!allowsBogus)
-                    throw new Exception("op allowed but should fail");
+                    throw new Exception("op " + i + " allowed but should fail on " + al.getClass());
             } catch (IllegalArgumentException e) {
                 if (allowsBogus)
                     throw new Exception("got exception but should not", e);

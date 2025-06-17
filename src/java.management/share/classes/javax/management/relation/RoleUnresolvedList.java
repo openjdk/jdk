@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,9 +53,6 @@ import java.util.List;
        for (RoleUnresolved r : roleUnresolvedList.asList())
 */
 public class RoleUnresolvedList extends ArrayList<Object> {
-
-    private transient boolean typeSafe;
-    private transient boolean tainted;
 
     /* Serial version */
     private static final long serialVersionUID = 4054902803091433324L;
@@ -121,25 +118,13 @@ public class RoleUnresolvedList extends ArrayList<Object> {
      * @return a {@code List<RoleUnresolved>} whose contents
      * reflect the contents of this {@code RoleUnresolvedList}.
      *
-     * <p>If this method has ever been called on a given
-     * {@code RoleUnresolvedList} instance, a subsequent attempt to add
-     * an object to that instance which is not a {@code RoleUnresolved}
-     * will fail with an {@code IllegalArgumentException}. For compatibility
-     * reasons, a {@code RoleUnresolvedList} on which this method has never
-     * been called does allow objects other than {@code RoleUnresolved}s to
-     * be added.</p>
-     *
      * @throws IllegalArgumentException if this {@code RoleUnresolvedList}
      * contains an element that is not a {@code RoleUnresolved}.
      *
      * @since 1.6
      */
     public List<RoleUnresolved> asList() {
-        if (!typeSafe) {
-            if (tainted)
-                checkTypeSafe(this);
-            typeSafe = true;
-        }
+        checkTypeSafe(this);
         return Util.cast(this);
     }
 
@@ -158,9 +143,9 @@ public class RoleUnresolvedList extends ArrayList<Object> {
         throws IllegalArgumentException {
 
         if (role == null) {
-            String excMsg = "Invalid parameter";
-            throw new IllegalArgumentException(excMsg);
+            throw new IllegalArgumentException("Invalid parameter");
         }
+        checkTypeSafe(role);
         super.add(role);
     }
 
@@ -184,10 +169,9 @@ public class RoleUnresolvedList extends ArrayList<Object> {
                IndexOutOfBoundsException {
 
         if (role == null) {
-            String excMsg = "Invalid parameter";
-            throw new IllegalArgumentException(excMsg);
+            throw new IllegalArgumentException("Invalid parameter");
         }
-
+        checkTypeSafe(role);
         super.add(index, role);
     }
 
@@ -210,10 +194,9 @@ public class RoleUnresolvedList extends ArrayList<Object> {
                 IndexOutOfBoundsException {
 
         if (role == null) {
-            String excMsg = "Invalid parameter";
-            throw new IllegalArgumentException(excMsg);
+            throw new IllegalArgumentException("Invalid parameter");
         }
-
+        checkTypeSafe(role);
         super.set(index, role);
      }
 
@@ -236,7 +219,7 @@ public class RoleUnresolvedList extends ArrayList<Object> {
         if (roleList == null) {
             return true;
         }
-
+        checkTypeSafe(roleList);
         return (super.addAll(roleList));
     }
 
@@ -261,10 +244,9 @@ public class RoleUnresolvedList extends ArrayList<Object> {
                IndexOutOfBoundsException {
 
         if (roleList == null) {
-            String excMsg = "Invalid parameter";
-            throw new IllegalArgumentException(excMsg);
+            throw new IllegalArgumentException("Invalid parameter");
         }
-
+        checkTypeSafe(roleList);
         return (super.addAll(index, roleList));
     }
 
@@ -274,48 +256,53 @@ public class RoleUnresolvedList extends ArrayList<Object> {
      * ever been called on this instance.
      */
 
+    /**
+     * {@inheritDoc}
+     * @throws IllegalArgumentException if {@code o} is not a {@code RoleUnresolved}.
+     */
     @Override
     public boolean add(Object o) {
-        if (!tainted)
-            tainted = isTainted(o);
-        if (typeSafe)
-            checkTypeSafe(o);
+        checkTypeSafe(o);
         return super.add(o);
     }
 
+    /**
+     * {@inheritDoc}
+     * @throws IllegalArgumentException if {@code element} is not a {@code RoleUnresolved}.
+     */
     @Override
     public void add(int index, Object element) {
-        if (!tainted)
-            tainted = isTainted(element);
-        if (typeSafe)
-            checkTypeSafe(element);
+        checkTypeSafe(element);
         super.add(index, element);
     }
 
+    /**
+     * {@inheritDoc}
+     * @throws IllegalArgumentException if {@code c} contains a member that is not a {@code RoleUnresolved}.
+     */
     @Override
     public boolean addAll(Collection<?> c) {
-        if (!tainted)
-            tainted = isTainted(c);
-        if (typeSafe)
-            checkTypeSafe(c);
+        checkTypeSafe(c);
         return super.addAll(c);
     }
 
+    /**
+     * {@inheritDoc}
+     * @throws IllegalArgumentException if {@code c} contains a member that is not a {@code RoleUnresolved}.
+     */
     @Override
     public boolean addAll(int index, Collection<?> c) {
-        if (!tainted)
-            tainted = isTainted(c);
-        if (typeSafe)
-            checkTypeSafe(c);
+        checkTypeSafe(c);
         return super.addAll(index, c);
     }
 
+    /**
+     * {@inheritDoc}
+     * @throws IllegalArgumentException if {@code element} is not a {@code RoleUnresolved}.
+     */
     @Override
     public Object set(int index, Object element) {
-        if (!tainted)
-            tainted = isTainted(element);
-        if (typeSafe)
-            checkTypeSafe(element);
+        checkTypeSafe(element);
         return super.set(index, element);
     }
 
@@ -341,29 +328,5 @@ public class RoleUnresolvedList extends ArrayList<Object> {
         } catch (ClassCastException e) {
             throw new IllegalArgumentException(e);
         }
-    }
-
-    /**
-     * Returns true if o is a non-RoleUnresolved object.
-     */
-    private static boolean isTainted(Object o) {
-        try {
-            checkTypeSafe(o);
-        } catch (IllegalArgumentException e) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Returns true if c contains any non-RoleUnresolved objects.
-     */
-    private static boolean isTainted(Collection<?> c) {
-        try {
-            checkTypeSafe(c);
-        } catch (IllegalArgumentException e) {
-            return true;
-        }
-        return false;
     }
 }
