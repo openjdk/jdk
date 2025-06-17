@@ -300,6 +300,81 @@ static bool core_handle_note(struct ps_prochandle* ph, ELF_PHDR* note_phdr) {
           }
           auxv++;
         }
+      } else if (notep->n_type == NT_FILE) {
+        /*
+         NT_FILE section contains all file locations that were memory-mapped,
+         including the executable file. If the executable file location
+         in the NT_FILE note does not match --exe, we will rewrite the locations
+         of other files we load at a later stage.
+
+         For example, if --exe is ~/jdk/bin/java, but NT_FILE is /opt/jdk/bin/java,
+         we will detect the common suffix (jdk/bin/java), and will later rewrite
+         the prefix /opt/ to ~/, for example
+         /opt/jdk/lib/server/libjvm.so will be rewritten to ~/jdk/lib/server/libjvm.so.
+        */
+
+        // variables used for remapping file names
+        static char remap_from[PATH_MAX];
+        static char remap_to[PATH_MAX];
+        static int remap_from_length;
+
+        long file_count = *(long*) descdata;
+
+        int filename_offset = (3 * file_count + 2) * sizeof(long);
+
+        const char* exename = ph->core->exec_path;
+        int exelen = strlen(exename);
+
+        for (int i = 0; i < file_count; i++) {
+          // iterate over the mapped files, find file name matching the exename
+          char* mapped_file_name = &descdata[filename_offset];
+          int filelen;
+          if (filename_offset >= notep->n_descsz ||
+              (filelen = strnlen(mapped_file_name, notep->n_descsz - filename_offset)) >=
+                  MIN(PATH_MAX, notep->n_descsz - filename_offset)) {
+            print_debug("Malformed NT_FILE section, ignore\n");
+            break;
+          } else {
+            print_debug("Mapped file location: %s\n", mapped_file_name);
+
+            // Try to find a common suffix between the original
+            // and the current file path
+            int maxchars = MIN(exelen, filelen);
+            int lastslash = -1;
+
+            for (int i = 1; i <= maxchars; i++) {
+              if (exename[exelen - i] != mapped_file_name[filelen - i]) {
+                break;
+              }
+              if (exename[exelen - i] == '/') {
+                lastslash = i;
+              }
+            }
+            if (lastslash == exelen && filelen == exelen) {
+              print_debug("Exe file matches core file, will not remap\n");
+              break;
+            } else if (lastslash != -1) {
+              int fd = pathmap_open(mapped_file_name);
+              if (fd >= 0) {
+                print_debug("Mapped file opened successfully, will not remap\n");
+                close(fd);
+                break;
+              }
+              remap_from_length = filelen - lastslash + 1;
+              memcpy(remap_from, mapped_file_name, remap_from_length);
+              remap_from[remap_from_length] = '\0';
+              int remap_to_length = exelen - lastslash + 1;
+              memcpy(remap_to, exename, remap_to_length);
+              remap_to[remap_to_length] = '\0';
+
+              print_debug("Found common suffix, will remap %s to %s\n", remap_from, remap_to);
+              pathmap_remap(remap_from, remap_to, remap_from_length);
+              break;
+            }
+          }
+          // move to next file path
+          filename_offset += filelen + 1;
+        }
       }
       p = descdata + ROUNDUP(notep->n_descsz, 4);
    }
@@ -769,6 +844,9 @@ Pgrab_core(const char* exec_file, const char* core_file) {
   ph->core->core_fd   = -1;
   ph->core->exec_fd   = -1;
   ph->core->interp_fd = -1;
+
+  strncpy(ph->core->exec_path, exec_file, sizeof(ph->core->exec_path));
+  ph->core->exec_path[sizeof(ph->core->exec_path) - 1] = '\0';
 
   // open the core file
   if ((ph->core->core_fd = open(core_file, O_RDONLY)) < 0) {
