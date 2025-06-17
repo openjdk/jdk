@@ -2991,7 +2991,7 @@ void OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(PhaseIte
 
 // Sunk stores should be referenced from an outer loop memory Phi
 void OuterStripMinedLoopNode::handle_sunk_stores_at_expansion(PhaseIterGVN* igvn) {
-  Node* cle_exit_proj = inner_loop_exit();
+  IfFalseNode* cle_exit_proj = inner_loop_exit();
 
   // Sunk stores are pinned on the loop exit projection of the inner loop
 #ifdef ASSERT
