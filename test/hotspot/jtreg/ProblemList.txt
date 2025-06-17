@@ -79,8 +79,6 @@ compiler/ciReplay/TestIncrementalInlining.java 8349191 generic-all
 
 compiler/c2/TestVerifyConstraintCasts.java 8355574 generic-all
 
-compiler/startup/StartupOutput.java 8358129 windows-all
-
 #############################################################################
 
 # :hotspot_gc
@@ -168,7 +166,6 @@ vmTestbase/metaspace/gc/firstGC_50m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_99m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_default/TestDescription.java 8208250 generic-all
 
-vmTestbase/nsk/jvmti/AttachOnDemand/attach045/TestDescription.java 8358094 generic-all
 vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8073470 linux-all
 vmTestbase/nsk/jvmti/InterruptThread/intrpthrd003/TestDescription.java 8288911 macosx-all
 

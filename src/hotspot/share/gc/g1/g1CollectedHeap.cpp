@@ -499,7 +499,7 @@ HeapWord* G1CollectedHeap::alloc_archive_region(size_t word_size, HeapWord* pref
 
   if (reserved.word_size() <= word_size) {
     log_info(gc, heap)("Unable to allocate regions as archive heap is too large; size requested = %zu"
-                       " bytes, heap = %zu bytes", word_size, reserved.word_size());
+                       " bytes, heap = %zu bytes", word_size * HeapWordSize, reserved.byte_size());
     return nullptr;
   }
 
