@@ -206,7 +206,7 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
                   file,line);
   }
 
-  if (!Metaspace::contains(obj_klass)) {
+  if (!Metaspace::klass_is_live(obj_klass, true)) {
     print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                   "Object klass pointer must go to metaspace",
                   file,line);
@@ -270,14 +270,14 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
 
   if (Universe::is_fully_initialized() && (obj_klass == vmClasses::Class_klass())) {
     Metadata* klass = obj->metadata_field(java_lang_Class::klass_offset());
-    if (klass != nullptr && !Metaspace::contains(klass)) {
+    if (klass != nullptr && !Metaspace::metadata_is_live(klass)) {
       print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                     "Instance class mirror should point to Metaspace",
                     file, line);
     }
 
     Metadata* array_klass = obj->metadata_field(java_lang_Class::array_klass_offset());
-    if (array_klass != nullptr && !Metaspace::contains(array_klass)) {
+    if (array_klass != nullptr && !Metaspace::metadata_is_live(array_klass)) {
       print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                     "Array class mirror should point to Metaspace",
                     file, line);
