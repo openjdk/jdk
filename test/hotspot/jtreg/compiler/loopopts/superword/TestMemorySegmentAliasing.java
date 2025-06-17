@@ -65,6 +65,14 @@ import java.lang.foreign.*;
  */
 
 /*
+ * @test id=byte-array-NoAutoAlignment
+ * @bug 8324751
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegmentAliasing ByteArray NoAutoAlignment
+ */
+
+/*
  * @test id=char-array
  * @bug 8324751
  * @summary Test vectorization of loops over MemorySegment
@@ -110,6 +118,14 @@ import java.lang.foreign.*;
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegmentAliasing IntArray AlignVector NoSpeculativeAliasingCheck
+ */
+
+/*
+ * @test id=int-array-NoAutoAlignment
+ * @bug 8324751
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegmentAliasing IntArray NoAutoAlignment
  */
 
 /*
@@ -208,6 +224,14 @@ import java.lang.foreign.*;
  * @run driver compiler.loopopts.superword.TestMemorySegmentAliasing Native AlignVector NoSpeculativeAliasingCheck
  */
 
+/*
+ * @test id=native-NoAutoAlignment
+ * @bug 8324751
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegmentAliasing Native NoAutoAlignment
+ */
+
 public class TestMemorySegmentAliasing {
     public static void main(String[] args) {
         TestFramework framework = new TestFramework(TestMemorySegmentAliasingImpl.class);
@@ -217,6 +241,9 @@ public class TestMemorySegmentAliasing {
             switch (tag) {
                 case "AlignVector" ->                framework.addFlags("-XX:+AlignVector");
                 case "NoSpeculativeAliasingCheck" -> framework.addFlags("-XX:-UseAutoVectorizationSpeculativeAliasingChecks");
+                // automatic alignment has an impact on where the main-loop starts, and that affects init and limit
+                // of the main loop.
+                case "NoAutoAlignment" ->            framework.addFlags("-XX:SuperWordAutomaticAlignment=0");
                 default ->                           throw new RuntimeException("Bad tag: " + tag);
             }
         }
