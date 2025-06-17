@@ -497,15 +497,10 @@ typedef CompositeOperation<MutexedWriteOperation, ReleaseOperation> WriteRelease
 typedef VirtualThreadLocalCheckpointWriteOp<JfrCheckpointManager::Buffer> VirtualThreadLocalCheckpointOperation;
 typedef MutexedWriteOp<VirtualThreadLocalCheckpointOperation> VirtualThreadLocalWriteOperation;
 
-void JfrCheckpointManager::begin_epoch_shift() {
-  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-  JfrTraceIdEpoch::begin_epoch_shift();
-}
-
-void JfrCheckpointManager::end_epoch_shift() {
+void JfrCheckpointManager::shift_epoch() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   DEBUG_ONLY(const u1 current_epoch = JfrTraceIdEpoch::current();)
-  JfrTraceIdEpoch::end_epoch_shift();
+  JfrTraceIdEpoch::shift_epoch();
   assert(current_epoch != JfrTraceIdEpoch::current(), "invariant");
   JfrStringPool::on_epoch_shift();
 }

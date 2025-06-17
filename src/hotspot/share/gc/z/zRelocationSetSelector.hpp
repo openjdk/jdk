@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,9 +62,9 @@ class ZRelocationSetSelectorStats {
   friend class ZRelocationSetSelector;
 
 private:
-  ZRelocationSetSelectorGroupStats _small[ZPageAgeMax + 1];
-  ZRelocationSetSelectorGroupStats _medium[ZPageAgeMax + 1];
-  ZRelocationSetSelectorGroupStats _large[ZPageAgeMax + 1];
+  ZRelocationSetSelectorGroupStats _small[ZPageAgeCount];
+  ZRelocationSetSelectorGroupStats _medium[ZPageAgeCount];
+  ZRelocationSetSelectorGroupStats _large[ZPageAgeCount];
 
   size_t _has_relocatable_pages;
 
@@ -90,7 +90,7 @@ private:
   ZArray<ZPage*>                   _live_pages;
   ZArray<ZPage*>                   _not_selected_pages;
   size_t                           _forwarding_entries;
-  ZRelocationSetSelectorGroupStats _stats[ZPageAgeMax + 1];
+  ZRelocationSetSelectorGroupStats _stats[ZPageAgeCount];
 
   bool is_disabled();
   bool is_selectable();
