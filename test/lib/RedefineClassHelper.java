@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,13 @@
  * questions.
  */
 
+import java.io.InputStream;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.ClassDefinition;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.helpers.ClassFileInstaller;
+
+import static jdk.test.lib.Asserts.assertTrue;
 
 /*
  * Helper class to write tests that redefine classes.
@@ -59,6 +62,53 @@ public class RedefineClassHelper {
      */
     public static void redefineClass(Class<?> clazz, byte[] bytecode) throws Exception {
         instrumentation.redefineClasses(new ClassDefinition(clazz, bytecode));
+    }
+
+    private static byte[] getBytecodes(ClassLoader loader, String name) throws Exception {
+        InputStream is = loader.getResourceAsStream(name + ".class");
+        byte[] buf = is.readAllBytes();
+        System.out.println("sizeof(" + name + ".class) == " + buf.length);
+        return buf;
+    }
+
+    private static int getStringIndex(String needle, byte[] buf) {
+        return getStringIndex(needle, buf, 0);
+    }
+
+    private static int getStringIndex(String needle, byte[] buf, int offset) {
+        outer:
+        for (int i = offset; i < buf.length - offset - needle.length(); i++) {
+            for (int j = 0; j < needle.length(); j++) {
+                if (buf[i + j] != (byte)needle.charAt(j)) continue outer;
+            }
+            return i;
+        }
+        return 0;
+    }
+
+    private static void replaceString(byte[] buf, String name, int index) {
+        for (int i = index; i < index + name.length(); i++) {
+            buf[i] = (byte)name.charAt(i - index);
+        }
+    }
+
+    /*
+     * Replace class name in bytecodes to the class we're trying to redefine, so that both
+     * old and new classes can be compiled with jtreg for the test.
+     *
+     * @param loader ClassLoader to find the bytes for the class.
+     * @param oldString old class name.
+     * @param newString new class name to replace with old class name.
+     */
+
+    public static byte[] replaceAllStrings(ClassLoader loader, String oldString, String newString) throws Exception {
+        byte[] buf = getBytecodes(loader, oldString);
+        assertTrue(oldString.length() == newString.length(), "must have same length");
+        int index = -1;
+        while ((index = getStringIndex(oldString, buf, index + 1)) != 0) {
+            replaceString(buf, newString, index);
+        }
+        return buf;
     }
 
     /**
