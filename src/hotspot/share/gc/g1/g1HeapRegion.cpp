@@ -455,7 +455,7 @@ static bool is_oop_safe(oop obj) {
     return false;
   }
 
-  if (!Metaspace::contains(klass)) {
+  if (!Metaspace::klass_is_live(klass, true)) {
     log_error(gc, verify)("klass " PTR_FORMAT " of object " PTR_FORMAT " "
                           "is not in metaspace", p2i(klass), p2i(obj));
     return false;

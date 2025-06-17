@@ -158,7 +158,7 @@ private:
       // Do this before touching obj->size()
       check(ShenandoahAsserts::_safe_unknown, obj, obj_klass != nullptr,
              "Object klass pointer should not be null");
-      check(ShenandoahAsserts::_safe_unknown, obj, Metaspace::contains(obj_klass),
+      check(ShenandoahAsserts::_safe_unknown, obj, Metaspace::klass_is_live(obj_klass, true),
              "Object klass pointer must go to metaspace");
 
       HeapWord *obj_addr = cast_from_oop<HeapWord*>(obj);
@@ -216,7 +216,7 @@ private:
       Klass* fwd_klass = fwd->klass_or_null();
       check(ShenandoahAsserts::_safe_oop, obj, fwd_klass != nullptr,
              "Forwardee klass pointer should not be null");
-      check(ShenandoahAsserts::_safe_oop, obj, Metaspace::contains(fwd_klass),
+      check(ShenandoahAsserts::_safe_oop, obj, Metaspace::klass_is_live(fwd_klass, true),
              "Forwardee klass pointer must go to metaspace");
       check(ShenandoahAsserts::_safe_oop, obj, obj_klass == fwd_klass,
              "Forwardee klass pointer must go to metaspace");
@@ -249,12 +249,12 @@ private:
     if (obj_klass == vmClasses::Class_klass()) {
       Metadata* klass = obj->metadata_field(java_lang_Class::klass_offset());
       check(ShenandoahAsserts::_safe_oop, obj,
-            klass == nullptr || Metaspace::contains(klass),
+            klass == nullptr || Metaspace::metadata_is_live(klass),
             "Instance class mirror should point to Metaspace");
 
       Metadata* array_klass = obj->metadata_field(java_lang_Class::array_klass_offset());
       check(ShenandoahAsserts::_safe_oop, obj,
-            array_klass == nullptr || Metaspace::contains(array_klass),
+            array_klass == nullptr || Metaspace::metadata_is_live(array_klass),
             "Array class mirror should point to Metaspace");
     }
 
