@@ -475,6 +475,7 @@ public class TestAliasingFuzzer {
 
         // Do we count up or down, iterate over the containers forward or backward?
         boolean loopForward,
+        int ivStrideAbs,
 
         // For all index forms: number of invariants in the rest, i.e. the [err] term.
         int numInvarRest,
@@ -512,6 +513,7 @@ public class TestAliasingFuzzer {
                 ContainerKind.ARRAY,
                 type,
                 loopForward,
+                1,
                 numInvarRest,
                 new IndexForm[] {form0, form1},
                 new MyType[]    {type,   type},
@@ -542,13 +544,15 @@ public class TestAliasingFuzzer {
                 accessType1 = accessType0;
             }
 
+            final int minAccessSize = Math.min(accessType0.byteSize(), accessType1.byteSize());
+            final int maxAccessSize = Math.max(accessType0.byteSize(), accessType1.byteSize());
+
             // size must be large enough for:
             //   - scale = 4
             //   - range with size / 4
             // -> need at least size 16_000 to ensure we have 1000 iterations
             // We want there to be a little variation, so alignment is not always the same.
             final int numAccessElements = Generators.G.safeRestrict(Generators.G.ints(), 18_000, 20_000).next();
-            final int maxAccessSize = Math.max(accessType0.byteSize(), accessType1.byteSize());
             final int align = Math.max(maxAccessSize, containerElementType.byteSize());
             // We need to align up, so the size is divisible exactly by all involved type sizes.
             final int containerByteSize = alignUp(numAccessElements * maxAccessSize, align);
@@ -562,7 +566,9 @@ public class TestAliasingFuzzer {
                 indexSize0 = 1;
                 indexSize1 = 1;
             }
+
             boolean withAbsOneIvScale = containerKind == ContainerKind.MEMORY_SEGMENT_LONG_ADR_STRIDE;
+            int ivStrideAbs = containerKind == ContainerKind.MEMORY_SEGMENT_LONG_ADR_STRIDE ? minAccessSize : 1;
             var form0 = IndexForm.random(numInvarRest, indexSize0, withAbsOneIvScale);
             var form1 = IndexForm.random(numInvarRest, indexSize1, withAbsOneIvScale);
 
@@ -572,6 +578,7 @@ public class TestAliasingFuzzer {
                 containerKind,
                 containerElementType,
                 loopForward,
+                ivStrideAbs,
                 numInvarRest,
                 new IndexForm[] {form0, form1},
                 new MyType[]    {accessType0, accessType1},
@@ -869,23 +876,9 @@ public class TestAliasingFuzzer {
             return template.asToken();
         }
 
-        private int memorySegmentLongAdrStride() {
-            // Take the smallest byteSize of all accessTypes. All others
-            // will get their ivScale adjusted.
-            int stride = Integer.MAX_VALUE;
-            for (MyType type : accessType) {
-                stride = Math.min(stride, type.byteSize());
-            }
-            return stride;
-        }
-
         private TemplateToken generateBoundsAndInvariants(String[] indexFormNames, String[] invarRest) {
             // We want there to be at least 1000 iterations.
-            final int minIvRange = switch (containerKind) {
-                // With the larger stride, we essencially divide the range to get the iterations.
-                case ContainerKind.MEMORY_SEGMENT_LONG_ADR_STRIDE -> 1000 * memorySegmentLongAdrStride();
-                default ->                                           1000;
-            };
+            final int minIvRange = ivStrideAbs * 1000;
 
             var template = Template.make(() -> body(
                 let("containerByteSize", containerByteSize),
