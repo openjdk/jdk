@@ -106,7 +106,6 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  *     and split ranges, and then different memory but overlapping ranges.
  *     This would also be never aliasing.
  *
- * TODO: native memory backing
  * TODO: pointer using stride instead of scale
  */
 public class TestAliasingFuzzer {
@@ -124,6 +123,8 @@ public class TestAliasingFuzzer {
     public static final String con2F = "Float.intBitsToFloat(0x09101112)";
     public static final String con1D = "Double.longBitsToDouble(" + con1 + ")";
     public static final String con2D = "Double.longBitsToDouble(" + con2 + ")";
+
+    // List of primitive types for accesses and arrays.
     public static final MyType myByte   = new MyType("byte",   1, con1, con2,   "ValueLayout.JAVA_BYTE");
     public static final MyType myChar   = new MyType("char",   2, con1, con2,   "ValueLayout.JAVA_CHAR_UNALIGNED");
     public static final MyType myShort  = new MyType("short",  2, con1, con2,   "ValueLayout.JAVA_SHORT_UNALIGNED");
@@ -131,8 +132,13 @@ public class TestAliasingFuzzer {
     public static final MyType myLong   = new MyType("long",   8, con1, con2,   "ValueLayout.JAVA_LONG_UNALIGNED");
     public static final MyType myFloat  = new MyType("float",  4, con1F, con2F, "ValueLayout.JAVA_FLOAT_UNALIGNED");
     public static final MyType myDouble = new MyType("double", 8, con1D, con2D, "ValueLayout.JAVA_DOUBLE_UNALIGNED");
-    public static final List<MyType> allTypes
+    public static final List<MyType> primitiveTypes
         = List.of(myByte, myChar, myShort, myInt, myLong, myFloat, myDouble);
+
+    // For native memory, we use this "fake" type. It has a byteSize of 1, since we measure the memory in bytes.
+    public static final MyType myNative = new MyType("native", 1, null, null,   null);
+    public static final List<MyType> primitiveTypesAndNative
+        = List.of(myByte, myChar, myShort, myInt, myLong, myFloat, myDouble, myNative);
 
     // Do the containers (array, MemorySegment, etc) ever overlap?
     enum Aliasing {
@@ -221,7 +227,7 @@ public class TestAliasingFuzzer {
         for (int i = 0; i < 20; i++) {
             Aliasing aliasing = sample(Arrays.asList(Aliasing.values()));
             AccessScenario accessScenario = sample(Arrays.asList(AccessScenario.values()));
-            MyType type = sample(allTypes);
+            MyType type = sample(primitiveTypes);
             testTemplateTokens.add(
                 TestGenerator.makeArray(type, aliasing, accessScenario).generate()
             );
@@ -232,8 +238,9 @@ public class TestAliasingFuzzer {
         for (int i = 0; i < 40; i++) {
             Aliasing aliasing = sample(Arrays.asList(Aliasing.values()));
             AccessScenario accessScenario = sample(Arrays.asList(AccessScenario.values()));
-            MyType containerElementType = sample(allTypes);
-            MyType accessType = sample(allTypes);
+            // Backing memory can be native, access must be primitive.
+            MyType containerElementType = sample(primitiveTypesAndNative);
+            MyType accessType = sample(primitiveTypes);
             boolean useAtIndex = RANDOM.nextBoolean();
             testTemplateTokens.add(
                 TestGenerator.makeMemorySegment(
@@ -300,6 +307,8 @@ public class TestAliasingFuzzer {
     //     iv.hi * ivScale <= range.hi - con - invar0 * invar0Scale - err - size
     //   This allows us to pick a iv.hi.
     //
+    // More details can be found in the implementation below.
+    //
     public static record IndexForm(int con, int ivScale, int invar0Scale, int[] invarRestScales, int size) {
         public static IndexForm random(int numInvarRest, int size) {
             int con = RANDOM.nextInt(-100_000, 100_000);
@@ -360,6 +369,7 @@ public class TestAliasingFuzzer {
         }
     }
 
+    // Mirror the IndexForm from the generator to the test.
     public static TemplateToken generateIndexForm() {
         var template = Template.make(() -> body(
             """
@@ -470,7 +480,7 @@ public class TestAliasingFuzzer {
         int numContainers,
         int containerByteSize,
         ContainerKind containerKind,
-        MyType containerElementType, // null means native
+        MyType containerElementType,
 
         // Do we count up or down, iterate over the containers forward or backward?
         boolean loopForward,
@@ -624,13 +634,21 @@ public class TestAliasingFuzzer {
         private TemplateToken generateMemorySegmentField(String name, MyType type) {
             var template = Template.make(() -> body(
                 let("size", containerByteSize / type.byteSize()),
+                let("byteSize", containerByteSize),
                 let("name", name),
                 let("type", type),
-                """
-                private static MemorySegment original_#name  = MemorySegment.ofArray(new #type[#size]);
-                private static MemorySegment test_#name      = MemorySegment.ofArray(new #type[#size]);
-                private static MemorySegment reference_#name = MemorySegment.ofArray(new #type[#size]);
-                """
+                (type == myNative
+                 ?  """
+                    private static MemorySegment original_#name  = Arena.ofAuto().allocate(#byteSize);
+                    private static MemorySegment test_#name      = Arena.ofAuto().allocate(#byteSize);
+                    private static MemorySegment reference_#name = Arena.ofAuto().allocate(#byteSize);
+                    """
+                 :  """
+                    private static MemorySegment original_#name  = MemorySegment.ofArray(new #type[#size]);
+                    private static MemorySegment test_#name      = MemorySegment.ofArray(new #type[#size]);
+                    private static MemorySegment reference_#name = MemorySegment.ofArray(new #type[#size]);
+                    """
+                )
             ));
             return template.asToken();
         }
