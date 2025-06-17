@@ -418,8 +418,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateTy
   if ( X_eq_A   &&  Y_exists && !Y_eq_W && !W_eq_B &&  U_exists) { row = 22; }
   if ( X_eq_A   &&  Y_exists &&             W_eq_B &&  U_exists) { row = 23; }
 
-  DEBUG_ONLY(print_case();)
-  switch(row) {
+    switch(row) {
     // row  0:  .........A..................B.....
     case 0: {
       update_A(B);

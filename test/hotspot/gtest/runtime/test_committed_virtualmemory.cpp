@@ -97,10 +97,6 @@ public:
       *touch_addr = 'a';
     }
 
-    address frame = (address)0x1235;
-    NativeCallStack stack(&frame, 1);
-    VirtualMemoryTracker::Instance::add_reserved_region((address)base, size, stack, mtThreadStack);
-
     // trigger the test
     VirtualMemoryTracker::Instance::snapshot_thread_stacks();
 

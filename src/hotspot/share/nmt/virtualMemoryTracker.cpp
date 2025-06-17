@@ -94,14 +94,14 @@ void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff diff) {
   size_t reserved, committed;
   MemTag tag = mtNone;
   auto print_err = [&](const char* str) {
-    return;
-    // Will be commented out after 8350567. The error outputs corrupt the jdk-image.
-    // log_error(nmt)("summary mismatch, at %s, for %s,"
-    //                " diff-reserved:  %ld"
-    //                " diff-committed: %ld"
-    //                " vms-reserved: %zu"
-    //                " vms-committed: %zu",
-    //                str, NMTUtil::tag_to_name(tag), (long)reserve_delta, (long)commit_delta, reserved, committed);
+#ifdef ASSERT
+    log_error(nmt)("summary mismatch, at %s, for %s,"
+                   " diff-reserved:  %ld"
+                   " diff-committed: %ld"
+                   " vms-reserved: %zu"
+                   " vms-committed: %zu",
+                   str, NMTUtil::tag_to_name(tag), (long)reserve_delta, (long)commit_delta, reserved, committed);
+#endif
   };
 
   for (int i = 0; i < mt_number_of_tags; i++) {

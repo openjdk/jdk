@@ -260,7 +260,6 @@ public:
       }
       tree.tree().upsert((VMATree::position)et.nodes[i], st);
     }
-    print_tree(et, line_no);
 }
 
   template <int N>
@@ -306,7 +305,6 @@ public:
         EXPECT_FALSE(r.end->val().in.has_committed_stack()) << for_this_node;
       }
     }
-    print_tree(et, line_no);
   }
 
   template<int N>
@@ -348,6 +346,16 @@ TEST_VM_F(NMTVMATreeTest, OverlappingReservationsResultInTwoNodes) {
     tree.reserve_mapping(i * 100, 101, rd);
   }
   EXPECT_EQ(2, count_nodes(tree));
+}
+
+TEST_VM_F(NMTVMATreeTest, DuplicateReserve) {
+  VMATree::RegionData rd{si[0], mtTest};
+  Tree tree;
+  tree.reserve_mapping(100, 100, rd);
+  tree.reserve_mapping(100, 100, rd);
+  EXPECT_EQ(2, count_nodes(tree));
+  VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(110);
+  EXPECT_EQ(100, (int)(r.end->key() - r.start->key()));
 }
 
 TEST_VM_F(NMTVMATreeTest, UseTagInplace) {

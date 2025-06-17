@@ -167,6 +167,8 @@ public:
   }
 
   static void test_add_committed_region_adjacent_overlapping() {
+    RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
+    rtree->tree().remove_all();
 
     size_t size  = 0x01000000;
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
@@ -180,11 +182,7 @@ public:
     NativeCallStack stack(&frame1, 1);
     NativeCallStack stack2(&frame2, 1);
 
-    // Add the reserved memory
-    VirtualMemoryTracker::Instance::add_reserved_region(addr, size, stack, mtTest);
-
     // Fetch the added RMR for the space
-    RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
     ReservedMemoryRegion rmr = rtree->find_reserved_region(addr);
 
     ASSERT_EQ(rmr.size(), size);
@@ -257,6 +255,8 @@ public:
   }
 
   static void test_add_committed_region_overlapping() {
+    RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
+    rtree->tree().remove_all();
 
     size_t size  = 0x01000000;
 
@@ -272,7 +272,6 @@ public:
     NativeCallStack stack2(&frame2, 1);
 
     // Fetch the added RMR for the space
-    RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
     ReservedMemoryRegion rmr = rtree->find_reserved_region(addr);
 
 
@@ -433,6 +432,8 @@ public:
   }
 
   static void test_remove_uncommitted_region() {
+    RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
+    rtree->tree().remove_all();
 
     size_t size  = 0x01000000;
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
@@ -447,7 +448,6 @@ public:
     NativeCallStack stack2(&frame2, 1);
 
     // Fetch the added RMR for the space
-    RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
     ReservedMemoryRegion rmr = rtree->find_reserved_region(addr);
 
     ASSERT_EQ(rmr.size(), size);
