@@ -621,11 +621,10 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             if (port != -1 && port != url.getDefaultPort()) {
                 host += ":" + String.valueOf(port);
             }
-            if (requests.findValue("Host") == null) {
-                // if the "Host" header hasn't been explicitly set, then set its
-                // value to the one determined through the request URL
-                requests.set("Host", host);
-            }
+            // if the "Host" header hasn't been explicitly set, then set its
+            // value to the one determined through the request URL
+            requests.setIfNotSet("Host", host);
+
             requests.setIfNotSet("Accept", acceptString);
 
             /*
