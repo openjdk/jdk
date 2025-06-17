@@ -102,6 +102,8 @@ public enum CompilePhase {
     BEFORE_MACRO_EXPANSION(         "Before Macro Expansion"),
     AFTER_MACRO_EXPANSION_STEP(     "After Macro Expansion Step"),
     AFTER_MACRO_EXPANSION(          "After Macro Expansion"),
+    AFTER_MACRO_ELIMINATION_STEP(   "After Macro Elimination Step"),
+    AFTER_MACRO_ELIMINATION(        "After Macro Elimination"),
     BARRIER_EXPANSION(              "Barrier Expand"),
     OPTIMIZE_FINISHED(              "Optimize Finished"),
     PRINT_IDEAL(                    "PrintIdeal"),

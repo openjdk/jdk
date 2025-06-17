@@ -2463,9 +2463,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         C->print_method(PHASE_AFTER_MACRO_ELIMINATION_STEP, 5, n);
       }
     }
-
   }
-#ifndef PRODUCT
+  #ifndef PRODUCT
   if (PrintOptoStatistics) {
     int membar_after = count_MemBar(C);
     Atomic::add(&PhaseMacroExpand::_memory_barriers_removed_counter, membar_before - membar_after);
@@ -2548,8 +2547,6 @@ void PhaseMacroExpand::eliminate_opaque_looplimit_macro_nodes() {
 //------------------------------expand_macro_nodes----------------------
 //  Returns true if a failure occurred.
 bool PhaseMacroExpand::expand_macro_nodes() {
-  // Do not allow new macro nodes once we started to expand
-  C->reset_allow_macro_nodes();
   if (StressMacroExpansion) {
     C->shuffle_macro_nodes();
   }
