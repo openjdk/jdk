@@ -140,7 +140,7 @@ public class TestRedundantLea {
             if (negativeTest) {
                 scenarios[i] = new Scenario(i, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-OptoPeephole");
             } else {
-                scenarios[i] = new Scenario(i, "-XX:+OptoPeephole");
+                scenarios[i] = new Scenario(i, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+OptoPeephole");
             }
             i += 1;
         }
