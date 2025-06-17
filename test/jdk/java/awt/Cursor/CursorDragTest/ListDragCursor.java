@@ -37,47 +37,13 @@ import java.awt.List;
 import java.awt.Panel;
 import java.awt.TextArea;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class ListDragCursor {
     static Frame testFrame;
     static Frame instructionsFrame;
-    static CountDownLatch countDownLatch;
-
-    public static void main(String[] args) throws Exception {
-        countDownLatch = new CountDownLatch(1);
-        EventQueue.invokeAndWait(() -> {
-            createTestFrame();
-            createInstructionsFrame();
-        });
-        countDownLatch.await();
-        System.out.println("Test Passed");
-    }
-
-    static void createTestFrame() {
-        Frame frame = new Frame("Cursor change after drag");
-        Panel panel = new Panel();
-
-        List list = new List(2);
-        list.add("List1");
-        list.add("List2");
-        list.add("List3");
-        list.add("List4");
-        list.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-        TextArea textArea = new TextArea(3, 5);
-        textArea.setCursor(new Cursor(Cursor.TEXT_CURSOR));
-
-        panel.add(textArea);
-        panel.add(list);
-
-        frame.add(panel);
-        frame.setSize(300, 150);
-        frame.setLocation(450, 500);
-        frame.setVisible(true);
-    }
-
-    static void createInstructionsFrame() {
-        String instructions = """
+    private static final CountDownLatch countDownLatch = new CountDownLatch(1);
+    static String INSTRUCTIONS = """
                 1. Move mouse to the TextArea.
                 2. Press the left mouse button.
                 3. Drag mouse to the list.
@@ -95,9 +61,49 @@ public class ListDragCursor {
                 mouse button.
                 """;
 
+    public static void main(String[] args) throws Exception {
+        try {
+            EventQueue.invokeAndWait(() -> {
+                createInstructionsFrame();
+                createTestFrame();
+            });
+            if (!countDownLatch.await(2, TimeUnit.MINUTES)) {
+                throw new RuntimeException("Test timeout : No action was"
+                        + " taken on the test.");
+            }
+            System.out.println("Test passed.");
+        } finally {
+            EventQueue.invokeAndWait(ListDragCursor::disposeFrames);
+        }
+    }
+
+    static void createTestFrame() {
+        testFrame = new Frame("Cursor change after drag");
+        Panel panel = new Panel();
+
+        List list = new List(2);
+        list.add("List1");
+        list.add("List2");
+        list.add("List3");
+        list.add("List4");
+        list.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        TextArea textArea = new TextArea(3, 5);
+        textArea.setCursor(new Cursor(Cursor.TEXT_CURSOR));
+
+        panel.add(textArea);
+        panel.add(list);
+
+        testFrame.add(panel);
+        testFrame.setSize(300, 150);
+        testFrame.setLocation(450, 500);
+        testFrame.setVisible(true);
+    }
+
+    static void createInstructionsFrame() {
         instructionsFrame = new Frame("Test Instructions");
         Panel mainPanel = new Panel(new BorderLayout());
-        TextArea textArea = new TextArea(instructions,
+        TextArea textArea = new TextArea(INSTRUCTIONS,
                 15, 60, TextArea.SCROLLBARS_NONE);
 
         Panel btnPanel = new Panel();
@@ -106,9 +112,10 @@ public class ListDragCursor {
         btnPanel.add(passBtn);
         btnPanel.add(failBtn);
 
-        passBtn.addActionListener(e -> disposeFrames());
+        passBtn.addActionListener(e -> {
+            countDownLatch.countDown();
+        });
         failBtn.addActionListener(e -> {
-            disposeFrames();
             throw new RuntimeException("Test Failed");
         });
 
@@ -117,12 +124,11 @@ public class ListDragCursor {
 
         instructionsFrame.add(mainPanel);
         instructionsFrame.pack();
-        instructionsFrame.setLocation(300, 100);
+        instructionsFrame.setLocationRelativeTo(null);
         instructionsFrame.setVisible(true);
     }
 
     static void disposeFrames() {
-        countDownLatch.countDown();
         if (testFrame != null) {
             testFrame.dispose();
         }
