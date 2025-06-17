@@ -26,7 +26,7 @@
  * @bug 6568874
  * @key printer
  * @summary Verify the native dialog works with attribute sets.
- * @library /java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers /test/lib
  * @build PassFailJFrame
  * @run main/manual DialogType
  */
@@ -37,6 +37,8 @@ import javax.print.attribute.Attribute;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.DialogTypeSelection;
+
+import jtreg.SkippedException;
 
 public class DialogType {
     private static PrinterJob job;
@@ -54,7 +56,7 @@ public class DialogType {
     public static void main(String[] args) throws Exception {
         job = PrinterJob.getPrinterJob();
         if (job.getPrintService() == null) {
-            throw new RuntimeException("Printer not configured or not available");
+            throw new SkippedException("Printer not configured or not available");
         }
         PassFailJFrame passFailJFrame = PassFailJFrame.builder()
             .title("DialogType Test Instructions")
