@@ -384,8 +384,8 @@ import java.util.function.Supplier;
  * <p>
  * The method {@link #orElseSet(Supplier)} guarantees that the provided
  * {@linkplain Supplier} is invoked successfully at most once, even under race.
- * Invocations of {@link #setOrThrow(Object)} form a total order of zero or more
- * exceptional invocations followed by zero (if the contents were already set) or one
+ * Invocations of {@link #orElseSet(Supplier)} form a total order of zero or
+ * more exceptional invocations followed by zero (if the contents were already set) or one
  * successful invocation. Since stable functions and stable collections are built on top
  * of the same principles as {@linkplain StableValue#orElseSet(Supplier) orElseSet()} they
  * too are thread safe and guarantee at-most-once-per-input invocation.
@@ -443,8 +443,6 @@ import java.util.function.Supplier;
 @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
 public sealed interface StableValue<T>
         permits StableValueImpl {
-
-    // Principal methods
 
     /**
      * Tries to set the contents of this StableValue to the provided {@code contents}.
@@ -509,8 +507,6 @@ public sealed interface StableValue<T>
      */
     T orElseSet(Supplier<? extends T> supplier);
 
-    // Convenience methods
-
     /**
      * Sets the contents of this StableValue to the provided {@code contents}, or, if
      * already set, throws {@code IllegalStateException}.
@@ -519,6 +515,9 @@ public sealed interface StableValue<T>
      *
      * @param contents to set
      * @throws IllegalStateException if the contents was already set
+     * @throws IllegalStateException if a supplier invoked by {@link #orElseSet(Supplier)}
+     *         recursively attempts to set this stable value by calling this method
+     *         directly or indirectly.
      */
     void setOrThrow(T contents);
 
@@ -573,8 +572,8 @@ public sealed interface StableValue<T>
      * at most once even in a multi-threaded environment. Competing threads invoking the
      * returned supplier's {@linkplain Supplier#get() get()} method when a value is
      * already under computation will block until a value is computed or an exception is
-     * thrown by the computing thread. The computing threads will then observe the newly
-     * computed value (if any) and will then never execute.
+     * thrown by the computing thread. The competing threads will then observe the newly
+     * computed value (if any) and will then never execute the {@code underlying} supplier.
      * <p>
      * If the provided {@code underlying} supplier throws an exception, it is rethrown
      * to the initial caller and no contents is recorded.
@@ -614,9 +613,9 @@ public sealed interface StableValue<T>
      * function for the same input, an {@linkplain IllegalStateException} will
      * be thrown.
      *
-     * @param size       the size of the allowed inputs in the continuous
-     *                   interval {@code [0, size)}
-     * @param underlying IntFunction used to compute cached values
+     * @param size       the upper bound of the range {@code [0, size)} indicating
+     *                   the allowed inputs
+     * @param underlying {@code IntFunction} used to compute cached values
      * @param <R>        the type of results delivered by the returned IntFunction
      * @throws IllegalArgumentException if the provided {@code size} is negative.
      */
@@ -684,7 +683,7 @@ public sealed interface StableValue<T>
      * If invoking the provided {@code mapper} function throws an exception, it
      * is rethrown to the initial caller and no value for the element is recorded.
      * <p>
-     * Any direct {@link List#subList(int, int) subList} or {@link List#reversed()} views
+     * Any {@link List#subList(int, int) subList} or {@link List#reversed()} views
      * of the returned list are also stable.
      * <p>
      * The returned list and its {@link List#subList(int, int) subList} or
@@ -727,8 +726,8 @@ public sealed interface StableValue<T>
      * is rethrown to the initial caller and no value associated with the provided key
      * is recorded.
      * <p>
-     * Any direct {@link Map#values()} or {@link Map#entrySet()} views
-     * of the returned map are also stable.
+     * Any {@link Map#values()} or {@link Map#entrySet()} views of the returned map are
+     * also stable.
      * <p>
      * The returned map is unmodifiable and does not implement the
      * {@linkplain Collection##optional-operations optional operations} in the

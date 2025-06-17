@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -57,12 +57,6 @@ inline void JavaThread::clear_suspend_flag(SuspendFlags f) {
   while (Atomic::cmpxchg(&_suspend_flags, flags, (flags & ~f)) != flags);
 }
 
-inline void JavaThread::set_trace_flag() {
-  set_suspend_flag(_trace_flag);
-}
-inline void JavaThread::clear_trace_flag() {
-  clear_suspend_flag(_trace_flag);
-}
 inline void JavaThread::set_obj_deopt_flag() {
   set_suspend_flag(_obj_deopt);
 }
@@ -71,11 +65,11 @@ inline void JavaThread::clear_obj_deopt_flag() {
 }
 
 #if INCLUDE_JVMTI
-inline void JavaThread::set_carrier_thread_suspended() {
-  _carrier_thread_suspended = true;
+inline bool JavaThread::set_carrier_thread_suspended() {
+  return Atomic::cmpxchg(&_carrier_thread_suspended, false, true) == false;
 }
-inline void JavaThread::clear_carrier_thread_suspended() {
-  _carrier_thread_suspended = false;
+inline bool JavaThread::clear_carrier_thread_suspended() {
+  return Atomic::cmpxchg(&_carrier_thread_suspended, true, false) == true;
 }
 #endif
 

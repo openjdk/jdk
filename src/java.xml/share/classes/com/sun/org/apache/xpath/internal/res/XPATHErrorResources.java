@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,7 +31,7 @@ import java.util.ListResourceBundle;
   * Also you need to  update the count of messages(MAX_CODE)or
  * the count of warnings(MAX_WARNING) [ Information purpose only]
  * @xsl.usage advanced
- * @LastModified: Nov 2024
+ * @LastModified: Apr 2025
  */
 public class XPATHErrorResources extends ListResourceBundle
 {
@@ -305,7 +305,6 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   public static final String ER_XPATH_ERROR = "ER_XPATH_ERROR";
 
   //BEGIN: Keys needed for exception messages of  JAXP 1.3 XPath API implementation
-  public static final String ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED = "ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED";
   public static final String ER_RESOLVE_VARIABLE_RETURNS_NULL = "ER_RESOLVE_VARIABLE_RETURNS_NULL";
   public static final String ER_NO_XPATH_VARIABLE_RESOLVER = "ER_NO_XPATH_VARIABLE_RESOLVER";
   public static final String ER_NO_XPATH_FUNCTION_PROVIDER = "ER_NO_XPATH_FUNCTION_PROVIDER";
@@ -765,11 +764,6 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
         "The XPathResult of XPath expression ''{0}'' has an XPathResultType of {1} which cannot be converted to a number"},
 
   //BEGIN:  Definitions of error keys used  in exception messages of  JAXP 1.3 XPath API implementation
-
-  /** Field ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED                       */
-
-  { ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED,
-       "Extension function: ''{0}'' can not be invoked when the XMLConstants.FEATURE_SECURE_PROCESSING feature is set to true."},
 
   /** Field ER_RESOLVE_VARIABLE_RETURNS_NULL                       */
 

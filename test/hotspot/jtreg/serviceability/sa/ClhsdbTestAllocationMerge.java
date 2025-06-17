@@ -30,6 +30,7 @@ import jtreg.SkippedException;
  * @bug 8318682
  * @summary Test clhsdb that decoding of AllocationMerge objects in debug info works correctly
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm ClhsdbTestAllocationMerge
  */

@@ -2170,15 +2170,13 @@ void C2_MacroAssembler::enc_cmove_cmp_fp(int cmpFlag, FloatRegister op1, FloatRe
       cmov_cmp_fp_le(op1, op2, dst, src, is_single);
       break;
     case BoolTest::ge:
-      assert(false, "Should go to BoolTest::le case");
-      ShouldNotReachHere();
+      cmov_cmp_fp_ge(op1, op2, dst, src, is_single);
       break;
     case BoolTest::lt:
       cmov_cmp_fp_lt(op1, op2, dst, src, is_single);
       break;
     case BoolTest::gt:
-      assert(false, "Should go to BoolTest::lt case");
-      ShouldNotReachHere();
+      cmov_cmp_fp_gt(op1, op2, dst, src, is_single);
       break;
     default:
       assert(false, "unsupported compare condition");
@@ -3110,7 +3108,9 @@ void C2_MacroAssembler::compare_integral_v(VectorRegister vd, VectorRegister src
   assert(is_integral_type(bt), "unsupported element type");
   assert(vm == Assembler::v0_t ? vd != v0 : true, "should be different registers");
   vsetvli_helper(bt, vector_length);
-  vmclr_m(vd);
+  if (vm == Assembler::v0_t) {
+    vmclr_m(vd);
+  }
   switch (cond) {
     case BoolTest::eq: vmseq_vv(vd, src1, src2, vm); break;
     case BoolTest::ne: vmsne_vv(vd, src1, src2, vm); break;
@@ -3133,7 +3133,9 @@ void C2_MacroAssembler::compare_fp_v(VectorRegister vd, VectorRegister src1, Vec
   assert(is_floating_point_type(bt), "unsupported element type");
   assert(vm == Assembler::v0_t ? vd != v0 : true, "should be different registers");
   vsetvli_helper(bt, vector_length);
-  vmclr_m(vd);
+  if (vm == Assembler::v0_t) {
+    vmclr_m(vd);
+  }
   switch (cond) {
     case BoolTest::eq: vmfeq_vv(vd, src1, src2, vm); break;
     case BoolTest::ne: vmfne_vv(vd, src1, src2, vm); break;

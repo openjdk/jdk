@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,12 @@ import static org.testng.Assert.assertTrue;
 
 /*
  * @test
- * @bug 8054307 8077559
+ * @bug 8054307 8077559 8351443
  * @summary Tests Compact String. This test is testing StringBuilder
  *          behavior related to Compact String.
  * @run testng/othervm -XX:+CompactStrings CompactStringBuilder
  * @run testng/othervm -XX:-CompactStrings CompactStringBuilder
+ * @run testng/othervm -Xcomp CompactStringBuilder
  */
 
 public class CompactStringBuilder {
@@ -54,6 +55,10 @@ public class CompactStringBuilder {
         check(new StringBuilder(ORIGIN).append(new StringBuffer("\uFF21")),
                 "A\uFF21");
         check(new StringBuilder(ORIGIN).append("\uFF21"), "A\uFF21");
+        check(new StringBuilder(ORIGIN).append(new char[] { 'a', 'b', 'c'}),
+                "Aabc");
+        check(new StringBuilder(ORIGIN).append(new char[] { 'a', 'b', 'c'}, 1, 2),
+                "Abc");
         check(new StringBuilder(ORIGIN).append(new StringBuffer("\uFF21")),
                 "A\uFF21");
         check(new StringBuilder(ORIGIN).delete(0, 1), "");
@@ -402,6 +407,54 @@ public class CompactStringBuilder {
       check(sb, "AB");      // maybeLatin1 become true
       check(new StringBuilder(sb).append('A'), "ABA");
       check(new StringBuilder().append(sb), "AB");
+    }
+
+    // Test cases to force expanding the capacity during replace.
+    // Start with a known capacity and a known initial value that almost fills it.
+    // Use both latin1 and utf16 initial values and replacement values.
+    // Iterate through cases of SB.replace start and end values and various lengths of replacement.
+    // The results are checked by composing the new string using concatenation of the segments.
+    @Test
+    public void testGrowingCapacityReplace() {
+        final int INIT_CAPACITY = 8;
+        final String[] INITIAL_CHARS = {"A", "\u0100"};
+        final String[] REPLACEMENT_CHARS = {"B", "\u0101"};
+        for (String INITIAL : INITIAL_CHARS) {
+            for (String REPLACEMENT : REPLACEMENT_CHARS) {
+                for (int initLen = INIT_CAPACITY - 1; initLen < INIT_CAPACITY + 2; initLen++) {
+                    final String orig = INITIAL.repeat(initLen);
+                    for (int start = INIT_CAPACITY - 4; start < orig.length(); start++) {
+                        for (int end = start; end < orig.length(); end++) {
+                            for (int insLen = 0; insLen < 2; insLen++) {
+                                final String repl = REPLACEMENT.repeat(insLen);
+                                var sb = new StringBuilder(INIT_CAPACITY)
+                                        .append(orig);
+                                int capBefore = sb.capacity();
+                                sb.replace(start, end, repl);
+                                int capAfter = sb.capacity();
+                                String expected = genReplacementString(orig, start, end, repl);
+                                try {
+                                    check(sb, expected);
+                                } catch (Throwable ex) {
+                                    System.out.printf("repl: \"%s\", actual: %s, expected: %s%n", repl, sb, expected);
+                                    System.out.printf("    insLen: %d, gap: %d, beforeLen: %d, afterLen: %d, capBefore: %d, capAfter: %d%n",
+                                            insLen, (end - start), orig.length(), sb.length(),
+                                            capBefore, capAfter);
+                                    throw ex;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Construct the replacement string using string concat of the segments
+    private static String genReplacementString(String orig, int start, int end, String repl) {
+        return orig.substring(0, start) +
+                repl +
+                orig.substring(end, orig.length());
     }
 
     private void checkGetChars(StringBuilder sb, int srcBegin, int srcEnd,

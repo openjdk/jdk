@@ -372,22 +372,45 @@ public enum AccessFlag {
 
     /**
      * {@return an unmodifiable set of access flags for the given mask value
-     * appropriate for the location in question}
+     * appropriate for the location in the current class file format version}
      *
      * @param mask bit mask of access flags
      * @param location context to interpret mask value
      * @throws IllegalArgumentException if the mask contains bit
-     * positions not support for the location in question
+     * positions not defined for the location in the current class file format
+     * @throws NullPointerException if {@code location} is {@code null}
      */
     public static Set<AccessFlag> maskToAccessFlags(int mask, Location location) {
-        var definition = findDefinition(location);
-        int flagsMask = location.flagsMask();
-        int parsingMask = location == Location.METHOD ? flagsMask | ACC_STRICT : flagsMask; // flagMask lacks strictfp
-        int unmatchedMask = mask & (~parsingMask);
+        var definition = findDefinition(location);  // null checks location
+        int unmatchedMask = mask & (~location.flagsMask());
         if (unmatchedMask != 0) {
             throw new IllegalArgumentException("Unmatched bit position 0x" +
                     Integer.toHexString(unmatchedMask) +
                     " for location " + location);
+        }
+        return new AccessFlagSet(definition, mask);
+    }
+
+    /**
+     * {@return an unmodifiable set of access flags for the given mask value
+     * appropriate for the location in the given class file format version}
+     *
+     * @param mask bit mask of access flags
+     * @param location context to interpret mask value
+     * @param cffv the class file format to interpret mask value
+     * @throws IllegalArgumentException if the mask contains bit
+     * positions not defined for the location in the given class file format
+     * @throws NullPointerException if {@code location} or {@code cffv} is {@code null}
+     * @since 25
+     */
+    public static Set<AccessFlag> maskToAccessFlags(int mask, Location location, ClassFileFormatVersion cffv) {
+        var definition = findDefinition(location);  // null checks location
+        int unmatchedMask = mask & (~location.flagsMask(cffv));  // null checks cffv
+        if (unmatchedMask != 0) {
+            throw new IllegalArgumentException("Unmatched bit position 0x" +
+                    Integer.toHexString(unmatchedMask) +
+                    " for location " + location +
+                    " for class file format " + cffv);
         }
         return new AccessFlagSet(definition, mask);
     }

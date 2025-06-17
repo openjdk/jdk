@@ -52,7 +52,13 @@ final class StableFunctionTest {
         ZERO(0),
         ILLEGAL_BEFORE(-1),
         // Valid values
-        THIRTEEN(13),
+        THIRTEEN(13) {
+            @Override
+            public String toString() {
+                // getEnumConstants will be `null` for this enum as it is overridden
+                return super.toString()+" (Overridden)";
+            }
+        },
         ILLEGAL_BETWEEN(-2),
         FORTY_TWO(42),
         // Illegal values (not in the input set)
@@ -194,6 +200,13 @@ final class StableFunctionTest {
         assertEquals("jdk.internal.lang.stable.StableEnumFunction", enumFunction.getClass().getName());
         Function<Value, Integer> emptyFunction = StableValue.function(Set.of(), Value::asInt);
         assertEquals("jdk.internal.lang.stable.StableFunction", emptyFunction.getClass().getName());
+    }
+
+    @Test
+    void overriddenEnum() {
+        final var overridden = Value.THIRTEEN;
+        Function<Value, Integer> enumFunction = StableValue.function(EnumSet.of(overridden), Value::asInt);
+        assertEquals(MAPPER.apply(overridden), enumFunction.apply(overridden));
     }
 
     private static Stream<Set<Value>> nonEmptySets() {

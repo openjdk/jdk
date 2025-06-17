@@ -59,6 +59,11 @@ inline bool Klass::is_loader_alive() const {
   return class_loader_data()->is_alive();
 }
 
+inline bool Klass::is_loader_present_and_alive() const {
+  ClassLoaderData* cld = class_loader_data();
+  return (cld != nullptr) ? cld->is_alive() : false;
+}
+
 inline markWord Klass::prototype_header() const {
   assert(UseCompactObjectHeaders, "only use with compact object headers");
 #ifdef _LP64
