@@ -146,6 +146,23 @@ void print_number_of_classes(outputStream* out, uintx classes, uintx classes_sha
 #define UL2(level, ...)
 #endif
 
+/*
+// Used for verifying memory ranges
+enum class MemoryRangeState {
+  // range outside metaspace or class space
+  outside,
+  // range inside metaspace/class space, but in uncommitted portion
+  in_uncommitted,
+  // range inside committed metaspace/class space, but in a currently
+  // unused chunk
+  in_uncommitted_free_chunk,
+  // range inside committed metaspace/class space, but in a currently
+  // unused chunk (likely
+  in_committed_free_chunk,
+  // range inside committed metaspace/class space, but is marked as dead
+  in_committed_dead,
+};
+*/
 } // namespace metaspace
 
 #endif // SHARE_MEMORY_METASPACE_METASPACECOMMON_HPP
