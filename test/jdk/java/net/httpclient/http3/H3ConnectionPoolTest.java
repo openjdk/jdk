@@ -28,8 +28,8 @@
  *        jdk.test.lib.Asserts
  *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors
- *                     -Djdk.internal.httpclient.debug=true
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors,http3,quic:hs
+ *                     -Djdk.internal.httpclient.debug=false
  *                     H3ConnectionPoolTest
  */
 
@@ -40,9 +40,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.util.Collections;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
@@ -63,6 +63,7 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.ANY;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertNotEquals;
+import static jdk.test.lib.Asserts.assertTrue;
 
 public class H3ConnectionPoolTest implements HttpServerAdapters {
 
@@ -71,7 +72,7 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
     static int altsvcPort, https2Port, http3Port;
     static Http3TestServer http3OnlyServer;
     static Http2TestServer https2AltSvcServer;
-    static HttpClient client = null;
+    static volatile HttpClient client = null;
     static SSLContext sslContext;
     static volatile String http3OnlyURIString, https2URIString, http3AltSvcURIString, http3DirectURIString;
 
@@ -308,6 +309,203 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
                 assertEquals(response4.connectionLabel().get(), response1.connectionLabel().get());
                 assertNotEquals(response4.connectionLabel().get(), response3.connectionLabel().get());
                 checkStatus(200, response1.statusCode());
+            } else {
+                System.out.println("WARNING: Couldn't create HTTP/3 server on same port! Can't test all...");
+                // Get, get the alt service
+                HttpRequest request2 = req2Builder.copy().build();
+                // first request with ALT_SVC is to get alt service, should be H2
+                HttpResponse<String> h2resp2 = client.send(request2, BodyHandlers.ofString());
+                assertEquals(HTTP_2, h2resp2.version());
+                checkStatus(200, h2resp2.statusCode());
+
+                // second request should have ALT_SVC and create new connection with H3
+                // it should not reuse the non-advertised connection
+                HttpResponse<String> response2 = client.send(request2, BodyHandlers.ofString());
+                assertEquals(HTTP_3, response2.version());
+                checkStatus(200, response2.statusCode());
+                assertNotEquals(response2.connectionLabel().get(), h2resp2.connectionLabel().get());
+
+                // third request with ALT_SVC should reuse the same advertised
+                // connection (from response2), regardless of same origin...
+                HttpRequest request3 = req2Builder.copy().build();
+                HttpResponse<String> response3 = client.send(request3, BodyHandlers.ofString());
+                assertEquals(HTTP_3, response3.version());
+                checkStatus(200, response3.statusCode());
+                assertEquals(response3.connectionLabel().get(), response2.connectionLabel().get());
+            }
+        } finally {
+            http3OnlyServer.stop();
+            https2AltSvcServer.stop();
+        }
+    }
+
+    @Test
+    public static void testParallelH2H3WithTwoAltSVC() throws Exception {
+        testH2H3Concurrent(false);
+    }
+
+    @Test
+    public static void testParallelH2H3WithAltSVCOnSamePort() throws Exception {
+        testH2H3Concurrent(true);
+    }
+
+    private static void testH2H3Concurrent(boolean samePort) throws Exception {
+        System.out.println("\nTesting concurrent connections with advertised AltSvc on "
+                + (samePort ? "same port" : "ephemeral port"));
+        initialize(samePort);
+        try (HttpClient client = getClient()) {
+            var req1Builder = HttpRequest.newBuilder()
+                    .uri(URI.create(http3DirectURIString))
+                    .version(HTTP_3)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
+                    .GET();
+            var req2Builder = HttpRequest.newBuilder()
+                    .uri(URI.create(http3DirectURIString))
+                    .setOption(H3_DISCOVERY, ALT_SVC)
+                    .version(HTTP_3)
+                    .GET();
+
+            if (altsvcPort == https2Port) {
+                System.out.println("Testing with alt service on same port");
+
+                // first request with HTTP3_URI_ONLY should create H3 connection
+                HttpRequest request1 = req1Builder.copy().build();
+                HttpRequest request2 = req2Builder.copy().build();
+                List<CompletableFuture<HttpResponse<String>>> directResponses = new ArrayList<>();
+                for (int i=0; i<3; i++) {
+                    directResponses.add(client.sendAsync(request1, BodyHandlers.ofString()));
+                }
+                // can't send requests in parallel here because if any establishes
+                // a connection before the H3 direct are established, then the H3
+                // direct might reuse the H3 alt since the service is with same origin
+                HttpResponse<String> h2resp2 = client.send(request2, BodyHandlers.ofString());
+                String c1Label = null;
+                for (int i = 0; i < directResponses.size(); i++) {
+                    HttpResponse<String> response1 = directResponses.get(i).get();
+                    System.out.printf("direct response [%s][%s]: %s%n", i,
+                            response1.connectionLabel(),
+                            response1);
+                    assertEquals(HTTP_3, response1.version());
+                    checkStatus(200, response1.statusCode());
+                    if (i == 0) {
+                        c1Label = response1.connectionLabel().get();
+                    }
+                    assertEquals(c1Label, response1.connectionLabel().orElse(null));
+                }
+                // first request with ALT_SVC is to get alt service, should be H2
+                assertEquals(HTTP_2, h2resp2.version());
+                checkStatus(200, h2resp2.statusCode());
+                assertNotEquals(c1Label, h2resp2.connectionLabel().orElse(null));
+
+                // second request should have ALT_SVC and create new connection with H3
+                // it should not reuse the non-advertised connection
+                List<CompletableFuture<HttpResponse<String>>> altResponses = new ArrayList<>();
+                for (int i = 0; i < 3; i++) {
+                    altResponses.add(client.sendAsync(request2, BodyHandlers.ofString()));
+                }
+                String c2Label = null;
+                for (int i = 0; i < altResponses.size(); i++) {
+                    HttpResponse<String> response2 = altResponses.get(i).get();
+                    System.out.printf("alt response [%s][%s]: %s%n", i,
+                            response2.connectionLabel(),
+                            response2);
+                    assertEquals(HTTP_3, response2.version());
+                    checkStatus(200, response2.statusCode());
+                    assertNotEquals(response2.connectionLabel().get(), c1Label);
+                    if (i == 0) {
+                        c2Label = response2.connectionLabel().get();
+                    }
+                    assertEquals(c2Label, response2.connectionLabel().orElse(null));
+                }
+
+                // second set of requests should reuse a created connection
+                HttpRequest request3 = req1Builder.copy().build();
+                List<CompletableFuture<HttpResponse<String>>> mixResponses = new ArrayList<>();
+                for (int i=0; i < 3; i++) {
+                    mixResponses.add(client.sendAsync(request3, BodyHandlers.ofString()));
+                    mixResponses.add(client.sendAsync(request2, BodyHandlers.ofString()));
+                }
+                for (int i=0; i < mixResponses.size(); i++) {
+                    HttpResponse<String> response3 = mixResponses.get(i).get();
+                    System.out.printf("mixed response [%s][%s] %s: %s%n", i,
+                            response3.connectionLabel(),
+                            response3.request().getOption(H3_DISCOVERY),
+                            response3);
+                    assertEquals(HTTP_3, response3.version());
+                    checkStatus(200, response3.statusCode());
+                    if (response3.request().getOption(H3_DISCOVERY).orElse(null) == ALT_SVC) {
+                        assertEquals(c2Label, response3.connectionLabel().get());
+                    } else {
+                        assertEquals(c1Label, response3.connectionLabel().get());
+                    }
+                }
+            } else if (http3Port == https2Port) {
+                System.out.println("Testing with two alt services");
+                // first - make a direct connection
+                HttpRequest request1 = req1Builder.copy().build();
+
+                // second, use the alt service
+                HttpRequest request2 = req2Builder.copy().build();
+                HttpResponse<String> h2resp2 = client.send(request2, BodyHandlers.ofString());
+                assertEquals(HTTP_2, h2resp2.version());
+                checkStatus(200, h2resp2.statusCode());
+
+                // third, use ANY
+                HttpRequest request3 = req2Builder.copy().setOption(H3_DISCOVERY, ANY).build();
+
+                List<CompletableFuture<HttpResponse<String>>> directResponses = new ArrayList<>();
+                List<CompletableFuture<HttpResponse<String>>> altResponses = new ArrayList<>();
+                List<CompletableFuture<HttpResponse<String>>> anyResponses = new ArrayList<>();
+                checkStatus(200, h2resp2.statusCode());
+                for (int i=0; i<3; i++) {
+                    anyResponses.add(client.sendAsync(request3, BodyHandlers.ofString()));
+                    directResponses.add(client.sendAsync(request1, BodyHandlers.ofString()));
+                    altResponses.add(client.sendAsync(request2, BodyHandlers.ofString()));
+                }
+                String c1Label = null;
+                for (int i = 0; i < directResponses.size(); i++) {
+                    HttpResponse<String> response1 = directResponses.get(i).get();
+                    System.out.printf("direct response [%s][%s] %s: %s%n", i,
+                            response1.connectionLabel(),
+                            response1.request().getOption(H3_DISCOVERY),
+                            response1);
+                    assertEquals(HTTP_3, response1.version());
+                    checkStatus(200, response1.statusCode());
+                    if (i == 0) {
+                        c1Label = response1.connectionLabel().get();
+                    }
+                    assertEquals(c1Label, response1.connectionLabel().orElse(null));
+                }
+                String c2Label = null;
+                for (int i = 0; i < altResponses.size(); i++) {
+                    HttpResponse<String> response2 = altResponses.get(i).get();
+                    System.out.printf("alt response [%s][%s] %s: %s%n", i,
+                            response2.connectionLabel(),
+                            response2.request().getOption(H3_DISCOVERY),
+                            response2);
+                    assertEquals(HTTP_3, response2.version());
+                    checkStatus(200, response2.statusCode());
+                    if (i == 0) {
+                        c2Label = response2.connectionLabel().get();
+                    }
+                    assertNotEquals(response2.connectionLabel().get(), h2resp2.connectionLabel().get());
+                    assertNotEquals(response2.connectionLabel().get(), c1Label);
+                    assertEquals(c2Label, response2.connectionLabel().orElse(null));
+                }
+                var expectedLabels = Set.of(c1Label, c2Label);
+                for (int i = 0; i < anyResponses.size(); i++) {
+                    HttpResponse<String> response3 = anyResponses.get(i).get();
+                    System.out.printf("any response [%s][%s] %s: %s%n", i,
+                            response3.connectionLabel(),
+                            response3.request().getOption(H3_DISCOVERY),
+                            response3);
+                    assertEquals(HTTP_3, response3.version());
+                    checkStatus(200, response3.statusCode());
+                    assertNotEquals(response3.connectionLabel().get(), h2resp2.connectionLabel().get());
+                    var label = response3.connectionLabel().orElse("");
+                    assertTrue(expectedLabels.contains(label), "Unexpected label: %s not in %s"
+                            .formatted(label, expectedLabels));
+                }
             } else {
                 System.out.println("WARNING: Couldn't create HTTP/3 server on same port! Can't test all...");
                 // Get, get the alt service

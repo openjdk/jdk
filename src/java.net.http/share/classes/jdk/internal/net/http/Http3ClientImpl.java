@@ -31,9 +31,8 @@ import java.net.http.UnsupportedProtocolVersionException;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,6 +40,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
+import jdk.internal.net.http.AltServicesRegistry.AltService;
 import jdk.internal.net.http.common.ConnectionExpiredException;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
@@ -100,7 +100,7 @@ public final class Http3ClientImpl implements AutoCloseable {
 
     final HttpClientImpl client;
     private final Http3ConnectionPool connections = new Http3ConnectionPool(debug);
-    private final Map<String,ConnectionRecovery> reconnections = new ConcurrentHashMap<>();
+    private final Http3PendingConnections reconnections = new Http3PendingConnections();
     private final Set<Http3Connection> pendingClose = ConcurrentHashMap.newKeySet();
     private final Set<String> noH3 = ConcurrentHashMap.newKeySet();
 
@@ -166,13 +166,14 @@ public final class Http3ClientImpl implements AutoCloseable {
     // Indicates that recovery of a connection has been initiated.
     // Waiters will be put in wait until the handshake is completed
     // and the connection is inserted in the pool
-    record PendingConnection(ConcurrentLinkedQueue<Waiter> waiters)
+    record PendingConnection(AltService altSvc, ConcurrentLinkedQueue<Waiter> waiters)
             implements ConnectionRecovery {
-        PendingConnection(ConcurrentLinkedQueue<Waiter> waiters) {
+        PendingConnection(AltService altSvc, ConcurrentLinkedQueue<Waiter> waiters) {
+            this.altSvc = altSvc;
             this.waiters = Objects.requireNonNull(waiters);
         }
-        PendingConnection() {
-            this(new ConcurrentLinkedQueue<>());
+        PendingConnection(AltService altSvc) {
+            this(altSvc, new ConcurrentLinkedQueue<>());
         }
     }
 
@@ -187,7 +188,7 @@ public final class Http3ClientImpl implements AutoCloseable {
     public void streamLimitReached(Http3Connection connection, HttpRequestImpl request) {
         lock.lock();
         try {
-            reconnections.computeIfAbsent(connectionKey(request), k -> new StreamLimitReached(connection));
+            reconnections.streamLimitReached(connectionKey(request), connection);
         } finally {
             lock.unlock();
         }
@@ -213,7 +214,6 @@ public final class Http3ClientImpl implements AutoCloseable {
                                             Exchange<?> exchange)
                 throws IOException {
         if (request.secure() && request.proxy() == null) {
-            var config = request.http3Discovery();
             final var pooled = connections.lookupFor(request);
             if (pooled == null) {
                 return null;
@@ -261,7 +261,7 @@ public final class Http3ClientImpl implements AutoCloseable {
         // so we can remove the PendingConnection from the reconnections list;
         PendingConnection pendingConnection;
         try {
-            var recovery = reconnections.remove(connectionKey);
+            var recovery = reconnections.removeCompleted(connectionKey, origExchange, conn);
             if (recovery instanceof PendingConnection pending) {
                 pendingConnection = pending;
             } else {
@@ -368,6 +368,7 @@ public final class Http3ClientImpl implements AutoCloseable {
     }
 
     CompletableFuture<Http3Connection> getConnectionFor(HttpRequestImpl request, Exchange<?> exchange) {
+        assert request != null;
         return getConnectionFor(request, exchange, null);
     }
 
@@ -418,9 +419,16 @@ public final class Http3ClientImpl implements AutoCloseable {
         }
     }
 
+    Optional<AltService> lookupAltSvc(HttpRequestImpl request) {
+        return client.registry()
+                .lookup(request.uri(), H3::equals)
+                .findFirst();
+    }
+
     CompletableFuture<Http3Connection> getConnectionFor(HttpRequestImpl request,
                                                         Exchange<?> exchange,
                                                         Waiter pendingWaiter) {
+        assert request != null;
         try {
             Http3Connection pooled = findPooledConnectionFor(request, exchange);
             if (pooled != null) {
@@ -453,7 +461,8 @@ public final class Http3ClientImpl implements AutoCloseable {
                 lock.lock();
                 try {
                     key = connectionKey(request);
-                    var recovery = reconnections.get(key);
+
+                    var recovery = reconnections.lookupFor(key, request);
                     if (recovery instanceof PendingConnection pending) {
                         // Recovery already initiated. Add waiter to the list!
                         pendingConnection = pending;
@@ -469,7 +478,7 @@ public final class Http3ClientImpl implements AutoCloseable {
                         // has not been initiated yet. Do that now.
                         reconnecting = waitForPendingConnect = true;
                     } else waitForPendingConnect = WAIT_FOR_PENDING_CONNECT;
-                    // By default we allow concurrent attempts to
+                    // By default, we allow concurrent attempts to
                     // create HTTP/3 connections to the same host, except when
                     // one connection has reached the maximum number of streams
                     // it is allowed to use. However,
@@ -481,8 +490,9 @@ public final class Http3ClientImpl implements AutoCloseable {
                         // check again
                         if ((pooled = findPooledConnectionFor(request, exchange)) == null) {
                             // initiate recovery
-                            pendingConnection = new PendingConnection();
-                            reconnections.put(key, pendingConnection);
+                            var altSvc = lookupAltSvc(request).orElse(null);
+                            // maybe null if ALT_SVC && altSvc == null
+                            pendingConnection = reconnections.addPending(key, request, altSvc);
                         } else if (pendingWaiter != null) {
                             if (Log.http3()) {
                                 Log.logHttp3("Completing pending waiter for: " + request + " #"
@@ -710,7 +720,7 @@ public final class Http3ClientImpl implements AutoCloseable {
                     !hasNoH3(request.uri().getRawAuthority());
             // otherwise, attempt direct connection only if we have no
             // alt service and it wasn't attempted and failed before
-            default -> client().registry().lookup(request.uri(), H3).findFirst().isEmpty()
+            default -> lookupAltSvc(request).isEmpty()
                     && !hasNoH3(request.uri().getRawAuthority());
         };
     }
