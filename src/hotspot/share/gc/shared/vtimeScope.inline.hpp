@@ -23,33 +23,34 @@
  */
 
 #include "gc/shared/vtimeScope.hpp"
+
 #include "gc/shared/collectedHeap.inline.hpp"
-#include "logging/log.hpp"
 #include "memory/universe.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/os.hpp"
+#include "runtime/vmThread.hpp"
 
 inline VTimeScope::VTimeScope(VMThread* thread, bool is_gc_operation)
-    : _start(0), _enabled(os::is_thread_cpu_time_supported()),
-      _gcLogging(is_gc_operation && log_is_enabled(Info, gc)),
-      _thread(thread) {
-  if (_gcLogging && _enabled) {
+  : _start(0),
+    _enabled(os::is_thread_cpu_time_supported()),
+    _is_gc_operation(is_gc_operation),
+    _thread(thread) {
+  if (_is_gc_operation && _enabled) {
     _start = os::thread_cpu_time(_thread);
   }
 }
 
 inline VTimeScope::~VTimeScope() {
-  if (_enabled) {
-    jlong end = _gcLogging || UsePerfData ? os::thread_cpu_time(_thread) : 0;
+  if (!_enabled) return;
 
-    if (_gcLogging) {
-      jlong duration = end > _start ? end - _start : 0;
-      Universe::heap()->add_vm_vtime(duration);
-    }
+  jlong end = (_is_gc_operation || UsePerfData) ? os::thread_cpu_time(_thread) : 0;
 
-    if (UsePerfData) {
-      CPUTimeCounters::get_instance()->update_counter(CPUTimeGroups::CPUTimeType::vm, end);
-    }
+  if (_is_gc_operation) {
+    jlong duration = end > _start ? end - _start : 0;
+    Universe::heap()->add_vm_vtime(duration);
+  }
+
+  if (UsePerfData) {
+    CPUTimeCounters::get_instance()->update_counter(CPUTimeGroups::CPUTimeType::vm, end);
   }
 }

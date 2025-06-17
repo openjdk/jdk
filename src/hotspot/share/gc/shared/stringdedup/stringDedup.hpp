@@ -106,10 +106,10 @@
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+class CollectedHeap;
 class Klass;
 class StringDedupThread;
 class ThreadClosure;
-class CollectedHeap;
 
 // The StringDedup class provides the API for the deduplication mechanism.
 // StringDedup::Requests and the StringDedup functions for candidate testing
@@ -117,8 +117,8 @@ class CollectedHeap;
 // feature.  Other functions in the StringDedup class are called where
 // needed, without requiring GC-specific code.
 class StringDedup : public AllStatic {
-  friend class StringDedupThread;
   friend class CollectedHeap;
+  friend class StringDedupThread;
 
   class Config;
   class Processor;

@@ -2203,6 +2203,7 @@ uint ShenandoahHeap::max_workers() {
 
 void ShenandoahHeap::stop() {
   CollectedHeap::stop();
+
   // The shutdown sequence should be able to terminate when GC is running.
 
   // Step 0. Notify policy to disable event recording and prevent visiting gc threads during shutdown

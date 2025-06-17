@@ -21,17 +21,19 @@
  * questions.
  *
  */
+
 #ifndef SHARE_GC_SHARED_VTIMESCOPE_HPP
 #define SHARE_GC_SHARED_VTIMESCOPE_HPP
 
 #include "memory/allocation.hpp"
 
 class VMThread;
+
 class VTimeScope : public StackObj {
 private:
   jlong         _start;
   bool          _enabled;
-  bool          _gcLogging;
+  bool          _is_gc_operation;
   Thread*       _thread;
 
 public:

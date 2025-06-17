@@ -30,9 +30,9 @@
 #include "memory/allocation.hpp"
 #include "utilities/macros.hpp"
 
+class CollectedHeap;
 class JavaThread;
 class OopStorage;
-class CollectedHeap;
 
 // This class performs string deduplication.  There is only one instance of
 // this class.  It processes deduplication requests.  It also manages the
@@ -45,6 +45,7 @@ class CollectedHeap;
 // safepoint checks can be performed between steps in those operations.
 class StringDedup::Processor : public CHeapObj<mtGC> {
   friend class CollectedHeap;
+
   Processor();
   ~Processor() = default;
 

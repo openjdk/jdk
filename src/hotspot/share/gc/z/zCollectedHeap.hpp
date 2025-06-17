@@ -91,8 +91,6 @@ public:
   GrowableArray<GCMemoryManager*> memory_managers() override;
   GrowableArray<MemoryPool*> memory_pools() override;
 
-  double elapsed_gc_vtime() override;
-
   void object_iterate(ObjectClosure* cl) override;
   ParallelObjectIteratorImpl* parallel_object_iterator(uint nworkers) override;
 

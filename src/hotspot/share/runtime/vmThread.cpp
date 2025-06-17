@@ -272,10 +272,11 @@ static void post_vm_operation_event(EventExecuteVMOperation* event, VM_Operation
 
 void VMThread::evaluate_operation(VM_Operation* op) {
   ResourceMark rm;
+
   {
     PerfTraceTime vm_op_timer(perf_accumulated_vm_operation_time());
     HOTSPOT_VMOPS_BEGIN(
-                     (char *) op->name(), strlen(op->name()),
+                     (char*) op->name(), strlen(op->name()),
                      op->evaluate_at_safepoint() ? 0 : 1);
 
     EventExecuteVMOperation event;
@@ -286,7 +287,7 @@ void VMThread::evaluate_operation(VM_Operation* op) {
     }
 
     HOTSPOT_VMOPS_END(
-                     (char *) op->name(), strlen(op->name()),
+                     (char*) op->name(), strlen(op->name()),
                      op->evaluate_at_safepoint() ? 0 : 1);
   }
 }
