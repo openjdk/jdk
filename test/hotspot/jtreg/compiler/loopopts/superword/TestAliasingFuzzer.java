@@ -96,7 +96,7 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  *     -> verify that the aliasing runtime check is not overly sensitive, so that the
  *        predicate does not fail unnecessarily and we have to recompile with multiversioning.
  *
- * Possible extensions:
+ * Possible extensions (Future Work):
  * - Access with Unsafe - side-step all issues with RangeChecks! - probably...
  * - Backing memory with Buffers
  * - AccessScenario:
@@ -111,6 +111,7 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  *     memory and split ranges. But we could alternate between same memory
  *     and split ranges, and then different memory but overlapping ranges.
  *     This would also be never aliasing.
+ * - Long iv and invariants (currently they are all int, and cast to long if needed)
  *
  */
 public class TestAliasingFuzzer {
@@ -299,11 +300,9 @@ public class TestAliasingFuzzer {
     // More details can be found in the implementation below.
     //
     public static record IndexForm(int con, int ivScale, int invar0Scale, int[] invarRestScales, int size) {
-        public static IndexForm random(int numInvarRest, int size, boolean withAbsOneIvScale) {
+        public static IndexForm random(int numInvarRest, int size, int ivStrideAbs) {
             int con = RANDOM.nextInt(-100_000, 100_000);
-            int ivScale = withAbsOneIvScale
-                          ? (RANDOM.nextBoolean() ? 1 : -1)
-                          : randomScale(size);
+            int ivScale = randomScale(size / ivStrideAbs);
             int invar0Scale = randomScale(size);
             int[] invarRestScales = new int[numInvarRest];
             // Sample values [-1, 0, 1]
@@ -504,8 +503,9 @@ public class TestAliasingFuzzer {
             boolean loopForward = RANDOM.nextBoolean();
 
             int numInvarRest = RANDOM.nextInt(5);
-            var form0 = IndexForm.random(numInvarRest, 1, false);
-            var form1 = IndexForm.random(numInvarRest, 1, false);
+            int ivStrideAbs = 1;
+            var form0 = IndexForm.random(numInvarRest, 1, ivStrideAbs);
+            var form1 = IndexForm.random(numInvarRest, 1, ivStrideAbs);
 
             return new TestGenerator(
                 2,
@@ -513,7 +513,7 @@ public class TestAliasingFuzzer {
                 ContainerKind.ARRAY,
                 type,
                 loopForward,
-                1,
+                ivStrideAbs,
                 numInvarRest,
                 new IndexForm[] {form0, form1},
                 new MyType[]    {type,   type},
@@ -569,8 +569,8 @@ public class TestAliasingFuzzer {
 
             boolean withAbsOneIvScale = containerKind == ContainerKind.MEMORY_SEGMENT_LONG_ADR_STRIDE;
             int ivStrideAbs = containerKind == ContainerKind.MEMORY_SEGMENT_LONG_ADR_STRIDE ? minAccessSize : 1;
-            var form0 = IndexForm.random(numInvarRest, indexSize0, withAbsOneIvScale);
-            var form1 = IndexForm.random(numInvarRest, indexSize1, withAbsOneIvScale);
+            var form0 = IndexForm.random(numInvarRest, indexSize0, ivStrideAbs);
+            var form1 = IndexForm.random(numInvarRest, indexSize1, ivStrideAbs);
 
             return new TestGenerator(
                 2,
@@ -1010,6 +1010,8 @@ public class TestAliasingFuzzer {
             return template.asToken();
         }
 
+        // Regular array-accesses are vectorized quite predictably, and we can create nice
+        // IR rules - even for cases where we do not expect vectorization.
         private TemplateToken generateIRRulesArray() {
             var template = Template.make(() -> body(
                 let("T", containerElementType.letter()),
@@ -1066,7 +1068,7 @@ public class TestAliasingFuzzer {
                 """
                 // Unfortunately, there are some issues that prevent RangeCheck elimination.
                 // The cases are currently quite unpredictable, so we cannot create any IR
-                // rules.
+                // rules - sometimes there are vectors sometimes not.
                 """
                 // JDK-8359688: it seems we only vectorize with ivScale=1, and not ivScale=-1
                 //              The issue seems to be RangeCheck elimination
@@ -1079,7 +1081,7 @@ public class TestAliasingFuzzer {
                 """
                 // Unfortunately, there are some issues that prevent RangeCheck elimination.
                 // The cases are currently quite unpredictable, so we cannot create any IR
-                // rules.
+                // rules - sometimes there are vectors sometimes not.
                 """
             ));
             return template.asToken();
@@ -1090,7 +1092,7 @@ public class TestAliasingFuzzer {
                 """
                 // Unfortunately, there are some issues that prevent RangeCheck elimination.
                 // The cases are currently quite unpredictable, so we cannot create any IR
-                // rules.
+                // rules - sometimes there are vectors sometimes not.
                 """
             ));
             return template.asToken();
@@ -1100,6 +1102,7 @@ public class TestAliasingFuzzer {
             var template = Template.make(() -> body(
                 let("methodName", methodName),
                 let("containerElementType", containerElementType),
+                let("ivStrideAbs", ivStrideAbs),
                 // Method head / signature.
                 "public static Object #methodName(",
                 IntStream.range(0, numContainers).mapToObj(i ->
@@ -1115,24 +1118,24 @@ public class TestAliasingFuzzer {
                 "int ivLo, int ivHi) {\n",
                 // Method loop body.
                 (loopForward
-                 ?  "for (int i = ivLo; i < ivHi; i++) {\n"
-                 :  "for (int i = ivHi-1; i >= ivLo; i--) {\n"),
+                 ?  "for (int i = ivLo; i < ivHi; i+=#ivStrideAbs) {\n"
+                 :  "for (int i = ivHi-#ivStrideAbs; i >= ivLo; i-=#ivStrideAbs) {\n"),
                 // Loop iteration.
                 switch (containerKind) {
                     case ContainerKind.ARRAY ->
                         generateTestLoopIterationArray(invarRest);
                     case ContainerKind.MEMORY_SEGMENT_AT_INDEX ->
                         generateTestLoopIterationMemorySegmentAtIndex(invarRest);
-                    case ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE ->
-                        generateTestLoopIterationMemorySegmentLongAdr(invarRest);
-                    case ContainerKind.MEMORY_SEGMENT_LONG_ADR_STRIDE ->
-                        // TODO:
+                    case ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE,
+                         ContainerKind.MEMORY_SEGMENT_LONG_ADR_STRIDE ->
                         generateTestLoopIterationMemorySegmentLongAdr(invarRest);
                 },
                 """
                     }
                     return new Object[] {
                 """,
+                // Return a list of all containers that are involved in the test.
+                // The caller can then compare the results of the test and reference method.
                 IntStream.range(0, numContainers).mapToObj(i ->
                     "container_" + i
                 ).collect(Collectors.joining(", ")), "\n",
@@ -1167,6 +1170,7 @@ public class TestAliasingFuzzer {
                 let("type1Layout", accessType[1].layout()),
                 switch (accessScenario) {
                     case COPY_LOAD_STORE ->
+                        // Conversion not implemented, index bound computation is too limited for this currently.
                         List.of("var v = ",
                                 "container_0.getAtIndex(#type0Layout, ", accessIndexForm[0].indexLong("invar0_0", invarRest), ");\n",
                                 "container_1.setAtIndex(#type1Layout, ", accessIndexForm[1].indexLong("invar0_1", invarRest), ", v);\n");
