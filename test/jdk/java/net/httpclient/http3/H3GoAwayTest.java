@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.net.ssl.SSLContext;
 
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http3.Http3TestServer;
@@ -45,8 +46,8 @@ import jdk.test.lib.net.URIBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.*;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -101,7 +102,10 @@ public class H3GoAwayTest {
      */
     @Test
     public void testSequential() throws Exception {
-        try (final HttpClient client = HttpClient.newBuilder().version(HTTP_3)
+        try (final HttpClient client = HttpServerAdapters
+                .createClientBuilderFor(HTTP_3)
+                .proxy(HttpClient.Builder.NO_PROXY)
+                .version(HTTP_3)
                 .sslContext(sslCtx).build()) {
             final String[] reqMethods = {"HEAD", "GET", "POST"};
             for (final String reqMethod : reqMethods) {
@@ -109,7 +113,7 @@ public class H3GoAwayTest {
                 final Set<String> connectionKeys = new LinkedHashSet<>();
                 for (int i = 1; i <= numReqs; i++) {
                     final URI reqURI = new URI(REQ_URI_BASE + "?" + reqMethod + "=" + i);
-                    final HttpRequest req = newBuilder()
+                    final HttpRequest req = HttpRequest.newBuilder()
                             .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                             .uri(reqURI)
                             .method(reqMethod, BodyPublishers.noBody())
