@@ -96,7 +96,9 @@ public class ListDragCursor {
 
         frame.add(panel);
         frame.setSize(300, 150);
-        frame.setLocation(450, 500);
+        frame.setLocation(instructionsFrame.getX()
+                + instructionsFrame.getWidth(),
+                instructionsFrame.getY());
         frame.setVisible(true);
         return frame;
     }
