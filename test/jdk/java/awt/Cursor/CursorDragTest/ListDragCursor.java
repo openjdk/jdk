@@ -64,8 +64,8 @@ public class ListDragCursor {
     public static void main(String[] args) throws Exception {
         try {
             EventQueue.invokeAndWait(() -> {
-                createInstructionsFrame();
-                createTestFrame();
+                instructionsFrame = createInstructionsFrame();
+                testFrame = createTestFrame();
             });
             if (!countDownLatch.await(2, TimeUnit.MINUTES)) {
                 throw new RuntimeException("Test timeout : No action was"
@@ -77,8 +77,8 @@ public class ListDragCursor {
         }
     }
 
-    static void createTestFrame() {
-        testFrame = new Frame("Cursor change after drag");
+    static Frame createTestFrame() {
+        Frame frame = new Frame("Cursor change after drag");
         Panel panel = new Panel();
 
         List list = new List(2);
@@ -94,14 +94,15 @@ public class ListDragCursor {
         panel.add(textArea);
         panel.add(list);
 
-        testFrame.add(panel);
-        testFrame.setSize(300, 150);
-        testFrame.setLocation(450, 500);
-        testFrame.setVisible(true);
+        frame.add(panel);
+        frame.setSize(300, 150);
+        frame.setLocation(450, 500);
+        frame.setVisible(true);
+        return frame;
     }
 
-    static void createInstructionsFrame() {
-        instructionsFrame = new Frame("Test Instructions");
+    static Frame createInstructionsFrame() {
+        Frame frame = new Frame("Test Instructions");
         Panel mainPanel = new Panel(new BorderLayout());
         TextArea textArea = new TextArea(INSTRUCTIONS,
                 15, 60, TextArea.SCROLLBARS_NONE);
@@ -122,10 +123,11 @@ public class ListDragCursor {
         mainPanel.add(textArea, BorderLayout.CENTER);
         mainPanel.add(btnPanel, BorderLayout.SOUTH);
 
-        instructionsFrame.add(mainPanel);
-        instructionsFrame.pack();
-        instructionsFrame.setLocationRelativeTo(null);
-        instructionsFrame.setVisible(true);
+        frame.add(mainPanel);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+        return frame;
     }
 
     static void disposeFrames() {
