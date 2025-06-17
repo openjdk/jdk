@@ -49,15 +49,17 @@
 import jdk.test.lib.process.ProcessTools;
 public class FDLeakTest {
     // This test has two native parts:
-    // - a library invoked with -agentlib that ensures that, in the parent JVM, we open a native fd without setting
-    //   FD_CLOEXEC (libFDLeaker.c). This is necessary because there is no way to do this from Java: if Java functions
-    //   correctly, all files the user could open via its APIs should be marked with FD_CLOEXEC.
-    // - a small native executable that tests - without using /proc - whether any file descriptors other than
-    //   stdin/out/err are open.
+    // - a library invoked with -agentlib that ensures that, in the parent JVM, we open
+    //   a native fd without setting FD_CLOEXEC (libFDLeaker.c). This is necessary because
+    //   there is no way to do this from Java: if Java functions correctly, all files the
+    //   user could open via its APIs should be marked with FD_CLOEXEC.
+    // - a small native executable that tests - without using /proc - whether any file
+    //   descriptors other than stdin/out/err are open.
     //
-    // What should happen: In the child process, between the initial fork and the exec of the target binary, we should
-    // close all filedescriptors that are not stdin/out/err. If that works, the child process should not see any other
-    // file descriptors save those three.
+    // What should happen: In the child process, between the initial fork and the exec of
+    // the target binary, we should close all filedescriptors that are not stdin/out/err.
+    // If that works, the child process should not see any other file descriptors save
+    // those three.
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createNativeTestProcessBuilder("FDLeakTester");
         pb.inheritIO();
