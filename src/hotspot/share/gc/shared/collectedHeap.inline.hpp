@@ -46,10 +46,6 @@ inline oop CollectedHeap::class_allocate(Klass* klass, size_t size, TRAPS) {
   return allocator.allocate();
 }
 
-inline jlong CollectedHeap::vm_vtime() {
-  return _vm_vtime;
-}
-
 inline void CollectedHeap::add_vm_vtime(jlong time) {
   _vm_vtime += time;
 }

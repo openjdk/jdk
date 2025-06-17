@@ -460,8 +460,8 @@ protected:
   // Default implementation does nothing.
   virtual void print_tracing_info() const = 0;
 
-  virtual double elapsed_gc_vtime();
-  void log_gc_vtime();
+  double elapsed_gc_vtime() const;
+  void log_gc_vtime() const;
 
   void print_before_gc() const;
   void print_after_gc() const;
