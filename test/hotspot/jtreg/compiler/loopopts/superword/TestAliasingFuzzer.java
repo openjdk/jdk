@@ -90,6 +90,9 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  *   - Different iv stride:
  *     - inc/dec by one, and then scale with ivScale:   for (..; i++)  { access(i * 4); }
  *     - abs(ivScale) == 1, but use iv stride instead:  for (..; i+=4) { access(i); }
+ *   - type of index, invars, and bounds (see isLongIvType)
+ *     - int: for array and MemorySegment
+ *     - long: for MemorySegment
  * - IR rules:
  *   - Verify that verification does (not) happen as expected.
  *   - Verify that we do not use multiversioning when no aliasing is expected at runtime.
@@ -97,11 +100,9 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  *        predicate does not fail unnecessarily and we have to recompile with multiversioning.
  *
  * Possible extensions (Future Work):
- * - Access with Unsafe - side-step all issues with RangeChecks! - probably...
+ * - Access with Unsafe
  * - Backing memory with Buffers
  * - AccessScenario:
- *   - type conversion (e.g. convert from float to double)
- *     -> interesting access pattern with different access sizes
  *   - More than two accesses
  * - Improve IR rules, once more cases vectorize (see e.g. JDK-8359688)
  * - Aliasing:
@@ -111,7 +112,6 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  *     memory and split ranges. But we could alternate between same memory
  *     and split ranges, and then different memory but overlapping ranges.
  *     This would also be never aliasing.
- * - Long iv and invariants (currently they are all int, and cast to long if needed)
  *
  */
 public class TestAliasingFuzzer {
@@ -475,6 +475,7 @@ public class TestAliasingFuzzer {
         // Do we count up or down, iterate over the containers forward or backward?
         boolean loopForward,
         int ivStrideAbs,
+        boolean isLongIvType,
 
         // For all index forms: number of invariants in the rest, i.e. the [err] term.
         int numInvarRest,
@@ -504,6 +505,7 @@ public class TestAliasingFuzzer {
 
             int numInvarRest = RANDOM.nextInt(5);
             int ivStrideAbs = 1;
+            boolean isLongIvType = false; // int index
             var form0 = IndexForm.random(numInvarRest, 1, ivStrideAbs);
             var form1 = IndexForm.random(numInvarRest, 1, ivStrideAbs);
 
@@ -514,6 +516,7 @@ public class TestAliasingFuzzer {
                 type,
                 loopForward,
                 ivStrideAbs,
+                isLongIvType,
                 numInvarRest,
                 new IndexForm[] {form0, form1},
                 new MyType[]    {type,   type},
@@ -569,6 +572,7 @@ public class TestAliasingFuzzer {
 
             boolean withAbsOneIvScale = containerKind == ContainerKind.MEMORY_SEGMENT_LONG_ADR_STRIDE;
             int ivStrideAbs = containerKind == ContainerKind.MEMORY_SEGMENT_LONG_ADR_STRIDE ? minAccessSize : 1;
+            boolean isLongIvType = RANDOM.nextBoolean();
             var form0 = IndexForm.random(numInvarRest, indexSize0, ivStrideAbs);
             var form1 = IndexForm.random(numInvarRest, indexSize1, ivStrideAbs);
 
@@ -579,6 +583,7 @@ public class TestAliasingFuzzer {
                 containerElementType,
                 loopForward,
                 ivStrideAbs,
+                isLongIvType,
                 numInvarRest,
                 new IndexForm[] {form0, form1},
                 new MyType[]    {accessType0, accessType1},
@@ -694,11 +699,12 @@ public class TestAliasingFuzzer {
 
         private TemplateToken generateTestFields(String[] invarRest, String[] containerNames, String[] indexFormNames) {
             var template = Template.make(() -> body(
+                let("ivType", isLongIvType ? "long" : "int"),
                 """
                 // invarRest fields:
                 """,
                 Arrays.stream(invarRest).map(invar ->
-                    List.of("private static int ", invar, " = 0;\n")
+                    List.of("private static #ivType ", invar, " = 0;\n")
                 ).toList(),
                 """
                 // Containers fields:
@@ -911,13 +917,13 @@ public class TestAliasingFuzzer {
                 int i = ivLo;
                 """,
                 IntStream.range(0, indexFormNames.length).mapToObj(i ->
-                    List.of("int lo_", i, " = ", accessIndexForm[i].index("invar0_" + i, invarRest), ";\n")
+                    List.of("int lo_", i, " = (int)(", accessIndexForm[i].index("invar0_" + i, invarRest), ");\n")
                 ).toList(),
                 """
                 i = ivHi;
                 """,
                 IntStream.range(0, indexFormNames.length).mapToObj(i ->
-                    List.of("int hi_", i, " =  ", accessIndexForm[i].index("invar0_" + i, invarRest), ";\n")
+                    List.of("int hi_", i, " =  (int)(", accessIndexForm[i].index("invar0_" + i, invarRest), ");\n")
                 ).toList(),
                 switch(aliasing) {
                     case Aliasing.CONTAINER_SAME_ALIASING_NEVER,
@@ -1103,23 +1109,24 @@ public class TestAliasingFuzzer {
                 let("methodName", methodName),
                 let("containerElementType", containerElementType),
                 let("ivStrideAbs", ivStrideAbs),
+                let("ivType", isLongIvType ? "long" : "int"),
                 // Method head / signature.
                 "public static Object #methodName(",
                 IntStream.range(0, numContainers).mapToObj(i ->
                     switch (containerKind) {
                         case ContainerKind.ARRAY ->
-                            List.of("#containerElementType[] container_", i, ", int invar0_", i, ", ");
+                            List.of("#containerElementType[] container_", i, ", #ivType invar0_", i, ", ");
                         case ContainerKind.MEMORY_SEGMENT_AT_INDEX,
                              ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE,
                              ContainerKind.MEMORY_SEGMENT_LONG_ADR_STRIDE ->
-                            List.of("MemorySegment container_", i, ", int invar0_", i, ", ");
+                            List.of("MemorySegment container_", i, ", #ivType invar0_", i, ", ");
                     }
                 ).toList(),
-                "int ivLo, int ivHi) {\n",
+                "#ivType ivLo, #ivType ivHi) {\n",
                 // Method loop body.
                 (loopForward
-                 ?  "for (int i = ivLo; i < ivHi; i+=#ivStrideAbs) {\n"
-                 :  "for (int i = ivHi-#ivStrideAbs; i >= ivLo; i-=#ivStrideAbs) {\n"),
+                 ?  "for (#ivType i = ivLo; i < ivHi; i+=#ivStrideAbs) {\n"
+                 :  "for (#ivType i = ivHi-#ivStrideAbs; i >= ivLo; i-=#ivStrideAbs) {\n"),
                 // Loop iteration.
                 switch (containerKind) {
                     case ContainerKind.ARRAY ->
