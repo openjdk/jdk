@@ -574,7 +574,7 @@ class LoopLimitNode : public Node {
 class OuterStripMinedLoopNode : public LoopNode {
 private:
   void fix_sunk_stores_when_back_to_counted_loop(PhaseIterGVN* igvn, PhaseIdealLoop* iloop) const;
-  void handle_sunk_stores_at_expansion(PhaseIterGVN* igvn);
+  void handle_sunk_stores_when_finishing_construction(PhaseIterGVN* igvn);
 
 public:
   OuterStripMinedLoopNode(Compile* C, Node *entry, Node *backedge)
@@ -1298,7 +1298,7 @@ public:
   void add_parse_predicate(Deoptimization::DeoptReason reason, Node* inner_head, IdealLoopTree* loop, SafePointNode* sfpt);
   SafePointNode* find_safepoint(Node* back_control, Node* x, IdealLoopTree* loop);
   IdealLoopTree* insert_outer_loop(IdealLoopTree* loop, LoopNode* outer_l, Node* outer_ift);
-  IdealLoopTree* create_outer_strip_mined_loop(BoolNode *test, Node *cmp, Node *init_control,
+  IdealLoopTree* create_outer_strip_mined_loop(Node* init_control,
                                                IdealLoopTree* loop, float cl_prob, float le_fcnt,
                                                Node*& entry_control, Node*& iffalse);
 

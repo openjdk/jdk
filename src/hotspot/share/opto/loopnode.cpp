@@ -298,19 +298,45 @@ IdealLoopTree* PhaseIdealLoop::insert_outer_loop(IdealLoopTree* loop, LoopNode* 
   return outer_ilt;
 }
 
-// Create a skeleton strip mined outer loop: a Loop head before the
-// inner strip mined loop, a safepoint and an exit condition guarded
-// by an opaque node after the inner strip mined loop with a backedge
-// to the loop head. The inner strip mined loop is left as it is. Only
-// once loop optimizations are over, do we adjust the inner loop exit
-// condition to limit its number of iterations, set the outer loop
-// exit condition and add Phis to the outer loop head. Some loop
-// optimizations that operate on the inner strip mined loop need to be
-// aware of the outer strip mined loop: loop unswitching needs to
-// clone the outer loop as well as the inner, unrolling needs to only
-// clone the inner loop etc. No optimizations need to change the outer
-// strip mined loop as it is only a skeleton.
-IdealLoopTree* PhaseIdealLoop::create_outer_strip_mined_loop(BoolNode *test, Node *cmp, Node *init_control,
+// Create a skeleton strip mined outer loop: an OuterStripMinedLoop head before the inner strip mined CountedLoop, a
+// SafePoint on exit of the inner CountedLoopEnd and an OuterStripMinedLoopEnd test that can't constant fold until loop
+// optimizations are over. The inner strip mined loop is left as it is. Only once loop optimizations are over, do we
+// adjust the inner loop exit condition to limit its number of iterations, set the outer loop exit condition and add
+// Phis to the outer loop head. Some loop optimizations that operate on the inner strip mined loop need to be aware of
+// the outer strip mined loop: loop unswitching needs to clone the outer loop as well as the inner, unrolling needs to
+// only clone the inner loop etc. No optimizations need to change the outer strip mined loop as it is only a skeleton.
+//
+// Schematically:
+//
+// OuterStripMinedLoop -------|
+//       |                    |
+// CountedLoop ----------- |  |
+//     \- Phi (iv) -|      |  |
+//       /  \       |      |  |
+//     CmpI  AddI --|      |  |
+//       \                 |  |
+//        Bool             |  |
+//         \               |  |
+// CountedLoopEnd          |  |
+//       /  \              |  |
+// IfFalse   IfTrue--------|  |
+//      |                     |
+// SafePoint                  |
+//      |                     |
+// OuterStripMinedLoopEnd     |
+//       /   \                |
+// IfFalse   IfTrue-----------|
+//      |
+//
+//
+// As loop optimizations transform the inner loop, the outer strip mined loop stays mostly unchanged. The only exception
+// is nodes referenced from the SafePoint and sunk from the inner loop: they end up in the outer strip mined loop.
+//
+// The main motivation for such a design that doesn't conform to C2's IR rules is to allow existing loop optimizations
+// to be mostly unaffected by the outer strip mined loop: the only extra step needed in most cases is to step over the
+// OuterStripMinedLoop. The main drawback is that once loop optimizations are over, an extra step is needed to finish
+// constructing the outer loop. This is handled by OuterStripMinedLoopNode::adjust_strip_mined_loop().
+IdealLoopTree* PhaseIdealLoop::create_outer_strip_mined_loop(Node* init_control,
                                                              IdealLoopTree* loop, float cl_prob, float le_fcnt,
                                                              Node*& entry_control, Node*& iffalse) {
   Node* outer_test = intcon(0);
@@ -2255,9 +2281,8 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
                          is_deleteable_safept(sfpt);
   IdealLoopTree* outer_ilt = nullptr;
   if (strip_mine_loop) {
-    outer_ilt = create_outer_strip_mined_loop(test, cmp, init_control, loop,
-                                              cl_prob, le->_fcnt, entry_control,
-                                              iffalse);
+    outer_ilt = create_outer_strip_mined_loop(init_control, loop, cl_prob, le->_fcnt,
+                                              entry_control, iffalse);
   }
 
   // Now setup a new CountedLoopNode to replace the existing LoopNode
@@ -2989,11 +3014,21 @@ void OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(PhaseIte
   }
 }
 
-// Sunk stores should be referenced from an outer loop memory Phi
-void OuterStripMinedLoopNode::handle_sunk_stores_at_expansion(PhaseIterGVN* igvn) {
+// The outer strip mined loop is initially only partially constructed. In particular Phis are omitted.
+// See comment above: PhaseIdealLoop::create_outer_strip_mined_loop()
+// We're now in the process of finishing the construction of the outer loop. For each Phi in the inner loop, a Phi in
+// the outer loop was created. Sunk Stores cause an extra challenge as, if all Stores in the inner loop were sunk for
+// a particular memory slice, there's no Phi left for that memory slice in the inner loop. So an extra Phi must be added
+// for each chain of sunk Stores for a particular memory slice. If some Stores were sunk and some left in the inner loop,
+// a Phi was already created in the outer loop but its backedge input wasn't wired correctly to the last Store of the
+// chain.
+void OuterStripMinedLoopNode::handle_sunk_stores_when_finishing_construction(PhaseIterGVN* igvn) {
   IfFalseNode* cle_exit_proj = inner_loop_exit();
 
-  // Sunk stores are pinned on the loop exit projection of the inner loop
+  // Find Sunk stores: Sunk stores are pinned on the loop exit projection of the inner loop. Indeed, because Sunk Stores
+  // modify the memory state captured by the SafePoint in the outer strip mined loop, they must be above it. The
+  // SafePoint's control input is the loop exit projection. It's also the only control out of the inner loop above the
+  // SafePoint.
 #ifdef ASSERT
   int stores_in_outer_loop_cnt = 0;
   for (DUIterator_Fast imax, i = cle_exit_proj->fast_outs(imax); i < imax; i++) {
@@ -3055,6 +3090,7 @@ void OuterStripMinedLoopNode::handle_sunk_stores_at_expansion(PhaseIterGVN* igvn
 }
 
 void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
+  verify_strip_mined(1);
   // Look for the outer & inner strip mined loop, reduce number of
   // iterations of the inner loop, set exit condition of outer loop,
   // construct required phi nodes for outer loop.
@@ -3177,7 +3213,7 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
     }
   }
 
-  handle_sunk_stores_at_expansion(igvn);
+  handle_sunk_stores_when_finishing_construction(igvn);
 
   if (iv_phi != nullptr) {
     // Now adjust the inner loop's exit condition
