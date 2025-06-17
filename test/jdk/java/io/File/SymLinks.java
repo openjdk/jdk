@@ -370,7 +370,6 @@ public class SymLinks {
     public static void main(String[] args) throws IOException {
         if (supportsSymLinks(top)) {
             try {
-            
                 setup();
                 go();
             } finally {
