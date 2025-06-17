@@ -1224,7 +1224,6 @@ double os::elapsed_process_vtime() {
     return -1;
   }
 
-
   SYSTEMTIME kernel_total;
   if (FileTimeToSystemTime(&kernel, &kernel_total) == 0) {
     return -1;
