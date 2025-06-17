@@ -679,7 +679,7 @@ public class Socket implements java.io.Closeable {
      *          SocketAddress subclass not supported by this socket
      *
      * @since   1.4
-     * @see #isBound
+     * @see #isBound()
      */
     public void bind(SocketAddress bindpoint) throws IOException {
         int s = state;
@@ -965,10 +965,7 @@ public class Socket implements java.io.Closeable {
             }
             long start = SocketReadEvent.timestamp();
             int nbytes = implRead(b, off, len);
-            long duration = SocketReadEvent.timestamp() - start;
-            if (SocketReadEvent.shouldCommit(duration)) {
-                SocketReadEvent.emit(start, duration, nbytes, parent.getRemoteSocketAddress(), getSoTimeout());
-            }
+            SocketReadEvent.offer(start, nbytes, parent.getRemoteSocketAddress(), getSoTimeout());
             return nbytes;
         }
 
@@ -1081,10 +1078,7 @@ public class Socket implements java.io.Closeable {
             }
             long start = SocketWriteEvent.timestamp();
             implWrite(b, off, len);
-            long duration = SocketWriteEvent.timestamp() - start;
-            if (SocketWriteEvent.shouldCommit(duration)) {
-                SocketWriteEvent.emit(start, duration, len, parent.getRemoteSocketAddress());
-            }
+            SocketWriteEvent.offer(start, len, parent.getRemoteSocketAddress());
         }
 
         private void implWrite(byte[] b, int off, int len) throws IOException {
@@ -1612,7 +1606,7 @@ public class Socket implements java.io.Closeable {
      * as well.
      *
      * @throws     IOException  if an I/O error occurs when closing this socket.
-     * @see #isClosed
+     * @see #isClosed()
      */
     public void close() throws IOException {
         synchronized (socketLock) {
@@ -1642,7 +1636,7 @@ public class Socket implements java.io.Closeable {
      * @see java.net.Socket#shutdownOutput()
      * @see java.net.Socket#close()
      * @see java.net.Socket#setSoLinger(boolean, int)
-     * @see #isInputShutdown
+     * @see #isInputShutdown()
      */
     public void shutdownInput() throws IOException {
         int s = state;
@@ -1672,7 +1666,7 @@ public class Socket implements java.io.Closeable {
      * @see java.net.Socket#shutdownInput()
      * @see java.net.Socket#close()
      * @see java.net.Socket#setSoLinger(boolean, int)
-     * @see #isOutputShutdown
+     * @see #isOutputShutdown()
      */
     public void shutdownOutput() throws IOException {
         int s = state;

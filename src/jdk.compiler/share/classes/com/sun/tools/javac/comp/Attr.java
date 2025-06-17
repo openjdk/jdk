@@ -5475,8 +5475,13 @@ public class Attr extends JCTree.Visitor {
                                                         .stream()
                                                         .anyMatch(d -> d.tsym == c);
                             if (!thisIsASuper) {
-                                log.error(TreeInfo.diagnosticPositionFor(subType.tsym, env.tree),
-                                        Errors.InvalidPermitsClause(Fragments.DoesntExtendSealed(subType)));
+                                if(c.isInterface()) {
+                                    log.error(TreeInfo.diagnosticPositionFor(subType.tsym, env.tree),
+                                            Errors.InvalidPermitsClause(Fragments.DoesntImplementSealed(kindName(subType.tsym), subType)));
+                                } else {
+                                    log.error(TreeInfo.diagnosticPositionFor(subType.tsym, env.tree),
+                                            Errors.InvalidPermitsClause(Fragments.DoesntExtendSealed(subType)));
+                                }
                             }
                         }
                     }
@@ -5711,9 +5716,9 @@ public class Attr extends JCTree.Visitor {
 
     private void setSyntheticVariableType(JCVariableDecl tree, Type type) {
         if (type.isErroneous()) {
-            tree.vartype = make.at(Position.NOPOS).Erroneous();
+            tree.vartype = make.at(tree.pos()).Erroneous();
         } else {
-            tree.vartype = make.at(Position.NOPOS).Type(type);
+            tree.vartype = make.at(tree.pos()).Type(type);
         }
     }
 

@@ -56,7 +56,7 @@ import sun.awt.util.ThreadGroupUtils;
  * Remind: This class uses solaris commands. We also need a linux
  * version
  */
-public class PrintServiceLookupProvider extends PrintServiceLookup
+public final class PrintServiceLookupProvider extends PrintServiceLookup
     implements BackgroundServiceLookup, Runnable {
 
     /* Remind: the current implementation is static, as its assumed
@@ -209,6 +209,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
      * This isn't required by the API and there's a risk doing this will
      * lead people to assume its guaranteed.
      */
+    @Override
     public synchronized PrintService[] getPrintServices() {
         if (printServices == null || !pollServices) {
             refreshServices();
@@ -541,6 +542,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
      * If service attributes are specified then there must be additional
      * filtering.
      */
+    @Override
     public PrintService[] getPrintServices(DocFlavor flavor,
                                            AttributeSet attributes) {
         PrintRequestAttributeSet requestSet = null;
@@ -599,6 +601,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
     /*
      * return empty array as don't support multi docs
      */
+    @Override
     public MultiDocPrintService[]
         getMultiDocPrintServices(DocFlavor[] flavors,
                                  AttributeSet attributes) {
@@ -606,6 +609,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
     }
 
 
+    @Override
     public synchronized PrintService getDefaultPrintService() {
         // clear defaultPrintService
         defaultPrintService = null;
@@ -665,6 +669,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         return defaultPrintService;
     }
 
+    @Override
     public synchronized void
         getServicesInbackground(BackgroundLookupListener listener) {
         if (printServices != null) {
@@ -695,6 +700,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         }
     }
 
+    @Override
     public void run() {
         PrintService[] services = getPrintServices();
         synchronized (this) {
@@ -897,7 +903,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         }
     }
 
-    private class PrinterChangeListener implements Runnable {
+    private final class PrinterChangeListener implements Runnable {
 
         @Override
         public void run() {
